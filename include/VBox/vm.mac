@@ -1,0 +1,90 @@
+;; @file
+;
+; VM - The Virtual Machine.
+;
+
+;
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+;
+
+%ifndef __VBox_vm_mac__
+%define __VBox_vm_mac__
+
+%include "VBox/stam.mac"
+
+;/** This action forces the VM to service check and pending interrups on the APIC. */
+%define VM_FF_INTERRUPT_APIC            (1 << 0)
+;/** This action forces the VM to service check and pending interrups on the PIC. */
+%define VM_FF_INTERRUPT_PIC             (1 << 1)
+;/** This action forces the VM to schedule and run pending timer (TM). */
+%define VM_FF_TIMER                     (1 << 2)
+;/** This action forces the VM to service pending requests from other
+; * thread or requests which must be executed in another context. */
+%define VM_FF_REQUEST                   (1 << 9)
+
+;;
+; This is part of  the VM structure.
+struc VM
+    .enmVMState         resd 1
+    .fForcedActions     resd 1
+    .HCPhysVM           resq 1
+    .pSession           RTR3PTR_RES 1
+    .pNext              RTHCPTR_RES 1
+    .pVMHC              RTHCPTR_RES 1
+    .pVMR3              RTR3PTR_RES 1
+    .pVMR0              RTR0PTR_RES 1
+    .pVMGC              RTGCPTR_RES 1
+
+    .pfnVMMGCGuestToHostAsmGuestCtx RTGCPTR_RES 1
+    .pfnVMMGCGuestToHostAsmHyperCtx RTGCPTR_RES 1
+    .pfnVMMGCGuestToHostAsm         RTGCPTR_RES 1
+
+    .ThreadEMT          RTHCPTR_RES 1
+    .NativeThreadEMT    RTHCPTR_RES 1
+
+    .fRawR3Enabled      resb 1
+    .fRawR0Enabled      resb 1
+    .fPATMEnabled       resb 1
+    .fCSAMEnabled       resb 1
+    .fHWACCMEnabled     resb 3
+
+    alignb 8
+
+    .StatTotalQemuToGC  resb STAMPROFILEADV_size
+    .StatTotalGCToQemu  resb STAMPROFILEADV_size
+    .StatTotalInGC      resb STAMPROFILEADV_size
+    .StatTotalInQemu    resb STAMPROFILEADV_size
+    .StatSwitcherToGC   resb STAMPROFILEADV_size
+    .StatSwitcherToHC   resb STAMPROFILEADV_size
+    .StatSwitcherSaveRegs resb STAMPROFILEADV_size
+    .StatSwitcherSysEnter resb STAMPROFILEADV_size
+    .StatSwitcherDebug    resb STAMPROFILEADV_size
+    .StatSwitcherCR0      resb STAMPROFILEADV_size
+    .StatSwitcherCR4      resb STAMPROFILEADV_size
+    .StatSwitcherJmpCR3   resb STAMPROFILEADV_size
+    .StatSwitcherRstrRegs resb STAMPROFILEADV_size
+    .StatSwitcherLgdt     resb STAMPROFILEADV_size
+    .StatSwitcherLidt     resb STAMPROFILEADV_size
+    .StatSwitcherLldt     resb STAMPROFILEADV_size
+    .StatSwitcherTSS      resb STAMPROFILEADV_size
+
+    alignb 32
+    .cpum                 resb 3424
+    .vmm                  resb 640
+
+endstruc
+
+
+%endif

@@ -1,0 +1,137 @@
+#
+# VirtualBox Guest Additions Module Makefile.
+#
+# (For 2.6.x this file must be 'Makefile'!)
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+#
+MODULE = vboxadd
+OBJS   = \
+	cmc.o \
+	vboxmod.o \
+	VBoxGuestLibBaseLinux.a \
+	r0drv/alloc-r0drv.o \
+	r0drv/linux/alloc-r0drv-linux.o \
+	r0drv/linux/semaphore-r0drv-linux.o
+
+#
+# Where is everything?
+#
+ifeq ($(KERN_DIR),)
+KERN_DIR_CUR := /lib/modules/$(shell uname -r)/build
+ifeq ($(shell if test -d $(KERN_DIR_CUR); then echo yes; fi),yes)
+KERN_DIR := $(KERN_DIR_CUR)
+else
+KERN_DIR = /usr/src/linux
+$(warning Warning: defaulting kernel sources to $(KERN_DIR). Specify KERN_DIR=<right-place> if this is not right.)
+endif
+endif
+
+# includes
+ifeq ($(KERN_INCL),)
+ifeq ($(shell if test -d $(KERN_DIR)/include; then echo yes; fi),yes)
+KERN_INCL = $(KERN_DIR)/include
+else
+KERN_INCL = /usr/src/linux/include
+$(warning Warning: defaulting to the includes in $(KERN_INCL). Specify KERN_INCL=<right-place> if this is not right.)
+endif
+endif
+
+# Module install dir.
+ifndef MODULE_DIR
+MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+MODULE_DIR := $(MODULE_DIR_TST)/misc
+else
+# MODULE_DIR := .
+$(error Unable to find the folder to install the additions driver to)
+endif
+endif # MODULE_DIR unspecified
+
+# guess kernel version (24 or 26)
+ifeq ($(shell if grep '"2.4.' $(KERN_INCL)/linux/version.h > /dev/null; then echo yes; fi),yes)
+KERN_VERSION := 24
+else
+KERN_VERSION := 26
+endif
+# KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
+
+# debug - show guesses.
+ifdef DEBUG
+$(warning dbg: KERN_DIR     = $(KERN_DIR))
+$(warning dbg: KERN_INCL    = $(KERN_INCL))
+$(warning dbg: MODULE_DIR   = $(MODULE_DIR))
+$(warning dbg: KERN_VERSION = $(KERN_VERSION))
+endif
+
+
+#
+# Compiler options
+#
+ifndef INCL
+INCL     := -I$(KERN_INCL) -I$(shell pwd)  -I$(shell pwd)/include -I$(shell pwd)/r0drv/linux
+export INCL
+endif
+KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -D_X86_ -DIN_RT_R0 -DIN_SUP_R0 -DVBGL_VBOXGUEST -DVBGL_HGCM -DVBOX_HGCM
+#ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
+#KFLAGS   += -DDEBUG
+#endif
+
+ifeq ($(KERN_VERSION), 24)
+#
+# 2.4
+#
+
+CFLAGS := -DVBOX_LINUX_2_4 -DEXPORT_SYMTAB $(INCL) $(KFLAGS) $(KDEBUG)
+MODULE_EXT := o
+
+# 2.4 Module linking
+$(MODULE).o: $(OBJS)
+	$(LD) -o $@ -r $(OBJS)
+
+.PHONY: $(MODULE)
+all: $(MODULE)
+$(MODULE): $(MODULE).o
+
+else
+#
+# 2.6 and later
+#
+
+MODULE_EXT := ko
+
+$(MODULE)-y  := $(OBJS)
+
+# build defs
+EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+
+all: $(MODULE)
+
+obj-m += $(MODULE).o
+
+$(MODULE):
+	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+
+endif
+
+install: $(MODULE)
+	@mkdir -p $(MODULE_DIR); \
+	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
+        PATH="$(PATH):/bin:/sbin" depmod -ae;
+
+clean:
+	rm -rf *.o .*.cmd .*.flags

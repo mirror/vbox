@@ -1,0 +1,77 @@
+#
+# Makefile for VBoxGuest (Windows Guest Additions Driver).
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+SYSMODS = VBoxGuest VBoxGuestNT
+#PROGRAMS = VBoxGuestInst
+
+#
+# VBoxGuest
+#
+VBoxGuest_TEMPLATE    = VBOXW32GUESTR0
+VBoxGuest_SDKS        = W2K3DDKX86 WINPSDKINCS
+VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_HGCM VBOX_REBOOT_ON_UNINSTALL
+#VBoxGuest_DEFS       += LOG_ENABLED
+VBoxGuest_LDFLAGS     = -Entry:DriverEntry@8
+VBoxGuest_SOURCES     = \
+	VBoxGuest.cpp \
+	VBoxGuestPnP.cpp \
+	Helper.cpp \
+	VBoxGuest.rc
+VBoxGuest_LIBS        = \
+	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
+	$(PATH_LIB)/additions/VBoxGuestLibBase$(VBOXW32GUEST_SUFF_LIB) \
+	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
+
+#
+# VBoxGuestNT - NT version of the driver.
+#
+VBoxGuestNT_TEMPLATE  = VBOXW32GUESTR0
+VBoxGuestNT_SDKS      = W2K3DDKX86 WINPSDKINCS
+VBoxGuestNT_DEFS      = $(VBoxGuest_DEFS) TARGET_NT4
+VBoxGuestNT_INCS      = $(VBoxGuest_INCS)
+VBoxGuestNT_LDFLAGS   = $(VBoxGuest_LDFLAGS)
+VBoxGuestNT_SOURCES   = \
+	VBoxGuest.cpp \
+	Helper.cpp \
+	NTLegacy.cpp \
+	VBoxGuest.rc
+VBoxGuestNT_LIBS      = \
+	$(PATH_SDK_W2K3DDKX86_LIB)/exsup.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
+	$(PATH_LIB)/additions/VBoxGuestLibBase$(VBOXW32GUEST_SUFF_LIB) \
+	$(PATH_LIB)/additions/RuntimeW32NT4GuestR0$(VBOXW32GUEST_SUFF_LIB)
+#	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib  - not needed?
+
+#
+# VBoxGuestInst - The installer.
+#
+VBoxGuestInst_TEMPLATE= VBOXW32GUESTR3
+VBoxGuestInst_SOURCES = VBoxGuestInst.cpp
+
+include	$(PATH_KBUILD)/footer.kmk
+

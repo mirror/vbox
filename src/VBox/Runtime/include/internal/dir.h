@@ -1,0 +1,132 @@
+/* $Id$ */
+/** @file
+ * InnoTek Portable Runtime - Internal Header for RTDir.
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+
+#ifndef __internal_dir_h__
+#define __internal_dir_h__
+
+#include <iprt/cdefs.h>
+#include <iprt/types.h>
+
+
+/**
+ * Filter a the filename in the against a filter.
+ *
+ * @returns true if the name matches the filter.
+ * @returns false if the name doesn't match filter.
+ * @param   pDir        The directory handle.
+ * @param   pszName     The path to match to the filter.
+ */
+typedef DECLCALLBACK(bool) FNRTDIRFILTER(PRTDIR pDir, const char *pszName);
+/** Pointer to a filter function. */
+typedef FNRTDIRFILTER *PFNRTDIRFILTER;
+
+
+/**
+ * Open directory.
+ */
+typedef struct RTDIR
+{
+    /** Magic value, RTDIR_MAGIC. */
+    uint32_t            u32Magic;
+    /** The type of filter that's to be applied to the directory listing. */
+    RTDIRFILTER         enmFilter;
+    /** The filter function. */
+    PFNRTDIRFILTER      pfnFilter;
+    /** The filter Code Point string.
+     * This is allocated in the same block as this structure. */
+    PRTUNICP            puszFilter;
+    /** The number of Code Points in the filter string. */
+    size_t              cucFilter;
+    /** The filter string.
+     * This is allocated in the same block as this structure, thus the const. */
+    const char         *pszFilter;
+    /** The length of the filter string. */
+    unsigned            cchFilter;
+    /** Normalized path to the directory including a trailing slash.
+     * We keep this around so we can query more information if required (posix).
+     * This is allocated in the same block as this structure, thus the const. */
+    const char         *pszPath;
+    /** The length of the path. */
+    unsigned            cchPath;
+    /** Set to indicate that the Data member contains unread data. */
+    bool                fDataUnread;
+#ifndef RT_DONT_CONVERT_FILENAMES
+    /** Pointer to the converted filename.
+     * This can be NULL. */
+    char               *pszName;
+    /** The length of the converted filename. */
+    unsigned            cchName;
+#endif
+
+#ifdef __WIN__
+    /** Handle to the opened directory search. */
+    HANDLE              hDir;
+    /** Find data buffer.
+     * fDataUnread indicates valid data. */
+# ifdef RT_DONT_CONVERT_FILENAMES
+    WIN32_FIND_DATAA    Data;
+# else
+    WIN32_FIND_DATAW    Data;
+# endif
+
+#else /* 'POSIX': */
+    /** What opendir() returned. */
+    DIR                *pDir;
+    /** Find data buffer.
+     * fDataUnread indicates valid data. */
+    struct dirent       Data;
+#endif
+} RTDIR;
+
+/** The value of RTDIR::u32Magic. (Michael Ende) */
+#define RTDIR_MAGIC                 0x19291112
+ /** The value of RTDIR::u32Magic after RTDirClose().  */
+#define RTDIR_MAGIC_DEAD            0x19950829
+
+
+/**
+ * Validates a directory handle.
+ * @returns true if valid.
+ * @returns false if valid after having bitched about it first.
+ */
+DECLINLINE(bool) rtDirValidHandle(PRTDIR pDir)
+{
+    AssertMsgReturn(VALID_PTR(pDir), ("%p\n", pDir), false);
+    AssertMsgReturn(pDir->u32Magic == RTDIR_MAGIC, ("%#RX32\n", pDir->u32Magic), false);
+    return true;
+}
+
+
+/**
+ * Initialize the OS specific part of the handle and open the directory.
+ * Called by rtDirOpenCommon().
+ *
+ * @returns IPRT status code.
+ * @param   pDir        The directory to open. The pszPath member contains the
+ *                      path to the directory.
+ * @param   pszPathBuf  Pointer to a RTPATH_MAX sized buffer containing pszPath.
+ *                      Find-first style systems can use this to setup the
+ *                      wildcard expression.
+ */
+int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf);
+
+#endif

@@ -1,0 +1,13 @@
+Index: dhcp-3.0.4b3/includes/site.h
+===================================================================
+--- dhcp-3.0.4b3.orig/includes/site.h	2002-03-12 20:33:39.000000000 +0200
++++ dhcp-3.0.4b3/includes/site.h	2006-03-15 12:50:00.000000000 +0200
+@@ -135,7 +135,7 @@
+    the aforementioned problems do not matter to you, or if no other
+    API is supported for your system, you may want to go with it. */
+ 
+-/* #define USE_SOCKETS */
++#define USE_SOCKETS
+ 
+ /* Define this to use the Sun Streams NIT API.
+ 

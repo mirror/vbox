@@ -1,0 +1,92 @@
+/** @file
+ *
+ * VBox frontends: Qt GUI ("VirtualBox"):
+ * VBoxToolBar class declaration & implementation
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#ifndef __VBoxToolBar_h__
+#define __VBoxToolBar_h__
+
+#include <qtoolbar.h>
+#include <qtoolbutton.h>
+#include <qmainwindow.h>
+#include <qobjectlist.h>
+
+/**
+ *  The VBoxToolBar class is a simple QToolBar reimplementation to disable
+ *  its built-in context menu and add some default behavior we need.
+ */
+class VBoxToolBar : public QToolBar
+{
+public:
+
+    VBoxToolBar (QMainWindow *mainWindow, QWidget *parent, const char *name)
+        : QToolBar (QString::null, mainWindow, parent, FALSE, name)
+    {
+        setResizeEnabled (false);
+        setMovingEnabled (false);
+    };
+
+    /** Reimplements and does nothing to disable the context menu */
+    void contextMenuEvent (QContextMenuEvent *) {};
+
+    /**
+     *  Substitutes for QMainWindow::setUsesBigPixmaps() when QMainWindow is
+     *  not used (otherwise just redirects the call to #mainWindow()).
+     */
+    void setUsesBigPixmaps (bool enable)
+    {
+        if (mainWindow())
+            mainWindow()->setUsesBigPixmaps (enable);
+        else
+        {
+            QObjectList *list = queryList ("QToolButton");
+            QObjectListIt it (*list);
+            QObject *obj;
+            while ((obj = it.current()) != 0)
+            {
+                QToolButton *btn = ::qt_cast <QToolButton *> (obj);
+                btn->setUsesBigPixmap (enable);
+                ++ it;
+            }
+            delete list;
+        }
+    }
+
+    void setUsesTextLabel (bool enable)
+    {
+        if (mainWindow())
+            mainWindow()->setUsesTextLabel (enable);
+        else
+        {
+            QObjectList *list = queryList ("QToolButton");
+            QObjectListIt it (*list);
+            QObject *obj;
+            while ((obj = it.current()) != 0)
+            {
+                QToolButton *btn = ::qt_cast <QToolButton *> (obj);
+                btn->setUsesTextLabel (enable);
+                ++ it;
+            }
+            delete list;
+        }
+    }
+};
+
+#endif // __VBoxToolBar_h__

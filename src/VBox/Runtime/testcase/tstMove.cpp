@@ -1,0 +1,140 @@
+/* $Id$ */
+/** @file
+ * InnoTek Portable Runtime - RTFileMove & RTDirMove test program.
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include <iprt/file.h>
+#include <iprt/path.h>
+#include <iprt/dir.h>
+#include <iprt/err.h>
+#include <iprt/runtime.h>
+#include <iprt/stream.h>
+
+
+/**
+ * Checks if there is one of the typical help options in the argument list.
+ */
+static bool HasHelpOption(int argc, char **argv)
+{
+    for (int argi = 1; argi < argc; argi++)
+        if (    argv[argi][0] == '-'
+            &&  (   argv[argi][1] == 'h'
+                 || argv[argi][1] == 'H'
+                 || argv[argi][1] == '?'
+                 || argv[argi][1] == '-')
+            )
+            return true;
+    return false;
+}
+
+
+int main(int argc, char **argv)
+{
+    RTR3Init();
+
+    /*
+     * Arguments or any -? or --help?
+     */
+    if (argc <= 1 || HasHelpOption(argc, argv))
+    {
+        RTPrintf("usage: tstMove [-efdr] <src> <dst>\n"
+                 "\n"
+                 "  -f      File only.\n"
+                 "  -d      Directory only.\n"
+                 "  -m      Use move operation instead of rename. (implies -f)\n"
+                 "  -r      Replace existing destination.\n"
+                 );
+        return 1;
+    }
+
+    /*
+     * Parse args.
+     */
+    const char *pszNew = NULL;
+    const char *pszOld = NULL;
+    bool        fDir = false;
+    bool        fFile = false;
+    bool        fReplace = false;
+    bool        fMoveFile = false;
+    for (int argi = 1; argi < argc; argi++)
+    {
+        if (argv[argi][0] == '-')
+        {
+            const char *psz = &argv[argi][1];
+            do
+            {
+                switch (*psz)
+                {
+                    case 'd':
+                        fDir = true;
+                        fMoveFile = false;
+                        break;
+                    case 'f':
+                        fFile = true;
+                        break;
+                    case 'm':
+                        fMoveFile = true;
+                        fDir = false;
+                        fFile = true;
+                        break;
+                    case 'r':
+                        fReplace = true;
+                        break;
+                    default:
+                        RTPrintf("tstRTFileMove: syntax error: Unknown option '%c' in '%s'!\n", *psz, argv[argi]);
+                        return 1;
+                }
+            } while (*++psz);
+        }
+        else if (!pszOld)
+            pszOld = argv[argi];
+        else if (!pszNew)
+            pszNew = argv[argi];
+        else
+        {
+            RTPrintf("tstRTFileMove: syntax error: too many filenames!\n");
+            return 1;
+        }
+    }
+    if (!pszNew || !pszOld)
+    {
+        RTPrintf("tstRTFileMove: syntax error: too few filenames!\n");
+        return 1;
+    }
+
+    /*
+     * Do the operation.
+     */
+    int rc;
+    if (!fDir && !fFile)
+        rc = RTPathRename(pszOld, pszNew, fReplace ? RTPATHRENAME_FLAGS_REPLACE : 0);
+    else if (fDir)
+        rc = RTDirRename( pszOld, pszNew, fReplace ? RTPATHRENAME_FLAGS_REPLACE : 0);
+    else if (!fMoveFile)
+        rc = RTFileRename(pszOld, pszNew, fReplace ? RTPATHRENAME_FLAGS_REPLACE : 0);
+    else
+        rc = RTFileMove(  pszOld, pszNew, fReplace ? RTFILEMOVE_FLAGS_REPLACE : 0);
+
+    RTPrintf("The API returned %Rrc\n", rc);
+    return !RT_SUCCESS(rc);
+}
+

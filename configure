@@ -1,0 +1,1117 @@
+#!/bin/bash
+# The purpose of this script is to check for all external tools, headers, and
+# libraries VBox OSE depends on.
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+LC_ALL=C
+export LC_ALL
+
+#
+# Default positions
+#
+OSE=1
+XPCOM=1
+CC="gcc"
+CXX="g++"
+BCC="bcc"
+YASM="yasm"
+IASL="iasl"
+AS86="as86"
+XSLTPROC="xsltproc"
+GENISOIMAGE="genisoimage"
+MKISOFS="mkisofs"
+INCXALAN=""
+LIBXALAN="-lxalan-c"
+INCXERCES=""
+LIBXERCES="-lxerces-c"
+LIBUUID="-luuid"
+INCSDL="/usr/include/SDL"
+LIBSDL="-lSDL"
+LIBSDLMAIN="-lSDLmain"
+LIBCRYPTO="-lcrypto"
+LIBPTHREAD="-lpthread"
+LIBXCURSOR="-lXcursor"
+LIBX11="-lXext -lX11"
+INCZ=""
+LIBZ="-lz"
+INCPNG=""
+LIBPNG="-lpng"
+QTDIR="/usr/qt/3 /usr/share/qt3"
+KBUILDDIR="`cd $(dirname $0); pwd`/kBuild"
+DEVDIR="`cd $(dirname $0); pwd`/tools"
+if [ -d /lib/modules/`uname -r`/build ]; then
+ LINUX="/lib/modules/`uname -r`/build"
+else
+ LINUX="/usr/src/linux"
+fi
+KCHMVIEWER="kchmviewer"
+LOG="configure.log"
+CNF="AutoConfig.kmk"
+ENV="env.sh"
+BUILD_TYPE="release"
+
+function cleanup()
+{
+  rm -f .tmp_src.cc .tmp_src.c .tmp_out
+}
+
+function fail()
+{
+  if [ -z "$nofatal" -o "x$1" != "x" ]; then
+    cleanup
+    rm -f $ENV
+    exit 1
+  fi
+}
+
+function log_success()
+{
+  if [ -n "$1" ]; then echo -n "$1, "; fi
+  echo "OK."
+  echo -e "$1\n\n" >> $LOG
+}
+
+function log_failure()
+{
+  echo -e "\n  ** $1!"
+  echo -e "** $1!\n" >> $LOG
+}
+
+function cnf_append()
+{
+  printf "%-26s := %s\n" "$1" "$2" >> $CNF
+}
+
+# Wrapper for ancient /usr/bin/which on darwin that always returns 0.
+function which_wrapper()
+{
+  if [ -z "$have_ancient_which" ]; then
+    if which /bin/___cErTaINly_a_nOn_eXisTing_fIle___ 2> /dev/null > /dev/null; then
+      have_ancient_which="yes"
+    else
+      have_ancient_which="no"
+    fi
+  fi
+  if [ "$have_ancient_which" = "yes" ]; then
+    local retval=`which $*`
+    echo "$retval"
+    test -e "$retval"
+  else
+    which $*
+  fi
+}
+
+function check_avail()
+{
+   if [ -z "$1" ]; then
+     log_failure "$2 is empty"
+     fail $3
+     return 1
+   elif which_wrapper $1 > /dev/null; then
+     return 0
+   else
+     log_failure "$1 (variable $2) not found"
+     fail $3
+     return 1
+   fi
+}
+
+#
+# Prepare a test
+#
+function test_header()
+{
+  echo "***** Checking $1 *****" >> $LOG
+  echo -n "Checking for $1: "
+}
+
+#
+# Compile a test
+#
+function test_compile()
+{
+  echo "compiling the following source file:" >> $LOG
+  cat .tmp_src.cc >> $LOG
+  echo "using the following command line:" >> $LOG
+  echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc \"$1\"" >> $LOG
+  $CXX -O -Wall -o .tmp_out .tmp_src.cc $1 >> $LOG 2>&1
+  if (($?!=0)); then
+    if [ -z "$4" ]; then
+      echo -e "\n  $2 not found at $1 or $3 headers not found"
+      echo      "  Check the file $LOG for detailed error information."
+      fail
+    else
+      echo "not found."
+      echo -e "\n" >> $LOG
+    fi
+    return 1
+  fi
+  return 0
+}
+
+# Execute a compiled test binary
+function test_execute()
+{
+  echo "executing the binary" >> $LOG
+  log=`./.tmp_out`
+  rc=$?
+  echo $log | tee -a $LOG
+  if (($rc!=0)); then
+    fail $1
+    return 1
+  fi
+  echo -e "\n\n" >> $LOG
+  return 0
+}
+
+#
+# Check for OS, MACHINE, CPU
+#
+function check_environment()
+{
+  test_header environment
+  CPU=`uname -m`
+  case "$CPU" in
+    i[3456789]86|x86)
+      MACHINE='x86'
+      ;;
+    x86_64|amd64)
+      MACHINE='amd64'
+      CPU='k8'
+      ;;
+    *)
+      log_failure "Cannot determine system"
+      exit 1
+      ;;
+  esac
+  OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr 'A-Z' 'a-z'`
+  case "$OS" in
+    linux)
+      ;;
+    darwin)
+      ;;
+    *)
+      log_failure "Cannot determine OS"
+      exit 1
+      ;;
+  esac
+  DEVDIR_BIN="$DEVDIR/$OS.$MACHINE/bin"
+  KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$MACHINE"
+  log_success "Determined $OS.$MACHINE"
+
+  # Automatically disable XPCOM on darwin.
+  if [ "$OS" = "darwin" -a $XPCOM -eq 1 ]; then
+    XPCOM=0
+    echo "Disabling checks for XPCOM related components."
+  fi
+}
+
+#
+# Check for gcc with version >= 3.2.
+# We depend on a working gcc, if we fail terminate in every case.
+#
+function check_gcc()
+{
+  test_header gcc
+  if check_avail "$CC" CC really; then
+    cc_ver=`$CC -dumpversion`
+    if check_avail "$CXX" CXX really; then
+      cxx_ver=`$CXX -dumpversion`
+      cc_maj=`echo $cc_ver|cut -d. -f1`
+      cc_min=`echo $cc_ver|cut -d. -f2`
+      if [ "x$cc_ver" != "x$cxx_ver" ]; then
+        log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
+        fail really
+      elif (($cc_maj>3)); then
+        log_success "found version $cc_ver, using precompiled objects for recompiler"
+        cnf_append "VBOX_USING_GCC4" "1"
+      elif (($cc_maj<3 || $cc_min<2)); then
+        log_failure "gcc version $cc_ver found, expected at least gcc version 3.2"
+        fail really
+      else
+        log_success "found version $cc_ver"
+      fi
+      if [ "$CC" != "gcc" ]; then
+        cnf_append "TOOL_GCC3_CC" "$CC"
+        cnf_append "TOOL_GCC3_AS" "$CC"
+      fi
+      if [ "$CXX" != "g++" ]; then
+        cnf_append "TOOL_GCC3_CXX" "$CXX"
+        cnf_append "TOOL_GCC3_LD"  "$CXX"
+      fi
+    fi
+  fi
+}
+
+#
+# Check for the bcc compiler, needed for compiling the BIOS
+#
+function check_bcc()
+{
+  test_header bcc
+  if check_avail "$BCC" BCC; then
+    bcc_ver=`$BCC -v 2>&1|grep version|sed 's+^bcc: version \(.*\)+\1+'`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      echo "compiling the following source file:" >> $LOG
+      echo '
+int foo(a)
+  int a;
+{
+  return 0;
+}
+' > .tmp_src.c
+      cat .tmp_src.c >> $LOG
+      local bcc_path=`which $BCC`
+      local bcc_dir=`dirname $bcc_path`
+      echo "using the following command line:" >> $LOG
+      echo "$BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c" >> $LOG
+      $BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c >> $LOG 2>&1
+      if (($?!=0)); then
+        log_failure "not found"
+        fail
+      else
+        log_success "found version $bcc_ver"
+        cnf_append "VBOX_BCC" "$bcc_path -B $bcc_dir"
+      fi
+    fi
+  fi
+}
+
+#
+# Check for the as86 assembler, needed for compiling the BIOS
+#
+function check_as86()
+{
+  test_header as86
+  if check_avail "$AS86" AS86; then
+    as86_ver=`$AS86 -v 2>&1|grep version|sed 's+^as86 version: \(.*\)+\1+'`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $as86_ver"
+      cnf_append "VBOX_AS86" "`which $AS86`"
+    fi
+  fi
+}
+
+#
+# Check for yasm, needed to compile assembler files
+#
+function check_yasm()
+{
+  test_header yasm
+  if check_avail "$YASM" YASM; then
+    yasm_ver=`$YASM --version|grep "^yasm"|sed 's+^yasm \(.*\)+\1+'`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      yasm_maj=`echo $yasm_ver|cut -d. -f1`
+      yasm_min=`echo $yasm_ver|cut -d. -f2`
+      yasm_rev=`echo $yasm_ver|cut -d. -f3`
+      yasm_ver_mul=$(($yasm_maj*10000+$yasm_min*100+$yasm_rev))
+      if (($yasm_ver_mul<501)); then
+        log_failure "found version $yasm_ver, expected at least 0.5.1"
+        fail
+      else
+        log_success "found version $yasm_ver"
+      fi
+    fi
+  fi
+}
+
+#
+# Check for the iasl ACPI compiler, needed to compile vbox.dsl
+#
+function check_iasl()
+{
+  test_header iasl
+  if check_avail "$IASL" IASL; then
+    iasl_ver=`$IASL|grep version|sed 's+^ASL.*version \([0-9]*\).*+\1+'`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $iasl_ver"
+      cnf_append "VBOX_IASLCMD" "`which $IASL`"
+    fi
+  fi
+}
+
+#
+# Check for xsltproc, needed by Main
+#
+function check_xsltproc()
+{
+  test_header xslt
+  if check_avail "$XSLTPROC" XSLTPROC; then
+    xsltproc_ver=`$XSLTPROC --version`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found"
+      cnf_append "VBOX_XSLTPROC" "`which $XSLTPROC`"
+    fi
+  fi
+}
+
+#
+# Check for mkisofs, needed to build the CDROM image containing the additions
+#
+function check_mkisofs()
+{
+  test_header mkisofs
+  if which $GENISOIMAGE > /dev/null; then
+    mkisofs_ver=`$GENISOIMAGE --version`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found $mkisofs_ver"
+      cnf_append "VBOX_MKISOFS" "`which $GENISOIMAGE`"
+    fi
+  elif check_avail "$MKISOFS" MKISOFS; then
+    mkisofs_ver=`$MKISOFS --version`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found $mkisofs_ver"
+      cnf_append "VBOX_MKISOFS" "`which $MKISOFS`"
+    fi
+  fi
+}
+
+#
+# Check for xalan, needed by VBoxXML
+#
+function check_xalan()
+{
+  test_header xalan
+  echo '
+#include <cstdio>
+#include <xalanc/Include/XalanVersion.hpp>
+extern "C" int main(void)
+{
+  printf("found version %d.%d.%d",
+         XALAN_VERSION_MAJOR, XALAN_VERSION_MINOR, XALAN_VERSION_REVISION);
+#if _XALAN_VERSION >= 11000
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.10.0 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile "$LIBXALAN ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
+    if test_execute; then
+      cnf_append "SDK_VBOX_XALAN_LIBS" `echo $LIBXALAN|sed 's+-l++'`
+      cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
+    fi
+  fi
+}
+
+#
+# Check for xerces, needed by VBoxXML
+#
+function check_xerces()
+{
+  test_header xerces
+  echo '
+#include <cstdio>
+#include <xercesc/util/XercesVersion.hpp>
+extern "C" int main(void)
+{
+  printf("found version %d.%d.%d",
+         XERCES_VERSION_MAJOR, XERCES_VERSION_MINOR, XERCES_VERSION_REVISION);
+#if _XERCES_VERSION >= 20600
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 2.6.0 or higher");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile "$LIBXERCES ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
+    if test_execute; then
+      cnf_append "SDK_VBOX_XERCES_LIBS" `echo $LIBXERCES|sed 's+-l++'`
+      cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
+    fi
+  fi
+}
+
+#
+# Check for libIDL, needed by xpcom
+#
+check_libidl()
+{
+  test_header libIDL
+   
+  if which "libIDL-config-2" > /dev/null; then
+    libidl_ver=`libIDL-config-2 --version`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $libidl_ver"
+    fi
+  elif check_avail "libIDL-config" libIDL-config; then
+    libidl_ver=`libIDL-config --version`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $libidl_ver"
+    fi
+  fi
+}
+
+#
+# Check for uuid, needed by Runtime, VBoxSVC, VBoxSDL, and VBoxBFE
+#
+function check_uuid()
+{
+  test_header uuid
+  echo '
+#include <cstdio>
+#include <uuid/uuid.h>
+extern "C" int main(void)
+{
+  uuid_t uu;
+  uuid_clear(uu);
+  if (uuid_is_null(uu)) {
+    printf("found, OK.\n");
+    return 0;
+  } else {
+    printf("uuid found but does not work\n");
+    return 1;
+  }
+}
+' > .tmp_src.cc
+  if test_compile $LIBUUID uuid uuid; then
+    if test_execute; then
+      cnf_append "LIB_UUID" `echo $LIBUUID|sed 's+-l++'`
+    fi
+  fi
+}
+
+#
+# Check for openssl, needed for RDP
+#
+function check_ssl()
+{
+  test_header ssl
+  echo '
+#include <cstdio>
+#include <openssl/opensslv.h>
+extern "C" int main(void)
+{
+  printf("found version %s", OPENSSL_VERSION_TEXT);
+#if OPENSSL_VERSION_NUMBER >= 0x0090700
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 0.9.7 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile $LIBCRYPTO libcrypto openssl; then
+    if test_execute nofatal; then
+      cnf_append "SDK_VBOX_OPENSSL_INCS" ""
+      cnf_append "SDK_VBOX_OPENSSL_LIBS" `echo $LIBCRYPTO|sed 's+-l++'`
+    fi
+  fi
+}
+
+#
+# Check for pthread, needed by VBoxSVC, frontends, ...
+#
+function check_pthread()
+{
+  test_header pthread
+  echo '
+#include <cstdio>
+#include <pthread.h>
+extern "C" int main(void)
+{
+  pthread_mutex_t mutex;
+  if (pthread_mutex_init(&mutex, NULL)) {
+    printf("pthread_mutex_init() failed\n");
+    return 1;
+  }
+  if (pthread_mutex_lock(&mutex)) {
+    printf("pthread_mutex_lock() failed\n");
+    return 1;
+  }
+  if (pthread_mutex_unlock(&mutex)) {
+    printf("pthread_mutex_unlock() failed\n");
+    return 1;
+  }
+  printf("found, OK.\n");
+}
+' > .tmp_src.cc
+  if test_compile $LIBPTHREAD pthread pthread; then
+    if test_execute; then
+      cnf_append "LIB_PTHREAD" `echo $LIBPTHREAD|sed 's+-l++'`
+    fi
+  fi
+}
+
+#
+# Check for zlib, needed by VBoxSVC, Runtime, ...
+#
+function check_z()
+{
+  test_header zlib
+  echo '
+#include <cstdio>
+#include <zlib.h>
+extern "C" int main(void)
+{
+  printf("found version %s", ZLIB_VERSION);
+#if ZLIB_VERNUM >= 0x1210
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.2.1 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile "$LIBZ ${INCZ:+-I$INCZ}" zlib zlib; then
+    if test_execute; then
+      cnf_append "SDK_VBOX_ZLIB_LIBS" `echo $LIBZ|sed 's+-l++'`
+      cnf_append "SDK_VBOX_ZLIB_INCS" "$INCZ"
+    fi
+  fi
+}
+
+#
+# Check for libpng, needed by kchmviewer
+#
+function check_png()
+{
+  test_header libpng
+  echo '
+#include <cstdio>
+#include <png.h>
+extern "C" int main(void)
+{
+  printf("found version %s", PNG_LIBPNG_VER_STRING);
+#if PNG_LIBPNG_VER >= 10205
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.2.5 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile "$LIBPNG ${INCPNG:+-I$INCPNG}" libpng libpng nofatal; then
+    if test_execute nofatal; then
+      cnf_append "SDK_VBOX_LIBPNG_LIBS" `echo $LIBPNG|sed 's+-l++'`
+      cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
+    fi
+  fi
+}
+
+#
+# Check for pam, needed by VRDPAuth
+# Version 79 was introduced in 9/2005, do we support older versions?
+#
+function check_pam()
+{
+  test_header pam
+  echo '
+#include <cstdio>
+#include <security/pam_appl.h>
+extern "C" int main(void)
+{
+  printf("found version %d", __LIBPAM_VERSION);
+  if (__LIBPAM_VERSION >= 79)
+  {
+    printf(", OK.\n");
+    return 0;
+  }
+  else
+  {
+    printf(", expected version 79 or higher\n");
+    return 1;
+  }
+}
+' > .tmp_src.cc
+  if test_compile "-lpam" pam pam; then
+    test_execute
+  fi
+}
+
+#
+# Check for the SDL library, needed by VBoxSDL and VirtualBox
+# We depend at least on version 1.2.7
+#
+function check_sdl()
+{
+  test_header SDL
+  echo '
+#include <cstdio>
+#include <SDL/SDL.h>
+#include <SDL/SDL_main.h>
+extern "C" int main(void)
+{
+  printf("found version %d.%d.%d",
+         SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
+#if SDL_VERSION_ATLEAST(1,2,7)
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.2.7 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile "$LIBSDL $LIBSDLMAIN ${INCSDL:+-I$INCSDL}" SDL SDL; then
+    if test_execute; then
+      cnf_append "LIB_SDK_LIBSDL_SDL" `echo $LIBSDL|sed 's+-l++'`
+      cnf_append "LIB_SDK_LIBSDL_SDLMAIN" `echo $LIBSDLMAIN|sed 's+-l++'`
+      [ -n "$INCSDL" ] && cnf_append "SDK_LIBSDL_INCS" "$INCSDL"
+    fi
+  fi
+}
+
+#
+# Check for the SDL_ttf library, needed by VBoxSDL (secure label)
+#
+function check_sdl_ttf()
+{
+  test_header SDL_ttf
+  echo '
+#include <cstdio>
+#include <SDL/SDL_ttf.h>
+extern "C" int main(void)
+{
+  printf("found version %d.%d.%d",
+         SDL_TTF_MAJOR_VERSION, SDL_TTF_MINOR_VERSION, SDL_TTF_PATCHLEVEL);
+#if 10000*SDL_TTF_MAJOR_VERSION + 100*SDL_TTF_MINOR_VERSION + SDL_TTF_PATCHLEVEL >= 20006
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 2.0.6 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile "-lSDL_ttf" SDL_ttf SDL_ttf; then
+    test_execute
+  fi
+}
+
+#
+# Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
+#
+function check_xcursor()
+{
+  test_header Xcursor
+  echo '
+#include <cstdio>
+#include <X11/Xlib.h>
+#include <X11/Xcursor/Xcursor.h>
+extern "C" int main(void)
+{
+  XcursorImage *cursor = XcursorImageCreate (10, 10);
+  XcursorImageDestroy(cursor);
+  return 0;
+}
+' > .tmp_src.cc
+  if test_compile $LIBXCURSOR Xcursor Xcursor; then
+    log_success "found"
+    cnf_append "LIB_XCURSOR" `echo $LIBXCURSOR|sed 's+-l++'`
+  fi
+}
+
+#
+# Check for the X libraries (Xext, X11)
+#
+function check_x()
+{
+  test_header "X libraries"
+  echo '
+#include <cstdio>
+#include <X11/Xlib.h>
+extern "C" int main(void)
+{
+  Display *dpy;
+  int scrn_num;
+  Screen *scrn;
+  Window win;
+
+  dpy      = XOpenDisplay(NULL);
+  scrn_num = DefaultScreen(dpy);
+  scrn     = ScreenOfDisplay(dpy, scrn_num);
+  win      = XCreateWindow(dpy, RootWindowOfScreen(scrn), 0, 0, 100, 100,
+                           0, 16, InputOutput, CopyFromParent, 0, NULL);
+  XDestroyWindow(dpy, win);
+}
+' > .tmp_src.cc
+  if test_compile "$LIBX11" Xlibs Xlibs; then
+    log_success "found"
+  fi
+}
+
+#
+# Check for the QT library, needed by VirtualBox
+#
+function check_qt()
+{
+  test_header Qt
+  echo '
+#include <cstdio>
+#include <qglobal.h>
+extern "C" int main(void)
+{
+  printf("found version %s", QT_VERSION_STR);
+#if QT_VERSION >= 0x030305
+  printf(", OK.\n");
+  return 0;
+#elif QT_VERSION >= 0x030300
+  printf("\n  ** WARNING: QT < 3.3.5 has known problems!\n");
+#else
+  printf(", expected version 3.3.0 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  found_qt=0
+  for q in $QTDIR; do
+    echo "compiling the following source file:" >> $LOG
+    cat .tmp_src.cc >> $LOG
+    echo "using the following command line:" >> $LOG
+    echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc \"-I$q/include -L$q/lib -lqt-mt\"" >> $LOG
+    $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/lib -lqt-mt >> $LOG 2>&1
+    if (($?==0)); then
+      if test_execute; then
+        cnf_append "QTDIR" `cd $q ; pwd`
+        found_qt=1
+        break
+      fi
+    fi
+  done
+  if (($found_qt!=1)); then
+    echo -e "\n  Qt not found at \"$QTDIR\" or Qt headers not found"
+    echo      "  Check the file $LOG for detailed error information."
+    fail
+    return 1
+  fi
+  test_header "Qt devtools"
+  if check_avail "$q/bin/moc" QTDIR/bin; then
+    moc_ver=`$q/bin/moc 2>&1 -v|sed 's+^.*(Qt \(.*\))+\1+'`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $moc_ver"
+    fi
+  fi
+}
+
+#
+# Check for Linux sources
+#
+function check_linux()
+{
+  test_header "Linux kernel sources"
+  echo '
+#include <linux/version.h>
+int printf(const char *format, ...);
+int main(void)
+{
+  printf("found version %d.%d.%d",  LINUX_VERSION_CODE / 65536, 
+                                   (LINUX_VERSION_CODE % 65536) / 256,
+                                    LINUX_VERSION_CODE          % 256);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,4,0)
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 2.4.0 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.c
+  echo "compiling the following source file:" >> $LOG
+  cat .tmp_src.c >> $LOG
+  echo "using the following command line:" >> $LOG
+  echo "$CC -O -Wall -o .tmp_out .tmp_src.c -nostdinc -I$LINUX/include" >> $LOG
+  $CC -O -Wall -o .tmp_out .tmp_src.c -nostdinc -I$LINUX/include >> $LOG 2>&1
+  if (($?!=0)); then
+    echo -e "\n  Linux kernel headers not found at $LINUX"
+    echo      "  Check the file $LOG for detailed error information."
+    fail
+  else
+    if test_execute; then
+      cnf_append "VBOX_LINUX_SRC" `cd $LINUX ; pwd`
+    fi
+  fi
+}
+
+#
+# Check for kchmviewer, needed to display the online help
+#
+function check_kchmviewer()
+{
+  test_header kchmviewer
+  if check_avail "$KCHMVIEWER" KCHMVIEWER; then
+    kchmviewer_ver=`$KCHMVIEWER --version|grep "^KchmViewer:"|sed 's+^KchmViewer: \(.*\)+\1+'`
+    if (($?!=0)); then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $kchmviewer_ver"
+    fi
+  fi
+}
+
+#
+# Check for the kBuild tools, we don't support GNU make
+#
+function check_kbuild()
+{
+  test_header kBuild
+  if check_avail "$KBUILDDIR_BIN/kmk" KBUILDDIR really; then
+    log_success "found"
+    echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
+    echo "export BUILD_PLATFORM_ARCH=\"$MACHINE\"" >> $ENV
+    echo "export BUILD_TARGET=\"$OS\"" >> $ENV
+    echo "export BUILD_TARGET_ARCH=\"$MACHINE\"" >> $ENV
+    echo "export BUILD_TARGET_CPU=\"$CPU\"" >> $ENV
+    echo "export BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
+    echo "export PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
+    echo "export PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
+    echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"" >> $ENV
+    echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
+    echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
+    echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
+    echo "export PATH" >> $ENV
+    echo "unset path_kbuild_bin path_dev_bin" >> $ENV
+  fi
+}
+
+#
+# Show help
+#
+function show_help()
+{
+  cat << EOF
+Usage: ./configure [OPTIONS]...
+
+Configuration:
+  -h, --help              display this help and exit
+  --nofatal               don't abort on errors
+  --disable-xpcom         disable XPCOM and related stuff
+
+Paths:
+  --with-gcc=PATH         position of the gcc compiler [$CC]
+  --with-g++=PATH         position of the g++ compiler [$CXX]
+  --with-kbuild-dir=DIR   kbuild directory [$KBUILDDIR]
+  --with-iasl=PATH        the position of the iasl compiler [$IASL]
+  --with-linux=DIR        Linux kernel source directory [$LINUX]
+  --with-mkisofs=PATH     position of mkisofs [$MKISOFS]
+  --with-qt-dir=DIR       directory for QT headers/libraries [$QTDIR]
+  --with-xalan=LIB        position of the xalan library [$LIBXALAN]
+  --with-xerces=LIB       position of the xerces library [$LIBXERCES]
+
+Build type:
+  -d, --build-debug       build with debugging symbols and assertions
+EOF
+  exit 0
+}
+
+
+#
+# The body.
+#
+
+# scan command line options
+for option; do
+  case "$option" in
+    --help|-help|-h)
+      show_help
+      ;;
+    --nofatal)
+      nofatal=1
+      ;;
+    --with-gcc=*)
+      CC=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-g++=*)
+      CXX=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-kbuild=*)
+      KBUILDDIR=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-qt-dir=*)
+      QTDIR=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-iasl=*)
+      IASL=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-linux=*)
+      LINUX=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-mkisofs=*)
+      MKISOFS=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-xalan=*)
+      LIBXALAN=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-xerces=*)
+      LIBXERCES=`echo $option | cut -d'=' -f2`
+      ;;
+    --disable-xpcom)
+      XPCOM=0
+      ;;
+    --disable-qt)
+      WITH_QT=0
+      ;;
+    --build-debug|-d)
+      BUILD_TYPE=debug
+      ;;
+    --ose)
+      OSE=2
+      ;;
+    --odir=*)
+      ODIR=`echo $option | cut -d'=' -f2`
+      ;;
+    *)
+      echo
+      echo "Unrecognized option \"$option\""
+      echo
+      show_help
+      ;;
+  esac
+done
+
+LOG="${ODIR:+$ODIR/}$LOG"
+ENV="${ODIR:+$ODIR/}$ENV"
+CNF="${ODIR:+$ODIR/}$CNF"
+
+# initialize output files
+cat > $LOG << EOF
+# Log file generated by
+#
+#   '$0 $*'
+#
+
+EOF
+cat > $CNF << EOF
+# -*- Makefile -*-
+#
+# automatically generated by
+#
+#   '$0 $*'
+#
+# It will be completely overwritten if configure is executed again.
+#
+
+EOF
+cat > $ENV << EOF
+#!/bin/bash
+#
+# automatically generated by
+#
+#   '$0 $*'
+#
+# It will be completely overwritten if configure is executed again.
+# Make sure you source this file once before you start to build VBox.
+#
+
+EOF
+
+# test if we are OSE
+if (($OSE==1)) && [ -d "`cd $(dirname $0); pwd`/src/VBox/Devices/USB" ]; then
+  echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
+  echo >> $LOG
+  OSE=0
+fi
+
+# first determine our environment
+check_environment
+check_kbuild
+
+# some things are not available in for OSE
+if (($OSE)); then
+  cnf_append "VBOX_OSE" "1"
+  cnf_append "VBOX_WITH_TESTSUITE" ""
+  cnf_append "VBOX_WITH_WIN32_ADDITIONS" ""
+
+  if [ "$OS" = "linux" ]; then 
+    cnf_append "VBOX_WITH_LINUX_ADDITIONS" "1"
+  else 
+    cnf_append "VBOX_WITH_LINUX_ADDITIONS" ""
+  fi
+  echo >> $CNF
+fi
+
+# append the tools directory to the default search path
+echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
+
+# the tools
+check_gcc
+[ "$OS" != "darwin" ] && check_as86
+[ "$OS" != "darwin" ] && check_bcc
+[ "$OS" != "darwin" ] && check_iasl
+# don't check for yasm for the time beeing as 0.40 and 0.50 both have known bugs
+# [ "$OS" != "darwin" ] && check_yasm
+[ "$OS" != "darwin" ] && check_xsltproc
+(($OSE==0)) && check_mkisofs
+
+# the libraries
+(($XPCOM==1)) && check_xalan
+(($XPCOM==1)) && check_xerces
+(($XPCOM==1)) && check_libidl
+[ "$OS" != "darwin" ] && check_uuid
+(($OSE==0)) && check_ssl
+[ "$OS" != "darwin" ] && check_pthread
+[ "$OS" != "darwin" ] && check_z
+(($OSE==0)) && check_png
+(($OSE==0)) && check_pam
+[ "$OS" != "darwin" ] && check_sdl
+(($OSE==0)) && check_sdl_ttf
+[ "$OS" != "darwin" ] && check_xcursor
+[ "$OS" != "darwin" ] && check_x
+(($XPCOM==1)) && check_qt
+
+# Linux-specific
+[ "$OS" = "linux" ] && check_linux
+
+# success!
+echo
+echo "Successfully generated '$CNF' and '$ENV'."
+echo "Source '$ENV' once before you start to build VBox:"
+echo
+echo "  source $ENV"
+echo "  kmk"
+echo
+echo "Enjoy!"
+cleanup

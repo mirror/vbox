@@ -1,0 +1,142 @@
+; vrdpdd.inf
+;
+; Installation inf for the vrdpdd mirror graphics adapter.
+;
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+, license agreement apply instead of the previous paragraph.
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Provider=%InnoTek%
+ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
+Class=Display
+
+[DestinationDirs]
+DefaultDestDir   = 11
+vrdpdd.Miniport  = 12  ; drivers
+vrdpdd.Display   = 11  ; system32
+
+;
+; Driver information
+;
+
+[Manufacturer]
+%InnoTek%=vrdpdd.Mfg,NT.5.1
+
+[vrdpdd.Mfg]
+; Empty
+
+[vrdpdd.Mfg.NT.5.1]
+%DevDesc% = vrdpdd, InnoTek_vrdpdd
+
+;
+; General installation section
+;
+
+[vrdpdd]
+CopyFiles=vrdpdd.Miniport, vrdpdd.Display
+
+;
+; File sections
+;
+
+[vrdpdd.Miniport]
+vrdpvd.sys
+
+[vrdpdd.Display]
+vrdpdd.dll
+
+
+;
+; Service Installation
+;
+
+[vrdpdd.Services]
+AddService = vrdpdd, 0x00000002, vrdpdd_Service_Inst, vrdpdd_EventLog_Inst
+
+[vrdpdd_Service_Inst]
+
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 1                  ; SERVICE_SYSTEM_START
+ErrorControl   = 0                  ; SERVICE_ERROR_IGNORE
+LoadOrderGroup = Video
+ServiceBinary  = %12%\vrdpvd.sys
+
+[vrdpdd_EventLog_Inst]
+AddReg = vrdpdd_EventLog_AddReg
+
+[vrdpdd_EventLog_AddReg]
+HKR,,EventMessageFile,0x00020000,"%SystemRoot%\System32\IoLogMsg.dll;%SystemRoot%\System32\drivers\vrdpvd.sys"
+HKR,,TypesSupported,0x00010001,7
+
+
+;
+; Software Installation
+;
+
+[vrdpdd.SoftwareSettings]
+AddReg = vrdpdd_SoftwareDeviceSettings
+
+[vrdpdd_SoftwareDeviceSettings]
+HKR,, MirrorDriver,                %REG_DWORD%,    1
+HKR,, InstalledDisplayDrivers,     %REG_MULTI_SZ%, vrdpdd
+HKR,, VgaCompatible,               %REG_DWORD%,    0
+HKR,, Attach.ToDesktop,            %REG_DWORD%,    1
+
+[vrdpdd.OpenGLSoftwareSettings]
+AddReg = vrdpdd_OpenGLSoftwareSettings
+
+[vrdpdd_OpenGLSoftwareSettings]
+
+;
+; Not currently used:
+;
+
+[vrdpdd.GeneralConfigData]
+MaximumNumberOfDevices = 1
+KeepExistingDriverEnabled = 1
+
+;
+; Source file information
+;
+
+[SourceDisksNames.x86]
+1 = %DiskId%,,,""
+
+[SourceDisksFiles]
+vrdpvd.sys  = 1
+vrdpdd.dll = 1
+
+[Strings]
+
+;
+; Non-Localizable Strings
+;
+
+REG_SZ         = 0x00000000
+REG_MULTI_SZ   = 0x00010000
+REG_EXPAND_SZ  = 0x00020000
+REG_BINARY     = 0x00000001
+REG_DWORD      = 0x00010001
+SERVICEROOT    = "System\CurrentControlSet\Services"
+DevDesc      = "InnoTek VirtualBox Mirror Driver"
+
+;
+; Localizable Strings
+;
+
+DiskId       = "InnoTek Mirror Driver Installation DISK (VIDEO)"
+GraphAdap    = "Graphics Adapter"
+InnoTek      = "InnoTek"

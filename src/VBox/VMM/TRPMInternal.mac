@@ -1,0 +1,112 @@
+;; @file
+;
+; TRPM - Internal header file.
+;
+;
+
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+;
+
+%include "VBox/stam.mac"
+
+%define TRPM_TRAP_IN_OP_MASK    0xffff
+%define TRPM_TRAP_IN_MOV_GS     1
+%define TRPM_TRAP_IN_MOV_FS     2
+%define TRPM_TRAP_IN_MOV_ES     3
+%define TRPM_TRAP_IN_MOV_DS     4
+%define TRPM_TRAP_IN_IRET       5
+%define TRPM_TRAP_IN_V86        BIT(30)
+%define TRPM_TRAP_IN_HYPER      BIT(31)
+
+
+struc TRPM
+    .offVM              resd 1
+    .uActiveVector      resd 1
+    .fActiveSoftwareInterrupt resd 1
+    .uActiveErrorCode   resd 1
+    .uActiveCR2         resd 1
+    .uSavedVector       resd 1
+    .fSavedSoftwareInterrupt resd 1
+    .uSavedErrorCode    resd 1
+    .uSavedCR2          resd 1
+    .uPrevVector        resd 1
+    .fDisableMonitoring resd 1
+    .achPadding1        resb 4
+    .aIdt               resd 512
+    .au32IdtPatched     resd 8
+    .au32IdtDirty       resd 8
+    .aTmpTrapHandlers   resd 256
+
+    .GCPtrIdt           resd 1
+    .GuestIdtr          resb 6
+    .au8Padding         resb 2
+
+    .aGuestTrapHandler  resd 256
+
+    .StatGCWriteGuestIDT  resb STAMCOUNTER_size
+    .StatSyncIDT        resb STAMPROFILE_size
+    .aStatGCTraps       resb STAMPROFILEADV_size * 0x14
+
+    .StatForwardFailNoHandler resb STAMCOUNTER_size
+    .StatForwardFailPatchAddr resb STAMCOUNTER_size
+    .StatForwardFailGC        resb STAMCOUNTER_size
+    .StatForwardFailHC        resb STAMCOUNTER_size
+
+    .paStatForwardedIRQR3  RTR3PTR_RES 1
+    .paStatForwardedIRQR0  RTR0PTR_RES 1
+    .paStatForwardedIRQGC  RTGCPTR_RES 1
+endstruc
+
+struc VBOXTSS
+    .selPrev            resw 1
+    .padding1           resw 1
+    .esp0               resd 1
+    .ss0                resw 1
+    .padding_ss0        resw 1
+    .esp1               resd 1
+    .ss1                resw 1
+    .padding_ss1        resw 1
+    .esp2               resd 1
+    .ss2                resw 1
+    .padding_ss2        resw 1
+    .cr3                resd 1
+    .eip                resd 1
+    .eflags             resd 1
+    .eax                resd 1
+    .ecx                resd 1
+    .edx                resd 1
+    .ebx                resd 1
+    .esp                resd 1
+    .ebp                resd 1
+    .esi                resd 1
+    .edi                resd 1
+    .es                 resw 1
+    .padding_es         resw 1
+    .cs                 resw 1
+    .padding_cs         resw 1
+    .ss                 resw 1
+    .padding_ss         resw 1
+    .ds                 resw 1
+    .padding_ds         resw 1
+    .fs                 resw 1
+    .padding_fs         resw 1
+    .gs                 resw 1
+    .padding_gs         resw 1
+    .selLdt             resw 1
+    .padding_ldt        resw 1
+    .fDebugTrap         resw 1
+    .offIoBitmap        resw 1
+endstruc
+

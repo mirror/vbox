@@ -1,0 +1,65 @@
+#
+# Some hacks to allow syntax and prerequisite include checking of headers.
+# This makefile doesn't and shouldn't build successfully.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ..
+include $(PATH_KBUILD)/header.kmk
+
+LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeGC
+
+hdrs := $(wildcard VBox/*.h iprt/*.h)
+
+SyntaxVBoxIncludeR3_TEMPLATE = VBOXR3
+SyntaxVBoxIncludeR3_SOURCES := \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs))))
+
+SyntaxVBoxIncludeR0_TEMPLATE = VBOXR0
+SyntaxVBoxIncludeR0_SOURCES = $(SyntaxVBoxIncludeR3_SOURCES)
+
+SyntaxVBoxIncludeGC_TEMPLATE = VBOXGC
+SyntaxVBoxIncludeGC_SOURCES = $(SyntaxVBoxIncludeR3_SOURCES)
+
+
+
+include $(PATH_KBUILD)/footer.kmk
+
+
+define def_hdr
+$(eval flatname := $(subst /,_,$(basename $(hdr))))
+$$(PATH_TARGET)/$(flatname)-cpp.cpp:
+	$$(MKDIR) -p $$(dir $$@)
+	$$(RM) -f $$@
+	$$(APPEND) $$@ "#include <$(hdr)>"
+	$$(APPEND) $$@ "int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}"
+
+$$(PATH_TARGET)/$(flatname)-c.c:
+	$$(MKDIR) -p $$(dir $$@)
+	$$(RM) -f $$@
+	$$(APPEND) $$@ "#include <$(hdr)>"
+	$$(APPEND) $$@ "int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}"
+
+$(subst .h,.o,$(notdir $(hdr)))::
+	$$(MAKE) -f $(MAKEFILE) $(flatname)-c.o $(flatname)-cpp.o
+
+endef
+
+$(foreach hdr,$(hdrs), $(eval $(def_hdr)))
+

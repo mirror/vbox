@@ -1,0 +1,65 @@
+#
+# Top-level makefile for the external libraries.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../..
+include $(PATH_KBUILD)/header.kmk
+
+subdirs      =
+subdirs.os2  = libuuid
+subdirs.l4   = libuuid
+ifdef VBOX_WITH_MAIN
+ subdirs.linux = xpcom18a4
+endif
+subdirs := liblzf-1.51 $(subdirs.$(BUILD_TARGET))
+ifndef VBOX_OSE
+ ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
+  subdirs += zlib-1.2.1 libpng-1.2.8
+ endif
+ ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
+  subdirs += libpng-1.2.8
+ endif
+endif
+ifdef VBOX_WITH_VRDP
+ ifeq ($(SDK_VBOX_OPENSSL_INCS),$(PATH_ROOT)/src/libs/openssl-0.9.7e/include)
+  subdirs += openssl-0.9.7e
+ endif
+endif
+ifdef VBOX_WITH_MAIN
+ # only build xerces if we don't use an external library
+ ifeq ($(SDK_VBOX_XERCES_INCS),$(PATH_ROOT)/src/libs/xerces-2.6.0/src)
+  subdirs += xerces-2.6.0
+ endif
+ # only build xalan if we don't use an external library
+ ifeq ($(SDK_VBOX_XALAN_INCS),$(PATH_ROOT)/src/libs/xalan-1.10.0)
+  subdirs += xalan-1.10.0
+ endif
+endif
+
+# optimized walking
+SUBDIRS_BLDPROGS.linux = xpcom18a4
+SUBDIRS_LIBRARIES      = $(subdirs)
+SUBDIRS_BINARIES.linux = xpcom18a4
+SUBDIRS_DLLS.linux     = xpcom18a4
+SUBDIRS_OTHERS.linux   = xpcom18a4
+SUBDIRS_CLEAN          = $(subdirs)
+
+DEPTH = ../..
+include $(PATH_KBUILD)/rules.kmk
+

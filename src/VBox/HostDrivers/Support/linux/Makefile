@@ -1,0 +1,151 @@
+#
+# Makefile for the VirtualBox Linux Host Driver.
+# (For 2.6.x this file must be called 'Makefile'!)
+#
+
+#
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+MODULE = vboxdrv
+OBJS   = \
+	linux/SUPDrv-linux.o \
+	SUPDRVShared.o \
+	r0drv/alloc-r0drv.o \
+	r0drv/linux/alloc-r0drv-linux.o \
+	r0drv/linux/semaphore-r0drv-linux.o \
+	r0drv/linux/spinlock-r0drv-linux.o \
+	r0drv/linux/thread-r0drv-linux.o \
+
+#
+# Where is everything?
+#
+KERN_DIR_CUR := /lib/modules/$(shell uname -r)/build
+ifndef $(KERN_DIR)
+KERN_DIR := $(KERN_DIR_CUR)
+endif
+ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+ifneq ($(shell if test -d /usr/src/linux; then echo yes; fi),yes)
+$(error Error: unable to find the sources of your current Linux kernel. Specify KERN_DIR=<directory> and run Make again.)
+endif
+KERN_DIR := /usr/src/linux
+$(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
+endif
+
+# includes
+ifndef $(KERN_INCL)
+KERN_INCL = $(KERN_DIR)/include
+$(info Info: using $(KERN_INCL) as the include directory of your Linux kernel. If this is not correct, specify KERN_INFO=<directory> and run Make again.)
+endif
+ifneq ($(shell if test -d $(KERN_INFO); then echo yes; fi),yes)
+$(error Error: unable to find the include directory for your current Linux kernel. Specify $KERN_INCL=<directory> and run Make again.)
+endif
+
+# Module install dir.
+ifndef MODULE_DIR
+MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+MODULE_DIR := $(MODULE_DIR_TST)/misc
+else
+$(error Error: could not find the module directory for your current Linux kernel)
+endif
+endif # MODULE_DIR unspecified
+
+# guess kernel version (24 or 26)
+KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
+
+# debug - show guesses.
+ifdef DEBUG
+$(warning dbg: KERN_DIR     = $(KERN_DIR))
+$(warning dbg: KERN_INCL    = $(KERN_INCL))
+$(warning dbg: MODULE_DIR   = $(MODULE_DIR))
+$(warning dbg: KERN_VERSION = $(KERN_VERSION))
+endif
+
+#
+# Compiler options
+#
+ifndef INCL
+INCL     := -I$(KERN_INCL) -I$(shell pwd) -I$(shell pwd)/include -I$(shell pwd)/r0drv/linux
+export INCL
+endif
+KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0
+ifndef CONFIG_VBOXDRV_FIXEDMAJOR
+KFLAGS   += -DCONFIG_VBOXDRV_AS_MISC
+endif
+ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
+KFLAGS   += -D__AMD64__
+else
+KFLAGS   += -D__X86__
+endif
+#ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
+#KFLAGS   += -DDEBUG
+#endif
+
+ifeq ($(KERN_VERSION), 24)
+#
+# 2.4
+#
+
+TOPDIR = $(KERN_DIR)
+
+MODULE_EXT := o
+
+EXTRA_CFLAGS := -DVBOX_LINUX_2_4
+
+$(MODULE)-objs = $(OBJS)
+
+else
+#
+# 2.6 and later
+#
+
+MODULE_EXT := ko
+
+$(MODULE)-y  := $(OBJS)
+
+endif
+
+# build defs
+EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+
+all: $(MODULE)
+
+obj-m += $(MODULE).o
+
+$(MODULE):
+	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+
+ifeq ($(KERN_VERSION), 24)
+#
+# 2.4 Module linking
+#
+$(MODULE).o: $(OBJS)
+	$(LD) -o $@ -r $(OBJS)
+
+include $(KERN_DIR)/Rules.make
+
+endif
+
+install: $(MODULE)
+	@mkdir -p $(MODULE_DIR); \
+	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
+        PATH="$(PATH):/bin:/sbin" depmod -ae;
+
+clean:
+	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers
+

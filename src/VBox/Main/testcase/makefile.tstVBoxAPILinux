@@ -1,0 +1,41 @@
+#
+# tstVBoxAPILinux makefile
+#
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+PATH_XPCOM     = ..
+
+PATH_XPCOM_IDL = $(PATH_XPCOM)/idl
+INCS_XPCOM     = $(PATH_XPCOM)/include \
+                 $(PATH_XPCOM)/include/xpcom/nsprpub \
+                 $(PATH_XPCOM)/include/xpcom/string \
+                 $(PATH_XPCOM)/include/xpcom/xpcom \
+                 $(PATH_XPCOM)/include/xpcom/ipcd
+
+#
+# Link with the public XPCOM libraries
+#
+tstVBoxAPILinux: tstVBoxAPILinux.o
+	g++ -g -o $@ $(addprefix -L, $(LIBPATH_XPCOM)) $^ \
+		../lib/VBoxXPCOMGlue.a ../../VBoxXPCOM.so \
+		-ldl -lpthread
+
+tstVBoxAPILinux.o: tstVBoxAPILinux.cpp
+	g++ -c -g $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
+
+clean:
+	rm -f tstVBoxAPILinux tstVBoxAPILinux.o

@@ -1,0 +1,32 @@
+HKCR
+{
+    NoRemove AppID
+    {
+        {819B4D85-9CEE-493C-B6FC-64FFE759B3C9} = s 'VirtualBox'
+        'VBoxSVC.EXE'
+        {
+            val AppID = s '{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}'
+        }
+    }
+
+    VirtualBox.Application.1 = s 'VirtualBox Class'
+    {
+        CLSID = s '{B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F}'
+    }
+    VirtualBox.Application = s 'VirtualBox Class'
+    {
+        CLSID = s '{B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F}'
+        CurVer = s 'VirtualBox.Application.1'
+    }
+    NoRemove CLSID
+    {
+        ForceRemove {B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F} = s 'VirtualBox Class'
+        {
+            ProgId = s 'VirtualBox.Application.1'
+            VersionIndependentProgID = s 'VirtualBox.Application'
+            LocalServer32 = s '%MODULE%'
+            val AppId = s '{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}'
+            'TypeLib' = s '{46137EEC-703B-4fe5-AFD4-7C9BBBBA0259}'
+        }
+    }
+}

@@ -1,0 +1,63 @@
+;
+; VBox host drivers - Ring-0 support drivers - Win32 host
+;
+; INF file for installing the Win32 driver
+;
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+;
+
+[Version]
+Signature="$Windows NT$"
+Class=System
+ClassGuid={ce4a90b5-1d8c-435d-b349-232ce55cb17f}
+Provider=%INNOTEK%
+DriverVer=08/20/2005,8.1.0.0
+DriverPackageType=KernelService
+;CatalogFile=VBoxDrv.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[DefaultInstall]
+CopyFiles=VBoxDrv.CopyFiles
+
+[DefaultInstall.Services]
+AddService=VBoxDrv,0x00000002,VBoxDrv_Service
+
+[Manufacturer]
+%INNOTEK%=INNOTEK
+
+[SourceDisksFiles]
+VBoxDrv.sys=1
+
+[SourceDisksNames]
+1=%DISK_NAME%,
+
+[VBoxDrv.CopyFiles]
+VBoxDrv.sys
+
+[VBoxDrv_Service]
+DisplayName    = %VBoxDrv.SVCDESC%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+;StartType      = 3                  ; SERVICE_DEMAND_START
+StartType      = 1                  ; autostart to fix Vista problem
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\VBoxDrv.sys
+
+[Strings]
+INNOTEK = "InnoTek Systemberatung GmbH"
+VBoxDrv.SVCDESC = "VirtualBox Service"
+VBoxDrv.DRVDESC = "VirtualBox Driver"
+DISK_NAME = "VirtualBox Driver Installation Disk"

@@ -1,0 +1,96 @@
+#
+# Top-level makefile for the VirtualBox Guest Additions.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../..
+include	$(PATH_KBUILD)/header.kmk
+
+SUBDIRS       = common
+ifdef VBOX_WITH_WIN32_ADDITIONS
+SUBDIRS      += WINNT
+endif
+ifdef VBOX_WITH_LINUX_ADDITIONS
+SUBDIRS      += linux
+LINUXINSTALLER = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
+endif
+ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
+PACKING	     += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
+endif
+
+LINUXINSTALLER_CROSS = $(PATH_ROOT)/out/linux.x86/$(BUILD_TYPE)/bin/additions/VBoxLinuxAdditions.run
+## @todo What's the use of the following 4 lines?
+ifdef VBOX_ADDITIONS_LINUX_CROSS
+OTHER_CLEAN   += $(LINUXINSTALLER_CROSS)
+LINUXINSTALLER = $(LINUXINSTALLER_CROSS)
+endif
+
+
+include	$(PATH_KBUILD)/footer.kmk
+
+
+ifdef VBOX_WITH_WIN32_ADDITIONS
+GUESTADDITIONS_WIN32_DEPS = $(PATH_BIN)/additions/VBoxGuest.sys \
+	./WINNT/VBoxGuest/VBoxGuest.inf \
+	$(PATH_BIN)/additions/VBoxService.exe \
+	$(PATH_BIN)/additions/VBoxControl.exe \
+	$(PATH_BIN)/additions/VBCoInst.dll \
+	$(PATH_BIN)/additions/VBoxMouse.sys \
+	./WINNT/MouseFilter/VBoxMouse.inf \
+	$(PATH_BIN)/additions/VBoxVideo.sys \
+	./WINNT/Graphics/Miniport/VBoxVideo.inf \
+	$(PATH_BIN)/additions/VBoxDisp.dll \
+	$(PATH_BIN)/additions/VBoxGINA.dll \
+	$(PATH_BIN)/additions/VBoxGuestAdditions.exe \
+	./WINNT/Installer/AUTORUN.INF
+GUESTADDITIONS_WIN32_FILESPEC = driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/additions/VBoxGuest.sys \
+	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
+	driver/VBoxGuest/VBoxService.exe=$(PATH_BIN)/additions/VBoxService.exe \
+	driver/VBoxGuest/VBoxControl.exe=$(PATH_BIN)/additions/VBoxControl.exe \
+	driver/VBoxGuest/VBCoInst.dll=$(PATH_BIN)/additions/VBCoInst.dll \
+	driver/VBoxGuest/VBoxMouse.sys=$(PATH_BIN)/additions/VBoxMouse.sys \
+	driver/VBoxGuest/VBoxMouse.inf=./WINNT/MouseFilter/VBoxMouse.inf \
+	driver/VBoxVideo/VBoxVideo.sys=$(PATH_BIN)/additions/VBoxVideo.sys \
+	driver/VBoxVideo/VBoxVideo.inf=./WINNT/Graphics/Miniport/VBoxVideo.inf \
+	driver/VBoxVideo/VBoxDisp.dll=$(PATH_BIN)/additions/VBoxDisp.dll \
+	gina/VBoxGINA.dll=$(PATH_BIN)/additions/VBoxGINA.dll \
+	VBoxGuestAdditions.exe=$(PATH_BIN)/additions/VBoxGuestAdditions.exe \
+	AUTORUN.INF=./WINNT/Installer/AUTORUN.INF
+endif
+
+ifdef LINUXINSTALLER
+GUESTADDITIONS_LINUX_DEPS = $(LINUXINSTALLER)
+GUESTADDITIONS_LINUX_FILESPEC = VBoxLinuxAdditions.run=$(LINUXINSTALLER)
+endif
+
+#
+# Build the Guest Additions ISO image.
+#
+$(PATH_BIN)/additions/VBoxGuestAdditions.iso: \
+		$(GUESTADDITIONS_WIN32_DEPS) $(GUESTADDITIONS_LINUX_DEPS) \
+		Makefile
+	$(call MSG_L1,Creating $@)
+	$(QUIET)$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 -volid "VBOXADDITIONS" -l -graft-points -o $@ \
+		$(GUESTADDITIONS_WIN32_FILESPEC) $(GUESTADDITIONS_LINUX_FILESPEC)
+
+# build the Linux installer on a remote machine
+$(LINUXINSTALLER_CROSS):
+	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Runtime BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
+	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Additions/common BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
+	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Additions/linux BUILD_TYPE=release all packing"
+

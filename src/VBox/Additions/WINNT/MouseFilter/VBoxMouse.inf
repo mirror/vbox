@@ -1,0 +1,67 @@
+;
+; INF file for installing the VirtualBox Guest Mouse
+; (driver for Windows 2000 and later).
+;
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+;
+
+[Version]
+Signature="$Windows NT$"
+ 
+[SourceDisksNames]
+1 = %VBoxMouse.MediaDesc%
+
+[SourceDisksFiles]
+VBoxMouse.sys = 1
+
+[DestinationDirs]
+DefaultDestDir = 12	; DIRID_DRIVERS
+
+
+[DefaultInstall]
+;
+; DefaultInstall section is used to install the class filter driver.
+;
+CopyFiles = @VBoxMouse.sys
+AddReg = VBoxMouse_AddReg
+ 
+[VBoxMouse_AddReg]
+HKLM, System\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}, UpperFilters, 0x00010000, "VBoxMouse", "mouclass"
+
+
+[DefaultInstall.Services]
+;
+; Services section is required for installation of drivers on NT-based operating systems.
+;
+AddService = VBoxMouse, , VBoxMouse_Service_Inst
+
+
+[VBoxMouse_Service_Inst]
+DisplayName    = %VBoxMouse.SvcDesc%
+ServiceType    = %SERVICE_KERNEL_DRIVER%
+StartType      = %SERVICE_DEMAND_START%
+ErrorControl   = %SERVICE_ERROR_IGNORE%
+ServiceBinary  = %12%\VBoxMouse.sys
+
+
+[Strings]
+VBoxMouse.SvcDesc	= "VirtualBox Guest Mouse Service"
+VBoxMouse.MediaDesc 	= "VirtualBox Guest Mouse Driver Installation Media"
+
+
+; Useful constants
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_DEMAND_START  = 3
+SERVICE_ERROR_IGNORE  = 0

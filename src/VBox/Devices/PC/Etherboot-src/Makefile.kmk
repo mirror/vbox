@@ -1,0 +1,797 @@
+#
+# VBox Etherboot Network boot ROM makefile
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../../
+include $(PATH_KBUILD)/header.kmk
+
+BLDPROGS  = nrv2b makerom
+LIBRARIES = NetBiosBin
+
+OTHERS    = $(PATH_TARGET)/pcnet32.zrom
+
+OTHER_CLEAN = \
+	$(PATH_TARGET)/NetBiosBin.c \
+	$(PATH_TARGET)/pcnet32.zrom \
+	$(PATH_TARGET)/pcnet32.zrom \
+	$(PATH_TARGET)/pcnet32.rom \
+	$(PATH_TARGET)/pcnet32.rom.prf \
+	$(PATH_TARGET)/pcnet32.rom.rt \
+	$(PATH_TARGET)/pcnet32.rom.rt1.bin \
+	$(PATH_TARGET)/pcnet32.rom.rt1.uo \
+	$(PATH_TARGET)/pcnet32.rom.rt2.bin \
+	$(PATH_TARGET)/pcnet32.rom.rt2.uo \
+	$(PATH_TARGET)/pcnet32.rom.rt2.zbin \
+	$(PATH_TARGET)/pcnet32.rom.rt2.zo \
+	$(PATH_TARGET)/pcnet32.rom.zprf \
+	$(PATH_TARGET)/basemem.o \
+	$(PATH_TARGET)/bios.o \
+	$(PATH_TARGET)/callbacks.o \
+	$(PATH_TARGET)/config.o \
+	$(PATH_TARGET)/console.o \
+	$(PATH_TARGET)/e820mangler.o \
+	$(PATH_TARGET)/elf.o \
+	$(PATH_TARGET)/heap.o \
+	$(PATH_TARGET)/hidemem.o \
+	$(PATH_TARGET)/hooks.o \
+	$(PATH_TARGET)/i386_timer.o \
+	$(PATH_TARGET)/init.o \
+	$(PATH_TARGET)/main.o \
+	$(PATH_TARGET)/memsizes.o \
+	$(PATH_TARGET)/misc.o \
+	$(PATH_TARGET)/nic.o \
+	$(PATH_TARGET)/osloader.o \
+	$(PATH_TARGET)/pci.o \
+	$(PATH_TARGET)/pci_io.o \
+	$(PATH_TARGET)/pci_probe.o \
+	$(PATH_TARGET)/pciprefix.entry.o \
+	$(PATH_TARGET)/pciprefix.exit.o \
+	$(PATH_TARGET)/pciprefix.o \
+	$(PATH_TARGET)/pcnet32.o \
+	$(PATH_TARGET)/pcnet32.rt.o \
+	$(PATH_TARGET)/pxe_callbacks.o \
+	$(PATH_TARGET)/pxe_export.o \
+	$(PATH_TARGET)/realmode.o \
+	$(PATH_TARGET)/realmode_asm.o \
+	$(PATH_TARGET)/relocate.o \
+	$(PATH_TARGET)/start32.o \
+	$(PATH_TARGET)/string.o \
+	$(PATH_TARGET)/timer.o \
+	$(PATH_TARGET)/unnrv2b.o \
+	$(PATH_TARGET)/vsprintf.o \
+	$(PATH_TARGET)/bootlib.a
+
+
+nrv2b_TEMPLATE      = VBOXBLDPROG
+nrv2b_SOURCES       = util/nrv2b.c
+nrv2b_DEFS          = ENCODE DECODE MAIN VERBOSE NDEBUG BITSIZE=32 ENDIAN=0
+
+makerom_TEMPLATE    = VBOXBLDPROG
+makerom_SOURCES     = util/makerom.c
+makerom_SOURCES.win = util/getopt.c
+makerom_INCS.win    = $(PATH_CURRENT)/util
+makerom_DEFS.win    = __inline__ __const__=const
+
+#
+# The NetBiosBin Library.
+#
+NetBiosBin_TEMPLATE = VBOXR3
+NetBiosBin_DEFS     = IN_VBOXDD2
+NetBiosBin_INCS     = ../..
+NetBiosBin_SOURCES  = $(PATH_TARGET)/NetBiosBin.c
+
+
+include $(PATH_KBUILD)/footer.kmk
+
+#
+# Rule for making the bios.
+#
+$(PATH_TARGET)/NetBiosBin.c: $(PATH_TARGET)/pcnet32.zrom $(VBOX_BIN2C)
+	$(call MSG_L1,bin2c $< => $@)
+	$(QUIET)$(VBOX_BIN2C) -min 32 -max 64 -mask 0xfff -export NetBiosBinary $< $@
+
+#
+# Net BIOS.
+#
+
+# 0. Prevent calling VBOX_CHECKCC again and again
+EB_CFLAGS:=
+
+# 1. Get Etherboot configuration
+ARCH=i386
+ENVIRONMENT:=VBOX
+include Config
+include arch/$(ARCH)/Config
+
+# 2. Replace Makefile.main
+#MAKEROM=        $(PERL) ./util/makerom.pl
+MAKEROM=	$(TARGET_makerom)
+VERSION_MAJOR=  5
+VERSION_MINOR=  4
+VERSION_PATCH=  2
+EXTRAVERSION= CVS-InnoTek
+VERSION=        $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)$(EXTRAVERSION)
+MM_VERSION=     $(VERSION_MAJOR).$(VERSION_MINOR)
+EB_CFLAGS+=     -DVERSION_MAJOR=$(VERSION_MAJOR) \
+                -DVERSION_MINOR=$(VERSION_MINOR) \
+                -DVERSION=\"$(VERSION)\" $(OLDGAS) \
+                -I include -I arch/$(ARCH)/include \
+                -DARCH=$(ARCH)
+
+IDENT=          '$(@F) $(VERSION) (GPL) etherboot.org'
+
+# Rebuild everything whenever the Makefile etc. is changed.
+MAKEDEPS=       Makefile.kmk Config arch/$(ARCH)/Config
+
+# The core (card-independent part) of Etherboot.
+BOBJS=          $(PATH_TARGET)/main.o $(PATH_TARGET)/osloader.o \
+                $(PATH_TARGET)/misc.o $(PATH_TARGET)/timer.o \
+                $(PATH_TARGET)/relocate.o $(PATH_TARGET)/heap.o \
+                $(PATH_TARGET)/nic.o $(PATH_TARGET)/pci.o \
+                $(PATH_TARGET)/pci_probe.o $(PATH_TARGET)/vsprintf.o \
+                $(PATH_TARGET)/string.o $(PATH_TARGET)/pxe_export.o \
+                $(PATH_TARGET)/pci_io.o $(PATH_TARGET)/i386_timer.o \
+                $(PATH_TARGET)/elf.o $(PATH_TARGET)/hooks.o
+
+BLIB=           $(PATH_TARGET)/bootlib.a
+
+# The processor-dependent start parts of Etherboot.
+START=  $(PATH_TARGET)/start32.o $(PATH_TARGET)/bios.o \
+        $(PATH_TARGET)/console.o \
+        $(PATH_TARGET)/memsizes.o $(PATH_TARGET)/basemem.o \
+        $(PATH_TARGET)/hidemem.o $(PATH_TARGET)/e820mangler.o \
+        $(PATH_TARGET)/realmode.o $(PATH_TARGET)/realmode_asm.o \
+        $(PATH_TARGET)/callbacks.o $(PATH_TARGET)/pxe_callbacks.o
+
+# Linker scripts.
+ifeq ($(BUILD_TARGET),win)
+LDSCRIPT = arch/i386/core/etherboot-pe.lds
+PLDSCRIPT = arch/i386/core/etherboot.prefix-pe.lds
+PREFULDSCRIPT = arch/i386/core/prefixudata-pe.lds
+PREFZLDSCRIPT = arch/i386/core/prefixzdata-pe.lds
+else
+LDSCRIPT = arch/i386/core/etherboot.lds
+PLDSCRIPT = arch/i386/core/etherboot.prefix.lds
+PREFULDSCRIPT = arch/i386/core/prefixudata.lds
+PREFZLDSCRIPT = arch/i386/core/prefixzdata.lds
+endif
+
+# Generic prefix objects.
+PREFIXOBJS = $(PATH_TARGET)/init.o
+ZPREFIXOBJS = $(PATH_TARGET)/init.o $(PATH_TARGET)/unnrv2b.o
+
+# PCI prefix objects.
+PCIPREFIX = $(PATH_TARGET)/pciprefix.o
+PCIENTRY = $(PATH_TARGET)/pciprefix.entry.o
+PCIEXIT = $(PATH_TARGET)/pciprefix.exit.o
+
+# PCNET32 ROM parts.
+PCNET32_RUNTIME_OBJ = $(PATH_TARGET)/pcnet32.rt.o
+PCNET32_RUNTIME = $(PATH_TARGET)/pcnet32.rom.rt
+PCNET32_PART1_U = $(PATH_TARGET)/pcnet32.rom.rt1.uo
+PCNET32_PART2_U = $(PATH_TARGET)/pcnet32.rom.rt2.uo
+PCNET32_PART2_Z = $(PATH_TARGET)/pcnet32.rom.rt2.zo
+
+# Build the core (card-independent part) of Etherboot.
+$(BLIB): $(BOBJS) $(MAKEDEPS)
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(EB_AR) r $@ $(BOBJS)
+	$(QUIET)$(EB_RANLIB) $@
+
+# General rules for compiling/assembling source files.
+$(PATH_TARGET)/%.o: core/%.c $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<,=> $@)
+	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
+
+$(PATH_TARGET)/%.o: drivers/net/%.c $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<,=> $@)
+	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
+
+$(PATH_TARGET)/%.o: arch/$(ARCH)/core/%.c $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<,=> $@)
+	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
+
+$(PATH_TARGET)/%.o: arch/$(ARCH)/firmware/pcbios/%.c $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<,=> $@)
+	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
+
+$(PATH_TARGET)/%.o: arch/$(ARCH)/core/%.S $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<,=> $@)
+	$(QUIET)$(EB_CC) $(EB_CFLAGS) -Ui386 -DASSEMBLY -o $@ -c $<
+
+$(PATH_TARGET)/%.o: arch/$(ARCH)/prefix/%.S $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<,=> $@)
+	$(QUIET)$(EB_CC) $(EB_CFLAGS) -Ui386 -DASSEMBLY -o $@ -c $<
+
+$(PATH_TARGET)/%.o: arch/$(ARCH)/firmware/pcbios/%.S $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<,=> $@)
+	$(QUIET)$(EB_CC) $(EB_CFLAGS) -Ui386 -DASSEMBLY -o $@ -c $<
+
+# General rules for generating runtime (rt) files.
+$(PATH_TARGET)/%.rt.o: $(PATH_TARGET)/%.o $(START) $(PATH_TARGET)/config.o $(BLIB) $(MAKEDEPS)
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -r $(START) $(PATH_TARGET)/config.o $< $(BLIB) -o $@
+
+# General rule for creating binary code.
+$(PATH_TARGET)/%.bin: $(PATH_TARGET)/%.o $(MAKEDEPS)
+	$(call MSG_L1,objcopy $< => $@)
+	$(QUIET)$(EB_OBJCOPY) -O binary $< $@
+
+# General rule for compressing binary code.
+$(PATH_TARGET)/%.zbin: $(PATH_TARGET)/%.bin $(TARGET_nrv2b) $(MAKEDEPS)
+	$(call MSG_L1,nrv2b $< => $@)
+	$(QUIET)$(TARGET_nrv2b) e $< $@
+
+# Creating the binary code in compressed and uncompressed form.
+$(PATH_TARGET)/%.zo: $(PATH_TARGET)/%.zbin $(PREFZLDSCRIPT) $(MAKEDEPS)
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(EB_LD) -T $(PREFZLDSCRIPT) -b binary $< -o $@
+
+$(PATH_TARGET)/%.uo: $(PATH_TARGET)/%.bin $(PREFULDSCRIPT) $(MAKEDEPS)
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(EB_LD) -T $(PREFULDSCRIPT) -b binary $< -o $@
+
+# Build the PCI prefix.
+$(PCIPREFIX):	arch/i386/prefix/romprefix.S $(MAKEDEPS)
+	$(call MSG_L1,Compiling $<)
+	$(QUIET)$(EB_CC) -DPCI_PNP_HEADER -DBBS_BUT_NOT_PNP_COMPLIANT $(EB_CFLAGS) $(LCONFIG) -Ui386 -DASSEMBLY -c $< -o $@
+
+# Build binary code, split out the various sections.
+$(PATH_TARGET)/%.rt.bin: $(PATH_TARGET)/%.rt $(MAKEDEPS)
+	$(call MSG_L1,objcopy $< => $@)
+	$(QUIET)$(EB_OBJCOPY) -O binary -R .prefix $< $@
+
+$(PATH_TARGET)/%.rt1.bin: $(PATH_TARGET)/%.rt $(MAKEDEPS)
+	$(call MSG_L1,objcopy $< => $@)
+	$(QUIET)$(EB_OBJCOPY) -O binary -j .text.nocompress $< $@
+
+$(PATH_TARGET)/%.rt2.bin: $(PATH_TARGET)/%.rt $(MAKEDEPS)
+	$(call MSG_L1,objcopy $< => $@)
+	$(QUIET)$(EB_OBJCOPY) -O binary -R .prefix -R .text.nocompress $< $@
+
+# Split the prefix.
+$(PATH_TARGET)/%prefix.entry.o: $(PATH_TARGET)/%prefix.o $(MAKEDEPS)
+	$(call MSG_L1,objcopy $< => $@)
+	$(QUIET)$(EB_OBJCOPY) -R .text16 $< $@
+
+$(PATH_TARGET)/%prefix.exit.o: $(PATH_TARGET)/%prefix.o $(MAKEDEPS)
+	$(call MSG_L1,objcopy $< => $@)
+	$(QUIET)$(EB_OBJCOPY) -R .prefix $< $@
+
+# Build the runtime.
+$(PCNET32_RUNTIME): $(PCNET32_RUNTIME_OBJ) $(PCIENTRY) $(PCIEXIT) $(LDSCRIPT) $(MAKEDEPS)
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -T $(LDSCRIPT) -o $@ $(PCIEXIT) $<
+
+# Build the ELF executable containing the complete ROM.
+$(PATH_TARGET)/pcnet32.rom.zprf: $(PCIENTRY) $(PCNET32_RUNTIME) $(ZPREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_Z) $(MAKEDEPS)
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -T $(PLDSCRIPT) $(PCIENTRY) -R $(PCNET32_RUNTIME) $(ZPREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_Z) -o $@
+
+$(PATH_TARGET)/pcnet32.rom.prf: $(PCIENTRY) $(PCNET32_RUNTIME) $(PREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_U) $(MAKEDEPS)
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -T $(PLDSCRIPT) $(PCIENTRY) -R $(PCNET32_RUNTIME) $(PREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_U) -o $@
+
+# Build the actual ROM image, phew.
+# @todo FIXME ugly shortcut for Windows targets, since the mingw32 tools
+# are not up to compiling Etherboot (the linker messes up big time, shifting
+# the final binary to 0xffc00000 and filling out relocations incorrectly
+# (first occurrence is the call to prelocate in the pciprefix.o file).
+ifeq ($(filter-out darwin os2 win,$(BUILD_TARGET)),)
+$(PATH_TARGET)/pcnet32.zrom: pcnet32.zrom
+	$(CP) -f $< $@
+else
+$(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEDEPS)
+	$(call MSG_L1,makerom $@)
+	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
+	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
+	$(QUIET)$(MV) -f $@.tmp $@
+# Update the binary in the source tree. Should be checked in when
+# the changes are stable, as building it on Windows is currently not
+# possible. Forgetting to update this file means that people building
+# on Windows will use some outdated network boot ROM image. Since it
+# causes SVN conflicts for no good reasons for other developers using
+# Linux, only do this as a specific user...
+ifeq ($(USERNAME),klaus)
+	$(CP) -p $@ pcnet32.zrom
+endif
+
+$(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $(MAKEDEPS)
+	$(call MSG_L1,makerom $@)
+	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
+	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
+	$(QUIET)$(MV) -f $@.tmp $@
+endif
+
+
+# Manually created dependencies.
+#
+
+$(PATH_TARGET)/basemem.o: \
+  arch/i386/firmware/pcbios/basemem.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/realmode.h arch/i386/include/segoff.h
+
+$(PATH_TARGET)/bios.o: \
+  arch/i386/firmware/pcbios/bios.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/realmode.h arch/i386/include/segoff.h
+
+$(PATH_TARGET)/callbacks.o: \
+  arch/i386/core/callbacks.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/realmode.h arch/i386/include/segoff.h
+
+$(PATH_TARGET)/config.o: \
+  core/config.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/nic.h include/dev.h include/isa.h include/pci.h \
+  include/pci_ids.h
+
+$(PATH_TARGET)/console.o: \
+  arch/i386/firmware/pcbios/console.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/realmode.h arch/i386/include/segoff.h
+
+$(PATH_TARGET)/e820mangler.o: \
+  arch/i386/firmware/pcbios/e820mangler.S include/etherboot-asm.h
+
+$(PATH_TARGET)/elf.o: \
+  arch/i386/core/elf.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/elf.h arch/i386/include/bits/elf.h arch/i386/include/bits/cpu.h \
+  include/elf_boot.h
+
+$(PATH_TARGET)/heap.o: \
+  core/heap.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h
+
+$(PATH_TARGET)/hidemem.o: \
+  arch/i386/firmware/pcbios/hidemem.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/hidemem.h arch/i386/include/segoff.h
+
+$(PATH_TARGET)/hooks.o: \
+  arch/i386/core/hooks.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h
+
+$(PATH_TARGET)/i386_timer.o: \
+  arch/i386/core/i386_timer.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/timer.h
+
+$(PATH_TARGET)/init.o: \
+  arch/i386/core/init.S include/etherboot-asm.h include/callbacks.h \
+  arch/i386/include/callbacks_arch.h
+
+$(PATH_TARGET)/main.o: \
+  core/main.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/dev.h include/isa.h include/pci.h include/pci_ids.h \
+  include/nic.h include/disk.h include/http.h include/timer.h \
+  include/cpu.h arch/i386/include/bits/cpu.h
+
+$(PATH_TARGET)/memsizes.o: \
+  arch/i386/firmware/pcbios/memsizes.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/realmode.h arch/i386/include/segoff.h
+
+$(PATH_TARGET)/misc.o: \
+  core/misc.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h
+
+$(PATH_TARGET)/nic.o: \
+  core/nic.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/nic.h include/dev.h include/isa.h include/pci.h \
+  include/pci_ids.h include/elf.h arch/i386/include/bits/elf.h \
+  arch/i386/include/bits/cpu.h include/elf_boot.h core/proto_eth_slow.c
+
+$(PATH_TARGET)/osloader.o: \
+  core/osloader.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/core/pxe_loader.c arch/i386/include/pxe_callbacks.h \
+  arch/i386/include/segoff.h include/pxe.h arch/i386/include/pxe_types.h \
+  include/pxe_export.h
+
+$(PATH_TARGET)/pci.o: \
+  core/pci.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/pci.h include/pci_ids.h
+
+$(PATH_TARGET)/pci_io.o: \
+  arch/i386/core/pci_io.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/pci.h include/pci_ids.h
+
+$(PATH_TARGET)/pci_probe.o: \
+  core/pci_probe.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/nic.h include/dev.h include/isa.h include/pci.h \
+  include/pci_ids.h
+
+$(PATH_TARGET)/pcnet32.o: \
+  drivers/net/pcnet32.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/nic.h include/dev.h include/isa.h include/pci.h \
+  include/pci_ids.h include/timer.h include/mii.h
+
+$(PATH_TARGET)/pxe_callbacks.o: \
+  arch/i386/core/pxe_callbacks.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/realmode.h arch/i386/include/segoff.h include/pxe.h \
+  arch/i386/include/pxe_types.h arch/i386/include/pxe_callbacks.h \
+  include/pxe_export.h arch/i386/include/hidemem.h
+
+$(PATH_TARGET)/pxe_export.o: \
+  core/pxe_export.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/pxe.h arch/i386/include/pxe_types.h arch/i386/include/segoff.h \
+  include/pxe_export.h arch/i386/include/pxe_callbacks.h include/nic.h \
+  include/dev.h include/isa.h include/pci.h include/pci_ids.h \
+  include/cpu.h arch/i386/include/bits/cpu.h include/timer.h
+
+$(PATH_TARGET)/realmode.o: \
+  arch/i386/core/realmode.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  arch/i386/include/realmode.h arch/i386/include/segoff.h
+
+$(PATH_TARGET)/realmode_asm.o: \
+  arch/i386/core/realmode_asm.S include/etherboot-asm.h \
+  arch/i386/include/realmode.h include/callbacks.h \
+  arch/i386/include/callbacks_arch.h
+
+$(PATH_TARGET)/relocate.o: \
+  core/relocate.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h
+
+$(PATH_TARGET)/pciprefix.o: \
+  arch/i386/prefix/romprefix.S include/etherboot-asm.h include/callbacks.h \
+  arch/i386/include/callbacks_arch.h
+
+$(PATH_TARGET)/start32.o: \
+  arch/i386/core/start32.S include/etherboot-asm.h include/callbacks.h \
+  arch/i386/include/callbacks_arch.h
+
+$(PATH_TARGET)/string.o: \
+  core/string.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h
+
+$(PATH_TARGET)/timer.o: \
+  core/timer.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h \
+  include/timer.h
+
+$(PATH_TARGET)/unnrv2b.o: \
+  arch/i386/prefix/unnrv2b.S include/etherboot-asm.h
+
+$(PATH_TARGET)/vsprintf.o: \
+  core/vsprintf.c include/etherboot.h include/osdep.h \
+  arch/i386/include/stdint.h arch/i386/include/limits.h include/string.h \
+  arch/i386/include/bits/string.h arch/i386/include/io.h include/endian.h \
+  arch/i386/include/bits/endian.h include/byteswap.h \
+  arch/i386/include/bits/byteswap.h include/little_bswap.h \
+  arch/i386/include/setjmp.h arch/i386/include/latch.h \
+  include/callbacks.h arch/i386/include/callbacks_arch.h \
+  arch/i386/include/hooks.h include/etherboot-asm.h include/if_ether.h \
+  include/in.h include/if_arp.h include/ip.h include/udp.h include/tcp.h \
+  include/bootp.h include/tftp.h include/igmp.h include/nfs.h
+
+include/etherboot.h:
+
+include/osdep.h:
+
+arch/i386/include/stdint.h:
+
+arch/i386/include/limits.h:
+
+include/string.h:
+
+arch/i386/include/bits/string.h:
+
+arch/i386/include/io.h:
+
+include/endian.h:
+
+arch/i386/include/bits/endian.h:
+
+include/byteswap.h:
+
+arch/i386/include/bits/byteswap.h:
+
+include/little_bswap.h:
+
+arch/i386/include/setjmp.h:
+
+arch/i386/include/latch.h:
+
+include/callbacks.h:
+
+arch/i386/include/callbacks_arch.h:
+
+arch/i386/include/hooks.h:
+
+include/etherboot-asm.h:
+
+include/if_ether.h:
+
+include/in.h:
+
+include/if_arp.h:
+
+include/ip.h:
+
+include/udp.h:
+
+include/tcp.h:
+
+include/bootp.h:
+
+include/tftp.h:
+
+include/igmp.h:
+
+include/nfs.h:
+
+arch/i386/include/realmode.h:
+
+arch/i386/include/segoff.h:
+
+include/nic.h:
+
+include/dev.h:
+
+include/isa.h:
+
+include/pci.h:
+
+include/pci_ids.h:
+
+include/elf.h:
+
+arch/i386/include/bits/elf.h:
+
+arch/i386/include/bits/cpu.h:
+
+include/elf_boot.h:
+
+arch/i386/include/hidemem.h:
+
+include/timer.h:
+
+include/disk.h:
+
+include/http.h:
+
+include/cpu.h:
+
+core/proto_eth_slow.c:
+
+arch/i386/core/pxe_loader.c:
+
+arch/i386/include/pxe_callbacks.h:
+
+include/pxe.h:
+
+arch/i386/include/pxe_types.h:
+
+include/pxe_export.h:
+
+include/mii.h:
+

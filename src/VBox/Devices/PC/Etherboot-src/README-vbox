@@ -1,0 +1,9 @@
+This is a subset of Etherboot-5.4.2 (actually a CVS version just before the
+release of 5.4.3), namely the contents of the src subdirectory.  When upgrading
+make sure that you don't accidentially overwrite the Config files (in this
+directoty and in arch/i386).  Of course the Etherboot code is still covered by
+the GPL.  See the standard Etherboot distribution for the license terms.
+Note that this directory tree contains local modifications. One of the biggest
+modification is an attempt at making Etherboot build with tools from MinGW
+possible. So far this produces an image that doesn't work, because the linker
+miscompiles relocations.

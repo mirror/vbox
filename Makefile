@@ -1,0 +1,249 @@
+#
+# Top level makefile.
+#
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = .
+include $(PATH_KBUILD)/header.kmk
+
+ifdef VBOX_WITH_DOCS
+ SUBDIRS = doc/manual
+endif
+SUBDIRS += src
+
+#
+# Install external binaries (mostly redistributable parts of tools we use).
+# This must be done *before* we build the manual.
+#
+# To avoid dragging in unnecessary tools and sdks here, we don't use the .win
+# and .linux property suffixes.
+#
+INSTALLS = bin
+
+bin_INST = bin/
+
+# The SDL DLLs
+ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ ifneq ($(VBOX_WITH_VBOXSDL)$(VBOX_WITH_VBOXBFE),)
+  include $(PATH_KBUILD)/sdks/LIBSDL.kmk
+  bin_SOURCES += \
+	$(DLL_SDK_LIBSDL_SDL)
+  ifdef VBOX_WITH_SECURELABEL
+   bin_SOURCES += \
+	$(DLL_SDK_LIBSDL_SDLTTF)
+  endif
+  ifeq ($(BUILD_TARGET),os2)
+   bin_SOURCES += \
+	$(DLL_SDK_LIBSDL_FSLIB)
+  endif
+ endif
+endif
+
+# The Qt DLLs.
+ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ ifneq ($(VBOX_WITH_QTGUI),)
+  #include $(PATH_KBUILD)/sdks/QT3.kmk
+  #bin_SOURCES += \
+  #	$(DLL_SDK_QT3_QT)
+  bin_SOURCES.win.x86 += \
+	$(VBOX_PATH_QT)/bin/qt-mt333.dll=>qt-mt333.dll
+  ifdef VBOX_USE_VCC80
+  bin_SOURCES.win.x86 += \
+	$(VBOX_PATH_QT)/bin/msvcr71.dll=>msvcr71.dll
+  endif
+  bin_SOURCES.win.amd64 += \
+	$(PATH_DEVTOOLS)/win.amd64/Qt/v3.3.6/bin/qt-mt336.dll=>qt-mt336.dll
+ endif
+endif
+
+# The compiler runtime DLLs.
+ifeq ($(BUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
+ ifdef VBOX_USE_VCC80
+  include $(PATH_KBUILD)/tools/VCC80X86.kmk
+  include $(PATH_KBUILD)/tools/VCC80AMD64.kmk
+  bin_SOURCES.x86 += \
+ 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
+	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
+	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
+	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
+  bin_SOURCES.amd64 += \
+	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
+	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
+	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
+	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
+ else
+  include $(PATH_KBUILD)/tools/VCC70.kmk
+  ## @todo Move these defines to VCC70.
+  DLL_TOOL_VCC70_MSVCR71 ?= $(PATH_TOOL_VCC70)/bin/msvcr71.dll
+  ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCR71)),)
+   bin_SOURCES += \
+	$(DLL_TOOL_VCC70_MSVCR71)=>msvcr71.dll \
+	$(DLL_TOOL_VCC70_MSVCR71)=>testcase/msvcr71.dll
+  endif
+  DLL_TOOL_VCC70_MSVCP71 ?= $(PATH_TOOL_VCC70)/bin/msvcp71.dll
+  ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCP71)),)
+   bin_SOURCES += \
+	$(DLL_TOOL_VCC70_MSVCP71)=>msvcp71.dll \
+	$(DLL_TOOL_VCC70_MSVCP71)=>testcase/msvcp71.dll
+   endif
+  DLL_TOOL_VCC70_MSVCRT  ?= $(PATH_TOOL_VCC70)/bin/msvcrt.dll
+  ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCRT)),)
+   bin_SOURCES += \
+	$(DLL_TOOL_VCC70_MSVCRT)=>msvcrt.dll \
+	$(DLL_TOOL_VCC70_MSVCRT)=>testcase/msvcrt.dll
+  endif
+ endif
+endif
+
+# The Xerces DLL
+ifneq ($(DLL_SDK_VBOX_XERCES_XERCES),)
+ bin_SOURCES += $(DLL_SDK_VBOX_XERCES_XERCES)
+endif
+
+# The Xalan DLLs
+ifneq ($(DLL_SDK_VBOX_XALAN_XALAN),)
+ bin_SOURCES += $(DLL_SDK_VBOX_XALAN_XALAN)
+endif
+ifneq ($(DLL_SDK_VBOX_XALAN_XALAN-MESSAGES),)
+ bin_SOURCES += $(DLL_SDK_VBOX_XALAN_XALAN-MESSAGES)
+endif
+
+
+include $(PATH_KBUILD)/footer.kmk
+
+
+#
+# Generate documentation.
+# (This should be converted into a separate pass or merged with an existing one later.)
+#
+docs: docs.Core
+	$(MAKE) -C src/VBox/Main docs
+	$(MAKE) -C src/VBox/Runtime docs
+
+docs.Core: $(PATH_TARGET)/docs.Core
+
+
+#
+# The core (VMM+Runtime+Devices) documentation.
+#
+$(PATH_TARGET)/docs.Core: \
+		Doxyfile.Core \
+		| $(call DIRDEP, $(PATH_TARGET)) \
+		  $(call DIRDEP, $(PATH_OUT)/docs/Core)
+	$(RM) -f $(wildcard $(PATH_OUT)/docs/Core/html/*)
+	PATH_OUT="$(PATH_OUT)" PATH_TARGET="$(PATH_TARGET)" doxygen Doxyfile.Core
+
+$(call DIRDEP, $(PATH_OUT)/docs/Core):
+	$(MKDIR) -p $@
+
+
+#
+# Generate x86.mac and err.mac.
+#
+incs:
+	$(SED) -f include/VBox/err.sed include/VBox/err.h > include/VBox/err.mac
+	echo '%include "iprt/err.mac"' >> include/VBox/err.mac
+	$(SED) -f include/VBox/err.sed include/iprt/err.h > include/iprt/err.mac
+	$(SED) -e '/__VBox_x86_h__/d' -e '/#define/!d' -e 's/#define/%define/' include/VBox/x86.h > include/VBox/x86.mac
+
+
+#
+# Generate Visual SlickEdit tagging #defines.
+#
+vslick.h: include/VBox/cdefs.h Makefile
+	echo '// autogenerated' > $@.tmp
+	#echo '#define __BEGIN_DECLS ' >> $@.tmp
+	#echo '#define __END_DECLS ' >> $@.tmp
+
+	echo '#define ATL_NO_VTABLE ' >> $@.tmp
+	echo '#define BEGIN_COM_MAP(a) ' >> $@.tmp
+	echo '#define END_COM_MAP(a) ' >> $@.tmp
+
+	echo '#define CHECKREADY if(!isReady()) return E_UNEXPECTED; ' >> $@.tmp
+	echo '#define COM_DECL_READONLY_ENUM_AND_COLLECTION(a) ' >> $@.tmp
+	echo '#define COM_INTERFACE_ENTRY(a) ' >> $@.tmp
+	echo '#define COMGETTER(n)                    Get##n ' >> $@.tmp
+	echo '#define COMSETTER(n)                    Set##n ' >> $@.tmp
+	echo '#define DECLARE_NOT_AGGREGATABLE(a) ' >> $@.tmp
+	echo '#define DECLARE_PROTECT_FINAL_CONSTRUCT(a) ' >> $@.tmp
+	echo '#define NS_DECL_ISUPPORTS ' >> $@.tmp
+	echo '#define NS_IMETHOD NS_IMETHOD_(nsresult) ' >> $@.tmp
+	echo '#define NS_IMETHOD_(type) type ' >> $@.tmp
+	echo '#define PARSERS_EXPORT ' >> $@.tmp
+	echo '#define SAX_EXPORT ' >> $@.tmp
+	echo '#define STDMETHOD(a) NS_IMETHOD a ' >> $@.tmp
+	echo '#define XERCES_CPP_NAMESPACE_BEGIN ' >> $@.tmp
+	echo '#define XERCES_CPP_NAMESPACE_END ' >> $@.tmp
+
+	echo '#define CTXAllSUFF(var)                 var##R3 ' >> $@.tmp
+	echo '#define CTXSUFF(var)                    var##HC ' >> $@.tmp
+	echo '#define OTHERCTXSUFF(var)  	      var##GC ' >> $@.tmp
+	echo '#define CTXALLMID(first, last)          first##R3##last ' >> $@.tmp
+	echo '#define CTXMID(first, last)             first##HC##last ' >> $@.tmp
+	echo '#define OTHERCTXMID(first, last)        first##GC##last ' >> $@.tmp
+	echo '#define CTXTYPE(GCType, R3Type, R0Type) R3Type ' >> $@.tmp
+	echo '#define GCPTRTYPE(GCType)               GCType ' >> $@.tmp
+	echo '#define GCTYPE(GCType, HCType)          GCType ' >> $@.tmp
+	echo '#define HCPTRTYPE(HCType)               HCType ' >> $@.tmp
+	echo '#define R0PTRTYPE(R3Type)               R3Type ' >> $@.tmp
+	echo '#define R3PTRTYPE(R0Type)               R0Type ' >> $@.tmp
+	echo '#define RT_SRC_POS                      __FILE__, __LINE__, __PRETTY_FUNCTION__ ' >> $@.tmp
+	echo '#define RT_SRC_POS_DECL                 const char *pszFile, unsigned iLine, const char *pszFunction ' >> $@.tmp
+	echo '#define RT_SRC_POS_ARGS                 pszFile, iLine, pszFunction ' >> $@.tmp
+	echo '#define RTCALL' >> $@.tmp
+	echo '#define DECLINLINE(type)                inline type ' >> $@.tmp
+
+	echo '#define PDM_SRC_POS                     __FILE__, __LINE__, __PRETTY_FUNCTION__ ' >> $@.tmp
+	echo '#define PDM_SRC_POS_DECL                const char *pszFile, unsigned iLine, const char *pszFunction ' >> $@.tmp
+	echo '#define PDM_SRC_POS_ARGS                pszFile, iLine, pszFunction ' >> $@.tmp
+	echo '#define PDMDEVINSINT_DECLARED           1' >> $@.tmp
+	echo '#define VBOXCALL' >> $@.tmp
+
+	$(SED)  -e '/__cdecl/d' \
+		-e '/^ *# *define.*DECL/!d' \
+		-e '/DECLS/d' \
+		-e '/_SRC_POS_DECL/d' \
+		-e '/declspec/d' \
+		-e 's/#  */#/g' \
+		-e 's/   */ /g' \
+		-e '/(type) DECLEXPORT/d' \
+		-e 's/ *VBOXCALL//' \
+		-e 's/ *RTCALL//' \
+		-e 's/(type) DECLIMPORT(type)/(type) type/' \
+		-e '/ DECLASM(type) type/d' \
+		-e '/define  *DECL..CALLBACKMEMBER(type[^)]*) *RT/d' \
+		-e '/define  *DECLINLINE(type)/d' \
+		\
+		include/iprt/cdefs.h \
+		include/VBox/cdefs.h \
+		>> $@.tmp
+	sort $@.tmp | sort | sed -e 's/$$/\n/' > $@.tmp2
+	$(MV) -f $@.tmp2 $@
+	$(RM) -f $@.tmp $@.tmp2 $@.tmp3
+
+
+ifndef VBOX_OSE
+## add tools fetching to the 'up' / 'update' target.
+up update::
+# this doesn't work of course if kmk is updated:	svn$(HOSTSUFF_EXE) up $(PATH_KBUILD)
+	$(MAKE) -C tools fetch
+endif
+
