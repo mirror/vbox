@@ -1,0 +1,33 @@
+#
+# Host drivers kBuild configuration file
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+# Include the top-level configure file.
+include $(PATH_ROOT)/Config.kmk
+
+# This screws up since it changes between the subdirs.
+INCS := $(filter-out $(PATH_CURRENT), $(INCS))
+
+
+# Can't use relative paths when dealing with sub-makefiles.
+VBOX_PATH_HOSTDRIVERS := $(PATH_ROOT)/src/VBox/HostDrivers
+VBOX_PATH_SUPPORT := $(VBOX_PATH_HOSTDRIVERS)/Support
+VBOX_PATH_VBOXTAP := $(VBOX_PATH_HOSTDRIVERS)/VBoxTap
+VBOX_PATH_VBOXUSB := $(VBOX_PATH_HOSTDRIVERS)/VBoxUSB
+

@@ -1,0 +1,57 @@
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+
+%include "VBox/nasm.mac"
+
+struc VMMR0JMPBUF
+%ifdef __X86__
+    ; traditional jmp_buf
+    .ebx            resd 1
+    .esi            resd 1
+    .edi            resd 1
+    .ebp            resd 1
+    .esp            resd 1
+    .eip            resd 1
+
+    ; additional state and stack info.
+    .fInRing3Call   resd 1
+    .pvSavedStack   resd 1
+    .cbSavedStack   resd 1
+    .espCheck       resd 1
+    .espResume      resd 1
+%endif
+%ifdef __AMD64__
+    ; traditional jmp_buf
+    .rbx            resq 1
+%ifdef __WIN__
+    .rsi            resq 1
+    .rdi            resq 1
+%endif
+    .rbp            resq 1
+    .r12            resq 1
+    .r13            resq 1
+    .r14            resq 1
+    .r15            resq 1
+    .rsp            resq 1
+    .rip            resq 1
+
+    ; additional state and stack info.
+    .fInRing3Call   resd 1
+    .cbSavedStack   resd 1
+    .pvSavedStack   resq 1
+    .rspCheck       resq 1
+    .rspResume      resq 1
+%endif
+endstruc
+

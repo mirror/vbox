@@ -1,0 +1,78 @@
+;
+; INF file for installing the VirtualBox Windows guest driver
+;
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider=%INNOTEK%
+LayoutFile=layout.inf
+DriverVer=12/31/2004,5.00.2072
+
+[DestinationDirs]
+DefaultDestDir = 12 ; drivers
+VBox_CoInstaller_CopyFiles = 11 ; system32
+VBoxService_CopyFiles = 11 ; system32
+
+[Manufacturer]
+%INNOTEK_MFG% = VBoxGuest
+
+[VBoxGuest]
+%VBoxGuest.DeviceDesc%=VBoxGuest_Install,PCI\VEN_80ee&DEV_cafe
+
+[VBoxGuest_Install]
+CopyFiles = VBoxGuest_CopyFiles, VBoxService_CopyFiles
+AddReg = VBoxService_Add_Reg
+
+[VBoxGuest_CopyFiles]
+VBoxGuest.sys
+
+[VBoxService_CopyFiles]
+VBoxService.exe
+VBoxControl.exe
+
+[VBoxGuest_Install.Services]
+AddService = VBoxGuest, 0x00000002, VBoxGuest_ServiceInstallSection
+DelService = VBoxService, 0x00000004
+
+[VBoxGuest_ServiceInstallSection]
+DisplayName    = %VBoxGuest_svcdesc%
+ServiceType    = 0x00000001 ; kernel driver
+StartType      = 0x00000003 ; demand start
+ErrorControl   = 0x00000001 ; normal error handling
+ServiceBinary  = %12%\VBoxGuest.sys
+
+[VBoxService_Add_Reg]
+HKLM, SOFTWARE\Microsoft\Windows\CurrentVersion\Run, VBoxService, 0x00000000, %11%\VBoxService.exe
+
+[VBoxGuest_Install.CoInstallers]
+AddReg = VBoxGuest_Install_CoInstallers_reg
+CopyFiles = VBox_CoInstaller_CopyFiles
+
+[VBox_CoInstaller_CopyFiles]
+vbcoinst.dll
+
+[VBoxGuest_Install_CoInstallers_reg]
+HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
+
+[Strings]
+INNOTEK_MFG = "InnoTek Systemberatung GmbH"
+INNOTEK = "InnoTek Systemberatung GmbH"
+VBoxGuest.DeviceDesc = "VirtualBox Device"
+VBoxGuest_svcdesc = "VirtualBox Guest Driver"
+VBoxService_svcdesc = "VirtualBox Guest Service"

@@ -1,0 +1,35 @@
+HKCR
+{
+    NoRemove AppID
+    {
+        {819B4D85-9CEE-493C-B6FC-64FFE759B3C9} = s 'VirtualBox'
+        'VBoxC.DLL'
+        {
+            val AppID = s '{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}'
+        }
+    }
+
+    VirtualBox.Session.1 = s 'Session Class'
+    {
+        CLSID = s '{3C02F46D-C9D2-4f11-A384-53F0CF917214}'
+    }
+    VirtualBox.Session = s 'Session Class'
+    {
+        CLSID = s '{3C02F46D-C9D2-4f11-A384-53F0CF917214}'
+        CurVer = s 'VirtualBox.Session.1'
+    }
+    NoRemove CLSID
+    {
+        ForceRemove {3C02F46D-C9D2-4f11-A384-53F0CF917214} = s 'Session Class'
+        {
+            ProgId = s 'VirtualBox.Session.1'
+            VersionIndependentProgID = s 'VirtualBox.Session'
+            InprocServer32 = s '%MODULE%'
+            {
+                val ThreadingModel = s 'Free'
+            }
+            val AppId = s '{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}'
+            'TypeLib' = s '{46137EEC-703B-4fe5-AFD4-7C9BBBBA0259}'
+        }
+    }
+}

@@ -1,0 +1,702 @@
+/** @file
+ *
+ * VMM - Host Context Ring 0.
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#define LOG_GROUP LOG_GROUP_VMM
+#ifdef __AMD64__ /** @todo fix logging on __AMD64__ (swapgs) */
+# define LOG_DISABLED
+#endif
+#include <VBox/vmm.h>
+#include <VBox/sup.h>
+#include <VBox/trpm.h>
+#include <VBox/cpum.h>
+#include <VBox/stam.h>
+#include <VBox/tm.h>
+#include "VMMInternal.h"
+#include <VBox/vm.h>
+#include <VBox/intnet.h>
+#include <VBox/hwaccm.h>
+
+#include <VBox/err.h>
+#include <VBox/version.h>
+#include <VBox/log.h>
+#include <iprt/assert.h>
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int VMMR0Init(PVM pVM, unsigned uVersion);
+static int VMMR0Term(PVM pVM);
+__BEGIN_DECLS
+VMMR0DECL(int) ModuleInit(void);
+VMMR0DECL(void) ModuleTerm(void);
+__END_DECLS
+
+
+//#define DEBUG_NO_RING0_ASSERTIONS
+#ifdef DEBUG_NO_RING0_ASSERTIONS
+static PVM g_pVMAssert = 0;
+#endif
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifndef __AMD64__ /* doesn't link here */
+/** Pointer to the internal networking service instance. */
+PINTNET    g_pIntNet = 0;
+#endif
+
+
+/**
+ * Initialize the module.
+ * This is called when we're first loaded.
+ *
+ * @returns 0 on success.
+ * @returns VBox status on failure.
+ */
+VMMR0DECL(int) ModuleInit(void)
+{
+#ifndef __AMD64__ /* doesn't link here */
+    LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
+    g_pIntNet = NULL;
+    LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
+    int rc = INTNETR0Create(&g_pIntNet);
+    if (VBOX_SUCCESS(rc))
+    {
+        LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
+        return 0;
+    }
+    g_pIntNet = NULL;
+    LogFlow(("ModuleTerm: returns %Vrc\n", rc));
+    return rc;
+#else
+    return 0;
+#endif
+}
+
+
+/**
+ * Terminate the module.
+ * This is called when we're finally unloaded.
+ */
+VMMR0DECL(void) ModuleTerm(void)
+{
+#ifndef __AMD64__ /* doesn't link here */
+    LogFlow(("ModuleTerm:\n"));
+    if (g_pIntNet)
+    {
+        INTNETR0Destroy(g_pIntNet);
+        g_pIntNet = NULL;
+    }
+    LogFlow(("ModuleTerm: returns\n"));
+#endif
+}
+
+
+/**
+ * Initaties the R0 driver for a particular VM instance.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM instance in question.
+ * @param   uVersion    The minimum module version required.
+ */
+static int VMMR0Init(PVM pVM, unsigned uVersion)
+{
+    /*
+     * Check if compatible version.
+     */
+    if (    uVersion != VBOX_VERSION
+        &&  (   VBOX_GET_VERSION_MAJOR(uVersion) != VBOX_VERSION_MAJOR
+             || VBOX_GET_VERSION_MINOR(uVersion) < VBOX_VERSION_MINOR))
+        return VERR_VERSION_MISMATCH;
+
+    /*
+     * Register the EMT R0 logger instance.
+     */
+    PVMMR0LOGGER pR0Logger = pVM->vmm.s.pR0Logger;
+    if (pR0Logger)
+    {
+#if 0 /* testing of the logger. */
+        LogCom(("VMMR0Init: before %p\n", RTLogDefaultInstance()));
+        LogCom(("VMMR0Init: pfnFlush=%p actual=%p\n", pR0Logger->Logger.pfnFlush, vmmR0LoggerFlush));
+        LogCom(("VMMR0Init: pfnLogger=%p actual=%p\n", pR0Logger->Logger.pfnLogger, vmmR0LoggerWrapper));
+        LogCom(("VMMR0Init: offScratch=%d fFlags=%#x fDestFlags=%#x\n", pR0Logger->Logger.offScratch, pR0Logger->Logger.fFlags, pR0Logger->Logger.fDestFlags));
+
+        RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
+        LogCom(("VMMR0Init: after %p reg\n", RTLogDefaultInstance()));
+        RTLogSetDefaultInstanceThread(NULL, 0);
+        LogCom(("VMMR0Init: after %p dereg\n", RTLogDefaultInstance()));
+
+        pR0Logger->Logger.pfnLogger("hello ring-0 logger\n");
+        LogCom(("VMMR0Init: returned succesfully from direct logger call.\n"));
+        pR0Logger->Logger.pfnFlush(&pR0Logger->Logger);
+        LogCom(("VMMR0Init: returned succesfully from direct flush call.\n"));
+
+        RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
+        LogCom(("VMMR0Init: after %p reg2\n", RTLogDefaultInstance()));
+        pR0Logger->Logger.pfnLogger("hello ring-0 logger\n");
+        LogCom(("VMMR0Init: returned succesfully from direct logger call (2). offScratch=%d\n", pR0Logger->Logger.offScratch));
+        RTLogSetDefaultInstanceThread(NULL, 0);
+        LogCom(("VMMR0Init: after %p dereg2\n", RTLogDefaultInstance()));
+
+        RTLogLoggerEx(&pR0Logger->Logger, 0, ~0U, "hello ring-0 logger (RTLogLoggerEx)\n");
+        LogCom(("VMMR0Init: RTLogLoggerEx returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
+#endif
+        RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
+    }
+
+
+    /*
+     * Init VMXM.
+     */
+    HWACCMR0Init(pVM);
+
+    /*
+     * Init CPUM.
+     */
+    int rc = CPUMR0Init(pVM);
+
+    if (RT_FAILURE(rc))
+        RTLogSetDefaultInstanceThread(NULL, 0);
+    return rc;
+}
+
+
+/**
+ * Terminates the R0 driver for a particular VM instance.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM instance in question.
+ */
+static int VMMR0Term(PVM pVM)
+{
+    /*
+     * Deregister the logger.
+     */
+    RTLogSetDefaultInstanceThread(NULL, 0);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Calls the ring-3 host code.
+ *
+ * @returns VBox status code of the ring-3 call.
+ * @param   pVM             The VM handle.
+ * @param   enmOperation    The operation.
+ * @param   uArg            The argument to the operation.
+ */
+VMMR0DECL(int) VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
+{
+/** @todo profile this! */
+    pVM->vmm.s.enmCallHostOperation = enmOperation;
+    pVM->vmm.s.u64CallHostArg = uArg;
+    pVM->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
+    int rc = vmmR0CallHostLongJmp(&pVM->vmm.s.CallHostR0JmpBuf, VINF_VMM_CALL_HOST);
+    if (rc == VINF_SUCCESS)
+        rc = pVM->vmm.s.rcCallHost;
+    return rc;
+}
+
+
+#ifdef VBOX_WITH_STATISTICS
+/**
+ * Record return code statistics
+ * @param   pVM         The VM handle.
+ * @param   rc          The status code.
+ */
+static void vmmR0RecordRC(PVM pVM, int rc)
+{
+    /*
+     * Collect statistics.
+     */
+    switch (rc)
+    {
+        case VINF_SUCCESS:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetNormal);
+            break;
+        case VINF_EM_RAW_INTERRUPT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetInterrupt);
+            break;
+        case VINF_EM_RAW_INTERRUPT_HYPER:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetInterruptHyper);
+            break;
+        case VINF_EM_RAW_GUEST_TRAP:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetGuestTrap);
+            break;
+        case VINF_EM_RAW_RING_SWITCH:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRingSwitch);
+            break;
+        case VINF_EM_RAW_RING_SWITCH_INT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRingSwitchInt);
+            break;
+        case VINF_EM_RAW_EXCEPTION_PRIVILEGED:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetExceptionPrivilege);
+            break;
+        case VINF_EM_RAW_STALE_SELECTOR:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetStaleSelector);
+            break;
+        case VINF_EM_RAW_IRET_TRAP:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIRETTrap);
+            break;
+        case VINF_IOM_HC_IOPORT_READ:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIORead);
+            break;
+        case VINF_IOM_HC_IOPORT_WRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIOWrite);
+            break;
+        case VINF_IOM_HC_IOPORT_READWRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIOReadWrite);
+            break;
+        case VINF_IOM_HC_MMIO_READ:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIORead);
+            break;
+        case VINF_IOM_HC_MMIO_WRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOWrite);
+            break;
+        case VINF_IOM_HC_MMIO_READ_WRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOReadWrite);
+            break;
+        case VINF_PATM_HC_MMIO_PATCH_READ:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOPatchRead);
+            break;
+        case VINF_PATM_HC_MMIO_PATCH_WRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOPatchWrite);
+            break;
+        case VINF_EM_RAW_EMULATE_INSTR:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetEmulate);
+            break;
+        case VINF_PATCH_EMULATE_INSTR:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchEmulate);
+            break;
+        case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetLDTFault);
+            break;
+        case VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetGDTFault);
+            break;
+        case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIDTFault);
+            break;
+        case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetTSSFault);
+            break;
+        case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDFault);
+            break;
+        case VINF_CSAM_PENDING_ACTION:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetCSAMTask);
+            break;
+        case VINF_PGM_SYNC_CR3:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetSyncCR3);
+            break;
+        case VINF_PATM_PATCH_INT3:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchInt3);
+            break;
+        case VINF_PATM_PATCH_TRAP_PF:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchPF);
+            break;
+        case VINF_PATM_PATCH_TRAP_GP:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchGP);
+            break;
+        case VERR_REM_FLUSHED_PAGES_OVERFLOW:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPageOverflow);
+            break;
+        case VINF_EM_RESCHEDULE_REM:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRescheduleREM);
+            break;
+        case VINF_EM_RAW_TO_R3:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetToR3);
+            break;
+        case VINF_EM_RAW_TIMER_PENDING:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetTimerPending);
+            break;
+        case VINF_EM_RAW_INTERRUPT_PENDING:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetInterruptPending);
+            break;
+        case VINF_VMM_CALL_HOST:
+            switch (pVM->vmm.s.enmCallHostOperation)
+            {
+            case VMMCALLHOST_PDM_LOCK:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMLock);
+                break;
+            case VMMCALLHOST_PDM_QUEUE_FLUSH:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMQueueFlush);
+                break;
+            case VMMCALLHOST_PGM_POOL_GROW:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMPoolGrow);
+                break;
+            case VMMCALLHOST_PGM_LOCK:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMLock);
+                break;
+            case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRemReplay);
+                break;
+            case VMMCALLHOST_PGM_RAM_GROW_RANGE:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMGrowRAM);
+                break;
+            case VMMCALLHOST_VMM_LOGGER_FLUSH:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetLogFlush);
+                break;
+            case VMMCALLHOST_VM_SET_ERROR:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetVMSetError);
+                break;
+            default:
+                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetCallHost);
+                break;
+            }
+            break;
+        case VINF_PATM_DUPLICATE_FUNCTION:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPATMDuplicateFn);
+            break;
+        case VINF_PGM_CHANGE_MODE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMChangeMode);
+            break;
+        case VINF_EM_RAW_EMULATE_INSTR_HLT:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetEmulHlt);
+            break;
+        case VINF_EM_PENDING_REQUEST:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPendingRequest);
+            break;
+        default:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMisc);
+            break;
+    }
+}
+#endif /* VBOX_WITH_STATISTICS */
+
+
+/**
+ * The Ring 0 entry point, called by the support library (SUP).
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   uOperation  Which operation to execute. (VMMR0OPERATION)
+ * @param   pvArg       Argument to the operation.
+ */
+VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, void *pvArg)
+{
+    switch (uOperation)
+    {
+        /*
+         * Switch to GC.
+         * These calls return whatever the GC returns.
+         */
+        case VMMR0_DO_RUN_GC:
+        {
+            /* Safety precaution as VMX disables the switcher. */
+            Assert(!pVM->vmm.s.fSwitcherDisabled);
+            if (pVM->vmm.s.fSwitcherDisabled)
+                return VERR_NOT_SUPPORTED;
+
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+            register int rc;
+            TMCpuTickResume(pVM);
+            pVM->vmm.s.iLastGCRc = rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            TMCpuTickPause(pVM);
+
+#ifdef VBOX_WITH_STATISTICS
+            vmmR0RecordRC(pVM, rc);
+#endif
+
+            /*
+             * Check if there is an exit R0 action associated with the return code.
+             */
+            switch (rc)
+            {
+                /*
+                 * Default - no action, just return.
+                 */
+                default:
+                    return rc;
+
+                /*
+                 * We'll let TRPM change the stack frame so our return is different.
+                 * Just keep in mind that after the call, things have changed!
+                 */
+                case VINF_EM_RAW_INTERRUPT:
+                case VINF_EM_RAW_INTERRUPT_HYPER:
+                    TRPMR0SetupInterruptDispatcherFrame(pVM, (char*)&pVM - sizeof(pVM));
+                    return rc;
+            }
+            /* Won't get here! */
+            break;
+        }
+
+        /*
+         * Run guest code using the available hardware acceleration technology.
+         */
+        case VMMR0_HWACC_RUN_GUEST:
+        {
+            int rc;
+
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+            TMCpuTickResume(pVM);
+            rc = HWACCMR0Enable(pVM);
+            if (VBOX_SUCCESS(rc))
+            {
+#ifdef DEBUG_NO_RING0_ASSERTIONS
+                g_pVMAssert = pVM;
+#endif
+                rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM); /* this may resume code. */
+#ifdef DEBUG_NO_RING0_ASSERTIONS
+                g_pVMAssert = 0;
+#endif
+                int rc2 = HWACCMR0Disable(pVM);
+                AssertRC(rc2);
+            }
+            TMCpuTickPause(pVM);
+            pVM->vmm.s.iLastGCRc = rc;
+
+#ifdef VBOX_WITH_STATISTICS
+            vmmR0RecordRC(pVM, rc);
+#endif
+            /* No special action required for external interrupts, just return. */
+            return rc;
+        }
+
+        /*
+         * Initialize the R0 part of a VM instance.
+         */
+        case VMMR0_DO_VMMR0_INIT:
+            return VMMR0Init(pVM, (unsigned)(uintptr_t)pvArg);
+
+        /*
+         * Terminate the R0 part of a VM instance.
+         */
+        case VMMR0_DO_VMMR0_TERM:
+            return VMMR0Term(pVM);
+
+        /*
+         * Setup the hardware accelerated raw-mode session.
+         */
+        case VMMR0_HWACC_SETUP_VM:
+            return HWACCMR0SetupVMX(pVM);
+
+        /*
+         * Switch to GC to execute Hypervisor function.
+         */
+        case VMMR0_DO_CALL_HYPERVISOR:
+        {
+            /* Safety precaution as VMX disables the switcher. */
+            Assert(!pVM->vmm.s.fSwitcherDisabled);
+            if (pVM->vmm.s.fSwitcherDisabled)
+                return VERR_NOT_SUPPORTED;
+
+            int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            return rc;
+        }
+
+#if !defined(__L4__) && !defined(__AMD64__) /** @todo Port this to L4. */ /** @todo fix logging and other services problems on AMD64. */
+        /*
+         * Services.
+         */
+        case VMMR0_DO_INTNET_OPEN:
+        case VMMR0_DO_INTNET_IF_CLOSE:
+        case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
+        case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
+        case VMMR0_DO_INTNET_IF_SEND:
+        case VMMR0_DO_INTNET_IF_WAIT:
+        {
+            /*
+             * Validate arguments a bit first.
+             */
+            if (!VALID_PTR(pvArg))
+                return VERR_INVALID_POINTER;
+            if (!VALID_PTR(pVM))
+                return VERR_INVALID_POINTER;
+            if (pVM->pVMHC != pVM)
+                return VERR_INVALID_POINTER;
+            if (!VALID_PTR(pVM->pSession))
+                return VERR_INVALID_POINTER;
+            if (!g_pIntNet)
+                return VERR_FILE_NOT_FOUND; ///@todo fix this status code!
+
+            /*
+             * Unpack the arguments and call the service.
+             */
+            switch (uOperation)
+            {
+                case VMMR0_DO_INTNET_OPEN:
+                {
+                    PINTNETOPENARGS pArgs = (PINTNETOPENARGS)pvArg;
+                    return INTNETR0Open(g_pIntNet, pVM->pSession, &pArgs->szNetwork[0], pArgs->cbSend, pArgs->cbRecv, &pArgs->hIf);
+                }
+
+                case VMMR0_DO_INTNET_IF_CLOSE:
+                {
+                    PINTNETIFCLOSEARGS pArgs = (PINTNETIFCLOSEARGS)pvArg;
+                    return INTNETR0IfClose(g_pIntNet, pArgs->hIf);
+                }
+
+                case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
+                {
+                    PINTNETIFGETRING3BUFFERARGS pArgs = (PINTNETIFGETRING3BUFFERARGS)pvArg;
+                    return INTNETR0IfGetRing3Buffer(g_pIntNet, pArgs->hIf, &pArgs->pRing3Buf);
+                }
+
+                case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
+                {
+                    PINTNETIFSETPROMISCUOUSMODEARGS pArgs = (PINTNETIFSETPROMISCUOUSMODEARGS)pvArg;
+                    return INTNETR0IfSetPromiscuousMode(g_pIntNet, pArgs->hIf, pArgs->fPromiscuous);
+                }
+
+                case VMMR0_DO_INTNET_IF_SEND:
+                {
+                    PINTNETIFSENDARGS pArgs = (PINTNETIFSENDARGS)pvArg;
+                    return INTNETR0IfSend(g_pIntNet, pArgs->hIf, pArgs->pvFrame, pArgs->cbFrame);
+                }
+
+                case VMMR0_DO_INTNET_IF_WAIT:
+                {
+                    PINTNETIFWAITARGS pArgs = (PINTNETIFWAITARGS)pvArg;
+                    return INTNETR0IfWait(g_pIntNet, pArgs->hIf, pArgs->cMillies);
+                }
+
+                default:
+                    return VERR_NOT_SUPPORTED;
+            }
+        }
+#endif /* !__L4__ */
+
+#ifdef DEBUG
+        /*
+         * For testing purposes only.
+         */
+        case 0xdeadbeef:
+        {
+            LogCom(("VMMR0Entry: !debug testing! 0xdeadbeef!\n"));
+            #if 0
+            void *pv;
+            void *pvPhys;
+
+            /* alloc cont memory */
+            int rc = SUPR0ContAlloc(pVM->pSession, 0x1fff, &pv, &pvPhys);
+            LogCom(("VMMR0Entry: ContAlloc: rc=%d pv=%p pvPhys=%p\n", rc, pv, pvPhys));
+            if (!VBOX_SUCCESS(rc))
+               return rc;
+            /* touch */
+            ((char*)pv)[0x1000] = ((char*)pv)[0] = 'f';
+            /* free */
+            rc = SUPR0ContFree(pVM->pSession, pv);
+            LogCom(("VMMR0Entry: ContFree: rc=%d\n", rc));
+            if (!VBOX_SUCCESS(rc))
+                return rc;
+            #endif
+            /* successful return - consistent with release builds. */
+            return VERR_NOT_SUPPORTED;
+        }
+#endif
+
+        default:
+            /*
+             * We're returning VERR_NOT_SUPPORT here so we've got something else
+             * than -1 which the interrupt gate glue code might return.
+             */
+            Log(("operation %#x is not supported\n", uOperation));
+            return VERR_NOT_SUPPORTED;
+    }
+}
+
+
+/**
+ * Internal R0 logger worker: Flush logger.
+ *
+ * @param   pLogger     The logger instance to flush.
+ * @remark  This function must be exported!
+ */
+VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
+{
+    /*
+     * Convert the pLogger into a VM handle and 'call' back to Ring-3.
+     * (This is a bit paranoid code.)
+     */
+    PVMMR0LOGGER pR0Logger = (PVMMR0LOGGER)((uintptr_t)pLogger - RT_OFFSETOF(VMMR0LOGGER, Logger));
+    if (    !VALID_PTR(pR0Logger)
+        ||  !VALID_PTR(pR0Logger + 1)
+        ||  !VALID_PTR(pLogger)
+        ||  pLogger->u32Magic != RTLOGGER_MAGIC)
+    {
+        LogCom(("vmmR0LoggerFlush: pLogger=%p!\n", pLogger));
+        return;
+    }
+
+    PVM pVM = pR0Logger->pVM;
+    if (    !VALID_PTR(pVM)
+        ||  pVM->pVMHC != pVM)
+    {
+        LogCom(("vmmR0LoggerFlush: pVM=%p! pLogger=%p\n", pVM, pLogger));
+        return;
+    }
+
+    /*
+     * Check that the jump buffer is armed.
+     */
+    if (!pVM->vmm.s.CallHostR0JmpBuf.eip)
+    {
+        LogCom(("vmmR0LoggerFlush: Jump buffer isn't armed!\n"));
+        pLogger->offScratch = 0;
+        return;
+    }
+
+    VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
+}
+
+#ifdef DEBUG_NO_RING0_ASSERTIONS
+/**
+ * Check if we really want to hit a breakpoint.
+ * Can jump back to ring-3 when the longjmp is armed.
+ */
+DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
+{
+    if (g_pVMAssert)
+    {
+        g_pVMAssert->vmm.s.enmCallHostOperation = VMMCALLHOST_VMM_LOGGER_FLUSH;
+        g_pVMAssert->vmm.s.uCallHostArg = 0;
+        g_pVMAssert->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
+        int rc = vmmR0CallHostLongJmp(&g_pVMAssert->vmm.s.CallHostR0JmpBuf, VERR_INTERNAL_ERROR);
+        if (rc == VINF_SUCCESS)
+            rc = g_pVMAssert->vmm.s.rcCallHost;
+    }
+       
+    return true;
+}
+
+
+#undef LOG_GROUP
+#define LOG_GROUP LOG_GROUP_EM
+
+/** Runtime assert implementation for Native Win32 Ring-0. */
+DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
+{
+    Log(("\n!!Assertion Failed!!\n"
+         "Expression: %s\n"
+         "Location  : %s(%d) %s\n",
+         pszExpr, pszFile, uLine, pszFunction));
+}
+
+#endif

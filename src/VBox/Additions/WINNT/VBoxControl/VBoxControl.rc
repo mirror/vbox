@@ -1,0 +1,48 @@
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#include <windows.h>
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+VS_VERSION_INFO VERSIONINFO
+   FILEVERSION          1,0,0,0
+   PRODUCTVERSION 	1,0,0,0
+   FILEFLAGSMASK        0x3fL
+   FILEFLAGS            0x0L
+   FILEOS               0x40004L
+   FILETYPE             0x2L
+   FILESUBTYPE          0x0L
+BEGIN
+   BLOCK "StringFileInfo"
+   BEGIN
+      BLOCK "040904b0"
+      BEGIN
+         VALUE "CompanyName",      "InnoTek Systemberatung GmbH"
+         VALUE "FileDescription",  "VirtualBox Additions Utility\0"
+         VALUE "FileVersion",	     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
+         VALUE "InternalName",     "vboxcontrol\0"
+         VALUE "LegalCopyright",   "(C) 2004-2005 InnoTek Systemberatung GmbH\0"
+         VALUE "OriginalFilename", "VBoxControl.exe\0"
+         VALUE "ProductName",	     "VirtualBox Additions Utility\0"
+         VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
+      END
+   END
+   BLOCK "VarFileInfo"
+   BEGIN
+      VALUE "Translation", 0x409, 1200
+   END
+END

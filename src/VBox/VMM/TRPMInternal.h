@@ -1,0 +1,195 @@
+/** @file
+ *
+ * TRPM - Internal header file.
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#ifndef __TRPMInternal_h__
+#define __TRPMInternal_h__
+
+#include <VBox/cdefs.h>
+#include <VBox/types.h>
+#include <VBox/stam.h>
+#include <VBox/cpum.h>
+
+
+#if !defined(IN_TRPM_R3) && !defined(IN_TRPM_R0) && !defined(IN_TRPM_GC)
+# error "Not in TRPM! This is an internal header!"
+#endif
+
+/* Enable to allow trap forwarding in GC. */
+#define TRPM_FORWARD_TRAPS_IN_GC
+
+__BEGIN_DECLS
+
+
+/** @defgroup grp_trpm_int   Internals
+ * @ingroup grp_trpm
+ * @internal
+ * @{
+ */
+
+/** @name   TRPMGCTrapIn* flags.
+ * The lower bits are offsets into the CPUMCTXCORE structure.
+ * @{ */
+/** The mask for the operation. */
+#define TRPM_TRAP_IN_OP_MASK    0xffff
+/** Traps on MOV GS, eax. */
+#define TRPM_TRAP_IN_MOV_GS     1
+/** Traps on MOV FS, eax. */
+#define TRPM_TRAP_IN_MOV_FS     2
+/** Traps on MOV ES, eax. */
+#define TRPM_TRAP_IN_MOV_ES     3
+/** Traps on MOV DS, eax. */
+#define TRPM_TRAP_IN_MOV_DS     4
+/** Traps on IRET. */
+#define TRPM_TRAP_IN_IRET       5
+/** Set if this is a V86 resume. */
+#define TRPM_TRAP_IN_V86        BIT(30)
+/** If set this is a hypervisor register set. If cleared it's a guest set. */
+#define TRPM_TRAP_IN_HYPER      BIT(31)
+/** @} */
+
+
+/**
+ * Converts a TRPM pointer into a VM pointer.
+ * @returns Pointer to the VM structure the TRPM is part of.
+ * @param   pTRPM   Pointer to TRPM instance data.
+ */
+#define TRPM2VM(pTRPM)  ( (PVM)((char*)pTRPM - pTRPM->offVM) )
+
+
+/**
+ * TRPM Data (part of VM)
+ *
+ * IMPORTANT! Keep the nasm version of this struct up-to-date.
+ */
+#pragma pack(4)
+typedef struct TRPM
+{
+    /** Offset to the VM structure.
+     * See TRPM2VM(). */
+    RTINT           offVM;
+
+    /** Active Interrupt or trap vector number.
+     * If not ~0U this indicates that we're currently processing
+     * a interrupt, trap, fault, abort, whatever which have arrived
+     * at that vector number.
+     */
+    RTUINT          uActiveVector;
+
+    /** If set the active trap is a software interrupt. */
+    RTUINT          fActiveSoftwareInterrupt;
+
+    /** Errorcode for the active interrupt/trap. */
+    RTGCUINT        uActiveErrorCode;
+
+    /** CR2 at the time of the active exception. */
+    RTGCUINTPTR     uActiveCR2;
+
+    /** Saved trap vector number. */
+    RTGCUINT        uSavedVector;
+
+    /** Saved software interrupt indicator. */
+    RTUINT          fSavedSoftwareInterrupt;
+
+    /** Saved errorcode. */
+    RTGCUINT        uSavedErrorCode;
+
+    /** Saved cr2. */
+    RTGCUINTPTR     uSavedCR2;
+
+    /** Previous trap vector # - for debugging. */
+    RTGCUINT        uPrevVector;
+
+    /** IDT monitoring and sync flag */
+    RTUINT          fDisableMonitoring; /** @todo r=bird: bool and 7 byte achPadding1. */
+
+    /** Padding to get the IDTs at a 16 byte alignement. */
+    char            achPadding1[4];
+
+    /** IDTs. Aligned at 16 byte offset for speed. */
+    VBOXIDTE        aIdt[256];
+
+    /** Bitmap for IDTEs that contain PATM handlers. (needed for relocation) */
+    uint32_t        au32IdtPatched[8];
+
+    /** Bitmap for IDTEs that were changed. */
+    uint32_t        au32IdtDirty[8];
+
+    /** Temporary Hypervisor trap handlers.
+     * NULL means default action. */
+    RTGCPTR         aTmpTrapHandlers[256];
+
+    /** GC Pointer to the IDT shadow area (aIdt) placed in Hypervisor memory arena. */
+    RTGCPTR         GCPtrIdt;
+    /** Current (last) Guest's IDTR. */
+    VBOXIDTR        GuestIdtr;
+
+    /** padding. */
+    uint8_t         au8Padding[2];
+
+    /** Checked trap & interrupt handler array */
+    RTGCPTR         aGuestTrapHandler[256];
+
+    /** GC: The number of times writes to the Guest IDT were detected. */
+    STAMCOUNTER     StatGCWriteGuestIDT;
+    /** HC: Profiling of the TRPMR3SyncIDT() method. */
+    STAMPROFILE     StatSyncIDT;
+    /** GC: Statistics for the trap handlers. */
+    STAMPROFILEADV  aStatGCTraps[0x14];
+
+    STAMCOUNTER     StatForwardFailNoHandler;
+    STAMCOUNTER     StatForwardFailPatchAddr;
+    STAMCOUNTER     StatForwardFailGC;
+    STAMCOUNTER     StatForwardFailHC;
+
+    /* R3: Statistics for interrupt handlers (allocated on the hypervisor heap). */
+    R3PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR3;
+    /* R0: Statistics for interrupt handlers (allocated on the hypervisor heap). */
+    R0PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR0;
+    /* GC: Statistics for interrupt handlers (allocated on the hypervisor heap). */
+    GCPTRTYPE(PSTAMCOUNTER) paStatForwardedIRQGC;
+} TRPM;
+#pragma pack()
+
+/** Pointer to TRPM Data. */
+typedef TRPM *PTRPM;
+
+TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange);
+TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange);
+
+
+#ifdef IN_RING3
+
+#endif
+
+
+#ifdef IN_RING0
+/**
+ * Code used for the dispatching of interrupts in HC.
+ * @internal
+ */
+DECLASM(int) trpmR0InterruptDispatcher(void);
+#endif
+
+/** @} */
+
+__END_DECLS
+
+#endif

@@ -1,0 +1,114 @@
+/** @file
+ *
+ * VBoxGuestLib - A support library for VirtualBox guest additions:
+ * Internal header
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#ifndef __VBGLINTERNAL__H
+#define __VBGLINTERNAL__H
+
+#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
+#include <VBox/log.h>
+# define dprintf(a) RTLogBackdoorPrintf a
+#else
+# define dprintf(a) do {} while (0)
+#endif
+
+#include "PhysHeap.h"
+#include "SysHlp.h"
+
+#pragma pack(4)
+
+struct _VBGLPHYSHEAPBLOCK;
+typedef struct _VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
+struct _VBGLPHYSHEAPCHUNK;
+typedef struct _VBGLPHYSHEAPCHUNK VBGLPHYSHEAPCHUNK;
+
+#ifndef VBGL_VBOXGUEST
+struct VBGLHGCMHANDLEDATA
+{
+    uint32_t fAllocated;
+    VBGLDRIVER driver;
+};
+
+typedef struct VBGLHGCMHANDLEDATA *VBGLHGCMHANDLE;
+#endif
+
+enum VbglLibStatus
+{
+    VbglStatusNotInitialized = 0,
+    VbglStatusInitializing,
+    VbglStatusReady
+};
+
+typedef struct _VBGLDATA
+{
+    VbglLibStatus status;
+
+    VBGLIOPORT portVMMDev;
+
+    VMMDevMemory *pVMMDevMemory;
+
+    /**
+     * Physical memory heap data.
+     * @{
+     */
+
+    VBGLPHYSHEAPBLOCK *pFreeBlocksHead;
+    VBGLPHYSHEAPBLOCK *pAllocBlocksHead;
+    VBGLPHYSHEAPCHUNK *pChunkHead;
+
+    RTSEMFASTMUTEX mutexHeap;
+    /** @} */
+
+#ifndef VBGL_VBOXGUEST
+    /**
+     * Fast heap for HGCM handles data.
+     * @{
+     */
+
+    RTSEMFASTMUTEX mutexHGCMHandle;
+
+    struct VBGLHGCMHANDLEDATA aHGCMHandleData[64];
+
+    /** @} */
+#endif
+} VBGLDATA;
+
+#pragma pack()
+
+#ifndef VBGL_DECL_DATA
+extern VBGLDATA g_vbgldata;
+#endif
+
+/* Check if library has been initialized before entering
+ * a public library function.
+ */
+int VbglEnter (void);
+
+#ifdef VBOX_HGCM
+#ifndef VBGL_VBOXGUEST
+/* Initialize HGCM subsystem. */
+int vbglHGCMInit (void);
+/* Terminate HGCM subsystem. */
+int vbglHGCMTerminate (void);
+#endif
+#endif
+
+#endif /* __VBGLINTERNAL__H */

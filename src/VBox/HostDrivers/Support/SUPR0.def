@@ -1,0 +1,71 @@
+;
+; VBox host drivers - Ring-0 support drivers - Shared code
+;
+; Export definitions
+;
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+;
+
+LIBRARY SUPR0
+
+EXPORTS
+    SUPR0ObjRegister
+    SUPR0ObjAddRef
+    SUPR0ObjRelease
+    SUPR0ObjVerifyAccess
+    SUPR0LockMem
+    SUPR0UnlockMem
+    SUPR0ContAlloc
+    SUPR0ContFree
+    SUPR0MemAlloc
+    SUPR0MemGetPhys
+    SUPR0MemFree
+    SUPR0Printf
+    RTMemAlloc
+    RTMemAllocZ
+    RTMemFree
+    ; broken - RTSemMutexCreate
+    ; broken - RTSemMutexRequest
+    ; broken - RTSemMutexRelease
+    ; broken - RTSemMutexDestroy
+    RTSemFastMutexCreate
+    RTSemFastMutexDestroy
+    RTSemFastMutexRequest
+    RTSemFastMutexRelease
+    RTSemEventCreate
+    RTSemEventSignal
+    RTSemEventWait
+    RTSemEventDestroy
+    RTSpinlockCreate
+    RTSpinlockDestroy
+    RTSpinlockAcquire
+    RTSpinlockRelease
+    RTSpinlockAcquireNoInts
+    RTSpinlockReleaseNoInts
+    RTThreadSelf
+    RTThreadSleep
+    RTThreadYield
+    RTLogDefaultInstance
+    RTLogRelDefaultInstance
+    RTLogSetDefaultInstanceThread
+    RTLogLogger
+    RTLogLoggerEx
+    RTLogLoggerExV
+    AssertMsg1
+    AssertMsg2
+
+    ; data
+    g_SUPGlobalInfoPage DATA
+

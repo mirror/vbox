@@ -1,0 +1,123 @@
+/** @file
+ *
+ * InnoTek Portable Runtime - Parameter Definitions.
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#ifndef __iprt_param_h__
+#define __iprt_param_h__
+
+/** @todo Much of the PAGE_* stuff here is obsolete and highly risky to have around.
+ * As for component configs (MM_*), either we gather all in here or we move those bits away! */
+
+/** @defgroup   grp_rt_param    System Parameter Definitions
+ * @ingroup grp_rt_cdefs
+ * @{
+ */
+
+/**
+ * i386 Page size.
+ */
+#define PAGE_SIZE           4096
+
+/**
+ * i386 Page shift.
+ * This is used to convert between size (in bytes) and page count.
+ */
+#define PAGE_SHIFT          12
+
+/**
+ * i386 Page offset mask.
+ *
+ * Do NOT one-complement this for whatever purpose. You may get a 32-bit const when you want a 64-bit one.
+ * Use PAGE_BASE_MASK, PAGE_BASE_GC_MASK, PAGE_BASE_HC_MASK, PAGE_ADDRESS() or X86_PTE_PAE_PG_MASK.
+ */
+#define PAGE_OFFSET_MASK    0xfff
+
+/**
+ * Page address mask for the guest context POINTERS.
+ * @remark  Physical addresses are always masked using X86_PTE_PAE_PG_MASK!
+ */
+#define PAGE_BASE_GC_MASK   (~(RTGCUINTPTR)0xfff)
+
+/**
+ * Page address mask for the host context POINTERS.
+ * @remark  Physical addresses are always masked using X86_PTE_PAE_PG_MASK!
+ */
+#define PAGE_BASE_HC_MASK   (~(RTHCUINTPTR)0xfff)
+
+/**
+ * Page address mask for the both context POINTERS.
+ *
+ * Be careful when using this since it may be a size too big!
+ * @remark  Physical addresses are always masked using X86_PTE_PAE_PG_MASK!
+ */
+#define PAGE_BASE_MASK     (~(RTUINTPTR)0xfff)
+
+/**
+ * Get the page aligned address of a POINTER in the CURRENT context.
+ *
+ * @returns Page aligned address (it's an uintptr_t).
+ * @param   pv      The address to align.
+ *
+ * @remark  Physical addresses are always masked using X86_PTE_PAE_PG_MASK!
+ */
+#define PAGE_ADDRESS(pv)    ((uintptr_t)(pv) & ~(uintptr_t)0xfff)
+
+#if 1 /** @todo remove this! Use X86_PAGE_* defines. */
+/**
+ * i386 Page directory shift.
+ * This is used to convert between PDR index and virtual address.
+ * @deprecated Use X86_*.
+ */
+#define PGDIR_SHIFT         22
+
+/**
+ * i386 Page table mask.
+ * This is used together with PAGE_SHIFT to get the page table
+ * index from a virtual address.
+ * @deprecated Use X86_*.
+ */
+#define PTE_MASK            0x3ff
+
+/**
+ * i386 Page table and page directory entry count for the default
+ * paging mode.
+ * @deprecated Use X86_*.
+ */
+#define PAGE_ENTRIES        1024
+
+/**
+ * i386 4MB Page offset mask.
+ * @deprecated Use X86_*.
+ */
+#define PAGE_OFFSET_MASK_BIG    0x3fffff
+#endif /* obsolete */
+
+/**
+ * Host max path (the reasonable value).
+ */
+#define RTPATH_MAX   (4096 + 4)      /* (PATH_MAX + 1) on linux w/ some alignment */
+
+/** @} */
+
+
+/** @} */
+
+#endif
+

@@ -1,0 +1,373 @@
+## @file
+#
+# !GNU MAKE!
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+
+DEPTH = ../..
+include $(PATH_KBUILD)/header.kmk
+
+# todo this is a BUILD_PLATFORM binary, to a target binary!
+ifeq ($(filter darwin,$(BUILD_TARGET)),)
+ ifeq ($(VBOX_USING_GCC4),)
+  BLDPROGS            = dyngen
+ endif
+ DLLS                 = VBoxREM
+ ifeq ($(BUILD_TARGET_ARCH),amd64)
+  SYSMODS             = VBoxREM2
+  REM_MOD             = VBoxREM2
+ else
+  REM_MOD             = VBoxREM
+ endif
+endif # !darwin
+IMPORT_LIBS           = VBoxREMImp
+GPLEXPORTS            = qemu-source-drop
+
+OTHER_CLEAN           = \
+	$(PATH_$(REM_MOD))/op.h \
+	$(PATH_$(REM_MOD))/opc.h \
+	$(PATH_$(REM_MOD))/gen-op.h \
+	$(PATH_$(REM_MOD))/opc.h \
+	$(PATH_TARGET)/VBoxREMImp.c
+
+#DEFS += DEBUG_DISAS
+
+# private hack for gcc 4.1
+ifeq ($(USERNAME).$(BUILD_TARGET),bird.linux)
+ TOOL_GCC3_CC = gcc-3.4.6
+ override VBOX_GCC_Wno-variadic-macros=
+ override VBOX_USING_GCC4=
+endif
+
+ifeq ($(BUILD_PLATFORM),win)
+ dyngen_TOOL          = MINGW32
+ dyngen_SDKS          = W32API
+ # On 64-bit Windows we pretend to be 32-bit.
+ dyngen_BLD_TRG_ARCH  = x86
+ dyngen_BLD_TRG_CPU   = i386
+ dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing
+else
+ dyngen_TEMPLATE      = VBOXBLDPRO
+endif
+dyngen_INCS           = \
+	InnoTek \
+	target-i386 \
+	fpu \
+	$(PATH_ROOT)/ ## @todo what is $(PATH_ROOT) doing here?
+dyngen_SOURCES        = dyngen.c
+
+
+#
+# The VBoxREM or VBoxREM2 DLL/SO.
+#
+$(REM_MOD)_TOOL          = GCC3
+$(REM_MOD)_TOOL.win.x86  = MINGW32
+$(REM_MOD)_TOOL.win.amd64= XGCCAMD64LINUX
+$(REM_MOD)_SDKS.win.x86  = W32API  							## @todo do we really need this now?
+$(REM_MOD)_ASFLAGS       = -x assembler-with-cpp 			## @todo didn't I make this default already?
+$(REM_MOD)_SYSSUFF       = .rel                             # amd64
+
+$(REM_MOD)_CFLAGS        = -Wall -g
+ifdef ($(BUILD_TARGET),win64) # with -O1 and higher, it generates incorrect code for double and long double constants. ## @todo didn't I fix this yet?
+ REMNoCRT_CFLAGS.release  = -O0
+ $(REM_MOD)_CFLAGS.amd64  = -mcmodel=medium -fno-common -O0 -fno-strict-aliasing -fno-math-errno -fno-peephole2
+else
+$(REM_MOD)_CFLAGS.amd64  = -mcmodel=medium -fno-common -O2 -fno-strict-aliasing
+endif
+$(REM_MOD)_CFLAGS.debug  = -O0
+ifdef ($(BUILD_TARGET_ARCH),x86)
+$(REM_MOD)_CFLAGS.release += -fomit-frame-pointer -fno-gcse
+endif
+$(REM_MOD)_CFLAGS.profile = $($(REM_MOD)_CFLAGS.release)
+$(REM_MOD)_CFLAGS.kprofile = $($(REM_MOD)_CFLAGS.release)
+$(REM_MOD)_CFLAGS.l4     = -nostdinc
+$(REM_MOD)_INCS          = \
+	InnoTek \
+	InnoTek/crt \
+	target-i386 \
+	fpu \
+	$(PATH_$(REM_MOD)) \
+	$(PATH_ROOT)/src/VBox/VMM
+ifeq ($(BUILD_TARGET),l4)
+$(REM_MOD)_INCS         += $(VBOX_L4_GCC3_INCS) $(L4_INCDIR)
+endif
+$(REM_MOD)_DEFS          = IN_RING3 IN_REM_R3 REM_INCLUDE_CPU_H #LOG_USE_C99
+#$(REM_MOD)_DEFS          += DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
+# these defines are probably all irrelevant now:
+$(REM_MOD)_DEFS         += _GNU_SOURCE _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _REENTRANT
+ifeq ($(VBOX_USING_GCC4),)
+ $(REM_MOD)_SOURCES      = \
+	VBoxRecompiler.c \
+	cpu-exec.c \
+	exec.c \
+	translate-all.c \
+	target-i386/helper.c \
+	target-i386/helper2.c \
+	target-i386/translate.c
+#	translate-op.c \
+#	fpu/softfloat-native.c \
+#	InnoTek/testmath.c
+
+# ***hacking***
+# ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+  $(REM_MOD)_SOURCES    += target-i386/op.c
+  FILE_OP_OBJ            = $(PATH_$(REM_MOD)_target-i386/op.c)/op.o
+# else # The remaining targets can be using gcc-4 and needs checking.
+#  $(REM_MOD)_SOURCES    += $(PATH_$(REM_MOD))/op.S
+#  FILE_OP_OBJ            = $(PATH_$(REM_MOD)_$(PATH_$(REM_MOD))/op.S)/op.o
+#  $(REM_MOD)_CLEAN       = $(FILE_OP_OBJ)
+# endif
+ $(REM_MOD)_SOURCES     += InnoTek/loghack.c 								# this will be obsoleted soon.
+else
+ $(REM_MOD)_SOURCES      = \
+	precompiled/VBoxRecompiler.o \
+	precompiled/cpu-exec.o \
+	precompiled/exec.o \
+	precompiled/translate-all.o \
+	precompiled/op.o \
+	precompiled/helper.o \
+	precompiled/helper2.o \
+	precompiled/translate.o \
+        precompiled/loghack.o
+ FILE_OP_OBJ             = precompiled/op.o
+endif
+$(REM_MOD)_DEFS         += fprintf=hacked_fprintf printf=hacked_printf      # ditto
+ifneq ($(BUILD_TYPE),debug)
+$(REM_MOD)_SOURCES.win.x86 = $(REM_MOD).def
+else
+$(REM_MOD)_LDFLAGS.win.x86 = --export-all-symbols --output-def $(PATH_TARGET)/$(REM_MOD)-new.def \
+	--exclude-symbols=console_main --exclude-symbols=WinMain@16
+endif
+$(REM_MOD)_SOURCES.os2   = $(PATH_TARGET)/VBoxREMOS2.def
+$(REM_MOD)_LDFLAGS.linux = -Wl,--no-undefined
+$(REM_MOD)_LDFLAGS.l4    = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib -Wl,--no-undefined
+
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+$(REM_MOD)_LIBS           = \
+	$(LIB_RUNTIME_NOCRT_GCC64) # !create this!
+#	$(VBOX_GCC_LIBGCC)  - fix this
+else # x86
+$(REM_MOD)_LIBS           = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME)
+$(REM_MOD)_LIBS.win       = \
+	mingw32 \
+	user32 gdi32 winmm ws2_32 iphlpapi dxguid
+$(REM_MOD)_LIBS.linux     = \
+	$(LIB_UUID) \
+	m \
+	util \
+	rt \
+	$(LIB_PTHREAD)
+$(REM_MOD)_LIBS.l4        = \
+	gcc \
+	$(L4_LIBDIR)/libvboxserver.s.so \
+	$(L4_LIBDIR)/libdl.s.so \
+	$(L4_LIBDIR)/libuc.0.s.so
+endif # x86
+
+# Extra flags for these source modules.
+target-i386/op.c_CFLAGS         = -O2 -fno-strict-aliasing -fomit-frame-pointer -falign-functions=0 -fno-reorder-blocks -fno-optimize-sibling-calls
+target-i386/op.c_CFLAGS.x86     = -fno-gcse -fno-instrument-functions -mpreferred-stack-boundary=2
+target-i386/helper.c_CFLAGS.x86 = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
+cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
+
+
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+#
+# The VBoxREM2 wrapper.
+#
+VBoxREM_TEMPLATE       = VBOXR3
+VBoxREM_DEFS           = IN_REM_R3
+VBoxREM_SOURCES        = \
+	VBoxREMWrapper.cpp \
+	VBoxREMWrapperA.asm
+VBoxREM_LIBS           = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME)
+endif
+
+
+#
+# The VBoxREM import library.
+#
+VBoxREMImp_TEMPLATE         = VBOXR3
+VBoxREMImp_SOURCES.win      = VBoxREM.def
+VBoxREMImp_SOURCES.os2      = $(PATH_TARGET)/VBoxREMOS2.def
+ifeq ($(filter win os2,$(BUILD_TARGET)),)
+VBoxREMImp_SOURCES          = $(PATH_TARGET)/VBoxREMImp.c
+endif
+VBoxREMImp_SONAME.linux     = VBoxREM.so
+VBoxREMImp_SONAME.l4        = VBoxREM.s.so
+VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
+VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
+
+$(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def deftoimp.sed | $(call DIRDEP,$(PATH_TARGET))
+	$(MKDIR) -p $(PATH_TARGET)
+	$(SED) -f deftoimp.sed VBoxREM.def > $@.tmp
+	$(MV) -f $@.tmp $@
+
+$(VBoxREMImp_SOURCES.os2): VBoxREM.def $(MAKEFILE) | $(call DIRDEP,$(PATH_TARGET))
+	$(SED) \
+		-e 's/^[ \t][ \t]*REMR3/    _REMR3/' \
+		-e 's/\.[Dd][Ll][Ll]//' \
+		-e 's/^LIBRARY .*/LIBRARY VBoxREM INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
+		VBoxREM.def > $@.tmp
+	$(MV) -f $@.tmp $@
+
+
+
+include $(PATH_KBUILD)/footer.kmk
+
+
+#
+# Generate the op.S file somehow...
+#
+# Gathering the flags, defines and include dirs for the command is a lot 
+# of work. Unfortunately, there is only a highly specialized kBuild function 
+# for doing this, so we're currently left to our own devices here.
+#
+
+ifndef VBOX_RECOMPILER_OP_GCC
+ ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),darwin.x86)
+  VBOX_RECOMPILER_OP_GCC ?= gcc-elf-something
+ endif
+ ifeq ($(USERNAME).$(BUILD_TARGET),bird.linux)
+  VBOX_RECOMPILER_OP_GCC ?= gcc-3.4.6
+ endif
+ VBOX_RECOMPILER_OP_GCC ?= $(TOOL_$(VBOX_GCC_TOOL)_CC)
+ VBOX_RECOMPILER_OP_GCC ?= false
+endif
+
+## @todo Check gcc version if plain gcc, gcc32 or gcc64.
+## @todo minimal dependencies.
+
+$(PATH_$(REM_MOD))/op.S: target-i386/op.c staged/op-elf-$(BUILD_TARGET_ARCH).S | $(call DIRDEP,$(PATH_$(REM_MOD)))
+	$(RM) -f $@ $@.tmp $@.tmp2
+	$(VBOX_RECOMPILER_OP_GCC) $(addsuffix $(SP)\$(NL)$(TAB),\
+		-S -s \
+		$(filter-out -g -O0, \
+			$($(REM_MOD)_CFLAGS) $($(REM_MOD)_CFLAGS.$(BUILD_TYPE)) $($(REM_MOD)_CFLAGS.$(BUILD_TARGET_ARCH)) \
+			$(target-i386/op.c_CFLAGS) $(target-i386/op.c_CFLAGS.$(BUILD_TARGET_ARCH)) \
+			) \
+		$(addprefix -I, \
+			$($(REM_MOD)_CINCS.$(BUILD_TARGET_ARCH)) $($(REM_MOD)_CINCS.$(BUILD_TARGET)) $($(REM_MOD)_CINCS) $(CINCS) \
+			$($(REM_MOD)_INCS.$(BUILD_TARGET_ARCH))  $($(REM_MOD)_INCS.$(BUILD_TARGET))  $($(REM_MOD)_INCS) $(INCS) \
+			) \
+		$(addprefix -D, \
+			$($(REM_MOD)_CDEFS.$(BUILD_TARGET_ARCH)) $($(REM_MOD)_CDEFS.$(BUILD_TARGET)) $($(REM_MOD)_CDEFS) $(CDEFS.$(BUILD_TARGET)) $(CDEFS.release) $(CDEFS) \
+			$($(REM_MOD)_DEFS.$(BUILD_TARGET_ARCH))  $($(REM_MOD)_DEFS.$(BUILD_TARGET))  $($(REM_MOD)_DEFS)  $(DEFS.$(BUILD_TARGET))  $(DEFS.release)  $(DEFS) \
+			) \
+		target-i386/op.c \
+		) -o $@.tmp \
+		|| $(CP) staged/op-elf-$(BUILD_TARGET_ARCH).S $@.tmp # @todo only do this with gcc-4.
+	$(SED) -f op-validate.sed $@.tmp || $(CP) staged/op-elf-$(BUILD_TARGET_ARCH).S $@.tmp # This isn't good enough yet.
+ifeq ($(BUILD_TARGET),darwin)
+	$(SED) -f op-darwin.sed $@.tmp > $@.tmp2
+	$(MV) -f $@.tmp2 $@.tmp
+endif
+	$(MV) -f $@.tmp $@
+	
+
+# predefined dependencies to the headers are generated.
+translate-all.c:             $(PATH_$(REM_MOD))/op.h     $(PATH_$(REM_MOD))/opc.h
+target-i386/translate.c:     $(PATH_$(REM_MOD))/gen-op.h $(PATH_$(REM_MOD))/opc.h
+
+# atm this will be build because of the direct dependency.
+DYNGEN = $(PATH_dyngen)/dyngen$(HOSTSUFF_EXE)
+DYNGEN_EXEC = $(DYNGEN)
+ifneq ($(BUILD_PLATFORM),$(BUILD_TARGET)) # hack for crosscompiling.
+ ifeq ($(BUILD_TARGET),win)
+  DYNGEN       = $(PATH_dyngen)/dyngen.exe
+  DYNGEN_EXEC := $(EXEC_X86_WIN32) $(DYNGEN_EXEC)
+ endif
+endif
+
+
+$(PATH_$(REM_MOD))/op.h:     $(FILE_OP_OBJ) $(DYNGEN)
+	$(call MSG_L1,dyngen => $@)
+	$(QUIET)$(DYNGEN_EXEC) -o $@ $<
+
+$(PATH_$(REM_MOD))/opc.h:    $(FILE_OP_OBJ) $(DYNGEN)
+	$(call MSG_L1,dyngen => $@)
+	$(QUIET)$(DYNGEN_EXEC) -c -o $@ $<
+
+$(PATH_$(REM_MOD))/gen-op.h: $(FILE_OP_OBJ) $(DYNGEN)
+	$(call MSG_L1,dyngen => $@)
+	$(QUIET)$(DYNGEN_EXEC) -g -o $@ $<
+
+importlib: $(LIB_REM)
+
+
+#
+# Phony rule for making the qemu source drop.
+# This is just an incomplete EXAMPLE. It does NOT include all we have to ship!
+#
+.PHONY: qemu-source-drop
+qemu-source-drop:
+	$(RM) -f $(PATH_BIN)/qemu-source.zip
+	zip -9 $(PATH_BIN)/qemu-source.zip \
+		target-i386/op.c \
+		target-i386/helper.c \
+		target-i386/ops_template_mem.h \
+		target-i386/ops_sse.h \
+		target-i386/helper2.c \
+		target-i386/ops_template.h \
+		target-i386/ops_mem.h \
+		target-i386/translate-copy.c \
+		target-i386/exec.h \
+		target-i386/cpu.h \
+		target-i386/opreg_template.h \
+		target-i386/translate.c \
+		\
+		a.out.h \
+		COPYING.LIB \
+		cpu-defs.h \
+		dyngen.c \
+		dyngen.h \
+		elf.h \
+		exec.c \
+		softmmu_header.h \
+		translate-all.c \
+		bswap.h \
+		cpu-all.h \
+		cpu-exec.c \
+		disas.h \
+		dyngen-exec.h \
+		dyngen-op.h \
+		exec-all.h \
+		osdep.h \
+		softmmu_template.h \
+		vl.h \
+		\
+		tests/hello-arm.c \
+		tests/hello-i386.c \
+		tests/linux-test.c \
+		tests/Makefile \
+		tests/pi_10.com \
+		tests/qruncom.c \
+		tests/runcom.c \
+		tests/sha1.c \
+		tests/test-i386.c \
+		tests/test-i386-code16.S \
+		tests/test-i386.h \
+		tests/test-i386-muldiv.h \
+		tests/test-i386-shift.h \
+		tests/test-i386-vm86.S \
+		tests/test_path.c \
+		tests/testthread.c
+

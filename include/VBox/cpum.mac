@@ -1,0 +1,171 @@
+;; @file
+;
+; CPUM - CPU Monitor.
+;
+
+;
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+
+%ifndef __VBox_cpum_mac__
+%define __VBox_cpum_mac__
+
+
+;;
+; Registers frame.
+; This is used internally in TRPM, VMMSwitcher_GuestToHost_GuestCtx
+; and other places.
+struc CPUMCTXCORE
+    .edi            resd    1
+    .esi            resd    1
+    .ebp            resd    1
+    .eax            resd    1
+    .ebx            resd    1
+    .edx            resd    1
+    .ecx            resd    1
+    .esp            resd    1
+    .ss             resw    1
+    .ssPadding      resw    1
+    .gs             resw    1
+    .gsPadding      resw    1
+    .fs             resw    1
+    .fsPadding      resw    1
+    .es             resw    1
+    .esPadding      resw    1
+    .ds             resw    1
+    .dsPadding      resw    1
+    .cs             resw    1
+    .csPadding      resw    1
+    .eflags         resd    1
+    .eip            resd    1
+
+    .esHid.u32Base      resd    1
+    .esHid.u32Limit     resd    1
+    .esHid.Attr         resd    1
+
+    .csHid.u32Base      resd    1
+    .csHid.u32Limit     resd    1
+    .csHid.Attr         resd    1
+
+    .ssHid.u32Base      resd    1
+    .ssHid.u32Limit     resd    1
+    .ssHid.Attr         resd    1
+
+    .dsHid.u32Base      resd    1
+    .dsHid.u32Limit     resd    1
+    .dsHid.Attr         resd    1
+
+    .fsHid.u32Base      resd    1
+    .fsHid.u32Limit     resd    1
+    .fsHid.Attr         resd    1
+
+    .gsHid.u32Base      resd    1
+    .gsHid.u32Limit     resd    1
+    .gsHid.Attr         resd    1
+
+endstruc
+
+
+struc CPUMCTX
+    .fpu            resb    512
+
+    .edi            resd    1
+    .esi            resd    1
+    .ebp            resd    1
+    .eax            resd    1
+    .ebx            resd    1
+    .edx            resd    1
+    .ecx            resd    1
+    .esp            resd    1
+    .ss             resw    1
+    .ssPadding      resw    1
+    .gs             resw    1
+    .gsPadding      resw    1
+    .fs             resw    1
+    .fsPadding      resw    1
+    .es             resw    1
+    .esPadding      resw    1
+    .ds             resw    1
+    .dsPadding      resw    1
+    .cs             resw    1
+    .csPadding      resw    1
+    .eflags         resd    1
+    .eip            resd    1
+    .esHid.u32Base      resd    1
+    .esHid.u32Limit     resd    1
+    .esHid.Attr         resd    1
+
+    .csHid.u32Base      resd    1
+    .csHid.u32Limit     resd    1
+    .csHid.Attr         resd    1
+
+    .ssHid.u32Base      resd    1
+    .ssHid.u32Limit     resd    1
+    .ssHid.Attr         resd    1
+
+    .dsHid.u32Base      resd    1
+    .dsHid.u32Limit     resd    1
+    .dsHid.Attr         resd    1
+
+    .fsHid.u32Base      resd    1
+    .fsHid.u32Limit     resd    1
+    .fsHid.Attr         resd    1
+
+    .gsHid.u32Base      resd    1
+    .gsHid.u32Limit     resd    1
+    .gsHid.Attr         resd    1
+
+
+    .cr0            resd    1
+    .cr2            resd    1
+    .cr3            resd    1
+    .cr4            resd    1
+
+    .dr0            resd    1
+    .dr1            resd    1
+    .dr2            resd    1
+    .dr3            resd    1
+    .dr4            resd    1
+    .dr5            resd    1
+    .dr6            resd    1
+    .dr7            resd    1
+
+    .gdtr           resb    6           ; GDT limit + linear address
+    .gdtrPadding    resw    1
+    .gdtrPadding64  resd    1
+    .idtr           resb    6           ; IDT limit + linear address
+    .idtrPadding    resw    1
+    .idtrPadding64  resd    1
+    .ldtr           resw    1
+    .ldtrPadding    resw    1
+    .tr             resw    1
+    .trPadding      resw    1
+
+    .SysEnter.cs    resb    8
+    .SysEnter.eip   resb    8
+    .SysEnter.esp   resb    8
+
+    .ldtrHid.u32Base    resd    1
+    .ldtrHid.u32Limit   resd    1
+    .ldtrHid.Attr       resd    1
+
+    .trHid.u32Base      resd    1
+    .trHid.u32Limit     resd    1
+    .trHid.Attr         resd    1
+
+    ; padding
+    .padding            resd    6
+endstruc
+
+%endif

@@ -1,0 +1,45 @@
+#
+# Makefile for the VirtualBox Windows Guest Mirror Graphics driver.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+SYSMODS = vrdpdd
+
+vrdpdd_TEMPLATE    = VBOXW32GUESTR0
+vrdpdd_SDKS        = W2K3DDKX86
+vrdpdd_SYSSUFF     = .dll
+vrdpdd_DEFS        = _WIN32_WINNT=0x0501
+#vrdpdd_DEFS        += LOG_TO_BACKDOOR LOG_ENABLED
+vrdpdd_SOURCES     = \
+	debug.c \
+	enable.c \
+	screen.c \
+	vrdpdd.rc
+vrdpdd_LDFLAGS     = /Entry:DrvEnableDriver@12
+vrdpdd_LIBS        = \
+	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib \
+	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \
+	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
+
+
+include	$(PATH_KBUILD)/footer.kmk
+

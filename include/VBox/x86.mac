@@ -1,0 +1,375 @@
+%define X86_EFL_CF          BIT(0)
+%define X86_EFL_PF          BIT(2)
+%define X86_EFL_AF          BIT(4)
+%define X86_EFL_ZF          BIT(6)
+%define X86_EFL_SF          BIT(7)
+%define X86_EFL_TF          BIT(8)
+%define X86_EFL_IF          BIT(9)
+%define X86_EFL_DF          BIT(10)
+%define X86_EFL_OF          BIT(11)
+%define X86_EFL_IOPL        (BIT(12) | BIT(13))
+%define X86_EFL_NT          BIT(14)
+%define X86_EFL_RF          BIT(16)
+%define X86_EFL_VM          BIT(17)
+%define X86_EFL_AC          BIT(18)
+%define X86_EFL_VIF         BIT(19)
+%define X86_EFL_VIP         BIT(20)
+%define X86_EFL_ID          BIT(21)
+%define X86_EFL_IOPL_SHIFT  12
+%define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
+%define X86_CPUID_FEATURE_ECX_SSE3      BIT(0)
+%define X86_CPUID_FEATURE_ECX_MONITOR   BIT(3)
+%define X86_CPUID_FEATURE_ECX_CPLDS     BIT(4)
+%define X86_CPUID_FEATURE_ECX_VMX       BIT(5)
+%define X86_CPUID_FEATURE_ECX_EST       BIT(7)
+%define X86_CPUID_FEATURE_ECX_TM2       BIT(8)
+%define X86_CPUID_FEATURE_ECX_CNTXID    BIT(10)
+%define X86_CPUID_FEATURE_ECX_CX16      BIT(13)
+%define X86_CPUID_FEATURE_EDX_FPU       BIT(0)
+%define X86_CPUID_FEATURE_EDX_VME       BIT(1)
+%define X86_CPUID_FEATURE_EDX_DE        BIT(2)
+%define X86_CPUID_FEATURE_EDX_PSE       BIT(3)
+%define X86_CPUID_FEATURE_EDX_TSC       BIT(4)
+%define X86_CPUID_FEATURE_EDX_MSR       BIT(5)
+%define X86_CPUID_FEATURE_EDX_PAE       BIT(6)
+%define X86_CPUID_FEATURE_EDX_MCE       BIT(7)
+%define X86_CPUID_FEATURE_EDX_CX8       BIT(8)
+%define X86_CPUID_FEATURE_EDX_APIC      BIT(9)
+%define X86_CPUID_FEATURE_EDX_SEP       BIT(11)
+%define X86_CPUID_FEATURE_EDX_MTRR      BIT(12)
+%define X86_CPUID_FEATURE_EDX_PGE       BIT(13)
+%define X86_CPUID_FEATURE_EDX_MCA       BIT(14)
+%define X86_CPUID_FEATURE_EDX_CMOV      BIT(15)
+%define X86_CPUID_FEATURE_EDX_PAT       BIT(16)
+%define X86_CPUID_FEATURE_EDX_PSE36     BIT(17)
+%define X86_CPUID_FEATURE_EDX_PSN       BIT(18)
+%define X86_CPUID_FEATURE_EDX_CLFSH     BIT(19)
+%define X86_CPUID_FEATURE_EDX_DS        BIT(21)
+%define X86_CPUID_FEATURE_EDX_ACPI      BIT(22)
+%define X86_CPUID_FEATURE_EDX_MMX       BIT(23)
+%define X86_CPUID_FEATURE_EDX_FXSR      BIT(24)
+%define X86_CPUID_FEATURE_EDX_SSE       BIT(25)
+%define X86_CPUID_FEATURE_EDX_SSE2      BIT(26)
+%define X86_CPUID_FEATURE_EDX_SS        BIT(27)
+%define X86_CPUID_FEATURE_EDX_HTT       BIT(28)
+%define X86_CPUID_FEATURE_EDX_TM        BIT(29)
+%define X86_CPUID_FEATURE_EDX_PBE       BIT(31)
+%define X86_CPUID_AMD_FEATURE_EDX_FPU   BIT(0)
+%define X86_CPUID_AMD_FEATURE_EDX_VME    BIT(1)
+%define X86_CPUID_AMD_FEATURE_EDX_DE        BIT(2)
+%define X86_CPUID_AMD_FEATURE_EDX_PSE       BIT(3)
+%define X86_CPUID_AMD_FEATURE_EDX_TSC       BIT(4)
+%define X86_CPUID_AMD_FEATURE_EDX_MSR       BIT(5)
+%define X86_CPUID_AMD_FEATURE_EDX_PAE       BIT(6)
+%define X86_CPUID_AMD_FEATURE_EDX_MCE       BIT(7)
+%define X86_CPUID_AMD_FEATURE_EDX_CX8       BIT(8)
+%define X86_CPUID_AMD_FEATURE_EDX_APIC      BIT(9)
+%define X86_CPUID_AMD_FEATURE_EDX_SEP       BIT(11)
+%define X86_CPUID_AMD_FEATURE_EDX_MTRR      BIT(12)
+%define X86_CPUID_AMD_FEATURE_EDX_PGE       BIT(13)
+%define X86_CPUID_AMD_FEATURE_EDX_MCA       BIT(14)
+%define X86_CPUID_AMD_FEATURE_EDX_CMOV      BIT(15)
+%define X86_CPUID_AMD_FEATURE_EDX_PAT       BIT(16)
+%define X86_CPUID_AMD_FEATURE_EDX_PSE36     BIT(17)
+%define X86_CPUID_AMD_FEATURE_EDX_NX        BIT(20)
+%define X86_CPUID_AMD_FEATURE_EDX_AXMMX     BIT(22)
+%define X86_CPUID_AMD_FEATURE_EDX_MMX       BIT(23)
+%define X86_CPUID_AMD_FEATURE_EDX_FXSR      BIT(24)
+%define X86_CPUID_AMD_FEATURE_EDX_FFXSR     BIT(25)
+%define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE BIT(29)
+%define X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX  BIT(30)
+%define X86_CPUID_AMD_FEATURE_EDX_3DNOW     BIT(31)
+%define X86_CPUID_AMD_FEATURE_ECX_CMPL      BIT(1)
+%define X86_CPUID_AMD_FEATURE_ECX_SVM       BIT(2)
+%define X86_CPUID_AMD_FEATURE_ECX_CR8L      BIT(4)
+%define X86_CR0_PE                          BIT(0)
+%define X86_CR0_PROTECTION_ENABLE           BIT(0)
+%define X86_CR0_MP                          BIT(1)
+%define X86_CR0_MONITOR_COPROCESSOR         BIT(1)
+%define X86_CR0_EM                          BIT(2)
+%define X86_CR0_EMULATE_FPU                 BIT(2)
+%define X86_CR0_TS                          BIT(3)
+%define X86_CR0_TASK_SWITCH                 BIT(3)
+%define X86_CR0_ET                          BIT(4)
+%define X86_CR0_EXTENSION_TYPE              BIT(4)
+%define X86_CR0_NE                          BIT(5)
+%define X86_CR0_NUMERIC_ERROR               BIT(5)
+%define X86_CR0_WP                          BIT(16)
+%define X86_CR0_WRITE_PROTECT               BIT(16)
+%define X86_CR0_AM                          BIT(18)
+%define X86_CR0_ALIGMENT_MASK               BIT(18)
+%define X86_CR0_NW                          BIT(29)
+%define X86_CR0_NOT_WRITE_THROUGH           BIT(29)
+%define X86_CR0_CD                          BIT(30)
+%define X86_CR0_CACHE_DISABLE               BIT(30)
+%define X86_CR0_PG                          BIT(31)
+%define X86_CR0_PAGING                      BIT(31)
+%define X86_CR3_PWT                         BIT(3)
+%define X86_CR3_PCD                         BIT(4)
+%define X86_CR3_PAGE_MASK                   (0xfffff000)
+%define X86_CR3_PAE_PAGE_MASK               (0xffffffe0)
+%define X86_CR4_VME                         BIT(0)
+%define X86_CR4_PVI                         BIT(1)
+%define X86_CR4_TSD                         BIT(2)
+%define X86_CR4_DE                          BIT(3)
+%define X86_CR4_PSE                         BIT(4)
+%define X86_CR4_PAE                         BIT(5)
+%define X86_CR4_MCE                         BIT(6)
+%define X86_CR4_PGE                         BIT(7)
+%define X86_CR4_PCE                         BIT(8)
+%define X86_CR4_OSFSXR                      BIT(9)
+%define X86_CR4_OSXMMEEXCPT                 BIT(10)
+%define X86_CR4_VMXE                        BIT(13)
+%define X86_DR6_B0                          BIT(0)
+%define X86_DR6_B1                          BIT(1)
+%define X86_DR6_B2                          BIT(2)
+%define X86_DR6_B3                          BIT(3)
+%define X86_DR6_BD                          BIT(13)
+%define X86_DR6_BS                          BIT(14)
+%define X86_DR6_BT                          BIT(15)
+%define X86_DR7_L0                          BIT(0)
+%define X86_DR7_G0                          BIT(1)
+%define X86_DR7_L1                          BIT(2)
+%define X86_DR7_G1                          BIT(3)
+%define X86_DR7_L2                          BIT(4)
+%define X86_DR7_G2                          BIT(5)
+%define X86_DR7_L3                          BIT(6)
+%define X86_DR7_G3                          BIT(7)
+%define X86_DR7_LE                          BIT(8)
+%define X86_DR7_GE                          BIT(9)
+%define X86_DR7_GD                          BIT(13)
+%define X86_DR7_RW0_MASK                    (3 << 16)
+%define X86_DR7_LEN0_MASK                   (3 << 18)
+%define X86_DR7_RW1_MASK                    (3 << 20)
+%define X86_DR7_LEN1_MASK                   (3 << 22)
+%define X86_DR7_RW2_MASK                    (3 << 24)
+%define X86_DR7_LEN2_MASK                   (3 << 26)
+%define X86_DR7_RW3_MASK                    (3 << 28)
+%define X86_DR7_LEN3_MASK                   (3 << 30)
+%define X86_DR7_MB1_MASK                    (BIT(10))
+%define X86_DR7_L(iBp)                      ( 1 << (iBp * 2) )
+%define X86_DR7_G(iBp)                      ( 1 << (iBp * 2 + 1) )
+%define X86_DR7_RW_EO                       0
+%define X86_DR7_RW_WO                       1
+%define X86_DR7_RW_IO                       2
+%define X86_DR7_RW_RW                       3
+%define X86_DR7_RW(iBp, fRw)                ( (fRw) << ((iBp) * 4 + 16) )
+%define X86_DR7_LEN_BYTE                    0
+%define X86_DR7_LEN_WORD                    1
+%define X86_DR7_LEN_QWORD                   2 /**< AMD64 long mode only. */
+%define X86_DR7_LEN_DWORD                   3
+%define X86_DR7_LEN(iBp, cb)                ( (cb) << ((iBp) * 4 + 18) )
+%define X86_DR7_ENABLED_MASK                (BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(6) | BIT(7))
+%define MSR_IA32_FEATURE_CONTROL            0x3A
+%define MSR_IA32_FEATURE_CONTROL_LOCK       BIT(0)
+%define MSR_IA32_FEATURE_CONTROL_VMXON      BIT(2)
+%define MSR_IA32_SYSENTER_CS                0x174
+%define MSR_IA32_SYSENTER_ESP               0x175
+%define MSR_IA32_SYSENTER_EIP               0x176
+%define MSR_IA32_VMX_BASIC_INFO             0x480
+%define MSR_IA32_VMX_PINBASED_CTLS          0x481
+%define MSR_IA32_VMX_PROCBASED_CTLS         0x482
+%define MSR_IA32_VMX_EXIT_CTLS              0x483
+%define MSR_IA32_VMX_ENTRY_CTLS             0x484
+%define MSR_IA32_VMX_MISC                   0x485
+%define MSR_IA32_VMX_CR0_FIXED0             0x486
+%define MSR_IA32_VMX_CR0_FIXED1             0x487
+%define MSR_IA32_VMX_CR4_FIXED0             0x488
+%define MSR_IA32_VMX_CR4_FIXED1             0x489
+%define MSR_IA32_VMX_VMCS_ENUM              0x48A
+%define MSR_K6_EFER                         0xc0000080
+%define  MSR_K6_EFER_SCE                     BIT(0)
+%define  MSR_K6_EFER_LME                     BIT(8)
+%define  MSR_K6_EFER_LMA                     BIT(10)
+%define  MSR_K6_EFER_NXE                     BIT(11)
+%define  MSR_K6_EFER_SVME                    BIT(12)
+%define  MSR_K6_EFER_LMSLE                   BIT(13)
+%define  MSR_K6_EFER_FFXSR                   BIT(14)
+%define MSR_K6_STAR                         0xc0000081
+%define  MSR_K6_STAR_SYSRET_CS_SS_SHIFT     48
+%define  MSR_K6_STAR_SYSCALL_CS_SS_SHIFT    32
+%define  MSR_K6_STAR_SEL_MASK               0xffff
+%define  MSR_K6_STAR_SYSCALL_EIP_MASK       0xffffffff
+%define MSR_K6_WHCR                         0xc0000082
+%define MSR_K6_UWCCR                        0xc0000085
+%define MSR_K6_PSOR                         0xc0000087
+%define MSR_K6_PFIR                         0xc0000088
+%define MSR_K7_EVNTSEL0                     0xc0010000
+%define MSR_K7_EVNTSEL1                     0xc0010001
+%define MSR_K7_EVNTSEL2                     0xc0010002
+%define MSR_K7_EVNTSEL3                     0xc0010003
+%define MSR_K7_PERFCTR0                     0xc0010004
+%define MSR_K7_PERFCTR1                     0xc0010005
+%define MSR_K7_PERFCTR2                     0xc0010006
+%define MSR_K7_PERFCTR3                     0xc0010007
+%define MSR_K8_LSTAR                        0xc0000082
+%define MSR_K8_CSTAR                        0xc0000083
+%define MSR_K8_SF_MASK                      0xc0000084
+%define MSR_K8_FS_BASE                      0xc0000100
+%define MSR_K8_GS_BASE                      0xc0000101
+%define MSR_K8_KERNEL_GS_BASE               0xc0000102
+%define MSR_K8_TSC_AUX                      0xc0000103
+%define MSR_K8_SYSCFG                       0xc0010010
+%define MSR_K8_HWCR                         0xc0010015
+%define MSR_K8_IORRBASE0                    0xc0010016
+%define MSR_K8_IORRMASK0                    0xc0010017
+%define MSR_K8_IORRBASE1                    0xc0010018
+%define MSR_K8_IORRMASK1                    0xc0010019
+%define MSR_K8_TOP_MEM1                     0xc001001a
+%define MSR_K8_TOP_MEM2                     0xc001001d
+%define MSR_K8_VM_CR                        0xc0010114
+%define MSR_K8_IGNNE                        0xc0010115
+%define MSR_K8_SMM_CTL                      0xc0010116
+%define MSR_K8_VM_HSAVE_PA                  0xc0010117
+%define X86_PG_ENTRIES                      1024
+%define X86_PG_PAE_ENTRIES                  512
+%define X86_PAGE_4K_SIZE                    _4K
+%define X86_PAGE_4K_SHIFT                   12
+%define X86_PAGE_4K_OFFSET_MASK             0xfff
+%define X86_PAGE_4K_BASE_MASK               0xfffffffffffff000ULL
+%define X86_PAGE_4K_BASE_MASK_32            0xfffff000U
+%define X86_PAGE_2M_SIZE                    _2M
+%define X86_PAGE_2M_SHIFT                   21
+%define X86_PAGE_2M_OFFSET_MASK             0x001fffff
+%define X86_PAGE_2M_BASE_MASK               0xffffffffffe00000ULL
+%define X86_PAGE_2M_BASE_MASK_32            0xffe00000U
+%define X86_PAGE_4M_SIZE                    _4M
+%define X86_PAGE_4M_SHIFT                   22
+%define X86_PAGE_4M_OFFSET_MASK             0x003fffff
+%define X86_PAGE_4M_BASE_MASK               0xffffffffffc00000ULL
+%define X86_PAGE_4M_BASE_MASK_32            0xffc00000U
+%define X86_PTE_P                           BIT(0)
+%define X86_PTE_RW                          BIT(1)
+%define X86_PTE_US                          BIT(2)
+%define X86_PTE_PWT                         BIT(3)
+%define X86_PTE_PCD                         BIT(4)
+%define X86_PTE_A                           BIT(5)
+%define X86_PTE_D                           BIT(6)
+%define X86_PTE_PAT                         BIT(7)
+%define X86_PTE_G                           BIT(8)
+%define X86_PTE_AVL_MASK                    (BIT(9) | BIT(10) | BIT(11))
+%define X86_PTE_PG_MASK                     ( 0xfffff000 )
+%define X86_PTE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
+%define X86_PTE_PAE_PG_MASK                 ( 0x000ffffffffff000ULL )
+%define X86_PTE_PAE_NX                      BIT64(63)
+%define X86_PT_SHIFT                        12
+%define X86_PT_MASK                         0x3ff
+%define X86_PT_PAE_SHIFT                    12
+%define X86_PT_PAE_MASK                     0x1ff
+%define X86_PDE_P                           BIT(0)
+%define X86_PDE_RW                          BIT(1)
+%define X86_PDE_US                          BIT(2)
+%define X86_PDE_PWT                         BIT(3)
+%define X86_PDE_PCD                         BIT(4)
+%define X86_PDE_A                           BIT(5)
+%define X86_PDE_PS                          BIT(7)
+%define X86_PDE_AVL_MASK                    (BIT(9) | BIT(10) | BIT(11))
+%define X86_PDE_PG_MASK                     ( 0xfffff000 )
+%define X86_PDE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
+%define X86_PDE_PAE_PG_MASK                 ( 0x000ffffffffff000ULL )
+%define X86_PDE_PAE_NX                      BIT64(63)
+%define X86_PDE4M_P                         BIT(0)
+%define X86_PDE4M_RW                        BIT(1)
+%define X86_PDE4M_US                        BIT(2)
+%define X86_PDE4M_PWT                       BIT(3)
+%define X86_PDE4M_PCD                       BIT(4)
+%define X86_PDE4M_A                         BIT(5)
+%define X86_PDE4M_D                         BIT(6)
+%define X86_PDE4M_PS                        BIT(7)
+%define X86_PDE4M_G                         BIT(8)
+%define X86_PDE4M_AVL                       (BIT(9) | BIT(10) | BIT(11))
+%define X86_PDE4M_PAT                       BIT(12)
+%define X86_PDE4M_PAT_SHIFT                 (12 - 7)
+%define X86_PDE4M_PG_MASK                   ( 0xffc00000 )
+%define X86_PDE4M_PG_HIGH_MASK              ( 0x001fe000 )
+%define X86_PDE4M_PG_HIGH_SHIFT             19
+%define X86_PDE4M_PAE_PG_MASK               ( 0x000fffffffc00000ULL )
+%define X86_PDE4M_PAE_NX                    BIT64(63)
+%define X86_PD_SHIFT                        22
+%define X86_PD_MASK                         0x3ff
+%define X86_PD_PAE_SHIFT                    21
+%define X86_PD_PAE_MASK                     0x1ff
+%define X86_PDPE_P                          BIT(0)
+%define X86_PDPE_RW                         BIT(1)
+%define X86_PDPE_US                         BIT(2)
+%define X86_PDPE_PWT                        BIT(3)
+%define X86_PDPE_PCD                        BIT(4)
+%define X86_PDPE_A                          BIT(5)
+%define X86_PDPE_AVL_MASK                   (BIT(9) | BIT(10) | BIT(11))
+%define X86_PDPE_PG_MASK                    ( 0x0000fffffffff000ULL )
+%define X86_PDPE_PG_MASK                    ( 0x000ffffffffff000ULL )
+%define X86_PDPE_NX                         BIT64(63)
+%define X86_PDPTR_SHIFT             30
+%define X86_PDPTR_MASK_32           0x3
+%define X86_PDPTR_MASK              0x1ff
+%define X86_PML4E_P                         BIT(0)
+%define X86_PML4E_RW                        BIT(1)
+%define X86_PML4E_US                        BIT(2)
+%define X86_PML4E_PWT                       BIT(3)
+%define X86_PML4E_PCD                       BIT(4)
+%define X86_PML4E_A                         BIT(5)
+%define X86_PML4E_AVL_MASK                  (BIT(9) | BIT(10) | BIT(11))
+%define X86_PML4E_PG_MASK                   ( 0x0000fffffffff000ULL )
+%define X86_PML4E_PG_MASK                   ( 0x000ffffffffff000ULL )
+%define X86_PML4E_NX                        BIT64(63)
+%define X86_PML4_SHIFT              39
+%define X86_PML4_MASK               0x1ff
+%define X86_SEL_TYPE_CODE                   8
+%define X86_SEL_TYPE_ACCESSED               1
+%define X86_SEL_TYPE_DOWN                   4
+%define X86_SEL_TYPE_CONF                   4
+%define X86_SEL_TYPE_WRITE                  2
+%define X86_SEL_TYPE_READ                   2
+%define X86_SEL_TYPE_RO                     0
+%define X86_SEL_TYPE_RO_ACC                (0 | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_RW                     2
+%define X86_SEL_TYPE_RW_ACC                (2 | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_RO_DOWN                4
+%define X86_SEL_TYPE_RO_DOWN_ACC           (4 | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_RW_DOWN                6
+%define X86_SEL_TYPE_RW_DOWN_ACC           (6 | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_EO                    (0 | X86_SEL_TYPE_CODE)
+%define X86_SEL_TYPE_EO_ACC                (0 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_ER                    (2 | X86_SEL_TYPE_CODE)
+%define X86_SEL_TYPE_ER_ACC                (2 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_EO_CONF               (4 | X86_SEL_TYPE_CODE)
+%define X86_SEL_TYPE_EO_CONF_ACC           (4 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_ER_CONF               (6 | X86_SEL_TYPE_CODE)
+%define X86_SEL_TYPE_ER_CONF_ACC           (6 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_SYS_UNDEFINED         0
+%define X86_SEL_TYPE_SYS_286_TSS_AVAIL     1
+%define X86_SEL_TYPE_SYS_LDT               2
+%define X86_SEL_TYPE_SYS_286_TSS_BUSY      3
+%define X86_SEL_TYPE_SYS_286_CALL_GATE     4
+%define X86_SEL_TYPE_SYS_TASK_GATE         5
+%define X86_SEL_TYPE_SYS_286_INT_GATE      6
+%define X86_SEL_TYPE_SYS_286_TRAP_GATE     7
+%define X86_SEL_TYPE_SYS_UNDEFINED2        8
+%define X86_SEL_TYPE_SYS_386_TSS_AVAIL     9
+%define X86_SEL_TYPE_SYS_UNDEFINED3        0xA
+%define X86_SEL_TYPE_SYS_386_TSS_BUSY      0xB
+%define X86_SEL_TYPE_SYS_386_CALL_GATE     0xC
+%define X86_SEL_TYPE_SYS_UNDEFINED4        0xD
+%define X86_SEL_TYPE_SYS_386_INT_GATE      0xE
+%define X86_SEL_TYPE_SYS_386_TRAP_GATE     0xF
+%define X86_DESC_TYPE_MASK                  (BIT(8) | BIT(9) | BIT(10) | BIT(11))
+%define X86_DESC_S                          BIT(12)
+%define X86_DESC_DPL                       (BIT(13) | BIT(14))
+%define X86_DESC_P                          BIT(15)
+%define X86_DESC_AVL                        BIT(20)
+%define X86_DESC_DB                         BIT(22)
+%define X86_DESC_G                          BIT(23)
+%define X86_SEL_SHIFT   3
+%define X86_SEL_MASK    0xfff8
+%define X86_SEL_LDT     0x0004
+%define X86_SEL_RPL     0x0003
+%define X86_TRAP_ERR_EXTERNAL       1
+%define X86_TRAP_ERR_IDT            2
+%define X86_TRAP_ERR_TI             4
+%define X86_TRAP_ERR_SEL_MASK       0xfff8
+%define X86_TRAP_ERR_SEL_SHIFT      3
+%define X86_TRAP_PF_P               BIT(0)
+%define X86_TRAP_PF_RW              BIT(1)
+%define X86_TRAP_PF_US              BIT(2)
+%define X86_TRAP_PF_RSVD            BIT(3)
+%define X86_TRAP_PF_ID              BIT(4)

@@ -1,0 +1,52 @@
+#
+# Makefile for VBoxFB.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../..
+include $(PATH_KBUILD)/header.kmk
+
+PROGRAMS = VBoxFB
+
+VBoxFB_SOURCES    = \
+	VBoxFB.cpp \
+	Framebuffer.cpp \
+	Helper.cpp
+VBoxFB_DEFS       = IN_RING3 IN_RT_R3 _GNU_SOURCE
+VBoxFB_INCS       = \
+	/usr/include/directfb \
+	$(PATH_BIN)/sdk/include \
+	$(VBOX_XPCOM_INCS)
+VBoxFB_LIBS       = \
+	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
+	$(LIB_RUNTIME) \
+	xpcomglue \
+	nspr4 \
+	plc4 \
+	$(LIB_PTHREAD) \
+	rt \
+	$(LIB_UUID) \
+	directfb
+VBoxFB_LIBPATH    = \
+	$(LIBPATH_XPCOM)
+VBoxFB_CXXFLAGS   =  \
+	-DNDEBUG -DTRIMMED -O -Wall -fno-rtti -fno-exceptions \
+	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
+
+include $(PATH_KBUILD)/footer.kmk
+

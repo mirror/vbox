@@ -1,0 +1,70 @@
+/** @file
+ *
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#include <windows.h>
+#include <winver.h>
+
+#include "resource.h"
+
+VS_VERSION_INFO    VERSIONINFO
+  FILEVERSION      1,0,0,1
+  PRODUCTVERSION   1,0,0,1
+  FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG|VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0 // final version
+#endif
+  FILEOS           VOS__WINDOWS32
+  FILETYPE         VFT_APP
+  FILESUBTYPE      0   // not used
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
+    BEGIN
+    VALUE "CompanyName",     "InnoTek Systemberatung GmbH\0"
+    VALUE "FileDescription", "InnoTek VirtualBox Interface\0"
+    VALUE "FileVersion",     "1.0.000\0"
+    VALUE "InternalName",    "VBOXSVC\0"
+    VALUE "LegalCopyright",  "\0"
+    VALUE "LegalTrademarks", "\0"
+    VALUE "OriginalFilename","VBOXSVC.EXE\0"
+    VALUE "ProductName",     "InnoTek VirtualBox\0"
+    VALUE "ProductVersion",  "1.0.000\0"
+
+    VALUE "OLESelfRegister", ""
+
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// REGISTRY
+//
+
+IDR_VIRTUALBOX REGISTRY "VBoxSVC.rgs"
+
+1 TYPELIB "VirtualBox.tlb"

@@ -1,0 +1,125 @@
+;; @file
+;
+; VMMGC - Guest Context Assembly Macros.
+
+; Copyright (C) 2006 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; If you received this file as part of a commercial VirtualBox
+; distribution, then only the terms of your commercial VirtualBox
+; license agreement apply instead of the previous paragraph.
+
+%ifndef __VMMGC_mac__
+%define __VMMGC_mac__
+
+%include "VBox/nasm.mac"
+
+
+;; @def VMMR0_SEG
+; Set the output segment to one of the special VMMR0 segments.
+; @param    %1      The segment name.
+; @remark   Use BEGINCODE to switch back to the code segment.
+%ifdef ASM_FORMAT_OMF
+ %macro VMMR0_SEG 1
+ segment VMMR0.%1 public CLASS=CONST align=1 use32
+ %endmacro
+ %define VMMR0_SEG_DEFINED
+%endif
+
+%ifdef ASM_FORMAT_ELF
+ %macro VMMR0_SEG 1
+ [section .VMMR0.%1 progbits alloc noexec nowrite align=1 ]
+ %endmacro
+ %define VMMR0_SEG_DEFINED
+%endif
+
+%ifdef ASM_FORMAT_MACHO
+ %macro VMMR0_SEG 1
+ [section VMMR0.%1 rdata align=1 ]
+ %endmacro
+ %define VMMR0_SEG_DEFINED
+%endif
+
+%ifdef ASM_FORMAT_PE
+ %macro VMMR0_SEG 1
+ [section .VMMR0.%1 rdata align=1 ]
+ %endmacro
+ %define VMMR0_SEG_DEFINED
+%endif
+
+%ifndef VMMR0_SEG_DEFINED
+ %error "VMMR0_SEG / ASM_FORMAT_xxx"
+%endif
+
+
+;; @def TRPM_HANDLER
+; Sets up a trap handler.
+;
+; @param    %1  The segment name.
+; @param    %2  The end address. Use 0 to just handle one instruction.
+; @param    %3  Address of the handler function.
+; @param    %4  The user data member.
+%macro TRPM_HANDLER 4
+
+VMMR0_SEG %1                            ; switch to the record segemnt.
+
+    dd  %%current_instr                 ; uStartEip
+    dd  %2                              ; uEndEip
+    dd  %3                              ; pfnHandler
+    dd  %4                              ; pvUser
+
+BEGINCODE                               ; back to the code segment.
+%%current_instr:
+
+%endmacro
+
+;; @def TRPM_NP_HANDLER
+; Sets up a segment not present fault handler for the current (=next) instruction.
+;
+; @param    %1  Address of the handler function.
+; @param    %2  The user data member.
+%macro TRPM_NP_HANDLER 2
+TRPM_HANDLER Trap0b, 0, %1, %2
+%endmacro
+
+
+;; @def TRPM_GP_HANDLER
+; Sets up a general protection fault handler for the current (=next) instruction.
+;
+; @param    %1  Address of the handler function.
+; @param    %2  The user data member.
+%macro TRPM_GP_HANDLER 2
+TRPM_HANDLER Trap0d, 0, %1, %2
+%endmacro
+
+
+;; @def TRPM_PF_HANDLER
+; Sets up a page fault handler for the current (=next) instruction.
+;
+; @param    %1  Address of the handler function.
+; @param    %2  The user data member.
+%macro TRPM_PF_HANDLER 2
+TRPM_HANDLER Trap0e, 0, %1, %2
+%endmacro
+
+
+;; @def TRPM_NP_GP_HANDLER
+; Sets up a segment not present fault and genernal protection fault handler
+; for the current (=next) instruction.
+;
+; @param    %1  Address of the handler function.
+; @param    %2  The user data member.
+%macro TRPM_NP_GP_HANDLER 2
+TRPM_HANDLER Trap0b, 0, %1, %2
+TRPM_HANDLER Trap0d, 0, %1, %2
+%endmacro
+
+
+%endif

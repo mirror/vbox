@@ -1,0 +1,91 @@
+/** @file
+ * DBGGUI - The VirtualBox Debugger GUI.
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#ifndef __VBox_dbggui_h__
+#define __VBox_dbggui_h__
+
+#if defined(__WIN__)
+# include <VirtualBox.h>
+#else
+# include <VirtualBox_XPCOM.h>
+#endif
+
+#include <VBox/types.h>
+
+__BEGIN_DECLS
+
+/** @defgroup grp_dbggui    VirtualBox Debugger GUI
+ * @{
+ */
+
+/** Pointer to the debugger GUI instance structure. */
+typedef struct DBGGUI *PDBGGUI;
+
+/**
+ * Creates the debugger GUI.
+ *
+ * @returns VBox status code.
+ * @param   pSession    The VirtualBox session.
+ * @param   ppGui       Where to store the pointer to the debugger instance.
+ */
+DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui);
+
+/**
+ * Destroys the debugger GUI.
+ *
+ * @returns VBox status code.
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ */
+DBGDECL(int) DBGGuiDestroy(PDBGGUI pGui);
+
+/**
+ * Notifies the debugger GUI that the console window (or whatever) has changed
+ * size or position.
+ *
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   x           The x-coordinate of the window the debugger is relative to.
+ * @param   y           The y-coordinate of the window the debugger is relative to.
+ * @param   cx          The width of the window the debugger is relative to.
+ * @param   cy          The height of the window the debugger is relative to.
+ */
+DBGDECL(void) DBGGuiAdjustRelativePos(PDBGGUI pGui, int x, int y, unsigned cx, unsigned cy);
+
+/**
+ * Shows the default statistics window.
+ *
+ * @returns VBox status code.
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ */
+DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui);
+
+/**
+ * Shows the default command line window.
+ *
+ * @returns VBox status code.
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ */
+DBGDECL(int) DBGGuiShowCommandLine(PDBGGUI pGui);
+
+/** @} */
+
+__END_DECLS
+
+#endif
+

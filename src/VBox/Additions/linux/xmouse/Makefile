@@ -1,0 +1,112 @@
+#
+# Makefile for the VBox Linux Additions X.org mouse driver.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+LIBRARIES   = vboxmouse vboxmouse_so_70 vboxmouse_so_71
+OTHERS      = \
+	$(PATH_BIN)/additions/vboxmouse_drv.o \
+	$(PATH_BIN)/additions/vboxmouse_drv_70.so \
+	$(PATH_BIN)/additions/vboxmouse_drv_71.so
+OTHER_CLEAN = $(OTHERS)
+
+vboxmouse_NOINST   = 1
+vboxmouse_TEMPLATE = VBOXLNX32GUESTR3
+vboxmouse_SOURCES  = \
+	mouse.c \
+	pnp.c \
+	VBoxUtils.c
+
+vboxmouse_so_70_NOINST   = 1
+vboxmouse_so_70_TEMPLATE = VBOXLNX32GUESTR3
+vboxmouse_so_70_SOURCES  = \
+	xorg70/mouse.c \
+	xorg70/pnp.c \
+	VBoxUtils.c
+
+vboxmouse_so_71_NOINST   = 1
+vboxmouse_so_71_TEMPLATE = VBOXLNX32GUESTR3
+vboxmouse_so_71_SOURCES  = \
+	xorg71/mouse.c \
+	xorg71/pnp.c \
+	VBoxUtils.c
+
+vboxmouse_INCS = \
+	../x11include/4.2/exports/include/X11 \
+	../x11include/4.2/include \
+	../x11include/4.2/include/extensions \
+	../x11include/4.2/programs/Xserver/include \
+	../x11include/4.2/programs/Xserver/hw/xfree86 \
+	../x11include/4.2/programs/Xserver/hw/xfree86/common \
+	../x11include/4.2/programs/Xserver/hw/xfree86/os-support \
+	../x11include/4.2/programs/Xserver/hw/xfree86/os-support/bus \
+	../x11include/4.2/programs/Xserver/mi \
+	$(PATH_ROOT)/include
+
+vboxmouse_so_70_INCS = \
+	../x11include/7.0 \
+	../x11include/7.0/X11 \
+	../x11include/7.0/xorg
+
+vboxmouse_so_71_INCS = \
+	../x11include/7.1 \
+	../x11include/7.1/X11 \
+	../x11include/7.1/xorg
+
+vboxmouse_DEFS = \
+	linux __i386__ _POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
+	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
+	XCSECURITY TOGCUP XF86BIGFONT DPMSExtension PIXPRIV PANORAMIX RENDER \
+	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
+	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
+	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
+	IN_MODULE XFree86Module PNP_MOUSE \
+	IN_RING3 VBOX
+
+vboxmouse_so_70_DEFS = \
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
+	IN_RING3 VBOX XORG_7X PIC
+
+vboxmouse_so_71_DEFS   := $(vboxmouse_so_70_DEFS)
+
+vboxmouse_CFLAGS       := -fno-merge-constants
+vboxmouse_so_70_CFLAGS := -fPIC
+vboxmouse_so_71_CFLAGS := $(vboxmouse_so_70_CFLAGS)
+
+
+include	$(PATH_KBUILD)/footer.kmk
+
+$(PATH_BIN)/additions/vboxmouse_drv.o: mouse.c pnp.c VBoxUtils.c
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
+	$(QUIET)ld -r -o $@ $(PATH_vboxmouse)/mouse.o $(PATH_vboxmouse)/pnp.o $(PATH_vboxmouse)/VBoxUtils.o
+
+# This is a DLL...
+$(PATH_BIN)/additions/vboxmouse_drv_70.so: xorg70/mouse.c xorg70/pnp.c VBoxUtils.c
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
+	$(QUIET)gcc -shared -s -o $@ $(PATH_vboxmouse_so_70)/xorg70/mouse.o $(PATH_vboxmouse_so_70)/xorg70/pnp.o $(PATH_vboxmouse_so_70)/VBoxUtils.o
+
+$(PATH_BIN)/additions/vboxmouse_drv_71.so: xorg71/mouse.c xorg71/pnp.c VBoxUtils.c
+	$(call MSG_L1,Linking $@)
+	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
+	$(QUIET)gcc -shared -s -o $@ $(PATH_vboxmouse_so_71)/xorg71/mouse.o $(PATH_vboxmouse_so_71)/xorg71/pnp.o $(PATH_vboxmouse_so_71)/VBoxUtils.o
+
