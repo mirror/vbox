@@ -812,6 +812,13 @@ else
 endif
 
 #
+# Special SDK for the problematic NTDLL.LIB.
+#
+SDK_VBOX_NTDLL = Requires W2K3DDK
+SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
+
+
+#
 # Qt build tools, for Linux we require it to be present on the system
 #
 ## @todo convert this into SDK and integrate the Qt stuff into kBuild.
