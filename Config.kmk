@@ -1053,7 +1053,7 @@ TEMPLATE_VBOXR0DRV_INCS.amd64          = \
 	$(VBOX_LINUX_SRC)/include
 TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include \
 	-Wall -Wstrict-prototypes -Wno-trigraphs $(VBOX_GCC_Wno-pointer-sign) \
-	$(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fno-common -msoft-float
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fno-common -msoft-float
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mpreferred-stack-boundary=2
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -mno-red-zone -mcmodel=kernel -fno-reorder-blocks \
 	-fno-asynchronous-unwind-tables -funit-at-a-time -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
