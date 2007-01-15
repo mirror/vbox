@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM testcase - Helper stuff.
  */
 

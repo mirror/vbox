@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PATMSSM - Dynamic Guest OS Patching Manager; Save and load state
  *
  * NOTE: CSAM assumes patch memory is never reused!!
@@ -48,9 +48,9 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/string.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <string.h>
 
 #define PATM_SUBTRACT_PTR(a, b) *(uintptr_t *)&(a) = (uintptr_t)(a) - (uintptr_t)(b)
 #define PATM_ADD_PTR(a, b)      *(uintptr_t *)&(a) = (uintptr_t)(a) + (uintptr_t)(b)

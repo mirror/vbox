@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * CFGM - Internal header file.
  */
 

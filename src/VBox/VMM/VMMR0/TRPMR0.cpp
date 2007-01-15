@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * TRPM - The Trap Monitor - HC Ring 0
  */
 

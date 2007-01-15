@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PGM - Page Manager and Monitor. (Mixing stuff here, not good?)
  */
 
@@ -630,7 +630,7 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.pInterPaePDPTR   = (PX86PDPTR)MMR3PageAllocLow(pVM);
 #if 1
     pVM->pgm.s.pInterPaePDPTR64 = (PX86PDPTR)MMR3PageAllocLow(pVM);
-#endif 
+#endif
     pVM->pgm.s.pInterPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);
     if (    !pVM->pgm.s.pInterPD
         ||  !pVM->pgm.s.apInterPTs[0]
@@ -710,7 +710,7 @@ static int pgmR3InitPaging(PVM pVM)
     ASMMemZero32(pVM->pgm.s.pInterPaePML4, PAGE_SIZE);
     pVM->pgm.s.pInterPaePML4->a[0].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A
                                      | pVM->pgm.s.HCPhysInterPaePDPTR;
-#endif 
+#endif
 
 
     /*
@@ -1348,7 +1348,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutBool(pSSM, pPGM->fMappingsFixed);
 #else
     SSMR3PutUInt(pSSM, pPGM->fMappingsFixed);
-#endif 
+#endif
     SSMR3PutGCPtr(pSSM, pPGM->GCPtrMappingFixed);
     SSMR3PutU32(pSSM, pPGM->cbMappingFixed);
     SSMR3PutUInt(pSSM, pPGM->cbRamSize);
@@ -1453,7 +1453,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     uint32_t u;
     SSMR3GetU32(pSSM,       &u);
     pPGM->fMappingsFixed = u;
-#endif 
+#endif
     SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
     SSMR3GetU32(pSSM,       &pPGM->cbMappingFixed);
 

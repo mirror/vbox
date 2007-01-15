@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VM - Internal header file.
  */
 

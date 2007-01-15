@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PATM - Internal header file.
  */
 

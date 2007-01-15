@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * STAM Internal Header.
  */
 

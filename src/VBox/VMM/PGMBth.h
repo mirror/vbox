@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox - Page Manager / Monitor, Shadow+Guest Paging Template.
  *
  * This file is a big challenge!

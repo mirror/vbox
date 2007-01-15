@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PDM Queue - Transport data and tasks to EMT and R3.
  */
 
@@ -152,7 +152,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
          * the initialization order to deal with problems like #1605 (pgm/pcnet deadlock
          * caused by the critsect queue to be last in the chain).
          * Update, the critical sections are no longer using queues.
-         */ 
+         */
         if (!pVM->pdm.s.pQueuesForced)
             pVM->pdm.s.pQueuesForced = pQueue;
         else

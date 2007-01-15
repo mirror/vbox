@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * CSAM - Guest OS Code Scanning and Analysis Manager - Any Context
  */
 
@@ -42,7 +42,7 @@
 #include <iprt/assert.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <string.h>
+#include <iprt/string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iprt/asm.h>

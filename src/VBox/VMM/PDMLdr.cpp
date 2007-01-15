@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PDM - Pluggable Device Manager, module loader.
  */
 
@@ -45,7 +45,6 @@
 #include <iprt/string.h>
 
 #include <limits.h>
-#include <string.h>
 
 
 /*******************************************************************************
@@ -97,7 +96,7 @@ int pdmR3LdrInit(PVM pVM)
     if (VBOX_SUCCESS(rc))
         rc = PDMR3LoadGC(pVM, NULL, VMMGC_MAIN_MODULE_NAME);
     return rc;
-#endif 
+#endif
 }
 
 /**
@@ -674,7 +673,7 @@ PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszS
 
     AssertMsgFailed(("Couldn't locate module '%s'\n", pszModule));
     return VERR_SYMBOL_NOT_FOUND;
-#endif 
+#endif
 }
 
 

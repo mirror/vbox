@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- *
+ * REM - Recompiled Execution Manager, GC Code.
  */
 
 /*

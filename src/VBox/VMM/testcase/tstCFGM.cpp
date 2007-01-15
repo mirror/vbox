@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * Testcase for CFGM.
  */
 
@@ -33,8 +33,7 @@
 #include <VBox/param.h>
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
-
-#include <string.h>
+#include <iprt/string.h>
 
 
 int main()

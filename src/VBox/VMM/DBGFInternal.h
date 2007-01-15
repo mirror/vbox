@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * DBGF - Internal header file.
  */
 

@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox Animation Testcase / Tool.
  */
 
@@ -41,9 +41,8 @@
 #include <iprt/stream.h>
 #include <iprt/file.h>
 #include <iprt/thread.h>
+#include <iprt/ctype.h>
 
-#include <string.h>
-#include <ctype.h>
 #include <signal.h>
 
 /*******************************************************************************

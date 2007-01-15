@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * DBGF - Debugger Facility, GC part.
  */
 

@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * IOM - Input / Output Monitor.
  */
 
@@ -65,8 +65,6 @@
 #include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
-
-#include <string.h>
 
 
 /*******************************************************************************

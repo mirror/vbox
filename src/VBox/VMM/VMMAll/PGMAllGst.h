@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox - Page Manager, Guest Paging Template - All context code.
  */
 

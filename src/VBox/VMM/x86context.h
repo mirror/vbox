@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM - Context switcher macros & definitions
  */
 

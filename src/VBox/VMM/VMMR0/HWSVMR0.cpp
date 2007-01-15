@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * HWACCM SVM - Host Context Ring 0.
  */
 
@@ -67,7 +67,7 @@ HWACCMR0DECL(int) SVMR0Setup(PVM pVM)
         return VERR_EM_INTERNAL_ERROR;
 
     /* Program the control fields. Most of them never have to be changed again. */
-    /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */ 
+    /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
     /** @note CR0 & CR4 can be safely read when guest and shadow copies are identical. */
     pVMCB->ctrl.u16InterceptRdCRx = BIT(0) | BIT(3) | BIT(4) | BIT(8);
 
@@ -105,7 +105,7 @@ HWACCMR0DECL(int) SVMR0Setup(PVM pVM)
                                     | SVM_CTRL1_INTERCEPT_INVLPG
                                     | SVM_CTRL1_INTERCEPT_INVLPGA       /* AMD only */
                                     | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* fatal */
-                                    | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Legacy FPU FERR handling. */  
+                                    | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Legacy FPU FERR handling. */
                                     ;
     pVMCB->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* required */
                                     | SVM_CTRL2_INTERCEPT_VMMCALL
@@ -621,7 +621,7 @@ ResumeExecution:
                                              | SVM_CTRL1_INTERCEPT_INVLPG
                                              | SVM_CTRL1_INTERCEPT_INVLPGA       /* AMD only */
                                              | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* fatal */
-                                             | SVM_CTRL1_INTERCEPT_FERR_FREEZE   /* Legacy FPU FERR handling. */  
+                                             | SVM_CTRL1_INTERCEPT_FERR_FREEZE   /* Legacy FPU FERR handling. */
                                              ));
     Assert(pVMCB->ctrl.u32InterceptCtrl2 == ( SVM_CTRL2_INTERCEPT_VMRUN         /* required */
                                              | SVM_CTRL2_INTERCEPT_VMMCALL
@@ -991,7 +991,7 @@ ResumeExecution:
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
-            
+
 #ifdef VBOX_STRICT
         case X86_XCPT_UD:   /* Unknown opcode exception. */
         case X86_XCPT_DE:   /* Debug exception. */

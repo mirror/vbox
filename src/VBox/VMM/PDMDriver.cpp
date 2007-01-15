@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PDM - Pluggable Device and Driver Manager, Driver parts.
  */
 
@@ -41,8 +41,6 @@
 #include <iprt/asm.h>
 #include <iprt/alloc.h>
 #include <iprt/path.h>
-
-#include <string.h>
 
 
 /*******************************************************************************

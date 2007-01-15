@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * MM Hypervisor Heap testcase.
  */
 
@@ -33,8 +33,7 @@
 #include <iprt/runtime.h>
 #include <iprt/assert.h>
 #include <iprt/stream.h>
-
-#include <string.h>
+#include <iprt/string.h>
 
 
 int main(int argc, char *argv[])

@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * CSAM - Guest OS Code Scanning and Analysis Manager
  */
 
@@ -46,9 +46,9 @@
 #include <VBox/ssm.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -58,7 +58,7 @@
 
 /* Enable to monitor code pages for self-modifying code. */
 #define CSAM_MONITOR_CODE_PAGES
-/* Enable to monitor all scanned pages 
+/* Enable to monitor all scanned pages
 #define CSAM_MONITOR_CSAM_CODE_PAGES */
 
 /*******************************************************************************
@@ -139,7 +139,7 @@ CSAMR3DECL(int) CSAMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->csam.s.StatNrPagesInv,       STAMTYPE_COUNTER,   "/CSAM/PageRec/AddedRWI",    STAMUNIT_OCCURENCES,     "The number of CSAM page records (RW & invalidation monitoring).");
     STAM_REG(pVM, &pVM->csam.s.StatNrRemovedPages,   STAMTYPE_COUNTER,   "/CSAM/PageRec/Removed",     STAMUNIT_OCCURENCES,     "The number of removed CSAM page records.");
     STAM_REG(pVM, &pVM->csam.s.StatPageRemoveREMFlush,STAMTYPE_COUNTER,  "/CSAM/PageRec/Removed/REMFlush",     STAMUNIT_OCCURENCES,     "The number of removed CSAM page records that caused a REM flush.");
-    
+
     STAM_REG(pVM, &pVM->csam.s.StatNrPatchPages,     STAMTYPE_COUNTER,   "/CSAM/PageRec/Patch",       STAMUNIT_OCCURENCES,     "The number of CSAM patch page records.");
     STAM_REG(pVM, &pVM->csam.s.StatNrUserPages,      STAMTYPE_COUNTER,   "/CSAM/PageRec/Ignore/User", STAMUNIT_OCCURENCES,     "The number of CSAM user page records (ignored).");
     STAM_REG(pVM, &pVM->csam.s.StatPagePATM,         STAMTYPE_COUNTER,   "/CSAM/PageRec/Type/PATM",   STAMUNIT_OCCURENCES,     "The number of PATM page records.");
@@ -164,7 +164,7 @@ CSAMR3DECL(int) CSAMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->csam.s.StatScanNextFunction,         STAMTYPE_COUNTER, "/CSAM/Function/Scan/Success",  STAMUNIT_OCCURENCES,     "The number of found functions beyond the ret border.");
     STAM_REG(pVM, &pVM->csam.s.StatScanNextFunctionFailed,   STAMTYPE_COUNTER, "/CSAM/Function/Scan/Failed",   STAMUNIT_OCCURENCES,     "The number of refused functions beyond the ret border.");
-    
+
     STAM_REG(pVM, &pVM->csam.s.StatTime,             STAMTYPE_PROFILE, "/PROF/CSAM/Scan",             STAMUNIT_TICKS_PER_CALL, "Scanning overhead.");
     STAM_REG(pVM, &pVM->csam.s.StatTimeCheckAddr,    STAMTYPE_PROFILE, "/PROF/CSAM/CheckAddr",        STAMUNIT_TICKS_PER_CALL, "Address check overhead.");
     STAM_REG(pVM, &pVM->csam.s.StatTimeAddrConv,     STAMTYPE_PROFILE, "/PROF/CSAM/AddrConv",         STAMUNIT_TICKS_PER_CALL, "Address conversion overhead.");
@@ -172,7 +172,7 @@ CSAMR3DECL(int) CSAMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->csam.s.StatTimeDisasm,       STAMTYPE_PROFILE, "/PROF/CSAM/Disasm",           STAMUNIT_TICKS_PER_CALL, "Disassembly overhead.");
     STAM_REG(pVM, &pVM->csam.s.StatFlushDirtyPages,  STAMTYPE_PROFILE, "/PROF/CSAM/FlushDirtyPage",   STAMUNIT_TICKS_PER_CALL, "Dirty page flushing overhead.");
     STAM_REG(pVM, &pVM->csam.s.StatCheckGates,       STAMTYPE_PROFILE, "/PROF/CSAM/CheckGates",       STAMUNIT_TICKS_PER_CALL, "CSAMR3CheckGates overhead.");
-    
+
 
 #ifdef CSAM_ENABLE
     CSAMEnableScanning(pVM);
@@ -607,7 +607,7 @@ int32_t CSAMR3ReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t size, RTHCUIN
             pDest++;
             size--;
         }
-        else 
+        else
             break;
     }
     if (size == 0)
@@ -955,7 +955,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCP
                      *
                      * lea esi, [esi]
                      * lea esi, [esi+0]
-                     * Any register is allowed as long as source and destination are identical. 
+                     * Any register is allowed as long as source and destination are identical.
                      */
                     if (    cpu.param1.flags != USE_REG_GEN32
                         ||  (   cpu.param2.flags != USE_REG_GEN32
@@ -1169,7 +1169,7 @@ static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTY
 
 #ifdef CSAM_ANALYSE_BEYOND_RET
         /* Remember the address of the instruction following the ret in case the parent instruction was a call. */
-        if (    pCacheRec->pCallExitRec 
+        if (    pCacheRec->pCallExitRec
             &&  cpu.pCurInstr->opcode == OP_RETN
             &&  pCacheRec->pCallExitRec->cInstrAfterRet < CSAM_MAX_CALLEXIT_RET)
         {
@@ -1265,11 +1265,11 @@ static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTY
                     /* Same page? */
                     if (PAGE_ADDRESS(addr) != PAGE_ADDRESS(pJumpTableGC))
                         break;
-                    
+
                     addr = *(RTGCPTR *)(pJumpTableHC + cpu.param1.scale * i);
 
                     rc2 = PGMGstGetPage(pVM, addr, &fFlags, NULL);
-                    if (    rc2 != VINF_SUCCESS 
+                    if (    rc2 != VINF_SUCCESS
                         ||  (fFlags & X86_PTE_US)
                         || !(fFlags & X86_PTE_P)
                        )
@@ -2172,7 +2172,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 
     if (iGate + cGates > maxGates)
         cGates = maxGates - iGate;
-    
+
     GCPtrIDT   = GCPtrIDT + iGate * sizeof(VBOXIDTE);
     iGateEnd   = iGate + cGates;
 
@@ -2207,7 +2207,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 
     for (/*iGate*/; iGate<iGateEnd; iGate++, pGuestIdte++)
     {
-        if (    pVM->csam.s.fGatesChecked 
+        if (    pVM->csam.s.fGatesChecked
             &&  cGates != 1                 /* applies only when we check the entire IDT */
             &&  pGuestIdte->au64 != pVM->csam.s.aIDT[iGate].au64)
         {

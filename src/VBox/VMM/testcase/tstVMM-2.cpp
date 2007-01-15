@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM Testcase - no. 2.
  */
 
@@ -33,11 +33,11 @@
 #include <iprt/runtime.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
+#include <iprt/string.h>
+#include <iprt/ctype.h>
+#include <iprt/stream.h>
 
-
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
+#include <stdio.h> /** @todo get rid of this. */
 
 
 /*******************************************************************************
@@ -88,13 +88,13 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
             psz++;
             if (*psz != '/')
             {
-                printf("%s(%d): error: key path must start with slash.\n", pArgs->pszFilename, iLine);
+                RTPrintf("%s(%d): error: key path must start with slash.\n", pArgs->pszFilename, iLine);
                 return VERR_GENERAL_FAILURE;
             }
             char *pszEnd = strchr(psz, ']');
             if (!pszEnd)
             {
-                printf("%s(%d): error: missing ']'.\n", pArgs->pszFilename, iLine);
+                RTPrintf("%s(%d): error: missing ']'.\n", pArgs->pszFilename, iLine);
                 return VERR_GENERAL_FAILURE;
             }
             while (pszEnd - 1 > psz && pszEnd[-1] == '/') /* strip trailing slashes. */
@@ -118,7 +118,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                     if (VBOX_FAILURE(rc))
                     {
                         *pszCurEnd = '/';
-                        printf("%s(%d): error: failed to create node '%s', rc=%d.\n", pArgs->pszFilename, iLine, psz, rc);
+                        RTPrintf("%s(%d): error: failed to create node '%s', rc=%d.\n", pArgs->pszFilename, iLine, psz, rc);
                         return rc;
                     }
                 }
@@ -145,7 +145,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                     pszNameEnd = strchr(pszNameEnd + 1, *pszName);
                     if (!pszNameEnd)
                     {
-                        printf("%s(%d): error: unbalanced quote.\n", pArgs->pszFilename, iLine);
+                        RTPrintf("%s(%d): error: unbalanced quote.\n", pArgs->pszFilename, iLine);
                         return VERR_GENERAL_FAILURE;
                     }
                     if (pszNameEnd[1] != pszNameEnd[0])
@@ -162,7 +162,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                 pszNameEnd = strpbrk(psz, "=<");
                 if (!pszNameEnd)
                 {
-                    printf("%s(%d): error: missing '='.\n", pArgs->pszFilename, iLine);
+                    RTPrintf("%s(%d): error: missing '='.\n", pArgs->pszFilename, iLine);
                     return VERR_GENERAL_FAILURE;
                 }
                 psz = strchr(pszNameEnd, '=');
@@ -171,20 +171,20 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                     pszNameEnd--;
                 if (!pszNameEnd)
                 {
-                    printf("%s(%d): error: missing '<'.\n", pArgs->pszFilename, iLine);
+                    RTPrintf("%s(%d): error: missing '<'.\n", pArgs->pszFilename, iLine);
                     return VERR_GENERAL_FAILURE;
                 }
             }
             if (pszName == pszNameEnd)
             {
-                printf("%s(%d): error: empty value name.\n", pArgs->pszFilename, iLine);
+                RTPrintf("%s(%d): error: empty value name.\n", pArgs->pszFilename, iLine);
                 return VERR_GENERAL_FAILURE;
             }
 
             /* check if equal sign present and skip past it and all following blanks. */
             if (!psz)
             {
-                printf("%s(%d): error: missing '='.\n", pArgs->pszFilename, iLine);
+                RTPrintf("%s(%d): error: missing '='.\n", pArgs->pszFilename, iLine);
                 return VERR_GENERAL_FAILURE;
             }
             psz++;
@@ -203,7 +203,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                     pszValueEnd = strchr(pszValueEnd + 1, *psz);
                     if (!pszValueEnd)
                     {
-                        printf("%s(%d): error: unbalanced quote in string value.\n", pArgs->pszFilename, iLine);
+                        RTPrintf("%s(%d): error: unbalanced quote in string value.\n", pArgs->pszFilename, iLine);
                         return VERR_GENERAL_FAILURE;
                     }
                     if (pszValueEnd[1] != pszValueEnd[0])
@@ -216,8 +216,8 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                 int rc = CFGMR3InsertString(pNode, pszName, psz);
                 if (VBOX_FAILURE(rc))
                 {
-                    printf("%s(%d): error: failed to insert string value named '%s' and with value '%s', rc=%d.\n",
-                           pArgs->pszFilename, iLine, pszName, psz, rc);
+                    RTPrintf("%s(%d): error: failed to insert string value named '%s' and with value '%s', rc=%d.\n",
+                             pArgs->pszFilename, iLine, pszName, psz, rc);
                     return rc;
                 }
             }
@@ -226,7 +226,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                      && isxdigit(psz[3]) && isxdigit(psz[4]))
             {
                 /* byte string */
-                printf("%s(%d): error: byte string is not implemented\n", pArgs->pszFilename, iLine);
+                RTPrintf("%s(%d): error: byte string is not implemented\n", pArgs->pszFilename, iLine);
                 return VERR_GENERAL_FAILURE;
             }
             else if (isdigit(psz[0]))
@@ -254,21 +254,21 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                 }
                 if (isalpha(*psz))
                 {
-                    printf("%s(%d): error: unexpected char(s) after number '%.10s'\n", pArgs->pszFilename, iLine, psz);
+                    RTPrintf("%s(%d): error: unexpected char(s) after number '%.10s'\n", pArgs->pszFilename, iLine, psz);
                     return VERR_GENERAL_FAILURE;
                 }
 
                 int rc = CFGMR3InsertInteger(pNode, pszName, u64);
                 if (VBOX_FAILURE(rc))
                 {
-                    printf("%s(%d): error: failed to insert integer value named '%s' and with value %#llx, rc=%d.\n",
-                           pArgs->pszFilename, iLine, pszName, u64, rc);
+                    RTPrintf("%s(%d): error: failed to insert integer value named '%s' and with value %#llx, rc=%d.\n",
+                             pArgs->pszFilename, iLine, pszName, u64, rc);
                     return rc;
                 }
             }
             else
             {
-                printf("%s(%d): error: unknown value format.\n", pArgs->pszFilename, iLine);
+                RTPrintf("%s(%d): error: unknown value format.\n", pArgs->pszFilename, iLine);
                 return VERR_GENERAL_FAILURE;
             }
         }
@@ -305,19 +305,19 @@ int main(int argc, char **argv)
             {
                 if (Args.pszFilename)
                 {
-                    printf("syntax error: only one config argument!\n");
+                    RTPrintf("syntax error: only one config argument!\n");
                     return 1;
                 }
                 if (i + 1 >= argc)
                 {
-                    printf("syntax error: no configuration filename!\n");
+                    RTPrintf("syntax error: no configuration filename!\n");
                     return 1;
                 }
                 Args.pszFilename = argv[++i];
                 Args.pFile = fopen(Args.pszFilename, "r");
                 if (!Args.pFile)
                 {
-                    printf("%s: Failed to open '%s' for reading!\n", TESTCASE, Args.pszFilename);
+                    RTPrintf("%s: Failed to open '%s' for reading!\n", TESTCASE, Args.pszFilename);
                     return 1;
                 }
             }
@@ -326,24 +326,24 @@ int main(int argc, char **argv)
             else if (   !strncmp(psz, "help", 4)
                      || (*psz == 'h' && !psz[1]))
             {
-                printf("syntax: %s [options]\n"
-                       "\n"
-                       "options (prefixed with a dash or two)\n"
-                       "  config <filename>     Load the flat config file.\n"
-                       "  help                  This help text.\n", argv[0]);
+                RTPrintf("syntax: %s [options]\n"
+                         "\n"
+                         "options (prefixed with a dash or two)\n"
+                         "  config <filename>     Load the flat config file.\n"
+                         "  help                  This help text.\n", argv[0]);
                 return 1;
             }
             else
             {
-                printf("syntax error: unknown option '%s' in arg %d.\n", psz, i);
+                RTPrintf("syntax error: unknown option '%s' in arg %d.\n", psz, i);
                 return 1;
             }
 
         }
         else
         {
-            printf("syntax error: Sorry dude, no idea what you're passing to me.\n"
-                   "              arg %d '%s'\n", i, argv[i]);
+            RTPrintf("syntax error: Sorry dude, no idea what you're passing to me.\n"
+                     "              arg %d '%s'\n", i, argv[i]);
             return 1;
         }
     }
@@ -369,10 +369,10 @@ int main(int argc, char **argv)
                 VMR3ReqFree(pReq);
                 if (VBOX_SUCCESS(rc))
                 {
-                    printf(TESTCASE ": info: VMR3PowerOn succeeded. rc=%d\n", rc);
-                    printf(TESTCASE ": info: main thread is taking a nap...\n");
+                    RTPrintf(TESTCASE ": info: VMR3PowerOn succeeded. rc=%d\n", rc);
+                    RTPrintf(TESTCASE ": info: main thread is taking a nap...\n");
                     rc = RTThreadSleep(8*3600*1000); /* 8 hours */
-                    printf(TESTCASE ": info: main thread is woke up... rc=%d\n", rc);
+                    RTPrintf(TESTCASE ": info: main thread is woke up... rc=%d\n", rc);
 
                     /*
                      * Power Off the VM.
@@ -383,23 +383,23 @@ int main(int argc, char **argv)
                         rc = pReq->iStatus;
                         VMR3ReqFree(pReq);
                         if (VBOX_SUCCESS(rc))
-                            printf(TESTCASE ": info: Successfully powered off the VM. rc=%d\n", rc);
+                            RTPrintf(TESTCASE ": info: Successfully powered off the VM. rc=%d\n", rc);
                         else
                         {
-                            printf(TESTCASE ": error: VMR3PowerOff -> %d\n", rc);
+                            RTPrintf(TESTCASE ": error: VMR3PowerOff -> %d\n", rc);
                             rcRet++;
                         }
                     }
                     else
                     {
-                        printf(TESTCASE ": error: VMR3ReqCall (power off) -> %d\n", rc);
+                        RTPrintf(TESTCASE ": error: VMR3ReqCall (power off) -> %d\n", rc);
                         rcRet++;
                     }
                 }
             }
             else
             {
-                printf(TESTCASE ": error: VMR3ReqCall (power on) -> %d\n", rc);
+                RTPrintf(TESTCASE ": error: VMR3ReqCall (power on) -> %d\n", rc);
                 rcRet++;
             }
         }
@@ -410,13 +410,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!VBOX_SUCCESS(rc))
         {
-            printf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
+            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcRet++;
         }
     }
     else
     {
-        printf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
+        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
         rcRet++;
     }
 

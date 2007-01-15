@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM - Test program #3.
  *
  * This program will loop for ever constantly checking its state.

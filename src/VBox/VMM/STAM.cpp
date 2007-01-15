@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * STAM - The Statistics Manager.
  */
 

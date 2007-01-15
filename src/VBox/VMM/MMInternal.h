@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * MM - Internal header file.
  */
 

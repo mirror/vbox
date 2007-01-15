@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM DBGF - Debugger Facility, Log Manager.
  */
 
