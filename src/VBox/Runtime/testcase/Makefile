@@ -166,9 +166,7 @@ tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 tstMove_SOURCES     = tstMove.cpp
 
 ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
-ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK
-ntGetTimerResolution_LIBS.win = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
+ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK  VBOX_NTDLL
 
 tstIoCtl_SOURCES = tstIoCtl.cpp
 

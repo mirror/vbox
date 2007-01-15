@@ -374,7 +374,7 @@ RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
 # VBoxRT - Shared Object / DLL version.
 #
 VBoxRT_TEMPLATE                = VBOXR3
-VBoxRT_SDKS.win                = WINPSDK W2K3DDK
+VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
 VBoxRT_DEFS                    = $(RuntimeR3_DEFS) IN_SUP_R3 IN_SUP_R3
 VBoxRT_DEFS.$(BUILD_TYPE)      = $(RuntimeR3_DEFS.$(BUILD_TYPE))
 VBoxRT_SOURCES                 = \
@@ -392,8 +392,6 @@ VBoxRT_LIBS                    = \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 VBoxRT_LIBS.darwin             = \
 	iconv
-VBoxRT_LIBS.win                = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
 VBoxRT_LIBS.os2                = \
 	$(PATH_LIB)/VBox-uuid$(VBOX_SUFF_LIB)
 ifdef VBOX_USE_VCC80
