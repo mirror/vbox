@@ -1,6 +1,6 @@
 ;; @file
-;
 ; EM Assembly Routines.
+;
 
 ; Copyright (C) 2006 InnoTek Systemberatung GmbH
 ;
