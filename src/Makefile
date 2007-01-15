@@ -30,8 +30,8 @@ else
  SUBDIRS =
 endif
 
-SUBDIRS += bldprogs libs VBox 
-ifeq ($(BUILD_TARGET),darwin)
+SUBDIRS += bldprogs libs VBox
+ifeq ($(filter-out darwin.x86 darwin.amd64 win.amd64 linux.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  SUBDIRS += recompiler/new
 else
  SUBDIRS += recompiler
