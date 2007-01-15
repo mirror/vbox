@@ -103,10 +103,10 @@ $(PATH_BIN)/additions/vboxmouse_drv.o: mouse.c pnp.c VBoxUtils.c
 $(PATH_BIN)/additions/vboxmouse_drv_70.so: xorg70/mouse.c xorg70/pnp.c VBoxUtils.c
 	$(call MSG_L1,Linking $@)
 	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-	$(QUIET)gcc -shared -s -o $@ $(PATH_vboxmouse_so_70)/xorg70/mouse.o $(PATH_vboxmouse_so_70)/xorg70/pnp.o $(PATH_vboxmouse_so_70)/VBoxUtils.o
+	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -shared -s -o $@ $(PATH_vboxmouse_so_70)/xorg70/mouse.o $(PATH_vboxmouse_so_70)/xorg70/pnp.o $(PATH_vboxmouse_so_70)/VBoxUtils.o
 
 $(PATH_BIN)/additions/vboxmouse_drv_71.so: xorg71/mouse.c xorg71/pnp.c VBoxUtils.c
 	$(call MSG_L1,Linking $@)
 	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-	$(QUIET)gcc -shared -s -o $@ $(PATH_vboxmouse_so_71)/xorg71/mouse.o $(PATH_vboxmouse_so_71)/xorg71/pnp.o $(PATH_vboxmouse_so_71)/VBoxUtils.o
+	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -shared -s -o $@ $(PATH_vboxmouse_so_71)/xorg71/mouse.o $(PATH_vboxmouse_so_71)/xorg71/pnp.o $(PATH_vboxmouse_so_71)/VBoxUtils.o
 
