@@ -616,7 +616,7 @@ PDMR3DECL(int) PDMR3GetSymbolR3(PVM pVM, const char *pszModule, const char *pszS
             else
             {
                 if (pszSymbol < (const char*)(void*)0x10000)
-                    AssertMsg(rc, ("Couldn't symbol '%u' in module '%s'\n", (unsigned)pszSymbol, pszModule));
+                    AssertMsg(rc, ("Couldn't symbol '%u' in module '%s'\n", (unsigned)(uintptr_t)pszSymbol, pszModule));
                 else
                     AssertMsg(rc, ("Couldn't symbol '%s' in module '%s'\n", pszSymbol, pszModule));
             }
@@ -760,7 +760,7 @@ PDMR3DECL(int) PDMR3GetSymbolGC(PVM pVM, const char *pszModule, const char *pszS
             else
             {
                 if (pszSymbol < (const char*)(void*)0x10000)
-                    AssertMsg(rc, ("Couldn't symbol '%u' in module '%s'\n", (unsigned)pszSymbol, pszModule));
+                    AssertMsg(rc, ("Couldn't symbol '%u' in module '%s'\n", (unsigned)(uintptr_t)pszSymbol, pszModule));
                 else
                     AssertMsg(rc, ("Couldn't symbol '%s' in module '%s'\n", pszSymbol, pszModule));
             }
