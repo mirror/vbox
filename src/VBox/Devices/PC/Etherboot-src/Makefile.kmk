@@ -105,7 +105,7 @@ include $(PATH_KBUILD)/footer.kmk
 #
 $(PATH_TARGET)/NetBiosBin.c: $(PATH_TARGET)/pcnet32.zrom $(VBOX_BIN2C)
 	$(call MSG_L1,bin2c $< => $@)
-	$(QUIET)$(VBOX_BIN2C) -min 16 -max 20 -mask 0xfff -export NetBiosBinary $< $@
+	$(QUIET)$(VBOX_BIN2C) -min 16 -max 24 -mask 0xfff -export NetBiosBinary $< $@
 
 #
 # Net BIOS.
