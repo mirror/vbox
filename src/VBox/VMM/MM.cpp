@@ -193,9 +193,16 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
 {
     LogFlow(("MMR3InitPaging:\n"));
     uint64_t    cbRam;
+    bool        fPreAlloc = false;
+
     int rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbRam = 0;
+
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "PreAlloc", &fPreAlloc);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fPreAlloc = false;
+
     if (VBOX_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (cbRam < PAGE_SIZE)
@@ -214,6 +221,19 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
             rc = PGM3PhysGrowRange(pVM, (RTGCPHYS)0);
             if (VBOX_SUCCESS(rc))
                 return rc;
+
+            /* Should we preallocate the entire guest RAM? */
+            if (fPreAlloc)
+            {
+                RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
+
+                for (;GCPhys < cbRam ; GCPhys+=PGM_DYNAMIC_CHUNK_SIZE)
+                {
+                    rc = PGM3PhysGrowRange(pVM, GCPhys);
+                    if (VBOX_SUCCESS(rc))
+                        return rc;
+                }
+            }
         }
 #else
         unsigned    cPages = cbRam >> PAGE_SHIFT;
