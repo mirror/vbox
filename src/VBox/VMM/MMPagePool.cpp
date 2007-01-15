@@ -284,7 +284,7 @@ DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
         {
             AssertMsg(paPhysPages[i].Phys && !(paPhysPages[i].Phys & PAGE_OFFSET_MASK),
                       ("i=%d Phys=%d\n", i, paPhysPages[i].Phys));
-            paPhysPages[i].uReserved = (unsigned)pSub;
+            paPhysPages[i].uReserved = (RTHCUINTPTR)pSub;
         }
 
         /*
