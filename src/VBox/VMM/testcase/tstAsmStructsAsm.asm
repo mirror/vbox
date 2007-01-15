@@ -1,8 +1,12 @@
+; $Id$
 ;; @file
+; Assembly / C structure layout testcase.
 ;
-; Make nasm create absolute symbols for the structure definition
+; Make yasm/nasm create absolute symbols for the structure definition
 ; which we can parse and make code from using objdump and sed.
+;
 
+;
 ; Copyright (C) 2006 InnoTek Systemberatung GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
@@ -16,6 +20,7 @@
 ; If you received this file as part of a commercial VirtualBox
 ; distribution, then only the terms of your commercial VirtualBox
 ; license agreement apply instead of the previous paragraph.
+;
 
 %ifdef __AMD64__
 BITS 64

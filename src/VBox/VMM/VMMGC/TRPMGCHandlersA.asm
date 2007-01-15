@@ -1,6 +1,7 @@
+; $Id$
 ;; @file
-;
 ; TRPM - Guest Context Trap Handlers
+;
 
 ; Copyright (C) 2006 InnoTek Systemberatung GmbH
 ;
@@ -25,7 +26,6 @@
 %include "VBox/stam.mac"
 %include "VBox/vm.mac"
 %include "TRPMInternal.mac"
-%include "iprt/err.mac"
 %include "VBox/err.mac"
 
 

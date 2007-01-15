@@ -1,8 +1,9 @@
+; $Id$
 ;; @file
-;
 ; PATM macros & definitions (identical to PATMA.h!!)
 ;
 
+;
 ; Copyright (C) 2006 InnoTek Systemberatung GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
@@ -16,6 +17,7 @@
 ; If you received this file as part of a commercial VirtualBox
 ; distribution, then only the terms of your commercial VirtualBox
 ; license agreement apply instead of the previous paragraph.
+;
 
 ; hardcoded dependency on single byte int 3
 %define PATM_INT3            int3
