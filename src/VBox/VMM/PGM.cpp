@@ -1599,12 +1599,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /* any memory associated with the range. */
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
-            bool fPreAlloc = false;
-
-            rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "PreAlloc", &fPreAlloc);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-                fPreAlloc = false;
-
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
                 uint8_t fValidChunk;
@@ -1617,9 +1611,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
                 if (fValidChunk)
                 {
-                    /* The first chunk is always present. (all chunks are present if guest ram is preallocated) */
-                    if (    iChunk != 0 
-                        && !fPreAlloc)
+                    if (!pRam->pavHCChunkHC[iChunk])
                     {
                         rc = pgmr3PhysGrowRange(pVM, pRam->GCPhys + iChunk * PGM_DYNAMIC_CHUNK_SIZE);
                         if (VBOX_FAILURE(rc))
