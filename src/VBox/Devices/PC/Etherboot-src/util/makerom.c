@@ -289,8 +289,13 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	/* shrink it down to the smallest size that will do */
+#ifndef VBOX
 	for (romsize = MAXROMSIZE; romsize > MINROMSIZE && romsize >= 2*fs; )
 		romsize /= 2L;
+#else
+        /* VBox can handle ROM BIOS at page boundaries */
+        romsize = (fs + 4095) & ~0xfff;
+#endif
 	rom[2] = romsize / 512L;
 	rom[5] = 0;
 	if (verbose)

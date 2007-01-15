@@ -826,12 +826,12 @@ static void pcbiosPlantDMITable(uint8_t *table)
     STRCPY(pszStr, "Virtual Machine");
     *pszStr++                    = '\0';
 
-    AssertMsg(pszStr - (char*)table == DMI_TABLE_SIZE,
-              ("DMI_TABLE_SIZE=%d, actual DMI table size is %d",
-              DMI_TABLE_SIZE, pszStr - (char*)table));
+    AssertMsg(pszStr - (char*)table == VBOX_DMI_TABLE_SIZE,
+              ("VBOX_DMI_TABLE_SIZE=%d, actual DMI table size is %d",
+              VBOX_DMI_TABLE_SIZE, pszStr - (char*)table));
 }
 
-AssertCompile(DMI_TABLE_ENTR == 2);
+AssertCompile(VBOX_DMI_TABLE_ENTR == 2);
 
 
 /**
@@ -917,7 +917,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     pcbiosPlantDMITable(pData->au8DMIPage);
 
-    rc = PDMDevHlpROMRegister(pDevIns, DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, "DMI tables");
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, "DMI tables");
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -1171,7 +1171,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * the (up to) 32 kb ROM image.
      */
     if (pu8LanBoot)
-        rc = PDMDevHlpROMRegister(pDevIns, 0x000c8000, cbFileLanBoot, pu8LanBoot, "Net Boot ROM");
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot, "Net Boot ROM");
 
     return rc;
 }

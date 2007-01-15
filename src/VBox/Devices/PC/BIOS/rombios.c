@@ -120,6 +120,10 @@
 //
 //   BCC Bug: find a generic way to handle the bug of #asm after an "if"  (fixed in 0.16.7)
 
+#ifdef VBOX
+#include "DevPcBios.h"
+#endif
+
 #define DEBUG_ROMBIOS      0
 
 #define DEBUG_ATA          0
@@ -7872,18 +7876,19 @@ Bit8u bseqnr;
 #ifdef VBOX
   // Check for boot from LAN first
   if (bootlan == 1) {
-    if (read_word(0xc800,0) == 0xaa55) {
+    if (read_word(VBOX_LANBOOT_SEG,0) == 0xaa55) {
       Bit16u pnpoff;
       // This is NOT a generic PnP implementation, but an Etherboot-specific hack.
-      pnpoff = read_word(0xc800,0x1a);
-      if (read_dword(0xc800,pnpoff) == 0x506e5024 && read_dword(0xc800,read_word(0xc800,pnpoff+0xe)) == 0x65687445) {
+      pnpoff = read_word(VBOX_LANBOOT_SEG,0x1a);
+      if (read_dword(VBOX_LANBOOT_SEG,pnpoff) == 0x506e5024 &&
+          read_dword(VBOX_LANBOOT_SEG,read_word(VBOX_LANBOOT_SEG,pnpoff+0xe)) == 0x65687445) {
         // Found PnP signature and Etherboot manufacturer string.
         print_boot_device(bootcd, bootlan, bootdrv);
 ASM_START
     push ds
     push es
     pusha
-    calli 0x0006,0xc800
+    calli 0x0006,VBOX_LANBOOT_SEG
     popa
     pop es
     pop ds
@@ -10840,23 +10845,22 @@ int08_store_ticks:
 .ascii BIOS_COPYRIGHT_STRING
 
 #ifdef VBOX
-#include "DevPcBios.h"
 // The DMI header
 .org 0xff40
 .align 16
  db   0x5f, 0x44, 0x4d, 0x49, 0x5f    ; "_DMI_" signature
  ; calculate the DMI header checksum
  db ( - ( 0x5f + 0x44 + 0x4d + 0x49 + 0x5f \
-         + ((DMI_TABLE_BASE      ) & 0xff) + ((DMI_TABLE_BASE >>  8) & 0xff) \
-         + ((DMI_TABLE_BASE >> 16) & 0xff) + ((DMI_TABLE_BASE >> 24) & 0xff) \
-         + ((DMI_TABLE_SIZE      ) & 0xff) + ((DMI_TABLE_SIZE >>  8) & 0xff) \
-         + ((DMI_TABLE_ENTR      ) & 0xff) + ((DMI_TABLE_ENTR >>  8) & 0xff) \
-         + DMI_TABLE_VER \
+         + ((VBOX_DMI_TABLE_BASE      ) & 0xff) + ((VBOX_DMI_TABLE_BASE >>  8) & 0xff) \
+         + ((VBOX_DMI_TABLE_BASE >> 16) & 0xff) + ((VBOX_DMI_TABLE_BASE >> 24) & 0xff) \
+         + ((VBOX_DMI_TABLE_SIZE      ) & 0xff) + ((VBOX_DMI_TABLE_SIZE >>  8) & 0xff) \
+         + ((VBOX_DMI_TABLE_ENTR      ) & 0xff) + ((VBOX_DMI_TABLE_ENTR >>  8) & 0xff) \
+         + VBOX_DMI_TABLE_VER \
     )) & 0xff
- dw DMI_TABLE_SIZE                    ; DMI tables length
- dd DMI_TABLE_BASE                    ; DMI tables base
- dw DMI_TABLE_ENTR                    ; DMI tables entries
- db DMI_TABLE_VER                     ; DMI version
+ dw VBOX_DMI_TABLE_SIZE               ; DMI tables length
+ dd VBOX_DMI_TABLE_BASE               ; DMI tables base
+ dw VBOX_DMI_TABLE_ENTR               ; DMI tables entries
+ db VBOX_DMI_TABLE_VER                ; DMI version
  db 0x00                              ; Just for alignment
 #endif
 

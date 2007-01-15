@@ -100,11 +100,12 @@ NetBiosBin_SOURCES  = $(PATH_TARGET)/NetBiosBin.c
 include $(PATH_KBUILD)/footer.kmk
 
 #
-# Rule for making the bios.
+# Rule for making the bios
+# Note: The BIOS image occupies 0xCB000...0xCFFFF, therefore its size is limited to 20KB.
 #
 $(PATH_TARGET)/NetBiosBin.c: $(PATH_TARGET)/pcnet32.zrom $(VBOX_BIN2C)
 	$(call MSG_L1,bin2c $< => $@)
-	$(QUIET)$(VBOX_BIN2C) -min 32 -max 64 -mask 0xfff -export NetBiosBinary $< $@
+	$(QUIET)$(VBOX_BIN2C) -min 16 -max 20 -mask 0xfff -export NetBiosBinary $< $@
 
 #
 # Net BIOS.
