@@ -1,5 +1,4 @@
 /** @file
- *
  * PGM - Page Manager and Monitor, Physical Memory Addressing.
  */
 
@@ -43,8 +42,7 @@
 #include <iprt/asm.h>
 #include <VBox/log.h>
 #include <iprt/thread.h>
-
-#include <string.h>
+#include <iprt/string.h>
 
 
 
@@ -334,7 +332,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
 {
     void *pvRam;
     int   rc;
-  
+
     /* We must execute this function in the EMT thread, otherwise we'll run into problems. */
     if (!VM_IS_EMT(pVM))
     {
