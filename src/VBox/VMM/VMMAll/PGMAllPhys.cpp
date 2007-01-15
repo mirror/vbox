@@ -710,21 +710,19 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                 /* Physical chunk in dynamically allocated range not present? */
                 if (RT_UNLIKELY(!(pCur->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK)))
                 {
-#ifdef IN_RING3
                     int rc;
-
-                    if (fGrabbedLock) 
-                    {   
+#ifdef IN_RING3
+                    if (fGrabbedLock)
+                    {
                         pgmUnlock(pVM);
                         rc = pgmr3PhysGrowRange(pVM, GCPhys);
                         if (rc == VINF_SUCCESS)
                             PGMPhysRead(pVM, GCPhys, pvBuf, cbRead); /* try again; can't assume pCur is still valid (paranoia) */
                         return;
                     }
-                    else
-                        rc = pgmr3PhysGrowRange(pVM, GCPhys);
+                    rc = pgmr3PhysGrowRange(pVM, GCPhys);
 #else
-                    int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
+                    rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
 #endif
                     if (rc != VINF_SUCCESS)
                         goto end;
@@ -979,21 +977,19 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                 /* Physical chunk in dynamically allocated range not present? */
                 if (RT_UNLIKELY(!(pCur->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK)))
                 {
-#ifdef IN_RING3
                     int rc;
-
-                    if (fGrabbedLock) 
-                    {   
+#ifdef IN_RING3
+                    if (fGrabbedLock)
+                    {
                         pgmUnlock(pVM);
                         rc = pgmr3PhysGrowRange(pVM, GCPhys);
                         if (rc == VINF_SUCCESS)
                             PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite); /* try again; can't assume pCur is still valid (paranoia) */
                         return;
                     }
-                    else
-                        rc = pgmr3PhysGrowRange(pVM, GCPhys);
+                    rc = pgmr3PhysGrowRange(pVM, GCPhys);
 #else
-                    int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
+                    rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
 #endif
                     if (rc != VINF_SUCCESS)
                         goto end;
