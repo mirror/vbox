@@ -354,7 +354,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     GCPhys = GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK;
 
     STAM_COUNTER_INC(&pVM->pgm.s.StatDynRamGrow);
-    STAM_COUNTER_ADD(&pVM->pgm.s.StatDynRamTotal, 4);
+    STAM_COUNTER_ADD(&pVM->pgm.s.StatDynRamTotal, PGM_DYNAMIC_CHUNK_SIZE/(1024*1024));
 
     Log(("pgmr3PhysGrowRange: allocate chunk of size 0x%X at %VGp\n", PGM_DYNAMIC_CHUNK_SIZE, GCPhys));
 
