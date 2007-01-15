@@ -185,7 +185,7 @@ __BEGIN_DECLS
 #define VERR_TIMER_ACTIVE                   (-68)
 /** The timer can't be stopped because i's already suspended. */
 #define VERR_TIMER_SUSPENDED                (-69)
-/** The operation was canceled by the user. */
+/** The operation was cancelled by the user. */
 #define VERR_CANCELLED                      (-70)
 
 /** @} */
