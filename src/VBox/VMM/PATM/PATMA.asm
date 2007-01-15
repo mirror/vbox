@@ -1,5 +1,5 @@
+; $Id$
 ;; @file
-;
 ; PATM Assembly Routines.
 ;
 
@@ -31,7 +31,7 @@
 ;*******************************************************************************
 ;* Header Files                                                                *
 ;*******************************************************************************
-%include "VBox/nasm.mac"
+%include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
 %include "VBox/x86.mac"
 %include "VBox/vm.mac"

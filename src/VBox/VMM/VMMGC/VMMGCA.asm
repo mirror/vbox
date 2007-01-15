@@ -1,6 +1,7 @@
+; $Id$
 ;; @file
-;
 ; VMMGC - Guest Context Virtual Machine Monitor assembly routines.
+;
 
 ; Copyright (C) 2006 InnoTek Systemberatung GmbH
 ;
@@ -19,7 +20,7 @@
 ;*******************************************************************************
 ;* Header Files                                                                *
 ;*******************************************************************************
-%include "VBox/nasm.mac"
+%include "VBox/asmdefs.mac"
 %include "VBox/x86.mac"
 
 
