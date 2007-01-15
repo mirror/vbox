@@ -1,5 +1,4 @@
 /** @file
- *
  * VMM - Host Context Ring 0.
  */
 
@@ -341,33 +340,33 @@ static void vmmR0RecordRC(PVM pVM, int rc)
         case VINF_VMM_CALL_HOST:
             switch (pVM->vmm.s.enmCallHostOperation)
             {
-            case VMMCALLHOST_PDM_LOCK:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMLock);
-                break;
-            case VMMCALLHOST_PDM_QUEUE_FLUSH:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMQueueFlush);
-                break;
-            case VMMCALLHOST_PGM_POOL_GROW:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMPoolGrow);
-                break;
-            case VMMCALLHOST_PGM_LOCK:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMLock);
-                break;
-            case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRemReplay);
-                break;
-            case VMMCALLHOST_PGM_RAM_GROW_RANGE:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMGrowRAM);
-                break;
-            case VMMCALLHOST_VMM_LOGGER_FLUSH:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetLogFlush);
-                break;
-            case VMMCALLHOST_VM_SET_ERROR:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetVMSetError);
-                break;
-            default:
-                STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetCallHost);
-                break;
+                case VMMCALLHOST_PDM_LOCK:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMLock);
+                    break;
+                case VMMCALLHOST_PDM_QUEUE_FLUSH:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMQueueFlush);
+                    break;
+                case VMMCALLHOST_PGM_POOL_GROW:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMPoolGrow);
+                    break;
+                case VMMCALLHOST_PGM_LOCK:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMLock);
+                    break;
+                case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRemReplay);
+                    break;
+                case VMMCALLHOST_PGM_RAM_GROW_RANGE:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMGrowRAM);
+                    break;
+                case VMMCALLHOST_VMM_LOGGER_FLUSH:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetLogFlush);
+                    break;
+                case VMMCALLHOST_VM_SET_ERROR:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetVMSetError);
+                    break;
+                default:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetCallHost);
+                    break;
             }
             break;
         case VINF_PATM_DUPLICATE_FUNCTION:
@@ -682,7 +681,7 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
         if (rc == VINF_SUCCESS)
             rc = g_pVMAssert->vmm.s.rcCallHost;
     }
-       
+
     return true;
 }
 
