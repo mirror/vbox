@@ -229,7 +229,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
                     for (;GCPhys < cbRam ; GCPhys+=PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         rc = PGM3PhysGrowRange(pVM, GCPhys);
-                        if (VBOX_SUCCESS(rc))
+                        if (VBOX_FAILURE(rc))
                             return rc;
                     }
                 }
