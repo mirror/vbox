@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PC-BIOS - Binary 2 C Structure Converter.
  */
  
@@ -151,13 +151,13 @@ syntax_error:
     /* check size restrictions */
     if (uMask && (cbBin & uMask))
     {
-        fprintf(stderr, "%s: size=%d - Not aligned!\n", argv[0], cbBin);
+        fprintf(stderr, "%s: size=%ld - Not aligned!\n", argv[0], (long)cbBin);
         return 1;
     }
     if (cbBin < cbMin || cbBin > cbMax)
     {
-        fprintf(stderr, "%s: size=%d - Not %d-%db in size!\n",
-                argv[0], cbBin, cbMin, cbMax);
+        fprintf(stderr, "%s: size=%ld - Not %ld-%ldb in size!\n",
+                argv[0], (long)cbBin, (long)cbMin, (long)cbMax);
         return 1;
     }
 
@@ -193,7 +193,7 @@ syntax_error:
     }
     if (off != cbBin)
     {
-        fprintf(stderr, "%s: read error off=%d cbBin=%d\n", argv[0], off, cbBin);
+        fprintf(stderr, "%s: read error off=%d cbBin=%ld\n", argv[0], off, (long)cbBin);
         goto error;
     }
 
