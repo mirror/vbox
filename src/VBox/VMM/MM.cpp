@@ -220,19 +220,20 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
             /* Allocate the first chunk, as we'll map ROM ranges there. */
             rc = PGM3PhysGrowRange(pVM, (RTGCPHYS)0);
             if (VBOX_SUCCESS(rc))
-                return rc;
-
-            /* Should we preallocate the entire guest RAM? */
-            if (fPreAlloc)
             {
-                RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
-
-                for (;GCPhys < cbRam ; GCPhys+=PGM_DYNAMIC_CHUNK_SIZE)
+                /* Should we preallocate the entire guest RAM? */
+                if (fPreAlloc)
                 {
-                    rc = PGM3PhysGrowRange(pVM, GCPhys);
-                    if (VBOX_SUCCESS(rc))
-                        return rc;
+                    RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
+
+                    for (;GCPhys < cbRam ; GCPhys+=PGM_DYNAMIC_CHUNK_SIZE)
+                    {
+                        rc = PGM3PhysGrowRange(pVM, GCPhys);
+                        if (VBOX_SUCCESS(rc))
+                            return rc;
+                    }
                 }
+                return rc;
             }
         }
 #else
