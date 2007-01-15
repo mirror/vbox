@@ -1072,7 +1072,8 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(filter-out -Wstrict-prototypes -Wno-p
   ifndef VBOX_LINUX_VERSION_2_4
 # 2.6
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .ko
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -m elf_i386 -r
+TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386 -r
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64 -r
   else
 # 2.4
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .o
