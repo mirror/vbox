@@ -25,6 +25,6 @@
 
 RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
-    printk("%.*s", cb, pch);
+    printk("%.*s", (int)cb, pch);
 }
 
