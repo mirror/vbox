@@ -1604,9 +1604,7 @@ void pgmPoolClearAll(PVM pVM)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-        {
             pRam->aHCPhys[iPage] &= MM_RAM_FLAGS_NO_REFS_MASK;
-        }
     }
 
     pPool->iPhysExtFreeHead = 0;
