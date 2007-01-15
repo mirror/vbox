@@ -157,7 +157,7 @@ vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
 vboxdrv_INCS          = $(VBOX_PATH_SUPPORT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(shell gcc -print-libgcc-file-name)
+vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(VBOX_GCC_LIBGCC)
 vboxdrv_SOURCES       = \
 	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c \
 	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c
