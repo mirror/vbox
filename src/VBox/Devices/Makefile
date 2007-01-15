@@ -58,7 +58,7 @@ endif
 # VBoxDD (shared object)
 #
 VBoxDD_TEMPLATE         = VBOXR3
-VBoxDD_SDKS.win         = WINPSDK DXSDK W2K3DDK
+VBoxDD_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
 VBoxDD_SOURCES          = \
 	Builtins.cpp \
 	muldiv64.c
@@ -77,8 +77,7 @@ VBoxDD_LIBS             = \
 	$(LIB_RUNTIME)
 VBoxDD_LIBS.win         = \
 	$(PATH_LIB)/VBoxDD2.lib \
-	$(PATH_SDK_DXSDK_LIB)/dxguid.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
+	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 VBoxDD_LIBS.linux       = \
 	$(PATH_BIN)/VBoxDD2.so
 
