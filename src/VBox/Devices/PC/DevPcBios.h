@@ -23,9 +23,11 @@
 #ifndef DEV_PCBIOS_H
 #define DEV_PCBIOS_H
 
-#define DMI_TABLE_ENTR          2
-#define DMI_TABLE_SIZE          160
-#define DMI_TABLE_BASE          0xe1000
-#define DMI_TABLE_VER           0x23
+#define VBOX_DMI_TABLE_ENTR          2
+#define VBOX_DMI_TABLE_SIZE          160
+#define VBOX_DMI_TABLE_BASE          0xe1000
+#define VBOX_DMI_TABLE_VER           0x23
+
+#define VBOX_LANBOOT_SEG             0xcb00
 
 #endif
