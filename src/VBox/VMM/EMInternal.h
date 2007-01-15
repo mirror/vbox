@@ -299,7 +299,7 @@ typedef struct EM
     /** More statistics (GC). */
     GCPTRTYPE(PEMSTATS)     pStatsGC;
 #if HC_ARCH_BITS != GC_ARCH_BITS && GC_ARCH_BITS == 32
-    GCPTR                   padding0
+    RTGCPTR                 padding0;
 #endif
 
     /** Tree for keeping track of cli occurances (debug only). */
