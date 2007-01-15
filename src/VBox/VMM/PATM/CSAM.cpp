@@ -1767,7 +1767,7 @@ CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag)
         Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     }
 
-#ifdef VBOX_STRICT
+#if 0 /* def VBOX_STRICT -> very annoying) */
     if (pPageRec->page.fMonitorActive)
     {
         uint64_t fPageShw;
