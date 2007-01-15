@@ -98,8 +98,10 @@ VBOX_VERSION_BUILD = 3
 
 # Build linux / win32 additions.
 ifeq ($(BUILD_TARGET),linux)
- VBOX_WITH_LINUX_ADDITIONS = 1
- VBOX_WITH_WIN32_ADDITIONS = 1
+ ifeq ($(BUILD_TARGET_ARCH),x86) # later on amd64 too.
+  VBOX_WITH_LINUX_ADDITIONS = 1
+  VBOX_WITH_WIN32_ADDITIONS = 1
+ endif
 endif
 ifeq ($(BUILD_TARGET),l4)
  VBOX_WITH_LINUX_ADDITIONS = 1
