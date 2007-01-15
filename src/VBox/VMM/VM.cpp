@@ -96,6 +96,7 @@ static PVMATDTOR    g_pVMAtDtorHead;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int  vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static void vmR3CallVMAtError(PFNVMATERROR pfnVMAtError, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, ...);
 static int  vmR3InitRing3(PVM pVM);
 static int  vmR3InitRing0(PVM pVM);
 static int  vmR3InitGC(PVM pVM);
@@ -300,12 +301,25 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                 pszError = N_("Unknown error initializing kernel driver (%Vrc)");
                 AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
         }
-        pfnVMAtError(NULL, pvUserVM, rc, RT_SRC_POS, pszError, (va_list)&rc); /** @todo r=bird: this isn't portable to AMD64, please fix. */
+        vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
     }
 
     LogFlow(("VMR3Create: returns %Vrc\n", rc));
     return rc;
 }
+
+
+/**
+ * Wrapper for getting a correct va_list.
+ */
+static void vmR3CallVMAtError(PFNVMATERROR pfnVMAtError, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, ...)
+{
+    va_list va;
+    va_start(va, pszError);
+    pfnVMAtError(NULL, pvUser, rc, RT_SRC_POS_ARGS, pszError, va);
+    va_end(va);
+}
+
 
 /**
  * Initializes the VM.
