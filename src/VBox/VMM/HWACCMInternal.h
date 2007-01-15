@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * HWACCM - Internal header file.
  */
 

@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * SSM - Internal header file.
  */
 

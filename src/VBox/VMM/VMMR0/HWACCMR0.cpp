@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * HWACCM - Host Context Ring 0.
  */
 
@@ -302,7 +302,6 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 
 
 #ifdef VBOX_STRICT
-#include <string.h>
 #include <iprt/string.h>
 /**
  * Dumps a descriptor.

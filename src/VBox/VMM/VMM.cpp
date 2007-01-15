@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM - The Virtual Machine Monitor Core.
  */
 
@@ -231,7 +231,7 @@ static int vmmR3InitCoreCode(PVM pVM)
     }
 
     /*
-     * Allocate continguous pages for switchers and deal with 
+     * Allocate continguous pages for switchers and deal with
      * conflicts in the intermediate mapping of the code.
      */
     pVM->vmm.s.cbCoreCode = RT_ALIGN_32(cbCoreCode, PAGE_SIZE);
@@ -243,7 +243,7 @@ static int vmmR3InitCoreCode(PVM pVM)
         if (rc == VERR_PGM_MAPPINGS_FIX_CONFLICT)
         {
             /* try more allocations. */
-            struct 
+            struct
             {
                 void *pvR0;
                 void *pvR3;
@@ -284,8 +284,8 @@ static int vmmR3InitCoreCode(PVM pVM)
     }
     if (VBOX_SUCCESS(rc))
     {
-        /* 
-         * copy the code. 
+        /*
+         * copy the code.
          */
         for (unsigned iSwitcher = 0; iSwitcher < ELEMENTS(s_apSwitchers); iSwitcher++)
         {
@@ -316,8 +316,8 @@ static int vmmR3InitCoreCode(PVM pVM)
         SUPContFree(pVM->vmm.s.pvHCCoreCodeR3);
     }
     else
-        VMSetError(pVM, rc, RT_SRC_POS, 
-                   N_("Failed to allocate %d bytes of contiguous memory for the world switcher code."), 
+        VMSetError(pVM, rc, RT_SRC_POS,
+                   N_("Failed to allocate %d bytes of contiguous memory for the world switcher code."),
                    cbCoreCode);
 
     pVM->vmm.s.pvHCCoreCodeR3 = NULL;
@@ -475,7 +475,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetStaleSelector,       STAMTYPE_COUNTER, "/VMM/GCRet/StaleSelector",       STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_STALE_SELECTOR returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetIRETTrap,            STAMTYPE_COUNTER, "/VMM/GCRet/IRETTrap",            STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_IRET_TRAP returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetEmulate,             STAMTYPE_COUNTER, "/VMM/GCRet/Emulate",             STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchEmulate,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchEmulate",        STAMUNIT_OCCURENCES, "Number of VINF_PATCH_EMULATE_INSTR returns."); 
+                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchEmulate,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchEmulate",        STAMUNIT_OCCURENCES, "Number of VINF_PATCH_EMULATE_INSTR returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetIORead,              STAMTYPE_COUNTER, "/VMM/GCRet/IORead",              STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_READ returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetIOWrite,             STAMTYPE_COUNTER, "/VMM/GCRet/IOWrite",             STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_WRITE returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetIOReadWrite,         STAMTYPE_COUNTER, "/VMM/GCRet/IOReadWrite",         STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_READWRITE returns.");
@@ -758,7 +758,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         if (pSwitcher && pSwitcher->pfnRelocate)
         {
             unsigned off = pVM->vmm.s.aoffSwitchers[iSwitcher];
-            pSwitcher->pfnRelocate(pVM, 
+            pSwitcher->pfnRelocate(pVM,
                                    pSwitcher,
                                    (uint8_t *)pVM->vmm.s.pvHCCoreCodeR0 + off,
                                    (uint8_t *)pVM->vmm.s.pvHCCoreCodeR3 + off,
@@ -2624,8 +2624,6 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
         VMMR3FatalDump(pVM, rc);
     return rc;
 }
-
-#include <stdio.h>
 
 
 /* execute the switch. */

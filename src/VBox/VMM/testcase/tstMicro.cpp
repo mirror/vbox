@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * Micro Testcase, profiling special CPU operations.
  */
 
@@ -38,8 +38,6 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
-
-#include <stdio.h>
 
 #include "tstMicro.h"
 
@@ -367,13 +365,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!VBOX_SUCCESS(rc))
         {
-            printf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
+            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcRet++;
         }
     }
     else
     {
-        printf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
+        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
         rcRet++;
     }
 

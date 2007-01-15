@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM Testcase.
  */
 
@@ -34,15 +34,13 @@
 #include <iprt/stream.h>
 
 
-#include <stdio.h>
-
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #define TESTCASE    "tstVMM"
 
 VMMR3DECL(int) VMMDoTest(PVM pVM);
+
 
 int main(int argc, char **argv)
 {
@@ -75,13 +73,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!VBOX_SUCCESS(rc))
         {
-            printf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
+            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcRet++;
         }
     }
     else
     {
-        printf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
+        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
         rcRet++;
     }
 

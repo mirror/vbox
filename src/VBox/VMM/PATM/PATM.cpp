@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PATM - Dynamic Guest OS Patching Manager
  *
  * NOTE: Never ever reuse patch memory!!
@@ -188,11 +188,11 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->patm.s.StatInt3BlockRun,  STAMTYPE_COUNTER, "/PATM/Patch/Run/Int3",        STAMUNIT_OCCURENCES,     "Number of times an int3 block patch was executed.");
     STAMR3RegisterF(pVM, &pVM->patm.s.pGCStateHC->uPatchCalls, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Patch/Run/Normal");
-    
+
     STAM_REG(pVM, &pVM->patm.s.StatInstalledFunctionPatches,   STAMTYPE_COUNTER, "/PATM/Patch/Installed/Function",       STAMUNIT_OCCURENCES,     "Number of installed function duplication patches.");
     STAM_REG(pVM, &pVM->patm.s.StatInstalledTrampoline,   STAMTYPE_COUNTER, "/PATM/Patch/Installed/Trampoline",          STAMUNIT_OCCURENCES,     "Number of installed trampoline patches.");
     STAM_REG(pVM, &pVM->patm.s.StatInstalledJump, STAMTYPE_COUNTER, "/PATM/Patch/Installed/Jump",  STAMUNIT_OCCURENCES,     "Number of installed jump patches.");
-    
+
     STAM_REG(pVM, &pVM->patm.s.StatOverwritten,   STAMTYPE_COUNTER, "/PATM/Patch/Overwritten",     STAMUNIT_OCCURENCES,     "Number of overwritten patches.");
     STAM_REG(pVM, &pVM->patm.s.StatFixedConflicts,STAMTYPE_COUNTER, "/PATM/Patch/ConflictFixed",   STAMUNIT_OCCURENCES,     "Number of fixed conflicts.");
     STAM_REG(pVM, &pVM->patm.s.StatFlushed,       STAMTYPE_COUNTER, "/PATM/Patch/Flushed",         STAMUNIT_OCCURENCES,     "Number of flushes of pages with patch jumps.");
@@ -219,7 +219,7 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->patm.s.StatPatchWrite,        STAMTYPE_PROFILE, "/PATM/Write/Handle",       STAMUNIT_TICKS_PER_CALL, "Profiling of PATMR3PatchWrite");
     STAM_REG(pVM, &pVM->patm.s.StatPatchWriteDetect,  STAMTYPE_PROFILE, "/PATM/Write/Detect",       STAMUNIT_TICKS_PER_CALL, "Profiling of PATMIsWriteToPatchPage");
     STAM_REG(pVM, &pVM->patm.s.StatPatchWriteInterpreted, STAMTYPE_COUNTER, "/PATM/Write/Interpreted/Success", STAMUNIT_OCCURENCES,  "Nr of interpreted patch writes.");
-    STAM_REG(pVM, &pVM->patm.s.StatPatchWriteInterpretedFailed, STAMTYPE_COUNTER, "/PATM/Write/Interpreted/Failed", STAMUNIT_OCCURENCES,  "Nr of failed interpreted patch writes.");    
+    STAM_REG(pVM, &pVM->patm.s.StatPatchWriteInterpretedFailed, STAMTYPE_COUNTER, "/PATM/Write/Interpreted/Failed", STAMUNIT_OCCURENCES,  "Nr of failed interpreted patch writes.");
 
     STAM_REG(pVM, &pVM->patm.s.StatPatchPageInserted, STAMTYPE_COUNTER, "/PATM/Page/Inserted",      STAMUNIT_OCCURENCES,     "Nr of inserted guest pages that were patched");
     STAM_REG(pVM, &pVM->patm.s.StatPatchPageRemoved,  STAMTYPE_COUNTER, "/PATM/Page/Removed",       STAMUNIT_OCCURENCES,     "Nr of removed guest pages that were patched");
@@ -237,7 +237,7 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->patm.s.StatGenJump,           STAMTYPE_COUNTER, "/PATM/Gen/Jmp" ,         STAMUNIT_OCCURENCES,     "Number of generated indirect jump instructions.");
     STAM_REG(pVM, &pVM->patm.s.StatGenPopf,           STAMTYPE_COUNTER, "/PATM/Gen/Popf" ,        STAMUNIT_OCCURENCES,     "Number of generated popf instructions.");
 
-    STAM_REG(pVM, &pVM->patm.s.StatCheckPendingIRQ,   STAMTYPE_COUNTER, "/PATM/GC/CheckIRQ" ,        STAMUNIT_OCCURENCES,     "Number of traps that ask to check for pending irqs.");   
+    STAM_REG(pVM, &pVM->patm.s.StatCheckPendingIRQ,   STAMTYPE_COUNTER, "/PATM/GC/CheckIRQ" ,        STAMUNIT_OCCURENCES,     "Number of traps that ask to check for pending irqs.");
 #endif /* VBOX_WITH_STATISTICS */
 
     Log(("PATMCallRecord.size           %d\n", PATMCallRecord.size));
@@ -248,7 +248,7 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
     Log(("PATMIretRecord.size           %d\n", PATMIretRecord.size));
     Log(("PATMStiRecord.size            %d\n", PATMStiRecord.size));
     Log(("PATMCheckIFRecord.size        %d\n", PATMCheckIFRecord.size));
-    
+
     return rc;
 }
 
@@ -2741,7 +2741,7 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
 
         Log(("PATMR3PatchBlock %VGv -> int 3 callable patch.\n", pPatch->pPrivInstrGC));
         /* Replace first opcode byte with 'int 3'. */
-        rc = patmActivateInt3Patch(pVM, pPatch); 
+        rc = patmActivateInt3Patch(pVM, pPatch);
         if (VBOX_FAILURE(rc))
             goto failure;
 
@@ -3627,7 +3627,7 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTGCPTR pInstrGC, PPATCHINFO pPatch)
 }
 
 /**
- * Activates an int3 patch 
+ * Activates an int3 patch
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
@@ -3651,7 +3651,7 @@ static int patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
 }
 
 /**
- * Deactivates an int3 patch 
+ * Deactivates an int3 patch
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
@@ -4028,7 +4028,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
         return rc;
     }
     /* Disallow patching instructions inside ROM code; complete function duplication is allowed though. */
-    if (    !(flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_TRAMPOLINE)) 
+    if (    !(flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_TRAMPOLINE))
         &&  !PGMPhysIsGCPhysNormal(pVM, GCPhys))
     {
         Log(("Code at %RGv (phys %RGp) is in a ROM, MMIO or invalid page - refused\n", pInstrGC, GCPhys));
@@ -4402,7 +4402,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
-        if (    pPatchPage->pLowestAddrGC == 0 
+        if (    pPatchPage->pLowestAddrGC == 0
             ||  pPatchPage->pLowestAddrGC > (RTGCPTR)pGuestToPatchRec->Core.Key)
         {
             RTGCUINTPTR offset;
@@ -4415,7 +4415,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
             {
                 /* Get the closest guest instruction (from above) */
                 pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGetBestFit(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)(pPage-1), false);
-    
+
                 if (pGuestToPatchRec)
                 {
                     uint32_t size = patmGetInstrSize(pVM, pPatch, (RTGCPTR)pGuestToPatchRec->Core.Key);
@@ -4431,7 +4431,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
-        if (    pPatchPage->pHighestAddrGC == 0 
+        if (    pPatchPage->pHighestAddrGC == 0
             ||  pPatchPage->pHighestAddrGC < (RTGCPTR)pGuestToPatchRec->Core.Key)
         {
             pPatchPage->pHighestAddrGC = (RTGCPTR)pGuestToPatchRec->Core.Key;
@@ -4790,9 +4790,9 @@ PATMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTGCPTR pInstrGC, uint8_t *pByte)
 
     pPatchRec = (PPATMPATCHREC)RTAvloGCPtrGetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC, false);
     // if the patch is enabled and the pointer lies within 5 bytes of this priv instr ptr, then we've got a hit!
-    if (    pPatchRec 
-        &&  pPatchRec->patch.uState == PATCH_ENABLED 
-        &&  pInstrGC >= pPatchRec->patch.pPrivInstrGC 
+    if (    pPatchRec
+        &&  pPatchRec->patch.uState == PATCH_ENABLED
+        &&  pInstrGC >= pPatchRec->patch.pPrivInstrGC
         &&  pInstrGC < pPatchRec->patch.pPrivInstrGC + pPatchRec->patch.cbPatchJump)
     {
         RTGCPTR offset = pInstrGC - pPatchRec->patch.pPrivInstrGC;
@@ -5086,7 +5086,7 @@ PATMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTGCPTR pInstrGC)
 
         if (pPatch->uState == PATCH_DISABLED)
         {
-            if (pPatch->flags & PATMFL_MUST_INSTALL_PATCHJMP)            
+            if (pPatch->flags & PATMFL_MUST_INSTALL_PATCHJMP)
             {
                 Assert(!(pPatch->flags & PATMFL_PATCHED_GUEST_CODE));
                 /** @todo -> pPrivInstrHC is probably not valid anymore */
@@ -5770,7 +5770,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTGCPTR pEip, RTGCPTR *
         AssertRC(rc);
 
         if (    rc == VINF_SUCCESS
-            &&  (   Cpu.pCurInstr->opcode == OP_PUSHF 
+            &&  (   Cpu.pCurInstr->opcode == OP_PUSHF
                  || Cpu.pCurInstr->opcode == OP_PUSH
                  || Cpu.pCurInstr->opcode == OP_CALL)
            )

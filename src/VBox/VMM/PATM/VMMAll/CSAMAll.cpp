@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * CSAM - Guest OS Code Scanning and Analysis Manager - Any Context
  */
 
@@ -42,7 +42,7 @@
 #include <iprt/assert.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <string.h>
+#include <iprt/string.h>
 #include <iprt/asm.h>
 
 /**
@@ -154,7 +154,7 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR pPage, bool fScanned)
     }
     if(fScanned)
         ASMBitSet(pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
-    else 
+    else
         ASMBitClear(pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir], bit);
 
     return VINF_SUCCESS;

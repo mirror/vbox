@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * CPUM - CPU Monitor(/Manager) - Stack manipulation.
  */
 

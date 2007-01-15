@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * CSAM - Internal header file.
  */
 

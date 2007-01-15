@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PATM - Dynamic Guest OS Patching Manager - Guest Context
  */
 
@@ -41,7 +41,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <string.h>
+#include <iprt/string.h>
 #include <stdlib.h>
 #include <stdio.h>
 

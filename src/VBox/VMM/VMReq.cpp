@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VM - Virtual Machine
  */
 
@@ -745,7 +745,7 @@ static int  vmR3ReqProcessOne(PVM pVM, PVMREQ pReq)
         case VMREQTYPE_INTERNAL:
         {
             uintptr_t *pauArgs = &pReq->u.Internal.aArgs[0];
-            union 
+            union
             {
                 PFNRT pfn;
                 DECLCALLBACKMEMBER(int, pfn00)(void);

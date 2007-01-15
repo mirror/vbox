@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * MM - Memory Monitor(/Manager) - Page Pool.
  */
 
@@ -37,8 +37,8 @@
 #ifdef USE_INLINE_ASM_BIT_OPS
 # include <iprt/asm.h>
 #endif
+#include <iprt/string.h>
 
-#include <string.h>
 
 
 /*******************************************************************************

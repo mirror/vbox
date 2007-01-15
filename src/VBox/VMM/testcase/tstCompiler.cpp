@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * Testing how the compiler deals with various things.
  *
  * This is testcase requires manual inspection and might not be very useful

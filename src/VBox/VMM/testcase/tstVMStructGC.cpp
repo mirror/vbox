@@ -1,8 +1,9 @@
+/* $Id$ */
 /** @file
+ * tstVMMStructGC - Generate structure member and size checks from the GC perspective.
  *
- * tstVMMStructGC - Generate structure member and size checks from the GC
- *                  perspective. This is built using the VBOXGC template
- *                  but linked into a host ring-3 executable, rather hacky.
+ * This is built using the VBOXGC template but linked into a host
+ * ring-3 executable, rather hacky.
  */
 
 /*
@@ -195,7 +196,7 @@ int main()
     GEN_CHECK_OFF(PDM, pTimerPollers);
 #ifdef VBOX_WITH_PDM_LOCK
     GEN_CHECK_OFF(PDM, CritSect);
-#endif 
+#endif
     GEN_CHECK_OFF(PDM, StatQueuedCritSectLeaves);
 
     GEN_CHECK_SIZE(PGM);

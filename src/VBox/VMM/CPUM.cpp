@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * CPUM - CPU Monitor(/Manager)
  */
 
@@ -590,7 +590,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
 /**
  * Formats the EFLAGS value into mnemonics.
- * 
+ *
  * @param   pszEFlags   Where to write the mnemonics. (Assumes sufficient buffer space.)
  * @param   efl         The EFLAGS value.
  */
@@ -646,8 +646,8 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
  */
 static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
 {
-    /*                                                                                                                                      
-     * Format the EFLAGS.                                                                                                                                       
+    /*
+     * Format the EFLAGS.
      */
     uint32_t efl = pCtxCore->eflags.u32;
     char szEFlags[80];
@@ -822,15 +822,15 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Host CPUM state: %s\n", pszComment);
 
-    /*                                                                                                                                      
-     * Format the EFLAGS.                                                                                                                                       
+    /*
+     * Format the EFLAGS.
      */
     PCPUMHOSTCTX pCtx = &pVM->cpum.s.Host;
 #if HC_ARCH_BITS == 32
     uint32_t efl = pCtx->eflags.u32;
 #else
     uint64_t efl = pCtx->rflags;
-#endif 
+#endif
     char szEFlags[80];
     cpumR3InfoFormatFlags(&szEFlags[0], efl);
 
@@ -873,7 +873,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
         ,
         /*pCtx->rax,*/ pCtx->rbx, /*pCtx->rcx,
         pCtx->rdx,*/ pCtx->rsi, pCtx->rdi,
-        /*pCtx->rip,*/ pCtx->rsp, pCtx->rbp, 
+        /*pCtx->rip,*/ pCtx->rsp, pCtx->rbp,
         /*pCtx->r8,  pCtx->r9,*/  pCtx->r10,
         pCtx->r11, pCtx->r12, pCtx->r13,
         pCtx->r14, pCtx->r15,
@@ -883,10 +883,10 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
         pCtx->cr4, pCtx->cr8, pCtx->ldtr, pCtx->tr,
         pCtx->dr0, pCtx->dr1, pCtx->dr2,
         pCtx->dr3, pCtx->dr6, pCtx->dr7,
-        *(uint64_t *)&pCtx->gdtr[2], *(uint16_t *)&pCtx->gdtr[0], *(uint64_t *)&pCtx->idtr[2], *(uint16_t *)&pCtx->idtr[0], 
+        *(uint64_t *)&pCtx->gdtr[2], *(uint16_t *)&pCtx->gdtr[0], *(uint64_t *)&pCtx->idtr[2], *(uint16_t *)&pCtx->idtr[0],
         pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
         pCtx->FSbase, pCtx->GSbase, pCtx->efer);
-#endif 
+#endif
 }
 
 /**

@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PATM macros & definitions (identical to PATMA.mac!!)
  */
 

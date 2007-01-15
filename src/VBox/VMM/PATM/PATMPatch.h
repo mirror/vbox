@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PATMPatch - Internal header file.
  */
 

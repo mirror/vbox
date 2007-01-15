@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VM - Virtual Machine, The Emulation Thread.
  */
 

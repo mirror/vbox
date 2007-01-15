@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VMM DBGF - Debugger Facility, Breakpoint Management.
  */
 
@@ -33,8 +33,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
-
-#include <string.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************

@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PGM - Page Manager, Guest Context Mappings.
  */
 
@@ -333,7 +333,7 @@ PGMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, size_t cb)
             }
             if (!pCur)
             {
-                LogRel(("PGMR3MappingsFix: Conflicts with intermediate PDE %#x (GCPtrBase=%VGv cb=%#zx). The guest should retry.\n", 
+                LogRel(("PGMR3MappingsFix: Conflicts with intermediate PDE %#x (GCPtrBase=%VGv cb=%#zx). The guest should retry.\n",
                         iPDNew + i, GCPtrBase, cb));
                 return VERR_PGM_MAPPINGS_FIX_CONFLICT;
             }
@@ -561,7 +561,7 @@ static int pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cP
         if (pPT->a[iPTE].u)
         {
             AssertMsgFailed(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPT->a[iPTE].u=%RX32\n", iPTE, iPDE, uAddress, pPT->a[iPTE].u));
-            LogRel(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPT->a[iPTE].u=%RX32\n", 
+            LogRel(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPT->a[iPTE].u=%RX32\n",
                     iPTE, iPDE, uAddress, pPT->a[iPTE].u));
             return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo error codes! */
         }
@@ -594,7 +594,7 @@ static int pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cP
         if (pPTPae->a[iPTE].u)
         {
             AssertMsgFailed(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPTPae->a[iPTE].u=%#RX64\n", iPTE, iPDE, uAddress, pPTPae->a[iPTE].u));
-            LogRel(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPTPae->a[iPTE].u=%#RX64\n", 
+            LogRel(("Conflict iPTE=%#x iPDE=%#x uAddress=%VHv pPTPae->a[iPTE].u=%#RX64\n",
                     iPTE, iPDE, uAddress, pPTPae->a[iPTE].u));
             return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo error codes! */
         }

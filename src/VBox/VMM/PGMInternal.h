@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * PGM - Internal header file.
  */
 

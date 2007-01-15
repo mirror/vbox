@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * MMRamGC - Guest Context Ram access Routines, pair for MMRamGCA.asm.
  */
 

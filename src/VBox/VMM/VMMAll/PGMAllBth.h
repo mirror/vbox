@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox - Page Manager, Shadow+Guest Paging Template - All context code.
  *
  * This file is a big challenge!
@@ -2078,8 +2078,8 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             else
             {
                 /** @note We used to sync PGM_SYNC_NR_PAGES pages, which triggered assertions in CSAM, because
-                 *        R/W attributes of nearby pages were reset. Not sure how that could happen. Anyway, it 
-                 *        makes no sense to prefetch more than one page. 
+                 *        R/W attributes of nearby pages were reset. Not sure how that could happen. Anyway, it
+                 *        makes no sense to prefetch more than one page.
                  */
                 rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
                 if (VBOX_SUCCESS(rc))
