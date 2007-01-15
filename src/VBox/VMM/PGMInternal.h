@@ -477,10 +477,10 @@ typedef struct PGMRAMRANGE
     /** MM_RAM_* flags */
     uint32_t                            fFlags;
 
-    /** HC virtual lookup ranges for 4 MB chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
-    GCPTRTYPE(void **)                  pvHCChunkGC; /**< @todo r=bird: ditto */
-    /** HC virtual lookup ranges for 4 MB chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
-    HCPTRTYPE(void **)                  pvHCChunkHC; /**< @todo r=bird: rename to papvHCChunkHC */
+    /** HC virtual lookup ranges for chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
+    GCPTRTYPE(void **)                  pavHCChunkGC;
+    /** HC virtual lookup ranges for chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
+    HCPTRTYPE(void **)                  pavHCChunkHC;
 
     /** Start of the HC mapping of the range.
      * For pure MMIO and dynamically allocated ranges this is NULL, while for all ranges this is a valid pointer. */
@@ -501,7 +501,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 
 /** Return hc ptr corresponding to the ram range and physical offset */
 #define PGMRAMRANGE_GETHCPTR(pRam, off) \
-    (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[(off >> PGM_DYNAMIC_CHUNK_SHIFT)] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK))  \
+    (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[(off >> PGM_DYNAMIC_CHUNK_SHIFT)] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK))  \
                                                 : (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
 
 /** @todo r=bird: fix typename. */
@@ -1835,7 +1835,7 @@ DECLINLINE(int) PGMRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
             {
                 unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
                 /* Physical chunk in dynamically allocated range not present? */
-                if (RT_UNLIKELY(!CTXSUFF(pRam->pvHCChunk)[idx]))
+                if (RT_UNLIKELY(!CTXSUFF(pRam->pavHCChunk)[idx]))
                 {
 #ifdef IN_RING3
                     int rc = pgmr3PhysGrowRange(PGM2VM(pPGM), GCPhys);
@@ -1845,7 +1845,7 @@ DECLINLINE(int) PGMRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
                     if (rc != VINF_SUCCESS)
                         return rc;
                 }
-                *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+                *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
                 return VINF_SUCCESS;
             }
             if (pRam->pvHC)
@@ -1880,7 +1880,7 @@ DECLINLINE(int) PGMRamGCPhys2HCPtr(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, 
     {
         unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
         /* Physical chunk in dynamically allocated range not present? */
-        if (RT_UNLIKELY(!CTXSUFF(pRam->pvHCChunk)[idx]))
+        if (RT_UNLIKELY(!CTXSUFF(pRam->pavHCChunk)[idx]))
         {
 #ifdef IN_RING3
             int rc = pgmr3PhysGrowRange(pVM, GCPhys);
@@ -1890,7 +1890,7 @@ DECLINLINE(int) PGMRamGCPhys2HCPtr(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, 
             if (rc != VINF_SUCCESS)
                 return rc;
         }
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
         return VINF_SUCCESS;
     }
     if (pRam->pvHC)
@@ -1939,7 +1939,7 @@ DECLINLINE(int) PGMRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
             {
                 unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-                *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+                *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
                 return VINF_SUCCESS;
             }
             if (pRam->pvHC)

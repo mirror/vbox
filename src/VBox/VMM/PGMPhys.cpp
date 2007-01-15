@@ -157,8 +157,8 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         pNew->GCPhysLast    = GCPhysLast;
         pNew->cb            = cb;
         pNew->fFlags        = fFlags;
-        pNew->pvHCChunkHC   = NULL;
-        pNew->pvHCChunkGC   = 0;
+        pNew->pavHCChunkHC  = NULL;
+        pNew->pavHCChunkGC  = 0;
 
         unsigned iPage = cb >> PAGE_SHIFT;
         if (paPages)
@@ -168,12 +168,12 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         }
         else if (fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
-            /* Allocate memory for 4 MB chunk to HC ptr lookup array. */
-            rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pvHCChunkHC);
+            /* Allocate memory for chunk to HC ptr lookup array. */
+            rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pavHCChunkHC);
             AssertMsgReturn(rc == VINF_SUCCESS, ("MMHyperAlloc(,%#x,,,) -> %Vrc\n", cbRam, cb), rc);
 
-            pNew->pvHCChunkGC = MMHyperHC2GC(pVM, pNew->pvHCChunkHC);
-            Assert(pNew->pvHCChunkGC);
+            pNew->pavHCChunkGC = MMHyperHC2GC(pVM, pNew->pavHCChunkHC);
+            Assert(pNew->pavHCChunkGC);
 
             /* Physical memory will be allocated on demand. */
             while (iPage-- > 0)
@@ -277,7 +277,7 @@ PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
             pRam->aHCPhys[off + iPage] = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags;
     }
     off >>= (PGM_DYNAMIC_CHUNK_SHIFT - PAGE_SHIFT);
-    pRam->pvHCChunkHC[off] = pvRam;
+    pRam->pavHCChunkHC[off] = pvRam;
 
     /* Notify the recompiler. */
     REMR3NotifyPhysRamChunkRegister(pVM, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, (RTHCUINTPTR)pvRam, fFlags);

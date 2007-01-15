@@ -196,7 +196,7 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
                         return rc;
                 }
                 unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-                *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+                *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
                 return VINF_SUCCESS;
             }
             if (pRam->pvHC)
@@ -235,9 +235,9 @@ PGMDECL(bool) PGMPhysIsHCPtrValid(PVM pVM, RTHCPTR HCPtr)
             /** @note this is quite slow */
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (CTXSUFF(pRam->pvHCChunk)[iChunk])
+                if (CTXSUFF(pRam->pavHCChunk)[iChunk])
                 {
-                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[iChunk];
+                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                         return true;
                 }
@@ -276,9 +276,9 @@ PGMDECL(int) PGMPhysHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
             /** @note this is quite slow */
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (CTXSUFF(pRam->pvHCChunk)[iChunk])
+                if (CTXSUFF(pRam->pavHCChunk)[iChunk])
                 {
-                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[iChunk];
+                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         *pGCPhys = pRam->GCPhys + iChunk*PGM_DYNAMIC_CHUNK_SIZE + off;
@@ -324,9 +324,9 @@ PGMDECL(int) PGMPhysHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
             /** @note this is quite slow */
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (CTXSUFF(pRam->pvHCChunk)[iChunk])
+                if (CTXSUFF(pRam->pavHCChunk)[iChunk])
                 {
-                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[iChunk];
+                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         RTHCPHYS HCPhys = pRam->aHCPhys[off >> PAGE_SHIFT];
@@ -458,7 +458,7 @@ PGMDECL(int) PGMPhysHCPhys2HCPtr(PVM pVM, RTHCPHYS HCPhys, PRTHCPTR pHCPtr)
                     {
                         unsigned idx = (iPage >> (PGM_DYNAMIC_CHUNK_SHIFT - PAGE_SHIFT));
 
-                        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pvHCChunk)[idx] + ((iPage << PAGE_SHIFT) & PGM_DYNAMIC_CHUNK_OFFSET_MASK) + off);
+                        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + ((iPage << PAGE_SHIFT) & PGM_DYNAMIC_CHUNK_OFFSET_MASK) + off);
                     }
                     else
                         *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + (iPage << PAGE_SHIFT) + off);
