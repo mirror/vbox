@@ -65,7 +65,7 @@
 
 
 /** SELM saved state version. */
-#define SELM_SAVED_STATE_VERSION    4
+#define SELM_SAVED_STATE_VERSION    5
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -138,6 +138,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
     pVM->selm.s.GCSelTss           = ~0;
 
     pVM->selm.s.fDisableMonitoring = false;
+    pVM->selm.s.fSyncTSSRing0Stack = false;
 
     /*
      * Register the saved state data unit.
@@ -505,6 +506,8 @@ SELMR3DECL(void) SELMR3Reset(PVM pVM)
     pVM->selm.s.offLdtHyper = 0;
     pVM->selm.s.cbMonitoredGuestTss = 0;
 
+    pVM->selm.s.fSyncTSSRing0Stack = false;
+
     /*
      * Default action when entering raw mode for the first time
      */
@@ -603,7 +606,8 @@ static DECLCALLBACK(int) selmR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     PSELM pSelm = &pVM->selm.s;
 
-    SSMR3PutUInt(pSSM, pSelm->fDisableMonitoring);
+    SSMR3PutBool(pSSM, pSelm->fDisableMonitoring);
+    SSMR3PutBool(pSSM, pSelm->fSyncTSSRing0Stack);
     SSMR3PutSel(pSSM, pSelm->SelCS);
     SSMR3PutSel(pSSM, pSelm->SelDS);
     SSMR3PutSel(pSSM, pSelm->SelCS64);
@@ -640,7 +644,10 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     SELMR3Reset(pVM);
 
     /* Get the monitoring flag. */
-    SSMR3GetUInt(pSSM, &pVM->selm.s.fDisableMonitoring);
+    SSMR3GetBool(pSSM, &pVM->selm.s.fDisableMonitoring);
+
+    /* Get the TSS state flag. */
+    SSMR3GetBool(pSSM, &pVM->selm.s.fSyncTSSRing0Stack);
 
     /*
      * Get the selectors.
@@ -1446,31 +1453,9 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 }
             }
 
-            /* Update the ring 0 stack selector and base address */
-            /* feeling very lazy; reading too much */
-            VBOXTSS tss;
-            rc = PGMPhysReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
-            if (VBOX_FAILURE(rc))
-            {
-                /// @todo this might not be as fatal as it seems!
-                AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
-                STAM_PROFILE_STOP(&pVM->selm.s.StatTSSSync, a);
-                return VERR_NOT_IMPLEMENTED;
-            }
-#ifdef DEBUG
-            uint32_t ssr0, espr0;
+            /** @note the ring 0 stack selector and base address are updated on demand (as it should) */
+            pVM->selm.s.fSyncTSSRing0Stack = true;
 
-            SELMGetRing1Stack(pVM, &ssr0, &espr0);
-            ssr0 &= ~1;
-
-            if (ssr0 != tss.ss0 || espr0 != tss.esp0)
-            {
-                Log(("SELMR3SyncTSS: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
-            }
-Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
-#endif
-            /* Update our TSS structure for the guest's ring 1 stack */
-            SELMSetRing1Stack(pVM, tss.ss0 | 1, tss.esp0);
             VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
         }
     }
@@ -1669,33 +1654,36 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
         }
     }
 
-    RTGCPTR     pGuestTSS = pVM->selm.s.GCPtrGuestTss;
-    uint32_t    ESPR0;
-    int rc = PGMPhysReadGCPtr(pVM, &ESPR0, pGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
-    if (VBOX_SUCCESS(rc))
+    if (!pVM->selm.s.fSyncTSSRing0Stack)
     {
-        RTSEL SelSS0;
-        rc = PGMPhysReadGCPtr(pVM, &SelSS0, pGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
+        RTGCPTR     pGuestTSS = pVM->selm.s.GCPtrGuestTss;
+        uint32_t    ESPR0;
+        int rc = PGMPhysReadGCPtr(pVM, &ESPR0, pGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
         if (VBOX_SUCCESS(rc))
         {
-            if (    ESPR0 == pVM->selm.s.Tss.esp1
-                &&  SelSS0 == (pVM->selm.s.Tss.ss1 & ~1))
-                return true;
+            RTSEL SelSS0;
+            rc = PGMPhysReadGCPtr(pVM, &SelSS0, pGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
+            if (VBOX_SUCCESS(rc))
+            {
+                if (    ESPR0 == pVM->selm.s.Tss.esp1
+                    &&  SelSS0 == (pVM->selm.s.Tss.ss1 & ~1))
+                    return true;
 
-            RTGCPHYS GCPhys;
-            uint64_t fFlags;
+                RTGCPHYS GCPhys;
+                uint64_t fFlags;
 
-            rc = PGMGstGetPage(pVM, pGuestTSS, &fFlags, &GCPhys);
-            AssertRC(rc);
-            AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%VGv Phys=%VGp\n",
-                             (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, pGuestTSS, GCPhys));
+                rc = PGMGstGetPage(pVM, pGuestTSS, &fFlags, &GCPhys);
+                AssertRC(rc);
+                AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%VGv Phys=%VGp\n",
+                                 (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, pGuestTSS, GCPhys));
+            }
+            else
+                AssertRC(rc);
         }
         else
-            AssertRC(rc);
+            /* Happens during early Windows XP boot when it is switching page tables. */
+            Assert(rc == VINF_SUCCESS || ((rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT) && !(CPUMGetGuestEFlags(pVM) & X86_EFL_IF)));
     }
-    else
-        /* Happens during early Windows XP boot when it is switching page tables. */
-        Assert(rc == VINF_SUCCESS || ((rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT) && !(CPUMGetGuestEFlags(pVM) & X86_EFL_IF)));
     return false;
 #else
     NOREF(pVM);
