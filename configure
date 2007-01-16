@@ -66,8 +66,8 @@ ENV="env.sh"
 BUILD_TYPE="release"
 INVALID_CHARS="[+$ ]"
 
-if pwd|grep -q "$INVALID_CHARS"; then
-  echo "Error: Current path contains invalid characters!"
+if (cd $(dirname $0); pwd)|grep -q "$INVALID_CHARS"; then
+  echo "Error: VBox base path contains invalid characters!"
   exit 1
 fi
 
