@@ -64,6 +64,12 @@ LOG="configure.log"
 CNF="AutoConfig.kmk"
 ENV="env.sh"
 BUILD_TYPE="release"
+INVALID_CHARS="[+.$ ]"
+
+if pwd|grep -q "$INVALID_CHARS"; then
+  echo "Error: Current path contains invalid characters!"
+  exit 1
+fi
 
 function cleanup()
 {
@@ -976,6 +982,10 @@ for option; do
       ;;
     --with-kbuild=*)
       KBUILDDIR=`echo $option | cut -d'=' -f2`
+      if echo $KBUILDDIR|grep -q "$INVALID_CHARS"; then
+        echo "Error: KBUILDDIR contains invalid characters!"
+        exit 1
+      fi
       ;;
     --with-qt-dir=*)
       QTDIR=`echo $option | cut -d'=' -f2`
