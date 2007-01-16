@@ -1662,8 +1662,8 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
             if (    GCPtrTss != pVM->selm.s.GCPtrGuestTss
                 ||  cbTss    != pVM->selm.s.cbMonitoredGuestTss)
             {
-                AssertMsgFailed(("Guest's TSS is changed from %RGv:%04x to %RGv:%04x\n",
-                                 pVM->selm.s.GCPtrGuestTss, pVM->selm.s.cbMonitoredGuestTss,
+                AssertMsgFailed(("Guest's TSS (Sel 0x%X) is changed from %RGv:%04x to %RGv:%04x\n",
+                                 SelTss, pVM->selm.s.GCPtrGuestTss, pVM->selm.s.cbMonitoredGuestTss,
                                  GCPtrTss, cbTss));
             }
         }
