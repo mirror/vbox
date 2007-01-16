@@ -109,6 +109,10 @@ public:
     void cannotApplyMachineSettings (const CMachine &machine, const COMResult &res);
     void cannotSaveMachineSettings (const CMachine &machine,
                                     QWidget *parent = 0);
+    void cannotLoadMachineSettings (const CMachine &machine,
+                                    bool strict = true,
+                                    QWidget *parent = 0);
+
     void cannotStartMachine (const CConsole &console);
     void cannotStartMachine (const CProgress &progress);
     void cannotPauseMachine (const CConsole &console);

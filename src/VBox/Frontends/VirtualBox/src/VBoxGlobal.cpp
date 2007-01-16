@@ -635,7 +635,7 @@ QString VBoxGlobal::detailsReport (
     static QString sGeneralBasicHrefTpl, sGeneralBasicBoldTpl;
     static QString sGeneralFullHrefTpl, sGeneralFullBoldTpl;
 
-    // generate templates after every language change
+    /* generate templates after every language change */
 
     if (!detailReportTemplatesReady)
     {
@@ -647,17 +647,17 @@ QString VBoxGlobal::detailsReport (
             + QString (sSectionItemTpl).arg (tr ("Base Memory", "details report"),
                                              tr ("<nobr>%3 MB</nobr>", "details report"));
         sGeneralBasicHrefTpl = QString (sSectionHrefTpl)
-                .arg (2 + 3) // rows
-                .arg ("machine_16px.png", // icon
-                      "#general", // link
-                      tr ("General", "details report"), // title
-                      generalItems); // items
+                .arg (2 + 3) /* rows */
+                .arg ("machine_16px.png", /* icon */
+                      "#general", /* link */
+                      tr ("General", "details report"), /* title */
+                      generalItems); /* items */
         sGeneralBasicBoldTpl = QString (sSectionBoldTpl)
-                .arg (2 + 3) // rows
-                .arg ("machine_16px.png", // icon
-                      "#general", // link
-                      tr ("General", "details report"), // title
-                      generalItems); // items
+                .arg (2 + 3) /* rows */
+                .arg ("machine_16px.png", /* icon */
+                      "#general", /* link */
+                      tr ("General", "details report"), /* title */
+                      generalItems); /* items */
 
         generalItems
            += QString (sSectionItemTpl).arg (tr ("Video Memory", "details report"),
@@ -667,20 +667,20 @@ QString VBoxGlobal::detailsReport (
             + QString (sSectionItemTpl).arg (tr ("IO APIC", "details report"), "%7");
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
-            .arg (2 + 7) // rows
-            .arg ("machine_16px.png", // icon
-                  "#general", // link
-                  tr ("General", "details report"), // title
-                  generalItems); // items
+            .arg (2 + 7) /* rows */
+            .arg ("machine_16px.png", /* icon */
+                  "#general", /* link */
+                  tr ("General", "details report"), /* title */
+                  generalItems); /* items */
         sGeneralFullBoldTpl = QString (sSectionBoldTpl)
-            .arg (2 + 7) // rows
-            .arg ("machine_16px.png", // icon
-                  "#general", // link
-                  tr ("General", "details report"), // title
-                  generalItems); // items
+            .arg (2 + 7) /* rows */
+            .arg ("machine_16px.png", /* icon */
+                  "#general", /* link */
+                  tr ("General", "details report"), /* title */
+                  generalItems); /* items */
     }
 
-    // common generated content
+    /* common generated content */
 
     const QString &sectionTpl = withLinks
         ? sSectionHrefTpl
@@ -688,7 +688,7 @@ QString VBoxGlobal::detailsReport (
 
     QString hardDisks;
     {
-        int rows = 2; // including section header and footer
+        int rows = 2; /* including section header and footer */
 
         CHardDiskAttachmentEnumerator aen = m.GetHardDiskAttachments().Enumerate();
         while (aen.HasMore())
@@ -714,14 +714,14 @@ QString VBoxGlobal::detailsReport (
         }
 
         hardDisks = sectionTpl
-            .arg (rows) // rows
-            .arg ("hd_16px.png", // icon
-                  "#hdds", // link
-                  tr ("Hard Disks", "details report"), // title
-                  hardDisks); // items
+            .arg (rows) /* rows */
+            .arg ("hd_16px.png", /* icon */
+                  "#hdds", /* link */
+                  tr ("Hard Disks", "details report"), /* title */
+                  hardDisks); /* items */
     }
 
-    // compose details report
+    /* compose details report */
 
     const QString &generalBasicTpl = withLinks
         ? sGeneralBasicHrefTpl
@@ -744,7 +744,7 @@ QString VBoxGlobal::detailsReport (
     }
     else
     {
-        // boot order
+        /* boot order */
         QString bootOrder;
         for (ulong i = 1; i <= vbox.GetSystemProperties().GetMaxBootPosition(); i++)
         {
@@ -760,17 +760,17 @@ QString VBoxGlobal::detailsReport (
 
         CBIOSSettings biosSettings = m.GetBIOSSettings();
 
-        // ACPI
+        /* ACPI */
         QString acpi = biosSettings.GetACPIEnabled()
             ? tr ("Enabled", "details report (ACPI)")
             : tr ("Disabled", "details report (ACPI)");
 
-        // IO APIC
+        /* IO APIC */
         QString ioapic = biosSettings.GetIOAPICEnabled()
             ? tr ("Enabled", "details report (IO APIC)")
             : tr ("Disabled", "details report (IO APIC)");
 
-        // General + Hard Disks
+        /* General + Hard Disks */
         detailsReport
             = generalFullTpl
                 .arg (m.GetName())
@@ -784,7 +784,7 @@ QString VBoxGlobal::detailsReport (
 
         QString item;
 
-        // Floppy
+        /* Floppy */
         CFloppyDrive floppy = m.GetFloppyDrive();
         item = QString (sSectionItemTpl);
         switch (floppy.GetState())
@@ -810,13 +810,13 @@ QString VBoxGlobal::detailsReport (
                 AssertMsgFailed (("Invalid floppy state: %d", floppy.GetState()));
         }
         detailsReport += sectionTpl
-            .arg (2 + 1) // rows
-            .arg ("fd_16px.png", // icon
-                  "#floppy", // link
-                  tr ("Floppy", "details report"), // title
-                  item); // items
+            .arg (2 + 1) /* rows */
+            .arg ("fd_16px.png", /* icon */
+                  "#floppy", /* link */
+                  tr ("Floppy", "details report"), /* title */
+                  item); /* items */
 
-        // DVD
+        /* DVD */
         CDVDDrive dvd = m.GetDVDDrive();
         item = QString (sSectionItemTpl);
         switch (dvd.GetState())
@@ -842,13 +842,13 @@ QString VBoxGlobal::detailsReport (
                 AssertMsgFailed (("Invalid DVD state: %d", dvd.GetState()));
         }
         detailsReport += sectionTpl
-            .arg (2 + 1) // rows
-            .arg ("cd_16px.png", // icon
-                  "#dvd", // link
-                  tr ("CD/DVD-ROM", "details report"), // title
+            .arg (2 + 1) /* rows */
+            .arg ("cd_16px.png", /* icon */
+                  "#dvd", /* link */
+                  tr ("CD/DVD-ROM", "details report"), /* title */
                   item); // items
 
-        // audio
+        /* audio */
         {
             CAudioAdapter audio = m.GetAudioAdapter();
             if (audio.GetEnabled())
@@ -860,17 +860,17 @@ QString VBoxGlobal::detailsReport (
                     .arg (tr ("Disabled", "details report (audio)"), "");
 
             detailsReport += sectionTpl
-                .arg (2 + 1) // rows
-                .arg ("sound_16px.png", // icon
-                      "#audio", // link
-                      tr ("Audio", "details report"), // title
-                      item); // items
+                .arg (2 + 1) /* rows */
+                .arg ("sound_16px.png", /* icon */
+                      "#audio", /* link */
+                      tr ("Audio", "details report"), /* title */
+                      item); /* items */
         }
-        // network
+        /* network */
         {
             item = QString::null;
             ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
-            int rows = 2; // including section header and footer
+            int rows = 2; /* including section header and footer */
             for (ulong slot = 0; slot < count; slot ++)
             {
                 CNetworkAdapter adapter = m.GetNetworkAdapter (slot);
@@ -891,17 +891,19 @@ QString VBoxGlobal::detailsReport (
             }
 
             detailsReport += sectionTpl
-                .arg (rows) // rows
-                .arg ("nw_16px.png", // icon
-                      "#network", // link
-                      tr ("Network", "details report"), // title
-                      item); // items
+                .arg (rows) /* rows */
+                .arg ("nw_16px.png", /* icon */
+                      "#network", /* link */
+                      tr ("Network", "details report"), /* title */
+                      item); /* items */
         }
-        // USB
+        /* USB */
         {
             CUSBController ctl = m.GetUSBController();
             if (!ctl.isNull())
             {
+                /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
+
                 if (ctl.GetEnabled())
                 {
                     CUSBDeviceFilterCollection coll = ctl.GetDeviceFilters();
@@ -921,11 +923,11 @@ QString VBoxGlobal::detailsReport (
                         .arg (tr ("Disabled", "details report (USB)"), "");
 
                 detailsReport += sectionTpl
-                    .arg (2 + 1) // rows
-                    .arg ("usb_16px.png", // icon
-                          "#usb", // link
-                          tr ("USB Controller", "details report"), // title
-                          item); // items
+                    .arg (2 + 1) /* rows */
+                    .arg ("usb_16px.png", /* icon */
+                          "#usb", /* link */
+                          tr ("USB Controller", "details report"), /* title */
+                          item); /* items */
             }
         }
     }

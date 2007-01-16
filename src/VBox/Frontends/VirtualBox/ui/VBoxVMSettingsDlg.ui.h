@@ -1230,26 +1230,38 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
     }
 
-    /* usb */
+    /* USB */
     {
         CUSBController ctl = machine.GetUSBController();
 
-        QListViewItem *usbListItem = listView->findItem ("USB", 0, Qt::Contains);
-        if (usbListItem && ctl.isNull())
-            usbListItem->setVisible (false);
+        if (ctl.isNull())
+        {
+            /* disable the USB controller category if the USB controller is
+             * not available (i.e. in VirtualBox OSE) */
 
-        cbEnableUSBController->setChecked (ctl.GetEnabled());
+            QListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
+            Assert (usbItem);
+            if (usbItem)
+                usbItem->setVisible (false);
 
-        CUSBDeviceFilterEnumerator en = ctl.GetDeviceFilters().Enumerate();
-        while (en.HasMore())
-            addUSBFilter (en.GetNext(), false /* isNew */);
+            /* if machine has something to say, show the message */
+            vboxProblem().cannotLoadMachineSettings (machine, false /* strict */);
+        }
+        else
+        {
+            cbEnableUSBController->setChecked (ctl.GetEnabled());
 
-        lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
-        /*
-         *  silly, silly Qt -- doesn't emit currentChanged after adding the
-         *  first item to an empty list
-         */
-        lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
+            CUSBDeviceFilterEnumerator en = ctl.GetDeviceFilters().Enumerate();
+            while (en.HasMore())
+                addUSBFilter (en.GetNext(), false /* isNew */);
+
+            lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
+            /*
+             *  silly, silly Qt -- doesn't emit currentChanged after adding the
+             *  first item to an empty list
+             */
+            lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
+        }
     }
 
     /* request for media shortcuts update */
@@ -1428,35 +1440,40 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     {
         CUSBController ctl = cmachine.GetUSBController();
 
-        ctl.SetEnabled (cbEnableUSBController->isChecked());
-
-        /*
-         *  first, remove all old filters (only if the list is changed,
-         *  not only individual properties of filters)
-         */
-        if (mUSBFilterListModified)
-            for (ulong count = ctl.GetDeviceFilters().GetCount(); count; -- count)
-                ctl.RemoveDeviceFilter (0);
-
-        /* then add all new filters */
-        for (QListViewItem *item = lvUSBFilters->firstChild(); item;
-             item = item->nextSibling())
+        if (!ctl.isNull())
         {
-            USBListItem *uli = static_cast <USBListItem *> (item);
-            VBoxUSBFilterSettings *settings =
-                static_cast <VBoxUSBFilterSettings *>
-                    (wstUSBFilters->widget (uli->mId));
-            Assert (settings);
+            /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
 
-            COMResult res = settings->putBackToFilter();
-            if (!res.isOk())
-                return res;
+            ctl.SetEnabled (cbEnableUSBController->isChecked());
 
-            CUSBDeviceFilter filter = settings->filter();
-            filter.SetActive (uli->isOn());
-
+            /*
+             *  first, remove all old filters (only if the list is changed,
+             *  not only individual properties of filters)
+             */
             if (mUSBFilterListModified)
-                ctl.InsertDeviceFilter (~0, filter);
+                for (ulong count = ctl.GetDeviceFilters().GetCount(); count; -- count)
+                    ctl.RemoveDeviceFilter (0);
+
+            /* then add all new filters */
+            for (QListViewItem *item = lvUSBFilters->firstChild(); item;
+                 item = item->nextSibling())
+            {
+                USBListItem *uli = static_cast <USBListItem *> (item);
+                VBoxUSBFilterSettings *settings =
+                    static_cast <VBoxUSBFilterSettings *>
+                        (wstUSBFilters->widget (uli->mId));
+                Assert (settings);
+
+                COMResult res = settings->putBackToFilter();
+                if (!res.isOk())
+                    return res;
+
+                CUSBDeviceFilter filter = settings->filter();
+                filter.SetActive (uli->isOn());
+
+                if (mUSBFilterListModified)
+                    ctl.InsertDeviceFilter (~0, filter);
+            }
         }
 
         mUSBFilterListModified = false;

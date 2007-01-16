@@ -531,16 +531,31 @@ cannotApplyMachineSettings (const CMachine &machine, const COMResult &res)
 void VBoxProblemReporter::cannotSaveMachineSettings (const CMachine &machine,
                                                      QWidget *parent /* = 0 */)
 {
-    // below, we use CMachine (machine) to preserve current error info
-    // for formatErrorInfo()
+    /* preserve the current error info before calling the object again */
+    COMErrorInfo errInfo = machine.errorInfo();
+     
+    message (parent ? parent : mainWindowShown(), Error,
+             tr ("Failed to save the settings of the virtual machine <b>%1</b>.")
+                 .arg (machine.GetName()),
+             formatErrorInfo (errInfo));
+}
 
-    message (
-        parent ? parent : mainWindowShown(),
-        Error,
-        tr ("Failed to save the settings of the virtual machine <b>%1</b>.")
-            .arg (CMachine (machine).GetName()),
-        formatErrorInfo (machine)
-    );
+/**
+ *  @param  strict  if |true| then show the message even if there is no basic
+ *                  error info available
+ */
+void VBoxProblemReporter::cannotLoadMachineSettings (const CMachine &machine,
+                                                     bool strict /* = true */,
+                                                     QWidget *parent /* = 0 */)
+{
+    COMErrorInfo errInfo = machine.errorInfo();
+    if (!strict && !errInfo.isBasicAvailable())
+        return;
+
+    message (parent ? parent : mainWindowShown(), Error,
+             tr ("Failed to load the settings of the virtual machine <b>%1</b>.")
+                 .arg (machine.GetName()),
+             formatErrorInfo (errInfo));
 }
 
 void VBoxProblemReporter::cannotStartMachine (const CConsole &console)
