@@ -132,14 +132,14 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     *pShadowDescr = Desc;
 
     /* Check if we change the LDT selector */
-    if (iGDTEntry == CPUMGetGuestLDTR(pVM))
+    if (Sel == CPUMGetGuestLDTR(pVM))
     {
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
         return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
     }
 
     /* Or the TR selector */
-    if (iGDTEntry == CPUMGetGuestTR(pVM))
+    if (Sel == CPUMGetGuestTR(pVM))
     {
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
         return VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;
