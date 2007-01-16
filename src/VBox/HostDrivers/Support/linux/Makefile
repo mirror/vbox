@@ -143,7 +143,8 @@ endif
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
 	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
-        PATH="$(PATH):/bin:/sbin" depmod -ae;
+	PATH="$(PATH):/bin:/sbin" depmod -ae; \
+	rm -f /etc/vbox/module_not_compiled
 
 clean:
 	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
