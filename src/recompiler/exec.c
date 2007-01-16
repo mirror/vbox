@@ -68,7 +68,7 @@ uint8_t *code_gen_ptr;
 #if !defined(VBOX)
 int phys_ram_fd;
 #endif /* !VBOX */
-int phys_ram_size;
+uint32_t phys_ram_size;
 uint8_t *phys_ram_base;
 uint8_t *phys_ram_dirty;
 
