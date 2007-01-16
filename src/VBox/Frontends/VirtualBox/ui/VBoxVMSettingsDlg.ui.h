@@ -674,6 +674,12 @@ void VBoxVMSettingsDlg::hdaMediaChanged()
 {
     uuidHDA = grbHDA->isChecked() ? cbHDA->getId() : QUuid();
     txHDA->setText (getHdInfo (grbHDA, uuidHDA));
+    /* tool-tip composing */
+    if (!uuidHDA.isNull())
+    {
+        CHardDisk hd = vboxGlobal().virtualBox().GetHardDisk (uuidHDA);
+        QToolTip::add (cbHDA, VBoxDiskImageManagerDlg::composeHdToolTip (hd));
+    }
     /* revailidate */
     wvalHDD->revalidate();
 }
@@ -683,6 +689,12 @@ void VBoxVMSettingsDlg::hdbMediaChanged()
 {
     uuidHDB = grbHDB->isChecked() ? cbHDB->getId() : QUuid();
     txHDB->setText (getHdInfo (grbHDB, uuidHDB));
+    /* tool-tip composing */
+    if (!uuidHDB.isNull())
+    {
+        CHardDisk hd = vboxGlobal().virtualBox().GetHardDisk (uuidHDB);
+        QToolTip::add (cbHDB, VBoxDiskImageManagerDlg::composeHdToolTip (hd));
+    }
     /* revailidate */
     wvalHDD->revalidate();
 }
@@ -692,6 +704,12 @@ void VBoxVMSettingsDlg::hddMediaChanged()
 {
     uuidHDD = grbHDD->isChecked() ? cbHDD->getId() : QUuid();
     txHDD->setText (getHdInfo (grbHDD, uuidHDD));
+    /* tool-tip composing */
+    if (!uuidHDD.isNull())
+    {
+        CHardDisk hd = vboxGlobal().virtualBox().GetHardDisk (uuidHDD);
+        QToolTip::add (cbHDD, VBoxDiskImageManagerDlg::composeHdToolTip (hd));
+    }
     /* revailidate */
     wvalHDD->revalidate();
 }
@@ -700,6 +718,12 @@ void VBoxVMSettingsDlg::hddMediaChanged()
 void VBoxVMSettingsDlg::cdMediaChanged()
 {
     uuidISODVD = bgDVD->isChecked() ? cbISODVD->getId() : QUuid();
+    /* tool-tip composing */
+    if (!uuidISODVD.isNull())
+    {
+        CDVDImage cd = vboxGlobal().virtualBox().GetDVDImage (uuidISODVD);
+        QToolTip::add (cbISODVD, VBoxDiskImageManagerDlg::composeCdToolTip (cd));
+    }
     /* revailidate */
     wvalDVD->revalidate();
 }
@@ -708,6 +732,12 @@ void VBoxVMSettingsDlg::cdMediaChanged()
 void VBoxVMSettingsDlg::fdMediaChanged()
 {
     uuidISOFloppy = bgFloppy->isChecked() ? cbISOFloppy->getId() : QUuid();
+    /* tool-tip composing */
+    if (!uuidISOFloppy.isNull())
+    {
+        CFloppyImage fd = vboxGlobal().virtualBox().GetFloppyImage (uuidISOFloppy);
+        QToolTip::add (cbISOFloppy, VBoxDiskImageManagerDlg::composeFdToolTip (fd));
+    }
     /* revailidate */
     wvalFloppy->revalidate();
 }
