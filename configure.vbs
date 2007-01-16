@@ -494,6 +494,31 @@ end sub
 
 
 ''
+' Checks the the path doesn't contain characters the tools cannot deal with.
+sub CheckSourcePath
+   dim sPwd;
+
+   sPwd = PathAbs(g_strPath);
+   if InStr(1, sPwd, " ") > 0 then
+      MsgError "Source path contains spaces! Please move it. (" & sPwd & ")"
+   end if
+   if InStr(1, sPwd, "$") > 0 then
+      MsgError "Source path contains the '$' char! Please move it. (" & sPwd & ")"
+   end if
+   if InStr(1, sPwd, "%") > 0 then
+      MsgError "Source path contains the '%' char! Please move it. (" & sPwd & ")"
+   end if
+   if  InStr(1, sPwd, Chr(10)) > 0 _
+    Or InStr(1, sPwd, Chr(13)) > 0 _
+    Or InStr(1, sPwd, Chr(9)) > 0 _
+    then
+      MsgError "Source path contains control characters! Please move it. (" & sPwd & ")"
+   end if
+   Print "Source path: OK"
+end sub
+
+
+''
 ' Checks for kBuild - very simple :)
 sub CheckForkBuild(strOptkBuild)
    PrintHdr "kBuild"
@@ -1715,6 +1740,7 @@ Sub Main
    if blnOptDisableCOM = True then
       DisableCOM "--disable-com"
    end if
+   CheckSourcePath
    CheckForkBuild strOptkBuild
    CheckForVisualCPP strOptVC, strOptVCCommon, blnOptVCExpressEdition
    CheckForPlatformSDK strOptSDK
