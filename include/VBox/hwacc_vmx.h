@@ -696,7 +696,7 @@
  * @returns VBox status code
  * @param   pVMXOn      Physical address of VMXON structure
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
 DECLASM(int) VMXEnable(RTHCPHYS pVMXOn);
 #else
 DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
@@ -749,7 +749,7 @@ the_end:
 /**
  * Executes VMXOFF
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
 DECLASM(void) VMXDisable(void);
 #else
 DECLINLINE(void) VMXDisable(void)
@@ -776,7 +776,7 @@ DECLINLINE(void) VMXDisable(void)
  * @returns VBox status code
  * @param   pVMCS       Physical address of VM control structure
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
 DECLASM(int) VMXClearVMCS(RTHCPHYS pVMCS);
 #else
 DECLINLINE(int) VMXClearVMCS(RTHCPHYS pVMCS)
@@ -823,7 +823,7 @@ success:
  * @returns VBox status code
  * @param   pVMCS       Physical address of VMCS structure
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
 DECLASM(int) VMXActivateVMCS(RTHCPHYS pVMCS);
 #else
 DECLINLINE(int) VMXActivateVMCS(RTHCPHYS pVMCS)
@@ -871,40 +871,7 @@ success:
  * @param   idxField        VMCS index
  * @param   u64Val          16, 32 or 64 bits value
  */
-#if RT_INLINE_ASM_EXTERNAL
 DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
-#else
-DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
-{
-    int rc = VINF_SUCCESS;
-# if RT_INLINE_ASM_GNU_STYLE
-#  if HC_ARCH_BITS == 64
-#   error "todo"
-#  endif
-# else
-    __asm
-    {
-        push   dword ptr [u64Val+4]
-        push   dword ptr [u64Val]
-        mov    eax, [idxField]
-        _emit  0x0F
-        _emit  0x79
-        _emit  0x04
-        _emit  0x24     /* VMWRITE eax, [esp] */
-        jnc    valid_vmcs
-        mov    dword ptr [rc], VERR_VMX_INVALID_VMCS_PTR
-        jmp    the_end
-
-valid_vmcs:
-        jnz    the_end
-        mov    dword ptr [rc], VERR_VMX_INVALID_VMCS_FIELD
-the_end:
-        add    esp, 8
-    }
-# endif
-    return rc;
-}
-#endif
 
 /**
  * Executes VMWRITE
@@ -913,7 +880,7 @@ the_end:
  * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
 DECLASM(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val);
 #else
 DECLINLINE(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val)
@@ -972,44 +939,7 @@ the_end:
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
  */
-#if RT_INLINE_ASM_EXTERNAL
 DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
-#else
-DECLINLINE(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData)
-{
-    int rc = VINF_SUCCESS;
-# if RT_INLINE_ASM_GNU_STYLE
-#  if HC_ARCH_BITS == 64
-#   error "todo"
-#  endif
-# else
-    __asm
-    {
-        sub     esp, 8
-        mov     dword ptr [esp], 0
-        mov     dword ptr [esp+4], 0
-        mov     eax, [idxField]
-        _emit   0x0F
-        _emit   0x78
-        _emit   0x04
-        _emit   0x24     /* VMREAD eax, [esp] */
-        mov     edx, pData
-        pop     dword ptr [edx]
-        pop     dword ptr [edx+4]
-        jnc     valid_vmcs
-        mov     dword ptr [rc], VERR_VMX_INVALID_VMCS_PTR
-        jmp     the_end
-
-valid_vmcs:
-        jnz     the_end
-        mov     dword ptr [rc], VERR_VMX_INVALID_VMCS_FIELD
-the_end:
-    }
-# endif
-    return rc;
-}
-#endif
-
 
 /**
  * Executes VMREAD
@@ -1018,7 +948,7 @@ the_end:
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
 DECLASM(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pData);
 #else
 DECLINLINE(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pData)
@@ -1093,14 +1023,22 @@ DECLASM(int) VMXResumeVM(PCPUMCTX pCtx);
  *
  * @returns error value
  */
-uint32_t inline VMXGetLastError()
+DECLINLINE(uint32_t) VMXGetLastError(void)
 {
+#if HC_ARCH_BITS == 64
+    uint64_t uLastError = 0;
+    int rc = VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &uLastError);
+    AssertRC(rc);
+    return (uint32_t)uLastError;
+
+#else /* 32-bit host: */
     uint32_t lasterr = 0;
     int      rc;
 
     rc = VMXReadVMCS32(VMX_VMCS_RO_VM_INSTR_ERROR, &lasterr);
     AssertRC(rc);
     return lasterr;
+#endif
 }
 
 /** @} */
