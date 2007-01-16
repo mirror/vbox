@@ -42,6 +42,8 @@
 #include "GuestOSTypeImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"
 
+#include "USBProxyService.h"
+
 #include "Logging.h"
 
 #include <stdio.h>
@@ -1115,6 +1117,27 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController * *a_ppUSBControll
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReaderLock alock (this);
+
+    USBProxyService *usbProxyService = mParent->host()->usbProxyService();
+    AssertReturn (usbProxyService, E_FAIL);
+    if (!usbProxyService->isActive())
+    {
+        /* disable the USB controller completely to avoid assertions if the
+         * USB proxy service could not start. */
+
+        Assert (VBOX_FAILURE (usbProxyService->getLastError()));
+        if (usbProxyService->getLastError() == VERR_FILE_NOT_FOUND)
+            return setError (E_FAIL,
+                tr ("Could not load the USB proxy service (%Vrc), "
+                    "the virtual USB Controller is not available."
+                    "The service may not be installed on the host computer."),
+                usbProxyService->getLastError());
+        else
+            return setError (E_FAIL,
+                tr ("Could not load the USB proxy service (%Vrc), "
+                    "the virtual USB Controller is not available."),
+                usbProxyService->getLastError());
+    }
 
     mUSBController.queryInterfaceTo (a_ppUSBController);
     return S_OK;
