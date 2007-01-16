@@ -177,7 +177,7 @@ public:
 
     int rtti() const { return 1002; }
 
-    int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
+    int compare (QListViewItem *aItem, int /*aColumn*/, bool aAscending) const
     {
         if (aItem->rtti() == 1001)
             return aAscending ? -1 : 1;
@@ -1180,7 +1180,7 @@ void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMedia &aMedia)
 }
 
 
-void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMediaList &aList)
+void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMediaList & /*aList*/)
 {
     if (!mToBeRefreshed) return;
 
