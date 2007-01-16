@@ -676,7 +676,7 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
     if (g_pVMAssert)
     {
         g_pVMAssert->vmm.s.enmCallHostOperation = VMMCALLHOST_VMM_LOGGER_FLUSH;
-        g_pVMAssert->vmm.s.uCallHostArg = 0;
+        g_pVMAssert->vmm.s.u64CallHostArg = 0;
         g_pVMAssert->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
         int rc = vmmR0CallHostLongJmp(&g_pVMAssert->vmm.s.CallHostR0JmpBuf, VERR_INTERNAL_ERROR);
         if (rc == VINF_SUCCESS)
