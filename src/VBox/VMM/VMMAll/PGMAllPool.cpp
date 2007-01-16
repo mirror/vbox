@@ -3046,10 +3046,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-        {
-            Assert(pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK);
             pRam->aHCPhys[iPage] &= MM_RAM_FLAGS_NO_REFS_MASK;
-        }
     }
 
     pPool->iPhysExtFreeHead = 0;
