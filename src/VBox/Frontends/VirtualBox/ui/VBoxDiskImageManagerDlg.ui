@@ -493,6 +493,8 @@
     <include location="global" impldecl="in implementation">qsizegrip.h</include>
     <include location="global" impldecl="in implementation">qlocale.h</include>
     <include location="global" impldecl="in implementation">qregexp.h</include>
+    <include location="global" impldecl="in implementation">qpainter.h</include>
+    <include location="global" impldecl="in implementation">qprogressbar.h</include>
     <include location="global" impldecl="in declaration">qvaluelist.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
@@ -506,6 +508,7 @@
     <forward>class VBoxToolBar</forward>
     <forward>class QSizeGrip</forward>
     <forward>class QIRichLabel</forward>
+    <forward>class ProgressBarItem</forward>
 </forwards>
 <variables>
     <variable access="public">enum ResultCode { Rejected, Accepted };</variable>
@@ -542,6 +545,9 @@
     <variable>QPushButton *defaultButton;</variable>
     <variable access="private">static VBoxDiskImageManagerDlg *mModelessDialog;</variable>
     <variable access="private">bool mToBeRefreshed;</variable>
+    <variable access="private">ProgressBarItem *mHdsProgress;</variable>
+    <variable access="private">ProgressBarItem *mCdsProgress;</variable>
+    <variable access="private">ProgressBarItem *mFdsProgress;</variable>
 </variables>
 <slots>
     <slot access="protected">mediaEnumerated( const VBoxMedia &amp; media )</slot>
@@ -560,6 +566,7 @@
     <slot access="protected">accept()</slot>
     <slot access="protected">reject()</slot>
     <slot access="protected">mouseOnItem( QListViewItem *item )</slot>
+    <slot access="protected">addDroppedImages( QDropEvent* )</slot>
 </slots>
 <functions>
     <function access="private">init()</function>
@@ -568,8 +575,8 @@
     <function returnType="int">exec()</function>
     <function access="private">done( int )</function>
     <function access="private">insertMedia( const VBoxMedia &amp; media )</function>
-    <function access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; id )</function>
-    <function access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; id )</function>
+    <function specifier="non virtual" access="private" returnType="QString">static getDVDImageUsage( const QUuid &amp; id )</function>
+    <function specifier="non virtual" access="private" returnType="QString">static getFloppyImageUsage( const QUuid &amp; id )</function>
     <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
     <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
     <function returnType="QUuid">getSelectedUuid()</function>
@@ -590,11 +597,12 @@
     <function access="protected" returnType="QIRichLabel*">createInfoString( QString, QWidget*, int, int )</function>
     <function access="protected" returnType="QPushButton*">searchDefaultButton()</function>
     <function access="protected">setCurrentItem( QListView*, DiskImageItem* )</function>
-    <function access="protected">createNotice( QListView* )</function>
-    <function access="protected">updateNotice( QListView* )</function>
-    <function access="protected">removeNotice( QListView* )</function>
     <function>uploadCurrentList( QStringList&amp;, QStringList&amp;, const QUuid&amp; )</function>
     <function specifier="non virtual">static showModeless( const VBoxMediaList * = NULL )</function>
+    <function access="protected">refreshList( QListView*, ProgressBarItem*&amp; )</function>
+    <function specifier="non virtual" returnType="QString">static composeHdToolTip( CHardDisk &amp; )</function>
+    <function specifier="non virtual" returnType="QString">static composeCdToolTip( CDVDImage &amp; )</function>
+    <function specifier="non virtual" returnType="QString">static composeFdToolTip( CFloppyImage &amp; )</function>
 </functions>
 <layoutdefaults spacing="10" margin="10"/>
 </UI>
