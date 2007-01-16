@@ -496,9 +496,9 @@ end sub
 ''
 ' Checks the the path doesn't contain characters the tools cannot deal with.
 sub CheckSourcePath
-   dim sPwd;
+   dim sPwd
 
-   sPwd = PathAbs(g_strPath);
+   sPwd = PathAbs(g_strPath)
    if InStr(1, sPwd, " ") > 0 then
       MsgError "Source path contains spaces! Please move it. (" & sPwd & ")"
    end if
