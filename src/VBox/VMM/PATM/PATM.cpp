@@ -2737,7 +2737,7 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
 
     if (pPatch->flags & PATMFL_INT3_REPLACEMENT_BLOCK)
     {
-        uint8_t ASMInt3 = 0xCC;
+        /*uint8_t ASMInt3 = 0xCC; - unused */
 
         Log(("PATMR3PatchBlock %VGv -> int 3 callable patch.\n", pPatch->pPrivInstrGC));
         /* Replace first opcode byte with 'int 3'. */
