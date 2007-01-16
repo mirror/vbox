@@ -400,6 +400,45 @@ GLOBALNAME %1_EndProc
 %endif
 
 
+
+;; @def RTHCPHYS_DEF
+; The pesudo-instruction used to declare an initialized host physical address.
+%define RTHCPHYS_DEF    dq
+
+;; @def RTHCPTR_RES
+; The pesudo-instruction used to declare (=reserve space for) an uninitialized 
+; host physical address variable
+%define RTHCPHYS_RES    resq
+
+;; @def RTHCPTR_PRE
+; The memory operand prefix used for a host physical address.
+%define RTHCPHYS_PRE    qword
+
+;; @def RTHCPHYS_CB
+; The size in bytes of a host physical address.
+%define RTHCPHYS_CB     8
+
+
+
+;; @def RTGCPHYS_DEF
+; The pesudo-instruction used to declare an initialized guest physical address.
+%define RTGCPHYS_DEF    dd
+
+;; @def RTGCPTR_RES
+; The pesudo-instruction used to declare (=reserve space for) an uninitialized 
+; guest physical address variable
+%define RTGCPHYS_RES    resd
+
+;; @def RTGCPTR_PRE
+; The memory operand prefix used for a guest physical address.
+%define RTGCPHYS_PRE    dword
+
+;; @def RTGCPHYS_CB
+; The size in bytes of a guest physical address.
+%define RTGCPHYS_CB     4
+
+
+
 ;;
 ; The size of the long double C/C++ type.
 ; On 32-bit Darwin this is 16 bytes, on L4, Linux, OS/2 and Windows
@@ -414,6 +453,7 @@ GLOBALNAME %1_EndProc
 %else
   %define RTLRD_CB          16
 %endif
+
 
 
 ;; @def ASM_CALL64_GCC
@@ -461,6 +501,57 @@ GLOBALNAME %1_EndProc
  %define RT_NOCRT(name) nocrt_ %+ name
 %else
  %define RT_NOCRT(name) name
+%endif
+
+
+
+;; @def xS
+; The stack unit size  / The register unit size.
+
+;; @def xSP
+; The stack pointer register (RSP or ESP).
+
+;; @def xBP
+; The base pointer register (RBP or ESP).
+
+;; @def xAX
+; RAX or EAX depending on context. 
+
+;; @def xBX
+; RBX or EBX depending on context. 
+
+;; @def xCX
+; RCX or ECX depending on context. 
+
+;; @def xDX
+; RDX or EDX depending on context. 
+
+;; @def xDI
+; RDI or EDI depending on context. 
+
+;; @def xSI
+; RSI or ESI depending on context. 
+
+%ifdef __AMD64__
+ %define xS  8
+ %define xSP rsp
+ %define xBP rbp
+ %define xAX rax
+ %define xBX rbx
+ %define xCX rcx
+ %define xDX rdx
+ %define xDI rdi
+ %define xSI rsi
+%else
+ %define xS  4
+ %define xSP esp
+ %define xBP ebp
+ %define xAX eax
+ %define xBX ebx
+ %define xCX ecx
+ %define xDX edx
+ %define xDI edi
+ %define xSI esi
 %endif
 
 %endif
