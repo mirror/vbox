@@ -40,6 +40,10 @@
 
 BEGINCODE
 
+ifdef __AMD64__ 
+ BITS 32 ; switch to 32-bit mode (x86).
+endif
+
 %ifdef VBOX_WITH_STATISTICS
 ;
 ; Patch call statistics
