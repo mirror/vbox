@@ -186,10 +186,10 @@ typedef struct RECPATCHTOGUEST
 typedef struct RECGUESTTOPATCH
 {
     /** The key is a GC virtual address. */
-    AVLPVNODECORE   Core;
+    AVLGCPTRNODECORE    Core;
 
     /** Patch offset (relative to PATM::pPatchMemGC / PATM::pPatchMemHC). */
-    uint32_t        PatchOffset;
+    uint32_t            PatchOffset;
 } RECGUESTTOPATCH, *PRECGUESTTOPATCH;
 
 /**
@@ -258,7 +258,7 @@ typedef struct _PATCHINFO
      * instruction in the patch block.
      */
     HCPTRTYPE(PAVLU32NODECORE) Patch2GuestAddrTree;
-    HCPTRTYPE(PAVLPVNODECORE) Guest2PatchAddrTree;
+    HCPTRTYPE(PAVLGCPTRNODECORE) Guest2PatchAddrTree;
     uint32_t                  nrPatch2GuestRecs;
 
     // Cache record for PATMGCVirtToHCVirt
