@@ -34,6 +34,7 @@
 #include <VBox/param.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
+#include <VBox/pgm.h>
 
 
 
@@ -492,14 +493,79 @@ SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, uint32_t esp)
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
  *
+ * @returns VBox status code.
  * @param   pVM     VM Handle.
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
-SELMDECL(void) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
+SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
 {
+    if (pVM->selm.s.fSyncTSSRing0Stack)
+    {
+        GCPTRTYPE(uint8_t *)GCPtrTss = (GCPTRTYPE(uint8_t *))pVM->selm.s.GCPtrGuestTss;
+        int     rc;
+        VBOXTSS tss;
+
+        Assert(pVM->selm.s.GCPtrGuestTss && pVM->selm.s.cbMonitoredGuestTss);
+
+#ifdef IN_GC
+        bool    fTriedAlready = false;
+
+tryagain:
+        rc  = MMGCRamRead(pVM, &tss.ss0,  GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0), sizeof(tss.ss0));
+        rc |= MMGCRamRead(pVM, &tss.esp0, GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0), sizeof(tss.esp0));
+  #ifdef DEBUG
+        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(tss.offIoBitmap));
+  #endif
+
+        if (VBOX_FAILURE(rc))
+        {
+            if (!fTriedAlready)
+            {
+                /* Shadow page might be out of sync. Sync and try again */
+                /** @todo might cross page boundary */
+                fTriedAlready = true;
+                rc = PGMPrefetchPage(pVM, GCPtrTss); 
+                if (rc != VINF_SUCCESS)
+                    return rc;
+
+                goto tryagain;
+            }
+            else
+            {
+                AssertMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
+                return rc;
+            }
+        }
+#else /* IN_GC */
+        /* Reading too much. Could be cheaper than two seperate calls though. */
+        rc = PGMPhysReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
+        if (VBOX_FAILURE(rc))
+        {
+            AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
+            return rc;
+        }
+#endif /* IN_GC */
+
+#ifdef DEBUG
+        uint32_t ssr0  = pVM->selm.s.Tss.ss1;
+        uint32_t espr0 = pVM->selm.s.Tss.esp1;
+        ssr0 &= ~1;
+
+        if (ssr0 != tss.ss0 || espr0 != tss.esp0)
+            Log(("SELMGetRing1Stack: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
+
+        Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
+#endif
+        /* Update our TSS structure for the guest's ring 1 stack */
+        SELMSetRing1Stack(pVM, tss.ss0 | 1, tss.esp0);
+        pVM->selm.s.fSyncTSSRing0Stack = false;
+    }
+
     *pSS  = pVM->selm.s.Tss.ss1;
     *pEsp = pVM->selm.s.Tss.esp1;
+
+    return VINF_SUCCESS;
 }
 
 
