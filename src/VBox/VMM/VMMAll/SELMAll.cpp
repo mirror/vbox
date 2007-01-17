@@ -27,6 +27,7 @@
 #include <VBox/selm.h>
 #include <VBox/stam.h>
 #include <VBox/mm.h>
+#include <VBox/pgm.h>
 #include "SELMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/x86.h>
@@ -34,7 +35,6 @@
 #include <VBox/param.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
-#include <VBox/pgm.h>
 
 
 
@@ -502,7 +502,7 @@ SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
 {
     if (pVM->selm.s.fSyncTSSRing0Stack)
     {
-        GCPTRTYPE(uint8_t *)GCPtrTss = (GCPTRTYPE(uint8_t *))pVM->selm.s.GCPtrGuestTss;
+        GCPTRTYPE(uint8_t *) GCPtrTss = (GCPTRTYPE(uint8_t *))pVM->selm.s.GCPtrGuestTss;
         int     rc;
         VBOXTSS tss;
 
@@ -511,7 +511,7 @@ SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
 #ifdef IN_GC
         bool    fTriedAlready = false;
 
-tryagain:
+l_tryagain:
         rc  = MMGCRamRead(pVM, &tss.ss0,  GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0), sizeof(tss.ss0));
         rc |= MMGCRamRead(pVM, &tss.esp0, GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0), sizeof(tss.esp0));
   #ifdef DEBUG
@@ -528,16 +528,13 @@ tryagain:
                 rc = PGMPrefetchPage(pVM, GCPtrTss); 
                 if (rc != VINF_SUCCESS)
                     return rc;
-
-                goto tryagain;
+                goto l_tryagain;
             }
-            else
-            {
-                AssertMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
-                return rc;
-            }
+            AssertMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
+            return rc;
         }
-#else /* IN_GC */
+
+#else /* !IN_GC */
         /* Reading too much. Could be cheaper than two seperate calls though. */
         rc = PGMPhysReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
         if (VBOX_FAILURE(rc))
@@ -545,9 +542,9 @@ tryagain:
             AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
             return rc;
         }
-#endif /* IN_GC */
+#endif /* !IN_GC */
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
         uint32_t ssr0  = pVM->selm.s.Tss.ss1;
         uint32_t espr0 = pVM->selm.s.Tss.esp1;
         ssr0 &= ~1;
