@@ -1109,8 +1109,6 @@ TEMPLATE_VBOXR0DRV_CFLAGS.release      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CFLAGS.profile      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.profile)
 TEMPLATE_VBOXR0DRV_CFLAGS.kprofile     = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = \
-	-L/Users/bird/Coding/XcodeMess/GenKernExt-1/build/Release \
-	-F/Users/bird/Coding/XcodeMess/GenKernExt-1/build/Release \
 	-static -nostdlib -r -lkmodc++ -lkmod -lcc_kext -lcpp_kext -Wl,-Y,1455 \
 	-mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
 endif
