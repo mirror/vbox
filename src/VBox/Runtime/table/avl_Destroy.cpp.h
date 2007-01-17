@@ -79,6 +79,7 @@ int KAVL_FN(Destroy)(PPKAVLNODECORE ppTree, PKAVLCALLBACK pfnCallBack, void *pvP
 
     } /* while */
 
+    *ppTree = KAVL_NULL;
     return 0;
 }
 
