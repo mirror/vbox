@@ -63,14 +63,13 @@
  *
  * @returns VBox status code.
  * @param   pNode           Current node
- * @param   pcPatches       Pointer to patch counter
+ * @param   pcPatches       Pointer to patch counter (uint32_t)
  */
 static DECLCALLBACK(int) patmCountLeafPV(PAVLPVNODECORE pNode, void *pcPatches)
 {
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
 }
-#endif 
 
 /**
  * Callback function for RTAvlU32DoWithAll
@@ -79,13 +78,14 @@ static DECLCALLBACK(int) patmCountLeafPV(PAVLPVNODECORE pNode, void *pcPatches)
  *
  * @returns VBox status code.
  * @param   pNode           Current node
- * @param   pcPatches       Pointer to patch counter
+ * @param   pcPatches       Pointer to patch counter (uint32_t)
  */
 static DECLCALLBACK(int) patmCountLeaf(PAVLU32NODECORE pNode, void *pcPatches)
 {
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
 }
+#endif /* VBOX_STRICT */
 
 /**
  * Callback function for RTAvloGCPtrDoWithAll
@@ -188,14 +188,14 @@ static DECLCALLBACK(int) patmSavePatchState(PAVLOGCPTRNODECORE pNode, void *pVM1
      * Reset HC pointers in fixup records and save them.
      */
 #ifdef VBOX_STRICT
-    int nrFixupRecs = 0;
+    uint32_t nrFixupRecs = 0;
     RTAvlPVDoWithAll(&pPatch->patch.FixupTree, true, patmCountLeafPV, &nrFixupRecs);
-    AssertMsg(nrFixupRecs == pPatch->patch.nrFixups, ("Fixup inconsistency! counted %d vs %d\n", nrFixupRecs, pPatch->patch.nrFixups));
+    AssertMsg((int32_t)nrFixupRecs == pPatch->patch.nrFixups, ("Fixup inconsistency! counted %d vs %d\n", nrFixupRecs, pPatch->patch.nrFixups));
 #endif
     RTAvlPVDoWithAll(&pPatch->patch.FixupTree, true, patmSaveFixupRecords, pVM);
 
 #ifdef VBOX_STRICT
-    int nrLookupRecords = 0;
+    uint32_t nrLookupRecords = 0;
     RTAvlU32DoWithAll(&pPatch->patch.Patch2GuestAddrTree, true, patmCountLeaf, &nrLookupRecords);
     Assert(nrLookupRecords == pPatch->patch.nrPatch2GuestRecs);
 #endif
