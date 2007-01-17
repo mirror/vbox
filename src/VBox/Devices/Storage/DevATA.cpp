@@ -4073,7 +4073,7 @@ static void ataBMDMAAddrWriteHighWord(PATACONTROLLER pCtl, uint32_t addr, uint32
  */
 PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int rc;
@@ -4103,7 +4103,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int rc;
@@ -4313,7 +4313,7 @@ static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
  */
 PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc = VINF_SUCCESS;
@@ -4343,7 +4343,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
  */
 PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc = VINF_SUCCESS;
@@ -4381,7 +4381,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  */
 PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, unsigned *pcTransfer, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc = VINF_SUCCESS;
@@ -4436,7 +4436,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  */
 PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, unsigned *pcTransfer, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc;
@@ -4491,7 +4491,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int rc;
@@ -4515,7 +4515,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
  */
 PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)pvUser;
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pData->aCts[i];
     int            rc;

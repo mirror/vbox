@@ -673,7 +673,7 @@ static int pic_load(QEMUFile *f, void *opaque, int version_id)
 PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PDEVPIC     pData = PDMINS2DATA(pDevIns, PDEVPIC);
-    uint32_t    iPic  = (uint32_t)pvUser;
+    uint32_t    iPic  = (uint32_t)(uintptr_t)pvUser;
 
     Assert(iPic == 0 || iPic == 1);
     if (cb == 1)
@@ -701,7 +701,7 @@ PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PDEVPIC     pData = PDMINS2DATA(pDevIns, PDEVPIC);
-    uint32_t    iPic  = (uint32_t)pvUser;
+    uint32_t    iPic  = (uint32_t)(uintptr_t)pvUser;
 
     Assert(iPic == 0 || iPic == 1);
 
