@@ -710,21 +710,39 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
             /* Current header version. */
 
             if (pHeader->u.v1.cbHeader < sizeof(VDIHEADER1))
+            {
+                LogRel(("VDI: v1 header size wrong (%d < %d)\n",
+                       pHeader->u.v1.cbHeader, sizeof(VDIHEADER1)));
                 return VERR_VDI_INVALID_HEADER;
+            }
 
             if (getImageBlocksOffset(pHeader) < (sizeof(VDIPREHEADER) + sizeof(VDIHEADER1)))
+            {
+                LogRel(("VDI: v1 blocks offset wrong (%d < %d)\n",
+                       getImageBlocksOffset(pHeader), sizeof(VDIPREHEADER) + sizeof(VDIHEADER1)));
                 return VERR_VDI_INVALID_HEADER;
+            }
 
             if (getImageDataOffset(pHeader) < (getImageBlocksOffset(pHeader) + getImageBlocks(pHeader) * sizeof(VDIIMAGEBLOCKPOINTER)))
+            {
+                LogRel(("VDI: v1 image data offset wrong (%d < %d)\n",
+                       getImageDataOffset(pHeader), getImageBlocksOffset(pHeader) + getImageBlocks(pHeader) * sizeof(VDIIMAGEBLOCKPOINTER)));
                 return VERR_VDI_INVALID_HEADER;
+            }
 
             if (    getImageType(pHeader) == VDI_IMAGE_TYPE_UNDO
                 ||  getImageType(pHeader) == VDI_IMAGE_TYPE_DIFF)
             {
                 if (RTUuidIsNull(getImageParentUUID(pHeader)))
+                {
+                    LogRel(("VDI: v1 uuid of parent is 0)\n"));
                     return VERR_VDI_INVALID_HEADER;
+                }
                 if (RTUuidIsNull(getImageParentModificationUUID(pHeader)))
+                {
+                    LogRel(("VDI: v1 uuid of parent modification is 0\n"));
                     return VERR_VDI_INVALID_HEADER;
+                }
             }
 
             break;
@@ -744,26 +762,59 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
         return VERR_VDI_INVALID_FLAGS;
 
     if ((getImageGeometry(pHeader))->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
+    {
+        LogRel(("VDI: wrong section size (%d != %d)\n",
+               (getImageGeometry(pHeader))->cbSector, VDI_GEOMETRY_SECTOR_SIZE));
         return VERR_VDI_INVALID_HEADER;
+    }
 
     if (    getImageDiskSize(pHeader) == 0
         ||  getImageBlockSize(pHeader) == 0
         ||  getImageBlocks(pHeader) == 0
-        ||  getPowerOfTwo(getImageBlockSize(pHeader)) == 0
-        ||  getImageBlocksAllocated(pHeader) > getImageBlocks(pHeader))
+        ||  getPowerOfTwo(getImageBlockSize(pHeader)) == 0)
+    {
+        LogRel(("VDI: wrong size (%lld, %d, %d, %d)\n",
+              getImageDiskSize(pHeader), getImageBlockSize(pHeader),
+              getImageBlocks(pHeader), getPowerOfTwo(getImageBlockSize(pHeader))));
         return VERR_VDI_INVALID_HEADER;
+    }
+
+    if (getImageBlocksAllocated(pHeader) > getImageBlocks(pHeader))
+    {
+        LogRel(("VDI: too many blocks allocated (%d > %d)\n"
+                "     blocksize=%d disksize=%lld\n",
+              getImageBlocksAllocated(pHeader), getImageBlocks(pHeader),
+              getImageBlockSize(pHeader), getImageDiskSize(pHeader)));
+        return VERR_VDI_INVALID_HEADER;
+    }
 
     if (    getImageExtraBlockSize(pHeader) != 0
         &&  getPowerOfTwo(getImageExtraBlockSize(pHeader)) == 0)
+    {
+        LogRel(("VDI: wrong extra size (%d, %d)\n",
+               getImageExtraBlockSize(pHeader), getPowerOfTwo(getImageExtraBlockSize(pHeader))));
         return VERR_VDI_INVALID_HEADER;
+    }
 
     if ( (uint64_t)getImageBlockSize(pHeader) * getImageBlocks(pHeader) < getImageDiskSize(pHeader))
+    {
+        LogRel(("VDI: wrong disk size (%d, %d, %lld)\n",
+               getImageBlockSize(pHeader),
+               getImageBlocks(pHeader),
+               getImageDiskSize(pHeader)));
         return VERR_VDI_INVALID_HEADER;
+    }
 
     if (RTUuidIsNull(getImageCreationUUID(pHeader)))
+    {
+        LogRel(("VDI: uuid of creator is 0\n"));
         return VERR_VDI_INVALID_HEADER;
+    }
     if (RTUuidIsNull(getImageModificationUUID(pHeader)))
+    {
+        LogRel(("VDI: uuid of modificator is 0\n"));
         return VERR_VDI_INVALID_HEADER;
+    }
 
     return VINF_SUCCESS;
 }

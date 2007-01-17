@@ -73,13 +73,13 @@ static int PrintDone(int rc)
     else if (VBOX_SUCCESS(rc))
         RTPrintf("The operation completed successfully! (rc=%Rrc)\n", rc);
     else
-        RTPrintf("failure: %Rrf (%Rrc)\n", rc, rc);
+        RTPrintf("FAILURE: %Rrf (%Rrc)\n", rc, rc);
     return rc;
 }
 
 static int NewImage(const char *pszFilename, uint32_t cMBs)
 {
-    RTPrintf("creating VDI: file=\"%s\" size=%u MB...\n",
+    RTPrintf("Creating VDI: file=\"%s\" size=%u MB...\n",
              pszFilename, cMBs);
     int rc = VDICreateBaseImage(pszFilename,
                                 VDI_IMAGE_TYPE_NORMAL,
@@ -90,7 +90,7 @@ static int NewImage(const char *pszFilename, uint32_t cMBs)
 
 static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
 {
-    RTPrintf("converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
+    RTPrintf("Converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
              pszDDFilename, pszFilename);
 
     /* open raw image file. */
@@ -107,7 +107,7 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
     rc = RTFileGetSize(File, &cbFile);
     if (VBOX_SUCCESS(rc))
     {
-        RTPrintf("creating fixed image with size %u Bytes...\n", (unsigned)cbFile);
+        RTPrintf("Creating fixed image with size %u Bytes...\n", (unsigned)cbFile);
         rc = VDICreateBaseImage(pszFilename,
                                 VDI_IMAGE_TYPE_FIXED,
                                 cbFile,
@@ -115,7 +115,7 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
         PrintDone(rc);
         if (VBOX_SUCCESS(rc))
         {
-            RTPrintf("writing data...\n");
+            RTPrintf("Writing data...\n");
             PVDIDISK pVdi = VDIDiskCreate();
             rc = VDIDiskOpenImage(pVdi, pszFilename, VDI_OPEN_FLAGS_NORMAL);
             if (VBOX_SUCCESS(rc))
@@ -176,7 +176,7 @@ static DECLCALLBACK(int) ProcessCallback(PVM pVM, unsigned uPercent, void *pvUse
 
 static int ConvertOldImage(const char *pszFilename)
 {
-    RTPrintf("converting VDI image file=\"%s\" to a new format...\n"
+    RTPrintf("Converting VDI image file=\"%s\" to a new format...\n"
              "progress: 0%%",
              pszFilename);
     unsigned uPercent = 0;
@@ -187,7 +187,7 @@ static int ConvertOldImage(const char *pszFilename)
 
 static int DumpImage(const char *pszFilename)
 {
-    RTPrintf("dumping VDI image file=\"%s\" into the log file...\n", pszFilename);
+    RTPrintf("Dumping VDI image file=\"%s\" into the log file...\n", pszFilename);
     PVDIDISK pVdi = VDIDiskCreate();
     int rc = VDIDiskOpenImage(pVdi, pszFilename, VDI_OPEN_FLAGS_READONLY);
     if (VBOX_SUCCESS(rc))
@@ -200,7 +200,7 @@ static int DumpImage(const char *pszFilename)
 
 static int ResetImageGeometry(const char *pszFilename)
 {
-    RTPrintf("resetting geometry info of VDI image file=\"%s\"\n", pszFilename);
+    RTPrintf("Resetting geometry info of VDI image file=\"%s\"\n", pszFilename);
     PVDIDISK pVdi = VDIDiskCreate();
     int rc = VDIDiskOpenImage(pVdi, pszFilename, VDI_OPEN_FLAGS_NORMAL);
     if (VBOX_SUCCESS(rc))
@@ -215,7 +215,7 @@ static int ResetImageGeometry(const char *pszFilename)
 
 static int CopyImage(const char *pszDstFile, const char *pszSrcFile)
 {
-    RTPrintf("copying VDI image file=\"%s\" to image file=\"%s\"...\n"
+    RTPrintf("Copying VDI image file=\"%s\" to image file=\"%s\"...\n"
              "progress: 0%%",
              pszSrcFile, pszDstFile);
     unsigned uPrecent = 0;
@@ -226,7 +226,7 @@ static int CopyImage(const char *pszDstFile, const char *pszSrcFile)
 
 static int CopyToDD(const char *pszDstFile, const char *pszSrcFile)
 {
-    RTPrintf("copying VDI image file=\"%s\" to DD file=\"%s\"...\n",
+    RTPrintf("Copying VDI image file=\"%s\" to DD file=\"%s\"...\n",
              pszSrcFile, pszDstFile);
     PVDIDISK pVdi = VDIDiskCreate();
     int rc = VDIDiskOpenImage(pVdi, pszSrcFile, VDI_OPEN_FLAGS_NORMAL);
@@ -263,7 +263,7 @@ static int CopyToDD(const char *pszDstFile, const char *pszSrcFile)
 
 static int ShrinkImage(const char *pszFilename)
 {
-    RTPrintf("shrinking VDI image file=\"%s\"...\n"
+    RTPrintf("Shrinking VDI image file=\"%s\"...\n"
              "progress: 0%%",
              pszFilename);
     unsigned uPrecent;
@@ -289,7 +289,13 @@ int main(int argc, char **argv)
     strcpy(szCmd, argv[1]);
     ascii2upper(szCmd);
 
-    int rc;
+    PRTLOGGER pLogger;
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    int rc = RTLogCreate(&pLogger, 0, "all",
+                         NULL, ELEMENTS(s_apszGroups), s_apszGroups,
+                          RTLOGDEST_STDOUT, NULL);
+    RTLogRelSetDefaultInstance(pLogger);
+
     if (strcmp(szCmd, "NEW") == 0)
     {
         if (argc != 4)
@@ -354,5 +360,6 @@ int main(int argc, char **argv)
     else
         return SyntaxError("Invalid command!");
 
+    RTLogFlush(NULL);
     return !VBOX_SUCCESS(rc);
 }
