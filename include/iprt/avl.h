@@ -259,6 +259,46 @@ RTDECL(PAVLROGCPHYSNODECORE)    RTAvlroGCPhysGetRight(PAVLROGCPHYSNODECORE pNode
 /** @} */
 
 
+/** AVL tree of RTGCPTRs.
+ * @{
+ */
+
+/**
+ * AVL Core node.
+ */
+typedef struct _AVLGCPtrNodeCore
+{
+    /** Key value. */
+    RTGCPTR             Key;
+    /** Pointer to the left node. */
+    struct _AVLGCPtrNodeCore *pLeft;
+    /** Pointer to the right node. */
+    struct _AVLGCPtrNodeCore *pRight;
+    /** Height of this tree: max(height(left), height(right)) + 1 */
+    unsigned char       uchHeight;
+} AVLGCPTRNODECORE, *PAVLGCPTRNODECORE, **PPAVLGCPTRNODECORE;
+
+/** A tree of RTGCPTR keys. */
+typedef PAVLGCPTRNODECORE     AVLGCPTRTREE;
+/** Pointer to a tree of RTGCPTR keys. */
+typedef PPAVLGCPTRNODECORE    PAVLGCPTRTREE;
+
+/** Callback function for RTAvlroGCPtrDoWithAll(). */
+typedef DECLCALLBACK(int)   AVLGCPTRCALLBACK(PAVLGCPTRNODECORE pNode, void *pvUser);
+/** Pointer to callback function for RTAvlroGCPtrDoWithAll(). */
+typedef AVLGCPTRCALLBACK *PAVLGCPTRCALLBACK;
+
+RTDECL(bool)                    RTAvlGCPtrInsert(PAVLGCPTRTREE pTree, PAVLGCPTRNODECORE pNode);
+RTDECL(PAVLGCPTRNODECORE)       RTAvlGCPtrRemove(PAVLGCPTRTREE pTree, RTGCPTR Key);
+RTDECL(PAVLGCPTRNODECORE)       RTAvlGCPtrGet(PAVLGCPTRTREE pTree, RTGCPTR Key);
+RTDECL(int)                     RTAvlGCPtrDoWithAll(PAVLGCPTRTREE pTree, int fFromLeft, PAVLGCPTRCALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLGCPTRNODECORE)       RTAvlGCPtrGetBestFit(PAVLGCPTRTREE ppTree, RTGCPTR Key, bool fAbove);
+RTDECL(PAVLGCPTRNODECORE)       RTAvlGCPtrRemoveBestFit(PAVLGCPTRTREE ppTree, RTGCPTR Key, bool fAbove);
+RTDECL(int)                     RTAvlGCPtrDestroy(PAVLGCPTRTREE pTree, PAVLGCPTRCALLBACK pfnCallBack, void *pvParam);
+
+/** @} */
+
+
 /** AVL tree of RTGCPTRs - using relative offsets internally.
  * @{
  */

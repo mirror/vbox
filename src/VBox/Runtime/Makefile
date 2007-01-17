@@ -122,6 +122,7 @@ RuntimeR3_SOURCES       = \
 	alloc.cpp \
 	assert.cpp \
 	table/avlhcphys.cpp \
+	table/avlgcptr.cpp \
 	table/avlogcphys.cpp \
 	table/avlogcptr.cpp \
 	table/avlohcphys.cpp \
@@ -464,6 +465,7 @@ RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
 RuntimeR0_SOURCES       = \
 	assert.cpp \
 	table/avlhcphys.cpp \
+	table/avlgcptr.cpp \
 	table/avlogcphys.cpp \
 	table/avlohcphys.cpp \
 	table/avlpv.cpp \
