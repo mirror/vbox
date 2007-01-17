@@ -60,11 +60,12 @@ SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, uint32_t esp);
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
  *
+ * @returns VBox status code.
  * @param   pVM     VM Handle.
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
-SELMDECL(void) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp);
+SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp);
 
 /**
  * Returns Guest TSS pointer
