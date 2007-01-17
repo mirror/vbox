@@ -96,14 +96,14 @@ BEGINPROC   CPUMHandleLazyFPUAsm
     ;
 %ifdef __AMD64__
  %ifdef __WIN__
-    mov     CPUM_REG, rcx
+    mov     xDX, rcx
  %else
-    mov     CPUM_REG, rdi
+    mov     xDX, rdi
  %endif
 %else
-    mov     CPUM_REG, dword [esp + 4]
+    mov     xDX, dword [esp + 4]
 %endif
-    test    dword [CPUM_REG + CPUM.fUseFlags], CPUM_USED_FPU
+    test    dword [xDX + CPUM.fUseFlags], CPUM_USED_FPU
     jz      hlfpua_not_loaded
     jmp     hlfpua_to_host
 
@@ -112,7 +112,7 @@ BEGINPROC   CPUMHandleLazyFPUAsm
     ;
 align 16
 hlfpua_not_loaded:
-    mov     eax, [CPUM_REG + CPUM.Guest.cr0]
+    mov     eax, [xDX + CPUM.Guest.cr0]
     and     eax, X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
 %ifdef __AMD64__
     lea     r8, [hlfpuajmp1 wrt rip]
@@ -133,14 +133,14 @@ hlfpuajmp1:
     RTCCPTR_DEF hlfpua_to_host
 ;; and mask for cr0.
 hlfpu_afFlags:
-    dd      ~(X86_CR0_TS | X86_CR0_MP)
-    dd      ~(X86_CR0_TS)
-    dd      ~(X86_CR0_TS | X86_CR0_MP)
-    dd      ~(X86_CR0_TS)
-    dd      ~(X86_CR0_MP)
-    dd      0
-    dd      ~(X86_CR0_MP)
-    dd      0
+    RTCCPTR_DEF ~(X86_CR0_TS | X86_CR0_MP)
+    RTCCPTR_DEF ~(X86_CR0_TS)
+    RTCCPTR_DEF ~(X86_CR0_TS | X86_CR0_MP)
+    RTCCPTR_DEF ~(X86_CR0_TS)
+    RTCCPTR_DEF ~(X86_CR0_MP)
+    RTCCPTR_DEF 0
+    RTCCPTR_DEF ~(X86_CR0_MP)
+    RTCCPTR_DEF 0
 
     ;
     ; Action - switch FPU context and change cr0 flags.
@@ -148,28 +148,28 @@ hlfpu_afFlags:
 align 16
 hlfpua_switch_fpu_ctx:
 %ifndef IN_RING3 ; IN_GC or IN_RING0
-    mov     ecx, cr0
+    mov     xCX, cr0
  %ifdef __AMD64__
     lea     r8, [hlfpu_afFlags wrt rip]
-    and     ecx, [eax*2 + r8]                   ; calc the new cr0 flags.
+    and     rcx, [rax*4 + r8]                   ; calc the new cr0 flags.
  %else
     and     ecx, [eax*2 + hlfpu_afFlags]        ; calc the new cr0 flags.
  %endif
-    mov     eax, cr0
-    and     eax, dword ~(X86_CR0_TS | X86_CR0_EM)
-    mov     cr0, eax                            ; clear flags so we don't trap here.
+    mov     xAX, cr0
+    and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
+    mov     cr0, xAX                            ; clear flags so we don't trap here.
 %endif
 %ifndef __AMD64__
-    test    dword [CPUM_REG + CPUM.CPUFeatures.edx], X86_CPUID_FEATURE_EDX_FXSR
+    test    dword [xDX + CPUM.CPUFeatures.edx], X86_CPUID_FEATURE_EDX_FXSR
     jz short hlfpua_no_fxsave
 %endif
 
-    fxsave  [CPUM_REG + CPUM.Host.fpu]
-    or      dword [CPUM_REG + CPUM.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
-    fxrstor [CPUM_REG + CPUM.Guest.fpu]
+    fxsave  [xDX + CPUM.Host.fpu]
+    or      dword [xDX + CPUM.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
+    fxrstor [xDX + CPUM.Guest.fpu]
 hlfpua_finished_switch:
 %ifdef IN_GC
-    mov     cr0, ecx                            ; load the new cr0 flags.
+    mov     cr0, xCX                            ; load the new cr0 flags.
 %endif
     ; return continue execution.
     xor     eax, eax
@@ -178,17 +178,17 @@ hlfpua_finished_switch:
 %ifndef __AMD64__
 ; legacy support.
 hlfpua_no_fxsave:
-    fnsave  [CPUM_REG + CPUM.Host.fpu]
-    or      dword [CPUM_REG + CPUM.fUseFlags], dword (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM) ; yasm / nasm
-    mov     eax, [CPUM_REG + CPUM.Guest.fpu]    ; control word
+    fnsave  [xDX + CPUM.Host.fpu]
+    or      dword [xDX + CPUM.fUseFlags], dword (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM) ; yasm / nasm
+    mov     eax, [xDX + CPUM.Guest.fpu]    ; control word
     not     eax                                 ; 1 means exception ignored (6 LS bits)
     and     eax, byte 03Fh                      ; 6 LS bits only
-    test    eax, [CPUM_REG + CPUM.Guest.fpu + 4]; status word
+    test    eax, [xDX + CPUM.Guest.fpu + 4]; status word
     jz short hlfpua_no_exceptions_pending
     ; technically incorrect, but we certainly don't want any exceptions now!!
-    and     dword [CPUM_REG + CPUM.Guest.fpu + 4], ~03Fh
+    and     dword [xDX + CPUM.Guest.fpu + 4], ~03Fh
 hlfpua_no_exceptions_pending:
-    frstor  [CPUM_REG + CPUM.Guest.fpu]
+    frstor  [xDX + CPUM.Guest.fpu]
     jmp near hlfpua_finished_switch
 %endif ; !__AMD64__
 
@@ -213,29 +213,29 @@ align 16
 BEGINPROC CPUMRestoreHostFPUStateAsm
 %ifdef __AMD64__
  %ifdef __WIN__
-    mov     CPUM_REG, rcx
+    mov     xDX, rcx
  %else
-    mov     CPUM_REG, rdi
+    mov     xDX, rdi
  %endif
 %else
-    mov     CPUM_REG, dword [esp + 4]
+    mov     xDX, dword [esp + 4]
 %endif
 
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
-    test    dword [CPUM_REG + CPUM.fUseFlags], CPUM_USED_FPU
+    test    dword [xDX + CPUM.fUseFlags], CPUM_USED_FPU
     jz short gth_fpu_no
 
-    mov     eax, cr0
-    mov     ecx, eax                    ; save old CR0
-    and     eax, dword ~(X86_CR0_TS | X86_CR0_EM)
-    mov     cr0, eax
+    mov     xAX, cr0
+    mov     xCX, xAX                    ; save old CR0
+    and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
+    mov     cr0, xAX
 
-    fxsave  [CPUM_REG + CPUM.Guest.fpu]
-    fxrstor [CPUM_REG + CPUM.Host.fpu]
+    fxsave  [xDX + CPUM.Guest.fpu]
+    fxrstor [xDX + CPUM.Host.fpu]
 
-    mov     cr0, ecx                    ; and restore old CR0 again
-    and     dword [CPUM_REG + CPUM.fUseFlags], ~CPUM_USED_FPU
+    mov     cr0, xCX                    ; and restore old CR0 again
+    and     dword [xDX + CPUM.fUseFlags], ~CPUM_USED_FPU
 gth_fpu_no:
     xor     eax, eax
     ret
