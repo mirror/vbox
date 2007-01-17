@@ -293,7 +293,7 @@ int foo(a)
 ' > .tmp_src.c
       cat .tmp_src.c >> $LOG
       local bcc_path=`which $BCC`
-      local bcc_dir=`dirname $bcc_path`
+      local bcc_dir="`dirname $bcc_path`/"
       echo "using the following command line:" >> $LOG
       echo "$BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c" >> $LOG
       $BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c >> $LOG 2>&1
