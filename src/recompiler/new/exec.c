@@ -92,10 +92,11 @@ uint8_t code_gen_buffer[CODE_GEN_BUFFER_SIZE]
 #endif 
 uint8_t *code_gen_ptr;
 
-int phys_ram_size;
 #ifndef VBOX
+int phys_ram_size;
 int phys_ram_fd;
 #endif /* !VBOX */
+RTGCPHYS phys_ram_size;
 uint8_t *phys_ram_base;
 uint8_t *phys_ram_dirty;
 #ifdef VBOX
