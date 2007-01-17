@@ -123,10 +123,13 @@ typedef struct SELM
     RTSEL                   GCSelTss;
 
     /** Indicates that the Guest GDT access handler have been registered. */
-    RTUINT                  fGDTRangeRegistered; /** @todo r=bird: use bool when we mean bool. Just keep in mind that it's a 1 byte byte. */
+    bool                    fGDTRangeRegistered;
 
     /** Indicates whether LDT/GDT/TSS monitoring and syncing is disabled. */
-    RTUINT                  fDisableMonitoring;
+    bool                    fDisableMonitoring;
+
+    /** Indicates whether the TSS stack selector & base address need to be refreshed.  */
+    bool                    fSyncTSSRing0Stack;
 
     /** SELMR3UpdateFromCPUM() profiling. */
     STAMPROFILE             StatUpdateFromCPUM;

@@ -537,7 +537,10 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 
                 if (!fConforming && dpl < cpl)  /* to inner privilege level */
                 {
-                    SELMGetRing1Stack(pVM, &ss_r0, &esp_r0);
+                    rc = SELMGetRing1Stack(pVM, &ss_r0, &esp_r0);
+                    if (VBOX_FAILURE(rc))
+                        goto failure;
+
                     Assert((ss_r0 & X86_SEL_RPL) == 1);
 
                     if (   !esp_r0

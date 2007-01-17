@@ -1181,6 +1181,8 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
         /*
          * Only replace the 0x2E handler; others need to be called indirectly via a trampoline in our GC handlers
          */
+        /** @note dependencies on trap gate numbers in SELMR3SyncTSS */
+        /** @todo handle those dependencies better! */
 # ifdef _WIN32 /** @todo Solve this in a proper manner. see defect #1186 */
         if (iTrap == 0x2E || iTrap == 0x80)
 # else
@@ -1254,6 +1256,9 @@ TRPMR3DECL(int) TRPMR3ClearHandler(PVM pVM, unsigned iTrap)
         return VERR_INVALID_PARAMETER;
     }
     memcpy(&pVM->trpm.s.aIdt[iTrap], &g_aIdt[iTrap], sizeof(pVM->trpm.s.aIdt[0]));
+
+    /* Unmark it for relocation purposes. */
+    ASMBitClear(&pVM->trpm.s.au32IdtPatched[0], iTrap);
 
     RTSEL               SelCS         = CPUMGetHyperCS(pVM);
     PVBOXIDTE           pIdte         = &pVM->trpm.s.aIdt[iTrap];
