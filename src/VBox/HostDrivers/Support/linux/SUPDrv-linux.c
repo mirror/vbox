@@ -68,7 +68,7 @@
                   DEVICE_NAME) == 0)                    \
         rc = (void *)' '; /* return not NULL */         \
     rc;                                                 \
-})
+ })
 
 #  define VBOX_UNREGISTER_DEVFS(handle)                 \
     devfs_remove(DEVICE_NAME);
