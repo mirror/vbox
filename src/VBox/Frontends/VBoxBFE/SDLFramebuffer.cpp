@@ -168,7 +168,13 @@ HRESULT SDLFramebuffer::getAddress(ULONG *address)
         return E_INVALIDARG;
 
     /* subtract the reserved extra area */
-    *address = (ULONG)(mScreen ? (int)mScreen->pixels + (mScreen->pitch * mTopOffset) : 0);
+    *address = mScreen
+             ? (uintptr_t)mScreen->pixels
+#ifdef __OS2__ /* Play safe for now - this is vital when we get a larger surface than requested. */
+               + mScreen->offset
+#endif
+               + (mScreen->pitch * mTopOffset)
+             : 0;
 
     LogFlow(("VBoxSDL::GetAddress returning %p\n", *address));
     return S_OK;
