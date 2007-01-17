@@ -1880,6 +1880,21 @@ PATMRetFunction_Start:
     add     eax, dword [ss:edx]                 ; stack base + stack position
     mov     eax, dword [ss:eax]                 ; relative patm return address
     add     eax, PATM_PATCHBASE
+
+%ifdef PATM_LOG_IF_CHANGES
+    push    eax
+    push    ecx
+    push    edx
+    mov     edx, eax                            ; return address
+    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_RET
+    mov     eax, PATM_ACTION_LOG_RET
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
+
     add     dword [ss:edx], 4                   ; pop return address from the PATM stack (sizeof(RTGCPTR); @note hardcoded assumption!)
 
     pop     edi
@@ -1924,6 +1939,21 @@ PATMRetFunction_SearchEnd:
     jz      PATMRetFunction_Failure
 
     add     eax, PATM_PATCHBASE
+
+%ifdef PATM_LOG_IF_CHANGES
+    push    eax
+    push    ecx
+    push    edx
+    mov     edx, eax                            ; return address
+    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_RET
+    mov     eax, PATM_ACTION_LOG_RET
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
+
     pop     edi
     pop     edx
     pop     ecx
@@ -1946,7 +1976,11 @@ GLOBALNAME PATMRetFunctionRecord
     DD      0
     DD      0
     DD      PATMRetFunction_End - PATMRetFunction_Start
+%ifdef PATM_LOG_IF_CHANGES
+    DD      9
+%else
     DD      7
+%endif
     DD      PATM_STACKPTR
     DD      0
     DD      PATM_STACKPTR
@@ -1957,10 +1991,18 @@ GLOBALNAME PATMRetFunctionRecord
     DD      0
     DD      PATM_PATCHBASE
     DD      0
+%ifdef PATM_LOG_IF_CHANGES
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      PATM_PENDINGACTION
     DD      0
     DD      PATM_PATCHBASE
     DD      0
+%ifdef PATM_LOG_IF_CHANGES
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      0ffffffffh
 
 
