@@ -588,6 +588,11 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 Log(("PATMHandleIllegalInstrTrap: IRET from %VGv (IF->1) to %VGv\n", pRegFrame->eip, pRegFrame->edx));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
+
+            case PATM_ACTION_LOG_RET:
+                Log(("PATMHandleIllegalInstrTrap: RET to %VGv\n", pRegFrame->edx));
+                pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
+                return VINF_SUCCESS;
 #endif
             default:
                 AssertFailed();
