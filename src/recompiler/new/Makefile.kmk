@@ -64,10 +64,15 @@ OTHER_CLEAN           = \
 #endif
 
 #
-# L4 must use the no-crt path becuase it's lacking math stuff it seems...
+# L4 must use the no-crt path because it's lacking math stuff it seems...
 # Darwin must use the non-crt path because it can't compile op.c nativly.
+# All the AMD64 target must use the no-crt path because ELF doesn't like op.c 
+# when stuffed into a shared library and windows doesn't have 64-bit gcc (yet).
 #
 ifeq ($(filter-out l4 darwin,$(BUILD_TARGET)),)
+ REM_USE_NOCRT := 1
+endif
+ifeq ($(BUILD_TARGET_ARCH),amd64)
  REM_USE_NOCRT := 1
 endif
 
