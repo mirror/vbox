@@ -55,6 +55,7 @@
 #define PATM_SUBTRACT_PTR(a, b) *(uintptr_t *)&(a) = (uintptr_t)(a) - (uintptr_t)(b)
 #define PATM_ADD_PTR(a, b)      *(uintptr_t *)&(a) = (uintptr_t)(a) + (uintptr_t)(b)
 
+#ifdef VBOX_STRICT
 /**
  * Callback function for RTAvlPVDoWithAll
  *
@@ -64,7 +65,23 @@
  * @param   pNode           Current node
  * @param   pcPatches       Pointer to patch counter
  */
-static DECLCALLBACK(int) patmCountLeaf(PAVLPVNODECORE pNode, void *pcPatches)
+static DECLCALLBACK(int) patmCountLeafPV(PAVLPVNODECORE pNode, void *pcPatches)
+{
+    *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
+    return VINF_SUCCESS;
+}
+#endif 
+
+/**
+ * Callback function for RTAvlU32DoWithAll
+ *
+ * Counts the number of patches in the tree
+ *
+ * @returns VBox status code.
+ * @param   pNode           Current node
+ * @param   pcPatches       Pointer to patch counter
+ */
+static DECLCALLBACK(int) patmCountLeaf(PAVLU32NODECORE pNode, void *pcPatches)
 {
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
@@ -86,7 +103,7 @@ static DECLCALLBACK(int) patmCountPatch(PAVLOGCPTRNODECORE pNode, void *pcPatche
 }
 
 /**
- * Callback function for RTAvlPVDoWithAll
+ * Callback function for RTAvlU32DoWithAll
  *
  * Saves all patch to guest lookup records.
  *
@@ -94,7 +111,7 @@ static DECLCALLBACK(int) patmCountPatch(PAVLOGCPTRNODECORE pNode, void *pcPatche
  * @param   pNode           Current node
  * @param   pVM1            VM Handle
  */
-static DECLCALLBACK(int) patmSaveP2GLookupRecords(PAVLPVNODECORE pNode, void *pVM1)
+static DECLCALLBACK(int) patmSaveP2GLookupRecords(PAVLU32NODECORE pNode, void *pVM1)
 {
     PVM                 pVM    = (PVM)pVM1;
     PSSMHANDLE          pSSM   = pVM->patm.s.savedstate.pSSM;
@@ -172,7 +189,7 @@ static DECLCALLBACK(int) patmSavePatchState(PAVLOGCPTRNODECORE pNode, void *pVM1
      */
 #ifdef VBOX_STRICT
     int nrFixupRecs = 0;
-    RTAvlPVDoWithAll(&pPatch->patch.FixupTree, true, patmCountLeaf, &nrFixupRecs);
+    RTAvlPVDoWithAll(&pPatch->patch.FixupTree, true, patmCountLeafPV, &nrFixupRecs);
     AssertMsg(nrFixupRecs == pPatch->patch.nrFixups, ("Fixup inconsistency! counted %d vs %d\n", nrFixupRecs, pPatch->patch.nrFixups));
 #endif
     RTAvlPVDoWithAll(&pPatch->patch.FixupTree, true, patmSaveFixupRecords, pVM);
