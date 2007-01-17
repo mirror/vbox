@@ -188,6 +188,9 @@ public:
 
     bool remindAboutInaccessibleMedia();
 
+    void remindAboutGoingFullscreen (const QString &hotKey,
+                                     const QString &hostKey);
+
     static QString highlight (const QString &str);
     static QString formatErrorInfo (const COMErrorInfo &info,
                                     HRESULT wrapperRC = S_OK);

@@ -1245,6 +1245,24 @@ bool VBoxProblemReporter::remindAboutInaccessibleMedia()
     return rc == QIMessageBox::Ok && !(rc & AutoConfirmed);
 }
 
+/**
+ *  @param  fullscreen hot key as defined in the menu
+ *  @param  current host key as in the global settings
+ *  @return true if the user has chosen to go fullscreen.
+ */
+void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
+                                                      const QString &hostKey)
+{
+    int rc = message (&vboxGlobal().consoleWnd(), Info,
+        tr ("<p>The Virtual Machine window will be now switched to the "
+            "<b>fullscreen</b> mode. "
+            "You can go back to the windowed mode at any time by pressing "
+            "the <b>%1</b> key combination. Note that the current "
+            "Host key is defined as <b>%1</b>.</p>")
+            .arg (hotKey).arg (hostKey),
+        "remindAboutGoingFullscreen");
+}
+
 // static
 QString VBoxProblemReporter::highlight (const QString &str)
 {
