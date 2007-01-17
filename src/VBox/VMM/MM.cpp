@@ -192,17 +192,17 @@ MMR3DECL(int) MMR3Init(PVM pVM)
 MMR3DECL(int) MMR3InitPaging(PVM pVM)
 {
     LogFlow(("MMR3InitPaging:\n"));
-    uint64_t    cbRam;
-    bool        fPreAlloc = false;
-
-    int rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        cbRam = 0;
-
-    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RamPreAlloc", &fPreAlloc);
+    bool        fPreAlloc;
+    int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RamPreAlloc", &fPreAlloc);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPreAlloc = false;
+    else
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamPreAlloc\", rc=%Vrc.\n", rc), rc);
 
+    uint64_t    cbRam;
+    rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        cbRam = 0;
     if (VBOX_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (cbRam < PAGE_SIZE)
@@ -211,7 +211,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
             return VINF_SUCCESS;
         }
 #ifdef PGM_DYNAMIC_RAM_ALLOC
-        Log(("MM: %llu bytes of RAM \n", cbRam));
+        Log(("MM: %llu bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
         pVM->mm.s.pvRamBaseHC = 0; /** @todo obsolete */
         pVM->mm.s.cbRamBase   = cbRam & PAGE_BASE_GC_MASK;
         rc = MMR3PhysRegister(pVM, pVM->mm.s.pvRamBaseHC, 0, pVM->mm.s.cbRamBase, MM_RAM_FLAGS_DYNAMIC_ALLOC, "Main Memory");
@@ -224,9 +224,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
                 /* Should we preallocate the entire guest RAM? */
                 if (fPreAlloc)
                 {
-                    RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
-
-                    for (;GCPhys < cbRam ; GCPhys+=PGM_DYNAMIC_CHUNK_SIZE)
+                    for (RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE; GCPhys < cbRam; GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         rc = PGM3PhysGrowRange(pVM, GCPhys);
                         if (VBOX_FAILURE(rc))
@@ -448,7 +446,7 @@ int mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *
          */
         PSUPPAGE    pPhysPage = &pLockedMem->aPhysPages[0];
         for (unsigned c = cPages; c > 0; c--, pPhysPage++)
-            pPhysPage->uReserved = (unsigned)pLockedMem;
+            pPhysPage->uReserved = (RTHCUINTPTR)pLockedMem;
 
         /*
          * Insert into the list.
