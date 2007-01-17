@@ -1124,12 +1124,12 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
     bool ret;
     PRECPATCHTOGUEST pPatchToGuestRec;
     PRECGUESTTOPATCH pGuestToPatchRec;
-    RTGCUINTPTR PatchOffset = pPatchInstrHC - pVM->patm.s.pPatchMemHC;  /* Offset in memory reserved for PATM. */
+    uint32_t PatchOffset = pPatchInstrHC - pVM->patm.s.pPatchMemHC;  /* Offset in memory reserved for PATM. */
 
     if (enmType == PATM_LOOKUP_PATCH2GUEST)
     {
-        pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlPVGet(&pPatch->Patch2GuestAddrTree, (AVLPVKEY)PatchOffset);
-        if (pPatchToGuestRec && pPatchToGuestRec->Core.Key == (AVLPVKEY)PatchOffset)
+        pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32Get(&pPatch->Patch2GuestAddrTree, PatchOffset);
+        if (pPatchToGuestRec && pPatchToGuestRec->Core.Key == PatchOffset)
             return; /* already there */
 
         Assert(!pPatchToGuestRec);
@@ -1137,25 +1137,25 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
 #ifdef VBOX_STRICT
     else
     {
-        pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlPVGet(&pPatch->Patch2GuestAddrTree, (AVLPVKEY)PatchOffset);
+        pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32Get(&pPatch->Patch2GuestAddrTree, PatchOffset);
         Assert(!pPatchToGuestRec);
     }
 #endif
 
     pPatchToGuestRec = (PRECPATCHTOGUEST)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(RECPATCHTOGUEST) + sizeof(RECGUESTTOPATCH));
     Assert(pPatchToGuestRec);
-    pPatchToGuestRec->Core.Key    = (AVLPVKEY)PatchOffset;
+    pPatchToGuestRec->Core.Key    = PatchOffset;
     pPatchToGuestRec->pOrgInstrGC = pInstrGC;
     pPatchToGuestRec->enmType     = enmType;
     pPatchToGuestRec->fDirty      = fDirty;
 
-    ret = RTAvlPVInsert(&pPatch->Patch2GuestAddrTree, &pPatchToGuestRec->Core);
+    ret = RTAvlU32Insert(&pPatch->Patch2GuestAddrTree, &pPatchToGuestRec->Core);
     Assert(ret);
 
     /* GC to patch address */
     if (enmType == PATM_LOOKUP_BOTHDIR)
     {
-        pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGet(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)PatchOffset);
+        pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGet(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)PatchOffset); /** @todo bird: this doesn't look right. check it out later. */
         if (!pGuestToPatchRec)
         {
             pGuestToPatchRec = (PRECGUESTTOPATCH)(pPatchToGuestRec+1);
@@ -1180,11 +1180,12 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
  */
 void patmr3RemoveP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, RTGCPTR pPatchInstrGC)
 {
-    PAVLPVNODECORE   pNode;
+    PAVLU32NODECORE  pNode;
+    PAVLPVNODECORE   pNode2;
     PRECPATCHTOGUEST pPatchToGuestRec;
-    RTGCUINTPTR      PatchOffset = pPatchInstrGC - pVM->patm.s.pPatchMemGC;  /* Offset in memory reserved for PATM. */
+    uint32_t         PatchOffset = pPatchInstrGC - pVM->patm.s.pPatchMemGC;  /* Offset in memory reserved for PATM. */
 
-    pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlPVGet(&pPatch->Patch2GuestAddrTree, (AVLPVKEY)PatchOffset);
+    pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32Get(&pPatch->Patch2GuestAddrTree, PatchOffset);
     Assert(pPatchToGuestRec);
     if (pPatchToGuestRec)
     {
@@ -1193,10 +1194,10 @@ void patmr3RemoveP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, RTGCPTR pPatchInstr
             PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)(pPatchToGuestRec+1);
 
             Assert(pGuestToPatchRec->Core.Key);
-            pNode = RTAvlPVRemove(&pPatch->Guest2PatchAddrTree, pGuestToPatchRec->Core.Key);
-            Assert(pNode);
+            pNode2 = RTAvlPVRemove(&pPatch->Guest2PatchAddrTree, pGuestToPatchRec->Core.Key);
+            Assert(pNode2);
         }
-        pNode = RTAvlPVRemove(&pPatch->Patch2GuestAddrTree, pPatchToGuestRec->Core.Key);
+        pNode = RTAvlU32Remove(&pPatch->Patch2GuestAddrTree, pPatchToGuestRec->Core.Key);
         Assert(pNode);
 
         MMR3HeapFree(pPatchToGuestRec);
@@ -1205,29 +1206,45 @@ void patmr3RemoveP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, RTGCPTR pPatchInstr
 }
 
 
-/* Empty the specified tree (PV tree, MMR3 heap)
+/**
+ * RTAvlPVDestroy callback.
+ */
+static DECLCALLBACK(int) patmEmptyTreePVCallback(PAVLPVNODECORE pNode, void *)
+{
+    MMR3HeapFree(pNode);
+    return 0;
+}
+
+/**
+ * Empty the specified tree (PV tree, MMR3 heap)
  *
  * @param   pVM             The VM to operate on.
  * @param   ppTree          Tree to empty
  */
 void patmEmptyTree(PVM pVM, PAVLPVNODECORE *ppTree)
 {
-    PAVLPVNODECORE pRec;
+    RTAvlPVDestroy(ppTree, patmEmptyTreePVCallback, NULL);
+}
 
-    if (*ppTree == 0)
-        return;
 
-    while (true)
-    {
-        pRec = RTAvlPVRemoveBestFit(ppTree, 0, true);
-        if (pRec)
-        {
-            MMR3HeapFree(pRec);
-        }
-        else
-            break;
-    }
-    Assert(*ppTree == 0);
+/**
+ * RTAvlU32Destroy callback.
+ */
+static DECLCALLBACK(int) patmEmptyTreeU32Callback(PAVLU32NODECORE pNode, void *)
+{
+    MMR3HeapFree(pNode);
+    return 0;
+}
+
+/**
+ * Empty the specified tree (U32 tree, MMR3 heap)
+ *
+ * @param   pVM             The VM to operate on.
+ * @param   ppTree          Tree to empty
+ */
+void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree)
+{
+    RTAvlU32Destroy(ppTree, patmEmptyTreeU32Callback, NULL);
 }
 
 
@@ -4242,7 +4259,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
     {
         if (pPatchRec && pPatchRec->patch.nrPatch2GuestRecs)
         {
-            patmEmptyTree(pVM, &pPatchRec->patch.Patch2GuestAddrTree);
+            patmEmptyTreeU32(pVM, &pPatchRec->patch.Patch2GuestAddrTree);
             pPatchRec->patch.nrPatch2GuestRecs = 0;
         }
         pVM->patm.s.uCurrentPatchIdx--;
@@ -4643,11 +4660,11 @@ loop_start:
                         pPatchInstrGC = patmGuestGCPtrToPatchGCPtr(pVM, pPatch, pGuestPtrGC);
                         if (pPatchInstrGC)
                         {
-                            RTGCUINTPTR PatchOffset = pPatchInstrGC - pVM->patm.s.pPatchMemGC;  /* Offset in memory reserved for PATM. */
+                            uint32_t PatchOffset = pPatchInstrGC - pVM->patm.s.pPatchMemGC;  /* Offset in memory reserved for PATM. */
 
                             fValidPatchWrite = true;
 
-                            PRECPATCHTOGUEST pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlPVGet(&pPatch->Patch2GuestAddrTree, (AVLPVKEY)PatchOffset);
+                            PRECPATCHTOGUEST pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32Get(&pPatch->Patch2GuestAddrTree, PatchOffset);
                             Assert(pPatchToGuestRec);
                             if (pPatchToGuestRec && !pPatchToGuestRec->fDirty)
                             {
@@ -5233,7 +5250,7 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
 #endif
 
     /** @note no need to free Guest2PatchAddrTree as those records share memory with Patch2GuestAddrTree records. */
-    patmEmptyTree(pVM, &pPatch->Patch2GuestAddrTree);
+    patmEmptyTreeU32(pVM, &pPatch->Patch2GuestAddrTree);
     pPatch->nrPatch2GuestRecs = 0;
     Assert(pPatch->Patch2GuestAddrTree == 0);
 
@@ -5398,7 +5415,7 @@ RTGCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t 
 {
     Assert(pPatch->Patch2GuestAddrTree);
     /* Get the closest record from below. */
-    PRECPATCHTOGUEST pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlPVGetBestFit(&pPatch->Patch2GuestAddrTree, (AVLPVKEY)(pPatchGC - pVM->patm.s.pPatchMemGC), false);
+    PRECPATCHTOGUEST pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->Patch2GuestAddrTree, pPatchGC - pVM->patm.s.pPatchMemGC, false);
     if (pPatchToGuestRec)
         return pPatchToGuestRec->pOrgInstrGC;
 
@@ -5600,7 +5617,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         pRec->fDirty      = false;
 
         /* Let's see if there's another dirty instruction right after. */
-        pRec = (PRECPATCHTOGUEST)RTAvlPVGetBestFit(&pPatch->patch.Patch2GuestAddrTree, (AVLPVKEY)(pCurPatchInstrGC - pVM->patm.s.pPatchMemGC), true);
+        pRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->patch.Patch2GuestAddrTree, pCurPatchInstrGC - pVM->patm.s.pPatchMemGC, true);
         if (!pRec || !pRec->fDirty)
             break;  /* no more dirty instructions */
     }
@@ -5752,7 +5769,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTGCPTR pEip, RTGCPTR *
             AssertMsg(pPatch->patch.uState == PATCH_DISABLED || pPatch->patch.uState == PATCH_UNUSABLE, ("Unexpected failure to disable patch state=%d rc=%Vrc\n", pPatch->patch.uState, rc));
         }
 
-        pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlPVGetBestFit(&pPatch->patch.Patch2GuestAddrTree, (AVLPVKEY)offset, false);
+        pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->patch.Patch2GuestAddrTree, offset, false);
         AssertReleaseMsg(pPatchToGuestRec, ("PATMR3HandleTrap: Unable to find corresponding guest address for %VGv (offset %x)\n", pEip, offset));
 
         pNewEip = pPatchToGuestRec->pOrgInstrGC;
@@ -5820,7 +5837,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTGCPTR pEip, RTGCPTR *
     /* Take care of dirty/changed instructions. */
     if (pPatchToGuestRec->fDirty)
     {
-        Assert(pPatchToGuestRec->Core.Key == (AVLPVKEY)offset);
+        Assert(pPatchToGuestRec->Core.Key == offset);
         Assert(pVM->patm.s.pGCStateHC->fPIF == 1);
 
         rc = patmR3HandleDirtyInstr(pVM, pCtx, pPatch, pPatchToGuestRec, pEip);

@@ -179,11 +179,11 @@ static DECLCALLBACK(int) patmSavePatchState(PAVLOGCPTRNODECORE pNode, void *pVM1
 
 #ifdef VBOX_STRICT
     int nrLookupRecords = 0;
-    RTAvlPVDoWithAll(&pPatch->patch.Patch2GuestAddrTree, true, patmCountLeaf, &nrLookupRecords);
+    RTAvlU32DoWithAll(&pPatch->patch.Patch2GuestAddrTree, true, patmCountLeaf, &nrLookupRecords);
     Assert(nrLookupRecords == pPatch->patch.nrPatch2GuestRecs);
 #endif
 
-    RTAvlPVDoWithAll(&pPatch->patch.Patch2GuestAddrTree, true, patmSaveP2GLookupRecords, pVM);
+    RTAvlU32DoWithAll(&pPatch->patch.Patch2GuestAddrTree, true, patmSaveP2GLookupRecords, pVM);
     return VINF_SUCCESS;
 }
 

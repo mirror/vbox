@@ -148,7 +148,7 @@ typedef struct
 
 typedef struct
 {
-    /** The key is a GC virtual address. */
+    /** The key is a pointer to a JUMPREC structure. */
     AVLPVNODECORE   Core;
 
     HCPTRTYPE(uint8_t *)pJumpHC;
@@ -172,7 +172,7 @@ typedef enum
 typedef struct RECPATCHTOGUEST
 {
     /** The key is an offset inside the patch memory block. */
-    AVLPVNODECORE    Core;
+    AVLU32NODECORE   Core;
 
     RTGCPTR          pOrgInstrGC;
     PATM_LOOKUP_TYPE enmType;
@@ -188,7 +188,8 @@ typedef struct RECGUESTTOPATCH
     /** The key is a GC virtual address. */
     AVLPVNODECORE   Core;
 
-    RTGCUINTPTR     PatchOffset;
+    /** Patch offset (relative to PATM::pPatchMemGC / PATM::pPatchMemHC). */
+    uint32_t        PatchOffset;
 } RECGUESTTOPATCH, *PRECGUESTTOPATCH;
 
 /**
@@ -256,7 +257,7 @@ typedef struct _PATCHINFO
      * Lookup trees for determining the corresponding guest address of an
      * instruction in the patch block.
      */
-    HCPTRTYPE(PAVLPVNODECORE) Patch2GuestAddrTree;
+    HCPTRTYPE(PAVLU32NODECORE) Patch2GuestAddrTree;
     HCPTRTYPE(PAVLPVNODECORE) Guest2PatchAddrTree;
     uint32_t                  nrPatch2GuestRecs;
 
@@ -608,12 +609,22 @@ HCPTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(ui
 PATMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTGCPTR pInstrGC);
 
 
-/* Empty the specified tree (PV tree, MMR3 heap)
+/**
+ * Empty the specified tree (PV tree, MMR3 heap)
  *
  * @param   pVM             The VM to operate on.
  * @param   ppTree          Tree to empty
  */
-void patmEmptyTree(PVM pVM, PAVLPVNODECORE *ppTree);
+void patmEmptyTree(PVM pVM, PPAVLPVNODECORE ppTree);
+
+
+/**
+ * Empty the specified tree (U32 tree, MMR3 heap)
+ *
+ * @param   pVM             The VM to operate on.
+ * @param   ppTree          Tree to empty
+ */
+void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree);
 
 
 /**
