@@ -303,6 +303,7 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
      * Walk range list.
      */
     pgmLock(pVM);
+
     PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
     while (pRam)
     {
@@ -310,7 +311,16 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         if (    off < pRam->cb
             &&  (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC))
         {
+            bool     fRangeExists = false;
+            unsigned off = (GCPhys - pRam->GCPhys) >> PGM_DYNAMIC_CHUNK_SHIFT;
+
+            /** @note A request made from another thread may end up in EMT after somebody else has already allocated the range. */
+            if (pRam->pavHCChunkHC[off])
+                fRangeExists = true;
+
             pgmUnlock(pVM);
+            if (fRangeExists)
+                return VINF_SUCCESS;
             return pgmr3PhysGrowRange(pVM, GCPhys);
         }
 
