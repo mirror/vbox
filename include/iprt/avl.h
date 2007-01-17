@@ -72,6 +72,7 @@ RTDECL(PAVLPVNODECORE)  RTAvlPVGet(PAVLPVTREE ppTree, AVLPVKEY Key);
 RTDECL(PAVLPVNODECORE)  RTAvlPVGetBestFit(PAVLPVTREE ppTree, AVLPVKEY Key, bool fAbove);
 RTDECL(PAVLPVNODECORE)  RTAvlPVRemoveBestFit(PAVLPVTREE ppTree, AVLPVKEY Key, bool fAbove);
 RTDECL(int)             RTAvlPVDoWithAll(PAVLPVTREE ppTree, int fFromLeft, PAVLPVCALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)             RTAvlPVDestroy(PAVLPVTREE ppTree, PAVLPVCALLBACK pfnCallBack, void *pvParam);
 
 /** @} */
 
