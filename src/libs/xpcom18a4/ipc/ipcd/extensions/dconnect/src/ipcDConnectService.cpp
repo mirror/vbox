@@ -1160,7 +1160,7 @@ DConnectStub::Release()
     // mRefCntLevels may already be empty here (due to the "stabilize" trick below)
     if (mRefCntLevels.GetSize() > 0)
     {
-      nsrefcnt top = (nsrefcnt) mRefCntLevels.Peek();
+      nsrefcnt top = (nsrefcnt) (uintptr_t) mRefCntLevels.Peek();
       NS_ASSERTION(top <= count + 1, "refcount is beyond the top level"); 
 
       if (top == count + 1)
