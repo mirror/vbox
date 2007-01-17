@@ -2407,7 +2407,7 @@ CFGLDRR3DECL(int) CFGLDRQueryUUID(CFGNODE hnode, const char *pszName, PRTUUID pU
         {
             // remove the curly brackets
             uuidUtf8[strlen(uuidUtf8) - 1] = '\0';
-            rc = RTUuidFromStr(pUUID, (char*)(int)uuidUtf8 + sizeof(char));
+            rc = RTUuidFromStr(pUUID, &uuidUtf8[1]);
         }
         delete[] uuidUtf8;
     }
@@ -2428,7 +2428,7 @@ CFGLDRR3DECL(int) CFGLDRSetUUID(CFGNODE hnode, const char *pszName, PCRTUUID pUu
     // UUID + curly brackets
     char strUuid[RTUUID_STR_LENGTH + 2 * sizeof(char)];
     strUuid[0] = '{';
-    RTUuidToStr((const PRTUUID)pUuid, (char*)((int)strUuid + sizeof(char)), RTUUID_STR_LENGTH);
+    RTUuidToStr((const PRTUUID)pUuid, &strUuid[1], RTUUID_STR_LENGTH);
     strcat(strUuid, "}");
     return hnode->SetString (pszName, strUuid, strlen (strUuid), false);
 }
