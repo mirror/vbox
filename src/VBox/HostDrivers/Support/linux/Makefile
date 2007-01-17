@@ -30,38 +30,41 @@ OBJS   = \
 	r0drv/linux/spinlock-r0drv-linux.o \
 	r0drv/linux/thread-r0drv-linux.o \
 
-#
-# Where is everything?
-#
-KERN_DIR_CUR := /lib/modules/$(shell uname -r)/build
+ifneq ($(MAKECMDGOALS),clean)
+
+# kernel base directory
 ifndef $(KERN_DIR)
-KERN_DIR := $(KERN_DIR_CUR)
-endif
-ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
-ifneq ($(shell if test -d /usr/src/linux; then echo yes; fi),yes)
-$(error Error: unable to find the sources of your current Linux kernel. Specify KERN_DIR=<directory> and run Make again.)
-endif
-KERN_DIR := /usr/src/linux
-$(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
+ KERN_DIR := /lib/modules/$(shell uname -r)/build
+ ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+  KERN_DIR := /usr/src/linux
+  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+   $(error Error: unable to find the sources of your current Linux kernel. Specify KERN_DIR=<directory> and run Make again.)
+  endif
+  $(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
+ endif
+else
+ ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+  $(error Error: KERN_DIR does not point to a directory.)
+ endif
 endif
 
 # includes
 ifndef $(KERN_INCL)
-KERN_INCL = $(KERN_DIR)/include
-$(info Info: using $(KERN_INCL) as the include directory of your Linux kernel. If this is not correct, specify KERN_INFO=<directory> and run Make again.)
+ KERN_INCL = $(KERN_DIR)/include
+ $(info Info: using $(KERN_INCL) as the include directory of your Linux kernel. If this is not correct, specify KERN_INCL=<directory> and run Make again.)
 endif
-ifneq ($(shell if test -d $(KERN_INFO); then echo yes; fi),yes)
-$(error Error: unable to find the include directory for your current Linux kernel. Specify $KERN_INCL=<directory> and run Make again.)
+ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
+ $(error Error: unable to find the include directory for your current Linux kernel. Specify $KERN_INCL=<directory> and run Make again.)
 endif
 
-# Module install dir.
+# module install dir.
 ifndef MODULE_DIR
-MODULE_DIR_TST := /lib/modules/$(shell uname -r)
-ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
-MODULE_DIR := $(MODULE_DIR_TST)/misc
-else
-$(error Error: could not find the module directory for your current Linux kernel)
-endif
+ MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+ ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+  MODULE_DIR := $(MODULE_DIR_TST)/misc
+ else
+  $(error Error: could not find the module directory for your current Linux kernel)
+ endif
 endif # MODULE_DIR unspecified
 
 # guess kernel version (24 or 26)
@@ -79,43 +82,32 @@ endif
 # Compiler options
 #
 ifndef INCL
-INCL     := -I$(KERN_INCL) -I$(shell pwd) -I$(shell pwd)/include -I$(shell pwd)/r0drv/linux
-export INCL
+ INCL    := -I$(KERN_INCL) -I$(shell pwd) -I$(shell pwd)/include -I$(shell pwd)/r0drv/linux
+ export INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0
 ifndef CONFIG_VBOXDRV_FIXEDMAJOR
-KFLAGS   += -DCONFIG_VBOXDRV_AS_MISC
+ KFLAGS  += -DCONFIG_VBOXDRV_AS_MISC
 endif
 ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
-KFLAGS   += -D__AMD64__
+ KFLAGS  += -D__AMD64__
 else
-KFLAGS   += -D__X86__
+ KFLAGS  += -D__X86__
 endif
 #ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
 #KFLAGS   += -DDEBUG
 #endif
 
 ifeq ($(KERN_VERSION), 24)
-#
 # 2.4
-#
-
-TOPDIR = $(KERN_DIR)
-
-MODULE_EXT := o
-
-EXTRA_CFLAGS := -DVBOX_LINUX_2_4
-
+TOPDIR         = $(KERN_DIR)
+MODULE_EXT    := o
+EXTRA_CFLAGS  := -DVBOX_LINUX_2_4
 $(MODULE)-objs = $(OBJS)
-
 else
-#
 # 2.6 and later
-#
-
-MODULE_EXT := ko
-
-$(MODULE)-y  := $(OBJS)
+MODULE_EXT    := ko
+$(MODULE)-y   := $(OBJS)
 
 endif
 
@@ -145,6 +137,8 @@ install: $(MODULE)
 	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
 	PATH="$(PATH):/bin:/sbin" depmod -ae; \
 	rm -f /etc/vbox/module_not_compiled
+
+endif # eq($(MAKECMDGOALS),clean)
 
 clean:
 	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
