@@ -22,7 +22,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 
-// ROM BIOS for use with Bochs/Plex x86 emulation environment
+// ROM BIOS for use with Bochs/Plex86/QEMU emulation environment
 
 
 // ROM BIOS compatability entry points:
@@ -124,6 +124,7 @@
 #include "DevPcBios.h"
 #endif
 
+#define BX_ROMBIOS32       0
 #define DEBUG_ROMBIOS      0
 
 #define DEBUG_ATA          0
@@ -171,8 +172,12 @@
 #define EBDA_SIZE          1              // In KiB
 #define BASE_MEM_IN_K   (640 - EBDA_SIZE)
 
+#define ACPI_DATA_SIZE    0x00010000L
+
   // Define the application NAME
-#ifdef PLEX86
+#if defined(BX_QEMU)
+#  define BX_APPNAME "QEMU"
+#elif defined(PLEX86)
 #  define BX_APPNAME "Plex86"
 #else
 #  define BX_APPNAME "Bochs"
@@ -1144,8 +1149,13 @@ static struct {
       {   none,   none,   none,   none, none },
       {   none,   none,   none,   none, none },
       { 0x565c, 0x567c,   none,   none, none }, /* \| */
+#ifndef VBOX
+      { 0x5700, 0x5700,   none,   none, none }, /* F11 */
+      { 0x5800, 0x5800,   none,   none, none }  /* F12 */
+#else
       { 0x8500, 0x8700, 0x8900, 0x8b00, none }, /* F11 */
       { 0x8600, 0x8800, 0x8a00, 0x8c00, none }  /* F12 */
+#endif
       };
 
   Bit8u
@@ -1841,14 +1851,17 @@ print_bios_banner()
   printf(BX_APPNAME" BIOS - build: %s\n%s\nOptions: ",
     BIOS_BUILD_DATE, bios_cvs_version_string);
   printf(
-#ifdef BX_APM
+#if BX_APM
   "apmbios "
 #endif
-#ifdef BX_PCIBIOS
+#if BX_PCIBIOS
   "pcibios "
 #endif
-#ifdef BX_ELTORITO_BOOT
+#if BX_ELTORITO_BOOT
   "eltorito "
+#endif
+#if BX_ROMBIOS32
+  "rombios32 "
 #endif
   "\n\n");
 #endif /* VBOX */
@@ -4296,6 +4309,24 @@ ASM_END
          case 0x20: // coded by osmaker aka K.J.
             if(regs.u.r32.edx == 0x534D4150)
             {
+                extended_memory_size = inb_cmos(0x35);
+                extended_memory_size <<= 8;
+                extended_memory_size |= inb_cmos(0x34);
+                extended_memory_size *= 64;
+                // greater than EFF00000???
+                if(extended_memory_size > 0x3bc000) {
+                    extended_memory_size = 0x3bc000; // everything after this is reserved memory until we get to 0x100000000
+                }
+                extended_memory_size *= 1024;
+                extended_memory_size += (16L * 1024 * 1024);
+                
+                if(extended_memory_size <= (16L * 1024 * 1024)) {
+                    extended_memory_size = inb_cmos(0x31);
+                    extended_memory_size <<= 8;
+                    extended_memory_size |= inb_cmos(0x30);
+                    extended_memory_size *= 1024;
+                }
+
                 switch(regs.u.r16.bx)
                 {
                     case 0:
@@ -4339,27 +4370,9 @@ ASM_END
                         return;
                         break;
                     case 3:
-                        extended_memory_size = inb_cmos(0x35);
-                        extended_memory_size <<= 8;
-                        extended_memory_size |= inb_cmos(0x34);
-                        extended_memory_size *= 64;
-                        if(extended_memory_size > 0x3bc000) // greater than EFF00000???
-                        {
-                            extended_memory_size = 0x3bc000; // everything after this is reserved memory until we get to 0x100000000
-                        }
-                        extended_memory_size *= 1024;
-                        extended_memory_size += (16L * 1024 * 1024);
-
-                        if(extended_memory_size <= (16L * 1024 * 1024))
-                        {
-                            extended_memory_size = inb_cmos(0x31);
-                            extended_memory_size <<= 8;
-                            extended_memory_size |= inb_cmos(0x30);
-                            extended_memory_size *= 1024;
-                        }
-
                         set_e820_range(ES, regs.u.r16.di,
-                                       0x00100000L, extended_memory_size - 0x00010000, 1);
+                                       0x00100000L,
+                                       extended_memory_size - ACPI_DATA_SIZE, 1);
                         regs.u.r32.ebx = 4;
                         regs.u.r32.eax = 0x534D4150;
                         regs.u.r32.ecx = 0x14;
@@ -4367,29 +4380,9 @@ ASM_END
                         return;
                         break;
                     case 4:
-#ifdef VBOX
-                        /* ACPI area at the end of physical memory */
-                        extended_memory_size = inb_cmos(0x35);
-                        extended_memory_size <<= 8;
-                        extended_memory_size |= inb_cmos(0x34);
-                        extended_memory_size *= 64;
-                        if (extended_memory_size > 0x3bc000) // greater than EF000000???
-                        {
-                            extended_memory_size = 0x3bc000; // everything after this is reserved memory until we get to 0x100000000
-                        }
-                        extended_memory_size *= 1024;
-                        extended_memory_size += (16L * 1024 * 1024);
-
-                        if(extended_memory_size <= (16L * 1024 * 1024))
-                        {
-                            extended_memory_size = inb_cmos(0x31);
-                            extended_memory_size <<= 8;
-                            extended_memory_size |= inb_cmos(0x30);
-                            extended_memory_size *= 1024;
-                        }
-                        extended_memory_size -= 0x10000L;
-                        set_e820_range(ES, regs.u.r16.di,
-                                       extended_memory_size, extended_memory_size + 0x00010000L, 3);
+                        set_e820_range(ES, regs.u.r16.di, 
+                                       extended_memory_size - ACPI_DATA_SIZE, 
+                                       extended_memory_size, 3); // ACPI RAM
                         regs.u.r32.ebx = 5;
                         regs.u.r32.eax = 0x534D4150;
                         regs.u.r32.ecx = 0x14;
@@ -4397,7 +4390,6 @@ ASM_END
                         return;
                         break;
                     case 5:
-#endif /* VBOX */
                         /* 256KB BIOS area at the end of 4 GB */
                         set_e820_range(ES, regs.u.r16.di,
                                        0xfffc0000L, 0x00000000L, 2);
@@ -5004,8 +4996,8 @@ BX_DEBUG_INT74("int74_function: make_farcall=1\n");
 #if BX_USE_ATADRV
 
   void
-int13_harddisk(DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
-  Bit16u DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
+int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
+  Bit16u EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
 {
   Bit32u lba;
   Bit16u ebda_seg=read_word(0x0040,0x000E);
@@ -6098,8 +6090,8 @@ ASM_END
 }
 
   void
-int13_harddisk(DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
-  Bit16u DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
+int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
+  Bit16u EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
 {
   Bit8u    drive, num_sectors, sector, head, status, mod;
   Bit8u    drive_map;
@@ -7913,12 +7905,12 @@ ASM_START
     push bp
     mov  bp, sp
 
-    mov  ax, #0x0000
+    xor  ax, ax
     mov  _int19_function.status + 2[bp], ax
     mov  dl, _int19_function.bootdrv + 2[bp]
     mov  ax, _int19_function.bootseg + 2[bp]
     mov  es, ax         ;; segment
-    mov  bx, #0x0000    ;; offset
+    xor  bx, bx         ;; offset
     mov  ah, #0x02      ;; function 2, read diskette sector
     mov  al, #0x01      ;; read 1 sector
     mov  ch, #0x00      ;; track 0
@@ -8173,7 +8165,11 @@ int1a_function(regs, ds, iret_addr)
       } else if (regs.u.r8.bl == 0x83) {
         BX_INFO("bad PCI vendor ID %04x\n", regs.u.r16.dx);
       } else if (regs.u.r8.bl == 0x86) {
+        if (regs.u.r8.al == 0x02) {
         BX_INFO("PCI device %04x:%04x not found at index %d\n", regs.u.r16.dx, regs.u.r16.cx, regs.u.r16.si);
+        } else {
+        BX_INFO("no PCI device with class code 0x%02x%04x found at index %d\n", regs.u.r8.cl, regs.u.r16.dx, regs.u.r16.si);
+        }
       }
       regs.u.r8.ah = regs.u.r8.bl;
       SetCF(iret_addr.flags);
@@ -8431,7 +8427,12 @@ int13_notcdrom:
 #endif
 
 int13_disk:
+  ;; int13_harddisk modifies high word of EAX
+  shr   eax, #16
+  push  ax
   call  _int13_harddisk
+  pop   ax
+  shl   eax, #16
 
 int13_out:
   pop ds
@@ -8533,7 +8534,7 @@ int1c_handler: ;; User Timer Tick
 ;- POST: Floppy Drive -
 ;----------------------
 floppy_drive_post:
-  mov  ax, #0x0000
+  xor  ax, ax
   mov  ds, ax
 
   mov  al, #0x00
@@ -8615,7 +8616,7 @@ hard_drive_post:
   mov  dx, #0x03f6
   out  dx, al
 
-  mov  ax, #0x0000
+  xor  ax, ax
   mov  ds, ax
   mov  0x0474, al /* hard disk status of last operation */
   mov  0x0477, al /* hard disk port offset (XT only ???) */
@@ -9092,7 +9093,7 @@ bios32_structure:
 
 .align 16
 bios32_entry_point:
-  pushf
+  pushfd
   cmp eax, #0x49435024 ;; "$PCI"
   jne unknown_service
   mov eax, #0x80000000
@@ -9116,12 +9117,15 @@ bios32_entry_point:
 unknown_service:
   mov al, #0x80
 bios32_end:
-  popf
+#ifdef BX_QEMU
+  and dword ptr[esp+8],0xfffffffc ;; reset CS.RPL for kqemu
+#endif
+  popfd
   retf
 
 .align 16
 pcibios_protected:
-  pushf
+  pushfd
   cli
   push esi
   push edi
@@ -9134,10 +9138,10 @@ pcibios_protected:
   jmp pci_pro_ok
 pci_pro_f02: ;; find pci device
   cmp al, #0x02
-  jne pci_pro_f08
+  jne pci_pro_f03
   shl ecx, #16
   mov cx, dx
-  mov bx, #0x0000
+  xor bx, bx
   mov di, #0x00
 pci_pro_devloop:
   call pci_pro_select_reg
@@ -9152,6 +9156,27 @@ pci_pro_nextdev:
   inc bx
   cmp bx, #0x0100
   jne pci_pro_devloop
+  mov ah, #0x86
+  jmp pci_pro_fail
+pci_pro_f03: ;; find class code
+  cmp al, #0x03
+  jne pci_pro_f08
+  xor bx, bx
+  mov di, #0x08
+pci_pro_devloop2:
+  call pci_pro_select_reg
+  mov dx, #0x0cfc
+  in  eax, dx
+  shr eax, #8
+  cmp eax, ecx
+  jne pci_pro_nextdev2
+  cmp si, #0
+  je  pci_pro_ok
+  dec si
+pci_pro_nextdev2:
+  inc bx
+  cmp bx, #0x0100
+  jne pci_pro_devloop2
   mov ah, #0x86
   jmp pci_pro_fail
 pci_pro_f08: ;; read configuration byte
@@ -9227,14 +9252,20 @@ pci_pro_unknown:
 pci_pro_fail:
   pop edi
   pop esi
-  popf
+#ifdef BX_QEMU
+  and dword ptr[esp+8],0xfffffffc ;; reset CS.RPL for kqemu
+#endif
+  popfd
   stc
   retf
 pci_pro_ok:
   xor ah, ah
   pop edi
   pop esi
-  popf
+#ifdef BX_QEMU
+  and dword ptr[esp+8],0xfffffffc ;; reset CS.RPL for kqemu
+#endif
+  popfd
   clc
   retf
 
@@ -9291,10 +9322,10 @@ pci_real_f02: ;; find pci device
   push esi
   push edi
   cmp al, #0x02
-  jne pci_real_f08
+  jne pci_real_f03
   shl ecx, #16
   mov cx, dx
-  mov bx, #0x0000
+  xor bx, bx
   mov di, #0x00
 pci_real_devloop:
   call pci_real_select_reg
@@ -9311,7 +9342,30 @@ pci_real_nextdev:
   jne pci_real_devloop
   mov dx, cx
   shr ecx, #16
-  mov ah, #0x86
+  mov ax, #0x8602
+  jmp pci_real_fail
+pci_real_f03: ;; find class code
+  cmp al, #0x03
+  jne pci_real_f08
+  xor bx, bx
+  mov di, #0x08
+pci_real_devloop2:
+  call pci_real_select_reg
+  mov dx, #0x0cfc
+  in  eax, dx
+  shr eax, #8
+  cmp eax, ecx
+  jne pci_real_nextdev2
+  cmp si, #0
+  je  pci_real_ok
+  dec si
+pci_real_nextdev2:
+  inc bx
+  cmp bx, #0x0100
+  jne pci_real_devloop2
+  mov dx, cx
+  shr ecx, #16
+  mov ax, #0x8603
   jmp pci_real_fail
 pci_real_f08: ;; read configuration byte
   cmp al, #0x08
@@ -9604,6 +9658,7 @@ pci_routing_table_structure_start:
 #endif /* VBOX */
 pci_routing_table_structure_end:
 
+#if !BX_ROMBIOS32
 pci_irq_list:
   db 11, 10, 9, 5;
 
@@ -9824,7 +9879,120 @@ pci_init_end:
   pop  bp
   pop  ds
   ret
+#endif // BX_ROMBIOS32
 #endif // BX_PCIBIOS
+
+#if BX_ROMBIOS32
+rombios32_init:
+  ;; save a20 and enable it
+  in al, 0x92
+  push ax
+  or al, #0x02
+  out 0x92, al
+
+  ;; save SS:SP to the BDA
+  xor ax, ax
+  mov ds, ax
+  mov 0x0469, ss
+  mov 0x0467, sp
+
+  SEG CS
+    lidt [pmode_IDT_info]
+  SEG CS
+    lgdt [rombios32_gdt_48]
+  ;; set PE bit in CR0
+  mov  eax, cr0
+  or   al, #0x01
+  mov  cr0, eax
+  ;; start protected mode code: ljmpl 0x10:rombios32_init1
+  db 0x66, 0xea
+  dw rombios32_05
+  dw 0x000f       ;; high 16 bit address
+  dw 0x0010
+
+use32 386
+rombios32_05:
+  ;; init data segments
+  mov eax, #0x18
+  mov ds, ax
+  mov es, ax
+  mov ss, ax
+  xor eax, eax
+  mov fs, ax
+  mov gs, ax
+  cld
+
+  ;; copy rombios32 code to ram (ram offset = 1MB)
+  mov esi, #0xfffe0000
+  mov edi, #0x00040000
+  mov ecx, #0x10000 / 4
+  rep 
+    movsd
+
+  ;; init the stack pointer
+  mov esp, #0x00080000
+
+  ;; call rombios32 code
+  mov eax, #0x00040000
+  call eax
+
+  ;; return to 16 bit protected mode first
+  db 0xea
+  dd rombios32_10
+  dw 0x20
+
+use16 386
+rombios32_10:
+  ;; restore data segment limits to 0xffff
+  mov ax, #0x28
+  mov ds, ax
+  mov es, ax
+  mov ss, ax
+  mov fs, ax
+  mov gs, ax
+
+  ;; reset PE bit in CR0
+  mov  eax, cr0
+  and  al, #0xFE
+  mov  cr0, eax
+
+  ;; far jump to flush CPU queue after transition to real mode
+  JMP_AP(0xf000, rombios32_real_mode)
+
+rombios32_real_mode:
+  ;; restore IDT to normal real-mode defaults
+  SEG CS
+    lidt [rmode_IDT_info]
+
+  xor ax, ax
+  mov ds, ax
+  mov es, ax
+  mov fs, ax
+  mov gs, ax
+
+  ;; restore SS:SP from the BDA
+  mov ss, 0x0469
+  xor esp, esp
+  mov sp, 0x0467
+  ;; restore a20
+  pop ax
+  out 0x92, al
+  ret
+
+rombios32_gdt_48:
+  dw 0x30
+  dw rombios32_gdt                  
+  dw 0x000f
+
+rombios32_gdt:
+  dw 0, 0, 0, 0
+  dw 0, 0, 0, 0
+  dw 0xffff, 0, 0x9b00, 0x00cf ; 32 bit flat code segment (0x10)
+  dw 0xffff, 0, 0x9300, 0x00cf ; 32 bit flat data segment (0x18)
+  dw 0xffff, 0, 0x9b0f, 0x0000 ; 16 bit code segment base=0xf0000 limit=0xffff
+  dw 0xffff, 0, 0x9300, 0x0000 ; 16 bit data segment base=0x0 limit=0xffff
+#endif
+
 
 ; parallel port detection: base address in DX, index in BX, timeout in CL
 detect_parport:
@@ -9956,10 +10124,17 @@ rom_scan_increment:
 ;; DATA_SEG_DEFS_HERE
 
 
+;; the following area can be used to write dynamically generated tables
+  .align 16
+bios_table_area_start:
+  dd 0xaafb4442
+  dd bios_table_area_end - bios_table_area_start - 8;
+
 ;--------
 ;- POST -
 ;--------
 .org 0xe05b ; POST Entry Point
+bios_table_area_end:
 post:
 
   xor ax, ax
@@ -10028,7 +10203,7 @@ normal_post:
   cli
   mov  ax, #0xfffe
   mov  sp, ax
-  mov  ax, #0x0000
+  xor  ax, ax
   mov  ds, ax
   mov  ss, ax
 
@@ -10043,7 +10218,7 @@ normal_post:
   call _log_bios_start
 
   ;; set all interrupts to default handler
-  mov  bx, #0x0000    ;; offset index
+  xor  bx, bx         ;; offset index
   mov  cx, #0x0100    ;; counter (256 interrupts)
   mov  ax, #dummy_iret_handler
   mov  dx, #0xF000
@@ -10223,11 +10398,14 @@ post_default_ints:
 #endif
   out  0xa1, AL ;slave  pic: unmask IRQ 12, 13, 14
 
+#if BX_ROMBIOS32
+  call rombios32_init
+#else
 #if 0 /* This currently breaks restoring a previously saved state. */
   call pcibios_init_iomem_bases
 #endif
   call pcibios_init_irqs
-
+#endif
   call rom_scan
 
   call _print_bios_banner
@@ -10378,7 +10556,7 @@ db 0x00
 int14_handler:
   push ds
   pusha
-  mov  ax, #0x0000
+  xor  ax, ax
   mov  ds, ax
   call _int14_function
   popa
@@ -10569,7 +10747,7 @@ int0e_loop2:
   je int0e_loop2
 int0e_normal:
   push ds
-  mov  ax, #0x0000 ;; segment 0000
+  xor  ax, ax ;; segment 0000
   mov  ds, ax
   call eoi_master_pic
   mov  al, 0x043e
@@ -10606,7 +10784,7 @@ db  0x08
 int17_handler:
   push ds
   pusha
-  mov  ax, #0x0000
+  xor  ax, ax
   mov  ds, ax
   call _int17_function
   popa
@@ -10840,6 +11018,7 @@ int08_store_ticks:
   iret
 
 .org 0xfef3 ; Initial Interrupt Vector Offsets Loaded by POST
+
 
 .org 0xff00
 .ascii BIOS_COPYRIGHT_STRING
