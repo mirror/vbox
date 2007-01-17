@@ -225,7 +225,7 @@ typedef struct REM
     /** Padding the CPUX86State structure to 32 byte. */
     uint8_t                 abPadding[8];
 
-#define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6440 : 0xb3e0)
+#define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6440 : 0xb4a0)
     /** Recompiler CPU state. */
 #ifdef REM_INCLUDE_CPU_H
     CPUX86State             Env;
