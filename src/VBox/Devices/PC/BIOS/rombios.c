@@ -4359,7 +4359,7 @@ ASM_END
                         }
 
                         set_e820_range(ES, regs.u.r16.di,
-                                       0x00100000L, extended_memory_size, 1);
+                                       0x00100000L, extended_memory_size - 0x00010000, 1);
                         regs.u.r32.ebx = 4;
                         regs.u.r32.eax = 0x534D4150;
                         regs.u.r32.ecx = 0x14;
