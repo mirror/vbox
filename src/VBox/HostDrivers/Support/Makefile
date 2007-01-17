@@ -176,9 +176,24 @@ VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
 VBoxDrv_INCS          = $(VBOX_PATH_SUPPORT)
 VBoxDrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+VBoxDrv_INST          = bin/VBoxDrv.kext/Contents/MacOS/
 VBoxDrv_SOURCES       = \
 	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c \
 	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c
+
+INSTALLS += VBoxDrv.kext
+VBoxDrv.kext_INST     = bin/VBoxDrv.kext/Contents/
+VBoxDrv.kext_SOURCES  = \
+	$(PATH_TARGET)/Info.plist
+
+$(PATH_TARGET)/Info.plist: $(VBOX_PATH_SUPPORT)/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
+	$(call MSG_L1,Generating $@)
+	$(xQUIET)$(RM) -f $@
+	$(xQUIET)$(SED) \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		$< > $@
 endif
 
 
