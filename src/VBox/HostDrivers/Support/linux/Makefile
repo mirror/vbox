@@ -148,5 +148,5 @@ install: $(MODULE)
 
 clean:
 	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
-	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers
+	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers
 
