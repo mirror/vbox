@@ -235,17 +235,6 @@ AssertCompileMemberSize(REM, Env, REM_ENV_SIZE);
 #else
 AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
 #endif
-#if 0
-AssertCompile(RT_OFFSETOF(CPUState, sse_status) == 456);
-AssertCompile(RT_OFFSETOF(CPUState, sysenter_eip) == 624);
-AssertCompile(RT_OFFSETOF(CPUState, efer) == 632);
-AssertCompile(RT_OFFSETOF(CPUState, jmp_env) == 656);
-AssertCompile(RT_OFFSETOF(CPUState, exception_index) == 812);
-AssertCompile(RT_OFFSETOF(CPUState, user_mode_only) == 868);
-AssertCompile(RT_OFFSETOF(CPUState, state) == 0x6408);
-AssertCompile(RT_OFFSETOF(CPUState, cpuid_ext2_features) == 0x6420);
-AssertCompile(RT_OFFSETOF(CPUState, alignment2) == 0x6424);
-#endif
 
 
 /**
@@ -3689,8 +3678,8 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
         RTGCUINTPTR eip = uCode - cpu_single_env->segs[R_CS].base;
         for (;;)
         {
-            char    szBuf[256];
-            size_t  cbInstr;
+            char        szBuf[256];
+            uint32_t    cbInstr;
             int rc = DBGFR3DisasInstrEx(pVM,
                                         cs,
                                         eip,
