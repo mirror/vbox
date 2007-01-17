@@ -1256,6 +1256,18 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
     AssertReturnVoid (full_screen != on);
     AssertReturnVoid ((hidden_children.isEmpty() == on));
 
+    if (on)
+    {
+        /* take the Fullscreen hot key from the menu item */
+        QString hotKey = vmFullscreenAction->menuText();
+        hotKey = QStringList::split ('\t', hotKey) [1];
+        Assert (!hotKey.isEmpty());
+        /* get the host key name */
+        QString hostKey = QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey());
+        /* show the info message */
+        vboxProblem().remindAboutGoingFullscreen (hotKey, hostKey);
+    }
+
     full_screen = on;
 
     vmAdjustWindowAction->setEnabled (!on);
