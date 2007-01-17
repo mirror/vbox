@@ -682,7 +682,7 @@ PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 AssertFailed();
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
-            rc = DISCoreOne(&cpu, (RTGCUINTPTR)&pRec->patch.aPrivInstr[0], &cbOp);
+            rc = DISCoreOne(&cpu, (RTUINTPTR)&pRec->patch.aPrivInstr[0], &cbOp);
             if (VBOX_FAILURE(rc))
             {
                 Log(("DISCoreOne failed with %Vrc\n", rc));
