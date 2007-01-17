@@ -1077,10 +1077,13 @@ iret_notring0:
 %ifdef PATM_LOG_IF_CHANGES
     push    eax
     push    ecx
+    push    edx
+    mov     edx, dword [ss:esp+12+4]        ;3 pushes + pushed flags -> iret eip
     mov     eax, PATM_ACTION_LOG_IRET
     lock    or dword [ss:PATM_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
     pop     ecx
     pop     eax
 %endif
