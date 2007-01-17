@@ -40,9 +40,9 @@
 
 BEGINCODE
 
-ifdef __AMD64__ 
+%ifdef __AMD64__ 
  BITS 32 ; switch to 32-bit mode (x86).
-endif
+%endif
 
 %ifdef VBOX_WITH_STATISTICS
 ;
