@@ -30,6 +30,8 @@
 #include <iprt/runtime.h>
 #include <VBox/err.h>
 
+#include <stdlib.h>
+
 
 
 static void ascii2upper(char *psz)
@@ -274,6 +276,9 @@ static int ShrinkImage(const char *pszFilename)
 
 int main(int argc, char **argv)
 {
+    setenv("VBOX_LOG_DEST", "stdout", 1);
+    setenv("VBOX_LOG_FLAGS", "", 1);
+
     RTR3Init();
     RTPrintf("vditool    Copyright (c) 2004-2005 InnoTek Systemberatung GmbH.\n\n");
 
