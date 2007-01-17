@@ -1155,14 +1155,14 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
     /* GC to patch address */
     if (enmType == PATM_LOOKUP_BOTHDIR)
     {
-        pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGet(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)PatchOffset); /** @todo bird: this doesn't look right. check it out later. */
+        pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGet(&pPatch->Guest2PatchAddrTree, pInstrGC);
         if (!pGuestToPatchRec)
         {
             pGuestToPatchRec = (PRECGUESTTOPATCH)(pPatchToGuestRec+1);
-            pGuestToPatchRec->Core.Key    = (AVLPVKEY)pInstrGC;
+            pGuestToPatchRec->Core.Key    = pInstrGC;
             pGuestToPatchRec->PatchOffset = PatchOffset;
 
-            ret = RTAvlPVInsert(&pPatch->Guest2PatchAddrTree, &pGuestToPatchRec->Core);
+            ret = RTAvlGCPtrInsert(&pPatch->Guest2PatchAddrTree, &pGuestToPatchRec->Core);
             Assert(ret);
         }
     }
@@ -1180,10 +1180,10 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
  */
 void patmr3RemoveP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, RTGCPTR pPatchInstrGC)
 {
-    PAVLU32NODECORE  pNode;
-    PAVLPVNODECORE   pNode2;
-    PRECPATCHTOGUEST pPatchToGuestRec;
-    uint32_t         PatchOffset = pPatchInstrGC - pVM->patm.s.pPatchMemGC;  /* Offset in memory reserved for PATM. */
+    PAVLU32NODECORE     pNode;
+    PAVLGCPTRNODECORE   pNode2;
+    PRECPATCHTOGUEST    pPatchToGuestRec;
+    uint32_t            PatchOffset = pPatchInstrGC - pVM->patm.s.pPatchMemGC;  /* Offset in memory reserved for PATM. */
 
     pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32Get(&pPatch->Patch2GuestAddrTree, PatchOffset);
     Assert(pPatchToGuestRec);
@@ -1194,7 +1194,7 @@ void patmr3RemoveP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, RTGCPTR pPatchInstr
             PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)(pPatchToGuestRec+1);
 
             Assert(pGuestToPatchRec->Core.Key);
-            pNode2 = RTAvlPVRemove(&pPatch->Guest2PatchAddrTree, pGuestToPatchRec->Core.Key);
+            pNode2 = RTAvlGCPtrRemove(&pPatch->Guest2PatchAddrTree, pGuestToPatchRec->Core.Key);
             Assert(pNode2);
         }
         pNode = RTAvlU32Remove(&pPatch->Patch2GuestAddrTree, pPatchToGuestRec->Core.Key);
@@ -4415,7 +4415,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
     CSAMR3MonitorPage(pVM, pPage, CSAM_TAG_PATM);
 
     /* Get the closest guest instruction (from below) */
-    PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGetBestFit(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)pPage, true);
+    PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGetBestFit(&pPatch->Guest2PatchAddrTree, pPage, true);
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
@@ -4431,7 +4431,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
             if (offset && offset < MAX_INSTR_SIZE)
             {
                 /* Get the closest guest instruction (from above) */
-                pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGetBestFit(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)(pPage-1), false);
+                pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGetBestFit(&pPatch->Guest2PatchAddrTree, pPage-1, false);
 
                 if (pGuestToPatchRec)
                 {
@@ -4444,7 +4444,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
     }
 
     /* Get the closest guest instruction (from above) */
-    pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGetBestFit(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)(pPage+PAGE_SIZE-1), false);
+    pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGetBestFit(&pPatch->Guest2PatchAddrTree, pPage+PAGE_SIZE-1, false);
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
@@ -4546,7 +4546,7 @@ int patmInsertPatchPages(PVM pVM, PPATCHINFO pPatch)
     for(pPage = pPatchPageStart; pPage <= pPatchPageEnd; pPage += PAGE_SIZE)
     {
         /* Get the closest guest instruction (from above) */
-        PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGetBestFit(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)pPage, true);
+        PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGetBestFit(&pPatch->Guest2PatchAddrTree, pPage, true);
         if (    pGuestToPatchRec
             &&  PAGE_ADDRESS(pGuestToPatchRec->Core.Key) == PAGE_ADDRESS(pPage)
            )
@@ -4579,9 +4579,9 @@ int patmRemovePatchPages(PVM pVM, PPATCHINFO pPatch)
     for(pPage = pPatchPageStart; pPage <= pPatchPageEnd; pPage += PAGE_SIZE)
     {
         /* Get the closest guest instruction (from above) */
-        PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGetBestFit(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)pPage, true);
+        PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGetBestFit(&pPatch->Guest2PatchAddrTree, pPage, true);
         if (    pGuestToPatchRec
-            &&  PAGE_ADDRESS(pGuestToPatchRec->Core.Key) == PAGE_ADDRESS(pPage)
+            &&  PAGE_ADDRESS(pGuestToPatchRec->Core.Key) == PAGE_ADDRESS(pPage) /** @todo bird: PAGE_ADDRESS is for the current context really. check out these. */
            )
         {
             /* Code in page really patched -> remove record */
@@ -5430,11 +5430,11 @@ RTGCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t 
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
  */
-RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t*)pInstrGC)
+RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t*) pInstrGC)
 {
     if (pPatch->Guest2PatchAddrTree)
     {
-        PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlPVGet(&pPatch->Guest2PatchAddrTree, (AVLPVKEY)pInstrGC);
+        PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGet(&pPatch->Guest2PatchAddrTree, pInstrGC);
         if (pGuestToPatchRec)
             return pVM->patm.s.pPatchMemGC + pGuestToPatchRec->PatchOffset;
     }
