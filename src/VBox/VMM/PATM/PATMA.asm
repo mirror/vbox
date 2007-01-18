@@ -1040,6 +1040,21 @@ BEGINPROC   PATMIretReplacement
 PATMIretStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushfd
+
+%ifdef PATM_LOG_IF_CHANGES
+    push    eax
+    push    ecx
+    push    edx
+    lea     edx, dword [ss:esp+4]        ;+ pushed flags -> iret eip
+    mov     eax, PATM_ACTION_LOG_IRET
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
+
     test    dword [esp], X86_EFL_NT
     jnz near iret_fault1
 
@@ -1077,21 +1092,6 @@ iret_notring0:
 
     ; Set IF again; below we make sure this won't cause problems.
     or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
-
-%ifdef PATM_LOG_IF_CHANGES
-    push    eax
-    push    ecx
-    push    edx
-    lea     edx, dword [ss:esp+12+4]        ;3 pushes + pushed flags -> iret eip
-    mov     eax, PATM_ACTION_LOG_IRET
-    lock    or dword [ss:PATM_PENDINGACTION], eax
-    mov     ecx, PATM_ACTION_MAGIC
-    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
-    pop     edx
-    pop     ecx
-    pop     eax
-%endif
-
     popfd
 
     ; make sure iret is executed fully (including the iret below; cli ... iret can otherwise be interrupted)
@@ -1127,6 +1127,10 @@ GLOBALNAME PATMIretRecord
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
+%ifdef PATM_LOG_IF_CHANGES
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      PATM_VM_FORCEDACTIONS
     DD      0
     DD      PATM_VMFLAGS
@@ -1135,10 +1139,6 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      PATM_VMFLAGS
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
-    DD      PATM_PENDINGACTION
-    DD      0
-%endif
     DD      PATM_INHIBITIRQADDR
     DD      0
     DD      PATM_CURINSTRADDR
