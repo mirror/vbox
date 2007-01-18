@@ -42,6 +42,12 @@
 #define __USE_GNU
 #endif
 #include <ucontext.h>
+#ifdef __AMD64__
+# define REG_PC REG_RIP
+#else
+# define REG_PC REG_EIP
+#endif
+
 
 
 /**
@@ -58,13 +64,13 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
     /* Do something useful with siginfo_t */
     if (sig == SIGSEGV)
         Log (("GUI: Got signal %d, faulty address is %p, from %p\n",
-              sig, info->si_addr, uc->uc_mcontext.gregs[REG_EIP]));
+              sig, info->si_addr, uc->uc_mcontext.gregs[REG_PC]));
     else
         Log (("GUI: Got signal %d\n", sig));
 
     trace_size = backtrace (trace, 16);
     /* overwrite sigaction with caller's address */
-    trace[1] = (void *) uc->uc_mcontext.gregs [REG_EIP];
+    trace[1] = (void *) uc->uc_mcontext.gregs [REG_PC];
 
     messages = backtrace_symbols (trace, trace_size);
     /* skip first stack frame (points here) */
