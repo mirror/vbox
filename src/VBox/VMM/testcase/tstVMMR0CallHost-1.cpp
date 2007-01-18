@@ -93,7 +93,7 @@ int main()
      */
     RTR3Init(false);
     RTPrintf("tstVMMR0CallHost-1: Testing...\n");
-    g_Jmp.pvSavedStack = &g_Stack[0];
+    g_Jmp.pvSavedStack = (RTR0PTR)&g_Stack[0];
 
     /*
      * Try about 1000 long jumps with increasing stack size..

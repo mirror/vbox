@@ -30,6 +30,7 @@ struc VMMR0JMPBUF
     .ebp            resd 1
     .esp            resd 1
     .eip            resd 1
+    .u32Padding     resd 1
 
     ; additional state and stack info.
     .fInRing3Call   resd 1

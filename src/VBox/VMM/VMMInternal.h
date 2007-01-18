@@ -108,6 +108,7 @@ typedef struct VMMR0JMPBUF
     uint32_t    ebp;
     uint32_t    esp;
     uint32_t    eip;
+    uint32_t    u32Padding;
 #endif 
 #if HC_ARCH_BITS == 64
     uint64_t    rbx;
@@ -131,7 +132,7 @@ typedef struct VMMR0JMPBUF
     uint32_t    cbSavedStack;
     /** Pointer to the buffer used to save the stack.
      * This is assumed to be 8KB. */
-    void       *pvSavedStack;
+    RTR0PTR     pvSavedStack;
     /** Esp we we match against esp on resume to make sure the stack wasn't relocated. */
     RTHCUINTREG SpCheck;
     /** The esp we should resume execution with after the restore. */
@@ -233,6 +234,9 @@ typedef struct VMM
     uint32_t                    cYieldResumeMillies;
     /** The EMT yield timer interval (milliseconds). */
     uint32_t                    cYieldEveryMillies;
+#if HC_ARCH_BITS == 32
+    uint32_t                    u32Padding0; /**< Alignment padding. */
+#endif
 
     /** @name CallHost
      * @{ */
@@ -246,8 +250,6 @@ typedef struct VMM
     VMMR0JMPBUF                 CallHostR0JmpBuf;
     /** @} */
 
-    /* on VC these members are qword aligned! */
-    //uint32_t                    u32Padding[1];
     /** Number of VMMR0_DO_RUN_GC calls. */
     STAMCOUNTER                 StatRunGC;
     /** Statistics for each of the GC return codes.

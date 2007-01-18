@@ -115,8 +115,8 @@ typedef struct REMHANDLERNOTIFICATION
 typedef struct REMCHUNKINFO
 {
     RTHCUINTPTR pChunk1;
-    RTGCPHYS    GCPhys1;
     RTHCUINTPTR pChunk2;
+    RTGCPHYS    GCPhys1;
     RTGCPHYS    GCPhys2;
 } REMCHUNKINFO, *PREMCHUNKINFO;
 
@@ -128,8 +128,8 @@ typedef struct REMCHUNKINFO
  */
 typedef struct REMPHYSREGISTRATION
 {
-    RTGCPHYS        GCPhys;
     RTHCUINTPTR     HCVirt;
+    RTGCPHYS        GCPhys;
     RTUINT          cb;
 } REMPHYSREGISTRATION, *PREMPHYSREGISTRATION;
 
@@ -176,21 +176,22 @@ typedef struct REM
     /** Array of recorded invlpg instruction.
      * These instructions are replayed when entering REM. */
     RTGCPTR                 aGCPtrInvalidatedPages[48];
-
     /** The number of recorded handler notifications. */
     RTUINT volatile         cHandlerNotifications;
+    RTUINT                  padding0; /**< Padding. */
     /** Array of recorded handler noticications.
      * These are replayed when entering REM. */
     REMHANDLERNOTIFICATION  aHandlerNotifications[32];
 
     /** Pointer to an array of hc virt to gc phys records. */
-    PREMCHUNKINFO           paHCVirtToGCPhys;
+    HCPTRTYPE(PREMCHUNKINFO) paHCVirtToGCPhys;
     /** Pointer to a GC Phys to HC Virt lookup table. */
-    RTHCUINTPTR            *paGCPhysToHCVirt;
+    HCPTRTYPE(PRTHCUINTPTR) paGCPhysToHCVirt;
 
-    /** Number of external RAM and ROM registrations (excluding guest RAM) */
-    RTUINT                  cPhysRegistrations;
+    /** Array of external RAM and ROM registrations (excluding guest RAM). */
     REMPHYSREGISTRATION     aPhysReg[REM_MAX_PHYS_REGISTRATIONS];
+    /** Number of external RAM and ROM registrations (excluding guest RAM). */
+    RTUINT                  cPhysRegistrations;
 
     /** MMIO memory type.
      * This is used to register MMIO physical access handlers. */
@@ -212,7 +213,7 @@ typedef struct REM
     RTINT                   rc;
 
     /** Padding for MS / GC alignment difference. */
-    //uint32_t                u32Padding;
+    uint32_t                u32Padding;
     /** Time spent in QEMU. */
     STAMPROFILEADV          StatsInQEMU;
     /** Time spent in rawmode.c. */
@@ -222,8 +223,10 @@ typedef struct REM
     /** Time spent switching state back. */
     STAMPROFILE             StatsStateBack;
 
+#if HC_ARCH_BITS != 32
     /** Padding the CPUX86State structure to 32 byte. */
-    uint8_t                 abPadding[8];
+    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 0 : 6];
+#endif
 
 #define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6440 : 0xb4a0)
     /** Recompiler CPU state. */

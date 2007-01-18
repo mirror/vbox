@@ -253,6 +253,9 @@ typedef struct PDMPIC
     DECLGCCALLBACKMEMBER(void, pfnSetIrqGC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
     /** @copydoc PDMPICREG::pfnGetInterruptHC */
     DECLGCCALLBACKMEMBER(int, pfnGetInterruptGC,(PPDMDEVINS pDevIns));
+#if GC_ARCH_BITS == 32
+    RTGCPTR                         GCPtrPadding; /**< Alignment padding. */
+#endif
 } PDMPIC;
 
 

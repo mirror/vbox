@@ -87,7 +87,7 @@ int main()
 #define PRINT_OFFSET(strct, member) \
     do \
     { \
-        printf("%s::%s offset %d\n",  #strct, #member, RT_OFFSETOF(strct, member)); \
+        printf("%s::%s offset %d sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
     } while (0)
 
 
@@ -150,6 +150,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Guest, 32);
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Hyper, 32);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CritSectVMLock, 8);
+    CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CallHostR0JmpBuf, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.StatRunGC, 8);
     CHECK_MEMBER_ALIGNMENT(VM, StatTotalQemuToGC, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);
@@ -188,11 +189,18 @@ int main()
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, pvPageHC, sizeof(RTHCPTR));
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, GCPhys, sizeof(RTGCPHYS));
 
+    /* misc */
+    CHECK_PADDING3(EM, u.FatalLongJump, u.achPaddingFatalLongJump);
+    CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalRegister, u.padding);
+    CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalDeregister, u.padding);
+    CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalModify, u.padding);
+    CHECK_SIZE_ALIGNMENT(VMMR0JMPBUF, 8);
 #if 0
     PRINT_OFFSET(VM, fForcedActions);
     PRINT_OFFSET(VM, StatQemuToGC);
     PRINT_OFFSET(VM, StatGCToQemu);
 #endif
+
 
     /*
      * Compare HC and GC.
