@@ -62,7 +62,7 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(Address) (ULONG *aAddress)
 {
     if (!aAddress)
         return E_POINTER;
-    *aAddress = (ULONG) address();
+    *aAddress = (uintptr_t) address();
     return S_OK;
 }
 
