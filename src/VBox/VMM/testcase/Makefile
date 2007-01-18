@@ -45,7 +45,7 @@ endif # VBOX_WITH_TESTCASES
 # validation testcases. Perhaps a bit hackish, but extremely useful.
 #
 ifeq ($(BUILD_TARGET),$(BUILD_PLATFORM))
- ifeq ($(filter-out x86.x86 x86.amd64, $(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH)),)
+ ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH)),)
   OTHERS          += \
 	$(PATH_TARGET)/tstAsmStructs.run \
 	$(PATH_TARGET)/tstVMStructSize.run
