@@ -139,7 +139,6 @@
  * Thus, When GCC code is calling MSC code we don't really have to preserve
  * anything. But but MSC code is calling GCC code, we'll have to save esi and edi.
  *
- *
  */
 
 
@@ -315,6 +314,7 @@ static DECLCALLBACKPTR(int, pfnREMR3StateBack)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3StateUpdate)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3A20Set)(PVM, bool);
 static DECLCALLBACKPTR(void, pfnREMR3ReplayInvalidatedPages)(PVM);
+static DECLCALLBACKPTR(void, pfnREMR3ReplayHandlerNotifications)(PVM pVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTUINT, void *, unsigned);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysReserve)(PVM, RTGCPHYS, RTUINT);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRomRegister)(PVM, RTGCPHYS, RTUINT, void *);
@@ -850,6 +850,7 @@ static const REMFNDESC g_aExports[] =
     { "REMR3StateUpdate",                       (void *)&pfnREMR3StateUpdate,                       &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3A20Set",                            (void *)&pfnREMR3A20Set,                            &g_aArgsA20Set[0],                          ELEMENTS(g_aArgsA20Set),                            REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3ReplayInvalidatedPages",            (void *)&pfnREMR3ReplayInvalidatedPages,            &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
+    { "REMR3ReplayHandlerNotifications",        (void *)&pfnREMR3ReplayHandlerNotifications,        &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysRamRegister",             (void *)&pfnREMR3NotifyPhysRamRegister,             &g_aArgsNotifyPhysRamRegister[0],           ELEMENTS(g_aArgsNotifyPhysRamRegister),             REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysReserve",                 (void *)&pfnREMR3NotifyPhysReserve,                 &g_aArgsNotifyPhysReserve[0],               ELEMENTS(g_aArgsNotifyPhysReserve),                 REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysRomRegister",             (void *)&pfnREMR3NotifyPhysRomRegister,             &g_aArgsNotifyPhysRomRegister[0],           ELEMENTS(g_aArgsNotifyPhysRomRegister),             REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
@@ -1641,6 +1642,14 @@ REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM)
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3ReplayInvalidatedPages));
     pfnREMR3ReplayInvalidatedPages(pVM);
+#endif
+}
+
+REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
+{
+#ifndef USE_REM_STUBS
+    Assert(VALID_PTR(pfnREMR3ReplayHandlerNotifications));
+    pfnREMR3ReplayHandlerNotifications(pVM);
 #endif
 }
 
