@@ -190,6 +190,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, GCPhys, sizeof(RTGCPHYS));
 
     /* misc */
+    CHECK_MEMBER_ALIGNMENT(REM, aGCPtrInvalidatedPages, 8);
     CHECK_PADDING3(EM, u.FatalLongJump, u.achPaddingFatalLongJump);
     CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalRegister, u.padding);
     CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalDeregister, u.padding);
