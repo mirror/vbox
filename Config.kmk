@@ -1181,7 +1181,7 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	-Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
 	-Wl,--rpath-link,$(L4_LIBDIR)
  ifeq ($(BUILD_TARGET),linux)
-TEMPLATE_VBOXR3EXE_LIBS                = pthread m uuid rt dl
+TEMPLATE_VBOXR3EXE_LIBS                = pthread m $(LIB_UUID) rt dl
  else
   ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXR3EXE_LIBS                = \
@@ -1384,7 +1384,7 @@ TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -Wall -Wno-long-long -Wno-trigraph
 TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = -fno-inline
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
  ifeq ($(BUILD_TARGET),linux)
-TEMPLATE_VBOXMAINEXE_LIBS                = pthread m uuid rt
+TEMPLATE_VBOXMAINEXE_LIBS                = pthread m $(LIB_UUID) rt
  else
   ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXMAINEXE_LIBS                =
@@ -1607,7 +1607,7 @@ TEMPLATE_VBOXBLDPROG_CXXFLAGS.release    = -O2 -fno-omit-frame-pointer -fno-stri
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
  ifeq ($(BUILD_PLATFORM),linux)
-TEMPLATE_VBOXBLDPROG_LIBS                = pthread m uuid rt dl
+TEMPLATE_VBOXBLDPROG_LIBS                = pthread m $(LIB_UUID) rt dl
  else
   ifeq ($(BUILD_PLATFORM),os2)
 TEMPLATE_VBOXBLDPROG_TOOL                = GCC3OMF
@@ -1814,7 +1814,7 @@ TEMPLATE_VBOXLNX32GUESTR3EXE_CFLAGS.profile    = $(TEMPLATE_VBOXLNX32GUESTR3EXE_
 TEMPLATE_VBOXLNX32GUESTR3EXE_CFLAGS.kprofile   = $(TEMPLATE_VBOXLNX32GUESTR3EXE_CXXFLAGS.kprofile)
 TEMPLATE_VBOXLNX32GUESTR3EXE_CFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_fno-stack-protector)
 TEMPLATE_VBOXLNX32GUESTR3EXE_LDFLAGS           = # -static
-TEMPLATE_VBOXLNX32GUESTR3EXE_LIBS              = # pthread m uuid rt dl
+TEMPLATE_VBOXLNX32GUESTR3EXE_LIBS              = # pthread m $(LIB_UUID) rt dl
 
 TEMPLATE_VBOXLNX32GUESTR3LIB                   = Template for building 32-bit linux guest additions programs.
 TEMPLATE_VBOXLNX32GUESTR3LIB_EXTENDS           = VBOXLNX32GUESTR3EXE
@@ -1823,7 +1823,7 @@ TEMPLATE_VBOXLNX32GUESTR3LIB_INST              = $(INST_ADDITION_LIB)
 TEMPLATE_VBOXLNX32GUESTR3                      = Template for building 32-bit linux guest additions libraries.
 TEMPLATE_VBOXLNX32GUESTR3_EXTENDS              = VBOXLNX32GUESTR3EXE
 TEMPLATE_VBOXLNX32GUESTR3_LDFLAGS              = -static
-TEMPLATE_VBOXLNX32GUESTR3_LIBS                 = pthread m uuid rt dl
+TEMPLATE_VBOXLNX32GUESTR3_LIBS                 = pthread m $(LIB_UUID) rt dl
 
 
 
