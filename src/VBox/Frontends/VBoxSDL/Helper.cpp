@@ -52,7 +52,7 @@ RTSEMEVENT    g_EventSemXPCOMQueueThread = NULL;
  */
 DECLCALLBACK(int) xpcomEventThread(RTTHREAD thread, void *pvUser)
 {
-    int eqFD = (int)pvUser;
+    int eqFD = (intptr_t)pvUser;
     unsigned cErrors = 0;
     int rc;
 
