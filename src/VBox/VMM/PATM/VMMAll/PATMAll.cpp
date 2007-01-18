@@ -524,6 +524,15 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 }
                 else
                 {
+#if 0
+                    if (pRegFrame->edx == 0x806eca98) 
+                    {
+                        pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
+                        pRegFrame->eax = 0;     /* make it fault */
+                        STAM_COUNTER_INC(&pVM->patm.s.StatFunctionNotFound);
+                        return VINF_SUCCESS;
+                    } 
+#endif
                     STAM_COUNTER_INC(&pVM->patm.s.StatFunctionNotFound);
                     return VINF_PATM_DUPLICATE_FUNCTION;
                 }
@@ -591,7 +600,7 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 char    *pIretFrame = (char *)pRegFrame->edx;
                 uint32_t eip, selCS, uEFlags;
 
-                rc  = MMGCRamRead(pVM, &eip,     pIretFrame, 3);
+                rc  = MMGCRamRead(pVM, &eip,     pIretFrame, 4);
                 rc |= MMGCRamRead(pVM, &selCS,   pIretFrame + 4, 4);
                 rc |= MMGCRamRead(pVM, &uEFlags, pIretFrame + 8, 4);
                 if (rc == VINF_SUCCESS)
