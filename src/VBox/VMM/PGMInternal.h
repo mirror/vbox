@@ -448,7 +448,7 @@ typedef struct PGMVIRTHANDLER
     STAMPROFILE                         Stat;
 #endif
     /** Array of cached physical addresses for the monitored ranged.  */
-    PGMPHYS2VIRTHANDLER                aPhysToVirt[1];
+    PGMPHYS2VIRTHANDLER                 aPhysToVirt[HC_ARCH_BITS == 32 ? 1 : 2];
 } PGMVIRTHANDLER;
 /** Pointer to a virtual page access handler structure. */
 typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
@@ -1242,6 +1242,9 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,  pfnGCShwGetPDEByIndex,(PVM pVM, uint32_t iPD, PX86PDEPAE pPde));
     DECLGCCALLBACKMEMBER(int,  pfnGCShwSetPDEByIndex,(PVM pVM, uint32_t iPD, X86PDEPAE Pde));
     DECLGCCALLBACKMEMBER(int,  pfnGCShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
+#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
+    RTGCPTR                    alignment0; /**< structure size alignment. */
+#endif 
 
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1312,6 +1315,9 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
+    RTGCPTR                         alignment2; /**< structure size alignment. */
+#endif 
     /** @} */
 
     /** Pointer to SHW+GST mode data (function pointers).

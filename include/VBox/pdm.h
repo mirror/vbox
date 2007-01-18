@@ -5403,8 +5403,10 @@ typedef struct PDMDEVINS
      * device level interfaces to export. To obtain this interface
      * call PDMR3QueryDevice(). */
     PDMIBASE                    IBase;
+#if HC_ARCH_BITS == 32
     /* padding to make achInstanceData aligned at 16 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 2 : 1];
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 2 : 0];
+#endif 
     /** Device instance data. The size of this area is defined
      * in the PDMDEVREG::cbInstanceData field. */
     char                        achInstanceData[4];

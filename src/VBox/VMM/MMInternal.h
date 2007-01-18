@@ -588,7 +588,7 @@ typedef struct MM
 
     /** Set if PGM has been initialized and we can safely call PGMR3Map(). */
     bool                        fPGMInitialized;
-#if GC_ARCH_BITS == 64
+#if GC_ARCH_BITS == 64 || HC_ARCH_BITS == 64
     uint32_t                    u32Padding1; /**< alignment padding. */
 #endif
 

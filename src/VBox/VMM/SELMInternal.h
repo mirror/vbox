@@ -130,6 +130,8 @@ typedef struct SELM
 
     /** Indicates whether the TSS stack selector & base address need to be refreshed.  */
     bool                    fSyncTSSRing0Stack;
+    /** alignment . */
+    RTUINT                  uPadding2;
 
     /** SELMR3UpdateFromCPUM() profiling. */
     STAMPROFILE             StatUpdateFromCPUM;

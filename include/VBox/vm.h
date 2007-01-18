@@ -316,8 +316,8 @@ typedef struct VM
     /** @} */
 
 
-#if HC_ARCH_BITS == 32
     /* padding to make gnuc put the StatQemuToGC where msc does. */
+#if HC_ARCH_BITS == 32
     uint32_t            padding0;
 #endif
 
@@ -346,9 +346,7 @@ typedef struct VM
     STAMPROFILEADV      StatSwitcherTSS;
 
     /* padding - the unions must be aligned on 32 bytes boundraries. */
-#if HC_ARCH_BITS == 32
-    char                padding[16];
-#endif
+    uint32_t            padding[HC_ARCH_BITS == 32 ? 4 : 6];
 
     /** CPUM part. */
     union
@@ -356,7 +354,7 @@ typedef struct VM
 #ifdef __CPUMInternal_h__
         struct CPUM s;
 #endif
-        char        padding[3424];      /* multiple of 32 */
+        char        padding[HC_ARCH_BITS == 32 ? 3424 : 3552];      /* multiple of 32 */
     } cpum;
 
     /** VMM part. */
@@ -482,7 +480,7 @@ typedef struct VM
 #ifdef __DBGFInternal_h__
         struct DBGF s;
 #endif
-        char        padding[1888];      /* multiple of 32 */
+        char        padding[HC_ARCH_BITS == 32 ? 1888 : 1920];      /* multiple of 32 */
     } dbgf;
 
     /** STAM part. */
