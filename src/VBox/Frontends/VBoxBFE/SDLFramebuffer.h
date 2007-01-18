@@ -46,7 +46,7 @@ public:
     virtual HRESULT getHeight(ULONG *height);
     virtual HRESULT Lock();
     virtual HRESULT Unlock();
-    virtual HRESULT getAddress(ULONG *address);
+    virtual HRESULT getAddress(uintptr_t *address);
     virtual HRESULT getColorDepth(ULONG *colorDepth);
     virtual HRESULT getLineSize(ULONG *lineSize);
     virtual HRESULT NotifyUpdate(ULONG x, ULONG y,
