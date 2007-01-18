@@ -81,8 +81,12 @@ struc VM
     .StatSwitcherTSS      resb STAMPROFILEADV_size
 
     alignb 32
+%if HC_ARCH_BITS == 32 
     .cpum                 resb 3424
-    .vmm                  resb 640
+%else
+    .cpum                 resb 3552
+%endif
+    .vmm                  resb 1024
 
 endstruc
 
