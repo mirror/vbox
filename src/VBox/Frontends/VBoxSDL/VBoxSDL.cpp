@@ -706,9 +706,9 @@ int main(int argc, char *argv[])
     bool fWin32UI = false;
 #endif
     bool fShowSDLConfig = false;
-    int fixedWidth = ~0;
-    int fixedHeight = ~0;
-    int fixedBPP = ~0;
+    uint32_t fixedWidth = ~(uint32_t)0;
+    uint32_t fixedHeight = ~(uint32_t)0;
+    uint32_t fixedBPP = ~(uint32_t)0;
 
     /* The damned GOTOs forces this to be up here - totally out of place. */
     /*
@@ -2245,10 +2245,10 @@ int main(int argc, char *argv[])
                 /*
                  * Decode event parameters.
                  */
-                #define DECODEX(event) ((int)(event).user.data1 >> 16)
-                #define DECODEY(event) ((int)(event).user.data1 & 0xFFFF)
-                #define DECODEW(event) ((int)(event).user.data2 >> 16)
-                #define DECODEH(event) ((int)(event).user.data2 & 0xFFFF)
+                #define DECODEX(event) ((intptr_t)(event).user.data1 >> 16)
+                #define DECODEY(event) ((intptr_t)(event).user.data1 & 0xFFFF)
+                #define DECODEW(event) ((intptr_t)(event).user.data2 >> 16)
+                #define DECODEH(event) ((intptr_t)(event).user.data2 & 0xFFFF)
                 int x = DECODEX(event);
                 int y = DECODEY(event);
                 int w = DECODEW(event);
