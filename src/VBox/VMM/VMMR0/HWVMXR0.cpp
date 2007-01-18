@@ -254,9 +254,9 @@ vmx_end:
 static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t cbInstr, uint32_t errCode)
 {
     int         rc;
-    uint32_t    iGate    = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
 
 #ifdef VBOX_STRICT
+    uint32_t    iGate = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
     if (iGate == 0xE)
         Log2(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", iGate, pCtx->eip, errCode, pCtx->cr2, intInfo));
     else
@@ -480,8 +480,8 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_FS_BASE,           0);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_GS_BASE,           0);
 #else
-        rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,           ASMRdMsr(MSR_IA32_FS_BASE));
-        rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,           ASMRdMsr(MSR_IA32_GS_BASE));
+        rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,           ASMRdMsr(MSR_K8_FS_BASE));
+        rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,           ASMRdMsr(MSR_K8_GS_BASE));
 #endif
         AssertRC(rc);
 
@@ -763,9 +763,11 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 {
     int         rc = VINF_SUCCESS;
-    RTGCUINTPTR val, valShadow;
-    RTGCUINTPTR exitReason, instrError, cbInstr, exitQualification;
-    RTGCUINTPTR intInfo, errCode, instrInfo, uInterruptState;
+    RTCCUINTREG val, valShadow;
+    RTCCUINTREG exitReason, instrError, cbInstr;
+    RTGCUINTPTR exitQualification;
+    RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
+    RTGCUINTPTR errCode, instrInfo, uInterruptState;
 
     Log2(("\nE"));
 
