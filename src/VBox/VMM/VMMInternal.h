@@ -101,25 +101,41 @@ typedef struct VMMR0JMPBUF
 {
     /** Tranditional jmp_buf stuff
      * @{ */
+#if HC_ARCH_BITS == 32
     uint32_t    ebx;
     uint32_t    esi;
     uint32_t    edi;
     uint32_t    ebp;
     uint32_t    esp;
     uint32_t    eip;
+#endif 
+#if HC_ARCH_BITS == 64
+    uint64_t    rbx;
+# ifdef __WIN__
+    uint64_t    rsi;            
+    uint64_t    rdi;            
+# endif
+    uint64_t    rbp;
+    uint64_t    r12;
+    uint64_t    r13;
+    uint64_t    r14;
+    uint64_t    r15;
+    uint64_t    rsp;
+    uint64_t    rip;
+#endif 
     /** @} */
 
     /** Flag that indicates that we've done a ring-3 call. */
     bool        fInRing3Call;
+    /** The number of bytes we've saved. */
+    uint32_t    cbSavedStack;
     /** Pointer to the buffer used to save the stack.
      * This is assumed to be 8KB. */
     void       *pvSavedStack;
-    /** The number of bytes we've saved. */
-    uint32_t    cbSavedStack;
     /** Esp we we match against esp on resume to make sure the stack wasn't relocated. */
-    uint32_t    espCheck;
+    RTHCUINTREG SpCheck;
     /** The esp we should resume execution with after the restore. */
-    uint32_t    espResume;
+    RTHCUINTREG SpResume;
 } VMMR0JMPBUF, *PVMMR0JMPBUF;
 
 

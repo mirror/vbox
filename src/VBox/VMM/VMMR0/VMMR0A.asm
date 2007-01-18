@@ -82,7 +82,7 @@ BEGINPROC vmmR0CallHostSetJmp
     ;
 .resume:
     ; Sanity checks.
-    cmp     ecx, [edx + VMMR0JMPBUF.espCheck]
+    cmp     ecx, [edx + VMMR0JMPBUF.SpCheck]
     je      .espCheck_ok
 .bad:
     and     dword [edx + VMMR0JMPBUF.eip], byte 0 ; used for valid check.
@@ -99,7 +99,7 @@ BEGINPROC vmmR0CallHostSetJmp
     test    ecx, 3
     jnz     .bad
     mov     edi, [edx + VMMR0JMPBUF.esp]
-    sub     edi, [edx + VMMR0JMPBUF.espResume]
+    sub     edi, [edx + VMMR0JMPBUF.SpResume]
     cmp     ecx, edi
     jne     .bad
 
@@ -110,7 +110,7 @@ BEGINPROC vmmR0CallHostSetJmp
     mov     ecx, [edx + VMMR0JMPBUF.cbSavedStack]
     shr     ecx, 2
     mov     esi, [edx + VMMR0JMPBUF.pvSavedStack]
-    mov     edi, [edx + VMMR0JMPBUF.espResume]
+    mov     edi, [edx + VMMR0JMPBUF.SpResume]
     mov     esp, edi
     rep movsd
 
@@ -167,7 +167,7 @@ BEGINPROC vmmR0CallHostLongJmp
     ; Save the stack.
     ;
     mov     edi, [edx + VMMR0JMPBUF.pvSavedStack]
-    mov     [edx + VMMR0JMPBUF.espResume], esp
+    mov     [edx + VMMR0JMPBUF.SpResume], esp
     mov     esi, esp
     mov     ecx, [edx + VMMR0JMPBUF.esp]
     sub     ecx, esi
@@ -192,7 +192,7 @@ BEGINPROC vmmR0CallHostLongJmp
 
     ; store the last pieces of info.
     mov     ecx, [edx + VMMR0JMPBUF.esp]
-    mov     [edx + VMMR0JMPBUF.espCheck], ecx
+    mov     [edx + VMMR0JMPBUF.SpCheck], ecx
     mov     byte [edx + VMMR0JMPBUF.fInRing3Call], 1
 
     ;

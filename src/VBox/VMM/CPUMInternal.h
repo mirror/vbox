@@ -152,7 +152,7 @@ typedef struct CPUMHOSTCTX
     /* padding to get 32byte aligned size */
     uint8_t         auPadding[24];
 
-#else  /* 64-bit */
+#elif HC_ARCH_BITS == 64
     /** General purpose register ++
      * { */
     //uint64_t        rax; - scratch
@@ -233,7 +233,9 @@ typedef struct CPUMHOSTCTX
 
     /* padding to get 32byte aligned size */
     uint8_t         auPadding[8];
-#endif /* 64-bit */
+#else
+# error HC_ARCH_BITS not defined
+#endif 
 } CPUMHOSTCTX, *PCPUMHOSTCTX;
 
 
