@@ -7817,6 +7817,9 @@ Bit8u bseqnr;
   bootseq|=((inb_cmos(0x3c) & 0x0f) << 12);
   if (read_byte(ebda_seg, &EbdaData->uForceBootDrive))
       bootseq = read_byte(ebda_seg, &EbdaData->uForceBootDrive);
+  /* Boot delay hack. */
+  if (bseqnr == 1)
+      delay_boot((inb_cmos(0x3c) & 0xf0) >> 4); /* Implemented in logo.c */
 #endif /* VBOX */
 
   if (bseqnr==2) bootseq >>= 4;
