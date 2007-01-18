@@ -32,7 +32,11 @@
 ** destructor.
 *****************************************************************************/
 
-static const int MinVDISize = 4;
+/** Minimum VDI size in MB */
+static const Q_UINT64 MinVDISize = 4;
+
+/** Initial VDI size in MB */
+static const Q_UINT64 InitialVDISize = 2 * _1K;
 
 /**
  *  Composes a file name from the given relative or full file name
@@ -47,25 +51,28 @@ static QString composeFullFileName (const QString file)
     QFileInfo fi = QFileInfo (file);
     if (fi.fileName() == file)
     {
-        // no path info at all, use defaultFolder
+        /* no path info at all, use defaultFolder */
         fi = QFileInfo (defaultFolder, file);
     }
     else if (fi.isRelative())
     {
-        // resolve relatively to homeFolder
+        /* resolve relatively to homeFolder */
         fi = QFileInfo (homeFolder, file);
     }
 
     return QDir::convertSeparators (fi.absFilePath());
 }
 
-
+/// @todo (r=dmik) not currently used
+#if 0
 class QISizeValidator : public QValidator
 {
 public:
-    QISizeValidator (QObject * aParent, ULONG64 aMinSize, ULONG64 aMaxSize,
+
+    QISizeValidator (QObject * aParent,
+                     Q_UINT64 aMinSize, Q_UINT64 aMaxSize,
                      const char * aName = 0) :
-        QValidator (aParent, aName), mMinSize(aMinSize), mMaxSize(aMaxSize) {}
+        QValidator (aParent, aName), mMinSize (aMinSize), mMaxSize (aMaxSize) {}
 
     ~QISizeValidator() {}
 
@@ -99,8 +106,8 @@ public:
             }
             QLocale::system().toDouble (size, &result);
 
-            ULONG64 sizeMB = vboxGlobal().parseSize (input) / _1M;
-            if (sizeMB > mMaxSize || sizeMB < mMinSize)
+            Q_UINT64 sizeB = vboxGlobal().parseSize (input);
+            if (sizeB > mMaxSize || sizeB < mMinSize)
                 warning = true;
 
             if (result)
@@ -111,88 +118,137 @@ public:
     }
 
 protected:
-    ULONG64 mMinSize;
-    ULONG64 mMaxSize;
-};
 
+    Q_UINT64 mMinSize;
+    Q_UINT64 mMaxSize;
+};
+#endif
+
+static inline int log2i (Q_UINT64 val)
+{
+    Q_UINT64 n = val;
+    int pow = -1;
+    while (n)
+    {
+        ++ pow;
+        n >>= 1; 
+    }
+    return pow;
+}
+
+static inline int sizeMBToSlider (Q_UINT64 val, int sliderScale)
+{
+    int pow = log2i (val);
+    Q_UINT64 tickMB = Q_UINT64 (1) << pow;
+    Q_UINT64 tickMBNext = Q_UINT64 (1) << (pow + 1);
+    int step = (val - tickMB) * sliderScale / (tickMBNext - tickMB);
+    return pow * sliderScale + step;
+}
+
+static inline Q_UINT64 sliderToSizeMB (int val, int sliderScale)
+{
+    int pow = val / sliderScale;
+    int step = val % sliderScale;
+    Q_UINT64 tickMB = Q_UINT64 (1) << pow;
+    Q_UINT64 tickMBNext = Q_UINT64 (1) << (pow + 1);
+    return tickMB + (tickMBNext - tickMB) * step / sliderScale;
+}
 
 void VBoxNewHDWzd::init()
 {
-    // disable help buttons
-    helpButton()->setShown( false );
+    /* disable help buttons */
+    helpButton()->setShown (false);
 
-    // fix tab order to get the proper direction
-    // (originally the focus goes Next/Finish -> Back -> Cancel -> page)
-    QWidget::setTabOrder( backButton(), nextButton() );
-    QWidget::setTabOrder( nextButton(), finishButton() );
-    QWidget::setTabOrder( finishButton(), cancelButton() );
+    /* fix tab order to get the proper direction
+     * (originally the focus goes Next/Finish -> Back -> Cancel -> page) */
+    QWidget::setTabOrder (backButton(), nextButton());
+    QWidget::setTabOrder (nextButton(), finishButton());
+    QWidget::setTabOrder (finishButton(), cancelButton());
 
-    // setup connections and set validation for pages
-    // ----------------------------------------------------------------------
+    /* setup connections and set validation for pages
+     * ---------------------------------------------------------------------- */
 
-    // Image type page
+    /* Image type page */
 
-    // Name and Size page
+    /* Name and Size page */
 
     CSystemProperties sysProps = vboxGlobal().virtualBox().GetSystemProperties();
 
-    MaxVDISize = sysProps.GetMaxVDISize();
+    maxVDISize = sysProps.GetMaxVDISize();
+
+    /* Detect how many steps to recognize between adjacent powers of 2
+     * to ensure that the last slider step is exactly maxVDISize */
+    sliderScale = 0;
+    {
+        int pow = log2i (maxVDISize);
+        Q_UINT64 tickMB = Q_UINT64 (1) << pow;
+        if (tickMB < maxVDISize)
+        {
+            Q_UINT64 tickMBNext = Q_UINT64 (1) << (pow + 1);
+            Q_UINT64 gap = tickMBNext - maxVDISize;
+            /// @todo (r=dmik) overflow may happen if maxVDISize is TOO big
+            sliderScale = (int) ((tickMBNext - tickMB) / gap);
+        }
+    }
+    sliderScale = QMAX (sliderScale, 8);
 
     leName->setValidator (new QRegExpValidator (QRegExp( ".+" ), this));
 
-    leSize->setValidator (new QISizeValidator (this, MinVDISize, MaxVDISize));
+    leSize->setValidator (new QRegExpValidator (vboxGlobal().sizeRegexp(), this));
     leSize->setAlignment (Qt::AlignRight);
 
-    wvalNameAndSize = new QIWidgetValidator (pageNameAndSize, this );
-    connect(
-        wvalNameAndSize, SIGNAL( validityChanged (const QIWidgetValidator *) ),
-        this, SLOT( enableNext (const QIWidgetValidator *) )
-    );
+    wvalNameAndSize = new QIWidgetValidator (pageNameAndSize, this);
+    connect (wvalNameAndSize, SIGNAL (validityChanged (const QIWidgetValidator *)),
+             this, SLOT (enableNext (const QIWidgetValidator *)));
+    connect (wvalNameAndSize, SIGNAL (isValidRequested (QIWidgetValidator *)),
+             this, SLOT (revalidate (QIWidgetValidator *)));
+    /* we ask revalidate only when currentSize is changed after manually
+     * editing the line edit field; the slider cannot produce invalid values */
+    connect (leSize, SIGNAL (textChanged (const QString &)),
+             wvalNameAndSize, SLOT (revalidate()));
 
-    // Summary page
+    /* Summary page */
 
-    // filter out Enter keys in order to direct them to the default dlg button
+    /* filter out Enter keys in order to direct them to the default dlg button */
     QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
-    ef->watchOn (teSummary) ;
+    ef->watchOn (teSummary);
 
-    // set initial values
-    // ----------------------------------------------------------------------
+    /* set initial values
+     * ---------------------------------------------------------------------- */
 
-    // Image type page
+    /* Image type page */
 
-    // Name and Size page
+    /* Name and Size page */
 
     static ulong HDNumber = 0;
     leName->setText (QString ("NewHardDisk%1.vdi").arg (++ HDNumber));
 
-    sliderStep = 50;
     slSize->setFocusPolicy (QWidget::StrongFocus);
-    slSize->setPageStep (sliderStep);
-    slSize->setLineStep (sliderStep);
+    slSize->setPageStep (sliderScale);
+    slSize->setLineStep (sliderScale / 8);
     slSize->setTickInterval (0);
-    slSize->setMinValue ((int)(log10 ((double)MinVDISize)       / log10 (2.0) * sliderStep));
-    slSize->setMaxValue ((int)(log10 ((double)(MaxVDISize + 1)) / log10 (2.0) * sliderStep));
-    txSizeMin->setText (vboxGlobal().formatSize (MinVDISize * _1M));
-    txSizeMax->setText (vboxGlobal().formatSize (MaxVDISize * _1M));
-    // initial HD size value = pow(2.0, 11) = 2048 MB
-    currentSize = 2 * _1K;
-    leSize->setText (vboxGlobal().formatSize (currentSize * _1M));
-    slSize->setValue ((int)(log10 ((double)currentSize) / log10 (2.0) * sliderStep));
-    // limit the max. size of QLineEdit (STUPID Qt has NO correct means for that)
-    leSize->setMaximumSize(
-        leSize->fontMetrics().width ("88888.88 MB") + leSize->frameWidth() * 2,
-        leSize->height()
-    );
+    slSize->setMinValue (sizeMBToSlider (MinVDISize, sliderScale));
+    slSize->setMaxValue (sizeMBToSlider (maxVDISize, sliderScale));
 
-    // Summary page
+    txSizeMin->setText (vboxGlobal().formatSize (MinVDISize * _1M));
+    txSizeMax->setText (vboxGlobal().formatSize (maxVDISize * _1M));
+
+    /* limit the max. size of QLineEdit (STUPID Qt has NO correct means for that) */
+    leSize->setMaximumSize (
+        leSize->fontMetrics().width ("88888.88 MB") + leSize->frameWidth() * 2,
+        leSize->height());
+
+    setRecommendedSize (InitialVDISize);
+
+    /* Summary page */
 
     teSummary->setPaper (pageSummary->backgroundBrush());
 
-    // update the next button state for pages with validation
-    // (validityChanged() connected to enableNext() will do the job)
+    /* update the next button state for pages with validation
+     * (validityChanged() connected to enableNext() will do the job) */
     wvalNameAndSize->revalidate();
 
-    // the finish button on the Summary page is always enabled
+    /* the finish button on the Summary page is always enabled */
     setFinishEnabled (pageSummary, true);
 }
 
@@ -203,13 +259,13 @@ void VBoxNewHDWzd::setRecommendedFileName (const QString &aName)
 }
 
 
-void VBoxNewHDWzd::setRecommendedSize (ulong aSize)
+void VBoxNewHDWzd::setRecommendedSize (Q_UINT64 aSize)
 {
-    AssertReturn (aSize >= (ulong) MinVDISize &&
-                  aSize <= (ulong) MaxVDISize, (void) 0);
+    AssertReturnVoid (aSize >= MinVDISize && aSize <= maxVDISize);
     currentSize = aSize;
-    slSize->setValue ((int)(log10 ((double)currentSize) / log10 (2.0) * sliderStep));
-    leSize->setText (vboxGlobal().formatSize(aSize * _1M));
+    slSize->setValue (sizeMBToSlider (currentSize, sliderScale));
+    leSize->setText (vboxGlobal().formatSize (currentSize * _1M));
+    updateSizeToolTip (currentSize * _1M);
 }
 
 
@@ -222,7 +278,7 @@ QString VBoxNewHDWzd::imageFileName()
 }
 
 
-Q_UINT64 VBoxNewHDWzd::imageSize()
+ULONG64 VBoxNewHDWzd::imageSize()
 {
     return currentSize;
 }
@@ -234,27 +290,34 @@ bool VBoxNewHDWzd::isDynamicImage()
 }
 
 
-void VBoxNewHDWzd::enableNext( const QIWidgetValidator *wval )
+void VBoxNewHDWzd::enableNext (const QIWidgetValidator *wval)
 {
     setNextEnabled (wval->widget(), wval->isValid());
 }
 
 
-void VBoxNewHDWzd::revalidate( QIWidgetValidator * /*wval*/ )
+void VBoxNewHDWzd::revalidate (QIWidgetValidator *wval)
 {
-    // do individual validations for pages
+    /* do individual validations for pages */
 
-// template:
-//    QWidget *pg = wval->widget();
-//    bool valid = wval->isOtherValid();
-//
-//    if ( pg == pageXXX ) {
-//        valid = XXX;
-//    }
-//
-//    wval->setOtherValid( valid );
+    QWidget *pg = wval->widget();
+    bool valid = wval->isOtherValid();
+
+    if (pg == pageNameAndSize)
+    {
+        valid = currentSize >= MinVDISize && currentSize <= maxVDISize;
+    }
+
+    wval->setOtherValid (valid);
 }
 
+
+void VBoxNewHDWzd::updateSizeToolTip (Q_UINT64 sizeB)
+{
+    QString tip = tr ("<nobr>%1 Bytes</nobr>").arg (sizeB);
+    QToolTip::add (slSize, tip);
+    QToolTip::add (leSize, tip);
+}
 
 void VBoxNewHDWzd::showPage( QWidget *page )
 {
@@ -273,44 +336,53 @@ void VBoxNewHDWzd::showPage( QWidget *page )
                                              : rbFixedType->text();
         type.remove ('&');
 
+        Q_UINT64 sizeB = imageSize() * _1M;
+
         // compose summary
         QString summary = QString (tr(
             "<table>"
             "<tr><td>Type:</td><td>%1</td></tr>"
             "<tr><td>Location:</td><td>%2</td></tr>"
-            "<tr><td>Size:</td><td>%3&nbsp;MB</td></tr>"
+            "<tr><td>Size:</td><td>%3&nbsp;(%4&nbsp;Bytes)</td></tr>"
             "</table>"
         ))
             .arg (type)
             .arg (composeFullFileName (imageFileName()))
-            .arg (imageSize());
+            .arg (VBoxGlobal::formatSize (sizeB))
+            .arg (sizeB);
         teSummary->setText (summary);
-        // set Finish to default
+        /* set Finish to default */
         finishButton()->setDefault (true);
     }
     else
     {
-        // always set Next to default
+        /* always set Next to default */
         nextButton()->setDefault (true);
     }
 
     QWizard::showPage (page);
 
-    // fix focus on the last page. when we go to the last page
-    // having the Next in focus the focus goes to the Cancel
-    // button because when the Next hides Finish is not yet shown.
+    /* fix focus on the last page. when we go to the last page
+     * having the Next in focus the focus goes to the Cancel
+     * button because when the Next hides Finish is not yet shown. */
     if (page == pageSummary && focusWidget() == cancelButton())
         finishButton()->setFocus();
 
-    // setup focus for individual pages
-    if (page == pageType) {
+    /* setup focus for individual pages */
+    if (page == pageType)
+    {
         bgType->setFocus();
-    } else if (page == pageNameAndSize) {
+    }
+    else if (page == pageNameAndSize)
+    {
         leName->setFocus();
-    } else if (page == pageSummary) {
+    }
+    else if (page == pageSummary)
+    {
         teSummary->setFocus();
     }
 }
+
 
 void VBoxNewHDWzd::accept()
 {
@@ -394,8 +466,9 @@ void VBoxNewHDWzd::slSize_valueChanged( int val )
 {
     if (focusWidget() == slSize)
     {
-        currentSize = (ULONG64)(pow (2.0, ((double)val / sliderStep)));
+        currentSize = sliderToSizeMB (val, sliderScale);
         leSize->setText (vboxGlobal().formatSize (currentSize * _1M));
+        updateSizeToolTip (currentSize * _1M);
     }
 }
 
@@ -404,15 +477,17 @@ void VBoxNewHDWzd::leSize_textChanged( const QString &text )
 {
     if (focusWidget() == leSize)
     {
-        currentSize = vboxGlobal().parseSize (text) / _1M;
-        slSize->setValue ((int)(log10 ((double)currentSize) / log10 (2.0) * sliderStep));
+        currentSize = vboxGlobal().parseSize (text);
+        updateSizeToolTip (currentSize);
+        currentSize /= _1M;
+        slSize->setValue (sizeMBToSlider (currentSize, sliderScale));
     }
 }
 
 
 void VBoxNewHDWzd::tbNameSelect_clicked()
 {
-    // set the first parent directory that exists as the current
+    /* set the first parent directory that exists as the current */
     QFileInfo fld (composeFullFileName (leName->text()));
     do
     {

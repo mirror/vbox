@@ -27,8 +27,8 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>520</width>
-            <height>400</height>
+            <width>542</width>
+            <height>499</height>
         </rect>
     </property>
     <property name="caption">
@@ -77,18 +77,53 @@
                     <set>AlignTop</set>
                 </property>
             </widget>
-            <widget class="QLabel">
+            <widget class="QLayoutWidget">
                 <property name="name">
-                    <cstring>txWelcome</cstring>
+                    <cstring>layout33</cstring>
                 </property>
-                <property name="text">
-                    <string>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txWelcome</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</string>
-                </property>
-                <property name="alignment">
-                    <set>WordBreak|AlignTop</set>
-                </property>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer30</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>0</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
             </widget>
         </hbox>
     </widget>
@@ -105,6 +140,9 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
             </property>
             <property name="spacing">
                 <number>20</number>
+            </property>
+            <property name="resizeMode">
+                <enum>Minimum</enum>
             </property>
             <widget class="QLabel">
                 <property name="name">
@@ -140,6 +178,14 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
                         <property name="name">
                             <cstring>textLabel1_2</cstring>
                         </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
                         <property name="text">
                             <string>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
@@ -149,7 +195,7 @@ the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt
 the same size as the size of the virtual hard disk.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
-                            <set>WordBreak|AlignVCenter</set>
+                            <set>WordBreak|AlignTop</set>
                         </property>
                     </widget>
                     <widget class="QButtonGroup">
@@ -205,8 +251,8 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</string>
                         </property>
                         <property name="sizeHint">
                             <size>
-                                <width>20</width>
-                                <height>90</height>
+                                <width>0</width>
+                                <height>0</height>
                             </size>
                         </property>
                     </spacer>
@@ -262,12 +308,20 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</string>
                         <property name="name">
                             <cstring>txNameComment</cstring>
                         </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
                         <property name="text">
                             <string>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
-                            <set>WordBreak|AlignVCenter</set>
+                            <set>WordBreak|AlignTop</set>
                         </property>
                     </widget>
                     <widget class="QGroupBox">
@@ -318,12 +372,20 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
                         <property name="name">
                             <cstring>txSizeComment</cstring>
                         </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
                         <property name="text">
                             <string>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
-                            <set>WordBreak|AlignVCenter</set>
+                            <set>WordBreak|AlignTop</set>
                         </property>
                     </widget>
                     <widget class="QGroupBox">
@@ -481,8 +543,8 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
                         </property>
                         <property name="sizeHint">
                             <size>
-                                <width>20</width>
-                                <height>20</height>
+                                <width>0</width>
+                                <height>0</height>
                             </size>
                         </property>
                     </spacer>
@@ -503,6 +565,9 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
             </property>
             <property name="spacing">
                 <number>20</number>
+            </property>
+            <property name="resizeMode">
+                <enum>Minimum</enum>
             </property>
             <widget class="QLabel">
                 <property name="name">
@@ -531,15 +596,26 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
                     <property name="name">
                         <cstring>unnamed</cstring>
                     </property>
+                    <property name="spacing">
+                        <number>15</number>
+                    </property>
                     <widget class="QLabel">
                         <property name="name">
                             <cstring>txSummaryHdr</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
                         </property>
                         <property name="text">
                             <string>You are going to create a new virtual hard disk image with the following parameters:</string>
                         </property>
                         <property name="alignment">
-                            <set>WordBreak|AlignVCenter</set>
+                            <set>WordBreak|AlignTop</set>
                         </property>
                     </widget>
                     <widget class="QTextEdit">
@@ -551,7 +627,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
                                 <hsizetype>7</hsizetype>
                                 <vsizetype>5</vsizetype>
                                 <horstretch>0</horstretch>
-                                <verstretch>1</verstretch>
+                                <verstretch>0</verstretch>
                             </sizepolicy>
                         </property>
                         <property name="frameShape">
@@ -568,10 +644,21 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
                         <property name="name">
                             <cstring>txSummaryFtr</cstring>
                         </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
                         <property name="text">
                             <string>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
                         </property>
                     </widget>
                     <spacer>
@@ -586,8 +673,8 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
                         </property>
                         <property name="sizeHint">
                             <size>
-                                <width>20</width>
-                                <height>20</height>
+                                <width>0</width>
+                                <height>0</height>
                             </size>
                         </property>
                     </spacer>
@@ -630,13 +717,12 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="global" impldecl="in implementation">qvalidator.h</include>
     <include location="global" impldecl="in implementation">qlocale.h</include>
-    <include location="local" impldecl="in implementation">math.h</include>
 </includes>
 <variables>
     <variable access="private">QIWidgetValidator *wvalNameAndSize;</variable>
     <variable access="private">CHardDisk chd;</variable>
-    <variable access="private">int sliderStep;</variable>
-    <variable access="private">Q_UINT64 MaxVDISize;</variable>
+    <variable access="private">int sliderScale;</variable>
+    <variable access="private">Q_UINT64 maxVDISize;</variable>
     <variable access="private">Q_UINT64 currentSize;</variable>
 </variables>
 <slots>
@@ -649,14 +735,15 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
 <functions>
     <function access="private">init()</function>
     <function>setRecommendedFileName( const QString &amp; aName )</function>
-    <function>setRecommendedSize( ulong aSize )</function>
+    <function>setRecommendedSize( Q_UINT64 aSize )</function>
     <function returnType="QString">imageFileName()</function>
     <function returnType="Q_UINT64">imageSize()</function>
     <function returnType="bool">isDynamicImage()</function>
     <function returnType="CHardDisk">hardDisk() { return chd; }</function>
+    <function>showPage( QWidget * page )</function>
+    <function>updateSizeToolTip (Q_UINT64)</function>
     <function>accept()</function>
     <function access="private" returnType="bool">createHardDisk()</function>
-    <function>showPage( QWidget * page )</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
