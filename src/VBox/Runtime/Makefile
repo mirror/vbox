@@ -100,7 +100,7 @@ RuntimeR3_SDKS.win      = WINPSDK W2K3DDK
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
 ifdef IPRT_WITH_KLDR
  RuntimeR3_DEFS        += LDR_WITH_KLDR KLDR_USE_CRT
- RuntimeR3_DEFS.debug  += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT 
+ RuntimeR3_DEFS.debug  += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
 endif
 RuntimeR3_DEFS.l4       = L4
 ifdef VBOX_MAIN_RELEASE_LOG ## @todo (dmik): temporary, until RTThreadSelf/RTThreadAdopt are properly updated
@@ -112,8 +112,6 @@ ifdef IPRT_WITH_KLDR
  RuntimeR3_INCS        += \
 	$(IPRT_PATH_KLDR)
 endif
-RuntimeR3_INCS.os2      = \
-	$(PATH_ROOT)/src/libs/libuuid
 RuntimeR3_INCS.l4       = \
 	$(PATH_ROOT)/src/libs/libuuid \
 	$(L4_INCDIR)
@@ -271,8 +269,8 @@ RuntimeR3_SOURCES.os2   = \
 	generic/semsrw-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/sched-generic.cpp \
+	generic/uuid-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
-	r3/linux/uuid-linux.cpp \
 	r3/os2/sems-os2.cpp \
 	r3/os2/system-os2.cpp \
 	r3/os2/thread-os2.cpp \

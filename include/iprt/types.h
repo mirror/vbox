@@ -985,7 +985,7 @@ typedef union RTUUID
     struct
     {
         uint32_t    u32TimeLow;
-        uint16_t    u16TimeMin;
+        uint16_t    u16TimeMid;
         uint16_t    u16TimeHiAndVersion;
         uint16_t    u16ClockSeq;
         uint8_t     au8Node[6];

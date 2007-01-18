@@ -49,6 +49,7 @@ PROGRAMS = \
 	tstMove \
 	tstUtf8 \
 	tstDeadlock \
+	tstUuid \
 	tstErrUnique
 PROGRAMS.win = \
 	tstRTProcWait \
@@ -171,6 +172,8 @@ ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK  VBOX_NTDLL
 tstIoCtl_SOURCES = tstIoCtl.cpp
 
 tstDeadlock_SOURCES = tstDeadlock.cpp
+
+tstUuid_SOURCES = tstUuid.cpp
 
 tstErrUnique_SOURCES = tstErrUnique.cpp
 tstErrUnique_INCS    = $(PATH_TARGET)/..
