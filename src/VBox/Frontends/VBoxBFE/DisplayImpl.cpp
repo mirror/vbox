@@ -386,7 +386,7 @@ void VMDisplay::updateDisplayData()
     // the driver might not have been constructed yet
     if (mpDrv)
     {
-        mFramebuffer->getAddress ((ULONG*)&mpDrv->Connector.pu8Data);
+        mFramebuffer->getAddress ((uintptr_t *)&mpDrv->Connector.pu8Data);
         mFramebuffer->getLineSize ((ULONG*)&mpDrv->Connector.cbScanline);
         mFramebuffer->getColorDepth ((ULONG*)&mpDrv->Connector.cBits);
         mFramebuffer->getWidth ((ULONG*)&mpDrv->Connector.cx);
@@ -402,7 +402,7 @@ void VMDisplay::resetFramebuffer()
     // the driver might not have been constructed yet
     if (mpDrv)
     {
-        mFramebuffer->getAddress ((ULONG*)&mpDrv->Connector.pu8Data);
+        mFramebuffer->getAddress ((uintptr_t *)&mpDrv->Connector.pu8Data);
         mFramebuffer->getColorDepth ((ULONG*)&mpDrv->Connector.cBits);
     }
 }

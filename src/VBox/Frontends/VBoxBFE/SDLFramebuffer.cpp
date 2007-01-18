@@ -161,7 +161,7 @@ HRESULT SDLFramebuffer::Unlock()
  * @returns COM status code.
  * @param   address Pointer to result variable.
  */
-HRESULT SDLFramebuffer::getAddress(ULONG *address)
+HRESULT SDLFramebuffer::getAddress(uintptr_t *address)
 {
     LogFlow(("SDLFramebuffer::GetAddress\n"));
     if (!address)

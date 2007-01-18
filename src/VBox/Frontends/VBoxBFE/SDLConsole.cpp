@@ -316,10 +316,10 @@ CONEVENT SDLConsole::eventWait()
             /*
              * Decode event parameters.
              */
-            #define DECODEX(ev) ((int)(ev)->user.data1 >> 16)
-            #define DECODEY(ev) ((int)(ev)->user.data1 & 0xFFFF)
-            #define DECODEW(ev) ((int)(ev)->user.data2 >> 16)
-            #define DECODEH(ev) ((int)(ev)->user.data2 & 0xFFFF)
+            #define DECODEX(ev) ((intptr_t)(ev)->user.data1 >> 16)
+            #define DECODEY(ev) ((intptr_t)(ev)->user.data1 & 0xFFFF)
+            #define DECODEW(ev) ((intptr_t)(ev)->user.data2 >> 16)
+            #define DECODEH(ev) ((intptr_t)(ev)->user.data2 & 0xFFFF)
             int x = DECODEX(ev);
             int y = DECODEY(ev);
             int w = DECODEW(ev);
