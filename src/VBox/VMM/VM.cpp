@@ -285,6 +285,9 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
             case VERR_VM_DRIVER_LOAD_ERROR:
                 pszError = N_("VirtualBox kernel driver not loaded");
                 break;
+            case VERR_VM_DRIVER_OPEN_ERROR:
+                pszError = N_("VirtualBox kernel driver cannot be opened");
+                break;
             case VERR_VM_DRIVER_NOT_ACCESSIBLE:
                 pszError = N_("VirtualBox kernel driver not accessible, permission problem");
                 break;
