@@ -328,11 +328,11 @@ public:
     {
         if (mSurfVRAM)
         {
-            return (uchar*) (mScreen ? (int) mSurfVRAM->pixels : 0);
+            return (uchar*) (mScreen ? (uintptr_t) mSurfVRAM->pixels : 0);
         }
         else
         {
-            return (uchar*) (mScreen ? (int) mScreen->pixels : 0);
+            return (uchar*) (mScreen ? (uintptr_t) mScreen->pixels : 0);
         }
     }
 
