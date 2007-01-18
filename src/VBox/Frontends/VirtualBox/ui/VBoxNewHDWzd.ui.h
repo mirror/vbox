@@ -131,7 +131,7 @@ static inline int log2i (Q_UINT64 val)
     while (n)
     {
         ++ pow;
-        n >>= 1; 
+        n >>= 1;
     }
     return pow;
 }
@@ -278,7 +278,7 @@ QString VBoxNewHDWzd::imageFileName()
 }
 
 
-ULONG64 VBoxNewHDWzd::imageSize()
+Q_UINT64 VBoxNewHDWzd::imageSize()
 {
     return currentSize;
 }
