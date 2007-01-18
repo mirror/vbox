@@ -1147,6 +1147,14 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
     LogFlow(("vmR3PowerOff: pVM=%p\n", pVM));
 
     /*
+     * The Windows guest additions might have performed a VMMDevPowerState_PowerOff()
+     * request which was not completed yet. Later, the Windows guest shuts down via
+     * ACPI and we find the VMSTATE_OFF. Just ignore the second power-off request.
+     */
+    if (pVM->enmVMState == VMSTATE_OFF)
+        return VINF_EM_OFF;
+
+    /*
      * Validate input.
      */
     if (    pVM->enmVMState != VMSTATE_RUNNING
