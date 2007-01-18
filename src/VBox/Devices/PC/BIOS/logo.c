@@ -1096,3 +1096,27 @@ done:
 
     return;
 }
+
+
+void delay_boot(secs)
+  Bit16u secs;
+{
+    Bit16u i;
+
+    if (!secs)
+        return;
+
+    // Set PIT to 1ms ticks
+    wait_init();
+
+    printf("Delaying boot for %d seconds:", secs);
+    for (i = secs; i > 0; i--)
+    {
+        printf(" %d", i);
+        wait(1000);
+    }
+    printf("\n");
+    // Restore PIT ticks
+    wait_uninit();
+}
+

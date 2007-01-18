@@ -92,7 +92,8 @@ typedef struct DEVPCBIOS
     char           *pszLanBootFile;
     /** The DMI tables. */
     uint8_t        au8DMIPage[0x1000];
-
+    /** The boot countdown (in seconds). */
+    uint8_t        uBootDelay;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 
@@ -315,7 +316,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     uint8_t reg3d = getBiosBootCode(pData, 0) | (getBiosBootCode(pData, 1) << 4);
     uint8_t reg38 = /* pcbiosCmosRead(pDevIns, 0x38) | */ getBiosBootCode(pData, 2) << 4;
     /* This is an extension. Bochs BIOS normally supports only 3 boot devices. */
-    uint8_t reg3c = /* pcbiosCmosRead(pDevIns, 0x3c) | */ getBiosBootCode(pData, 3);
+    uint8_t reg3c = getBiosBootCode(pData, 3) | (pData->uBootDelay << 4);
     pcbiosCmosWrite(pDevIns, 0x3d, reg3d);
     pcbiosCmosWrite(pDevIns, 0x38, reg38);
     pcbiosCmosWrite(pDevIns, 0x3c, reg3c);
@@ -872,7 +873,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "FadeOut\0"
                               "LogoTime\0"
                               "LogoFile\0"
-                              "ShowBootMenu\0"))
+                              "ShowBootMenu\0"
+                              "DelayBoot\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
 
@@ -1172,6 +1174,21 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (pu8LanBoot)
         rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot, "Net Boot ROM");
+
+    rc = CFGMR3QueryU8(pCfgHandle, "DelayBoot", &pData->uBootDelay);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        pData->uBootDelay = 0;
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        if (VBOX_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                    N_("Configuration error: Querying \"DelayBoot\" as integer failed"));
+        if (pData->uBootDelay > 15)
+            pData->uBootDelay = 15;
+    }
 
     return rc;
 }
