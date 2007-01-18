@@ -969,7 +969,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
     QString storageType = vboxGlobal().toString (aHd.GetStorageType());
     QString hardDiskType = vboxGlobal().hardDiskTypeString (aHd);
     QString virtualSize = accessible ?
-        vboxGlobal().formatSize ((ULONG64)aHd.GetSize() * _1M) : QString ("--");
+        vboxGlobal().formatSize (aHd.GetSize() * _1M) : QString ("--");
     QString actualSize = accessible ?
         vboxGlobal().formatSize (aHd.GetActualSize()) : QString ("--");
     QString snapshotName;

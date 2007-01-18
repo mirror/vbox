@@ -1338,7 +1338,7 @@ STDMETHODIMP HVirtualDiskImage::COMSETTER(Description) (INPTR BSTR aDescription)
     return S_OK;
 }
 
-STDMETHODIMP HVirtualDiskImage::COMGETTER(Size) (ULONG *aSize)
+STDMETHODIMP HVirtualDiskImage::COMGETTER(Size) (ULONG64 *aSize)
 {
     if (!aSize)
         return E_POINTER;
@@ -1426,7 +1426,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Created) (BOOL *aCreated)
 // IVirtualDiskImage methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP HVirtualDiskImage::CreateDynamicImage (ULONG aSize, IProgress **aProgress)
+STDMETHODIMP HVirtualDiskImage::CreateDynamicImage (ULONG64 aSize, IProgress **aProgress)
 {
     if (!aProgress)
         return E_POINTER;
@@ -1437,7 +1437,7 @@ STDMETHODIMP HVirtualDiskImage::CreateDynamicImage (ULONG aSize, IProgress **aPr
     return createImage (aSize, TRUE /* aDynamic */, aProgress);
 }
 
-STDMETHODIMP HVirtualDiskImage::CreateFixedImage (ULONG aSize, IProgress **aProgress)
+STDMETHODIMP HVirtualDiskImage::CreateFixedImage (ULONG64 aSize, IProgress **aProgress)
 {
     if (!aProgress)
         return E_POINTER;
@@ -2244,7 +2244,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
             {
                 uint64_t size = VDIDiskGetSize (disk);
                 /* convert to MBytes */
-                mSize = (ULONG) (size / 1024 / 1024);
+                mSize = size / 1024 / 1024;
             }
 
             VDIDiskDestroy (disk);
@@ -2284,8 +2284,8 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
  *  @param aDynamic     dynamic or fixed image
  *  @param aProgress    address of IProgress pointer to return
  */
-HRESULT HVirtualDiskImage::createImage (ULONG aSize, BOOL aDynamic,
-                                       IProgress **aProgress)
+HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
+                                        IProgress **aProgress)
 {
     AutoLock alock (this);
 
@@ -2352,7 +2352,7 @@ HRESULT HVirtualDiskImage::createImage (ULONG aSize, BOOL aDynamic,
 
         if (aSize < 1 || aSize > maxVDISize)
             return setError (E_INVALIDARG,
-                tr ("Invalid VDI size %ul MB (must be in range [1, %Lu] MB)"),
+                tr ("Invalid VDI size: %llu MB (must be in range [1, %llu] MB)"),
                 aSize, maxVDISize);
     }
 
@@ -2681,7 +2681,7 @@ STDMETHODIMP HISCSIHardDisk::COMSETTER(Description) (INPTR BSTR aDescription)
     return S_OK;
 }
 
-STDMETHODIMP HISCSIHardDisk::COMGETTER(Size) (ULONG *aSize)
+STDMETHODIMP HISCSIHardDisk::COMGETTER(Size) (ULONG64 *aSize)
 {
     if (!aSize)
         return E_POINTER;

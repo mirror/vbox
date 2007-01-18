@@ -1959,7 +1959,7 @@ static int handleCreateVDI(int argc, char *argv[],
 {
     HRESULT rc;
     Bstr filename;
-    size_t sizeMB = 0;
+    uint64_t sizeMB = 0;
     bool fStatic = false;
     Bstr comment;
     bool fRegister = false;
@@ -1984,7 +1984,7 @@ static int handleCreateVDI(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             }
             i++;
-            sizeMB = atoi(argv[i]);
+            sizeMB = RTStrToUInt64(argv[i]);
         }
         else if (strcmp(argv[i], "-static") == 0)
         {
@@ -4433,12 +4433,12 @@ static int handleShowVDIInfo(int argc, char *argv[],
             RTPrintf("Description:          %lS\n", description.raw());
         }
 
-        ULONG size;
+        ULONG64 size;
         hardDisk->COMGETTER(Size)(&size);
-        RTPrintf("Size:                 %lu MBytes\n", size);
+        RTPrintf("Size:                 %llu MBytes\n", size);
         ULONG64 actualSize;
         hardDisk->COMGETTER(ActualSize)(&actualSize);
-        RTPrintf("Current size on disk: %lu MBytes\n", actualSize >> 20);
+        RTPrintf("Current size on disk: %llu MBytes\n", actualSize >> 20);
 
         HardDiskType_T type;
         hardDisk->COMGETTER(Type)(&type);

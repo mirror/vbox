@@ -472,6 +472,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnRuntimeError)(BOOL fatal, INPTR BSTR id, INPTR BSTR message)
+    {
+        return S_OK;
+    }
+
     static const char *GetStateName(MachineState_T machineState)
     {
         switch (machineState)
