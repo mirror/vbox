@@ -1648,7 +1648,7 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
                  */
                 QImage shot = QImage (fb->width(), fb->height(), 32, 0);
                 CDisplay dsp = cconsole.GetDisplay();
-                dsp.TakeScreenShot ((ULONG) shot.bits(),
+                dsp.TakeScreenShot ((uintptr_t) shot.bits(),
                                     shot.width(), shot.height());
                 /*
                  *  TakeScreenShot() may fail if, e.g. the Paused notification
