@@ -1356,73 +1356,189 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         aWidget->resize (newGeo.width() - extraw, newGeo.height() - extrah);
 }
 
+/**
+ *  Returns the decimal separator for the current locale.
+ */
 /* static */
-unsigned long long VBoxGlobal::parseSize (QString aText)
+QChar VBoxGlobal::decimalSep()
 {
-    QRegExp regexp ("^(\\d+([^\\s^\\d^B^K^M^G^T^P]\\d{1,2})?)\\s?(B|KB|MB|GB|TB|PB)?$");
+    QString n = QLocale::system().toString (0.0, 'f', 1).stripWhiteSpace();
+    return n [1];
+}
+
+/**
+ *  Returns the regexp string that defines the format of the human-readable
+ *  size representation, <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
+ *
+ *  This regexp will capture 5 groups of text:
+ *  - cap(1): integer number in case when no decimal point is present
+ *            (if empty, it means that decimal point is present)
+ *  - cap(2): size suffix in case when no decimal point is present (may be empty)
+ *  - cap(3): integer number in case when decimal point is present (may be empty)
+ *  - cap(4): fraction number (hundredth) in case when decimal point is present
+ *  - cap(5): size suffix in case when decimal point is present (note that
+ *            B cannot appear there)
+ */
+/* static */
+QString VBoxGlobal::sizeRegexp()
+{
+    QString regexp =
+        QString ("^(?:(?:(\\d+)(?:\\s?([KMGTP]?B))?)|(?:(\\d*)%1(\\d{1,2})(?:\\s?([KMGTP]B))))$")
+                 .arg (decimalSep());
+    return regexp;
+}
+
+/**
+ *  Parses the given size string that should be in form of
+ *  <tt>####[.##] B|KB|MB|GB|TB|PB</tt> and returns the size value
+ *  in bytes. Zero is returned on error.
+ */
+/* static */
+Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
+{
+    QRegExp regexp (sizeRegexp());
     int pos = regexp.search (aText);
     if (pos != -1)
     {
-        QString size   = regexp.cap (1);
-        QString suffix = regexp.cap (3);
-        double  result = QLocale::system().toDouble(size);
-        if (suffix.isEmpty() || suffix == "B")
-            return (unsigned long long)result;
-        else if (suffix == "KB")
-            return (unsigned long long)(result * _1K);
-        else if (suffix == "MB")
-            return (unsigned long long)(result * _1M);
-        else if (suffix == "GB")
-            return (unsigned long long)(result * _1G);
-        else if (suffix == "TB")
-            return (unsigned long long)(result * _1T);
-        else if (suffix == "PB")
-            return (unsigned long long)(result * _1P);
-        else
-            return 0;
+        QString intgS = regexp.cap (1);
+        QString hundS;
+        QString suff = regexp.cap (2);
+        if (intgS.isEmpty())
+        {
+            intgS = regexp.cap (3);
+            hundS = regexp.cap (4);
+            suff = regexp.cap (5);
+        }
+
+        Q_UINT64 denom = 0;
+        if (suff.isEmpty() || suff == "B")
+            denom = 1;
+        else if (suff == "KB")
+            denom = _1K;
+        else if (suff == "MB")
+            denom = _1M;
+        else if (suff == "GB")
+            denom = _1G;
+        else if (suff == "TB")
+            denom = _1T;
+        else if (suff == "PB")
+            denom = _1P;
+
+        Q_UINT64 intg = intgS.toULongLong();
+        if (denom == 1)
+            return intg;
+
+        Q_UINT64 hund = hundS.rightJustify (2, '0').toULongLong();
+        hund = hund * denom / 100;
+        intg = intg * denom + hund;
+        return intg; 
     }
     else
         return 0;
 }
 
+/**
+ *  Formats the given \a size value in bytes to a human readable string
+ *  in form of <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
+ *
+ *  The \a mode parameter is used for resulting numbers that get a fractional
+ *  part after converting the \a size to KB, MB etc:
+ *  <ul>
+ *  <li>When \a mode is 0, the result is rounded to the closest number
+ *      containing two decimal digits.
+ *  </li>
+ *  <li>When \a mode is -1, the result is rounded to the largest two decimal
+ *      digit number that is not greater than the result. This guarantees that
+ *      converting the resulting string back to the integer value in bytes
+ *      will not produce a value greater that the initial \a size parameter. 
+ *  </li>
+ *  <li>When \a mode is 1, the result is rounded to the smallest two decimal
+ *      digit number that is not less than the result. This guarantees that
+ *      converting the resulting string back to the integer value in bytes
+ *      will not produce a value less that the initial \a size parameter. 
+ *  </li>
+ *  </ul>
+ *
+ *  @param  aSize   size value in bytes
+ *  @param  aMode   convertion mode (-1, 0 or 1)
+ *  @return         human-readable size string
+ */
 /* static */
-QString VBoxGlobal::formatSize (unsigned long long aSize)
+QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
 {
-    double size;
-    QString suffix;
+    static const char *Suffixes [] = { "B", "KB", "MB", "GB", "TB", "PB", NULL }; 
+
+    Q_UINT64 denom = 0;
+    int suffix = 0;
+
     if (aSize < _1K)
     {
-        size = aSize;
-        suffix = "B";
+        denom = 1;
+        suffix = 0;
     }
     else if (aSize < _1M)
     {
-        size = (double)aSize / _1K;
-        suffix = "KB";
+        denom = _1K;
+        suffix = 1;
     }
     else if (aSize < _1G)
     {
-        size = (double)aSize / _1M;
-        suffix = "MB";
+        denom = _1M;
+        suffix = 2;
     }
     else if (aSize < _1T)
     {
-        size = (double)aSize / _1G;
-        suffix = "GB";
+        denom = _1G;
+        suffix = 3;
     }
     else if (aSize < _1P)
     {
-        size = (double)aSize / _1T;
-        suffix = "TB";
+        denom = _1T;
+        suffix = 4;
     }
     else
     {
-        size = (double)aSize / _1P;
-        suffix = "PB";
+        denom = _1P;
+        suffix = 5;
     }
-    QString number = QLocale::system().toString(size, 'f', 2);
-    number.remove (QRegExp ("\\s+"));
-    return QString ("%1 %2").arg (number).arg (suffix);
+
+    Q_UINT64 intg = aSize / denom;
+    Q_UINT64 hund = aSize % denom;
+
+    QString number;
+    if (denom > 1)
+    {
+        if (hund)
+        {
+            hund *= 100;
+            /* not greater */
+            if (aMode < 0) hund = hund / denom;
+            /* not less */
+            else if (aMode > 0) hund = (hund + denom - 1) / denom;
+            /* nearest */
+            else hund = (hund + denom / 2) / denom;
+        }
+        /* check for the fractional part overflow due to rounding */
+        if (hund == 100)
+        {
+            hund = 0;
+            ++ intg;
+            /* check if we've got 1024 XB after rounding and scale down if so */
+            if (intg == 1024 && Suffixes [suffix + 1] != NULL)
+            {
+                intg /= 1024;
+                ++ suffix; 
+            }
+        }
+        number = QString ("%1%2%3").arg (intg).arg (decimalSep())
+                                   .arg (QString::number (hund).leftJustify (2, '0'));
+    }
+    else
+    {
+        number = QString::number (intg);
+    }
+    
+    return QString ("%1 %2").arg (number).arg (Suffixes [suffix]);
 }
 
 // Protected members

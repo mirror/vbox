@@ -323,8 +323,11 @@ public:
     static void centerWidget (QWidget *aWidget, QWidget *aRelative,
                               bool aCanResize = true);
 
-    static unsigned long long parseSize (QString);
-    static QString formatSize (unsigned long long);
+    static QChar decimalSep();
+    static QString sizeRegexp();
+
+    static Q_UINT64 parseSize (const QString &);
+    static QString formatSize (Q_UINT64, int aMode = 0);
 
 signals:
 
