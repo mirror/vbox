@@ -1060,12 +1060,12 @@ PGMDECL(int) pgmGuestROMWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     Cpu.mode = SELMIsSelector32Bit(pVM, pRegFrame->cs, &pRegFrame->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT;
     if (Cpu.mode == CPUMODE_32BIT)
     {
-        uint8_t *pu8Code;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, (PRTGCPTR)&pu8Code);
+        RTGCPTR GCPtrCode;
+        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &GCPtrCode);
         if (VBOX_SUCCESS(rc))
         {
             uint32_t cbOp;
-            rc = pgmDisCoreOne(pVM, &Cpu, (RTGCUINTPTR)pu8Code, &cbOp);
+            rc = pgmDisCoreOne(pVM, &Cpu, (RTGCUINTPTR)GCPtrCode, &cbOp);
             if (VBOX_SUCCESS(rc))
             {
                 /* ASSUMES simple instructions.
