@@ -222,7 +222,7 @@ QString VBoxNewHDWzd::imageFileName()
 }
 
 
-ULONG64 VBoxNewHDWzd::imageSize()
+Q_UINT64 VBoxNewHDWzd::imageSize()
 {
     return currentSize;
 }
@@ -331,7 +331,7 @@ void VBoxNewHDWzd::accept()
 bool VBoxNewHDWzd::createHardDisk()
 {
     QString src = imageFileName();
-    ulong size = imageSize();
+    Q_UINT64 size = imageSize();
 
     AssertReturn (!src.isEmpty(), false);
     AssertReturn (size > 0, false);

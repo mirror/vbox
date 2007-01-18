@@ -636,8 +636,8 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
     <variable access="private">QIWidgetValidator *wvalNameAndSize;</variable>
     <variable access="private">CHardDisk chd;</variable>
     <variable access="private">int sliderStep;</variable>
-    <variable access="private">ULONG64 MaxVDISize;</variable>
-    <variable access="private">ULONG64 currentSize;</variable>
+    <variable access="private">Q_UINT64 MaxVDISize;</variable>
+    <variable access="private">Q_UINT64 currentSize;</variable>
 </variables>
 <slots>
     <slot>enableNext( const QIWidgetValidator * wval )</slot>
@@ -651,7 +651,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
     <function>setRecommendedFileName( const QString &amp; aName )</function>
     <function>setRecommendedSize( ulong aSize )</function>
     <function returnType="QString">imageFileName()</function>
-    <function returnType="ULONG64">imageSize()</function>
+    <function returnType="Q_UINT64">imageSize()</function>
     <function returnType="bool">isDynamicImage()</function>
     <function returnType="CHardDisk">hardDisk() { return chd; }</function>
     <function>accept()</function>

@@ -584,7 +584,7 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */) 
     else
         details = hardDiskTypeString (root);
     
-    details += ", " + formatSize ((unsigned long long) root.GetSize() * _1M);
+    details += ", " + formatSize (root.GetSize() * _1M);
     
     return details;
 }

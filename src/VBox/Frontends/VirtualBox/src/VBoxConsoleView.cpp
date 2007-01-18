@@ -269,6 +269,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTRPARAM id, IN_BSTRPARAM message)
+    {
+        return S_OK;
+    }
+
 protected:
 
     VBoxConsoleView *view;

@@ -101,6 +101,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnRuntimeError)(BOOL fatal, INPTR BSTR id, INPTR BSTR message)
+    {
+        return S_OK;
+    }
+
     // IDisplay properties
     STDMETHOD(COMGETTER(Width)) (ULONG *width);
     STDMETHOD(COMGETTER(Height)) (ULONG *height);

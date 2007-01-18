@@ -237,7 +237,7 @@ public:
     // IHardDisk properties
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
     STDMETHOD(COMSETTER(Description)) (INPTR BSTR aDescription);
-    STDMETHOD(COMGETTER(Size)) (ULONG *aSize);
+    STDMETHOD(COMGETTER(Size)) (ULONG64 *aSize);
     STDMETHOD(COMGETTER(ActualSize)) (ULONG64 *aActualSize);
 
     // IVirtualDiskImage properties
@@ -246,8 +246,8 @@ public:
     STDMETHOD(COMGETTER(Created)) (BOOL *aCreated);
 
     // IVirtualDiskImage methods
-    STDMETHOD(CreateDynamicImage) (ULONG aSize, IProgress **aProgress);
-    STDMETHOD(CreateFixedImage) (ULONG aSize, IProgress **aProgress);
+    STDMETHOD(CreateDynamicImage) (ULONG64 aSize, IProgress **aProgress);
+    STDMETHOD(CreateFixedImage) (ULONG64 aSize, IProgress **aProgress);
     STDMETHOD(DeleteImage)();
 
     // public methods for internal purposes only
@@ -285,7 +285,7 @@ private:
 
     HRESULT setFilePath (const BSTR aFilePath);
     HRESULT queryInformation (Bstr *aAccessError);
-    HRESULT createImage (ULONG aSize, BOOL aDynamic, IProgress **aProgress);
+    HRESULT createImage (ULONG64 aSize, BOOL aDynamic, IProgress **aProgress);
 
     /** VDI asynchronous operation thread function */
     static DECLCALLBACK(int) vdiTaskThread (RTTHREAD thread, void *pvUser);
@@ -301,7 +301,7 @@ private:
 
     Bstr mDescription;
 
-    ULONG mSize;
+    ULONG64 mSize;
     ULONG64 mActualSize;
 
     Bstr mFilePath;
@@ -356,7 +356,7 @@ public:
     // IHardDisk properties
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
     STDMETHOD(COMSETTER(Description)) (INPTR BSTR aDescription);
-    STDMETHOD(COMGETTER(Size)) (ULONG *aSize);
+    STDMETHOD(COMGETTER(Size)) (ULONG64 *aSize);
     STDMETHOD(COMGETTER(ActualSize)) (ULONG64 *aActualSize);
 
     // IISCSIHardDisk properties
@@ -405,7 +405,7 @@ private:
 
     Bstr mDescription;
 
-    ULONG mSize;
+    ULONG64 mSize;
     ULONG64 mActualSize;
 
     Bstr mServer;
