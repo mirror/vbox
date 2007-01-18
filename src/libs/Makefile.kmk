@@ -22,7 +22,6 @@ DEPTH = ../..
 include $(PATH_KBUILD)/header.kmk
 
 subdirs      =
-subdirs.os2  = libuuid
 subdirs.l4   = libuuid
 ifdef VBOX_WITH_MAIN
  subdirs.linux = xpcom18a4
