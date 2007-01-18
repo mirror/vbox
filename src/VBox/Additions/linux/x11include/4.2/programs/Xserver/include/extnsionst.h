@@ -105,6 +105,8 @@ extern void NotImplemented (	/* FIXME: this may move to another file... */
 typedef void (* ExtensionLookupProc)(	/*args indeterminate*/
 #ifdef	EXTENSION_PROC_ARGS
 	EXTENSION_PROC_ARGS
+#else
+        void
 #endif
 );
 
