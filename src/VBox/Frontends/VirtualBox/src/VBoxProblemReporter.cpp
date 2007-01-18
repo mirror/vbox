@@ -1261,6 +1261,7 @@ void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
             "Host key is defined as <b>%1</b>.</p>")
             .arg (hotKey).arg (hostKey),
         "remindAboutGoingFullscreen");
+    NOREF(rc);
 }
 
 // static
