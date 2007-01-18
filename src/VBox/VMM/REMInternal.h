@@ -171,6 +171,10 @@ typedef struct REM
     /** Pending interrupt (~0 -> nothing). */
     RTUINT                  u32PendingInterrupt;
 
+#if HC_ARCH_BITS == 32
+    /** Padding for MS / GC alignment difference. */
+    uint32_t                u32Padding;
+#endif 
     /** Number of recorded invlpg instructions. */
     RTUINT                  cInvalidatedPages;
     /** Array of recorded invlpg instruction.
@@ -212,8 +216,6 @@ typedef struct REM
     /** Pending rc. */
     RTINT                   rc;
 
-    /** Padding for MS / GC alignment difference. */
-    uint32_t                u32Padding;
     /** Time spent in QEMU. */
     STAMPROFILEADV          StatsInQEMU;
     /** Time spent in rawmode.c. */
