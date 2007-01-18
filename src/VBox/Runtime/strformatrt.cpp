@@ -418,7 +418,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                             return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                                                u.pUuid->Gen.u32TimeLow,
-                                               u.pUuid->Gen.u16TimeMin,
+                                               u.pUuid->Gen.u16TimeMid,
                                                u.pUuid->Gen.u16TimeHiAndVersion,
                                                u.pUuid->Gen.u16ClockSeq & 0xff,
                                                u.pUuid->Gen.u16ClockSeq >> 8,
