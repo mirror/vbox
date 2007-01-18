@@ -472,7 +472,7 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
     /* OP_ILLUD2 in PATM generated code? */
     if (CTXSUFF(pVM->patm.s.pGCState)->uPendingAction)
     {
-        Log(("PATMHandleIllegalInstrTrap: Pending action %x at %VGv\n", CTXSUFF(pVM->patm.s.pGCState)->uPendingAction, pRegFrame->eip));
+        LogFlow(("PATMGC: Pending action %x at %VGv\n", CTXSUFF(pVM->patm.s.pGCState)->uPendingAction, pRegFrame->eip));
 
         /* Private PATM interface (@todo hack due to lack of anything generic). */
         /* Parameters:
@@ -495,7 +495,7 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                  */
                 AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->edi), ("edx = %VGv\n", pRegFrame->edi));
 
-                Log(("PATMHandleIllegalInstrTrap: lookup %VGv jump table=%VGv\n", pRegFrame->edx, pRegFrame->edi));
+                Log(("PATMGC: lookup %VGv jump table=%VGv\n", pRegFrame->edx, pRegFrame->edi));
 
                 pRec = PATMQueryFunctionPatch(pVM, (RTGCPTR)(pRegFrame->edx));
                 if (pRec)
@@ -532,7 +532,7 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 /* Parameters:
                  *  edi = GC address to jump to
                  */
-                Log(("PATMHandleIllegalInstrTrap: Dispatch pending interrupt; eip=%VGv->%VGv\n", pRegFrame->eip, pRegFrame->edi));
+                Log(("PATMGC: Dispatch pending interrupt; eip=%VGv->%VGv\n", pRegFrame->eip, pRegFrame->edi));
 
                 /* Change EIP to the guest address the patch would normally jump to after setting IF. */
                 pRegFrame->eip = pRegFrame->edi;
@@ -555,42 +555,42 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_SUCCESS;
 #ifdef DEBUG
             case PATM_ACTION_LOG_CLI:
-                Log(("PATMHandleIllegalInstrTrap: CLI at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
+                Log(("PATMGC: CLI at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_STI:
-                Log(("PATMHandleIllegalInstrTrap: STI at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
+                Log(("PATMGC: STI at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_POPF_IF1:
-                Log(("PATMHandleIllegalInstrTrap: POPF setting IF at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
+                Log(("PATMGC: POPF setting IF at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_POPF_IF0:
-                Log(("PATMHandleIllegalInstrTrap: POPF at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
+                Log(("PATMGC: POPF at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_PUSHF:
-                Log(("PATMHandleIllegalInstrTrap: PUSHF at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
+                Log(("PATMGC: PUSHF at %VGv (current IF=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_IF1:
-                Log(("PATMHandleIllegalInstrTrap: IF=1 escape from %VGv\n", pRegFrame->eip));
+                Log(("PATMGC: IF=1 escape from %VGv\n", pRegFrame->eip));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_IRET:
-                Log(("PATMHandleIllegalInstrTrap: IRET from %VGv (IF->1) to %VGv new eflags=%x\n", pRegFrame->eip, pRegFrame->edx, pVM->patm.s.CTXSUFF(pGCState)->uVMFlags));
+                Log(("PATMGC: IRET from %VGv (IF->1) to %VGv new eflags=%x\n", pRegFrame->eip, pRegFrame->edx, pVM->patm.s.CTXSUFF(pGCState)->uVMFlags));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_RET:
-                Log(("PATMHandleIllegalInstrTrap: RET to %VGv\n", pRegFrame->edx));
+                Log(("PATMGC: RET to %VGv\n", pRegFrame->edx));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 #endif
