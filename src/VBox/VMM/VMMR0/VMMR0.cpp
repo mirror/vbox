@@ -656,7 +656,11 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     /*
      * Check that the jump buffer is armed.
      */
+#ifdef __X86__
     if (!pVM->vmm.s.CallHostR0JmpBuf.eip)
+#else
+    if (!pVM->vmm.s.CallHostR0JmpBuf.rip)
+#endif
     {
         LogCom(("vmmR0LoggerFlush: Jump buffer isn't armed!\n"));
         pLogger->offScratch = 0;

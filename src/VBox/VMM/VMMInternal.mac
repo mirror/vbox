@@ -33,10 +33,10 @@ struc VMMR0JMPBUF
 
     ; additional state and stack info.
     .fInRing3Call   resd 1
-    .pvSavedStack   resd 1
     .cbSavedStack   resd 1
-    .espCheck       resd 1
-    .espResume      resd 1
+    .pvSavedStack   resd 1
+    .SpCheck        resd 1
+    .SpResume       resd 1
 %endif
 %ifdef __AMD64__
     ; traditional jmp_buf
@@ -57,8 +57,8 @@ struc VMMR0JMPBUF
     .fInRing3Call   resd 1
     .cbSavedStack   resd 1
     .pvSavedStack   resq 1
-    .rspCheck       resq 1
-    .rspResume      resq 1
+    .SpCheck        resq 1
+    .SpResume       resq 1
 %endif
 endstruc
 
