@@ -1082,7 +1082,7 @@ iret_notring0:
     push    eax
     push    ecx
     push    edx
-    mov     edx, dword [ss:esp+12+4]        ;3 pushes + pushed flags -> iret eip
+    lea     edx, dword [ss:esp+12+4]        ;3 pushes + pushed flags -> iret eip
     mov     eax, PATM_ACTION_LOG_IRET
     lock    or dword [ss:PATM_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC

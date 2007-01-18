@@ -30,6 +30,7 @@
 #include <VBox/em.h>
 #include <VBox/err.h>
 #include <VBox/selm.h>
+#include <VBox/mm.h>
 #include "PATMInternal.h"
 #include <VBox/vm.h>
 #include "PATMA.h"
@@ -585,9 +586,23 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_IRET:
+            {
+#ifdef IN_GC
+                char    *pIretFrame = (char *)pRegFrame->edx;
+                uint32_t eip, selCS, uEFlags;
+
+                rc  = MMGCRamRead(pVM, &eip,     pIretFrame, 3);
+                rc |= MMGCRamRead(pVM, &selCS,   pIretFrame + 4, 4);
+                rc |= MMGCRamRead(pVM, &uEFlags, pIretFrame + 8, 4);
+                if (rc == VINF_SUCCESS)
+                {
+                    Log(("PATMGC: IRET stack frame: return address %04X:%VGv eflags=%08x\n", selCS, eip, uEFlags));
+                }
+#endif
                 Log(("PATMGC: IRET from %VGv (IF->1) to %VGv new eflags=%x\n", pRegFrame->eip, pRegFrame->edx, pVM->patm.s.CTXSUFF(pGCState)->uVMFlags));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
+            }
 
             case PATM_ACTION_LOG_RET:
                 Log(("PATMGC: RET to %VGv\n", pRegFrame->edx));
