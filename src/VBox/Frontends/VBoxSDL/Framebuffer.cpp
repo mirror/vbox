@@ -70,11 +70,11 @@ DECLSPEC void (SDLCALL *pTTF_Quit)(void);
  * @param fFullscreen    flag whether we start in fullscreen mode
  * @param fResizable     flag whether the SDL window should be resizable
  * @param fShowSDLConfig flag whether we print out SDL settings
- * @param ulFixedWith    fixed SDL width (~0 means not set)
- * @param ulFixedHeight  fixed SDL height (~0 means not set)
+ * @param iFixedWidth   fixed SDL width (-1 means not set)
+ * @param iFixedHeight  fixed SDL height (-1 means not set)
  */
 VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
-                     int ulFixedWidth, int ulFixedHeight, int ulFixedBPP)
+                     uint32_t u32FixedWidth, uint32_t u32FixedHeight, uint32_t u32FixedBPP)
 {
     int rc;
     LogFlow(("VBoxSDLFB::VBoxSDLFB\n"));
@@ -90,9 +90,9 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     mTopOffset      = 0;
     mfResizable     = fResizable;
     mfShowSDLConfig = fShowSDLConfig;
-    mFixedSDLWidth  = ulFixedWidth;
-    mFixedSDLHeight = ulFixedHeight;
-    mFixedSDLBPP    = ulFixedBPP;
+    mFixedSDLWidth  = u32FixedWidth;
+    mFixedSDLHeight = u32FixedHeight;
+    mFixedSDLBPP    = u32FixedBPP;
     mCenterXOffset  = 0;
     mCenterYOffset  = 0;
     /* Start with standard screen dimensions. */
@@ -505,9 +505,9 @@ STDMETHODIMP VBoxSDLFB::VideoModeSupported(ULONG width, ULONG height, ULONG bpp,
         return E_POINTER;
 
     /* are constraints set? */
-    if (   (   (mMaxScreenWidth != ~0UL)
+    if (   (   (mMaxScreenWidth != ~(uint32_t)0)
             && (width > mMaxScreenWidth)
-        || (   (mMaxScreenHeight != ~0UL)
+        || (   (mMaxScreenHeight != ~(uint32_t)0)
             && (height > mMaxScreenHeight))))
     {
         /* nope, we don't want that (but still don't freak out if it is set) */
@@ -676,8 +676,8 @@ void VBoxSDLFB::resizeSDL(void)
     else
     {
         /* no restriction */
-        mMaxScreenWidth  = ~0;
-        mMaxScreenHeight = ~0;
+        mMaxScreenWidth  = ~(uint32_t)0;
+        mMaxScreenHeight = ~(uint32_t)0;
     }
 
     uint32_t newWidth;
@@ -688,7 +688,7 @@ void VBoxSDLFB::resizeSDL(void)
     mCenterYOffset = 0;
 
     /* we either have a fixed SDL resolution or we take the guest's */
-    if (mFixedSDLWidth != ~0U)
+    if (mFixedSDLWidth != ~(uint32_t)0)
     {
         newWidth  = mFixedSDLWidth;
         newHeight = mFixedSDLHeight;
@@ -717,7 +717,7 @@ void VBoxSDLFB::resizeSDL(void)
      * to the guest height. If it worked, we have an offset. If it didn't the below
      * code will try again with the original guest resolution.
      */
-    if (mFixedSDLWidth == ~0U)
+    if (mFixedSDLWidth == ~(uint32_t)0)
     {
         /* if it didn't work, then we have to go for the original resolution and paint over the guest */
         if (!mScreen)
@@ -1217,7 +1217,7 @@ STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Address)(ULONG *address)
     LogFlow(("VBoxSDLFBOverlay::GetAddress\n"));
     if (!address)
         return E_INVALIDARG;
-    *address = (ULONG) mOverlayBits->pixels;
+    *address = (uintptr_t) mOverlayBits->pixels;
     return S_OK;
 }
 

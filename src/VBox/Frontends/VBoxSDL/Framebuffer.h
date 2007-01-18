@@ -48,7 +48,7 @@ class VBoxSDLFB :
 {
 public:
     VBoxSDLFB(bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
-              int ulFixedWidth = ~0, int ulFixedHeight = ~0, int ulFixedBPP = ~0);
+              uint32_t u32FixedWidth = ~(uint32_t)0, uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
     virtual ~VBoxSDLFB();
 
 #ifdef __WIN__
