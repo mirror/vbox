@@ -34,8 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/file.h>
-
-#include <string.h>
+#include <iprt/string.h>
 
 #include "Builtins.h"
 
@@ -742,26 +741,26 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
 
     /* Check common header parameters. */
 
-    bool failure = false;
+    bool fFailed = false;
 
     if (    getImageType(pHeader) < VDI_IMAGE_TYPE_FIRST
         ||  getImageType(pHeader) > VDI_IMAGE_TYPE_LAST)
     {
         LogRel(("VDI: bad image type %d\n", getImageType(pHeader)));
-        failure = true;
+        fFailed = true;
     }
 
     if (getImageFlags(pHeader) & ~VDI_IMAGE_FLAGS_MASK)
     {
         LogRel(("VDI: bad image flags %08x\n", getImageFlags(pHeader)));
-        failure = true;
+        fFailed = true;
     }
 
     if ((getImageGeometry(pHeader))->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
     {
         LogRel(("VDI: wrong sector size (%d != %d)\n",
                (getImageGeometry(pHeader))->cbSector, VDI_GEOMETRY_SECTOR_SIZE));
-        failure = true;
+        fFailed = true;
     }
 
     if (    getImageDiskSize(pHeader) == 0
@@ -772,7 +771,7 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
         LogRel(("VDI: wrong size (%lld, %d, %d, %d)\n",
               getImageDiskSize(pHeader), getImageBlockSize(pHeader),
               getImageBlocks(pHeader), getPowerOfTwo(getImageBlockSize(pHeader))));
-        failure = true;
+        fFailed = true;
     }
 
     if (getImageBlocksAllocated(pHeader) > getImageBlocks(pHeader))
@@ -781,7 +780,7 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
                 "     blocksize=%d disksize=%lld\n",
               getImageBlocksAllocated(pHeader), getImageBlocks(pHeader),
               getImageBlockSize(pHeader), getImageDiskSize(pHeader)));
-        failure = true;
+        fFailed = true;
     }
 
     if (    getImageExtraBlockSize(pHeader) != 0
@@ -789,29 +788,29 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
     {
         LogRel(("VDI: wrong extra size (%d, %d)\n",
                getImageExtraBlockSize(pHeader), getPowerOfTwo(getImageExtraBlockSize(pHeader))));
-        failure = true;
+        fFailed = true;
     }
 
     if ((uint64_t)getImageBlockSize(pHeader) * getImageBlocks(pHeader) < getImageDiskSize(pHeader))
     {
         LogRel(("VDI: wrong disk size (%d, %d, %lld)\n",
                getImageBlockSize(pHeader), getImageBlocks(pHeader), getImageDiskSize(pHeader)));
-        failure = true;
+        fFailed = true;
     }
 
     if (RTUuidIsNull(getImageCreationUUID(pHeader)))
     {
         LogRel(("VDI: uuid of creator is 0\n"));
-        failure = true;
+        fFailed = true;
     }
 
     if (RTUuidIsNull(getImageModificationUUID(pHeader)))
     {
         LogRel(("VDI: uuid of modificator is 0\n"));
-        failure = true;
+        fFailed = true;
     }
 
-    return failure ? VERR_VDI_INVALID_HEADER : VINF_SUCCESS;
+    return fFailed ? VERR_VDI_INVALID_HEADER : VINF_SUCCESS;
 }
 
 /**
@@ -1927,10 +1926,9 @@ static int vdiMergeImages(PVDIIMAGEDESC pImageFrom, PVDIIMAGEDESC pImageTo, bool
 }
 
 /**
- * @note    Only used by tstVDI.
- *
  * internal: commit last image(s) to selected previous image.
  * note: all images accessed across this call must be opened in R/W mode.
+ * @remark    Only used by tstVDI.
  */
 static int vdiCommitToImage(PVDIDISK pDisk, PVDIIMAGEDESC pDstImage,
                             PFNVMPROGRESS pfnProgress, void *pvUser)
@@ -2479,12 +2477,12 @@ IDER3DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFilena
 
 /**
  * Shrinks growing image file by removing zeroed data blocks.
- * @note    Only used by vditool
  *
  * @returns VBox status code.
  * @param   pszFilename     Name of the image file to shrink.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ * @remark  Only used by vditool
  */
 IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
@@ -2532,8 +2530,7 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
     uint64_t cbData = cbFile - pImage->offStartData;
     unsigned cBlocksAllocated2 = (unsigned)(cbData >> pImage->uShiftIndex2Offset);
     if (cbData != (uint64_t)cBlocksAllocated << pImage->uShiftIndex2Offset)
-        Log(("VDIShrinkImage: invalid image file length, cbBlock=%u cBlocks=%u "
-             "cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+        Log(("VDIShrinkImage: invalid image file length, cbBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
              cbBlock, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
 
     /* Allocate second blocks array for back resolving. */
@@ -2541,8 +2538,7 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
                 (PVDIIMAGEBLOCKPOINTER)RTMemTmpAlloc(sizeof(VDIIMAGEBLOCKPOINTER) * cBlocks);
     if (!paBlocks2)
     {
-        Log(("VDIShrinkImage: failed to allocate paBlocks2 buffer (%u bytes)\n",
-             sizeof(VDIIMAGEBLOCKPOINTER) * cBlocks));
+        Log(("VDIShrinkImage: failed to allocate paBlocks2 buffer (%u bytes)\n", sizeof(VDIIMAGEBLOCKPOINTER) * cBlocks));
         vdiCloseImage(pImage);
         return VERR_NO_MEMORY;
     }
@@ -2570,8 +2566,7 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
             }
             else
             {
-                Log(("VDIShrinkImage: block n=%u -> uBlock=%u is out of blocks range! (cbBlock=%u "
-                     "cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu)\n",
+                Log(("VDIShrinkImage: block n=%u -> uBlock=%u is out of blocks range! (cbBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu)\n",
                      n, uBlock, cbBlock, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                 /* free link to invalid block. */
                 pImage->paBlocks[n] = VDI_IMAGE_BLOCK_FREE;
@@ -2595,19 +2590,15 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
                 rc = RTFileSeek(pImage->File, u64Offset, RTFILE_SEEK_BEGIN, NULL);
                 if (VBOX_FAILURE(rc))
                 {
-                    Log(("VDIShrinkImage: seek rc=%Vrc filename=\"%s\" uBlock=%u cBlocks=%u "
-                         "cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
-                         rc, pImage->szFilename, uBlock, cBlocks, cBlocksAllocated,
-                         cBlocksAllocated2, cbData));
+                    Log(("VDIShrinkImage: seek rc=%Vrc filename=\"%s\" uBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                         rc, pImage->szFilename, uBlock, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                     break;
                 }
                 rc = RTFileRead(pImage->File, pvBuf, cbBlock, NULL);
                 if (VBOX_FAILURE(rc))
                 {
-                    Log(("VDIShrinkImage: read rc=%Vrc filename=\"%s\" cbBlock=%u uBlock=%u "
-                         "cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
-                         rc, pImage->szFilename, cbBlock, uBlock, cBlocks, cBlocksAllocated,
-                         cBlocksAllocated2, cbData));
+                    Log(("VDIShrinkImage: read rc=%Vrc filename=\"%s\" cbBlock=%u uBlock=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                         rc, pImage->szFilename, cbBlock, uBlock, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                     break;
                 }
 
@@ -2632,20 +2623,15 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
                         rc = RTFileSeek(pImage->File, u64Offset, RTFILE_SEEK_BEGIN, NULL);
                         if (VBOX_FAILURE(rc))
                         {
-                            Log(("VDIShrinkImage: seek(2) rc=%Vrc filename=\"%s\" uBlockWrite=%u "
-                                 "cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
-                                 rc, pImage->szFilename, uBlockWrite, cBlocks, cBlocksAllocated,
-                                 cBlocksAllocated2, cbData));
+                            Log(("VDIShrinkImage: seek(2) rc=%Vrc filename=\"%s\" uBlockWrite=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                                 rc, pImage->szFilename, uBlockWrite, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                             break;
                         }
                         rc = RTFileWrite(pImage->File, pvBuf, cbBlock, NULL);
                         if (VBOX_FAILURE(rc))
                         {
-                            Log(("VDIShrinkImage: write rc=%Vrc filename=\"%s\" cbBlock=%u "
-                                 "uBlockWrite=%u cBlocks=%u cBlocksAllocated=%u "
-                                 "cBlocksAllocated2=%u cbData=%llu\n",
-                                 rc, pImage->szFilename, cbBlock, uBlockWrite, cBlocks,
-                                 cBlocksAllocated, cBlocksAllocated2, cbData));
+                            Log(("VDIShrinkImage: write rc=%Vrc filename=\"%s\" cbBlock=%u uBlockWrite=%u cBlocks=%u cBlocksAllocated=%u cBlocksAllocated2=%u cbData=%llu\n",
+                                 rc, pImage->szFilename, cbBlock, uBlockWrite, cBlocks, cBlocksAllocated, cBlocksAllocated2, cbData));
                             break;
                         }
                     }
@@ -2717,12 +2703,12 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
 
 /**
  * Converts image file from older VDI formats to current one.
- * @note    Only used by vditool
  *
  * @returns VBox status code.
  * @param   pszFilename     Name of the image file to convert.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ * @remark  Only used by vditool
  */
 IDER3DECL(int) VDIConvertImage(const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
@@ -4002,12 +3988,11 @@ IDER3DECL(void) VDIDiskCloseAllImages(PVDIDISK pDisk)
  *
  * Note that in case of unrecoverable error all images of HDD container will be closed.
  *
- * @note    Only used by tstVDI.
- *
  * @returns VBox status code.
  * @param   pDisk           Pointer to VDI HDD container.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ * @remark  Only used by tstVDI.
  */
 IDER3DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
@@ -4066,8 +4051,6 @@ IDER3DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgress, 
 }
 
 /**
- * @note    Only used by tstVDI.
- *
  * Creates and opens a new differencing image file in HDD container.
  * See comments for VDIDiskOpenImage function about differencing images.
  *
@@ -4077,6 +4060,7 @@ IDER3DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgress, 
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ * @remark  Only used by tstVDI.
  */
 IDER3DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *pszFilename,
                                                 const char *pszComment, PFNVMPROGRESS pfnProgress,
@@ -4115,9 +4099,9 @@ IDER3DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *pszF
 }
 
 /**
- * @note    Only used by tstVDI.
- *
  * internal: debug image dump.
+ * 
+ * @remark  Only used by tstVDI.
  */
 static void vdiDumpImage(PVDIIMAGEDESC pImage)
 {
@@ -4180,9 +4164,9 @@ static void vdiDumpImage(PVDIIMAGEDESC pImage)
 
 /**
  * Debug helper - dumps all opened images of HDD container into the log file.
- * @note    Only used by tstVDI and vditool
  *
  * @param   pDisk           Pointer to VDI HDD container.
+ * @remark  Only used by tstVDI and vditool
  */
 IDER3DECL(void) VDIDiskDumpImages(PVDIDISK pDisk)
 {
@@ -4268,8 +4252,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         int rc = CFGMR3QueryStringAlloc(pCurNode, "Path", &pszName);
         if (VBOX_FAILURE(rc))
             return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                    N_("VHDD: Configuration error: Querying \"Path\" as "
-                                       "string failed"));
+                                    N_("VHDD: Configuration error: Querying \"Path\" as string failed"));
 
         bool fReadOnly;
         rc = CFGMR3QueryBool(pCfgHandle, "ReadOnly", &fReadOnly);
@@ -4279,8 +4262,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         {
             MMR3HeapFree(pszName);
             return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                    N_("VHDD: Configuration error: Querying \"ReadOnly\" as "
-                                       "boolean failed"));
+                                    N_("VHDD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
         }
 
         /*
@@ -4310,8 +4292,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("VHDD: Configuration error: Querying \"Path\" as "
-                                   "string failed"));
+                                N_("VHDD: Configuration error: Querying \"Path\" as string failed"));
 
     /** True if the media is readonly. */
     bool fReadOnly;
@@ -4322,9 +4303,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     {
         MMR3HeapFree(pszName);
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("VHDD: Configuration error: Querying \"ReadOnly\" as "
-                                   "boolean failed"));
-        return rc;
+                                N_("VHDD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
     }
 
     /*
@@ -4333,8 +4312,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     rc = VDIDiskOpenImage(pData, pszName, fReadOnly ? VDI_OPEN_FLAGS_READONLY
                                                     : VDI_OPEN_FLAGS_NORMAL);
     if (VBOX_SUCCESS(rc))
-        Log(("vdiConstruct: Opened '%s' in %s mode\n",
-              pszName, VDIDiskIsReadOnly(pData) ? "read-only" : "read-write"));
+        Log(("vdiConstruct: Opened '%s' in %s mode\n", pszName, VDIDiskIsReadOnly(pData) ? "read-only" : "read-write"));
     else
         AssertMsgFailed(("Failed to open image '%s' rc=%Vrc\n", pszName, rc));
 
