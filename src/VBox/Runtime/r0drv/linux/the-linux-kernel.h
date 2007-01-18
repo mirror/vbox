@@ -107,31 +107,35 @@
 #  define MAX_JIFFY_OFFSET ((~0UL >> 1)-1)
 # endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 29) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+
 DECLINLINE(unsigned int) jiffies_to_msecs(unsigned long cJiffies)
 {
-# if HZ <= 1000 && !(1000 % HZ)
+#  if HZ <= 1000 && !(1000 % HZ)
     return (1000 / HZ) * cJiffies;
-# elif HZ > 1000 && !(HZ % 1000)
+#  elif HZ > 1000 && !(HZ % 1000)
     return (cJiffies + (HZ / 1000) - 1) / (HZ / 1000);
-# else
+#  else
     return (j * 1000) / HZ;
-# endif
+#  endif
 }
 
 DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 {
-# if HZ > 1000
+#  if HZ > 1000
     if (cMillies > jiffies_to_msecs(MAX_JIFFY_OFFSET))
         return MAX_JIFFY_OFFSET;
-# endif
-# if HZ <= 1000 && !(1000 % HZ)
+#  endif
+#  if HZ <= 1000 && !(1000 % HZ)
     return (cMillies + (1000 / HZ) - 1) / (1000 / HZ);
-# elif HZ > 1000 && !(HZ % 1000)
+#  elif HZ > 1000 && !(HZ % 1000)
     return cMillies * (HZ / 1000);
-# else
+#  else
     return (cMillies * HZ + 999) / 1000;
-# endif
+#  endif
 }
+
+# endif  /* < 2.4.29 || >= 2.6.0 */
 
 # define prepare_to_wait(q, wait, state) \
     do { \
