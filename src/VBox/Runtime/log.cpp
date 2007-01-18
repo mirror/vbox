@@ -56,7 +56,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Ascii to lower macro. */
-#define CHLOWER(ch)     (((unsigned char)(ch) - (unsigned char)'A') > (unsigned char)('Z' - 'A') ? (ch) : (ch) + ('a' - 'A'))
+#define CHLOWER(ch)     (((unsigned char)(ch) <= (unsigned char)'A') || ((unsigned char)(ch) > (unsigned char)'Z') ? (ch) : (ch) + ('a' - 'A'))
 
 
 /*******************************************************************************
@@ -1031,7 +1031,8 @@ static unsigned rtlogGroupFlags(const char *psz)
                 if (!*psz1)
                 {
                     if (    (*psz2 >= 'a' && *psz2 <= 'z')
-                        ||  (*psz2 >= 'A' && *psz2 <= 'Z') )
+                        ||  (*psz2 >= 'A' && *psz2 <= 'Z')
+                        ||  (*psz2 >= '0' && *psz2 <= '9') )
                         break;
                     fFlags |= aFlags[i].fFlag;
                     fFound = true;
@@ -1700,7 +1701,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
         size_t cbRet = 0;
         for (;;)
         {
-            #if defined(DEBUG) && defined(IN_RING3)
+#if defined(DEBUG) && defined(IN_RING3)
             /* sanity */
             if (pLogger->offScratch >= sizeof(pLogger->achScratch))
             {
@@ -1708,7 +1709,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
                         pLogger->offScratch, (unsigned)sizeof(pLogger->achScratch));
                 AssertBreakpoint(); AssertBreakpoint();
             }
-            #endif
+#endif
 
             /* how much */
             size_t cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
