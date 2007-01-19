@@ -441,6 +441,8 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	\
 	misc/setjmp.asm \
 	\
+	string/memchr.asm \
+	string/memchr_alias.c \
 	string/memcpy.asm \
 	string/memcpy_alias.c \
 	string/mempcpy.asm \
@@ -511,7 +513,7 @@ endif
 #
 RuntimeR0Drv_TEMPLATE   = VBOXR0DRV
 RuntimeR0Drv_SDKS.win   = W2K3DDK WINPSDKINCS
-RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX
+RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0 # why is IN_SUP_R0 here? because!
 
@@ -557,6 +559,7 @@ RuntimeR0Drv_SOURCES.win.amd64 = \
 
 RuntimeR0Drv_SOURCES.darwin = \
 	RTErrConvertFromErrno.cpp \
+	string/memchr.asm \
 	r0drv/initterm-r0drv.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/thread-r0drv.cpp \
