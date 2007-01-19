@@ -42,6 +42,9 @@ endif
 ifdef VBOX_WITH_TESTSUITE
  SUBDIRS +=  tests
 endif
+ifdef VBOX_WITH_TESTCASES
+ SUBDIRS +=  testcase
+endif
 
 include $(PATH_KBUILD)/footer.kmk
 
