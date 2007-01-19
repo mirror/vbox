@@ -56,7 +56,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		installer/vboxadd-timesync.sh \
 		installer/vboxadd.sh \
 		installer/install.sh \
-		installer/runlevel.sh \
+		../../Installer/linux/runlevel.sh \
 		installer/x11config.pl \
 		installer/Makefile.test \
 		installer/test.c \
@@ -83,7 +83,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(RM) $(PATH_TARGET)/install/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 installer/vboxadd-timesync.sh $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 installer/vboxadd.sh   $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 installer/runlevel.sh  $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0755 ../../Installer/linux/runlevel.sh  $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 installer/x11config.pl $(PATH_TARGET)/install
 	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv.o  $(PATH_TARGET)/install/vboxmouse_drv.o
 	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv_70.so $(PATH_TARGET)/install/vboxmouse_drv_70.so
