@@ -593,6 +593,22 @@ GLOBALNAME PATMIntEntryRecordErrorCode
 BEGINPROC   PATMPopf32Replacement
 PATMPopf32Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
+%ifdef PATM_LOG_IF_CHANGES
+    push    eax
+    push    ecx
+    mov     eax, PATM_ACTION_LOG_POPF_IF1
+    test    dword [esp+8], X86_EFL_IF
+    jnz     PATMPopf32_Log
+    mov     eax, PATM_ACTION_LOG_POPF_IF0
+
+PATMPopf32_Log:
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     ecx
+    pop     eax
+%endif
+
     test    dword [esp], X86_EFL_IF
     jnz     PATMPopf32_Ok
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
@@ -637,9 +653,17 @@ GLOBALNAME PATMPopf32Record
     DD      0
     DD      0
     DD      PATMPopf32End - PATMPopf32Start
+%ifdef PATM_LOG_IF_CHANGES
+    DD      13
+%else
     DD      12
+%endif
     DD      PATM_INTERRUPTFLAG
     DD      0
+%ifdef PATM_LOG_IF_CHANGES
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      PATM_VMFLAGS
@@ -673,10 +697,10 @@ PATMPopf32_NoExitStart:
     push    ecx
     mov     eax, PATM_ACTION_LOG_POPF_IF1
     test    dword [esp+8], X86_EFL_IF
-    jnz     PATMPopf32_Log
+    jnz     PATMPopf32_NoExitLog
     mov     eax, PATM_ACTION_LOG_POPF_IF0
 
-PATMPopf32_Log:
+PATMPopf32_NoExitLog:
     lock    or dword [ss:PATM_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
