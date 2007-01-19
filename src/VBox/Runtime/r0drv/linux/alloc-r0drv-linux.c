@@ -42,7 +42,40 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
 #if defined(__AMD64__)
+#if 0
+        /*
+         * We need memory in the module range (~2GB to ~0) this can only be obtained
+         * thru APIs that are not exported (see module_alloc()).
+         *
+         * So, we'll have to create a quick and dirty heap here using BSS memory. 
+         * Very annoying and it's going to restrict us!
+         */
+        static uint8_t      s_abMemory[_2M];
+        static uint8_t     *s_pbMemory = NULL; /**< NULL if not initialized. */
+        static RTSPINLOCK   s_Spinlock = NIL_RTSPINLOCK;
+        static struct RTMEMRECLNXEXEC
+        {
+            PRTMEMHDR   pHdr;   /**< NULL if no free range. */
+            uint32_t    off;    /**< Offset into s_pbMemory. */
+            uint32_t    cb;     
+        }                   s_aMemRecs[64];
+        RTSPINLOCKTMP       SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+
+        if (!s_pbMemory) 
+        {
+            /* serialize */
+        }
+
+        RTSpinlockAcquireNoInts(s_Spinlock, &SpinlockTmp);
+        /* find free area and split it... */
+
+        RTSpinlockReleaseNoInts(s_Spinlock, &SpinlockTmp);
+
+# else
         pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, PAGE_KERNEL_EXEC);
+# endif 
+
+
 #elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
         pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM,
                                     __pgprot(cpu_has_pge ? _PAGE_KERNEL_EXEC | _PAGE_GLOBAL : _PAGE_KERNEL_EXEC));
