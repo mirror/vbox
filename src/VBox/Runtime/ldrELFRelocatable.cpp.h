@@ -347,7 +347,7 @@ static int RTLDRELF_NAME(RelocateSection)(PRTLDRMODELF pModElf, Elf_Addr BaseAdd
             }
 
             /*
-             * Trunacated 32-bit value (sign-extendedable to the 64-bit value).
+             * Truncated 32-bit value (sign-extendedable to the 64-bit value).
              */
             case R_X86_64_32S:
             {
