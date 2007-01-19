@@ -64,6 +64,7 @@ LOG="configure.log"
 CNF="AutoConfig.kmk"
 ENV="env.sh"
 BUILD_TYPE="release"
+## todo: These are the chars that ar can deal with in mri mode: [A-Za-z0-9/\\$:.\-\_]
 INVALID_CHARS="[+$ ]"
 
 if (cd $(dirname $0); pwd)|grep -q "$INVALID_CHARS"; then
