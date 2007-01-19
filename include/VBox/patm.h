@@ -58,7 +58,7 @@ __BEGIN_DECLS
 /** @} */
 
 /** Enable to activate sysenter emulation in GC. */
-#define PATM_EMULATE_SYSENTER
+/* #define PATM_EMULATE_SYSENTER */
 
 /**
  * Maximum number of cached VGA writes
