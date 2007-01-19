@@ -204,6 +204,9 @@ typedef struct TranslationBlock {
 #ifdef USE_DIRECT_JUMP
     uint16_t tb_jmp_offset[4]; /* offset of jump instruction */
 #else
+# if defined(VBOX) && defined(__DARWIN__) && defined(__AMD64__)
+#  error "First 4GB aren't reachable. jmp dword [tb_next] wont work."
+# endif
     uint32_t tb_next[2]; /* address of jump generated code */
 #endif
     /* list of TBs jumping to this one. This is a circular list using
@@ -362,16 +365,28 @@ do {\
 # ifdef VBOX /* bird: GCC4 (and Ming 3.4.x?) will remove the two unused static
                 variables. I've added a dummy __asm__ statement which reference
                 the two variables to prevent this. */
-#define GOTO_TB(opname, tbparam, n)\
-do {\
-    static void __attribute__((unused)) *dummy ## n = &&dummy_label ## n;\
-    static void __attribute__((unused)) *__op_label ## n \
-        __asm__(ASM_OP_LABEL_NAME(n, opname)) = &&label ## n;\
-    __asm__ ("" : : "m" (__op_label ## n), "m" (dummy ## n));\
-    goto *(void *)(((TranslationBlock *)tbparam)->tb_next[n]);\
-label ## n: ;\
-dummy_label ## n: ;\
-} while (0)
+#  if __GNUC__ >= 4
+#   define GOTO_TB(opname, tbparam, n)\
+    do {\
+        static void __attribute__((unused)) *dummy ## n = &&dummy_label ## n;\
+        static void __attribute__((unused)) *__op_label ## n \
+            __asm__(ASM_OP_LABEL_NAME(n, opname)) = &&label ## n;\
+        __asm__ ("" : : "m" (__op_label ## n), "m" (dummy ## n));\
+        goto *(void *)(uintptr_t)(((TranslationBlock *)tbparam)->tb_next[n]);\
+    label ## n: ;\
+    dummy_label ## n: ;\
+    } while (0)
+#  else
+#   define GOTO_TB(opname, tbparam, n)\
+    do {\
+        static void __attribute__((unused)) *dummy ## n = &&dummy_label ## n;\
+        static void __attribute__((unused)) *__op_label ## n \
+            __asm__(ASM_OP_LABEL_NAME(n, opname)) = &&label ## n;\
+        goto *(void *)(uintptr_t)(((TranslationBlock *)tbparam)->tb_next[n]);\
+    label ## n: ;\
+    dummy_label ## n: ;\
+    } while (0)
+#  endif 
 # else /* !VBOX */
 #define GOTO_TB(opname, tbparam, n)\
 do {\
