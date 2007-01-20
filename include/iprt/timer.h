@@ -109,7 +109,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
  * Stops and destroys a running timer.
  *
  * @returns iprt status code.
- * @param   pTimer      Timer to stop and destroy.
+ * @param   pTimer      Timer to stop and destroy. NULL is ok.
  */
 RTDECL(int) RTTimerDestroy(PRTTIMER pTimer);
 
@@ -117,7 +117,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer);
  * Stops an active timer.
  *
  * @returns IPRT status code.
- * @retval  VERR_INVALID_POINTER if pTimer isn't valid.
+ * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
  * @retval  VERR_TIMER_ACTIVE if the timer isn't suspended.
  *
  * @param   pTimer      The timer to activate.
@@ -131,7 +131,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First);
  * Stops an active timer.
  *
  * @returns IPRT status code.
- * @retval  VERR_INVALID_POINTER if pTimer isn't valid.
+ * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
  * @retval  VERR_TIMER_SUSPENDED if the timer isn't active.
  * @retval  VERR_NOT_SUPPORTED if the IPRT implementation doesn't support stopping a timer.
  *

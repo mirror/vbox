@@ -411,11 +411,16 @@ RTR3DECL(int)     RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PF
  */
 RTR3DECL(int)     RTTimerDestroy(PRTTIMER pTimer)
 {
+    /* NULL is ok. */
+    if (!pTimer)
+        return VINF_SUCCESS;
+
     /*
      * Validate handle first.
      */
     int rc;
-    if (pTimer && pTimer->u32Magic == RTTIMER_MAGIC)
+    if (    VALID_PTR(pTimer)
+        &&  pTimer->u32Magic == RTTIMER_MAGIC)
     {
 #ifdef USE_WINMM
         /*
