@@ -2578,6 +2578,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         vrc = RTProcCreate (path, args, NULL, 0, &pid);
     }
     else
+#ifdef VBOX_VRDP
     if (type == "vrdp")
     {
         const char VBoxVRDP_exe[] = "VBoxVRDP" HOSTSUFF_EXE;
@@ -2589,6 +2590,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         vrc = RTProcCreate (path, args, NULL, 0, &pid);
     }
     else
+#endif /* VBOX_VRDP */
     if (type == "capture")
     {
         const char VBoxVRDP_exe[] = "VBoxVRDP" HOSTSUFF_EXE;
