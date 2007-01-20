@@ -35,7 +35,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-#if 0 /** @todo */
 /**
  * Darwin event semaphore.
  */
@@ -43,13 +42,18 @@ typedef struct RTSEMEVENTINTERNAL
 {
     /** Magic value (RTSEMEVENT_MAGIC). */
     uint32_t volatile   u32Magic;
-    /** The NT Event object. */
-    KEVENT              Event;
+    /** The number of waiting threads. */
+    uint32_t volatile   cWaiters;
+    /** Set if the event object is signaled. */
+    uint8_t volatile    fSignaled;
+    /** The number of threads in the process of waking up. */
+    uint32_t volatile   cWaking;
+    /** The spinlock protecting us. */
+    lck_spin_t         *pSpinlock;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
 /** Magic for the Darwin event semaphore structure. (Neil Gaiman) */
 #define RTSEMEVENT_MAGIC 0x19601110
-#endif
 
 #if 0 /** @todo */
 /**
@@ -83,18 +87,28 @@ typedef struct RTSEMFASTMUTEXINTERNAL
 #define RTSEMFASTMUTEX_MAGIC    0x18920102
 
 
-#if 0/** @todo */
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
 {
     Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
+    AssertPtrReturn(VALID_PTR(pEventSem), VERR_INVALID_POINTER);
+
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
     if (pEventInt)
     {
         pEventInt->u32Magic = RTSEMEVENT_MAGIC;
-        wait_queue_init
-        KeInitializeEvent(&pEventInt->Event, SynchronizationEvent, FALSE);
-        *pEventSem = pEventInt;
-        return VINF_SUCCESS;
+        pEventInt->cWaiters = 0;
+        pEventInt->cWaking = 0;
+        pEventInt->fSignaled = 0;
+        Assert(g_pDarwinLockGroup);
+        pEventInt->pSpinlock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
+        if (pEventInt->pSpinlock)
+        {
+            *pEventSem = pEventInt;
+            return VINF_SUCCESS;
+        }
+
+        pEventInt->u32Magic = 0;
+        RTMemFree(pEventInt);
     }
     return VERR_NO_MEMORY;
 }
@@ -102,97 +116,160 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
 
 RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
 {
-    /*
-     * Validate input.
-     */
+    if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
+        return VERR_INVALID_HANDLE;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
-        return VERR_INVALID_PARAMETER;
-    if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+    AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
+                    ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    lck_spin_lock(pEventInt->pSpinlock);
+    ASMAtomicIncU32(&pEventInt->u32Magic); /* make the handle invalid */
+    if (pEventInt->cWaiters > 0)
     {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt->u32Magic, pEventInt));
-        return VERR_INVALID_PARAMETER;
+        /* abort waiting thread, last man cleans up. */
+        ASMAtomicXchgU32(&pEventInt->cWaking, pEventInt->cWaking + pEventInt->cWaiters);
+        thread_wakeup_prim((event_t)pEventInt, FALSE /* all threads */, THREAD_RESTART);
+        lck_spin_unlock(pEventInt->pSpinlock);
+    }
+    else if (pEventInt->cWaking)
+        /* the last waking thread is gonna do the cleanup */
+        lck_spin_unlock(pEventInt->pSpinlock);
+    else
+    {
+        lck_spin_unlock(pEventInt->pSpinlock);
+        lck_spin_destroy(pEventInt->pSpinlock, g_pDarwinLockGroup);
+        RTMemFree(pEventInt);
     }
 
-    /*
-     * Invalidate it and signal the object just in case.
-     */
-    ASMAtomicIncU32(&pEventInt->u32Magic);
-    KeSetEvent(&pEventInt->Event, 0xfff, FALSE);
-    RTMemFree(pEventInt);
     return VINF_SUCCESS;
 }
 
 
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 {
-    /*
-     * Validate input.
-     */
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pEventInt
-        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+    AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
+                    ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    lck_spin_lock(pEventInt->pSpinlock);
+
+    if (pEventInt->cWaiters > 0)
     {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
-        return VERR_INVALID_PARAMETER;
+        ASMAtomicDecU32(&pEventInt->cWaiters);
+        ASMAtomicIncU32(&pEventInt->cWaking);
+        thread_wakeup_prim((event_t)pEventInt, TRUE /* one thread */, THREAD_AWAKENED);
+    }
+    else
+        ASMAtomicXchgU8(&pEventInt->fSignaled, true);
+
+    lck_spin_unlock(pEventInt->pSpinlock);
+    return VINF_SUCCESS;
+}
+
+
+static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, wait_interrupt_t fInterruptible)
+{
+    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
+    AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
+                    ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    lck_spin_lock(pEventInt->pSpinlock);
+
+    int rc;
+    if (pEventInt->fSignaled)
+    {
+        Assert(!pEventInt->cWaiters);
+        ASMAtomicXchgU8(&pEventInt->fSignaled, false);
+        rc = 0;
+    }
+    else
+    {
+        ASMAtomicIncU32(&pEventInt->cWaiters);
+
+        wait_result_t rcWait;
+        if (cMillies == RT_INDEFINITE_WAIT)
+            rcWait = lck_spin_sleep(pEventInt->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pEventInt, fInterruptible);
+        else
+        {
+            uint64_t u64AbsTime;
+            nanoseconds_to_absolutetime(cMillies * UINT64_C(1000000), &u64AbsTime);
+            u64AbsTime += mach_absolute_time();
+
+            rcWait = lck_spin_sleep_deadline(pEventInt->pSpinlock, LCK_SLEEP_DEFAULT,
+                                             (event_t)pEventInt, fInterruptible, u64AbsTime);
+        }
+        switch (rcWait)
+        {
+            case THREAD_AWAKENED:
+                Assert(pEventInt->cWaking > 0);
+                if (    !ASMAtomicDecU32(&pEventInt->cWaking)
+                    &&  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+                {
+                    /* the event was destroyed after we woke up, as the last thread do the cleanup. */
+                    lck_spin_unlock(pEventInt->pSpinlock);
+                    Assert(g_pDarwinLockGroup);
+                    lck_spin_destroy(pEventInt->pSpinlock, g_pDarwinLockGroup);
+                    RTMemFree(pEventInt);
+                    return VINF_SUCCESS;
+                }
+                rc = VINF_SUCCESS;
+                break;
+
+            case THREAD_TIMED_OUT:
+                Assert(cMillies != RT_INDEFINITE_WAIT);
+                ASMAtomicDecU32(&pEventInt->cWaiters);
+                rc = VERR_TIMEOUT;
+                break;
+
+            case THREAD_INTERRUPTED:
+                Assert(fInterruptible);
+                ASMAtomicDecU32(&pEventInt->cWaiters);
+                rc = VERR_INTERRUPTED;
+                break;
+
+            case THREAD_RESTART:
+                /* Last one out does the cleanup. */
+                if (!ASMAtomicDecU32(&pEventInt->cWaking))
+                {
+                    lck_spin_unlock(pEventInt->pSpinlock);
+                    Assert(g_pDarwinLockGroup);
+                    lck_spin_destroy(pEventInt->pSpinlock, g_pDarwinLockGroup);
+                    RTMemFree(pEventInt);
+                    return VERR_SEM_DESTROYED;
+                }
+
+                rc = VERR_SEM_DESTROYED;
+                break;
+
+            default:
+                AssertMsgFailed(("rcWait=%d\n", rcWait));
+                rc = VERR_GENERAL_FAILURE;
+                break;
+        }
     }
 
-    /*
-     * Signal the event object.
-     */
-    KeSetEvent(&pEventInt->Event, 1, FALSE);
-    return VINF_SUCCESS;
+    lck_spin_unlock(pEventInt->pSpinlock);
+    return rc;
 }
 
 
 RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
 {
-    /*
-     * Validate input.
-     */
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pEventInt
-        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Wait for it.
-     */
-    NTSTATUS rcNt;
-    if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, KernelMode, TRUE, NULL);
-    else
-    {
-        LARGE_INTEGER Timeout;
-        Timeout.QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, KernelMode, TRUE, &Timeout);
-    }
-    switch (rcNt)
-    {
-        case STATUS_SUCCESS:
-            if (pEventInt->u32Magic == RTSEMEVENT_MAGIC)
-                return VINF_SUCCESS;
-            return VERR_SEM_DESTROYED;
-        case STATUS_ALERTED:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
-        case STATUS_USER_APC:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
-        case STATUS_TIMEOUT:
-            return VERR_TIMEOUT;
-        default:
-            AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p: wait returned %lx!\n",
-                             pEventInt->u32Magic, pEventInt, (long)rcNt));
-            return VERR_INTERNAL_ERROR;
-    }
+    return rtSemEventWait(EventSem, cMillies, FALSE /* not interruptable */);
 }
-#endif /* todo */
+
+
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+{
+    return rtSemEventWait(EventSem, cMillies, TRUE /* interruptable */);
+}
+
 
 
 
@@ -353,7 +430,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
     if (MutexSem == NIL_RTSEMFASTMUTEX) /* don't bitch */
         return VERR_INVALID_PARAMETER;
     PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    AssertPtrReturn(VALID_PTR(pFastInt), VERR_INVALID_POINTER);
+    AssertPtrReturn(pFastInt, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
@@ -371,8 +448,9 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
 RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
 {
     PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    AssertMsgReturn(VALID_PTR(pFastInt) && pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
-                    ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", VALID_PTR(pFastInt) ? pFastInt->u32Magic : 0, pFastInt),
+    AssertPtrReturn(pFastInt, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
+                    ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
     lck_mtx_lock(pFastInt->pMtx);
     return VINF_SUCCESS;
@@ -382,8 +460,9 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
 RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
 {
     PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    AssertMsgReturn(VALID_PTR(pFastInt) && pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
-                    ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", VALID_PTR(pFastInt) ? pFastInt->u32Magic : 0, pFastInt),
+    AssertPtrReturn(pFastInt, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
+                    ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
     lck_mtx_unlock(pFastInt->pMtx);
     return VINF_SUCCESS;
