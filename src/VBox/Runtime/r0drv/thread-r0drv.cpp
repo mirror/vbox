@@ -23,7 +23,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_THREAD
-#include "r0drv/thread-r0drv.h"
+#include "internal/thread.h"
 #include <iprt/thread.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

@@ -571,6 +571,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/spinlock-r0drv-darwin.cpp \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
 	r0drv/darwin/time-r0drv-darwin.cpp \
+	generic/timer-generic.cpp \
 
 RuntimeR0Drv_SOURCES.os2 = \
 	os2/RTErrConvertFromOS2.cpp \

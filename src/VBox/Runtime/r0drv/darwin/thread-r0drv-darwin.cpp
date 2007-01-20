@@ -26,7 +26,7 @@
 #include <iprt/thread.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
-#include "r0drv/thread-r0drv.h"
+#include "internal/thread.h"
 
 
 RTDECL(RTTHREAD) RTThreadSelf(void)
@@ -138,7 +138,7 @@ static void rtThreadNativeMain(void *pvArg, wait_result_t Ignored)
 {
     const thread_t Self = current_thread();
 
-    rtThreadMain((RTNATIVETHREAD)Self, (PRTR0THREADARGS)pvArg);
+    rtThreadMain((PRTR0THREADARGS)pvArg, (RTNATIVETHREAD)Self);
 
     kern_return_t rc = thread_terminate(Self);
     AssertFatalMsgFailed(("rc=%d\n", rc));

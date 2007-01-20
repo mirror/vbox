@@ -531,19 +531,19 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t c
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
- * @param   MemToMap        The object to be map.
+ * @param   MemObjToMap     The object to be map.
  * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
  */
-RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, PRTR0MEMOBJ MemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, PRTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
-    AssertPtrReturn(MemToMap, VERR_INVALID_HANDLE);
-    PRTR0MEMOBJINTERNAL pMemToMap = (PRTR0MEMOBJINTERNAL)pMemToMap;
+    AssertPtrReturn(MemObjToMap, VERR_INVALID_HANDLE);
+    PRTR0MEMOBJINTERNAL pMemToMap = (PRTR0MEMOBJINTERNAL)MemObjToMap;
     AssertReturn(pMemToMap->u32Magic == RTR0MEMOBJ_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pMemToMap->enmType > RTR0MEMOBJTYPE_INVALID && pMemToMap->enmType < RTR0MEMOBJTYPE_END, VERR_INVALID_HANDLE);
     AssertReturn(!rtR0MemObjIsMapping(pMemToMap), VERR_INVALID_PARAMETER);
@@ -586,19 +586,19 @@ RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, PRTR0MEMOBJ MemToMap, voi
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
- * @param   MemToMap        The object to be map.
+ * @param   MemObjToMap     The object to be map.
  * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
  */
-RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, PRTR0MEMOBJ MemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
-    AssertPtrReturn(MemToMap, VERR_INVALID_HANDLE);
-    PRTR0MEMOBJINTERNAL pMemToMap = (PRTR0MEMOBJINTERNAL)pMemToMap;
+    AssertPtrReturn(MemObjToMap, VERR_INVALID_HANDLE);
+    PRTR0MEMOBJINTERNAL pMemToMap = (PRTR0MEMOBJINTERNAL)MemObjToMap;
     AssertReturn(pMemToMap->u32Magic == RTR0MEMOBJ_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pMemToMap->enmType > RTR0MEMOBJTYPE_INVALID && pMemToMap->enmType < RTR0MEMOBJTYPE_END, VERR_INVALID_HANDLE);
     AssertReturn(!rtR0MemObjIsMapping(pMemToMap), VERR_INVALID_PARAMETER);
