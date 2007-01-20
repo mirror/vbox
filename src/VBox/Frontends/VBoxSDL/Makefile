@@ -92,7 +92,7 @@ VBoxSDL_CXXFLAGS.linux = \
 	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
 
 VBoxSDL_CLEAN = $(PATH_VBoxSDL)/Ico64x01.h
-VBoxSDL.cpp_DEPS = $(PATH_VBoxSDL)/Ico64x01.h
+Framebuffer.cpp_DEPS = $(PATH_VBoxSDL)/Ico64x01.h
 
 
 #
@@ -115,7 +115,7 @@ tstSDL_LIBS = \
 	$(LIB_RUNTIME)
 ifneq ($(filter-out win,$(BUILD_TARGET)),) # someone PLEASE explain why we don't use sdl main!
 tstSDL_LIBS += \
-	$(LIB_SDK_LIBSDL_SDLMAIN)	
+	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
 ifdef VBOX_OPENGL
 tstSDL_LIBS.linux += GL
