@@ -44,7 +44,7 @@ typedef struct RTTIMER
     /** Magic.
      * This is RTTIMER_MAGIC, but changes to something else before the timer
      * is destroyed to indicate clearly that thread should exit. */
-    volatile uint32_t       u32Magic;
+    uint32_t volatile       u32Magic;
     /** Flag indicating the the timer is suspended. */
     uint8_t volatile        fSuspended;
     /** Flag indicating that the timer has been destroyed. */
@@ -276,7 +276,7 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD Thread, void *pvUser)
     /*
      * Release the timer resources.
      */
-    pTimer->u32Magic++;
+    ASMAtomicIncU32(&pTimer->u32Magic); /* make the handle invalid. */
     int rc = RTSemEventDestroy(pTimer->Event); AssertRC(rc);
     pTimer->Event = NIL_RTSEMEVENT;
     pTimer->Thread = NIL_RTTHREAD;
