@@ -64,8 +64,8 @@ LOG="configure.log"
 CNF="AutoConfig.kmk"
 ENV="env.sh"
 BUILD_TYPE="release"
-## todo: These are the chars that ar can deal with in mri mode: [A-Za-z0-9/\\$:.\-\_]
-INVALID_CHARS="[^A-Za-z0-9/\\$:.\-_]"
+# the restricting tool is ar (mri mode).
+INVALID_CHARS="[^A-Za-z0-9/\\$:._-]"
 
 if (cd $(dirname $0); pwd)|grep -q "$INVALID_CHARS"; then
   echo "Error: VBox base path contains invalid characters!"
