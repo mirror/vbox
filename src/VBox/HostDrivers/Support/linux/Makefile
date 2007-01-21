@@ -82,7 +82,11 @@ endif
 # Compiler options
 #
 ifndef INCL
- INCL    := -I$(KERN_INCL) -I$(shell pwd) -I$(shell pwd)/include -I$(shell pwd)/r0drv/linux
+ INCL    := -I$(KERN_INCL)
+ ifndef KBUILD_EXTMOD
+  KBUILD_EXTMOD := $(shell pwd)
+ endif
+ INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
  export INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0
@@ -108,11 +112,10 @@ else
 # 2.6 and later
 MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
-
 endif
 
 # build defs
-EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS  += $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 
