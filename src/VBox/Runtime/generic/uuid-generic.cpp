@@ -39,7 +39,7 @@
  * @returns iprt status code.
  * @param   pUuid           Where to store generated uuid.
  */
-RTR3DECL(int)  RTUuidCreate(PRTUUID pUuid)
+RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 {
     /* validate input. */
     AssertReturn(pUuid, VERR_INVALID_PARAMETER);
@@ -65,7 +65,7 @@ RTR3DECL(int)  RTUuidCreate(PRTUUID pUuid)
  * @returns iprt status code.
  * @param   pUuid           Where to store generated null uuid.
  */
-RTR3DECL(int)  RTUuidClear(PRTUUID pUuid)
+RTDECL(int)  RTUuidClear(PRTUUID pUuid)
 {
     AssertReturn(pUuid, VERR_INVALID_PARAMETER);
     pUuid->au64[0] = 0;
@@ -80,7 +80,7 @@ RTR3DECL(int)  RTUuidClear(PRTUUID pUuid)
  * @returns true if UUID is null.
  * @param   pUuid           uuid to check.
  */
-RTR3DECL(int)  RTUuidIsNull(PCRTUUID pUuid)
+RTDECL(int)  RTUuidIsNull(PCRTUUID pUuid)
 {
     AssertReturn(pUuid, VERR_INVALID_PARAMETER);
     return !pUuid->au64[0]
@@ -95,7 +95,7 @@ RTR3DECL(int)  RTUuidIsNull(PCRTUUID pUuid)
  * @param   pUuid1          First value to compare.
  * @param   pUuid2          Second value to compare.
  */
-RTR3DECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
+RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
 {
     /*
      * Special cases.
@@ -142,7 +142,7 @@ RTR3DECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
  * @param   pszString       Where to store result string.
  * @param   cchString       pszString buffer length, must be >= RTUUID_STR_LENGTH.
  */
-RTR3DECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
+RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
 {
     /* validate parameters */
     AssertReturn(pUuid, VERR_INVALID_PARAMETER);
@@ -217,7 +217,7 @@ RTR3DECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
  * @param   pUuid           Where to store result Uuid.
  * @param   pszString       String with UUID text data.
  */
-RTR3DECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
+RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
 {
     /* 0xff if not a hex number, otherwise the value. (Assumes UTF-8 encoded strings.) */
     static const uint8_t s_aDigits[256] =

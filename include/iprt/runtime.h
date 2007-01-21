@@ -1,6 +1,5 @@
 /** @file
- *
- * InnoTek Portable Runtime - Runtime Init/Term.
+ * InnoTek Portable Runtime - Include Everything.
  */
 
 /*
@@ -19,75 +18,54 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_Runtime_h__
-#define __iprt_Runtime_h__
+#ifndef __iprt_runtime_h__
+#define __iprt_runtime_h__
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/param.h>
+#include <iprt/initterm.h>
 
-
-__BEGIN_DECLS
-
-/** @defgroup grp_rt    InnoTek Portable Runtime APIs
- * @{
- */
-
-/** @defgroup grp_rt_initterm  Init / Term
- * @{
- */
+#include <iprt/alloc.h>
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/avl.h>
+#include <iprt/crc32.h>
+#include <iprt/crc64.h>
+#include <iprt/critsect.h>
+#include <iprt/dir.h>
+#include <iprt/err.h>
+#include <iprt/file.h>
+#include <iprt/fs.h>
+#include <iprt/ldr.h>
+#include <iprt/log.h>
+#include <iprt/md5.h>
+#include <iprt/mem.h>
+#include <iprt/path.h>
+#include <iprt/semaphore.h>
+#include <iprt/spinlock.h>
+#include <iprt/stdarg.h>
+#include <iprt/string.h>
+#include <iprt/system.h>
+#include <iprt/table.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
+#include <iprt/timer.h>
+#include <iprt/uni.h>
+#include <iprt/uuid.h>
+#include <iprt/zip.h>
 
 #ifdef IN_RING3
-/**
- * Initalizes the runtime library.
- *
- * @returns iprt status code.
- *
- * @param   fInitSUPLib     Set if SUPInit() shall be called during init (default).
- *                          Clear if not to call it.
- * @param   cbReserve       The number of bytes of contiguous memory that should be reserved by
- *                          the runtime / support library.
- *                          Set this to 0 if no reservation is required. (default)
- *                          Set this to ~(size_t)0 if the maximum amount supported by the VM is to be
- *                          attempted reserved, or the maximum available.
- *                          This argument only applies if fInitSUPLib is true and we're in ring-3 HC.
- */
-RTR3DECL(int) RTR3Init(
-#ifdef __cplusplus
-    bool fInitSUPLib = true,
-    size_t cbReserve = 0
-#else
-    bool fInitSUPLib,
-    size_t cbReserve
+# include <iprt/stream.h>
+# include <iprt/tcp.h>
+# include <iprt/ctype.h>
+# include <iprt/alloca.h>  /** @todo iprt/alloca.h should be made available in R0 and GC too! */
+# include <iprt/process.h> /** @todo iprt/process.h should be made available in R0 too (partly). */
 #endif
-    );
-
-/**
- * Terminates the runtime library.
- */
-RTR3DECL(void) RTR3Term(void);
-#endif
-
 
 #ifdef IN_RING0
-/**
- * Initalizes the ring-0 driver runtime library.
- *
- * @returns iprt status code.
- * @param   fReserved       Flags reserved for the future.
- */
-RTR0DECL(int) RTR0Init(unsigned fReserved);
-
-/**
- * Terminates the ring-0 driver runtime library.
- */
-RTR0DECL(void) RTR0Term(void);
+# include <iprt/memobj.h>
 #endif
-
-/** @} */
-
-/** @} */
-
-__END_DECLS
 
 
 #endif

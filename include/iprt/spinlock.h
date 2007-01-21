@@ -1,5 +1,4 @@
 /** @file
- *
  * InnoTek Portable Runtime - Spinlocks.
  */
 
@@ -90,7 +89,7 @@ typedef const RTSPINLOCKTMP *PCRTSPINLOCKTMP;
  */
 #ifdef __DOXYGEN__
 # define RTSPINLOCKTMP_INITIALIZER
-#endif 
+#endif
 
 
 
