@@ -729,6 +729,21 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
 
 
 /**
+ * Replace an instruction with a breakpoint (0xCC), that is handled dynamically in the guest context.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pInstrGC    Guest context point to privileged instruction
+ * @param   pInstrHC    Host context point to privileged instruction
+ * @param   pCpu        Disassembly CPU structure ptr
+ * @param   pPatch      Patch record
+ *
+ * @note    returns failure if patching is not allowed or possible
+ *
+ */
+PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch);
+
+/**
  * Mark patch as dirty
  *
  * @returns VBox status code.

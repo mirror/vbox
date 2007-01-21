@@ -1773,9 +1773,9 @@ CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag)
         uint64_t fPageShw;
         RTHCPHYS GCPhys;
         rc = PGMShwGetPage(pVM, pPageAddrGC, &fPageShw, &GCPhys);
-        AssertMsg(     (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
-                ||  !(fPageShw & X86_PTE_RW)
-                ||   (pPageRec->page.GCPhys == 0), ("Shadow page flags for %VGv (%VHp) aren't readonly (%VX64)!!\n", pPageAddrGC, GCPhys, fPageShw));
+//        AssertMsg(     (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
+//                ||  !(fPageShw & X86_PTE_RW)
+//                ||   (pPageRec->page.GCPhys == 0), ("Shadow page flags for %VGv (%VHp) aren't readonly (%VX64)!!\n", pPageAddrGC, GCPhys, fPageShw));
     }
 #endif
 
@@ -2265,63 +2265,65 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             }
             else
             {
-                /* OpenBSD guest specific patch test */
-                rc = PATMR3InstallPatch(pVM, pHandler - 4, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
-                if (VBOX_SUCCESS(rc))
+                if (iGate >= 0x20)
                 {
-                    Log(("Installed OpenBSD interrupt handler prefix instruction (push cs) patch\n"));
-                    if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
+                    /* OpenBSD guest specific patch test (3.7 & 3.8) */
+                    rc = PATMR3InstallPatch(pVM, pHandler - 3, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
+                    if (VBOX_FAILURE(rc))
+                        /* OpenBSD guest specific patch test (3.9 & 4.0) */
+                        rc = PATMR3InstallPatch(pVM, pHandler - 0x2B, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
+                    if (VBOX_SUCCESS(rc))
                     {
-                        /* This is actually fatal!!!! */
-                        Log(("Warning: patch jump overwrites trap handler entrypoint!!!!!!!!!!!!!\n"));
+                        Log(("Installed OpenBSD interrupt handler prefix instruction (push cs) patch\n"));
+                        if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
+                        {
+                           /* This is actually fatal!!!! */
+                            Log(("Warning: patch jump overwrites trap handler entrypoint!!!!!!!!!!!!!\n"));
+                        }
                     }
                 }
-                else
+
                 /* Trap gates and certain interrupt gates. */
-//                if (   pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32
-//                    || iGate == 0x2E || iGate == 0xE || iGate == 0x80 || iGate == 0xEF)
+                uint32_t fPatchFlags = PATMFL_CODE32 | PATMFL_IDTHANDLER;
+
+                if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
+                    fPatchFlags |= PATMFL_TRAPHANDLER;
+                else
+                    fPatchFlags |= PATMFL_INTHANDLER;
+
+                switch (iGate) {
+                case 8:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                case 17:
+                    fPatchFlags |= PATMFL_TRAPHANDLER_WITH_ERRORCODE;
+                    break;
+                default:
+                    /* No error code. */
+                    break;
+                }
+
+                Log(("Installing %s gate handler for 0x%X at %VGv\n", (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32) ? "trap" : "intr", iGate, pHandler));
+
+                rc = PATMR3InstallPatch(pVM, pHandler, fPatchFlags);
+                if (VBOX_SUCCESS(rc) || rc == VERR_PATM_ALREADY_PATCHED)
                 {
-                    uint32_t fPatchFlags = PATMFL_CODE32 | PATMFL_IDTHANDLER;
+                    RTGCPTR pNewHandlerGC;
 
-                    if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
-                        fPatchFlags |= PATMFL_TRAPHANDLER;
-                    else
-                        fPatchFlags |= PATMFL_INTHANDLER;
+                    Log(("Gate handler 0x%X is SAFE!\n", iGate));
 
-                    switch (iGate) {
-                    case 8:
-                    case 10:
-                    case 11:
-                    case 12:
-                    case 13:
-                    case 14:
-                    case 17:
-                        fPatchFlags |= PATMFL_TRAPHANDLER_WITH_ERRORCODE;
-                        break;
-                    default:
-                        /* No error code. */
-                        break;
-                    }
-
-                    Log(("Installing %s gate handler for 0x%X at %VGv\n", (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32) ? "trap" : "intr", iGate, pHandler));
-
-                    rc = PATMR3InstallPatch(pVM, pHandler, fPatchFlags);
-                    if (VBOX_SUCCESS(rc) || rc == VERR_PATM_ALREADY_PATCHED)
+                    pNewHandlerGC = PATMR3QueryPatchGCPtr(pVM, pHandler);
+                    if (pNewHandlerGC)
                     {
-                        RTGCPTR pNewHandlerGC;
-
-                        Log(("Gate handler 0x%X is SAFE!\n", iGate));
-
-                        pNewHandlerGC = PATMR3QueryPatchGCPtr(pVM, pHandler);
-                        if (pNewHandlerGC)
-                        {
-                            rc = TRPMR3SetGuestTrapHandler(pVM, iGate, pNewHandlerGC);
-                            if (VBOX_FAILURE(rc))
-                                Log(("TRPMR3SetGuestTrapHandler %d failed with %Vrc\n", iGate, rc));
-                        }
-                        else
-                            Assert(0);
+                        rc = TRPMR3SetGuestTrapHandler(pVM, iGate, pNewHandlerGC);
+                        if (VBOX_FAILURE(rc))
+                            Log(("TRPMR3SetGuestTrapHandler %d failed with %Vrc\n", iGate, rc));
                     }
+                    else
+                        Assert(0);
                 }
             }
         }
