@@ -538,7 +538,6 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
 }
 
 
-
 /** Runtime assert implementation for the Darwin Ring-0 driver.
  * @todo this one needs fixing! */
 RTDECL(void) AssertMsg2(const char *pszFormat, ...)
