@@ -110,6 +110,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_VGA,
     /** VMM Device group. */
     LOG_GROUP_DEV_VMM,
+    /** VMM Device group for backdoor logging. */
+    LOG_GROUP_DEV_VMM_BACKDOOR,
     /** VMM Device group for logging guest backdoor logging to stderr. */
     LOG_GROUP_DEV_VMM_STDERR,
     /** Disassembler group. */
@@ -222,6 +224,8 @@ typedef enum LOGGROUP
     LOG_GROUP_RT_THREAD,
     /** SELM group. */
     LOG_GROUP_SELM,
+    /** Shared folders host service group. */
+    LOG_GROUP_SHARED_FOLDERS,
     /** The internal networking service group. */
     LOG_GROUP_SRV_INTNET,
     /** SSM group. */
@@ -289,6 +293,7 @@ typedef enum LOGGROUP
     "DEV_USB",      \
     "DEV_VGA",      \
     "DEV_VMM",      \
+    "DEV_VMM_BACKDOOR", \
     "DEV_VMM_STDERR",\
     "DIS",          \
     "DRV",          \
@@ -345,6 +350,7 @@ typedef enum LOGGROUP
     "RT",           \
     "RT_THREAD",    \
     "SELM",         \
+    "SHARED_FOLDERS",\
     "SRV_INTNET",   \
     "SSM",          \
     "STAM",         \
