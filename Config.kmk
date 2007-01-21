@@ -1094,7 +1094,8 @@ TEMPLATE_VBOXR0DRV_INCS               += \
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = \
 	-g -Wall -Wno-long-long -Wno-trigraphs -pipe -fno-common -nostdinc -fno-builtin -finline \
 	-fno-keep-inline-functions -force_cpusubtype_ALL -fno-exceptions -msoft-float -static \
-	-mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
+	-mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk \
+	-fapple-kext -fno-rtti -fcheck-new
 TEMPLATE_VBOXR0DRV_CXXFLAGS.release    = $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CXXFLAGS.profile    = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
