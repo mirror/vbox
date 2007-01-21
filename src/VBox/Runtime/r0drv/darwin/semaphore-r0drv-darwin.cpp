@@ -90,7 +90,7 @@ typedef struct RTSEMFASTMUTEXINTERNAL
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
 {
     Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
-    AssertPtrReturn(VALID_PTR(pEventSem), VERR_INVALID_POINTER);
+    AssertPtrReturn(pEventSem, VERR_INVALID_POINTER);
 
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
     if (pEventInt)
@@ -405,7 +405,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
 RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
 {
     AssertCompile(sizeof(RTSEMFASTMUTEXINTERNAL) > sizeof(void *));
-    AssertPtrReturn(VALID_PTR(pMutexSem), VERR_INVALID_POINTER);
+    AssertPtrReturn(pMutexSem, VERR_INVALID_POINTER);
 
     PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)RTMemAlloc(sizeof(*pFastInt));
     if (pFastInt)
