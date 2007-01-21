@@ -23,9 +23,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/assert.h>
-#include "r0drv/initterm-r0drv.h"
+#include "internal/initterm.h"
 
 
 /**

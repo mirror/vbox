@@ -31,7 +31,7 @@
 #include <iprt/log.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
-#include "r0drv/memobj-r0drv.h"
+#include "internal/memobj.h"
 
 
 
