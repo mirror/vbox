@@ -24,9 +24,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
-#include "r0drv/initterm-r0drv.h"
 #include <iprt/err.h>
 #include <iprt/assert.h>
+#include "internal/initterm.h"
 
 
 /*******************************************************************************

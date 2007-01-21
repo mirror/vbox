@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Initialization & Termination, R0 Driver, Common.
+ * InnoTek Portable Runtime - Initialization & Termination.
  */
 
 /*
@@ -19,12 +19,14 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __r0drv_initterm_r0drv_h_
-#define __r0drv_initterm_r0drv_h_
+#ifndef __internal_initterm_h_
+#define __internal_initterm_h_
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
+
+#ifdef IN_RING0
 
 /**
  * Platform specific initialization.
@@ -37,6 +39,8 @@ int rtR0InitNative(void);
  * Platform specific terminiation.
  */
 void rtR0TermNative(void);
+
+#endif /* IN_RING0 */
 
 __END_DECLS
 

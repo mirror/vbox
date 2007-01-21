@@ -30,7 +30,7 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/param.h>
-#include "r0drv/memobj-r0drv.h"
+#include "internal/memobj.h"
 
 
 /**
