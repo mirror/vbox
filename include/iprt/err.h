@@ -187,7 +187,17 @@ __BEGIN_DECLS
 #define VERR_TIMER_SUSPENDED                (-69)
 /** The operation was cancelled by the user. */
 #define VERR_CANCELLED                      (-70)
-
+/** Failed to initialize a memory object.
+ * Exactly what this means is OS specific. */
+#define VERR_MEMOBJ_INIT_FAILED             (-71)
+/** Out of memory condition when allocating memory with low physical backing. */
+#define VERR_NO_LOW_MEMORY                  (-72)
+/** Out of memory condition when allocating physical memory (without mapping). */
+#define VERR_NO_PHYS_MEMORY                 (-73)
+/** The address (virtual or physical) is too big. */
+#define VERR_ADDRESS_TOO_BIG                (-74)
+/** Failed to map a memory object. */
+#define VERR_MAP_FAILED                     (-75)
 /** @} */
 
 

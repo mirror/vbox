@@ -91,11 +91,13 @@ static int rtR0MemObjLink(PRTR0MEMOBJINTERNAL pParent, PRTR0MEMOBJINTERNAL pChil
         if (!pv)
             return VERR_NO_MEMORY;
         pParent->uRel.Parent.papMappings = (PPRTR0MEMOBJINTERNAL)pv;
+        pParent->uRel.Parent.cMappingsAllocated = i + 32;
         Assert(i == pParent->uRel.Parent.cMappings);
     }
 
     /* do the linking. */
     pParent->uRel.Parent.papMappings[i] = pChild;
+    pParent->uRel.Parent.cMappings++;
     pChild->uRel.Child.pParent = pParent;
 
     return VINF_SUCCESS;
@@ -187,7 +189,17 @@ RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, unsigned iPage)
         AssertReturn(iPage < (pMem->cb >> PAGE_SHIFT), NIL_RTHCPHYS);
     }
 
-    /* return the size. */
+    /*
+     * We know the address of physically contiguous allocations and mappings.
+     */
+    if (pMem->enmType == RTR0MEMOBJTYPE_CONT)
+        return pMem->u.Cont.Phys + iPage * PAGE_SIZE;
+    if (pMem->enmType == RTR0MEMOBJTYPE_PHYS)
+        return pMem->u.Phys.PhysBase + iPage * PAGE_SIZE;
+
+    /*
+     * Do the job.
+     */
     return rtR0MemObjNativeGetPagePhysAddr(pMem, iPage);
 }
 
@@ -262,6 +274,8 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
             AssertFatal(pParent->u32Magic == RTR0MEMOBJ_MAGIC);
             AssertFatal(pParent->enmType > RTR0MEMOBJTYPE_INVALID && pParent->enmType < RTR0MEMOBJTYPE_END);
             AssertFatal(!rtR0MemObjIsMapping(pParent));
+            AssertFatal(pParent->uRel.Parent.cMappings > 0);
+            AssertPtr(pParent->uRel.Parent.papMappings);
 
             /* locate and remove from the array of mappings. */
             uint32_t i = pParent->uRel.Parent.cMappings;
@@ -435,6 +449,7 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
+    AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest);
