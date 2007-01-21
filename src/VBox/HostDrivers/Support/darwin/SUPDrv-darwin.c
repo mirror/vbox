@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox host drivers - Ring-0 support drivers - Darwin host:
  * Darwin driver C code
  */
@@ -24,15 +23,14 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-/* deal with conflicts first, we ignore any Darwin variants of ALIGN, MAX, MIN, and PVM. */
+/* Deal with conflicts first.
+ * (This is mess inherited from BSD. The *BSDs has clean this up long ago.) */
 #include <sys/param.h>
-#undef ALIGN
-#undef MAX
-#undef MIN
 #undef PVM
 
 #include "SUPDRV.h"
 #include <iprt/types.h>
+#include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
@@ -125,47 +123,58 @@ static kern_return_t    VBoxSupDrvStart(struct kmod_info *pKModInfo, void *pvDat
     dprintf(("VBoxSupDrvStart\n"));
 
     /*
-     * Initialize the device extension.
+     * Initialize IPRT.
      */
-    rc = supdrvInitDevExt(&g_DevExt);
+    rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Initialize the session hash table.
+         * Initialize the device extension.
          */
-        memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab)); /* paranoia */
-        rc = RTSpinlockCreate(&g_Spinlock);
+        rc = supdrvInitDevExt(&g_DevExt);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Registering ourselves as a character device.
+             * Initialize the session hash table.
              */
-            g_iMajorDeviceNo = cdevsw_add(-1, &g_DevCW);
-            if (g_iMajorDeviceNo >= 0)
+            memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab)); /* paranoia */
+            rc = RTSpinlockCreate(&g_Spinlock);
+            if (RT_SUCCESS(rc))
             {
-                g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
-                                                 UID_ROOT, GID_WHEEL, 0660, DEVICE_NAME); /** @todo the UID and GID should be configurable! */
-                if (g_hDevFsDevice)
+                /*
+                 * Registering ourselves as a character device.
+                 */
+                g_iMajorDeviceNo = cdevsw_add(-1, &g_DevCW);
+                if (g_iMajorDeviceNo >= 0)
                 {
-                    OSDBGPRINT(("VBoxDrv: Successfully started. (major=%d)\n", g_iMajorDeviceNo));
-                    return KMOD_RETURN_SUCCESS;
+                    g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
+                                                     UID_ROOT, GID_WHEEL, 0660, DEVICE_NAME); /** @todo the UID and GID should be configurable! */
+                    if (g_hDevFsDevice)
+                    {
+                        OSDBGPRINT(("VBoxDrv: Successfully started. (major=%d)\n", g_iMajorDeviceNo));
+                        return KMOD_RETURN_SUCCESS;
+                    }
+
+                    OSDBGPRINT(("VBoxDrv: devfs_make_node(makedev(%d,0),,,,%s) failed\n",
+                                g_iMajorDeviceNo, DEVICE_NAME));
+                    cdevsw_remove(g_iMajorDeviceNo, &g_DevCW);
+                    g_iMajorDeviceNo = -1;
                 }
-                OSDBGPRINT(("VBoxDrv: devfs_make_node(makedev(%d,0),,,,%s) failed\n",
-                            g_iMajorDeviceNo, DEVICE_NAME));
-                cdevsw_remove(g_iMajorDeviceNo, &g_DevCW);
-                g_iMajorDeviceNo = -1;
+                else
+                    OSDBGPRINT(("VBoxDrv: cdevsw_add failed (%d)\n", g_iMajorDeviceNo));
+                RTSpinlockDestroy(g_Spinlock);
+                g_Spinlock = NIL_RTSPINLOCK;
             }
             else
-                OSDBGPRINT(("VBoxDrv: cdevsw_add failed (%d)\n", g_iMajorDeviceNo));
-            RTSpinlockDestroy(g_Spinlock);
-            g_Spinlock = NIL_RTSPINLOCK;
+                OSDBGPRINT(("VBoxDrv: RTSpinlockCreate failed (rc=%d)\n", rc));
+            supdrvDeleteDevExt(&g_DevExt);
         }
         else
-            OSDBGPRINT(("VBoxDrv: RTSpinlockCreate failed (rc=%d)\n", rc));
-        supdrvDeleteDevExt(&g_DevExt);
+            OSDBGPRINT(("VBoxDrv: failed to initialize device extension (rc=%d)\n", rc));
+        RTR0Term();
     }
     else
-        OSDBGPRINT(("VBoxDrv: failed to initialize device extension (rc=%d)\n", rc));
+        OSDBGPRINT(("VBoxDrv: failed to initialize IPRT (rc=%d)\n", rc));
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
     return KMOD_RETURN_FAILURE;
@@ -199,6 +208,8 @@ static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData
     rc = RTSpinlockDestroy(g_Spinlock);
     AssertRC(rc);
     g_Spinlock = NIL_RTSPINLOCK;
+
+    RTR0Term();
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
     return KMOD_RETURN_SUCCESS;
@@ -517,7 +528,7 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 }
 
 
-/** Runtime assert implementation for Linux Ring-0. */
+/** Runtime assert implementation for Darwin Ring-0. */
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     printf("!!Assertion Failed!!\n"
