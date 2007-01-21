@@ -1,5 +1,4 @@
 /** @file
- *
  * InnoTek Portable Runtime - Process Management.
  */
 

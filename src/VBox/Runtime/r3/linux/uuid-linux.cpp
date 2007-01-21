@@ -72,7 +72,7 @@ static void rtuuid_convert_byteorder(PRTUUID pUuid)
  * @returns iprt status code.
  * @param   pUuid           Where to store generated uuid.
  */
-RTR3DECL(int)  RTUuidCreate(PRTUUID pUuid)
+RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 {
     /* check params */
     if (pUuid == NULL)
@@ -93,7 +93,7 @@ RTR3DECL(int)  RTUuidCreate(PRTUUID pUuid)
  * @returns iprt status code.
  * @param   pUuid           Where to store generated null uuid.
  */
-RTR3DECL(int)  RTUuidClear(PRTUUID pUuid)
+RTDECL(int)  RTUuidClear(PRTUUID pUuid)
 {
     /* check params */
     if (pUuid == NULL)
@@ -113,7 +113,7 @@ RTR3DECL(int)  RTUuidClear(PRTUUID pUuid)
  * @returns true if UUID is null.
  * @param   pUuid           uuid to check.
  */
-RTR3DECL(int)  RTUuidIsNull(PCRTUUID pUuid)
+RTDECL(int)  RTUuidIsNull(PCRTUUID pUuid)
 {
     /* check params */
     if (pUuid == NULL)
@@ -132,7 +132,7 @@ RTR3DECL(int)  RTUuidIsNull(PCRTUUID pUuid)
  * @param   pUuid1          First value to compare.
  * @param   pUuid2          Second value to compare.
  */
-RTR3DECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
+RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
 {
     /* check params */
     if ((pUuid1 == NULL) || (pUuid2 == NULL))
@@ -152,7 +152,7 @@ RTR3DECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
  * @param   pszString       Where to store result string.
  * @param   cchString       pszString buffer length, must be >= RTUUID_STR_LENGTH.
  */
-RTR3DECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
+RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
 {
     /* check params */
     if ((pUuid == NULL) || (pszString == NULL) || (cchString < RTUUID_STR_LENGTH))
@@ -176,7 +176,7 @@ RTR3DECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, unsigned cchString)
  * @param   pUuid           Where to store result Uuid.
  * @param   pszString       String with UUID text data.
  */
-RTR3DECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
+RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
 {
     /* check params */
     if ((pUuid == NULL) || (pszString == NULL))
