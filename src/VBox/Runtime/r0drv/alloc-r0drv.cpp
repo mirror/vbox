@@ -156,7 +156,10 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew)
  */
 RTDECL(void) RTMemFree(void *pv)
 {
-    PRTMEMHDR pHdr = (PRTMEMHDR)pv - 1;
+    PRTMEMHDR pHdr;
+    if (!pv)
+        return;
+    pHdr = (PRTMEMHDR)pv - 1;
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
         Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_EXEC));

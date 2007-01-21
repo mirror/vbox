@@ -59,6 +59,8 @@
 #include <sys/proc.h>
 #include <IOKit/IOTypes.h>
 #include <IOKit/IOLib.h>
+#include <IOKit/IOMemoryDescriptor.h>
+#include <IOKit/IOMapper.h>
 
 
 __BEGIN_DECLS

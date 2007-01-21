@@ -185,7 +185,6 @@ typedef struct RTR0MEMOBJINTERNAL
         } Mapping;
     } u;
 
-
 } RTR0MEMOBJINTERNAL;
 
 /** RTR0MEMOBJ::u32Magic. (Masakazu Katsura) */
