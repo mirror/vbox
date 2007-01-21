@@ -4172,7 +4172,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
         switch (cpu.pCurInstr->opcode)
         {
         case OP_SYSENTER:
-        case OP_PUSHF:
+        case OP_PUSH:
             rc = PATMInstallGuestSpecificPatch(pVM, &cpu, pInstrGC, pInstrHC, pPatchRec);
             if (rc == VINF_SUCCESS)
             {

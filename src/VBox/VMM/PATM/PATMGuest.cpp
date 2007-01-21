@@ -69,12 +69,22 @@ static uint8_t uFnKiFastSystemCall[7] = {0x8b, 0xd4, 0x0f, 0x34, 0x90, 0x90, 0x9
 static uint8_t uFnKiIntSystemCall[7]  = {0x8d, 0x54, 0x24, 0x08, 0xcd, 0x2e, 0xc3};
 
 /*
- * D0101B6C:  pushf                         [9C]
+ * OpenBSD 3.7 & 3.8:
+ *
  * D0101B6D:  push CS                       [0E]
  * D0101B6E:  push ESI                      [56]
  * D0101B6F:  cli                           [FA]
  */
-static uint8_t uFnOpenBSDHandlerPrefix[4] = { 0x9C, 0x0E, 0x56, 0xFA };
+static uint8_t uFnOpenBSDHandlerPrefix1[3] = { 0x0E, 0x56, 0xFA };
+/*
+ * OpenBSD 3.9 & 4.0
+ *
+ * D0101BD1:  push CS                       [0E]
+ * D0101BD2:  push ESI                      [56]
+ * D0101BD3:  push 0x00                     [6A 00]
+ * D0101BD4:  push 0x03                     [6A 03]
+ */
+static uint8_t uFnOpenBSDHandlerPrefix2[6] = { 0x0E, 0x56, 0x6A, 0x00, 0x6A, 0x03 };
 
 
 /**
@@ -174,18 +184,20 @@ int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, 
     uint8_t   uTemp[16];
     int       rc;
 
-    Assert(sizeof(uTemp) > sizeof(uFnOpenBSDHandlerPrefix));
+    Assert(sizeof(uTemp) > RT_MAX(sizeof(uFnOpenBSDHandlerPrefix1), sizeof(uFnOpenBSDHandlerPrefix2)));
 
     /* Guest OS specific patch; check heuristics first */
 
-    rc = PGMPhysReadGCPtr(pVM, uTemp, pInstrGC, sizeof(uFnOpenBSDHandlerPrefix));
-    if (VBOX_FAILURE(rc) || memcmp(uFnOpenBSDHandlerPrefix, uTemp, sizeof(uFnOpenBSDHandlerPrefix)))
+    rc = PGMPhysReadGCPtr(pVM, uTemp, pInstrGC, RT_MAX(sizeof(uFnOpenBSDHandlerPrefix1), sizeof(uFnOpenBSDHandlerPrefix2)));
+    if (    VBOX_FAILURE(rc) 
+        || (    memcmp(uFnOpenBSDHandlerPrefix1, uTemp, sizeof(uFnOpenBSDHandlerPrefix1))
+            &&  memcmp(uFnOpenBSDHandlerPrefix2, uTemp, sizeof(uFnOpenBSDHandlerPrefix2))))
     {
         return VERR_PATCHING_REFUSED;
     }
-    /* Found it; patch the pushf block (including push cs) */
+    /* Found it; patch the push cs */
     pPatchRec->patch.flags &= ~(PATMFL_GUEST_SPECIFIC);  /* prevent a breakpoint from being triggered */
-    return PATMR3PatchBlock(pVM, pInstrGC, pInstrHC, pCpu->pCurInstr->opcode, pCpu->opsize, pPatchRec);
+    return PATMR3PatchInstrInt3(pVM, pInstrGC, pInstrHC, pCpu, &pPatchRec->patch);
 }
 
 /**
@@ -217,7 +229,7 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, 
         }
         return VINF_SUCCESS;
 
-    case OP_PUSHF:
+    case OP_PUSH:
         /* OpenBSD guest specific patch for the following code block:
          *
          *  pushf
@@ -225,7 +237,10 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, 
          *  push esi
          *  cli
          */
-        return PATMPatchOpenBSDHandlerPrefix(pVM, pCpu, pInstrGC, pInstrHC, pPatchRec);
+        if (pCpu->pCurInstr->param1 == OP_PARM_REG_CS)
+            return PATMPatchOpenBSDHandlerPrefix(pVM, pCpu, pInstrGC, pInstrHC, pPatchRec);
+
+        return VERR_PATCHING_REFUSED;
 
     default:
         AssertMsgFailed(("PATMInstallGuestSpecificPatch: unknown opcode %d\n", pCpu->pCurInstr->opcode));
