@@ -261,6 +261,9 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
+#undef LOG_GROUP
+#define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
+
 static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     if (cb == 1 && Port == RTLOG_DEBUG_PORT)
@@ -298,6 +301,8 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
     }
     return VINF_SUCCESS;
 }
+#undef LOG_GROUP
+#define LOG_GROUP LOG_GROUP_DEV_VMM
 
 #ifdef TIMESYNC_BACKDOOR
 /**
