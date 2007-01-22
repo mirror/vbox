@@ -1148,7 +1148,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 if (pService)
                 {
                     LogFlow(("HGCMMSGID_HOSTCALL found service, forwarding the call.\n"));
-                    pService->HostCall (0, NULL, pMsg->u32Function, pMsg->cParms, pMsg->paParms);
+                    pService->HostCall (NULL, 0, pMsg->u32Function, pMsg->cParms, pMsg->paParms);
                 }
             } break;
             
