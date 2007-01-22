@@ -60,6 +60,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
      */
     if (pMemDarwin->pMemDesc)
     {
+        if (pMemDarwin->Core.enmType == RTR0MEMOBJTYPE_LOCK)
+            pMemDarwin->pMemDesc->complete();
         pMemDarwin->pMemDesc->release();
         pMemDarwin->pMemDesc = NULL;
         Assert(!pMemDarwin->pMemMap);
@@ -87,8 +89,6 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
-            AssertMsgFailed(("RTR0MEMOBJTYPE_LOCK\n"));
-            return VERR_INTERNAL_ERROR;
             break;
 
         case RTR0MEMOBJTYPE_PHYS:
@@ -331,13 +331,66 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 
 int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-    return VERR_NOT_IMPLEMENTED;
+    Assert(current_task() != kernel_task);
+    int rc = VERR_MEMOBJ_INIT_FAILED;
+    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, current_task());
+    if (pMemDesc)
+    {
+        IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
+        if (IORet == kIOReturnSuccess)
+        {
+            /*
+             * Create the IPRT memory object.
+             */
+            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
+            if (pMemDarwin)
+            {
+                pMemDarwin->Core.u.Lock.Process = (RTPROCESS)current_task();
+                pMemDarwin->pMemDesc = pMemDesc;
+                *ppMem = &pMemDarwin->Core;
+                return VINF_SUCCESS;
+            }
+
+            pMemDesc->complete();
+            rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_LOCK_FAILED;
+        pMemDesc->release();
+    }
+    return rc;
 }
 
 
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VERR_MEMOBJ_INIT_FAILED;
+    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
+    if (pMemDesc)
+    {
+        IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
+        if (IORet == kIOReturnSuccess)
+        {
+            /*
+             * Create the IPRT memory object.
+             */
+            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
+            if (pMemDarwin)
+            {
+                pMemDarwin->Core.u.Lock.Process = NIL_RTPROCESS;
+                pMemDarwin->pMemDesc = pMemDesc;
+                *ppMem = &pMemDarwin->Core;
+                return VINF_SUCCESS;
+            }
+
+            pMemDesc->complete();
+            rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_LOCK_FAILED;
+        pMemDesc->release();
+    }
+    return rc;
 }
 
 
