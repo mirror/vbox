@@ -77,7 +77,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)/install/module/test
 	$(QUIET)$(INSTALL) -m 0644 installer/Makefile.test  $(PATH_TARGET)/install/module/test/Makefile
 	$(QUIET)$(INSTALL) -m 0644 installer/test.c $(PATH_TARGET)/install/module/test/
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxadd-timesync $(PATH_TARGET)/install/vboxadd-timesync
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxadd-timesync $(PATH_TARGET)/install/vboxadd-timesync
 	$(QUIET)$(SED) "s;_VERSION_;$(VBOX_VERSION);g" installer/install.sh | $(SED) "s;_BUILD_;$(shell date);g" | $(SED) "s;_OSE_;$(VBOX_OSE);g" > $(PATH_TARGET)/install/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/install/install_.sh $(PATH_TARGET)/install/install.sh
 	$(QUIET)$(RM) $(PATH_TARGET)/install/install_.sh
@@ -85,15 +85,15 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0755 installer/vboxadd.sh   $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 ../../Installer/linux/runlevel.sh  $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 installer/x11config.pl $(PATH_TARGET)/install
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv.o  $(PATH_TARGET)/install/vboxmouse_drv.o
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv_70.so $(PATH_TARGET)/install/vboxmouse_drv_70.so
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv_71.so $(PATH_TARGET)/install/vboxmouse_drv_71.so
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxvideo_drv.o  $(PATH_TARGET)/install/vboxvideo_drv.o
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxvideo_drv_70.so $(PATH_TARGET)/install/vboxvideo_drv_70.so
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/vboxvideo_drv_71.so $(PATH_TARGET)/install/vboxvideo_drv_71.so
+	$(QUIET)objcopy -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv.o  $(PATH_TARGET)/install/vboxmouse_drv.o
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_70.so $(PATH_TARGET)/install/vboxmouse_drv_70.so
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_71.so $(PATH_TARGET)/install/vboxmouse_drv_71.so
+	$(QUIET)objcopy -g -R .comment $(PATH_BIN)/additions/vboxvideo_drv.o  $(PATH_TARGET)/install/vboxvideo_drv.o
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_70.so $(PATH_TARGET)/install/vboxvideo_drv_70.so
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_71.so $(PATH_TARGET)/install/vboxvideo_drv_71.so
 ifndef VBOX_OSE
 	$(QUIET)$(INSTALL) -m 0755 installer/vboxvfs.sh $(PATH_TARGET)/install
-	$(QUIET)objcopy -S -g -R .comment $(PATH_BIN)/additions/mountvboxsf $(PATH_TARGET)/install/mount.vboxsf
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/mountvboxsf $(PATH_TARGET)/install/mount.vboxsf
 endif
 	$(QUIET)$(VBOX_MAKESELF) $(PATH_TARGET)/install $@ \
 	"VirtualBox $(VBOX_VERSION) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
