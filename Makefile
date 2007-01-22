@@ -60,19 +60,23 @@ ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
 endif
 
 # The Qt DLLs.
-ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+#ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ifeq ($(filter-out win,$(BUILD_TARGET)),)
  ifneq ($(VBOX_WITH_QTGUI),)
   #include $(PATH_KBUILD)/sdks/QT3.kmk
   #bin_SOURCES += \
   #	$(DLL_SDK_QT3_QT)
-  bin_SOURCES.win.x86 += \
-	$(VBOX_PATH_QT)/bin/qt-mt333.dll=>qt-mt333.dll
-  ifdef VBOX_USE_VCC80
-  bin_SOURCES.win.x86 += \
-	$(VBOX_PATH_QT)/bin/msvcr71.dll=>msvcr71.dll
+  ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.x86)
+   VBOX_DLL_QT ?= $(VBOX_PATH_QT)/bin/qt-mt333.dll
+  else ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.amd64)
+   VBOX_DLL_QT ?= $(PATH_DEVTOOLS)/win.amd64/Qt/v3.3.6/bin/qt-mt336.dll=>qt-mt336.dll
+  #else ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),os2.x86)
+  # VBOX_DLL_QT ?= $(PATH_DEVTOOLS)/os2.x86/Qt/v3.3.6/bin/qt-mt336.dll=>qt-mt336.dll
   endif
-  bin_SOURCES.win.amd64 += \
-	$(PATH_DEVTOOLS)/win.amd64/Qt/v3.3.6/bin/qt-mt336.dll=>qt-mt336.dll
+  ifdef VBOX_DLL_QT 
+   bin_SOURCES += \
+	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
+  endif
  endif
 endif
 
