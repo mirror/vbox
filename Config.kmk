@@ -157,6 +157,8 @@ VBOX_WITH_USB = 1
 VBOX_WITH_ISCSI = 1
 # Disable ALSA support for Linux (currently broken).
 VBOX_WITH_ALSA =
+# Enable the kchmviewer
+VBOX_WITH_KCHMVIEWER = 1
 # Build the testsuite.
 VBOX_WITH_TESTSUITE = 1
 # Build the testcases.
@@ -252,6 +254,7 @@ ifdef VBOX_OSE
  VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS=
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_INSTALLER=
+ VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_DOCS=
  VBOX_WITH_TESTSUITE=
  PASSES := $(filter-out PACKING,$(PASSES))
