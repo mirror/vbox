@@ -52,10 +52,15 @@
 #define MSR_K6_EFER                         0xc0000080
 #undef MSR_K6_EFER_NXE
 #define MSR_K6_EFER_NXE                     BIT(11)
+#undef MSR_K6_EFER_LMA
+#define  MSR_K6_EFER_LMA                    BIT(10)
 #undef X86_CR4_PGE
 #define X86_CR4_PGE                         BIT(7)
 #undef X86_CR4_PAE
 #define X86_CR4_PAE                         BIT(5)
+#undef X86_CPUID_AMD_FEATURE_EDX_LONG_MODE
+#define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE BIT(29)
+
 
 /** The frequency by which we recalculate the u32UpdateHz and
  * u32UpdateIntervalNS GIP members. The value must be a power of 2. */
@@ -1703,7 +1708,20 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, void *pvR3, unsigned cb, PS
     rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb);
     if (RT_SUCCESS(rc))
     {
-        rc = supdrvMemAdd(&Mem, pSession);
+        unsigned iPage = cb >> PAGE_SHIFT;
+        while (iPage-- > 0)
+        {
+            paPages[iPage].uReserved = 0;
+            paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(Mem.MemObj, iPage);
+            if (RT_UNLIKELY(paPages[iPage].Phys == NIL_RTCCPHYS))
+            {
+                AssertMsgFailed(("iPage=%d\n", iPage));
+                rc = VERR_INTERNAL_ERROR;
+                break;
+            }
+        }
+        if (RT_SUCCESS(rc))
+            rc = supdrvMemAdd(&Mem, pSession);
         if (RT_FAILURE(rc))
         {
             int rc2 = RTR0MemObjFree(Mem.MemObj, false);
@@ -3653,21 +3671,22 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
     else
     {
         RTUINTREG cr4 = ASMGetCR4();
-        uint32_t fNXE = 0;
+        uint32_t fNXEPlusLMA = 0;
         if (cr4 & X86_CR4_PAE)
         {
             uint32_t fAmdFeatures = ASMCpuId_EDX(0x80000001);
-            if (fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)
+            if (fAmdFeatures & (X86_CPUID_AMD_FEATURE_EDX_NX | X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
             {
                 uint64_t efer = ASMRdMsr(MSR_K6_EFER);
-                if (efer & MSR_K6_EFER_NXE)
-                    fNXE = 1;
+                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)        && (efer & MSR_K6_EFER_NXE))
+                    fNXEPlusLMA |= BIT(0);
+                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE) && (efer & MSR_K6_EFER_LMA))
+                    fNXEPlusLMA |= BIT(1);
             }
         }
 
-        switch ((cr4 & (X86_CR4_PAE | X86_CR4_PGE)) | fNXE)
+        switch ((cr4 & (X86_CR4_PAE | X86_CR4_PGE)) | fNXEPlusLMA)
         {
-#ifndef __AMD64__
             case 0:
                 pOut->enmMode = SUPPAGINGMODE_32_BIT;
                 break;
@@ -3680,7 +3699,7 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
                 pOut->enmMode = SUPPAGINGMODE_PAE;
                 break;
 
-            case X86_CR4_PAE | 1:
+            case X86_CR4_PAE | BIT(0):
                 pOut->enmMode = SUPPAGINGMODE_PAE_NX;
                 break;
 
@@ -3688,29 +3707,28 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
                 pOut->enmMode = SUPPAGINGMODE_PAE_GLOBAL;
                 break;
 
-            case X86_CR4_PAE | X86_CR4_PGE | 1:
+            case X86_CR4_PAE | X86_CR4_PGE | BIT(0):
                 pOut->enmMode = SUPPAGINGMODE_PAE_GLOBAL;
                 break;
-#else /* __AMD64__ */
-            case X86_CR4_PAE:
+
+            case BIT(1) | X86_CR4_PAE:
                 pOut->enmMode = SUPPAGINGMODE_AMD64;
                 break;
 
-            case X86_CR4_PAE | 1:
+            case BIT(1) | X86_CR4_PAE | BIT(0):
                 pOut->enmMode = SUPPAGINGMODE_AMD64_NX;
                 break;
 
-            case X86_CR4_PAE | X86_CR4_PGE:
+            case BIT(1) | X86_CR4_PAE | X86_CR4_PGE:
                 pOut->enmMode = SUPPAGINGMODE_AMD64_GLOBAL;
                 break;
 
-            case X86_CR4_PAE | X86_CR4_PGE | 1:
+            case BIT(1) | X86_CR4_PAE | X86_CR4_PGE | BIT(0):
                 pOut->enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
                 break;
-#endif /* __AMD64__ */
 
             default:
-                AssertMsgFailed(("Cannot happen! cr4=%#x fNXE=%d\n", cr4, fNXE));
+                AssertMsgFailed(("Cannot happen! cr4=%#x fNXEPlusLMA=%d\n", cr4, fNXEPlusLMA));
                 pOut->enmMode = SUPPAGINGMODE_INVALID;
                 break;
         }
