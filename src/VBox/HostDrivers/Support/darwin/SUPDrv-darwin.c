@@ -377,6 +377,7 @@ static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
 static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess)
 {
     int                 rc;
+    void               *pvPageBuf = NULL;
     void               *pvBuf = NULL;
     int                 cbBuf = 0;
     unsigned            cbOut = 0;
@@ -400,6 +401,8 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
         cbBuf = max(pArgs->cbIn, pArgs->cbOut);
         MALLOC(pvBuf, void *, cbBuf, M_TEMP, M_WAITOK);
         if (pvBuf == NULL)
+            pvPageBuf = pvBuf = IOMallocAligned(cbBuf, 8);
+        if (pvBuf == NULL)
         {
             dprintf(("VBoxSupDrvIOCtl: failed to allocate buffer of %d bytes.\n", cbBuf));
             return ENOMEM;
@@ -408,7 +411,10 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
         if (rc)
         {
             dprintf(("VBoxSupDrvIOCtl: copyin(%p,,%d) failed.\n", pArgs->pvIn, cbBuf));
-            FREE(pvBuf, M_TEMP);
+            if (pvPageBuf)
+                IOFreeAligned(pvPageBuf, cbBuf);
+            else
+                FREE(pvBuf, M_TEMP);
             return rc;
         }
     }
@@ -446,7 +452,9 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
         }
     }
 
-    if (pvBuf)
+    if (pvPageBuf)
+        IOFreeAligned(pvPageBuf, cbBuf);
+    else if (pvBuf)
         FREE(pvBuf, M_TEMP);
 
     dprintf2(("VBoxSupDrvIOCtl: returns %d\n", rc));
