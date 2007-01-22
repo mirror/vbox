@@ -23,6 +23,8 @@
 #include <VBox/VBoxGuestLib.h>
 #include "SysHlp.h"
 
+#define LOG_GROUP LOG_GROUP_HGCM
+#include <VBox/log.h>
 #include <iprt/assert.h>
 
 #ifndef VBGL_VBOXGUEST
@@ -54,11 +56,13 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
 
     if (NT_SUCCESS (rc))
     {
+        Log(("vbglDriverOpen VBoxGuest successful pDeviceObject=%x\n", pDeviceObject));
         pDriver->pDeviceObject = pDeviceObject;
         pDriver->pFileObject = pFileObject;
         return VINF_SUCCESS;
     }
-/** @todo return RTErrConvertFromNtStatus(rc)! */
+    /** @todo return RTErrConvertFromNtStatus(rc)! */
+    Log(("vbglDriverOpen VBoxGuest failed with ntstatus=%x\n", rc));
     return rc;
 #else
     void *opaque;
@@ -92,10 +96,14 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
                                               &ioStatusBlock);
     if (irp == NULL)
     {
+        Log(("vbglDriverIOCtl: IoBuildDeviceIoControlRequest failed\n"));
         return VERR_NO_MEMORY;
     }
 
     NTSTATUS rc = IoCallDriver (pDriver->pDeviceObject, irp);
+
+    if (!NT_SUCCESS(rc))
+        Log(("vbglDriverIOCtl: IoCallDriver failed with ntstatus=%x\n", rc));
 
     return NT_SUCCESS(rc)? VINF_SUCCESS: VERR_VBGL_IOCTL_FAILED;
 #else
@@ -106,6 +114,7 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 void vbglDriverClose (VBGLDRIVER *pDriver)
 {
 #ifdef __WIN__
+    Log(("vbglDriverClose pDeviceObject=%x\n", pDriver->pDeviceObject));
     ObDereferenceObject (pDriver->pFileObject);
 #else
     vboxadd_cmc_close (pDriver->opaque);
