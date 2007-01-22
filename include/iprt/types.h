@@ -898,9 +898,9 @@ typedef RTNATIVETHREAD                             *PRTNATIVETHREAD;
 #define NIL_RTNATIVETHREAD                          (~(RTNATIVETHREAD)0)
 
 /** Process handle. */
-typedef RTUINT                                      RTPROCESS;
+typedef RTHCUINTPTR                                 RTPROCESS;
 /** Pointer to a process handle. */
-typedef RTPROCESS                                   *PRTPROCESS;
+typedef RTPROCESS                                  *PRTPROCESS;
 /** Nil process handle. */
 #define NIL_RTPROCESS                               (~(RTPROCESS)0)
 
