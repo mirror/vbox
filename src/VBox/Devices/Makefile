@@ -145,11 +145,15 @@ DevicesR3_SOURCES       = \
 	VMMDev/VBoxDev.cpp \
 	VMMDev/VMMDevHGCM.cpp \
 	Network/DevPCNet.cpp \
-	Network/ne2000.c \
 	Audio/DevIchAc97.cpp \
 	PC/dma.c \
 	Storage/fdc.c \
 	Serial/serial.c
+
+ifeq (0,1)
+DevicesR3_SOURCES += \
+	Network/ne2000.c
+endif
 
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
