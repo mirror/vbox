@@ -123,7 +123,7 @@ VirtualBox_DEFS           += VBOX_GUI_SEPARATE_VM_PROCESS
 
 ifeq ($(BUILD_TYPE),release)
 VirtualBox_DEFS.win       += VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.linux     += VBOX_GUI_USE_SDL
+VirtualBox_DEFS.linux     += VBOX_GUI_USE_SDL VBOX_GUI_USE_QIMAGE
 else
 VirtualBox_DEFS           += VBOX_WITH_DEBUGGER_GUI_MENU
 VirtualBox_DEFS.win       += \
