@@ -947,7 +947,7 @@ Configuration:
 Paths:
   --with-gcc=PATH         position of the gcc compiler [$CC]
   --with-g++=PATH         position of the g++ compiler [$CXX]
-  --with-kbuild-dir=DIR   kbuild directory [$KBUILDDIR]
+  --with-kbuild=DIR       kbuild directory [$KBUILDDIR]
   --with-iasl=PATH        the position of the iasl compiler [$IASL]
   --with-linux=DIR        Linux kernel source directory [$LINUX]
   --with-mkisofs=PATH     position of mkisofs [$MKISOFS]
