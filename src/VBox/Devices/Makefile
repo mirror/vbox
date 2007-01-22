@@ -30,7 +30,7 @@ SYSMODS   = VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
 OTHER_CLEAN = \
 	$(PATH_TARGET)/vboxaml.hex \
-	$(PATH_DevicesR3)/vboxaml.aml
+	$(PATH_TARGET)/vboxaml.aml
 
 SUBDIRS   = \
 	PC/BIOS \

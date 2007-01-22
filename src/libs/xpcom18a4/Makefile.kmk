@@ -1066,6 +1066,9 @@ XPTFILES = $(addprefix $(PATH_TARGET)/, \
 	nsIInterfaceInfoManager.xpt \
 	nsIXPTLoader.xpt)
 
+OTHER_CLEAN += \
+	$(XPTFILES)
+
 # combined typelib library
 $(PATH_BIN)/VBoxXPCOMBase.xpt: $(XPTFILES)
 	$(call MSG_L1,Linking $@)
