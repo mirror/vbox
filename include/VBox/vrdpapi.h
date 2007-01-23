@@ -577,8 +577,31 @@ typedef DECLCALLBACK(int) FNVRDPUSBCALLBACK (void *pvCallback,
                                              
 typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
 
-#define VRDP_CLIENT_INTERCEPT_AUDIO (0x1)
-#define VRDP_CLIENT_INTERCEPT_USB   (0x2)
+#define VRDP_CLIPBOARD_FORMAT_UNICODE_TEXT 0
+#define VRDP_CLIPBOARD_FORMAT_BITMAP       1
+
+/**
+ * Called by the server when a clipboard data is received from a client.
+ *
+ * @param pvCallback  Callback specific value returned by VRDPSERVERCALLBACK::pfnInterceptClipboard.
+ * @param u32ClientId Identifies the client that sent the reply.
+ * @param u32Format   The format of data.
+ * @param pvData      Points to data received from the client.
+ * @param cbData      Size of the data in bytes.
+ *
+ * @return VBox error code.
+ */
+typedef DECLCALLBACK(int) FNVRDPCLIPBOARDCALLBACK (void *pvCallback,
+                                                   uint32_t u32ClientId,
+                                                   uint32_t u32Format,
+                                                   const void *pvRet,
+                                                   uint32_t cbRet);
+                                             
+typedef FNVRDPCLIPBOARDCALLBACK *PFNVRDPCLIPBOARDCALLBACK;
+
+#define VRDP_CLIENT_INTERCEPT_AUDIO     (0x1)
+#define VRDP_CLIENT_INTERCEPT_USB       (0x2)
+#define VRDP_CLIENT_INTERCEPT_CLIPBOARD (0x4)
 
 typedef struct _VRDPSERVERCALLBACK
 {
@@ -623,6 +646,12 @@ typedef struct _VRDPSERVERCALLBACK
                                                uint32_t u32ClientId,
                                                PFNVRDPUSBCALLBACK *ppfn,
                                                void **ppv);
+    /* The client supports clipboard channel.
+     */
+    DECLCALLBACKMEMBER(void, pfnInterceptClipboard) (void *pvUser,
+                                                     uint32_t u32ClientId,
+                                                     PFNVRDPCLIPBOARDCALLBACK *ppfn,
+                                                     void **ppv);
 } VRDPSERVERCALLBACK;
 #else
 /**
@@ -641,6 +670,8 @@ VRDPR3DECL(void) VRDPSendUSBRequest (HVRDPSERVER hserver, void *pvParm, uint32_t
 typedef DECLCALLBACK(int) FNVRDPUSBCALLBACK (void *pv, uint8_t code, void *pvRet, uint32_t cbRet);
 typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
 
+typedef DECLCALLBACK(int) FNVRDPCLIPBOARDCALLBACK (void *pv, uint32_t u32Format, void *pvData, uint32_t cbData);
+typedef FNVRDPCLIPBOARDCALLBACK *PFNVRDPCLIPBOARDCALLBACK;
 
 typedef struct _VRDPSERVERCALLBACK
 {
@@ -649,6 +680,7 @@ typedef struct _VRDPSERVERCALLBACK
     DECLCALLBACKMEMBER(void, pfnClientDisconnect) (void *pvUser);
     DECLCALLBACKMEMBER(void, pfnInterceptAudio) (void *pvUser, bool fKeepHostAudio);
     DECLCALLBACKMEMBER(void, pfnInterceptUSB) (void *pvUser, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
+    DECLCALLBACKMEMBER(void, pfnInterceptClipboard) (void *pvUser, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
 } VRDPSERVERCALLBACK;
 #endif /* VRDP_MC */
 
