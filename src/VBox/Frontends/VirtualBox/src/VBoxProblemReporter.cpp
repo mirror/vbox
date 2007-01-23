@@ -1264,26 +1264,122 @@ void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
     NOREF(rc);
 }
 
-// static
+void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal,
+                                            const QString &errorID,
+                                            const QString &errorMsg)
+{
+    /// @todo (r=dmik) it's just a preliminary box. We need to:
+    //  - for fatal errors and non-fatal with-retry errors, listen for a
+    //    VM state signal to automatically close the message if the VM
+    //    (externally) leaves the Paused state while it is shown.
+    //  - make warning messages modeless
+    //  - add common buttons like Retry/Save/PowerOff/whatever
+
+    CConsole console = aConsole;
+    CEnums::MachineState state = console.GetState();
+    Type type;
+    QString severity;
+
+    if (fatal)
+    {
+        /* the machine must be paused on fatal errors */
+        Assert (state == CEnums::Paused);
+        if (state != CEnums::Paused)
+            console.Pause();
+        type = Critical;
+        severity = tr ("Fatal Error", "runtime error info");
+    }
+    else if (state == CEnums::Paused)
+    {
+        type = Error;
+        severity = tr ("Non-Fatal Error", "runtime error info");
+    }
+    else
+    {
+        type = Warning;
+        severity = tr ("Warning", "runtime error info");
+    }
+    
+    QString formatted;
+
+    if (!errorMsg.isEmpty())
+        formatted += QString ("<table bgcolor=#FFFFFF border=0 cellspacing=0 "
+                              "cellpadding=0 width=100%>"
+                              "<tr><td><p>%1.</p></td></tr>"
+                              "</table><p></p>")
+                              .arg (highlight (errorMsg));
+
+    if (!errorID.isEmpty())
+        formatted += QString ("<table bgcolor=#EEEEEE border=0 cellspacing=0 "
+                              "cellpadding=0 width=100%>"
+                              "<tr><td>%1</td><td>%2</td></tr>"
+                              "<tr><td>%3</td><td>%4</td></tr>"
+                              "</table>")
+                              .arg (tr ("Error ID: ", "runtime error info"),
+                                    errorID)
+                              .arg (tr ("Error Severity: ", "runtime error info"),
+                                    severity);
+    
+    if (!formatted.isEmpty())
+        formatted = "<qt>" + formatted + "</qt>";
+ 
+    int rc = 0;
+
+    if (type == Critical)
+    {
+        rc = message (&vboxGlobal().consoleWnd(), type,
+            tr ("<p>A fatal error has occured during virtual machine execution! "
+                "The virtual machine will be powered off. It is suggested to "
+                "use the clipboard to copy the following error message for "
+                "further examination:</p>"),
+            formatted);
+        
+        /* always power down after a fatal error */
+        console.PowerDown();
+    }
+    else if (type == Error)
+    {
+        rc = message (&vboxGlobal().consoleWnd(), type,
+            tr ("<p>An error has occured during virtual machine execution! "
+                "The error details are shown below. You can try to correct "
+                "the described error and resume the virtual machine "
+                "execution.</p>"),
+            formatted);
+    }
+    else
+    {
+        rc = message (&vboxGlobal().consoleWnd(), type,
+            tr ("<p>The virtual machine execution may run into an error "
+                "condition as described below. "
+                "You may ignore this message, but it is suggested to perform "
+                "an appropriate action to make sure the described error will "
+                "not happen.</p>"),
+            formatted);
+    }
+
+    NOREF(rc);
+}
+
+/* static */
 QString VBoxProblemReporter::highlight (const QString &str)
 {
     QString text = str;
-    // mark strings in single quotes with color
+    /* mark strings in single quotes with color */
     QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
     rx.setMinimal (true);
     text.replace (rx, "\\1'<font color=#0000CC>\\2</font>'");
-    // mark UUIDs with color
+    /* mark UUIDs with color */
     text.replace (QRegExp (
         "((?:^|\\s)[(]?)"
         "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
         "(?=[:.-!);]?(?:\\s|$))"),
         "\\1<font color=#008000>\\2</font>");
-    // split to paragraphs at \n chars
+    /* split to paragraphs at \n chars */
     text.replace ('\n', "</p><p>");
     return text;
 }
 
-// static
+/* static */
 QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &info,
                                               HRESULT wrapperRC)
 {
@@ -1376,7 +1472,7 @@ QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &info,
             .arg (uint (wrapperRC), 8, 16);
 #endif
     }
-    formatted += "</table></font></qt>";
+    formatted += "</table></qt>";
 
     return formatted;
 }

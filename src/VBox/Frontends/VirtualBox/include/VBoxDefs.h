@@ -149,6 +149,7 @@ struct VBoxDefs
         SnapshotEventType = QEvent::User + 8,
         EnumerateMediaEventType = QEvent::User + 100,
         ActivateMenuEventType = QEvent::User + 101,
+        RuntimeErrorEventType = QEvent::User + 102,
     };
 };
 
