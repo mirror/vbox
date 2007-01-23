@@ -2461,7 +2461,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP)
                 val = pcnetMIIReadU16(pData, miiaddr);
             }
             else
-                val = 0;
+                val = 0xffff;
             break;
 
         default:
