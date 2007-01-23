@@ -188,7 +188,8 @@ public:
     void onStateChange (MachineState_T aMachineState);
     void onAdditionsStateChange();
     void onAdditionsOutdated();
-    void onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
+    void onKeyboardLedsChange (bool fNumLock, bool fCapsLock, bool fScrollLock);
+    void onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMessage);
 
     static const PDMDRVREG DrvStatusReg;
 
@@ -373,6 +374,11 @@ private:
     static DECLCALLBACK(void)
     setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                         const char *pszFormat, va_list args);
+
+    static DECLCALLBACK(void)
+    setVMRuntimeErrorCallback (PVM pVM, void *pvUser, bool fFatal,
+                               const char *pszErrorID,
+                               const char *pszFormat, va_list args);
 
     HRESULT                     captureUSBDevices (PVM pVM);
     void                        releaseAllUSBDevices (void);
