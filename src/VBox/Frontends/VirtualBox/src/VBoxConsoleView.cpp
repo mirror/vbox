@@ -193,6 +193,20 @@ private:
     QString mMessage;
 };
 
+/** Modifier key change event */
+class ModifierKeyChangeEvent : public QEvent
+{
+public:
+    ModifierKeyChangeEvent(bool fNumLock, bool fScrollLock, bool fCapsLock) :
+        QEvent ((QEvent::Type) VBoxDefs::ModifierKeyChangeEventType),
+        mfNumLock(fNumLock), mfScrollLock(fScrollLock), mfCapsLock(fCapsLock) {}
+    bool NumLock()    const { return mfNumLock; }
+    bool ScrollLock() const { return mfScrollLock; }
+    bool CapsLock()   const { return mfCapsLock; }
+private:
+    bool mfNumLock, mfScrollLock, mfCapsLock;
+};
+
 //
 // VBoxConsoleCallback class
 /////////////////////////////////////////////////////////////////////////////
@@ -279,10 +293,8 @@ public:
 
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fScrollLock, BOOL fCapsLock)
     {
-        /** @todo */
-        Q_UNUSED (fNumLock);
-        Q_UNUSED (fScrollLock);
-        Q_UNUSED (fCapsLock);
+        QApplication::postEvent (
+            view, new ModifierKeyChangeEvent (fNumLock, fScrollLock, fCapsLock));
         return S_OK;
     }
 
@@ -336,6 +348,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , hostkey_alone (false)
     , ignore_mainwnd_resize (false)
     , autoresize_guest (false)
+    , muNumLockAdaptionCnt (2)
     , mode (rm)
 {
     Assert (!cconsole.isNull() &&
@@ -762,6 +775,17 @@ bool VBoxConsoleView::event (QEvent *e)
                     emitMouseStateChanged();
                     vboxProblem().remindAboutMouseIntegration (mouse_absolute);
                 }
+                return true;
+            }
+
+            case VBoxDefs::ModifierKeyChangeEventType:
+            {
+                ModifierKeyChangeEvent *me = (ModifierKeyChangeEvent* )e;
+                if (me->NumLock() != mfNumLock)
+                    muNumLockAdaptionCnt = 2;
+                mfNumLock    = me->NumLock();
+                mfScrollLock = me->ScrollLock();
+                mfCapsLock   = me->CapsLock();
                 return true;
             }
 
@@ -1256,6 +1280,66 @@ void VBoxConsoleView::focusEvent (bool focus)
 }
 
 /**
+ *  Synchronize the views of the host and the guest to the modifier keys.
+ *  This function will add up to 6 additional keycodes to codes.
+ *
+ *  @param  codes  pointer to keycodes which are sent to the keyboard
+ *  @param  count  pointer to the keycodes counter
+ */
+void VBoxConsoleView::FixModifierState(LONG *codes, uint *count)
+{
+    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0, uKeyMaskScroll = 0;
+
+#if defined(Q_WS_X11)
+
+    Window   wDummy1, wDummy2;
+    int      iDummy3, iDummy4, iDummy5, iDummy6;
+    unsigned uMask;
+
+    uKeyMaskCaps          = LockMask;
+    XModifierKeymap* map  = XGetModifierMapping(qt_xdisplay());
+    KeyCode keyCodeNum    = XKeysymToKeycode(qt_xdisplay(), XK_Num_Lock);
+    KeyCode keyCodeScroll = XKeysymToKeycode(qt_xdisplay(), XK_Scroll_Lock);
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (   keyCodeNum != NoSymbol
+            && map->modifiermap[map->max_keypermod * i] == keyCodeNum)
+            uKeyMaskNum    = 1 << i;
+        else if (   keyCodeScroll != NoSymbol
+                 && map->modifiermap[map->max_keypermod * i] == keyCodeScroll)
+            uKeyMaskScroll = 1 << i;
+    }
+    XQueryPointer(qt_xdisplay(), DefaultRootWindow(qt_xdisplay()), &wDummy1, &wDummy2,
+                  &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
+    XFreeModifiermap(map);
+
+    if (muNumLockAdaptionCnt && (mfNumLock ^ !!(uMask & uKeyMaskNum)))
+    {
+        muNumLockAdaptionCnt--;
+        codes[(*count)++] = 0x45;
+        codes[(*count)++] = 0x45 | 0x80;
+    }
+
+#elif defined(Q_WS_WIN32)
+
+    if (muNumLockAdaptionCnt && (mfNumLock ^ !!(GetKeyState(VK_NUMLOCK))))
+    {
+        muNumLockAdaptionCnt--;
+        codes[(*count)++] = 0x45;
+        codes[(*count)++] = 0x45 | 0x80;
+    }
+
+#else
+
+#warning Adapt VBoxConsoleView::FixModifierState
+
+#endif
+
+
+}
+
+/**
  *  Called on every key press and release (while in focus).
  *
  *  @key        virtual scan code (virtual key on Win32 and KeySym on X11)
@@ -1274,7 +1358,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags)
 
     const bool is_hostkey = key == gs.hostKey();
 
-    LONG buf [2];
+    LONG buf [16];
     LONG *codes = buf;
     uint count = 0;
 
@@ -1330,6 +1414,12 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags)
                 keys_pressed [scan] |= IsKbdCaptured;
             else
                 keys_pressed [scan] &= ~IsKbdCaptured;
+
+            // Check if the guest has the same view on the modifier keys (NumLock,
+            // CapsLock, ScrollLock) as the X server. If not, send KeyPress events
+            // to synchronize the state.
+            FixModifierState (codes, &count);
+            
         }
     }
     else
