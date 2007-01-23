@@ -424,6 +424,7 @@ void VBoxDiskImageManagerDlg::loadListViews()
     {
         CDVDImage cd = cdEnum.GetNext();
         DiskImageItem *item = createCdItem (cdsView, 0, cd, VBoxMedia::Unknown);
+        NOREF(item);
     }
 
     /* load fd list */
@@ -432,6 +433,7 @@ void VBoxDiskImageManagerDlg::loadListViews()
     {
         CFloppyImage fd = fdEnum.GetNext();
         DiskImageItem *item = createFdItem (fdsView, 0, fd, VBoxMedia::Unknown);
+        NOREF(item);
     }
 }
 

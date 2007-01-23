@@ -199,7 +199,7 @@ int VBoxMediaComboBox::updateMedia (const QString &aSrc,
     return index == -1 ? count() - 1 : index;
 }
 
-void VBoxMediaComboBox::listEnumerated (const VBoxMediaList &aList)
+void VBoxMediaComboBox::listEnumerated (const VBoxMediaList & /*aList*/)
 {
     emit activated (currentItem());
     mToBeRefreshed = false;

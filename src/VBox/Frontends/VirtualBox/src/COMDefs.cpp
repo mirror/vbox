@@ -62,6 +62,7 @@
 // for exception fetching
 #include <nsIExceptionService.h>
 
+#undef ASSERT
 #include <VBox/com/assert.h>
 
 nsIComponentManager *COMBase::componentManager = nsnull;
