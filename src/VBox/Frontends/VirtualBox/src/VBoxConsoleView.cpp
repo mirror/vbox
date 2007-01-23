@@ -653,15 +653,14 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
  */
 void VBoxConsoleView::onFullscreenChange (bool /* on */)
 {
-LogTrace();
-    if (fb)
-    {
-        VBoxResizeEvent e (fb->pixelFormat(), fb->address(), fb->colorDepth(),
-                           fb->width(), fb->height());
-        fb->resizeEvent (&e);
-    }
-//CDisplay dsp = cconsole.GetDisplay();
-//dsp.InvalidateAndUpdate();
+    /// @todo (r=dmik) not currently sure is this method necessary to
+    //  fix fullscreen toggle problems (invalid areas) on Linux/SDL    
+//    if (fb)
+//    {
+//        VBoxResizeEvent e (fb->pixelFormat(), fb->address(), fb->colorDepth(),
+//                           fb->width(), fb->height());
+//        fb->resizeEvent (&e);
+//    }
 }
 
 //
