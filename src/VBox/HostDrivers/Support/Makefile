@@ -164,6 +164,7 @@ vboxdrv_SOURCES       = \
 ifndef VBOX_LINUX_VERSION_2_4
 vboxdrv_SOURCES      += \
 	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).mod.c
+vboxdrv_NOINST        = 1
 endif
 endif # real linux
 
