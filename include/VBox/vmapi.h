@@ -543,6 +543,16 @@ VMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMR3DECL(PVM)   VMR3EnumVMs(PVM pVMPrev);
 
 /**
+ * Wait for VM to be resumed. Handle events like vmR3EmulationThread does.
+ * In case the VM is stopped, clean up and long jump to the main EMT loop.
+ *
+ * @returns VINF_SUCCESS or doesn't return
+ * @param   pVM             VM handle.
+ */
+VMR3DECL(int) VMR3WaitForResume(PVM pVM);
+
+
+/**
  * VM destruction callback.
  * @param   pVM     The VM which is about to be destroyed.
  * @param   pvUser  The user parameter specified at registration.
