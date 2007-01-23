@@ -301,6 +301,7 @@ typedef struct VMM
     STAMCOUNTER                 StatGCRetPGMPoolGrow;
     STAMCOUNTER                 StatGCRetRemReplay;
     STAMCOUNTER                 StatGCRetVMSetError;
+    STAMCOUNTER                 StatGCRetVMSetRuntimeError;
     STAMCOUNTER                 StatGCRetPGMLock;
 
     /** @} */

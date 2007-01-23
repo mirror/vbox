@@ -3384,6 +3384,10 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                  * Execute recompiled.
                  */
                 case EMSTATE_REM:
+#if 0
+                    /* simulate a runtime error */
+                    VMSetRuntimeError (pVM, true, "simulatedError", "pVM=%p", pVM);
+#endif
                     rc = emR3RemExecute(pVM, &fFFDone);
                     Log2(("EMR3ExecuteVM: emR3RemExecute -> %Vrc\n", rc));
                     break;

@@ -115,6 +115,8 @@ static DECLCALLBACK(int) vmR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, v
 static DECLCALLBACK(int) vmR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
 static DECLCALLBACK(int) vmR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
 static DECLCALLBACK(int) vmR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
+static DECLCALLBACK(int) vmR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
+static DECLCALLBACK(int) vmR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 
 
 /**
@@ -201,6 +203,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
             pVM->vm.s.ppAtResetNext = &pVM->vm.s.pAtReset;
             pVM->vm.s.ppAtStateNext = &pVM->vm.s.pAtState;
             pVM->vm.s.ppAtErrorNext = &pVM->vm.s.pAtError;
+            pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
             rc = RTSemEventCreate(&pVM->vm.s.EventSemWait);
             if (VBOX_FAILURE(rc))
             {
@@ -2479,6 +2482,7 @@ VMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
         AssertCompile(sizeof(const char) == sizeof(uint8_t));
         if (pErr->offFile)
             pszFile = (const char *)pErr + pErr->offFile;
+        iLine = pErr->iLine;
         if (pErr->offFunction)
             pszFunction = (const char *)pErr + pErr->offFunction;
         if (pErr->offMessage)
@@ -2522,6 +2526,257 @@ DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *p
         va_list va2;
         va_copy(va2, *pArgs);
         pCur->pfnAtError(pVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va2);
+        va_end(va2);
+    }
+}
+
+
+/**
+ * Registers a VM runtime error callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pfnAtRuntimeError   Pointer to callback.
+ * @param   pvUser              User argument.
+ * @thread  Any.
+ */
+VMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+{
+    LogFlow(("VMR3AtRuntimeErrorRegister: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
+
+    /*
+     * Validate input.
+     */
+    if (!pfnAtRuntimeError)
+    {
+        AssertMsgFailed(("callback is required\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Make sure we're in EMT (to avoid the logging).
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegister, 3, pVM, pfnAtRuntimeError, pvUser);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    LogFlow(("VMR3AtRuntimeErrorRegister: returns %Vrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Registers a VM runtime error callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pfnAtRuntimeError   Pointer to callback.
+ * @param   pvUser              User argument.
+ * @thread  EMT
+ */
+static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+{
+    /*
+     * Allocate a new record.
+     */
+
+    PVMATRUNTIMEERROR pNew = (PVMATRUNTIMEERROR)MMR3HeapAlloc(pVM, MM_TAG_VM, sizeof(*pNew));
+    if (!pNew)
+        return VERR_NO_MEMORY;
+
+    /* fill */
+    pNew->pfnAtRuntimeError = pfnAtRuntimeError;
+    pNew->pvUser            = pvUser;
+    pNew->pNext             = NULL;
+
+    /* insert */
+    *pVM->vm.s.ppAtRuntimeErrorNext = pNew;
+    pVM->vm.s.ppAtRuntimeErrorNext = &pNew->pNext;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deregisters a VM runtime error callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pfnAtRuntimeError   Pointer to callback.
+ * @param   pvUser              User argument.
+ * @thread  Any.
+ */
+VMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+{
+    LogFlow(("VMR3AtRuntimeErrorDeregister: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
+
+    /*
+     * Validate input.
+     */
+    if (!pfnAtRuntimeError)
+    {
+        AssertMsgFailed(("callback is required\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Make sure we're in EMT (to avoid the logging).
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregister, 3, pVM, pfnAtRuntimeError, pvUser);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    LogFlow(("VMR3AtRuntimeErrorDeregister: returns %Vrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Deregisters a VM runtime error callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pfnAtRuntimeError   Pointer to callback.
+ * @param   pvUser              User argument.
+ * @thread  EMT
+ */
+static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+{
+    LogFlow(("vmR3AtRuntimeErrorDeregister: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
+
+    /*
+     * Search the list for the entry.
+     */
+    PVMATRUNTIMEERROR pPrev = NULL;
+    PVMATRUNTIMEERROR pCur = pVM->vm.s.pAtRuntimeError;
+    while (     pCur
+           &&   pCur->pfnAtRuntimeError == pfnAtRuntimeError
+           &&   pCur->pvUser == pvUser)
+    {
+        pPrev = pCur;
+        pCur = pCur->pNext;
+    }
+    if (!pCur)
+    {
+        AssertMsgFailed(("pfnAtRuntimeError=%p was not found\n", pfnAtRuntimeError));
+        return VERR_FILE_NOT_FOUND;
+    }
+
+    /*
+     * Unlink it.
+     */
+    if (pPrev)
+    {
+        pPrev->pNext = pCur->pNext;
+        if (!pCur->pNext)
+            pVM->vm.s.ppAtRuntimeErrorNext = &pPrev->pNext;
+    }
+    else
+    {
+        pVM->vm.s.pAtRuntimeError = pCur->pNext;
+        if (!pCur->pNext)
+            pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
+    }
+
+    /*
+     * Free it.
+     */
+    pCur->pfnAtRuntimeError = NULL;
+    pCur->pNext = NULL;
+    MMR3HeapFree(pCur);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Ellipsis to va_list wrapper for calling pfnAtRuntimeError.
+ */
+static void vmR3SetRuntimeErrorWorkerDoCall(PVM pVM, PVMATRUNTIMEERROR pCur, bool fFatal,
+                                            const char *pszErrorID, 
+                                            const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    pCur->pfnAtRuntimeError(pVM, pCur->pvUser, fFatal, pszErrorID, pszFormat, va);
+    va_end(va);
+}
+
+
+/**
+ * This is a worker function for GC and Ring-0 calls to VMSetError and VMSetErrorV.
+ * The message is found in VMINT.
+ *
+ * @param   pVM             The VM handle.
+ * @thread  EMT.
+ */
+VMR3DECL(void) VMR3SetRuntimeErrorWorker(PVM pVM)
+{
+    VM_ASSERT_EMT(pVM);
+    AssertReleaseMsgFailed(("And we have a winner! You get to implement Ring-0 and GC VMSetRuntimeErrorV! Contrats!\n"));
+
+    /*
+     * Unpack the error (if we managed to format one).
+     */
+    PVMRUNTIMEERROR pErr = pVM->vm.s.pRuntimeErrorR3;
+    const char *pszErrorID = NULL;
+    const char *pszMessage;
+    bool        fFatal = false;
+    if (pErr)
+    {
+        AssertCompile(sizeof(const char) == sizeof(uint8_t));
+        if (pErr->offErrorID)
+            pszErrorID = (const char *)pErr + pErr->offErrorID;
+        if (pErr->offMessage)
+            pszMessage = (const char *)pErr + pErr->offMessage;
+        else
+            pszMessage = "No message!";
+        fFatal = pErr->fFatal;
+    }
+    else
+        pszMessage = "No message! (Failed to allocate memory to put the error message in!)";
+
+    /*
+     * Call the at runtime error callbacks.
+     */
+    for (PVMATRUNTIMEERROR pCur = pVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
+        vmR3SetRuntimeErrorWorkerDoCall(pVM, pCur, fFatal, pszErrorID, "%s", pszMessage);
+}
+
+
+/**
+ * Worker which calls everyone listening to the VM runtime error messages.
+ *
+ * @param   pVM             The VM handle.
+ * @param   fFatal          Whether it is a fatal error or not.
+ * @param   pszErrorID      Error ID string.
+ * @param   pszFormat       Format string.
+ * @param   pArgs           Pointer to the format arguments.
+ * @thread  EMT
+ */
+DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal,
+                                        const char *pszErrorID,
+                                        const char *pszFormat, va_list *pArgs)
+{
+    /*
+     * Make a copy of the message.
+     */
+    vmSetRuntimeErrorCopy(pVM, fFatal, pszErrorID, pszFormat, *pArgs);
+
+    /*
+     * Call the at error callbacks.
+     */
+    for (PVMATRUNTIMEERROR pCur = pVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
+    {
+        va_list va2;
+        va_copy(va2, *pArgs);
+        pCur->pfnAtRuntimeError(pVM, pCur->pvUser, fFatal, pszErrorID, pszFormat, va2);
         va_end(va2);
     }
 }

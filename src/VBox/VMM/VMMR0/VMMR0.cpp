@@ -365,6 +365,9 @@ static void vmmR0RecordRC(PVM pVM, int rc)
                 case VMMCALLHOST_VM_SET_ERROR:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetVMSetError);
                     break;
+                case VMMCALLHOST_VM_SET_RUNTIME_ERROR:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetVMSetRuntimeError);
+                    break;
                 default:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetCallHost);
                     break;

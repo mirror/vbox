@@ -87,7 +87,7 @@ typedef FNVMATERROR *PFNVMATERROR;
  * @returns rc. Meaning you can do:
  *    @code
  *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
- *    @codeend
+ *    @endcode
  * @param   pVM             VM handle. Must be non-NULL.
  * @param   rc              VBox status code.
  * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
@@ -103,7 +103,7 @@ VMDECL(int) VMSetError(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, 
  * @returns rc. Meaning you can do:
  *    @code
  *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
- *    @codeend
+ *    @endcode
  * @param   pVM             VM handle. Must be non-NULL.
  * @param   rc              VBox status code.
  * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
@@ -120,13 +120,88 @@ VMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat,
  * @returns rc. Meaning you can do:
  *    @code
  *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
- *    @codeend
+ *    @endcode
  * @param   pVM             VM handle.
  * @param   rc              VBox status code.
  * @param   pszMessage      Error message string.
  * @thread  Any
  */
 #define VM_SET_ERROR(pVM, rc, pszMessage)   (VMSetError(pVM, rc, RT_SRC_POS, pszMessage))
+
+
+/**
+ * VM runtime error callback function.
+ * See VMSetRuntimeError for the detailed description of parameters.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pvUser          The user argument.
+ * @param   fFatal          Whether it is a fatal error or not.
+ * @param   pszErrorID      Error ID string.
+ * @param   pszFormat       Error message format string.
+ * @param   args            Error message arguments.
+ */
+typedef DECLCALLBACK(void) FNVMATRUNTIMEERROR(PVM pVM, void *pvUser, bool fFatal,
+                                              const char *pszErrorID,
+                                              const char *pszFormat, va_list args);
+/** Pointer to a VM runtime error callback. */
+typedef FNVMATRUNTIMEERROR *PFNVMATRUNTIMEERROR;
+
+/**
+ * Sets the runtime error message.
+ * As opposed VMSetError(), this method is intended to inform the VM user about
+ * errors and error-like conditions that happen at an arbitrary point during VM
+ * execution (like "host memory low" or "out of host disk space").
+ *
+ * The @a fFatal parameter defines whether the error is fatal or not. If it is
+ * true, then it is expected that the caller has already paused the VM execution
+ * before calling this method. The VM user is supposed to power off the VM
+ * immediately after it has received the runtime error notification via the
+ * FNVMATRUNTIMEERROR callback.
+ *
+ * If @a fFatal is false, then the paused state of the VM defines the kind of
+ * the error. If the VM is paused before calling this method, it means that
+ * the VM user may try to fix the error condition (i.e. free more host memory)
+ * and then resume the VM execution. If the VM is not paused before calling
+ * this method, it means that the given error is a warning about an error
+ * condition that may happen soon but that doesn't directly affect the
+ * VM execution by the time of the call.
+ *
+ * The @a pszErrorID parameter defines an unique error identificator.
+ * It is used by the front-ends to show a proper message to the end user
+ * containig possible actions (for example, Retry/Ignore). For this reason,
+ * an error ID assigned once to some particular error condition should not
+ * change in the future. The format of this parameter is "SomeErrorCondition". 
+ *
+ * @param   pVM             VM handle. Must be non-NULL.
+ * @param   fFatal          Whether it is a fatal error or not.
+ * @param   pszErrorID      Error ID string.
+ * @param   pszFormat       Error message format string.
+ * @param   ...             Error message arguments.
+ *
+ * @return  VBox status code (whether the error has been successfully set
+ *          and delivered to callbacks or not).
+ *
+ * @thread  Any
+ */
+VMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,
+                              const char *pszFormat, ...);
+
+/**
+ * va_list version of VMSetRuntimeError.
+ *
+ * @param   pVM             VM handle. Must be non-NULL.
+ * @param   fFatal          Whether it is a fatal error or not.
+ * @param   pszErrorID      Error ID string.
+ * @param   pszFormat       Error message format string.
+ * @param   args            Error message arguments.
+ *
+ * @return  VBox status code (whether the error has been successfully set
+ *          and delivered to callbacks or not).
+ *
+ * @thread  Any
+ */
+VMDECL(int) VMSetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID,
+                               const char *pszFormat, va_list args);
 
 
 /**
@@ -630,6 +705,37 @@ VMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pv
  * @thread  EMT.
  */
 VMR3DECL(void) VMR3SetErrorWorker(PVM pVM);
+
+/**
+ * Registers a VM runtime error callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pfnAtRuntimeError   Pointer to callback.
+ * @param   pvUser              User argument.
+ * @thread  Any.
+ */
+VMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
+
+/**
+ * Deregisters a VM runtime error callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pfnAtRuntimeError   Pointer to callback.
+ * @param   pvUser              User argument.
+ * @thread  Any.
+ */
+VMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
+
+/**
+ * This is a worker function for GC and Ring-0 calls to VMSetRuntimeError and VMSetRuntimeErrorV.
+ * The message is found in VMINT.
+ *
+ * @param   pVM             The VM handle.
+ * @thread  EMT.
+ */
+VMR3DECL(void) VMR3SetRuntimeErrorWorker(PVM pVM);
 
 
 /**
