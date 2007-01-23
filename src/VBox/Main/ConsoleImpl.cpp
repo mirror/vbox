@@ -3312,6 +3312,21 @@ void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLo
         (*it++)->OnKeyboardLedsChange(fNumLock, fCapsLock, fScrollLock);
 }
 
+/**
+ *  @note Locks this object for reading.
+ */
+void Console::onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMessage)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    CallbackList::iterator it = mCallbacks.begin();
+    while (it != mCallbacks.end())
+        (*it++)->OnRuntimeError (aFatal, aErrorID, aMessage);
+}
+
 // private mehtods
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -5321,15 +5336,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
 #undef STR_FREE
 #undef STR_CONV
 
-    /*
-     * Register VM state change handler
-     */
-    rc = VMR3AtStateRegister(pVM, Console::vmstateChangeCallback, pConsole);
-    AssertRC (rc);
+    /* Register VM state change handler */
+    int rc2 = VMR3AtStateRegister (pVM, Console::vmstateChangeCallback, pConsole);
+    AssertRC (rc2);
+    if (VBOX_SUCCESS (rc))
+        rc = rc2;
 
-    /*
-     * Save the VM pointer in the machine object.
-     */
+    /* Register VM runtime error handler */
+    rc2 = VMR3AtRuntimeErrorRegister (pVM, Console::setVMRuntimeErrorCallback, pConsole);
+    AssertRC (rc2);
+    if (VBOX_SUCCESS (rc))
+        rc = rc2;
+
+    /* Save the VM pointer in the machine object */
     pConsole->mpVM = pVM;
 
     LogFlowFunc (("vrc = %Vrc\n", rc));
@@ -5708,16 +5727,46 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
     VMProgressTask *task = static_cast <VMProgressTask *> (pvUser);
     AssertReturnVoid (task);
 
+    /* we ignore RT_SRC_POS_DECL arguments to avoid confusion of end-users */
     HRESULT hrc = setError (E_FAIL, tr ("%N.\n"
-                                        "At '%s' (%d) in %s.\n"
-                                        "VBox status code: %d %Vrc\n"),
+                                        "VBox status code: %d (%Vrc)"),
                                     tr (pszFormat), &args,
-                                    pszFile, iLine, pszFunction,
                                     rc, rc);
     task->mProgress->notifyComplete (hrc);
 }
 
+/**
+ * VM runtime error callback function.
+ * See VMSetRuntimeError for the detailed description of parameters.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pvUser          The user argument.
+ * @param   fFatal          Whether it is a fatal error or not.
+ * @param   pszErrorID      Error ID string.
+ * @param   pszFormat       Error message format string.
+ * @param   args            Error message arguments.
+ * @thread EMT.
+ */
+/* static */ DECLCALLBACK(void)
+Console::setVMRuntimeErrorCallback (PVM pVM, void *pvUser, bool fFatal,
+                                    const char *pszErrorID,
+                                    const char *pszFormat, va_list args)
+{
+    LogFlowFuncEnter();
 
+    Console *that = static_cast <Console *> (pvUser);
+    AssertReturnVoid (that);
+
+    Utf8Str message = Utf8StrFmt (pszFormat, args);
+
+    LogRel (("Console: VM runtime error: fatal=%RTbool, "
+             "errorID=%s message=\"%s\"\n",
+             fFatal, pszErrorID, message.raw()));
+
+    that->onRuntimeError (BOOL (fFatal), Bstr (pszErrorID), Bstr (message)); 
+
+    LogFlowFuncLeave();
+}
 
 /**
  *  Captures and attaches USB devices to a newly created VM.

@@ -2434,7 +2434,7 @@
                 <ul>
                     <li><i>fatal</i></li>
                     <li><i>non-fatal with retry</i></li>
-                    <li><i>non-fatal without retry</i></li>
+                    <li><i>non-fatal warnings</i></li>
                 </ul>
                 
                 <b>Fatal</b> errors are indicated by the @a fatal parameter set
@@ -2445,10 +2445,10 @@
                 or power it off using <link to="IConsole::powerDown()"/>.
                 Resuming the execution can lead to unpredictable results.
                 
-                <b>Non-fatal</b> errors are indicated by the
+                <b>Non-fatal</b> errors and warnings are indicated by the
                 @a fatal parameter set to <tt>false</tt>. If the virtual machine
                 is in the Paused state by the time the error notification is
-                received, it means that the user can retry the machine
+                received, it means that the user can <i>try to resume</i> the machine
                 execution after attempting to solve the probem that caused the
                 error. In this case, the notification handler is supposed
                 to show an appropriate message to the user (depending on the
@@ -2457,9 +2457,9 @@
                 wants to retry, the notification handler should continue
                 the machine execution using the <link to="IConsole::resume()"/>
                 call. If the machine execution is not Paused during this
-                notification, then it means this notification is a warning (for
-                example, about a fatal condition that can happen very soon); no
-                any immediate action is required from the user, the machine
+                notification, then it means this notification is a <i>warning</i>
+                (for example, about a fatal condition that can happen very soon);
+                no immediate action is required from the user, the machine
                 continues its normal execution.
 
                 Note that in either case the notification handler
@@ -2470,9 +2470,9 @@
                 
                 Currently, the following error identificators are known:
                 <ul>
-                <li>"HostMemoryLow"</li>
-                <li>"HostAudioNotResponding"</li>
-                <li>"VDIStorageFull"</li>
+                <li><tt>"HostMemoryLow"</tt></li>
+                <li><tt>"HostAudioNotResponding"</tt></li>
+                <li><tt>"VDIStorageFull"</tt></li>
                 </ul>
 
                 <note>
