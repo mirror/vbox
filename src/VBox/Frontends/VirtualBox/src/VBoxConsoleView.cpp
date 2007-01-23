@@ -197,14 +197,14 @@ private:
 class ModifierKeyChangeEvent : public QEvent
 {
 public:
-    ModifierKeyChangeEvent(bool fNumLock, bool fScrollLock, bool fCapsLock) :
+    ModifierKeyChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock) :
         QEvent ((QEvent::Type) VBoxDefs::ModifierKeyChangeEventType),
-        mfNumLock(fNumLock), mfScrollLock(fScrollLock), mfCapsLock(fCapsLock) {}
+        mfNumLock(fNumLock), mfCapsLock(fCapsLock), mfScrollLock(fScrollLock) {}
     bool NumLock()    const { return mfNumLock; }
-    bool ScrollLock() const { return mfScrollLock; }
     bool CapsLock()   const { return mfCapsLock; }
+    bool ScrollLock() const { return mfScrollLock; }
 private:
-    bool mfNumLock, mfScrollLock, mfCapsLock;
+    bool mfNumLock, mfCapsLock, mfScrollLock;
 };
 
 //
@@ -291,10 +291,10 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fScrollLock, BOOL fCapsLock)
+    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
         QApplication::postEvent (
-            view, new ModifierKeyChangeEvent (fNumLock, fScrollLock, fCapsLock));
+            view, new ModifierKeyChangeEvent (fNumLock, fCapsLock, fScrollLock));
         return S_OK;
     }
 
@@ -349,6 +349,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , ignore_mainwnd_resize (false)
     , autoresize_guest (false)
     , muNumLockAdaptionCnt (2)
+    , muCapsLockAdaptionCnt (2)
     , mode (rm)
 {
     Assert (!cconsole.isNull() &&
@@ -783,9 +784,11 @@ bool VBoxConsoleView::event (QEvent *e)
                 ModifierKeyChangeEvent *me = (ModifierKeyChangeEvent* )e;
                 if (me->NumLock() != mfNumLock)
                     muNumLockAdaptionCnt = 2;
+                if (me->CapsLock() != mfCapsLock)
+                    muCapsLockAdaptionCnt = 2;
                 mfNumLock    = me->NumLock();
-                mfScrollLock = me->ScrollLock();
                 mfCapsLock   = me->CapsLock();
+                mfScrollLock = me->ScrollLock();
                 return true;
             }
 
@@ -1288,13 +1291,12 @@ void VBoxConsoleView::focusEvent (bool focus)
  */
 void VBoxConsoleView::FixModifierState(LONG *codes, uint *count)
 {
-    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0, uKeyMaskScroll = 0;
-
 #if defined(Q_WS_X11)
 
     Window   wDummy1, wDummy2;
     int      iDummy3, iDummy4, iDummy5, iDummy6;
     unsigned uMask;
+    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0, uKeyMaskScroll = 0;
 
     uKeyMaskCaps          = LockMask;
     XModifierKeymap* map  = XGetModifierMapping(qt_xdisplay());
@@ -1320,6 +1322,12 @@ void VBoxConsoleView::FixModifierState(LONG *codes, uint *count)
         codes[(*count)++] = 0x45;
         codes[(*count)++] = 0x45 | 0x80;
     }
+    if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(uMask & uKeyMaskCaps)))
+    {
+        muCapsLockAdaptionCnt--;
+        codes[(*count)++] = 0x3a;
+        codes[(*count)++] = 0x3a | 0x80;
+    }
 
 #elif defined(Q_WS_WIN32)
 
@@ -1328,6 +1336,12 @@ void VBoxConsoleView::FixModifierState(LONG *codes, uint *count)
         muNumLockAdaptionCnt--;
         codes[(*count)++] = 0x45;
         codes[(*count)++] = 0x45 | 0x80;
+    }
+    if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
+    {
+        muCapsLockAdaptionCnt--;
+        codes[(*count)++] = 0x3a;
+        codes[(*count)++] = 0x3a | 0x80;
     }
 
 #else
@@ -1387,6 +1401,14 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags)
         }
         else
         {
+            if (flags & KeyPressed)
+            {
+                // Check if the guest has the same view on the modifier keys (NumLock,
+                // CapsLock, ScrollLock) as the X server. If not, send KeyPress events
+                // to synchronize the state.
+                FixModifierState (codes, &count);
+            }
+
             // process the scancode and update the table of pressed keys
             uint8_t what_pressed = IsKeyPressed;
 
@@ -1414,12 +1436,6 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags)
                 keys_pressed [scan] |= IsKbdCaptured;
             else
                 keys_pressed [scan] &= ~IsKbdCaptured;
-
-            // Check if the guest has the same view on the modifier keys (NumLock,
-            // CapsLock, ScrollLock) as the X server. If not, send KeyPress events
-            // to synchronize the state.
-            FixModifierState (codes, &count);
-            
         }
     }
     else

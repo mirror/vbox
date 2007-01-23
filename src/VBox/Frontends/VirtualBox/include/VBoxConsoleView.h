@@ -199,6 +199,7 @@ private:
     bool mfScrollLock;
     bool mfCapsLock;
     long muNumLockAdaptionCnt;
+    long muCapsLockAdaptionCnt;
 
     QTimer *resize_hint_timer;
 
