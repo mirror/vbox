@@ -205,8 +205,3 @@ RTDECL(int) RTThreadSetAffinity(uint64_t u64Mask)
     return RTErrConvertFromOS2(rc);
 }
 
-
-RTR3DECL(void) RTThreadExit(void)
-{
-    DosExit(EXIT_THREAD, 0);
-}
