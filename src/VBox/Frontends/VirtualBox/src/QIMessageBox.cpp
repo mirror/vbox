@@ -69,24 +69,25 @@ QIMessageBox::QIMessageBox (
     layout->setResizeMode (QLayout::Minimum);
 
     QHBox *main = new QHBox (this);
+    main->setMargin (0);
     main->setSpacing (10);
-    main->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
     layout->addWidget (main);
 
     licon = new QLabel (main);
     licon->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) icon));
-    licon->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
+    licon->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
     licon->setAlignment (AlignHCenter | AlignTop);
 
     message = new QVBox (main);
+    message->setMargin (0);
     message->setSpacing (10);
 
     ltext = new QLabel (text, message);
     ltext->setAlignment (AlignAuto | AlignTop | ExpandTabs | WordBreak);
-    ltext->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Fixed);
+    ltext->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Fixed, true);
 
     dbox = new QVBox (this);
-    dbox->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
+    dbox->setMargin (0);
     dbox->setSpacing (10);
     layout->addWidget (dbox);
 
@@ -97,9 +98,9 @@ QIMessageBox::QIMessageBox (
         QFontMetrics fm = dtext->fontMetrics();
         dtext->setMinimumSize (40 * fm.width ('m'), fm.lineSpacing() * 6);
     }
-    dtext->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     dtext->setReadOnly (true);
     dtext->setWrapPolicy (QTextEdit::AtWordOrDocumentBoundary);
+    dtext->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
 
     /* cbflag has no parent initially, setDetailsShown() will do that */
     cbflag = new QCheckBox (0);
