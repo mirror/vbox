@@ -23,11 +23,12 @@
 #ifndef __VBoxMediaComboBox_h__
 #define __VBoxMediaComboBox_h__
 
+#include "VBoxGlobal.h"
+
 #include <qcombobox.h>
 #include <quuid.h>
 
-struct VBoxMedia;
-typedef QValueList <VBoxMedia> VBoxMediaList;
+class QListBoxItem;
 
 class VBoxMediaComboBox : public QComboBox
 {
@@ -37,32 +38,40 @@ public:
 
     VBoxMediaComboBox (QWidget *aParent = 0,
                        const char *aName = 0, int aType = 0);
-    ~VBoxMediaComboBox () {}
+    ~VBoxMediaComboBox() {}
 
-    void refresh();
+    void  refresh();
+    void  appendItem (const QString &, const QUuid &, const QString &);
+    void  replaceItem (int, const QString &, const QString &);
+    void  removeLastItem();
+    void  setReadyForRefresh();
+    void  setRequiredItem (const QUuid &);
+    void  setUseEmptyItem (bool);
+    void  setBelongsTo (const QUuid &);
     QUuid getId();
-    void appendItem (const QString&, const QUuid&);
-    void removeLastItem();
-    void setRequiredItem (const QUuid&);
-    void setUseEmptyItem (bool);
-    void setReadyForRefresh();
-    void setBelongsTo (const QUuid&);
     QUuid getBelongsTo();
-    void loadShortCuts (const QStringList&, const QStringList&);
+    void setCurrentItem (int);
 
 protected slots:
 
-    void updateShortcuts (const VBoxMediaList &);
+    void mediaEnumerated (const VBoxMedia &);
+    void listEnumerated (const VBoxMediaList &);
+    void processOnItem (QListBoxItem *);
+    void updateToolTip (int);
 
 protected:
 
+    void loadCleanContent();
+    int updateMedia (const QString &, const QUuid &, const QString &,
+                     VBoxMedia::Status);
+
     int         mType;
     QStringList mUuidList;
+    QStringList mTipList;
     QUuid       mMachineId;
     QUuid       mRequiredId;
     bool        mUseEmptyItem;
     bool        mToBeRefreshed;
-    bool        mWasEnabled;
 };
 
 #endif /* __VBoxMediaComboBox_h__ */

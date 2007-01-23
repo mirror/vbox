@@ -46,7 +46,7 @@
 /** Simple media descriptor type. */
 struct VBoxMedia
 {
-    enum Status { Ok = 0, Error = 0x01, Inaccessible = 0x02 };
+    enum Status { Unknown, Ok, Error, Inaccessible };
 
     VBoxMedia() : type (VBoxDefs::InvalidType), status (Ok) {}
 
@@ -297,6 +297,7 @@ public:
     bool startMachine (const QUuid &id);
 
     void startEnumeratingMedia();
+    bool isInEnumeratingProcess() { return media_enum_thread ? true : false; }
 
     /** Returns a list of all currently enumerated media (it is empty if the
      *  enumeration has been finished or never been started). */

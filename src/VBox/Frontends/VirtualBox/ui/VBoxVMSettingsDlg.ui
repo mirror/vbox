@@ -2457,7 +2457,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <function access="protected">setWarning( const QString &amp; )</function>
     <function access="protected">showEvent( QShowEvent * )</function>
     <function returnType="bool">eventFilter( QObject * watched, QEvent * e )</function>
-    <function access="protected">updateShortcuts( VBoxDefs::DiskType, VBoxDiskImageManagerDlg *aVdm = 0 )</function>
+    <function access="protected">updateShortcuts()</function>
     <function access="protected" returnType="QString">getHdInfo( QGroupBox*, QUuid )</function>
 </functions>
 <pixmapinproject/>
