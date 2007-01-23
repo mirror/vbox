@@ -48,8 +48,10 @@
 # include <linux/miscdevice.h>
 #endif
 #ifdef CONFIG_X86_LOCAL_APIC
-#  include <asm/apic.h>
+# include <asm/apic.h>
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 #  include <asm/nmi.h>
+# endif
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) && !defined(page_to_pfn)
