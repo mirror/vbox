@@ -43,7 +43,8 @@ public:
                    QString aLabel7 = QString::null,
                    QString aLabel8 = QString::null) :
         QListViewItem (parent, aLabel1, aLabel2, aLabel3, aLabel4, aLabel5,
-                       aLabel6, aLabel7, aLabel8), mName (aLabel1) {}
+                       aLabel6, aLabel7, aLabel8),
+        mName (aLabel1), mStatus (VBoxMedia::Unknown) {}
 
     DiskImageItem (QListView *parent, QString aLabel1,
                    QString aLabel2 = QString::null,
@@ -54,7 +55,8 @@ public:
                    QString aLabel7 = QString::null,
                    QString aLabel8 = QString::null) :
         QListViewItem (parent, aLabel1, aLabel2, aLabel3, aLabel4, aLabel5,
-                       aLabel6, aLabel7, aLabel8), mName (aLabel1) {}
+                       aLabel6, aLabel7, aLabel8),
+        mName (aLabel1), mStatus (VBoxMedia::Unknown) {}
 
     QString getName() { return mName; }
 
@@ -87,6 +89,10 @@ public:
     const QString &getMachineId() { return mMachineId; }
 
 
+    void setStatus (VBoxMedia::Status aStatus) { mStatus = aStatus; }
+    VBoxMedia::Status getStatus() { return mStatus; }
+
+
     void setToolTip (QString aToolTip) { mToolTip = aToolTip; }
     const QString &getToolTip() { return mToolTip; }
 
@@ -105,9 +111,6 @@ public:
 
     int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
     {
-        if (aItem->rtti() == 1002)
-            return aAscending ? 1 : -1;
-
         ULONG64 thisValue = vboxGlobal().parseSize (       text (aColumn));
         ULONG64 thatValue = vboxGlobal().parseSize (aItem->text (aColumn));
         if (thisValue && thatValue)
@@ -128,6 +131,15 @@ public:
                 static_cast<DiskImageItem*> (QListViewItem::nextSibling()) : 0;
     }
 
+    void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
+                    int aColumn, int aWidth, int aSlign)
+    {
+        QColorGroup cGroup (aColorGroup);
+        if (mStatus == VBoxMedia::Unknown)
+            cGroup.setColor (QColorGroup::Text, cGroup.mid());
+        QListViewItem::paintCell (aPainter, cGroup, aColumn, aWidth, aSlign);
+    }
+
 protected:
 
     QString mName;
@@ -143,47 +155,8 @@ protected:
     QString mMachineId;
 
     QString mToolTip;
-};
 
-
-class ProgressBarItem : public QListViewItem, public QProgressBar
-{
-public:
-
-    ProgressBarItem (QListView *aParent, ULONG aTotalSteps) :
-        QListViewItem (aParent)
-    {
-        setFrameShadow (Sunken);
-        setFrameShape (Panel);
-        setSelectable (false);
-        setProgress (0, aTotalSteps);
-        setPercentageVisible (false);
-    }
-
-    void paintCell (QPainter *p, const QColorGroup &cg,
-                    int column, int width, int align)
-    {
-        setMaximumWidth (100);
-        setFixedHeight (QListViewItem::height());
-        QListViewItem::paintCell (p, cg, column, width, align);
-        if (column == 0)
-        {
-            drawContents (p);
-            drawFrame (p);
-        }
-    }
-
-    void increaseProgress() { setProgress (progress() + 1); }
-
-    int rtti() const { return 1002; }
-
-    int compare (QListViewItem *aItem, int /*aColumn*/, bool aAscending) const
-    {
-        if (aItem->rtti() == 1001)
-            return aAscending ? -1 : 1;
-        else
-            return 0;
-    }
+    VBoxMedia::Status mStatus;
 };
 
 
@@ -205,8 +178,8 @@ void VBoxDiskImageManagerDlg::showModeless (const VBoxMediaList *list /* = NULL 
          * the contents of the modeless dialog */
         /// @todo refreshAll() may be slow, so it may be better to analyze
         //  event details and update only what is changed */
-        connect (&vboxGlobal(), SIGNAL (machineDataChanged (const VBoxMachineDataChangeEvent &)),
-                 mModelessDialog, SLOT (refreshAll()));
+        //connect (&vboxGlobal(), SIGNAL (machineDataChanged (const VBoxMachineDataChangeEvent &)),
+        //         mModelessDialog, SLOT (refreshAll()));
         connect (&vboxGlobal(), SIGNAL (machineRegistered (const VBoxMachineRegisteredEvent &)),
                  mModelessDialog, SLOT (refreshAll()));
         connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent &)),
@@ -222,7 +195,6 @@ void VBoxDiskImageManagerDlg::showModeless (const VBoxMediaList *list /* = NULL 
     mModelessDialog->setWindowState (mModelessDialog->windowState() &
                                      ~WindowMinimized);
     mModelessDialog->setActiveWindow();
-
 }
 
 
@@ -232,10 +204,6 @@ void VBoxDiskImageManagerDlg::init()
 
     mToBeRefreshed = false;
     mInLoop = false;
-
-    mHdsProgress = 0;
-    mCdsProgress = 0;
-    mFdsProgress = 0;
 
     defaultButton = searchDefaultButton();
 
@@ -272,11 +240,6 @@ void VBoxDiskImageManagerDlg::init()
 
 
     /* setup image list views */
-
-    hdsView->setShowSortIndicator (true);
-    cdsView->setShowSortIndicator (true);
-    fdsView->setShowSortIndicator (true);
-
     hdsView->setColumnAlignment (1, Qt::AlignRight);
     hdsView->setColumnAlignment (2, Qt::AlignRight);
     hdsView->header()->setStretchEnabled (false);
@@ -290,6 +253,7 @@ void VBoxDiskImageManagerDlg::init()
     cdsView->header()->setStretchEnabled (false);
     cdsView->header()->setStretchEnabled (true, 0);
 
+
     /* setup list-view's item tooltip */
     hdsView->setShowToolTips (false);
     cdsView->setShowToolTips (false);
@@ -301,19 +265,10 @@ void VBoxDiskImageManagerDlg::init()
     connect (fdsView, SIGNAL (onItem (QListViewItem*)),
              this, SLOT (mouseOnItem(QListViewItem*)));
 
-    /* setup dnd handlers */
-    hdsView->viewport()->setAcceptDrops (true);
-    cdsView->viewport()->setAcceptDrops (true);
-    fdsView->viewport()->setAcceptDrops (true);
-    connect (hdsView, SIGNAL (dropped (QDropEvent *)),
-             this, SLOT (addDroppedImages (QDropEvent*)));
-    connect (cdsView, SIGNAL (dropped (QDropEvent*)),
-             this, SLOT (addDroppedImages (QDropEvent*)));
-    connect (fdsView, SIGNAL (dropped (QDropEvent*)),
-             this, SLOT (addDroppedImages (QDropEvent*)));
 
     /* status-bar currently disabled */
     statusBar()->setHidden (true);
+
 
     /* context menu composing */
     itemMenu = new QPopupMenu (this, "itemMenu");
@@ -434,6 +389,50 @@ void VBoxDiskImageManagerDlg::init()
     /* create info-pane for fd list-view */
     fdsPane1 = createInfoString (tr ("Location"), fdsContainer, 0, -1);
     fdsPane2 = createInfoString (tr ("Attached to"), fdsContainer, 1, -1);
+
+
+    /* enumeration progressbar creation */
+    mProgressText = new QLabel (tr ("Checking accessibility"), centralWidget());
+    mProgressText->setHidden (true);
+    buttonLayout->insertWidget (2, mProgressText);
+    mProgressBar = new QProgressBar (centralWidget());
+    mProgressBar->setHidden (true);
+    mProgressBar->setFrameShadow (QFrame::Sunken);
+    mProgressBar->setFrameShape  (QFrame::Panel);
+    mProgressBar->setPercentageVisible (false);
+    mProgressBar->setMaximumWidth (100);
+    buttonLayout->insertWidget (3, mProgressBar);
+
+    if (!vboxGlobal().isInEnumeratingProcess()) loadListViews();
+}
+
+
+void VBoxDiskImageManagerDlg::loadListViews()
+{
+    /* load hd list */
+    CHardDiskEnumerator hdEnum = vbox.GetHardDisks().Enumerate();
+    while (hdEnum.HasMore())
+    {
+        CHardDisk hd = hdEnum.GetNext();
+        DiskImageItem *item = createHdItem (hdsView, 0, hd, VBoxMedia::Unknown);
+        createHdChildren (item, hd, VBoxMedia::Unknown);
+    }
+
+    /* load cd list */
+    CDVDImageEnumerator cdEnum = vbox.GetDVDImages().Enumerate();
+    while (cdEnum.HasMore())
+    {
+        CDVDImage cd = cdEnum.GetNext();
+        DiskImageItem *item = createCdItem (cdsView, 0, cd, VBoxMedia::Unknown);
+    }
+
+    /* load fd list */
+    CFloppyImageEnumerator fdEnum = vbox.GetFloppyImages().Enumerate();
+    while (fdEnum.HasMore())
+    {
+        CFloppyImage fd = fdEnum.GetNext();
+        DiskImageItem *item = createFdItem (fdsView, 0, fd, VBoxMedia::Unknown);
+    }
 }
 
 
@@ -503,9 +502,6 @@ void VBoxDiskImageManagerDlg::mouseOnItem (QListViewItem *aItem)
     {
         case 1001:
             tip = static_cast<DiskImageItem*> (aItem)->getToolTip();
-            break;
-        case 1002:
-            tip = tr ("Enumeration in progress...", "Media accessibility check");
             break;
         default:
             Assert (0);
@@ -623,7 +619,35 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
             {
                 QDragEnterEvent *dragEnterEvent =
                     static_cast<QDragEnterEvent*>(aEvent);
-                dragEnterEvent->accept();
+                dragEnterEvent->acceptAction();
+                return true;
+            }
+            break;
+        }
+        case QEvent::Drop:
+        {
+            if (aObject == currentList)
+            {
+                QDropEvent *dropEvent =
+                    static_cast<QDropEvent*>(aEvent);
+                QStringList *droppedList = new QStringList();
+                QUriDrag::decodeLocalFiles (dropEvent, *droppedList);
+                QCustomEvent *updateEvent = new QCustomEvent (1001);
+                updateEvent->setData (droppedList);
+                QApplication::postEvent (currentList, updateEvent);
+                dropEvent->acceptAction();
+                return true;
+            }
+            break;
+        }
+        case 1001: /* QCustomEvent 1001 - DnD Update Event */
+        {
+            if (aObject == currentList)
+            {
+                QCustomEvent *updateEvent =
+                    static_cast<QCustomEvent*>(aEvent);
+                addDroppedImages ((QStringList*) updateEvent->data());
+                return true;
             }
             break;
         }
@@ -654,15 +678,13 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 }
 
 
-void VBoxDiskImageManagerDlg::addDroppedImages (QDropEvent *aEvent)
+void VBoxDiskImageManagerDlg::addDroppedImages (QStringList *aDroppedList)
 {
     QListView *currentList = getCurrentListView();
 
-    QStringList droppedList;
-    QUriDrag::decodeLocalFiles (aEvent, droppedList);
-
-    for (QStringList::Iterator it = droppedList.begin();
-         it != droppedList.end(); ++it)
+    DiskImageItem *item = 0;
+    for (QStringList::Iterator it = (*aDroppedList).begin();
+         it != (*aDroppedList).end(); ++it)
     {
         // Checking dropped media type
         VBoxDefs::DiskType type = VBoxDefs::InvalidType;
@@ -679,19 +701,19 @@ void VBoxDiskImageManagerDlg::addDroppedImages (QDropEvent *aEvent)
             if (currentList == hdsView) type = VBoxDefs::HD;
         }
         // If media type has been determined - attach this device
-        if (type)
-            addDroppedImage (*it, type);
+        if (type) item = addImageToList (*it, type);
     }
-
-    refreshAll();
+    delete aDroppedList;
+    setCurrentItem (currentList, item);
 }
 
 
-void VBoxDiskImageManagerDlg::addDroppedImage (QString aSource, VBoxDefs::DiskType aDiskType)
+DiskImageItem* VBoxDiskImageManagerDlg::addImageToList (QString aSource, VBoxDefs::DiskType aDiskType)
 {
     if (aSource.isEmpty())
-        return;
+        return 0;
 
+    DiskImageItem *item = 0;
     QUuid uuid;
     switch (aDiskType)
     {
@@ -702,6 +724,16 @@ void VBoxDiskImageManagerDlg::addDroppedImage (QString aSource, VBoxDefs::DiskTy
             {
                 CHardDisk hardDisk = CUnknown (vdi);
                 vbox.RegisterHardDisk (hardDisk);
+                if (vbox.isOk())
+                {
+                    VBoxMedia::Status status = hardDisk.GetAccessible() ?
+                        VBoxMedia::Ok : VBoxMedia::Inaccessible;
+                    item = createHdItem (hdsView, 0, hardDisk, status);
+                    /* synchronize modeless dialog if present */
+                    if (mModelessDialog && mModelessDialog != this)
+                        mModelessDialog->createHdItem (mModelessDialog->hdsView,
+                                                       0, hardDisk, status);
+                }
             }
             break;
         }
@@ -709,14 +741,38 @@ void VBoxDiskImageManagerDlg::addDroppedImage (QString aSource, VBoxDefs::DiskTy
         {
             CDVDImage dvdImage = vbox.OpenDVDImage (aSource, uuid);
             if (vbox.isOk())
+            {
                 vbox.RegisterDVDImage (dvdImage);
+                if (vbox.isOk())
+                {
+                    VBoxMedia::Status status = dvdImage.GetAccessible() ?
+                        VBoxMedia::Ok : VBoxMedia::Inaccessible;
+                    item = createCdItem (cdsView, 0, dvdImage, status);
+                    /* synchronize modeless dialog if present */
+                    if (mModelessDialog && mModelessDialog != this)
+                        mModelessDialog->createCdItem (mModelessDialog->cdsView,
+                                                       0, dvdImage, status);
+                }
+            }
             break;
         }
         case VBoxDefs::FD:
         {
             CFloppyImage floppyImage = vbox.OpenFloppyImage (aSource, uuid);
             if (vbox.isOk())
+            {
                 vbox.RegisterFloppyImage (floppyImage);
+                if (vbox.isOk())
+                {
+                    VBoxMedia::Status status = floppyImage.GetAccessible() ?
+                        VBoxMedia::Ok : VBoxMedia::Inaccessible;
+                    item = createFdItem (fdsView, 0, floppyImage, status);
+                    /* synchronize modeless dialog if present */
+                    if (mModelessDialog && mModelessDialog != this)
+                        mModelessDialog->createFdItem (mModelessDialog->fdsView,
+                                                       0, floppyImage, status);
+                }
+            }
             break;
         }
         default:
@@ -724,6 +780,7 @@ void VBoxDiskImageManagerDlg::addDroppedImage (QString aSource, VBoxDefs::DiskTy
             Assert(0);
         }
     }
+    return item;
 }
 
 
@@ -837,10 +894,10 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId)
 }
 
 
-QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd)
+QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
+                                                   VBoxMedia::Status aStatus)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    bool accessible = aHd.GetAccessible();
     QUuid machineId = aHd.GetMachineId();
 
     QString src = aHd.GetLocation();
@@ -866,32 +923,57 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd)
 
     /* compose tool-tip information */
     QString tip;
-    if (!accessible)
+    switch (aStatus)
     {
-        tip = tr ("<nobr><b>%1</b></nobr><br>%2")
-                  .arg (location)
-                  .arg (aHd.GetLastAccessError());
-    }
-    else
-    {
-        tip = tr ("<nobr><b>%1</b></nobr><br>"
-                  "<nobr>Disk type:&nbsp;&nbsp;%2</nobr><br>"
-                  "<nobr>Storage type:&nbsp;&nbsp;%3</nobr>")
-                  .arg (location)
-                  .arg (hardDiskType)
-                  .arg (storageType);
+        case VBoxMedia::Unknown:
+        {
+            tip = tr ("<nobr><b>%1</b></nobr><br>"
+                      "Checking accessibility...", "HDD")
+                      .arg (location);
+            break;
+        }
+        case VBoxMedia::Ok:
+        {
+            tip = tr ("<nobr><b>%1</b></nobr><br>"
+                      "<nobr>Disk type:&nbsp;&nbsp;%2</nobr><br>"
+                      "<nobr>Storage type:&nbsp;&nbsp;%3</nobr>")
+                      .arg (location)
+                      .arg (hardDiskType)
+                      .arg (storageType);
 
-        if (!usage.isNull())
-            tip += tr ("<br><nobr>Attached to:&nbsp;&nbsp;%1</nobr>").arg (usage);
-        if (!snapshotName.isNull())
-            tip += tr ("<br><nobr>Snapshot:&nbsp;&nbsp;%5</nobr>").arg (snapshotName);
+            if (!usage.isNull())
+                tip += tr ("<br><nobr>Attached to:&nbsp;&nbsp;%1</nobr>", "HDD")
+                           .arg (usage);
+            if (!snapshotName.isNull())
+                tip += tr ("<br><nobr>Snapshot:&nbsp;&nbsp;%5</nobr>", "HDD")
+                           .arg (snapshotName);
+            break;
+        }
+        case VBoxMedia::Error:
+        {
+            /// @todo (r=dmik) paass a complete VBoxMedia instance here
+            //  to get the result of blabla.GetAccessible() call form CUnknown
+            tip = tr ("<nobr><b>%1</b></nobr><br>"
+                      "Error checking media accessibility", "HDD")
+                      .arg (location);
+            break;
+        }
+        case VBoxMedia::Inaccessible:
+        {
+            tip = tr ("<nobr><b>%1</b></nobr><br>%2", "HDD")
+                      .arg (location)
+                      .arg (aHd.GetLastAccessError());
+            break;
+        }
+        default:
+            AssertFailed();
     }
     return tip;
 }
 
-QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd)
+QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd,
+                                                   VBoxMedia::Status aStatus)
 {
-    bool accessible = aCd.GetAccessible();
     QString src = aCd.GetFilePath();
     QFileInfo fi (src);
     QString location = QDir::convertSeparators (fi.absFilePath ());
@@ -900,29 +982,54 @@ QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd)
 
     /* compose tool-tip information */
     QString tip;
-    if (!accessible)
+    switch (aStatus)
     {
-        /// @todo (r=dmik) correct this when GetLastAccessError() is
-        //  implemented for IFloppyImage/IDVDImage
-        tip = tr ("<nobr><b>%1</b></nobr><br>%2")
-                  .arg (location)
-                  .arg (tr ("The image file is not accessible",
-                            "CD/DVD/Floppy"));
-    }
-    else
-    {
-        tip = tr ("<nobr><b>%1</b></nobr>")
-                  .arg (location);
+        case VBoxMedia::Unknown:
+        {
+            tip = tr ("<nobr><b>%1</b></nobr><br>"
+                      "Checking accessibility...", "CD/DVD/Floppy")
+                      .arg (location);
+            break;
+        }
+        case VBoxMedia::Ok:
+        {
+            tip = tr ("<nobr><b>%1</b></nobr>", "CD/DVD/Floppy")
+                      .arg (location);
 
-        if (!usage.isNull())
-            tip += tr ("<br><nobr>Attached to:&nbsp;&nbsp;%1</nobr>").arg (usage);
+            if (!usage.isNull())
+                tip += tr ("<br><nobr>Attached to:&nbsp;&nbsp;%1</nobr>",
+                           "CD/DVD/Floppy")
+                           .arg (usage);
+            break;
+        }
+        case VBoxMedia::Error:
+        {
+            /// @todo (r=dmik) paass a complete VBoxMedia instance here
+            //  to get the result of blabla.GetAccessible() call form CUnknown
+            tip = tr ("<nobr><b>%1</b></nobr><br>"
+                      "Error checking media accessibility", "CD/DVD/Floppy")
+                      .arg (location);
+            break;
+        }
+        case VBoxMedia::Inaccessible:
+        {
+            /// @todo (r=dmik) correct this when GetLastAccessError() is
+            //  implemented for IDVDImage
+            tip = tr ("<nobr><b>%1</b></nobr><br>%2")
+                      .arg (location)
+                      .arg (tr ("The image file is not accessible",
+                                "CD/DVD/Floppy"));
+            break;
+        }
+        default:
+            AssertFailed();
     }
     return tip;
 }
 
-QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd)
+QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd,
+                                                   VBoxMedia::Status aStatus)
 {
-    bool accessible = aFd.GetAccessible();
     QString src = aFd.GetFilePath();
     QFileInfo fi (src);
     QString location = QDir::convertSeparators (fi.absFilePath ());
@@ -930,23 +1037,49 @@ QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd)
     QString usage = getFloppyImageUsage (uuid);
 
     /* compose tool-tip information */
+    /* compose tool-tip information */
     QString tip;
-    if (!accessible)
+    switch (aStatus)
     {
-        /// @todo (r=dmik) correct this when GetLastAccessError() is
-        //  implemented for IFloppyImage/IDVDImage
-        tip = tr ("<nobr><b>%1</b></nobr><br>%2")
-                  .arg (location)
-                  .arg (tr ("The image file is not accessible",
-                            "CD/DVD/Floppy"));
-    }
-    else
-    {
-        tip = tr ("<nobr><b>%1</b></nobr>")
+        case VBoxMedia::Unknown:
+        {
+            tip = tr ("<nobr><b>%1</b></nobr><br>"
+                      "Checking accessibility...", "CD/DVD/Floppy")
+                      .arg (location);
+            break;
+        }
+        case VBoxMedia::Ok:
+        {
+            tip = tr ("<nobr><b>%1</b></nobr>", "CD/DVD/Floppy")
                       .arg (location);
 
-        if (!usage.isNull())
-            tip += tr ("<br><nobr>Attached to:&nbsp;&nbsp;%1</nobr>").arg (usage);
+            if (!usage.isNull())
+                tip += tr ("<br><nobr>Attached to:&nbsp;&nbsp;%1</nobr>",
+                           "CD/DVD/Floppy")
+                           .arg (usage);
+            break;
+        }
+        case VBoxMedia::Error:
+        {
+            /// @todo (r=dmik) paass a complete VBoxMedia instance here
+            //  to get the result of blabla.GetAccessible() call form CUnknown
+            tip = tr ("<nobr><b>%1</b></nobr><br>"
+                      "Error checking media accessibility", "CD/DVD/Floppy")
+                      .arg (location);
+            break;
+        }
+        case VBoxMedia::Inaccessible:
+        {
+            /// @todo (r=dmik) correct this when GetLastAccessError() is
+            //  implemented for IDVDImage
+            tip = tr ("<nobr><b>%1</b></nobr><br>%2")
+                      .arg (location)
+                      .arg (tr ("The image file is not accessible",
+                                "CD/DVD/Floppy"));
+            break;
+        }
+        default:
+            AssertFailed();
     }
     return tip;
 }
@@ -954,23 +1087,23 @@ QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd)
 
 DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
                                                       DiskImageItem *aRoot,
-                                                      CHardDisk &aHd)
+                                                      CHardDisk &aHd,
+                                                      VBoxMedia::Status aStatus)
 {
     DiskImageItem *item = 0;
 
     QUuid uuid = aHd.GetId();
     QString src = aHd.GetLocation();
     QUuid machineId = aHd.GetMachineId();
-    bool accessible = aHd.GetAccessible();
 
     QString usage;
     if (!machineId.isNull())
         usage = vbox.GetMachine (machineId).GetName();
     QString storageType = vboxGlobal().toString (aHd.GetStorageType());
     QString hardDiskType = vboxGlobal().hardDiskTypeString (aHd);
-    QString virtualSize = accessible ?
-        vboxGlobal().formatSize (aHd.GetSize() * _1M) : QString ("--");
-    QString actualSize = accessible ?
+    QString virtualSize = aStatus == VBoxMedia::Ok ?
+        vboxGlobal().formatSize ((ULONG64)aHd.GetSize() * _1M) : QString ("--");
+    QString actualSize = aStatus == VBoxMedia::Ok ?
         vboxGlobal().formatSize (aHd.GetActualSize()) : QString ("--");
     QString snapshotName;
     if (!machineId.isNull() && !aHd.GetSnapshotId().isNull())
@@ -982,12 +1115,10 @@ DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
     }
     QFileInfo fi (src);
 
-    item = createImageNode (
-        aList, aRoot,
-        fi.fileName(),
-        virtualSize,
-        actualSize
-    );
+    item = createImageNode (aList, aRoot,
+                            fi.fileName(),
+                            virtualSize,
+                            actualSize);
     item->setPath (aHd.GetStorageType() == CEnums::ISCSIHardDisk ? src :
                    QDir::convertSeparators (fi.absFilePath()));
     item->setUsage (usage);
@@ -998,7 +1129,8 @@ DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
     item->setActualSize (actualSize);
     item->setUuid (uuid);
     item->setMachineId (machineId);
-    item->setToolTip (composeHdToolTip (aHd));
+    item->setToolTip (composeHdToolTip (aHd, aStatus));
+    item->setStatus (aStatus);
 
     return item;
 }
@@ -1006,16 +1138,16 @@ DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
 
 DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
                                                       DiskImageItem *aRoot,
-                                                      CDVDImage &aCd)
+                                                      CDVDImage &aCd,
+                                                      VBoxMedia::Status aStatus)
 {
     DiskImageItem *item = 0;
 
     QUuid uuid = aCd.GetId();
     QString src = aCd.GetFilePath();
     QString usage = getDVDImageUsage (uuid);
-    bool accessible = aCd.GetAccessible();
 
-    QString size = accessible ?
+    QString size = aStatus == VBoxMedia::Ok ?
         vboxGlobal().formatSize (aCd.GetSize()) : QString ("--");
     QFileInfo fi (src);
 
@@ -1026,7 +1158,8 @@ DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
     item->setUsage (usage);
     item->setActualSize (size);
     item->setUuid (uuid);
-    item->setToolTip (composeCdToolTip (aCd));
+    item->setToolTip (composeCdToolTip (aCd, aStatus));
+    item->setStatus (aStatus);
 
     return item;
 }
@@ -1034,16 +1167,16 @@ DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
 
 DiskImageItem* VBoxDiskImageManagerDlg::createFdItem (QListView *aList,
                                                       DiskImageItem *aRoot,
-                                                      CFloppyImage &aFd)
+                                                      CFloppyImage &aFd,
+                                                      VBoxMedia::Status aStatus)
 {
     DiskImageItem *item = 0;
 
     QUuid uuid = aFd.GetId();
     QString src = aFd.GetFilePath();
     QString usage = getFloppyImageUsage (uuid);
-    bool accessible = aFd.GetAccessible();
 
-    QString size = accessible ?
+    QString size = aStatus == VBoxMedia::Ok ?
         vboxGlobal().formatSize (aFd.GetSize()) : QString ("--");
     QFileInfo fi (src);
 
@@ -1054,59 +1187,75 @@ DiskImageItem* VBoxDiskImageManagerDlg::createFdItem (QListView *aList,
     item->setUsage (usage);
     item->setActualSize (size);
     item->setUuid (uuid);
-    item->setToolTip (composeFdToolTip (aFd));
+    item->setToolTip (composeFdToolTip (aFd, aStatus));
+    item->setStatus (aStatus);
 
     return item;
 }
 
 
 void VBoxDiskImageManagerDlg::createHdChildren (DiskImageItem *aRoot,
-                                                CHardDisk &aHd)
+                                                CHardDisk &aHd,
+                                                VBoxMedia::Status aStatus)
 {
     CHardDiskEnumerator enumerator = aHd.GetChildren().Enumerate();
     while (enumerator.HasMore())
     {
         CHardDisk subHd = enumerator.GetNext();
-        DiskImageItem *subItem = createHdItem (0, aRoot, subHd);
-        createHdChildren (subItem, subHd);
+        DiskImageItem *subItem = createHdItem (0, aRoot, subHd, aStatus);
+        createHdChildren (subItem, subHd, aStatus);
     }
 }
 
 
-void VBoxDiskImageManagerDlg::insertMedia (const VBoxMedia &aMedia)
+DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList, QUuid aId)
 {
-    /* ignore non-interesting aMedia */
+    DiskImageItem *item = 0, *iterator = 0;
+    if (aList->firstChild() && aList->firstChild()->rtti() == 1001)
+        iterator = static_cast<DiskImageItem*>(aList->firstChild());
+    while (iterator)
+    {
+        if (iterator->getUuid() == aId)
+            item = iterator;
+        iterator = iterator->nextSibling();
+    }
+    return item;
+}
+
+
+void VBoxDiskImageManagerDlg::updateMedia (const VBoxMedia &aMedia)
+{
+    /* ignore non-updated aMedia */
     if (!(type & aMedia.type))
         return;
 
+    /* search for updated listview item */
     DiskImageItem *item = 0;
-
     switch (aMedia.type)
     {
         case VBoxDefs::HD:
         {
-            refreshList (hdsView, mHdsProgress);
             CHardDisk hd = aMedia.disk;
-            item = createHdItem (hdsView, 0, hd);
-            createHdChildren (item, hd);
-            hdsView->adjustColumn (1);
-            hdsView->adjustColumn (2);
+            item = searchItem (hdsView, hd.GetId());
+            delete item;
+            item = createHdItem (hdsView, 0, hd, aMedia.status);
+            createHdChildren (item, hd, aMedia.status);
             break;
         }
         case VBoxDefs::CD:
         {
-            refreshList (cdsView, mCdsProgress);
             CDVDImage cd = aMedia.disk;
-            item = createCdItem (cdsView, 0, cd);
-            cdsView->adjustColumn (1);
+            item = searchItem (cdsView, cd.GetId());
+            delete item;
+            item = createCdItem (cdsView, 0, cd, aMedia.status);
             break;
         }
         case VBoxDefs::FD:
         {
-            refreshList (fdsView, mFdsProgress);
             CFloppyImage fd = aMedia.disk;
-            item = createFdItem (fdsView, 0, fd);
-            fdsView->adjustColumn (1);
+            item = searchItem (fdsView, fd.GetId());
+            delete item;
+            item = createFdItem (fdsView, 0, fd, aMedia.status);
             break;
         }
         default:
@@ -1120,6 +1269,8 @@ void VBoxDiskImageManagerDlg::insertMedia (const VBoxMedia &aMedia)
         item->setPixmap (0, pxInaccessible);
     else if (aMedia.status == VBoxMedia::Error)
         item->setPixmap (0, pxErroneous);
+
+    mProgressBar->setProgress (mProgressBar->progress() + 1);
 }
 
 
@@ -1159,15 +1310,20 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
         list = vboxGlobal().currentMediaList();
 
     VBoxMediaList::const_iterator it;
+    prepareToRefresh();
     for (it = list.begin(); it != list.end(); ++ it)
-        insertMedia (*it);
+        updateMedia (*it);
 
-    if (!mediaList)
+    if (mediaList)
+    {
+        mediaEnumerated (*mediaList);
+    }
+    else
     {
         /* only start enumerating media if we haven't been supplied with a list
          * (it's ok if the enumeration has been already started, nothing will
          * happen) */
-        refreshAll();
+        vboxGlobal().startEnumeratingMedia();
     }
 }
 
@@ -1175,8 +1331,8 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
 void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMedia &aMedia)
 {
     if (!mToBeRefreshed) return;
-
-    insertMedia (aMedia);
+    updateMedia (aMedia);
+    processCurrentChanged();
 }
 
 
@@ -1184,16 +1340,8 @@ void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMediaList & /*aList*/)
 {
     if (!mToBeRefreshed) return;
 
-    delete mHdsProgress, delete mCdsProgress, delete mFdsProgress;
-    mHdsProgress = 0, mCdsProgress = 0, mFdsProgress = 0;
-
-    cdsView->setCurrentItem (cdsView->firstChild());
-    fdsView->setCurrentItem (fdsView->firstChild());
-    hdsView->setCurrentItem (hdsView->firstChild());
-    cdsView->setSelected (cdsView->currentItem(), true);
-    fdsView->setSelected (fdsView->currentItem(), true);
-    hdsView->setSelected (hdsView->currentItem(), true);
-    processCurrentChanged();
+    mProgressBar->setHidden (true);
+    mProgressText->setHidden (true);
 
     imRefreshAction->setEnabled (true);
     unsetCursor();
@@ -1225,7 +1373,7 @@ void VBoxDiskImageManagerDlg::machineStateChanged (const VBoxMachineStateChangeE
 }
 
 
-void VBoxDiskImageManagerDlg::refreshAll()
+void VBoxDiskImageManagerDlg::prepareToRefresh()
 {
     if (mToBeRefreshed) return;
     mToBeRefreshed = true;
@@ -1237,28 +1385,36 @@ void VBoxDiskImageManagerDlg::refreshAll()
     cdsPane1->clear(), cdsPane2->clear();
     fdsPane1->clear(), fdsPane2->clear();
 
+    /* prepare progressbar */
+    if (mProgressBar)
+    {
+        int totalSteps = 0;
+        if (type & VBoxDefs::HD)
+            totalSteps += vbox.GetHardDisks().GetCount();
+        if (type & VBoxDefs::CD)
+            totalSteps += vbox.GetDVDImages().GetCount();
+        if (type & VBoxDefs::FD)
+            totalSteps += vbox.GetFloppyImages().GetCount();
+        mProgressBar->setProgress (0, totalSteps);
+        mProgressBar->setHidden (false);
+        mProgressText->setHidden (false);
+    }
+
     imRefreshAction->setEnabled (false);
     setCursor (QCursor (BusyCursor));
-
-    /* start enumerating media */
-    vboxGlobal().startEnumeratingMedia();
 }
 
-void VBoxDiskImageManagerDlg::refreshList (QListView *aView, ProgressBarItem *&aItem)
+
+void VBoxDiskImageManagerDlg::refreshAll()
 {
-    if (!aItem)
-    {
-        aView->clear();
-        ULONG iCount = 0;
-        if (aView == hdsView)
-            iCount = vbox.GetHardDisks().GetCount();
-        else if (aView == cdsView)
-            iCount = vbox.GetDVDImages().GetCount();
-        else if (aView == fdsView)
-            iCount = vbox.GetFloppyImages().GetCount();
-        aItem = new ProgressBarItem (aView, iCount);
-    }
-    aItem->increaseProgress();
+    if (mToBeRefreshed) return;
+    prepareToRefresh();
+    /* lists clearing */
+    hdsView->clear(), cdsView->clear(), fdsView->clear();
+    /* load all lists */
+    loadListViews();
+    /* start enumerating media */
+    vboxGlobal().startEnumeratingMedia();
 }
 
 
@@ -1322,16 +1478,18 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
 }
 
 
-void VBoxDiskImageManagerDlg::setCurrentItem (QListView *aListView, DiskImageItem *aItem)
+void VBoxDiskImageManagerDlg::setCurrentItem (QListView *aListView, QListViewItem *aItem)
 {
+    aListView->setFocus();
     if (aItem)
     {
         aListView->setCurrentItem (aItem);
         aListView->setSelected (aListView->currentItem(), true);
+        /* it is strange repeat but it works */
         aListView->adjustColumn (1);
         aListView->adjustColumn (2);
+        aListView->adjustColumn (1);
     }
-    aListView->setFocus();
     processCurrentChanged (aListView->currentItem());
 }
 
@@ -1340,6 +1498,11 @@ void VBoxDiskImageManagerDlg::processCurrentChanged()
 {
     QListView *currentList = getCurrentListView();
     currentList->setFocus();
+
+    QListViewItem *itemToSelect =
+        !currentList->isSelected (currentList->currentItem()) ?
+        currentList->firstChild() : currentList->currentItem();
+    setCurrentItem (currentList, itemToSelect);
 
     /* tab stop setup */
     setTabOrder (hdsView, hdsPane1);
@@ -1359,8 +1522,6 @@ void VBoxDiskImageManagerDlg::processCurrentChanged()
 
     setTabOrder (buttonHelp, buttonOk);
     setTabOrder (buttonOk, twImages);
-
-    processCurrentChanged (currentList->selectedItem());
 }
 
 void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
@@ -1439,11 +1600,14 @@ void VBoxDiskImageManagerDlg::newImage()
     if (dlg.exec() == QDialog::Accepted)
     {
         CHardDisk hd = dlg.hardDisk();
-        DiskImageItem *createdItem = createHdItem (hdsView, 0, hd);
+        VBoxMedia::Status status = hd.GetAccessible() ?
+            VBoxMedia::Ok : VBoxMedia::Inaccessible;
+        DiskImageItem *createdItem = createHdItem (hdsView, 0, hd, status);
         setCurrentItem (hdsView, createdItem);
         /* synchronize modeless dialog if present */
         if (mModelessDialog && mModelessDialog != this)
-            mModelessDialog->createHdItem (mModelessDialog->hdsView, 0, hd);
+            mModelessDialog->createHdItem (mModelessDialog->hdsView,
+                                           0, hd, status);
     }
 }
 
@@ -1456,7 +1620,7 @@ void VBoxDiskImageManagerDlg::addImage()
         static_cast<DiskImageItem*> (currentList->currentItem()) : 0;
 
     QString dir;
-    if (item)
+    if (item && item->getStatus() == VBoxMedia::Ok)
         dir = item->getPath().stripWhiteSpace();
 
     if (!dir)
@@ -1489,68 +1653,13 @@ void VBoxDiskImageManagerDlg::addImage()
                                                 this, "AddDiskImageDialog",
                                                 title);
 
-    DiskImageItem *createdItem = 0;
-    if (src)
-    {
-        QUuid uuid;
-        if (currentList == hdsView)
-        {
-            CVirtualDiskImage vdi = vbox.OpenVirtualDiskImage (src);
-            if (vbox.isOk())
-            {
-                /// @todo (dmik) later, change wrappers so that converting
-                //  to CUnknown is not necessary for cross-assignments
-                CHardDisk hardDisk = CUnknown (vdi);
-                vbox.RegisterHardDisk (hardDisk);
-                if (vbox.isOk())
-                {
-                    createdItem = createHdItem (hdsView, 0, hardDisk);
-                    /* synchronize modeless dialog if present */
-                    if (mModelessDialog && mModelessDialog != this)
-                        mModelessDialog->createHdItem (mModelessDialog->hdsView, 0, hardDisk);
-                }
-            }
-        }
-        else
-        if (currentList == cdsView)
-        {
-            CDVDImage dvdImage = vbox.OpenDVDImage (src, uuid);
-            if (vbox.isOk())
-            {
-                vbox.RegisterDVDImage (dvdImage);
-                if (vbox.isOk())
-                {
-                    createdItem = createCdItem (cdsView, 0, dvdImage);
-                    /* synchronize modeless dialog if present */
-                    if (mModelessDialog && mModelessDialog != this)
-                        mModelessDialog->createCdItem (mModelessDialog->cdsView, 0, dvdImage);
-                }
-            }
-        }
-        else
-        if (currentList == fdsView)
-        {
-            CFloppyImage floppyImage = vbox.OpenFloppyImage (src, uuid);
-            if (vbox.isOk())
-            {
-                vbox.RegisterFloppyImage (floppyImage);
-                if (vbox.isOk())
-                {
-                    createdItem = createFdItem (fdsView, 0, floppyImage);
-                    /* synchronize modeless dialog if present */
-                    if (mModelessDialog && mModelessDialog != this)
-                        mModelessDialog->createFdItem (mModelessDialog->fdsView, 0, floppyImage);
-                }
-            }
-        }
-
-        if (!vbox.isOk())
-        {
-            vboxProblem().cannotRegisterMedia (this, vbox, type, src);
-        }
-    }
-    /* set current item */
+    DiskImageItem *createdItem = addImageToList (src, type);
     setCurrentItem (currentList, createdItem);
+
+    if (!vbox.isOk())
+    {
+        vboxProblem().cannotRegisterMedia (this, vbox, type, src);
+    }
 }
 
 
@@ -1572,7 +1681,7 @@ void VBoxDiskImageManagerDlg::removeImage()
         type = VBoxDefs::HD;
         int deleteImage;
         if (vbox.GetHardDisk (uuid).GetStorageType() == CEnums::VirtualDiskImage &&
-            vbox.GetHardDisk (uuid).GetAccessible())
+            item->getStatus() == VBoxMedia::Ok)
         {
             deleteImage = vboxProblem().confirmHardDiskImageDeletion (this, src);
         }
@@ -1612,7 +1721,7 @@ void VBoxDiskImageManagerDlg::removeImage()
     else
     {
         delete item;
-        setCurrentItem (currentList, (DiskImageItem*)currentList->currentItem());
+        setCurrentItem (currentList, currentList->currentItem());
         /* synchronize modeless dialog if present */
         if (mModelessDialog && mModelessDialog != this)
         {
@@ -1823,29 +1932,4 @@ void VBoxDiskImageManagerDlg::processDoubleClick (QListViewItem*)
 
     if (doSelect && currentList->selectedItem() && buttonOk->isEnabled())
         accept();
-}
-
-
-void VBoxDiskImageManagerDlg::uploadCurrentList (QStringList &aNames,
-                                                 QStringList &aKeys,
-                                                 const QUuid &aMachineId)
-{
-    QListView *currentList = getCurrentListView();
-    DiskImageItem *item = 0;
-    if (currentList->firstChild() &&
-        currentList->firstChild()->rtti() == 1001)
-        item = static_cast<DiskImageItem*> (currentList->firstChild());
-    Assert (item);
-
-    do {
-        if (QUuid (item->getMachineId()).isNull() ||
-            QUuid (item->getMachineId()) == aMachineId)
-        {
-            aNames << QString ("%1 (%2)")
-                      .arg (item->getName().stripWhiteSpace())
-                      .arg (item->getPath().stripWhiteSpace());
-            aKeys  << item->getUuid();
-        }
-        item = item->nextSibling();
-    } while (item);
 }

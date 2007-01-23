@@ -225,7 +225,7 @@ enum
 void VBoxVMSettingsDlg::init()
 {
     polished = false;
-    
+
     setIcon (QPixmap::fromMimeSource ("settings_16px.png"));
 
     /* all pages are initially valid */
@@ -332,7 +332,7 @@ void VBoxVMSettingsDlg::init()
                                 "and allows to quickly select a different hard disk."));
     QWhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
                                 "and allows to quickly select a different hard disk."));
-    
+
     wvalHDD = new QIWidgetValidator( pageHDD, this );
     connect (wvalHDD, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
@@ -416,7 +416,7 @@ void VBoxVMSettingsDlg::init()
                      tr ("When checked, the virtual PCI audio card is plugged into the "
                          "virtual machine that uses the specified driver to communicate "
                          "to the host audio card."));
-    
+
     /* Network Page */
 
     QVBoxLayout* pageNetworkLayout = new QVBoxLayout (pageNetwork, 0, 10, "pageNetworkLayout");
@@ -562,7 +562,7 @@ bool VBoxVMSettingsDlg::eventFilter (QObject *object, QEvent *event)
 {
     if (!object->isWidgetType())
         return QDialog::eventFilter (object, event);
-    
+
     QWidget *widget = static_cast <QWidget *> (object);
     if (widget->topLevelWidget() != this)
         return QDialog::eventFilter (object, event);
@@ -594,21 +594,21 @@ bool VBoxVMSettingsDlg::eventFilter (QObject *object, QEvent *event)
 void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
 {
     QDialog::showEvent (e);
-    
+
     /* one may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
      * the widget style & layout are not fully done, at least the minimum
      * size hint is not properly calculated. Since this is sometimes necessary,
      * we provide our own "polish" implementation. */
-    
+
     if (polished)
         return;
-    
+
     polished = true;
-    
+
     /* resize to the miminum possible size */
     resize (minimumSize());
-    
+
     VBoxGlobal::centerWidget (this, parentWidget());
 }
 
@@ -621,65 +621,30 @@ void VBoxVMSettingsDlg::bootItemActivate (int row, int col, int /* button */,
         (static_cast<ComboTableItem*>(tableItem))->getEditor()->popup();
 }
 
-void VBoxVMSettingsDlg::updateShortcuts (VBoxDefs::DiskType aType,
-                                         VBoxDiskImageManagerDlg *aVdm)
+void VBoxVMSettingsDlg::updateShortcuts()
 {
-    /* update request for selected item */
+    /* setup necessary combobox item */
     cbHDA->setRequiredItem (uuidHDA);
     cbHDB->setRequiredItem (uuidHDB);
     cbHDD->setRequiredItem (uuidHDD);
     cbISODVD->setRequiredItem (uuidISODVD);
     cbISOFloppy->setRequiredItem (uuidISOFloppy);
-
-    if (aVdm)
-    /* quick update from vdm data */
-    {
-        QStringList names, keys;
-        aVdm->uploadCurrentList (names, keys, cbHDA->getBelongsTo());
-
-        switch (aType)
-        {
-            case VBoxDefs::HD:
-                cbHDA->loadShortCuts (names, keys);
-                cbHDB->loadShortCuts (names, keys);
-                cbHDD->loadShortCuts (names, keys);
-                break;
-            case VBoxDefs::CD:
-                cbISODVD->loadShortCuts (names, keys);
-                break;
-            case VBoxDefs::FD:
-                cbISOFloppy->loadShortCuts (names, keys);
-                break;
-            default:
-                Assert (0);
-                break;
-        }
-    }
-    else
-    /* slow update through media-enumeration process */
-    {
-        /* request for refresh every combo-box */
-        cbHDA->setReadyForRefresh();
-        cbHDB->setReadyForRefresh();
-        cbHDD->setReadyForRefresh();
-        cbISODVD->setReadyForRefresh();
-        cbISOFloppy->setReadyForRefresh();
-        /* starting media-enumerating process */
-        vboxGlobal().startEnumeratingMedia();
-    }
+    /* request for refresh every combo-box */
+    cbHDA->setReadyForRefresh();
+    cbHDB->setReadyForRefresh();
+    cbHDD->setReadyForRefresh();
+    cbISODVD->setReadyForRefresh();
+    cbISOFloppy->setReadyForRefresh();
+    /* starting media-enumerating process */
+    vboxGlobal().startEnumeratingMedia();
 }
 
 
 void VBoxVMSettingsDlg::hdaMediaChanged()
 {
     uuidHDA = grbHDA->isChecked() ? cbHDA->getId() : QUuid();
+    cbHDA->setRequiredItem (uuidHDA);
     txHDA->setText (getHdInfo (grbHDA, uuidHDA));
-    /* tool-tip composing */
-    if (!uuidHDA.isNull())
-    {
-        CHardDisk hd = vboxGlobal().virtualBox().GetHardDisk (uuidHDA);
-        QToolTip::add (cbHDA, VBoxDiskImageManagerDlg::composeHdToolTip (hd));
-    }
     /* revailidate */
     wvalHDD->revalidate();
 }
@@ -688,13 +653,8 @@ void VBoxVMSettingsDlg::hdaMediaChanged()
 void VBoxVMSettingsDlg::hdbMediaChanged()
 {
     uuidHDB = grbHDB->isChecked() ? cbHDB->getId() : QUuid();
+    cbHDB->setRequiredItem (uuidHDB);
     txHDB->setText (getHdInfo (grbHDB, uuidHDB));
-    /* tool-tip composing */
-    if (!uuidHDB.isNull())
-    {
-        CHardDisk hd = vboxGlobal().virtualBox().GetHardDisk (uuidHDB);
-        QToolTip::add (cbHDB, VBoxDiskImageManagerDlg::composeHdToolTip (hd));
-    }
     /* revailidate */
     wvalHDD->revalidate();
 }
@@ -703,13 +663,8 @@ void VBoxVMSettingsDlg::hdbMediaChanged()
 void VBoxVMSettingsDlg::hddMediaChanged()
 {
     uuidHDD = grbHDD->isChecked() ? cbHDD->getId() : QUuid();
+    cbHDD->setRequiredItem (uuidHDD);
     txHDD->setText (getHdInfo (grbHDD, uuidHDD));
-    /* tool-tip composing */
-    if (!uuidHDD.isNull())
-    {
-        CHardDisk hd = vboxGlobal().virtualBox().GetHardDisk (uuidHDD);
-        QToolTip::add (cbHDD, VBoxDiskImageManagerDlg::composeHdToolTip (hd));
-    }
     /* revailidate */
     wvalHDD->revalidate();
 }
@@ -718,12 +673,7 @@ void VBoxVMSettingsDlg::hddMediaChanged()
 void VBoxVMSettingsDlg::cdMediaChanged()
 {
     uuidISODVD = bgDVD->isChecked() ? cbISODVD->getId() : QUuid();
-    /* tool-tip composing */
-    if (!uuidISODVD.isNull())
-    {
-        CDVDImage cd = vboxGlobal().virtualBox().GetDVDImage (uuidISODVD);
-        QToolTip::add (cbISODVD, VBoxDiskImageManagerDlg::composeCdToolTip (cd));
-    }
+    cbISODVD->setRequiredItem (uuidISODVD);
     /* revailidate */
     wvalDVD->revalidate();
 }
@@ -732,12 +682,7 @@ void VBoxVMSettingsDlg::cdMediaChanged()
 void VBoxVMSettingsDlg::fdMediaChanged()
 {
     uuidISOFloppy = bgFloppy->isChecked() ? cbISOFloppy->getId() : QUuid();
-    /* tool-tip composing */
-    if (!uuidISOFloppy.isNull())
-    {
-        CFloppyImage fd = vboxGlobal().virtualBox().GetFloppyImage (uuidISOFloppy);
-        QToolTip::add (cbISOFloppy, VBoxDiskImageManagerDlg::composeFdToolTip (fd));
-    }
+    cbISOFloppy->setRequiredItem (uuidISOFloppy);
     /* revailidate */
     wvalFloppy->revalidate();
 }
@@ -745,7 +690,7 @@ void VBoxVMSettingsDlg::fdMediaChanged()
 
 QString VBoxVMSettingsDlg::getHdInfo (QGroupBox *aGroupBox, QUuid aId)
 {
-    QString notAttached = tr ("<not attached>", "hard disk"); 
+    QString notAttached = tr ("<not attached>", "hard disk");
     if (aId.isNull())
         return notAttached;
     return aGroupBox->isChecked() ?
@@ -789,7 +734,7 @@ void VBoxVMSettingsDlg::setWarning (const QString &warning)
     warningString = warning;
     if (!warning.isEmpty())
         warningString = QString ("<font color=red>%1</font>").arg (warning);
-    
+
     if (!warningString.isEmpty())
         whatsThisLabel->setText (warningString);
     else
@@ -1268,7 +1213,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     cbHDA->setBelongsTo(machine.GetId());
     cbHDB->setBelongsTo(machine.GetId());
     cbHDD->setBelongsTo(machine.GetId());
-    updateShortcuts (VBoxDefs::InvalidType);
+    updateShortcuts();
 
     /* revalidate pages with custom validation */
     wvalHDD->revalidate();
@@ -1505,7 +1450,7 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
     dlg.setup (type, true, &machineId, (const VBoxMediaList*)0, cmachine);
     if (dlg.exec() == VBoxDiskImageManagerDlg::Accepted)
         *id = dlg.getSelectedUuid();
-    updateShortcuts (type, &dlg);
+    updateShortcuts();
     cbb->setFocus();
 }
 

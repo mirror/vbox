@@ -401,8 +401,10 @@ void VBoxNewVMWzd::showNewVDIWizard()
         uuidHD = chd.GetId();
         /* update media combobox */
         QFileInfo fi (chd.GetLocation());
-        mediaCombo->appendItem (fi.fileName() + " (" +
-                                QDir::convertSeparators (fi.dirPath()) + ")", uuidHD);
+        mediaCombo->appendItem (QString ("%1 (%2)")
+            .arg (fi.fileName())
+            .arg (QDir::convertSeparators (fi.dirPath())),
+            uuidHD, VBoxDiskImageManagerDlg::composeHdToolTip (chd));
         mediaCombo->setCurrentItem (mediaCombo->count() - 1);
         mediaCombo->setFocus();
         /* revailidate */
