@@ -122,13 +122,13 @@ public:
     {
         if (data) delete[] data;
     }
-    bool isVisible() { return vis; }
-    bool hasAlpha() { return alph; }
-    uint xHot() { return xh; }
-    uint yHot() { return yh; }
-    uint width() { return w; }
-    uint height() { return h; }
-    const uchar *shapeData() { return data; }
+    bool isVisible() const { return vis; }
+    bool hasAlpha() const { return alph; }
+    uint xHot() const { return xh; }
+    uint yHot() const { return yh; }
+    uint width() const { return w; }
+    uint height() const { return h; }
+    const uchar *shapeData() const { return data; }
 private:
     bool vis, alph;
     uint xh, yh, w, h;
@@ -143,8 +143,8 @@ public:
         QEvent ((QEvent::Type) VBoxDefs::MouseCapabilityEventType),
         can_abs (supportsAbsolute),
         needs_host_cursor (needsHostCursor) {}
-    bool supportsAbsolute() { return can_abs; }
-    bool needsHostCursor() { return needs_host_cursor; }
+    bool supportsAbsolute() const { return can_abs; }
+    bool needsHostCursor() const { return needs_host_cursor; }
 private:
     bool can_abs;
     bool needs_host_cursor;
@@ -157,7 +157,7 @@ public:
     StateChangeEvent (CEnums::MachineState state) :
         QEvent ((QEvent::Type) VBoxDefs::MachineStateChangeEventType),
         s (state) {}
-    CEnums::MachineState machineState() { return s; }
+    CEnums::MachineState machineState() const { return s; }
 private:
     CEnums::MachineState s;
 };
@@ -169,11 +169,28 @@ public:
     ActivateMenuEvent (QMenuData *menuData, uint index) :
         QEvent ((QEvent::Type) VBoxDefs::ActivateMenuEventType),
         md (menuData), i (index) {}
-    QMenuData *menuData() { return md; }
-    uint index() { return i; }
+    QMenuData *menuData() const { return md; }
+    uint index() const { return i; }
 private:
     QMenuData *md;
     uint i;
+};
+
+/** VM Runtime error event */
+class RuntimeErrorEvent : public QEvent
+{
+public:
+    RuntimeErrorEvent (bool aFatal, const QString &aErrorID,
+                       const QString &aMessage) :
+        QEvent ((QEvent::Type) VBoxDefs::RuntimeErrorEventType),
+        mFatal (aFatal), mErrorID (aErrorID), mMessage (aMessage) {}
+    bool fatal() const { return mFatal; }
+    QString errorID() const { return mErrorID; }
+    QString message() const { return mMessage; }
+private:
+    bool mFatal;
+    QString mErrorID;
+    QString mMessage;
 };
 
 //
@@ -263,14 +280,17 @@ public:
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fScrollLock, BOOL fCapsLock)
     {
         /** @todo */
-        Q_UNUSED( fNumLock );
-        Q_UNUSED( fScrollLock );
-        Q_UNUSED( fCapsLock );
+        Q_UNUSED (fNumLock);
+        Q_UNUSED (fScrollLock);
+        Q_UNUSED (fCapsLock);
         return S_OK;
     }
 
-    STDMETHOD(OnRuntimeError)(BOOL /*fatal*/, IN_BSTRPARAM /*id*/, IN_BSTRPARAM /*message*/)
+    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTRPARAM id, IN_BSTRPARAM message)
     {
+        QApplication::postEvent (
+            view, new RuntimeErrorEvent (!!fatal, QString::fromUcs2 (id), 
+                                         QString::fromUcs2 (message)));
         return S_OK;
     }
 
@@ -285,8 +305,8 @@ private:
 };
 
 #if !defined (Q_WS_WIN)
-NS_DECL_CLASSINFO( VBoxConsoleCallback )
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI( VBoxConsoleCallback, IConsoleCallback )
+NS_DECL_CLASSINFO (VBoxConsoleCallback)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxConsoleCallback, IConsoleCallback)
 #endif
 
 //
@@ -773,6 +793,14 @@ bool VBoxConsoleView::event (QEvent *e)
                 if (!destroyed && mainwnd->statusBar())
                     mainwnd->statusBar()->clear();
 
+                return true;
+            }
+
+            case VBoxDefs::RuntimeErrorEventType:
+            {
+                RuntimeErrorEvent *ee = (RuntimeErrorEvent *) e;
+                vboxProblem().showRuntimeError (cconsole, ee->fatal(),
+                                                ee->errorID(), ee->message());
                 return true;
             }
 

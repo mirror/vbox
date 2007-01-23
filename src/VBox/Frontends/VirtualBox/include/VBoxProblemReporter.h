@@ -191,6 +191,10 @@ public:
     void remindAboutGoingFullscreen (const QString &hotKey,
                                      const QString &hostKey);
 
+    void showRuntimeError (const CConsole &console, bool fatal,
+                           const QString &errorID,
+                           const QString &errorMsg);
+
     static QString highlight (const QString &str);
     static QString formatErrorInfo (const COMErrorInfo &info,
                                     HRESULT wrapperRC = S_OK);
