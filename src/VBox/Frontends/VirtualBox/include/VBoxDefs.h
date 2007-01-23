@@ -147,6 +147,7 @@ struct VBoxDefs
         MachineRegisteredEventType = QEvent::User + 6,
         SessionStateChangeEventType = QEvent::User + 7,
         SnapshotEventType = QEvent::User + 8,
+        ModifierKeyChangeEventType = QEvent::User + 9,
         EnumerateMediaEventType = QEvent::User + 100,
         ActivateMenuEventType = QEvent::User + 101,
         RuntimeErrorEventType = QEvent::User + 102,

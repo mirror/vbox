@@ -83,6 +83,8 @@ public:
 
     void onFullscreenChange (bool on);
     
+    void FixModifierState (LONG *codes, uint *count);
+
 signals:
 
     void keyboardStateChanged (int state);
@@ -99,7 +101,7 @@ protected:
     bool winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &event);
     bool winEvent (MSG *msg);
 #elif defined(Q_WS_X11)
-    bool x11Event( XEvent *event );
+    bool x11Event (XEvent *event );
 #endif
 
 private:
@@ -144,6 +146,7 @@ private:
     void captureMouse (bool capture, bool emit_signal = true);
 
     bool processHotKey (const QKeySequence &key, QMenuData *data);
+    void updateModifiers (bool fNumLock, bool fCapsLock, bool fScrollLock);
 
     void releaseAllKeysPressed (bool release_hostkey = true);
     void saveKeyStates();
@@ -191,6 +194,11 @@ private:
 
     bool ignore_mainwnd_resize : 1;
     bool autoresize_guest : 1;
+
+    bool mfNumLock;
+    bool mfScrollLock;
+    bool mfCapsLock;
+    long muNumLockAdaptionCnt;
 
     QTimer *resize_hint_timer;
 
