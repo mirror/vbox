@@ -96,7 +96,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fScrollLock, BOOL fCapsLock)
+    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
         return S_OK;
     }

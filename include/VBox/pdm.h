@@ -592,10 +592,10 @@ typedef enum PDMKEYBLEDS
 {
     /** Num Lock */
     PDMKEYBLEDS_NUMLOCK          = 0x0001,
-    /** Scroll Lock */
-    PDMKEYBLEDS_SCROLLLOCK       = 0x0002,
     /** Caps Lock */
-    PDMKEYBLEDS_CAPSLOCK         = 0x0004
+    PDMKEYBLEDS_CAPSLOCK         = 0x0002,
+    /** Scroll Lock */
+    PDMKEYBLEDS_SCROLLLOCK       = 0x0004
 } PDMKEYBLEDS;
 
 /** Pointer to keyboard connector interface. */

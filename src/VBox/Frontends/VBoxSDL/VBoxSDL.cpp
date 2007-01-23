@@ -165,6 +165,7 @@ static BOOL gfGuestNumLockPressed = FALSE;
 static BOOL gfGuestCapsLockPressed = FALSE;
 static BOOL gfGuestScrollLockPressed = FALSE;
 static int  guGuestNumLockAdaptionCnt = 2;
+static int  guGuestCapsLockAdaptionCnt = 2;
 
 /** modifier keypress status (scancode as index) */
 static uint8_t gaModifiersState[256];
@@ -461,14 +462,16 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fScrollLock, BOOL fCapsLock)
+    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
         /* Don't bother the guest with NumLock scancodes if he doesn't set the NumLock LED */
         if (gfGuestNumLockPressed != fNumLock)
             guGuestNumLockAdaptionCnt = 2;
+        if (gfGuestCapsLockPressed != fCapsLock)
+            guGuestCapsLockAdaptionCnt = 2;
         gfGuestNumLockPressed    = fNumLock;
-        gfGuestScrollLockPressed = fScrollLock;
         gfGuestCapsLockPressed   = fCapsLock;
+        gfGuestScrollLockPressed = fScrollLock;
         return S_OK;
     }
 
@@ -2792,21 +2795,33 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
         }
     }
 
-    /*
-     * Some keyboards (e.g. the one of mine T60) don't send a NumLock scan code on every
-     * press of the key. Both the guest and the host should agree on the NumLock state.
-     * If they differ, we try to alter the guest NumLock state by sending the NumLock key
-     * scancode. We will get a feedback through the KBD_CMD_SET_LEDS command if the guest
-     * tries to set/clear the NumLock LED. If a (silly) guest doesn't change the LED, don't
-     * bother him with NumLock scancodes. At least our BIOS, Linux and Windows handle the
-     * NumLock LED well.
-     */
-    if (   guGuestNumLockAdaptionCnt
-        && (gfGuestNumLockPressed ^ !!(SDL_GetModState() & KMOD_NUM)))
+    if (ev->type != SDL_KEYDOWN)
     {
-        guGuestNumLockAdaptionCnt--;
-        gKeyboard->PutScancode(0x45);
-        gKeyboard->PutScancode(0x45 | 0x80);
+        /*
+         * Some keyboards (e.g. the one of mine T60) don't send a NumLock scan code on every
+         * press of the key. Both the guest and the host should agree on the NumLock state.
+         * If they differ, we try to alter the guest NumLock state by sending the NumLock key
+         * scancode. We will get a feedback through the KBD_CMD_SET_LEDS command if the guest
+         * tries to set/clear the NumLock LED. If a (silly) guest doesn't change the LED, don't
+         * bother him with NumLock scancodes. At least our BIOS, Linux and Windows handle the
+         * NumLock LED well.
+         */
+        if (   guGuestNumLockAdaptionCnt
+            && (gfGuestNumLockPressed ^ !!(SDL_GetModState() & KMOD_NUM)))
+        {
+            guGuestNumLockAdaptionCnt--;
+            gKeyboard->PutScancode(0x45);
+            gKeyboard->PutScancode(0x45 | 0x80);
+        }
+#if 0  /* For some reason SDL_GetModState() does not return KMOD_CAPS correctly */
+        if (   guGuestCapsLockAdaptionCnt
+            && (gfGuestCapsLockPressed ^ !!(SDL_GetModState() & KMOD_CAPS)))
+        {
+            guGuestCapsLockAdaptionCnt--;
+            gKeyboard->PutScancode(0x3a);
+            gKeyboard->PutScancode(0x3a | 0x80);
+        }
+#endif
     }
 
     /*
