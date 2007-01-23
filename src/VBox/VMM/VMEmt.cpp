@@ -67,6 +67,9 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
     Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pVM=%p\n", ThreadSelf, pVM));
     for (;;)
     {
+        /* Requested to exit the EMT thread out of sync? (currently only VMR3WaitForResume) */
+        if (setjmp(pVM->vm.s.emtJumpEnv) != 0)
+            break;
 
         /*
          * Pending requests which needs servicing?
@@ -125,7 +128,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
         /*
          * Some requests (both VMR3Req* and the DBGF) can potentially
          * resume or start the VM, in that case we'll get a change in
-         * VM status indicating that we're no running.
+         * VM status indicating that we're now running.
          */
         if (    VBOX_SUCCESS(rc)
             &&  enmBefore != pVM->enmVMState
@@ -139,7 +142,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
 
 
     /*
-     * Exitting.
+     * Exiting.
      */
     Log(("vmR3EmulationThread: Terminating emulation thread! Thread=%#x pVM=%p rc=%Vrc enmBefore=%d enmVMState=%d\n",
          ThreadSelf, pVM, rc, enmBefore, pVM->enmVMState));
@@ -158,6 +161,95 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
     return rc;
 }
 
+/**
+ * Wait for VM to be resumed. Handle events like vmR3EmulationThread does.
+ * In case the VM is stopped, clean up and long jump to the main EMT loop.
+ *
+ * @returns VINF_SUCCESS or doesn't return
+ * @param   pVM             VM handle.
+ */
+VMR3DECL(int) VMR3WaitForResume(PVM pVM)
+{
+    /*
+     * The request loop.
+     */
+    VMSTATE enmBefore;
+    int     rc;
+    for (;;)
+    {
+
+        /*
+         * Pending requests which needs servicing?
+         *
+         * We check for state changes in addition to status codes when
+         * servicing requests. (Look after the ifs.)
+         */
+        enmBefore = pVM->enmVMState;
+        if (VM_FF_ISSET(pVM, VM_FF_TERMINATE))
+        {
+            rc = VINF_EM_TERMINATE;
+            break;
+        }
+        else if (pVM->vm.s.pReqs)
+        {
+            /*
+             * Service execute in EMT request.
+             */
+            rc = VMR3ReqProcess(pVM);
+            Log(("vmR3EmulationThread: Req rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+        }
+        else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
+        {
+            /*
+             * Service the debugger request.
+             */
+            rc = DBGFR3VMMForcedAction(pVM);
+            Log(("vmR3EmulationThread: Dbg rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+        }
+        else if (VM_FF_ISSET(pVM, VM_FF_RESET))
+        {
+            /*
+             * Service a delay reset request.
+             */
+            rc = VMR3Reset(pVM);
+            VM_FF_CLEAR(pVM, VM_FF_RESET);
+            Log(("vmR3EmulationThread: Reset rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+        }
+        else
+        {
+            /*
+             * Nothing important is pending, so wait for something.
+             */
+            rc = VMR3Wait(pVM);
+            if (VBOX_FAILURE(rc))
+                break;
+        }
+
+        /*
+         * Check for termination requests, these are extremely high priority.
+         */
+        if (    rc == VINF_EM_TERMINATE
+            ||  VM_FF_ISSET(pVM, VM_FF_TERMINATE))
+            break;
+
+        /*
+         * Some requests (both VMR3Req* and the DBGF) can potentially
+         * resume or start the VM, in that case we'll get a change in
+         * VM status indicating that we're now running.
+         */
+        if (    VBOX_SUCCESS(rc)
+            &&  enmBefore != pVM->enmVMState
+            &&  (pVM->enmVMState == VMSTATE_RUNNING))
+        {
+            /* Only valid exit reason. */
+            return VINF_SUCCESS;
+        }
+
+    } /* forever */
+
+    /* Return to the main loop in vmR3EmulationThread, which will clean up for us. */
+    longjmp(pVM->vm.s.emtJumpEnv, 1);
+}
 
 /**
  * Notify the emulation thread (EMT) about pending Forced Action (FF).

@@ -406,15 +406,16 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
  * the required records to the pLockedMem list.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pv          Pointer to memory range which shall be locked down.
- *                      This pointer is page aligned.
- * @param   cb          Size of memory range (in bytes). This size is page aligned.
- * @param   eType       Memory type.
- * @param   ppLockedMem Where to store the pointer to the created locked memory record.
- *                      This is optional, pass NULL if not used.
+ * @param   pVM             The VM handle.
+ * @param   pv              Pointer to memory range which shall be locked down.
+ *                          This pointer is page aligned.
+ * @param   cb              Size of memory range (in bytes). This size is page aligned.
+ * @param   eType           Memory type.
+ * @param   ppLockedMem     Where to store the pointer to the created locked memory record.
+ *                          This is optional, pass NULL if not used.
+ * @param   fSilentFailure  Don't raise an error when unsuccessful. Upper layer with deal with it.
  */
-int mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *ppLockedMem)
+int mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *ppLockedMem, bool fSilentFailure)
 {
     Assert(RT_ALIGN_P(pv, PAGE_SIZE) == pv);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
@@ -464,7 +465,8 @@ int mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *
     {
         AssertMsgFailed(("SUPPageLock failed with rc=%d\n", rc));
         MMR3HeapFree(pLockedMem);
-        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to lock %d bytes of host memory (out of memory)"), cb);
+        if (!fSilentFailure)
+            rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to lock %d bytes of host memory (out of memory)"), cb);
     }
 
     return rc;
