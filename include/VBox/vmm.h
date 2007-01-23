@@ -85,6 +85,8 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_VMM_LOGGER_FLUSH,
     /** Set the VM error message. */
     VMMCALLHOST_VM_SET_ERROR,
+    /** Set the VM runtime error message. */
+    VMMCALLHOST_VM_SET_RUNTIME_ERROR,
     /** The usual 32-bit hack. */
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;

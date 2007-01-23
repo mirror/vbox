@@ -2120,6 +2120,13 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
             VMR3SetErrorWorker(pVM);
             break;
 
+        /*
+         * Set the VM runtime error message.
+         */
+        case VMMCALLHOST_VM_SET_RUNTIME_ERROR:
+            VMR3SetRuntimeErrorWorker(pVM);
+            break;
+
         default:
             AssertMsgFailed(("enmCallHostOperation=%d\n", pVM->vmm.s.enmCallHostOperation));
             return VERR_INTERNAL_ERROR;

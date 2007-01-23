@@ -155,6 +155,43 @@ typedef struct VMERROR
 
 
 /**
+ * VM runtime error callback.
+ */
+typedef struct VMATRUNTIMEERROR
+{
+    /** Pointer to the next one. */
+    struct VMATRUNTIMEERROR *pNext;
+    /** Pointer to the callback. */
+    PFNVMATRUNTIMEERROR      pfnAtRuntimeError;
+    /** The user argument. */
+    void                    *pvUser;
+} VMATRUNTIMEERROR;
+/** Pointer to a VM error callback. */
+typedef VMATRUNTIMEERROR *PVMATRUNTIMEERROR;
+
+
+/**
+ * Chunk of memory allocated off the hypervisor heap in which
+ * we copy the runtime error details.
+ */
+typedef struct VMRUNTIMEERROR
+{
+    /** The size of the chunk. */
+    uint32_t                cbAllocated;
+    /** The current offset into the chunk.
+     * We start by putting the error ID immediatly
+     * after the end of the buffer. */
+    uint32_t                off;
+    /** Offset from the start of this structure to the error ID. */
+    uint32_t                offErrorID;
+    /** Offset from the start of this structure to the formatted message text. */
+    uint32_t                offMessage;
+    /** Whether the error is fatal or not */
+    bool                    fFatal;
+} VMRUNTIMEERROR, *PVMRUNTIMEERROR;
+
+
+/**
  * Converts a VMM pointer into a VM pointer.
  * @returns Pointer to the VM structure the VMM is part of.
  * @param   pVMM   Pointer to VMM instance data.
@@ -186,6 +223,11 @@ typedef struct VMINT
     /** List of registered error callbacks. */
     HCPTRTYPE(PVMATERROR *)         ppAtErrorNext;
 
+    /** List of registered error callbacks. */
+    HCPTRTYPE(PVMATRUNTIMEERROR)    pAtRuntimeError;
+    /** List of registered error callbacks. */
+    HCPTRTYPE(PVMATRUNTIMEERROR *)  ppAtRuntimeErrorNext;
+
     /** Head of the request queue. Atomic. */
     volatile HCPTRTYPE(PVMREQ)      pReqs;
     /** The last index used during alloc/free. */
@@ -202,6 +244,9 @@ typedef struct VMINT
 
     /** VM Error Message. */
     R3PTRTYPE(PVMERROR)             pErrorR3;
+
+    /** VM Runtime Error Message. */
+    R3PTRTYPE(PVMRUNTIMEERROR)      pRuntimeErrorR3;
 
     /** Pointer to the DBGC instance data. */
     HCPTRTYPE(void *)               pvDBGC;
@@ -244,6 +289,8 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArg);
 DECLCALLBACK(int) vmR3Destroy(PVM pVM);
 DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *args);
 void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
+DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list *args);
+void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list args);
 void vmR3DestroyFinalBit(PVM pVM);
 
 
