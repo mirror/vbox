@@ -352,6 +352,14 @@ RTR3DECL(uint64_t) RTThreadGetAffinity(void);
  * @param   u64Mask         Affinity mask (bit 0 = logical cpu 0).
  */
 RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask);
+
+/**
+ * Exits the current thread
+ * @note does not return
+ *
+ */
+RTR3DECL(void) RTThreadExit(void);
+
 #endif /* IN_RING3 */
 
 /** @} */
