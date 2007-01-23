@@ -353,13 +353,6 @@ RTR3DECL(uint64_t) RTThreadGetAffinity(void);
  */
 RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask);
 
-/**
- * Exits the current thread
- * @note does not return
- *
- */
-RTR3DECL(void) RTThreadExit(void);
-
 #endif /* IN_RING3 */
 
 /** @} */
