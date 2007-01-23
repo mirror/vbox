@@ -306,6 +306,7 @@ Drivers_SOURCES    = \
 	Input/DrvKeyboardQueue.cpp \
 	Storage/VBoxHDD.cpp \
 	Storage/DrvBlock.cpp \
+	Storage/VmdkHDD.cpp \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvHostBase.cpp \
@@ -354,6 +355,7 @@ Drivers_SOURCES       = \
 	Input/DrvKeyboardQueue.cpp \
 	Storage/VBoxHDD.cpp \
 	Storage/DrvBlock.cpp \
+	Storage/VmdkHDD.cpp \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvHostBase.cpp \

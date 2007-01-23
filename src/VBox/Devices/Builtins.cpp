@@ -154,6 +154,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVBoxHDD);
     if (VBOX_FAILURE(rc))
         return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVmdkHDD);
+    if (VBOX_FAILURE(rc))
+        return rc;
 #if !defined(__L4ENV__) && !defined(__DARWIN__) && !defined(__OS2__)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostDVD);
     if (VBOX_FAILURE(rc))
