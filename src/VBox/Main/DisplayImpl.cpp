@@ -199,13 +199,15 @@ void Display::callFramebufferResize (FramebufferPixelFormat_T pixelFormat, void 
     {
         LogFlowFunc (("External framebuffer wants us to wait!\n"));
 
+        /* Note: The previously obtained framebuffer lock is preserved.
+         *       The EMT keeps the lock until the resize process completes.
+         */
+        
         /* The framebuffer needs more time to process
          * the event so we have to halt the VM until it's done.
          */
         RTSemEventMultiReset(mResizeSem);
-        mFramebuffer->Unlock();
         RTSemEventMultiWait(mResizeSem, RT_INDEFINITE_WAIT); /** @todo r=bird: this is a serious deadlock point, where EMT is stuck while the main thread is doing VMR3Req for some reason. */
-        mFramebuffer->Lock();
     }
 }
 
@@ -1539,10 +1541,8 @@ STDMETHODIMP Display::ResizeCompleted()
             tr ("Resize completed notification is valid only "
                 "for external framebuffers"));
 
-    mFramebuffer->Lock();
     /* signal our semaphore */
     RTSemEventMultiSignal(mResizeSem);
-    mFramebuffer->Unlock();
 
     return S_OK;
 }
