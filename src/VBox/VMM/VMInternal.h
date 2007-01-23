@@ -24,7 +24,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/vmapi.h>
-
+#include <setjmp.h>
 
 #if !defined(IN_VM_R3) && !defined(IN_VM_R0) && !defined(IN_VM_GC)
 # error "Not in VM! This is an internal header!"
@@ -254,6 +254,9 @@ typedef struct VMINT
     /** If set the EMT does the final VM cleanup when it exits.
      * If clear the VMR3Destroy() caller does so. */
     bool                            fEMTDoesTheCleanup;
+
+    /** vmR3EmulationThread longjmp buffer */
+    jmp_buf                         emtJumpEnv;
 
     /** Number of VMR3ReqAlloc returning a new packet. */
     STAMCOUNTER                     StatReqAllocNew;

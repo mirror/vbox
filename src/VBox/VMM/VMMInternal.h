@@ -249,7 +249,7 @@ typedef struct VMM
     /** The Ring-0 jmp buffer. */
     VMMR0JMPBUF                 CallHostR0JmpBuf;
     /** @} */
-
+    
     /** Number of VMMR0_DO_RUN_GC calls. */
     STAMCOUNTER                 StatRunGC;
     /** Statistics for each of the GC return codes.

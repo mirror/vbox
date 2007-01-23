@@ -375,7 +375,22 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         rc = MMR3PhysRegisterEx(pVM, pvRam, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, 0, MM_PHYS_TYPE_DYNALLOC_CHUNK, "Main Memory");
         if (VBOX_SUCCESS(rc))
             return rc;
+
         SUPPageFree(pvRam);
+
+        LogRel(("pgmr3PhysGrowRange: out of memory. pause until the user resumes execution.\n"));
+        VMSetRuntimeError(pVM, false, "HostMemoryLow", "Unable to allocate and lock memory. The virtual machine will be paused. Please close applications to free up memory or save and close the VM.");
+ 
+        rc = VMR3Suspend(pVM);
+        AssertRC(rc);
+
+        /* Wait for resume event; will only return in that case. If the VM is stopped, the EMT thread will be destroyed. */
+        rc = VMR3WaitForResume(pVM);
+
+        /* Retry */
+        LogRel(("pgmr3PhysGrowRange: VM execution resumed -> retry.\n"));
+        return pgmr3PhysGrowRange(pVM, GCPhys);
+        
     }
     return rc;
 }
