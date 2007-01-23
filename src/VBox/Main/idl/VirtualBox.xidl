@@ -5500,6 +5500,8 @@
 
                 The caller checks if the call was successful
                 via IFramebuffer property 'PixelFormat'.
+
+                Note: The method is called by IDisplay under the Framebuffer lock.
             </desc>
             <param name="pixelFormat" type="FramebufferPixelFormat" dir="in">
                 <desc>Specifies the pixel format of the surface (bpp and layout)</desc>

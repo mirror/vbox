@@ -139,13 +139,16 @@ void VMDisplay::handleDisplayResize (int w, int h)
     if (!finished)
     {
         LogFlow(("VMDisplay::handleDisplayResize: external framebuffer wants us to wait!\n"));
+
+        /* Note: The previously obtained framebuffer lock must be preserved. 
+         *       The EMT keeps the framebuffer lock until the resize process completes.
+         */
+
         /// @todo is this compatible with VBOX_NEXT_STEP?
         // the framebuffer needs more time to process
         // the event so we have to halt the VM until it's done
         RTSemEventMultiReset(mResizeSem);
-        mFramebuffer->Unlock();
         RTSemEventMultiWait(mResizeSem, RT_INDEFINITE_WAIT);
-        mFramebuffer->Lock();
     }
 
     updateDisplayData();
