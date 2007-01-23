@@ -257,3 +257,8 @@ RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask)
     return VINF_SUCCESS;
 }
 
+
+RTR3DECL(void) RTThreadExit(void)
+{
+    AssertMsgFailed(("Unimplemented\n"));
+}

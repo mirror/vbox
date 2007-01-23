@@ -217,3 +217,7 @@ RTR3DECL(uint64_t) RTThreadGetAffinity(void)
     return RTErrConvertFromWin32(iLastError);
 }
 
+RTR3DECL(void) RTThreadExit(void)
+{
+    ExitThread(0);
+}
