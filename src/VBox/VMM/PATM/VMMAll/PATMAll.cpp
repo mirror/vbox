@@ -565,11 +565,19 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_SUCCESS;
 
             case PATM_ACTION_PENDING_IRQ_AFTER_IRET:
-                Assert(pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags == (PATM_RESTORE_EAX|PATM_RESTORE_ECX));
+                /* Parameters:
+                 *  edi = GC address to jump to
+                 */
+                Log(("PATMGC: Dispatch pending interrupt (iret); eip=%VGv->%VGv\n", pRegFrame->eip, pRegFrame->edi));
+                Assert(pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags == (PATM_RESTORE_EAX|PATM_RESTORE_ECX|PATM_RESTORE_EDI));
                 Assert(pVM->patm.s.CTXSUFF(pGCState)->fPIF == 0);
+
+                /* Change EIP to the guest address of the iret. */
+                pRegFrame->eip = pRegFrame->edi;
 
                 pRegFrame->eax = pVM->patm.s.CTXSUFF(pGCState)->Restore.uEAX;
                 pRegFrame->ecx = pVM->patm.s.CTXSUFF(pGCState)->Restore.uECX;
+                pRegFrame->edi = pVM->patm.s.CTXSUFF(pGCState)->Restore.uEDI;
                 pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags = 0;
                 return VINF_PATM_PENDING_IRQ_AFTER_IRET;
 
