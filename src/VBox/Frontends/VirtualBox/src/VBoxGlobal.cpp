@@ -328,6 +328,7 @@ VBoxGlobal::VBoxGlobal()
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
     , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
+    , USBDeviceStates (CEnums::USBDeviceState_COUNT)
     , detailReportTemplatesReady (false)
 {
 }
@@ -587,6 +588,60 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */) 
     details += ", " + formatSize (root.GetSize() * _1M);
     
     return details;
+}
+
+/**
+ *  Returns the details of the given USB device as a single-line string.
+ */
+QString VBoxGlobal::details (const CUSBDevice &aDevice) const
+{
+    QString details;
+    QString m = aDevice.GetManufacturer();
+    QString p = aDevice.GetProduct();
+    if (m.isEmpty() && p.isEmpty())
+        details += QString().sprintf (
+            tr ("Unknown device %04hX:%04hX", "USB device details"),
+            aDevice.GetVendorId(), aDevice.GetProductId());
+    else
+    {
+        if (!m.isEmpty())
+            details += m;
+        if (!p.isEmpty())
+            details += " " + p;
+    }
+    ushort r = aDevice.GetRevision();                    
+    if (r != 0)
+        details += QString().sprintf (" [%04hX]", r);
+
+    return details;        
+}
+
+/**
+ *  Returns the multi-line description of the given USB device.
+ */
+QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
+{
+    QString tip = QString().sprintf (
+        tr ("<nobr>Vendor ID: %04hX</nobr><br>"
+            "<nobr>Product ID: %04hX</nobr><br>"
+            "<nobr>Revision: %04hX</nobr>", "USB device tooltip"),
+            aDevice.GetVendorId(), aDevice.GetProductId(),
+            aDevice.GetRevision());
+
+    QString ser = aDevice.GetSerialNumber();
+    if (!ser.isEmpty())
+        tip += QString (tr ("<br><nobr>Serial No. %1</nobr>", "USB device tooltip"))
+                        .arg (ser);
+
+    /* add the state field if it's a host USB device */
+    CHostUSBDevice hostDev = CUnknown (aDevice);
+    if (!hostDev.isNull())
+    {
+        tip += QString (tr ("<br><nobr>State: %1</nobr>", "USB device tooltip"))
+                        .arg (vboxGlobal().toString (hostDev.GetState()));
+    }
+                        
+    return tip;        
 }
 
 /**
@@ -1163,6 +1218,19 @@ void VBoxGlobal::languageChange()
         tr ("NAT", "NetworkAttachmentType");
     networkAttachmentTypes [CEnums::HostInterfaceNetworkAttachment] =
         tr ("Host Interface", "NetworkAttachmentType");
+
+    USBDeviceStates [CEnums::USBDeviceNotSupported] =
+        tr ("Not supported", "USBDeviceState");
+    USBDeviceStates [CEnums::USBDeviceUnavailable] =
+        tr ("Unavailable", "USBDeviceState");
+    USBDeviceStates [CEnums::USBDeviceBusy] =
+        tr ("Busy", "USBDeviceState");
+    USBDeviceStates [CEnums::USBDeviceAvailable] =
+        tr ("Available", "USBDeviceState");
+    USBDeviceStates [CEnums::USBDeviceHeld] =
+        tr ("Held", "USBDeviceState");
+    USBDeviceStates [CEnums::USBDeviceCaptured] =
+        tr ("Captured", "USBDeviceState");
 
     detailReportTemplatesReady = false;
 }

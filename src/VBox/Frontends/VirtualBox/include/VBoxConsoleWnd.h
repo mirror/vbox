@@ -201,6 +201,7 @@ private:
         devicesMountFloppyMenuId,
         devicesMountDVDMenuId,
         devicesUSBMenuId,
+        devicesUSBMenuNoDevicesId,
 #ifdef VBOX_WITH_DEBUGGER_GUI
         dbgMenuId,
 #endif

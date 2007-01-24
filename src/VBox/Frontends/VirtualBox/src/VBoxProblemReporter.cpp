@@ -1100,6 +1100,34 @@ void VBoxProblemReporter::cannotRemoveHostInterface (
 
 #endif
 
+void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
+                                                 const QString &device)
+{
+    /* preserve the current error info before calling the object again */
+    COMErrorInfo errInfo = console.errorInfo();
+
+    message (&vboxGlobal().consoleWnd(), Error,
+        tr ("Failed to attach the USB device <b>%1</b> "
+            "to the virtual machine <b>%2</b>.")
+            .arg (device)
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (errInfo));
+}
+
+void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
+                                                 const QString &device)
+{
+    /* preserve the current error info before calling the object again */
+    COMErrorInfo errInfo = console.errorInfo();
+
+    message (&vboxGlobal().consoleWnd(), Error,
+        tr ("Failed to detach the USB device <b>%1</b> "
+            "from the virtual machine <b>%2</b>.")
+            .arg (device)
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (errInfo));
+}
+
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
 bool VBoxProblemReporter::remindAboutInputCapture()
 {
@@ -1287,17 +1315,17 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
         if (state != CEnums::Paused)
             console.Pause();
         type = Critical;
-        severity = tr ("Fatal Error", "runtime error info");
+        severity = tr ("<nobr>Fatal Error</nobr>", "runtime error info");
     }
     else if (state == CEnums::Paused)
     {
         type = Error;
-        severity = tr ("Non-Fatal Error", "runtime error info");
+        severity = tr ("<nobr>Non-Fatal Error</nobr>", "runtime error info");
     }
     else
     {
         type = Warning;
-        severity = tr ("Warning", "runtime error info");
+        severity = tr ("<nobr>Warning</nobr>", "runtime error info");
     }
     
     QString formatted;
@@ -1315,9 +1343,9 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                               "<tr><td>%1</td><td>%2</td></tr>"
                               "<tr><td>%3</td><td>%4</td></tr>"
                               "</table>")
-                              .arg (tr ("Error ID: ", "runtime error info"),
+                              .arg (tr ("<nobrl>Error ID: </nobr>", "runtime error info"),
                                     errorID)
-                              .arg (tr ("Error Severity: ", "runtime error info"),
+                              .arg (tr ("Severity: ", "runtime error info"),
                                     severity);
     
     if (!formatted.isEmpty())

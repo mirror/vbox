@@ -70,35 +70,47 @@ class VBoxUSBLedTip : public QToolTip
 {
 public:
 
-    VBoxUSBLedTip (QWidget *aWidget, const CSession &aSession) :
-        QToolTip (aWidget), mSession (aSession) {}
-    ~VBoxUSBLedTip() { remove (parentWidget()); }
+    VBoxUSBLedTip (QWidget *aWidget, const CConsole &aConsole, bool aUSBEnabled) :
+        QToolTip (aWidget), mConsole (aConsole), mUSBEnabled (aUSBEnabled) {}
 
+    ~VBoxUSBLedTip() { remove (parentWidget()); }
+    
 protected:
 
     void maybeTip (const QPoint &/* aPoint */)
     {
-        CUSBDeviceEnumerator en = mSession.GetConsole().GetUSBDevices().Enumerate();
-        QString devices;
-        while (en.HasMore())
-        {
-            CUSBDevice usb = en.GetNext();
-            devices += QString ("[<b><nobr>%1 %2 (%3)</nobr></b>]<br>")
-                               .arg (usb.GetManufacturer())
-                               .arg (usb.GetProduct())
-                               .arg (usb.GetRevision());
-        }
-        QString toolTip = QObject::tr (
+        QString toolTip = VBoxConsoleWnd::tr (
             "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;"
-            "the&nbsp;attached&nbsp;USB&nbsp;devices"
-            "<br>%1</qt>"
-        );
-        if (devices.isNull())
-            devices += QObject::tr ("[<b>not attached</b>]");
+            "attached&nbsp;USB&nbsp;devices<br>"
+            "%1</qt>",
+            "USB device indicator");
+
+        QString devices;
+
+        if (mUSBEnabled)
+        {
+            CUSBDeviceEnumerator en = mConsole.GetUSBDevices().Enumerate();
+            while (en.HasMore())
+            {
+                CUSBDevice usb = en.GetNext();
+                devices += QString ("[<b><nobr>%1</nobr></b>]<br>")
+                                    .arg (vboxGlobal().details (usb));
+            }
+            if (devices.isNull())
+                devices = VBoxConsoleWnd::tr ("<nobr>[<b>not attached</b>]</nobr>",
+                                              "USB device indicator");
+        }
+        else
+            devices = VBoxConsoleWnd::tr ("<nobr>[<b>USB Controller is disabled</b>]</nobr>",
+                                          "USB device indicator");
+
         tip (parentWidget()->rect(), toolTip.arg (devices));
     }
 
-    const CSession &mSession;
+private:
+
+    CConsole mConsole;
+    bool mUSBEnabled;
 };
 
 /** \class VBoxConsoleWnd
@@ -292,6 +304,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesMenu->insertSeparator();
     devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
+    devicesMenu->insertSeparator();
     devicesInstallGuestToolsAction->addTo (devicesMenu);
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
 
@@ -450,7 +463,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
 {
-    delete mUsbLedTip;
+    if (mUsbLedTip)
+        delete mUsbLedTip;
 }
 
 //
@@ -560,9 +574,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     }
 
     /* initialize usb stuff */
-    bool isUsbAvailable = cmachine.GetUSBController().GetEnabled();
-    devicesMenu->setItemVisible (devicesUSBMenuId, isUsbAvailable);
-    mUsbLedTip = new VBoxUSBLedTip (usb_light, csession);
+    bool isUSBEnabled = cmachine.GetUSBController().GetEnabled();
+    devicesUSBMenu->setEnabled (isUSBEnabled);
+    usb_light->setState (CEnums::InvalidActivity);
+    mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
 
     /* start an idle timer that will update device lighths */
     connect (idle_timer, SIGNAL (timeout()), SLOT (updateDeviceLights()));
@@ -1777,13 +1792,17 @@ void VBoxConsoleWnd::prepareUSBMenu()
     if (!console) return;
 
     devicesUSBMenu->clear();
+    hostUSBMap.clear();
+
     CHost host = vboxGlobal().virtualBox().GetHost();
 
     bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
     if (isUSBEmpty)
     {
-        int id = devicesUSBMenu->insertItem (tr ("[No device attached to host]"));
-        devicesUSBMenu->setItemEnabled (id, !isUSBEmpty);
+        devicesUSBMenu->insertItem (
+            tr ("<no available devices>", "USB devices"),
+            devicesUSBMenuNoDevicesId);
+        devicesUSBMenu->setItemEnabled (devicesUSBMenuNoDevicesId, false);
         return;
     }
 
@@ -1792,10 +1811,7 @@ void VBoxConsoleWnd::prepareUSBMenu()
     {
         CHostUSBDevice iterator = en.GetNext();
         CUSBDevice usb = CUnknown (iterator);
-        int id = devicesUSBMenu->insertItem (QString ("%1 %2 [%3]")
-                                             .arg (usb.GetManufacturer())
-                                             .arg (usb.GetProduct())
-                                             .arg (usb.GetRevision()));
+        int id = devicesUSBMenu->insertItem (vboxGlobal().details (usb));
         hostUSBMap [id] = usb;
         CUSBDevice attachedUSB =
             csession.GetConsole().GetUSBDevices().FindById (usb.GetId());
@@ -1858,14 +1874,39 @@ void VBoxConsoleWnd::switchUSB (int id)
 {
     if (!console) return;
 
+    CConsole cconsole = csession.GetConsole();
+    AssertWrapperOk (csession);
+
+    /* the <no available devices> item should be always disabled */
+    AssertReturnVoid (id != devicesUSBMenuNoDevicesId);
+    
     CUSBDevice usb = hostUSBMap [id];
-    /* if null then some other item but usb device is selected */
-    if (usb.isNull()) return;
+    /* if null then some other item but a USB device is selected */
+    if (usb.isNull())
+        return;
 
     if (devicesUSBMenu->isItemChecked (id))
-        csession.GetConsole().DetachUSBDevice (usb.GetId());
+    {
+        cconsole.DetachUSBDevice (usb.GetId());
+        if (!cconsole.isOk())
+        {
+            /// @todo (r=dmik) the dialog should be either modeless
+            //  or we have to pause the VM
+            vboxProblem().cannotDetachUSBDevice (cconsole,
+                                                 vboxGlobal().details (usb));
+        }
+    }
     else
-        csession.GetConsole().AttachUSBDevice (usb.GetId());
+    {
+        cconsole.AttachUSBDevice (usb.GetId());
+        if (!cconsole.isOk())
+        {
+            /// @todo (r=dmik) the dialog should be either modeless
+            //  or we have to pause the VM
+            vboxProblem().cannotAttachUSBDevice (cconsole,
+                                                 vboxGlobal().details (usb));
+        }
+    }
 }
 
 /**
@@ -1875,13 +1916,25 @@ void VBoxConsoleWnd::makeUSBToolTip (int id)
 {
     if (!console) return;
 
+    /* the <no available devices> item is highlighted */
+    if (id == devicesUSBMenuNoDevicesId)
+    {
+        QToolTip::add (devicesUSBMenu,
+            tr ("No supported devices connected to the host PC",
+                "USB device tooltip"));
+        return;
+    }
+    
     CUSBDevice usb = hostUSBMap [id];
-    /* if null then some other item but usb device is selected */
-    if (usb.isNull()) return;
+    /* if null then some other item but a USB device is highlighted */
+    if (usb.isNull())
+    {
+        QToolTip::remove (devicesUSBMenu);
+        return;
+    }
 
-    QString tip = tr ("Vendor ID: %1\nProduct ID: %2\nSerial Number: %3")
-        .arg (usb.GetVendorId()).arg (usb.GetProductId()).arg (usb.GetSerialNumber());
-    QToolTip::remove (devicesUSBMenu);
+    QString tip = vboxGlobal().toolTip (usb);
+
     QToolTip::add (devicesUSBMenu, tip);
 }
 
@@ -1889,7 +1942,7 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
 {
     if (ind == cd_light)
     {
-        // set "this is a context menu" flag
+        /* set "this is a context menu" flag */
         devicesMenu->setItemParameter (devicesMountDVDMenuId, 1);
         devicesMountDVDMenu->exec (e->globalPos());
         devicesMenu->setItemParameter (devicesMountDVDMenuId, 0);
@@ -1897,7 +1950,7 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     else
     if (ind == fd_light)
     {
-        // set "this is a context menu" flag
+        /* set "this is a context menu" flag */
         devicesMenu->setItemParameter (devicesMountFloppyMenuId, 1);
         devicesMountFloppyMenu->exec (e->globalPos());
         devicesMenu->setItemParameter (devicesMountFloppyMenuId, 0);
@@ -1905,10 +1958,13 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     else
     if (ind == usb_light)
     {
-        // set "this is a context menu" flag
-        devicesMenu->setItemParameter (devicesUSBMenuId, 1);
-        devicesUSBMenu->exec (e->globalPos());
-        devicesMenu->setItemParameter (devicesUSBMenuId, 0);
+        if (devicesUSBMenu->isEnabled())
+        {
+            /* set "this is a context menu" flag */
+            devicesMenu->setItemParameter (devicesUSBMenuId, 1);
+            devicesUSBMenu->exec (e->globalPos());
+            devicesMenu->setItemParameter (devicesUSBMenuId, 0);
+        }
     }
 }
 
