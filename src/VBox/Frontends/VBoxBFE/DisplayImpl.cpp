@@ -134,6 +134,10 @@ void VMDisplay::handleDisplayResize (int w, int h)
     BOOL finished;
 
     mFramebuffer->Lock();
+
+    /* Reset the event here. It could be signalled before it gets to after 'if (!finished)' */
+    RTSemEventMultiReset(mResizeSem);
+
     mFramebuffer->RequestResize(w, h, &finished);
 
     if (!finished)
@@ -147,7 +151,6 @@ void VMDisplay::handleDisplayResize (int w, int h)
         /// @todo is this compatible with VBOX_NEXT_STEP?
         // the framebuffer needs more time to process
         // the event so we have to halt the VM until it's done
-        RTSemEventMultiReset(mResizeSem);
         RTSemEventMultiWait(mResizeSem, RT_INDEFINITE_WAIT);
     }
 
