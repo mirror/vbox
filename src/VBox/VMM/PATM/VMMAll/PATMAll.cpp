@@ -134,7 +134,7 @@ PATMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
     pCtxCore->eflags.u32 = efl;
     CTXSUFF(pVM->patm.s.pGCState)->uVMFlags = X86_EFL_IF;
 
-    AssertReleaseMsg((efl & X86_EFL_IF) || fPatchCode, ("Inconsistent state at %VGv\n", pCtxCore->eip));
+    AssertReleaseMsg((efl & X86_EFL_IF) || fPatchCode || rawRC == VINF_PATM_PENDING_IRQ_AFTER_IRET, ("Inconsistent state at %VGv\n", pCtxCore->eip));
     AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode, ("fPIF=%d eip=%VGv\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip));
 
 #ifdef IN_RING3
