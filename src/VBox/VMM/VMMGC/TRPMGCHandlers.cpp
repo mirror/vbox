@@ -354,7 +354,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         if (Cpu.pCurInstr->opcode == OP_ILLUD2)
         {
             int rc = PATMHandleIllegalInstrTrap(pVM, pRegFrame);
-            if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_DUPLICATE_FUNCTION)
+            if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_DUPLICATE_FUNCTION || rc == VINF_PATM_PENDING_IRQ_AFTER_IRET)
                 return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
     }
