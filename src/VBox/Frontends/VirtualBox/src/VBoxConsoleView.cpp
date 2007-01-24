@@ -199,10 +199,10 @@ class ModifierKeyChangeEvent : public QEvent
 public:
     ModifierKeyChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock) :
         QEvent ((QEvent::Type) VBoxDefs::ModifierKeyChangeEventType),
-        mfNumLock(fNumLock), mfCapsLock(fCapsLock), mfScrollLock(fScrollLock) {}
-    bool NumLock()    const { return mfNumLock; }
-    bool CapsLock()   const { return mfCapsLock; }
-    bool ScrollLock() const { return mfScrollLock; }
+        mfNumLock (fNumLock), mfCapsLock (fCapsLock), mfScrollLock (fScrollLock) {}
+    bool numLock()    const { return mfNumLock; }
+    bool capsLock()   const { return mfCapsLock; }
+    bool scrollLock() const { return mfScrollLock; }
 private:
     bool mfNumLock, mfCapsLock, mfScrollLock;
 };
@@ -348,6 +348,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , hostkey_alone (false)
     , ignore_mainwnd_resize (false)
     , autoresize_guest (false)
+    , mfNumLock (false)
+    , mfScrollLock (false)
+    , mfCapsLock (false)
     , muNumLockAdaptionCnt (2)
     , muCapsLockAdaptionCnt (2)
     , mode (rm)
@@ -782,13 +785,13 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::ModifierKeyChangeEventType:
             {
                 ModifierKeyChangeEvent *me = (ModifierKeyChangeEvent* )e;
-                if (me->NumLock() != mfNumLock)
+                if (me->numLock() != mfNumLock)
                     muNumLockAdaptionCnt = 2;
-                if (me->CapsLock() != mfCapsLock)
+                if (me->capsLock() != mfCapsLock)
                     muCapsLockAdaptionCnt = 2;
-                mfNumLock    = me->NumLock();
-                mfCapsLock   = me->CapsLock();
-                mfScrollLock = me->ScrollLock();
+                mfNumLock    = me->numLock();
+                mfCapsLock   = me->capsLock();
+                mfScrollLock = me->scrollLock();
                 return true;
             }
 
@@ -1289,7 +1292,7 @@ void VBoxConsoleView::focusEvent (bool focus)
  *  @param  codes  pointer to keycodes which are sent to the keyboard
  *  @param  count  pointer to the keycodes counter
  */
-void VBoxConsoleView::FixModifierState(LONG *codes, uint *count)
+void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 {
 #if defined(Q_WS_X11)
 
@@ -1346,7 +1349,7 @@ void VBoxConsoleView::FixModifierState(LONG *codes, uint *count)
 
 #else
 
-#warning Adapt VBoxConsoleView::FixModifierState
+#warning Adapt VBoxConsoleView::fixModifierState
 
 #endif
 
@@ -1406,7 +1409,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags)
                 // Check if the guest has the same view on the modifier keys (NumLock,
                 // CapsLock, ScrollLock) as the X server. If not, send KeyPress events
                 // to synchronize the state.
-                FixModifierState (codes, &count);
+                fixModifierState (codes, &count);
             }
 
             // process the scancode and update the table of pressed keys
