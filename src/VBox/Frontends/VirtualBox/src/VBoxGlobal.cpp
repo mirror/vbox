@@ -325,6 +325,7 @@ VBoxGlobal::VBoxGlobal()
     , diskControllerTypes (CEnums::DiskControllerType_COUNT)
     , diskTypes (CEnums::HardDiskType_COUNT)
     , diskStorageTypes (CEnums::HardDiskStorageType_COUNT)
+    , vrdpAuthTypes (CEnums::VRDPAuthType_COUNT)
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
     , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
@@ -1197,6 +1198,13 @@ void VBoxGlobal::languageChange()
         tr ("Virtual Disk Image", "DiskStorageType");
     diskStorageTypes [CEnums::ISCSIHardDisk] =
         tr ("iSCSI", "DiskStorageType");
+
+    vrdpAuthTypes [CEnums::VRDPAuthNull] =
+        tr ("Null", "VRDPAuthType");
+    vrdpAuthTypes [CEnums::VRDPAuthExternal] =
+        tr ("External", "VRDPAuthType");
+    vrdpAuthTypes [CEnums::VRDPAuthGuest] =
+        tr ("Guest", "VRDPAuthType");
 
     Assert (diskControllerDevices.count() == 3);
     diskControllerDevices [0] = tr ("Master", "DiskControllerDevice");

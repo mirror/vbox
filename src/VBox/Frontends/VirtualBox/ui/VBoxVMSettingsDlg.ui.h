@@ -456,6 +456,27 @@ void VBoxVMSettingsDlg::init()
     mLastUSBFilterNum = 0;
     mUSBFilterListModified = false;
 
+    /* VRDP Page */
+
+    QWhatsThis::add (static_cast <QWidget *> (grbVRDP->child ("qt_groupbox_checkbox")),
+                     tr ("When checked, enables the Virtual Remote Desktop "
+                         "Protocol which allows remote clients to connect "
+                         "to this virtual machine (when it is running) "
+                         "using a VRDP client."));
+
+    ULONG maxPort = 65535;
+    leVRDPPort->setValidator (new QIntValidator (0, maxPort, this));
+    leVRDPTimeout->setValidator (new QIntValidator (0, maxPort, this));
+    wvalVRDP = new QIWidgetValidator (pageVRDP, this);
+    connect (wvalVRDP, SIGNAL (validityChanged (const QIWidgetValidator *)),
+             this, SLOT (enableOk (const QIWidgetValidator *)));
+    connect (wvalVRDP, SIGNAL (isValidRequested (QIWidgetValidator *)),
+             this, SLOT (revalidate( QIWidgetValidator *)));
+
+    connect (grbVRDP, SIGNAL (toggled (bool)), wvalFloppy, SLOT (revalidate()));
+    connect (leVRDPPort, SIGNAL (textChanged (const QString&)), wvalFloppy, SLOT (revalidate()));
+    connect (leVRDPTimeout, SIGNAL (textChanged (const QString&)), wvalFloppy, SLOT (revalidate()));
+
     /*
      *  set initial values
      *  ----------------------------------------------------------------------
@@ -556,6 +577,14 @@ void VBoxVMSettingsDlg::init()
     wvalHDD->revalidate();
     wvalDVD->revalidate();
     wvalFloppy->revalidate();
+
+    /* VRDP Page */
+
+    leVRDPPort->setAlignment (Qt::AlignRight);
+    cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthNull));
+    cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthExternal));
+    cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthGuest));
+    leVRDPTimeout->setAlignment (Qt::AlignRight);
 }
 
 bool VBoxVMSettingsDlg::eventFilter (QObject *object, QEvent *event)
@@ -938,6 +967,15 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
             setWarning (tr ("Incorrect host network interface is selected for Adapter %1.")
                         .arg (slot));
     }
+    else if (pg == pageVRDP)
+    {
+        valid = !(grbVRDP->isChecked() &&
+                (leVRDPPort->text().isEmpty() || leVRDPTimeout->text().isEmpty()));
+        if (!valid && leVRDPPort->text().isEmpty())
+            setWarning (tr ("VRDP Port is not set."));
+        if (!valid && leVRDPTimeout->text().isEmpty())
+            setWarning (tr ("VRDP Timeout is not set."));
+    }
 
     wval->setOtherValid (valid);
 }
@@ -1209,6 +1247,15 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
     }
 
+    /* vrdp */
+    {
+        CVRDPServer vrdp = machine.GetVRDPServer();
+        grbVRDP->setChecked (vrdp.GetEnabled());
+        leVRDPPort->setText (QString::number (vrdp.GetPort()));
+        cbVRDPAuthType->setCurrentText (vboxGlobal().toString (vrdp.GetAuthType()));
+        leVRDPTimeout->setText (QString::number (vrdp.GetAuthTimeout()));
+    }
+
     /* request for media shortcuts update */
     cbHDA->setBelongsTo(machine.GetId());
     cbHDB->setBelongsTo(machine.GetId());
@@ -1422,6 +1469,15 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
 
         mUSBFilterListModified = false;
+    }
+
+    /* vrdp */
+    {
+        CVRDPServer vrdp = cmachine.GetVRDPServer();
+        vrdp.SetEnabled (grbVRDP->isChecked());
+        vrdp.SetPort (leVRDPPort->text().toULong());
+        vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (cbVRDPAuthType->currentText()));
+        vrdp.SetAuthTimeout (leVRDPTimeout->text().toULong());
     }
 
     return COMResult();
