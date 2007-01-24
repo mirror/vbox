@@ -323,6 +323,9 @@ static void vmmR0RecordRC(PVM pVM, int rc)
         case VINF_PATM_PATCH_TRAP_GP:
             STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchGP);
             break;
+        case VINF_PATM_PENDING_IRQ_AFTER_IRET:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchIretIRQ);
+            break;
         case VERR_REM_FLUSHED_PAGES_OVERFLOW:
             STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPageOverflow);
             break;
