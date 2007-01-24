@@ -80,7 +80,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc);
 DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PCPUMCTX pCtx, int rc);
 static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx);
 static int emR3RawExecute(PVM pVM, bool *pfFFDone);
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix);
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int gcret = VINF_SUCCESS);
 static int emR3HighPriorityPostForcedActions(PVM pVM, int rc);
 static int emR3ForcedActions(PVM pVM, int rc);
 static int emR3RawGuestTrap(PVM pVM);
@@ -949,13 +949,14 @@ static int emR3RawStep(PVM pVM)
  * @returns VBox status code suitable for EM.
  *
  * @param   pVM         VM handle.
+ * @param   gcret       GC return code
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  */
 #ifdef LOG_ENABLED
-static int emR3RawExecuteInstructionWorker(PVM pVM, const char *pszPrefix)
+static int emR3RawExecuteInstructionWorker(PVM pVM, int gcret, const char *pszPrefix)
 #else
-static int emR3RawExecuteInstructionWorker(PVM pVM)
+static int emR3RawExecuteInstructionWorker(PVM pVM, int gcret)
 #endif
 {
     PCPUMCTX pCtx = pVM->em.s.pCtx;
@@ -1014,6 +1015,12 @@ static int emR3RawExecuteInstructionWorker(PVM pVM)
                      */
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
                     return emR3RawExecuteInstruction(pVM, "PATCHIR");
+                }
+                else
+                if (gcret == VINF_PATM_PENDING_IRQ_AFTER_IRET)
+                {
+                    /* special case: iret, that sets IF,  detected a pending irq/event */
+                    return emR3RawExecuteInstruction(pVM, "PATCHIRET");
                 }
                 return VINF_EM_RESCHEDULE_REM;
 
@@ -1101,13 +1108,14 @@ static int emR3RawExecuteInstructionWorker(PVM pVM)
  * @param   pVM         VM handle.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
+ * @param   gcret       GC return code
  */
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix)
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int gcret)
 {
 #ifdef LOG_ENABLED
-    return emR3RawExecuteInstructionWorker(pVM, pszPrefix);
+    return emR3RawExecuteInstructionWorker(pVM, gcret, pszPrefix);
 #else
-    return emR3RawExecuteInstructionWorker(pVM);
+    return emR3RawExecuteInstructionWorker(pVM, gcret);
 #endif
 }
 
@@ -1708,12 +1716,6 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                     /* Interrupts are enabled; just go back to the original instruction.
                     return VINF_SUCCESS; */
                 }
-                else 
-                if (gcret == VINF_PATM_PENDING_IRQ_AFTER_IRET)
-                {
-                    /* special case: iret, that sets IF,  detected a pending irq/event */
-                    return emR3RawExecuteInstruction(pVM, "PATCHIRET");
-                }
                 return VINF_EM_RESCHEDULE_REM;
             }
 
@@ -2062,7 +2064,6 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_PATM_PATCH_TRAP_PF:
         case VINF_PATM_PATCH_INT3:
-        case VINF_PATM_PENDING_IRQ_AFTER_IRET:
             rc = emR3PatchTrap(pVM, pCtx, rc);
             break;
 
@@ -2214,6 +2215,10 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_EMULATE_INSTR_HLT:
             /** @todo skip instruction and go directly to the halt state. (see REM for implementation details) */
             rc = emR3RawPrivileged(pVM);
+            break;
+
+        case VINF_PATM_PENDING_IRQ_AFTER_IRET:
+            rc = emR3RawExecuteInstruction(pVM, "EMUL: ", VINF_PATM_PENDING_IRQ_AFTER_IRET);
             break;
 
         case VINF_EM_RAW_EMULATE_INSTR:
