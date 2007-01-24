@@ -43,6 +43,8 @@ class QLabel;
 class VBoxConsoleView;
 class QIStateIndicator;
 
+class VBoxUSBLedTip;
+
 class VBoxConsoleWnd : public QMainWindow
 {
     Q_OBJECT
@@ -90,6 +92,7 @@ private:
         NetworkStuff                = 0x10,
         DisableMouseIntegrAction    = 0x20,
         Caption                     = 0x40,
+        USBStuff                    = 0x80,
         AllStuff                    = 0xFF,
     };
 
@@ -122,9 +125,12 @@ private slots:
 
     void prepareFloppyMenu();
     void prepareDVDMenu();
+    void prepareUSBMenu();
 
     void captureFloppy (int id);
     void captureDVD (int id);
+    void switchUSB (int id);
+    void makeUSBToolTip (int id);
 
     void showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e);
 
@@ -181,6 +187,7 @@ private:
     QPopupMenu *devicesMenu;
     QPopupMenu *devicesMountFloppyMenu;
     QPopupMenu *devicesMountDVDMenu;
+    QPopupMenu *devicesUSBMenu;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
@@ -193,6 +200,7 @@ private:
         devicesMenuId,
         devicesMountFloppyMenuId,
         devicesMountDVDMenuId,
+        devicesUSBMenuId,
 #ifdef VBOX_WITH_DEBUGGER_GUI
         dbgMenuId,
 #endif
@@ -203,10 +211,12 @@ private:
 
     // widgets
     VBoxConsoleView *console;
-    QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light;
+    QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light;
     QIStateIndicator *mouse_state, *hostkey_state;
     QHBox *hostkey_hbox;
     QLabel *hostkey_name;
+
+    VBoxUSBLedTip *mUsbLedTip;
 
     QTimer *idle_timer;
     CEnums::MachineState machine_state;
@@ -216,6 +226,7 @@ private:
 
     QMap <int, CHostDVDDrive> hostDVDMap;
     QMap <int, CHostFloppyDrive> hostFloppyMap;
+    QMap <int, CUSBDevice> hostUSBMap;
 
     QPoint normal_pos;
     QSize normal_size;
