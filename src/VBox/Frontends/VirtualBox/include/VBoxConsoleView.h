@@ -83,7 +83,7 @@ public:
 
     void onFullscreenChange (bool on);
     
-    void FixModifierState (LONG *codes, uint *count);
+    void fixModifierState (LONG *codes, uint *count);
 
 signals:
 
@@ -195,9 +195,9 @@ private:
     bool ignore_mainwnd_resize : 1;
     bool autoresize_guest : 1;
 
-    bool mfNumLock;
-    bool mfScrollLock;
-    bool mfCapsLock;
+    bool mfNumLock : 1;
+    bool mfScrollLock : 1;
+    bool mfCapsLock : 1;
     long muNumLockAdaptionCnt;
     long muCapsLockAdaptionCnt;
 
