@@ -563,6 +563,16 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
                 /* The caller will call trpmGCExitTrap, which will dispatch pending interrupts for us. */
                 return VINF_SUCCESS;
+
+            case PATM_ACTION_PENDING_IRQ_AFTER_IRET:
+                Assert(pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags == (PATM_RESTORE_EAX|PATM_RESTORE_ECX));
+                Assert(pVM->patm.s.CTXSUFF(pGCState)->fPIF == 0);
+
+                pRegFrame->eax = pVM->patm.s.CTXSUFF(pGCState)->Restore.uEAX;
+                pRegFrame->ecx = pVM->patm.s.CTXSUFF(pGCState)->Restore.uECX;
+                pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags = 0;
+                return VINF_PATM_PENDING_IRQ_AFTER_IRET;
+
 #ifdef DEBUG
             case PATM_ACTION_LOG_CLI:
                 Log(("PATMGC: CLI at %VGv (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
