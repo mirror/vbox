@@ -43,6 +43,7 @@
 #include <qtooltip.h>
 #include <qlineedit.h>
 #include <qtextedit.h>
+#include <qtooltip.h>
 #include <qdir.h>
 
 #include <qeventloop.h>
@@ -59,6 +60,46 @@
 #ifdef VBOX_WITH_DEBUGGER_GUI
 #include <VBox/err.h>
 #endif
+
+/** class VBoxUSBLedTip
+ *
+ *  The VBoxUSBLedTip class is an auxiliary ToolTip class
+ *  for the USB LED indicator.
+ */
+class VBoxUSBLedTip : public QToolTip
+{
+public:
+
+    VBoxUSBLedTip (QWidget *aWidget, const CSession &aSession) :
+        QToolTip (aWidget), mSession (aSession) {}
+    ~VBoxUSBLedTip() { remove (parentWidget()); }
+
+protected:
+
+    void maybeTip (const QPoint &/* aPoint */)
+    {
+        CUSBDeviceEnumerator en = mSession.GetConsole().GetUSBDevices().Enumerate();
+        QString devices;
+        while (en.HasMore())
+        {
+            CUSBDevice usb = en.GetNext();
+            devices += QString ("[<b><nobr>%1 %2 (%3)</nobr></b>]<br>")
+                               .arg (usb.GetManufacturer())
+                               .arg (usb.GetProduct())
+                               .arg (usb.GetRevision());
+        }
+        QString toolTip = QObject::tr (
+            "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;"
+            "the&nbsp;attached&nbsp;USB&nbsp;devices"
+            "<br>%1</qt>"
+        );
+        if (devices.isNull())
+            devices += QObject::tr ("[<b>not attached</b>]");
+        tip (parentWidget()->rect(), toolTip.arg (devices));
+    }
+
+    const CSession &mSession;
+};
 
 /** \class VBoxConsoleWnd
  *
@@ -87,6 +128,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dbgMenu (NULL)
 #endif
     , console (0)
+    , mUsbLedTip (0)
     , machine_state (CEnums::InvalidMachineState)
     , no_auto_close (false)
     , full_screen (false)
@@ -238,6 +280,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* two dynamic submenus */
     devicesMountFloppyMenu = new QPopupMenu (devicesMenu, "devicesMountFloppyMenu");
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
+    devicesUSBMenu = new QPopupMenu (devicesMenu, "devicesUSBMenu");
 
     devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
         QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
@@ -247,12 +290,15 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
         QString::null, devicesMountDVDMenu, devicesMountDVDMenuId);
     devicesUnmountDVDAction->addTo (devicesMenu);
     devicesMenu->insertSeparator();
+    devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
+        QString::null, devicesUSBMenu, devicesUSBMenuId);
     devicesInstallGuestToolsAction->addTo (devicesMenu);
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
 
     /* reset the "context menu" flag */
     devicesMenu->setItemParameter (devicesMountFloppyMenuId, 0);
     devicesMenu->setItemParameter (devicesMountDVDMenuId, 0);
+    devicesMenu->setItemParameter (devicesUSBMenuId, 0);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug popup menu */
@@ -302,6 +348,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     net_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("nw_read_16px.png"));
     net_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("nw_write_16px.png"));
     net_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("nw_disabled_16px.png"));
+    usb_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "usb_light", WNoAutoErase);
+    usb_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("usb_16px.png"));
+    usb_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("usb_read_16px.png"));
+    usb_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("usb_write_16px.png"));
+    usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
     /* mouse */
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
     mouse_state = new QIStateIndicator (0, indicatorBox, "mouse_state", WNoAutoErase);
@@ -362,9 +413,12 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     connect (devicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
     connect (devicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
+    connect (devicesUSBMenu, SIGNAL(aboutToShow()), this, SLOT(prepareUSBMenu()));
 
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
+    connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
+    connect (devicesUSBMenu, SIGNAL(highlighted(int)), this, SLOT(makeUSBToolTip(int)));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -376,6 +430,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (fd_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (cd_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+    connect (usb_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
 
     /* watch global settings changes */
@@ -394,6 +450,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
 {
+    delete mUsbLedTip;
 }
 
 //
@@ -501,6 +558,11 @@ bool VBoxConsoleWnd::openView (const CSession &session)
                 was_max = max;
         }
     }
+
+    /* initialize usb stuff */
+    bool isUsbAvailable = cmachine.GetUSBController().GetEnabled();
+    devicesMenu->setItemVisible (devicesUSBMenuId, isUsbAvailable);
+    mUsbLedTip = new VBoxUSBLedTip (usb_light, csession);
 
     /* start an idle timer that will update device lighths */
     connect (idle_timer, SIGNAL (timeout()), SLOT (updateDeviceLights()));
@@ -1050,6 +1112,7 @@ void VBoxConsoleWnd::languageChange()
 
     devicesMenu->changeItem (devicesMountFloppyMenuId, tr ("Mount &Floppy"));
     devicesMenu->changeItem (devicesMountDVDMenuId, tr ("Mount &CD/DVD-ROM"));
+    devicesMenu->changeItem (devicesUSBMenuId, tr ("&USB Devices"));
 
     menuBar()->changeItem (vmMenuId, tr ("&VM"));
     menuBar()->changeItem (devicesMenuId, tr ("&Devices"));
@@ -1205,6 +1268,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             "<br>[<b>%1 adapter(s)</b>]</qt>"
         );
         QToolTip::add (net_light, tip.arg (count));
+    }
+    if (element & USBStuff)
+    {
+        devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
     }
     if (element & PauseAction)
     {
@@ -1702,6 +1769,43 @@ void VBoxConsoleWnd::prepareDVDMenu()
 }
 
 /**
+ *  Prepares the "USB Devices" menu by populating the existent host
+ *  USB Devices.
+ */
+void VBoxConsoleWnd::prepareUSBMenu()
+{
+    if (!console) return;
+
+    devicesUSBMenu->clear();
+    CHost host = vboxGlobal().virtualBox().GetHost();
+
+    bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
+    if (isUSBEmpty)
+    {
+        int id = devicesUSBMenu->insertItem (tr ("[No device attached to host]"));
+        devicesUSBMenu->setItemEnabled (id, !isUSBEmpty);
+        return;
+    }
+
+    CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
+    while (en.HasMore())
+    {
+        CHostUSBDevice iterator = en.GetNext();
+        CUSBDevice usb = CUnknown (iterator);
+        int id = devicesUSBMenu->insertItem (QString ("%1 %2 [%3]")
+                                             .arg (usb.GetManufacturer())
+                                             .arg (usb.GetProduct())
+                                             .arg (usb.GetRevision()));
+        hostUSBMap [id] = usb;
+        CUSBDevice attachedUSB =
+            csession.GetConsole().GetUSBDevices().FindById (usb.GetId());
+        devicesUSBMenu->setItemChecked (id, !attachedUSB.isNull());
+        devicesUSBMenu->setItemEnabled (id, iterator.GetState() !=
+                                            CEnums::USBDeviceUnavailable);
+    }
+}
+
+/**
  *  Captures a floppy device corresponding to a given menu id.
  */
 void VBoxConsoleWnd::captureFloppy (int id)
@@ -1747,6 +1851,40 @@ void VBoxConsoleWnd::captureDVD (int id)
     }
 }
 
+/**
+ *  Attach/Detach selected USB Device.
+ */
+void VBoxConsoleWnd::switchUSB (int id)
+{
+    if (!console) return;
+
+    CUSBDevice usb = hostUSBMap [id];
+    /* if null then some other item but usb device is selected */
+    if (usb.isNull()) return;
+
+    if (devicesUSBMenu->isItemChecked (id))
+        csession.GetConsole().DetachUSBDevice (usb.GetId());
+    else
+        csession.GetConsole().AttachUSBDevice (usb.GetId());
+}
+
+/**
+ *  Update tooltip for highlighted USB Device.
+ */
+void VBoxConsoleWnd::makeUSBToolTip (int id)
+{
+    if (!console) return;
+
+    CUSBDevice usb = hostUSBMap [id];
+    /* if null then some other item but usb device is selected */
+    if (usb.isNull()) return;
+
+    QString tip = tr ("Vendor ID: %1\nProduct ID: %2\nSerial Number: %3")
+        .arg (usb.GetVendorId()).arg (usb.GetProductId()).arg (usb.GetSerialNumber());
+    QToolTip::remove (devicesUSBMenu);
+    QToolTip::add (devicesUSBMenu, tip);
+}
+
 void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e)
 {
     if (ind == cd_light)
@@ -1763,6 +1901,14 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
         devicesMenu->setItemParameter (devicesMountFloppyMenuId, 1);
         devicesMountFloppyMenu->exec (e->globalPos());
         devicesMenu->setItemParameter (devicesMountFloppyMenuId, 0);
+    }
+    else
+    if (ind == usb_light)
+    {
+        // set "this is a context menu" flag
+        devicesMenu->setItemParameter (devicesUSBMenuId, 1);
+        devicesUSBMenu->exec (e->globalPos());
+        devicesMenu->setItemParameter (devicesUSBMenuId, 0);
     }
 }
 
@@ -1823,7 +1969,7 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
 
         machine_state = state;
 
-        updateAppearanceOf (Caption | FloppyStuff | DVDStuff | PauseAction |
+        updateAppearanceOf (Caption | FloppyStuff | DVDStuff | USBStuff | PauseAction |
                             DisableMouseIntegrAction );
 
         if (state < CEnums::Running)
