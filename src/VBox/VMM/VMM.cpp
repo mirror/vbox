@@ -495,6 +495,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchInt3,           STAMTYPE_COUNTER, "/VMM/GCRet/PatchInt3",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_INT3 returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchPF,             STAMTYPE_COUNTER, "/VMM/GCRet/PatchPF",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_PF returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchGP,             STAMTYPE_COUNTER, "/VMM/GCRet/PatchGP",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_GP returns.");
+                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchIretIRQ,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchIret",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PENDING_IRQ_AFTER_IRET returns.");                    
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPageOverflow,        STAMTYPE_COUNTER, "/VMM/GCRet/InvlpgOverflow",      STAMUNIT_OCCURENCES, "Number of VERR_REM_FLUSHED_PAGES_OVERFLOW returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetRescheduleREM,       STAMTYPE_COUNTER, "/VMM/GCRet/ScheduleREM",         STAMUNIT_OCCURENCES, "Number of VINF_EM_RESCHEDULE_REM returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetToR3,                STAMTYPE_COUNTER, "/VMM/GCRet/ToR3",                STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");

@@ -284,6 +284,7 @@ typedef struct VMM
     STAMCOUNTER                 StatGCRetPatchInt3;
     STAMCOUNTER                 StatGCRetPatchPF;
     STAMCOUNTER                 StatGCRetPatchGP;
+    STAMCOUNTER                 StatGCRetPatchIretIRQ;
     STAMCOUNTER                 StatGCRetPageOverflow;
     STAMCOUNTER                 StatGCRetRescheduleREM;
     STAMCOUNTER                 StatGCRetToR3;
