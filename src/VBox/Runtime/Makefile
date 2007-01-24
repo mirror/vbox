@@ -118,6 +118,7 @@ RuntimeR3_INCS.l4       = \
 
 RuntimeR3_SOURCES       = \
 	alloc.cpp \
+	alloc/heapsimple.cpp \
 	assert.cpp \
 	table/avlhcphys.cpp \
 	table/avlgcptr.cpp \
