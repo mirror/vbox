@@ -277,20 +277,29 @@ public:
         return CEnums::NetworkAttachmentType (it - networkAttachmentTypes.begin());
     }
 
+    QString toString (CEnums::USBDeviceState aState) const
+    {
+        AssertMsg (!USBDeviceStates [aState].isNull(), ("No text for %d", aState));
+        return USBDeviceStates [aState];
+    }
+
     QPixmap snapshotIcon (bool online) const
     {
         return online ? mOnlineSnapshotIcon : mOfflineSnapshotIcon;
     }
 
-    // details generators
+    /* details generators */
 
     QString details (const CHardDisk &aHD, bool aPredict = false) const;
+
+    QString details (const CUSBDevice &aDevice) const;
+    QString toolTip (const CUSBDevice &aDevice) const;
 
     QString prepareFileNameForHTML (const QString &fn) const;
 
     QString detailsReport (const CMachine &m, bool isNewVM, bool withLinks) const;
 
-    // VirtualBox helpers
+    /* VirtualBox helpers */
 
     CSession openSession (const QUuid &id);
 
@@ -303,13 +312,14 @@ public:
      *  enumeration has been finished or never been started). */
     VBoxMediaList currentMediaList() const { return media_list; }
 
-    // various helpers
+    /* various helpers */
 
     void languageChange();
 
-    void cleanup(); // made public for internal purposes
+    /* made public for internal purposes */
+    void cleanup();
 
-    // public static stuff
+    /* public static stuff */
 
     static QIconSet iconSet (const char *aNormal,
                              const char *aDisabled = 0,
@@ -344,9 +354,9 @@ signals:
      *  when this signal is emitted, use the argument instead. */
     void mediaEnumerated (const VBoxMediaList &list);
 
-    // signals emitted when the VirtualBox callback is called by the server
-    // (not that currently these signals are emitted only when the application
-    //  is the in the VM selector mode)
+    /* signals emitted when the VirtualBox callback is called by the server
+     * (not that currently these signals are emitted only when the application
+     * is the in the VM selector mode) */
 
     void machineStateChanged (const VBoxMachineStateChangeEvent &e);
     void machineDataChanged (const VBoxMachineDataChangeEvent &e);
@@ -413,6 +423,7 @@ private:
     QStringVector diskControllerDevices;
     QStringVector audioDriverTypes;
     QStringVector networkAttachmentTypes;
+    QStringVector USBDeviceStates;
 
     mutable bool detailReportTemplatesReady;
 
@@ -422,5 +433,5 @@ private:
 
 inline VBoxGlobal &vboxGlobal() { return VBoxGlobal::instance(); }
 
-#endif // __VBoxGlobal_h__
+#endif /* __VBoxGlobal_h__ */
 

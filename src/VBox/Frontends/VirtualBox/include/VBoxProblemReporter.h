@@ -179,6 +179,9 @@ public:
                                     QWidget *parent = 0);
 #endif
 
+    void cannotAttachUSBDevice (const CConsole &console, const QString &device);
+    void cannotDetachUSBDevice (const CConsole &console, const QString &device);
+
     bool confirmReleaseImage (QWidget*, QString);
 
     bool remindAboutInputCapture();
