@@ -54,8 +54,12 @@
 # endif
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) && !defined(page_to_pfn)
-# define page_to_pfn(page) ((page) - mem_map)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+# ifndef page_to_pfn
+#  define page_to_pfn(page) ((page) - mem_map)
+# endif
+# include <asm/pgtable.h>
+# define global_flush_tlb __flush_tlb_global
 #endif
 
 /* devfs defines */

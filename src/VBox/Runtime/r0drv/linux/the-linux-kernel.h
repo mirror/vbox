@@ -32,6 +32,15 @@
 
 #include <linux/autoconf.h>
 #include <linux/version.h>
+
+/* We only support 2.4 and 2.6 series kernels */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+# error We only support 2.4 and 2.6 series kernels
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+# error We only support 2.4 and 2.6 series kernels
+#endif
+
 #if defined(CONFIG_MODVERSIONS) && !defined(MODVERSIONS)
 # define MODVERSIONS
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 71)
