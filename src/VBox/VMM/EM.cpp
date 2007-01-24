@@ -1016,12 +1016,14 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int gcret)
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
                     return emR3RawExecuteInstruction(pVM, "PATCHIR");
                 }
+#if 0 /** @note no noticable change; revisit later when we can emulate iret ourselves. */
                 else
                 if (gcret == VINF_PATM_PENDING_IRQ_AFTER_IRET)
                 {
                     /* special case: iret, that sets IF,  detected a pending irq/event */
                     return emR3RawExecuteInstruction(pVM, "PATCHIRET");
                 }
+#endif
                 return VINF_EM_RESCHEDULE_REM;
 
             /*
