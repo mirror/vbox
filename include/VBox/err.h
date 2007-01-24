@@ -267,21 +267,23 @@
 #define VINF_PATM_HC_MMIO_PATCH_WRITE       1413
 /** Reason for leaving GC: attempt to patch MMIO read. */
 #define VINF_PATM_HC_MMIO_PATCH_READ        1414
+/** Reason for leaving GC: pending irq after iret that sets IF. */
+#define VINF_PATM_PENDING_IRQ_AFTER_IRET    1415
 /** Last leave GC code. */
-#define VINF_PATM_LEAVEGC_LAST              VINF_PATCH_EMULATE_INSTR
+#define VINF_PATM_LEAVEGC_LAST              VINF_PATM_PENDING_IRQ_AFTER_IRET
 
 /** No conflicts to resolve */
-#define VERR_PATCH_NO_CONFLICT              (-1415)
+#define VERR_PATCH_NO_CONFLICT              (-1425)
 /** Detected unsafe code for patching */
-#define VERR_PATM_UNSAFE_CODE               (-1416)
+#define VERR_PATM_UNSAFE_CODE               (-1426)
 /** Terminate search branch */
-#define VWRN_PATCH_END_BRANCH                1417
+#define VWRN_PATCH_END_BRANCH                1427
 /** Already patched */
-#define VERR_PATM_ALREADY_PATCHED           (-1418)
+#define VERR_PATM_ALREADY_PATCHED           (-1428)
 /** Spinlock detection failed. */
-#define VINF_PATM_SPINLOCK_FAILED           (1419)
+#define VINF_PATM_SPINLOCK_FAILED           (1429)
 /** Continue execution after patch trap. */
-#define VINF_PATCH_CONTINUE                 (1420)
+#define VINF_PATCH_CONTINUE                 (1430)
 
 /** @} */
 
