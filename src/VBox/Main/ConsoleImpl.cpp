@@ -5029,8 +5029,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 }
                 else
                 {
-                    AssertMsgFailed(("Could not attach to host interface! Bad!\n"));
-                    return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_("Failed to initialize Host Interface Networking"));
+                    switch (hrc)
+                    {
+#ifdef __LINUX__
+                        case VERR_ACCESS_DENIED:
+                            return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
+                                             "Failed to open '/dev/net/tun' for read/write access. Please check the "
+                                             "permissions of that node. Either do 'chmod 0666 /dev/net/tun' or "
+                                             "change the group of that node and get member of that group. Make "
+                                             "sure that these changes are permanently in particular if you are "
+                                             "using udev"));
+#endif /* __LINUX__ */
+                        default:
+                            AssertMsgFailed(("Could not attach to host interface! Bad!\n"));
+                            return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
+                                             "Failed to initialize Host Interface Networking"));
+                    }
                 }
                 break;
             }
@@ -5478,7 +5492,17 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
         else
         {
             AssertMsgFailed(("Configuration error: Failed to open /dev/net/tun rc=%Vrc\n", rcVBox));
-            rc = setError(E_FAIL, "Failed to open /dev/net/tun rc = %Vrc\n", rcVBox);
+            switch (rcVBox)
+            {
+                case VERR_ACCESS_DENIED:
+                    /* will be handled by our caller */
+                    LogRel(("HERE\n"));
+                    rc = rcVBox;
+                    break;
+                default:
+                    rc = setError(E_FAIL, "Failed to open /dev/net/tun rc = %Vrc\n", rcVBox);
+                    break;
+            }
         }
 #elif
 #error "Unknown host OS"
