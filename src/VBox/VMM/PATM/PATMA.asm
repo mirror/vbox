@@ -1098,8 +1098,24 @@ PATMIretStart:
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @@todo fix this properly, so we can dispatch pending interrupts in GC
     test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
-    jnz     iret_fault
+    jz      iret_continue
 
+    ; Go to our hypervisor trap handler to dispatch the pending irq
+    mov     dword [ss:PATM_TEMP_EAX], eax
+    mov     dword [ss:PATM_TEMP_ECX], ecx
+    mov     dword [ss:PATM_TEMP_EDI], edi
+    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     eax, PATM_ACTION_PENDING_IRQ_AFTER_IRET
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    mov     edi, PATM_CURINSTRADDR
+
+    popfd
+
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    ; does not return
+
+iret_continue:
     or      dword [esp+8], 1
 iret_notring0:
 
@@ -1145,9 +1161,9 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      PATMIretEnd- PATMIretStart
 %ifdef PATM_LOG_IF_CHANGES
-    DD      11
+    DD      17
 %else
-    DD      10
+    DD      16
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
@@ -1156,6 +1172,18 @@ GLOBALNAME PATMIretRecord
     DD      0
 %endif
     DD      PATM_VM_FORCEDACTIONS
+    DD      0
+    DD      PATM_TEMP_EAX
+    DD      0
+    DD      PATM_TEMP_ECX
+    DD      0
+    DD      PATM_TEMP_EDI
+    DD      0
+    DD      PATM_TEMP_RESTORE_FLAGS
+    DD      0
+    DD      PATM_PENDINGACTION
+    DD      0
+    DD      PATM_CURINSTRADDR
     DD      0
     DD      PATM_VMFLAGS
     DD      0
