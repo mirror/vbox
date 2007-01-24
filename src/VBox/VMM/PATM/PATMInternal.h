@@ -36,7 +36,7 @@
 #endif
 
 
-#define PATM_SSM_VERSION                    48
+#define PATM_SSM_VERSION                    49
 
 /* Enable for call patching. */
 #define PATM_ENABLE_CALL
