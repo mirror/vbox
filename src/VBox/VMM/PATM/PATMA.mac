@@ -76,16 +76,17 @@
 %define PATM_STACK_TOTAL_SIZE              (2*PATM_STACK_SIZE)
 
 ;/* Patch Manager pending actions (in GCSTATE). */
-%define PATM_ACTION_LOOKUP_ADDRESS     1
+%define PATM_ACTION_LOOKUP_ADDRESS              1
 %define PATM_ACTION_DISPATCH_PENDING_IRQ        2
-%define PATM_ACTION_LOG_IF1                     3
-%define PATM_ACTION_LOG_CLI                     4
-%define PATM_ACTION_LOG_STI                     5
-%define PATM_ACTION_LOG_POPF_IF1                6
-%define PATM_ACTION_LOG_POPF_IF0                7
-%define PATM_ACTION_LOG_PUSHF                   8
-%define PATM_ACTION_LOG_IRET                    9
-%define PATM_ACTION_LOG_RET                     10
+%define PATM_ACTION_PENDING_IRQ_AFTER_IRET      3
+%define PATM_ACTION_LOG_IF1                     4
+%define PATM_ACTION_LOG_CLI                     5
+%define PATM_ACTION_LOG_STI                     6
+%define PATM_ACTION_LOG_POPF_IF1                7
+%define PATM_ACTION_LOG_POPF_IF0                8
+%define PATM_ACTION_LOG_PUSHF                   9
+%define PATM_ACTION_LOG_IRET                    10
+%define PATM_ACTION_LOG_RET                     11
 
 ;/* Magic dword found in ecx for patm pending actions. */
 %define PATM_ACTION_MAGIC          0xABCD4321
