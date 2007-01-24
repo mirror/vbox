@@ -1708,6 +1708,12 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                     /* Interrupts are enabled; just go back to the original instruction.
                     return VINF_SUCCESS; */
                 }
+                else 
+                if (gcret == VINF_PATM_PENDING_IRQ_AFTER_IRET)
+                {
+                    /* special case: iret, that sets IF,  detected a pending irq/event */
+                    return emR3RawExecuteInstruction(pVM, "PATCHIRET");
+                }
                 return VINF_EM_RESCHEDULE_REM;
             }
 
@@ -2056,6 +2062,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_PATM_PATCH_TRAP_PF:
         case VINF_PATM_PATCH_INT3:
+        case VINF_PATM_PENDING_IRQ_AFTER_IRET:
             rc = emR3PatchTrap(pVM, pCtx, rc);
             break;
 
