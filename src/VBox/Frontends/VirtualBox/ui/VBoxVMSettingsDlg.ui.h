@@ -459,10 +459,10 @@ void VBoxVMSettingsDlg::init()
     /* VRDP Page */
 
     QWhatsThis::add (static_cast <QWidget *> (grbVRDP->child ("qt_groupbox_checkbox")),
-                     tr ("When checked, enables the Virtual Remote Desktop "
-                         "Protocol which allows remote clients to connect "
-                         "to this virtual machine (when it is running) "
-                         "using a VRDP client."));
+                     tr ("When checked, the VM will act as a Remote Desktop "
+                         "Protocol (RDP) server, allowing remote clients to connect "
+                         "and operate the VM (when it is running) "
+                         "using a standard RDP client."));
 
     ULONG maxPort = 65535;
     leVRDPPort->setValidator (new QIntValidator (0, maxPort, this));

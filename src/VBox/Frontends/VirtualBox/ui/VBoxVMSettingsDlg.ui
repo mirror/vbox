@@ -233,7 +233,7 @@
         </item>
         <item>
             <property name="text">
-                <string> VRDP </string>
+                <string> Remote Display </string>
             </property>
             <property name="text">
                 <string>7</string>
