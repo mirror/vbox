@@ -50,7 +50,8 @@ PROGRAMS = \
 	tstUtf8 \
 	tstDeadlock \
 	tstUuid \
-	tstErrUnique
+	tstErrUnique \
+	tstHeapSimple
 PROGRAMS.win = \
 	tstRTProcWait \
 	tstCritSectW32 \
@@ -180,6 +181,7 @@ tstErrUnique_INCS    = $(PATH_TARGET)/..
 ## tstErrUnique.cpp depends on a generated header.
 tstErrUnique.cpp_DEPS = $(PATH_TARGET)/../errmsgdata.h
 
+tstHeapSimple_SOURCES = tstHeapSimple.cpp
 
 include	$(PATH_KBUILD)/footer.kmk
 
