@@ -217,6 +217,20 @@ public:
         return diskStorageTypes [t];
     }
 
+    QString toString (CEnums::VRDPAuthType t) const
+    {
+        AssertMsg (!vrdpAuthTypes [t].isNull(), ("No text for %d", t));
+        return vrdpAuthTypes [t];
+    }
+
+    CEnums::VRDPAuthType toVRDPAuthType (const QString &s) const
+    {
+        QStringVector::const_iterator it =
+            qFind (vrdpAuthTypes.begin(), vrdpAuthTypes.end(), s);
+        AssertMsg (it != vrdpAuthTypes.end(), ("No value for {%s}", s.latin1()));
+        return CEnums::VRDPAuthType (it - vrdpAuthTypes.begin());
+    }
+
     /**
      *  Similar to toString (CEnums::HardDiskType), but returns 'Differencing'
      *  for normal hard disks that have a parent hard disk.
@@ -420,6 +434,7 @@ private:
     QStringVector diskControllerTypes;
     QStringVector diskTypes;
     QStringVector diskStorageTypes;
+    QStringVector vrdpAuthTypes;
     QStringVector diskControllerDevices;
     QStringVector audioDriverTypes;
     QStringVector networkAttachmentTypes;

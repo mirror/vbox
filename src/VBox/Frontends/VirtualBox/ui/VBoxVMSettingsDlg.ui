@@ -231,6 +231,26 @@
                 <pixmap></pixmap>
             </property>
         </item>
+        <item>
+            <property name="text">
+                <string> VRDP </string>
+            </property>
+            <property name="text">
+                <string>7</string>
+            </property>
+            <property name="text">
+                <string>#vrdp</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>discard_cur_state_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
             <property name="name">
                 <cstring>listView</cstring>
             </property>
@@ -2022,6 +2042,220 @@ The checkbox to the left defines whether the particular filter is enabled or not
                     </widget>
                 </vbox>
             </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageVRDP</cstring>
+                </property>
+                <attribute name="id">
+                    <number>7</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbVRDP</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Enable VRDP Server</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="checked">
+                            <bool>true</bool>
+                        </property>
+                        <hbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout31</cstring>
+                                </property>
+                                <vbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLabel">
+                                        <property name="name">
+                                            <cstring>txVRDPPort</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Server port </string>
+                                        </property>
+                                        <property name="buddy" stdset="0">
+                                            <cstring>cbAudioDriver</cstring>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLabel">
+                                        <property name="name">
+                                            <cstring>txVRDPAuthMethod</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Authentication Method </string>
+                                        </property>
+                                        <property name="buddy" stdset="0">
+                                            <cstring>cbAudioDriver</cstring>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLabel">
+                                        <property name="name">
+                                            <cstring>txVRDPAuthTimeout</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Authentication Timeout </string>
+                                        </property>
+                                        <property name="buddy" stdset="0">
+                                            <cstring>cbAudioDriver</cstring>
+                                        </property>
+                                    </widget>
+                                </vbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout32</cstring>
+                                </property>
+                                <vbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLineEdit">
+                                        <property name="name">
+                                            <cstring>leVRDPPort</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>1</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Displays the VRDP Server port.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QComboBox">
+                                        <property name="name">
+                                            <cstring>cbVRDPAuthType</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>1</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Defines the VRDP authentication method.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLineEdit">
+                                        <property name="name">
+                                            <cstring>leVRDPTimeout</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>1</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Specifies the timeout for guest authentication, in milliseconds.</string>
+                                        </property>
+                                    </widget>
+                                </vbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout33</cstring>
+                                </property>
+                                <vbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer36_2</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>16</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer36_2_3</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>16</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer36_2_2</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>16</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </vbox>
+                            </widget>
+                        </hbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer11_2</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>110</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
         </widget>
         <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
             <property name="name">
@@ -2358,6 +2592,10 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <tabstop>tbRemoveUSBFilter</tabstop>
     <tabstop>tbUSBFilterUp</tabstop>
     <tabstop>tbUSBFilterDown</tabstop>
+    <tabstop>grbVRDP</tabstop>
+    <tabstop>leVRDPPort</tabstop>
+    <tabstop>cbVRDPAuthType</tabstop>
+    <tabstop>leVRDPTimeout</tabstop>
     <tabstop>buttonHelp</tabstop>
     <tabstop>buttonOk</tabstop>
     <tabstop>buttonCancel</tabstop>
@@ -2396,6 +2634,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <variable access="private">QIWidgetValidator *wvalHDD;</variable>
     <variable access="private">QIWidgetValidator *wvalDVD;</variable>
     <variable access="private">QIWidgetValidator *wvalFloppy;</variable>
+    <variable access="private">QIWidgetValidator *wvalVRDP;</variable>
     <variable access="private">QUuid uuidHDA;</variable>
     <variable access="private">QUuid uuidHDB;</variable>
     <variable access="private">QUuid uuidHDD;</variable>
