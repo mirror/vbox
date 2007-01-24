@@ -4198,6 +4198,8 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     LogFlow(("vdiConstruct:\n"));
     PVDIDISK pData = PDMINS2DATA(pDrvIns, PVDIDISK);
+    char *pszName;      /**< The path of the disk image file. */
+    bool fReadOnly;     /**< True if the media is readonly. */
 
     /*
      * Init the static parts.
@@ -4248,7 +4250,6 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         /*
          * Read the image configuration.
          */
-        char *pszName;
         int rc = CFGMR3QueryStringAlloc(pCurNode, "Path", &pszName);
         if (VBOX_FAILURE(rc))
             return PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4288,14 +4289,11 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     /*
      * Validate and read top level configuration.
      */
-    char *pszName;
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("VHDD: Configuration error: Querying \"Path\" as string failed"));
 
-    /** True if the media is readonly. */
-    bool fReadOnly;
     rc = CFGMR3QueryBool(pCfgHandle, "ReadOnly", &fReadOnly);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fReadOnly = false;
@@ -4319,6 +4317,12 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     MMR3HeapFree(pszName);
     pszName = NULL;
 #endif
+
+    if (rc == VERR_ACCESS_DENIED)
+        /* This should never happen here since this case is covered by Console::PowerUp */
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Cannot open virtual disk image '%s' for %s access"),
+                                   pszName, fReadOnly ? "readonly" : "read/write");
 
     return rc;
 }

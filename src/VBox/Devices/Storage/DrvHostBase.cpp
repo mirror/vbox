@@ -92,6 +92,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
@@ -1198,9 +1199,30 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     rc = drvHostBaseReopen(pThis);
     if (VBOX_FAILURE(rc))
     {
+        char pszPathReal[256];
+        char *pszDevice = pThis->pszDevice;
+        if (RT_SUCCESS(RTPathReal(pszDevice, pszPathReal, sizeof(pszPathReal))))
+            pszDevice = pszPathReal;
         AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pThis->pszDevice, rc));
         pThis->FileDevice = NIL_RTFILE;
-        return rc;
+        switch (rc)
+        {
+            case VERR_ACCESS_DENIED:
+                return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+#ifdef __LINUX__
+                        N_("Cannot open host device '%s' for %s access. Check the permissions "
+                           "of that device ('/bin/ls -l %s'): Most probably you need to be member "
+                           "of the device group. Make sure that you logout/login after changing "
+                           "the group settings of the current user"),
+#else
+                        N_("Cannot open host device '%s' for %s access. Check the permissions "
+                           "of that device"),
+#endif
+                       pszPathReal, pThis->fReadOnlyConfig ? "readonly" : "read/write",
+                       pszPathReal);
+            default:
+                return rc;
+        }
     }
 #ifdef __WIN__
     DRVHostBaseMediaPresent(pThis);
