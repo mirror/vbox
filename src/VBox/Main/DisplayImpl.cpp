@@ -193,6 +193,9 @@ void Display::callFramebufferResize (FramebufferPixelFormat_T pixelFormat, void 
     /* Call the framebuffer to try and set required pixelFormat. */
     BOOL finished = TRUE;
 
+    /* Reset the event here. It could be signalled before it gets to after 'if (!finished)' */
+    RTSemEventMultiReset(mResizeSem);
+
     mFramebuffer->RequestResize (pixelFormat, (ULONG)pvVRAM, cbLine, w, h, &finished);
 
     if (!finished)
@@ -202,11 +205,10 @@ void Display::callFramebufferResize (FramebufferPixelFormat_T pixelFormat, void 
         /* Note: The previously obtained framebuffer lock is preserved.
          *       The EMT keeps the lock until the resize process completes.
          */
-        
+
         /* The framebuffer needs more time to process
          * the event so we have to halt the VM until it's done.
          */
-        RTSemEventMultiReset(mResizeSem);
         RTSemEventMultiWait(mResizeSem, RT_INDEFINITE_WAIT); /** @todo r=bird: this is a serious deadlock point, where EMT is stuck while the main thread is doing VMR3Req for some reason. */
     }
 }
