@@ -5406,7 +5406,15 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             else
             {
                 AssertMsgFailed(("Failed to attach LUN#%d. rc=%Vrc\n", pIf->iLUN, rc));
-                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot attach drive."));
+                switch (rc)
+                {
+                    case VERR_ACCESS_DENIED:
+                        /* Error already catched by DrvHostBase */
+                        return rc;
+                    default:
+                        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_(
+                               "PIIX3 cannot attach drive to the %s"), s_apszDescs[i][j]);
+                }
             }
             cbTotalBuffer += pIf->cbIOBuffer;
         }
