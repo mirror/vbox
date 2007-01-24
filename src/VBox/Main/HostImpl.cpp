@@ -1334,7 +1334,7 @@ bool Host::validateDevice(char *deviceNode, bool isCDROM)
             {
                 int fileHandle;
                 // now try to open the device
-                fileHandle = open(deviceNode, O_RDONLY | O_EXCL | O_NONBLOCK, 0);
+                fileHandle = open(deviceNode, O_RDONLY | O_NONBLOCK, 0);
                 if (fileHandle >= 0)
                 {
                     cdrom_subchnl cdChannelInfo;
