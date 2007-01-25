@@ -63,7 +63,7 @@ INST_SDK_SAMPLES     = $(INST_SDK)/samples
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(filter 695 700 705 709 731,$(KMK_REVISION)),)
+ifneq ($(call int-ge,$(KMK_REVISION),788),1)
  $(error You must update kBuild!)
 endif
 
