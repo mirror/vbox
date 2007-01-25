@@ -155,12 +155,12 @@ void dumpheap (char *point)
 #endif
 
 
-DECLINLINE(void *) vbglPhysHeapBlock2Data (VBGLPHYSHEAPBLOCK *pBlock)
+static DECLINLINE(void *) vbglPhysHeapBlock2Data (VBGLPHYSHEAPBLOCK *pBlock)
 {
     return (void *)(pBlock? (char *)pBlock + sizeof (VBGLPHYSHEAPBLOCK): NULL);
 }
 
-DECLINLINE(VBGLPHYSHEAPBLOCK *) vbglPhysHeapData2Block (void *p)
+static DECLINLINE(VBGLPHYSHEAPBLOCK *) vbglPhysHeapData2Block (void *p)
 {
     VBGLPHYSHEAPBLOCK *pBlock = (VBGLPHYSHEAPBLOCK *)(p? (char *)p - sizeof (VBGLPHYSHEAPBLOCK): NULL);
 
@@ -170,7 +170,7 @@ DECLINLINE(VBGLPHYSHEAPBLOCK *) vbglPhysHeapData2Block (void *p)
     return pBlock;
 }
 
-DECLINLINE(int) vbglPhysHeapEnter (void)
+static DECLINLINE(int) vbglPhysHeapEnter (void)
 {
     int rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
 
@@ -180,7 +180,7 @@ DECLINLINE(int) vbglPhysHeapEnter (void)
     return rc;
 }
 
-DECLINLINE(void) vbglPhysHeapLeave (void)
+static DECLINLINE(void) vbglPhysHeapLeave (void)
 {
     RTSemFastMutexRelease(g_vbgldata.mutexHeap);
 }
