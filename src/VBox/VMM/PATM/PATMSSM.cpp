@@ -301,6 +301,16 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         return VERR_SSM_INVALID_STATE;
     }
 
+    /* Relative calls are made to the helper functions. Therefor their location must not change! */
+    if (    pVM->patm.s.pfnHelperCallGC != patmInfo.pfnHelperCallGC
+        ||  pVM->patm.s.pfnHelperRetGC  != patmInfo.pfnHelperRetGC
+        ||  pVM->patm.s.pfnHelperJumpGC != patmInfo.pfnHelperJumpGC
+        ||  pVM->patm.s.pfnHelperIretGC != patmInfo.pfnHelperIretGC)
+    {
+        AssertMsgFailed(("Helper function ptrs don't match!!!\n"));
+        return VERR_SSM_INVALID_STATE;
+    }
+
     if (    pVM->patm.s.pPatchMemGC != patmInfo.pPatchMemGC
         ||  pVM->patm.s.cbPatchMem != patmInfo.cbPatchMem)
     {
