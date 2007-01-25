@@ -194,7 +194,7 @@ static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
     int rc = PDMDevHlpCMOSWrite(pDevIns, off, u32Val);
     AssertRC(rc);
 #else
-    PVM pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
     IOMIOPortWrite(pVM, 0x70, off, 1);
     IOMIOPortWrite(pVM, 0x71, u32Val, 1);
     IOMIOPortWrite(pVM, 0x70, 0, 1);
@@ -275,7 +275,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     PDEVPCBIOS      pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
     uint32_t        u32;
     unsigned        i;
-    PVM             pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+    PVM             pVM = PDMDevHlpGetVM(pDevIns);
     PPDMIBLOCKBIOS  apHDs[4] = {0};
     PPDMIBLOCKBIOS  apFDs[2] = {0};
     AssertRelease(pVM);
@@ -532,7 +532,7 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
             if (pData->iShutdown == 8)
             {
 #if 0
-                PVM pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+                PVM pVM = PDMDevHlpGetVM(pDevIns);
                 AssertRelease(pVM);
                 VM_FF_SET(pVM, VM_FF_TERMINATE);
 #endif
@@ -658,7 +658,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     /*
      * Paranoia: Check that the BIOS ROM hasn't changed.
      */
-    PVM pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
     /* the low ROM mapping. */
     unsigned cb = RT_MIN(g_cbPcBiosBinary, 128 * _1K);
     const uint8_t *pb1 = (uint8_t *)MMPhysGCPhys2HCVirt(pVM, 0x00100000 - cb);

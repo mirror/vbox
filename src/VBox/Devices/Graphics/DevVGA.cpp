@@ -3633,7 +3633,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     if (pData->fHaveDirtyBits)
     {
         PPDMDEVINS pDevIns = pData->pDevInsHC;
-        PGMHandlerPhysicalReset(pDevIns->pDevHlp->pfnGetVM(pDevIns), pData->GCPhysVRAM);
+        PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
         pData->fHaveDirtyBits = false;
     }
 }
@@ -4037,7 +4037,7 @@ static DECLCALLBACK(int) vgaPortSetupVRAM (PPDMIDISPLAYPORT pInterface, void *pv
     pDevIns = s->pDevInsHC;
     Assert(pDevIns);
 
-    pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+    pVM = PDMDevHlpGetVM(pDevIns);
     Assert(pVM);
 
     if (s->pvExtVRAMHC != NULL)
@@ -4133,7 +4133,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
          * Windows usually re-initializes the PCI devices, so we have to check whether the memory was
          * already registered before trying to do that all over again.
          */
-        PVM pVM = pPciDev->pDevIns->pDevHlp->pfnGetVM(pPciDev->pDevIns);
+        PVM pVM = PDMDevHlpGetVM(pPciDev->pDevIns);
         if (pData->GCPhysVRAM)
         {
             AssertMsg(pData->GCPhysVRAM == GCPhysAddress,
@@ -4352,7 +4352,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
              || pData->fR0Enabled)
         &&  pData->GCPhysVRAM)
     {
-        int rc = PGMHandlerPhysicalReset(pDevIns->pDevHlp->pfnGetVM(pDevIns), pData->GCPhysVRAM);
+        int rc = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
         AssertRC(rc);
     }
 
@@ -4503,7 +4503,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     int         rc;
     unsigned i;
     PVGASTATE   pData = PDMINS2DATA(pDevIns, PVGASTATE);
-    PVM         pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+    PVM         pVM = PDMDevHlpGetVM(pDevIns);
 #ifdef VBE_NEW_DYN_LIST
     uint32_t    cCustomModes;
     uint32_t    cyReduction;

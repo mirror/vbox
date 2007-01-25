@@ -5688,6 +5688,14 @@ DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect
 }
 
 /**
+ * @copydoc PDMDEVHLP::pfnGetVM
+ */
+DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pDevHlp->pfnGetVM(pDevIns);
+}
+
+/**
  * @copydoc PDMDEVHLP::pfnPhysReadGCVirt
  */
 DECLINLINE(int) PDMDevHlpPhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)

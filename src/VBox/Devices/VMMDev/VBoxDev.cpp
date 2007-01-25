@@ -235,7 +235,7 @@ static void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
 void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
 {
     PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS(pVMMDevState);
-    PVM pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
     int rc;
     PVMREQ pReq;
 
@@ -644,7 +644,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)requestHeader;
-                PVM pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+                PVM pVM = PDMDevHlpGetVM(pDevIns);
                 size_t hypervisorSize = 0;
                 requestHeader->rc = PGMR3MappingsSize(pVM, &hypervisorSize);
                 hypervisorInfo->hypervisorSize = (uint32_t)hypervisorSize;
@@ -666,7 +666,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)requestHeader;
-                PVM pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+                PVM pVM = PDMDevHlpGetVM(pDevIns);
                 if (hypervisorInfo->hypervisorStart == 0)
                 {
                     requestHeader->rc = PGMR3MappingsUnfix(pVM);
@@ -1183,7 +1183,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
          * Windows usually re-initializes the PCI devices, so we have to check whether the memory was
          * already registered before trying to do that all over again.
          */
-        PVM pVM = pPciDev->pDevIns->pDevHlp->pfnGetVM(pPciDev->pDevIns);
+        PVM pVM = PDMDevHlpGetVM(pPciDev->pDevIns);
 
         if (pData->GCPhysVMMDevRAM)
         {
