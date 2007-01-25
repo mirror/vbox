@@ -164,8 +164,8 @@ static BOOL gfOffCursorActive = FALSE;
 static BOOL gfGuestNumLockPressed = FALSE;
 static BOOL gfGuestCapsLockPressed = FALSE;
 static BOOL gfGuestScrollLockPressed = FALSE;
-static int  guGuestNumLockAdaptionCnt = 2;
-static int  guGuestCapsLockAdaptionCnt = 2;
+static int  gcGuestNumLockAdaptions = 2;
+static int  gcGuestCapsLockAdaptions = 2;
 
 /** modifier keypress status (scancode as index) */
 static uint8_t gaModifiersState[256];
@@ -466,9 +466,9 @@ public:
     {
         /* Don't bother the guest with NumLock scancodes if he doesn't set the NumLock LED */
         if (gfGuestNumLockPressed != fNumLock)
-            guGuestNumLockAdaptionCnt = 2;
+            gcGuestNumLockAdaptions = 2;
         if (gfGuestCapsLockPressed != fCapsLock)
-            guGuestCapsLockAdaptionCnt = 2;
+            gcGuestCapsLockAdaptions = 2;
         gfGuestNumLockPressed    = fNumLock;
         gfGuestCapsLockPressed   = fCapsLock;
         gfGuestScrollLockPressed = fScrollLock;
@@ -2806,18 +2806,18 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
          * bother him with NumLock scancodes. At least our BIOS, Linux and Windows handle the
          * NumLock LED well.
          */
-        if (   guGuestNumLockAdaptionCnt
+        if (   gcGuestNumLockAdaptions
             && (gfGuestNumLockPressed ^ !!(SDL_GetModState() & KMOD_NUM)))
         {
-            guGuestNumLockAdaptionCnt--;
+            gcGuestNumLockAdaptions--;
             gKeyboard->PutScancode(0x45);
             gKeyboard->PutScancode(0x45 | 0x80);
         }
 #if 0  /* For some reason SDL_GetModState() does not return KMOD_CAPS correctly */
-        if (   guGuestCapsLockAdaptionCnt
+        if (   gcGuestCapsLockAdaptions
             && (gfGuestCapsLockPressed ^ !!(SDL_GetModState() & KMOD_CAPS)))
         {
-            guGuestCapsLockAdaptionCnt--;
+            gcGuestCapsLockAdaptions--;
             gKeyboard->PutScancode(0x3a);
             gKeyboard->PutScancode(0x3a | 0x80);
         }
