@@ -891,7 +891,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
             }
         }
         if (!pRight)
-            pRight = (PMMHYPERCHUNKFREE)((char *)CTXSUFF(pHeap->pbHeap) + pHeap->offFreeTail);
+            pRight = (PMMHYPERCHUNKFREE)((char *)CTXSUFF(pHeap->pbHeap) + pHeap->offFreeTail); /** @todo this can't be correct! 'pLeft = .. ; else' I think */
         if (pRight)
         {
             ASSERT_CHUNK_FREE(pHeap, pRight);
