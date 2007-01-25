@@ -67,35 +67,32 @@ int main(int argc, char *argv[])
         unsigned    iFreeOrder;
     } aOps[] =
     {
-        {        16,          0,    NULL,  0 },
+        {        16,          0,    NULL,  0 },  // 0
         {        16,          4,    NULL,  1 },
         {        16,          8,    NULL,  2 },
         {        16,         16,    NULL,  5 },
         {        16,         32,    NULL,  4 },
-        {        32,          0,    NULL,  3 },
+        {        32,          0,    NULL,  3 },  // 5
         {        31,          0,    NULL,  6 },
         {      1024,          0,    NULL,  8 },
         {      1024,         32,    NULL, 10 },
         {      1024,         32,    NULL, 12 },
-        { PAGE_SIZE,  PAGE_SIZE,    NULL, 13 },
+        { PAGE_SIZE,  PAGE_SIZE,    NULL, 13 },  // 10
         {      1024,         32,    NULL,  9 },
         { PAGE_SIZE,         32,    NULL, 11 },
         { PAGE_SIZE,  PAGE_SIZE,    NULL, 14 },
         {        16,          0,    NULL, 15 },
-        {        9,           0,    NULL,  7 },
+        {        9,           0,    NULL,  7 },  // 15
         {        16,          0,    NULL,  7 },
         {        36,          0,    NULL,  7 },
         {        16,          0,    NULL,  7 },
         {     12344,          0,    NULL,  7 },
-        {        50,          0,    NULL,  7 },
+        {        50,          0,    NULL,  7 },  // 20
         {        16,          0,    NULL,  7 },
     };
     unsigned i;
-#ifdef DEBUG
-    RTHeapSimpleDump(Heap);
-#endif
-//    size_t cbBefore = RTHeapSimpleGetFreeSize(Heap);
-    size_t cbBefore = 0;
+    RTHeapSimpleDump(Heap, (PFNRTHEAPSIMPLEPRINTF)RTPrintf);
+    size_t cbBefore = RTHeapSimpleGetFreeSize(Heap);
     static char szFill[] = "01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     /* allocate */
@@ -118,34 +115,33 @@ int main(int argc, char *argv[])
     /* free and allocate the same node again. */
     for (i = 0; i < ELEMENTS(aOps); i++)
     {
-        if (    !aOps[i].pvAlloc
-            ||  aOps[i].uAlignment == PAGE_SIZE)
+        if (!aOps[i].pvAlloc)
             continue;
-        //size_t cbBeforeSub = RTHeapSimpleGetFreeSize(Heap);
+        //RTPrintf("debug: i=%d pv=%#x cb=%#zx align=%#zx cbReal=%#zx\n", i, aOps[i].pvAlloc,
+        //         aOps[i].cb, aOps[i].uAlignment, RTHeapSimpleSize(Heap, aOps[i].pvAlloc));
+        size_t cbBeforeSub = RTHeapSimpleGetFreeSize(Heap);
         RTHeapSimpleFree(Heap, aOps[i].pvAlloc);
+        size_t cbAfterSubFree = RTHeapSimpleGetFreeSize(Heap);
 
-        //RTPrintf("debug: i=%d cbBeforeSub=%d now=%d\n", i, cbBeforeSub, RTHeapSimpleGetFreeSize(Heap));
         void *pv;
         pv = RTHeapSimpleAlloc(Heap, aOps[i].cb, aOps[i].uAlignment);
-        if (pv)
+        if (!pv)
         {
             RTPrintf("Failure: RTHeapSimpleAlloc(%p, %#x, %#x,) -> NULL i=%d\n", (void *)Heap, aOps[i].cb, aOps[i].uAlignment, i);
             return 1;
         }
+        //RTPrintf("debug: i=%d pv=%p cbReal=%#zx cbBeforeSub=%#zx cbAfterSubFree=%#zx cbAfterSubAlloc=%#zx \n", i, pv, RTHeapSimpleSize(Heap, pv),
+        //         cbBeforeSub, cbAfterSubFree, RTHeapSimpleGetFreeSize(Heap));
         if (pv != aOps[i].pvAlloc)
-        {
-            RTPrintf("Failure: Free+Alloc returned different address. new=%p old=%p i=%d (doesn't work with delayed free)\n", pv, aOps[i].pvAlloc, i);
-            //return 1;
-        }
+            RTPrintf("Warning: Free+Alloc returned different address. new=%p old=%p i=%d\n", pv, aOps[i].pvAlloc, i);
         aOps[i].pvAlloc = pv;
-        #if 0 /* won't work :/ */
-        size_t cbAfterSub = RTHeapSimpleGetFreeSize(Heap);
-        if (cbBeforeSub != cbAfterSub)
+        size_t cbAfterSubAlloc = RTHeapSimpleGetFreeSize(Heap);
+        if (cbBeforeSub != cbAfterSubAlloc)
         {
-            RTPrintf("Failure: cbBeforeSub=%d cbAfterSub=%d. i=%d\n", cbBeforeSub, cbAfterSub, i);
-            return 1;
+            RTPrintf("Warning: cbBeforeSub=%#zx cbAfterSubFree=%#zx cbAfterSubAlloc=%#zx. i=%d\n",
+                     cbBeforeSub, cbAfterSubFree, cbAfterSubAlloc, i);
+            //return 1; - won't work correctly until we start creating free block instead of donating memory on alignment.
         }
-        #endif
     }
 
     /* free it in a specific order. */
@@ -159,29 +155,22 @@ int main(int argc, char *argv[])
                 ||  !aOps[j].pvAlloc)
                 continue;
             //RTPrintf("j=%d i=%d free=%d cb=%d pv=%p\n", j, i, RTHeapSimpleGetFreeSize(Heap), aOps[j].cb, aOps[j].pvAlloc);
-            if (aOps[j].uAlignment == PAGE_SIZE)
-                cbBefore -= aOps[j].cb;
-            else
-                RTHeapSimpleFree(Heap, aOps[j].pvAlloc);
+            RTHeapSimpleFree(Heap, aOps[j].pvAlloc);
             aOps[j].pvAlloc = NULL;
             cFreed++;
         }
     }
     Assert(cFreed == RT_ELEMENTS(aOps));
-    //RTPrintf("i=done free=%d\n", RTHeapSimpleGetFreeSize(Heap));
+    RTPrintf("i=done free=%d\n", RTHeapSimpleGetFreeSize(Heap));
 
-#if 0
     /* check that we're back at the right amount of free memory. */
-    //size_t cbAfter = RTHeapSimpleGetFreeSize(Heap);
+    size_t cbAfter = RTHeapSimpleGetFreeSize(Heap);
     if (cbBefore != cbAfter)
     {
         RTPrintf("Warning: Either we've split out an alignment chunk at the start, or we've got\n"
                  "         an alloc/free accounting bug: cbBefore=%d cbAfter=%d\n", cbBefore, cbAfter);
-#ifdef DEBUG
-        RTHeapSimpleDump(Heap);
-#endif
+        RTHeapSimpleDump(Heap, (PFNRTHEAPSIMPLEPRINTF)RTPrintf);
     }
-#endif 
 
     RTPrintf("tstHeapSimple: Success\n");
 #ifdef LOG_ENABLED
