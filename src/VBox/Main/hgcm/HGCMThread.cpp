@@ -127,8 +127,8 @@ class HGCMThread: public HGCMObject
         HGCMMsgCore *m_pFreeTail;
 
 
-        DECLINLINE(int) Enter (void);
-        DECLINLINE(void) Leave (void);
+        inline int Enter (void);
+        inline void Leave (void);
 
         HGCMMsgCore *FetchFreeListHead (void);
 
@@ -322,7 +322,7 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
     return rc;
 }
 
-DECLINLINE(int) HGCMThread::Enter (void)
+inline int HGCMThread::Enter (void)
 {
     int rc = RTCritSectEnter (&m_critsect);
 
@@ -336,7 +336,7 @@ DECLINLINE(int) HGCMThread::Enter (void)
     return rc;
 }
 
-DECLINLINE(void) HGCMThread::Leave (void)
+inline void HGCMThread::Leave (void)
 {
     RTCritSectLeave (&m_critsect);
 }
