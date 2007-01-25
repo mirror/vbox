@@ -39,6 +39,7 @@ extern "C" {
 }
 
 #undef LOG_VOICES
+//#define USE_MIXER
 
 #define AC97_SSM_VERSION 1
 
@@ -579,8 +580,8 @@ static void mixer_reset (AC97LinkState *s)
 
 #ifdef USE_MIXER
     record_select (s, 0);
-    set_volume (s, AC97_Master_Volume_Mute, AUD_MIXER_VOLUME  , 0x8000);
-    set_volume (s, AC97_PCM_Out_Volume_Mute, AUD_MIXER_PCM    , 0x8808);
+    set_volume (s, AC97_Master_Volume_Mute,  AUD_MIXER_VOLUME,  0x8000);
+    set_volume (s, AC97_PCM_Out_Volume_Mute, AUD_MIXER_PCM,     0x8808);
     set_volume (s, AC97_Line_In_Volume_Mute, AUD_MIXER_LINE_IN, 0x8808);
 #else
     mixer_store (s, AC97_Record_Select, 0);
@@ -1472,7 +1473,7 @@ static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
 #ifdef USE_MIXER
     record_select (s, mixer_load (s, AC97_Record_Select));
 #define V_(a, b) set_volume (s, a, b, mixer_load (s, a))
-    V_ (AC97_Master_Volume_Mute, AUD_MIXER_VOLUME);
+    V_ (AC97_Master_Volume_Mute,  AUD_MIXER_VOLUME);
     V_ (AC97_PCM_Out_Volume_Mute, AUD_MIXER_PCM);
     V_ (AC97_Line_In_Volume_Mute, AUD_MIXER_LINE_IN);
 #undef V_
@@ -1666,7 +1667,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
 
     /** @todo r=bird: add a devhlp for this of course! */
     if (!pData->ac97.voice_pi || !pData->ac97.voice_po || !pData->ac97.voice_mc)
-        VMSetRuntimeError(pDevIns->pDevHlp->pfnGetVM(pDevIns), false,
+        VMSetRuntimeError(PDMDevHlpGetVM(pDevIns), false,
                           N_("Some audio devices could not be opened. Guest applications "
                              "generating audio output or depending on audio input may hang. "
                              "Make sure your host audio device is working properly."),

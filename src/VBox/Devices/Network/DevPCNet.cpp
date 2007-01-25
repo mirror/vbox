@@ -1199,7 +1199,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
 
 #if 0
     if (pData->RDRAPhysOld != 0 && pData->GCRDRA != pData->RDRAPhysOld)
-        PGMHandlerPhysicalDeregister(pDevIns->pDevHlp->pfnGetVM(pDevIns),
+        PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
                                      pData->RDRAPhysOld & ~PAGE_OFFSET_MASK);
     if (   pData->TRDAPhysOld != 0 && pData->GCTDRA != pData->TRDAPhysOld
         && (pData->GCRDRA & ~PAGE_OFFSET_MASK) != (pData->GCTDRA & ~PAGE_OFFSET_MASK))
@@ -1208,7 +1208,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     if (pData->GCRDRA != oldrdra)
     {
         int rc;
-        rc = PGMR3HandlerPhysicalRegister(pDevIns->pDevHlp->pfnGetVM(pDevIns),
+        rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
                                           PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                           pData->GCRDRA & ~PAGE_OFFSET_MASK,
                                           RT_ALIGN(pcnetRdraAddr(pData, 0), PAGE_SIZE) - 1,
@@ -1227,12 +1227,12 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     if (pData->GCTDRA != pData->TRDAPhysOld || CSR_XMTRL(pData) != pData->cbTRDAOld)
     {
         if (pData->TRDAPhysOld != 0)
-            PGMHandlerPhysicalDeregister(pDevIns->pDevHlp->pfnGetVM(pDevIns),
+            PGMHandlerPhysicalDeregister(PDMDevHlpVM(pDevIns),
                                          pData->TRDAPhysOld & ~PAGE_OFFSET_MASK);
 
         int rc;
 
-        rc = PGMR3HandlerPhysicalRegister(pDevIns->pDevHlp->pfnGetVM(pDevIns),
+        rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
                                           PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                           pData->GCTDRA & ~PAGE_OFFSET_MASK,
                                           RT_ALIGN(pcnetTdraAddr(pData, 0), PAGE_SIZE) - 1,
@@ -3941,14 +3941,14 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return rc;
 
 #ifdef PCNET_NO_POLLING
-    rc = PDMR3GetSymbolR0Lazy(pDevIns->pDevHlp->pfnGetVM(pDevIns), NULL, "EMInterpretInstruction", (void **)&pData->pfnEMInterpretInstructionR0);
+    rc = PDMR3GetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (void **)&pData->pfnEMInterpretInstructionR0);
     if (VBOX_SUCCESS(rc))
     {
         /*
          * Resolve the GC handler.
          */
         RTGCPTR pfnHandlerGC;
-        rc = PDMR3GetSymbolGCLazy(pDevIns->pDevHlp->pfnGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pData->pfnEMInterpretInstructionGC);
+        rc = PDMR3GetSymbolGCLazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pData->pfnEMInterpretInstructionGC);
     }
     if (VBOX_FAILURE(rc))
     {

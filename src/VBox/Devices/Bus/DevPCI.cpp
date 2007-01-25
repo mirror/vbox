@@ -1311,7 +1311,7 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
     uint8_t     elcr[2] = {0, 0};
     PPCIGLOBALS pGlobals = DEVINS2PCIGLOBALS(pDevIns);
     PPCIBUS     pBus = PDMINS2DATA(pDevIns, PPCIBUS);
-    PVM         pVM = pDevIns->pDevHlp->pfnGetVM(pDevIns);
+    PVM         pVM = PDMDevHlpGetVM(pDevIns);
     Assert(pVM);
 
     /*

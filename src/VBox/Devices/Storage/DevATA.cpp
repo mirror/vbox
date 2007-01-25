@@ -2390,7 +2390,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         {
                         PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
                         PVMREQ pReq;
-                        rc = VMR3ReqCall(pDevIns->pDevHlp->pfnGetVM(pDevIns), &pReq, RT_INDEFINITE_WAIT,
+                        rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), &pReq, RT_INDEFINITE_WAIT,
                                          (PFNRT)s->pDrvMount->pfnUnmount, 1, s->pDrvMount);
                         AssertReleaseRC(rc);
                         VMR3ReqFree(pReq);
@@ -4579,7 +4579,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         for (uint32_t i = 0; i < cbTransfer; i += cb)
             MMGCRamWriteNoTrapHandler((char *)GCDst + i, s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart + i, cb);
 #else /* !IN_GC */
-        rc = PGMPhysWriteGCPtrDirty(pDevIns->pDevHlp->pfnGetVM(pDevIns), GCDst, s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart, cbTransfer);
+        rc = PGMPhysWriteGCPtrDirty(PDMDevHlpGetVM(pDevIns), GCDst, s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart, cbTransfer);
         Assert(rc == VINF_SUCCESS);
 #endif /* IN_GC */
 
@@ -4636,7 +4636,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         for (uint32_t i = 0; i < cbTransfer; i += cb)
             MMGCRamReadNoTrapHandler(s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart + i, (char *)GCSrc + i, cb);
 #else /* !IN_GC */
-        rc = PGMPhysReadGCPtr(pDevIns->pDevHlp->pfnGetVM(pDevIns), s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart, GCSrc, cbTransfer);
+        rc = PGMPhysReadGCPtr(PDMDevHlpGetVM(pDevIns), s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart, GCSrc, cbTransfer);
         Assert(rc == VINF_SUCCESS);
 #endif /* IN_GC */
 
@@ -4727,7 +4727,7 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
      * shutdown, and the VM lock is only held for the first call (which
      * can be either from ataPowerOff or ataSuspend), there is no other
      * reasonable solution. */
-    fVMLocked = VMMR3LockIsOwner(pDevIns->pDevHlp->pfnGetVM(pDevIns));
+    fVMLocked = VMMR3LockIsOwner(PDMDevHlpGetVM(pDevIns));
 
     if (fVMLocked)
         pDevIns->pDevHlp->pfnUnlockVM(pDevIns);
@@ -4763,7 +4763,7 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
 DECLINLINE(void) ataRelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
 {
     if (s->pbIOBufferHC)
-        s->pbIOBufferGC = MMHyperHC2GC(pDevIns->pDevHlp->pfnGetVM(pDevIns), s->pbIOBufferHC);
+        s->pbIOBufferGC = MMHyperHC2GC(PDMDevHlpGetVM(pDevIns), s->pbIOBufferHC);
 }
 
 
@@ -4942,6 +4942,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     /*
      * Allocate I/O buffer.
      */
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
     if (pIf->cbIOBuffer)
     {
         /* Buffer is (probably) already allocated. Validate the fields,
@@ -4951,7 +4952,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         else
             AssertRelease(pIf->cbIOBuffer == ATA_MAX_MULT_SECTORS * 512);
         Assert(pIf->pbIOBufferHC);
-        Assert(pIf->pbIOBufferGC == MMHyperHC2GC(pDevIns->pDevHlp->pfnGetVM(pDevIns), pIf->pbIOBufferHC));
+        Assert(pIf->pbIOBufferGC == MMHyperHC2GC(pVM, pIf->pbIOBufferHC));
     }
     else
     {
@@ -4960,10 +4961,10 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         else
             pIf->cbIOBuffer = ATA_MAX_MULT_SECTORS * 512;
         Assert(!pIf->pbIOBufferHC);
-        rc = MMHyperAlloc(pDevIns->pDevHlp->pfnGetVM(pDevIns), pIf->cbIOBuffer, 1, MM_TAG_PDM_DEVICE_USER, (void **)&pIf->pbIOBufferHC);
+        rc = MMHyperAlloc(pVM, pIf->cbIOBuffer, 1, MM_TAG_PDM_DEVICE_USER, (void **)&pIf->pbIOBufferHC);
         if (VBOX_FAILURE(rc))
             return VERR_NO_MEMORY;
-        pIf->pbIOBufferGC = MMHyperHC2GC(pDevIns->pDevHlp->pfnGetVM(pDevIns), pIf->pbIOBufferHC);
+        pIf->pbIOBufferGC = MMHyperHC2GC(pVM, pIf->pbIOBufferHC);
     }
 
     /*
@@ -5403,7 +5404,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             pData->aCts[i].aIfs[j].pDevInsHC = pDevIns;
             pData->aCts[i].aIfs[j].pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
             pData->aCts[i].aIfs[j].pControllerHC = &pData->aCts[i];
-            pData->aCts[i].aIfs[j].pControllerGC = MMHyperHC2GC(pDevIns->pDevHlp->pfnGetVM(pDevIns), &pData->aCts[i]);
+            pData->aCts[i].aIfs[j].pControllerGC = MMHyperHC2GC(PDMDevHlpGetVM(pDevIns), &pData->aCts[i]);
             pData->aCts[i].aIfs[j].IBase.pfnQueryInterface = ataQueryInterface;
             pData->aCts[i].aIfs[j].IMountNotify.pfnMountNotify = ataMountNotify;
             pData->aCts[i].aIfs[j].IMountNotify.pfnUnmountNotify = ataUnmountNotify;
