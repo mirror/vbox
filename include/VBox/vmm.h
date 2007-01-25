@@ -24,7 +24,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/vmapi.h>
-#include <stdarg.h>
+#include <iprt/stdarg.h>
 
 __BEGIN_DECLS
 
