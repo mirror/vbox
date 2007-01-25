@@ -494,7 +494,7 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufacturer)
 
     if (mData->mManufacturer.string() != aManufacturer)
     {
-        Data::USHORTFilter flt = aManufacturer;
+        Data::BstrFilter flt = aManufacturer;
         ComAssertRet (!flt.isNull(), E_FAIL);
         if (!flt.isValid())
             return setError (E_INVALIDARG,
@@ -532,7 +532,7 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
 
     if (mData->mProduct.string() != aProduct)
     {
-        Data::USHORTFilter flt = aProduct;
+        Data::BstrFilter flt = aProduct;
         ComAssertRet (!flt.isNull(), E_FAIL);
         if (!flt.isValid())
             return setError (E_INVALIDARG,
@@ -570,7 +570,7 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNumber)
 
     if (mData->mSerialNumber.string() != aSerialNumber)
     {
-        Data::USHORTFilter flt = aSerialNumber;
+        Data::BstrFilter flt = aSerialNumber;
         ComAssertRet (!flt.isNull(), E_FAIL);
         if (!flt.isValid())
             return setError (E_INVALIDARG,
@@ -1077,7 +1077,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufactu
 
     if (mData->mManufacturer.string() != aManufacturer)
     {
-        Data::USHORTFilter flt = aManufacturer;
+        Data::BstrFilter flt = aManufacturer;
         ComAssertRet (!flt.isNull(), E_FAIL);
         if (!flt.isValid())
             return setError (E_INVALIDARG,
@@ -1113,7 +1113,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
 
     if (mData->mProduct.string() != aProduct)
     {
-        Data::USHORTFilter flt = aProduct;
+        Data::BstrFilter flt = aProduct;
         ComAssertRet (!flt.isNull(), E_FAIL);
         if (!flt.isValid())
             return setError (E_INVALIDARG,
@@ -1149,7 +1149,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNum
 
     if (mData->mSerialNumber.string() != aSerialNumber)
     {
-        Data::USHORTFilter flt = aSerialNumber;
+        Data::BstrFilter flt = aSerialNumber;
         ComAssertRet (!flt.isNull(), E_FAIL);
         if (!flt.isValid())
             return setError (E_INVALIDARG,
