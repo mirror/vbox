@@ -540,6 +540,13 @@ typedef struct _VRDPUSBREQNEGOTIATERET
 
 #pragma pack()
 
+
+#define VRDP_CLIPBOARD_FORMAT_INVALID      (0xFFFFFFFF)
+#define VRDP_CLIPBOARD_FORMAT_UNICODE_TEXT (0)
+#define VRDP_CLIPBOARD_FORMAT_BITMAP       (1)
+
+VRDPR3DECL(void) VRDPSendClipboardData (HVRDPSERVER hserver, uint32_t u32Format, void *pvData, uint32_t cbData);
+
 #ifdef VRDP_MC
 /**
  * Sends a USB request.
@@ -576,9 +583,6 @@ typedef DECLCALLBACK(int) FNVRDPUSBCALLBACK (void *pvCallback,
                                              uint32_t cbRet);
                                              
 typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
-
-#define VRDP_CLIPBOARD_FORMAT_UNICODE_TEXT 0
-#define VRDP_CLIPBOARD_FORMAT_BITMAP       1
 
 /**
  * Called by the server when a clipboard data is received from a client.
