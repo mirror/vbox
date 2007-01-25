@@ -25,8 +25,16 @@ LIBRARIES   = PcBiosBin PcDefBiosLogo
 
 OTHERS      = $(PATH_TARGET)/bios.bin
 
-OTHER_CLEAN = $(addprefix $(PATH_TARGET)/,_rombios_.c rombios0.s rombios1.s \
-		bios.lst bios.tmp bios.bin PcBiosBin.c PcDefBiosLogo.c bios-syms.h)
+OTHER_CLEAN = \
+	$(PATH_TARGET)/_rombios_.c \
+	$(PATH_TARGET)/rombios0.s \
+	$(PATH_TARGET)/rombios1.s \
+	$(PATH_TARGET)/bios.lst \
+	$(PATH_TARGET)/bios.tmp \
+	$(PATH_TARGET)/bios.bin \
+	$(PATH_TARGET)/PcBiosBin.c \
+	$(PATH_TARGET)/PcDefBiosLogo.c \
+	$(PATH_TARGET)/bios-syms.h
 
 TEMPLATE = VBOXBLDPROG
 biossums_SOURCES    = biossums.c
