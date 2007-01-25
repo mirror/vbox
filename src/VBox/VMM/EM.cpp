@@ -80,7 +80,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc);
 DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PCPUMCTX pCtx, int rc);
 static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx);
 static int emR3RawExecute(PVM pVM, bool *pfFFDone);
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int gcret = VINF_SUCCESS);
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int rcGC = VINF_SUCCESS);
 static int emR3HighPriorityPostForcedActions(PVM pVM, int rc);
 static int emR3ForcedActions(PVM pVM, int rc);
 static int emR3RawGuestTrap(PVM pVM);
@@ -949,14 +949,14 @@ static int emR3RawStep(PVM pVM)
  * @returns VBox status code suitable for EM.
  *
  * @param   pVM         VM handle.
- * @param   gcret       GC return code
+ * @param   rcGC        GC return code
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  */
 #ifdef LOG_ENABLED
-static int emR3RawExecuteInstructionWorker(PVM pVM, int gcret, const char *pszPrefix)
+static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC, const char *pszPrefix)
 #else
-static int emR3RawExecuteInstructionWorker(PVM pVM, int gcret)
+static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
 #endif
 {
     PCPUMCTX pCtx = pVM->em.s.pCtx;
@@ -1017,8 +1017,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int gcret)
                     return emR3RawExecuteInstruction(pVM, "PATCHIR");
                 }
 #if 0 /** @note no noticable change; revisit later when we can emulate iret ourselves. */
-                else
-                if (gcret == VINF_PATM_PENDING_IRQ_AFTER_IRET)
+                else if (rcGC == VINF_PATM_PENDING_IRQ_AFTER_IRET)
                 {
                     /* special case: iret, that sets IF,  detected a pending irq/event */
                     return emR3RawExecuteInstruction(pVM, "PATCHIRET");
@@ -1110,14 +1109,14 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int gcret)
  * @param   pVM         VM handle.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
- * @param   gcret       GC return code
+ * @param   rcGC        GC return code
  */
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int gcret)
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int rcGC)
 {
 #ifdef LOG_ENABLED
-    return emR3RawExecuteInstructionWorker(pVM, gcret, pszPrefix);
+    return emR3RawExecuteInstructionWorker(pVM, rcGC, pszPrefix);
 #else
-    return emR3RawExecuteInstructionWorker(pVM, gcret);
+    return emR3RawExecuteInstructionWorker(pVM, rcGC);
 #endif
 }
 
