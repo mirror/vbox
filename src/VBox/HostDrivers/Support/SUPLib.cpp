@@ -709,10 +709,6 @@ static int suplibGenerateCallVMMR0(uint8_t u8Interrupt)
      *
      *      eax     eax     [g_u32Gookie]
      */
-#ifndef __WIN__
-*pb++ = 0xcc; /* fix me!! */
-*pb++ = 0xc3;
-#endif
     *pb++ = 0xb8;                       /* mov eax, <g_u32Cookie> */
     *(uint32_t *)pb = g_u32Cookie;
     pb += sizeof(uint32_t);
