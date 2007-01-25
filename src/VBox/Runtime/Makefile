@@ -545,6 +545,8 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/semaphore-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c
+RuntimeR0Drv_SOURCES.linux.amd64 = \
+	alloc/heapsimple.cpp
 
 RuntimeR0Drv_SOURCES.win = \
 	nt/RTErrConvertFromNtStatus.cpp \
