@@ -992,6 +992,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
                 /* Check if we can do something now */
                 pcnetPollRxTx(pData);
+                pcnetUpdateIrq(pData);
 
                 PDMCritSectLeave(&pData->CritSect);
                 return VINF_SUCCESS;
