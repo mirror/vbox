@@ -1664,6 +1664,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     if (!pData->ac97.voice_mc)
         LogRel(("AC97: WARNING: Unable to open PCM MC!\n"));
 
+    /** @todo r=bird: add a devhlp for this of course! */
     if (!pData->ac97.voice_pi || !pData->ac97.voice_po || !pData->ac97.voice_mc)
         VMSetRuntimeError(pDevIns->pDevHlp->pfnGetVM(pDevIns), false,
                           N_("Some audio devices could not be opened. Guest applications "
