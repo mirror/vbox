@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 #  InnoTek VirtualBox
 #
@@ -31,11 +31,7 @@
 # Description:    VirtualBox Additions timesync
 ### END INIT INFO
 
-# We still have some dependency problems to solve
-#if [ ! "`uname -r | grep '2.4'`" = "" ]; then
-#    echo The VirtualBox time synchronization module currently does not work on 2.4 series Linux kernels
-#    exit 0
-#fi
+PATH=$PATH:/bin:/sbin:/usr/sbin
 
 system=unknown
 if [ -f /etc/redhat-release ]; then
@@ -50,11 +46,13 @@ elif [ -f /etc/debian_version ]; then
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
     PIDFILE="/var/run/vboxadd-timesync"
+elif [ -f /etc/slackware-version ]; then
+    system=slackware
 else
     echo "$0: Unknown system" 1>&2
 fi
 
-if [ $system = redhat ]; then
+if [ "$system" = redhat ]; then
     . /etc/init.d/functions
     fail_msg() {
         echo_failure
@@ -67,7 +65,7 @@ if [ $system = redhat ]; then
     }
 fi
 
-if [ $system = suse ]; then
+if [ "$system" = suse ]; then
     . /etc/rc.status
     daemon() {
         startproc ${1+"$@"}
@@ -84,7 +82,7 @@ if [ $system = suse ]; then
     }
 fi
 
-if [ $system = debian ]; then
+if [ "$system" = debian ]; then
     daemon() {
         start-stop-daemon --start --exec $1 -- $2
     }
@@ -102,7 +100,7 @@ if [ $system = debian ]; then
     }
 fi
 
-if [ $system = gentoo ]; then
+if [ "$system" = gentoo ]; then
     . /sbin/functions.sh
     daemon() {
         start-stop-daemon --start --exec $1 -- $2
@@ -125,9 +123,23 @@ if [ $system = gentoo ]; then
     fi
 fi
 
+if [ "$system" = slackware ]; then
+    fail_msg() {
+        echo "...fail!"
+    }
+
+    succ_msg() {
+        echo "...done."
+    }
+
+    begin() {
+        echo -n $1
+    }
+fi
+
 binary=/usr/sbin/vboxadd-timesync
 
-test -x $binary || {
+test -x "$binary" || {
     echo "Cannot run $binary"
     exit 1
 }
