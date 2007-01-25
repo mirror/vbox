@@ -64,6 +64,7 @@
 #define PATM_LOOKUP_AND_CALL_FUNCTION           0xF1ABCE07    /** Relative address of global PATM lookup and call function. */
 #define PATM_RETURN_FUNCTION                    0xF1ABCE08    /** Relative address of global PATM return function. */
 #define PATM_LOOKUP_AND_JUMP_FUNCTION           0xF1ABCE09    /** Relative address of global PATM lookup and jump function. */
+#define PATM_IRET_FUNCTION                      0xF1ABCE0A    /** Relative address of global PATM iret function. */
 
 // everything except IOPL, NT, IF, VM, VIF, VIP and RF
 #define PATM_FLAGS_MASK                         (X86_EFL_CF|X86_EFL_PF|X86_EFL_AF|X86_EFL_ZF|X86_EFL_SF|X86_EFL_TF|X86_EFL_DF|X86_EFL_OF|X86_EFL_AC|X86_EFL_ID)
@@ -166,6 +167,7 @@ extern PATCHASMRECORD PATMJumpIndirectRecord;
 extern PATCHASMRECORD PATMLookupAndCallRecord;
 extern PATCHASMRECORD PATMRetFunctionRecord;
 extern PATCHASMRECORD PATMLookupAndJumpRecord;
+extern PATCHASMRECORD PATMIretFunctionRecord;
 
 extern PATCHASMRECORD PATMStatsRecord;
 

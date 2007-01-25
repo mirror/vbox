@@ -123,7 +123,7 @@ int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offs
 
 
 #define PATCHGEN_EPILOG(pPatch, size) \
-    Assert(size <= 400);              \
+    Assert(size <= 512);              \
     pPatch->uCurPatchOffset += size;
 
 
@@ -308,6 +308,17 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                     /* Relative value is target minus address of instruction after the actual call instruction. */
                     dest = pVM->patm.s.pfnHelperRetGC - pInstrAfterCall;
+                    break;
+                }
+
+                case PATM_IRET_FUNCTION:
+                {
+                    RTGCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR)(&pPB[j] + sizeof(RTGCPTR) - pVM->patm.s.pPatchMemHC);
+                    Assert(pVM->patm.s.pfnHelperIretGC);
+                    Assert(sizeof(uint32_t) == sizeof(RTGCPTR));
+
+                    /* Relative value is target minus address of instruction after the actual call instruction. */
+                    dest = pVM->patm.s.pfnHelperIretGC - pInstrAfterCall;
                     break;
                 }
 
@@ -894,9 +905,18 @@ int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch)
     size = patmPatchGenCode(pVM, pPatch, pPB, &PATMLookupAndJumpRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
+    /* Round to next 8 byte boundary. */
+    pPatch->uCurPatchOffset = RT_ALIGN_32(pPatch->uCurPatchOffset, 8);
+
+    pVM->patm.s.pfnHelperIretGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    size = patmPatchGenCode(pVM, pPatch, pPB, &PATMIretFunctionRecord, 0, false);
+    PATCHGEN_EPILOG(pPatch, size);
+
     Log(("pfnHelperCallGC %VGv\n", pVM->patm.s.pfnHelperCallGC));
     Log(("pfnHelperRetGC  %VGv\n", pVM->patm.s.pfnHelperRetGC));
     Log(("pfnHelperJumpGC %VGv\n", pVM->patm.s.pfnHelperJumpGC));
+    Log(("pfnHelperIretGC  %VGv\n", pVM->patm.s.pfnHelperIretGC));
 
     return VINF_SUCCESS;
 }

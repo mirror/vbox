@@ -426,6 +426,7 @@ PATMR3DECL(void) PATMR3Relocate(PVM pVM)
         /* Deal with the global patch functions. */
         pVM->patm.s.pfnHelperCallGC += delta;
         pVM->patm.s.pfnHelperRetGC  += delta;
+        pVM->patm.s.pfnHelperIretGC += delta;
         pVM->patm.s.pfnHelperJumpGC += delta;
 
         RelocatePatches(&pVM->patm.s.pGlobalPatchRec->Core, (void *)pVM);

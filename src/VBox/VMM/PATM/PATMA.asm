@@ -1093,7 +1093,7 @@ PATMIretStart:
     jnz     iret_notring0
 
     test    dword [esp+12], X86_EFL_IF
-    jz      iret_fault
+    jz      iret_clearIF
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @@todo fix this properly, so we can dispatch pending interrupts in GC
@@ -1150,6 +1150,58 @@ iret_fault1:
     popfd
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
     PATM_INT3
+
+iret_clearIF:
+    push    dword [esp+4]           ; eip to return to
+    pushfd
+    push    eax
+    push    PATM_FIXUP
+    DB      0E8h                    ; call
+    DD      PATM_IRET_FUNCTION
+    add     esp, 4                  ; pushed address of jump table
+
+    cmp     eax, 0
+    je      near iret_fault3
+
+    mov     dword [esp+12+4], eax   ; stored eip in iret frame
+    pop     eax
+    popfd
+    add     esp, 4                  ; pushed eip
+
+    ; always ring 0 return -> change to ring 1 (CS in iret frame)
+    or      dword [esp+8], 1
+
+	; This section must *always* be executed (!!)
+	; Extract the IOPL from the return flags, save them to our virtual flags and
+	; put them back to zero
+	push	eax
+	mov     eax, dword [esp+16]
+	and     eax, X86_EFL_IOPL
+	and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
+	or      dword [ss:PATM_VMFLAGS], eax
+    pop		eax
+	and		dword [esp+12], ~X86_EFL_IOPL
+
+    ; Clear IF
+    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IF
+    popfd
+
+                                                ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
+    iretd
+
+iret_fault3:
+    pop     eax
+    popfd
+    add     esp, 4                  ; pushed eip
+    jmp     iret_fault
+
+align   4
+PATMIretTable:
+    DW      PATM_MAX_JUMPTABLE_ENTRIES          ; nrSlots
+    DW      0                                   ; ulInsertPos
+    DD      0                                   ; cAddresses
+    RESB    PATCHJUMPTABLE_SIZE                 ; lookup slots
+    
 PATMIretEnd:
 ENDPROC     PATMIretReplacement
 
@@ -1161,9 +1213,9 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      PATMIretEnd- PATMIretStart
 %ifdef PATM_LOG_IF_CHANGES
-    DD      17
+    DD      22
 %else
-    DD      16
+    DD      21
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
@@ -1200,6 +1252,111 @@ GLOBALNAME PATMIretRecord
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      PATM_INTERRUPTFLAG
+    DD      0
+    DD      PATM_FIXUP
+    DD      PATMIretTable - PATMIretStart
+    DD      PATM_IRET_FUNCTION
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      0ffffffffh
+
+
+;
+; global function for implementing 'iret' to code with IF cleared
+;
+; Caller is responsible for right stack layout
+;  + 16 original return address
+;  + 12 eflags
+;  +  8 eax
+;  +  4 Jump table address
+;( +  0 return address )
+;
+; @note assumes PATM_INTERRUPTFLAG is zero
+; @note assumes it can trash eax and eflags
+;
+; @returns eax=0 on failure
+;          otherwise return address in eax
+;
+; @note NEVER change this without bumping the SSM version
+align 16
+BEGINPROC   PATMIretFunction
+PATMIretFunction_Start:
+    push    ecx
+    push    edx
+    push    edi
+
+    ; Event order:
+    ; 1) Check if the return patch address can be found in the lookup table
+    ; 2) Query return patch address from the hypervisor
+
+    ; 1) Check if the return patch address can be found in the lookup table
+    mov     edx, dword [esp+12+16]  ; pushed target address
+
+    xor     eax, eax                ; default result -> nothing found
+    mov     edi, dword [esp+12+4]  ; jump table
+    mov     ecx, [ss:edi + PATCHJUMPTABLE.cAddresses]
+    cmp     ecx, 0
+    je      near PATMIretFunction_AskHypervisor
+
+PATMIretFunction_SearchStart:
+    cmp     [ss:edi + PATCHJUMPTABLE.Slot_pInstrGC + eax*8], edx        ; edx = GC address to search for
+    je      near PATMIretFunction_SearchHit
+    inc     eax
+    cmp     eax, ecx
+    jl      near PATMIretFunction_SearchStart
+
+PATMIretFunction_AskHypervisor:
+    ; 2) Query return patch address from the hypervisor
+    ; @todo private ugly interface, since we have nothing generic at the moment
+    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
+    mov     eax, PATM_ACTION_LOOKUP_ADDRESS
+    mov     ecx, PATM_ACTION_MAGIC
+    mov     edi, dword [esp+12+4]               ; jump table address
+    mov     edx, dword [esp+12+16]              ; original return address
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    jmp     near PATMIretFunction_SearchEnd
+
+PATMIretFunction_SearchHit:
+    mov     eax, [ss:edi + PATCHJUMPTABLE.Slot_pRelPatchGC + eax*8]        ; found a match!
+    ;@note can be zero, so the next check is required!!
+
+PATMIretFunction_SearchEnd:
+    cmp     eax, 0
+    jz      PATMIretFunction_Failure
+
+    add     eax, PATM_PATCHBASE
+
+    pop     edi
+    pop     edx
+    pop     ecx
+    ret
+
+PATMIretFunction_Failure:
+    ;signal error
+    xor     eax, eax
+    pop     edi
+    pop     edx
+    pop     ecx
+    ret
+
+PATMIretFunction_End:
+ENDPROC     PATMIretFunction
+
+GLOBALNAME PATMIretFunctionRecord
+    RTCCPTR_DEF PATMIretFunction_Start
+    DD      0
+    DD      0
+    DD      0
+    DD      PATMIretFunction_End - PATMIretFunction_Start
+    DD      2
+    DD      PATM_PENDINGACTION
+    DD      0
+    DD      PATM_PATCHBASE
     DD      0
     DD      0ffffffffh
 

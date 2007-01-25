@@ -36,7 +36,7 @@
 #endif
 
 
-#define PATM_SSM_VERSION                    49
+#define PATM_SSM_VERSION                    50
 
 /* Enable for call patching. */
 #define PATM_ENABLE_CALL
@@ -401,6 +401,8 @@ typedef struct PATM
     RTGCPTR                 pfnHelperRetGC;
     /** Global PATM jump function (used by indirect jmp patches). */
     RTGCPTR                 pfnHelperJumpGC;
+    /** Global PATM return function (used by iret patches). */
+    RTGCPTR                 pfnHelperIretGC;
 
     /** Fake patch record for global functions. */
     PPATMPATCHREC           pGlobalPatchRec;
