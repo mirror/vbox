@@ -19,23 +19,11 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-/* >>> heap.h */
 #ifndef __iprt_heap_h__
 #define __iprt_heap_h__
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-
-/* >>> types.h */
-/** Handle to a simple heap. */
-typedef struct RTHEAPSIMPLEINTERNAL *RTHEAPSIMPLE;
-/** Pointer to a handle to a simple heap. */
-typedef RTHEAPSIMPLE *PRTHEAPSIMPLE;
-
-/** NIL simple heap handle. */
-#define NIL_RTHEAPSIMPLE    ((RTHEAPSIMPLE)0)
-/* <<< types.h */
 
 __BEGIN_DECLS
 
