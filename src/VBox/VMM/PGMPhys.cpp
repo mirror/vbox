@@ -390,7 +390,6 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         /* Retry */
         LogRel(("pgmr3PhysGrowRange: VM execution resumed -> retry.\n"));
         return pgmr3PhysGrowRange(pVM, GCPhys);
-        
     }
     return rc;
 }
