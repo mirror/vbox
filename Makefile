@@ -257,3 +257,33 @@ up update::
 	$(MAKE) -C tools fetch
 endif
 
+#
+# Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution
+#
+# - includes kBuild
+# - must be executed on an OSE checkout
+#
+
+# the path where to store the tarball
+TARBALLPATH ?= $(shell cd $(PATH_ROOT)/..; pwd)
+# the root directory inside the tarball
+TARBALLROOT ?= VirtualBox-OSE-$(VBOX_VERSION)
+# the name of the tarball file
+TARBALLNAME ?= VirtualBox-OSE-$(VBOX_VERSION).tar.bz2
+snapshot:
+	@$(call MSG_L1,Creating tarball $(TARBALLPATH)/$(TARBALLNAME))
+	@if [ -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then echo; echo "Found USB stuff, refused to build OSE tarball!"; echo; exit 1; fi
+	$(QUIET)$(MKDIR) -p $(TARBALLPATH)
+	$(QUIET)$(RM) -f $(wildcard $(TARBALLPATH)/VirtualBox*)
+	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(TARBALLPATH)/$(TARBALLROOT)
+	$(QUIET)tar -cjh --owner 0 --group 0 --totals \
+	    --exclude=.svn \
+	    --exclude=$(TARBALLROOT)/out \
+	    --exclude=$(TARBALLROOT)/env.sh \
+	    --exclude=$(TARBALLROOT)/configure.log \
+	    --exclude=$(TARBALLROOT)/AutoConfig.kmk \
+	    --exclude=$(TARBALLROOT)/LocalConfig.kmk \
+	    -C $(TARBALLPATH) \
+	    -f $(TARBALLPATH)/$(TARBALLNAME) \
+	    $(TARBALLROOT)
+	$(QUIET)$(RM) $(TARBALLPATH)/$(TARBALLROOT)
