@@ -146,7 +146,12 @@ BEGINPROC VMXStartVM
     mov     xBP, xSP
 
     ;/* First we have to save some final CPU context registers. */
+%ifdef __AMD64__
+    mov     rax, qword .vmlaunch_done
+    push    rax
+%else
     push    .vmlaunch_done
+%endif
     mov     eax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
     vmwrite xAX, [xSP]
     ;/* @todo assumes success... */
@@ -290,7 +295,12 @@ BEGINPROC VMXResumeVM
     mov     xBP, xSP
 
     ;/* First we have to save some final CPU context registers. */
+%ifdef __AMD64__
+    mov     rax, qword vmresume_done
+    push    rax
+%else
     push    vmresume_done
+%endif
     mov     eax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
     vmwrite xAX, [xSP]
     ;/* @todo assumes success... */
