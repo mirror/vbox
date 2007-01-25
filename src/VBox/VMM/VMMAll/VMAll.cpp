@@ -214,6 +214,12 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
  *          and delivered to callbacks or not).
  *
  * @thread  Any
+ * @todo    r=bird: The pausing/suspending of the VM should be done here, we'll just end 
+ *                  up duplicating code all over the place otherwise. In the case of 
+ *                  devices/drivers/etc they might not be trusted to pause/suspend the 
+ *                  vm even. Change fFatal to fFlags and define action flags and a fatal flag.
+ *                      
+ *                  Also, why a string ID and not an enum?
  */
 VMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,
                               const char *pszFormat, ...)
