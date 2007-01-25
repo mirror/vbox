@@ -429,16 +429,14 @@
  * How to declare a function as inline.
  * @param   type    The return type of the function declaration.
  */
-#ifdef __cplusplus
+#ifdef __GNUC__
+# define DECLINLINE(type) static inline type
+#elif defined(__cplusplus)
 # define DECLINLINE(type) inline type
+#elif defined(_MSC_VER)
+# define DECLINLINE(type) _inline type
 #else
-# ifdef __GNUC__
-#  define DECLINLINE(type) static inline type
-# elif defined(_MSC_VER)
-#  define DECLINLINE(type) _inline type
-# else
-#  define DECLINLINE(type) inline type
-# endif
+# define DECLINLINE(type) inline type
 #endif
 
 
@@ -458,7 +456,7 @@
 
 /** @def IN_RT_R3
  * Used to indicate whether we're inside the same link module as
- * the HC Ring-3 Runtime Library.
+ * the HC Ring-3 Runtime Library.  
  */
 /** @def RTR3DECL(type)
  * Runtime Library HC Ring-3 export or import declaration.
