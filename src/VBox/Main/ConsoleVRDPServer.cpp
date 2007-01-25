@@ -145,11 +145,13 @@ int ConsoleVRDPServer::Launch (void)
 
 void ConsoleVRDPServer::SetCallback (void)
 {
+#ifdef VBOX_VRDP
     /* This is called after VM is created and allows the server to accept client connection. */
     if (mhServer && mpfnVRDPSetCallback)
     {
         mpfnVRDPSetCallback (mhServer, mConsole->getVrdpServerCallback (), mConsole);
     }
+#endif
 }
 
 void ConsoleVRDPServer::Stop (void)
