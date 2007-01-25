@@ -52,7 +52,7 @@
 /** The heap. */
 static RTHEAPSIMPLE g_HeapExec = NIL_RTHEAPSIMPLE;
 /** Spinlock protecting the heap. */
-static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTHEAPSIMPLE;
+static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTSPINLOCK;
 
 
 /**
@@ -83,9 +83,10 @@ RTDECL(void) RTMemExecCleanup(void)
  */
 RTDECL(int) RTMemExecDonate(void *pvMemory, size_t cb)
 {
+    int rc;
     AssertReturn(g_HeapExec == NIL_RTHEAPSIMPLE, VERR_WRONG_ORDER);
 
-    int rc = RTSpinlockCreate(&g_HeapExecSpinlock);
+    rc = RTSpinlockCreate(&g_HeapExecSpinlock);
     if (RT_SUCCESS(rc))
     {
         rc = RTHeapSimpleInit(&g_HeapExec, pvMemory, cb);
@@ -114,11 +115,11 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 # ifdef RTMEMALLOC_EXEC_HEAP
         if (g_HeapExec != NIL_RTHEAPSIMPLE)
         {
-            fFlags |= RTMEMHDR_FLAG_EXEC_HEAP;
             RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
             RTSpinlockAcquireNoInts(g_HeapExecSpinlock, &SpinlockTmp);
             pHdr = (PRTMEMHDR)RTHeapSimpleAlloc(g_HeapExec, cb + sizeof(*pHdr), 0);
             RTSpinlockReleaseNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+            fFlags |= RTMEMHDR_FLAG_EXEC_HEAP;
         }
         else
 # endif
@@ -167,6 +168,7 @@ void rtMemFree(PRTMEMHDR pHdr)
 #ifdef RTMEMALLOC_EXEC_HEAP
     else if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC_HEAP)
     {
+        RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquireNoInts(g_HeapExecSpinlock, &SpinlockTmp);
         RTHeapSimpleFree(g_HeapExec, pHdr);
         RTSpinlockReleaseNoInts(g_HeapExecSpinlock, &SpinlockTmp);
