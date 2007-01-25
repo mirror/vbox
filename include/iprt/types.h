@@ -966,7 +966,7 @@ typedef RTTHREAD                                   *PRTTHREAD;
 #define NIL_RTTHREAD                                0
 
 /** Handle to a simple heap. */
-typedef struct RTHEAPSIMPLEINTERNAL                *RTHEAPSIMPLE;
+typedef HCPTRTYPE(struct RTHEAPSIMPLEINTERNAL *)    RTHEAPSIMPLE;
 /** Pointer to a handle to a simple heap. */
 typedef RTHEAPSIMPLE                               *PRTHEAPSIMPLE;
 /** NIL simple heap handle. */
