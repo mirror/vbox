@@ -76,7 +76,7 @@
 /**
  * The SSM saved state version.
  */
-#define ATA_SAVED_STATE_VERSION 13
+#define ATA_SAVED_STATE_VERSION 14
 
 /** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS  1024
