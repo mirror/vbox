@@ -435,7 +435,7 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
          * Lock the heap memory and tell PGM about the locked pages.
          */
         PMMLOCKEDMEM    pLockedMem;
-        rc = mmr3LockMem(pVM, pvHCPage, cb, fFree ? MM_LOCKED_TYPE_HYPER : MM_LOCKED_TYPE_HYPER_NOFREE, &pLockedMem);
+        rc = mmr3LockMem(pVM, pvHCPage, cb, fFree ? MM_LOCKED_TYPE_HYPER : MM_LOCKED_TYPE_HYPER_NOFREE, &pLockedMem, false /* fSilentFailure */);
         if (VBOX_SUCCESS(rc))
         {
             /* map the stuff into guest address space. */
