@@ -941,37 +941,37 @@ CPUMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
 
 
 
-CPUMDECL(int) CPUMSetGuestDR0(PVM pVM, RTUINTREG uDr0)
+CPUMDECL(int) CPUMSetGuestDR0(PVM pVM, RTGCUINTREG uDr0)
 {
     pVM->cpum.s.Guest.dr0 = uDr0;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR1(PVM pVM, RTUINTREG uDr1)
+CPUMDECL(int) CPUMSetGuestDR1(PVM pVM, RTGCUINTREG uDr1)
 {
     pVM->cpum.s.Guest.dr1 = uDr1;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR2(PVM pVM, RTUINTREG uDr2)
+CPUMDECL(int) CPUMSetGuestDR2(PVM pVM, RTGCUINTREG uDr2)
 {
     pVM->cpum.s.Guest.dr2 = uDr2;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR3(PVM pVM, RTUINTREG uDr3)
+CPUMDECL(int) CPUMSetGuestDR3(PVM pVM, RTGCUINTREG uDr3)
 {
     pVM->cpum.s.Guest.dr3 = uDr3;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR6(PVM pVM, RTUINTREG uDr6)
+CPUMDECL(int) CPUMSetGuestDR6(PVM pVM, RTGCUINTREG uDr6)
 {
     pVM->cpum.s.Guest.dr6 = uDr6;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-CPUMDECL(int) CPUMSetGuestDR7(PVM pVM, RTUINTREG uDr7)
+CPUMDECL(int) CPUMSetGuestDR7(PVM pVM, RTGCUINTREG uDr7)
 {
     pVM->cpum.s.Guest.dr7 = uDr7;
     return CPUMRecalcHyperDRx(pVM);
