@@ -266,6 +266,7 @@ endif
 
 # the path where to store the tarball
 TARBALLPATH ?= $(shell cd $(PATH_ROOT)/..; pwd)
+#TARBALLPATH ?= $(abspath $(PATH_ROOT)/..) - this should also do the trick without spawning a shell.
 # the root directory inside the tarball
 TARBALLROOT ?= VirtualBox-OSE-$(VBOX_VERSION)
 # the name of the tarball file
