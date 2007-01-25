@@ -21,8 +21,6 @@
 DEPTH = ../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-VBOX_VERSION = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
-
 # This can only be built on a real Linux system.
 SUBDIRS =
 ifeq ($(filter-out linux l4, $(BUILD_TARGET)),)

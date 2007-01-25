@@ -66,7 +66,7 @@ $(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
 # 1. precompile
 $(PATH_TARGET)/_vgabios_.c: vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c
 	$(call MSG_L1,Precompiling $<,=> $@)
-	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -DVBOX -DVBOX_VERSION=\"$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)\" -E -P $< -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) > $@
+	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -DVBOX -DVBOX_VERSION=\"$(VBOX_VERSION)\" -E -P $< -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) > $@
 
 # 2. compile
 $(PATH_TARGET)/vgabios0.s: $(PATH_TARGET)/_vgabios_.c
