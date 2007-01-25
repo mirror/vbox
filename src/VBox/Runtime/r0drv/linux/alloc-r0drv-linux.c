@@ -28,6 +28,74 @@
 #include <iprt/assert.h>
 #include "r0drv/alloc-r0drv.h"
 
+#if defined(__AMD64__) || defined(__DOXYGEN__)
+/**
+ * We need memory in the module range (~2GB to ~0) this can only be obtained
+ * thru APIs that are not exported (see module_alloc()).
+ *
+ * So, we'll have to create a quick and dirty heap here using BSS memory.
+ * Very annoying and it's going to restrict us!
+ */
+# define RTMEMALLOC_EXEC_HEAP
+#endif
+#ifdef RTMEMALLOC_EXEC_HEAP
+# include <iprt/heap.h>
+# include <iprt/spinlock.h>
+#endif
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef RTMEMALLOC_EXEC_HEAP
+/** The heap. */
+static RTHEAPSIMPLE g_HeapExec = NIL_RTHEAPSIMPLE;
+/** Spinlock protecting the heap. */
+static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTHEAPSIMPLE;
+
+
+/**
+ * API for cleaning up the heap spinlock on IPRT termination.
+ * This is as RTMemExecDonate specific to AMD64 Linux/GNU.
+ */
+RTDECL(void) RTMemExecCleanup(void)
+{
+    RTSpinlockDestroy(g_HeapSpinlock);
+    g_HeapSpinlock = NIL_RTSPINLOCK;
+}
+
+
+/**
+ * Donate read+write+execute memory to the exec heap.
+ *
+ * This API is specific to AMD64 and Linux/GNU. A kernel module that desires to
+ * use RTMemExecAlloc on AMD64 Linux/GNU will have to donate some statically
+ * allocated memory in the module if it wishes for GCC generated code to work.
+ * GCC can only generate modules that work in the address range ~2GB to ~0
+ * currently.
+ *
+ * The API only accept one single donation.
+ *
+ * @returns IPRT status code.
+ * @param   pvMemory    Pointer to the memory block.
+ * @param   cb          The size of the memory block.
+ */
+RTDECL(int) RTMemExecDonate(void *pvMemory, size_t cb)
+{
+    AssertReturn(g_HeapExec == NIL_RTHEAPSIMPLE, VERR_WRONG_ORDER);
+
+    int rc = RTSpinlockCreate(&g_HeapExecSpinlock);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTHeapSimpleInit(&g_HeapExec, pvMemory, cb);
+        if (RT_FAILURE(rc))
+            RTMemExecCleanup();
+    }
+    return rc;
+}
+#endif /* RTMEMALLOC_EXEC_HEAP */
+
+
 
 /**
  * OS specific allocation function.
@@ -42,39 +110,18 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
 #if defined(__AMD64__)
-#if 0
-        /*
-         * We need memory in the module range (~2GB to ~0) this can only be obtained
-         * thru APIs that are not exported (see module_alloc()).
-         *
-         * So, we'll have to create a quick and dirty heap here using BSS memory. 
-         * Very annoying and it's going to restrict us!
-         */
-        static uint8_t      s_abMemory[_2M];
-        static uint8_t     *s_pbMemory = NULL; /**< NULL if not initialized. */
-        static RTSPINLOCK   s_Spinlock = NIL_RTSPINLOCK;
-        static struct RTMEMRECLNXEXEC
+# ifdef RTMEMALLOC_EXEC_HEAP
+        if (g_HeapExec != NIL_RTHEAPSIMPLE)
         {
-            PRTMEMHDR   pHdr;   /**< NULL if no free range. */
-            uint32_t    off;    /**< Offset into s_pbMemory. */
-            uint32_t    cb;     
-        }                   s_aMemRecs[64];
-        RTSPINLOCKTMP       SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-
-        if (!s_pbMemory) 
-        {
-            /* serialize */
+            fFlags |= RTMEMHDR_FLAG_EXEC_HEAP;
+            RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+            RTSpinlockAcquireNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+            pHdr = (PRTMEMHDR)RTHeapSimpleAlloc(g_HeapExec, cb + sizeof(*pHdr), 0);
+            RTSpinlockReleaseNoInts(g_HeapExecSpinlock, &SpinlockTmp);
         }
-
-        RTSpinlockAcquireNoInts(s_Spinlock, &SpinlockTmp);
-        /* find free area and split it... */
-
-        RTSpinlockReleaseNoInts(s_Spinlock, &SpinlockTmp);
-
-# else
-        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, PAGE_KERNEL_EXEC);
-# endif 
-
+        else
+# endif
+            pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, PAGE_KERNEL_EXEC);
 
 #elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
         pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM,
@@ -82,7 +129,6 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 #else
         pHdr = (PRTMEMHDR)vmalloc(cb + sizeof(*pHdr));
 #endif
-        fFlags &= ~RTMEMHDR_FLAG_KMALLOC;
     }
     else
     {
@@ -92,10 +138,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
             pHdr = kmalloc(cb + sizeof(*pHdr), GFP_KERNEL);
         }
         else
-        {
-            fFlags &= ~RTMEMHDR_FLAG_KMALLOC;
             pHdr = vmalloc(cb + sizeof(*pHdr));
-        }
     }
 
     /*
@@ -120,6 +163,14 @@ void rtMemFree(PRTMEMHDR pHdr)
     pHdr->u32Magic += 1;
     if (pHdr->fFlags & RTMEMHDR_FLAG_KMALLOC)
         kfree(pHdr);
+#ifdef RTMEMALLOC_EXEC_HEAP
+    else if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC_HEAP)
+    {
+        RTSpinlockAcquireNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+        RTHeapSimpleFree(g_HeapExec, pHdr);
+        RTSpinlockReleaseNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+    }
+#endif
     else
         vfree(pHdr);
 }
