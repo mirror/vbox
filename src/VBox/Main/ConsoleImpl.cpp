@@ -3020,6 +3020,10 @@ HRESULT Console::onVRDPServerChange()
             {
                 rc = E_FAIL;
             }
+            else
+            {
+                mConsoleVRDPServer->SetCallback ();
+            }
         }
         else
         {
@@ -6167,26 +6171,12 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             break;
         }
 
-        /*
-         * Create the VM
-         */
-        PVM pVM;
-        /*
-         *  leave the lock since EMT will call Console. It's safe because
-         *  mMachineState is either Starting or Restoring state here.
-         */
-        alock.leave();
-
-        vrc = VMR3Create (task->mSetVMErrorCallback, task.get(),
-                          task->mConfigConstructor, task.get(),
-                          &pVM);
-
-        alock.enter();
-
 #ifdef VBOX_VRDP
         if (VBOX_SUCCESS (vrc))
         {
-            /* Start the VRDP server after the VM is created. */
+            /* Create the VRDP server. In case of headless operation, this will
+             * also create the framebuffer, required at VM creation.
+             */
             ConsoleVRDPServer *server = console->consoleVRDPServer();
             Assert (server);
             /// @todo (dmik)
@@ -6215,7 +6205,32 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 LogRel (("Failed to launch VRDP server (%Vrc), error message: '%s'\n",
                          vrc, errMsg.raw()));
                 hrc = setError (E_FAIL, errMsg);
+                break;
             }
+        }
+#endif /* VBOX_VRDP */
+
+        /*
+         * Create the VM
+         */
+        PVM pVM;
+        /*
+         *  leave the lock since EMT will call Console. It's safe because
+         *  mMachineState is either Starting or Restoring state here.
+         */
+        alock.leave();
+
+        vrc = VMR3Create (task->mSetVMErrorCallback, task.get(),
+                          task->mConfigConstructor, task.get(),
+                          &pVM);
+
+        alock.enter();
+
+#ifdef VBOX_VRDP
+        {
+            /* Enable client connections to the server. */
+            ConsoleVRDPServer *server = console->consoleVRDPServer();
+            server->SetCallback ();
         }
 #endif /* VBOX_VRDP */
 
