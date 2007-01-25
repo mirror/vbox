@@ -41,6 +41,7 @@
 #ifdef RTMEMALLOC_EXEC_HEAP
 # include <iprt/heap.h>
 # include <iprt/spinlock.h>
+# include <iprt/err.h>
 #endif
 
 
@@ -60,8 +61,8 @@ static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTHEAPSIMPLE;
  */
 RTDECL(void) RTMemExecCleanup(void)
 {
-    RTSpinlockDestroy(g_HeapSpinlock);
-    g_HeapSpinlock = NIL_RTSPINLOCK;
+    RTSpinlockDestroy(g_HeapExecSpinlock);
+    g_HeapExecSpinlock = NIL_RTSPINLOCK;
 }
 
 
