@@ -32,13 +32,16 @@
 typedef struct RTHEAPSIMPLEINTERNAL *RTHEAPSIMPLE;
 /** Pointer to a handle to a simple heap. */
 typedef RTHEAPSIMPLE *PRTHEAPSIMPLE;
+
+/** NIL simple heap handle. */
+#define NIL_RTHEAPSIMPLE    ((RTHEAPSIMPLE)0)
 /* <<< types.h */
 
 __BEGIN_DECLS
 
 /**
  * Initializes the heap.
- * 
+ *
  * @returns IPRT status code on success.
  * @param   pHeap       Where to store the heap anchor block on success.
  * @param   pvMemory    Pointer to the heap memory.
@@ -48,22 +51,23 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
 
 /**
  * Merge two simple heaps into one.
- * 
+ *
  * The requiremet is of course that they next two each other memory wise.
- * 
+ *
  * @returns IPRT status code on success.
  * @param   pHeap       Where to store the handle to the merged heap on success.
  * @param   Heap1       Handle to the first heap.
  * @param   Heap2       Handle to the second heap.
+ * @remark  This API isn't implemented yet.
  */
 RTDECL(int) RTHeapSimpleMerge(PRTHEAPSIMPLE pHeap, RTHEAPSIMPLE Heap1, RTHEAPSIMPLE Heap2);
 
 /**
  * Allocates memory from the specified simple heap.
- * 
+ *
  * @returns Pointer to the allocated memory block on success.
  * @returns NULL if the request cannot be satisfied. (A VERR_NO_MEMORY condition.)
- * 
+ *
  * @param   Heap        The heap to allocate the memory on.
  * @param   cb          The requested heap block size.
  * @param   cbAlignment The requested heap block alignment. Pass 0 for default alignment.
@@ -73,10 +77,10 @@ RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignmen
 
 /**
  * Allocates zeroed memory from the specified simple heap.
- * 
+ *
  * @returns Pointer to the allocated memory block on success.
  * @returns NULL if the request cannot be satisfied. (A VERR_NO_MEMORY condition.)
- * 
+ *
  * @param   Heap        The heap to allocate the memory on.
  * @param   cb          The requested heap block size.
  * @param   cbAlignment The requested heap block alignment. Pass 0 for default alignment.
@@ -85,24 +89,91 @@ RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignmen
 RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignment);
 
 /**
+ * Reallocates / Allocates / Frees a heap block.
+ *
+ * @param   Heap        The heap. This is optional and will only be used for strict assertions.
+ * @param   pv          The heap block returned by RTHeapSimple. If NULL it behaves like RTHeapSimpleAlloc().
+ * @param   cbNew       The new size of the heap block. If NULL it behaves like RTHeapSimpleFree().
+ * @param   cbAlignment The requested heap block alignment. Pass 0 for default alignment.
+ *                      Must be a power of 2.
+ * @remark  This API isn't implemented yet.
+ */
+RTDECL(void *) RTHeapSimpleRealloc(RTHEAPSIMPLE Heap, void *pv, size_t cbNew, size_t cbAlignment);
+
+/**
+ * Reallocates / Allocates / Frees a heap block, zeroing any new bits.
+ *
+ * @param   Heap        The heap. This is optional and will only be used for strict assertions.
+ * @param   pv          The heap block returned by RTHeapSimple. If NULL it behaves like RTHeapSimpleAllocZ().
+ * @param   cbNew       The new size of the heap block. If NULL it behaves like RTHeapSimpleFree().
+ * @param   cbAlignment The requested heap block alignment. Pass 0 for default alignment.
+ *                      Must be a power of 2.
+ * @remark  This API isn't implemented yet.
+ */
+RTDECL(void *) RTHeapSimpleReallocZ(RTHEAPSIMPLE Heap, void *pv, size_t cbNew, size_t cbAlignment);
+
+/**
  * Frees memory allocated from a simple heap.
- * 
+ *
  * @param   Heap    The heap. This is optional and will only be used for strict assertions.
  * @param   pv      The heap block returned by RTHeapSimple
  */
 RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv);
 
-#ifdef DEBUG
 /**
- * Dumps the hypervisor heap to the (default) log.
- * 
- * @param   Heap        The heap handle.
+ * Gets the size of the specified heap block.
+ *
+ * @returns The actual size of the heap block.
+ * @returns 0 if \a pv is NULL or it doesn't point to a valid heap block. An invalid \a pv
+ *          can also cause traps or trigger assertions.
+ * @param   Heap    The heap. This is optional and will only be used for strict assertions.
+ * @param   pv      The heap block returned by RTHeapSimple
  */
-RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap);
-#endif
+RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv);
 
+/**
+ * Gets the size of the heap.
+ *
+ * This size includes all the internal heap structures. So, even if the heap is
+ * empty the RTHeapSimpleGetFreeSize() will never reach the heap size returned
+ * by this function.
+ *
+ * @returns The heap size.
+ * @returns 0 if heap was safely detected as being bad.
+ * @param   Heap    The heap.
+ */
+RTDECL(size_t) RTHeapSimpleGetHeapSize(RTHEAPSIMPLE Heap);
+
+/**
+ * Returns the sum of all free heap blocks.
+ *
+ * This is the amount of memory you can theoretically allocate
+ * if you do allocations exactly matching the free blocks.
+ *
+ * @returns The size of the free blocks.
+ * @returns 0 if heap was safely detected as being bad.
+ * @param   Heap    The heap.
+ */
+RTDECL(size_t) RTHeapSimpleGetFreeSize(RTHEAPSIMPLE Heap);
+
+/**
+ * Printf like callbaclk function for RTHeapSimpleDump.
+ * @param   pszFormat   IPRT format string.
+ * @param   ...         Format arguments.
+ */
+typedef DECLCALLBACK(void) FNRTHEAPSIMPLEPRINTF(const char *pszFormat, ...);
+/** Pointer to a FNRTHEAPSIMPLEPRINTF function. */
+typedef FNRTHEAPSIMPLEPRINTF *PFNRTHEAPSIMPLEPRINTF;
+
+/**
+ * Dumps the hypervisor heap.
+ *
+ * @param   Heap        The heap handle.
+ * @param   pfnPrintf   Printf like function that groks IPRT formatting.
+ */
+RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf);
 
 __END_DECLS
 
-#endif 
+#endif
 
