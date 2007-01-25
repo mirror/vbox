@@ -434,6 +434,7 @@ static void ataReadSectorsSS(ATADevState *);
 static void ataWriteSectorsSS(ATADevState *);
 static void ataExecuteDeviceDiagnosticSS(ATADevState *);
 static void ataPacketSS(ATADevState *);
+static void atapiGetConfigurationSS(ATADevState *);
 static void atapiIdentifySS(ATADevState *);
 static void atapiInquirySS(ATADevState *);
 static void atapiMechanismStatusSS(ATADevState *);
@@ -441,9 +442,11 @@ static void atapiModeSenseErrorRecoverySS(ATADevState *);
 static void atapiModeSenseCDStatusSS(ATADevState *);
 static void atapiReadSS(ATADevState *);
 static void atapiReadCapacitySS(ATADevState *);
+static void atapiReadDiscInformationSS(ATADevState *);
 static void atapiReadTOCNormalSS(ATADevState *);
 static void atapiReadTOCMultiSS(ATADevState *);
 static void atapiReadTOCRawSS(ATADevState *);
+static void atapiReadTrackInformationSS(ATADevState *);
 static void atapiRequestSenseSS(ATADevState *);
 static void atapiPassthroughSS(ATADevState *);
 
@@ -485,6 +488,7 @@ typedef enum ATAFNSS
     ATAFN_SS_WRITE_SECTORS,
     ATAFN_SS_EXECUTE_DEVICE_DIAGNOSTIC,
     ATAFN_SS_PACKET,
+    ATAFN_SS_ATAPI_GET_CONFIGURATION,
     ATAFN_SS_ATAPI_IDENTIFY,
     ATAFN_SS_ATAPI_INQUIRY,
     ATAFN_SS_ATAPI_MECHANISM_STATUS,
@@ -492,9 +496,11 @@ typedef enum ATAFNSS
     ATAFN_SS_ATAPI_MODE_SENSE_CD_STATUS,
     ATAFN_SS_ATAPI_READ,
     ATAFN_SS_ATAPI_READ_CAPACITY,
+    ATAFN_SS_ATAPI_READ_DISC_INFORMATION,
     ATAFN_SS_ATAPI_READ_TOC_NORMAL,
     ATAFN_SS_ATAPI_READ_TOC_MULTI,
     ATAFN_SS_ATAPI_READ_TOC_RAW,
+    ATAFN_SS_ATAPI_READ_TRACK_INFORMATION,
     ATAFN_SS_ATAPI_REQUEST_SENSE,
     ATAFN_SS_ATAPI_PASSTHROUGH,
     ATAFN_SS_MAX
@@ -513,6 +519,7 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
     ataWriteSectorsSS,
     ataExecuteDeviceDiagnosticSS,
     ataPacketSS,
+    atapiGetConfigurationSS,
     atapiIdentifySS,
     atapiInquirySS,
     atapiMechanismStatusSS,
@@ -520,9 +527,11 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
     atapiModeSenseCDStatusSS,
     atapiReadSS,
     atapiReadCapacitySS,
+    atapiReadDiscInformationSS,
     atapiReadTOCNormalSS,
     atapiReadTOCMultiSS,
     atapiReadTOCRawSS,
+    atapiReadTrackInformationSS,
     atapiRequestSenseSS,
     atapiPassthroughSS
 };
@@ -1759,9 +1768,88 @@ static void atapiReadCapacitySS(ATADevState *s)
     uint8_t *pbBuf = s->CTXSUFF(pbIOBuffer);
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
-    Assert(s->cbElementaryTransfer <= 36);
+    Assert(s->cbElementaryTransfer <= 8);
     ataH2BE_U32(pbBuf, s->cTotalSectors - 1);
     ataH2BE_U32(pbBuf + 4, 2048);
+    s->iSourceSink = ATAFN_SS_NULL;
+    atapiCmdOK(s);
+}
+
+
+static void atapiReadDiscInformationSS(ATADevState *s)
+{
+    uint8_t *pbBuf = s->CTXSUFF(pbIOBuffer);
+
+    Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
+    Assert(s->cbElementaryTransfer <= 34);
+    memset(pbBuf, '\0', 34);
+    ataH2BE_U16(pbBuf, 32);
+    pbBuf[2] = (0 << 4) | (3 << 2) | (2 << 0); /* not erasable, complete session, complete disc */
+    pbBuf[3] = 1; /* number of first track */
+    pbBuf[4] = 1; /* number of sessions (LSB) */
+    pbBuf[5] = 1; /* first track number in last session (LSB) */
+    pbBuf[6] = 1; /* last track number in last session (LSB) */
+    pbBuf[7] = (0 << 7) | (0 << 6) | (1 << 5) | (0 << 2) | (0 << 0); /* disc id not valid, disc bar code not valid, unrestricted use, not dirty, not RW medium */
+    pbBuf[8] = 0; /* disc type = CD-ROM */
+    pbBuf[9] = 0; /* number of sessions (MSB) */
+    pbBuf[10] = 0; /* number of sessions (MSB) */
+    pbBuf[11] = 0; /* number of sessions (MSB) */
+    ataH2BE_U32(pbBuf + 16, 0x00ffffff); /* last session lead-in start time is not available */
+    ataH2BE_U32(pbBuf + 20, 0x00ffffff); /* last possible start time for lead-out is not available */
+    s->iSourceSink = ATAFN_SS_NULL;
+    atapiCmdOK(s);
+}
+
+
+static void atapiReadTrackInformationSS(ATADevState *s)
+{
+    uint8_t *pbBuf = s->CTXSUFF(pbIOBuffer);
+
+    Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
+    Assert(s->cbElementaryTransfer <= 36);
+    /* Accept address/number type of 1 only, and only track 1 exists. */
+    if ((s->aATAPICmd[1] & 0x03) != 1 || ataBE2H_U32(&s->aATAPICmd[2]) != 1)
+    {
+        atapiCmdError(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+        return;
+    }
+    memset(pbBuf, '\0', 36);
+    ataH2BE_U16(pbBuf, 34);
+    pbBuf[2] = 1; /* track number (LSB) */
+    pbBuf[3] = 1; /* session number (LSB) */
+    pbBuf[5] = (0 << 5) | (0 << 4) | (4 << 0); /* not damaged, primary copy, data track */
+    pbBuf[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | (1 << 0); /* not reserved track, not blank, not packet writing, not fixed packet, data mode 1 */
+    pbBuf[7] = (0 << 1) | (0 << 0); /* last recorded address not valid, next recordable address not valid */
+    ataH2BE_U32(pbBuf + 8, 0); /* track start address is 0 */
+    ataH2BE_U32(pbBuf + 24, s->cTotalSectors); /* track size */
+    pbBuf[32] = 0; /* track number (MSB) */
+    pbBuf[33] = 0; /* session number (MSB) */
+    s->iSourceSink = ATAFN_SS_NULL;
+    atapiCmdOK(s);
+}
+
+
+static void atapiGetConfigurationSS(ATADevState *s)
+{
+    uint8_t *pbBuf = s->CTXSUFF(pbIOBuffer);
+
+    Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
+    Assert(s->cbElementaryTransfer <= 32);
+    /* Accept request type of 0 or 1 only, and only starting feature 0. */
+    if (((s->aATAPICmd[1] & 0x03) != 0 && (s->aATAPICmd[1] & 0x03) != 1) || ataBE2H_U16(&s->aATAPICmd[2]) != 0)
+    {
+        atapiCmdError(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+        return;
+    }
+    memset(pbBuf, '\0', 32);
+    ataH2BE_U32(pbBuf, 12);
+    ataH2BE_U16(pbBuf + 6, 8); /* current profile: cd-rom read-only */
+
+    ataH2BE_U16(pbBuf + 8, 0); /* feature 0: list of profiles supported */
+    pbBuf[10] = (0 << 2) | (1 << 1) | (1 || 0); /* version 0, persistent, current */
+    pbBuf[11] = 4; /* additional bytes for profiles */
+    ataH2BE_U16(pbBuf + 12, 8); /* profile: cd-rom read-only */
+    pbBuf[14] = (1 << 0); /* current profile */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
 }
@@ -1826,8 +1914,8 @@ static void atapiModeSenseCDStatusSS(ATADevState *s)
     uint8_t *pbBuf = s->CTXSUFF(pbIOBuffer);
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
-    Assert(s->cbElementaryTransfer <= 28);
-    ataH2BE_U16(&pbBuf[0], 28 + 6);
+    Assert(s->cbElementaryTransfer <= 40);
+    ataH2BE_U16(&pbBuf[0], 38);
     pbBuf[2] = 0x70;
     pbBuf[3] = 0;
     pbBuf[4] = 0;
@@ -1836,25 +1924,33 @@ static void atapiModeSenseCDStatusSS(ATADevState *s)
     pbBuf[7] = 0;
 
     pbBuf[8] = 0x2a;
-    pbBuf[9] = 0x12;
-    pbBuf[10] = 0x00;
-    pbBuf[11] = 0x00;
-
-    pbBuf[12] = 0x70;
-    pbBuf[13] = 3 << 5;
-    pbBuf[14] = (1 << 0) | (1 << 3) | (1 << 5);
+    pbBuf[9] = 30; /* page length */
+    pbBuf[10] = 0x08; /* DVD-ROM read support */
+    pbBuf[11] = 0x00; /* no write support */
+    /* The following claims we support audio play. This is obviously false,
+     * but the Linux generic CDROM support makes many features depend on this
+     * capability. If it's not set, this causes many things to be disabled. */
+    pbBuf[12] = 0x71; /* multisession support, mode 2 form 1/2 support, audio play */
+    pbBuf[13] = 0x00; /* no subchannel reads supported */
+    pbBuf[14] = (1 << 0) | (1 << 3) | (1 << 5); /* lock supported, eject supported, tray type loading mechanism */
     if (s->pDrvMount->pfnIsLocked(s->pDrvMount))
-        pbBuf[6] |= 1 << 1;
-    pbBuf[15] = 0x00;
-    ataH2BE_U16(&pbBuf[16], 706);
-    pbBuf[18] = 0;
-    pbBuf[19] = 2;
-    ataH2BE_U16(&pbBuf[20], 512);
-    ataH2BE_U16(&pbBuf[22], 706);
-    pbBuf[24] = 0;
-    pbBuf[25] = 0;
-    pbBuf[26] = 0;
-    pbBuf[27] = 0;
+        pbBuf[14] |= 1 << 1; /* report lock state */
+    pbBuf[15] = 0; /* no subchannel reads supported, no separate audio volume control, no changer etc. */
+    ataH2BE_U16(&pbBuf[16], 5632); /* (obsolete) claim 32x speed support */
+    ataH2BE_U16(&pbBuf[18], 2); /* number of audio volume levels */
+    ataH2BE_U16(&pbBuf[20], s->cbIOBuffer / _1K); /* buffer size supported in Kbyte */
+    ataH2BE_U16(&pbBuf[22], 5632); /* (obsolete) current read speed 32x */
+    pbBuf[24] = 0; /* reserved */
+    pbBuf[25] = 0; /* reserved for digital audio (see idx 15) */
+    ataH2BE_U16(&pbBuf[26], 0); /* (obsolete) maximum write speed */
+    ataH2BE_U16(&pbBuf[28], 0); /* (obsolete) current write speed */
+    ataH2BE_U16(&pbBuf[30], 0); /* copy management revision supported 0=no CSS */
+    pbBuf[32] = 0; /* reserved */
+    pbBuf[33] = 0; /* reserved */
+    pbBuf[34] = 0; /* reserved */
+    pbBuf[35] = 1; /* rotation control CAV */
+    ataH2BE_U16(&pbBuf[36], 0); /* current write speed */
+    ataH2BE_U16(&pbBuf[38], 0); /* number of write speed performance descriptors */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
 }
@@ -1920,9 +2016,8 @@ static void atapiReadTOCNormalSS(ATADevState *s)
         if (fMSF)
         {
             *q++ = 0; /* reserved */
-            *q++ = 0; /* minute */
-            *q++ = 2; /* second */
-            *q++ = 0; /* frame */
+            ataLBA2MSF(q, 0);
+            q += 3;
         }
         else
         {
@@ -1933,7 +2028,7 @@ static void atapiReadTOCNormalSS(ATADevState *s)
     }
     /* lead out track */
     *q++ = 0; /* reserved */
-    *q++ = 0x16; /* ADR, control */
+    *q++ = 0x14; /* ADR, control */
     *q++ = 0xaa; /* track number */
     *q++ = 0; /* reserved */
     if (fMSF)
@@ -1959,14 +2054,29 @@ static void atapiReadTOCNormalSS(ATADevState *s)
 static void atapiReadTOCMultiSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->CTXSUFF(pbIOBuffer);
+    bool fMSF;
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 12);
+    fMSF = (s->aATAPICmd[1] >> 1) & 1;
     /* multi session: only a single session defined */
+/** @todo double-check this stuff against what a real drive says for a CD-ROM (not a CD-R) with only a single data session. Maybe solve the problem with "cdrdao read-toc" not being able to figure out whether numbers are in BCD or hex. */
     memset(pbBuf, 0, 12);
     pbBuf[1] = 0x0a;
     pbBuf[2] = 0x01;
     pbBuf[3] = 0x01;
+    pbBuf[5] = 0x14; /* ADR, control */
+    pbBuf[6] = 1; /* first track in last complete session */
+    if (fMSF)
+    {
+        pbBuf[8] = 0; /* reserved */
+        ataLBA2MSF(&pbBuf[9], 0);
+    }
+    else
+    {
+        /* sector 0 */
+        ataH2BE_U32(pbBuf + 8, 0);
+    }
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
 }
@@ -1989,26 +2099,26 @@ static void atapiReadTOCRawSS(ATADevState *s)
     *q++ = 1; /* session number */
     *q++ = 0x14; /* data track */
     *q++ = 0; /* track number */
-    *q++ = 0xa0; /* lead-in */
+    *q++ = 0xa0; /* first track in program area */
     *q++ = 0; /* min */
     *q++ = 0; /* sec */
     *q++ = 0; /* frame */
     *q++ = 0;
     *q++ = 1; /* first track */
-    *q++ = 0x00; /* disk type */
-    *q++ = 0x00;
+    *q++ = 0x00; /* disk type CD-DA or CD data */
+    *q++ = 0;
 
     *q++ = 1; /* session number */
     *q++ = 0x14; /* data track */
     *q++ = 0; /* track number */
-    *q++ = 0xa1;
+    *q++ = 0xa1; /* last track in program area */
     *q++ = 0; /* min */
     *q++ = 0; /* sec */
     *q++ = 0; /* frame */
     *q++ = 0;
     *q++ = 1; /* last track */
-    *q++ = 0x00;
-    *q++ = 0x00;
+    *q++ = 0;
+    *q++ = 0;
 
     *q++ = 1; /* session number */
     *q++ = 0x14; /* data track */
@@ -2036,10 +2146,18 @@ static void atapiReadTOCRawSS(ATADevState *s)
     *q++ = 0; /* min */
     *q++ = 0; /* sec */
     *q++ = 0; /* frame */
-    *q++ = 0;
-    *q++ = 0;
-    *q++ = 0;
-    *q++ = 0;
+    if (fMSF)
+    {
+        *q++ = 0; /* reserved */
+        ataLBA2MSF(q, 0);
+        q += 3;
+    }
+    else
+    {
+        /* sector 0 */
+        ataH2BE_U32(q, 0);
+        q += 4;
+    }
 
     cbSize = q - pbBuf;
     ataH2BE_U16(pbBuf, cbSize - 2);
@@ -2088,7 +2206,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                                 ataStartTransfer(s, RT_MIN(cbMax, 16), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_ERROR_RECOVERY, true);
                                 break;
                             case SCSI_MODEPAGE_CD_STATUS:
-                                ataStartTransfer(s, RT_MIN(cbMax, 28), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_CD_STATUS, true);
+                                ataStartTransfer(s, RT_MIN(cbMax, 40), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_CD_STATUS, true);
                                 break;
                             default:
                                 goto error_cmd;
@@ -2311,7 +2429,10 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                     break;
                 }
                 cbMax = ataBE2H_U16(pbPacket + 7);
-                format = pbPacket[9] >> 6;
+                /* SCSI MMC-3 spec says format is at offset 2 (lower 4 bits),
+                 * but Linux kernel uses offset 9 (topmost 2 bits). Hope that
+                 * the other field is clear... */
+                format = (pbPacket[2] & 0xf) | (pbPacket[9] >> 6);
                 switch (format)
                 {
                     case 0:
@@ -2343,6 +2464,51 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                 break;
             }
             ataStartTransfer(s, 8, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_CAPACITY, true);
+            break;
+        case SCSI_READ_DISC_INFORMATION:
+            if (s->cNotifiedMediaChange > 0)
+            {
+                s->cNotifiedMediaChange-- ;
+                atapiCmdError(s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
+                break;
+            }
+            else if (!s->pDrvMount->pfnIsMounted(s->pDrvMount))
+            {
+                atapiCmdError(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+                break;
+            }
+            cbMax = ataBE2H_U16(pbPacket + 7);
+            ataStartTransfer(s, RT_MIN(cbMax, 34), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_DISC_INFORMATION, true);
+            break;
+        case SCSI_READ_TRACK_INFORMATION:
+            if (s->cNotifiedMediaChange > 0)
+            {
+                s->cNotifiedMediaChange-- ;
+                atapiCmdError(s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
+                break;
+            }
+            else if (!s->pDrvMount->pfnIsMounted(s->pDrvMount))
+            {
+                atapiCmdError(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+                break;
+            }
+            cbMax = ataBE2H_U16(pbPacket + 7);
+            ataStartTransfer(s, RT_MIN(cbMax, 36), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_TRACK_INFORMATION, true);
+            break;
+        case SCSI_GET_CONFIGURATION:
+            if (s->cNotifiedMediaChange > 0)
+            {
+                s->cNotifiedMediaChange-- ;
+                atapiCmdError(s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
+                break;
+            }
+            else if (!s->pDrvMount->pfnIsMounted(s->pDrvMount))
+            {
+                atapiCmdError(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+                break;
+            }
+            cbMax = ataBE2H_U16(pbPacket + 7);
+            ataStartTransfer(s, RT_MIN(cbMax, 32), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_CONFIGURATION, true);
             break;
         case SCSI_INQUIRY:
             cbMax = pbPacket[4];
@@ -4417,6 +4583,8 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         Assert(rc == VINF_SUCCESS);
 #endif /* IN_GC */
 
+        if (cbTransfer)
+            Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, Port, cbTransfer, s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
         s->iIOBufferPIODataStart += cbTransfer;
         *pGCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCDst + cbTransfer);
         *pcTransfer = cTransfer - cTransAvailable;
@@ -4472,6 +4640,8 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         Assert(rc == VINF_SUCCESS);
 #endif /* IN_GC */
 
+        if (cbTransfer)
+            Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, Port, cbTransfer, s->CTXSUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
         s->iIOBufferPIODataStart += cbTransfer;
         *pGCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCSrc + cbTransfer);
         *pcTransfer = cTransfer - cTransAvailable;
