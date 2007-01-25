@@ -161,8 +161,21 @@ typedef const SUPGLOBALINFOPAGE *PCSUPGLOBALINFOPAGE;
 #if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_GC)
 extern DECLEXPORT(PCSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
 #elif defined(IN_RING0)
-# define g_pSUPGlobalInfoPage         (&g_SUPGlobalInfoPage)
 extern DECLIMPORT(const SUPGLOBALINFOPAGE) g_SUPGlobalInfoPage;
+# if defined(__GNUC__) && !defined(__DARWIN__) && defined(__AMD64__)
+/** Workaround for ELF+GCC problem on 64-bit hosts.
+ * (GCC emits a mov with a R_X86_64_32 reloc, we need R_X86_64_64.) */
+DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
+{
+    PCSUPGLOBALINFOPAGE pGIP;
+    __asm__ __volatile__ ("movabs g_SUPGlobalInfoPage,%0\n\t" 
+                          : "=a" (pGIP));
+    return pGIP;
+}
+#  define g_pSUPGlobalInfoPage         (SUPGetGIP())
+# else
+#  define g_pSUPGlobalInfoPage         (&g_SUPGlobalInfoPage)
+#endif 
 #else
 extern DECLIMPORT(PCSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
 #endif
