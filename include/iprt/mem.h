@@ -157,6 +157,25 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb);
  */
 RTDECL(void)      RTMemExecFree(void *pv);
 
+#if defined(IN_RING0) && defined(__AMD64__) && defined(__LINUX__)
+/**
+ * Donate read+write+execute memory to the exec heap.
+ *
+ * This API is specific to AMD64 and Linux/GNU. A kernel module that desires to
+ * use RTMemExecAlloc on AMD64 Linux/GNU will have to donate some statically
+ * allocated memory in the module if it wishes for GCC generated code to work.
+ * GCC can only generate modules that work in the address range ~2GB to ~0
+ * currently.
+ *
+ * The API only accept one single donation.
+ *
+ * @returns IPRT status code.
+ * @param   pvMemory    Pointer to the memory block.
+ * @param   cb          The size of the memory block.
+ */
+RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb);
+#endif /* R0+AMD64+LINUX */
+
 /**
  * Allocate page aligned memory.
  *

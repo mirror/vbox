@@ -38,22 +38,25 @@
 #  endif
 # endif /* DARWIN && KERNEL */
 
-# if defined(__LINUX__) && defined(__KERNEL__)  /* Klugde for the linux kernel. */
-#  ifndef bool /* Linux 2.6.19 C++ nightmare */
-#  define bool bool_type
-#  define true true_type
-#  define false false_type
-#  define _Bool int
-#  define bool_type_iprt_types_h__
+# if defined(__LINUX__) && defined(__KERNEL__)
+    /* 
+     * Kludge for the linux kernel:
+     *   1. sys/types.h doesn't mix with the kernel.
+     *   2. Starting with 2.6.19 linux/types.h typedefs bool and linux/stddef.h 
+     *      declares false and true as enum values.
+     * We work around these issues here and nowhere else.
+     */
+#  if defined(__cplusplus)
+    typedef bool _Bool;
 #  endif
-#   include <linux/types.h>
-#  ifdef bool_type_iprt_types_h__
-#  undef bool
-#  undef true
+#  define bool linux_bool
+#  define true linux_true
+#  define false linux_false
+#  include <linux/types.h>
+#  include <linux/stddef.h>
 #  undef false
-#  undef _Bool
-#  undef bool_type_iprt_types_h__
-#  endif
+#  undef true
+#  undef bool
 # else
 #  include <sys/types.h>
 # endif
@@ -111,7 +114,11 @@
  * C doesn't have bool.
  */
 #ifndef __cplusplus
+# if defined(__GNUC__)
+typedef _Bool bool;
+# else
 typedef unsigned char bool;
+# endif 
 # ifndef true
 #  define true  (1)
 # endif

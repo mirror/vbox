@@ -30,6 +30,9 @@
  * Include sys/cdefs.h if present, if not define the stuff we need.
  */
 #ifdef HAVE_SYS_CDEFS_H
+# if defined(__LINUX__) && defined(__KERNEL__)
+#  error "oops"
+# endif 
 # include <sys/cdefs.h>
 #else
 

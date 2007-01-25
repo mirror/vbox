@@ -310,7 +310,8 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
                      - sizeof(RTHEAPSIMPLEBLOCK)
                      - sizeof(RTHEAPSIMPLEINTERNAL);
     pHeapInt->pFreeTail = pHeapInt->pFreeHead = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
-    for (unsigned i = 0; i < ELEMENTS(pHeapInt->auAlignment); i++)
+    unsigned i;
+    for (i = 0; i < ELEMENTS(pHeapInt->auAlignment); i++)
         pHeapInt->auAlignment[i] = ~(size_t)0;
 
     /* Init the single free block. */
@@ -447,7 +448,8 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
      * Search for a fitting block from the lower end of the heap.
      */
     PRTHEAPSIMPLEBLOCK  pRet = NULL;
-    for (PRTHEAPSIMPLEFREE pFree = pHeapInt->pFreeHead;
+    PRTHEAPSIMPLEFREE   pFree;
+    for (pFree = pHeapInt->pFreeHead;
          pFree;
          pFree = pFree->pNext)
     {
@@ -767,7 +769,8 @@ static void rtHeapSimpleAssertAll(PRTHEAPSIMPLEINTERNAL pHeapInt)
 {
     PRTHEAPSIMPLEFREE pPrev = NULL;
     PRTHEAPSIMPLEFREE pPrevFree = NULL;
-    for (PRTHEAPSIMPLEFREE pBlock = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
+    PRTHEAPSIMPLEFREE pBlock;
+    for (pBlock = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
          pBlock;
          pBlock = (PRTHEAPSIMPLEFREE)pBlock->Core.pNext)
     {
@@ -880,7 +883,8 @@ RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf
     pfnPrintf("**** Dumping Heap %p - cbHeap=%zx cbFree=%zx ****\n",
               Heap, pHeapInt->cbHeap, pHeapInt->cbFree);
 
-    for (PRTHEAPSIMPLEFREE pBlock = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
+    PRTHEAPSIMPLEFREE pBlock;
+    for (pBlock = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
          pBlock;
          pBlock = (PRTHEAPSIMPLEFREE)pBlock->Core.pNext)
     {

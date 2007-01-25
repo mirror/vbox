@@ -20,15 +20,42 @@
 # license agreement apply instead of the previous paragraph.
 #
 
+#
+# First, figure out which architecture we're targeting.
+# (We have to support basic cross building (ARCH=i386|x86_64).)
+#
+ifeq ($(filter amd64 x86,$(BUILD_TARGET_ARCH)),)
+ $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
+ BUILD_TARGET_ARCH :=
+endif
+ifeq ($(BUILD_TARGET_ARCH),)
+ ifeq ($(ARCH),x86_64)
+  BUILD_TARGET_ARCH := amd64
+ else ifeq ($(ARCH),i386)
+  BUILD_TARGET_ARCH := x86
+ else ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
+  BUILD_TARGET_ARCH := amd64
+ else
+  BUILD_TARGET_ARCH := x86
+ endif
+endif
+
+
 MODULE = vboxdrv
 OBJS   = \
 	linux/SUPDrv-linux.o \
 	SUPDRVShared.o \
 	r0drv/alloc-r0drv.o \
+	r0drv/initterm-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
+	r0drv/linux/initterm-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o \
 	r0drv/linux/spinlock-r0drv-linux.o \
-	r0drv/linux/thread-r0drv-linux.o \
+	r0drv/linux/thread-r0drv-linux.o
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+OBJS  += alloc/heapsimple.o
+endif
+
 
 ifneq ($(MAKECMDGOALS),clean)
 
@@ -93,7 +120,7 @@ KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0
 ifndef CONFIG_VBOXDRV_FIXEDMAJOR
  KFLAGS  += -DCONFIG_VBOXDRV_AS_MISC
 endif
-ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
+ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS  += -D__AMD64__
 else
  KFLAGS  += -D__X86__

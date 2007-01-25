@@ -35,7 +35,7 @@
 # define __STDC_LIMIT_MACROS
 #endif
 
-#include <VBox/cdefs.h>
+#include <iprt/cdefs.h>
 
 #if (!defined(__LINUX__) || !defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(IPRT_NO_CRT)
 # include <stdint.h>
