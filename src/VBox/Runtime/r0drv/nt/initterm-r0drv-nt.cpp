@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Initialization & Termination.
+ * InnoTek Portable Runtime - Initialization & Termination, R0 Driver, NT.
  */
 
 /*
@@ -19,30 +19,22 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __internal_initterm_h_
-#define __internal_initterm_h_
 
-#include <iprt/cdefs.h>
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include "the-nt-kernel.h"
+#include <iprt/err.h>
+#include <iprt/assert.h>
+#include "internal/initterm.h"
 
-__BEGIN_DECLS
+int rtR0InitNative(void)
+{
+    return VINF_SUCCESS;
+}
 
-#ifdef IN_RING0
 
-/**
- * Platform specific initialization.
- *
- * @returns IPRT status code.
- */
-int rtR0InitNative(void);
-
-/**
- * Platform specific terminiation.
- */
-void rtR0TermNative(void);
-
-#endif /* IN_RING0 */
-
-__END_DECLS
-
-#endif
+void rtR0TermNative(void)
+{
+}
 

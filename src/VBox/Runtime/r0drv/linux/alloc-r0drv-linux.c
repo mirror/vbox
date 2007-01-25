@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
 #include <iprt/assert.h>
 #include "r0drv/alloc-r0drv.h"
 
@@ -59,7 +59,7 @@ static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTSPINLOCK;
  * API for cleaning up the heap spinlock on IPRT termination.
  * This is as RTMemExecDonate specific to AMD64 Linux/GNU.
  */
-RTDECL(void) RTMemExecCleanup(void)
+void rtR0MemExecCleanup(void)
 {
     RTSpinlockDestroy(g_HeapExecSpinlock);
     g_HeapExecSpinlock = NIL_RTSPINLOCK;
@@ -81,7 +81,7 @@ RTDECL(void) RTMemExecCleanup(void)
  * @param   pvMemory    Pointer to the memory block.
  * @param   cb          The size of the memory block.
  */
-RTDECL(int) RTMemExecDonate(void *pvMemory, size_t cb)
+RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb)
 {
     int rc;
     AssertReturn(g_HeapExec == NIL_RTHEAPSIMPLE, VERR_WRONG_ORDER);
@@ -91,7 +91,7 @@ RTDECL(int) RTMemExecDonate(void *pvMemory, size_t cb)
     {
         rc = RTHeapSimpleInit(&g_HeapExec, pvMemory, cb);
         if (RT_FAILURE(rc))
-            RTMemExecCleanup();
+            rtR0MemExecCleanup();
     }
     return rc;
 }

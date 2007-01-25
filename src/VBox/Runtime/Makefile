@@ -532,6 +532,7 @@ RuntimeR0Drv_SOURCES    = \
 	strtonum.cpp \
 	VBox/strformat-vbox.cpp \
 	r0drv/alloc-r0drv.cpp \
+	r0drv/initterm-r0drv.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
@@ -540,17 +541,18 @@ RuntimeR0Drv_SOURCES    = \
 	crc64.cpp
 
 RuntimeR0Drv_SOURCES.linux = \
+	alloc/heapsimple.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
+	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
 	r0drv/linux/semaphore-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c
-RuntimeR0Drv_SOURCES.linux.amd64 = \
-	alloc/heapsimple.cpp
 
 RuntimeR0Drv_SOURCES.win = \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/nt/alloc-r0drv-nt.cpp \
+	r0drv/nt/initterm-r0drv-nt.cpp \
 	r0drv/nt/RTLogWriteDebugger-r0drv-nt.cpp \
 	r0drv/nt/semaphore-r0drv-nt.cpp \
 	r0drv/nt/spinlock-r0drv-nt.cpp \
@@ -563,7 +565,6 @@ RuntimeR0Drv_SOURCES.win.amd64 = \
 RuntimeR0Drv_SOURCES.darwin = \
 	RTErrConvertFromErrno.cpp \
 	string/memchr.asm \
-	r0drv/initterm-r0drv.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/thread-r0drv.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \

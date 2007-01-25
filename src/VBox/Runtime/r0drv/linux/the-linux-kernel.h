@@ -22,13 +22,12 @@
 #ifndef __the_linux_kernel_h__
 #define __the_linux_kernel_h__
 
-#ifndef bool /* Linux 2.6.19 C++ nightmare */
-#define bool bool_type
-#define true true_type
-#define false false_type
-#define _Bool int
-#define bool_type_r0drv_the_linux_kernel_h__
-#endif
+/* 
+ * Include iprt/types.h to install the bool wrappers.
+ * Then use the linux bool type for all the stuff include here.
+ */
+#include <iprt/types.h>
+#define bool linux_bool
 
 #include <linux/autoconf.h>
 #include <linux/version.h>
@@ -53,10 +52,6 @@
 # else
 #  define KBUILD_STR(s) #s
 # endif
-#endif
-#include <iprt/cdefs.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# undef ALIGN
 #endif
 #include <linux/string.h>
 #include <linux/spinlock.h>
@@ -88,14 +83,6 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/div64.h>
-
-#ifdef bool_type_r0drv_the_linux_kernel_h__
-#undef bool
-#undef true
-#undef false
-#undef _Bool
-#undef bool_type_r0drv_the_linux_kernel_h__
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # ifndef page_to_pfn
@@ -226,6 +213,11 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #ifndef PAGE_OFFSET_MASK
 # define PAGE_OFFSET_MASK (PAGE_SIZE - 1)
 #endif
+
+/* 
+ * Stop using the linux bool type.
+ */
+#undef bool
 
 #endif
 

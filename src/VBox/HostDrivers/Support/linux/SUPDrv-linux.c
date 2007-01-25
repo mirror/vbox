@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Linux host:
- * Linux host driver code
+ * The VirtualBox Support Driver - Linux hosts.
  */
 
 /*
@@ -27,6 +25,9 @@
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
+#include <iprt/initterm.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -212,13 +213,26 @@ static devfs_handle_t   g_hDevFsVBoxDrv = NULL;
 /** Module major number */
 #define DEVICE_MAJOR   234
 /** Saved major device number */
-static int 	        g_iModuleMajor;
+static int              g_iModuleMajor;
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
 
 /** The module name. */
 #define DEVICE_NAME    "vboxdrv"
 
-
+#ifdef __AMD64__
+/** 
+ * Memory for the executable memory heap (in IPRT).
+ */
+extern uint8_t g_abExecMemory[1572864]; /* 1.5 MB */
+__asm__(".section execmemory, \"awx\", @progbits\n\t"
+        ".align 32\n\t"
+        ".globl g_abExecMemory\n"
+        "g_abExecMemory:\n\t"
+        ".zero 1572864\n\t"
+        ".type g_abExecMemory, @object\n\t"
+        ".size g_abExecMemory, 1572864\n\t"
+        ".text\n\t");
+#endif 
 
 
 /*******************************************************************************
@@ -241,10 +255,10 @@ static int      VBoxSupDrvErr2LinuxErr(int);
 /** The file_operations structure. */
 static struct file_operations gFileOpsVBoxDrv =
 {
-	owner:		THIS_MODULE,
-	open:		VBoxSupDrvCreate,
-	release:	VBoxSupDrvClose,
-	ioctl:		VBoxSupDrvDeviceControl,
+    owner:      THIS_MODULE,
+    open:       VBoxSupDrvCreate,
+    release:    VBoxSupDrvClose,
+    ioctl:      VBoxSupDrvDeviceControl,
 };
 
 #ifdef CONFIG_VBOXDRV_AS_MISC
@@ -377,7 +391,7 @@ nmi_activated:
     rc = VBOX_REGISTER_DEVICE((dev_t)g_iModuleMajor, DEVICE_NAME, &gFileOpsVBoxDrv);
     if (rc < 0)
     {
-	dprintf(("VBOX_REGISTER_DEVICE failed with rc=%#x!\n", rc));
+        dprintf(("VBOX_REGISTER_DEVICE failed with rc=%#x!\n", rc));
         return rc;
     }
 
@@ -397,7 +411,7 @@ nmi_activated:
     g_hDevFsVBoxDrv = VBOX_REGISTER_DEVFS();
     if (g_hDevFsVBoxDrv == NULL)
     {
-	dprintf(("devfs_register failed!\n"));
+        dprintf(("devfs_register failed!\n"));
         rc = -EINVAL;
     }
 #endif
@@ -405,21 +419,37 @@ nmi_activated:
     if (!rc)
     {
         /*
-         * Initialize the device extension.
+         * Initialize the runtime.
+         * On AMD64 we'll have to donate the high rwx memory block to the exec allocator.
          */
-        rc = supdrvInitDevExt(&g_DevExt);
-        if (!rc)
+        rc = RTR0Init(0);
+        if (RT_SUCCESS(rc))
         {
+#ifdef __AMD64__
+            rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
+#endif
             /*
-             * Create the GIP page.
+             * Initialize the device extension.
              */
-            rc = VBoxSupDrvInitGip(&g_DevExt);
+            if (RT_SUCCESS(rc))
+                rc = supdrvInitDevExt(&g_DevExt);
             if (!rc)
             {
-                dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
-                return rc;
+                /*
+                 * Create the GIP page.
+                 */
+                rc = VBoxSupDrvInitGip(&g_DevExt);
+                if (!rc)
+                {
+                    dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
+                    return rc;
+                }
+
+                supdrvDeleteDevExt(&g_DevExt);
             }
-            supdrvDeleteDevExt(&g_DevExt);
+            else
+                rc = -EINVAL;
+            RTR0Term();
         }
         else
             rc = -EINVAL;
@@ -475,10 +505,11 @@ static void __exit VBoxSupDrvUnload(void)
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
 
     /*
-     * Destroy GIP and delete the device extension.
+     * Destroy GIP, delete the device extension and terminate IPRT.
      */
     VBoxSupDrvTermGip(&g_DevExt);
     supdrvDeleteDevExt(&g_DevExt);
+    RTR0Term();
 }
 
 
@@ -539,7 +570,7 @@ static int VBoxSupDrvDeviceControl(struct inode *pInode, struct file *pFilp,
                                    unsigned int IOCmd, unsigned long IOArg)
 {
     int                 rc;
-    SUPDRVIOCTLDATA	Args;
+    SUPDRVIOCTLDATA     Args;
     void               *pvBuf = NULL;
     int                 cbBuf = 0;
     unsigned            cbOut = 0;
@@ -685,7 +716,7 @@ static int VBoxSupDrvOrder(unsigned long cPages)
  */
 int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages)
 {
-    int 	rc;
+    int         rc;
     struct page **papPages;
     unsigned    iPage;
     unsigned    cPages = pMem->cb >> PAGE_SHIFT;
@@ -1480,8 +1511,8 @@ static int     VBoxSupDrvErr2LinuxErr(int rc)
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
 #if 1
-    va_list	 args;
-    char	 szMsg[512];
+    va_list args;
+    char    szMsg[512];
 
     va_start(args, pszFormat);
     vsnprintf(szMsg, sizeof(szMsg) - 1, pszFormat, args);
@@ -1512,8 +1543,8 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
 /** Runtime assert implementation for Linux Ring-0. */
 RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 {   /* forwarder. */
-    va_list	 ap;
-    char	 msg[256];
+    va_list ap;
+    char    msg[256];
 
     va_start(ap, pszFormat);
     vsnprintf(msg, sizeof(msg) - 1, pszFormat, ap);

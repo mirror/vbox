@@ -27,21 +27,7 @@
 #include <iprt/stdarg.h>
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(__LINUX__) && defined(__KERNEL__)
-# ifndef bool /* Linux 2.6.19 C++ nightmare */
-# define bool bool_type
-# define true true_type
-# define false false_type
-# define _Bool int
-# define bool_type_iprt_string_h__
-# endif
-#  include <linux/string.h>
-# ifdef bool_type_iprt_string_h__
-# undef bool
-# undef true
-# undef false
-# undef _Bool
-# undef bool_type_iprt_string_h__
-# endif
+# include <linux/string.h>
 #else
 # include <string.h>
 #endif
