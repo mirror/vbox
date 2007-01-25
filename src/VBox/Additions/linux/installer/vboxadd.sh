@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 # InnoTek VirtualBox
 # Linux Additions kernel module init script
 #
@@ -29,6 +29,8 @@
 # Description:    VirtualBox Linux Additions kernel module
 ### END INIT INFO
 
+PATH=$PATH:/bin:/sbin:/usr/sbin
+
 system=unknown
 if [ -f /etc/redhat-release ]; then
     system=redhat
@@ -38,11 +40,13 @@ elif [ -f /etc/debian_version ]; then
     system=debian
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
+elif [ -f /etc/slackware-version ]; then
+    system=slackware
 else
     echo "$0: Unknown system" 1>&2
 fi
 
-if [ $system = redhat ]; then
+if [ "$system" = "redhat" ]; then
     . /etc/init.d/functions
     fail_msg() {
         echo_failure
@@ -59,7 +63,7 @@ if [ $system = redhat ]; then
     }
 fi
 
-if [ $system = suse ]; then
+if [ "$system" = "suse" ]; then
     . /etc/rc.status
     fail_msg() {
         rc_failed 1
@@ -76,7 +80,7 @@ if [ $system = suse ]; then
     }
 fi
 
-if [ $system = debian ]; then
+if [ "$system" = "debian" ]; then
     fail_msg() {
         echo "...fail!"
     }
@@ -90,7 +94,7 @@ if [ $system = debian ]; then
     }
 fi
 
-if [ $system = gentoo ]; then
+if [ "$system" = "gentoo" ]; then
     . /sbin/functions.sh
     fail_msg() {
         eend 1
@@ -109,6 +113,20 @@ if [ $system = gentoo ]; then
     fi
 fi
 
+if [ "$system" = "slackware" ]; then
+    fail_msg() {
+        echo "...fail!"
+    }
+
+    succ_msg() {
+        echo "...done."
+    }
+
+    begin() {
+        echo -n $1
+    }
+fi
+                                                
 kdir=/lib/modules/`uname -r`/misc
 dev=/dev/vboxadd
 modname=vboxadd
@@ -119,7 +137,7 @@ test -f $module.o  && file=$module.o
 test -f $module.ko && file=$module.ko
 
 fail() {
-    if [ $system = gentoo ]; then
+    if [ "$system" = "gentoo" ]; then
         eerror $1
         exit 1
     fi
@@ -151,7 +169,7 @@ start() {
     }
     if [ ! -c $dev ]; then
         maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/devices`
-        test -z $maj && {
+        test -z "$maj" && {
             rmmod $modname
             fail "Cannot locate device major"
         }

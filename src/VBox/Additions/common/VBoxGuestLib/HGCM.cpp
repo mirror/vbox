@@ -71,7 +71,7 @@ int vbglHGCMTerminate (void)
     return VINF_SUCCESS;
 }
 
-DECLINLINE(int) vbglHandleHeapEnter (void)
+static DECLINLINE(int) vbglHandleHeapEnter (void)
 {
     int rc = RTSemFastMutexRequest(g_vbgldata.mutexHGCMHandle);
 
@@ -81,7 +81,7 @@ DECLINLINE(int) vbglHandleHeapEnter (void)
     return rc;
 }
 
-DECLINLINE(void) vbglHandleHeapLeave (void)
+static DECLINLINE(void) vbglHandleHeapLeave (void)
 {
     RTSemFastMutexRelease(g_vbgldata.mutexHGCMHandle);
 }
