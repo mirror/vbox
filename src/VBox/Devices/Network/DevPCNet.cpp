@@ -71,7 +71,7 @@
 #include "vl_vbox.h"
 
 /* Enable this to catch writes to the ring descriptors instead of using excessive polling */
-//#define PCNET_NO_POLLING
+/* #define PCNET_NO_POLLING */
 
 /* Enable to handle frequent io reads in the guest context */
 #define PCNET_GC_ENABLED
@@ -119,11 +119,12 @@ typedef struct PCNetState_st PCNetState;
 struct PCNetState_st
 {
     PCIDEVICE                           PciDev;
+#ifndef PCNET_NO_POLLING
     /** Poll timer (address for host context) */
     PTMTIMERHC                          pTimerPollHC;
     /** Poll timer (address for guest context) */
     PTMTIMERGC                          pTimerPollGC;
-
+#endif
     /** Register Address Pointer */
     uint32_t                            u32RAP;
     /** Internal interrupt service */
@@ -216,6 +217,17 @@ struct PCNetState_st
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
 
+#ifdef PCNET_NO_POLLING
+    RTGCPHYS                            TRDAPhysOld;
+    uint32_t                            cbTRDAOld;
+
+    RTGCPHYS                            RDRAPhysOld;
+    uint32_t                            cbRDRAOld;
+
+    DECLGCCALLBACKMEMBER(int, pfnEMInterpretInstructionGC, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
+    DECLR0CALLBACKMEMBER(int, pfnEMInterpretInstructionR0, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
+#endif
+
     bool                                fGCEnabled;
     bool                                fR0Enabled;
     bool                                fAm79C973;
@@ -246,7 +258,16 @@ struct PCNetState_st
     STAMCOUNTER                         StatRCVRingWrite;
     STAMCOUNTER                         StatTXRingWrite;
     STAMCOUNTER                         StatRingWriteHC;
+    STAMCOUNTER                         StatRingWriteR0;
     STAMCOUNTER                         StatRingWriteGC;
+
+    STAMCOUNTER                         StatRingWriteFailedHC;
+    STAMCOUNTER                         StatRingWriteFailedR0;
+    STAMCOUNTER                         StatRingWriteFailedGC;
+
+    STAMCOUNTER                         StatRingWriteOutsideRangeHC;
+    STAMCOUNTER                         StatRingWriteOutsideRangeR0;
+    STAMCOUNTER                         StatRingWriteOutsideRangeGC;
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 };
@@ -920,8 +941,8 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
                                   RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 #ifndef IN_RING3
-DECLEXPORT(int) pcnetHandleRingWriteGC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                       RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                     RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #endif
 __END_DECLS
 
@@ -932,6 +953,7 @@ __END_DECLS
 
 static void     pcnetPollRxTx(PCNetState *pData);
 static void     pcnetPollTimer(PCNetState *pData);
+static void     pcnetUpdateIrq(PCNetState *pData);
 static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP);
 static int      pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val);
 
@@ -950,14 +972,38 @@ static int      pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t va
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
  */
-DECLEXPORT(int) pcnetHandleRingWriteGC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                       RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                     RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
-    PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
-    PCNetState *pData   = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData   = (PCNetState *)pvUser;
 
     Log(("#%d pcnetHandleRingWriteGC: write to %08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, GCPhysFault));
-    STAM_COUNTER_INC(&CTXSUFF(pData->StatRingWrite)); NOREF(pData);
+
+    uint32_t cb;
+    int rc = CTXALLSUFF(pData->pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
+    if (VBOX_SUCCESS(rc) && cb)
+    {
+        if (GCPhysFault >= pData->GCTDRA && GCPhysFault + cb < pcnetTdraAddr(pData, 0))
+        {
+            int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+            if (VBOX_SUCCESS(rc))
+            {
+                STAM_COUNTER_INC(&CTXALLSUFF(pData->StatRingWrite)); ;
+
+                /* Check if we can do something now */
+                pcnetPollRxTx(pData);
+
+                PDMCritSectLeave(&pData->CritSect);
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            STAM_COUNTER_INC(&CTXALLSUFF(pData->StatRingWriteOutsideRange)); ;
+            return VINF_SUCCESS;    /* outside of the ring range */
+        }
+    }
+    STAM_COUNTER_INC(&CTXALLSUFF(pData->StatRingWriteFailed)); ;
     return VINF_IOM_HC_MMIO_WRITE; /* handle in ring3 */
 }
 
@@ -1002,7 +1048,8 @@ static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pv
         int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
         AssertReleaseRC(rc);
         /* Check if we can do something now */
-        pcnetPollTimer(pData);
+        pcnetPollRxTx(pData);
+        pcnetUpdateIrq(pData);
         PDMCritSectLeave(&pData->CritSect);
     }
     return VINF_SUCCESS;
@@ -1142,16 +1189,18 @@ static void pcnetUpdateIrq(PCNetState *pData)
 
 #ifdef IN_RING3
 #ifdef PCNET_NO_POLLING
-static void pcnetUpdateRingHandlers(PCNetState *pData,
-                                    RTGCPHYS oldrdra, uint16_t oldrcvrl,
-                                    RTGCPHYS oldtdra, uint16_t oldxmtrl)
+static void pcnetUpdateRingHandlers(PCNetState *pData)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
+
+    Log(("pcnetUpdateRingHandlers TD %VGp size %x -> %VGp size %x\n", pData->TRDAPhysOld, pData->cbTRDAOld, pData->GCTDRA, pcnetTdraAddr(pData, 0)));
+    Log(("pcnetUpdateRingHandlers RX %VGp size %x -> %VGp size %x\n", pData->RDRAPhysOld, pData->cbRDRAOld, pData->GCRDRA, pcnetRdraAddr(pData, 0)));
+
 #if 0
-    if (oldrdra != 0 && pData->GCRDRA != oldrdra)
+    if (pData->RDRAPhysOld != 0 && pData->GCRDRA != pData->RDRAPhysOld)
         PGMHandlerPhysicalDeregister(pDevIns->pDevHlp->pfnGetVM(pDevIns),
-                                     oldrdra & ~PAGE_OFFSET_MASK);
-    if (   oldtdra != 0 && pData->GCTDRA != oldtdra
+                                     pData->RDRAPhysOld & ~PAGE_OFFSET_MASK);
+    if (   pData->TRDAPhysOld != 0 && pData->GCTDRA != pData->TRDAPhysOld
         && (pData->GCRDRA & ~PAGE_OFFSET_MASK) != (pData->GCTDRA & ~PAGE_OFFSET_MASK))
 #endif
 #if 0
@@ -1163,31 +1212,39 @@ static void pcnetUpdateRingHandlers(PCNetState *pData,
                                           pData->GCRDRA & ~PAGE_OFFSET_MASK,
                                           RT_ALIGN(pcnetRdraAddr(pData, 0), PAGE_SIZE) - 1,
                                           pcnetHandleRingWrite, pDevIns,
-                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWriteGC",
+                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
                                           pData->pDevInsHC->pvInstanceDataHC,
-                                          g_DevicePCNet.szGCMod, "pcnetHandleRingWriteGC",
+                                          g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
                                           pData->pDevInsHC->pvInstanceDataGC,
                                           "PCNet receive ring write access handler");
         AssertRC(rc);
+
+        pData->RDRAPhysOld = pData->GCRDRA;
+        pData->cbRDRAOld   = pcnetRdraAddr(pData, 0);
     }
 #endif
-    if (pData->GCTDRA != oldtdra || CSR_XMTRL(pData) != oldxmtrl)
+    if (pData->GCTDRA != pData->TRDAPhysOld || CSR_XMTRL(pData) != pData->cbTRDAOld)
     {
-        if (oldtdra != 0)
+        if (pData->TRDAPhysOld != 0)
             PGMHandlerPhysicalDeregister(pDevIns->pDevHlp->pfnGetVM(pDevIns),
-                                         oldtdra & ~PAGE_OFFSET_MASK);
+                                         pData->TRDAPhysOld & ~PAGE_OFFSET_MASK);
+
         int rc;
+
         rc = PGMR3HandlerPhysicalRegister(pDevIns->pDevHlp->pfnGetVM(pDevIns),
                                           PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                           pData->GCTDRA & ~PAGE_OFFSET_MASK,
                                           RT_ALIGN(pcnetTdraAddr(pData, 0), PAGE_SIZE) - 1,
                                           pcnetHandleRingWrite, pDevIns,
-                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWriteGC",
+                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
                                           pData->pDevInsHC->pvInstanceDataHC,
-                                          g_DevicePCNet.szGCMod, "pcnetHandleRingWriteGC",
+                                          g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
                                           pData->pDevInsHC->pvInstanceDataGC,
                                           "PCNet transmit ring write access handler");
         AssertRC(rc);
+
+        pData->TRDAPhysOld = pData->GCTDRA;
+        pData->cbTRDAOld   = pcnetTdraAddr(pData, 0);
     }
 }
 #endif /* PCNET_NO_POLLING */
@@ -1195,10 +1252,6 @@ static void pcnetUpdateRingHandlers(PCNetState *pData,
 static void pcnetInit(PCNetState *pData)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
-#ifdef PCNET_NO_POLLING
-    RTGCPHYS oldrdra  = pData->GCRDRA,    oldtdra  = pData->GCTDRA;
-    uint16_t oldrcvrl = CSR_RCVRL(pData), oldxmtrl = CSR_XMTRL(pData);
-#endif
     Log(("#%d pcnetInit: init_addr=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          PHYSADDR(pData, CSR_IADR(pData))));
 
@@ -1248,7 +1301,7 @@ static void pcnetInit(PCNetState *pData)
     CSR_XMTRC(pData) = CSR_XMTRL(pData);
 
 #ifdef PCNET_NO_POLLING
-    pcnetUpdateRingHandlers(pData, oldrdra, oldrcvrl, oldtdra, oldxmtrl);
+    pcnetUpdateRingHandlers(pData);
 #endif
 
     /* Reset cached RX and TX states */
@@ -2084,6 +2137,9 @@ static void pcnetPollTimer(PCNetState *pData)
          * The drawback is that csr46 and csr47 are not updated properly anymore
          * but so far I have not seen any guest depending on these values. The 2ms
          * interval is the default polling interval of the PCNet card (65536/33MHz). */
+#ifdef PCNET_NO_POLLING
+        pcnetPollRxTx(pData);
+#else
         uint64_t u64Now = TMTimerGet(pData->CTXSUFF(pTimerPoll));
         if (RT_UNLIKELY(u64Now - pData->u64LastPoll > 200000))
         {
@@ -2094,6 +2150,7 @@ static void pcnetPollTimer(PCNetState *pData)
             /* Poll timer interval is fixed to 500Hz. Don't stop it. */
             TMTimerSet(pData->CTXSUFF(pTimerPoll),
                        TMTimerGet(pData->CTXSUFF(pTimerPoll)) + 2000000);
+#endif
     }
     STAM_PROFILE_ADV_STOP(&pData->StatPollTimer, a);
 }
@@ -3431,7 +3488,11 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutU64(pSSMHandle, pData->u64LastPoll);
     SSMR3PutMem(pSSMHandle, &pData->MacConfigured, sizeof(pData->MacConfigured));
     SSMR3PutBool(pSSMHandle, pData->fAm79C973);
+#ifdef PCNET_NO_POLLING
+    return VINF_SUCCESS;
+#else
     return TMR3TimerSave(pData->CTXSUFF(pTimerPoll), pSSMHandle);
+#endif
 }
 
 
@@ -3465,7 +3526,9 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3GetMem(pSSMHandle, &Mac, sizeof(Mac));
     Assert(!memcmp(&Mac, &pData->MacConfigured, sizeof(Mac)));
     SSMR3GetBool(pSSMHandle, &pData->fAm79C973);
+#ifndef PCNET_NO_POLLING
     TMR3TimerLoad(pData->CTXSUFF(pTimerPoll), pSSMHandle);
+#endif
 
     pData->iLog2DescSize = BCR_SWSTYLE(pData)
                          ? 4
@@ -3707,9 +3770,13 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     pData->pDevInsGC     = PDMDEVINS_2_GCPTR(pDevIns);
-    pData->pTimerPollGC  = TMTimerGCPtr(pData->pTimerPollHC);
     pData->pXmitQueueGC  = PDMQueueGCPtr(pData->pXmitQueueHC);
     pData->pCanRxQueueGC = PDMQueueGCPtr(pData->pCanRxQueueHC);
+#ifdef PCNET_NO_POLLING
+    *(RTHCUINTPTR *)&pData->pfnEMInterpretInstructionGC += offDelta;
+#else
+    pData->pTimerPollGC  = TMTimerGCPtr(pData->pTimerPollHC);
+#endif
 }
 
 
@@ -3872,6 +3939,22 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (VBOX_FAILURE(rc))
         return rc;
 
+#ifdef PCNET_NO_POLLING
+    rc = PDMR3GetSymbolR0Lazy(pDevIns->pDevHlp->pfnGetVM(pDevIns), NULL, "EMInterpretInstruction", (void **)&pData->pfnEMInterpretInstructionR0);
+    if (VBOX_SUCCESS(rc))
+    {
+        /*
+         * Resolve the GC handler.
+         */
+        RTGCPTR pfnHandlerGC;
+        rc = PDMR3GetSymbolGCLazy(pDevIns->pDevHlp->pfnGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pData->pfnEMInterpretInstructionGC);
+    }
+    if (VBOX_FAILURE(rc))
+    {
+        AssertMsgFailed(("PDMR3GetSymbolGCLazy -> %Vrc\n", rc));
+        return rc;
+    }
+#else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer,
                                 "PCNet Poll Timer", &pData->pTimerPollHC);
     if (VBOX_FAILURE(rc))
@@ -3879,6 +3962,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
+#endif
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerRestore,
                                 "PCNet Restore Timer", &pData->pTimerRestore);
     if (VBOX_FAILURE(rc))
@@ -3995,8 +4079,15 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 # ifdef PCNET_NO_POLLING
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRCVRingWrite,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of receive ring writes",          "/Devices/PCNet%d/Ring/RCVWrites", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTXRingWrite,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of transmit ring writes",         "/Devices/PCNet%d/Ring/TXWrites", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteHC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/HCWrites", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteGC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/GCWrites", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteHC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/HC/Writes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteR0,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/R0/Writes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteGC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/GC/Writes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",   "/Devices/PCNet%d/Ring/HC/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",   "/Devices/PCNet%d/Ring/R0/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",   "/Devices/PCNet%d/Ring/GC/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring range",   "/Devices/PCNet%d/Ring/HC/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring range",   "/Devices/PCNet%d/Ring/R0/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring range",   "/Devices/PCNet%d/Ring/GC/Outside", iInstance);
 # endif /* PCNET_NO_POLLING */
 #endif
 
