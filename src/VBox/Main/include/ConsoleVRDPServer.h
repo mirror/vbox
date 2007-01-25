@@ -37,6 +37,7 @@ public:
     ~ConsoleVRDPServer ();
 
     int Launch (void);
+    void SetCallback (void);
     void Stop (void);
 
     VRDPAuthResult Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,

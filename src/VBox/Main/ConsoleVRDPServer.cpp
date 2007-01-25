@@ -126,8 +126,6 @@ int ConsoleVRDPServer::Launch (void)
             mpfnVRDPSetFramebuffer (mhServer, framebuffer,
                 framebuffer? VRDP_EXTERNAL_FRAMEBUFFER: VRDP_INTERNAL_FRAMEBUFFER);
 
-            mpfnVRDPSetCallback (mhServer, mConsole->getVrdpServerCallback (), mConsole);
-
             LogFlow(("Framebuffer %p set for the VRDP server\n", framebuffer));
             
 #ifdef VBOX_WITH_USB
@@ -143,6 +141,15 @@ int ConsoleVRDPServer::Launch (void)
     int rc = VERR_NOT_SUPPORTED;
 #endif
     return rc;
+}
+
+void ConsoleVRDPServer::SetCallback (void)
+{
+    /* This is called after VM is created and allows the server to accept client connection. */
+    if (mhServer && mpfnVRDPSetCallback)
+    {
+        mpfnVRDPSetCallback (mhServer, mConsole->getVrdpServerCallback (), mConsole);
+    }
 }
 
 void ConsoleVRDPServer::Stop (void)
