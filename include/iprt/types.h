@@ -965,7 +965,12 @@ typedef RTTHREAD                                   *PRTTHREAD;
 /** Nil thread handle. */
 #define NIL_RTTHREAD                                0
 
-
+/** Handle to a simple heap. */
+typedef struct RTHEAPSIMPLEINTERNAL                *RTHEAPSIMPLE;
+/** Pointer to a handle to a simple heap. */
+typedef RTHEAPSIMPLE                               *PRTHEAPSIMPLE;
+/** NIL simple heap handle. */
+#define NIL_RTHEAPSIMPLE                            ((RTHEAPSIMPLE)0)
 
 
 /**
