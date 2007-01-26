@@ -92,11 +92,11 @@ if [ "$system" = debian ]; then
     }
 
     fail_msg() {
-        echo "...fail!"
+        echo " ...fail!"
     }
 
     succ_msg() {
-        echo "...done."
+        echo " ...done."
     }
 fi
 
@@ -111,11 +111,11 @@ if [ "$system" = gentoo ]; then
     }
 
     fail_msg() {
-        echo "...fail!"
+        echo " ...fail!"
     }
 
     succ_msg() {
-        echo "...done."
+        echo " ...done."
     }
 
     if [ "`which $0`" = "/sbin/rc" ]; then
@@ -125,11 +125,11 @@ fi
 
 if [ "$system" = slackware ]; then
     fail_msg() {
-        echo "...fail!"
+        echo " ...fail!"
     }
 
     succ_msg() {
-        echo "...done."
+        echo " ...done."
     }
 
     begin() {

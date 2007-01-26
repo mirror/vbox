@@ -82,11 +82,11 @@ fi
 
 if [ "$system" = "debian" ]; then
     fail_msg() {
-        echo "...fail!"
+        echo " ...fail!"
     }
 
     succ_msg() {
-        echo "...done."
+        echo " ...done."
     }
 
     begin() {
@@ -115,11 +115,11 @@ fi
 
 if [ "$system" = "slackware" ]; then
     fail_msg() {
-        echo "...fail!"
+        echo " ...fail!"
     }
 
     succ_msg() {
-        echo "...done."
+        echo " ...done."
     }
 
     begin() {
@@ -141,8 +141,8 @@ fail() {
         eerror $1
         exit 1
     fi
-    echo -n "($1)"
     fail_msg
+    echo "($1)"
     exit 1
 }
 
