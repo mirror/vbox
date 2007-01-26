@@ -218,8 +218,8 @@ struct PCNetState_st
     PDMCRITSECT                         CritSect;
 
 #ifdef PCNET_NO_POLLING
-    RTGCPHYS                            TRDAPhysOld;
-    uint32_t                            cbTRDAOld;
+    RTGCPHYS                            TDRAPhysOld;
+    uint32_t                            cbTDRAOld;
 
     RTGCPHYS                            RDRAPhysOld;
     uint32_t                            cbRDRAOld;
@@ -983,7 +983,8 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     int rc = CTXALLSUFF(pData->pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
     if (VBOX_SUCCESS(rc) && cb)
     {
-        if (GCPhysFault >= pData->GCTDRA && GCPhysFault + cb < pcnetTdraAddr(pData, 0))
+        if (    (GCPhysFault >= pData->GCTDRA && GCPhysFault + cb < pcnetTdraAddr(pData, 0))
+            ||  (GCPhysFault >= pData->GCRDRA && GCPhysFault + cb < pcnetRdraAddr(pData, 0)))
         {
             int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
             if (VBOX_SUCCESS(rc))
@@ -1193,21 +1194,17 @@ static void pcnetUpdateIrq(PCNetState *pData)
 static void pcnetUpdateRingHandlers(PCNetState *pData)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
+    int rc;
 
-    Log(("pcnetUpdateRingHandlers TD %VGp size %x -> %VGp size %x\n", pData->TRDAPhysOld, pData->cbTRDAOld, pData->GCTDRA, pcnetTdraAddr(pData, 0)));
+    Log(("pcnetUpdateRingHandlers TD %VGp size %x -> %VGp size %x\n", pData->TDRAPhysOld, pData->cbTDRAOld, pData->GCTDRA, pcnetTdraAddr(pData, 0)));
     Log(("pcnetUpdateRingHandlers RX %VGp size %x -> %VGp size %x\n", pData->RDRAPhysOld, pData->cbRDRAOld, pData->GCRDRA, pcnetRdraAddr(pData, 0)));
 
-#if 0
-    if (pData->RDRAPhysOld != 0 && pData->GCRDRA != pData->RDRAPhysOld)
-        PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
-                                     pData->RDRAPhysOld & ~PAGE_OFFSET_MASK);
-    if (   pData->TRDAPhysOld != 0 && pData->GCTDRA != pData->TRDAPhysOld
-        && (pData->GCRDRA & ~PAGE_OFFSET_MASK) != (pData->GCTDRA & ~PAGE_OFFSET_MASK))
-#endif
-#if 0
-    if (pData->GCRDRA != oldrdra)
+    if (pData->GCRDRA != pData->RDRAPhysOld || CSR_RCVRL(pData) != pData->cbRDRAOld)
     {
-        int rc;
+        if (pData->RDRAPhysOld != 0)
+            PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
+                                        pData->RDRAPhysOld & ~PAGE_OFFSET_MASK);
+
         rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
                                           PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                           pData->GCRDRA & ~PAGE_OFFSET_MASK,
@@ -1223,30 +1220,54 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
         pData->RDRAPhysOld = pData->GCRDRA;
         pData->cbRDRAOld   = pcnetRdraAddr(pData, 0);
     }
-#endif
-    if (pData->GCTDRA != pData->TRDAPhysOld || CSR_XMTRL(pData) != pData->cbTRDAOld)
+
+    /* 3 possibilities:
+     * 1) TDRA on different physical page as RDRA
+     * 2) TDRA completely on same physical page as RDRA
+     * 3) TDRA & RDRA overlap partly with different physical pages
+     */
+    RTGCPHYS RDRAPageStart = pData->GCRDRA & ~PAGE_OFFSET_MASK;
+    RTGCPHYS RDRAPageEnd   = (pcnetRdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
+    RTGCPHYS TDRAPageStart = pData->GCTDRA & ~PAGE_OFFSET_MASK;
+    RTGCPHYS TDRAPageEnd   = (pcnetTdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
+    
+    if (    RDRAPageStart > TDRAPageEnd
+        ||  TDRAPageStart > RDRAPageEnd)
     {
-        if (pData->TRDAPhysOld != 0)
-            PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
-                                         pData->TRDAPhysOld & ~PAGE_OFFSET_MASK);
+        /* 1) */
+        if (pData->GCTDRA != pData->TDRAPhysOld || CSR_XMTRL(pData) != pData->cbTDRAOld)
+        {
+            if (pData->TDRAPhysOld != 0)
+                PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
+                                             pData->TDRAPhysOld & ~PAGE_OFFSET_MASK);
 
-        int rc;
+            rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
+                                              PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+                                              pData->GCTDRA & ~PAGE_OFFSET_MASK,
+                                              RT_ALIGN(pcnetTdraAddr(pData, 0), PAGE_SIZE) - 1,
+                                              pcnetHandleRingWrite, pDevIns,
+                                              g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
+                                              pData->pDevInsHC->pvInstanceDataHC,
+                                              g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
+                                              pData->pDevInsHC->pvInstanceDataGC,
+                                              "PCNet transmit ring write access handler");
+            AssertRC(rc);
 
-        rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
-                                          PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                          pData->GCTDRA & ~PAGE_OFFSET_MASK,
-                                          RT_ALIGN(pcnetTdraAddr(pData, 0), PAGE_SIZE) - 1,
-                                          pcnetHandleRingWrite, pDevIns,
-                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
-                                          pData->pDevInsHC->pvInstanceDataHC,
-                                          g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
-                                          pData->pDevInsHC->pvInstanceDataGC,
-                                          "PCNet transmit ring write access handler");
-        AssertRC(rc);
-
-        pData->TRDAPhysOld = pData->GCTDRA;
-        pData->cbTRDAOld   = pcnetTdraAddr(pData, 0);
+            pData->TDRAPhysOld = pData->GCTDRA;
+            pData->cbTDRAOld   = pcnetTdraAddr(pData, 0);
+        }
     }
+    else
+    if (    RDRAPageStart != TDRAPageStart
+        &&  (   TDRAPageStart == RDRAPageEnd
+             || TDRAPageEnd   == RDRAPageStart
+            )
+        )
+    {
+        /* 3) */
+        AssertFailed();
+    }
+    /* else 2) */
 }
 #endif /* PCNET_NO_POLLING */
 
@@ -2110,7 +2131,7 @@ static void pcnetPollTimer(PCNetState *pData)
 
 #ifdef LOG_ENABLED
     TMD dummy;
-    Log2(("#%d pcnetPollTimer time=%08x TDMD=%d TXON=%d POLL=%d TDTE=%d TRDA=%x\n",
+    Log2(("#%d pcnetPollTimer time=%08x TDMD=%d TXON=%d POLL=%d TDTE=%d TDRA=%x\n",
           PCNETSTATE_2_DEVINS(pData)->iInstance, RTTimeMilliTS(), CSR_TDMD(pData), CSR_TXON(pData),
           !CSR_DPOLL(pData), pcnetTdtePoll(pData, &dummy), pData->GCTDRA));
     Log2(("#%d pcnetPollTimer: CSR_CXDA=%x CSR_XMTRL=%d CSR_XMTRC=%d\n",
@@ -3545,6 +3566,10 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     if (pData->pDrv)
         pData->pDrv->pfnSetPromiscuousMode(pData->pDrv, CSR_PROM(pData));
 
+#ifdef PCNET_NO_POLLING
+    /* Enable physical monitoring again (!) */
+    pcnetUpdateRingHandlers(pData);
+#endif
     /* Indicate link down to the guest OS that all network connections have been lost. */
     if (pData->fLinkUp)
     {
