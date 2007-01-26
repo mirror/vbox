@@ -1930,13 +1930,15 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                                     <iconset></iconset>
                                                 </property>
                                                 <property name="textLabel">
-                                                    <string>Add</string>
+                                                    <string>Add Empty (Ins)</string>
                                                 </property>
                                                 <property name="autoRaise">
                                                     <bool>true</bool>
                                                 </property>
                                                 <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter.</string>
+                                                    <string>Adds a new USB filter with
+all fields initially set to empty strings. Note that such a filter will match any attached
+USB device.</string>
                                                 </property>
                                             </widget>
                                             <widget class="QToolButton">
@@ -1950,19 +1952,20 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                                     <string></string>
                                                 </property>
                                                 <property name="accel">
-                                                    <string>Ins</string>
+                                                    <string>Alt+Ins</string>
                                                 </property>
                                                 <property name="iconSet">
                                                     <iconset></iconset>
                                                 </property>
                                                 <property name="textLabel">
-                                                    <string>Add existing</string>
+                                                    <string>Add From (Alt+Ins)</string>
                                                 </property>
                                                 <property name="autoRaise">
                                                     <bool>true</bool>
                                                 </property>
                                                 <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter from an existing USB device.</string>
+                                                    <string>Adds a new USB filter
+with all fields set to the values of the selected USB device attached to a host PC.</string>
                                                 </property>
                                             </widget>
                                             <widget class="QToolButton">
@@ -1982,7 +1985,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                                     <iconset></iconset>
                                                 </property>
                                                 <property name="textLabel">
-                                                    <string>Remove</string>
+                                                    <string>Remove (Del)</string>
                                                 </property>
                                                 <property name="autoRaise">
                                                     <bool>true</bool>
@@ -2008,7 +2011,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                                     <iconset></iconset>
                                                 </property>
                                                 <property name="textLabel">
-                                                    <string>Up</string>
+                                                    <string>Move Up (Ctrl+Up)</string>
                                                 </property>
                                                 <property name="autoRaise">
                                                     <bool>true</bool>
@@ -2034,7 +2037,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                                     <iconset></iconset>
                                                 </property>
                                                 <property name="textLabel">
-                                                    <string>Down</string>
+                                                    <string>Move Down (Ctrl+Down)</string>
                                                 </property>
                                                 <property name="autoRaise">
                                                     <bool>true</bool>
@@ -2691,7 +2694,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
     <variable access="private">QPopupMenu *usbDevicesMenu;</variable>
     <variable access="private">QMap&lt;int, CUSBDevice&gt; usbDevicesMap;</variable>
-    <variable access="private">int mUsbDevicesMenuNoDevicesId;</variable>
+    <variable access="private">enum { USBDevicesMenuNoDevicesId = 1 };</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
