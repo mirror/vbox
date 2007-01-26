@@ -1762,8 +1762,8 @@ void VBoxVMSettingsDlg::menuAddUSBFilterFrom_highlighted (int aIndex)
         return;
     }
 
-    QString tip = vboxGlobal().toolTip (usb);
-    QToolTip::add (usbDevicesMenu, tip);
+    QToolTip::remove (usbDevicesMenu);
+    QToolTip::add (usbDevicesMenu, vboxGlobal().toolTip (usb));
 }
 
 void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
