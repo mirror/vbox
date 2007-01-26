@@ -463,13 +463,11 @@ void VBoxProblemReporter::cannotCreateVirtualBox (const CVirtualBox &vbox)
 void VBoxProblemReporter::cannotLoadGlobalConfig (const CVirtualBox &vbox,
                                                   const QString &error)
 {
-    message (
-        mainWindowShown(),
-        Critical,
+    message (mainWindowShown(), Critical,
         tr ("<p>Failed to load the global GUI configuration.</p>"
             "<p>The application will now terminate.</p>"),
-        !vbox.isOk() ? formatErrorInfo (vbox) : highlight (error)
-    );
+        !vbox.isOk() ? formatErrorInfo (vbox)
+                     : QString ("<p>%1</p>").arg (VBoxGlobal::highlight (error)));
 }
 
 void VBoxProblemReporter::cannotSaveGlobalConfig (const CVirtualBox &vbox)
@@ -1335,7 +1333,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                               "cellpadding=0 width=100%>"
                               "<tr><td><p>%1.</p></td></tr>"
                               "</table><p></p>")
-                              .arg (highlight (errorMsg));
+                              .arg (VBoxGlobal::highlight (errorMsg));
 
     if (!errorID.isEmpty())
         formatted += QString ("<table bgcolor=#EEEEEE border=0 cellspacing=0 "
@@ -1389,25 +1387,6 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
 }
 
 /* static */
-QString VBoxProblemReporter::highlight (const QString &str)
-{
-    QString text = str;
-    /* mark strings in single quotes with color */
-    QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
-    rx.setMinimal (true);
-    text.replace (rx, "\\1'<font color=#0000CC>\\2</font>'");
-    /* mark UUIDs with color */
-    text.replace (QRegExp (
-        "((?:^|\\s)[(]?)"
-        "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
-        "(?=[:.-!);]?(?:\\s|$))"),
-        "\\1<font color=#008000>\\2</font>");
-    /* split to paragraphs at \n chars */
-    text.replace ('\n', "</p><p>");
-    return text;
-}
-
-/* static */
 QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &info,
                                               HRESULT wrapperRC)
 {
@@ -1418,7 +1397,7 @@ QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &info,
                               "cellpadding=0 width=100%>"
                               "<tr><td><p>%1.</p></td></tr>"
                               "</table><p></p>")
-                              .arg (highlight (info.text()));
+                              .arg (VBoxGlobal::highlight (info.text()));
 
     formatted += "<table bgcolor=#EEEEEE border=0 cellspacing=0 "
                  "cellpadding=0 width=100%>";

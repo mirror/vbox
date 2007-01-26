@@ -1617,6 +1617,59 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
     return QString ("%1 %2").arg (number).arg (Suffixes [suffix]);
 }
 
+/* static */
+/**
+ *  Reformats the input string @a aStr so that:
+ *  - strings in single quotes will be put inside <nobr> and marked
+ *    with blue color;
+ *  - UUIDs be put inside <nobr> and marked
+ *    with green color;
+ *  - replaces new line chars with </p><p> constructs to form paragraphs
+ *    (note that <p> and </p> are not appended to the beginnign and to the
+ *     end of the string respectively, to allow the result be appended
+ *     or prepended to the existing paragraph).
+ *
+ *  If @a aToolTip is true, colouring is not applied, only the <nobr> tag
+ *  is added. Also, new line chars are replaced with <br> instead of <p>.
+ */
+QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
+{
+    QString strFont; 
+    QString uuidFont;
+    QString endFont;
+    if (!aToolTip)
+    {
+        strFont = "<font color=#0000CC>";
+        uuidFont = "<font color=#008000>";
+        endFont = "</font>";
+    }
+    
+    QString text = aStr;
+
+    /* mark strings in single quotes with color */
+    QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
+    rx.setMinimal (true);
+    text.replace (rx,
+        QString ("\\1%1<nobr>'\\2'</nobr>%2")
+                 .arg (strFont). arg (endFont));
+
+    /* mark UUIDs with color */
+    text.replace (QRegExp (
+        "((?:^|\\s)[(]?)"
+        "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
+        "(?=[:.-!);]?(?:\\s|$))"),
+        QString ("\\1%1<nobr>\\2</nobr>%2")
+                 .arg (uuidFont). arg (endFont));
+
+    /* split to paragraphs at \n chars */
+    if (!aToolTip)
+        text.replace ('\n', "</p><p>");
+    else
+        text.replace ('\n', "<br>");
+
+    return text;
+}
+
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
