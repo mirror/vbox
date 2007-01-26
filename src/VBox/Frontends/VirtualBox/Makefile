@@ -313,7 +313,7 @@ $(foreach src,$(VirtualBox_SOURCES),$(eval $(def_wrapper_deps)))
 
 # static images are imported from VBoxUI.pro as IMAGES
 
-$(PATH_VirtualBox)/ui/vbox_image_collection.txt: Makefile $(IMAGES)
+$(PATH_VirtualBox)/ui/vbox_image_collection.txt: Makefile VBoxUI.pro $(IMAGES)
 	@echo " \
 	$(IMAGES) \
     " > $@
