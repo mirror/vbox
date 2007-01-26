@@ -169,6 +169,7 @@ start() {
     }
     if [ ! -c $dev ]; then
         maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/devices`
+        test -z "$maj" && maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/misc`
         test -z "$maj" && {
             rmmod $modname
             fail "Cannot locate device major"
