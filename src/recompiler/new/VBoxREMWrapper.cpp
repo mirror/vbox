@@ -157,8 +157,16 @@
  * Define USE_REM_CALLING_CONVENTION_GLUE for platforms where it's necessary to
  * use calling convention wrappers.
  */
-#if defined(__WIN64__) || defined(__DOXYGEN__)
+#if (defined(__AMD64__) && defined(__WIN__)) || defined(__DOXYGEN__)
 # define USE_REM_CALLING_CONVENTION_GLUE
+#endif
+
+/** @def USE_REM_IMPORT_JUMP_GLUE
+ * Define USE_REM_IMPORT_JUMP_GLUE for platforms where we need to 
+ * emit some jump glue to deal with big addresses.
+ */
+#if (defined(__AMD64__) && !defined(USE_REM_CALLING_CONVENTION_GLUE) && !defined(__DARWIN__)) || defined(__DOXYGEN__)
+# define USE_REM_IMPORT_JUMP_GLUE
 #endif
 
 
@@ -1001,7 +1009,7 @@ sqrtf               sqrtf
 };
 
 
-# ifdef USE_REM_CALLING_CONVENTION_GLUE
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
 /** LIFO of read-write-executable memory chunks used for wrappers. */
 static PREMEXECMEM g_pExecMemHead;
 # endif
@@ -1039,7 +1047,7 @@ DECLASM(int) WrapMSC2GCC9Int(void);  DECLASM(int) WrapMSC2GCC9Int_EndProc(void);
 # endif
 
 
-# ifdef USE_REM_CALLING_CONVENTION_GLUE
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
 /**
  * Allocates a block of memory for glue code.
  *
@@ -1073,8 +1081,10 @@ static void *remAllocGlue(size_t cb)
     g_pExecMemHead = pCur;
     return memset((uint8_t *)pCur + RT_ALIGN_Z(sizeof(*pCur), 32), 0xcc, cbAligned);
 }
+# endif /* USE_REM_CALLING_CONVENTION_GLUE || USE_REM_IMPORT_JUMP_GLUE */
 
 
+# ifdef USE_REM_CALLING_CONVENTION_GLUE
 /**
  * Checks if a function is all straight forward integers.
  *
@@ -1320,9 +1330,10 @@ static int remGenerateExportGlue(PRTUINTPTR pValue, PCREMFNDESC pDesc)
  */
 static int remGenerateImportGlue(PRTUINTPTR pValue, PREMFNDESC pDesc)
 {
-# ifdef USE_REM_CALLING_CONVENTION_GLUE
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
     if (!pDesc->pvWrapper)
     {
+#  ifdef USE_REM_CALLING_CONVENTION_GLUE
         if (remIsFunctionAllInts(pDesc))
         {
             static const struct { void *pvStart, *pvEnd; } s_aTemplates[] =
@@ -1381,9 +1392,31 @@ static int remGenerateImportGlue(PRTUINTPTR pValue, PREMFNDESC pDesc)
             *pb++ = 0xc3;
 #endif
         }
+#  else  /* !USE_REM_CALLING_CONVENTION_GLUE */
+
+        /*
+         * Generate a jump patch.
+         */
+        uint8_t *pb;
+#   ifdef __AMD64__
+        pDesc->pvWrapper = pb = (uint8_t *)remAllocGlue(32);
+        AssertReturn(pDesc->pvWrapper, VERR_NO_MEMORY);
+        *pb++ = 0xcc;
+        *pb++ = 0xff;
+        *pb++ = 0x24;
+        *pb++ = 0x25;
+        *(uint32_t *)pb = (uintptr_t)pb + 5;
+        pb += 5;
+        *(uint64_t *)pb = (uint64_t)pDesc->pv;
+#   else
+        pDesc->pvWrapper = pb = (uint8_t *)remAllocGlue(8);
+        AssertReturn(pDesc->pvWrapper, VERR_NO_MEMORY);
+        *pb++ = 0xea;
+        *(uint32_t *)pb = (uint32_t)pDesc->pv;
+#   endif
+#  endif /* !USE_REM_CALLING_CONVENTION_GLUE */
     }
     *pValue = (uintptr_t)pDesc->pvWrapper;
-
 # else  /* !USE_REM_CALLING_CONVENTION_GLUE */
     *pValue = (uintptr_t)pDesc->pv;
 # endif /* !USE_REM_CALLING_CONVENTION_GLUE */
@@ -1494,7 +1527,7 @@ static void remUnloadLinuxObj(void)
     /* clear the pointers. */
     for (i = 0; i < ELEMENTS(g_aExports); i++)
         *(void **)g_aExports[i].pv = NULL;
-# ifdef USE_REM_CALLING_CONVENTION_GLUE
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
     for (i = 0; i < ELEMENTS(g_aVMMImports); i++)
         g_aVMMImports[i].pvWrapper = NULL;
     for (i = 0; i < ELEMENTS(g_aRTImports); i++)
