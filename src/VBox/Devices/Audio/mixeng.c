@@ -27,11 +27,16 @@
 #include "../../vl_vbox.h"
 #include "audio.h"
 #include <iprt/alloc.h>
+#ifdef VBOX
+#include <iprt/asm.h>
+#endif
 
 #define AUDIO_CAP "mixeng"
 #include "audio_int.h"
 
+#ifndef VBOX
 #define NOVOL
+#endif
 
 /* 8 bit */
 #define ENDIAN_CONVERSION natural

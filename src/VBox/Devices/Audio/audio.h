@@ -55,6 +55,23 @@ typedef enum {
     AUD_CNOTIFY_DISABLE
 } audcnotification_e;
 
+typedef enum
+{
+    AUD_MIXER_VOLUME,
+    AUD_MIXER_PCM,
+    AUD_MIXER_LINE_IN
+} audmixerctl_t;
+
+typedef enum
+{
+    AUD_REC_MIC,
+    AUD_REC_CD,
+    AUD_REC_VIDEO,
+    AUD_REC_AUX,
+    AUD_REC_LINE_IN,
+    AUD_REC_PHONE
+} audrecsource_t;
+
 struct audio_capture_ops {
     void (*notify) (void *opaque, audcnotification_e cmd);
     void (*capture) (void *opaque, void *buf, int size);
@@ -140,6 +157,10 @@ int  AUD_is_active_in (SWVoiceIn *sw);
 void     AUD_init_time_stamp_in (SWVoiceIn *sw, QEMUAudioTimeStamp *ts);
 uint64_t AUD_get_elapsed_usec_in (SWVoiceIn *sw, QEMUAudioTimeStamp *ts);
 
+void AUD_set_volume_out (SWVoiceOut *po, int mute, uint8_t lvol, uint8_t rvol);
+void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol);
+void AUD_set_record_source (audrecsource_t *ars, audrecsource_t *als);
+
 static inline void *advance (void *p, int incr)
 {
 #ifndef VBOX
@@ -158,13 +179,13 @@ uint32_t lsbindex (uint32_t u);
     __typeof (a) ta = a;                        \
     __typeof (b) tb = b;                        \
     ((ta)>(tb)?(tb):(ta));                      \
-}))
+ }))
 
 #define audio_MAX(a, b) ( __extension__ ({      \
     __typeof (a) ta = a;                        \
     __typeof (b) tb = b;                        \
     ((ta)<(tb)?(tb):(ta));                      \
-}))
+ }))
 #else
 #define audio_MIN(a, b) ((a)>(b)?(b):(a))
 #define audio_MAX(a, b) ((a)<(b)?(b):(a))

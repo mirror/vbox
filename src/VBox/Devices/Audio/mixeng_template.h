@@ -34,12 +34,20 @@
 #ifdef NOVOL
 #define VOL(a, b) a
 #else
+#ifdef VBOX
+#ifdef SIGNED
+#define VOL(a, b) ((ASMMult2xS32RetS64(a, b) >> 31))
+#else
+#define VOL(a, b) ((ASMMult2xU32RetU64(a, b) >> 31))
+#endif
+#else /* !VBOX */
 #ifdef FLOAT_MIXENG
 #define VOL(a, b) ((a) * (b))
 #else
 #define VOL(a, b) ((a) * (b)) >> 32
 #endif
 #endif
+#endif /* !VBOX */
 
 #define ET glue (ENDIAN_CONVERSION, glue (_, IN_T))
 
