@@ -964,7 +964,8 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
         {
             tip = tr ("<nobr><b>%1</b></nobr><br>%2", "HDD")
                       .arg (location)
-                      .arg (aHd.GetLastAccessError());
+                      .arg (VBoxGlobal::highlight (aHd.GetLastAccessError(),
+                                                   true /* aToolTip */));
             break;
         }
         default:

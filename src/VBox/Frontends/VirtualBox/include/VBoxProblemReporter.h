@@ -198,7 +198,6 @@ public:
                            const QString &errorID,
                            const QString &errorMsg);
 
-    static QString highlight (const QString &str);
     static QString formatErrorInfo (const COMErrorInfo &info,
                                     HRESULT wrapperRC = S_OK);
     static QString formatErrorInfo (const CVirtualBoxErrorInfo &info) {
