@@ -444,10 +444,10 @@ void VBoxVMSettingsDlg::init()
     lvUSBFilters_currentChanged (NULL);
 
     /* setup iconsets -- qdesigner is not capable... */
-    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
-                                                     "usb_add_disabled_16px.png"));
-    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_read_16px.png",
-                                                         "usb_read_16px.png"));
+    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_16px.png",
+                                                     "usb_disabled_16px.png"));
+    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
+                                                         "usb_add_disabled_16px.png"));
     tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
                                                         "usb_remove_disabled_16px.png"));
     tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
@@ -459,7 +459,6 @@ void VBoxVMSettingsDlg::init()
     connect (usbDevicesMenu, SIGNAL(highlighted(int)), this, SLOT(menuAddUSBFilterFrom_highlighted(int)));
     mLastUSBFilterNum = 0;
     mUSBFilterListModified = false;
-    mUsbDevicesMenuNoDevicesId = -1;
 
     /* VRDP Page */
 
@@ -1724,13 +1723,13 @@ void VBoxVMSettingsDlg::tbAddUSBFilterFrom_clicked()
     bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
     if (isUSBEmpty)
     {
-        mUsbDevicesMenuNoDevicesId = usbDevicesMenu->insertItem (
-            tr ("<no available devices>", "USB devices"));
-        usbDevicesMenu->setItemEnabled (mUsbDevicesMenuNoDevicesId, false);
+        usbDevicesMenu->insertItem (
+            tr ("<no available devices>", "USB devices"),
+            USBDevicesMenuNoDevicesId);
+        usbDevicesMenu->setItemEnabled (USBDevicesMenuNoDevicesId, false);
     }
     else
     {
-        mUsbDevicesMenuNoDevicesId = -1;
         CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
         while (en.HasMore())
         {
@@ -1740,13 +1739,14 @@ void VBoxVMSettingsDlg::tbAddUSBFilterFrom_clicked()
             usbDevicesMap [id] = usb;
         }
     }
+
     usbDevicesMenu->exec (QCursor::pos());
 }
 
 void VBoxVMSettingsDlg::menuAddUSBFilterFrom_highlighted (int aIndex)
 {
     /* the <no available devices> item is highlighted */
-    if (aIndex == mUsbDevicesMenuNoDevicesId)
+    if (aIndex == USBDevicesMenuNoDevicesId)
     {
         QToolTip::add (usbDevicesMenu,
             tr ("No supported devices connected to the host PC",
@@ -1774,8 +1774,7 @@ void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
         return;
 
     CUSBDeviceFilter filter = cmachine.GetUSBController()
-        .CreateDeviceFilter (tr ("New Filter %1", "usb")
-                                 .arg (++ mLastUSBFilterNum));
+        .CreateDeviceFilter (vboxGlobal().details (usb));
 
     filter.SetVendorId (QString().sprintf ("%04hX", usb.GetVendorId()));
     filter.SetProductId (QString().sprintf ("%04hX", usb.GetProductId()));
