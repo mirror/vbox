@@ -1941,6 +1941,32 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                             </widget>
                                             <widget class="QToolButton">
                                                 <property name="name">
+                                                    <cstring>tbAddUSBFilterFrom</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="accel">
+                                                    <string>Ins</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Add existing</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Adds a new USB filter from an existing USB device.</string>
+                                                </property>
+                                            </widget>
+                                            <widget class="QToolButton">
+                                                <property name="name">
                                                     <cstring>tbRemoveUSBFilter</cstring>
                                                 </property>
                                                 <property name="focusPolicy">
@@ -2531,6 +2557,12 @@ The checkbox to the left defines whether the particular filter is enabled or not
         <slot>tbAddUSBFilter_clicked()</slot>
     </connection>
     <connection>
+        <sender>tbAddUSBFilterFrom</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbAddUSBFilterFrom_clicked()</slot>
+    </connection>
+    <connection>
         <sender>tbRemoveUSBFilter</sender>
         <signal>clicked()</signal>
         <receiver>VBoxVMSettingsDlg</receiver>
@@ -2589,6 +2621,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <tabstop>cbEnableUSBController</tabstop>
     <tabstop>lvUSBFilters</tabstop>
     <tabstop>tbAddUSBFilter</tabstop>
+    <tabstop>tbAddUSBFilterFrom</tabstop>
     <tabstop>tbRemoveUSBFilter</tabstop>
     <tabstop>tbUSBFilterUp</tabstop>
     <tabstop>tbUSBFilterDown</tabstop>
@@ -2612,6 +2645,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <include location="global" impldecl="in implementation">qlistbox.h</include>
     <include location="global" impldecl="in implementation">qfocusdata.h</include>
     <include location="global" impldecl="in implementation">qtimer.h</include>
+    <include location="global" impldecl="in implementation">qpopupmenu.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
@@ -2624,6 +2658,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
 <forwards>
     <forward>class VBoxMediaComboBox</forward>
     <forward>class VBoxDiskImageManagerDlg</forward>
+    <forward>class QPopupMenu</forward>
 </forwards>
 <variables>
     <variable access="private">bool polished;</variable>
@@ -2654,6 +2689,9 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <variable access="private">VBoxMediaComboBox *cbHDD;</variable>
     <variable access="private">VBoxMediaComboBox *cbISODVD;</variable>
     <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
+    <variable access="private">QPopupMenu *usbDevicesMenu;</variable>
+    <variable access="private">QMap&lt;int, CUSBDevice&gt; usbDevicesMap;</variable>
+    <variable access="private">int mUsbDevicesMenuNoDevicesId;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
@@ -2678,6 +2716,9 @@ The checkbox to the left defines whether the particular filter is enabled or not
     <slot>lvUSBFilters_currentChanged( QListViewItem * item )</slot>
     <slot>lvUSBFilters_setCurrentText( const QString &amp; aText )</slot>
     <slot>tbAddUSBFilter_clicked()</slot>
+    <slot>tbAddUSBFilterFrom_clicked()</slot>
+    <slot>menuAddUSBFilterFrom_activated( int )</slot>
+    <slot>menuAddUSBFilterFrom_highlighted( int )</slot>
     <slot>tbRemoveUSBFilter_clicked()</slot>
     <slot>tbUSBFilterUp_clicked()</slot>
     <slot>tbUSBFilterDown_clicked()</slot>
