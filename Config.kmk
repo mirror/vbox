@@ -263,6 +263,16 @@ ifdef VBOX_OSE
 endif
 
 #
+# HACK ALERT!
+# OVerride anyone attempting to build Linux/GNU additions when targeting AMD64.
+#
+ifdef VBOX_WITH_LINUX_ADDITIONS
+ ifeq ($(BUILD_TARGET_ARCH),amd64)
+  VBOX_WITH_LINUX_ADDITIONS :=
+ endif
+endif
+
+#
 # Image and object format config.
 #
 ifeq ($(BUILD_TARGET),linux)
@@ -998,7 +1008,7 @@ ifeq ($(VBOX_LDR_FMT),elf)
 TEMPLATE_VBOXR0_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector)
 TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector)
-TEMPLATE_VBOXR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables -ffreestanding 
+TEMPLATE_VBOXR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables -ffreestanding
 TEMPLATE_VBOXR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables
 TEMPLATE_VBOXR0_LDFLAGS             = -nostdlib -Bsymbolic
 # temporarily, must fix the loader.
