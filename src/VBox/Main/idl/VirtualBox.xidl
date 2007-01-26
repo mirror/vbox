@@ -4530,14 +4530,6 @@
                 </ul>
                 Individual hard disk storage type interfaces may define
                 additional attributes that depend on the accessibility state.
-
-                <note>If this method fails, it most likely means that an
-                unaccessible storage of the registered hard disk has become
-                accessible, but an UUID embedded in the storage doesn't match
-                one stored in the registry. It is not recommended to use this
-                hard disk in such case (until a storage with the correct
-                UUID becomes accessible).</note>
-
             </desc>
         </attribute>
 
