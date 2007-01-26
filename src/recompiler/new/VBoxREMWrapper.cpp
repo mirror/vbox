@@ -177,6 +177,8 @@
 #include <VBox/rem.h>
 #include <VBox/vmm.h>
 #include <VBox/dbgf.h>
+#include <VBox/dbg.h>
+#include <VBox/csam.h>
 #include <VBox/mm.h>
 #include <VBox/em.h>
 #include <VBox/ssm.h>
@@ -196,6 +198,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/stream.h>
 
 
 /*******************************************************************************
@@ -454,6 +457,27 @@ static const REMPARMDESC g_aArgsCPUMQueryGuestCtxPtr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTX *) }
+};
+static const REMPARMDESC g_aArgsCSAMR3MonitorPage[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG) }
+};
+static const REMPARMDESC g_aArgsDBGCRegisterCommands[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGCCMD) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned) }
+};
+static const REMPARMDESC g_aArgsDBGFR3DisasInstrEx[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTSEL) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *) }
 };
 static const REMPARMDESC g_aArgsDBGFR3Info[] =
 {
@@ -896,7 +920,11 @@ static REMFNDESC g_aVMMImports[] =
     { "CPUMGetGuestESI",                        (void *)(uintptr_t)&CPUMGetGuestESI,                &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint32_t),   NULL },
     { "CPUMGetGuestESP",                        (void *)(uintptr_t)&CPUMGetGuestESP,                &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint32_t),   NULL },
     { "CPUMQueryGuestCtxPtr",                   (void *)(uintptr_t)&CPUMQueryGuestCtxPtr,           &g_aArgsCPUMQueryGuestCtxPtr[0],            ELEMENTS(g_aArgsCPUMQueryGuestCtxPtr),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "CSAMR3MonitorPage",                      (void *)(uintptr_t)&CSAMR3MonitorPage,              &g_aArgsCSAMR3MonitorPage[0],               ELEMENTS(g_aArgsCSAMR3MonitorPage),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "DBGCRegisterCommands",                   (void *)(uintptr_t)&DBGCRegisterCommands,           &g_aArgsDBGCRegisterCommands[0],            ELEMENTS(g_aArgsDBGCRegisterCommands),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "DBGFR3DisasInstrEx",                     (void *)(uintptr_t)&DBGFR3DisasInstrEx,             &g_aArgsDBGFR3DisasInstrEx[0],              ELEMENTS(g_aArgsDBGFR3DisasInstrEx),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3Info",                             (void *)(uintptr_t)&DBGFR3Info,                     &g_aArgsDBGFR3Info[0],                      ELEMENTS(g_aArgsDBGFR3Info),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "DBGFR3InfoLogRelHlp",                    (void *)(uintptr_t)&DBGFR3InfoLogRelHlp,            NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "DBGFR3SymbolByAddr",                     (void *)(uintptr_t)&DBGFR3SymbolByAddr,             &g_aArgsDBGFR3SymbolByAddr[0],              ELEMENTS(g_aArgsDBGFR3SymbolByAddr),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DISInstr",                               (void *)(uintptr_t)&DISInstr,                       &g_aArgsDISInstr[0],                        ELEMENTS(g_aArgsDISInstr),                          REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "EMR3FatalError",                         (void *)(uintptr_t)&EMR3FatalError,                 &g_aArgsEMR3FatalError[0],                  ELEMENTS(g_aArgsEMR3FatalError),                    REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
@@ -964,7 +992,6 @@ static REMFNDESC g_aVMMImports[] =
     { "VMR3ReqCall",                            (void *)(uintptr_t)&VMR3ReqCall,                    &g_aArgsVMR3ReqCall[0],                     ELEMENTS(g_aArgsVMR3ReqCall),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3ReqFree",                            (void *)(uintptr_t)&VMR3ReqFree,                    &g_aArgsVMR3ReqFree[0],                     ELEMENTS(g_aArgsVMR3ReqFree),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
 //    { "",                        (void *)(uintptr_t)&,                &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),   NULL },
-
 };
 
 
@@ -976,6 +1003,7 @@ static REMFNDESC g_aRTImports[] =
     { "AssertMsg1",                             (void *)(uintptr_t)&AssertMsg1,                     &g_aArgsAssertMsg1[0],                      ELEMENTS(g_aArgsAssertMsg1),                        REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "AssertMsg2",                             (void *)(uintptr_t)&AssertMsg2,                     &g_aArgsAssertMsg2[0],                      ELEMENTS(g_aArgsAssertMsg2),                        REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
     { "RTLogDefaultInstance",                   (void *)(uintptr_t)&RTLogDefaultInstance,           NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
+    { "RTLogRelDefaultInstance",                (void *)(uintptr_t)&RTLogRelDefaultInstance,        NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
     { "RTLogFlags",                             (void *)(uintptr_t)&RTLogFlags,                     &g_aArgsRTLogFlags[0],                      ELEMENTS(g_aArgsRTLogFlags),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "RTLogLoggerEx",                          (void *)(uintptr_t)&RTLogLoggerEx,                  &g_aArgsRTLogLoggerEx[0],                   ELEMENTS(g_aArgsRTLogLoggerEx),                     REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
     { "RTLogLoggerExV",                         (void *)(uintptr_t)&RTLogLoggerExV,                 &g_aArgsRTLogLoggerExV[0],                  ELEMENTS(g_aArgsRTLogLoggerExV),                    REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_VALIST, 0, NULL },
@@ -1480,6 +1508,12 @@ static int remLoadLinuxObj(void)
         g_pvREM2 = RTMemExecAlloc(RTLdrSize(g_ModREM2));
         if (g_pvREM2)
         {
+#ifdef DEBUG /* How to load the VBoxREM2.rel symbols into the GNU debugger. */
+            RTPrintf("VBoxREMWrapper: (gdb) add-symbol-file %s 0x%p\n", szPath, g_pvREM2);
+#endif 
+            Log(("Loading %s at 0x%p (%d bytes)\n"
+                 "(gdb) add-symbol-file %s 0x%p\n", 
+                 szPath, g_pvREM2, RTLdrSize(g_ModREM2), szPath, g_pvREM2));
             rc = RTLdrGetBits(g_ModREM2, g_pvREM2, (RTUINTPTR)g_pvREM2, remGetImport, NULL);
             if (VBOX_SUCCESS(rc))
             {
