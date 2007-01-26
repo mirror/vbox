@@ -413,7 +413,7 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 /** @} */
 
 /** TRPM saved state version. */
-#define TRPM_SAVED_STATE_VERSION    6
+#define TRPM_SAVED_STATE_VERSION    7
 
 
 /*******************************************************************************
