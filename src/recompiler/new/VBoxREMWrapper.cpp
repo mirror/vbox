@@ -1429,7 +1429,7 @@ static int remGenerateImportGlue(PRTUINTPTR pValue, PREMFNDESC pDesc)
 #   ifdef __AMD64__
         pDesc->pvWrapper = pb = (uint8_t *)remAllocGlue(32);
         AssertReturn(pDesc->pvWrapper, VERR_NO_MEMORY);
-        *pb++ = 0xcc;
+        /**pb++ = 0xcc;*/
         *pb++ = 0xff;
         *pb++ = 0x24;
         *pb++ = 0x25;
