@@ -1542,7 +1542,7 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
         /* An accessibility check in progress on some other thread,
          * wait for it to finish. */
 
-        ComAssertRet (mStateCheckWaiters != ~0, E_FAIL);
+        ComAssertRet (mStateCheckWaiters != (ULONG) ~0, E_FAIL);
         ++ mStateCheckWaiters;
         alock.leave();
         
@@ -1557,6 +1557,8 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
             mStateCheckSem = NIL_RTSEMEVENTMULTI;
         }
         
+        AssertRCReturn (vrc, E_FAIL);
+
         /* don't touch aAccessError, it has been already set */
         return S_OK;
     }
