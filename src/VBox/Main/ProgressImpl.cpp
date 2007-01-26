@@ -838,6 +838,30 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
                                   const Bstr &aComponent,
                                   const char *aText, ...)
 {
+    va_list args;
+    va_start (args, aText);
+    Bstr text = Utf8StrFmt (aText, args);
+    va_end (args);
+    
+    return notifyCompleteBstr (aResultCode, aIID, aComponent, text);
+}
+
+/**
+ *  Marks the operation as complete and attaches full error info.
+ *  See VirtualBoxSupportErrorInfoImpl::setError(HRESULT, const GUID &, const wchar_t *, const char *, ...)
+ *  for more info.
+ *
+ *  This method is preferred iy you have a ready (translated and formatted)
+ *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr.
+ * 
+ *  @param  aResultCode operation result (error) code, must not be S_OK
+ *  @param  aIID        IID of the intrface that defines the error
+ *  @param  aComponent  name of the component that generates the error
+ *  @param  aText       error message (must not be null)
+ */
+HRESULT Progress::notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
+                                      const Bstr &aComponent, const Bstr &aText)
+{
     AutoLock lock (this);
     AssertReturn (isReady(), E_UNEXPECTED);
 
@@ -851,11 +875,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
     AssertComRC (rc);
     if (SUCCEEDED (rc))
     {
-        va_list args;
-        va_start (args, aText);
-        Bstr bstrText = Utf8StrFmt (aText, args);
-        va_end (args);
-        errorInfo->init (aResultCode, aIID, aComponent, bstrText);
+        errorInfo->init (aResultCode, aIID, aComponent, aText);
         errorInfo.queryInterfaceTo (mErrorInfo.asOutParam());
     }
 
