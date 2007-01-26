@@ -24,7 +24,7 @@
 # First, figure out which architecture we're targeting.
 # (We have to support basic cross building (ARCH=i386|x86_64).)
 #
-ifeq ($(filter amd64 x86,$(BUILD_TARGET_ARCH)),)
+ifneq ($(filter-out amd64 x86,$(BUILD_TARGET_ARCH)),)
  $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
  BUILD_TARGET_ARCH :=
 endif
