@@ -37,7 +37,7 @@
 #define VBOX_MAX_CURSOR_WIDTH 64
 #define VBOX_MAX_CURSOR_HEIGHT 64
 
-/* #define DEBUG_X */
+#define DEBUG_X
 #ifdef DEBUG_X
 #define TRACE_ENTRY() for (;;) {                \
     ErrorF ("%s\n", __FUNCTION__);              \
@@ -608,8 +608,8 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     cp = (CARD32 *) (m + size_mask);
 
     dolog ("w=%d h=%d sm=%d sr=%d p=%d\n",
-           w, h, size_mask, size_rgba, dst_pitch);
-    dolog ("m=%p c=%p cp=%p\n", m, c, cp);
+           w, h, (int) size_mask, (int) size_rgba, (int) dst_pitch);
+    dolog ("m=%p c=%p cp=%p\n", m, c, (void *) cp);
 
     fc = color_to_byte (pCurs->foreBlue)
       | (color_to_byte (pCurs->foreGreen) << 8)
