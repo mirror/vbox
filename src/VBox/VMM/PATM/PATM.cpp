@@ -4708,7 +4708,7 @@ invalid_write_loop_start:
                     {
                         PPATCHINFO pPatch = pPatchPage->aPatch[i];
 
-                        if (++pPatch->cInvalidWrites > PATM_MAX_INVALID_WRITES)
+                        if (pPatch->cInvalidWrites > PATM_MAX_INVALID_WRITES)
                         {
                             LogRel(("PATM: Disable block at %VGv - invalid write %VGv-%VGv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
 
