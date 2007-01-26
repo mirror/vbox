@@ -44,7 +44,7 @@
 
 /** @} */
 
-#define CSAM_SSM_VERSION                       12
+#define CSAM_SSM_VERSION                       13
 
 #define CSAM_PGDIRBMP_CHUNKS                   1024
 
@@ -157,9 +157,6 @@ typedef struct CSAM
     GCPTRTYPE(RTHCPTR *)  pPDHCBitmapGC;
     HCPTRTYPE(uint8_t **) pPDBitmapHC;
     HCPTRTYPE(RTGCPTR  *) pPDGCBitmapHC;
-
-    /* Saved IDT entries. */
-    VBOXIDTE            aIDT[256];
 
     /* Temporary storage during load/save state */
     struct

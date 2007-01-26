@@ -215,8 +215,6 @@ static int csamReinit(PVM pVM)
     pVM->csam.s.fGatesChecked    = false;
     pVM->csam.s.fScanningStarted = false;
 
-    memset(&pVM->csam.s.aIDT[0], 0, sizeof(pVM->csam.s.aIDT));
-
     VM_FF_CLEAR(pVM, VM_FF_CSAM_FLUSH_DIRTY_PAGE);
     pVM->csam.s.cDirtyPages = 0;
     /* not necessary */
@@ -453,9 +451,6 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     pVM->csam.s.cDirtyPages = csamInfo.cDirtyPages;
     memcpy(pVM->csam.s.pvDirtyBasePage,  csamInfo.pvDirtyBasePage, sizeof(pVM->csam.s.pvDirtyBasePage));
     memcpy(pVM->csam.s.pvDirtyFaultPage, csamInfo.pvDirtyFaultPage, sizeof(pVM->csam.s.pvDirtyFaultPage));
-
-    /* Restore IDT gate info. */
-    memcpy(&pVM->csam.s.aIDT[0], &csamInfo.aIDT[0], sizeof(pVM->csam.s.aIDT));
 
     /* Restore pgdir bitmap (we'll change the pointers next). */
     rc = SSMR3GetMem(pSSM, pVM->csam.s.pPDBitmapHC, CSAM_PGDIRBMP_CHUNKS*sizeof(RTHCPTR));
@@ -2160,6 +2155,19 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
         return VINF_SUCCESS;
     }
 
+    /* We only check all gates once during a session */
+    if (    !pVM->csam.s.fGatesChecked
+        &&   cGates != 256)
+        return VINF_SUCCESS;    /* too early */
+
+    /* We only check all gates once during a session */
+    if (    pVM->csam.s.fGatesChecked
+        &&  cGates != 1)
+        return VINF_SUCCESS;    /* ignored */
+
+    if (cGates != 1)
+        pVM->csam.s.fGatesChecked = true;
+
     Assert(GCPtrIDT && cGates <= 256);
     if (!GCPtrIDT || cGates > 256)
         return VERR_INVALID_PARAMETER;
@@ -2207,42 +2215,16 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 
     for (/*iGate*/; iGate<iGateEnd; iGate++, pGuestIdte++)
     {
-        if (    pVM->csam.s.fGatesChecked
-            &&  cGates != 1                 /* applies only when we check the entire IDT */
-            &&  pGuestIdte->au64 != pVM->csam.s.aIDT[iGate].au64)
-        {
-            /* We can't check the contents here, as it might only have been partially modified at this point.
-             * TRPMR3InjectEvent will recheck if necessary.
-             */
-#ifdef DEBUG
-            RTGCPTR pHandler = (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow;
-
-            Log2(("IDT entry %x with handler %VGv refused (1)\n", iGate, pHandler));
-#endif
-            TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
-            TRPMR3SetGuestTrapHandlerDirty(pVM, iGate, true);
-            continue;
-        }
-
-        TRPMR3SetGuestTrapHandlerDirty(pVM, iGate, false);
+        Assert(TRPMR3GetGuestTrapHandler(pVM, iGate) == TRPM_INVALID_HANDLER);
 
         if (    pGuestIdte->Gen.u1Present
             &&  (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32 || pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
             &&  (pGuestIdte->Gen.u2DPL == 3 || pGuestIdte->Gen.u2DPL == 0)
-            &&  pGuestIdte->au64 != pVM->csam.s.aIDT[iGate].au64
            )
         {
             RTGCPTR pHandler;
             CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
             PCSAMPAGE pPage = NULL;
-
-            /* Save a copy */
-            pVM->csam.s.aIDT[iGate].au64 = pGuestIdte->au64;
-
-            /*
-             * Assume it's not safe.
-             */
-            TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
 
             pHandler = (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow;
             pHandler = SELMToFlat(pVM, pGuestIdte->Gen.u16SegSel, 0, pHandler);
@@ -2262,94 +2244,60 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             if (rc != VINF_SUCCESS)
             {
                 Log(("CSAMCheckGates: csamAnalyseCodeStream failed with %d\n", rc));
+                continue;
             }
-            else
+            if (iGate >= 0x20)
             {
-                if (iGate >= 0x20)
+                /* OpenBSD guest specific patch test (3.7 & 3.8) */
+                rc = PATMR3InstallPatch(pVM, pHandler - 3, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
+                if (VBOX_FAILURE(rc))
+                    /* OpenBSD guest specific patch test (3.9 & 4.0) */
+                    rc = PATMR3InstallPatch(pVM, pHandler - 0x2B, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
+                if (VBOX_SUCCESS(rc))
+                    Log(("Installed OpenBSD interrupt handler prefix instruction (push cs) patch\n"));
+            }
+
+            /* Trap gates and certain interrupt gates. */
+            uint32_t fPatchFlags = PATMFL_CODE32 | PATMFL_IDTHANDLER;
+
+            if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
+                fPatchFlags |= PATMFL_TRAPHANDLER;
+            else
+                fPatchFlags |= PATMFL_INTHANDLER;
+
+            switch (iGate) {
+            case 8:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 17:
+                fPatchFlags |= PATMFL_TRAPHANDLER_WITH_ERRORCODE;
+                break;
+            default:
+                /* No error code. */
+                break;
+            }
+
+            Log(("Installing %s gate handler for 0x%X at %VGv\n", (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32) ? "trap" : "intr", iGate, pHandler));
+
+            rc = PATMR3InstallPatch(pVM, pHandler, fPatchFlags);
+            if (VBOX_SUCCESS(rc) || rc == VERR_PATM_ALREADY_PATCHED)
+            {
+                Log(("Gate handler 0x%X is SAFE!\n", iGate));
+
+                RTGCPTR pNewHandlerGC = PATMR3QueryPatchGCPtr(pVM, pHandler);
+                if (pNewHandlerGC)
                 {
-                    /* OpenBSD guest specific patch test (3.7 & 3.8) */
-                    rc = PATMR3InstallPatch(pVM, pHandler - 3, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
+                    rc = TRPMR3SetGuestTrapHandler(pVM, iGate, pNewHandlerGC);
                     if (VBOX_FAILURE(rc))
-                        /* OpenBSD guest specific patch test (3.9 & 4.0) */
-                        rc = PATMR3InstallPatch(pVM, pHandler - 0x2B, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
-                    if (VBOX_SUCCESS(rc))
-                        Log(("Installed OpenBSD interrupt handler prefix instruction (push cs) patch\n"));
-                }
-
-                /* Trap gates and certain interrupt gates. */
-                uint32_t fPatchFlags = PATMFL_CODE32 | PATMFL_IDTHANDLER;
-
-                if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
-                    fPatchFlags |= PATMFL_TRAPHANDLER;
-                else
-                    fPatchFlags |= PATMFL_INTHANDLER;
-
-                switch (iGate) {
-                case 8:
-                case 10:
-                case 11:
-                case 12:
-                case 13:
-                case 14:
-                case 17:
-                    fPatchFlags |= PATMFL_TRAPHANDLER_WITH_ERRORCODE;
-                    break;
-                default:
-                    /* No error code. */
-                    break;
-                }
-
-                Log(("Installing %s gate handler for 0x%X at %VGv\n", (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32) ? "trap" : "intr", iGate, pHandler));
-
-                rc = PATMR3InstallPatch(pVM, pHandler, fPatchFlags);
-                if (VBOX_SUCCESS(rc) || rc == VERR_PATM_ALREADY_PATCHED)
-                {
-                    RTGCPTR pNewHandlerGC;
-
-                    Log(("Gate handler 0x%X is SAFE!\n", iGate));
-
-                    pNewHandlerGC = PATMR3QueryPatchGCPtr(pVM, pHandler);
-                    if (pNewHandlerGC)
-                    {
-                        rc = TRPMR3SetGuestTrapHandler(pVM, iGate, pNewHandlerGC);
-                        if (VBOX_FAILURE(rc))
-                            Log(("TRPMR3SetGuestTrapHandler %d failed with %Vrc\n", iGate, rc));
-                    }
-                    else
-                        Assert(0);
+                        Log(("TRPMR3SetGuestTrapHandler %d failed with %Vrc\n", iGate, rc));
                 }
             }
         }
-        else
-        if (pGuestIdte->au64 != pVM->csam.s.aIDT[iGate].au64)
-        {
-            /* Save a copy */
-            pVM->csam.s.aIDT[iGate].au64 = pGuestIdte->au64;
-
-#ifdef DEBUG
-            RTGCPTR pHandler = (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow;
-
-            Log2(("IDT entry %x with handler %VGv refused (2)\n", iGate, pHandler));
-#endif
-
-            /*
-             * Everything is dangerous unless checked
-             */
-            TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
-        }
-#ifdef DEBUG
-        else
-        if (TRPMR3GetGuestTrapHandler(pVM, iGate) == TRPM_INVALID_HANDLER)
-        {
-            RTGCPTR pHandler = (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow;
-
-            Log2(("IDT entry %x with handler %VGv refused (3)\n", iGate, pHandler));
-        }
-#endif
-    }
+    } /* for */
     STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
-
-    pVM->csam.s.fGatesChecked = true;
     return VINF_SUCCESS;
 }
 
