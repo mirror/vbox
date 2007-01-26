@@ -321,12 +321,22 @@ void VBoxDiskImageManagerDlg::init()
     imReleaseAction->setStatusTip (tr ("Release selected media image file from being using in some VM"));
     imRefreshAction->setStatusTip (tr ("Refresh media image list"));
 
-    imNewAction->setIconSet (VBoxGlobal::iconSet ("hd_16px.png", "hd_disabled_16px.png"));
-    imAddAction->setIconSet (VBoxGlobal::iconSet ("cd_16px.png", "cd_disabled_16px.png"));
+    imNewAction->setIconSet (VBoxGlobal::iconSetEx (
+        "vdm_new_22px.png", "vdm_new_16px.png",
+        "vdm_new_disabled_22px.png", "vdm_new_disabled_16px.png"));
+    imAddAction->setIconSet (VBoxGlobal::iconSetEx (
+        "vdm_add_22px.png", "vdm_add_16px.png",
+        "vdm_add_disabled_22px.png", "vdm_add_disabled_16px.png"));
     // imEditAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png", "guesttools_disabled_16px.png"));
-    imRemoveAction->setIconSet (VBoxGlobal::iconSet ("delete_16px.png", "delete_dis_16px.png"));
-    imReleaseAction->setIconSet (VBoxGlobal::iconSet ("start_16px.png", "start_dis_16px.png"));
-    imRefreshAction->setIconSet (VBoxGlobal::iconSet ("settings_16px.png", "settings_dis_16px.png"));
+    imRemoveAction->setIconSet (VBoxGlobal::iconSetEx (
+        "vdm_remove_22px.png", "vdm_remove_16px.png",
+        "vdm_remove_disabled_22px.png", "vdm_remove_disabled_16px.png"));
+    imReleaseAction->setIconSet (VBoxGlobal::iconSetEx (
+        "vdm_release_22px.png", "vdm_release_16px.png",
+        "vdm_release_disabled_22px.png", "vdm_release_disabled_16px.png"));
+    imRefreshAction->setIconSet (VBoxGlobal::iconSetEx (
+        "refresh_22px.png", "refresh_16px.png",
+        "refresh_disabled_22px.png", "refresh_disabled_16px.png"));
 
     // imEditAction->addTo (itemMenu);
     imRemoveAction->addTo (itemMenu);
@@ -337,7 +347,9 @@ void VBoxDiskImageManagerDlg::init()
     toolBar = new VBoxToolBar (this, centralWidget(), "toolBar");
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
     ((QVBoxLayout*)centralWidget()->layout())->insertWidget(0, toolBar);
-    setUsesTextLabel (true);
+
+    toolBar->setUsesTextLabel (true);
+    toolBar->setUsesBigPixmaps (true);
 
     imNewAction->addTo (toolBar);
     imAddAction->addTo (toolBar);

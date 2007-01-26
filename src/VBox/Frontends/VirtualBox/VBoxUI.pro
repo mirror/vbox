@@ -112,6 +112,7 @@ IMAGES	= images/tpixel.png \
 	images/ico32x01.png \
 	images/ico40x01.png \
 	images/ico64x01.png \
+	images/help_16px.png \
 	images/about_16px.png \
 	images/site_16px.png \
 	images/reset_16px.png \
@@ -119,6 +120,12 @@ IMAGES	= images/tpixel.png \
 	images/pause_16px.png \
 	images/fullscreen_16px.png \
 	images/fullscreen_disabled_16px.png \
+	images/acpi_16px.png \
+	images/acpi_disabled_16px.png \
+	images/adjust_win_size_16px.png \
+	images/adjust_win_size_disabled_16px.png \
+	images/auto_resize_16px.png \
+	images/auto_resize_disabled_16px.png \
 	images/exit_16px.png \
 	images/fd_unmount_16px.png \
 	images/fd_unmount_dis_16px.png \
@@ -173,4 +180,24 @@ IMAGES	= images/tpixel.png \
 	images/show_snapshot_details_22px.png \
 	images/show_snapshot_details_dis_16px.png \
 	images/show_snapshot_details_dis_22px.png \
+	images/refresh_16px.png \
+	images/refresh_disabled_16px.png \
+	images/refresh_22px.png \
+	images/refresh_disabled_22px.png \
+	images/vdm_add_16px.png \
+	images/vdm_add_disabled_16px.png \
+	images/vdm_add_22px.png \
+	images/vdm_add_disabled_22px.png \
+	images/vdm_new_16px.png \
+	images/vdm_new_disabled_16px.png \
+	images/vdm_new_22px.png \
+	images/vdm_new_disabled_22px.png \
+	images/vdm_release_16px.png \
+	images/vdm_release_disabled_16px.png \
+	images/vdm_release_22px.png \
+	images/vdm_release_disabled_22px.png \
+	images/vdm_remove_16px.png \
+	images/vdm_remove_disabled_16px.png \
+	images/vdm_remove_22px.png \
+	images/vdm_remove_disabled_22px.png \
 	images/about_600px.png

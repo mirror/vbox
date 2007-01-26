@@ -181,12 +181,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     vmAutoresizeGuestAction = new QAction (runningActions, "vmAutoresizeGuestAction");
     vmAutoresizeGuestAction->setIconSet (
-        VBoxGlobal::iconSet ("fullscreen_16px.png", "fullscreen_disabled_16px.png"));
+        VBoxGlobal::iconSet ("auto_resize_16px.png", "auto_resize_disabled_16px.png"));
     vmAutoresizeGuestAction->setToggleAction (true);
 
     vmAdjustWindowAction = new QAction (this, "vmAdjustWindowAction");
     vmAdjustWindowAction->setIconSet (
-        VBoxGlobal::iconSet ("fullscreen_16px.png", "fullscreen_disabled_16px.png"));
+        VBoxGlobal::iconSet ("adjust_win_size_16px.png",
+                             "adjust_win_size_disabled_16px.png"));
 
     vmTypeCADAction = new QAction (runningActions, "vmTypeCADAction");
     vmTypeCADAction->setIconSet (VBoxGlobal::iconSet ("hostkey_16px.png",
@@ -207,6 +208,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmPauseAction->setToggleAction( true );
 
     vmACPIShutdownAction = new QAction (this, "vmACPIShutdownAction");
+    vmACPIShutdownAction->setIconSet (
+        VBoxGlobal::iconSet ("acpi_16px.png", "acpi_disabled_16px.png"));
 
     vmCloseAction = new QAction (this, "vmCloseAction");
     vmCloseAction->setIconSet (VBoxGlobal::iconSet ("exit_16px.png"));

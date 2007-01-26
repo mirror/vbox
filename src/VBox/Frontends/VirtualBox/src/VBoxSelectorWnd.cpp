@@ -255,7 +255,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     /// @todo (r=dmik) set icon set
     
     helpContentsAction = new QAction (this, "helpContentsAction");
-    helpContentsAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
+    helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
     helpWebAction = new QAction (this, "helpWebAction");
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
