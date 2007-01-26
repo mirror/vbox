@@ -440,7 +440,6 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
     AssertRelease(!(RT_OFFSETOF(VM, trpm.s.aIdt) & 15));
     AssertRelease(sizeof(pVM->trpm.s) <= sizeof(pVM->trpm.padding));
     AssertRelease(ELEMENTS(pVM->trpm.s.aGuestTrapHandler) == sizeof(pVM->trpm.s.au32IdtPatched)*8);
-    AssertRelease(ELEMENTS(pVM->trpm.s.aGuestTrapHandler) == sizeof(pVM->trpm.s.au32IdtDirty)*8);
 
     /*
      * Initialize members.
@@ -722,7 +721,6 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutGCUInt(pSSM,    pTrpm->fDisableMonitoring);
     SSMR3PutUInt(pSSM,      VM_FF_ISSET(pVM, VM_FF_TRPM_SYNC_IDT));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
-    SSMR3PutMem(pSSM,       &pTrpm->au32IdtDirty[0], sizeof(pTrpm->au32IdtDirty));
     SSMR3PutU32(pSSM, ~0);              /* separator. */
 
     /*
@@ -797,7 +795,6 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     /* else: cleared by reset call above. */
 
     SSMR3GetMem(pSSM, &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
-    SSMR3GetMem(pSSM, &pTrpm->au32IdtDirty[0], sizeof(pTrpm->au32IdtDirty));
 
     /* check the separator */
     uint32_t u32Sep;
@@ -865,8 +862,13 @@ TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
 
     if (fRawRing0 && CSAMIsEnabled(pVM))
     {
-        rc = CSAMR3CheckGates(pVM, 0, 256); /* check all gates */
-        AssertRCReturn(rc, rc);
+        /* Clear all handlers */
+        /** @todo inefficient, but simple */
+        for (unsigned iGate=0;iGate<256;iGate++)
+            TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
+
+        /* Scan them all (only the first time) */
+        CSAMR3CheckGates(pVM, 0, 256);
     }
 
     /*
@@ -993,63 +995,62 @@ static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
 }
 
 
-#if 0 /* obsolete */
 /**
- * Activate guest trap gate handler
- * Used for setting up trap gates used for kernel calls.
+ * Clear passthrough interrupt gate handler (reset to default handler)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   iTrap       Interrupt/trap number.
+ * @param   iTrap       Trap/interrupt gate number.
  */
-TRPMR3DECL(int) TRPMR3EnableGuestTrapHandler(PVM pVM, unsigned iTrap)
+TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
 {
-    /*
-     * Validate.
-     */
-    if (!EMIsRawRing0Enabled(pVM))
+    /** @todo cleanup trpmR3ClearPassThroughHandler()! */
+    RTGCPTR aGCPtrs[TRPM_HANDLER_MAX];
+    int rc;
+
+    memset(aGCPtrs, 0, sizeof(aGCPtrs));
+
+    rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerInterupt", &aGCPtrs[TRPM_HANDLER_INT]);
+    AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerInterupt in VMMGC.gc!\n"));
+
+    if (    iTrap < TRPM_HANDLER_INT_BASE
+        ||  iTrap >= ELEMENTS(pVM->trpm.s.aIdt))
     {
-        AssertMsgFailed(("Enabling interrupt gates only works when raw ring 0 is enabled\n"));
-        return VINF_SUCCESS;
-    }
-    if (iTrap < TRPM_HANDLER_INT_BASE || iTrap >= ELEMENTS(pVM->trpm.s.aIdt))
-    {
-        AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %d!\n", iTrap));
+        AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %#x!\n", iTrap));
         return VERR_INVALID_PARAMETER;
     }
+    memcpy(&pVM->trpm.s.aIdt[iTrap], &g_aIdt[iTrap], sizeof(pVM->trpm.s.aIdt[0]));
 
-    uint16_t    cbIDT;
-    RTGCPTR     GCPtrIDT = CPUMGetGuestIDTR(pVM, &cbIDT);
-    if (iTrap * sizeof(VBOXIDTE) >= cbIDT)
-        return VERR_INVALID_PARAMETER;  /* Silently ignore out of range requests. */
+    /* Unmark it for relocation purposes. */
+    ASMBitClear(&pVM->trpm.s.au32IdtPatched[0], iTrap);
 
-    /*
-     * Read the guest IDT entry.
-     */
-    VBOXIDTE GuestIdte;
-    int rc = PGMPhysReadGCPtr(pVM, &GuestIdte, GCPtrIDT + iTrap * sizeof(GuestIdte),  sizeof(GuestIdte));
-    if (VBOX_FAILURE(rc))
+    RTSEL               SelCS         = CPUMGetHyperCS(pVM);
+    PVBOXIDTE           pIdte         = &pVM->trpm.s.aIdt[iTrap];
+    PVBOXIDTE_GENERIC   pIdteTemplate = &g_aIdt[iTrap];
+    if (pIdte->Gen.u1Present)
     {
-        AssertMsgRC(rc, ("Failed to read IDTE! rc=%Vrc\n", rc));
-        return rc;
-    }
+        Assert(pIdteTemplate->u16OffsetLow == TRPM_HANDLER_INT);
+        Assert(sizeof(RTGCPTR) <= sizeof(aGCPtrs[0]));
+        RTGCPTR Offset = (RTGCPTR)aGCPtrs[pIdteTemplate->u16OffsetLow];
 
-    if (    GuestIdte.Gen.u1Present
-        &&  GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32
-        &&  GuestIdte.Gen.u2DPL == 3)
-    {
-        LogFlow(("TRPMR3SetHandler: %X %04X:%04X%04X gate=%d dpl=%d present=%d\n", iTrap,
-                 GuestIdte.Gen.u16SegSel, GuestIdte.Gen.u16OffsetHigh, GuestIdte.Gen.u16OffsetLow,
-                 GuestIdte.Gen.u5Type2, GuestIdte.Gen.u2DPL, GuestIdte.Gen.u1Present));
+        /*
+         * Generic handlers have different entrypoints for each possible
+         * vector number. These entrypoints make a sort of an array with
+         * 8 byte entries where the vector number is the index.
+         * See TRPMGCHandlersA.asm for details.
+         */
+        Offset += iTrap * 8;
 
-        PVBOXIDTE pIdte = &pVM->trpm.s.aIdt[iTrap];
-        GuestIdte.Gen.u16SegSel |= 1;  // ring 1
-        *pIdte = GuestIdte;
+        if (pIdte->Gen.u5Type2 != VBOX_IDTE_TYPE2_TASK)
+        {
+            pIdte->Gen.u16OffsetLow  = Offset & 0xffff;
+            pIdte->Gen.u16OffsetHigh = Offset >> 16;
+            pIdte->Gen.u16SegSel     = SelCS;
+        }
     }
 
     return VINF_SUCCESS;
 }
-#endif
 
 
 /**
@@ -1078,40 +1079,6 @@ TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTGCPTR GCPtr)
         }
     }
     return ~0;
-}
-
-
-/**
- * Marks IDT entry as dirty
- *
- * @returns Guest trap handler address or TRPM_INVALID_HANDLER if none installed
- * @param   pVM         The VM to operate on.
- * @param   iTrap       Interrupt/trap number.
- * @param   fSetDirty   Set or clear
- */
-TRPMR3DECL(int) TRPMR3SetGuestTrapHandlerDirty(PVM pVM, unsigned iGate, bool fSetDirty)
-{
-    AssertReturn(iGate < ELEMENTS(pVM->trpm.s.aIdt), VERR_INVALID_PARAMETER);
-
-    if (fSetDirty)
-        ASMBitSet(&pVM->trpm.s.au32IdtDirty[0], iGate);
-    else
-        ASMBitClear(&pVM->trpm.s.au32IdtDirty[0], iGate);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Checks if IDT entry is dirty
- *
- * @returns dirty status
- * @param   pVM         The VM to operate on.
- * @param   iTrap       Interrupt/trap number.
- */
-TRPMR3DECL(bool) TRPMR3IsGuestTrapHandlerDirty(PVM pVM, unsigned iGate)
-{
-    return ASMBitTest(&pVM->trpm.s.au32IdtDirty[0], iGate);
 }
 
 
@@ -1161,6 +1128,10 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
     {
         /* clear trap handler */
         Log(("TRPMR3SetGuestTrapHandler: clear handler %x\n", iTrap));
+
+        if (ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap))
+            trpmR3ClearPassThroughHandler(pVM, iTrap);
+
         pVM->trpm.s.aGuestTrapHandler[iTrap] = TRPM_INVALID_HANDLER;
         return VINF_SUCCESS;
     }
@@ -1228,64 +1199,6 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
         return VINF_SUCCESS;
     }
     return VERR_INVALID_PARAMETER;
-}
-
-
-/**
- * Clear interrupt gate handler (reset to default handler)
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   iTrap       Trap/interrupt gate number.
- */
-TRPMR3DECL(int) TRPMR3ClearHandler(PVM pVM, unsigned iTrap)
-{
-    /** @todo cleanup TRPMR3ClearHandler()! */
-    RTGCPTR aGCPtrs[TRPM_HANDLER_MAX];
-    int rc;
-
-    memset(aGCPtrs, 0, sizeof(aGCPtrs));
-
-    rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerInterupt", &aGCPtrs[TRPM_HANDLER_INT]);
-    AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerInterupt in VMMGC.gc!\n"));
-
-    if (    iTrap < TRPM_HANDLER_INT_BASE
-        ||  iTrap >= ELEMENTS(pVM->trpm.s.aIdt))
-    {
-        AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %#x!\n", iTrap));
-        return VERR_INVALID_PARAMETER;
-    }
-    memcpy(&pVM->trpm.s.aIdt[iTrap], &g_aIdt[iTrap], sizeof(pVM->trpm.s.aIdt[0]));
-
-    /* Unmark it for relocation purposes. */
-    ASMBitClear(&pVM->trpm.s.au32IdtPatched[0], iTrap);
-
-    RTSEL               SelCS         = CPUMGetHyperCS(pVM);
-    PVBOXIDTE           pIdte         = &pVM->trpm.s.aIdt[iTrap];
-    PVBOXIDTE_GENERIC   pIdteTemplate = &g_aIdt[iTrap];
-    if (pIdte->Gen.u1Present)
-    {
-        Assert(pIdteTemplate->u16OffsetLow == TRPM_HANDLER_INT);
-        Assert(sizeof(RTGCPTR) <= sizeof(aGCPtrs[0]));
-        RTGCPTR Offset = (RTGCPTR)aGCPtrs[pIdteTemplate->u16OffsetLow];
-
-        /*
-         * Generic handlers have different entrypoints for each possible
-         * vector number. These entrypoints make a sort of an array with
-         * 8 byte entries where the vector number is the index.
-         * See TRPMGCHandlersA.asm for details.
-         */
-        Offset += iTrap * 8;
-
-        if (pIdte->Gen.u5Type2 != VBOX_IDTE_TYPE2_TASK)
-        {
-            pIdte->Gen.u16OffsetLow  = Offset & 0xffff;
-            pIdte->Gen.u16OffsetHigh = Offset >> 16;
-            pIdte->Gen.u16SegSel     = SelCS;
-        }
-    }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -1400,10 +1313,9 @@ TRPMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
                 STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
                 return VINF_EM_RESCHEDULE_HWACC;
             }
-            /* If the guest gate is marked dirty, then we will check again if we can patch it. */
-            if (TRPMR3IsGuestTrapHandlerDirty(pVM, u8Interrupt))
+            /* If the guest gate is not patched, then we will check (again) if we can patch it. */
+            if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] == TRPM_INVALID_HANDLER)
             {
-                Assert(TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER);
                 CSAMR3CheckGates(pVM, u8Interrupt, 1);
                 Log(("TRPMR3InjectEvent: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
             }

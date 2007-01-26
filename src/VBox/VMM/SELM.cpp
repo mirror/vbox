@@ -1477,8 +1477,8 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 /** @note the ring 0 stack selector and base address are updated on demand in this case. */
 
                 /** @todo handle these dependencies better! */
-                TRPMR3ClearHandler(pVM, 0x2E);
-                TRPMR3ClearHandler(pVM, 0x80);
+                TRPMR3SetGuestTrapHandler(pVM, 0x2E, TRPM_INVALID_HANDLER);
+                TRPMR3SetGuestTrapHandler(pVM, 0x80, TRPM_INVALID_HANDLER);
                 pVM->selm.s.fSyncTSSRing0Stack = true;
  	        }
             VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);

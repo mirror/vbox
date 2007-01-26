@@ -46,7 +46,6 @@ struc TRPM
     .achPadding1        resb 4
     .aIdt               resd 512
     .au32IdtPatched     resd 8
-    .au32IdtDirty       resd 8
     .aTmpTrapHandlers   resd 256
 
     .GCPtrIdt           resd 1

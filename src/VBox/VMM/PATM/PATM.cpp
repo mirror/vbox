@@ -1593,13 +1593,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
 
         if (pCpu->pCurInstr->opcode == OP_CALL)
         {
-            if (PATMIsPatchGCAddr(pVM, pTargetGC))
-            {
-                pTargetGC = PATMR3QueryPatchGCPtr(pVM, pTargetGC);
-                if (pTargetGC == 0)
-                    return VERR_PATCHING_REFUSED;
-            }
-
+            Assert(!PATMIsPatchGCAddr(pVM, pTargetGC));
             rc = patmPatchGenCall(pVM, pPatch, pCpu, pCurInstrGC, pTargetGC, false);
             if (VBOX_FAILURE(rc))
                 goto end;
@@ -4862,10 +4856,7 @@ PATMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTGCPTR pInstrGC)
 
             iGate = TRPMR3QueryGateByHandler(pVM, PATCHCODE_PTR_GC(pPatch));
             if (iGate != (uint32_t)~0)
-            {
                 TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
-                TRPMR3SetGuestTrapHandlerDirty(pVM, iGate, false);
-            }
         }
 
         /* Mark the entry with a breakpoint in case somebody else calls it later on (cli patch used as a function, function, trampoline or idt patches) */
@@ -5541,27 +5532,11 @@ PATMR3DECL(RTGCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTGCPTR pAddrGC)
 
     // Find the patch record
     pPatchRec = (PPATMPATCHREC)RTAvloGCPtrGet(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pAddrGC);
-    if (pPatchRec)
-    {
+    /** @todo we should only use patches that are enabled! always did this, but it's incorrect! */
+    if (pPatchRec && (pPatchRec->patch.uState == PATCH_ENABLED || pPatchRec->patch.uState == PATCH_DIRTY))
         return PATCHCODE_PTR_GC(&pPatchRec->patch);
-    }
-    return 0;
-}
 
-/**
- * Handle traps in patch code.
- *
- * The current guest trap has an EIP inside patch code space.
- *
- * @returns On success VINF_SUCCESS or between VINF_EM_FIRST and VINF_EM_LAST.
- * @returns On failure appropriate status code.
- * @param   pVM         VM Handle.
- * @param   rc          The GC return code.
- */
-PATMR3DECL(int) PATMR3Trap(PVM pVM, int rc)
-{
-    /** @todo Implement PATMR3Trap! */
-    return VERR_NOT_IMPLEMENTED;
+    return 0;
 }
 
 /**

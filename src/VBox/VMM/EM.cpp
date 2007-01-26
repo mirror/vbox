@@ -2057,6 +2057,23 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                 rc = VERR_EM_RAW_PATCH_CONFLICT;
                 break;
             }
+            uint8_t u8Interrupt;
+
+            Assert(TRPMHasTrap(pVM));
+            Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
+
+            if (TRPMHasTrap(pVM))
+            {
+                u8Interrupt = TRPMGetTrapNo(pVM);
+
+                /* If the guest gate is marked unpatched, then we will check again if we can patch it. */
+                if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER)
+                {
+                    CSAMR3CheckGates(pVM, u8Interrupt, 1);
+                    Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
+                    /** @note If it was successful, then we could go back to raw mode, but let's keep things simple for now. */
+                }
+            }
             rc = emR3RawGuestTrap(pVM);
             break;
 
@@ -2134,6 +2151,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Invoked Interrupt gate - must directly (!) go to the recompiler.
          */
         case VINF_EM_RAW_INTERRUPT_PENDING:
+        case VINF_EM_RAW_RING_SWITCH_INT:
         {
             uint8_t u8Interrupt;
 
@@ -2144,10 +2162,9 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
             {
                 u8Interrupt = TRPMGetTrapNo(pVM);
 
-                /* If the guest gate is marked dirty, then we will check again if we can patch it. */
-                if (TRPMR3IsGuestTrapHandlerDirty(pVM, u8Interrupt))
+                /* If the guest gate is marked unpatched, then we will check again if we can patch it. */
+                if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER)
                 {
-                    Assert(TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER);
                     CSAMR3CheckGates(pVM, u8Interrupt, 1);
                     Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
                     /** @note If it was successful, then we could go back to raw mode, but let's keep things simple for now. */
@@ -2156,10 +2173,6 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
             rc = VINF_EM_RESCHEDULE_REM;
             break;
         }
-
-        case VINF_EM_RAW_RING_SWITCH_INT:
-            rc = VINF_EM_RESCHEDULE_REM;
-            break;
 
         /*
          * Other ring switch types.

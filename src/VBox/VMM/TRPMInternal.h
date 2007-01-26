@@ -129,9 +129,6 @@ typedef struct TRPM
     /** Bitmap for IDTEs that contain PATM handlers. (needed for relocation) */
     uint32_t        au32IdtPatched[8];
 
-    /** Bitmap for IDTEs that were changed. */
-    uint32_t        au32IdtDirty[8];
-
     /** Temporary Hypervisor trap handlers.
      * NULL means default action. */
     RTGCPTR         aTmpTrapHandlers[256];
