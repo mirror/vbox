@@ -150,7 +150,7 @@ vboxaddrunning() {
 
 start() {
     if ! test -f $PIDFILE; then
-        echo -n "Starting vboxadd-timesync ";
+        echo -n "Starting VirtualBox host to guest time synchronisation";
         vboxaddrunning || {
             echo "VirtualBox Additions module not loaded!"
             exit 1
@@ -165,7 +165,7 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        echo -n "Stopping vboxadd-timesync";
+        echo -n "Stopping VirtualBox host to guest time synchronisation";
         vboxaddrunning || {
             echo "VirtualBox Additions module not loaded!"
             exit 1
