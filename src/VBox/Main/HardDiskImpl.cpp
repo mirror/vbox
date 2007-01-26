@@ -2253,7 +2253,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
                     tr ("UUID {%Vuuid} of the parent image '%ls' stored in "
                         "the hard disk image file '%s' doesn't match "
                         "UUID {%Vuuid} stored in the registry"),
-                    parentId.ptr(), mParent->toString().raw(),
+                    parentId.raw(), mParent->toString().raw(),
                     filePath.raw(), mParent->id().raw());
                 break;
             }
@@ -2261,9 +2261,10 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
         else if (!parentId.isEmpty())
         {
             errMsg = Utf8StrFmt (
-                tr ("Hard disk image '%s' is a differencing image and "
-                    "cannot be opened directly"),
-                filePath.raw());
+                tr ("Hard disk image '%s' is a differencing image that is linked "
+                    "to a hard disk with UUID {%Vuuid} and cannot be used "
+                    "directly as a base hard disk"),
+                filePath.raw(), parentId.raw());
             break;
         }
 
