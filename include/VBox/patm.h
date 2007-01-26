@@ -439,18 +439,6 @@ PATMR3DECL(HCPTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTGCPTR pAddrGC);
 PATMR3DECL(PPATMGCSTATE) PATMR3QueryGCStateHC(PVM pVM);
 
 /**
- * Handle traps in patch code.
- *
- * The current guest trap has an EIP inside patch code space.
- *
- * @returns On success VINF_SUCCESS or between VINF_EM_FIRST and VINF_EM_LAST.
- * @returns On failure appropriate status code.
- * @param   pVM         VM Handle.
- * @param   rc          The GC return code.
- */
-PATMR3DECL(int) PATMR3Trap(PVM pVM, int rc);
-
-/**
  * Handle trap inside patch code
  *
  * @returns VBox status code.

@@ -338,25 +338,6 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
 TRPMR3DECL(RTGCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap);
 
 /**
- * Marks IDT entry as dirty
- *
- * @returns Guest trap handler address or TRPM_INVALID_HANDLER if none installed
- * @param   pVM         The VM to operate on.
- * @param   iTrap       Interrupt/trap number.
- * @param   fSetDirty   Set or clear
- */
-TRPMR3DECL(int) TRPMR3SetGuestTrapHandlerDirty(PVM pVM, unsigned iGate, bool fSetDirty);
-
-/**
- * Checks if IDT entry is dirty
- *
- * @returns dirty status
- * @param   pVM         The VM to operate on.
- * @param   iTrap       Interrupt/trap number.
- */
-TRPMR3DECL(bool) TRPMR3IsGuestTrapHandlerDirty(PVM pVM, unsigned iGate);
-
-/**
  * Disable IDT monitoring and syncing
  *
  * @param   pVM         The VM to operate on.
@@ -370,15 +351,6 @@ TRPMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM);
  * @param   pVM         The VM to operate on.
  */
 TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM);
-
-/**
- * Clear interrupt gate handler (reset to default handler)
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   iTrap       Trap/interrupt gate number.
- */
-TRPMR3DECL(int) TRPMR3ClearHandler(PVM pVM, unsigned iTrap);
 
 /**
  * Check if address is a gate handler (interrupt/trap/task/anything).
