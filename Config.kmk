@@ -749,8 +749,12 @@ ifneq ($(VBOX_GCC_TOOL),$(VBOX_GCC32_TOOL))
  ifeq ($(origin VBOX_GCC32_Wno-variadic-macros),undefined)
   export VBOX_GCC32_Wno-variadic-macros := $(call VBOX_GCC32_CHECK_CXX,-Wno-variadic-macros,)
  endif
+ ifndef VBOX_GCC32_LIBGCC
+  export VBOX_GCC32_LIBGCC := $(shell $(TOOL_$(VBOX_GCC32_TOOL)_CC) -print-libgcc-file-name)
+ endif
 else
  VBOX_GCC32_Wno-variadic-macros ?= $(VBOX_GCC_Wno-variadic-macros)
+ VBOX_GCC32_LIBGCC ?= $(VBOX_GCC_LIBGCC)
 endif
 
 # Find the compiler defines (for IPRT no-crt).
@@ -918,7 +922,7 @@ TEMPLATE_VBOXGC_LDFLAGS             = -nostdlib -Bsymbolic
 TEMPLATE_VBOXGC_LDFLAGS            += -S
 TEMPLATE_VBOXGC_LDFLAGS.release     = -S
 TEMPLATE_VBOXGC_LIBS                = \
-	$(VBOX_GCC_LIBGCC) # instricts
+	$(VBOX_GCC32_LIBGCC) # instricts
 endif
 
 ifeq ($(VBOX_LDR_FMT32),macho)
@@ -928,7 +932,7 @@ TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-tri
 TEMPLATE_VBOXGC_LDFLAGS             = -dynamic -nostdlib
 #TEMPLATE_VBOXGC_LDFLAGS.release     = -Wl,-S ???
 TEMPLATE_VBOXGC_LIBS                = \
-	$(VBOX_GCC_LIBGCC) # instricts
+	$(VBOX_GCC32_LIBGCC) # instricts
 endif
 
 ifeq ($(VBOX_LDR_FMT32),lx)
@@ -937,7 +941,7 @@ TEMPLATE_VBOXGC_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-tri
 TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXGC_LDFLAGS             = -Zdll -nostdlib
 TEMPLATE_VBOXGC_LIBS                = \
-	$(VBOX_GCC_LIBGCC) \
+	$(VBOX_GCC32_LIBGCC) \
 	$(OBJ_SYS0) \
 	end
 endif
