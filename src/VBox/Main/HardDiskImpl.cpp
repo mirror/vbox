@@ -66,10 +66,10 @@ struct VDITask
     ComObjPtr <HVirtualDiskImage> vdi;
     ComObjPtr <Progress> progress;
 
-    // for CreateDynamic, CreateStatic
+    /* for CreateDynamic, CreateStatic */
     uint64_t size;
 
-    // for CloneToImage
+    /* for CloneToImage */
     ComObjPtr <HardDisk> source;
 };
 
@@ -83,7 +83,7 @@ static DECLCALLBACK(int) progressCallback (PVM /* pVM */, unsigned uPercent, voi
 {
     Progress *progress = static_cast <Progress *> (pvUser);
 
-    // update the progress object
+    /* update the progress object */
     if (progress)
         progress->notifyProgress (uPercent);
 
@@ -171,7 +171,7 @@ void HardDisk::protectedUninit (AutoLock &alock)
     Assert (alock.belongsTo (this));
     Assert (isReady());
 
-    // uninit all children
+    /* uninit all children */
     uninitDependentChildren();
 
     setReady (false);
@@ -331,7 +331,7 @@ STDMETHODIMP HardDisk::COMGETTER(AllAccessible) (BOOL *aAllAccessible)
     {
         HRESULT rc = S_OK;
 
-        // check the accessibility state of all ancestors
+        /* check the accessibility state of all ancestors */
         ComObjPtr <HardDisk> parent = (HardDisk *) mParent;
         while (parent)
         {
@@ -412,7 +412,7 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
 
     HRESULT rc = S_OK;
 
-    // create a project object
+    /* create a project object */
     ComObjPtr <Progress> progress;
     progress.createObject();
     rc = progress->init (mVirtualBox, (IVirtualDiskImage *) this,
@@ -420,13 +420,13 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
                          FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);
 
-    // create an imageless resulting object
+    /* create an imageless resulting object */
     ComObjPtr <HVirtualDiskImage> image;
     image.createObject();
     rc = image->init (mVirtualBox, NULL, NULL);
     CheckComRCReturnRC (rc);
 
-    // append the default path if only a name is given
+    /* append the default path if only a name is given */
     Bstr path = aFilePath;
     {
         Utf8Str fp = aFilePath;
@@ -440,11 +440,11 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
         }
     }
 
-    // set the desired path
+    /* set the desired path */
     rc = image->setFilePath (path);
     CheckComRCReturnRC (rc);
 
-    // ensure the directory exists
+    /* ensure the directory exists */
     {
         Utf8Str imageDir = image->filePath();
         RTPathStripFilename (imageDir.mutableRaw());
@@ -461,19 +461,19 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
         }
     }
 
-    // mark as busy (being created)
-    // (VDI task thread will unmark it)
+    /* mark as busy (being created)
+     * (VDI task thread will unmark it) */
     image->setBusy();
 
-    // fill in a VDI task data
+    /* fill in a VDI task data */
     VDITask *task = new VDITask (VDITask::CloneToImage, image, progress);
     task->source = this;
 
-    // increase readers until finished
-    // (VDI task thread will decrease them)
+    /* increase readers until finished
+     * (VDI task thread will decrease them) */
     addReader();
 
-    // create the hard disk creation thread, pass operation data
+    /* create the hard disk creation thread, pass operation data */
     int vrc = RTThreadCreate (NULL, HVirtualDiskImage::vdiTaskThread,
                               (void *) task, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER,
                               0, "VDITask");
@@ -486,7 +486,7 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
         return E_FAIL;
     }
 
-    // return interfaces to the caller
+    /* return interfaces to the caller */
     image.queryInterfaceTo (aImage);
     progress.queryInterfaceTo (aProgress);
 
@@ -705,7 +705,7 @@ bool HardDisk::hasForeignChildren()
 
     AssertReturn (!mMachineId.isEmpty(), false);
 
-    // check all children
+    /* check all children */
     AutoLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
@@ -745,7 +745,7 @@ HRESULT HardDisk::setBusyWithChildren()
         AutoLock childLock (child);
         if (child->mReaders > 0 || child->mBusy)
         {
-            // reset the busy flag of all previous children
+            /* reset the busy flag of all previous children */
             while (it != children().begin())
                 (*(-- it))->clearBusy();
             return setError (E_FAIL, errMsg, child->toString().raw());
@@ -905,7 +905,7 @@ HRESULT HardDisk::createDiffHardDisk (const Bstr &aFolder, const Guid &aMachineI
     Utf8Str filePathTo = Utf8StrFmt ("%ls%c{%Vuuid}.vdi",
                                      aFolder.raw(), RTPATH_DELIMITER, id.ptr());
 
-    // try to make the path relative to the vbox home dir
+    /* try to make the path relative to the vbox home dir */
     const char *filePathToRel = filePathTo;
     {
         const Utf8Str &homeDir = mVirtualBox->homeDir();
@@ -913,7 +913,7 @@ HRESULT HardDisk::createDiffHardDisk (const Bstr &aFolder, const Guid &aMachineI
             filePathToRel = (filePathToRel + homeDir.length() + 1);
     }
 
-    // first ensure the directory exists
+    /* first ensure the directory exists */
     {
         Utf8Str dir = aFolder;
         if (!RTDirExists (dir))
@@ -931,7 +931,7 @@ HRESULT HardDisk::createDiffHardDisk (const Bstr &aFolder, const Guid &aMachineI
 
     alock.leave();
 
-    // call storage type specific diff creation method
+    /* call storage type specific diff creation method */
     HRESULT rc = createDiffImage (id, filePathTo, aProgress);
 
     alock.enter();
@@ -944,7 +944,7 @@ HRESULT HardDisk::createDiffHardDisk (const Bstr &aFolder, const Guid &aMachineI
                     TRUE /* aRegistered  */);
     CheckComRCReturnRC (rc);
 
-    // associate the created hard disk with the given machine
+    /* associate the created hard disk with the given machine */
     vdi->setMachineId (aMachineId);
 
     rc = mVirtualBox->registerHardDisk (vdi, VirtualBox::RHD_Internal);
@@ -1010,13 +1010,13 @@ HRESULT HardDisk::loadSettings (CFGNODE aHDNode)
 {
     AssertReturn (aHDNode, E_FAIL);
 
-    Guid uuid; // uuid (required)
+    Guid uuid; /* uuid (required) */
     CFGLDRQueryUUID (aHDNode, "uuid", uuid.ptr());
     mId = uuid;
 
     if (!isDifferencing())
     {
-        Bstr type; // type (required for <HardDisk> nodes only)
+        Bstr type; /* type (required for <HardDisk> nodes only) */
         CFGLDRQueryBSTR (aHDNode, "type", type.asOutParam());
         if (type == L"normal")
             mType = HardDiskType_NormalHardDisk;
@@ -1035,7 +1035,7 @@ HRESULT HardDisk::loadSettings (CFGNODE aHDNode)
     if (FAILED (rc))
         return rc;
 
-    // load all children
+    /* load all children */
     unsigned count = 0;
     CFGLDRCountChildren (aHDNode, "DiffHardDisk", &count);
     for (unsigned i = 0; i < count && SUCCEEDED (rc); ++ i)
@@ -1082,12 +1082,12 @@ HRESULT HardDisk::saveSettings (CFGNODE aHDNode)
 {
     AssertReturn (aHDNode, E_FAIL);
 
-    // uuid (required)
+    /* uuid (required) */
     CFGLDRSetUUID (aHDNode, "uuid", mId.ptr());
 
     if (!isDifferencing())
     {
-        // type (required)
+        /* type (required) */
         const char *type = NULL;
         switch (mType)
         {
@@ -1106,7 +1106,7 @@ HRESULT HardDisk::saveSettings (CFGNODE aHDNode)
 
     HRESULT rc = S_OK;
 
-    // save all children
+    /* save all children */
     AutoLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end() && SUCCEEDED (rc);
@@ -1151,6 +1151,9 @@ HRESULT HVirtualDiskImage::FinalConstruct()
         return rc;
 
     mState = NotCreated;
+
+    mStateCheckSem = NIL_RTSEMEVENTMULTI;
+    mStateCheckWaiters = 0;
 
     mSize = 0;
     mActualSize = 0;
@@ -1346,7 +1349,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Size) (ULONG64 *aSize)
     AutoLock alock (this);
     CHECK_READY();
 
-    // only a non-differencing image knows the logical size
+    /* only a non-differencing image knows the logical size */
     if (isDifferencing())
         return root()->COMGETTER(Size) (aSize);
 
@@ -1520,7 +1523,31 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
     AutoLock alock (this);
     CHECK_READY();
 
-    // check the basic accessibility
+    if (mStateCheckSem != NIL_RTSEMEVENTMULTI)
+    {
+        /* An accessibility check in progress on some other thread,
+         * wait for it to finish. */
+
+        ComAssertRet (mStateCheckWaiters != ~0, E_FAIL);
+        ++ mStateCheckWaiters;
+        alock.leave();
+        
+        int vrc = RTSemEventMultiWait (mStateCheckSem, RT_INDEFINITE_WAIT);
+
+        alock.enter();
+        AssertReturn (mStateCheckWaiters != 0, E_FAIL);
+        -- mStateCheckWaiters;
+        if (mStateCheckWaiters == 0)
+        {
+            RTSemEventMultiDestroy (mStateCheckSem);
+            mStateCheckSem = NIL_RTSEMEVENTMULTI;
+        }
+        
+        /* don't touch aAccessError, it has been already set */
+        return S_OK;
+    }
+
+    /* check the basic accessibility */
     HRESULT rc = HardDisk::getAccessible (aAccessError);
     if (FAILED (rc) || !aAccessError.isNull())
         return rc;
@@ -1528,10 +1555,10 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
     if (mState >= Created)
     {
         return queryInformation (&aAccessError);
-        // if we fail here, this means something like UUID mismatch.
-        // Do nothing, just return the failure (error info is already
-        // set by queryInformation()), in hope that one of subsequent
-        // attempts to check for acessibility will succeed
+        /* if we fail here, this means something like UUID mismatch.
+         * Do nothing, just return the failure (error info is already
+         * set by queryInformation()), in hope that one of subsequent
+         * attempts to check for acessibility will succeed */
     }
 
     aAccessError = Utf8StrFmt ("Hard disk image '%ls' is not yet created",
@@ -1702,7 +1729,7 @@ HVirtualDiskImage::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
     alock.enter();
     releaseReader();
 
-    // update the UUID to correspond to the file name
+    /* update the UUID to correspond to the file name */
     if (VBOX_SUCCESS (vrc))
         vrc = VDISetImageUUIDs (aTargetPath, aId, NULL, NULL, NULL);
 
@@ -1756,7 +1783,7 @@ HVirtualDiskImage::cloneDiffImage (const Bstr &aFolder, const Guid &aMachineId,
     Utf8Str filePathTo = Utf8StrFmt ("%ls%c{%Vuuid}.vdi",
                                      aFolder.raw(), RTPATH_DELIMITER, id.ptr());
 
-    // try to make the path relative to the vbox home dir
+    /* try to make the path relative to the vbox home dir */
     const char *filePathToRel = filePathTo;
     {
         const Utf8Str &homeDir = mVirtualBox->homeDir();
@@ -1764,7 +1791,7 @@ HVirtualDiskImage::cloneDiffImage (const Bstr &aFolder, const Guid &aMachineId,
             filePathToRel = (filePathToRel + homeDir.length() + 1);
     }
 
-    // first ensure the directory exists
+    /* first ensure the directory exists */
     {
         Utf8Str dir = aFolder;
         if (!RTDirExists (dir))
@@ -1790,7 +1817,7 @@ HVirtualDiskImage::cloneDiffImage (const Bstr &aFolder, const Guid &aMachineId,
 
     alock.enter();
 
-    // get modification and parent UUIDs of this image
+    /* get modification and parent UUIDs of this image */
     RTUUID modUuid, parentUuid, parentModUuid;
     if (VBOX_SUCCESS (vrc))
         vrc = VDIGetImageUUIDs (filePathFull, NULL, &modUuid,
@@ -1814,7 +1841,7 @@ HVirtualDiskImage::cloneDiffImage (const Bstr &aFolder, const Guid &aMachineId,
     if (FAILED (rc))
         return rc;
 
-    // associate the created hard disk with the given machine
+    /* associate the created hard disk with the given machine */
     vdi->setMachineId (aMachineId);
 
     rc = mVirtualBox->registerHardDisk (vdi, VirtualBox::RHD_Internal);
@@ -1899,12 +1926,12 @@ HRESULT HVirtualDiskImage::mergeImageToParent (Progress *aProgress)
             ComObjPtr <HVirtualDiskImage> child = (*it)->asVDI();
             AutoLock childLock (child);
 
-            // reparent the child
+            /* reparent the child */
             child->mParent = mParent;
             if (mParent)
                 mParent->addDependentChild (child);
 
-            // change the parent UUID in the image as well
+            /* change the parent UUID in the image as well */
             RTUUID parentUuid, parentModUuid;
             vrc = VDIGetImageUUIDs (Utf8Str (mParent->asVDI()->mFilePathFull),
                                     &parentUuid, &parentModUuid, NULL, NULL);
@@ -1932,7 +1959,7 @@ HRESULT HVirtualDiskImage::mergeImageToParent (Progress *aProgress)
             return rc;
     }
 
-    // detach all our children to avoid their uninit in #uninit()
+    /* detach all our children to avoid their uninit in #uninit() */
     removeDependentChildren();
 
     mParent->clearBusy();
@@ -1976,7 +2003,7 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
     AutoLock alock (this);
     CHECK_READY();
 
-    // this must be a diff image
+    /* this must be a diff image */
     AssertReturn (isDifferencing(), E_FAIL);
 
     ComAssertRet (isBusy() == true, E_FAIL);
@@ -1990,7 +2017,7 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
 
         AutoLock chLock (childrenLock());
 
-        // iterate over a copy since we will modify the list
+        /* iterate over a copy since we will modify the list */
         HardDiskList list = children();
 
         for (HardDiskList::const_iterator it = list.begin();
@@ -2022,12 +2049,12 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
                 break;
             }
 
-            // reparent the child
+            /* reparent the child */
             child->mParent = mParent;
             if (mParent)
                 mParent->addDependentChild (child);
 
-            // change the parent UUID in the image as well
+            /* change the parent UUID in the image as well */
             RTUUID parentUuid, parentModUuid;
             vrc = VDIGetImageUUIDs (Utf8Str (mParent->asVDI()->mFilePathFull),
                                     &parentUuid, &parentModUuid, NULL, NULL);
@@ -2050,10 +2077,10 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
                 break;
             }
 
-            // detach child to avoid its uninit in #uninit()
+            /* detach child to avoid its uninit in #uninit() */
             removeDependentChild (child);
 
-            // remove the busy flag
+            /* remove the busy flag */
             child->clearBusy();
         }
 
@@ -2093,7 +2120,7 @@ HRESULT HVirtualDiskImage::wipeOutImage()
     vrc = VDICreateDifferenceImage (filePathFull,
                                     Utf8Str (mParent->asVDI()->mFilePathFull),
                                     NULL, NULL, NULL);
-    // update the UUID to correspond to the file name
+    /* update the UUID to correspond to the file name */
     if (VBOX_SUCCESS (vrc))
         vrc = VDISetImageUUIDs (filePathFull, mId, NULL, NULL, NULL);
 
@@ -2119,7 +2146,7 @@ HRESULT HVirtualDiskImage::setFilePath (const BSTR aFilePath)
 {
     if (aFilePath && *aFilePath)
     {
-        // get the full file name
+        /* get the full file name */
         char filePathFull [RTPATH_MAX];
         int vrc = RTPathAbsEx (mVirtualBox->homeDir(), Utf8Str (aFilePath),
                                filePathFull, sizeof (filePathFull));
@@ -2140,21 +2167,40 @@ HRESULT HVirtualDiskImage::setFilePath (const BSTR aFilePath)
 }
 
 /**
- *  Helper to query information about the VDI hard disk
+ *  Helper to query information about the VDI hard disk.
  *
  *  @param aAccessError not used when NULL, otherwise see #getAccessible()
- *  @note
- *      Must be called from under the object's lock!
+ *
+ *  @note Must be called from under the object's lock, only after
+ *        CHECK_BUSY_AND_READERS() succeeds.
  */
 HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
 {
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    /* create a lock object to completely release it later */
+    AutoLock alock (this);
+
+    AssertReturn (mStateCheckWaiters == 0, E_FAIL);
+
     ComAssertRet (mState >= Created, E_FAIL);
 
     HRESULT rc = S_OK;
     int vrc = VINF_SUCCESS;
 
-    /* stupid-stupid-stupid code. VBoxVHDD management is sick.
-     * we're opening a file three times to get three bits of information */
+    /* lazily create a semaphore */
+    vrc = RTSemEventMultiCreate (&mStateCheckSem);
+    ComAssertRCRet (vrc, E_FAIL);
+
+    /* go to Busy state to prevent any concurrent modifications
+     * after releasing the lock below (to unblock getters before 
+     * a lengthy operation) */
+    setBusy();
+
+    alock.leave();
+    
+    /* VBoxVHDD management interface needs to be optimized: we're opening a
+     * file three times in a raw to get three bits of information. */
 
     Utf8Str filePath = mFilePathFull;
 
@@ -2164,6 +2210,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
         Guid id, parentId;
         vrc = VDICheckImage (filePath, NULL, NULL, NULL,
                              id.ptr(), parentId.ptr(), NULL, 0);
+
         if (VBOX_FAILURE (vrc))
         {
             /* mId is empty only when constructing a HVirtualDiskImage object
@@ -2251,14 +2298,15 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
             if (VBOX_FAILURE (vrc))
                 break;
         }
-
-        if (aAccessError)
-            aAccessError->setNull();
-
-        mState = Accessible;
     }
     while (0);
 
+    /* enter the lock again */
+    alock.enter();
+    
+    /* remove the busy flag */
+    clearBusy();
+    
     if (VBOX_FAILURE (vrc) || FAILED (rc))
     {
         Log (("HVirtualDiskImage::queryInformation(): "
@@ -2272,6 +2320,25 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
 
         /* downgrade to not accessible */
         mState = Created;
+    }
+    else
+    {
+        if (aAccessError)
+            aAccessError->setNull();
+
+        mState = Accessible;
+    }
+    
+    /* inform waiters if there are any */
+    if (mStateCheckWaiters > 0)
+    {
+        RTSemEventMultiSignal (mStateCheckSem);
+    }
+    else
+    {
+        /* delete the semaphore ourselves */
+        RTSemEventMultiDestroy (mStateCheckSem);
+        mStateCheckSem = NIL_RTSEMEVENTMULTI;
     }
 
     return rc;
@@ -2301,7 +2368,7 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
             tr ("Cannot create a hard disk image using an empty (null) file path"),
             mFilePathFull.raw());
 
-    // first ensure the directory exists
+    /* first ensure the directory exists */
     {
         Utf8Str imageDir = mFilePathFull;
         RTPathStripFilename (imageDir.mutableRaw());
@@ -2318,7 +2385,7 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
         }
     }
 
-    // check whether the given file exists or not
+    /* check whether the given file exists or not */
     RTFILE file;
     int vrc = RTFileOpen (&file, Utf8Str (mFilePathFull),
                           RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
@@ -2340,7 +2407,7 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
         }
     }
 
-    // check VDI size limits
+    /* check VDI size limits */
     {
         HRESULT rc;
         ULONG64 maxVDISize;
@@ -2358,7 +2425,7 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
 
     HRESULT rc;
 
-    // create a project object
+    /* create a project object */
     ComObjPtr <Progress> progress;
     progress.createObject();
     {
@@ -2369,18 +2436,18 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
         CheckComRCReturnRC (rc);
     }
 
-    // mark as busy (being created)
-    // (VDI task thread will unmark it)
+    /* mark as busy (being created)
+     * (VDI task thread will unmark it) */
     setBusy();
 
-    // fill in a VDI task data
+    /* fill in VDI task data */
     VDITask *task = new VDITask (aDynamic ? VDITask::CreateDynamic
                                           : VDITask::CreateStatic,
                                  this, progress);
     task->size = aSize;
-    task->size *= 1024 * 1024; // convert to bytes
+    task->size *= 1024 * 1024; /* convert to bytes */
 
-    // create the hard disk creation thread, pass operation data
+    /* create the hard disk creation thread, pass operation data */
     vrc = RTThreadCreate (NULL, vdiTaskThread, (void *) task, 0,
                           RTTHREADTYPE_MAIN_HEAVY_WORKER, 0, "VDITask");
     ComAssertMsgRC (vrc, ("Could not create a thread (%Vrc)", vrc));
@@ -2392,14 +2459,14 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
     }
     else
     {
-        // get one interface for the caller
+        /* get one interface for the caller */
         progress.queryInterfaceTo (aProgress);
     }
 
     return rc;
 }
 
-// static
+/* static */
 DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUser)
 {
     VDITask *task = static_cast <VDITask *> (pvUser);
@@ -2430,7 +2497,7 @@ DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUse
                                          Utf8Str (task->vdi->filePathFull()),
                                          task->progress);
 
-        // release reader added in HardDisk::CloneToImage()
+        /* release reader added in HardDisk::CloneToImage() */
         task->source->releaseReader();
     }
     else
@@ -2443,7 +2510,7 @@ DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUse
 
         if (VBOX_SUCCESS (vrc) && task->vdi->id())
         {
-            // we have a non-null UUID, update the created image
+            /* we have a non-null UUID, update the created image */
             vrc = VDISetImageUUIDs (Utf8Str (task->vdi->filePathFull()),
                                     task->vdi->id().raw(), NULL, NULL, NULL);
         }
@@ -2461,16 +2528,16 @@ DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUse
 
     AutoLock alock (task->vdi);
 
-    // clear busy set in in HardDisk::CloneToImage() or
-    // in HVirtualDiskImage::createImage()
+    /* clear busy set in in HardDisk::CloneToImage() or
+     * in HVirtualDiskImage::createImage() */
     task->vdi->clearBusy();
 
     if (SUCCEEDED (rc))
     {
         task->vdi->mState = HVirtualDiskImage::Created;
-        // update VDI data fields
+        /* update VDI data fields */
         rc = task->vdi->queryInformation (NULL);
-        // complete the progress object
+        /* complete the progress object */
         task->progress->notifyComplete (rc);
     }
     else
@@ -2479,7 +2546,7 @@ DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUse
         RTFileDelete(Utf8Str (task->vdi->filePathFull()));
 
         task->vdi->mState = HVirtualDiskImage::NotCreated;
-        // complete the progress object
+        /* complete the progress object */
         if (errorMsg)
             task->progress->notifyComplete (
                 E_FAIL, COM_IIDOF (IVirtualDiskImage), getComponentName(),
@@ -2553,28 +2620,28 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
         rc = protectedInit (aVirtualBox, NULL);
         CheckComRCBreakRC (rc);
 
-        // set ready to let protectedUninit() be called on failure
+        /* set ready to let protectedUninit() be called on failure */
         setReady (true);
 
-        // server (required)
+        /* server (required) */
         CFGLDRQueryBSTR (aISCSINode, "server", mServer.asOutParam());
-        // target (required)
+        /* target (required) */
         CFGLDRQueryBSTR (aISCSINode, "target", mTarget.asOutParam());
 
-        // port (optional)
+        /* port (optional) */
         CFGLDRQueryUInt16 (aISCSINode, "port", &mPort);
-        // lun (optional)
+        /* lun (optional) */
         CFGLDRQueryUInt64 (aISCSINode, "lun", &mLun);
-        // userName (optional)
+        /* userName (optional) */
         CFGLDRQueryBSTR (aISCSINode, "userName", mUserName.asOutParam());
-        // password (optional)
+        /* password (optional) */
         CFGLDRQueryBSTR (aISCSINode, "password", mPassword.asOutParam());
 
         LogFlowMember ((" 'iscsi:%ls:%hu@%ls/%ls:%llu'\n",
                         mServer.raw(), mPort, mUserName.raw(), mTarget.raw(),
                         mLun));
 
-        // load basic settings and children
+        /* load basic settings and children */
         rc = loadSettings (aHDNode);
         CheckComRCBreakRC (rc);
 
@@ -2617,10 +2684,10 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox)
         rc = protectedInit (aVirtualBox, NULL);
         CheckComRCBreakRC (rc);
 
-        // set ready to let protectedUninit() be called on failure
+        /* set ready to let protectedUninit() be called on failure */
         setReady (true);
 
-        // we have to generate a new UUID
+        /* we have to generate a new UUID */
         mId.create();
         mType = HardDiskType_WritethroughHardDisk;
         mRegistered = FALSE;
@@ -2921,7 +2988,7 @@ HRESULT HISCSIHardDisk::getAccessible (Bstr &aAccessError)
     AutoLock alock (this);
     CHECK_READY();
 
-    // check the basic accessibility
+    /* check the basic accessibility */
     HRESULT rc = HardDisk::getAccessible (aAccessError);
     if (FAILED (rc) || !aAccessError.isNull())
         return rc;
@@ -2943,33 +3010,33 @@ HRESULT HISCSIHardDisk::saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode)
     AutoLock alock (this);
     CHECK_READY();
 
-    // server (required)
+    /* server (required) */
     CFGLDRSetBSTR (aStorageNode, "server", mServer);
-    // target (required)
+    /* target (required) */
     CFGLDRSetBSTR (aStorageNode, "target", mTarget);
 
-    // port (optional)
+    /* port (optional) */
     if (mPort != 0)
         CFGLDRSetUInt16 (aStorageNode, "port", mPort);
     else
         CFGLDRDeleteAttribute (aStorageNode, "port");
-    // lun (optional)
+    /* lun (optional) */
     if (mLun != 0)
         CFGLDRSetUInt64 (aStorageNode, "lun", mLun);
     else
         CFGLDRDeleteAttribute (aStorageNode, "lun");
-    // userName (optional)
+    /* userName (optional) */
     if (!mUserName.isNull())
         CFGLDRSetBSTR (aStorageNode, "userName", mUserName);
     else
         CFGLDRDeleteAttribute (aStorageNode, "userName");
-    // password (optional)
+    /* password (optional) */
     if (!mPassword.isNull())
         CFGLDRSetBSTR (aStorageNode, "password", mPassword);
     else
         CFGLDRDeleteAttribute (aStorageNode, "password");
 
-    // save basic settings and children
+    /* save basic settings and children */
     return HardDisk::saveSettings (aHDNode);
 }
 
