@@ -1080,7 +1080,7 @@ PATMIretStart:
 %endif
 
     test    dword [esp], X86_EFL_NT
-    jnz near iret_fault1
+    jnz     iret_fault1
 
     test    dword [esp+12], X86_EFL_VM
     jnz     iret_fault
