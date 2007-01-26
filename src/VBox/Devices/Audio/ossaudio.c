@@ -98,6 +98,7 @@ static void GCC_FMT_ATTR (2, 3) oss_logerr (int err, const char *fmt, ...)
     AUD_log (AUDIO_CAP, "Reason: %s\n", strerror (err));
 }
 
+#ifndef VBOX
 static void GCC_FMT_ATTR (3, 4) oss_logerr2 (
     int err,
     const char *typ,
@@ -115,6 +116,7 @@ static void GCC_FMT_ATTR (3, 4) oss_logerr2 (
 
     AUD_log (AUDIO_CAP, "Reason: %s\n", strerror (err));
 }
+#endif
 
 static void oss_anal_close (int *fdp)
 {
@@ -221,45 +223,80 @@ static int oss_open (int in, struct oss_params *req,
 
     fd = open (dspname, (in ? O_RDONLY : O_WRONLY) | O_NONBLOCK);
     if (-1 == fd) {
+#ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to open `%s'\n", dspname);
-        LogRel(("Audio/OSS: Failed to open '%s' as %s\n", dspname, typ));
+#else
+        LogRel(("Audio/OSS: Failed to open %s for %s (%s)\n",
+                 dspname, typ, strerror(errno)));
+#endif
         return -1;
     }
+
+#ifdef VBOX
+    LogRel(("Audio/OSS: Successfully opened %s for %s\n", dspname, typ));
+#endif
 
     freq = req->freq;
     nchannels = req->nchannels;
     fmt = req->fmt;
 
     if (ioctl (fd, SNDCTL_DSP_SAMPLESIZE, &fmt)) {
+#ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set sample size %d\n", req->fmt);
+#else
+        LogRel(("Audio/OSS: Failed to set sample size %d (%s)\n",
+                 req->fmt, strerror(errno)));
+#endif
         goto err;
     }
 
     if (ioctl (fd, SNDCTL_DSP_CHANNELS, &nchannels)) {
+#ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set number of channels %d\n",
                      req->nchannels);
+#else
+        LogRel(("Audio/OSS: Failed to set nchannels=%d (%s)\n",
+                 req->nchannels, strerror(errno)));
+#endif
         goto err;
     }
 
     if (ioctl (fd, SNDCTL_DSP_SPEED, &freq)) {
+#ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set frequency %d\n", req->freq);
+#else
+        LogRel(("Audio/OSS: Failed to set freq=%dHZ\n", req->freq, strerror(errno)));
+#endif
         goto err;
     }
 
     if (ioctl (fd, SNDCTL_DSP_NONBLOCK)) {
+#ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set non-blocking mode\n");
+#else
+        LogRel(("Audio/OSS: Failed to set non-blocking mode (%s)\n", strerror(errno)));
+#endif
         goto err;
     }
 
     mmmmssss = (req->nfrags << 16) | lsbindex (req->fragsize);
     if (ioctl (fd, SNDCTL_DSP_SETFRAGMENT, &mmmmssss)) {
+#ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set buffer length (%d, %d)\n",
                      req->nfrags, req->fragsize);
+#else
+        LogRel(("Audio/OSS: Failed to set buffer_length=%d,%d (%s)\n",
+                req->nfrags, req->fragsize, strerror(errno)));
+#endif
         goto err;
     }
 
     if (ioctl (fd, in ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, &abinfo)) {
+#ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to get buffer length\n");
+#else
+        LogRel(("Audio/OSS: Failed to get buffer length (%s)\n", strerror(errno)));
+#endif
         goto err;
     }
 
@@ -288,6 +325,10 @@ static int oss_open (int in, struct oss_params *req,
 
  err:
     oss_anal_close (&fd);
+#ifdef VBOX
+    LogRel(("Audio/OSS: Closed %s for %s\n",
+            in ? conf.devpath_in : conf.devpath_out, in ? "ADC" : "DAC"));
+#endif
     return -1;
 }
 
@@ -439,6 +480,9 @@ static void oss_fini_out (HWVoiceOut *hw)
 
     ldebug ("oss_fini\n");
     oss_anal_close (&oss->fd);
+#ifdef VBOX
+    LogRel(("Audio/OSS: Closed %s for DAC\n", conf.devpath_out));
+#endif
 
     if (oss->pcm_buf) {
 #ifdef __L4ENV__
@@ -484,6 +528,9 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
     err = oss_to_audfmt (obt.fmt, &effective_fmt, &endianness);
     if (err) {
         oss_anal_close (&fd);
+#ifdef VBOX
+    LogRel(("Audio/OSS: Closed %s for DAC\n", conf.devpath_out));
+#endif
         return -1;
     }
 
@@ -562,6 +609,9 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
                 1 << hw->info.shift
                 );
             oss_anal_close (&fd);
+#ifdef VBOX
+    LogRel(("Audio/OSS: Closed %s for DAC\n", conf.devpath_out));
+#endif
             return -1;
         }
 #ifndef __L4ENV__
@@ -635,6 +685,9 @@ static int oss_init_in (HWVoiceIn *hw, audsettings_t *as)
     err = oss_to_audfmt (obt.fmt, &effective_fmt, &endianness);
     if (err) {
         oss_anal_close (&fd);
+#ifdef VBOX
+    LogRel(("Audio/OSS: Closed %s for ADC\n", conf.devpath_in));
+#endif
         return -1;
     }
 
@@ -658,6 +711,9 @@ static int oss_init_in (HWVoiceIn *hw, audsettings_t *as)
         dolog ("Could not allocate ADC buffer (%d samples, each %d bytes)\n",
                hw->samples, 1 << hw->info.shift);
         oss_anal_close (&fd);
+#ifdef VBOX
+    LogRel(("Audio/OSS: Closed %s for ADC\n", conf.devpath_in));
+#endif
         return -1;
     }
 
@@ -670,6 +726,9 @@ static void oss_fini_in (HWVoiceIn *hw)
     OSSVoiceIn *oss = (OSSVoiceIn *) hw;
 
     oss_anal_close (&oss->fd);
+#ifdef VBOX
+    LogRel(("Audio/OSS: Closed %s for ADC\n", conf.devpath_in));
+#endif
 
     if (oss->pcm_buf) {
         qemu_free (oss->pcm_buf);
