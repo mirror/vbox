@@ -2645,6 +2645,40 @@ DECLINLINE(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2)
 
 
 /**
+ * Multiplies two signed 32-bit values returning a signed 64-bit result.
+ *
+ * @returns u32F1 * u32F2.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !defined(__AMD64__)
+DECLASM(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2);
+#else
+DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
+{
+# ifdef __AMD64__
+    return (int64_t)i32F1 * i32F2;
+# else /* !__AMD64__ */
+    int64_t i64;
+#  if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("imull %%edx"
+                         : "=A" (i64)
+                         : "a" (i32F2), "d" (i32F1));
+#  else
+    __asm
+    {
+        mov     edx, [i32F1]
+        mov     eax, [i32F2]
+        mul     edx
+        mov     dword ptr [i64], eax
+        mov     dword ptr [i64 + 4], edx
+    }
+#  endif
+    return i64;
+# endif /* !__AMD64__ */
+}
+#endif
+
+
+/**
  * Devides a 64-bit unsigned by a 32-bit unsigned returning an unsigned 32-bit result.
  *
  * @returns u64 / u32.
@@ -2673,6 +2707,40 @@ DECLINLINE(uint32_t) ASMDivU64ByU32RetU32(uint64_t u64, uint32_t u32)
     }
 #  endif
     return u32;
+# endif /* !__AMD64__ */
+}
+#endif
+
+
+/**
+ * Devides a 64-bit signed by a 32-bit signed returning a signed 32-bit result.
+ *
+ * @returns u64 / u32.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !defined(__AMD64__)
+DECLASM(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32);
+#else
+DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
+{
+# ifdef __AMD64__
+    return (int32_t)(i64 / i32);
+# else /* !__AMD64__ */
+#  if RT_INLINE_ASM_GNU_STYLE
+    RTUINTREG iDummy;
+    __asm__ __volatile__("idivl %3"
+                         : "=a" (i32), "=d"(iDummy)
+                         : "A" (i64), "r" (i32));
+#  else
+    __asm
+    {
+        mov     eax, dword ptr [i64]
+        mov     edx, dword ptr [i64 + 4]
+        mov     ecx, [i32]
+        div     ecx
+        mov     [i32], eax
+    }
+#  endif
+    return i32;
 # endif /* !__AMD64__ */
 }
 #endif
