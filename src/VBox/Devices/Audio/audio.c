@@ -127,8 +127,13 @@ volume_t nominal_volume = {
     1.0,
     1.0
 #else
+#ifndef VBOX
     UINT_MAX,
     UINT_MAX
+#else
+    INT_MAX,
+    INT_MAX
+#endif
 #endif
 };
 
@@ -136,8 +141,14 @@ volume_t nominal_volume = {
 volume_t pcm_out_volume =
 {
     0,
-    UINT_MAX,
-    UINT_MAX
+    INT_MAX,
+    INT_MAX
+};
+volume_t pcm_in_volume =
+{
+    0,
+    INT_MAX,
+    INT_MAX
 };
 #endif
 
@@ -1732,13 +1743,14 @@ void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol)
     {
         case AUD_MIXER_VOLUME:
             name = "MASTER";
-            vol = &pcm_out_volume;
+            vol  = &pcm_out_volume;
             break;
         case AUD_MIXER_PCM:
             name = "PCM_OUT";
             break;
         case AUD_MIXER_LINE_IN:
             name = "LINE_IN";
+            vol  = &pcm_in_volume;
             break;
         default:
             return;

@@ -782,8 +782,13 @@ static int oss_run_in (HWVoiceIn *hw)
                            hw->info.align + 1);
                 }
                 read_samples += nread >> hwshift;
+#ifndef VBOX
                 hw->conv (hw->conv_buf + bufs[i].add, p, nread >> hwshift,
                           &nominal_volume);
+#else
+                hw->conv (hw->conv_buf + bufs[i].add, p, nread >> hwshift,
+                          &pcm_in_volume);
+#endif
             }
 
             if (bufs[i].len - nread) {

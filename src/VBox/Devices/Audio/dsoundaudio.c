@@ -925,6 +925,7 @@ static int dsound_run_in (HWVoiceIn *hw)
     len2 = blen2 >> hwshift;
     decr = len1 + len2;
 
+#ifndef VBOX
     if (p1 && len1) {
         hw->conv (hw->conv_buf + hw->wpos, p1, len1, &nominal_volume);
     }
@@ -932,6 +933,15 @@ static int dsound_run_in (HWVoiceIn *hw)
     if (p2 && len2) {
         hw->conv (hw->conv_buf, p2, len2, &nominal_volume);
     }
+#else
+    if (p1 && len1) {
+        hw->conv (hw->conv_buf + hw->wpos, p1, len1, &pcm_in_volume);
+    }
+
+    if (p2 && len2) {
+        hw->conv (hw->conv_buf, p2, len2, &pcm_in_volume);
+    }
+#endif
 
     dsound_unlock_in (dscb, p1, p2, blen1, blen2);
     hw->wpos = (hw->wpos + decr) % hw->samples;
