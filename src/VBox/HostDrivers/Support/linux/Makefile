@@ -31,12 +31,16 @@ endif
 ifeq ($(BUILD_TARGET_ARCH),)
  ifeq ($(ARCH),x86_64)
   BUILD_TARGET_ARCH := amd64
- else ifeq ($(ARCH),i386)
-  BUILD_TARGET_ARCH := x86
- else ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
-  BUILD_TARGET_ARCH := amd64
  else
-  BUILD_TARGET_ARCH := x86
+  ifeq ($(ARCH),i386)
+   BUILD_TARGET_ARCH := x86
+  else
+   ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
+    BUILD_TARGET_ARCH := amd64
+   else
+    BUILD_TARGET_ARCH := x86
+   endif
+  endif
  endif
 endif
 
