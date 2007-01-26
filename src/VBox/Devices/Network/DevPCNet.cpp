@@ -1227,7 +1227,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     if (pData->GCTDRA != pData->TRDAPhysOld || CSR_XMTRL(pData) != pData->cbTRDAOld)
     {
         if (pData->TRDAPhysOld != 0)
-            PGMHandlerPhysicalDeregister(PDMDevHlpVM(pDevIns),
+            PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
                                          pData->TRDAPhysOld & ~PAGE_OFFSET_MASK);
 
         int rc;
