@@ -1187,10 +1187,13 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
         if (!fAccessible)
         {
             Bstr loc;
-            hdd->COMGETTER(Location)(loc.asOutParam());
+            hdd->COMGETTER(Location) (loc.asOutParam());
+            Bstr errMsg;
+            hdd->COMGETTER(LastAccessError) (errMsg.asOutParam());
             return setError (E_FAIL,
-                tr ("VM cannot start because the hard disk '%ls' is not accessible"),
-                loc.raw());
+                tr ("VM cannot start because the hard disk '%ls' is not accessible "
+                    "(%ls)"),
+                loc.raw(), errMsg.raw());
         }
     }
 
@@ -1208,6 +1211,8 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
         {
             Bstr filePath;
             dvdImage->COMGETTER(FilePath)(filePath.asOutParam());
+            /// @todo (r=dmik) grab the last access error once
+            //  IDVDImage::lastAccessError is there
             return setError (E_FAIL,
                 tr ("VM cannot start because the DVD image '%ls' is not accessible"),
                 filePath.raw());
@@ -1228,6 +1233,8 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
         {
             Bstr filePath;
             floppyImage->COMGETTER(FilePath)(filePath.asOutParam());
+            /// @todo (r=dmik) grab the last access error once
+            //  IDVDImage::lastAccessError is there
             return setError (E_FAIL,
                 tr ("VM cannot start because the floppy image '%ls' is not accessible"),
                 filePath.raw());

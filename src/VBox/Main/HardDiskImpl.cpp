@@ -1264,6 +1264,8 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         rc = setFilePath (aFilePath);
         CheckComRCBreakRC (rc);
 
+        Assert (mId.isEmpty());
+        
         if (aFilePath && *aFilePath)
         {
             mRegistered = aRegistered;
@@ -1272,7 +1274,19 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
             /* Call queryInformation() anyway (even if it will block), because
              * it is the only way to get the UUID of the existing VDI and
              * initialize the vital mId property. */
-            rc = queryInformation (NULL);
+            Bstr errMsg;
+            rc = queryInformation (&errMsg);
+            if (SUCCEEDED (rc))
+            {
+                /* We are constructing a new HVirtualDiskImage object. If there
+                 * is a fatal accessibility error (we cannot read image UUID),
+                 * we have to fail. We do so even on non-fatal errors as well,
+                 * because it's not worth to keep going with the inaccessible
+                 * image from the very beginning (when nothing else depends on
+                 * it yet). */
+                if (!errMsg.isNull())
+                    rc = setErrorBstr (E_FAIL, errMsg);
+            }
         }
         else
         {
@@ -1555,10 +1569,6 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
     if (mState >= Created)
     {
         return queryInformation (&aAccessError);
-        /* if we fail here, this means something like UUID mismatch.
-         * Do nothing, just return the failure (error info is already
-         * set by queryInformation()), in hope that one of subsequent
-         * attempts to check for acessibility will succeed */
     }
 
     aAccessError = Utf8StrFmt ("Hard disk image '%ls' is not yet created",
@@ -2203,6 +2213,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
      * file three times in a raw to get three bits of information. */
 
     Utf8Str filePath = mFilePathFull;
+    Bstr errMsg;
 
     do
     {
@@ -2212,23 +2223,14 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
                              id.ptr(), parentId.ptr(), NULL, 0);
 
         if (VBOX_FAILURE (vrc))
-        {
-            /* mId is empty only when constructing a HVirtualDiskImage object
-             * from an existing file image which UUID is not known. If we can't
-             * read it, we have to fail. */
-            if (mId.isEmpty())
-                rc = setError (E_FAIL,
-                    tr ("Could not open the hard disk image '%s' (%Vrc)"),
-                    filePath.raw(), vrc);
             break;
-        }
 
         if (!mId.isEmpty())
         {
             /* check that the actual UUID of the image matches the stored UUID */
             if (mId != id)
             {
-                rc = setError (E_FAIL,
+                errMsg = Utf8StrFmt (
                     tr ("Actual UUID {%Vuuid} of the hard disk image '%s' doesn't "
                         "match UUID {%Vuuid} stored in the registry"),
                     id.ptr(), filePath.raw(), mId.ptr());
@@ -2247,7 +2249,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
             AutoLock parentLock (mParent);
             if (mParent->id() != parentId)
             {
-                rc = setError (E_FAIL,
+                errMsg = Utf8StrFmt (
                     tr ("UUID {%Vuuid} of the parent image '%ls' stored in "
                         "the hard disk image file '%s' doesn't match "
                         "UUID {%Vuuid} stored in the registry"),
@@ -2258,7 +2260,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
         }
         else if (!parentId.isEmpty())
         {
-            rc = setError (E_FAIL,
+            errMsg = Utf8StrFmt (
                 tr ("Hard disk image '%s' is a differencing image and "
                     "cannot be opened directly"),
                 filePath.raw());
@@ -2307,17 +2309,22 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
     /* remove the busy flag */
     clearBusy();
     
-    if (VBOX_FAILURE (vrc) || FAILED (rc))
+    if (FAILED (rc) || VBOX_FAILURE (vrc) || !errMsg.isNull())
     {
-        Log (("HVirtualDiskImage::queryInformation(): "
-              "WARNING: '%ls' is not accessible (%Vrc) (rc=%08X)\n",
-              mFilePathFull.raw(), vrc, rc));
+        LogWarningFunc (("'%ls' is not accessible "
+                         "(rc=%08X, vrc=%Vrc, errMsg='%ls')\n",
+                         mFilePathFull.raw(), rc, vrc, errMsg.raw()));
 
-        if (VBOX_FAILURE (vrc) && aAccessError)
-            *aAccessError =
-                Utf8StrFmt ("Error accessing hard disk image '%ls' (%Vrc)",
-                            mFilePathFull.raw(), vrc);
-
+        if (aAccessError)
+        {
+            if (!errMsg.isNull())
+                *aAccessError = errMsg;
+            else if (VBOX_FAILURE (vrc))
+                *aAccessError = Utf8StrFmt (
+                    tr ("Could not access hard disk image '%ls' (%Vrc)"),
+                        mFilePathFull.raw(), vrc);
+        }
+        
         /* downgrade to not accessible */
         mState = Created;
     }
@@ -2536,9 +2543,16 @@ DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUse
     {
         task->vdi->mState = HVirtualDiskImage::Created;
         /* update VDI data fields */
-        rc = task->vdi->queryInformation (NULL);
-        /* complete the progress object */
-        task->progress->notifyComplete (rc);
+        Bstr errMsg;
+        rc = task->vdi->queryInformation (&errMsg);
+        /* we want to deliver the access check result to the caller
+         * immediately, before he calls HardDisk::GetAccssible() himself. */
+        if (SUCCEEDED (rc) && !errMsg.isNull())
+            task->progress->notifyCompleteBstr (
+                E_FAIL, COM_IIDOF (IVirtualDiskImage), getComponentName(),
+                errMsg);
+        else
+            task->progress->notifyComplete (rc);
     }
     else
     {
