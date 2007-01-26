@@ -181,6 +181,8 @@ public:
     HRESULT notifyComplete (HRESULT aResultCode, const GUID &aIID,
                             const Bstr &aComponent,
                             const char *aText, ...);
+    HRESULT notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
+                                const Bstr &aComponent, const Bstr &aText);
 
 private:
 

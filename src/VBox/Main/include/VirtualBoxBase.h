@@ -1213,26 +1213,31 @@ protected:
      *  (a value of C::getComponentName()).
      *
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
-     *  for details.
-     *
-     *  This method is the most common (and convenient) way  to set error
-     *  information from within interface methods. A typical pattern of usage
-     *  is looks like this:
-     *
-     *  <code>
-     *      return setErrorV (E_FAIL, pszFormat, args);
-     *  </code>
-     *  or
-     *  <code>
-     *      HRESULT rc = setErrorV (E_FAIL, pszFormat, args);
-     *      ...
-     *      return rc;
-     *  </code>
+     *  and #setError (HRESULT, const char *, ...)  for details.
      */
     inline static HRESULT setErrorV (HRESULT resultCode, const char *text, va_list args)
     {
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError (
             resultCode, COM_IIDOF(I), C::getComponentName(), text, args);
+        return rc;
+    }
+
+    /**
+     *  Sets the error information for the current thread, BStr variant.
+     *  A convenience method that automatically sets the default interface
+     *  ID (taken from the I template argument) and the component name
+     *  (a value of C::getComponentName()).
+     *
+     *  This method is preferred iy you have a ready (translated and formatted)
+     *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr. 
+     *
+     *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
+     *  and #setError (HRESULT, const char *, ...)  for details.
+     */
+    inline static HRESULT setErrorBstr (HRESULT resultCode, const Bstr &text)
+    {
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError (
+            resultCode, COM_IIDOF(I), C::getComponentName(), text);
         return rc;
     }
 
