@@ -392,7 +392,7 @@ HRESULT Progress::FinalConstruct()
     if (FAILED (rc))
         return rc;
 
-    mCompletedSem = NIL_RTSEMEVENT;
+    mCompletedSem = NIL_RTSEMEVENTMULTI;
     mWaitersCount = 0;
 
     return S_OK;

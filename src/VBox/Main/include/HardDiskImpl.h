@@ -27,6 +27,8 @@
 
 #include <VBox/cfgldr.h>
 
+#include <iprt/semaphore.h>
+
 #include <list>
 
 class VirtualBox;
@@ -60,9 +62,6 @@ public:
 
     HRESULT FinalConstruct();
     void FinalRelease();
-
-    /// @todo (dmik) remove
-    enum InitMode { Init_New, Init_Existing, Init_Registered };
 
 protected:
 
@@ -167,8 +166,9 @@ public:
 
     void updatePaths (const char *aOldPath, const char *aNewPath);
 
-    bool isBusy() { AutoLock alock (this); return mBusy; }
-    unsigned readers() { AutoLock alock (this); return mReaders; }
+    /* these must be are called from under the lock */
+    bool isBusy() { isLockedOnCurrentThread(); return mBusy; }
+    unsigned readers() { isLockedOnCurrentThread(); return mReaders; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HardDisk"; }
@@ -294,10 +294,14 @@ private:
     {
         NotCreated,
         Created,
-        Accessible, // must be greater than Created
+        /* the following must be greater than Created */
+        Accessible,
     };
 
     State mState;
+    
+    RTSEMEVENTMULTI mStateCheckSem;
+    ULONG mStateCheckWaiters;
 
     Bstr mDescription;
 
