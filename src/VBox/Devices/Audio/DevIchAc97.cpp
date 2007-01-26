@@ -39,7 +39,11 @@ extern "C" {
 }
 
 #undef LOG_VOICES
+#ifndef VBOX
 //#define USE_MIXER
+#else
+#define USE_MIXER
+#endif
 
 #define AC97_SSM_VERSION 1
 
@@ -78,7 +82,11 @@ enum {
     AC97_Vendor_ID2                = 0x7e
 };
 
+#ifndef VBOX
 #define SOFT_VOLUME
+#else
+#undef  SOFT_VOLUME
+#endif
 #define SR_FIFOE BIT(4)          /* rwc, fifo error */
 #define SR_BCIS  BIT(3)          /* rwc, buffer completion interrupt status */
 #define SR_LVBCI BIT(2)          /* rwc, last valid buffer completion interrupt */
@@ -498,6 +506,22 @@ static void set_volume (AC97LinkState *s, int index,
 
     rvol = VOL_MASK - ((VOL_MASK * rvol) / 255);
     lvol = VOL_MASK - ((VOL_MASK * lvol) / 255);
+
+#ifdef VBOX
+    /*
+     * From AC'97 SoundMax Codec AD1981A: "Because AC '97 defines 6-bit volume registers, to
+     * maintain compatibility whenever the D5 or D13 bits are set to `1,' their respective
+     * lower five volume bits are automatically set to `1' by the Codec logic. On readback,
+     * all lower 5 bits will read ones whenever these bits are set to `1.'"
+     *
+     *  Linux ALSA depends on this behavior.
+     */
+    if (val & BIT(5))
+        val |= BIT(4) | BIT(3) | BIT(2) | BIT(1) | BIT(0);
+    if (val & BIT(13))
+        val |= BIT(12) | BIT(11) | BIT(10) | BIT(9) | BIT(8);
+#endif
+
     mixer_store (s, index, val);
 }
 

@@ -25,7 +25,11 @@
 #define QEMU_AUDIO_INT_H
 
 #ifdef CONFIG_COREAUDIO
+#ifndef VBOX
 #define FLOAT_MIXENG
+#else
+#undef  FLOAT_MIXENG
+#endif
 /* #define RECIPROCAL */
 #endif
 

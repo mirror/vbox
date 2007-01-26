@@ -132,6 +132,15 @@ volume_t nominal_volume = {
 #endif
 };
 
+#ifdef VBOX
+volume_t pcm_out_volume =
+{
+    0,
+    UINT_MAX,
+    UINT_MAX
+};
+#endif
+
 /* http://www.df.lth.se/~john_e/gems/gem002d.html */
 /* http://www.multi-platforms.com/Tips/PopCount.htm */
 uint32_t popcount (uint32_t u)
@@ -884,7 +893,11 @@ int audio_pcm_sw_write (SWVoiceOut *sw, void *buf, int size)
     swlim = ((int64_t) dead << 32) / sw->ratio;
     swlim = audio_MIN (swlim, samples);
     if (swlim) {
+#ifndef VBOX
         sw->conv (sw->buf, buf, swlim, &sw->vol);
+#else
+        sw->conv (sw->buf, buf, swlim, &pcm_out_volume);
+#endif
     }
 
     while (swlim) {
@@ -1698,6 +1711,54 @@ void AUD_del_capture (CaptureVoiceOut *cap, void *cb_opaque)
             return;
         }
     }
+}
+
+void AUD_set_volume_out (SWVoiceOut *sw, int mute, uint8_t lvol, uint8_t rvol)
+{
+    if (sw)
+    {
+        sw->vol.mute = mute;
+        sw->vol.l    = (uint32_t)lvol * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
+        sw->vol.r    = (uint32_t)rvol * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
+    }
+}
+
+void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol)
+{
+    volume_t *vol = NULL;
+    const char *name;
+
+    switch (mt)
+    {
+        case AUD_MIXER_VOLUME:
+            name = "MASTER";
+            vol = &pcm_out_volume;
+            break;
+        case AUD_MIXER_PCM:
+            name = "PCM_OUT";
+            break;
+        case AUD_MIXER_LINE_IN:
+            name = "LINE_IN";
+            break;
+        default:
+            return;
+
+    }
+
+    if (vol)
+    {
+        vol->mute  = *mute;
+        vol->l     = ((uint32_t)*lvol) * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
+        vol->r     = ((uint32_t)*rvol) * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
+    }
+#if 0
+    LogRel(("AUDIO: Set '%s' volume to %d%%/%d%%\n", name, (*lvol*100)/255, (*rvol*100)/255l));
+#endif
+}
+
+void AUD_set_record_source (audrecsource_t *ars, audrecsource_t *als)
+{
+    LogRel(("AUDIO: set_record_source ars=%d als=%d (not implemented)\n", *ars, *als));
 }
 
 /**

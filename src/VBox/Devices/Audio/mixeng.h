@@ -26,6 +26,11 @@
 
 struct HWVoiceOut;
 
+#ifdef VBOX
+/* use faster ASMMult2xS32RetS64 */
+typedef struct { int mute;  uint32_t r; uint32_t l; } volume_t;
+typedef struct { int64_t l; int64_t r; } st_sample_t;
+#else /* !VBOX */
 #ifdef FLOAT_MIXENG
 typedef float real_t;
 typedef struct { int mute; real_t r; real_t l; } volume_t;
@@ -34,6 +39,7 @@ typedef struct { real_t l; real_t r; } st_sample_t;
 typedef struct { int mute; int64_t r; int64_t l; } volume_t;
 typedef struct { int64_t l; int64_t r; } st_sample_t;
 #endif
+#endif /* VBOX */
 
 typedef void (t_sample) (st_sample_t *dst, const void *src,
                          int samples, volume_t *vol);
