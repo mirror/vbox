@@ -446,15 +446,20 @@ void VBoxVMSettingsDlg::init()
     /* setup iconsets -- qdesigner is not capable... */
     tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
                                                      "usb_add_disabled_16px.png"));
+    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_read_16px.png",
+                                                         "usb_read_16px.png"));
     tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
                                                         "usb_remove_disabled_16px.png"));
     tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
                                                     "usb_moveup_disabled_16px.png"));
     tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
                                                       "usb_movedown_disabled_16px.png"));
-
+    usbDevicesMenu = new QPopupMenu (this, "usbDevicesMenu");
+    connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
+    connect (usbDevicesMenu, SIGNAL(highlighted(int)), this, SLOT(menuAddUSBFilterFrom_highlighted(int)));
     mLastUSBFilterNum = 0;
     mUSBFilterListModified = false;
+    mUsbDevicesMenuNoDevicesId = -1;
 
     /* VRDP Page */
 
@@ -1703,6 +1708,83 @@ void VBoxVMSettingsDlg::tbAddUSBFilter_clicked()
     CUSBDeviceFilter filter = cmachine.GetUSBController()
         .CreateDeviceFilter (tr ("New Filter %1", "usb")
                                  .arg (++ mLastUSBFilterNum));
+
+    filter.SetActive (true);
+    addUSBFilter (filter, true /* isNew */);
+
+    mUSBFilterListModified = true;
+}
+
+void VBoxVMSettingsDlg::tbAddUSBFilterFrom_clicked()
+{
+    usbDevicesMenu->clear();
+    usbDevicesMap.clear();
+    CHost host = vboxGlobal().virtualBox().GetHost();
+
+    bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
+    if (isUSBEmpty)
+    {
+        mUsbDevicesMenuNoDevicesId = usbDevicesMenu->insertItem (
+            tr ("<no available devices>", "USB devices"));
+        usbDevicesMenu->setItemEnabled (mUsbDevicesMenuNoDevicesId, false);
+    }
+    else
+    {
+        mUsbDevicesMenuNoDevicesId = -1;
+        CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
+        while (en.HasMore())
+        {
+            CHostUSBDevice iterator = en.GetNext();
+            CUSBDevice usb = CUnknown (iterator);
+            int id = usbDevicesMenu->insertItem (vboxGlobal().details (usb));
+            usbDevicesMap [id] = usb;
+        }
+    }
+    usbDevicesMenu->exec (QCursor::pos());
+}
+
+void VBoxVMSettingsDlg::menuAddUSBFilterFrom_highlighted (int aIndex)
+{
+    /* the <no available devices> item is highlighted */
+    if (aIndex == mUsbDevicesMenuNoDevicesId)
+    {
+        QToolTip::add (usbDevicesMenu,
+            tr ("No supported devices connected to the host PC",
+                "USB device tooltip"));
+        return;
+    }
+
+    CUSBDevice usb = usbDevicesMap [aIndex];
+    /* if null then some other item but a USB device is highlighted */
+    if (usb.isNull())
+    {
+        QToolTip::remove (usbDevicesMenu);
+        return;
+    }
+
+    QString tip = vboxGlobal().toolTip (usb);
+    QToolTip::add (usbDevicesMenu, tip);
+}
+
+void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
+{
+    CUSBDevice usb = usbDevicesMap [aIndex];
+    /* if null then some other item but a USB device is selected */
+    if (usb.isNull())
+        return;
+
+    CUSBDeviceFilter filter = cmachine.GetUSBController()
+        .CreateDeviceFilter (tr ("New Filter %1", "usb")
+                                 .arg (++ mLastUSBFilterNum));
+
+    filter.SetVendorId (QString().sprintf ("%04hX", usb.GetVendorId()));
+    filter.SetProductId (QString().sprintf ("%04hX", usb.GetProductId()));
+    filter.SetRevision (QString().sprintf ("%04hX", usb.GetRevision()));
+    filter.SetPort (QString().sprintf ("%04hX", usb.GetPort()));
+    filter.SetManufacturer (usb.GetManufacturer());
+    filter.SetProduct (usb.GetProduct());
+    filter.SetSerialNumber (usb.GetSerialNumber());
+    filter.SetRemote (usb.GetRemote() ? "yes" : "no");
 
     filter.SetActive (true);
     addUSBFilter (filter, true /* isNew */);
