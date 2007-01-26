@@ -1933,9 +1933,8 @@ void VBoxConsoleWnd::makeUSBToolTip (int id)
         return;
     }
 
-    QString tip = vboxGlobal().toolTip (usb);
-
-    QToolTip::add (devicesUSBMenu, tip);
+    QToolTip::remove (devicesUSBMenu);
+    QToolTip::add (devicesUSBMenu, vboxGlobal().toolTip (usb));
 }
 
 void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e)
