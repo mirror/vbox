@@ -294,7 +294,7 @@ $(PATH_TARGET)/pcnet32.rom.prf: $(PCIENTRY) $(PCNET32_RUNTIME) $(PREFIXOBJS) $(P
 # are not up to compiling Etherboot (the linker messes up big time, shifting
 # the final binary to 0xffc00000 and filling out relocations incorrectly
 # (first occurrence is the call to prelocate in the pciprefix.o file).
-ifeq ($(filter-out darwin os2 win,$(BUILD_TARGET)),)
+ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 win.x86 win.amd64 linux.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
 $(PATH_TARGET)/pcnet32.zrom: pcnet32.zrom
 	$(CP) -f $< $@
 else
