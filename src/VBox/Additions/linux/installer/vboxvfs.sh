@@ -82,11 +82,11 @@ fi
 
 if [ "$system" = debian ]; then
     fail_msg() {
-        echo "...fail!"
+        echo " ...fail!"
     }
 
     succ_msg() {
-        echo "...done."
+        echo " ...done."
     }
 
     begin() {
@@ -115,11 +115,11 @@ fi
 
 if [ "$system" = slackware ]; then
     fail_msg() {
-        echo "...fail!"
+        echo " ...fail!"
     }
 
     succ_msg() {
-        echo "...done."
+        echo " ...done."
     }
 
     begin() {
@@ -140,8 +140,8 @@ fail() {
         eerror $1
         exit 1
     fi
-    echo -n "($1)"
     fail_msg
+    echo "($1)"
     exit 1
 }
 
@@ -156,7 +156,13 @@ running() {
 start() {
     begin "Starting VirtualBox Additions shared folder support";
     running || {
-        modprobe $modname || {
+        modprobe $modname > /dev/null 2>&1 || {
+            if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
+                fail_msg
+                echo "You may be trying to run Guest Additions from binary release of VirtualBox"
+                echo "in the Open Source Edition."
+                exit 1
+            fi
             fail "modprobe $modname failed"
         }
     }
