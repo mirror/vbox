@@ -53,6 +53,7 @@ OBJS   = \
 	r0drv/initterm-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
+	r0drv/linux/process-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o \
 	r0drv/linux/spinlock-r0drv-linux.o \
 	r0drv/linux/thread-r0drv-linux.o
