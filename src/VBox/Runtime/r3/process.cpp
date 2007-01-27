@@ -42,7 +42,7 @@
  *
  * @returns Process identifier.
  */
-RTR3DECL(RTPROCESS) RTProcSelf(void)
+RTDECL(RTPROCESS) RTProcSelf(void)
 {
     RTPROCESS Self = g_ProcessSelf;
     if (Self != NIL_RTPROCESS)

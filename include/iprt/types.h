@@ -39,10 +39,10 @@
 # endif /* DARWIN && KERNEL */
 
 # if defined(__LINUX__) && defined(__KERNEL__)
-    /* 
+    /*
      * Kludge for the linux kernel:
      *   1. sys/types.h doesn't mix with the kernel.
-     *   2. Starting with 2.6.19 linux/types.h typedefs bool and linux/stddef.h 
+     *   2. Starting with 2.6.19 linux/types.h typedefs bool and linux/stddef.h
      *      declares false and true as enum values.
      * We work around these issues here and nowhere else.
      */
@@ -118,7 +118,7 @@
 typedef _Bool bool;
 # else
 typedef unsigned char bool;
-# endif 
+# endif
 # ifndef true
 #  define true  (1)
 # endif
@@ -904,12 +904,19 @@ typedef RTNATIVETHREAD                             *PRTNATIVETHREAD;
 /** Nil native thread handle. */
 #define NIL_RTNATIVETHREAD                          (~(RTNATIVETHREAD)0)
 
-/** Process handle. */
+/** Process identifier. */
 typedef RTHCUINTPTR                                 RTPROCESS;
-/** Pointer to a process handle. */
+/** Pointer to a process identifier. */
 typedef RTPROCESS                                  *PRTPROCESS;
-/** Nil process handle. */
+/** Nil process identifier. */
 #define NIL_RTPROCESS                               (~(RTPROCESS)0)
+
+/** Process ring-0 handle. */
+typedef RTR0UINTPTR                                 RTR0PROCESS;
+/** Pointer to a ring-0 process handle. */
+typedef RTR0PROCESS                                *PRTR0PROCESS;
+/** Nil ring-0 process handle. */
+#define NIL_RTR0PROCESS                             (~(RTR0PROCESS)0)
 
 /** @typedef RTSEMEVENT
  * Event Semaphore handle. */
