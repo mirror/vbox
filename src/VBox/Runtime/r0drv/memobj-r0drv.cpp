@@ -26,6 +26,7 @@
 #define LOG_GROUP RTLOGGROUP_DEFAULT ///@todo RTLOGGROUP_MEM
 #include <iprt/memobj.h>
 #include <iprt/alloc.h>
+#include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
@@ -388,10 +389,11 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   pv              User virtual address. This is rounded down to a page boundrary.
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
+ * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
  *
  * @remark  RTR0MemObjGetAddress() will return the rounded down address.
  */
-RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
+RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
@@ -400,9 +402,11 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
     const size_t cbAligned = RT_ALIGN_Z(cb + ((uintptr_t)pv & PAGE_OFFSET_MASK), PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     void * const pvAligned = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
+    if (R0Process == NIL_RTR0PROCESS)
+        R0Process = RTR0ProcHandleSelf();
 
     /* do the allocation. */
-    return rtR0MemObjNativeLockUser(pMemObj, pvAligned, cbAligned);
+    return rtR0MemObjNativeLockUser(pMemObj, pvAligned, cbAligned, R0Process);
 }
 
 
@@ -521,8 +525,9 @@ RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t
  * @param   cb              The number of bytes to reserve. This is rounded up to nearest PAGE_SIZE.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
+ * @param   R0Process       The process to reserve the memory in. NIL_R0PROCESS is an alias for the current one.
  */
-RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t cb, size_t uAlignment)
+RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
@@ -535,9 +540,11 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t c
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     if (pvFixed != (void *)-1)
         AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
+    if (R0Process == NIL_RTR0PROCESS)
+        R0Process = RTR0ProcHandleSelf();
 
     /* do the reservation. */
-    return rtR0MemObjNativeReserveUser(pMemObj, pvFixed, cbAligned, uAlignment);
+    return rtR0MemObjNativeReserveUser(pMemObj, pvFixed, cbAligned, uAlignment, R0Process);
 }
 
 
@@ -606,8 +613,9 @@ RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, PRTR0MEMOBJ MemObjToMap, 
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
+ * @param   R0Process       The process to map the memory into. NIL_R0PROCESS is an alias for the current one.
  */
-RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
@@ -625,11 +633,12 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, voi
         AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
     AssertReturn(fProt != RTMEM_PROT_NONE, VERR_INVALID_PARAMETER);
     AssertReturn(!(fProt & ~(RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
-
+    if (R0Process == NIL_RTR0PROCESS)
+        R0Process = RTR0ProcHandleSelf();
 
     /* do the mapping. */
     PRTR0MEMOBJINTERNAL pNew;
-    int rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, pvFixed, uAlignment, fProt);
+    int rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, pvFixed, uAlignment, fProt, R0Process);
     if (RT_SUCCESS(rc))
     {
         /* link it. */
