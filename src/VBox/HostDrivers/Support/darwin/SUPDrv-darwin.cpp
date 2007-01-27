@@ -36,6 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
+#include <iprt/process.h>
 #include <iprt/alloc.h>
 
 #include <mach/kmod.h>
@@ -113,11 +114,11 @@ private:
 public:
     virtual bool initWithTask(task_t OwningTask, void *pvSecurityId, UInt32 u32Type);
     virtual bool start(IOService *pProvider);
-    virtual void stop(IOService *pProvider);
     virtual IOReturn clientClose(void);
     virtual IOReturn clientDied(void);
     virtual bool terminate(IOOptionBits fOptions = 0);
     virtual bool finalize(IOOptionBits fOptions);
+    virtual void stop(IOService *pProvider);
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient)
@@ -312,7 +313,8 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
             pSession->Uid = pCred->cr_uid;
             pSession->Gid = pCred->cr_gid;
         }
-        pSession->Process = proc_pid(pProcess);
+        pSession->Process = RTProcSelf();
+        pSession->R0Process = RTR0ProcHandleSelf();
 
         /*
          * Insert it into the hash table.
@@ -767,20 +769,38 @@ IOReturn org_virtualbox_SupDrvClient::clientClose(void)
  */
 IOReturn org_virtualbox_SupDrvClient::clientDied(void)
 {
-    dprintf(("org_virtualbox_SupDrvClient::clientDied([%p])\n", this));
+    dprintf(("org_virtualbox_SupDrvClient::clientDied([%p]) m_Task=%p R0Process=%p Process=%d\n",
+             this, m_Task, RTR0ProcHandleSelf(), RTProcSelf()));
 
-    /* IOUserClient::clientDied() only calls calls close... */
+    /*
+     * Do early session cleanup (if there is a session) so
+     * we avoid hanging in vm_map_remove().
+     */
+    const RTR0PROCESS   R0Process = (RTR0PROCESS)m_Task;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    for (unsigned i = 0; i < RT_ELEMENTS(g_apSessionHashTab); i++)
+    {
+        for (PSUPDRVSESSION pSession = g_apSessionHashTab[i]; pSession; pSession = pSession->pNextHash)
+        {
+            dprintf2(("pSession=%p R0Process=%p (=? %p)\n", pSession, pSession->R0Process, R0Process));
+            if (pSession->R0Process == R0Process)
+            {
+                /*
+                 * It is safe to leave the spinlock here; the session shouldn't be able
+                 * to go away while we're cleaning it up, changes to pNextHash will not
+                 * harm us, and new sessions can't possibly be added for this process.
+                 */
+                RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+                supdrvCleanupSession(&g_DevExt, pSession);
+                RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+            }
+        }
+    }
+    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+
+    /* IOUserClient::clientDied() calls close... */
     return IOUserClient::clientDied();
-}
-
-
-/**
- * Stop the client service.
- */
-void org_virtualbox_SupDrvClient::stop(IOService *pProvider)
-{
-    dprintf(("org_virtualbox_SupDrvClient::stop([%p])\n", this));
-    IOUserClient::stop(pProvider);
 }
 
 
@@ -801,5 +821,15 @@ bool org_virtualbox_SupDrvClient::finalize(IOOptionBits fOptions)
 {
     dprintf(("org_virtualbox_SupDrvClient::finalize([%p], %#x)\n", this, fOptions));
     return IOUserClient::finalize(fOptions);
+}
+
+
+/**
+ * Stop the client service.
+ */
+void org_virtualbox_SupDrvClient::stop(IOService *pProvider)
+{
+    dprintf(("org_virtualbox_SupDrvClient::stop([%p])\n", this));
+    IOUserClient::stop(pProvider);
 }
 

@@ -326,8 +326,36 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSessio
  */
 void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
+    /*
+     * Cleanup the session first.
+     */
+    supdrvCleanupSession(pDevExt, pSession);
+
+    /*
+     * Free the rest of the session stuff.
+     */
+    RTSpinlockDestroy(pSession->Spinlock);
+    pSession->Spinlock = NIL_RTSPINLOCK;
+    pSession->pDevExt = NULL;
+    RTMemFree(pSession);
+    dprintf2(("supdrvCloseSession: returns\n"));
+}
+
+
+/**
+ * Shared code for cleaning up a session (but not quite freeing it).
+ *
+ * This is primarily intended for MAC OS X where we have to clean up the memory
+ * stuff before the file handle is closed.
+ *
+ * @param   pDevExt     Device extension.
+ * @param   pSession    Session data.
+ *                      This data will be freed by this routine.
+ */
+void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+{
     PSUPDRVBUNDLE       pBundle;
-    dprintf(("supdrvCloseSession: pSession=%p\n", pSession));
+    dprintf(("supdrvCleanupSession: pSession=%p\n", pSession));
 
     /*
      * Remove logger instances related to this session.
@@ -428,6 +456,7 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
                 rc = RTR0MemObjFree(pBundle->aMem[i].MemObj, false);
                 AssertRC(rc); /** @todo figure out how to handle this. */
                 pBundle->aMem[i].MemObj = NIL_RTR0MEMOBJ;
+                pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
             }
 
 #else /* !USE_NEW_OS_INTERFACE */
@@ -453,6 +482,7 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
                     default:
                         break;
                 }
+                pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
             }
 #endif /* !USE_NEW_OS_INTERFACE */
         }
@@ -471,7 +501,7 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
     dprintf2(("freeing memory - done\n"));
 
     /*
-     * Loaded images needs to be dereferenced and possibly freed.
+     * Loaded images needs to be dereferenced and possibly freed up.
      */
     RTSemFastMutexRequest(pDevExt->mtxLdr);
     dprintf2(("freeing images:\n"));
@@ -512,15 +542,6 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
         pSession->fGipReferenced = 0;
     }
     dprintf2(("umapping GIP - done\n"));
-
-    /*
-     * Free the rest of the session stuff.
-     */
-    RTSpinlockDestroy(pSession->Spinlock);
-    pSession->Spinlock = NIL_RTSPINLOCK;
-    pSession->pDevExt = NULL;
-    RTMemFree(pSession);
-    dprintf2(("supdrvCloseSession: returns\n"));
 }
 
 

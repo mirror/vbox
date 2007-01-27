@@ -24,10 +24,12 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP
 #include <VBox/types.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <iprt/path.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -40,6 +42,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <mach/mach_port.h>
+#include <IOKit/IOKitLib.h>
 
 
 /*******************************************************************************
@@ -47,13 +51,19 @@
 *******************************************************************************/
 /** BSD Device name. */
 #define DEVICE_NAME     "/dev/vboxdrv"
+/** The IOClass key of the service (see SUPDrv-darwin.cpp / Info.plist). */
+#define IOCLASS_NAME    "org_virtualbox_SupDrv"
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Handle to the open device. */
-static int      g_hDevice = -1;
+static int              g_hDevice = -1;
+/** The IOMasterPort. */
+static mach_port_t      g_MasterPort = 0;
+/** The current service connection. */
+static io_connect_t     g_Connection = NULL;
 
 
 int suplibOsInit(size_t cbReserve)
@@ -65,18 +75,65 @@ int suplibOsInit(size_t cbReserve)
         return VINF_SUCCESS;
 
     /*
-     * Try open the device.
+     * Open the IOKit client first - The first step is finding the service.
+     */
+    mach_port_t MasterPort;
+    kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort);
+    if (kr != kIOReturnSuccess)
+    {
+        LogRel(("IOMasterPort -> %d\n", kr));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    CFDictionaryRef ClassToMatch = IOServiceMatching(IOCLASS_NAME);
+    if (!ClassToMatch)
+    {
+        LogRel(("IOServiceMatching(\"%s\") failed.\n", IOCLASS_NAME));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    /* Create an io_iterator_t for all instances of our drivers class that exist in the IORegistry. */
+    io_iterator_t Iterator;
+    kr = IOServiceGetMatchingServices(g_MasterPort, ClassToMatch, &Iterator);
+    if (kr != kIOReturnSuccess)
+    {
+        LogRel(("IOServiceGetMatchingServices returned %d\n", kr));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    /* Get the first item in the iterator and release it. */
+    io_service_t ServiceObject = IOIteratorNext(Iterator);
+    IOObjectRelease(Iterator);
+    if (!ServiceObject)
+    {
+        LogRel(("Couldn't find any matches.\n"));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    /*
+     * Open the service.
+     * This will cause the user client class in SUPDrv-darwin.cpp to be instantiated.
+     */
+    kr = IOServiceOpen(ServiceObject, mach_task_self(), 0, &g_Connection);
+    IOObjectRelease(ServiceObject);
+    if (kr != kIOReturnSuccess)
+    {
+        LogRel(("IOServiceOpen returned %d\n", kr));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    /*
+     * Now, try open the BSD device.
      */
     g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
     if (g_hDevice < 0)
     {
-        /*
-         * Try load the device.
-         */
-        //todo suplibOsLoadKernelModule();
-        g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
-        if (g_hDevice < 0)
-            return RTErrConvertFromErrno(errno);
+        int rc = errno;
+        LogRel(("Failed to open \"%s\", errno=%d\n", rc));
+        kr = IOServiceClose(g_Connection);
+        if (kr != kIOReturnSuccess)
+            LogRel(("Warning: IOServiceClose(%p) returned %d\n", g_Connection, kr));
+        return RTErrConvertFromErrno(rc);
     }
 
     /*
@@ -97,6 +154,20 @@ int suplibOsTerm(void)
         if (close(g_hDevice))
             AssertFailed();
         g_hDevice = -1;
+    }
+
+    /*
+     * Close the connection to the IOService and destroy the connection handle.
+     */
+    if (g_Connection)
+    {
+        kern_return_t kr = IOServiceClose(g_Connection);
+        if (kr != kIOReturnSuccess)
+        {
+            LogRel(("Warning: IOServiceClose(%p) returned %d\n", g_Connection, kr));
+            AssertFailed();
+        }
+        g_Connection = NULL;
     }
 
     return VINF_SUCCESS;

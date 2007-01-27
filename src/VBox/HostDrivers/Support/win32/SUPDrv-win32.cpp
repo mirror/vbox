@@ -222,7 +222,8 @@ NTSTATUS _stdcall VBoxSupDrvCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     {
         pSession->Uid       = NIL_RTUID;
         pSession->Gid       = NIL_RTGID;
-        pSession->Process   = NIL_RTPROCESS;
+        pSession->Process   = RTProcSelf();
+        pSession->R0Process = RTR0ProcHandleSelf();
         pFileObj->FsContext = pSession;
     }
 
