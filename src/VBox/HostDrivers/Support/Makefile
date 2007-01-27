@@ -181,12 +181,12 @@ ifeq ($(BUILD_TARGET),darwin)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
 VBoxDrv_INCS          = $(VBOX_PATH_SUPPORT)
-VBoxDrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) $(VBOX_GCC_LIBGCC)
+VBoxDrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxDrv_LDFLAGS       = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxDrv_INST          = bin/VBoxDrv.kext/Contents/MacOS/
 VBoxDrv_SOURCES       = \
 	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c \
-	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c
+	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).cpp
 
 INSTALLS += VBoxDrv.kext
 VBoxDrv.kext_INST     = bin/VBoxDrv.kext/Contents/

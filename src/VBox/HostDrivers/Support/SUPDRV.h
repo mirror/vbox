@@ -170,7 +170,7 @@ __END_DECLS
 #endif
 
 /* dprintf2 - extended logging. */
-#if 0
+#if defined(__DARWIN__)
 # define dprintf2 dprintf
 #else
 # define dprintf2(a) do { } while (0)
@@ -545,6 +545,10 @@ typedef struct SUPDRVSESSION
 #if defined(__DARWIN__) || defined(__OS2__)
     /** Pointer to the next session with the same has. */
     PSUPDRVSESSION              pNextHash;
+#endif
+#if defined(__DARWIN__)
+    /** Pointer to the org_virtualbox_SupDrvClient client that's associated with the session. */
+    void                       *pvClient;
 #endif
 } SUPDRVSESSION;
 
