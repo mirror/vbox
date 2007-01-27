@@ -55,6 +55,7 @@
 #include <iprt/file.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
+#include <VBox/VBoxHDD.h>
 
 #include "VBoxManage.h"
 
@@ -411,7 +412,8 @@ static void printUsage(USAGECATEGORY enmCmd)
     if (enmCmd & USAGE_MODIFYVDI)
     {
         RTPrintf("VBoxManage modifyvdi        <uuid>|<filename>\n"
-                 "                            -type normal|writethrough|immutable\n"
+                 "                            settype normal|writethrough|immutable |\n"
+                 "                            compact\n"
                  "\n");
     }
 
@@ -2087,34 +2089,32 @@ static int handleCreateVDI(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static DECLCALLBACK(int) vdiProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
+{
+    unsigned *pPercent = (unsigned *)pvUser;
+
+    if (*pPercent != uPercent)
+    {
+        *pPercent = uPercent;
+        RTPrintf(".");
+        if ((uPercent % 10) == 0 && uPercent)
+            RTPrintf("%d%%", uPercent);
+        RTStrmFlush(g_pStdOut);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 static int handleModifyVDI(int argc, char *argv[],
                            ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     HRESULT rc;
-    char *type = NULL;
 
-    /* The uuid/filename and a the parameter "-type" with an argument. */
-    if (argc != 3)
+    /* The uuid/filename and a command */
+    if (argc < 2)
     {
         return errorSyntax(USAGE_MODIFYVDI, "Incorrect number of parameters");
-    }
-
-    /* let's have a closer look at the arguments */
-    for (int i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-type") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            }
-            i++;
-            type = argv[i];
-        }
-        else
-        {
-            return errorSyntax(USAGE_MODIFYVDI, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-        }
     }
 
     ComPtr<IHardDisk> hardDisk;
@@ -2135,10 +2135,21 @@ static int handleModifyVDI(int argc, char *argv[],
     {
         vdi = hardDisk;
     }
-    if (SUCCEEDED(rc) && hardDisk && vdi)
+
+    /* let's find out which command */
+    if (strcmp(argv[1], "settype") == 0)
     {
-        if (type)
+        /* hard disk must be registered */
+        if (SUCCEEDED(rc) && hardDisk && vdi)
         {
+            char *type = NULL;
+
+            if (argc <= 2)
+            {
+                return errorArgument("Missing argument to for settype");
+            }
+            type = argv[2];
+
             HardDiskType_T hddType;
             CHECK_ERROR(hardDisk, COMGETTER(Type)(&hddType));
 
@@ -2163,6 +2174,50 @@ static int handleModifyVDI(int argc, char *argv[],
                 return errorArgument("Invalid VDI type '%s' specified", Utf8Str(type).raw());
             }
         }
+        else
+        {
+            return errorArgument("Hard disk image not registered");
+        }
+    }
+    else if (strcmp(argv[1], "compact") == 0)
+    {
+        ComPtr<IVirtualDiskImage> vdi;
+
+        /* the hard disk image might not be registered */
+        if (!hardDisk)
+        {
+            virtualBox->OpenVirtualDiskImage(Bstr(argv[0]), vdi.asOutParam());
+            if (!hardDisk)
+            {
+                return errorArgument("Hard disk image not found");
+            }
+        }
+        else
+            vdi = hardDisk;
+
+        if (!vdi)
+            return errorArgument("Invalid hard disk type. The command only works on VDI files\n");
+
+        Bstr fileName;
+        vdi->COMGETTER(FilePath)(fileName.asOutParam());
+
+        /* close the file */
+        hardDisk = NULL;
+        vdi = NULL;
+
+        unsigned uProcent;
+
+        RTPrintf("Shrinking '%lS': 0%%", fileName.raw());
+        int vrc = VDIShrinkImage(Utf8Str(fileName).raw(), vdiProgressCallback, &uProcent);
+        if (VBOX_FAILURE(vrc))
+        {
+            RTPrintf("Error while shrinking hard disk image: %Vrc\n", vrc);
+            rc = E_FAIL;
+        }
+    }
+    else
+    {
+        return errorSyntax(USAGE_MODIFYVDI, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
