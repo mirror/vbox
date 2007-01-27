@@ -55,6 +55,7 @@ EXPORT_FILE_PAIRS = \
 	include/iprt/log.h=$(PATH_ROOT)/include/iprt/log.h \
 	include/iprt/mem.h=$(PATH_ROOT)/include/iprt/mem.h \
 	include/iprt/param.h=$(PATH_ROOT)/include/iprt/param.h \
+	include/iprt/process.h=$(PATH_ROOT)/include/iprt/process.h \
 	include/iprt/semaphore.h=$(PATH_ROOT)/include/iprt/semaphore.h \
 	include/iprt/spinlock.h=$(PATH_ROOT)/include/iprt/spinlock.h \
 	include/iprt/stdarg.h=$(PATH_ROOT)/include/iprt/stdarg.h \

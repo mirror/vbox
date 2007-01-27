@@ -26,6 +26,7 @@
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
 #include <iprt/initterm.h>
+#include <iprt/process.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 
@@ -220,7 +221,7 @@ static int              g_iModuleMajor;
 #define DEVICE_NAME    "vboxdrv"
 
 #ifdef __AMD64__
-/** 
+/**
  * Memory for the executable memory heap (in IPRT).
  */
 extern uint8_t g_abExecMemory[1572864]; /* 1.5 MB */
@@ -232,7 +233,7 @@ __asm__(".section execmemory, \"awx\", @progbits\n\t"
         ".type g_abExecMemory, @object\n\t"
         ".size g_abExecMemory, 1572864\n\t"
         ".text\n\t");
-#endif 
+#endif
 
 
 /*******************************************************************************
@@ -362,9 +363,9 @@ static int __init VBoxSupDrvInit(void)
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 nmi_activated:
 #  endif
-                printk(KERN_ERR DEVICE_NAME 
+                printk(KERN_ERR DEVICE_NAME
                 ": NMI watchdog active -- refused to load the kernel module! Please disable\n"
-                                DEVICE_NAME 
+                                DEVICE_NAME
                 ": the NMI watchdog by specifying 'nmi_watchdog=0' at kernel command line.\n");
                 return -EINVAL;
 # endif /* >= 2.6.19 */
@@ -533,7 +534,8 @@ static int VBoxSupDrvCreate(struct inode *pInode, struct file *pFilp)
     {
         pSession->Uid       = current->euid;
         pSession->Gid       = current->egid;
-        pSession->Process   = (RTPROCESS)current->tgid;
+        pSession->Process   = RTProcSelf();
+        pSession->R0Process = RTR0ProcHandleSelf();
     }
 
     dprintf(("VBoxSupDrvCreate: g_DevExt=%p pSession=%p rc=%d\n", &g_DevExt, pSession, rc));

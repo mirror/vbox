@@ -542,13 +542,11 @@ typedef struct SUPDRVSESSION
     RTGID                       Gid;
     /** The process (id) of the session. (Set by the OS part.) */
     RTPROCESS                   Process;
+    /** Which process this session is associated with. */
+    RTR0PROCESS                 R0Process;
 #if defined(__DARWIN__) || defined(__OS2__)
     /** Pointer to the next session with the same has. */
     PSUPDRVSESSION              pNextHash;
-#endif
-#if defined(__DARWIN__)
-    /** Pointer to the org_virtualbox_SupDrvClient client that's associated with the session. */
-    void                       *pvClient;
 #endif
 } SUPDRVSESSION;
 
@@ -668,6 +666,7 @@ int  VBOXCALL   supdrvInitDevExt(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSession);
 void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
+void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 int  VBOXCALL   supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz);
 void VBOXCALL   supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
 void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS);
