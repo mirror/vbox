@@ -28,6 +28,7 @@
 #include "SUPDRV.h"
 #include <excpt.h>
 #include <iprt/assert.h>
+#include <iprt/process.h>
 
 
 /*******************************************************************************
