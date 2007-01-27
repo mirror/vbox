@@ -73,6 +73,8 @@ int main(int argc, char **argv)
             {
                 RTPrintf("SUPPageLock -> rc=%d\n", rc);
                 rcRet++;
+                free(aPinnings[i].pv);
+                aPinnings[i].pv = aPinnings[i].pvAligned = NULL;
                 break;
             }
         }
@@ -100,10 +102,11 @@ int main(int argc, char **argv)
                 aPinnings[i].pv = NULL;
             }
         }
+
+
         /*
          * Allocate a bit of contiguous memory.
          */
-
         pv = SUPContAlloc(15003, &HCPhys);
         rcRet += pv == NULL || HCPhys == 0;
         if (pv && HCPhys)
