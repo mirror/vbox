@@ -1,0 +1,106 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxAboutDlg</class>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>VBoxAboutDlg</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>600</width>
+            <height>450</height>
+        </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>0</hsizetype>
+            <vsizetype>0</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
+    </property>
+    <property name="minimumSize">
+        <size>
+            <width>600</width>
+            <height>450</height>
+        </size>
+    </property>
+    <property name="maximumSize">
+        <size>
+            <width>600</width>
+            <height>450</height>
+        </size>
+    </property>
+    <property name="paletteBackgroundPixmap">
+        <pixmap>about_600px.png</pixmap>
+    </property>
+    <property name="caption">
+        <string>VirtualBox - About</string>
+    </property>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>buttonOK</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>14</x>
+                <y>416</y>
+                <width>82</width>
+                <height>26</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>&amp;OK</string>
+        </property>
+        <property name="accel">
+            <string>Alt+O</string>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>txVersions</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>330</x>
+                <y>0</y>
+                <width>260</width>
+                <height>16</height>
+            </rect>
+        </property>
+        <property name="backgroundMode">
+            <enum>PaletteBackground</enum>
+        </property>
+        <property name="paletteForegroundColor">
+            <color>
+                <red>0</red>
+                <green>0</green>
+                <blue>0</blue>
+            </color>
+        </property>
+        <property name="backgroundOrigin">
+            <enum>ParentOrigin</enum>
+        </property>
+        <property name="lineWidth">
+            <number>0</number>
+        </property>
+        <property name="text">
+            <string>VirtualBox Graphical User Interface Version %1</string>
+        </property>
+        <property name="alignment">
+            <set>WordBreak|AlignBottom|AlignRight</set>
+        </property>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>buttonOK</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxAboutDlg</receiver>
+        <slot>accept()</slot>
+    </connection>
+</connections>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
