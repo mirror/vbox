@@ -422,9 +422,9 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
 {
-    return rtR0MemObjNativeLock(ppMem, pv, cb, current_task());
+    return rtR0MemObjNativeLock(ppMem, pv, cb, (task_t)R0Process);
 }
 
 
@@ -440,7 +440,7 @@ int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, siz
 }
 
 
-int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
+int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -489,7 +489,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 }
 
 
-int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     /*
      * Must have a memory descriptor.
@@ -498,8 +498,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
     PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
     if (pMemToMapDarwin->pMemDesc)
     {
-        Assert(current_task() != kernel_task);
-        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map(current_task(), kIOMapAnywhere,
+        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map((task_t)R0Process, kIOMapAnywhere,
                                                               kIOMapAnywhere | kIOMapDefaultCache);
         if (pMemMap)
         {
@@ -514,7 +513,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
                                                                                 pv, pMemToMapDarwin->Core.cb);
                 if (pMemDarwin)
                 {
-                    pMemDarwin->Core.u.Mapping.R0Process = RTR0ProcHandleSelf();
+                    pMemDarwin->Core.u.Mapping.R0Process = R0Process;
                     pMemDarwin->pMemMap = pMemMap;
                     *ppMem = &pMemDarwin->Core;
                     return VINF_SUCCESS;

@@ -263,8 +263,9 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   pv              User virtual address, page aligned.
  * @param   cb              Number of bytes to lock, page aligned.
+ * @param   R0Process       The process to lock pages in.
  */
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb);
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process);
 
 /**
  * Locks a range of kernel virtual memory.
@@ -316,8 +317,9 @@ int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, siz
  * @param   pvFixed         Requested address. (void *)-1 means any address. This matches uAlignment if specified.
  * @param   cb              The number of bytes to reserve, page aligned.
  * @param   uAlignment      The alignment of the reserved memory; PAGE_SIZE, _2M or _4M.
+ * @param   R0Process       The process to reserve the memory in.
  */
-int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment);
+int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process);
 
 /**
  * Maps a memory object into user virtual address space in the current process.
@@ -340,8 +342,9 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pM
  * @param   pvFixed         Requested address. (void *)-1 means any address. This matches uAlignment if specified.
  * @param   uAlignment      The alignment of the reserved memory; PAGE_SIZE, _2M or _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
+ * @param   R0Process       The process to map the memory into.
  */
-int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt);
+int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process);
 
 /**
  * Get the physical address of an page in the memory object.

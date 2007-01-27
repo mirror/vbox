@@ -32,6 +32,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/thread.h>
+#include <iprt/process.h>
 #include <iprt/log.h>
 #ifdef VBOX_WITHOUT_IDT_PATCHING
 # include <VBox/vmm.h>
@@ -1726,7 +1727,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, void *pvR3, unsigned cb, PS
      * Let IPRT do the job.
      */
     Mem.eType = MEMREF_TYPE_LOCKED;
-    rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb);
+    rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTR0ProcHandleSelf());
     if (RT_SUCCESS(rc))
     {
         unsigned iPage = cb >> PAGE_SHIFT;
@@ -1831,7 +1832,8 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void *)-1, 0, RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void *)-1, 0,
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
             Mem.eType = MEMREF_TYPE_CONT;
@@ -1935,7 +1937,8 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **pp
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void *)-1, 0, RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void *)-1, 0,
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
             Mem.eType = MEMREF_TYPE_LOW;
@@ -2045,7 +2048,8 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0,
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void*)-1, 0, RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void*)-1, 0,
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
             Mem.eType = MEMREF_TYPE_MEM;
@@ -2219,7 +2223,8 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, 
         {
 #ifdef USE_NEW_OS_INTERFACE
             if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
-                rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (void*)-1, 0, RTMEM_PROT_READ);
+                rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (void*)-1, 0,
+                                       RTMEM_PROT_READ, RTR0ProcHandleSelf());
             if (RT_SUCCESS(rc))
             {
                 pGip = (PCSUPGLOBALINFOPAGE)RTR0MemObjAddress(pSession->GipMapObjR3);
