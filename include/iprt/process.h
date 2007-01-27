@@ -24,11 +24,6 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-#ifndef IN_RING3
-# error "The RTProc APIs are Ring-3 only!"
-#endif
-
-
 __BEGIN_DECLS
 
 /** @defgroup grp_rt_process    RTProc - Process Management
@@ -84,6 +79,23 @@ typedef enum RTPROCPRIORITY
 } RTPROCPRIORITY;
 
 
+/**
+ * Get the current process identifier.
+ *
+ * @returns Process identifier.
+ */
+RTDECL(RTPROCESS) RTProcSelf(void);
+
+
+#ifdef IN_RING0
+/**
+ * Get the current process handle.
+ *
+ * @returns Ring-0 process handle.
+ */
+RTR0DECL(RTR0PROCESS) RTR0ProcHandleSelf(void);
+#endif
+
 
 #ifdef IN_RING3
 
@@ -101,13 +113,6 @@ RTR3DECL(int) RTProcSetPriority(RTPROCPRIORITY enmPriority);
  * @returns The priority (see RTPROCPRIORITY).
  */
 RTR3DECL(RTPROCPRIORITY) RTProcGetPriority(void);
-
-/**
- * Get the identifier for the current process.
- *
- * @returns Process identifier.
- */
-RTR3DECL(RTPROCESS) RTProcSelf(void);
 
 /**
  * Create a child process.
@@ -214,7 +219,7 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void);
  */
 RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName);
 
-#endif
+#endif /* IN_RING3 */
 
 /** @} */
 

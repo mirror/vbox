@@ -155,8 +155,8 @@ typedef struct RTR0MEMOBJINTERNAL
         struct
         {
             /** The process that owns the locked memory.
-             * This is NIL_RTPROCESS if it's kernel memory. */
-            RTPROCESS   Process;
+             * This is NIL_RTR0PROCESS if it's kernel memory. */
+            RTR0PROCESS R0Process;
         } Lock;
 
         /** RTR0MEMTYPE_PHYS. */
@@ -172,16 +172,16 @@ typedef struct RTR0MEMOBJINTERNAL
         struct
         {
             /** The process that owns the reserved memory.
-             * This is NIL_RTPROCESS if it's kernel memory. */
-            RTPROCESS   Process;
+             * This is NIL_RTR0PROCESS if it's kernel memory. */
+            RTR0PROCESS R0Process;
         } ResVirt;
 
         /** RTR0MEMOBJTYPE_MAPPING */
         struct
         {
             /** The process that owns the reserved memory.
-             * This is NIL_RTPROCESS if it's kernel memory. */
-            RTPROCESS   Process;
+             * This is NIL_RTR0PROCESS if it's kernel memory. */
+            RTR0PROCESS R0Process;
         } Mapping;
     } u;
 

@@ -31,6 +31,7 @@
 #include <iprt/log.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/process.h>
 #include "internal/memobj.h"
 
 /*#define USE_VM_MAP_WIRE*/
@@ -93,8 +94,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_LOCK:
         {
 #ifdef USE_VM_MAP_WIRE
-            vm_map_t Map = pMemDarwin->Core.u.Lock.Process != NIL_RTPROCESS
-                         ? get_task_map((task_t)pMemDarwin->Core.u.Lock.Process)
+            vm_map_t Map = pMemDarwin->Core.u.Lock.R0Process != NIL_RTR0PROCESS
+                         ? get_task_map((task_t)pMemDarwin->Core.u.Lock.R0Process)
                          : kernel_map;
             kern_return_t kr = vm_map_unwire(Map,
                                              (vm_map_offset_t)pMemDarwin->Core.pv,
@@ -376,7 +377,7 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
         PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
         if (pMemDarwin)
         {
-            pMemDarwin->Core.u.Lock.Process = (RTPROCESS)Task;
+            pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
             *ppMem = &pMemDarwin->Core;
             return VINF_SUCCESS;
         }
@@ -403,7 +404,7 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
             PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
             if (pMemDarwin)
             {
-                pMemDarwin->Core.u.Lock.Process = (RTPROCESS)Task;
+                pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
                 pMemDarwin->pMemDesc = pMemDesc;
                 *ppMem = &pMemDarwin->Core;
                 return VINF_SUCCESS;
@@ -469,7 +470,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
                                                                                 pv, pMemToMapDarwin->Core.cb);
                 if (pMemDarwin)
                 {
-                    pMemDarwin->Core.u.Mapping.Process = NIL_RTPROCESS;
+                    pMemDarwin->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
                     pMemDarwin->pMemMap = pMemMap;
                     *ppMem = &pMemDarwin->Core;
                     return VINF_SUCCESS;
@@ -513,7 +514,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
                                                                                 pv, pMemToMapDarwin->Core.cb);
                 if (pMemDarwin)
                 {
-                    pMemDarwin->Core.u.Mapping.Process = /*RTProcSelf()*/(RTPROCESS)current_task();
+                    pMemDarwin->Core.u.Mapping.R0Process = RTR0ProcHandleSelf();
                     pMemDarwin->pMemMap = pMemMap;
                     *ppMem = &pMemDarwin->Core;
                     return VINF_SUCCESS;
@@ -545,7 +546,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPag
     if (pMemDarwin->Core.enmType == RTR0MEMOBJTYPE_LOCK)
     {
         ppnum_t PgNo;
-        if (pMemDarwin->Core.u.Lock.Process == NIL_RTPROCESS)
+        if (pMemDarwin->Core.u.Lock.R0Process == NIL_RTR0PROCESS)
             PgNo = pmap_find_phys(kernel_pmap, (uintptr_t)pMemDarwin->Core.pv + iPage * PAGE_SIZE);
         else
         {
@@ -574,7 +575,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPag
                     }
                 AssertReturn(s_offPmap >= 0, NIL_RTHCPHYS);
             }
-            pmap_t Pmap = *(pmap_t *)((uintptr_t)get_task_map((task_t)pMemDarwin->Core.u.Lock.Process) + s_offPmap);
+            pmap_t Pmap = *(pmap_t *)((uintptr_t)get_task_map((task_t)pMemDarwin->Core.u.Lock.R0Process) + s_offPmap);
             PgNo = pmap_find_phys(Pmap, (uintptr_t)pMemDarwin->Core.pv + iPage * PAGE_SIZE);
         }
 

@@ -392,6 +392,7 @@ VBoxRT_LIBS                    = \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 VBoxRT_LIBS.darwin             = \
 	iconv
+VBoxRT_LDFLAGS.darwin          = -framework IOKit
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
 endif
@@ -544,6 +545,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	alloc/heapsimple.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
+	r0drv/linux/process-r0drv-linux.cpp \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
 	r0drv/linux/semaphore-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
@@ -553,6 +555,7 @@ RuntimeR0Drv_SOURCES.win = \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
+	r0drv/nt/process-r0drv-nt.cpp \
 	r0drv/nt/RTLogWriteDebugger-r0drv-nt.cpp \
 	r0drv/nt/semaphore-r0drv-nt.cpp \
 	r0drv/nt/spinlock-r0drv-nt.cpp \
@@ -570,6 +573,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/memobj-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
+	r0drv/darwin/process-r0drv-darwin.cpp \
 	r0drv/darwin/RTLogWriteDebugger-r0drv-darwin.cpp \
 	r0drv/darwin/semaphore-r0drv-darwin.cpp \
 	r0drv/darwin/spinlock-r0drv-darwin.cpp \
