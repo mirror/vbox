@@ -545,7 +545,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	alloc/heapsimple.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
-	r0drv/linux/process-r0drv-linux.cpp \
+	r0drv/linux/process-r0drv-linux.c \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
 	r0drv/linux/semaphore-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
