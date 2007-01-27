@@ -1820,8 +1820,10 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0
                 if (ppvR0)
                     *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
                 *ppvR3 = RTR0MemObjAddress(Mem.MapObjR3);
+                *pHCPhys = RTR0MemObjGetPagePhysAddr(Mem.MemObj, 0);
                 return 0;
             }
+
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
             AssertRC(rc2);
         }
@@ -1930,6 +1932,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **pp
                 *ppvR3 = RTR0MemObjAddress(Mem.MapObjR3);
                 return 0;
             }
+
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
             AssertRC(rc2);
         }

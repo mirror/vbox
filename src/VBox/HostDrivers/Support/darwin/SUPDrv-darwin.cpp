@@ -27,13 +27,16 @@
  * (This is mess inherited from BSD. The *BSDs has clean this up long ago.) */
 #include <sys/param.h>
 #undef PVM
+#include <IOKit/IOLib.h> /* Assert as function */
 
 #include "SUPDRV.h"
+#include <VBox/version.h>
 #include <iprt/types.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
+#include <iprt/alloc.h>
 
 #include <mach/kmod.h>
 #include <miscfs/devfs/devfs.h>
@@ -42,6 +45,8 @@
 #include <sys/ioccom.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
+#include <IOKit/IOService.h>
+#include <IOKit/IOUserclient.h>
 
 
 /*******************************************************************************
@@ -56,6 +61,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+__BEGIN_DECLS
 static kern_return_t    VBoxSupDrvStart(struct kmod_info *pKModInfo, void *pvData);
 static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData);
 
@@ -65,6 +71,57 @@ static int              VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, i
 static int              VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess);
 
 static int              VBoxSupDrvErr2DarwinErr(int rc);
+__END_DECLS
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * The service class.
+ * This is just a formality really.
+ */
+class org_virtualbox_SupDrv : public IOService
+{
+    OSDeclareDefaultStructors(org_virtualbox_SupDrv)
+
+public:
+    virtual bool init(OSDictionary *pDictionary = 0);
+    virtual void free(void);
+    virtual bool start(IOService *pProvider);
+    virtual void stop(IOService *pProvider);
+    virtual IOService *probe(IOService *pProvider, SInt32 *pi32Score);
+};
+
+OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService)
+
+
+/**
+ * An attempt at getting that clientDied() notification.
+ * I don't think it'll work as I cannot figure out where/what creates the correct
+ * port right.
+ */
+class org_virtualbox_SupDrvClient : public IOUserClient
+{
+    OSDeclareDefaultStructors(org_virtualbox_SupDrvClient)
+
+private:
+    PSUPDRVSESSION          m_pSession;     /**< The session. */
+    task_t                  m_Task;         /**< The client task. */
+    org_virtualbox_SupDrv  *m_pProvider;    /**< The service provider. */
+
+public:
+    virtual bool initWithTask(task_t OwningTask, void *pvSecurityId, UInt32 u32Type);
+    virtual bool start(IOService *pProvider);
+    virtual void stop(IOService *pProvider);
+    virtual IOReturn clientClose(void);
+    virtual IOReturn clientDied(void);
+    virtual bool terminate(IOOptionBits fOptions = 0);
+    virtual bool finalize(IOOptionBits fOptions);
+};
+
+OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient)
+
 
 
 /*******************************************************************************
@@ -73,7 +130,19 @@ static int              VBoxSupDrvErr2DarwinErr(int rc);
 /**
  * Declare the module stuff.
  */
-KMOD_EXPLICIT_DECL(vboxdrv, "1.0", VBoxSupDrvStart, VBoxSupDrvStop)
+__BEGIN_DECLS
+extern kern_return_t _start(struct kmod_info *pKModInfo, void *pvData);
+extern kern_return_t _stop(struct kmod_info *pKModInfo, void *pvData);
+__private_extern__ kmod_start_func_t *_realmain;
+__private_extern__ kmod_stop_func_t  *_antimain;
+__private_extern__ int                _kext_apple_cc;
+
+KMOD_EXPLICIT_DECL(VBoxDrv, VBOX_VERSION_STRING, _start, _stop)
+kmod_start_func_t *_realmain = VBoxSupDrvStart;
+kmod_stop_func_t  *_antimain = VBoxSupDrvStop;
+int                _kext_apple_cc = __APPLE_CC__;
+__END_DECLS
+
 
 /**
  * Device extention & session data association structure.
@@ -85,24 +154,25 @@ static SUPDRVDEVEXT     g_DevExt;
  */
 static struct cdevsw    g_DevCW =
 {
-    .d_open = VBoxSupDrvOpen,
-    .d_close = VBoxSupDrvClose,
-    .d_read = eno_rdwrt,
-    .d_write = eno_rdwrt,
-    .d_ioctl = VBoxSupDrvIOCtl,
-    .d_stop = eno_stop,
-    .d_reset = eno_reset,
-    .d_ttys = NULL,
-    .d_select = eno_select,
-    .d_mmap = eno_mmap,
-    .d_strategy = eno_strat,
-    .d_getc = eno_getc,
-    .d_putc = eno_putc,
-    .d_type = 0
+    /** @todo g++ doesn't like this syntax - it worked with gcc before renaming to .cpp. */
+    /*.d_open  = */VBoxSupDrvOpen,
+    /*.d_close = */VBoxSupDrvClose,
+    /*.d_read  = */eno_rdwrt,
+    /*.d_write = */eno_rdwrt,
+    /*.d_ioctl = */VBoxSupDrvIOCtl,
+    /*.d_stop  = */eno_stop,
+    /*.d_reset = */eno_reset,
+    /*.d_ttys  = */NULL,
+    /*.d_select= */eno_select,
+    /*.d_mmap  = */eno_mmap,
+    /*.d_strategy = */eno_strat,
+    /*.d_getc  = */eno_getc,
+    /*.d_putc  = */eno_putc,
+    /*.d_type  = */0
 };
 
 /** Major device number. */
-static int 	            g_iMajorDeviceNo = -1;
+static int              g_iMajorDeviceNo = -1;
 /** Registered devfs device handle. */
 static void            *g_hDevFsDevice = NULL;
 
@@ -379,7 +449,7 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
     int                 rc;
     void               *pvPageBuf = NULL;
     void               *pvBuf = NULL;
-    int                 cbBuf = 0;
+    unsigned long       cbBuf = 0;
     unsigned            cbOut = 0;
     PSUPDRVIOCTLDATA    pArgs = (PSUPDRVIOCTLDATA)pData;
     dprintf(("VBoxSupDrvIOCtl: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
@@ -399,7 +469,7 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
     if (pArgs->cbIn > 0 || pArgs->cbOut > 0)
     {
         cbBuf = max(pArgs->cbIn, pArgs->cbOut);
-        MALLOC(pvBuf, void *, cbBuf, M_TEMP, M_WAITOK);
+        pvBuf = RTMemTmpAlloc(cbBuf);
         if (pvBuf == NULL)
             pvPageBuf = pvBuf = IOMallocAligned(cbBuf, 8);
         if (pvBuf == NULL)
@@ -414,7 +484,7 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
             if (pvPageBuf)
                 IOFreeAligned(pvPageBuf, cbBuf);
             else
-                FREE(pvBuf, M_TEMP);
+                RTMemTmpFree(pvBuf);
             return rc;
         }
     }
@@ -455,7 +525,7 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
     if (pvPageBuf)
         IOFreeAligned(pvPageBuf, cbBuf);
     else if (pvBuf)
-        FREE(pvBuf, M_TEMP);
+        RTMemTmpFree(pvBuf);
 
     dprintf2(("VBoxSupDrvIOCtl: returns %d\n", rc));
     return rc;
@@ -523,8 +593,8 @@ static int VBoxSupDrvErr2DarwinErr(int rc)
 /** @todo move this to assembly where a simple "jmp printf" will to the trick. */
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
-    va_list	 args;
-    char	 szMsg[512];
+    va_list     args;
+    char        szMsg[512];
 
     va_start(args, pszFormat);
     vsnprintf(szMsg, sizeof(szMsg) - 1, pszFormat, args);
@@ -550,13 +620,186 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
  * @todo this one needs fixing! */
 RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 {   /* forwarder. */
-    va_list	 ap;
-    char	 msg[256];
+    va_list     ap;
+    char        msg[256];
 
     va_start(ap, pszFormat);
     vsnprintf(msg, sizeof(msg) - 1, pszFormat, ap);
     msg[sizeof(msg) - 1] = '\0';
     printf("%s", msg);
     va_end(ap);
+}
+
+
+/*
+ *
+ * org_virtualbox_SupDrv
+ *
+ */
+
+
+/**
+ * Initialize the object.
+ */
+bool org_virtualbox_SupDrv::init(OSDictionary *pDictionary)
+{
+    dprintf(("org_virtualbox_SupDrv::init([%p], %p)\n", this, pDictionary));
+    if (IOService::init(pDictionary))
+    {
+        /* init members. */
+        return true;
+    }
+    return false;
+}
+
+
+/**
+ * Free the object.
+ */
+void org_virtualbox_SupDrv::free(void)
+{
+    dprintf(("IOService::free([%p])\n", this));
+    IOService::free();
+}
+
+
+/**
+ * Check if it's ok to start this service.
+ * It's always ok by us, so it's up to IOService to decide really.
+ */
+IOService *org_virtualbox_SupDrv::probe(IOService *pProvider, SInt32 *pi32Score)
+{
+    dprintf(("org_virtualbox_SupDrv::probe([%p])\n", this));
+    return IOService::probe(pProvider, pi32Score);
+}
+
+
+/**
+ * Start this service.
+ */
+bool org_virtualbox_SupDrv::start(IOService *pProvider)
+{
+    dprintf(("org_virtualbox_SupDrv::start([%p])\n", this));
+
+    if (IOService::start(pProvider))
+    {
+        /* register the service. */
+        registerService();
+        return true;
+    }
+    return false;
+}
+
+
+/**
+ * Stop this service.
+ */
+void org_virtualbox_SupDrv::stop(IOService *pProvider)
+{
+    dprintf(("org_virtualbox_SupDrv::stop([%p], %p)\n", this, pProvider));
+    IOService::stop(pProvider);
+}
+
+
+/*
+ *
+ * org_virtualbox_SupDrvClient
+ *
+ */
+
+
+/**
+ * Initializer called when the client opens the service.
+ */
+bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecurityId, UInt32 u32Type)
+{
+    dprintf(("org_virtualbox_SupDrvClient::initWithTask([%p], %#x, %p, %#x)\n", this, OwningTask, pvSecurityId, u32Type));
+
+    if (!OwningTask)
+        return false;
+    if (IOUserClient::initWithTask(OwningTask, pvSecurityId , u32Type))
+    {
+        m_Task = OwningTask;
+        m_pSession = NULL;
+        m_pProvider = NULL;
+        return true;
+    }
+    return false;
+}
+
+
+/**
+ * Start the client service.
+ */
+bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
+{
+    dprintf(("org_virtualbox_SupDrvClient::start([%p], %p)\n", this, pProvider));
+    if (IOUserClient::start(pProvider))
+    {
+        m_pProvider = OSDynamicCast(org_virtualbox_SupDrv, pProvider);
+        if (m_pProvider)
+        {
+            /* this is where we could create the section. */
+            return true;
+        }
+        dprintf(("org_virtualbox_SupDrvClient::start: %p isn't org_virtualbox_SupDrv\n", pProvider));
+    }
+    return false;
+}
+
+
+/**
+ * Client exits normally.
+ */
+IOReturn org_virtualbox_SupDrvClient::clientClose(void)
+{
+    dprintf(("org_virtualbox_SupDrvClient::clientClose([%p])\n", this));
+
+    m_pProvider = NULL;
+    terminate();
+
+    return kIOReturnSuccess;
+}
+
+
+/**
+ * The client exits abnormally / forgets to do cleanups.
+ */
+IOReturn org_virtualbox_SupDrvClient::clientDied(void)
+{
+    dprintf(("org_virtualbox_SupDrvClient::clientDied([%p])\n", this));
+
+    /* IOUserClient::clientDied() only calls calls close... */
+    return IOUserClient::clientDied();
+}
+
+
+/**
+ * Stop the client service.
+ */
+void org_virtualbox_SupDrvClient::stop(IOService *pProvider)
+{
+    dprintf(("org_virtualbox_SupDrvClient::stop([%p])\n", this));
+    IOUserClient::stop(pProvider);
+}
+
+
+/**
+ * Terminate the service (initiate the destruction).
+ */
+bool org_virtualbox_SupDrvClient::terminate(IOOptionBits fOptions)
+{
+    dprintf(("org_virtualbox_SupDrvClient::terminate([%p], %#x)\n", this, fOptions));
+    return IOUserClient::terminate(fOptions);
+}
+
+
+/**
+ * The final stage of the client service destruction.
+ */
+bool org_virtualbox_SupDrvClient::finalize(IOOptionBits fOptions)
+{
+    dprintf(("org_virtualbox_SupDrvClient::finalize([%p], %#x)\n", this, fOptions));
+    return IOUserClient::finalize(fOptions);
 }
 
