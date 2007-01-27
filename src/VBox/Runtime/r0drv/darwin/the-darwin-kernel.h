@@ -51,6 +51,7 @@
 #include <kern/locks.h>
 #include <libkern/libkern.h>
 #include <mach/thread_act.h>
+#include <mach/vm_map.h>
 #include <pexpert/pexpert.h>
 #include <sys/conf.h>
 #include <sys/errno.h>
@@ -64,7 +65,27 @@
 
 
 __BEGIN_DECLS
-kern_return_t thread_terminate(thread_t);
+/* mach/vm_types.h */
+typedef struct pmap *pmap_t;
+
+/* vm/vm_kern.h */
+extern vm_map_t kernel_map;
+
+/* vm/pmap.h */
+extern pmap_t kernel_pmap;
+
+/* kern/task.h */
+extern vm_map_t get_task_map(task_t);
+
+/* osfmk/i386/pmap.h */
+extern ppnum_t pmap_find_phys(pmap_t, addr64_t);
+
+/* vm/vm_map.h */
+extern kern_return_t vm_map_wire(vm_map_t, vm_map_offset_t, vm_map_offset_t, vm_prot_t, boolean_t);
+extern kern_return_t vm_map_unwire(vm_map_t, vm_map_offset_t, vm_map_offset_t, boolean_t);
+
+/* mach/i386/thread_act.h */
+extern kern_return_t thread_terminate(thread_t);
 __END_DECLS
 
 

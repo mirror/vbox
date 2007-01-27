@@ -33,6 +33,8 @@
 #include <iprt/string.h>
 #include "internal/memobj.h"
 
+/*#define USE_VM_MAP_WIRE*/
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -61,7 +63,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
     if (pMemDarwin->pMemDesc)
     {
         if (pMemDarwin->Core.enmType == RTR0MEMOBJTYPE_LOCK)
-            pMemDarwin->pMemDesc->complete();
+            pMemDarwin->pMemDesc->complete(); /* paranoia */
         pMemDarwin->pMemDesc->release();
         pMemDarwin->pMemDesc = NULL;
         Assert(!pMemDarwin->pMemMap);
@@ -89,7 +91,19 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
+        {
+#ifdef USE_VM_MAP_WIRE
+            vm_map_t Map = pMemDarwin->Core.u.Lock.Process != NIL_RTPROCESS
+                         ? get_task_map((task_t)pMemDarwin->Core.u.Lock.Process)
+                         : kernel_map;
+            kern_return_t kr = vm_map_unwire(Map,
+                                             (vm_map_offset_t)pMemDarwin->Core.pv,
+                                             (vm_map_offset_t)pMemDarwin->Core.pv + pMemDarwin->Core.cb,
+                                             0 /* not user */);
+            AssertRC(kr == KERN_SUCCESS); /** @todo don't ignore... */
+#endif
             break;
+        }
 
         case RTR0MEMOBJTYPE_PHYS:
             /*if (pMemDarwin->Core.u.Phys.fAllocated)
@@ -329,11 +343,55 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
+/**
+ * Internal worker for locking down pages.
+ *
+ * @return IPRT status code.
+ *
+ * @param ppMem     Where to store the memory object pointer.
+ * @param pv        First page.
+ * @param cb        Number of bytes.
+ * @param Task      The task \a pv and \a cb refers to.
+ */
+static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, task_t Task)
 {
-    Assert(current_task() != kernel_task);
+#ifdef USE_VM_MAP_WIRE
+    vm_map_t Map = get_task_map(Task);
+    Assert(Map);
+
+    /*
+     * First try lock the memory.
+     */
+    int rc = VERR_LOCK_FAILED;
+    kern_return_t kr = vm_map_wire(get_task_map(Task),
+                                   (vm_map_offset_t)pv,
+                                   (vm_map_offset_t)pv + cb,
+                                   VM_PROT_DEFAULT,
+                                   0 /* not user */);
+    if (kr == KERN_SUCCESS)
+    {
+        /*
+         * Create the IPRT memory object.
+         */
+        PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
+        if (pMemDarwin)
+        {
+            pMemDarwin->Core.u.Lock.Process = (RTPROCESS)Task;
+            *ppMem = &pMemDarwin->Core;
+            return VINF_SUCCESS;
+        }
+        kr = vm_map_unwire(get_task_map(Task), (vm_map_offset_t)pv, (vm_map_offset_t)pv + cb, 0 /* not user */);
+        Assert(kr == KERN_SUCCESS);
+        rc = VERR_NO_MEMORY;
+    }
+
+#else
+
+    /*
+     * Create a descriptor and try lock it (prepare).
+     */
     int rc = VERR_MEMOBJ_INIT_FAILED;
-    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, current_task());
+    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, Task);
     if (pMemDesc)
     {
         IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
@@ -345,7 +403,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
             PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
             if (pMemDarwin)
             {
-                pMemDarwin->Core.u.Lock.Process = (RTPROCESS)current_task();
+                pMemDarwin->Core.u.Lock.Process = (RTPROCESS)Task;
                 pMemDarwin->pMemDesc = pMemDesc;
                 *ppMem = &pMemDarwin->Core;
                 return VINF_SUCCESS;
@@ -358,39 +416,20 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
             rc = VERR_LOCK_FAILED;
         pMemDesc->release();
     }
+#endif
     return rc;
+}
+
+
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
+{
+    return rtR0MemObjNativeLock(ppMem, pv, cb, current_task());
 }
 
 
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-    int rc = VERR_MEMOBJ_INIT_FAILED;
-    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
-    if (pMemDesc)
-    {
-        IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
-        if (IORet == kIOReturnSuccess)
-        {
-            /*
-             * Create the IPRT memory object.
-             */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
-            if (pMemDarwin)
-            {
-                pMemDarwin->Core.u.Lock.Process = NIL_RTPROCESS;
-                pMemDarwin->pMemDesc = pMemDesc;
-                *ppMem = &pMemDarwin->Core;
-                return VINF_SUCCESS;
-            }
-
-            pMemDesc->complete();
-            rc = VERR_NO_MEMORY;
-        }
-        else
-            rc = VERR_LOCK_FAILED;
-        pMemDesc->release();
-    }
-    return rc;
+    return rtR0MemObjNativeLock(ppMem, pv, cb, kernel_task);
 }
 
 
@@ -495,24 +534,74 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
 
 RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPage)
 {
-    PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)pMem;
+    RTHCPHYS            PhysAddr;
+    PRTR0MEMOBJDARWIN   pMemDarwin = (PRTR0MEMOBJDARWIN)pMem;
 
+#ifdef USE_VM_MAP_WIRE
     /*
-     * Get the memory descriptor.
+     * Locked memory doesn't have a memory descriptor and
+     * needs to be handled differently.
      */
-    IOMemoryDescriptor *pMemDesc = pMemDarwin->pMemDesc;
-    if (!pMemDesc)
-        pMemDesc = pMemDarwin->pMemMap->getMemoryDescriptor();
-    AssertReturn(pMemDesc, NIL_RTHCPHYS);
+    if (pMemDarwin->Core.enmType == RTR0MEMOBJTYPE_LOCK)
+    {
+        ppnum_t PgNo;
+        if (pMemDarwin->Core.u.Lock.Process == NIL_RTPROCESS)
+            PgNo = pmap_find_phys(kernel_pmap, (uintptr_t)pMemDarwin->Core.pv + iPage * PAGE_SIZE);
+        else
+        {
+            /*
+             * From what I can tell, Apple seems to have locked up the all the
+             * available interfaces that could help us obtain the pmap_t of a task
+             * or vm_map_t.
 
+             * So, we'll have to figure out where in the vm_map_t  structure it is
+             * and read it our selves. ASSUMING that kernel_pmap is pointed to by
+             * kernel_map->pmap, we scan kernel_map to locate the structure offset.
+             * Not nice, but it will hopefully do the job in a reliable manner...
+             *
+             * (get_task_pmap, get_map_pmap or vm_map_pmap is what we really need btw.)
+             */
+            static int s_offPmap = -1;
+            if (RT_UNLIKELY(s_offPmap == -1))
+            {
+                pmap_t const *p = (pmap_t *)kernel_map;
+                pmap_t const * const pEnd = p + 64;
+                for (; p < pEnd; p++)
+                    if (*p == kernel_pmap)
+                    {
+                        s_offPmap = (uintptr_t)p - (uintptr_t)kernel_map;
+                        break;
+                    }
+                AssertReturn(s_offPmap >= 0, NIL_RTHCPHYS);
+            }
+            pmap_t Pmap = *(pmap_t *)((uintptr_t)get_task_map((task_t)pMemDarwin->Core.u.Lock.Process) + s_offPmap);
+            PgNo = pmap_find_phys(Pmap, (uintptr_t)pMemDarwin->Core.pv + iPage * PAGE_SIZE);
+        }
 
-    /*
-     * If we've got a memory descriptor, use getPhysicalSegment64().
-     */
-    addr64_t Addr = pMemDesc->getPhysicalSegment64(iPage * PAGE_SIZE, NULL);
-    AssertMsgReturn(Addr, ("iPage=%u\n", iPage), NIL_RTHCPHYS);
-    RTHCPHYS PhysAddr = Addr;
-    AssertMsgReturn(PhysAddr == Addr, ("PhysAddr=%VHp Addr=%RX64\n", PhysAddr, (uint64_t)Addr), NIL_RTHCPHYS);
+        AssertReturn(PgNo, NIL_RTHCPHYS);
+        PhysAddr = (RTHCPHYS)PgNo << PAGE_SHIFT;
+        Assert((PhysAddr >> PAGE_SHIFT) == PgNo);
+    }
+    else
+#endif /* USE_VM_MAP_WIRE */
+    {
+        /*
+         * Get the memory descriptor.
+         */
+        IOMemoryDescriptor *pMemDesc = pMemDarwin->pMemDesc;
+        if (!pMemDesc)
+            pMemDesc = pMemDarwin->pMemMap->getMemoryDescriptor();
+        AssertReturn(pMemDesc, NIL_RTHCPHYS);
+
+        /*
+         * If we've got a memory descriptor, use getPhysicalSegment64().
+         */
+        addr64_t Addr = pMemDesc->getPhysicalSegment64(iPage * PAGE_SIZE, NULL);
+        AssertMsgReturn(Addr, ("iPage=%u\n", iPage), NIL_RTHCPHYS);
+        PhysAddr = Addr;
+        AssertMsgReturn(PhysAddr == Addr, ("PhysAddr=%VHp Addr=%RX64\n", PhysAddr, (uint64_t)Addr), NIL_RTHCPHYS);
+    }
+
     return PhysAddr;
 }
 
