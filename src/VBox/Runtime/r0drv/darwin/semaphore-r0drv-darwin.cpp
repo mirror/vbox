@@ -55,6 +55,28 @@ typedef struct RTSEMEVENTINTERNAL
 /** Magic for the Darwin event semaphore structure. (Neil Gaiman) */
 #define RTSEMEVENT_MAGIC 0x19601110
 
+
+/**
+ * Darwin multiple release event semaphore.
+ */
+typedef struct RTSEMEVENTMULTIINTERNAL
+{
+    /** Magic value (RTSEMEVENTMULTI_MAGIC). */
+    uint32_t volatile   u32Magic;
+    /** The number of waiting threads. */
+    uint32_t volatile   cWaiters;
+    /** Set if the event object is signaled. */
+    uint8_t volatile    fSignaled;
+    /** The number of threads in the process of waking up. */
+    uint32_t volatile   cWaking;
+    /** The spinlock protecting us. */
+    lck_spin_t         *pSpinlock;
+} RTSEMEVENTMULTIINTERNAL, *PRTSEMEVENTMULTIINTERNAL;
+
+/** Magic for the Darwin multiple release event semaphore structure. (Isaac Asimov) */
+#define RTSEMEVENTMULTI_MAGIC 0x19200102
+
+
 #if 0 /** @todo */
 /**
  * Darwin mutex semaphore.
@@ -186,7 +208,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, wait_interrupt
     {
         Assert(!pEventInt->cWaiters);
         ASMAtomicXchgU8(&pEventInt->fSignaled, false);
-        rc = 0;
+        rc = VINF_SUCCESS;
     }
     else
     {
@@ -269,6 +291,205 @@ RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
 {
     return rtSemEventWait(EventSem, cMillies, TRUE /* interruptable */);
 }
+
+
+
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
+{
+    Assert(sizeof(RTSEMEVENTMULTIINTERNAL) > sizeof(void *));
+    AssertPtrReturn(pEventMultiSem, VERR_INVALID_POINTER);
+
+    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pEventMultiInt));
+    if (pEventMultiInt)
+    {
+        pEventMultiInt->u32Magic = RTSEMEVENTMULTI_MAGIC;
+        pEventMultiInt->cWaiters = 0;
+        pEventMultiInt->cWaking = 0;
+        pEventMultiInt->fSignaled = 0;
+        Assert(g_pDarwinLockGroup);
+        pEventMultiInt->pSpinlock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
+        if (pEventMultiInt->pSpinlock)
+        {
+            *pEventMultiSem = pEventMultiInt;
+            return VINF_SUCCESS;
+        }
+
+        pEventMultiInt->u32Magic = 0;
+        RTMemFree(pEventMultiInt);
+    }
+    return VERR_NO_MEMORY;
+}
+
+
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
+{
+    if (EventMultiSem == NIL_RTSEMEVENTMULTI)     /* don't bitch */
+        return VERR_INVALID_HANDLE;
+    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
+    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
+                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    lck_spin_lock(pEventMultiInt->pSpinlock);
+    ASMAtomicIncU32(&pEventMultiInt->u32Magic); /* make the handle invalid */
+    if (pEventMultiInt->cWaiters > 0)
+    {
+        /* abort waiting thread, last man cleans up. */
+        ASMAtomicXchgU32(&pEventMultiInt->cWaking, pEventMultiInt->cWaking + pEventMultiInt->cWaiters);
+        thread_wakeup_prim((event_t)pEventMultiInt, FALSE /* all threads */, THREAD_RESTART);
+        lck_spin_unlock(pEventMultiInt->pSpinlock);
+    }
+    else if (pEventMultiInt->cWaking)
+        /* the last waking thread is gonna do the cleanup */
+        lck_spin_unlock(pEventMultiInt->pSpinlock);
+    else
+    {
+        lck_spin_unlock(pEventMultiInt->pSpinlock);
+        lck_spin_destroy(pEventMultiInt->pSpinlock, g_pDarwinLockGroup);
+        RTMemFree(pEventMultiInt);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
+{
+    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
+    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
+                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    lck_spin_lock(pEventMultiInt->pSpinlock);
+
+    ASMAtomicXchgU8(&pEventMultiInt->fSignaled, true);
+    if (pEventMultiInt->cWaiters > 0)
+    {
+        ASMAtomicXchgU32(&pEventMultiInt->cWaking, pEventMultiInt->cWaking + pEventMultiInt->cWaiters);
+        ASMAtomicXchgU32(&pEventMultiInt->cWaiters, 0);
+        thread_wakeup_prim((event_t)pEventMultiInt, FALSE /* all threads */, THREAD_AWAKENED);
+    }
+
+    lck_spin_unlock(pEventMultiInt->pSpinlock);
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
+{
+    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
+    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
+                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    lck_spin_lock(pEventMultiInt->pSpinlock);
+    ASMAtomicXchgU8(&pEventMultiInt->fSignaled, false);
+    lck_spin_unlock(pEventMultiInt->pSpinlock);
+    return VINF_SUCCESS;
+}
+
+
+static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies, wait_interrupt_t fInterruptible)
+{
+    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
+    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
+                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    lck_spin_lock(pEventMultiInt->pSpinlock);
+
+    int rc;
+    if (pEventMultiInt->fSignaled)
+    {
+        ASMAtomicXchgU8(&pEventMultiInt->fSignaled, false);
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        ASMAtomicIncU32(&pEventMultiInt->cWaiters);
+
+        wait_result_t rcWait;
+        if (cMillies == RT_INDEFINITE_WAIT)
+            rcWait = lck_spin_sleep(pEventMultiInt->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pEventMultiInt, fInterruptible);
+        else
+        {
+            uint64_t u64AbsTime;
+            nanoseconds_to_absolutetime(cMillies * UINT64_C(1000000), &u64AbsTime);
+            u64AbsTime += mach_absolute_time();
+
+            rcWait = lck_spin_sleep_deadline(pEventMultiInt->pSpinlock, LCK_SLEEP_DEFAULT,
+                                             (event_t)pEventMultiInt, fInterruptible, u64AbsTime);
+        }
+        switch (rcWait)
+        {
+            case THREAD_AWAKENED:
+                Assert(pEventMultiInt->cWaking > 0);
+                if (    !ASMAtomicDecU32(&pEventMultiInt->cWaking)
+                    &&  pEventMultiInt->u32Magic != RTSEMEVENTMULTI_MAGIC)
+                {
+                    /* the event was destroyed after we woke up, as the last thread do the cleanup. */
+                    lck_spin_unlock(pEventMultiInt->pSpinlock);
+                    Assert(g_pDarwinLockGroup);
+                    lck_spin_destroy(pEventMultiInt->pSpinlock, g_pDarwinLockGroup);
+                    RTMemFree(pEventMultiInt);
+                    return VINF_SUCCESS;
+                }
+                rc = VINF_SUCCESS;
+                break;
+
+            case THREAD_TIMED_OUT:
+                Assert(cMillies != RT_INDEFINITE_WAIT);
+                ASMAtomicDecU32(&pEventMultiInt->cWaiters);
+                rc = VERR_TIMEOUT;
+                break;
+
+            case THREAD_INTERRUPTED:
+                Assert(fInterruptible);
+                ASMAtomicDecU32(&pEventMultiInt->cWaiters);
+                rc = VERR_INTERRUPTED;
+                break;
+
+            case THREAD_RESTART:
+                /* Last one out does the cleanup. */
+                if (!ASMAtomicDecU32(&pEventMultiInt->cWaking))
+                {
+                    lck_spin_unlock(pEventMultiInt->pSpinlock);
+                    Assert(g_pDarwinLockGroup);
+                    lck_spin_destroy(pEventMultiInt->pSpinlock, g_pDarwinLockGroup);
+                    RTMemFree(pEventMultiInt);
+                    return VERR_SEM_DESTROYED;
+                }
+
+                rc = VERR_SEM_DESTROYED;
+                break;
+
+            default:
+                AssertMsgFailed(("rcWait=%d\n", rcWait));
+                rc = VERR_GENERAL_FAILURE;
+                break;
+        }
+    }
+
+    lck_spin_unlock(pEventMultiInt->pSpinlock);
+    return rc;
+}
+
+
+RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+{
+    return rtSemEventMultiWait(EventMultiSem, cMillies, FALSE /* not interruptable */);
+}
+
+
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+{
+    return rtSemEventMultiWait(EventMultiSem, cMillies, TRUE /* interruptable */);
+}
+
 
 
 

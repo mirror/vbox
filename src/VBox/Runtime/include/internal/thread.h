@@ -24,16 +24,14 @@
 
 #include <iprt/types.h>
 #include <iprt/thread.h>
+#include <iprt/avl.h>
 #ifdef IN_RING3
 # include <iprt/process.h>
 # include <iprt/critsect.h>
-# include <iprt/avl.h>
 #endif
 
 __BEGIN_DECLS
 
-
-#ifdef IN_RING3
 
 
 /**
@@ -88,7 +86,7 @@ typedef struct RTTHREADINT
     uint32_t volatile       cRefs;
     /** The current thread state. */
     RTTHREADSTATE volatile  enmState;
-#ifdef __WIN__
+#if defined(__WIN__) && defined(IN_RING3)
     /** The thread handle.
      * This is not valid until the create function has returned! */
     uintptr_t               hThread;
@@ -111,6 +109,7 @@ typedef struct RTTHREADINT
     void                   *pvUser;
     /** Actual stack size. */
     size_t                  cbStack;
+#ifdef IN_RING3
     /** What we're blocking on. */
     union RTTHREADINTBLOCKID
     {
@@ -126,6 +125,7 @@ typedef struct RTTHREADINT
     unsigned volatile       uBlockLine;
     /** Where we're blocking. */
     RTUINTPTR volatile      uBlockId;
+#endif /* IN_RING3 */
     /** Thread name. */
     char                    szName[RTTHREAD_NAME_LEN];
 } RTTHREADINT, *PRTTHREADINT;
@@ -153,25 +153,11 @@ typedef struct RTTHREADINT
 /**
  * Initialize the native part of the thread management.
  *
- * Generally a TLS entry will be allocated at this point.
+ * Generally a TLS entry will be allocated at this point (Ring-3).
  *
  * @returns iprt status code.
  */
 int rtThreadNativeInit(void);
-
-/**
- * Sets the priority of the thread according to the thread type
- * and current process priority.
- *
- * The RTTHREADINT::enmType member has not yet been updated and will be updated by
- * the caller on a successful return.
- *
- * @returns iprt status code.
- * @param   Thread      The thread in question.
- * @param   enmType     The thread type.
- * @remark  Located in sched.
- */
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType);
 
 /**
  * Create a native thread.
@@ -191,7 +177,22 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
  */
 int rtThreadNativeAdopt(PRTTHREADINT pThread);
 
-#ifdef __WIN__
+/**
+ * Sets the priority of the thread according to the thread type
+ * and current process priority.
+ *
+ * The RTTHREADINT::enmType member has not yet been updated and will be updated by
+ * the caller on a successful return.
+ *
+ * @returns iprt status code.
+ * @param   Thread      The thread in question.
+ * @param   enmType     The thread type.
+ * @remark  Located in sched.
+ */
+int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType);
+
+#ifdef IN_RING3
+# ifdef __WIN__
 /**
  * Callback for when a native thread is detaching.
  *
@@ -199,60 +200,24 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread);
  * threads properly.
  */
 void rtThreadNativeDetach(void);
-#endif
+# endif
+#endif /* !IN_RING0 */
 
-int rtThreadInit(void);
+
+/* thread.cpp */
 int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
-void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
-PRTTHREADINT rtThreadGetByNative(RTNATIVETHREAD NativeThread);
-PRTTHREADINT rtThreadGet(RTTHREAD Thread);
-uint32_t rtThreadRelease(PRTTHREADINT pThread);
-int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
-void rtThreadTerminate(PRTTHREADINT pThread, int rc);
 void rtThreadBlocking(PRTTHREADINT pThread, RTTHREADSTATE enmState, uint64_t u64Block,
                       const char *pszFile, unsigned uLine, RTUINTPTR uId);
 void rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState);
-
-
-#elif defined(IN_RING0)
-
-/**
- * Argument package for a ring-0 thread.
- */
-typedef struct RTR0THREADARGS
-{
-    /** The thread function. */
-    PFNRTTHREAD     pfnThread;
-    /** The thread function argument. */
-    void           *pvUser;
-    /** The thread type. */
-    RTTHREADTYPE    enmType;
-} RTR0THREADARGS, *PRTR0THREADARGS;
-
-
-
-int rtThreadMain(PRTR0THREADARGS pArgs, RTNATIVETHREAD NativeThread);
-
-/**
- * Do the actual thread creation.
- *
- * @returns IPRT status code.
- *          On failure, no thread has been created.
- * @param   pArgs           The argument package.
- * @param   pNativeThread   Where to return the native thread handle.
- */
-int rtThreadNativeCreate(PRTR0THREADARGS pArgs, PRTNATIVETHREAD pNativeThread);
-
-/**
- * Do the actual thread priority change.
- *
- * @returns IPRT status code.
- * @param   Thread      The thread which priority should be changed.
- *                      This is currently restricted to the current thread.
- * @param   enmType     The new thread priority type (valid).
- */
-int rtThreadNativeSetPriority(RTTHREAD Thread, RTTHREADTYPE enmType);
-
+uint32_t rtThreadRelease(PRTTHREADINT pThread);
+void rtThreadTerminate(PRTTHREADINT pThread, int rc);
+PRTTHREADINT rtThreadGetByNative(RTNATIVETHREAD NativeThread);
+PRTTHREADINT rtThreadGet(RTTHREAD Thread);
+int rtThreadInit(void);
+void rtThreadTerm(void);
+void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
+#ifdef IN_RING3
+int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
 #endif /* !IN_RING0 */
 
 __END_DECLS

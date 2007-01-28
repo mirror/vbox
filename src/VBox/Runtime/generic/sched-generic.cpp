@@ -40,7 +40,7 @@
  */
 int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     return VINF_SUCCESS;
 }
 
@@ -75,7 +75,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
  */
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     return VINF_SUCCESS;
 }
 

@@ -25,7 +25,10 @@
 *******************************************************************************/
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+
 #include "internal/initterm.h"
+#include "internal/thread.h"
 
 
 /**
@@ -36,8 +39,20 @@
  */
 RTR0DECL(int) RTR0Init(unsigned fReserved)
 {
+    int rc;
     Assert(fReserved == 0);
-    return rtR0InitNative();
+    rc = rtR0InitNative();
+    if (RT_SUCCESS(rc))
+    {
+#if !defined(__LINUX__) && !defined(__WIN__)
+        rc = rtThreadInit();
+#endif
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        rtR0TermNative();
+    }
+    return rc;
 }
 
 
@@ -46,6 +61,9 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
  */
 RTR0DECL(void) RTR0Term(void)
 {
-    return rtR0TermNative();
+#if !defined(__LINUX__) && !defined(__WIN__)
+    rtThreadTerm();
+#endif
+    rtR0TermNative();
 }
 

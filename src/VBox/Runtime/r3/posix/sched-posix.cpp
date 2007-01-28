@@ -121,7 +121,7 @@ typedef struct
  * seems to be using this (needs more research to be
  * certain).
  */
-static const PROCPRIORITYTYPE g_aTypesThread[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesThread[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 -999999999 },
     { RTTHREADTYPE_INFREQUENT_POLLER,        5 },
@@ -137,7 +137,7 @@ static const PROCPRIORITYTYPE g_aTypesThread[RTTHREADTYPE_LAST] =
     { RTTHREADTYPE_TIMER,                   31 }
 };
 
-static const PROCPRIORITYTYPE g_aTypesThreadFlat[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesThreadFlat[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 ~0 },
     { RTTHREADTYPE_INFREQUENT_POLLER,       15 },
@@ -183,7 +183,7 @@ static const PROCPRIORITY   g_aProcessAndThread[] =
  * Deltas for a process in which we are not restricted
  * to only be lowering the priority.
  */
-static const PROCPRIORITYTYPE g_aTypesUnixFree[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesUnixFree[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 -999999999 },
     { RTTHREADTYPE_INFREQUENT_POLLER,       +3 },
@@ -203,7 +203,7 @@ static const PROCPRIORITYTYPE g_aTypesUnixFree[RTTHREADTYPE_LAST] =
  * Deltas for a process in which we are restricted
  * to only be lowering the priority.
  */
-static const PROCPRIORITYTYPE g_aTypesUnixRestricted[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesUnixRestricted[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 -999999999 },
     { RTTHREADTYPE_INFREQUENT_POLLER,       +3 },
@@ -223,7 +223,7 @@ static const PROCPRIORITYTYPE g_aTypesUnixRestricted[RTTHREADTYPE_LAST] =
  * Deltas for a process in which we are restricted
  * to only be lowering the priority.
  */
-static const PROCPRIORITYTYPE g_aTypesUnixFlat[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesUnixFlat[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 -999999999 },
     { RTTHREADTYPE_INFREQUENT_POLLER,        0 },
@@ -505,7 +505,7 @@ static void *rtSchedNativeProberThread(void *pvUser)
  */
 int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
 
     /*
      * First figure out what's supported by the OS.
@@ -583,7 +583,7 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
             {
                 int iMin = sched_get_priority_min(SavedPriority.iPolicy);
                 pthread_t Self = pthread_self();
-                for (int i = RTTHREADTYPE_INVALID + 1; i < RTTHREADTYPE_LAST; i++)
+                for (int i = RTTHREADTYPE_INVALID + 1; i < RTTHREADTYPE_END; i++)
                 {
                     struct sched_param SchedParam = SavedPriority.PthreadSchedParam;
                     SchedParam.sched_priority = pCfg->paTypes[i].iPriority
@@ -606,7 +606,7 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
          */
         case OSPRIOSUP_THREAD_LEVEL:
         {
-            int i = RTTHREADTYPE_LAST;
+            int i = RTTHREADTYPE_END;
             while (--i > RTTHREADTYPE_INVALID)
             {
                 int iPriority = pCfg->paTypes[i].iPriority + pCfg->iDelta;
@@ -736,7 +736,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
  */
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     Assert(enmType == g_pProcessPriority->paTypes[enmType].enmType);
     Assert((pthread_t)pThread->Core.Key == pthread_self());
 

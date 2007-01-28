@@ -28,9 +28,9 @@
 #include <iprt/err.h>
 
 
-RTDECL(RTTHREAD) RTThreadSelf(void)
+RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 {
-    return (RTTHREAD)current;
+    return (RTNATIVETHREAD)current;
 }
 
 

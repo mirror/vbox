@@ -283,6 +283,7 @@ static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData
     RTR0Term();
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
+    dprintf(("VBoxSupDrvStop - done\n"));
     return KMOD_RETURN_SUCCESS;
 }
 

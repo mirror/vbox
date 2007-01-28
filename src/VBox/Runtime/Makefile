@@ -531,6 +531,7 @@ RuntimeR0Drv_SOURCES    = \
 	strformat.cpp \
 	strformatrt.cpp \
 	strtonum.cpp \
+	strprintf.cpp \
 	VBox/strformat-vbox.cpp \
 	r0drv/alloc-r0drv.cpp \
 	r0drv/initterm-r0drv.cpp \
@@ -538,6 +539,7 @@ RuntimeR0Drv_SOURCES    = \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	VBox/log-vbox.cpp \
+	table/avlpv.cpp \
 	crc32.cpp \
 	crc64.cpp
 
@@ -569,7 +571,6 @@ RuntimeR0Drv_SOURCES.darwin = \
 	RTErrConvertFromErrno.cpp \
 	string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
-	r0drv/thread-r0drv.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/memobj-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
@@ -578,7 +579,9 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/semaphore-r0drv-darwin.cpp \
 	r0drv/darwin/spinlock-r0drv-darwin.cpp \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
+	r0drv/darwin/thread2-r0drv-darwin.cpp \
 	r0drv/darwin/time-r0drv-darwin.cpp \
+	thread.cpp \
 	generic/timer-generic.cpp \
 
 RuntimeR0Drv_SOURCES.os2 = \

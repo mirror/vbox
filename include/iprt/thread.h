@@ -164,7 +164,7 @@ typedef enum RTTHREADTYPE
      */
     RTTHREADTYPE_TIMER,
     /** Only used for validation. */
-    RTTHREADTYPE_LAST
+    RTTHREADTYPE_END
 } RTTHREADTYPE;
 
 
@@ -233,7 +233,46 @@ RTDECL(RTTHREAD) RTThreadFromNative(RTNATIVETHREAD NativeThread);
  */
 RTDECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType);
 
-#ifdef IN_RING3
+/**
+ * Wait for the thread to terminate, resume on interruption.
+ *
+ * @returns     iprt status code.
+ *              Will not return VERR_INTERRUPTED.
+ * @param       Thread          The thread to wait for.
+ * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
+ *                              an indefinite wait.
+ * @param       prc             Where to store the return code of the thread. Optional.
+ */
+RTDECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc);
+
+/**
+ * Wait for the thread to terminate, return on interruption.
+ *
+ * @returns     iprt status code.
+ * @param       Thread          The thread to wait for.
+ * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
+ *                              an indefinite wait.
+ * @param       prc             Where to store the return code of the thread. Optional.
+ */
+RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, unsigned cMillies, int *prc);
+
+/**
+ * Gets the name of the current thread thread.
+ *
+ * @returns Pointer to readonly name string.
+ * @returns NULL on failure.
+ */
+RTDECL(const char *) RTThreadSelfName(void);
+
+/**
+ * Gets the name of a thread.
+ *
+ * @returns Pointer to readonly name string.
+ * @returns NULL on failure.
+ * @param   Thread      Thread handle of the thread to query the name of.
+ */
+RTDECL(const char *) RTThreadGetName(RTTHREAD Thread);
+
 /**
  * Gets the type of the specified thread.
  *
@@ -241,7 +280,54 @@ RTDECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType);
  * @returns RTTHREADTYPE_INVALID if the thread handle is invalid.
  * @param   Thread      The thread in question.
  */
-RTR3DECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread);
+RTDECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread);
+
+/**
+ * Sets the name of a thread.
+ *
+ * @returns iprt status code.
+ * @param   Thread      Thread handle of the thread to query the name of.
+ * @param   pszName     The thread name.
+ */
+RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName);
+
+/**
+ * Signal the user event.
+ *
+ * @returns     iprt status code.
+ */
+RTDECL(int) RTThreadUserSignal(RTTHREAD Thread);
+
+/**
+ * Wait for the user event.
+ *
+ * @returns     iprt status code.
+ * @param       Thread          The thread to wait for.
+ * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
+ *                              an indefinite wait.
+ */
+RTDECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies);
+
+/**
+ * Wait for the user event, return on interruption.
+ *
+ * @returns     iprt status code.
+ * @param       Thread          The thread to wait for.
+ * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
+ *                              an indefinite wait.
+ */
+RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies);
+
+/**
+ * Reset the user event.
+ *
+ * @returns     iprt status code.
+ * @param       Thread          The thread to reset.
+ */
+RTDECL(int) RTThreadUserReset(RTTHREAD Thread);
+
+
+#ifdef IN_RING3
 
 /**
  * Adopts a non-IPRT thread.
@@ -253,90 +339,6 @@ RTR3DECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread);
  * @param   pThread         Where to store the thread handle. Optional.
  */
 RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszName, PRTTHREAD pThread);
-
-/**
- * Gets the name of the current thread thread.
- *
- * @returns Pointer to readonly name string.
- * @returns NULL on failure.
- */
-RTR3DECL(const char *) RTThreadSelfName(void);
-
-/**
- * Gets the name of a thread.
- *
- * @returns Pointer to readonly name string.
- * @returns NULL on failure.
- * @param   Thread      Thread handle of the thread to query the name of.
- */
-RTR3DECL(const char *) RTThreadGetName(RTTHREAD Thread);
-
-/**
- * Sets the name of a thread.
- *
- * @returns iprt status code.
- * @param   Thread      Thread handle of the thread to query the name of.
- * @param   pszName     The thread name.
- */
-RTR3DECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName);
-
-/**
- * Signal the user event.
- *
- * @returns     iprt status code.
- */
-RTR3DECL(int) RTThreadUserSignal(RTTHREAD Thread);
-
-/**
- * Wait for the user event.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- */
-RTR3DECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies);
-
-/**
- * Wait for the user event, return on interruption.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- */
-RTR3DECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies);
-
-/**
- * Reset the user event.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to reset.
- */
-RTR3DECL(int) RTThreadUserReset(RTTHREAD Thread);
-
-/**
- * Wait for the thread to terminate, resume on interruption.
- *
- * @returns     iprt status code.
- *              Will not return VERR_INTERRUPTED.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- * @param       prc             Where to store the return code of the thread. Optional.
- */
-RTR3DECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc);
-
-/**
- * Wait for the thread to terminate, return on interruption.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- * @param       prc             Where to store the return code of the thread. Optional.
- */
-RTR3DECL(int) RTThreadWaitNoResume(RTTHREAD Thread, unsigned cMillies, int *prc);
 
 /**
  * Gets the affinity mask of the current thread.

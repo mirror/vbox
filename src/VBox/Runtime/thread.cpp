@@ -31,6 +31,9 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>
+#ifdef IN_RING0
+# include <iprt/spinlock.h>
+#endif
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
@@ -42,10 +45,19 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define RT_THREAD_LOCK_RW()     rtThreadLockRW()
-#define RT_THREAD_UNLOCK_RW()   rtThreadUnLockRW()
-#define RT_THREAD_LOCK_RD()     rtThreadLockRD()
-#define RT_THREAD_UNLOCK_RD()   rtThreadUnLockRD()
+#ifdef IN_RING0
+# define RT_THREAD_LOCK_TMP(Tmp)    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER
+# define RT_THREAD_LOCK_RW(Tmp)     RTSpinlockAcquireNoInts(g_ThreadSpinlock, &(Tmp))
+# define RT_THREAD_UNLOCK_RW(Tmp)   RTSpinlockReleaseNoInts(g_ThreadSpinlock, &(Tmp))
+# define RT_THREAD_LOCK_RD(Tmp)     RTSpinlockAcquireNoInts(g_ThreadSpinlock, &(Tmp))
+# define RT_THREAD_UNLOCK_RD(Tmp)   RTSpinlockReleaseNoInts(g_ThreadSpinlock, &(Tmp))
+#else
+# define RT_THREAD_LOCK_TMP(Tmp)
+# define RT_THREAD_LOCK_RW(Tmp)     rtThreadLockRW()
+# define RT_THREAD_UNLOCK_RW(Tmp)   rtThreadUnLockRW()
+# define RT_THREAD_LOCK_RD(Tmp)     rtThreadLockRD()
+# define RT_THREAD_UNLOCK_RD(Tmp)   rtThreadUnLockRD()
+#endif
 
 
 /*******************************************************************************
@@ -53,8 +65,13 @@
 *******************************************************************************/
 /** The AVL thread containing the threads. */
 static PAVLPVNODECORE   g_ThreadTree;
+#ifdef IN_RING3
 /** The RW lock protecting the tree. */
 static RTSEMRW          g_ThreadRWSem = NIL_RTSEMRW;
+#else
+/** The spinlocks protecting the tree. */
+static RTSPINLOCK       g_ThreadSpinlock = NIL_RTSPINLOCK;
+#endif
 
 
 /*******************************************************************************
@@ -86,16 +103,21 @@ static PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, unsigne
  * most platforms we are using the RTTHREADINT pointer as key and not the
  * thread id. RTThreadSelf() then have to be implemented using a pointer stored
  * in thread local storage (TLS).
+ *
+ * In Ring-0 we only try keep track of kernel threads created by RTCreateThread
+ * at the moment. There we really only need the 'join' feature, but doing things
+ * the same way allow us to name threads and similar stuff.
  */
 
 
 /**
- * Initializes the thread data base.
+ * Initializes the thread database.
  *
  * @returns iprt status code.
  */
 int rtThreadInit(void)
 {
+#ifdef IN_RING3
     int rc = VINF_ALREADY_INITIALIZED;
     if (g_ThreadRWSem == NIL_RTSEMRW)
     {
@@ -107,10 +129,12 @@ int rtThreadInit(void)
         if (RT_SUCCESS(rc))
         {
             rc = rtThreadNativeInit();
+#ifdef IN_RING3
             if (RT_SUCCESS(rc))
                 rc = rtThreadAdopt(RTTHREADTYPE_DEFAULT, 0, "main");
             if (RT_SUCCESS(rc))
                 rc = rtSchedNativeCalcDefaultPriority(RTTHREADTYPE_DEFAULT);
+#endif
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
 
@@ -119,8 +143,84 @@ int rtThreadInit(void)
             g_ThreadRWSem = NIL_RTSEMRW;
         }
     }
+
+#elif defined(IN_RING0)
+
+    /*
+     * Create the spinlock and to native init.
+     */
+    Assert(g_ThreadSpinlock == NIL_RTSPINLOCK);
+    int rc = RTSpinlockCreate(&g_ThreadSpinlock);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtThreadNativeInit();
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+
+        /* failed, clear out */
+        RTSpinlockDestroy(g_ThreadSpinlock);
+        g_ThreadSpinlock = NIL_RTSPINLOCK;
+    }
+#else
+# error "!IN_RING0 && !IN_RING3"
+#endif
     return rc;
 }
+
+
+/**
+ * Terminates the thread database.
+ */
+void rtThreadTerm(void)
+{
+#ifdef IN_RING3
+    /* we don't cleanup here yet */
+
+#elif defined(IN_RING0)
+    /* just destroy the spinlock and assume the thread is fine... */
+    RTSpinlockDestroy(g_ThreadSpinlock);
+    g_ThreadSpinlock = NIL_RTSPINLOCK;
+    if (g_ThreadTree != NULL)
+        AssertMsg2("WARNING: g_ThreadTree=%p\n", g_ThreadTree);
+#endif
+}
+
+
+
+#ifdef IN_RING3
+
+inline void rtThreadLockRW(void)
+{
+    if (g_ThreadRWSem == NIL_RTSEMRW)
+        rtThreadInit();
+    int rc = RTSemRWRequestWrite(g_ThreadRWSem, RT_INDEFINITE_WAIT);
+    AssertReleaseRC(rc);
+}
+
+
+inline void rtThreadLockRD(void)
+{
+    if (g_ThreadRWSem == NIL_RTSEMRW)
+        rtThreadInit();
+    int rc = RTSemRWRequestRead(g_ThreadRWSem, RT_INDEFINITE_WAIT);
+    AssertReleaseRC(rc);
+}
+
+
+inline void rtThreadUnLockRW(void)
+{
+    int rc = RTSemRWReleaseWrite(g_ThreadRWSem);
+    AssertReleaseRC(rc);
+}
+
+
+inline void rtThreadUnLockRD(void)
+{
+    int rc = RTSemRWReleaseRead(g_ThreadRWSem);
+    AssertReleaseRC(rc);
+}
+
+#endif /* IN_RING3 */
 
 
 /**
@@ -195,38 +295,6 @@ RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *psz
 }
 
 
-inline void rtThreadLockRW(void)
-{
-    if (!g_ThreadRWSem)
-        rtThreadInit();
-    int rc = RTSemRWRequestWrite(g_ThreadRWSem, RT_INDEFINITE_WAIT);
-    AssertReleaseRC(rc);
-}
-
-
-inline void rtThreadLockRD(void)
-{
-    if (!g_ThreadRWSem)
-        rtThreadInit();
-    int rc = RTSemRWRequestRead(g_ThreadRWSem, RT_INDEFINITE_WAIT);
-    AssertReleaseRC(rc);
-}
-
-
-inline void rtThreadUnLockRW(void)
-{
-    int rc = RTSemRWReleaseWrite(g_ThreadRWSem);
-    AssertReleaseRC(rc);
-}
-
-
-inline void rtThreadUnLockRD(void)
-{
-    int rc = RTSemRWReleaseRead(g_ThreadRWSem);
-    AssertReleaseRC(rc);
-}
-
-
 /**
  * Allocates a per thread data structure and initializes the basic fields.
  *
@@ -284,7 +352,8 @@ void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
     Assert(pThread);
     Assert(pThread->u32Magic == RTTHREADINT_MAGIC);
 
-    RT_THREAD_LOCK_RW();
+    RT_THREAD_LOCK_TMP(Tmp);
+    RT_THREAD_LOCK_RW(Tmp);
 
     /*
      * Before inserting we must check if there is a thread with this id
@@ -316,7 +385,7 @@ void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
         NOREF(fRc);
     }
 
-    RT_THREAD_UNLOCK_RW();
+    RT_THREAD_UNLOCK_RW(Tmp);
 }
 
 
@@ -342,10 +411,11 @@ static void rtThreadRemoveLocked(PRTTHREADINT pThread)
  */
 static void rtThreadRemove(PRTTHREADINT pThread)
 {
-    RT_THREAD_LOCK_RW();
+    RT_THREAD_LOCK_TMP(Tmp);
+    RT_THREAD_LOCK_RW(Tmp);
     if (ASMAtomicBitTestAndClear(&pThread->fIntFlags, RTTHREADINT_FLAG_IN_TREE_BIT))
         rtThreadRemoveLocked(pThread);
-    RT_THREAD_UNLOCK_RW();
+    RT_THREAD_UNLOCK_RW(Tmp);
 }
 
 
@@ -373,9 +443,10 @@ PRTTHREADINT rtThreadGetByNative(RTNATIVETHREAD NativeThread)
     /*
      * Simple tree lookup.
      */
-    RT_THREAD_LOCK_RD();
+    RT_THREAD_LOCK_TMP(Tmp);
+    RT_THREAD_LOCK_RD(Tmp);
     PRTTHREADINT pThread = (PRTTHREADINT)RTAvlPVGet(&g_ThreadTree, (void *)NativeThread);
-    RT_THREAD_UNLOCK_RD();
+    RT_THREAD_UNLOCK_RD(Tmp);
     return pThread;
 }
 
@@ -506,8 +577,13 @@ int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
      * Change the priority.
      */
     int rc = rtThreadNativeSetPriority(pThread, pThread->enmType);
+#ifdef IN_RING3
     AssertMsgRC(rc, ("Failed to set priority of thread %p (%RTnthrd / %s) to enmType=%d enmPriority=%d rc=%Vrc\n",
                      pThread, NativeThread, pThread->szName, pThread->enmType, g_enmProcessPriority, rc));
+#else
+    AssertMsgRC(rc, ("Failed to set priority of thread %p (%RTnthrd / %s) to enmType=%d rc=%Vrc\n",
+                     pThread, NativeThread, pThread->szName, pThread->enmType, rc));
+#endif
 
     /*
      * Call thread function and terminate when it returns.
@@ -847,7 +923,7 @@ static int rtThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc, bool fAuto
  *                              an indefinite wait.
  * @param       prc             Where to store the return code of the thread. Optional.
  */
-RTR3DECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc)
+RTDECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc)
 {
     int rc = rtThreadWait(Thread, cMillies, prc, true);
     Assert(rc != VERR_INTERRUPTED);
@@ -884,7 +960,7 @@ RTR3DECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
      */
     int     rc;
     if (    enmType > RTTHREADTYPE_INVALID
-        &&  enmType < RTTHREADTYPE_LAST)
+        &&  enmType < RTTHREADTYPE_END)
     {
         PRTTHREADINT pThread = rtThreadGet(Thread);
         if (pThread)
@@ -894,13 +970,14 @@ RTR3DECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
                 /*
                  * Do the job.
                  */
-                RT_THREAD_UNLOCK_RW();
+                RT_THREAD_LOCK_TMP(Tmp);
+                RT_THREAD_LOCK_RW(Tmp);
                 rc = rtThreadNativeSetPriority(pThread, enmType);
                 if (RT_SUCCESS(rc))
                     ASMAtomicXchgSize(&pThread->enmType, enmType);
-                else
+                RT_THREAD_UNLOCK_RW(Tmp);
+                if (RT_FAILURE(rc))
                     Log(("RTThreadSetType: failed on thread %p (%s), rc=%Vrc!!!\n", Thread, pThread->szName, rc));
-                RT_THREAD_LOCK_RW();
             }
             else
                 rc = VERR_THREAD_IS_DEAD;
@@ -938,6 +1015,8 @@ RTR3DECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
 }
 
 
+#ifdef IN_RING3
+
 /**
  * Recalculates scheduling attributes for the the default process
  * priority using the specified priority type for the calling thread.
@@ -950,9 +1029,10 @@ RTR3DECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
  */
 int rtThreadDoCalcDefaultPriority(RTTHREADTYPE enmType)
 {
-    RT_THREAD_LOCK_RW();
+    RT_THREAD_LOCK_TMP(Tmp);
+    RT_THREAD_LOCK_RW(Tmp);
     int rc = rtSchedNativeCalcDefaultPriority(enmType);
-    RT_THREAD_UNLOCK_RW();
+    RT_THREAD_UNLOCK_RW(Tmp);
     return rc;
 }
 
@@ -996,7 +1076,8 @@ int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
      * First validate that we're allowed by the OS to use all the
      * scheduling attributes defined by the specified process priority.
      */
-    RT_THREAD_LOCK_RW();
+    RT_THREAD_LOCK_TMP(Tmp);
+    RT_THREAD_LOCK_RW(Tmp);
     int rc = rtProcNativeSetPriority(enmPriority);
     if (RT_SUCCESS(rc))
     {
@@ -1015,7 +1096,7 @@ int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
             RTAvlPVDoWithAll(&g_ThreadTree, true, rtThreadSetPriorityOne, NULL);
         }
     }
-    RT_THREAD_UNLOCK_RW();
+    RT_THREAD_UNLOCK_RW(Tmp);
     LogFlow(("rtThreadDoSetProcPriority: returns %Vrc\n", rc));
     return rc;
 }
@@ -1213,4 +1294,6 @@ void rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState)
     if (pThread && pThread->enmState == enmCurState)
         ASMAtomicXchgSize(&pThread->enmState, RTTHREADSTATE_RUNNING);
 }
+
+#endif /* IN_RING3 */
 

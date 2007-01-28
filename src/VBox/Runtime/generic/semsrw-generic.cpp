@@ -100,7 +100,7 @@ inline bool rtsemRWValid(struct RTSEMRWINTERNAL *pIntRWSem)
 }
 
 
-RTR3DECL(int)   RTSemRWCreate(PRTSEMRW pRWSem)
+RTDECL(int)   RTSemRWCreate(PRTSEMRW pRWSem)
 {
     int rc;
 
@@ -159,7 +159,7 @@ RTR3DECL(int)   RTSemRWCreate(PRTSEMRW pRWSem)
 }
 
 
-RTR3DECL(int)   RTSemRWDestroy(RTSEMRW RWSem)
+RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem)
 {
     /*
      * Validate handle.
@@ -234,7 +234,7 @@ RTR3DECL(int)   RTSemRWDestroy(RTSEMRW RWSem)
 }
 
 
-RTR3DECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 {
     /*
      * Validate handle.
@@ -365,13 +365,13 @@ RTR3DECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 }
 
 
-RTR3DECL(int)   RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int)   RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     return RTSemRWRequestRead(RWSem, cMillies);
 }
 
 
-RTR3DECL(int)   RTSemRWReleaseRead(RTSEMRW RWSem)
+RTDECL(int)   RTSemRWReleaseRead(RTSEMRW RWSem)
 {
     /*
      * Validate handle.
@@ -437,7 +437,7 @@ RTR3DECL(int)   RTSemRWReleaseRead(RTSEMRW RWSem)
 
 
 
-RTR3DECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 {
     /*
      * Validate handle.
@@ -581,14 +581,14 @@ RTR3DECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 }
 
 
-RTR3DECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     return RTSemRWRequestWrite(RWSem, cMillies);
 }
 
 
 
-RTR3DECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
+RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
 {
     /*
      * Validate handle.
