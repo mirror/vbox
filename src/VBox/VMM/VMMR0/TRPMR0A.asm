@@ -63,7 +63,8 @@ BEGINPROC trpmR0DispatchHostInterrupt
     push    rax                         ; RSP
     pushfd                              ; RFLAGS
     and     dword [rsp], ~X86_EFL_IF
-    push    cs                          ; CS
+    mov     ax, cs
+    push    rax                         ; CS
     mov     rax, .return                ; RIP
     push    rax
 
