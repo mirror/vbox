@@ -43,12 +43,12 @@ static unsigned     g_cFailures = 0;
 /** The number of skipped testcases. */
 static unsigned     g_cSkipped = 0;
 /** The exclude list. */
-static const char  *g_apszExclude[] = 
+static const char  *g_apszExclude[] =
 {
 #if 1 // slow stuff
     "testcase/tstFile",
     "testcase/tstAvl",
-#endif 
+#endif
     "testcase/tstFileLock",
     "testcase/tstCritSect",
     "testcase/tstCritSectW32",
@@ -80,11 +80,11 @@ static const char  *g_apszExclude[] =
 
 
 /**
- * Checks if a testcase is include or should be skipped. 
- * 
+ * Checks if a testcase is include or should be skipped.
+ *
  * @param pszTestcase   The testcase (filename).
- * 
- * @return  true if the testcase is included. 
+ *
+ * @return  true if the testcase is included.
  *          false if the testcase should be skipped.
  */
 static bool IsTestcaseIncluded(const char *pszTestcase)
@@ -112,14 +112,14 @@ static bool IsTestcaseIncluded(const char *pszTestcase)
 
 /**
  * Process the testcases found in the filter.
- * 
- * @param   pszFilter   The filter (winnt) to pass to RTDirOpenFiltered for 
+ *
+ * @param   pszFilter   The filter (winnt) to pass to RTDirOpenFiltered for
  *                      selecting the testcases.
  * @param   pszDir      The directory we're processing.
  */
 static void Process(const char *pszFilter, const char *pszDir)
 {
-    /*                                                                                                                                      
+    /*
      * Open and enumerate the directory.
      */
     PRTDIR pDir;
@@ -139,7 +139,7 @@ static void Process(const char *pszFilter, const char *pszDir)
                 break;
             }
 
-            /*                                                                                                                              
+            /*
              * Construct the testcase name.
              */
             char *pszTestcase;
@@ -152,10 +152,10 @@ static void Process(const char *pszFilter, const char *pszDir)
             }
             if (IsTestcaseIncluded(pszTestcase))
             {
-                /*                                                                                                                              
+                /*
                  * Execute the testcase.
                  */
-                RTPrintf("*** %s: Executing...\n", pszTestcase);
+                RTPrintf("*** %s: Executing...\n", pszTestcase);  RTStrmFlush(g_pStdOut);
                 const char *papszArgs[2];
                 papszArgs[0] = pszTestcase;
                 papszArgs[1] = NULL;
@@ -163,8 +163,8 @@ static void Process(const char *pszFilter, const char *pszDir)
                 rc = RTProcCreate(pszTestcase, papszArgs, NULL, 0, &Process);
                 if (RT_SUCCESS(rc))
                 {
-                    /* 
-                     * Wait for the process and collect it's return code. 
+                    /*
+                     * Wait for the process and collect it's return code.
                      * If it takes too long, we'll terminate it and continue.
                      */
                     RTTIMESPEC Start;
@@ -188,7 +188,7 @@ static void Process(const char *pszFilter, const char *pszDir)
                         RTThreadSleep(100);
                     }
 
-                    /*                                                                                                                      
+                    /*
                      * Examin the exit status.
                      */
                     if (RT_SUCCESS(rc))
