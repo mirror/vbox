@@ -40,7 +40,7 @@
 
 BEGINCODE
 
-%ifdef __AMD64__ 
+%ifdef __AMD64__
  BITS 32 ; switch to 32-bit mode (x86).
 %endif
 
@@ -1080,10 +1080,10 @@ PATMIretStart:
 %endif
 
     test    dword [esp], X86_EFL_NT
-    jnz     iret_fault1
+    jnz near iret_fault1
 
     test    dword [esp+12], X86_EFL_VM
-    jnz     iret_fault
+    jnz near iret_fault
 
     ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ;;@todo: not correct for iret back to ring 2!!!!!
@@ -1093,7 +1093,7 @@ PATMIretStart:
     jnz     iret_notring0
 
     test    dword [esp+12], X86_EFL_IF
-    jz      iret_clearIF
+    jz near iret_clearIF
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @@todo fix this properly, so we can dispatch pending interrupts in GC
@@ -1201,7 +1201,7 @@ PATMIretTable:
     DW      0                                   ; ulInsertPos
     DD      0                                   ; cAddresses
     RESB    PATCHJUMPTABLE_SIZE                 ; lookup slots
-    
+
 PATMIretEnd:
 ENDPROC     PATMIretReplacement
 
