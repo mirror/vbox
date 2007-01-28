@@ -88,8 +88,12 @@ int main(int argc, char **argv)
              */
             for (int i = cIterations; i > 0; i--)
             {
-                rc = SUPCallVMMR0(&vm, 0xdeadbeef, NULL);
-                //RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d\n", rc, i);
+                rc = SUPCallVMMR0(&vm, VMMR0_DO_NOP, NULL);
+                if (rc != VINF_SUCCESS)
+                {
+                    RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                    break;s
+                }
             }
             RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Vrc)\n", cIterations, rc);
 

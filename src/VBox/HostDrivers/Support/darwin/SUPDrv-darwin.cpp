@@ -429,8 +429,9 @@ static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
      */
-    if (    iCmd == 1
-        ||  iCmd == 1)
+    if (    iCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+        ||  iCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+        ||  iCmd == SUP_IOCTL_FAST_DO_NOP)
         return supdrvIOCtlFast(iCmd, &g_DevExt, pSession);
     return VBoxSupDrvIOCtlSlow(pSession, iCmd, pData, pProcess);
 }

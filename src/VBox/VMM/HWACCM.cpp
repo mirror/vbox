@@ -291,7 +291,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
-            int rc = SUPCallVMMR0(pVM, VMMR0_HWACC_SETUP_VM, NULL);
+            int rc = SUPCallVMMR0(pVM, VMMR0_DO_HWACC_SETUP_VM, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
@@ -322,7 +322,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
-            int rc = SUPCallVMMR0(pVM, VMMR0_HWACC_SETUP_VM, NULL);
+            int rc = SUPCallVMMR0(pVM, VMMR0_DO_HWACC_SETUP_VM, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {

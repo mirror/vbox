@@ -23,9 +23,90 @@
 ;* Header Files                                                                *
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
+%include "VBox/x86.mac"
 
 
 BEGINCODE
+    align 16
+
+;;
+; Calls the interrupt gate as if we received an interrupt while in Ring-0.
+;
+; Returns with interrupts enabled.
+;
+; @param   uIP     x86:[ebp+8]   msc:rcx  gcc:rdi  The interrupt gate IP.
+; @param   SelCS   x86:[ebp+12]  msc:dx   gcc:si   The interrupt gate CS.
+; @param   RSP                   msc:r8   gcc:rdx  The interrupt gate RSP. ~0 if no stack switch should take place. (only AMD64)
+;DECLASM(void) trpmR0DispatchHostInterrupt(RTR0UINTPTR uIP, RTSEL SelCS, RTR0UINTPTR RSP);
+BEGINPROC trpmR0DispatchHostInterrupt
+    push    xBP
+    mov     xBP, xSP
+
+%ifdef __AMD64__
+    mov     rax, rsp
+    and     rsp, 15h                    ; align the stack. (do it unconditionally saves some jump mess)
+
+    ; switch stack?
+% ifdef ASM_CALL64_MSC
+    cmp     r8, 0ffffffffffffffffh
+    je      .no_stack_switch
+    mov     rsp, r8
+% else
+    cmp     rdx, 0ffffffffffffffffh
+    je      .no_stack_switch
+    mov     rsp, rdx
+% endif
+.no_stack_switch:
+
+    ; create the iret frame
+    push    0                           ; SS
+    push    rax                         ; RSP
+    pushfd                              ; RFLAGS
+    and     dword [rsp], ~X86_EFL_IF
+    push    cs                          ; CS
+    mov     rax, .return                ; RIP
+    push    rax
+
+    ; create the retf frame
+% ifdef ASM_CALL64_MSC
+    movzx   rdx, dx
+    push    rdx
+    push    rcx
+% else
+    movzx   rdi, di
+    push    rdi
+    push    rsi
+% endif
+
+    ; dispatch it!
+    db 048h
+    retf
+
+%else ; 32-bit:
+    mov     ecx, [ebp + 8]              ; uIP
+    movzx   edx, word [ebp + 12]        ; SelCS
+
+    ; create the iret frame
+    pushfd                              ; EFLAGS
+    and     dword [esp], ~X86_EFL_IF
+    push    cs                          ; CS
+    push    .return                     ; EIP
+
+    ; create the retf frame
+    push    edx
+    push    ecx
+
+    ; dispatch it!
+    retf
+%endif
+.return:
+
+    leave
+    ret
+ENDPROC trpmR0DispatchHostInterrupt
+
+
+%ifndef VBOX_WITHOUT_IDT_PATCHING
 
     align 16
 ;;
@@ -64,4 +145,6 @@ BEGINPROC trpmR0InterruptDispatcher
     retf
 %endif ; !__AMD64__
 ENDPROC   trpmR0InterruptDispatcher
+
+%endif ; !VBOX_WITHOUT_IDT_PATCHING
 

@@ -412,7 +412,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
          * Switch to GC.
          * These calls return whatever the GC returns.
          */
-        case VMMR0_DO_RUN_GC:
+        case VMMR0_DO_RAW_RUN:
         {
             /* Safety precaution as VMX disables the switcher. */
             Assert(!pVM->vmm.s.fSwitcherDisabled);
@@ -446,7 +446,11 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                  */
                 case VINF_EM_RAW_INTERRUPT:
                 case VINF_EM_RAW_INTERRUPT_HYPER:
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+                    TRPMR0DispatchHostInterrupt(pVM);
+#else
                     TRPMR0SetupInterruptDispatcherFrame(pVM, (char*)&pVM - sizeof(pVM));
+#endif
                     return rc;
             }
             /* Won't get here! */
@@ -456,7 +460,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
         /*
          * Run guest code using the available hardware acceleration technology.
          */
-        case VMMR0_HWACC_RUN_GUEST:
+        case VMMR0_DO_HWACC_RUN:
         {
             int rc;
 
@@ -500,7 +504,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
         /*
          * Setup the hardware accelerated raw-mode session.
          */
-        case VMMR0_HWACC_SETUP_VM:
+        case VMMR0_DO_HWACC_SETUP_VM:
             return HWACCMR0SetupVMX(pVM);
 
         /*
@@ -589,34 +593,19 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
         }
 #endif /* !__L4__ */
 
-#ifdef DEBUG
         /*
-         * For testing purposes only.
+         * For profiling.
          */
-        case 0xdeadbeef:
-        {
-            LogCom(("VMMR0Entry: !debug testing! 0xdeadbeef!\n"));
-            #if 0
-            void *pv;
-            void *pvPhys;
+        case VMMR0_DO_NOP:
+            return VINF_SUCCESS;
 
-            /* alloc cont memory */
-            int rc = SUPR0ContAlloc(pVM->pSession, 0x1fff, &pv, &pvPhys);
-            LogCom(("VMMR0Entry: ContAlloc: rc=%d pv=%p pvPhys=%p\n", rc, pv, pvPhys));
-            if (!VBOX_SUCCESS(rc))
-               return rc;
-            /* touch */
-            ((char*)pv)[0x1000] = ((char*)pv)[0] = 'f';
-            /* free */
-            rc = SUPR0ContFree(pVM->pSession, pv);
-            LogCom(("VMMR0Entry: ContFree: rc=%d\n", rc));
-            if (!VBOX_SUCCESS(rc))
-                return rc;
-            #endif
-            /* successful return - consistent with release builds. */
-            return VERR_NOT_SUPPORTED;
-        }
-#endif
+        /*
+         * For testing Ring-0 APIs invoked in this environment.
+         */
+        case VMMR0_DO_TESTS:
+            /** @todo make new test */
+            return VINF_SUCCESS;
+
 
         default:
             /*

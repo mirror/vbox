@@ -558,18 +558,38 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
  */
 int  VBOXCALL   supdrvIOCtlFast(unsigned uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
-    if (    !pSession->pVM
-        ||  pDevExt->pfnVMMR0Entry)
-        return VERR_INTERNAL_ERROR;
-    switch (uIOCtl)
+    /*
+     * Disable interrupts before invoking VMMR0Entry() because it ASSUMES
+     * that interrupts are disabled. (We check the two prereqs after doing
+     * this only to allow the compiler to optimize things better.)
+     */
+    RTCCUINTREG     uFlags = ASMGetFlags();
+    ASMIntDisable();
+
+    int rc;
+    if (RT_LIKELY(pSession->pVM && pDevExt->pfnVMMR0Entry))
     {
-        case SUP_IOCTL_FAST_DO_RAW_RUN:
-            return pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_RUN_GC, NULL);
-        case SUP_IOCTL_FAST_DO_HWACC_RUN:
-            return pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_HWACC_RUN_GUEST, NULL);
-        default:
-            return VERR_INTERNAL_ERROR;
+        switch (uIOCtl)
+        {
+            case SUP_IOCTL_FAST_DO_RAW_RUN:
+                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_RAW_RUN, NULL);
+                break;
+            case SUP_IOCTL_FAST_DO_HWACC_RUN:
+                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_HWACC_RUN, NULL);
+                break;
+            case SUP_IOCTL_FAST_DO_NOP:
+                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_NOP, NULL);
+                break;
+            default:
+                rc = VERR_INTERNAL_ERROR;
+                break;
+        }
     }
+    else
+        rc = VERR_INTERNAL_ERROR;
+
+    ASMSetFlags(uFlags);
+    return rc;
 }
 #endif /* VBOX_WITHOUT_IDT_PATCHING */
 

@@ -34,6 +34,65 @@
 
 
 
+
+/**
+ * Dispatches an interrupt that arrived while we were in the guest context.
+ *
+ * It's assumes we're invoked with interrupts disabled.
+ * When this function returns, interrupts will be enabled.
+ *
+ * @param   pVM     The VM handle.
+ */
+TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
+{
+    RTUINT uActiveVector = pVM->trpm.s.uActiveVector;
+    pVM->trpm.s.uActiveVector = ~0;
+    AssertMsgReturnVoid(uActiveVector < 256, ("uActiveVector=%#x is invalid! (More assertions to come, please enjoy!)\n", uActiveVector));
+
+    /*
+     * Get the handler pointer (16:32 ptr) / (16:48 ptr).
+     */
+    RTIDTR      Idtr;
+    ASMGetIDTR(&Idtr);
+#if HC_ARCH_BITS == 32
+    PVBOXIDTE   pIdte = &((PVBOXIDTE)Idtr.pIdt)[uActiveVector];
+#else
+    PVBOXIDTE   pIdte = &((PVBOXIDTE)Idtr.pIdt)[uActiveVector * 2];
+#endif
+    AssertMsgReturnVoid(pIdte->Gen.u1Present, ("The IDT entry (%d) is not present!\n", uActiveVector));
+    AssertMsgReturnVoid(    pIdte->Gen.u3Type1 == VBOX_IDTE_TYPE1
+                        ||  pIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32,
+                        ("The IDT entry (%d) is not 32-bit int gate! type1=%#x type2=%#x\n",
+                         uActiveVector, pIdte->Gen.u3Type1, pIdte->Gen.u5Type2));
+#if HC_ARCH_BITS == 32
+    RTFAR32   pfnHandler;
+    pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+    pfnHandler.sel = pIdte->Gen.u16SegSel;
+
+    const RTR0UINTREG uRSP = ~(RTR0UINTREG)0;
+
+#else /* 64-bit: */
+    RTFAR64   pfnHandler;
+    pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
+    pfnHandler.off |= (uint64_t)(*(uint32_t *)(pIdte + 1)) << 32; //cleanup!
+    pfnHandler.sel = pIdte->Gen.u16SegSel;
+
+    RTR0UINTREG uRSP = ~(RTR0UINTREG)0;
+    if (pIdte->au32[1] & 0x7 /*IST*/)
+    {
+        /** @todo implement IST */
+    }
+
+#endif
+
+    /*
+     * Dispatch it.
+     */
+    trpmR0DispatchHostInterrupt(pfnHandler.off, pfnHandler.sel, uRSP);
+}
+
+#ifndef VBOX_WITHOUT_IDT_PATCHING
+
 /**
  * Changes the VMMR0Entry() call frame and stack used by the IDT patch code
  * so that we'll dispatch an interrupt rather than returning directly to Ring-3
@@ -46,12 +105,7 @@ TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
 {
     RTUINT uActiveVector = pVM->trpm.s.uActiveVector;
     pVM->trpm.s.uActiveVector = ~0;
-    if (uActiveVector >= 256)
-    {
-        AssertMsgFailed(("uActiveVector=%#x is invalid! (More assertions to come, please enjoy!)\n",
-                         uActiveVector));
-        return;
-    }
+    AssertMsgReturnVoid(uActiveVector < 256, ("uActiveVector=%#x is invalid! (More assertions to come, please enjoy!)\n", uActiveVector));
 
 #if HC_ARCH_BITS == 32
     /*
@@ -60,18 +114,11 @@ TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
     RTIDTR      Idtr;
     ASMGetIDTR(&Idtr);
     PVBOXIDTE   pIdte = &((PVBOXIDTE)Idtr.pIdt)[uActiveVector];
-    if (!pIdte->Gen.u1Present)
-    {
-        AssertMsgFailed(("The IDT entry (%d) is not present!\n", uActiveVector));
-        return;
-    }
-    if (    pIdte->Gen.u3Type1 != VBOX_IDTE_TYPE1
-        &&  pIdte->Gen.u5Type2 != VBOX_IDTE_TYPE2_INT_32)
-    {
-        AssertMsgFailed(("The IDT entry (%d) is not 32-bit int gate! type1=%#x type2=%#x\n",
+    AssertMsgReturnVoid(pIdte->Gen.u1Present, ("The IDT entry (%d) is not present!\n", uActiveVector));
+    AssertMsgReturnVoid(    pIdte->Gen.u3Type1 == VBOX_IDTE_TYPE1
+                        &&  pIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32,
+                        ("The IDT entry (%d) is not 32-bit int gate! type1=%#x type2=%#x\n",
                          uActiveVector, pIdte->Gen.u3Type1, pIdte->Gen.u5Type2));
-        return;
-    }
 
     RTFAR32   pfnHandler;
     pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
@@ -109,23 +156,22 @@ TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
     RTIDTR      Idtr;
     ASMGetIDTR(&Idtr);
     PVBOXIDTE   pIdte = &((PVBOXIDTE)Idtr.pIdt)[uActiveVector * 2];
-    if (!pIdte->Gen.u1Present)
-    {
-        AssertMsgFailed(("The IDT entry (%d) is not present!\n", uActiveVector));
-        return;
-    }
-    if (    pIdte->Gen.u3Type1 != VBOX_IDTE_TYPE1
-        &&  pIdte->Gen.u5Type2 != VBOX_IDTE_TYPE2_INT_32)
-    {
-        AssertMsgFailed(("The IDT entry (%d) is not 32-bit int gate! type1=%#x type2=%#x\n",
+
+    AssertMsgReturnVoid(pIdte->Gen.u1Present, ("The IDT entry (%d) is not present!\n", uActiveVector));
+    AssertMsgReturnVoid(    pIdte->Gen.u3Type1 == VBOX_IDTE_TYPE1
+                        &&  pIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32, /* == 64 */
+                        ("The IDT entry (%d) is not 64-bit int gate! type1=%#x type2=%#x\n",
                          uActiveVector, pIdte->Gen.u3Type1, pIdte->Gen.u5Type2));
-        return;
-    }
 
     RTFAR64   pfnHandler;
     pfnHandler.off = (pIdte->Gen.u16OffsetHigh << 16) | pIdte->Gen.u16OffsetLow;
     pfnHandler.off |= (uint64_t)(*(uint32_t *)(pIdte + 1)) << 32; //cleanup!
     pfnHandler.sel = pIdte->Gen.u16SegSel;
+
+    if (pIdte->au32[1] & 0x7 /*IST*/)
+    {
+        /** @todo implement IST */
+    }
 
     /*
      * The stack frame is as follows:
@@ -149,3 +195,5 @@ TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
 
 //    dprintf(("Interrupt: %04x:%08x vector %d\n", pfnHandler.sel, pfnHandler.off, uActiveVector));
 }
+
+#endif /* !VBOX_WITHOUT_IDT_PATCHING */

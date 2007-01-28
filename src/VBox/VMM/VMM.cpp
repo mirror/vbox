@@ -495,7 +495,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchInt3,           STAMTYPE_COUNTER, "/VMM/GCRet/PatchInt3",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_INT3 returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchPF,             STAMTYPE_COUNTER, "/VMM/GCRet/PatchPF",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_PF returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchGP,             STAMTYPE_COUNTER, "/VMM/GCRet/PatchGP",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_GP returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchIretIRQ,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchIret",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PENDING_IRQ_AFTER_IRET returns.");                    
+                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchIretIRQ,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchIret",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PENDING_IRQ_AFTER_IRET returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPageOverflow,        STAMTYPE_COUNTER, "/VMM/GCRet/InvlpgOverflow",      STAMUNIT_OCCURENCES, "Number of VERR_REM_FLUSHED_PAGES_OVERFLOW returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetRescheduleREM,       STAMTYPE_COUNTER, "/VMM/GCRet/ScheduleREM",         STAMUNIT_OCCURENCES, "Number of VINF_EM_RESCHEDULE_REM returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetToR3,                STAMTYPE_COUNTER, "/VMM/GCRet/ToR3",                STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
@@ -1829,7 +1829,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RUN_GC, NULL);
+            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1877,7 +1877,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_HWACC_RUN_GUEST, NULL);
+            rc = SUPCallVMMR0(pVM, VMMR0_DO_HWACC_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1958,7 +1958,7 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RUN_GC, NULL);
+            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -2012,7 +2012,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RUN_GC, NULL);
+            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -2539,7 +2539,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
-    return SUPCallVMMR0(pVM, VMMR0_DO_RUN_GC, NULL);
+    return SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
 }
 
 
@@ -2573,7 +2573,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
-    rc = SUPCallVMMR0(pVM, VMMR0_DO_RUN_GC, NULL);
+    rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
     bool fDump = false;
     if (rc != rcExpect)
     {
@@ -2793,7 +2793,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         uint64_t    TickStart = ASMReadTSC();
         do
         {
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RUN_GC, NULL);
+            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
             if (VBOX_FAILURE(rc))
             {
                 Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
@@ -2844,7 +2844,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
 
             uint64_t TickThisStart = ASMReadTSC();
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RUN_GC, NULL);
+            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (VBOX_FAILURE(rc))
             {

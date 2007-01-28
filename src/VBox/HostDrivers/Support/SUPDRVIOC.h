@@ -131,10 +131,12 @@
 /** Set the VM handle for doing fast call ioctl calls. */
 #define SUP_IOCTL_SET_VM_FOR_FAST   SUP_CTL_CODE(20)
 
-/** Fast path IOCtl: VMMR0_DO_RUN_GC */
+/** Fast path IOCtl: VMMR0_DO_RAW_RUN */
 #define SUP_IOCTL_FAST_DO_RAW_RUN   SUP_CTL_CODE_FAST(64)
-/** Fast path IOCtl: VMMR0_HWACC_RUN_GUEST */
+/** Fast path IOCtl: VMMR0_DO_HWACC_RUN */
 #define SUP_IOCTL_FAST_DO_HWACC_RUN SUP_CTL_CODE_FAST(65)
+/** Just a NOP call for profiling the latency of a fast ioctl call to VMMR0. */
+#define SUP_IOCTL_FAST_DO_NOP       SUP_CTL_CODE_FAST(66)
 
 
 /*******************************************************************************

@@ -380,16 +380,22 @@ SUPR3DECL(int) SUPCallVMMR0(PVM pVM, unsigned uOperation, void *pvArg)
 {
 #ifndef VBOX_WITHOUT_IDT_PATCHING
     return g_pfnCallVMMR0(pVM, uOperation, pvArg);
+
 #else
-    if (uOperation == VMMR0_DO_RUN_GC)
+    if (uOperation == VMMR0_DO_RAW_RUN)
     {
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_RAW_RUN);
     }
-    if (uOperation == VMMR0_HWACC_RUN_GUEST)
+    if (uOperation == VMMR0_DO_HWACC_RUN)
     {
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_HWACC_RUN);
+    }
+    if (uOperation == VMMR0_DO_NOP)
+    {
+        Assert(!pvArg);
+        return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_NOP);
     }
     return SUPCallVMMR0Ex(pVM, uOperation, pvArg, pvArg ? sizeof(pvArg) : 0);
 #endif
