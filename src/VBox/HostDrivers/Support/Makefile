@@ -63,6 +63,7 @@ EXPORT_FILE_PAIRS = \
 	include/iprt/string.h=$(PATH_ROOT)/include/iprt/string.h \
 	include/iprt/thread.h=$(PATH_ROOT)/include/iprt/thread.h \
 	include/iprt/types.h=$(PATH_ROOT)/include/iprt/types.h \
+	include/iprt/avl.h=$(PATH_ROOT)/include/iprt/avl.h \
 	include/VBox/cdefs.h=$(PATH_ROOT)/include/VBox/cdefs.h \
 	include/VBox/log.h=$(PATH_ROOT)/include/VBox/log.h \
 	include/VBox/sup.h=$(PATH_ROOT)/include/VBox/sup.h \
