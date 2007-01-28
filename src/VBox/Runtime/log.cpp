@@ -111,11 +111,11 @@ static int32_t volatile             g_cPerThreadLoggers;
 static struct RTLOGGERPERTHREAD
 {
     /** The thread. */
-    RTTHREAD volatile   Thread;
+    RTNATIVETHREAD volatile NativeThread;
     /** The (process / session) key. */
-    uintptr_t volatile  uKey;
+    uintptr_t volatile      uKey;
     /** The logger instance.*/
-    PRTLOGGER volatile  pLogger;
+    PRTLOGGER volatile      pLogger;
 }                                   g_aPerThreadLoggers[8];
 #endif /* IN_RING0 */
 
@@ -1249,10 +1249,10 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
      */
     if (g_cPerThreadLoggers)
     {
-        const RTTHREAD Self = RTThreadSelf();
+        const RTNATIVETHREAD Self = RTThreadNativeSelf();
         int32_t i = ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
-            if (g_aPerThreadLoggers[i].Thread == Self)
+            if (g_aPerThreadLoggers[i].NativeThread == Self)
                 return g_aPerThreadLoggers[i].pLogger;
     }
 # endif /* IN_RING0 */
@@ -1280,8 +1280,8 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
  */
 RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
 {
-    int         rc;
-    RTTHREAD    Self = RTThreadSelf();
+    int             rc;
+    RTNATIVETHREAD  Self = RTThreadNativeSelf();
     if (pLogger)
     {
         AssertReturn(pLogger->u32Magic == RTLOGGER_MAGIC, VERR_INVALID_MAGIC);
@@ -1291,7 +1291,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
          */
         int32_t i = ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
-            if (g_aPerThreadLoggers[i].Thread == Self)
+            if (g_aPerThreadLoggers[i].NativeThread == Self)
             {
                 ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
                 g_aPerThreadLoggers[i].pLogger = pLogger;
@@ -1313,9 +1313,9 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
             i = ELEMENTS(g_aPerThreadLoggers);
             while (i-- > 0)
             {
-                AssertCompile(sizeof(RTTHREAD) == sizeof(void*));
-                if (    g_aPerThreadLoggers[i].Thread == NIL_RTTHREAD
-                    &&  ASMAtomicCmpXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].Thread, Self, NIL_RTTHREAD))
+                AssertCompile(sizeof(RTNATIVETHREAD) == sizeof(void*));
+                if (    g_aPerThreadLoggers[i].NativeThread == NIL_RTTHREAD
+                    &&  ASMAtomicCmpXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].NativeThread, (void *)Self, (void *)NIL_RTNATIVETHREAD))
                 {
                     ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
                     ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].pLogger, pLogger);
@@ -1334,12 +1334,12 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
          */
         int32_t i = ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
-            if (    g_aPerThreadLoggers[i].Thread == Self
+            if (    g_aPerThreadLoggers[i].NativeThread == Self
                 ||  g_aPerThreadLoggers[i].uKey == uKey)
             {
                 ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, NULL);
                 ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].pLogger, NULL);
-                ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].Thread, NIL_RTTHREAD);
+                ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].NativeThread, (void *)NIL_RTNATIVETHREAD);
                 ASMAtomicDecS32(&g_cPerThreadLoggers);
             }
 
