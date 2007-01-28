@@ -68,6 +68,7 @@ EXPORT_FILE_PAIRS = \
 	include/VBox/sup.h=$(PATH_ROOT)/include/VBox/sup.h \
 	include/VBox/types.h=$(PATH_ROOT)/include/VBox/types.h \
 	include/internal/initterm.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/initterm.h \
+	include/internal/thread.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/thread.h \
 	linux/SUPDrv-linux.c=$(VBOX_PATH_SUPPORT)/linux/SUPDrv-linux.c \
 	Makefile=$(VBOX_PATH_SUPPORT)/linux/Makefile \
 	alloc/heapsimple.c=$(PATH_ROOT)/src/VBox/Runtime/alloc/heapsimple.cpp \
