@@ -146,7 +146,7 @@ typedef struct _kAvlStack2
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-inline void KAVL_FN(Rebalance)(PKAVLSTACK pStack);
+DECLINLINE(void) KAVL_FN(Rebalance)(PKAVLSTACK pStack);
 
 
 
@@ -380,7 +380,7 @@ RTDECL(PKAVLNODECORE) KAVL_FN(Remove)(PPKAVLNODECORE ppTree, KAVLKEY Key)
  *                    ELSE correct height.
  *            END
  */
-inline void KAVL_FN(Rebalance)(PKAVLSTACK pStack)
+DECLINLINE(void) KAVL_FN(Rebalance)(PKAVLSTACK pStack)
 {
     while (pStack->cEntries > 0)
     {
