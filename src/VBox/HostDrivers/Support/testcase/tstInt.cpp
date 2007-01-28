@@ -93,10 +93,13 @@ int main(int argc, char **argv)
                 if (rc != VINF_SUCCESS)
                 {
                     RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                    rcRet++;
                     break;
                 }
             }
             RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Vrc)\n", cIterations, rc);
+
+            /** @todo profile it! */
 
             /*
              * Unload VMM.
