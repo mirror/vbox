@@ -143,10 +143,126 @@ typedef struct _kAvlStack2
 } KAVLSTACK2, *PLAVLSTACK2;
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-DECLINLINE(void) KAVL_FN(Rebalance)(PKAVLSTACK pStack);
+
+/**
+ * Rewinds a stack of pointers to pointers to nodes, rebalancing the tree.
+ * @param     pStack  Pointer to stack to rewind.
+ * @sketch    LOOP thru all stack entries
+ *            BEGIN
+ *                Get pointer to pointer to node (and pointer to node) from the stack.
+ *                IF 2 higher left subtree than in right subtree THEN
+ *                BEGIN
+ *                    IF higher (or equal) left-sub-subtree than right-sub-subtree THEN
+ *                                *                       n+2|n+3
+ *                              /   \                     /     \
+ *                            n+2    n       ==>         n+1   n+1|n+2
+ *                           /   \                             /     \
+ *                         n+1 n|n+1                          n|n+1  n
+ *
+ *                         Or with keys:
+ *
+ *                               4                           2
+ *                             /   \                       /   \
+ *                            2     5        ==>          1     4
+ *                           / \                               / \
+ *                          1   3                             3   5
+ *
+ *                    ELSE
+ *                                *                         n+2
+ *                              /   \                      /   \
+ *                            n+2    n                   n+1   n+1
+ *                           /   \           ==>        /  \   /  \
+ *                          n    n+1                    n  L   R   n
+ *                               / \
+ *                              L   R
+ *
+ *                         Or with keys:
+ *                               6                           4
+ *                             /   \                       /   \
+ *                            2     7        ==>          2     6
+ *                          /   \                       /  \  /  \
+ *                          1    4                      1  3  5  7
+ *                              / \
+ *                             3   5
+ *                END
+ *                ELSE IF 2 higher in right subtree than in left subtree THEN
+ *                BEGIN
+ *                    Same as above but left <==> right. (invert the picture)
+ *                ELSE
+ *                    IF correct height THEN break
+ *                    ELSE correct height.
+ *            END
+ */
+DECLINLINE(void) KAVL_FN(Rebalance)(PKAVLSTACK pStack)
+{
+    while (pStack->cEntries > 0)
+    {
+        /** @todo Perhaps some of these KAVL_SET_POINTER_NULL() cases could be optimized away.. */
+        PPKAVLNODECORE   ppNode = pStack->aEntries[--pStack->cEntries];
+        PKAVLNODECORE    pNode = KAVL_GET_POINTER(ppNode);
+        PKAVLNODECORE    pLeftNode = KAVL_GET_POINTER_NULL(&pNode->pLeft);
+        unsigned char    uchLeftHeight = AVL_HEIGHTOF(pLeftNode);
+        PKAVLNODECORE    pRightNode = KAVL_GET_POINTER_NULL(&pNode->pRight);
+        unsigned char    uchRightHeight = AVL_HEIGHTOF(pRightNode);
+
+        if (uchRightHeight + 1 < uchLeftHeight)
+        {
+            PKAVLNODECORE    pLeftLeftNode = KAVL_GET_POINTER_NULL(&pLeftNode->pLeft);
+            PKAVLNODECORE    pLeftRightNode = KAVL_GET_POINTER_NULL(&pLeftNode->pRight);
+            unsigned char    uchLeftRightHeight = AVL_HEIGHTOF(pLeftRightNode);
+
+            if (AVL_HEIGHTOF(pLeftLeftNode) >= uchLeftRightHeight)
+            {
+                KAVL_SET_POINTER_NULL(&pNode->pLeft, &pLeftNode->pRight);
+                KAVL_SET_POINTER(&pLeftNode->pRight, pNode);
+                pLeftNode->uchHeight = (unsigned char)(1 + (pNode->uchHeight = (unsigned char)(1 + uchLeftRightHeight)));
+                KAVL_SET_POINTER(ppNode, pLeftNode);
+            }
+            else
+            {
+                KAVL_SET_POINTER_NULL(&pLeftNode->pRight, &pLeftRightNode->pLeft);
+                KAVL_SET_POINTER_NULL(&pNode->pLeft, &pLeftRightNode->pRight);
+                KAVL_SET_POINTER(&pLeftRightNode->pLeft, pLeftNode);
+                KAVL_SET_POINTER(&pLeftRightNode->pRight, pNode);
+                pLeftNode->uchHeight = pNode->uchHeight = uchLeftRightHeight;
+                pLeftRightNode->uchHeight = uchLeftHeight;
+                KAVL_SET_POINTER(ppNode, pLeftRightNode);
+            }
+        }
+        else if (uchLeftHeight + 1 < uchRightHeight)
+        {
+            PKAVLNODECORE    pRightLeftNode = KAVL_GET_POINTER_NULL(&pRightNode->pLeft);
+            unsigned char    uchRightLeftHeight = AVL_HEIGHTOF(pRightLeftNode);
+            PKAVLNODECORE    pRightRightNode = KAVL_GET_POINTER_NULL(&pRightNode->pRight);
+
+            if (AVL_HEIGHTOF(pRightRightNode) >= uchRightLeftHeight)
+            {
+                KAVL_SET_POINTER_NULL(&pNode->pRight, &pRightNode->pLeft);
+                KAVL_SET_POINTER(&pRightNode->pLeft, pNode);
+                pRightNode->uchHeight = (unsigned char)(1 + (pNode->uchHeight = (unsigned char)(1 + uchRightLeftHeight)));
+                KAVL_SET_POINTER(ppNode, pRightNode);
+            }
+            else
+            {
+                KAVL_SET_POINTER_NULL(&pRightNode->pLeft, &pRightLeftNode->pRight);
+                KAVL_SET_POINTER_NULL(&pNode->pRight, &pRightLeftNode->pLeft);
+                KAVL_SET_POINTER(&pRightLeftNode->pRight, pRightNode);
+                KAVL_SET_POINTER(&pRightLeftNode->pLeft, pNode);
+                pRightNode->uchHeight = pNode->uchHeight = uchRightLeftHeight;
+                pRightLeftNode->uchHeight = uchRightHeight;
+                KAVL_SET_POINTER(ppNode, pRightLeftNode);
+            }
+        }
+        else
+        {
+            register unsigned char uchHeight = (unsigned char)(KMAX(uchLeftHeight, uchRightHeight) + 1);
+            if (uchHeight == pNode->uchHeight)
+                break;
+            pNode->uchHeight = uchHeight;
+        }
+    }
+
+}
 
 
 
@@ -328,127 +444,6 @@ RTDECL(PKAVLNODECORE) KAVL_FN(Remove)(PPKAVLNODECORE ppTree, KAVLKEY Key)
 
     KAVL_FN(Rebalance)(SSToDS(&AVLStack));
     return pDeleteNode;
-}
-
-
-/**
- * Rewinds a stack of pointers to pointers to nodes, rebalancing the tree.
- * @param     pStack  Pointer to stack to rewind.
- * @sketch    LOOP thru all stack entries
- *            BEGIN
- *                Get pointer to pointer to node (and pointer to node) from the stack.
- *                IF 2 higher left subtree than in right subtree THEN
- *                BEGIN
- *                    IF higher (or equal) left-sub-subtree than right-sub-subtree THEN
- *                                *                       n+2|n+3
- *                              /   \                     /     \
- *                            n+2    n       ==>         n+1   n+1|n+2
- *                           /   \                             /     \
- *                         n+1 n|n+1                          n|n+1  n
- *
- *                         Or with keys:
- *
- *                               4                           2
- *                             /   \                       /   \
- *                            2     5        ==>          1     4
- *                           / \                               / \
- *                          1   3                             3   5
- *
- *                    ELSE
- *                                *                         n+2
- *                              /   \                      /   \
- *                            n+2    n                   n+1   n+1
- *                           /   \           ==>        /  \   /  \
- *                          n    n+1                    n  L   R   n
- *                               / \
- *                              L   R
- *
- *                         Or with keys:
- *                               6                           4
- *                             /   \                       /   \
- *                            2     7        ==>          2     6
- *                          /   \                       /  \  /  \
- *                          1    4                      1  3  5  7
- *                              / \
- *                             3   5
- *                END
- *                ELSE IF 2 higher in right subtree than in left subtree THEN
- *                BEGIN
- *                    Same as above but left <==> right. (invert the picture)
- *                ELSE
- *                    IF correct height THEN break
- *                    ELSE correct height.
- *            END
- */
-DECLINLINE(void) KAVL_FN(Rebalance)(PKAVLSTACK pStack)
-{
-    while (pStack->cEntries > 0)
-    {
-        /** @todo Perhaps some of these KAVL_SET_POINTER_NULL() cases could be optimized away.. */
-        PPKAVLNODECORE   ppNode = pStack->aEntries[--pStack->cEntries];
-        PKAVLNODECORE    pNode = KAVL_GET_POINTER(ppNode);
-        PKAVLNODECORE    pLeftNode = KAVL_GET_POINTER_NULL(&pNode->pLeft);
-        unsigned char    uchLeftHeight = AVL_HEIGHTOF(pLeftNode);
-        PKAVLNODECORE    pRightNode = KAVL_GET_POINTER_NULL(&pNode->pRight);
-        unsigned char    uchRightHeight = AVL_HEIGHTOF(pRightNode);
-
-        if (uchRightHeight + 1 < uchLeftHeight)
-        {
-            PKAVLNODECORE    pLeftLeftNode = KAVL_GET_POINTER_NULL(&pLeftNode->pLeft);
-            PKAVLNODECORE    pLeftRightNode = KAVL_GET_POINTER_NULL(&pLeftNode->pRight);
-            unsigned char    uchLeftRightHeight = AVL_HEIGHTOF(pLeftRightNode);
-
-            if (AVL_HEIGHTOF(pLeftLeftNode) >= uchLeftRightHeight)
-            {
-                KAVL_SET_POINTER_NULL(&pNode->pLeft, &pLeftNode->pRight);
-                KAVL_SET_POINTER(&pLeftNode->pRight, pNode);
-                pLeftNode->uchHeight = (unsigned char)(1 + (pNode->uchHeight = (unsigned char)(1 + uchLeftRightHeight)));
-                KAVL_SET_POINTER(ppNode, pLeftNode);
-            }
-            else
-            {
-                KAVL_SET_POINTER_NULL(&pLeftNode->pRight, &pLeftRightNode->pLeft);
-                KAVL_SET_POINTER_NULL(&pNode->pLeft, &pLeftRightNode->pRight);
-                KAVL_SET_POINTER(&pLeftRightNode->pLeft, pLeftNode);
-                KAVL_SET_POINTER(&pLeftRightNode->pRight, pNode);
-                pLeftNode->uchHeight = pNode->uchHeight = uchLeftRightHeight;
-                pLeftRightNode->uchHeight = uchLeftHeight;
-                KAVL_SET_POINTER(ppNode, pLeftRightNode);
-            }
-        }
-        else if (uchLeftHeight + 1 < uchRightHeight)
-        {
-            PKAVLNODECORE    pRightLeftNode = KAVL_GET_POINTER_NULL(&pRightNode->pLeft);
-            unsigned char    uchRightLeftHeight = AVL_HEIGHTOF(pRightLeftNode);
-            PKAVLNODECORE    pRightRightNode = KAVL_GET_POINTER_NULL(&pRightNode->pRight);
-
-            if (AVL_HEIGHTOF(pRightRightNode) >= uchRightLeftHeight)
-            {
-                KAVL_SET_POINTER_NULL(&pNode->pRight, &pRightNode->pLeft);
-                KAVL_SET_POINTER(&pRightNode->pLeft, pNode);
-                pRightNode->uchHeight = (unsigned char)(1 + (pNode->uchHeight = (unsigned char)(1 + uchRightLeftHeight)));
-                KAVL_SET_POINTER(ppNode, pRightNode);
-            }
-            else
-            {
-                KAVL_SET_POINTER_NULL(&pRightNode->pLeft, &pRightLeftNode->pRight);
-                KAVL_SET_POINTER_NULL(&pNode->pRight, &pRightLeftNode->pLeft);
-                KAVL_SET_POINTER(&pRightLeftNode->pRight, pRightNode);
-                KAVL_SET_POINTER(&pRightLeftNode->pLeft, pNode);
-                pRightNode->uchHeight = pNode->uchHeight = uchRightLeftHeight;
-                pRightLeftNode->uchHeight = uchRightHeight;
-                KAVL_SET_POINTER(ppNode, pRightLeftNode);
-            }
-        }
-        else
-        {
-            register unsigned char uchHeight = (unsigned char)(KMAX(uchLeftHeight, uchRightHeight) + 1);
-            if (uchHeight == pNode->uchHeight)
-                break;
-            pNode->uchHeight = uchHeight;
-        }
-    }
-
 }
 
 #endif
