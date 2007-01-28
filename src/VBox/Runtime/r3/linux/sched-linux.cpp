@@ -123,7 +123,7 @@ typedef struct
  * Deltas for a process in which we are not restricted
  * to only be lowering the priority.
  */
-static const PROCPRIORITYTYPE g_aTypesLinuxFree[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesLinuxFree[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 -999999999 },
     { RTTHREADTYPE_INFREQUENT_POLLER,       +3 },
@@ -142,7 +142,7 @@ static const PROCPRIORITYTYPE g_aTypesLinuxFree[RTTHREADTYPE_LAST] =
 /**
  * Deltas for a process in which we are restricted and can only lower the priority.
  */
-static const PROCPRIORITYTYPE g_aTypesLinuxRestricted[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesLinuxRestricted[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 -999999999 },
     { RTTHREADTYPE_INFREQUENT_POLLER,       +3 },
@@ -164,7 +164,7 @@ static const PROCPRIORITYTYPE g_aTypesLinuxRestricted[RTTHREADTYPE_LAST] =
  * This is typically choosen when we find that we can't raise the priority
  * to the process default of a thread created by a low priority thread.
  */
-static const PROCPRIORITYTYPE g_aTypesLinuxFlat[RTTHREADTYPE_LAST] =
+static const PROCPRIORITYTYPE g_aTypesLinuxFlat[RTTHREADTYPE_END] =
 {
     { RTTHREADTYPE_INVALID,                 -999999999 },
     { RTTHREADTYPE_INFREQUENT_POLLER,        0 },
@@ -464,7 +464,7 @@ static void *rtSchedNativeProberThread(void *pvUser)
  */
 int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
 
     /*
      * First figure out what's we're allowed to do in this process.
@@ -517,7 +517,7 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
      * Try out the priorities from the top and down.
      */
     int rc = VINF_SUCCESS;
-    int i = RTTHREADTYPE_LAST;
+    int i = RTTHREADTYPE_END;
     while (--i > RTTHREADTYPE_INVALID)
     {
         int iPriority = pCfg->paTypes[i].iPriority + pCfg->iDelta;
@@ -597,7 +597,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     /* sanity */
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     Assert(enmType == g_pProcessPriority->paTypes[enmType].enmType);
     Assert((pthread_t)pThread->Core.Key == pthread_self());
 

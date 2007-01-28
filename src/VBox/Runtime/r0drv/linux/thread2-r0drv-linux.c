@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Threads, Ring-0 Driver, NT.
+ * InnoTek Portable Runtime - Threads (Part 2), Ring-0 Driver, Linux.
  */
 
 /*
@@ -22,43 +22,15 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-nt-kernel.h"
+#include "the-linux-kernel.h"
 
 #include <iprt/thread.h>
 #include <iprt/err.h>
-
-__BEGIN_DECLS
-NTSTATUS NTAPI ZwYieldExecution(void);
-__END_DECLS
+#include "internal/thread.h"
 
 
-RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
+RTDECL(RTTHREAD) RTThreadSelf(void)
 {
-    return (RTNATIVETHREAD)PsGetCurrentThread();
+    return rtThreadGetByNative(((RTNATIVETHREAD)current);
 }
-
-
-RTDECL(int)   RTThreadSleep(unsigned cMillies)
-{
-    LARGE_INTEGER Interval;
-    Interval.QuadPart = -(int64_t)cMillies * 10000;
-    NTSTATUS rcNt = KeDelayExecutionThread(KernelMode, TRUE, &Interval);
-    switch (rcNt)
-    {
-        case STATUS_SUCCESS:
-            return VINF_SUCCESS;
-        case STATUS_ALERTED:
-        case STATUS_USER_APC:
-            return VERR_INTERRUPTED;
-        default:
-            return RTErrConvertFromNtStatus(rcNt);
-    }
-}
-
-
-RTDECL(bool) RTThreadYield(void)
-{
-    return ZwYieldExecution() != STATUS_NO_YIELD_PERFORMED;
-}
-
 

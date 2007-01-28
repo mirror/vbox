@@ -60,7 +60,7 @@ typedef struct
         RTTHREADTYPE    enmType;
         /** The Win32 thread priority. */
         DWORD           dwThreadPriority;
-    } aTypes[RTTHREADTYPE_LAST];
+    } aTypes[RTTHREADTYPE_END];
 } PROCPRIORITY;
 
 /** Matches any process priority class. */
@@ -253,7 +253,7 @@ static const PROCPRIORITY *g_pProcessPriority = &g_aDefaultPriority;
  */
 int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     return VINF_SUCCESS;
 }
 
@@ -302,7 +302,7 @@ inline HANDLE rtThreadNativeGetHandle(PRTTHREADINT pThread)
  */
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_LAST);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     AssertMsg(g_pProcessPriority && g_pProcessPriority->aTypes[enmType].enmType == enmType,
               ("enmType=%d entry=%d\n", enmType, g_pProcessPriority->aTypes[enmType].enmType));
 

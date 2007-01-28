@@ -33,6 +33,7 @@
 #include <iprt/log.h>
 
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -152,9 +153,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
      * If the timer is active, we just flag it to self destruct on the next tick.
      * If it's suspended we can safely set the destroy flag and signal it.
      */
-#ifdef IN_RING3
     RTTHREAD Thread = pTimer->Thread;
-#endif
     if (!pTimer->fSuspended)
     {
         ASMAtomicXchgU8(&pTimer->fSuspended, true);
@@ -169,9 +168,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
         AssertRC(rc);
     }
 
-#ifdef IN_RING3
     RTThreadWait(Thread, 250, NULL);
-#endif
     return VINF_SUCCESS;
 }
 
@@ -188,8 +185,8 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
      */
     u64First += RTTimeNanoTS();
     ASMAtomicXchgU64(&pTimer->iTick, 0);
-    ASMAtomicXchgU64(&pTimer->iTick, u64First);
     ASMAtomicXchgU64(&pTimer->u64StartTS, u64First);
+    ASMAtomicXchgU64(&pTimer->u64NextTS, u64First);
     ASMAtomicXchgU8(&pTimer->fSuspended, false);
     int rc = RTSemEventSignal(pTimer->Event);
     if (rc == VERR_ALREADY_POSTED)
@@ -215,7 +212,6 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
         rc = VINF_SUCCESS;
     AssertRC(rc);
     return rc;
-
 }
 
 
