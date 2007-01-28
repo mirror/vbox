@@ -55,7 +55,7 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
     /*
      * Allocate and initialize the object.
      */
-    pNew = (PRTR0MEMOBJINTERNAL)RTMemAllocZ(cb);
+    pNew = (PRTR0MEMOBJINTERNAL)RTMemAllocZ(cbSelf);
     if (pNew)
     {
         pNew->u32Magic  = RTR0MEMOBJ_MAGIC;
