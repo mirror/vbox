@@ -44,6 +44,8 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
         pHdr->cb        = cb;
         pHdr->u32Padding= 0;
     }
+    else
+        printf("rmMemAlloc(%#x, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
     return pHdr;
 }
 
