@@ -450,6 +450,18 @@ TRPMGCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc);
  */
 
 /**
+ * Dispatches an interrupt that arrived while we were in the guest context.
+ *
+ * It's assumes we're invoked with interrupts disabled.
+ * When this function returns, interrupts will be enabled.
+ *
+ * @param   pVM     The VM handle.
+ */
+TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM);
+
+# ifndef VBOX_WITHOUT_IDT_PATCHING
+
+/**
  * Changes the VMMR0Entry() call frame and stack used by the IDT patch code
  * so that we'll dispatch an interrupt rather than returning directly to Ring-3
  * when VMMR0Entry() returns.
@@ -458,6 +470,8 @@ TRPMGCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc);
  * @param   pvRet       Pointer to the return address of VMMR0Entry() on the stack.
  */
 TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet);
+
+# endif /* !VBOX_WITHOUT_IDT_PATCHING */
 
 /** @} */
 #endif

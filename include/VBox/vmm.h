@@ -344,15 +344,16 @@ VMMR3DECL(void) VMMR3YieldResume(PVM pVM);
 typedef enum VMMR0OPERATION
 {
     /** Run guest context. */
-    VMMR0_DO_RUN_GC = 0,
+    VMMR0_DO_RAW_RUN = 0,
+    VMMR0_DO_RUN_GC = VMMR0_DO_RAW_RUN,
     /** Run guest code using the available hardware acceleration technology. */
-    VMMR0_HWACC_RUN_GUEST,
+    VMMR0_DO_HWACC_RUN,
     /** Call VMMR0 Per VM Init. */
     VMMR0_DO_VMMR0_INIT,
     /** Call VMMR0 Per VM Termination. */
     VMMR0_DO_VMMR0_TERM,
     /** Setup the hardware accelerated raw-mode session. */
-    VMMR0_HWACC_SETUP_VM,
+    VMMR0_DO_HWACC_SETUP_VM,
     /** Calls function in the hypervisor.
      * The caller must setup the hypervisor context so the call will be performed.
      * The difference between VMMR0_DO_RUN_GC and this one is the handling of
@@ -376,6 +377,11 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_INTNET_IF_WAIT,
     /** The end of the R0 service operations. */
     VMMR0_DO_SRV_END,
+
+    /** Official NOP that we use for profiling. */
+    VMMR0_DO_NOP,
+    /** Official call we use for testing Ring-0 APIs. */
+    VMMR0_DO_TESTS,
 
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff
