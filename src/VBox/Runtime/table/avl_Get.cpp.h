@@ -30,7 +30,7 @@
  * @param     Key     Key value of the node which is to be found.
  * @author    knut st. osmundsen
  */
-PKAVLNODECORE KAVL_FN(Get)(PPKAVLNODECORE ppTree, KAVLKEY Key)
+RTDECL(PKAVLNODECORE) KAVL_FN(Get)(PPKAVLNODECORE ppTree, KAVLKEY Key)
 {
     register PKAVLNODECORE  pNode = KAVL_GET_POINTER_NULL(ppTree);
 

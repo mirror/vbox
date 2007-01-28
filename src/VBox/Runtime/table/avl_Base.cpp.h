@@ -169,7 +169,7 @@ inline void KAVL_FN(Rebalance)(PKAVLSTACK pStack);
  *            Fill in leaf node and insert it.
  *            Rebalance the tree.
  */
-bool KAVL_FN(Insert)(PPKAVLNODECORE ppTree, PKAVLNODECORE pNode)
+RTDECL(bool) KAVL_FN(Insert)(PPKAVLNODECORE ppTree, PKAVLNODECORE pNode)
 {
     KAVLSTACK               AVLStack;
     PPKAVLNODECORE          ppCurNode = ppTree;
@@ -269,7 +269,7 @@ bool KAVL_FN(Insert)(PPKAVLNODECORE ppTree, PKAVLNODECORE pNode)
  *            END
  *            return pointer to the removed node (if found).
  */
-PKAVLNODECORE KAVL_FN(Remove)(PPKAVLNODECORE ppTree, KAVLKEY Key)
+RTDECL(PKAVLNODECORE) KAVL_FN(Remove)(PPKAVLNODECORE ppTree, KAVLKEY Key)
 {
     KAVLSTACK                AVLStack;
     PPKAVLNODECORE           ppDeleteNode = ppTree;
