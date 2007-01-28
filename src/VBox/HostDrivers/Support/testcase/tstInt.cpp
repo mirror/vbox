@@ -26,6 +26,7 @@
 *******************************************************************************/
 #include <VBox/sup.h>
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/param.h>
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
@@ -92,7 +93,7 @@ int main(int argc, char **argv)
                 if (rc != VINF_SUCCESS)
                 {
                     RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
-                    break;s
+                    break;
                 }
             }
             RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Vrc)\n", cIterations, rc);
