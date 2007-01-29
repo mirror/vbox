@@ -42,11 +42,11 @@ BEGINPROC trpmR0DispatchHostInterrupt
 
 %ifdef __AMD64__
     mov     r11, rsp                    ; save the RSP for the iret frame.
-    and     rsp, ~15h                   ; align the stack. (do it unconditionally saves some jump mess)
+    and     rsp, 0fffffffffffffff0h     ; align the stack. (do it unconditionally saves some jump mess)
 
     ; switch stack?
  %ifdef ASM_CALL64_MSC
-    cmp     r8, 0ffffffffffffffffh
+    cmp     r8,  0ffffffffffffffffh
     je      .no_stack_switch
     mov     rsp, r8
  %else
