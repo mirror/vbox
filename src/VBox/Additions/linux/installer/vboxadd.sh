@@ -168,16 +168,23 @@ start() {
         sleep 1
     }
     if [ ! -c $dev ]; then
-        maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/devices`
-        test -z "$maj" && maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/misc`
+        maj=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/devices`
+        if [ ! -z "$maj" ]; then
+            min=0
+        else
+            min=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/misc`
+            if [ ! -z "$min" ]; then
+                maj=10
+            fi
+        fi
         test -z "$maj" && {
             rmmod $modname
-            fail "Cannot locate device major"
+            fail "Cannot locate the VirtualBox device"
         }
 
-        mknod -m 0664 $dev c $maj 0 || {
+        mknod -m 0664 $dev c $maj $min || {
             rmmod $modname
-            fail "Cannot create device $dev with major $maj"
+            fail "Cannot create device $dev with major $maj and minor $min"
         }
     fi
 
