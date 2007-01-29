@@ -19,7 +19,7 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__AMD64__) && !defined(__WIN__)
+#if 0 //defined(__AMD64__) && !defined(__WIN__)
 # define NO_SUPCALLR0VMM
 #endif
 
@@ -2650,6 +2650,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
     int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
+        RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
+        
         /*
          * Test various crashes which we must be able to recover from.
          */
@@ -2787,7 +2789,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         /*
          * Switch and do da thing.
          */
-        RTPrintf("VMM: interrupt forwarding...\n");
+        RTPrintf("VMM: interrupt forwarding...\n"); RTStrmFlush(g_pStdOut); RTThreadSleep(250);
         i = 0;
         uint64_t    tsBegin = RTTimeNanoTS();
         uint64_t    TickStart = ASMReadTSC();
@@ -2804,7 +2806,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             if (!(i % 32))
                 Log(("VMM: iteration %d, esi=%08x edi=%08x ebx=%08x\n",
                        i, CPUMGetHyperESI(pVM), CPUMGetHyperEDI(pVM), CPUMGetHyperEBX(pVM)));
-        } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
+        } while (rc == VINF_EM_RAW_INTERRUPT_HYPER && i < 1000000 /*hack!*/);
         uint64_t    TickEnd = ASMReadTSC();
         uint64_t    tsEnd = RTTimeNanoTS();
 
