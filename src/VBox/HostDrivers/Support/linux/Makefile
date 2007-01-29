@@ -86,7 +86,7 @@ ifndef $(KERN_INCL)
 # Instead of sticking to the standards, OpenSUSE 10.2 only puts a few include
 # files in /lib/modules/$(uname -r)/build/include, and puts the rest in
 # /lib/modules/$(uname -r)/source/include, which points into the kernel sources
- EXTRA_INCL = -I/lib/modules/$(shell uname -r)/source/include
+ EXTRA_INCL = /lib/modules/$(shell uname -r)/source/include
  $(info Info: using $(KERN_INCL) as the include directory of your Linux kernel. If this is not correct, specify KERN_INCL=<directory> and run Make again.)
 endif
 ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
@@ -118,7 +118,7 @@ endif
 # Compiler options
 #
 ifndef INCL
- INCL    := -I$(KERN_INCL) -I$(EXTRA_INCL)
+ INCL    := -I$(KERN_INCL) $(addprefix -I, $(EXTRA_INCL))
  ifndef KBUILD_EXTMOD
   KBUILD_EXTMOD := $(shell pwd)
  endif
