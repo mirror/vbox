@@ -33,15 +33,11 @@
 #include <iprt/asm.h>
 
 
-
-
 /**
  * Dispatches an interrupt that arrived while we were in the guest context.
  *
- * It's assumes we're invoked with interrupts disabled.
- * When this function returns, interrupts will be enabled.
- *
  * @param   pVM     The VM handle.
+ * @remark  Must be called with interrupts disabled.
  */
 TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
 {
@@ -188,12 +184,11 @@ TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
      * a 64-bit far return frame where dummy and uArg is.
      */
     uint64_t *pau = (uint64_t *)pvRet;
+    Assert(pau[1] == (uint64_t)pVM);
     pau[0] = (uint64_t)trpmR0InterruptDispatcher; /* new return address */
     pau[3] = pfnHandler.off;            /* retf off */
     pau[4] = pfnHandler.sel;            /* retf sel */
 #endif
-
-//    dprintf(("Interrupt: %04x:%08x vector %d\n", pfnHandler.sel, pfnHandler.off, uActiveVector));
 }
 
 #endif /* !VBOX_WITHOUT_IDT_PATCHING */
