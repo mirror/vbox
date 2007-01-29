@@ -120,9 +120,6 @@ endif
 # SUPR0 - The Ring-0 Import / Thunk library.
 #
 SUPR0_TEMPLATE      = VBOXR0
-ifeq ($(VBOX_LDR_FMT),elf)
-SUPR0_SOURCES.amd64 += $(VBOX_PATH_SUPPORT)/SUPR0Elf.asm
-endif
 ifeq ($(VBOX_LDR_FMT),pe)
 SUPR0_SOURCES       += $(VBOX_PATH_SUPPORT)/SUPR0.def
 endif
