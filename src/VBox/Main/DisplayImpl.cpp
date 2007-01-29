@@ -389,6 +389,8 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
         /* callback into the framebuffer to notify it */
         BOOL finished = FALSE;
 
+        RTSemEventMultiReset(mUpdateSem);
+
         mFramebuffer->NotifyUpdate(x, y, w, h, &finished);
 
         if (!finished)
@@ -397,7 +399,6 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
              *  the framebuffer needs more time to process
              *  the event so we have to halt the VM until it's done
              */
-            RTSemEventMultiReset(mUpdateSem);
             mFramebuffer->Unlock();
             RTSemEventMultiWait(mUpdateSem, RT_INDEFINITE_WAIT);
         } else
