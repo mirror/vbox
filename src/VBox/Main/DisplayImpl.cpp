@@ -735,7 +735,7 @@ static void vbvaFetchBytes (VBVAMEMORY *pVbvaMemory, uint8_t *pu8Dst, uint32_t c
 {
     if (cbDst >= VBVA_RING_BUFFER_SIZE)
     {
-        AssertFailed ();
+        AssertMsgFailed (("cbDst = 0x%08X, ring buffer size 0x%08X", cbDst, VBVA_RING_BUFFER_SIZE));
         return;
     }
 
