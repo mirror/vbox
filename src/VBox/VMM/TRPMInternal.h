@@ -182,8 +182,6 @@ TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
 /**
  * Calls the interrupt gate as if we received an interrupt while in Ring-0.
  *
- * Returns with interrupts enabled.
- *
  * @param   uIP     The interrupt gate IP.
  * @param   SelCS   The interrupt gate CS.
  * @param   RSP     The interrupt gate RSP. ~0 if no stack switch should take place. (only AMD64)

@@ -32,8 +32,6 @@ BEGINCODE
 ;;
 ; Calls the interrupt gate as if we received an interrupt while in Ring-0.
 ;
-; Returns with interrupts enabled.
-;
 ; @param   uIP     x86:[ebp+8]   msc:rcx  gcc:rdi  The interrupt gate IP.
 ; @param   SelCS   x86:[ebp+12]  msc:dx   gcc:si   The interrupt gate CS.
 ; @param   RSP                   msc:r8   gcc:rdx  The interrupt gate RSP. ~0 if no stack switch should take place. (only AMD64)
@@ -43,8 +41,8 @@ BEGINPROC trpmR0DispatchHostInterrupt
     mov     xBP, xSP
 
 %ifdef __AMD64__
-    mov     rax, rsp
-    and     rsp, 15h                    ; align the stack. (do it unconditionally saves some jump mess)
+    mov     r11, rsp                    ; save the RSP for the iret frame.
+    and     rsp, ~15h                   ; align the stack. (do it unconditionally saves some jump mess)
 
     ; switch stack?
  %ifdef ASM_CALL64_MSC
@@ -60,28 +58,40 @@ BEGINPROC trpmR0DispatchHostInterrupt
 
     ; create the iret frame
     push    0                           ; SS
-    push    rax                         ; RSP
+    push    r11                         ; RSP
     pushfd                              ; RFLAGS
     and     dword [rsp], ~X86_EFL_IF
     mov     ax, cs
     push    rax                         ; CS
-    mov     rax, .return                ; RIP
-    push    rax
+    lea     r10, [.return wrt rip]      ; RIP
+    push    r10
 
     ; create the retf frame
  %ifdef ASM_CALL64_MSC
     movzx   rdx, dx
+    cmp     rdx, r11
+    je      .dir_jump
     push    rdx
     push    rcx
  %else
-    movzx   rdi, di
-    push    rdi
+    movzx   rsi, si
+    cmp     rsi, r11
+    je      .dir_jump
     push    rsi
+    push    rdi
  %endif
 
-    ; dispatch it!
+    ; dispatch it
     db 048h
     retf
+
+    ; dispatch it by a jmp (don't mess up the IST stack)
+.dir_jump:
+ %ifdef ASM_CALL64_MSC
+    jmp     rcx
+ %else
+    jmp     rdi
+ %endif
 
 %else ; 32-bit:
     mov     ecx, [ebp + 8]              ; uIP
@@ -101,6 +111,7 @@ BEGINPROC trpmR0DispatchHostInterrupt
     retf
 %endif
 .return:
+    cli
 
     leave
     ret
@@ -131,11 +142,12 @@ ENDPROC trpmR0DispatchHostInterrupt
 ;           18  retf selector (interrupt handler)
 ;           10  retf offset   (interrupt handler)
 ;            8  uOperation
-;            0  pVM
+;            0  pVM (rsp here)
 ;
 BEGINPROC trpmR0InterruptDispatcher
 %ifdef __AMD64__
     lea     rsp, [rsp + 10h]            ; skip pVM and uOperation
+    swapgs
     db 48h
     retf
 %else  ; !__AMD64__
