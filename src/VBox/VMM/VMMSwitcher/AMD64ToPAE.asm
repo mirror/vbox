@@ -127,16 +127,16 @@ BEGINPROC vmmR0HostToGuestAsm
     ;;      Skip eax, edx and ecx as these are not preserved over calls.
     ;;
     ; general registers.
-    ; mov     [edx + CPUM.Host.rax], rax - scratch
+    ; mov     [rdx + CPUM.Host.rax], rax - scratch
     mov     [rdx + CPUM.Host.rbx], rbx
-    ; mov     [edx + CPUM.Host.rcx], rcx - scratch
-    ; mov     [edx + CPUM.Host.rdx], rdx - scratch
+    ; mov     [rdx + CPUM.Host.rcx], rcx - scratch
+    ; mov     [rdx + CPUM.Host.rdx], rdx - scratch
     mov     [rdx + CPUM.Host.rdi], rdi
     mov     [rdx + CPUM.Host.rsi], rsi
     mov     [rdx + CPUM.Host.rsp], rsp
     mov     [rdx + CPUM.Host.rbp], rbp
-    ; mov     [edx + CPUM.Host.r8 ], r8 - scratch
-    ; mov     [edx + CPUM.Host.r9 ], r9 - scratch
+    ; mov     [rdx + CPUM.Host.r8 ], r8 - scratch
+    ; mov     [rdx + CPUM.Host.r9 ], r9 - scratch
     mov     [rdx + CPUM.Host.r10], r10
     mov     [rdx + CPUM.Host.r11], r11
     mov     [rdx + CPUM.Host.r12], r12
@@ -198,7 +198,7 @@ htg_no_sysenter:
     ; debug registers.
     test    esi, CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HOST
     jz      htg_debug_regs_no
-    jmp     htg_debug_regs_save_dr7and6
+    jmp     htg_debug_regs_save
 htg_debug_regs_no:
     DEBUG_CHAR('a')                     ; trashes esi
 
@@ -268,6 +268,33 @@ NAME(fpIDEnterTarget):
 dd  0
     FIXUP FIX_HYPER_CS, 0
 dd  0
+
+
+;;
+; Detour for saving the host DR7 and DR6.
+; esi and rdx must be preserved.
+htg_debug_regs_save:
+DEBUG_S_CHAR('s');
+    mov     rax, dr7                    ; not sure, but if I read the docs right this will trap if GD is set. FIXME!!!
+    mov     [rdx + CPUM.Host.dr7], rax
+    xor     eax, eax                    ; clear everything. (bit 12? is read as 1...)
+    mov     dr7, rax
+    mov     rax, dr6                    ; just in case we save the state register too.
+    mov     [rdx + CPUM.Host.dr6], rax
+    ; save host DR0-3?
+    test    esi, CPUM_USE_DEBUG_REGS
+    jz near htg_debug_regs_no
+DEBUG_S_CHAR('S');
+    mov     rax, dr0
+    mov     [rdx + CPUM.Host.dr0], rax
+    mov     rbx, dr1
+    mov     [rdx + CPUM.Host.dr1], rbx
+    mov     rcx, dr2
+    mov     [rdx + CPUM.Host.dr2], rcx
+    mov     rax, dr3
+    mov     [rdx + CPUM.Host.dr3], rax
+    jmp     htg_debug_regs_no
+
 
     ; We're now on an identity mapped pages! in 32-bit compatability mode.
 BITS 32
@@ -395,34 +422,12 @@ htg_debug_regs_guest_no:
     jmp     eax
 
 ;;
-; Detour for saving the host DR7 and DR6.
-; esi and edx must be preserved.
-htg_debug_regs_save_dr7and6:
-DEBUG_S_CHAR('s');
-    mov     eax, dr7                    ; not sure, but if I read the docs right this will trap if GD is set. FIXME!!!
-    mov     [edx + CPUM.Host.dr7], eax
-    xor     eax, eax                    ; clear everything. (bit 12? is read as 1...)
-    mov     dr7, eax
-    mov     eax, dr6                    ; just in case we save the state register too.
-    mov     [edx + CPUM.Host.dr6], eax
-    jmp     htg_debug_regs_no
-
-;;
 ; Detour for saving host DR0-3 and loading hypervisor debug registers.
 ; esi and edx must be preserved.
 htg_debug_regs_guest:
     DEBUG_S_CHAR('D')
     DEBUG_S_CHAR('R')
     DEBUG_S_CHAR('x')
-    ; save host DR0-3.
-    mov     eax, dr0
-    mov     [edx + CPUM.Host.dr0], eax
-    mov     ebx, dr1
-    mov     [edx + CPUM.Host.dr1], ebx
-    mov     ecx, dr2
-    mov     [edx + CPUM.Host.dr2], ecx
-    mov     eax, dr3
-    mov     [edx + CPUM.Host.dr3], eax
     ; load hyper DR0-7
     mov     ebx, [edx + CPUM.Hyper.dr0]
     mov     dr0, ebx
@@ -891,32 +896,32 @@ gth_debug_regs_no:
     ; Restore MSRs
     mov     rbx, rdx
     mov     ecx, MSR_K8_FS_BASE
-    mov     eax, [ebx + CPUM.Host.FSbase]
-    mov     edx, [ebx + CPUM.Host.FSbase + 4]
+    mov     eax, [rbx + CPUM.Host.FSbase]
+    mov     edx, [rbx + CPUM.Host.FSbase + 4]
     wrmsr
     mov     ecx, MSR_K8_GS_BASE
-    mov     eax, [ebx + CPUM.Host.GSbase]
-    mov     edx, [ebx + CPUM.Host.GSbase + 4]
+    mov     eax, [rbx + CPUM.Host.GSbase]
+    mov     edx, [rbx + CPUM.Host.GSbase + 4]
     wrmsr
     mov     ecx, MSR_K6_EFER
-    mov     eax, [ebx + CPUM.Host.efer]
-    mov     edx, [ebx + CPUM.Host.efer + 4]
+    mov     eax, [rbx + CPUM.Host.efer]
+    mov     edx, [rbx + CPUM.Host.efer + 4]
     wrmsr
     mov     rdx, rbx
 
 
     ; restore general registers.
     mov     eax, edi                    ; restore return code. eax = return code !!
-    ; mov     rax, [edx + CPUM.Host.rax] - scratch + return code
+    ; mov     rax, [rdx + CPUM.Host.rax] - scratch + return code
     mov     rbx, [rdx + CPUM.Host.rbx]
-    ; mov     rcx, [edx + CPUM.Host.rcx] - scratch
-    ; mov     rdx, [edx + CPUM.Host.rdx] - scratch
+    ; mov     rcx, [rdx + CPUM.Host.rcx] - scratch
+    ; mov     rdx, [rdx + CPUM.Host.rdx] - scratch
     mov     rdi, [rdx + CPUM.Host.rdi]
     mov     rsi, [rdx + CPUM.Host.rsi]
     mov     rsp, [rdx + CPUM.Host.rsp]
     mov     rbp, [rdx + CPUM.Host.rbp]
-    ; mov     r8,  [edx + CPUM.Host.r8 ] - scratch
-    ; mov     r9,  [edx + CPUM.Host.r9 ] - scratch
+    ; mov     r8,  [rdx + CPUM.Host.r8 ] - scratch
+    ; mov     r9,  [rdx + CPUM.Host.r9 ] - scratch
     mov     r10, [rdx + CPUM.Host.r10]
     mov     r11, [rdx + CPUM.Host.r11]
     mov     r12, [rdx + CPUM.Host.r12]
@@ -925,7 +930,7 @@ gth_debug_regs_no:
     mov     r15, [rdx + CPUM.Host.r15]
 
     ; finally restore flags. (probably not required)
-    push    qword [edx + CPUM.Host.rflags]
+    push    qword [rdx + CPUM.Host.rflags]
     popf
 
 
