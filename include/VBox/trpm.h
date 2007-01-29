@@ -452,10 +452,8 @@ TRPMGCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc);
 /**
  * Dispatches an interrupt that arrived while we were in the guest context.
  *
- * It's assumes we're invoked with interrupts disabled.
- * When this function returns, interrupts will be enabled.
- *
  * @param   pVM     The VM handle.
+ * @remark  Must be called with interrupts disabled.
  */
 TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM);
 
