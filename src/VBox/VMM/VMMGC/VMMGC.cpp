@@ -77,9 +77,9 @@ VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg)
          */
         case VMMGC_DO_TESTCASE_HYPER_INTERRUPT:
         {
+            uint32_t volatile i = 0;
             ASMIntEnable();
-            int i = 0;
-            while (i + 1 > i)
+            while (i < _2G32)
                 i++;
             ASMIntDisable();
             return 0;
