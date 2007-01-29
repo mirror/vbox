@@ -2821,14 +2821,22 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     *u.pb++ = 0x74;                     //  jz      @VBoxCall
     *u.pb++ = 2;
 
-    /* jump to forward code. */
+    /* jump to forwarder code. */
     *u.pb++ = 0xeb;
     uFixJmp = u;
     *u.pb++ = 0xfe;
 
-    /* Call _VMMR0Entry */              //  @VBoxCall:
-    /* (This pushing of the arguments is NOT necessary, but it may ease debugging.) */
-# ifdef __WIN64__
+                                        //  @VBoxCall:
+    *u.pb++ = 0x0f;                     //  swapgs
+    *u.pb++ = 0x01;
+    *u.pb++ = 0xf8;
+
+    /* 
+     * Call VMMR0Entry
+     *      We don't have to push the arguments here, but we have to 
+     *      reserve some stack space for the interrupt forwarding.
+     */
+# ifdef __WIN__
     *u.pb++ = 0x50;                     //  push    rax                             ; alignment filler.
     *u.pb++ = 0x41;                     //  push    r8                              ; uArg
     *u.pb++ = 0x50;
@@ -2850,6 +2858,10 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     *u.pb++ = 0x81;
     *u.pb++ = 0xc4;
     *u.pu32++ = 0x20;
+
+    *u.pb++ = 0x0f;                     // swapgs
+    *u.pb++ = 0x01;
+    *u.pb++ = 0xf8;
 
     /* Return to R3. */
     uNotNested = u;
