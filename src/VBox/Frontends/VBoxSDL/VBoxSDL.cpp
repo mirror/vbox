@@ -2260,12 +2260,7 @@ int main(int argc, char *argv[])
                         x, y, w, h));
 
                 Assert(gpFrameBuffer);
-                /*
-                 * Lock the framebuffer, perform the update and lock again
-                 */
-                gpFrameBuffer->Lock();
                 gpFrameBuffer->update(x, y, w, h, true /* fGuestRelative */);
-                gpFrameBuffer->Unlock();
 
                 #undef DECODEX
                 #undef DECODEY
