@@ -446,12 +446,45 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                  */
                 case VINF_EM_RAW_INTERRUPT:
                 case VINF_EM_RAW_INTERRUPT_HYPER:
+                {
 #ifdef VBOX_WITHOUT_IDT_PATCHING
                     TRPMR0DispatchHostInterrupt(pVM);
-#else
-                    TRPMR0SetupInterruptDispatcherFrame(pVM, (char*)&pVM - sizeof(pVM));
-#endif
+#else /* !VBOX_WITHOUT_IDT_PATCHING */
+                    /* 
+                     * Don't trust the compiler to get this right.
+                     * gcc -fomit-frame-pointer screws up big time here. This works fine in 64-bit 
+                     * mode too because we push the arguments on the stack in the IDT patch code.
+                     */
+# if defined(__GNUC__)
+                    void *pvRet = (uint8_t *)__builtin_frame_address(0) + sizeof(void *);
+# elif defined(_MSC_VER) && defined(__AMD64__) /** @todo check this with with VC7! */
+#  pragma intrinsic(_AddressOfReturnAddress)
+                    void *pvRet = (uint8_t *)_AddressOfReturnAddress;
+# elif defined(__X86__)
+                    void *pvRet = (uint8_t *)&pVM - sizeof(pVM);
+# else
+#  error "huh?"
+# endif
+                    if (    ((uintptr_t *)pvRet)[1] == (uintptr_t)pVM 
+                        &&  ((uintptr_t *)pvRet)[2] == (uintptr_t)uOperation
+                        &&  ((uintptr_t *)pvRet)[3] == (uintptr_t)pvArg)
+                        TRPMR0SetupInterruptDispatcherFrame(pVM, pvRet);
+                    else
+                    {
+# if defined(DEBUG) || defined(LOG_ENABLED)
+                        static bool  s_fHaveWarned = false;
+                        if (!s_fHaveWarned)
+                        {
+                             s_fHaveWarned = true;
+                             //RTLogPrintf("VMMR0.r0: The compiler can't find the stack frame!\n"); -- @todo export me!
+                             RTLogComPrintf("VMMR0.r0: The compiler can't find the stack frame!\n");
+                        }
+# endif
+                        TRPMR0DispatchHostInterrupt(pVM);
+                    }
+#endif /* !VBOX_WITHOUT_IDT_PATCHING */
                     return rc;
+                }
             }
             /* Won't get here! */
             break;
