@@ -35,6 +35,7 @@
 #include <VBox/rem.h>
 #include <VBox/selm.h>
 #include <VBox/trpm.h>
+#include <VBox/cfgm.h>
 #include <VBox/param.h>
 #include <iprt/avl.h>
 #include <iprt/asm.h>
@@ -173,10 +174,19 @@ CSAMR3DECL(int) CSAMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->csam.s.StatFlushDirtyPages,  STAMTYPE_PROFILE, "/PROF/CSAM/FlushDirtyPage",   STAMUNIT_TICKS_PER_CALL, "Dirty page flushing overhead.");
     STAM_REG(pVM, &pVM->csam.s.StatCheckGates,       STAMTYPE_PROFILE, "/PROF/CSAM/CheckGates",       STAMUNIT_TICKS_PER_CALL, "CSAMR3CheckGates overhead.");
 
-
+    /* 
+     * Check CFGM option and enable/disable CSAM.
+     */
+    bool fEnabled;
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "CSAMEnabled", &fEnabled);
+    if (VBOX_FAILURE(rc))
 #ifdef CSAM_ENABLE
-    CSAMEnableScanning(pVM);
+        fEnabled = true;
+#else
+        fEnabled = false;
 #endif
+    if (fEnabled)
+        CSAMEnableScanning(pVM);
 
 #ifdef VBOX_WITH_DEBUGGER
     /*
