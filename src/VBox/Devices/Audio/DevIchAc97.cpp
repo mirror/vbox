@@ -1692,10 +1692,10 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     /** @todo r=bird: add a devhlp for this of course! */
     if (!pData->ac97.voice_pi || !pData->ac97.voice_po || !pData->ac97.voice_mc)
         VMSetRuntimeError(PDMDevHlpGetVM(pDevIns), false,
+                          "HostAudioNotResponding",
                           N_("Some audio devices could not be opened. Guest applications "
                              "generating audio output or depending on audio input may hang. "
-                             "Make sure your host audio device is working properly."),
-                          "HostAudioNotResponding");
+                             "Make sure your host audio device is working properly."));
 
     return VINF_SUCCESS;
 }
