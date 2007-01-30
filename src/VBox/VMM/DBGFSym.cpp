@@ -73,7 +73,7 @@ typedef struct DBGFMOD *PDBGFMOD;
 typedef struct DBGFSYM
 {
     /** Node core with the symbol address range. */
-    AVLROGCPTRNODECORE      Core;
+    AVLRGCPTRNODECORE       Core;
     /** Pointer to the module this symbol is associated with. */
     PDBGFMOD                pModule;
     /** Pointer to the next symbol in with this name. */
@@ -115,7 +115,7 @@ static int dbgfR3SymbolInit(PVM pVM)
         pSym->Core.KeyLast = ~0;
         pSym->pModule = NULL;
         pSym->szName[0] = '\0';
-        if (RTAvlroGCPtrInsert(&pVM->dbgf.s.SymbolTree, &pSym->Core))
+        if (RTAvlrGCPtrInsert(&pVM->dbgf.s.SymbolTree, &pSym->Core))
             return VINF_SUCCESS;
         AssertReleaseMsgFailed(("Failed to insert %VGv-%VGv!\n", pSym->Core.Key, pSym->Core.KeyLast));
         return VERR_INTERNAL_ERROR;
@@ -141,19 +141,19 @@ static int dbgfR3SymbolInsert(PVM pVM, const char *pszName, RTGCPTR Address, siz
         pSym->pModule = pModule;
         memcpy(pSym->szName, pszName, cchName);
 
-        PDBGFSYM pOld = (PDBGFSYM)RTAvlroGCPtrRangeGet(&pVM->dbgf.s.SymbolTree, (RTGCPTR)Address);
+        PDBGFSYM pOld = (PDBGFSYM)RTAvlrGCPtrRangeGet(&pVM->dbgf.s.SymbolTree, (RTGCPTR)Address);
         if (pOld)
         {
             pSym->Core.KeyLast = pOld->Core.KeyLast;
             if (pOld->Core.Key == pSym->Core.Key)
             {
-                pOld = (PDBGFSYM)RTAvlroGCPtrRemove(&pVM->dbgf.s.SymbolTree, (RTGCPTR)Address);
+                pOld = (PDBGFSYM)RTAvlrGCPtrRemove(&pVM->dbgf.s.SymbolTree, (RTGCPTR)Address);
                 AssertRelease(pOld);
                 MMR3HeapFree(pOld);
             }
             else
                 pOld->Core.KeyLast = Address - 1;
-            if (RTAvlroGCPtrInsert(&pVM->dbgf.s.SymbolTree, &pSym->Core))
+            if (RTAvlrGCPtrInsert(&pVM->dbgf.s.SymbolTree, &pSym->Core))
             {
                 /*
                  * Make the name space node.
@@ -198,7 +198,7 @@ static int dbgfR3SymbolInsert(PVM pVM, const char *pszName, RTGCPTR Address, siz
  */
 static PDBGFSYM dbgfR3SymbolGetAddr(PVM pVM, RTGCPTR Address)
 {
-    PDBGFSYM pSym = (PDBGFSYM)RTAvlroGCPtrRangeGet(&pVM->dbgf.s.SymbolTree, Address);
+    PDBGFSYM pSym = (PDBGFSYM)RTAvlrGCPtrRangeGet(&pVM->dbgf.s.SymbolTree, Address);
     Assert(pSym);
     if (pSym && pSym->szName[0])
         return pSym;
