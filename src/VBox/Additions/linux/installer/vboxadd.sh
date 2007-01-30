@@ -168,11 +168,11 @@ start() {
         sleep 1
     }
     if [ ! -c $dev ]; then
-        maj=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/devices`
+        maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/devices`
         if [ ! -z "$maj" ]; then
             min=0
         else
-            min=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/misc`
+            min=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/misc`
             if [ ! -z "$min" ]; then
                 maj=10
             fi
