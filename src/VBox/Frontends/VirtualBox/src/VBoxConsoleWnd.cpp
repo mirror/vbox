@@ -75,6 +75,8 @@ public:
 
     ~VBoxUSBLedTip() { remove (parentWidget()); }
     
+    bool isUSBEnabled() const { return mUSBEnabled; }
+    
 protected:
 
     void maybeTip (const QPoint &/* aPoint */)
@@ -579,7 +581,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     /* initialize usb stuff */
     bool isUSBEnabled = cmachine.GetUSBController().GetEnabled();
     devicesUSBMenu->setEnabled (isUSBEnabled);
-    usb_light->setState (CEnums::InvalidActivity);
+    usb_light->setState (isUSBEnabled ? CEnums::DeviceIdle
+                                      : CEnums::InvalidActivity);
     mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
 
     /* start an idle timer that will update device lighths */
@@ -1289,7 +1292,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & USBStuff)
     {
-        devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
+        /// @todo (r=dmik) do we really need to disable the control while
+        //  in Pause? Check the same for CD/DVD above.
+        if (mUsbLedTip->isUSBEnabled())
+            devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
     }
     if (element & PauseAction)
     {
@@ -2021,6 +2027,11 @@ void VBoxConsoleWnd::updateDeviceLights()
             st = cconsole.GetDeviceActivity (CEnums::NetworkDevice);
             if (net_light->state() != st)
                 net_light->setState (st);
+        }
+        if (usb_light->state() != CEnums::InvalidActivity) {
+            st = cconsole.GetDeviceActivity (CEnums::USBDevice);
+            if (usb_light->state() != st)
+                usb_light->setState (st);
         }
     }
 }
