@@ -5887,7 +5887,7 @@
 
     <interface
         name="IMachineDebugger" extends="$unknown"
-        uuid="837c19ca-c4a4-479b-81e4-362d441f8f94"
+        uuid="288da658-74fa-4877-ab5c-dafdad19a1cd"
     >
         <method name="resetStats">
             <desc>
@@ -5929,6 +5929,13 @@
             <desc>
                 Flag indicating whether the VM is currently making use of CPU hardware
                 virtualization extensions
+            </desc>
+        </attribute>
+
+        <attribute name="VirtualTimeRate" type="unsigned long">
+            <desc>
+                The rate at which the virtual time runs expressed as a percentage. 
+                The accepted range is 2% to 20000%.
             </desc>
         </attribute>
 
