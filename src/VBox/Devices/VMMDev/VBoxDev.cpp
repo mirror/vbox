@@ -621,6 +621,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 AssertMsgFailed(("VMMDev host time structure has invalid size!\n"));
                 requestHeader->rc = VERR_INVALID_PARAMETER;
             }
+            else if (RT_UNLIKELY(pData->fGetHostTimeDisabled))
+                requestHeader->rc = VERR_NOT_SUPPORTED;
             else
             {
                 VMMDevReqHostTime *hostTimeReq = (VMMDevReqHostTime*)requestHeader;
@@ -1579,10 +1581,18 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     Assert(iInstance == 0);
 
     /*
-     * Validate configuration.
+     * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+
+    rc = CFGMR3QueryBool(pCfgHandle, "GetHostTimeDisabled", &pData->fGetHostTimeDisabled);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->fGetHostTimeDisabled = false;
+    else if (VBOX_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, 
+                                   N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean. (%Vrc)"),
+                                   rc);
 
     /*
      * Initialize data (most of it anyway).

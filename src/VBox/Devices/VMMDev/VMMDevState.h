@@ -45,7 +45,7 @@ typedef struct VMMDevState
     uint32_t mouseYAbs;
 
     /** Pointer to device instance. */
-    PPDMDEVINS          pDevIns;
+    PPDMDEVINS pDevIns;
     /** VMMDev port base interface. */
     PDMIBASE Base;
     /** VMMDev port interface. */
@@ -129,6 +129,9 @@ typedef struct VMMDevState
     bool fTimesyncBackdoorLo;
     uint64_t hostTime;
 #endif
+    /** Set if GetHostTime should fail. 
+     * Loaded from the GetHostTimeDisabled configuration value. */
+    bool fGetHostTimeDisabled; 
 
 } VMMDevState;
 
