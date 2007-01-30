@@ -555,6 +555,7 @@ static void show_usage()
              "  -[no]patm                Enable or disable PATM\n"
              "  -[no]csam                Enable or disable CSAM\n"
              "  -[no]hwvirtex            Permit or deny the usage of VMX/SVN\n"
+             "  -warpdrive <1..20000>    The virtual time rate as percent, with 100 as the normal rate.\n"
 #endif
              "\n");
 }
@@ -704,6 +705,7 @@ int main(int argc, char *argv[])
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
     TriStateBool_T fHWVirt = TriStateBool_Default;
+    uint32_t u32WarpDrive = 0;
 #endif
 #ifdef VBOX_WIN32_UI
     bool fWin32UI = false;
@@ -1132,6 +1134,22 @@ int main(int argc, char *argv[])
             fHWVirt = TriStateBool_True;
         else if (strcmp(argv[curArg], "-nohwvirtex") == 0)
             fHWVirt = TriStateBool_False;
+        else if (strcmp(argv[curArg], "-warpdrive") == 0)
+        {
+            if (++curArg >= argc)
+            {
+                RTPrintf("Error: missing the rate value for the -warpdrive option!\n");
+                rc = E_FAIL;
+                break;
+            }
+            u32WarpDrive = RTStrToUInt32(argv[curArg]);
+            if (u32WarpDrive < 2 || u32WarpDrive > 20000)
+            {
+                RTPrintf("Error: the warp drive rate is restricted to [2..20000]. (%d)\n", u32WarpDrive);
+                rc = E_FAIL;
+                break;
+            }
+        }
 #endif /* VBOXSDL_ADVANCED_OPTIONS */
 #ifdef VBOX_WIN32_UI
         else if (strcmp(argv[curArg], "-win32ui") == 0)
@@ -1766,6 +1784,15 @@ int main(int argc, char *argv[])
     if (fHWVirt != TriStateBool_Default)
     {
         gMachine->COMSETTER(HWVirtExEnabled)(fHWVirt);
+    }
+    if (u32WarpDrive != 0)
+    {
+        if (!gMachineDebugger)
+        {
+            RTPrintf("Error: No debugger object; -warpdrive %d cannot be executed!\n", u32WarpDrive);
+            goto leave;
+        }
+        gMachineDebugger->COMSETTER(VirtualTimeRate)(u32WarpDrive);
     }
 #endif /* VBOXSDL_ADVANCED_OPTIONS */
 
@@ -3089,21 +3116,21 @@ void SaveState(void)
  */
 static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 {
-    static char pszTitle[1024] = {0};
+    static char szTitle[1024] = {0};
 
     /* back up current title */
-    char pszPrevTitle[1024];
-    strcpy(pszPrevTitle, pszTitle);
+    char szPrevTitle[1024];
+    strcpy(szPrevTitle, szTitle);
 
 
-    strcpy(pszTitle, "InnoTek VirtualBox - ");
+    strcpy(szTitle, "InnoTek VirtualBox - ");
 
     Bstr name;
     gMachine->COMGETTER(Name)(name.asOutParam());
     if (name)
-        strcat(pszTitle, Utf8Str(name).raw());
+        strcat(szTitle, Utf8Str(name).raw());
     else
-        strcat(pszTitle, "<noname>");
+        strcat(szTitle, "<noname>");
 
 
     /* which mode are we in? */
@@ -3114,10 +3141,10 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
             MachineState_T machineState;
             gMachine->COMGETTER(State)(&machineState);
             if (machineState == MachineState_Paused)
-                strcat(pszTitle, " - [Paused]");
+                strcat(szTitle, " - [Paused]");
 
             if (gfGrabbed)
-                strcat(pszTitle, " - [Input captured]");
+                strcat(szTitle, " - [Input captured]");
 
             // do we have a debugger interface
             if (gMachineDebugger)
@@ -3131,6 +3158,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                 BOOL singlestepEnabled = FALSE;
                 BOOL logEnabled = FALSE;
                 BOOL hwVirtEnabled = FALSE;
+                ULONG virtualTimeRate = 100;
                 gMachineDebugger->COMGETTER(RecompileSupervisor)(&recompileSupervisor);
                 gMachineDebugger->COMGETTER(RecompileUser)(&recompileUser);
                 gMachineDebugger->COMGETTER(PATMEnabled)(&patmEnabled);
@@ -3138,15 +3166,21 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                 gMachineDebugger->COMGETTER(LogEnabled)(&logEnabled);
                 gMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
                 gMachineDebugger->COMGETTER(HWVirtExEnabled)(&hwVirtEnabled);
-                RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
-                            " [STEP=%d CS=%d PAT=%d RR0=%d RR3=%d LOG=%d HWVirt=%d]",
+                gMachineDebugger->COMGETTER(VirtualTimeRate)(&virtualTimeRate);
+                RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
+                            " [STEP=%d CS=%d PAT=%d RR0=%d RR3=%d LOG=%d HWVirt=%d",
                             singlestepEnabled == TRUE, csamEnabled == TRUE, patmEnabled == TRUE,
                             recompileSupervisor == FALSE, recompileUser == FALSE,
                             logEnabled == TRUE, hwVirtEnabled == TRUE);
+                char *psz = strchr(szTitle, '\0');
+                if (virtualTimeRate != 100)
+                    RTStrPrintf(psz, &szTitle[sizeof(szTitle)] - psz, " WD=%d%%]", virtualTimeRate);
+                else
+                    RTStrPrintf(psz, &szTitle[sizeof(szTitle)] - psz, "]");
 #else
                 BOOL hwVirtEnabled = FALSE;
                 gMachineDebugger->COMGETTER(HWVirtExEnabled)(&hwVirtEnabled);
-                RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
+                RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                             "%s", hwVirtEnabled ? " (HWVirtEx)" : "");
 #endif /* DEBUG */
             }
@@ -3161,16 +3195,16 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
             MachineState_T machineState;
             gMachine->COMGETTER(State)(&machineState);
             if (machineState == MachineState_Starting)
-                strcat(pszTitle, " - Starting...");
+                strcat(szTitle, " - Starting...");
             else if (machineState == MachineState_Restoring)
             {
                 LONG cPercentNow;
                 HRESULT rc = gProgress->COMGETTER(Percent)(&cPercentNow);
                 if (SUCCEEDED(rc))
-                    RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
+                    RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Restoring %d%%...", (int)cPercentNow);
                 else
-                    RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
+                    RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Restoring...");
             }
             /* ignore other states, we could already be in running or aborted state */
@@ -3180,7 +3214,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
         case TITLEBAR_SAVE:
         {
             AssertMsg(u32User >= 0 && u32User <= 100, ("%d\n", u32User));
-            RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
+            RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                         " - Saving %d%%...", u32User);
             break;
         }
@@ -3188,7 +3222,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
         case TITLEBAR_SNAPSHOT:
         {
             AssertMsg(u32User >= 0 && u32User <= 100, ("%d\n", u32User));
-            RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
+            RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                         " - Taking snapshot %d%%...", u32User);
             break;
         }
@@ -3201,16 +3235,16 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
     /*
      * Don't update if it didn't change.
      */
-    if (strcmp(pszTitle, pszPrevTitle) == 0)
+    if (strcmp(szTitle, szPrevTitle) == 0)
         return;
 
     /*
      * Set the new title
      */
 #ifdef VBOX_WIN32_UI
-    setUITitle(pszTitle);
+    setUITitle(szTitle);
 #else
-    SDL_WM_SetCaption(pszTitle, "InnoTek VirtualBox");
+    SDL_WM_SetCaption(szTitle, "InnoTek VirtualBox");
 #endif
 }
 
