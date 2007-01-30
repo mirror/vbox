@@ -32,13 +32,13 @@
 
 using namespace com;
 
-#include <iprt/runtime.h>
-#include <iprt/stream.h>
-
 #define LOG_ENABLED
 #define LOG_GROUP LOG_GROUP_MAIN
 #define LOG_INSTANCE NULL
 #include <VBox/log.h>
+
+#include <iprt/runtime.h>
+#include <iprt/stream.h>
 
 #define printf RTPrintf
 
