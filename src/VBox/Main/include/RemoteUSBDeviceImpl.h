@@ -127,48 +127,7 @@ private:
 #endif /* VRDP_MC */
 };
 
-
-/// @todo (dmik) give a less stupid name and move to Collection.h
-#define COM_DECL_READONLY_ENUM_AND_COLLECTION_FOR_BEGIN(c, iface) \
-    class c##Enumerator \
-        : public IfaceVectorEnumerator \
-            <iface##Enumerator, iface, ComObjPtr <c>, c##Enumerator> \
-        , public VirtualBoxSupportTranslation <c##Enumerator> \
-    { \
-        NS_DECL_ISUPPORTS \
-        public: static const wchar_t *getComponentName() { \
-            return WSTR_LITERAL (c) L"Enumerator"; \
-        } \
-    }; \
-    class c##Collection \
-        : public ReadonlyIfaceVector \
-            <iface##Collection, iface, iface##Enumerator, ComObjPtr <c>, c##Enumerator, \
-         c##Collection> \
-        , public VirtualBoxSupportTranslation <c##Collection> \
-    { \
-        NS_DECL_ISUPPORTS \
-        public: static const wchar_t *getComponentName() { \
-            return WSTR_LITERAL (c) L"Collection"; \
-        }
-
-#define COM_DECL_READONLY_ENUM_AND_COLLECTION_FOR_END(c, iface) \
-    };
-
-#ifdef __WIN__
-
-#define COM_IMPL_READONLY_ENUM_AND_COLLECTION_FOR(c, iface)
-
-#else // !__WIN__
-
-#define COM_IMPL_READONLY_ENUM_AND_COLLECTION_FOR(c, iface) \
-    NS_DECL_CLASSINFO(c##Collection) \
-    NS_IMPL_THREADSAFE_ISUPPORTS1_CI(c##Collection, iface##Collection) \
-    NS_DECL_CLASSINFO(c##Enumerator) \
-    NS_IMPL_THREADSAFE_ISUPPORTS1_CI(c##Enumerator, iface##Enumerator)
-
-#endif
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION_FOR_BEGIN (RemoteUSBDevice, IHostUSBDevice)
+COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
 
     STDMETHOD(FindById) (INPTR GUIDPARAM aId, IHostUSBDevice **aDevice)
     {
@@ -225,7 +184,7 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_FOR_BEGIN (RemoteUSBDevice, IHostUSBDevice
         return found.queryInterfaceTo (aDevice);
     }
 
-COM_DECL_READONLY_ENUM_AND_COLLECTION_FOR_END (RemoteUSBDevice, IHostUSBDevice)
+COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
 
 
 #endif // ____H_REMOTEUSBDEVICEIMPL

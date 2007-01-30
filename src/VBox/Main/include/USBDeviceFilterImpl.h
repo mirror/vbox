@@ -278,7 +278,7 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION (HostUSBDeviceFilter)
 /**
  *  Separate IUSBDeviceCollection implementation that is constructed from a list of
  *  IUSBDevice instances (as opposed to a collection defined in IUSBDeviceImpl.h
- *  constructed from USBDevice lists).
+ *  constructed from OUSBDevice lists).
  */
 COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN (IfaceUSBDevice, IUSBDevice)
 

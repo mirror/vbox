@@ -538,6 +538,7 @@ updatenls:
 ifeq ($(BUILD_TARGET),linux)
 
 testidl: $(IDLFILE) $(IDLTYPELIB)
+testidlhdr: $(IDLHEADER)
 
 else
 

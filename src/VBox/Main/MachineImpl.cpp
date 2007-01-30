@@ -1362,6 +1362,10 @@ STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
             tr ("Invalid boot position: %lu (must be in range [1, %lu])"),
                 aPosition, SchemaDefs::MaxBootPosition);
 
+    if (aDevice == DeviceType_USBDevice)
+        return setError (E_FAIL,
+            tr ("Booting from USB devices is not currently supported"));
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
