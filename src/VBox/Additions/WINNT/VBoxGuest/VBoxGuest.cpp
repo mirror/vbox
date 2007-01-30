@@ -929,12 +929,12 @@ VOID vboxWorkerThread(PVOID context)
         return;
     }
 
-    /** perform the hypervisor address space reservation */
+    /* perform the hypervisor address space reservation */
     reserveHypervisorMemory(pDevExt);
 
     do
     {
-        /**
+        /*
          * Do the time sync
          */
         {
@@ -966,7 +966,7 @@ VOID vboxWorkerThread(PVOID context)
             }
         }
 
-        /**
+        /*
          * Go asleep unless we're supposed to terminate
          */
         if (!pDevExt->stopThread)
