@@ -803,7 +803,9 @@ static void ataSetIRQ(ATADevState *s)
     if (!(s->uATARegDevCtl & ATA_DEVCTL_DISABLE_IRQ))
     {
         Log2(("%s: LUN#%d asserting IRQ\n", __FUNCTION__, s->iLUN));
-        if (s->fDMA)
+        /* The BMDMA unit unconditionally sets BM_STATUS_INT if the interrupt
+         * line is asserted. It monitors the line for a rising edge. */
+        if (!s->fIrqPending)
             pCtl->BmDma.u8Status |= BM_STATUS_INT;
         s->fIrqPending = true;
         /* Only actually set the IRQ line if updating the currently selected drive. */
