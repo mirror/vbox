@@ -1283,8 +1283,8 @@ void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
         tr ("<p>The virtual machine window will be now switched to "
             "<b>fullscreen</b> mode. "
             "You can go back to windowed mode at any time by pressing "
-            "Host-<b>%1</b>. Note that the current "
-            "Host key is defined as <b>%1</b>.</p>")
+            "<b>%1</b>. Note that the <i>Host</i> key is currently "
+            "defined as <b>%1</b>.</p>")
             .arg (hotKey).arg (hostKey),
         "remindAboutGoingFullscreen");
     NOREF(rc);
