@@ -3219,15 +3219,6 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
             else if (fFFDone)
                 fFFDone = false;
 
-#if defined(__AMD64__)
- Assert(!pVM->fPATMEnabled);
- Assert(!pVM->fCSAMEnabled);
- #ifndef __WIN__
-  Assert(!pVM->fRawR0Enabled);
-  Assert(!pVM->fRawR3Enabled);
- #endif
-#endif
-
             /*
              * Now what to do?
              */
