@@ -227,6 +227,8 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
                 "Failed to clear the VirtualBox graphics acceleration queue.  "
                 "Switching to unaccelerated mode.\n");
         pRecord = &pMem->aRecords[pMem->indexRecordFree];
+        /* Mark the record as being updated. */
+        pRecord->cbRecord = VBVA_F_RECORD_PARTIAL;
         pMem->indexRecordFree = indexRecordNext;
         /* Compute how many bytes we have in the ring buffer. */
         off32Free = pMem->off32Free;
@@ -276,7 +278,9 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
             memcpy(&pMem->au8RingBuffer[0], (void *)pu8Second, u32Second);
             pMem->off32Free = u32Second;
         }
-        pRecord->cbRecord = sizeof(cmdHdr);
+        pRecord->cbRecord += sizeof(cmdHdr);
+        /* Mark the record completed. */
+        pRecord->cbRecord &= ~VBVA_F_RECORD_PARTIAL;
     }
 }
 
