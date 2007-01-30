@@ -1045,6 +1045,7 @@ STDMETHODIMP Machine::COMGETTER(HardDiskAttachments) (IHardDiskAttachmentCollect
 
 STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
 {
+#ifdef VBOX_VRDP
     if (!vrdpServer)
         return E_POINTER;
 
@@ -1053,14 +1054,13 @@ STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
 
     AutoReaderLock alock (this);
 
-#ifdef VBOX_VRDP
     Assert (!!mVRDPServer);
     mVRDPServer.queryInterfaceTo (vrdpServer);
-#else
-    *vrdpServer = NULL;
-#endif
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Machine::COMGETTER(DVDDrive) (IDVDDrive **dvdDrive)
