@@ -1353,7 +1353,7 @@ static void ataDiskFull(PPDMDEVINS pDevIns)
 {
     int rc;
     LogRel(("PIIX3 ATA: Host disk full\n"));
-    rc = VMSetRuntimeError(PDMDevHlpGetVM(ATADEVSTATE_2_DEVINS(s)),
+    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
                            false, "DevATA_DISKFULL",
                            N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
     AssertRC(rc);
