@@ -363,15 +363,6 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
             /** @todo Check if the required minimum of resources are available. */
             if (VBOX_SUCCESS(rc))
             {
-#if defined(__AMD64__)
- pVM->fCSAMEnabled = false;
- pVM->fPATMEnabled = false;
- #ifndef __WIN__
-  pVM->fRawR0Enabled = false;
-  pVM->fRawR3Enabled = false;
- #endif
-#endif
-
                 /*
                  * Init the Ring-3 components and do a round of relocations with 0 delta.
                  */
@@ -1710,14 +1701,6 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
     Assert(pVM->enmVMState == VMSTATE_RESETTING);
     vmR3SetState(pVM, enmVMState);
 
-#if defined(__AMD64__)
- pVM->fCSAMEnabled = false;
- pVM->fPATMEnabled = false;
- #ifndef __WIN__
-  pVM->fRawR0Enabled = false;
-  pVM->fRawR3Enabled = false;
- #endif
-#endif
     return VINF_EM_RESET;
 }
 
