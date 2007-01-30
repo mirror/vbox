@@ -5327,30 +5327,41 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             continue;
         char *pszExtraDataKey = (char*)strExtraDataKeyUtf8.raw() + 13;
 
-        /* the key will be in the format "Node1/Node2/Value" */
-        char *pszCFGMValueName = strrchr(pszExtraDataKey, '/');
-        if (!pszCFGMValueName)
-            continue;
-        /* terminate the node and advance to the value */
-        *pszCFGMValueName = '\0';
-        pszCFGMValueName++;
-
+        /* the key will be in the format "Node1/Node2/Value" or simply "Value". */
         PCFGMNODE pNode;
-        /* does the node already exist? */
-        pNode = CFGMR3GetChild(pRoot, pszExtraDataKey);
-        if (pNode)
+        char *pszCFGMValueName = strrchr(pszExtraDataKey, '/');
+        if (pszCFGMValueName)
         {
-            /* the value might already exist, remove it to be safe */
-            CFGMR3RemoveValue(pNode, pszCFGMValueName);
+            /* terminate the node and advance to the value */
+            *pszCFGMValueName = '\0';
+            pszCFGMValueName++;
+    
+            /* does the node already exist? */
+            pNode = CFGMR3GetChild(pRoot, pszExtraDataKey);
+            if (pNode)
+            {
+                /* the value might already exist, remove it to be safe */
+                CFGMR3RemoveValue(pNode, pszCFGMValueName);
+            }
+            else
+            {
+                /* create the node */
+                rc = CFGMR3InsertNode(pRoot, pszExtraDataKey, &pNode);
+                AssertMsgRC(rc, ("failed to insert node '%s'\n", pszExtraDataKey));
+                if (VBOX_FAILURE(rc) || !pNode)
+                    continue;
+            }
         }
         else
         {
-            /* create the node */
-            rc = CFGMR3InsertNode(pRoot, pszExtraDataKey, &pNode);
-            AssertMsgRC(rc, ("failed to insert node '%s'\n", pszExtraDataKey));
-            if (VBOX_FAILURE(rc) || !pNode)
-                continue;
+            pNode = pRoot;
+            pszCFGMValueName = pszExtraDataKey;
+            pszExtraDataKey--;
+
+            /* the value might already exist, remove it to be safe */
+            CFGMR3RemoveValue(pNode, pszCFGMValueName);
         }
+
         /* now let's have a look at the value */
         Utf8Str strCFGMValueUtf8 = Utf8Str(strExtraDataValue);
         const char *pszCFGMValue = strCFGMValueUtf8.raw();
