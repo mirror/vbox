@@ -25,7 +25,7 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-USBDevice::USBDevice()
+OUSBDevice::OUSBDevice()
 {
     mVendorId = 0;
     mProductId = 0;
@@ -35,7 +35,7 @@ USBDevice::USBDevice()
     mRemote = FALSE;
 }
 
-USBDevice::~USBDevice()
+OUSBDevice::~OUSBDevice()
 {
 }
 
@@ -49,7 +49,7 @@ USBDevice::~USBDevice()
  * @returns COM result indicator
  * @param   aUSBDevice    The USB device (interface) to clone.
  */
-HRESULT USBDevice::init(IUSBDevice *aUSBDevice)
+HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
 {
     AutoLock lock(this);
     AssertReturn (!isReady(), E_UNEXPECTED);
@@ -100,7 +100,7 @@ HRESULT USBDevice::init(IUSBDevice *aUSBDevice)
  * @returns COM status code
  * @param   aId   Address of result variable.
  */
-STDMETHODIMP USBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
+STDMETHODIMP OUSBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
 {
     if (!aId)
         return E_POINTER;
@@ -119,7 +119,7 @@ STDMETHODIMP USBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
  * @returns COM status code
  * @param   aVendorId   Where to store the vendor id.
  */
-STDMETHODIMP USBDevice::COMGETTER(VendorId)(USHORT *aVendorId)
+STDMETHODIMP OUSBDevice::COMGETTER(VendorId)(USHORT *aVendorId)
 {
     if (!aVendorId)
         return E_POINTER;
@@ -138,7 +138,7 @@ STDMETHODIMP USBDevice::COMGETTER(VendorId)(USHORT *aVendorId)
  * @returns COM status code
  * @param   aProductId  Where to store the product id.
  */
-STDMETHODIMP USBDevice::COMGETTER(ProductId)(USHORT *aProductId)
+STDMETHODIMP OUSBDevice::COMGETTER(ProductId)(USHORT *aProductId)
 {
     if (!aProductId)
         return E_POINTER;
@@ -157,7 +157,7 @@ STDMETHODIMP USBDevice::COMGETTER(ProductId)(USHORT *aProductId)
  * @returns COM status code
  * @param   aRevision  Where to store the revision BCD.
  */
-STDMETHODIMP USBDevice::COMGETTER(Revision)(USHORT *aRevision)
+STDMETHODIMP OUSBDevice::COMGETTER(Revision)(USHORT *aRevision)
 {
     if (!aRevision)
         return E_POINTER;
@@ -175,7 +175,7 @@ STDMETHODIMP USBDevice::COMGETTER(Revision)(USHORT *aRevision)
  * @returns COM status code
  * @param   aManufacturer     Where to put the return string.
  */
-STDMETHODIMP USBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
+STDMETHODIMP OUSBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
 {
     if (!aManufacturer)
         return E_POINTER;
@@ -194,7 +194,7 @@ STDMETHODIMP USBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
  * @returns COM status code
  * @param   aProduct          Where to put the return string.
  */
-STDMETHODIMP USBDevice::COMGETTER(Product)(BSTR *aProduct)
+STDMETHODIMP OUSBDevice::COMGETTER(Product)(BSTR *aProduct)
 {
     if (!aProduct)
         return E_POINTER;
@@ -213,7 +213,7 @@ STDMETHODIMP USBDevice::COMGETTER(Product)(BSTR *aProduct)
  * @returns COM status code
  * @param   aSerialNumber     Where to put the return string.
  */
-STDMETHODIMP USBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
+STDMETHODIMP OUSBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
 {
     if (!aSerialNumber)
         return E_POINTER;
@@ -232,7 +232,7 @@ STDMETHODIMP USBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
  * @returns COM status code
  * @param   aAddress          Where to put the return string.
  */
-STDMETHODIMP USBDevice::COMGETTER(Address)(BSTR *aAddress)
+STDMETHODIMP OUSBDevice::COMGETTER(Address)(BSTR *aAddress)
 {
     if (!aAddress)
         return E_POINTER;
@@ -244,7 +244,7 @@ STDMETHODIMP USBDevice::COMGETTER(Address)(BSTR *aAddress)
     return S_OK;
 }
 
-STDMETHODIMP USBDevice::COMGETTER(Port)(USHORT *aPort)
+STDMETHODIMP OUSBDevice::COMGETTER(Port)(USHORT *aPort)
 {
     if (!aPort)
         return E_POINTER;
@@ -256,7 +256,7 @@ STDMETHODIMP USBDevice::COMGETTER(Port)(USHORT *aPort)
     return S_OK;
 }
 
-STDMETHODIMP USBDevice::COMGETTER(Remote)(BOOL *aRemote)
+STDMETHODIMP OUSBDevice::COMGETTER(Remote)(BOOL *aRemote)
 {
     if (!aRemote)
         return E_POINTER;

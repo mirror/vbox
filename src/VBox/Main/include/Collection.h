@@ -256,76 +256,151 @@ protected:
 };
 
 /**
- *  This macro declares an enumerator class and a collection class for the
- *  given item class. The namespace of the collection class remains opened after
- *  this macro is expanded (i.e. no closing brace with semicolon), thus allowing
- *  one to declare extra collection class members. This namespace
- *  must be closed by the COM_DECL_READONLY_ENUM_AND_COLLECTION_END macro.
+ *  This macro declares an enumerator class and a collection class that stores
+ *  elements of the given class @a itemcls that implements the given
+ *  interface @a iface
  *
- *  For example, given a 'SomeItem' argument, this macro will declare the
- *  following:
+ *  The the @a itemcls class must be either a ComObjPtr or a ComPtr template
+ *  instantiation with the argument being a class that implements the @a iface
+ *  interface.
+ *
+ *  The namespace of the collection class remains opened after
+ *  this macro is expanded (i.e. no closing brace with semicolon), which
+ *  allows to declare extra collection class members. This namespace
+ *  must be closed by the COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END macro.
+ *
+ *  For example, given |ComObjPtr <OSomeItem>|, |ISomeItem|| and |OSomeItem|
+ *  arguments, this macro will generate the following code:
  *
  *  <code>
- *      class SomeItemEnumerator : public
- *          IfaceVectorEnumerator <ISomeItemEnumerator, ISomeItem, ComObjPtr <SomeItem>,
- *              SomeItemEnumerator> {...};
+ *      class OSomeItemEnumerator : public
+ *          IfaceVectorEnumerator <ISomeItemEnumerator, ISomeItem, ComObjPtr <OSomeItem>,
+ *                                 OSomeItemEnumerator>
+ *      {...};
  *      class SomeItemCollection : public
- *          ReadonlyIfaceVector <ISomeItemCollection, ISomeItem, ComObjPtr <SomeItem>,
- *              SomeItemEnumerator, SomeItemCollection> {
+ *          ReadonlyIfaceVector <ISomeItemCollection, ISomeItem, ComObjPtr <OSomeItem>,
+ *                               OSomeItemEnumerator, OSomeItemCollection>
+ *      {...};
  *  </code>
  *
  *  i.e. it assumes that ISomeItemEnumerator, ISomeItem and ISomeItemCollection
- *  are existing interfaces, and SomeItem implements the ISomeItem interface.
+ *  are existing interfaces, and OSomeItem implements the ISomeItem interface.
  *  It also assumes, that std::list passed to SomeItemCollection::init()
- *  stores objects of |ComObjPtr <SomeItem>| class, i.e. safe pointers around
- *  SomeItem instances.
+ *  stores objects of the @a itemcls class (|ComObjPtr <OSomeItem>| in the
+ *  example above).
  *
- *  See descriptions of the above two templates for more info.
+ *  See descriptions of the above IfaceVectorEnumerator and 
+ *  ReadonlyIfaceVector templates for more info.
  *
  *  The generated class also inherits the VirtualBoxSupportTranslation template,
  *  providing the support for translation of string constants within class
  *  members.
  *
  *  The macro is best to be placed in the header after SomeItem class
- *  declaration. The COM_DECL_READONLY_ENUM_AND_COLLECTION_END macro must follow
- *  all extra member declarations of the collection class, or right after this
- *  macro if the collection doesn't have extra members.
+ *  declaration. The COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END macro must
+ *  follow all extra member declarations of the collection class, or right
+ *  after this macro if the collection doesn't have extra members.
  *
- *  @param c    component class implementing the interface of items to be stored
- *              in the collection
+ *  @param  itemcls     Either ComObjPtr or ComPtr for the class that implements
+ *                      the given interface of items to be stored in the
+ *                      collection
+ *  @param  iface       Interface of items implemented by the @a itemcls class 
+ *  @param  prefix      Prefix to apply to generated enumerator and collection
+ *                      names.
  */
-#define COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN(c) \
-    class c##Enumerator \
+#define COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN(itemcls, iface, prefix) \
+    class prefix##Enumerator \
         : public IfaceVectorEnumerator \
-            <I##c##Enumerator, I##c, ComObjPtr <c>, c##Enumerator> \
-        , public VirtualBoxSupportTranslation <c##Enumerator> \
+            <iface##Enumerator, iface, itemcls, prefix##Enumerator> \
+        , public VirtualBoxSupportTranslation <prefix##Enumerator> \
     { \
         NS_DECL_ISUPPORTS \
         public: static const wchar_t *getComponentName() { \
-            return WSTR_LITERAL (c) L"Enumerator"; \
+            return WSTR_LITERAL (prefix) L"Enumerator"; \
         } \
     }; \
-    class c##Collection \
+    class prefix##Collection \
         : public ReadonlyIfaceVector \
-            <I##c##Collection, I##c, I##c##Enumerator, ComObjPtr <c>, c##Enumerator, \
-         c##Collection> \
-        , public VirtualBoxSupportTranslation <c##Collection> \
+            <iface##Collection, iface, iface##Enumerator, itemcls, prefix##Enumerator, \
+             prefix##Collection> \
+        , public VirtualBoxSupportTranslation <prefix##Collection> \
     { \
         NS_DECL_ISUPPORTS \
         public: static const wchar_t *getComponentName() { \
-            return WSTR_LITERAL (c) L"Collection"; \
+            return WSTR_LITERAL (prefix) L"Collection"; \
         }
 
 /**
- *  This macro is a counterpart to COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN
+ *  This macro is a counterpart to COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN
  *  and must be always used to finalize the collection declaration started
  *  by that macro.
  *
  *  Currently the macro just expands to the closing brace with semicolon,
  *  but this might change in the future.
  */
-#define COM_DECL_READONLY_ENUM_AND_COLLECTION_END(c) \
+#define COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END(itemcls, iface, prefix) \
     };
+
+/**
+ *  This is a "shortcut" macro, for convenience. It expands exactly to:
+ *  <code>
+ *      COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN(itemcls, iface, prefix)
+ *      COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END(itemcls, iface, prefix)
+ *  </code>
+ */
+#define COM_DECL_READONLY_ENUM_AND_COLLECTION_EX(itemcls, iface, prefix) \
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (itemcls, iface, prefix) \
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (itemcls, iface, prefix)
+
+/**
+ *  This macro declares an enumerator class and a collection class for the
+ *  given item class @a c.
+ *
+ *  It's a convenience macro that deduces all arguments to the
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN macro from a single @a c
+ *  class name argument. Given a class named |SomeItem|, this macro is
+ *  equivalent to
+ *  <code>
+ *      COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <SomeItem>, ISomeItem, SomeItem)
+ *  </code>
+ *  and will generate the following code:
+ *  <code>
+ *      class OSomeItemEnumerator : public
+ *          IfaceVectorEnumerator <ISomeItemEnumerator, ISomeItem, ComObjPtr <SomeItem>,
+ *                                 SomeItemEnumerator>
+ *      {...};
+ *      class SomeItemCollection : public
+ *          ReadonlyIfaceVector <ISomeItemCollection, ISomeItem, ComObjPtr <SomeItem>,
+ *                               SomeItemEnumerator, SomeItemCollection>
+ *      {...};
+ *  </code>
+ *
+ *  See COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN for the detailed
+ *  description.
+ *
+ *  The macro is best to be placed in the header after SomeItem class
+ *  declaration. The COM_DECL_READONLY_ENUM_AND_COLLECTION_END macro must follow
+ *  all extra member declarations of the collection class, or right after this
+ *  macro if the collection doesn't have extra members.
+ *
+ *  @param c    Component class implementing the interface of items to be stored
+ *              in the collection
+ */
+#define COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN(c) \
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <c>, I##c, c)
+
+/**
+ *  This macro is a counterpart to COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN
+ *  and must be always used to finalize the collection declaration started
+ *  by that macro.
+ *
+ *  This is a "shortcut" macro that expands exactly to:
+ *  <code>
+ *      COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <c>, I##c, c)
+ *  </code>
+ */
+#define COM_DECL_READONLY_ENUM_AND_COLLECTION_END(c) \
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <c>, I##c, c)
 
 /**
  *  This is a "shortcut" macro, for convenience. It expands exactly to:
@@ -340,78 +415,54 @@ protected:
 
 /**
  *  This macro declares an enumerator class and a collection class for the
- *  given item class and interface. The namespace of the collection class remains
- *  opened after this macro is expanded (i.e. no closing brace with semicolon),
- *  thus allowing one to declare extra collection class members. This namespace
- *  must be closed by the COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_END macro.
+ *  given item interface @a iface prefixed with the given @a prefix.
  *
- *  For example, given a 'SomeItem' and a 'ISomeItem' arguments, this macro will
- *  declare the following:
- *
+ *  It's a convenience macro that deduces all arguments to the
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN macro from the two given
+ *  @a iface and @a prefix arguments. Given an interface named |ISomeItem|,
+ *  and a prefix SomeItem this macro is equivalent to
  *  <code>
- *      class SomeItemEnumerator_ComponentName {...};
- *      class SomeItemCollection_ComponentName {...};
- *
- *      class SomeItemEnumerator : public
+ *      COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComPtr <ISomeItem>, ISomeItem, SomeItem)
+ *  </code>
+ *  and will generate the following code:
+ *  <code>
+ *      class OSomeItemEnumerator : public
  *          IfaceVectorEnumerator <ISomeItemEnumerator, ISomeItem, ComPtr <ISomeItem>,
- *              SomeItemEnumerator_ComponentName> {...};
+ *                                 SomeItemEnumerator>
+ *      {...};
  *      class SomeItemCollection : public
  *          ReadonlyIfaceVector <ISomeItemCollection, ISomeItem, ComPtr <ISomeItem>,
- *              SomeItemEnumerator, SomeItemCollection_ComponentName> {...};
+ *                               SomeItemEnumerator, SomeItemCollection>
+ *      {...};
  *  </code>
  *
- *  i.e. it assumes that ISomeItemEnumerator, ISomeItem and ISomeItemCollection
- *  are existing interfaces. It also assumes, that std::list passed to
- *  SomeItemCollection::init() stores objects of |ComPtr <ISomeItem>| class, i.e
- *  safe ISomeItem interface pointers.
- *
- *  See descriptions of the above two templates for more info.
- *
- *  The generated class also inherits the VirtualBoxSupportTranslation template,
- *  providing the support for translation of string constants within class
- *  members.
+ *  See COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN for the detailed
+ *  description.
  *
  *  The macro is best to be placed in the header after SomeItem class
  *  declaration. The COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_END macro must follow
  *  all extra member declarations of the collection class, or right after this
  *  macro if the collection doesn't have extra members.
  *
- *  @param prefix   the prefix prepended to the generated collection and
+ *  @param prefix   Prefix prepended to the generated collection and
  *                  enumerator classes
- *  @param iface    interface class
+ *  @param iface    Interface class
  */
 #define COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN(prefix, iface) \
-    class prefix##Enumerator \
-        : public IfaceVectorEnumerator \
-            <iface##Enumerator, iface, ComPtr <iface>, prefix##Enumerator> \
-        , public VirtualBoxSupportTranslation <prefix##Enumerator> \
-    { \
-        NS_DECL_ISUPPORTS \
-        public: static const wchar_t *getComponentName() { \
-            return WSTR_LITERAL (prefix) L"Enumerator"; \
-        } \
-    }; \
-    class prefix##Collection \
-        : public ReadonlyIfaceVector \
-            <iface##Collection, iface, iface##Enumerator, ComPtr <iface>, prefix##Enumerator, \
-             prefix##Collection> \
-        , public VirtualBoxSupportTranslation <prefix##Collection> \
-    { \
-        NS_DECL_ISUPPORTS \
-        public: static const wchar_t *getComponentName() { \
-            return WSTR_LITERAL (prefix) L"Collection"; \
-        }
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComPtr <iface>, iface, prefix)
 
 /**
  *  This macro is a counterpart to COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN
  *  and must be always used to finalize the collection declaration started
  *  by that macro.
- *
- *  Currently the macro just expands to the closing brace with semicolon,
- *  but this might change in the future.
+ * 
+ *  This is a "shortcut" macro that expands exactly to:
+ *  <code>
+ *      COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <c>, I##c, c)
+ *  </code>
  */
 #define COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_END(prefix, iface) \
-    };
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComPtr <iface>, iface, prefix)
 
 /**
  *  This is a "shortcut" macro, for convenience. It expands exactly to:
@@ -421,19 +472,26 @@ protected:
  *  </code>
  */
 #define COM_DECL_READONLY_ENUM_AND_COLLECTION_AS(prefix, iface) \
-    COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN(prefix, iface) \
-    COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_END(prefix, iface)
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN (prefix, iface) \
+    COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_END (prefix, iface)
 
 #ifdef __WIN__
 
+#define COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(itemcls, iface, prefix)
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION(c)
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(prefix, iface)
+
 #else // !__WIN__
 
 /**
  *  This macro defines nsISupports implementations (i.e. QueryInterface(),
  *  AddRef() and Release()) for the enumerator and collection classes
- *  declared by the COM_DECL_READONLY_ENUM_AND_COLLECTION macro.
+ *  declared by the COM_DECL_READONLY_ENUM_AND_COLLECTION_EX,
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN and
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_EX macros.
+ *
+ *  See COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN for the detailed
+ *  description.
  *
  *  The macro should be placed in one of the source files.
  *
@@ -441,34 +499,63 @@ protected:
  *      this macro is XPCOM-specific and not necessary for MS COM,
  *      so expands to nothing on Win32.
  *
- *  @param c    component class implementing the item interface
+ *  @param  itemcls     Either ComObjPtr or ComPtr for the class that implements
+ *                      the given interface of items to be stored in the
+ *                      collection
+ *  @param  iface       Interface of items implemented by the @a itemcls class 
+ *  @param  prefix      Prefix to apply to generated enumerator and collection
+ *                      names.
  */
-#define COM_IMPL_READONLY_ENUM_AND_COLLECTION(c) \
-    NS_DECL_CLASSINFO(c##Collection) \
-    NS_IMPL_THREADSAFE_ISUPPORTS1_CI(c##Collection, I##c##Collection) \
-    NS_DECL_CLASSINFO(c##Enumerator) \
-    NS_IMPL_THREADSAFE_ISUPPORTS1_CI(c##Enumerator, I##c##Enumerator)
-
-/**
- *  This macro defines nsISupports implementations (i.e. QueryInterface(),
- *  AddRef() and Release()) for the enumerator and collection classes
- *  declared by the COM_DECL_READONLY_ENUM_AND_COLLECTION_AS macro.
- *
- *  The macro should be placed in one of the source files.
- *
- *  @note
- *      this macro is XPCOM-specific and not necessary for MS COM,
- *      so expands to nothing on Win32.
- *
- *  @param prefix   the prefix prepended to the generated collection and
- *                  enumerator classes
- *  @param iface    interface class
- */
-#define COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(prefix, iface) \
+#define COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(itemcls, iface, prefix) \
     NS_DECL_CLASSINFO(prefix##Collection) \
     NS_IMPL_THREADSAFE_ISUPPORTS1_CI(prefix##Collection, iface##Collection) \
     NS_DECL_CLASSINFO(prefix##Enumerator) \
     NS_IMPL_THREADSAFE_ISUPPORTS1_CI(prefix##Enumerator, iface##Enumerator)
+
+/**
+ *  This macro defines nsISupports implementations (i.e. QueryInterface(),
+ *  AddRef() and Release()) for the enumerator and collection classes
+ *  declared by the COM_DECL_READONLY_ENUM_AND_COLLECTION,
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN and
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_END macros.
+ *
+ *  See COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN for the detailed
+ *  description.
+ *
+ *  The macro should be placed in one of the source files.
+ *
+ *  @note
+ *      this macro is XPCOM-specific and not necessary for MS COM,
+ *      so expands to nothing on Win32.
+ *
+ *  @param c    Component class implementing the interface of items to be stored
+ *              in the collection
+ */
+#define COM_IMPL_READONLY_ENUM_AND_COLLECTION(c) \
+    COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX (0, I##c, c) 
+
+/**
+ *  This macro defines nsISupports implementations (i.e. QueryInterface(),
+ *  AddRef() and Release()) for the enumerator and collection classes
+ *  declared by the COM_DECL_READONLY_ENUM_AND_COLLECTION_AS,
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN and
+ *  COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_END macros.
+ *
+ *  See COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN for the detailed
+ *  description.
+ *
+ *  The macro should be placed in one of the source files.
+ *
+ *  @note
+ *      this macro is XPCOM-specific and not necessary for MS COM,
+ *      so expands to nothing on Win32.
+ *
+ *  @param prefix   Prefix prepended to the generated collection and
+ *                  enumerator classes
+ *  @param iface    Interface class
+ */
+#define COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(prefix, iface) \
+    COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX (0, iface, prefix) 
 
 #endif // !__WIN__
 

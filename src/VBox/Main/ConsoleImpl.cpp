@@ -1082,7 +1082,7 @@ STDMETHODIMP Console::COMGETTER(USBDevices) (IUSBDeviceCollection **aUSBDevices)
 
     AutoReaderLock alock (this);
 
-    ComObjPtr <USBDeviceCollection> collection;
+    ComObjPtr <OUSBDeviceCollection> collection;
     collection.createObject();
     collection->init (mUSBDevices);
     collection.queryInterfaceTo (aUSBDevices);
@@ -1775,19 +1775,30 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
         }
 
         case DeviceType_DVDDevice:
+        {
             SumLed.u32 |= readAndClearLed(mapIDELeds[2]);
             break;
+        }
 
         case DeviceType_HardDiskDevice:
+        {
             SumLed.u32 |= readAndClearLed(mapIDELeds[0]);
             SumLed.u32 |= readAndClearLed(mapIDELeds[1]);
             SumLed.u32 |= readAndClearLed(mapIDELeds[3]);
             break;
+        }
 
         case DeviceType_NetworkDevice:
         {
             for (unsigned i = 0; i < ELEMENTS(mapNetworkLeds); i++)
                 SumLed.u32 |= readAndClearLed(mapNetworkLeds[i]);
+            break;
+        }
+
+        case DeviceType_USBDevice:
+        {
+            /// @todo (r=dmik)
+            //  USB_DEVICE_ACTIVITY
             break;
         }
 
@@ -1868,7 +1879,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
     AutoLock alock (this);
 
     /* Find it. */
-    ComObjPtr <USBDevice> device;
+    ComObjPtr <OUSBDevice> device;
     USBDeviceList::iterator it = mUSBDevices.begin();
     while (it != mUSBDevices.end())
     {
@@ -3140,7 +3151,7 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId)
     AutoLock alock (this);
 
     /* Find the device. */
-    ComObjPtr <USBDevice> device;
+    ComObjPtr <OUSBDevice> device;
     USBDeviceList::iterator it = mUSBDevices.begin();
     while (it != mUSBDevices.end())
     {
@@ -4066,8 +4077,8 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
 
     if (VBOX_SUCCESS (vrc))
     {
-        /* Create a USBDevice and add it to the device list */
-        ComObjPtr <USBDevice> device;
+        /* Create a OUSBDevice and add it to the device list */
+        ComObjPtr <OUSBDevice> device;
         device.createObject();
         HRESULT hrc = device->init (aHostDevice);
         AssertComRC (hrc);

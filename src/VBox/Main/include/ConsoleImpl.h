@@ -30,7 +30,7 @@ class Keyboard;
 class Mouse;
 class Display;
 class MachineDebugger;
-class USBDevice;
+class OUSBDevice;
 class RemoteUSBDevice;
 class SharedFolder;
 class RemoteDisplayInfo;
@@ -322,7 +322,7 @@ public:
 
 private:
 
-    typedef std::list <ComObjPtr <USBDevice> > USBDeviceList;
+    typedef std::list <ComObjPtr <OUSBDevice> > USBDeviceList;
     typedef std::list <ComObjPtr <RemoteUSBDevice> > RemoteUSBDeviceList;
     typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
 

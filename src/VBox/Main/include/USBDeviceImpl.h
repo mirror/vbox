@@ -30,22 +30,22 @@
  * Object class used for maintaining devices attached to a USB controller.
  * Generally this contains much less information.
  */
-class ATL_NO_VTABLE USBDevice :
-    public VirtualBoxSupportErrorInfoImpl<USBDevice, IUSBDevice>,
-    public VirtualBoxSupportTranslation<USBDevice>,
+class ATL_NO_VTABLE OUSBDevice :
+    public VirtualBoxSupportErrorInfoImpl<OUSBDevice, IUSBDevice>,
+    public VirtualBoxSupportTranslation<OUSBDevice>,
     public VirtualBoxBase,
     public IUSBDevice
 {
 public:
 
-    USBDevice();
-    virtual ~USBDevice();
+    OUSBDevice();
+    virtual ~OUSBDevice();
 
-    DECLARE_NOT_AGGREGATABLE(USBDevice)
+    DECLARE_NOT_AGGREGATABLE(OUSBDevice)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(USBDevice)
+    BEGIN_COM_MAP(OUSBDevice)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IUSBDevice)
     END_COM_MAP()
@@ -97,7 +97,7 @@ private:
     BOOL mRemote;
 };
 
-COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (USBDevice)
+COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <OUSBDevice>, IUSBDevice, OUSBDevice)
 
     STDMETHOD(FindById) (INPTR GUIDPARAM aId, IUSBDevice **aDevice)
     {
@@ -120,7 +120,7 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (USBDevice)
         }
 
         if (!found)
-            return setError (E_INVALIDARG, USBDeviceCollection::tr (
+            return setError (E_INVALIDARG, OUSBDeviceCollection::tr (
                 "Could not find a USB device with UUID {%s}"),
                 idToFind.toString().raw());
 
@@ -147,13 +147,13 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (USBDevice)
         }
 
         if (!found)
-            return setError (E_INVALIDARG, USBDeviceCollection::tr (
+            return setError (E_INVALIDARG, OUSBDeviceCollection::tr (
                 "Could not find a USB device with address '%ls'"),
                 aAddress);
 
         return found.queryInterfaceTo (aDevice);
     }
 
-COM_DECL_READONLY_ENUM_AND_COLLECTION_END (USBDevice)
+COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <OUSBDevice>, IUSBDevice, OUSBDevice)
 
 #endif // ____H_USBDEVICEIMPL

@@ -263,6 +263,9 @@
         <const name="NetworkDevice"     value="4">
             <desc>Network device.</desc>
         </const>
+        <const name="USBDevice"         value="5">
+            <desc>USB device.</desc>
+        </const>
     </enum>
 
     <enum
@@ -5482,24 +5485,32 @@
                 a default format is set. In that case the memory
                 buffer does not have to be aligned and lockable.
 
-                The callee is also allowed to use the memory buffer
-                pointed to by the vram parameter. For non linear
-                modes (such as text and standard VGA), the parameter
-                is NULL and must not be used. When using it, all the
-                IFramebuffer implementation has to do is return the
-                same pointer as the Address property. It is recommended
-                to use it as it will remove one copy operation.
+                The callee is also allowed to use the guest video memory
+                buffer (pointed to by the @a vram parameter) directly instead
+                of allocating its own buffer. To indicate that the framebuffer
+                wants to use the guest video memory, its <link to="#address"/>
+                implementation must return the same address as it gets in
+                the @a vram parameter of this method.
+                
+                For non linear modes (such as text and standard VGA), the
+                @vram parameter is NULL and must not be used. When it's not
+                NULL, it is recommended to use it to access the guest video
+                memory instead of creating a separate buffer as it will at
+                least remove one copy operation.
 
                 The caller checks if the call was successful
-                via IFramebuffer property 'PixelFormat'.
+                via the <link to="#pixelFormat"/> property.
 
-                Note: The method is called by IDisplay under the Framebuffer lock.
+                <note>
+                    This method is called by IDisplay under the IFramebuffer
+                    lock.
+                </note>
             </desc>
             <param name="pixelFormat" type="FramebufferPixelFormat" dir="in">
-                <desc>Specifies the pixel format of the surface (bpp and layout)</desc>
+                <desc>Pixel format of the surface (BPP and layout)</desc>
             </param>
             <param name="vram" type="unsigned long" dir="in">
-                <desc>Pointer to original guest VRAM (NULL for non linear modes)</desc>
+                <desc>Pointer to the guest VRAM (NULL for non linear modes)</desc>
             </param>
             <param name="lineSize" type="unsigned long" dir="in"/>
             <param name="width" type="unsigned long" dir="in"/>
