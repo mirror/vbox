@@ -36,6 +36,7 @@
 #include <VBox/ssm.h>
 #include <VBox/pdm.h>
 #include <VBox/trpm.h>
+#include <VBox/cfgm.h>
 #include <VBox/param.h>
 #include <VBox/selm.h>
 #include <iprt/avl.h>
@@ -145,6 +146,17 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
     rc = MMHyperAlloc(pVM, sizeof(*pVM->patm.s.PatchLookupTreeHC), 0, MM_TAG_PATM, (void **)&pVM->patm.s.PatchLookupTreeHC);
     AssertRCReturn(rc, rc);
     pVM->patm.s.PatchLookupTreeGC = MMHyperHC2GC(pVM, pVM->patm.s.PatchLookupTreeHC);
+
+#ifdef __AMD64__ /* see patmReinit(). */
+    /* Check CFGM option. */
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "PATMEnabled", &pVM->fPATMEnabled);
+    if (VBOX_FAILURE(rc))
+# ifdef PATM_DISABLE_ALL
+        pVM->fPATMEnabled = false;
+# else
+        pVM->fPATMEnabled = true;
+# endif 
+#endif
 
     rc = patmReinit(pVM);
     AssertRC(rc);
@@ -296,8 +308,10 @@ static int patmReinit(PVM pVM)
      */
     pVM->patm.s.offVM = RT_OFFSETOF(VM, patm);
 
+#ifndef __AMD64__ /* would be nice if this was changed everywhere. was driving me crazy on AMD64. */
 #ifndef PATM_DISABLE_ALL
     pVM->fPATMEnabled = true;
+#endif
 #endif
 
     Assert(pVM->patm.s.pGCStateHC);
