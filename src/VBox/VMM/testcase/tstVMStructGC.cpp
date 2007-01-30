@@ -407,12 +407,14 @@ int main()
     GEN_CHECK_OFF(TM, u64TSCOffset);
     GEN_CHECK_OFF(TM, u64TSC);
     GEN_CHECK_OFF(TM, cTSCTicksPerSecond);
-    GEN_CHECK_OFF(TM, uReserved);
     GEN_CHECK_OFF(TM, fVirtualTicking);
+    GEN_CHECK_OFF(TM, fVirtualWarpDrive);
+    GEN_CHECK_OFF(TM, u32VirtualWarpDrivePercentage);
     GEN_CHECK_OFF(TM, u64VirtualOffset);
     GEN_CHECK_OFF(TM, u64Virtual);
+    GEN_CHECK_OFF(TM, u64VirtualWarpDriveStart);
     GEN_CHECK_OFF(TM, u64VirtualSync);
-    GEN_CHECK_OFF(TM, u32VirtualSyncCatchupPrecentage);
+    GEN_CHECK_OFF(TM, u32VirtualSyncCatchupPercentage);
     GEN_CHECK_OFF(TM, u32VirtualSyncCatchupStopThreashold);
     GEN_CHECK_OFF(TM, u64VirtualSyncCatchupStartTreashold);
     GEN_CHECK_OFF(TM, u64VirtualSyncCatchupGiveUpTreashold);

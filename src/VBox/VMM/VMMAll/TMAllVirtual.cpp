@@ -39,6 +39,53 @@
 #include <iprt/asm.h>
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
+
+
+
+/**
+ * Get the time when we're not running at 100%
+ * 
+ * @returns The timestamp.
+ * @param   pVM     The VM handle.
+ */
+uint64_t tmVirtualGetRawNonNormal(PVM pVM)
+{
+    /* 
+     * Recalculate the RTTimeNanoTS() value for the period where 
+     * warp drive has been enabled.
+     */
+    uint64_t u64 = RTTimeNanoTS();
+    u64 -= pVM->tm.s.u64VirtualWarpDriveStart;
+    u64 *= pVM->tm.s.u32VirtualWarpDrivePercentage;
+    u64 /= 100;
+    u64 += pVM->tm.s.u64VirtualWarpDriveStart;
+
+    /* 
+     * Now we apply the virtual time offset. 
+     * (Which is the negate RTTimeNanoTS() value for when the virtual machine 
+     * started if it had been running continuously without any suspends.)
+     */
+    u64 -= pVM->tm.s.u64VirtualOffset;
+    return u64;
+}
+
+
+/**
+ * Get the raw virtual time.
+ * 
+ * @returns The current time stamp. 
+ * @param   pVM     The VM handle.
+ */
+DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
+{
+    if (RT_LIKELY(!pVM->tm.s.fVirtualWarpDrive))
+        return RTTimeNanoTS() - pVM->tm.s.u64VirtualOffset;
+    return tmVirtualGetRawNonNormal(pVM);
+}
 
 
 /**
@@ -58,7 +105,7 @@ TMDECL(uint64_t) TMVirtualGet(PVM pVM)
     if (pVM->tm.s.fVirtualTicking)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGet);
-        u64 = RTTimeNanoTS() - pVM->tm.s.u64VirtualOffset;
+        u64 = tmVirtualGetRaw(pVM);
 
         /*
          * Use the chance to check for expired timers.
@@ -101,7 +148,7 @@ TMDECL(uint64_t) TMVirtualGetSync(PVM pVM)
          * Do TMVirtualGet() to get the current TMCLOCK_VIRTUAL time.
          */
         Assert(pVM->tm.s.fVirtualTicking);
-        u64 = RTTimeNanoTS() - pVM->tm.s.u64VirtualOffset;
+        u64 = tmVirtualGetRaw(pVM);
         if (    !VM_FF_ISSET(pVM, VM_FF_TIMER)
             &&  pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
         {
@@ -144,7 +191,7 @@ TMDECL(uint64_t) TMVirtualGetSync(PVM pVM)
             uint64_t u64Delta = u64 - u64Prev;
             if (!(u64Delta >> 32))
             {
-                uint32_t u32Sub = ASMDivU64ByU32RetU32(ASMMult2xU32RetU64((uint32_t)u64Delta, pVM->tm.s.u32VirtualSyncCatchupPrecentage),
+                uint32_t u32Sub = ASMDivU64ByU32RetU32(ASMMult2xU32RetU64((uint32_t)u64Delta, pVM->tm.s.u32VirtualSyncCatchupPercentage),
                                                        100);
                 if (u32Sub < (uint32_t)u64Delta)
                 {
@@ -222,7 +269,8 @@ TMDECL(int) TMVirtualResume(PVM pVM)
     if (!pVM->tm.s.fVirtualTicking)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualResume);
-        pVM->tm.s.u64VirtualOffset = RTTimeNanoTS() - pVM->tm.s.u64Virtual;
+        pVM->tm.s.u64VirtualWarpDriveStart = RTTimeNanoTS();
+        pVM->tm.s.u64VirtualOffset = pVM->tm.s.u64VirtualWarpDriveStart - pVM->tm.s.u64Virtual;
         pVM->tm.s.fVirtualTicking = true;
         pVM->tm.s.fVirtualSyncTicking = true;
         return VINF_SUCCESS;
@@ -250,7 +298,7 @@ TMDECL(int) TMVirtualPause(PVM pVM)
     {
 #ifndef TM_CONTINUOUS_TIME
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualPause);
-        pVM->tm.s.u64Virtual = RTTimeNanoTS() - pVM->tm.s.u64VirtualOffset;
+        pVM->tm.s.u64Virtual = tmVirtualGetRaw(pVM);
         pVM->tm.s.fVirtualSyncTicking = false;
         pVM->tm.s.fVirtualTicking = false;
 #endif
@@ -259,6 +307,84 @@ TMDECL(int) TMVirtualPause(PVM pVM)
 
     AssertFailed();
     return VERR_INTERNAL_ERROR;
+}
+
+
+/**
+ * Gets the current warp drive percent.
+ * 
+ * @returns The warp drive percent.
+ * @param   pVM         The VM handle.
+ */
+TMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM)
+{
+    return pVM->tm.s.u32VirtualWarpDrivePercentage;
+}
+
+
+/**
+ * Sets the warp drive percent of the virtual time.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   u32Percent  The new percentage. 100 means normal operation.
+ */
+TMDECL(int) TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
+{
+#ifdef IN_RING3
+    PVMREQ pReq;
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)tmVirtualSetWarpDrive, 2, pVM, u32Percent);
+    if (VBOX_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+    return rc;
+#else
+
+    return tmVirtualSetWarpDrive(pVM, u32Percent);
+#endif 
+}
+
+
+/**
+ * EMT worker for tmVirtualSetWarpDrive.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   u32Percent  See TMVirtualSetWarpDrive().
+ * @internal
+ */
+static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
+{
+    /*
+     * Validate it.
+     */
+    AssertMsgReturn(u32Percent >= 2 && u32Percent <= 20000, 
+                    ("%RX32 is not between 2 and 20000 (inclusive).\n", u32Percent), 
+                    VERR_INVALID_PARAMETER);
+
+    /* 
+     * If the time is running we'll have to pause it before we can change
+     * the warp drive settings.
+     */
+    bool fPaused = pVM->tm.s.fVirtualTicking;
+    if (fPaused)
+    {
+        int rc = TMVirtualPause(pVM);
+        AssertRCReturn(rc, rc);
+    }
+
+    pVM->tm.s.u32VirtualWarpDrivePercentage = u32Percent;
+    pVM->tm.s.fVirtualWarpDrive = u32Percent != 100;
+    LogRel(("TM: u32VirtualWarpDrivePercentage=%RI32 fVirtualWarpDrive=%RTbool\n", 
+            pVM->tm.s.u32VirtualWarpDrivePercentage, pVM->tm.s.fVirtualWarpDrive));
+
+    if (fPaused)
+    {
+        int rc = TMVirtualResume(pVM);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
 }
 
 

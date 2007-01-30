@@ -201,6 +201,23 @@ TMDECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS);
  */
 TMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
 
+/**
+ * Gets the current warp drive percent.
+ * 
+ * @returns The warp drive percent.
+ * @param   pVM         The VM handle.
+ */
+TMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM);
+
+/**
+ * Sets the warp drive percent of the virtual time.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   u32Percent  The new percentage. 100 means normal operation.
+ */
+TMDECL(int) TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
+
 /** @} */
 
 
