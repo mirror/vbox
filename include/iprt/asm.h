@@ -2667,7 +2667,7 @@ DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
     {
         mov     edx, [i32F1]
         mov     eax, [i32F2]
-        mul     edx
+        imul    edx
         mov     dword ptr [i64], eax
         mov     dword ptr [i64 + 4], edx
     }
@@ -2736,7 +2736,7 @@ DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
         mov     eax, dword ptr [i64]
         mov     edx, dword ptr [i64 + 4]
         mov     ecx, [i32]
-        div     ecx
+        idiv    ecx
         mov     [i32], eax
     }
 #  endif
