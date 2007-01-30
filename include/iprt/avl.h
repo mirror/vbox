@@ -283,9 +283,9 @@ typedef PAVLGCPTRNODECORE     AVLGCPTRTREE;
 /** Pointer to a tree of RTGCPTR keys. */
 typedef PPAVLGCPTRNODECORE    PAVLGCPTRTREE;
 
-/** Callback function for RTAvlroGCPtrDoWithAll(). */
+/** Callback function for RTAvlGCPtrDoWithAll(). */
 typedef DECLCALLBACK(int)   AVLGCPTRCALLBACK(PAVLGCPTRNODECORE pNode, void *pvUser);
-/** Pointer to callback function for RTAvlroGCPtrDoWithAll(). */
+/** Pointer to callback function for RTAvlGCPtrDoWithAll(). */
 typedef AVLGCPTRCALLBACK *PAVLGCPTRCALLBACK;
 
 RTDECL(bool)                    RTAvlGCPtrInsert(PAVLGCPTRTREE pTree, PAVLGCPTRNODECORE pNode);
@@ -332,9 +332,9 @@ typedef AVLOGCPTRTREE    *PAVLOGCPTRTREE;
  * In this case it's a pointer to a relative offset. */
 typedef AVLOGCPTRTREE    *PPAVLOGCPTRNODECORE;
 
-/** Callback function for RTAvlroGCPtrDoWithAll(). */
+/** Callback function for RTAvloGCPtrDoWithAll(). */
 typedef DECLCALLBACK(int)   AVLOGCPTRCALLBACK(PAVLOGCPTRNODECORE pNode, void *pvUser);
-/** Pointer to callback function for RTAvlroGCPtrDoWithAll(). */
+/** Pointer to callback function for RTAvloGCPtrDoWithAll(). */
 typedef AVLOGCPTRCALLBACK *PAVLOGCPTRCALLBACK;
 
 RTDECL(bool)                    RTAvloGCPtrInsert(PAVLOGCPTRTREE pTree, PAVLOGCPTRNODECORE pNode);
@@ -344,6 +344,56 @@ RTDECL(int)                     RTAvloGCPtrDoWithAll(PAVLOGCPTRTREE pTree, int f
 RTDECL(PAVLOGCPTRNODECORE)      RTAvloGCPtrGetBestFit(PAVLOGCPTRTREE ppTree, RTGCPTR Key, bool fAbove);
 RTDECL(PAVLOGCPTRNODECORE)      RTAvloGCPtrRemoveBestFit(PAVLOGCPTRTREE ppTree, RTGCPTR Key, bool fAbove);
 RTDECL(int)                     RTAvloGCPtrDestroy(PAVLOGCPTRTREE pTree, PAVLOGCPTRCALLBACK pfnCallBack, void *pvParam);
+
+/** @} */
+
+
+/** AVL tree of RTGCPTR ranges.
+ * @{
+ */
+
+/**
+ * AVL Core node.
+ */
+typedef struct _AVLRGCPtrNodeCore
+{
+    /** First key value in the range (inclusive). */
+    RTGCPTR             Key;
+    /** Last key value in the range (inclusive). */
+    RTGCPTR             KeyLast;
+    /** Offset to the left leaf node, relative to this field. */
+    struct _AVLRGCPtrNodeCore  *pLeft;
+    /** Offset to the right leaf node, relative to this field. */
+    struct _AVLRGCPtrNodeCore  *pRight;
+    /** Height of this tree: max(height(left), height(right)) + 1 */
+    unsigned char       uchHeight;
+} AVLRGCPTRNODECORE, *PAVLRGCPTRNODECORE;
+
+/** A offset base tree with RTGCPTR keys. */
+typedef PAVLRGCPTRNODECORE AVLRGCPTRTREE;
+/** Pointer to a offset base tree with RTGCPTR keys. */
+typedef AVLRGCPTRTREE    *PAVLRGCPTRTREE;
+
+/** Pointer to an internal tree pointer.
+ * In this case it's a pointer to a relative offset. */
+typedef AVLRGCPTRTREE    *PPAVLRGCPTRNODECORE;
+
+/** Callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
+typedef DECLCALLBACK(int)   AVLRGCPTRCALLBACK(PAVLRGCPTRNODECORE pNode, void *pvUser);
+/** Pointer to callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
+typedef AVLRGCPTRCALLBACK *PAVLRGCPTRCALLBACK;
+
+RTDECL(bool)                   RTAvlrGCPtrInsert(       PAVLRGCPTRTREE pTree, PAVLRGCPTRNODECORE pNode);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrRemove(       PAVLRGCPTRTREE pTree, RTGCPTR Key);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrGet(          PAVLRGCPTRTREE pTree, RTGCPTR Key);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrGetBestFit(   PAVLRGCPTRTREE pTree, RTGCPTR Key, bool fAbove);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrRangeGet(     PAVLRGCPTRTREE pTree, RTGCPTR Key);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrRangeRemove(  PAVLRGCPTRTREE pTree, RTGCPTR Key);
+RTDECL(int)                    RTAvlrGCPtrDoWithAll(    PAVLRGCPTRTREE pTree, int fFromLeft, PAVLRGCPTRCALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)                    RTAvlrGCPtrDestroy(      PAVLRGCPTRTREE pTree, PAVLRGCPTRCALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrGetRoot(      PAVLRGCPTRTREE pTree);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrGetLeft(      PAVLRGCPTRNODECORE pNode);
+RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrGetRight(     PAVLRGCPTRNODECORE pNode);
 
 /** @} */
 

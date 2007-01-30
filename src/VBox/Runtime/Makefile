@@ -127,6 +127,7 @@ RuntimeR3_SOURCES       = \
 	table/avlohcphys.cpp \
 	table/avloioport.cpp \
 	table/avlpv.cpp \
+	table/avlrgcptr.cpp \
 	table/avlrogcphys.cpp \
 	table/avlrogcptr.cpp \
 	table/avlroogcptr.cpp \
