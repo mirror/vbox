@@ -296,20 +296,28 @@ typedef struct TM
      * If GIP is available, g_pSUPGlobalInfoPage->u64CpuHz will be used instead. */
     uint64_t                    cTSCTicksPerSecond;
 
-    /** Padding to ensure that 64-bit values are equaly aligned everywhere. */
-    uint32_t                    uReserved;
     /** Virtual time ticking enabled indicator (bool). (TMCLOCK_VIRTUAL) */
     bool                        fVirtualTicking;
+    /** Virtual time is not running at 100%. */
+    bool                        fVirtualWarpDrive;
     /** Virtual timer synchronous time ticking enabled indicator (bool). (TMCLOCK_VIRTUAL_SYNC) */
     bool                        fVirtualSyncTicking;
     /** Virtual timer synchronous time catch-up active. */
     bool volatile               fVirtualSyncCatchUp;
+    /** WarpDrive percentage. 
+     * 100% is normal (fVirtualSyncNormal == true). When other than 100% we apply 
+     * this percentage to the raw time source for the period it's been valid in, 
+     * i.e. since u64VirtualWarpDriveStart. */
+    uint32_t                    u32VirtualWarpDrivePercentage;
 
     /** The offset of the virtual clock relative to it's timesource.
      * Only valid if fVirtualTicking is set. */
     uint64_t                    u64VirtualOffset;
     /** The guest virtual time when fVirtualTicking is cleared. */
     uint64_t                    u64Virtual;
+    /** When the Warp drive was started or last adjusted.
+     * Only valid when fVirtualWarpDrive is set. */
+    uint64_t                    u64VirtualWarpDriveStart;
 
     /** The offset of the virtual timer synchronous clock (TMCLOCK_VIRTUAL_SYNC) relative
      * to the virtual clock. */
@@ -318,8 +326,8 @@ typedef struct TM
     uint64_t volatile           u64VirtualSyncCatchUpPrev;
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
     uint64_t                    u64VirtualSync;
-    /** How many precent faster the clock should advance when catch-up is active. */
-    uint32_t                    u32VirtualSyncCatchupPrecentage;
+    /** How many percent faster the clock should advance when catch-up is active. */
+    uint32_t                    u32VirtualSyncCatchupPercentage;
     /** When to stop catch-up. */
     uint32_t                    u32VirtualSyncCatchupStopThreashold;
     /** When to start catch-up. */

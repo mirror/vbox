@@ -192,17 +192,33 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         return rc;
 
     /*
-     * Start the timer.
+     * Setup the warp drive.
+     */
+    rc = CFGMR3QueryU32(CFGMR3GetRoot(pVM), "WarpDrivePercentage", &pVM->tm.s.u32VirtualWarpDrivePercentage);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pVM->tm.s.u32VirtualWarpDrivePercentage = 100;
+    else if (VBOX_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS, 
+                          N_("Configuration error: Failed to querying uint32_t value \"WarpDrivePercent\". (%Vrc)"), rc); 
+    else if (   pVM->tm.s.u32VirtualWarpDrivePercentage < 2 
+             || pVM->tm.s.u32VirtualWarpDrivePercentage > 20000)
+        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, 
+                          N_("Configuration error: \"WarpDrivePercent\" = %RI32 is not in the range 2..20000!"),
+                          pVM->tm.s.u32VirtualWarpDrivePercentage);
+    pVM->tm.s.fVirtualWarpDrive = pVM->tm.s.u32VirtualWarpDrivePercentage != 100;
+    if (pVM->tm.s.fVirtualWarpDrive)
+        LogRel(("TM: u32VirtualWarpDrivePercentage=%RI32\n", pVM->tm.s.u32VirtualWarpDrivePercentage));
+
+    /*
+     * Start the timer (guard against REM not yielding).
      */
     uint32_t u32Millies;
     rc = CFGMR3QueryU32(CFGMR3GetRoot(pVM), "TimerMillies", &u32Millies);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         u32Millies = 10;
     else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Failed to query uint32_t value \"TimerMillies\", rc=%Vrc.\n", rc));
-        return rc;
-    }
+        return VMSetError(pVM, rc, RT_SRC_POS, 
+                          N_("Configuration error: Failed to query uint32_t value \"TimerMillies\", rc=%Vrc.\n"), rc);
     rc = RTTimerCreate(&pVM->tm.s.pTimer, u32Millies, tmR3TimerCallback, pVM);
     if (VBOX_FAILURE(rc))
     {
