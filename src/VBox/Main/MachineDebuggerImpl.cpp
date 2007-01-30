@@ -27,6 +27,7 @@
 #include <VBox/patm.h>
 #include <VBox/csam.h>
 #include <VBox/vm.h>
+#include <VBox/tm.h>
 #include <VBox/err.h>
 #include <VBox/hwaccm.h>
 
@@ -82,6 +83,7 @@ HRESULT MachineDebugger::init(Console *parent)
     patmEnabledQueued = ~0;
     csamEnabledQueued = ~0;
     mLogEnabledQueued = ~0;
+    mVirtualTimeRateQueued = ~0;
     fFlushMode = false;
     setReady(true);
     return S_OK;
@@ -480,6 +482,66 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled)(BOOL *enabled)
 }
 
 /**
+ * Returns the current virtual time rate.
+ * 
+ * @returns COM status code.
+ * @param   pct     Where to store the rate.
+ */
+STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate)(ULONG *pct)
+{
+    if (!pct)
+        return E_POINTER;
+
+    AutoLock lock(this);
+    CHECK_READY();
+
+    Console::SafeVMPtrQuiet pVM (mParent);
+    if (pVM.isOk())
+        *pct = TMVirtualGetWarpDrive(pVM);
+    else
+        *pct = 100;
+    return S_OK;
+}
+
+/**
+ * Returns the current virtual time rate.
+ * 
+ * @returns COM status code.
+ * @param   pct     Where to store the rate.
+ */
+STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG pct)
+{
+    if (pct < 2 || pct > 20000)
+        return E_INVALIDARG;
+
+    AutoLock lock(this);
+    CHECK_READY();
+
+    if (!fFlushMode)
+    {
+        // check if the machine is running
+        MachineState_T machineState;
+        mParent->COMGETTER(State)(&machineState);
+        if (machineState != MachineState_Running)
+        {
+            // queue the request
+            mVirtualTimeRateQueued = pct;
+            return S_OK;
+        }
+    }
+
+    Console::SafeVMPtr pVM (mParent);
+    CheckComRCReturnRC (pVM.rc());
+
+    int vrc = TMVirtualSetWarpDrive(pVM, pct);
+    if (VBOX_FAILURE(vrc))
+    {
+        /** @todo handle error code. */
+    }
+    return S_OK;
+}
+
+/**
  * Hack for getting the VM handle.
  * This is only temporary (promise) while prototyping the debugger.
  *
@@ -544,6 +606,11 @@ void MachineDebugger::flushQueuedSettings()
     {
         COMSETTER(LogEnabled)(mLogEnabledQueued);
         mLogEnabledQueued = ~0;
+    }
+    if (mVirtualTimeRateQueued != ~0)
+    {
+        COMSETTER(VirtualTimeRate)(mVirtualTimeRateQueued);
+        mVirtualTimeRateQueued = ~0;
     }
     fFlushMode = false;
 }

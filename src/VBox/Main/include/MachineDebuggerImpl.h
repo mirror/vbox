@@ -66,6 +66,8 @@ public:
     STDMETHOD(COMGETTER(LogEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(LogEnabled))(BOOL enable);
     STDMETHOD(COMGETTER(HWVirtExEnabled))(BOOL *enabled);
+    STDMETHOD(COMGETTER(VirtualTimeRate))(ULONG *pct);
+    STDMETHOD(COMSETTER(VirtualTimeRate))(ULONG pct);
     STDMETHOD(COMGETTER(VM))(ULONG64 *vm);
 
     // IMachineDebugger methods
@@ -88,6 +90,7 @@ private:
     int patmEnabledQueued;
     int csamEnabledQueued;
     int mLogEnabledQueued;
+    uint32_t mVirtualTimeRateQueued;
     bool fFlushMode;
 };
 
