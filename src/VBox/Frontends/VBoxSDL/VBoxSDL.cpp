@@ -2167,7 +2167,7 @@ int main(int argc, char *argv[])
                         InputGrabStart();
                     }
                 }
-                else
+                else if (gfGrabbed || UseAbsoluteMouse())
                 {
                     int dz = bev->button == SDL_BUTTON_WHEELUP
                                          ? -1
