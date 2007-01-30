@@ -412,7 +412,9 @@ static void printUsage(USAGECATEGORY enmCmd)
     if (enmCmd & USAGE_MODIFYVDI)
     {
         RTPrintf("VBoxManage modifyvdi        <uuid>|<filename>\n"
+#if 0 /* doesn't currently work */
                  "                            settype normal|writethrough|immutable |\n"
+#endif
                  "                            compact\n"
                  "\n");
     }
@@ -2137,7 +2139,8 @@ static int handleModifyVDI(int argc, char *argv[],
     }
 
     /* let's find out which command */
-    if (strcmp(argv[1], "settype") == 0)
+// doesn't currently work    if (strcmp(argv[1], "settype") == 0)
+    if (0)
     {
         /* hard disk must be registered */
         if (SUCCEEDED(rc) && hardDisk && vdi)
