@@ -973,12 +973,17 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
     }
     else if (pg == pageVRDP)
     {
-        valid = !(grbVRDP->isChecked() &&
-                (leVRDPPort->text().isEmpty() || leVRDPTimeout->text().isEmpty()));
-        if (!valid && leVRDPPort->text().isEmpty())
-            setWarning (tr ("VRDP Port is not set."));
-        if (!valid && leVRDPTimeout->text().isEmpty())
-            setWarning (tr ("VRDP Timeout is not set."));
+        if (pageVRDP->isEnabled())
+        {
+            valid = !(grbVRDP->isChecked() &&
+                    (leVRDPPort->text().isEmpty() || leVRDPTimeout->text().isEmpty()));
+            if (!valid && leVRDPPort->text().isEmpty())
+                setWarning (tr ("VRDP Port is not set."));
+            if (!valid && leVRDPTimeout->text().isEmpty())
+                setWarning (tr ("VRDP Timeout is not set."));
+        }
+        else
+            valid = true;
     }
 
     wval->setOtherValid (valid);
@@ -1231,6 +1236,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             if (usbItem)
                 usbItem->setVisible (false);
 
+            /* disable validators if any */
+            pageUSB->setEnabled (false);
+
             /* if machine has something to say, show the message */
             vboxProblem().cannotLoadMachineSettings (machine, false /* strict */);
         }
@@ -1243,10 +1251,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 addUSBFilter (en.GetNext(), false /* isNew */);
 
             lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
-            /*
-             *  silly, silly Qt -- doesn't emit currentChanged after adding the
-             *  first item to an empty list
-             */
+            /* silly Qt -- doesn't emit currentChanged after adding the
+             * first item to an empty list */
             lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
         }
     }
@@ -1254,10 +1260,30 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* vrdp */
     {
         CVRDPServer vrdp = machine.GetVRDPServer();
-        grbVRDP->setChecked (vrdp.GetEnabled());
-        leVRDPPort->setText (QString::number (vrdp.GetPort()));
-        cbVRDPAuthType->setCurrentText (vboxGlobal().toString (vrdp.GetAuthType()));
-        leVRDPTimeout->setText (QString::number (vrdp.GetAuthTimeout()));
+
+        if (vrdp.isNull())
+        {
+            /* disable the VRDP category if VRDP is
+             * not available (i.e. in VirtualBox OSE) */
+
+            QListViewItem *vrdpItem = listView->findItem ("#vrdp", listView_Link);
+            Assert (vrdpItem);
+            if (vrdpItem)
+                vrdpItem->setVisible (false);
+
+            /* disable validators if any */
+            pageVRDP->setEnabled (false);
+
+            /* if machine has something to say, show the message */
+            vboxProblem().cannotLoadMachineSettings (machine, false /* strict */);
+        }
+        else
+        {
+            grbVRDP->setChecked (vrdp.GetEnabled());
+            leVRDPPort->setText (QString::number (vrdp.GetPort()));
+            cbVRDPAuthType->setCurrentText (vboxGlobal().toString (vrdp.GetAuthType()));
+            leVRDPTimeout->setText (QString::number (vrdp.GetAuthTimeout()));
+        }
     }
 
     /* request for media shortcuts update */
@@ -1270,6 +1296,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     wvalHDD->revalidate();
     wvalDVD->revalidate();
     wvalFloppy->revalidate();
+    wvalVRDP->revalidate();
 }
 
 
@@ -1478,10 +1505,15 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     /* vrdp */
     {
         CVRDPServer vrdp = cmachine.GetVRDPServer();
-        vrdp.SetEnabled (grbVRDP->isChecked());
-        vrdp.SetPort (leVRDPPort->text().toULong());
-        vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (cbVRDPAuthType->currentText()));
-        vrdp.SetAuthTimeout (leVRDPTimeout->text().toULong());
+
+        if (!vrdp.isNull())
+        {
+            /* VRDP may be unavailable (i.e. in VirtualBox OSE) */
+            vrdp.SetEnabled (grbVRDP->isChecked());
+            vrdp.SetPort (leVRDPPort->text().toULong());
+            vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (cbVRDPAuthType->currentText()));
+            vrdp.SetAuthTimeout (leVRDPTimeout->text().toULong());
+        }
     }
 
     return COMResult();

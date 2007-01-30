@@ -257,8 +257,10 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     rc = mMachine->COMGETTER(State) (&mMachineState);
     AssertComRCReturn (rc, rc);
 
+#ifdef VBOX_VRDP
     rc = mMachine->COMGETTER(VRDPServer) (unconst (mVRDPServer).asOutParam());
     AssertComRCReturn (rc, rc);
+#endif    
 
     rc = mMachine->COMGETTER(DVDDrive) (unconst (mDVDDrive).asOutParam());
     AssertComRCReturn (rc, rc);
@@ -409,7 +411,9 @@ void Console::uninit()
 
     unconst (mFloppyDrive).setNull();
     unconst (mDVDDrive).setNull();
+#ifdef VBOX_VRDP
     unconst (mVRDPServer).setNull();
+#endif
 
     unconst (mControl).setNull();
     unconst (mMachine).setNull();
