@@ -1372,29 +1372,6 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         /* set the correct flags to disable unnecessary frame controls */
         int flags = WType_TopLevel | WStyle_Customize | WStyle_NoBorder |
                     WStyle_StaysOnTop;
-
-		/* test by kerschi
-		int isvdesk = QApplication::desktop()->isVirtualDesktop();
-
-		int numscreens = QApplication::desktop()->numScreens();
-
-		int idxprimaryscreen = QApplication::desktop()->primaryScreen();
-		int screennumber = QApplication::desktop()->screenNumber(this);
-		QRect scrGeo1 = QApplication::desktop()->screenGeometry (this);
-
-		vboxProblem().message (this, VBoxProblemReporter::Error,
-            tr ("<p>vdesk: %1   numscreens: %2    idxprim: %3   screen#: %4 x:%5 y:%6 w:%7 h:%8</p>")
-            .arg (isvdesk,0,10)
-            .arg (numscreens,0,10)
-            .arg (idxprimaryscreen,0,10)
-            .arg (screennumber,0,10)
-            .arg (scrGeo1.x(),0,10)
-            .arg (scrGeo1.y(),0,10)
-            .arg (scrGeo1.width(),0,10)
-            .arg (scrGeo1.height(),0,10));
-		*/
-
-
         QRect scrGeo = QApplication::desktop()->screenGeometry (this);
         /* hide early to avoid extra flicker */
         hide();
@@ -1413,12 +1390,9 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
             }
         }
         delete list;
-        /* reparet to apply new flags */
-//original
-//        reparent (parentWidget(), flags, QPoint (0, 0), false);
-//edited by kerschi
+        /* reparet to apply new flags and place to the top left corner of the
+         * current desktop */
         reparent (parentWidget(), flags, QPoint (scrGeo.x(), scrGeo.y()), false);
-
         /* adjust colors and appearance */
         erase_color = centralWidget()->eraseColor();
         centralWidget()->setEraseColor (black);
