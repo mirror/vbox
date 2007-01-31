@@ -53,6 +53,7 @@
 #endif /* !VBOX_WITH_PDM_LOCK */
 
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -66,6 +67,7 @@ PDMBOTHCBDECL(int) picIOPortElcrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 PDMBOTHCBDECL(int) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 
 __END_DECLS
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
 
 /*
@@ -118,6 +120,9 @@ typedef struct PicState {
     HCPTRTYPE(PPDMDEVINS) pDevInsHC;
     /** Pointer to the device instance, GCPtr. */
     GCPTRTYPE(PPDMDEVINS) pDevInsGC;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
+    RTGCPTR               Alignment0;
+#endif
 } PicState;
 
 /**
@@ -127,16 +132,19 @@ typedef struct DEVPIC
 {
     /** The two interrupt controllers. */
     PicState                aPics[2];
-    /** Pointer to the device instance - GC Ptr. */
-    HCPTRTYPE(PPDMDEVINS)   pDevInsHC;
-    /** Pointer to the device instance - GC Ptr. */
-    GCPTRTYPE(PPDMDEVINS)   pDevInsGC;
     /** Pointer to the PIC R3 helpers. */
     PCPDMPICHLPR3           pPicHlpR3;
-    /** Pointer to the PIC GC helpers. */
-    PCPDMPICHLPGC           pPicHlpGC;
     /** Pointer to the PIC R0 helpers. */
     PCPDMPICHLPR0           pPicHlpR0;
+    /** Pointer to the PIC GC helpers. */
+    PCPDMPICHLPGC           pPicHlpGC;
+    /** Pointer to the device instance - GC Ptr. */
+    GCPTRTYPE(PPDMDEVINS)   pDevInsGC;
+    /** Pointer to the device instance - GC Ptr. */
+    HCPTRTYPE(PPDMDEVINS)   pDevInsHC;
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignmnet0;
+#endif
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER             StatSetIrqGC;
     STAMCOUNTER             StatSetIrqHC;
@@ -146,6 +154,8 @@ typedef struct DEVPIC
 #endif
 } DEVPIC, *PDEVPIC;
 
+
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 #ifdef LOG_ENABLED
 static inline void DumpPICState(PicState *s, char *szFn)
 {
@@ -1104,5 +1114,5 @@ const PDMDEVREG g_DeviceI8259 =
 };
 
 #endif /* IN_RING3 */
-
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
