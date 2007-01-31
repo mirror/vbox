@@ -181,6 +181,9 @@ typedef struct APICState {
     uint32_t divide_conf;
     int count_shift;
     uint32_t initial_count;
+#ifdef VBOX
+    uint32_t Alignment0;
+#endif
     int64_t initial_count_load_time, next_time;
 #ifndef VBOX
     QEMUTimer *timer;
@@ -193,6 +196,8 @@ typedef struct APICState {
     PCPDMAPICHLPR3  pApicHlpR3;
     /** The APIC timer - HC Ptr. */
     PTMTIMERHC      pTimerHC;
+    /** Pointer to the APIC R0 helpers. */
+    PCPDMAPICHLPR0  pApicHlpR0;
 
     /** GC pointer to the device instance. */
     PPDMDEVINSGC    pDevInsGC;
@@ -200,9 +205,6 @@ typedef struct APICState {
     PCPDMAPICHLPGC  pApicHlpGC;
     /** The APIC timer - GC Ptr. */
     PTMTIMERGC      pTimerGC;
-
-    /** Pointer to the APIC R0 helpers. */
-    PCPDMAPICHLPR0  pApicHlpR0;
 
     /** Number of attempts made to optimize TPR accesses. */
     uint32_t        ulTPRPatchAttempts;
@@ -236,7 +238,9 @@ struct IOAPICState {
 
     /** Pointer to the IOAPIC R0 helpers. */
     PCPDMIOAPICHLPR0    pIoApicHlpR0;
-
+# if HC_ARCH_BITS == 32
+    uint32_t            Alignment0;
+# endif
 # ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER StatMMIOReadGC;
     STAMCOUNTER StatMMIOReadHC;
@@ -252,6 +256,7 @@ struct IOAPICState {
 typedef struct IOAPICState IOAPICState;
 #endif /* VBOX */
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 #ifndef VBOX
 static int apic_io_memory;
 static APICState *first_local_apic = NULL;
@@ -2065,3 +2070,5 @@ const PDMDEVREG g_DeviceIOAPIC =
 };
 
 #endif /* IN_RING3 */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
