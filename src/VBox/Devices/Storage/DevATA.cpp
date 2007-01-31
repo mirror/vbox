@@ -92,10 +92,10 @@ typedef struct ATADevState {
     uint8_t cMultSectors;
     /** LCHS disk geometry. */
     uint32_t cCHSCylinders, cCHSHeads, cCHSSectors;
-    /** Number of sectors to transfer per IRQ. */
-    uint32_t cSectorsPerIRQ;
     /** Total number of sectors on this disk. */
     uint64_t cTotalSectors;
+    /** Number of sectors to transfer per IRQ. */
+    uint32_t cSectorsPerIRQ;
 
     /** ATA/ATAPI register 1: feature (write-only). */
     uint8_t uATARegFeature;
@@ -177,6 +177,9 @@ typedef struct ATADevState {
     HCPTRTYPE(uint8_t *) pbIOBufferHC;
     /** Pointer to the I/O buffer. */
     GCPTRTYPE(uint8_t *) pbIOBufferGC;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
+    RTGCPTR Aligmnent0; /**< Align the statistics at an 8-byte boundrary. */
+#endif
 
     /*
      * No data that is part of the saved state after this point!!!!!
@@ -218,14 +221,17 @@ typedef struct ATADevState {
     PDMIMOUNTNOTIFY                 IMountNotify;
     /** The LUN #. */
     RTUINT                          iLUN;
+#if HC_ARCH_BITS == 64
+    RTUINT                          Alignment2; /**< Align pDevInsHC correctly. */
+#endif
     /** Pointer to device instance. */
     HCPTRTYPE(PPDMDEVINS)           pDevInsHC;
+    /** Pointer to controller instance. */
+    HCPTRTYPE(struct ATACONTROLLER *) pControllerHC;
     /** Pointer to device instance. */
     GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
     /** Pointer to controller instance. */
-    HCPTRTYPE(struct ATACONTROLLER *)pControllerHC;
-    /** Pointer to controller instance. */
-    GCPTRTYPE(struct ATACONTROLLER *)pControllerGC;
+    GCPTRTYPE(struct ATACONTROLLER *) pControllerGC;
 } ATADevState;
 
 
@@ -332,12 +338,16 @@ typedef struct ATACONTROLLER
     uint8_t             AsyncIOReqHead;
     /** The position at which to get a new request for the AIO thread. */
     uint8_t             AsyncIOReqTail;
+    uint8_t             Alignment3[2]; /** Explicit padding of the 2 byte gap. */
+    /** Magic delay before triggering interrupts in DMA mode. */
+    uint32_t            DelayIRQMillies;
     /** The mutex protecting the request queue. */
     RTSEMMUTEX          AsyncIORequestMutex;
     /** The event semaphore the thread is waiting on during suspended I/O. */
     RTSEMEVENT          SuspendIOSem;
-    /** Magic delay before triggering interrupts in DMA mode. */
-    uint32_t            DelayIRQMillies;
+#if HC_ARCH_BITS == 32
+    uint32_t            Alignment0;
+#endif
 
     /* Statistics */
     STAMCOUNTER StatAsyncOps;
@@ -353,17 +363,18 @@ typedef struct PCIATAState {
     /** The controllers. */
     ATACONTROLLER       aCts[2];
     /** Pointer to device instance. */
-    PPDMDEVINS          pDevIns;
+    PPDMDEVINSR3        pDevIns;
     /** Status Port - Base interface. */
     PDMIBASE            IBase;
     /** Status Port - Leds interface. */
     PDMILEDPORTS        ILeds;
     /** Partner of ILeds. */
-    PPDMILEDCONNECTORS  pLedsConnector;
+    R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
     /** Flag whether GC is enabled. */
     bool                fGCEnabled;
     /** Flag whether R0 is enabled. */
     bool                fR0Enabled;
+    bool                Alignment0[HC_ARCH_BITS == 64 ? 6 : 2]; /**< Align the struct size. */
 } PCIATAState;
 
 #define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTXSUFF(pController) )
@@ -380,6 +391,7 @@ typedef struct PCIATAState {
 #define ATACONTROLLER_IDX(pController) ( (pController) - PDMINS2DATA(CONTROLLER_2_DEVINS(pController), PCIATAState *)->aCts )
 
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
  *  Internal Functions                                                         *
  ******************************************************************************/
@@ -5911,3 +5923,5 @@ const PDMDEVREG g_DevicePIIX3IDE =
     ataPowerOff
 };
 #endif /* IN_RING3 */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
