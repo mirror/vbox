@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
- * VMM - Context switcher macros & definitions
+ * tstVMStructSize - testcase for check structure sizes/alignment
+ *                   and to verify that HC and GC uses the same
+ *                   representation of the structures.                
  */
 
 /*
