@@ -1351,13 +1351,24 @@ static void ataReadWriteSectorsBT(ATADevState *s)
 }
 
 
-static void ataDiskFull(PPDMDEVINS pDevIns)
+static void ataWarningDiskFull(PPDMDEVINS pDevIns)
 {
     int rc;
     LogRel(("PIIX3 ATA: Host disk full\n"));
     rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
                            false, "DevATA_DISKFULL",
                            N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
+    AssertRC(rc);
+}
+
+
+static void ataWarningISCSI(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("PIIX3 ATA: iSCSI target unavailable\n"));
+    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
+                           false, "DevATA_ISCSIDOWN",
+                           N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
     AssertRC(rc);
 }
 
@@ -1384,7 +1395,14 @@ static bool ataReadSectorsSS(ATADevState *s)
     {
         if (rc == VERR_DISK_FULL)
         {
-            ataDiskFull(ATADEVSTATE_2_DEVINS(s));
+            ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+            return true;
+        }
+        if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
+        {
+            /* iSCSI connection abort (first error) or failure to reestablish
+             * connection (second error). Pause VM. On resume we'll retry. */
+            ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
             return true;
         }
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
@@ -1419,7 +1437,14 @@ static bool ataWriteSectorsSS(ATADevState *s)
     {
         if (rc == VERR_DISK_FULL)
         {
-            ataDiskFull(ATADEVSTATE_2_DEVINS(s));
+            ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+            return true;
+        }
+        if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
+        {
+            /* iSCSI connection abort (first error) or failure to reestablish
+             * connection (second error). Pause VM. On resume we'll retry. */
+            ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
             return true;
         }
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
