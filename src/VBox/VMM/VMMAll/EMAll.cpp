@@ -35,6 +35,7 @@
 #include "EMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/hwaccm.h>
+#include <VBox/tm.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -1714,6 +1715,25 @@ static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     return VERR_EM_INTERPRETER;
 }
 
+#ifdef IN_GC
+/**
+ * RDTSC Emulation.
+ */
+static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    unsigned uCR4 = CPUMGetGuestCR4(pVM);
+
+    if (uCR4 & X86_CR4_TSD)
+        return VERR_EM_INTERPRETER; /* genuine #GP */
+
+    uint64_t uTicks = TMCpuTickGet(pVM);
+
+    pRegFrame->eax = uTicks;
+    pRegFrame->edx = (uTicks >> 32ULL);
+
+    return VINF_SUCCESS;
+}
+#endif
 
 /**
  * MONITOR Emulation.
@@ -1826,6 +1846,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_ADC,Adc);
         INTERPRET_CASE(OP_SUB,Sub);
 #ifdef IN_GC
+        INTERPRET_CASE(OP_RDTSC,Rdtsc);
         INTERPRET_CASE(OP_STI,Sti);
 #endif
         INTERPRET_CASE(OP_HLT,Hlt);
