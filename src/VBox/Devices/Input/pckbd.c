@@ -65,6 +65,7 @@
 #define PCKBD_SAVED_STATE_VERSION 2
 
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -73,6 +74,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 #endif /* VBOX */
 
 
@@ -223,9 +225,9 @@ typedef struct KBDState {
 
 #ifdef VBOX
     /** Pointer to the device instance. */
-    PPDMDEVINSHC                pDevInsHC;
-    /** Pointer to the device instance. */
     PPDMDEVINSGC                pDevInsGC;
+    /** Pointer to the device instance. */
+    PPDMDEVINSHC                pDevInsHC;
     /**
      * Keyboard port - LUN#0.
      */
@@ -260,6 +262,7 @@ typedef struct KBDState {
 #endif
 } KBDState;
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 #ifndef VBOX
 KBDState kbd_state;
 #endif
@@ -1749,3 +1752,5 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
 
 #endif /* IN_RING3 */
 #endif /* VBOX */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
