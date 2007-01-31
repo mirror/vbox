@@ -376,8 +376,8 @@ struc CPUM
     .CPUFeatures.edx      resd    1
     .CPUFeatures.ecx      resd    1
     ; CR4 masks
-    .CR4.Mask             resd    1
-    .CR4.OSFSXR           resd    1
+    .CR4.AndMask          resd    1
+    .CR4.OrMask           resd    1
     ; entered rawmode?
     .fRawEntered          resb    1
 %if RTHCPTR_CB == 8

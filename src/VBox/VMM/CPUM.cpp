@@ -124,13 +124,13 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     {
         Log(("The CPU doesn't support FXSAVE/FXRSTOR!\n"));
         /* No FXSAVE implies no SSE */
-        pVM->cpum.s.CR4.Mask   = X86_CR4_PVI | X86_CR4_VME;
-        pVM->cpum.s.CR4.OSFSXR = 0;
+        pVM->cpum.s.CR4.AndMask = X86_CR4_PVI | X86_CR4_VME;
+        pVM->cpum.s.CR4.OrMask  = 0;
     }
     else
     {
-        pVM->cpum.s.CR4.Mask   = X86_CR4_OSXMMEEXCPT | X86_CR4_PVI | X86_CR4_VME;
-        pVM->cpum.s.CR4.OSFSXR = X86_CR4_OSFSXR;
+        pVM->cpum.s.CR4.AndMask = X86_CR4_OSXMMEEXCPT | X86_CR4_PVI | X86_CR4_VME;
+        pVM->cpum.s.CR4.OrMask  = X86_CR4_OSFSXR;
     }
 
     if (!pVM->cpum.s.CPUFeatures.edx.u1MMX)

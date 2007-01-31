@@ -229,12 +229,12 @@ htg_debug_regs_no:
     ;                          simplify this operation a bit (and improve locality of the data).
 
     ;
-    ; CR4.Mask and CR4.OSFSXR are set in CPUMR3Init based on the presence of
+    ; CR4.AndMask and CR4.OrMask are set in CPUMR3Init based on the presence of
     ; FXSAVE support on the host CPU
     ;
-    and     ecx, [rdx + CPUM.CR4.Mask]
+    and     ecx, [rdx + CPUM.CR4.AndMask]
     or      eax, ecx
-    or      eax, [rdx + CPUM.CR4.OSFSXR]
+    or      eax, [rdx + CPUM.CR4.OrMask]
     mov     cr4, rax
     DEBUG_CHAR('c')                     ; trashes esi
 
