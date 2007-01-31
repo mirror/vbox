@@ -74,7 +74,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pInterface      Pointer to this structure.
      * @param   pAvailable      Bitmap indicating the available ports. Set bit == available port.
      */
-    DECLCALLBACKMEMBER(unsigned, pfnGetAvailablePorts)(PVUSBIROOTHUBPORT pInterface, PVUSBPORTBITMAP pAvailable);
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetAvailablePorts,(PVUSBIROOTHUBPORT pInterface, PVUSBPORTBITMAP pAvailable));
 
     /**
      * A device is being attached to a port in the roothub.
@@ -83,7 +83,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pDev            Pointer to the device being attached.
      * @param   uPort           The port number assigned to the device.
      */
-    DECLCALLBACKMEMBER(int, pfnAttach)(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort);
+    DECLR3CALLBACKMEMBER(int, pfnAttach,(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort));
 
     /**
      * A device is being detached from a port in the roothub.
@@ -92,7 +92,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pDev            Pointer to the device being detached.
      * @param   uPort           The port number assigned to the device.
      */
-    DECLCALLBACKMEMBER(void, pfnDetach)(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort);
+    DECLR3CALLBACKMEMBER(void, pfnDetach,(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort));
 
     /**
      * Reset the root hub.
@@ -101,7 +101,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pInterface      Pointer to this structure.
      * @param   pResetOnLinux   Whether or not to do real reset on linux.
      */
-    DECLCALLBACKMEMBER(int, pfnReset)(PVUSBIROOTHUBPORT pInterface, bool fResetOnLinux);
+    DECLR3CALLBACKMEMBER(int, pfnReset,(PVUSBIROOTHUBPORT pInterface, bool fResetOnLinux));
 
     /**
      * Do transmit preparations.
@@ -111,7 +111,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pInterface      Pointer to this structure.
      * @param   pUrb            Pointer to the URB in question.
      */
-    DECLCALLBACKMEMBER(void, pfnXferPrepare)(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb);
+    DECLR3CALLBACKMEMBER(void, pfnXferPrepare,(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb));
 
     /**
      * Transfer completion callback routine.
@@ -122,7 +122,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pInterface      Pointer to this structure.
      * @param   pUrb            Pointer to the URB in question.
      */
-    DECLCALLBACKMEMBER(void, pfnXferCompletion)(PVUSBIROOTHUBPORT pInterface, PVUSBURB urb);
+    DECLR3CALLBACKMEMBER(void, pfnXferCompletion,(PVUSBIROOTHUBPORT pInterface, PVUSBURB urb));
 
     /**
      * Handle transfer errors.
@@ -134,7 +134,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pInterface      Pointer to this structure.
      * @param   pUrb            Pointer to the URB in question.
      */
-    DECLCALLBACKMEMBER(bool, pfnXferError)(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb);
+    DECLR3CALLBACKMEMBER(bool, pfnXferError,(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb));
 
 } VUSBIROOTHUBPORT;
 
@@ -161,7 +161,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   cbData      The amount of data space required.
      * @param   cTds        The amount of TD space.
      */
-    DECLCALLBACKMEMBER(PVUSBURB, pfnNewUrb)(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, uint32_t cbData, uint32_t cTds);
+    DECLR3CALLBACKMEMBER(PVUSBURB, pfnNewUrb,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, uint32_t cbData, uint32_t cTds));
 
     /**
      * Submits a URB for transfer.
@@ -172,7 +172,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   pUrb        Pointer to the URB returned by pfnNewUrb.
      *                      The URB will be freed in case of failure.
      */
-    DECLCALLBACKMEMBER(int, pfnSubmitUrb)(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb);
+    DECLR3CALLBACKMEMBER(int, pfnSubmitUrb,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb));
 
     /**
      * Call to service asynchronous URB completions in a polling fashion.
@@ -188,7 +188,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   pInterface  Pointer to this struct.
      * @param   cMillies    Number of milliseconds to poll for completion.
      */
-    DECLCALLBACKMEMBER(void, pfnReapAsyncUrbs)(PVUSBIROOTHUBCONNECTOR pInterface, unsigned cMillies);
+    DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, unsigned cMillies));
 
     /**
      * Cancels and completes - with CRC failure - all in-flight async URBs.
@@ -196,7 +196,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *
      * @param   pInterface  Pointer to this struct.
      */
-    DECLCALLBACKMEMBER(void, pfnCancelAllUrbs)(PVUSBIROOTHUBCONNECTOR pInterface);
+    DECLR3CALLBACKMEMBER(void, pfnCancelAllUrbs,(PVUSBIROOTHUBCONNECTOR pInterface));
 
     /**
      * Attach the device to the root hub.
@@ -206,7 +206,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   pInterface  Pointer to this struct.
      * @param   pDevice     Pointer to the device (interface) attach.
      */
-    DECLCALLBACKMEMBER(int, pfnAttachDevice)(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice);
+    DECLR3CALLBACKMEMBER(int, pfnAttachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
 
     /**
      * Detach the device from the root hub.
@@ -216,11 +216,12 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   pInterface  Pointer to this struct.
      * @param   pDevice     Pointer to the device (interface) to detach.
      */
-    DECLCALLBACKMEMBER(int, pfnDetachDevice)(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice);
+    DECLR3CALLBACKMEMBER(int, pfnDetachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
 
 } VUSBIROOTHUBCONNECTOR;
 
 
+#ifdef IN_RING3
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnNewUrb */
 DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t DstAddress, uint32_t cbData, uint32_t cTds)
 {
@@ -256,6 +257,7 @@ DECLINLINE(int) VUSBIRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEV
 {
     return pInterface->pfnDetachDevice(pInterface, pDevice);
 }
+#endif /* IN_RING3 */
 
 
 
@@ -278,7 +280,7 @@ typedef struct VUSBIRHCONFIG
      * @param   pvBackend       An opaque pointer for the backend. Only used by
      *                          the VRDP backend so far.
      */
-    DECLCALLBACKMEMBER(int, pfnCreateProxyDevice)(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend);
+    DECLR3CALLBACKMEMBER(int, pfnCreateProxyDevice,(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend));
 
     /**
      * Removes a USB proxy device from the root hub and destroys it.
@@ -287,10 +289,11 @@ typedef struct VUSBIRHCONFIG
      * @param   pInterface      Pointer to the root hub configuration interface structure.
      * @param   pUuid           Pointer to the UUID for the device.
      */
-    DECLCALLBACKMEMBER(int, pfnDestroyProxyDevice)(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid);
+    DECLR3CALLBACKMEMBER(int, pfnDestroyProxyDevice,(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid));
 
 } VUSBIRHCONFIG;
 
+#ifdef IN_RING3
 /** @copydoc  VUSBIRHCONFIG::pfnCreateProxyDevice */
 DECLINLINE(int) VUSBIRhCreateProxyDevice(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend)
 {
@@ -302,6 +305,7 @@ DECLINLINE(int) VUSBIRhDestroyProxyDevice(PVUSBIRHCONFIG pInterface, PCRTUUID pU
 {
     return pInterface->pfnDestroyProxyDevice(pInterface, pUuid);
 }
+#endif /* IN_RING3 */
 
 
 
@@ -385,8 +389,8 @@ typedef struct VUSBIDEVICE
      * @param   pvUser          User argument to the completion routine.
      * @param   pVM             Pointer to the VM handle if callback in EMT is required. (optional)
      */
-    DECLCALLBACKMEMBER(int, pfnReset)(PVUSBIDEVICE pInterface, bool fResetOnLinux,
-                                      PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM);
+    DECLR3CALLBACKMEMBER(int, pfnReset,(PVUSBIDEVICE pInterface, bool fResetOnLinux,
+                                        PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM));
 
     /**
      * Powers on the device.
@@ -394,7 +398,7 @@ typedef struct VUSBIDEVICE
      * @returns VBox status code.
      * @param   pInterface      Pointer to the device interface structure.
      */
-    DECLCALLBACKMEMBER(int, pfnPowerOn)(PVUSBIDEVICE pInterface);
+    DECLR3CALLBACKMEMBER(int, pfnPowerOn,(PVUSBIDEVICE pInterface));
 
     /**
      * Powers off the device.
@@ -402,7 +406,7 @@ typedef struct VUSBIDEVICE
      * @returns VBox status code.
      * @param   pInterface      Pointer to the device interface structure.
      */
-    DECLCALLBACKMEMBER(int, pfnPowerOff)(PVUSBIDEVICE pInterface);
+    DECLR3CALLBACKMEMBER(int, pfnPowerOff,(PVUSBIDEVICE pInterface));
 
     /**
      * Get the state of the device.
@@ -410,11 +414,12 @@ typedef struct VUSBIDEVICE
      * @returns Device state.
      * @param   pInterface      Pointer to the device interface structure.
      */
-    DECLCALLBACKMEMBER(VUSBDEVICESTATE, pfnGetState)(PVUSBIDEVICE pInterface);
+    DECLR3CALLBACKMEMBER(VUSBDEVICESTATE, pfnGetState,(PVUSBIDEVICE pInterface));
 
 } VUSBIDEVICE;
 
 
+#ifdef IN_RING3
 /**
  * Resets the device.
  *
@@ -477,6 +482,7 @@ DECLINLINE(VUSBDEVICESTATE) VUSBIDevGetState(PVUSBIDEVICE pInterface)
 {
     return pInterface->pfnGetState(pInterface);
 }
+#endif /* IN_RING3 */
 
 
 /** @name URB
