@@ -101,7 +101,7 @@
 
 #include <VBox/VBoxGuest.h>
 
-#if defined(VBE_NEW_DYN_LIST) && defined(IN_RING3)
+#if defined(VBE_NEW_DYN_LIST) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
 # include "DevVGAModes.h"
 # include <stdio.h> /* sscan */
 #endif
@@ -112,6 +112,7 @@
 #include "Builtins2.h"
 
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -179,7 +180,9 @@ DECLINLINE(void) vga_reset_dirty(VGAState *pData, RTGCPHYS offVRAMStart, RTGCPHY
     ASMBitClearRange(&pData->au32DirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
 }
 
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 #endif /* VBOX */
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 #ifndef VBOX
 #include "vl.h"
@@ -571,7 +574,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
                 val = VBE_DISPI_MAX_BPP;
                 break;
             default:
-                val = s->vbe_regs[s->vbe_index]; 
+                val = s->vbe_regs[s->vbe_index];
                 break;
           }
       } else {
@@ -1299,7 +1302,7 @@ static void vga_get_offsets(VGAState *s,
         start_addr = s->cr[0x0d] | (s->cr[0x0c] << 8);
 
         /* line compare */
-        line_compare = s->cr[0x18] | 
+        line_compare = s->cr[0x18] |
             ((s->cr[0x07] & 0x10) << 4) |
             ((s->cr[0x09] & 0x40) << 3);
     }
@@ -1961,6 +1964,7 @@ static void vga_draw_graphic(VGAState *s, int full_update)
             multi_run--;
         }
         /* line compare acts on the displayed lines */
+/** @todo r=bird: why was our change removed? I can't immediately spot and it wasn't mentioned in the commit message... */
         if ((uint32_t)y == s->line_compare)
             addr1 = 0;
         d += linesize;
@@ -2643,7 +2647,7 @@ DECLEXPORT(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, u
 DECLEXPORT(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     VGAState *s = PDMINS2DATA(pDevIns, PVGASTATE);
-    
+
     NOREF(pvUser);
 
 #ifdef IN_GC
@@ -5022,6 +5026,7 @@ const PDMDEVREG g_DeviceVga =
 
 #endif /* !IN_RING3 */
 #endif /* VBOX */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
 /*
  * Local Variables:

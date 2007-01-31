@@ -179,7 +179,7 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 /* bird: vram_offset have been remove, function pointers declared external,
          some type changes, and some padding have been added. */
 #define VGA_STATE_COMMON                                                \
-    HCPTRTYPE(uint8_t *) vram_ptrHC;                                    \
+    R3PTRTYPE(uint8_t *) vram_ptrHC;                                    \
     uint32_t vram_size;                                                 \
     uint32_t latch;                                                     \
     uint8_t sr_index;                                                   \
@@ -202,31 +202,33 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
     uint8_t dac_cache[3]; /* used when writing */                       \
     uint8_t palette[768];                                               \
     int32_t bank_offset;                                                \
-    HCPTRTYPE(FNGETBPP *) get_bpp;                                      \
-    HCPTRTYPE(FNGETOFFSETS *) get_offsets;                              \
-    HCPTRTYPE(FNGETRESOLUTION *) get_resolution;                        \
+    int32_t padding0;                                                   \
+    R3PTRTYPE(FNGETBPP *) get_bpp;                                      \
+    R3PTRTYPE(FNGETOFFSETS *) get_offsets;                              \
+    R3PTRTYPE(FNGETRESOLUTION *) get_resolution;                        \
     VGA_STATE_COMMON_BOCHS_VBE                                          \
     /* display refresh support */                                       \
     uint32_t font_offsets[2];                                           \
     int32_t graphic_mode;                                               \
     uint8_t shift_control;                                              \
     uint8_t double_scan;                                                \
-    uint8_t padding0[2];                                                \
+    uint8_t padding1[2];                                                \
     uint32_t line_offset;                                               \
     uint32_t line_compare;                                              \
     uint32_t start_addr;                                                \
     uint32_t plane_updated;                                             \
-    uint8_t last_cw, last_ch, padding1[2];                              \
+    uint8_t last_cw, last_ch, padding2[2];                              \
     uint32_t last_width, last_height; /* in chars or pixels */          \
     uint32_t last_scr_width, last_scr_height; /* in pixels */           \
     uint32_t last_bpp;                                                  \
-    uint8_t cursor_start, cursor_end, padding2[2];                      \
+    uint8_t cursor_start, cursor_end, padding3[2];                      \
     uint32_t cursor_offset;                                             \
-    HCPTRTYPE(FNRGBTOPIXEL *) rgb_to_pixel;                             \
+    uint32_t padding4;                                                  \
+    R3PTRTYPE(FNRGBTOPIXEL *) rgb_to_pixel;                             \
     /* hardware mouse cursor support */                                 \
     uint32_t invalidated_y_table[VGA_MAX_HEIGHT / 32];                  \
-    HCPTRTYPE(FNCURSORINVALIDATE *) cursor_invalidate;                  \
-    HCPTRTYPE(FNCURSORDRAWLINE *) cursor_draw_line;                     \
+    R3PTRTYPE(FNCURSORINVALIDATE *) cursor_invalidate;                  \
+    R3PTRTYPE(FNCURSORDRAWLINE *) cursor_draw_line;                     \
     /* tell for each page if it has been updated since the last time */ \
     uint32_t last_palette[256];                                         \
     uint32_t last_ch_attr[CH_ATTR_SIZE]; /* XXX: make it dynamic */
@@ -256,7 +258,7 @@ typedef struct VGAState {
     /** Bitmap tracking dirty pages. */
     uint32_t                    au32DirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 32];
     /** Pointer to the device instance - HC Ptr. */
-    HCPTRTYPE(PPDMDEVINS)       pDevInsHC;
+    PPDMDEVINSHC                pDevInsHC;
     /* * Pointer to the device instance - GC Ptr. */
     /*GCPTRTYPE(PPDMDEVINS)   pDevInsGC;*/
 
@@ -265,19 +267,21 @@ typedef struct VGAState {
     /** The display port interface. */
     PDMIDISPLAYPORT             Port;
     /** Pointer to base interface of the driver. */
-    PPDMIBASE                   pDrvBase;
+    R3PTRTYPE(PPDMIBASE)        pDrvBase;
     /** Pointer to display connector interface of the driver. */
-    PPDMIDISPLAYCONNECTOR       pDrv;
+    R3PTRTYPE(PPDMIDISPLAYCONNECTOR) pDrv;
     /** Refresh timer handle - HC. */
     PTMTIMERHC                  RefreshTimer;
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
 
-    /** Address of external video memory buffer overlaying VRAM. */
-    void *pvExtVRAMHC;
     /** Size of the buffer*/
-    uint32_t cbExtVRAM;
-
+    uint32_t                    cbExtVRAM;
+    /** Address of external video memory buffer overlaying VRAM. */
+    R3PTRTYPE(void *)           pvExtVRAMHC;
+#if HC_ARCH_BITS ==32
+    uint32_t                    Alignment0;
+#endif
     /** The PCI device. */
     PCIDEVICE                   Dev;
 
@@ -295,19 +299,23 @@ typedef struct VGAState {
     /** VBE write data/index one byte buffer */
     uint8_t                     cbWriteVBEData;
     uint8_t                     cbWriteVBEIndex;
-#ifdef VBE_NEW_DYN_LIST
+# ifdef VBE_NEW_DYN_LIST
     /** VBE Extra Data write address one byte buffer */
     uint8_t                     cbWriteVBEExtraAddress;
-#endif
+    uint8_t                     Padding6;       /**< Alignment padding. */
+# else
+    uint8_t                     Padding6[2];    /**< Alignment padding. */
+# endif
 #endif
 
 #ifdef VBE_NEW_DYN_LIST
+    /** The VBE BIOS extra data. */
+    R3PTRTYPE(uint8_t *)        pu8VBEExtraData;
     /** The size of the VBE BIOS extra data. */
     uint16_t                    cbVBEExtraData;
-    /** The VBE BIOS extra data. */
-    uint8_t                     *pu8VBEExtraData;
     /** The VBE BIOS current memory address. */
     uint16_t                    u16VBEExtraAddress;
+    uint16_t                    Padding7[2];    /**< Alignment padding. */
 #endif
 
 #endif /* VBOX */
