@@ -84,8 +84,10 @@ Keyboard::~Keyboard()
  */
 STDMETHODIMP Keyboard::PutScancode(LONG scancode)
 {
-    int rcVBox = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)scancode);
+    if (!mpDrv)
+        return S_OK;
 
+    int rcVBox = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)scancode);
     if (VBOX_FAILURE (rcVBox))
         return E_FAIL;
 
@@ -108,6 +110,8 @@ STDMETHODIMP Keyboard::PutScancodes(LONG *scancodes,
 {
     if (!scancodes)
         return E_INVALIDARG;
+    if (!mpDrv)
+        return S_OK;
 
     LONG *currentScancode = scancodes;
     int rcVBox = VINF_SUCCESS;
