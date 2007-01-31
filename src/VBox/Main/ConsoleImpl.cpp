@@ -3252,7 +3252,8 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
-        (*it++)->OnMousePointerShapeChange(fVisible, fAlpha, xHot, yHot, width, height, (ULONG)pShape);
+        (*it++)->OnMousePointerShapeChange (fVisible, fAlpha, xHot, yHot,
+                                            width, height, (BYTE *) pShape);
 }
 
 /**

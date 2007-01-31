@@ -72,16 +72,16 @@ class VBoxConsoleView;
 class VBoxResizeEvent : public QEvent
 {
 public:
-    VBoxResizeEvent (FramebufferPixelFormat_T f, void *v, unsigned l, int w, int h) :
+    VBoxResizeEvent (FramebufferPixelFormat_T f, uchar *v, unsigned l, int w, int h) :
         QEvent ((QEvent::Type) VBoxDefs::ResizeEventType), fmt (f), vr (v), lsz (l), wdt (w), hgt (h) {}
     FramebufferPixelFormat_T  pixelFormat() { return fmt; }
-    void *vram() { return vr; }
+    uchar *vram() { return vr; }
     unsigned lineSize() { return lsz; }
     int width() { return wdt; }
     int height() { return hgt; }
 private:
     FramebufferPixelFormat_T fmt;
-    void *vr;
+    uchar *vr;
     unsigned lsz;
     int wdt;
     int hgt;
@@ -203,7 +203,7 @@ public:
 #endif
 
     // IFramebuffer COM methods
-    STDMETHOD(COMGETTER(Address)) (ULONG *aAddress);
+    STDMETHOD(COMGETTER(Address)) (BYTE **aAddress);
     STDMETHOD(COMGETTER(Width)) (ULONG *aWidth);
     STDMETHOD(COMGETTER(Height)) (ULONG *aHeight);
     STDMETHOD(COMGETTER(ColorDepth)) (ULONG *aColorDepth);
@@ -216,7 +216,7 @@ public:
     STDMETHOD(Unlock)();
 
     STDMETHOD(RequestResize) (FramebufferPixelFormat_T aPixelFormat,
-                              ULONG aVRAM, ULONG aLineSize,
+                              BYTE *aVRAM, ULONG aLineSize,
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished);
 
@@ -361,7 +361,7 @@ private:
     SDL_Surface *mScreen;
     SDL_Surface *mSurfVRAM;
 
-    void *mPtrVRAM;
+    uchar *mPtrVRAM;
     ULONG mLineSize;
     FramebufferPixelFormat_T mPixelFormat;
 };
@@ -396,8 +396,8 @@ public:
 private:
     void releaseObjects();
 
-    void setupSurface (FramebufferPixelFormat_T pixelFormat, void *pvVRAM, ULONG lineSize, ULONG w, ULONG h);
-    void recreateSurface (FramebufferPixelFormat_T pixelFormat, void *pvVRAM, ULONG lineSize, ULONG w, ULONG h);
+    void setupSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h);
+    void recreateSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h);
     void deleteSurface ();
     void drawRect (ULONG x, ULONG y, ULONG w, ULONG h);
     void getWindowPosition (void);

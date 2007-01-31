@@ -55,11 +55,11 @@ HRESULT InternalFramebuffer::init(ULONG width, ULONG height, ULONG depth)
 // IFramebuffer properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP InternalFramebuffer::COMGETTER(Address) (ULONG *address)
+STDMETHODIMP InternalFramebuffer::COMGETTER(Address) (BYTE **address)
 {
     if (!address)
         return E_POINTER;
-    *address = (ULONG)mData;
+    *address = mData;
     return S_OK;
 }
 
@@ -147,8 +147,10 @@ STDMETHODIMP InternalFramebuffer::NotifyUpdate(ULONG x, ULONG y,
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::RequestResize(FramebufferPixelFormat_T pixelFormat, ULONG vram, ULONG lineSize, ULONG w, ULONG h,
-                                                BOOL *finished)
+STDMETHODIMP
+InternalFramebuffer::RequestResize(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+                                   ULONG lineSize, ULONG w, ULONG h,
+                                   BOOL *finished)
 {
     if (!finished)
         return E_POINTER;

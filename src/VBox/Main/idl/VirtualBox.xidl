@@ -2364,7 +2364,7 @@
                     Height of the pointer shape in pixels.
                 </desc>
             </param>
-            <param name="shape" type="unsigned long" dir="in">
+            <param name="shape" type="octet" mod="ptr" dir="in">
                 <desc>
                     Address of the shape buffer.
 
@@ -5389,7 +5389,7 @@
         name="IFramebuffer" extends="$unknown"
         uuid="4481F27F-5C79-48d9-86C1-A2EC6747034D"
     >
-        <attribute name="address" type="unsigned long" readonly="yes">
+        <attribute name="address" type="octet" mod="ptr" readonly="yes">
             <desc>Address of the start byte of the framebuffer.</desc>
         </attribute>
 
@@ -5509,7 +5509,7 @@
             <param name="pixelFormat" type="FramebufferPixelFormat" dir="in">
                 <desc>Pixel format of the surface (BPP and layout)</desc>
             </param>
-            <param name="vram" type="unsigned long" dir="in">
+            <param name="vram" type="octet" mod="ptr" dir="in">
                 <desc>Pointer to the guest VRAM (NULL for non linear modes)</desc>
             </param>
             <param name="lineSize" type="unsigned long" dir="in"/>
@@ -5635,8 +5635,8 @@
 
         <attribute name="colorDepth" type="unsigned long" readonly="yes">
             <desc>
-                Current guest display color depth. Note that this might
-                be different from <link to="IFramebuffer::colorDepth">IFramebuffer::colorDepth</link>.
+                Current guest display color depth. Note that this may differ
+                from <link to="IFramebuffer::colorDepth">IFramebuffer::colorDepth</link>.
             </desc>
         </attribute>
 
@@ -5651,7 +5651,7 @@
             <desc>
                Requests access to the internal framebuffer.
             </desc>
-            <param name="address" type="unsigned long" dir="return"/>
+            <param name="address" type="octet" mod="ptr" dir="return"/>
         </method>
 
         <method name="unlockFramebuffer">
@@ -5688,7 +5688,7 @@
                 Takes a screen shot of the requested size and copies it to the
                 32-bpp buffer allocated by the caller.
             </desc>
-            <param name="address" type="unsigned long" dir="in"/>
+            <param name="address" type="octet" mod="ptr" dir="in"/>
             <param name="width" type="unsigned long" dir="in"/>
             <param name="height" type="unsigned long" dir="in"/>
         </method>
@@ -5698,7 +5698,7 @@
                 Draws a 32-bpp image of the specified size from the given buffer
                 to the given point on the VM display.
             </desc>
-            <param name="address" type="unsigned long" dir="in"/>
+            <param name="address" type="octet" mod="ptr" dir="in"/>
             <param name="x" type="unsigned long" dir="in"/>
             <param name="y" type="unsigned long" dir="in"/>
             <param name="width" type="unsigned long" dir="in"/>

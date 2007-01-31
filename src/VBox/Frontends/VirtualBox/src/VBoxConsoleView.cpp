@@ -257,12 +257,12 @@ public:
     STDMETHOD(OnMousePointerShapeChange) (BOOL visible, BOOL alpha,
                                           ULONG xhot, ULONG yhot,
                                           ULONG width, ULONG height,
-                                          ULONG shape)
+                                          BYTE *shape)
     {
         QApplication::postEvent (
             view, new MousePointerChangeEvent (visible, alpha, xhot, yhot,
                                                width, height,
-                                               (const uchar*) shape)
+                                               shape)
         );
         return S_OK;
     }
@@ -1784,8 +1784,7 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
                  */
                 QImage shot = QImage (fb->width(), fb->height(), 32, 0);
                 CDisplay dsp = cconsole.GetDisplay();
-                dsp.TakeScreenShot ((uintptr_t) shot.bits(),
-                                    shot.width(), shot.height());
+                dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
                 /*
                  *  TakeScreenShot() may fail if, e.g. the Paused notification
                  *  was delivered after the machine execution was resumed. It's

@@ -386,11 +386,11 @@ public:
     NS_DECL_ISUPPORTS
 
     STDMETHOD(OnMousePointerShapeChange) (BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                          ULONG width, ULONG height, ULONG shape)
+                                          ULONG width, ULONG height, BYTE *shape)
     {
         PointerShapeChangeData *data;
         data = new PointerShapeChangeData (visible, alpha, xHot, yHot, width, height,
-                                           (const uint8_t *) shape);
+                                           shape);
         Assert (data);
         if (!data)
             return E_FAIL;

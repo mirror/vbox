@@ -78,8 +78,9 @@ public:
 #endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
 
-    /* IConsoleCallback methods */
-    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot, ULONG width, ULONG height, ULONG shape)
+    // IConsoleCallback methods
+    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
+                                         ULONG width, ULONG height, BYTE *shape)
     {
         return S_OK;
     }
@@ -113,12 +114,12 @@ public:
 
     // IDisplay methods
     STDMETHOD(SetupInternalFramebuffer)(ULONG depth);
-    STDMETHOD(LockFramebuffer)(ULONG *address);
+    STDMETHOD(LockFramebuffer)(BYTE **address);
     STDMETHOD(UnlockFramebuffer)();
     STDMETHOD(RegisterExternalFramebuffer)(IFramebuffer *frameBuf);
     STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG colorDepth);
-    STDMETHOD(TakeScreenShot)(ULONG address, ULONG width, ULONG height);
-    STDMETHOD(DrawToScreen)(ULONG address, ULONG x, ULONG y, ULONG width, ULONG height);
+    STDMETHOD(TakeScreenShot)(BYTE *address, ULONG width, ULONG height);
+    STDMETHOD(DrawToScreen)(BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
     STDMETHOD(InvalidateAndUpdate)();
     STDMETHOD(ResizeCompleted)();
     STDMETHOD(UpdateCompleted)();

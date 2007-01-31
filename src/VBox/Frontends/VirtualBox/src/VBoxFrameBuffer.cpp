@@ -58,11 +58,11 @@ VBoxFrameBuffer::~VBoxFrameBuffer()
 // IFramebuffer implementation methods.
 // Just forwarders to relevant class methods.
 
-STDMETHODIMP VBoxFrameBuffer::COMGETTER(Address) (ULONG *aAddress)
+STDMETHODIMP VBoxFrameBuffer::COMGETTER(Address) (BYTE **aAddress)
 {
     if (!aAddress)
         return E_POINTER;
-    *aAddress = (uintptr_t) address();
+    *aAddress = address();
     return S_OK;
 }
 
@@ -139,12 +139,12 @@ STDMETHODIMP VBoxFrameBuffer::Unlock()
 
 /** @note This method is called on EMT from under this object's lock */
 STDMETHODIMP VBoxFrameBuffer::RequestResize (FramebufferPixelFormat_T aPixelFormat,
-                                             ULONG aVRAM, ULONG aLineSize,
+                                             BYTE *aVRAM, ULONG aLineSize,
                                              ULONG aWidth, ULONG aHeight,
                                              BOOL *aFinished)
 {
     QApplication::postEvent (mView,
-                             new VBoxResizeEvent (aPixelFormat, (void *) aVRAM,
+                             new VBoxResizeEvent (aPixelFormat, aVRAM,
                                                   aLineSize, aWidth, aHeight));
 
 #ifdef DEBUG_sunlover
