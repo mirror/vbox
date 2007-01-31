@@ -1953,6 +1953,7 @@ typedef struct PDMLED
 {
     /** Just a magic for sanity checking. */
     uint32_t    u32Magic;
+    uint32_t    u32Alignment;           /**< structure size alignment. */
     /** The actual LED status.
      * Only the device is allowed to change this. */
     PDMLEDCORE  Actual;
@@ -4268,6 +4269,7 @@ typedef struct PDMRTCREG
 {
     /** Structure version number. PDM_RTCREG_VERSION defines the current version. */
     uint32_t            u32Version;
+    uint32_t            u32Alignment;   /**< structure size alignment. */
 
     /**
      * Write to a CMOS register and update the checksum if necessary.
@@ -5372,6 +5374,13 @@ typedef struct PDMDEVINS
 {
     /** Structure version. PDM_DEVINS_VERSION defines the current version. */
     uint32_t                    u32Version;
+    /** Device instance number. */
+    RTUINT                      iInstance;
+    /** The base interface of the device.
+     * The device constructor initializes this if it has any
+     * device level interfaces to export. To obtain this interface
+     * call PDMR3QueryDevice(). */
+    PDMIBASE                    IBase;
 
     /** Internal data. */
     union
@@ -5384,32 +5393,25 @@ typedef struct PDMDEVINS
 
     /** Pointer the HC PDM Device API. */
     HCPTRTYPE(PCPDMDEVHLP)      pDevHlp;
-    /** Pointer the GC PDM Device API. */
-    GCPTRTYPE(PCPDMDEVHLPGC)    pDevHlpGC;
     /** Pointer the R0 PDM Device API. */
-    HCPTRTYPE(PCPDMDEVHLPR0)    pDevHlpR0;
+    R0PTRTYPE(PCPDMDEVHLPR0)    pDevHlpR0;
     /** Pointer to device registration structure.  */
     HCPTRTYPE(PCPDMDEVREG)      pDevReg;
     /** Configuration handle. */
     HCPTRTYPE(PCFGMNODE)        pCfgHandle;
-    /** Device instance number. */
-    RTUINT                      iInstance;
     /** Pointer to device instance data. */
     HCPTRTYPE(void *)           pvInstanceDataHC;
+    /** Pointer the GC PDM Device API. */
+    GCPTRTYPE(PCPDMDEVHLPGC)    pDevHlpGC;
     /** Pointer to device instance data. */
     GCPTRTYPE(void *)           pvInstanceDataGC;
-    /** The base interface of the device.
-     * The device constructor initializes this if it has any
-     * device level interfaces to export. To obtain this interface
-     * call PDMR3QueryDevice(). */
-    PDMIBASE                    IBase;
 #if HC_ARCH_BITS == 32
     /* padding to make achInstanceData aligned at 16 byte boundrary. */
     uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 2 : 0];
-#endif 
+#endif
     /** Device instance data. The size of this area is defined
      * in the PDMDEVREG::cbInstanceData field. */
-    char                        achInstanceData[4];
+    char                        achInstanceData[8];
 } PDMDEVINS;
 
 /** Current DEVREG version number. */
