@@ -431,6 +431,7 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "                            -target <target>\n"
                  "                            [-port <port>]\n"
                  "                            [-lun <lun>]\n"
+                 "                            [-encodedlun <lun>]\n"
                  "                            [-username <username>]\n"
                  "                            [-password <password>]\n"
                  "                            [-comment <comment>]\n"
@@ -657,7 +658,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     BOOL accessible = FALSE;
     CHECK_ERROR (machine, COMGETTER(Accessible) (&accessible));
     CheckComRCReturnRC (rc);
-    
+
     if (!accessible)
     {
         RTPrintf ("Name:            <inaccessible!>\n");
@@ -675,7 +676,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         RTPrintf ("\n");
         return S_OK;
     }
-    
+
     Bstr machineName;
     rc = machine->COMGETTER(Name)(machineName.asOutParam());
     RTPrintf("Name:            %lS\n", machineName.raw());
@@ -2328,7 +2329,32 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             }
             i++;
-            lun = atoi(argv[i]);
+            char *pszNext;
+            int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
+            if (VBOX_FAILURE(rc) || *pszNext != '\0' || lun >= 16384)
+                return errorArgument("Invalid LUN number '%s'", argv[i]);
+            if (lun <= 255)
+            {
+                /* Assume bus identifier = 0. */
+                lun = (lun << 48); /* uses peripheral device addressing method */
+            }
+            else
+            {
+                /* Check above already limited the LUN to 14 bits. */
+                lun = (lun << 48) | (1 << 62); /* uses flat space addressing method */
+            }
+        }
+        else if (strcmp(argv[i], "-encodedlun") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            char *pszNext;
+            int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
+            if (VBOX_FAILURE(rc) || *pszNext != '\0')
+                return errorArgument("Invalid encoded LUN number '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-username") == 0)
         {
@@ -4707,14 +4733,14 @@ static int handleCreateHostIF(int argc, char *argv[],
     {
         ComPtr<IHost> host;
         CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
-    
+
         ComPtr<IHostNetworkInterface> hostif;
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(host,
             CreateHostNetworkInterface(Bstr(argv[0]),
                                        hostif.asOutParam(),
                                        progress.asOutParam()));
-    
+
         showProgress(progress);
         HRESULT result;
         CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&result));
@@ -4746,7 +4772,7 @@ static int handleRemoveHostIF(int argc, char *argv[],
         CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
 
         ComPtr<IHostNetworkInterface> hostif;
-    
+
         /* first guess is that it's a UUID */
         Guid uuid(argv[0]);
         if (uuid.isEmpty())
@@ -4757,7 +4783,7 @@ static int handleRemoveHostIF(int argc, char *argv[],
             CHECK_ERROR_BREAK(coll, FindByName(Bstr(argv[0]), hostif.asOutParam()));
             CHECK_ERROR_BREAK(hostif, COMGETTER(Id)(uuid.asOutParam()));
         }
-    
+
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(host,
             RemoveHostNetworkInterface(uuid,
