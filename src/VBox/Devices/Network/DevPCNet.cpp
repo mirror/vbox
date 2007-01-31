@@ -140,6 +140,7 @@ struct PCNetState_st
     uint16_t                            aBCR[BCR_MAX_RAP];
     uint16_t                            aMII[MII_MAX_REG];
     uint16_t                            u16CSR0LastSeenByGuest; /** @todo SSM!! */
+    uint16_t                            Alignment0[HC_ARCH_BITS == 32 ? 2 : 4];
     /** Last time we polled the queues */
     uint64_t                            u64LastPoll;
 
@@ -167,19 +168,19 @@ struct PCNetState_st
     RTGCPHYS                            GCUpperPhys;
 
     /** Transmit signaller */
-    HCPTRTYPE(PPDMQUEUE)                pXmitQueueHC;
     GCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
+    HCPTRTYPE(PPDMQUEUE)                pXmitQueueHC;
 
     /** Receive signaller */
     HCPTRTYPE(PPDMQUEUE)                pCanRxQueueHC;
     GCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
+    /** Pointer to the device instance. */
+    GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
+    /** Pointer to the device instance. */
+    HCPTRTYPE(PPDMDEVINS)               pDevInsHC;
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
     PTMTIMERHC                          pTimerRestore;
-    /** Pointer to the device instance. */
-    HCPTRTYPE(PPDMDEVINS)               pDevInsHC;
-    /** Pointer to the device instance. */
-    GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
     /** Pointer to the connector of the attached network driver. */
     HCPTRTYPE(PPDMINETWORKCONNECTOR)    pDrv;
     /** Pointer to the attached network driver. */
@@ -231,6 +232,7 @@ struct PCNetState_st
     bool                                fGCEnabled;
     bool                                fR0Enabled;
     bool                                fAm79C973;
+    bool                                afAlignment[5];
 
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV                      StatMMIOReadGC;
@@ -524,6 +526,11 @@ typedef struct RMD
 AssertCompileSize(RMD, 16);
 #pragma pack()
 
+
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 #define PRINT_TMD(T) Log((    \
         "TMD0 : TBADR=0x%08x\n" \
         "TMD1 : OWN=%d, ERR=%d, FCS=%d, LTI=%d, "       \
@@ -924,9 +931,6 @@ DECLINLINE(RTGCPHYS) pcnetTdraAddr(PCNetState *pData, int idx)
     return pData->GCTDRA + ((CSR_XMTRL(pData) - idx) << pData->iLog2DescSize);
 }
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
 __BEGIN_DECLS
 PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                                    RTIOPORT Port, uint32_t *pu32, unsigned cb);
@@ -1230,7 +1234,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     RTGCPHYS RDRAPageEnd   = (pcnetRdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
     RTGCPHYS TDRAPageStart = pData->GCTDRA & ~PAGE_OFFSET_MASK;
     RTGCPHYS TDRAPageEnd   = (pcnetTdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
-    
+
     if (    RDRAPageStart > TDRAPageEnd
         ||  TDRAPageStart > RDRAPageEnd)
     {
@@ -4177,3 +4181,5 @@ const PDMDEVREG g_DevicePCNet =
 };
 
 #endif /* IN_RING3 */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
