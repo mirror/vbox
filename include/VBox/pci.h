@@ -95,26 +95,27 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 typedef struct PCIDevice
 {
     /** PCI config space. */
-    uint8_t             config[256];
+    uint8_t                 config[256];
 
     /** Read only data.
      * @{
      */
     /** PCI device number on the pci bus. */
-    int                 devfn;
+    int32_t                 devfn;
+    uint32_t                Alignment0; /**< Alignment. */
     /** Device name. */
-    const char         *name;
+    R3PTRTYPE(const char *) name;
     /** Pointer to the device instance which registered the device. */
-    PPDMDEVINSHC        pDevIns;
+    PPDMDEVINSR3            pDevIns;
     /**  @} */
 
     /** Internal data. */
     union
     {
 #ifdef __PCIDEVICEINT_DECLARED__
-        PCIDEVICEINT    s;
+        PCIDEVICEINT        s;
 #endif
-        char            padding[196];
+        char                padding[224];
     } Int;
 } PCIDEVICE;
 
