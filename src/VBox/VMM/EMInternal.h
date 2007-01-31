@@ -124,6 +124,7 @@ typedef struct EMSTATS
     STAMCOUNTER             StatHCSub;
     STAMCOUNTER             StatGCAdc;
     STAMCOUNTER             StatHCAdc;
+    STAMCOUNTER             StatGCRdtsc;
 
     STAMCOUNTER             StatGCInterpretFailed;
     STAMCOUNTER             StatHCInterpretFailed;
@@ -187,6 +188,7 @@ typedef struct EMSTATS
     STAMCOUNTER             StatHCFailedSub;
     STAMCOUNTER             StatGCFailedWbInvd;
     STAMCOUNTER             StatHCFailedWbInvd;
+    STAMCOUNTER             StatGCFailedRdtsc;
 
     STAMCOUNTER             StatGCFailedUserMode;
     STAMCOUNTER             StatHCFailedUserMode;

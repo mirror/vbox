@@ -560,6 +560,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_INVLPG:
         case OP_LLDT:
         case OP_STI:
+        case OP_RDTSC:
         {
             uint32_t cbIgnored;
             int rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, PC, &cbIgnored);
@@ -568,22 +569,6 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
             else if (rc == VERR_EM_INTERPRETER)
                 rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
             return trpmGCExitTrap(pVM, rc, pRegFrame);
-        }
-
-        case OP_RDTSC:
-        {
-            unsigned uCR4 = CPUMGetGuestCR4(pVM);
-
-            if (uCR4 & X86_CR4_TSD)
-                break; /* genuine #GP */
-
-            uint64_t uTicks = TMCpuTickGet(pVM);
-
-            pRegFrame->eax = uTicks;
-            pRegFrame->edx = (uTicks >> 32ULL);
-
-            pRegFrame->eip += pCpu->opsize;
-            return trpmGCExitTrap(pVM, VINF_SUCCESS, pRegFrame);
         }
     }
 
