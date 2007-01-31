@@ -278,7 +278,7 @@ void VBoxDDRAWFrameBuffer::moveEvent (QMoveEvent *me)
  * Assigns VBoxDDRAWFrameBuffer::mSurface to the new surface
  * and VBoxDDRAWFrameBuffer::mPixelFormat to format of the created surface.
  */
-void VBoxDDRAWFrameBuffer::setupSurface (FramebufferPixelFormat_T pixelFormat, void *pvVRAM, ULONG lineSize, ULONG w, ULONG h)
+void VBoxDDRAWFrameBuffer::setupSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h)
 {
     /* Check requested pixel format. */
     switch (pixelFormat)
@@ -314,7 +314,7 @@ void VBoxDDRAWFrameBuffer::setupSurface (FramebufferPixelFormat_T pixelFormat, v
  * Assigns VBoxDDRAWFrameBuffer::mSurface to the new surface if
  * the requested format is supported and the surface was successfully created.
  */
-void VBoxDDRAWFrameBuffer::recreateSurface (FramebufferPixelFormat_T pixelFormat, void *pvVRAM, ULONG lineSize, ULONG w, ULONG h)
+void VBoxDDRAWFrameBuffer::recreateSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h)
 {
     HRESULT rc;
 

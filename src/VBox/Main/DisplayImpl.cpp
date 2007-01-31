@@ -196,7 +196,7 @@ void Display::callFramebufferResize (FramebufferPixelFormat_T pixelFormat, void 
     /* Reset the event here. It could be signalled before it gets to after 'if (!finished)' */
     RTSemEventMultiReset(mResizeSem);
 
-    mFramebuffer->RequestResize (pixelFormat, (ULONG)pvVRAM, cbLine, w, h, &finished);
+    mFramebuffer->RequestResize (pixelFormat, (BYTE *) pvVRAM, cbLine, w, h, &finished);
 
     if (!finished)
     {
@@ -269,7 +269,7 @@ void Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, 
         Assert(pixelFormat == newPixelFormat);
 
         /* Framebuffer successfully set the requested format. */
-        ULONG address;
+        BYTE *address;
         mFramebuffer->COMGETTER(Address) (&address);
 
         ULONG lineSize;
@@ -281,7 +281,7 @@ void Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, 
          */
         uint32_t cbBuffer = cbLine * h;
 
-        int rc = mpDrv->pUpPort->pfnSetupVRAM (mpDrv->pUpPort, (void *)address, cbBuffer);
+        int rc = mpDrv->pUpPort->pfnSetupVRAM (mpDrv->pUpPort, address, cbBuffer);
 
         if (VBOX_FAILURE(rc))
         {
@@ -1213,7 +1213,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
     return S_OK;
 }
 
-STDMETHODIMP Display::LockFramebuffer (ULONG *address)
+STDMETHODIMP Display::LockFramebuffer (BYTE **address)
 {
     if (!address)
         return E_POINTER;
@@ -1228,7 +1228,7 @@ STDMETHODIMP Display::LockFramebuffer (ULONG *address)
 
         mFramebuffer->Lock();
         mFramebufferOpened = true;
-        *address = (ULONG)mpDrv->Connector.pu8Data;
+        *address = mpDrv->Connector.pu8Data;
         return S_OK;
     }
 
@@ -1323,20 +1323,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColor
     return S_OK;
 }
 
-/**
- * Takes a screen shot of the requested size and copies it to the buffer
- * allocated by the caller. The screen shot is always a 32-bpp image, so the
- * size of the buffer must be at least (((width * 32 + 31) / 32) * 4) * height
- * (i.e. dword-aligned). If the requested screen shot dimentions differ from
- * the actual VM display size then the screen shot image is stretched and/or
- * shrunk accordingly.
- *
- * @returns COM status code
- * @param address the address of the buffer allocated by the caller
- * @param width the width of the screenshot to take
- * @param height the height of the screenshot to take
- */
-STDMETHODIMP Display::TakeScreenShot (ULONG address, ULONG width, ULONG height)
+STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 {
     /// @todo (r=dmik) this function may take too long to complete if the VM
     //  is doing something like saving state right now. Which, in case if it
@@ -1379,7 +1366,7 @@ STDMETHODIMP Display::TakeScreenShot (ULONG address, ULONG width, ULONG height)
         size_t cbData = RT_ALIGN_Z(width, 4) * 4 * height;
         rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
-                             (void *)address, cbData, NULL, NULL, NULL);
+                             address, cbData, NULL, NULL, NULL);
         if (VBOX_SUCCESS(rcVBox))
         {
             rcVBox = pReq->iStatus;
@@ -1405,20 +1392,7 @@ STDMETHODIMP Display::TakeScreenShot (ULONG address, ULONG width, ULONG height)
     return rc;
 }
 
-/**
- * Draws an image of the specified size from the given buffer to the given
- * point on the VM display. The image is assumed to have a 32-bit depth, so the
- * size of one scanline must be ((width * 32 + 31) / 32) * 4), i.e.
- * dword-aligned. The total image size in the buffer is height * scanline size.
- *
- * @returns COM status code
- * @param address the address of the buffer containing the image
- * @param x the x coordinate on the VM display to place the image to
- * @param y the y coordinate on the VM display to place the image to
- * @param width the width of the image in the buffer
- * @param height the height of the image in the buffer
- */
-STDMETHODIMP Display::DrawToScreen (ULONG address, ULONG x, ULONG y,
+STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
                                     ULONG width, ULONG height)
 {
     /// @todo (r=dmik) this function may take too long to complete if the VM
@@ -1430,6 +1404,11 @@ STDMETHODIMP Display::DrawToScreen (ULONG address, ULONG x, ULONG y,
     LogFlowFuncEnter();
     LogFlowFunc (("address=%p, x=%d, y=%d, width=%d, height=%d\n",
                   address, x, y, width, height));
+
+    if (!address)
+        return E_POINTER;
+    if (!width || !height)
+        return E_INVALIDARG;
 
     AutoLock lock(this);
     CHECK_READY();
@@ -1446,7 +1425,7 @@ STDMETHODIMP Display::DrawToScreen (ULONG address, ULONG x, ULONG y,
     PVMREQ pReq;
     int rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6, mpDrv->pUpPort,
-                             (void *)address, x, y, width, height);
+                             address, x, y, width, height);
     if (VBOX_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
@@ -1616,7 +1595,7 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
     if (mFramebuffer)
     {
         HRESULT rc;
-        ULONG address = 0;
+        BYTE *address = 0;
         rc = mFramebuffer->COMGETTER(Address) (&address);
         AssertComRC (rc);
         ULONG lineSize = 0;
@@ -1639,7 +1618,7 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
          *  aCheckOld = false.
          */
         if (aCheckParams &&
-            (mLastAddress != (uint8_t *) address ||
+            (mLastAddress != address ||
              mLastLineSize != lineSize ||
              mLastColorDepth != colorDepth ||
              mLastWidth != (int) width ||

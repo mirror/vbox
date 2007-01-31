@@ -257,7 +257,7 @@ STDMETHODIMP VBoxSDLFB::Unlock()
  * @returns COM status code.
  * @param   address Pointer to result variable.
  */
-STDMETHODIMP VBoxSDLFB::COMGETTER(Address)(ULONG *address)
+STDMETHODIMP VBoxSDLFB::COMGETTER(Address)(BYTE **address)
 {
     LogFlow(("VBoxSDLFB::GetAddress\n"));
     if (!address)
@@ -265,7 +265,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(Address)(ULONG *address)
 
     if (mSurfVRAM)
     {
-        *address = (uintptr_t)mSurfVRAM->pixels;
+        *address = (BYTE *) mSurfVRAM->pixels;
     }
     else
     {
@@ -423,8 +423,8 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
  *                      for all call to the resize complete API before
  *                      continuing with display updates.
  */
-STDMETHODIMP VBoxSDLFB::RequestResize(FramebufferPixelFormat_T pixelFormat, ULONG vram, ULONG lineSize, ULONG w, ULONG h,
-                                      BOOL *finished)
+STDMETHODIMP VBoxSDLFB::RequestResize(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+                                      ULONG lineSize, ULONG w, ULONG h, BOOL *finished)
 {
     LogFlow(("VBoxSDLFB::RequestResize: w = %d, h = %d, pixelFormat: %d, vram = %p, lineSize = %d\n",
              w, h, pixelFormat, vram, lineSize));
@@ -442,7 +442,7 @@ STDMETHODIMP VBoxSDLFB::RequestResize(FramebufferPixelFormat_T pixelFormat, ULON
     mGuestXRes = w;
     mGuestYRes = h;
     mPixelFormat = pixelFormat;
-    mPtrVRAM = (void *)vram;
+    mPtrVRAM = vram;
     mLineSize = lineSize;
 
     SDL_Event event;

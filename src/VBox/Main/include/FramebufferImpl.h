@@ -47,7 +47,7 @@ public:
     HRESULT init (ULONG width, ULONG height, ULONG depth);
 
     // IFramebuffer properties
-    STDMETHOD(COMGETTER(Address)) (ULONG *address);
+    STDMETHOD(COMGETTER(Address)) (BYTE **address);
     STDMETHOD(COMGETTER(Width)) (ULONG *width);
     STDMETHOD(COMGETTER(Height)) (ULONG *height);
     STDMETHOD(COMGETTER(ColorDepth)) (ULONG *colorDepth);
@@ -62,7 +62,8 @@ public:
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h,
                             BOOL *finished);
-    STDMETHOD(RequestResize)(FramebufferPixelFormat_T pixelFormat, ULONG vram, ULONG lineSize, ULONG w, ULONG h,
+    STDMETHOD(RequestResize)(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+                             ULONG lineSize, ULONG w, ULONG h,
                              BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation,
                                   BOOL *supported);

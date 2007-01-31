@@ -88,7 +88,7 @@ public:
     STDMETHOD(COMGETTER(Height))(ULONG *height);
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
-    STDMETHOD(COMGETTER(Address))(ULONG *address);
+    STDMETHOD(COMGETTER(Address))(BYTE **address);
     STDMETHOD(COMGETTER(ColorDepth))(ULONG *colorDepth);
     STDMETHOD(COMGETTER(LineSize))(ULONG *lineSize);
     STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *pixelFormat);
@@ -97,8 +97,8 @@ public:
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
-    STDMETHOD(RequestResize)(FramebufferPixelFormat_T pixelFormat, ULONG vram, ULONG lineSize, ULONG w, ULONG h,
-                             BOOL *finished);
+    STDMETHOD(RequestResize)(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+                             ULONG lineSize, ULONG w, ULONG h, BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation, BOOL *supported);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);
     STDMETHOD(SolidFill)(ULONG x, ULONG y, ULONG width, ULONG height,
@@ -178,7 +178,7 @@ private:
 #endif
     SDL_Surface *mSurfVRAM;
 
-    void *mPtrVRAM;
+    BYTE *mPtrVRAM;
     ULONG mLineSize;
     FramebufferPixelFormat_T mPixelFormat;
 
