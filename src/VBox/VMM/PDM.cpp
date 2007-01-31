@@ -539,15 +539,17 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /* compare */
         if (!pDevIns)
         {
-            AssertMsgFailed(("Device '%s'/%d not found in current config\n", szDeviceName, iInstance));
+            LogRel(("Device '%s'/%d not found in current config\n", szDeviceName, iInstance));
+            AssertFailed();
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
         if (    strcmp(szDeviceName, pDevIns->pDevReg->szDeviceName)
             ||  pDevIns->iInstance != iInstance
             )
         {
-            AssertMsgFailed(("u32Sep=%d loaded '%s'/%d  configured '%s'/%d\n",
-                             u32Sep, szDeviceName, iInstance, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+            LogRel(("u32Sep=%d loaded '%s'/%d  configured '%s'/%d\n",
+                    u32Sep, szDeviceName, iInstance, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+            AssertFailed();
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
     }
@@ -557,7 +559,8 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      */
     if (pDevIns)
     {
-        AssertMsgFailed(("Device '%s'/%d not found in saved state\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        LogRel(("Device '%s'/%d not found in saved state\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        AssertFailed();
         return VERR_SSM_LOAD_CONFIG_MISMATCH;
     }
 
