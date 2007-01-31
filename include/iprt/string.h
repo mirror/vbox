@@ -613,7 +613,7 @@ RTDECL(char *) RTStrStripL(const char *psz);
 RTDECL(char *) RTStrStripR(char *psz);
 
 
-/** @defgroup rt_str_conv   String To/From Number Convertions
+/** @defgroup rt_str_conv   String To/From Number Conversions
  * @ingroup grp_rt_str
  * @{ */
 
@@ -621,11 +621,11 @@ RTDECL(char *) RTStrStripR(char *psz);
  * Converts a string representation of a number to a 64-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu64        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase, uint64_t *pu64);
@@ -644,11 +644,11 @@ RTDECL(uint64_t) RTStrToUInt64(const char *pszValue);
  * Converts a string representation of a number to a 32-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu32        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase, uint32_t *pu32);
@@ -667,11 +667,11 @@ RTDECL(uint32_t) RTStrToUInt32(const char *pszValue);
  * Converts a string representation of a number to a 16-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu16        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt16Ex(const char *pszValue, char **ppszNext, unsigned uBase, uint16_t *pu16);
@@ -690,11 +690,11 @@ RTDECL(uint16_t) RTStrToUInt16(const char *pszValue);
  * Converts a string representation of a number to a 8-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu8         Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase, uint8_t *pu8);
@@ -713,11 +713,11 @@ RTDECL(uint8_t) RTStrToUInt8(const char *pszValue);
  * Converts a string representation of a number to a 64-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi64        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase, int64_t *pi64);
@@ -736,11 +736,11 @@ RTDECL(int64_t) RTStrToInt64(const char *pszValue);
  * Converts a string representation of a number to a 32-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi32        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase, int32_t *pi32);
@@ -759,11 +759,11 @@ RTDECL(int32_t) RTStrToInt32(const char *pszValue);
  * Converts a string representation of a number to a 16-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi16        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBase, int16_t *pi16);
@@ -782,11 +782,11 @@ RTDECL(int16_t) RTStrToInt16(const char *pszValue);
  * Converts a string representation of a number to a 8-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi8        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase, int8_t *pi8);
