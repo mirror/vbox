@@ -2341,7 +2341,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
             else
             {
                 /* Check above already limited the LUN to 14 bits. */
-                lun = (lun << 48) | (1 << 62); /* uses flat space addressing method */
+                lun = (lun << 48) | RT_BIT_64(62); /* uses flat space addressing method */
             }
         }
         else if (strcmp(argv[i], "-encodedlun") == 0)
