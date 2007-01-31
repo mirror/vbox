@@ -68,6 +68,7 @@ typedef struct RTCState RTCState;
 #define RTC_CRC_HIGH    0x2e
 #define RTC_CRC_LOW     0x2f
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -78,6 +79,7 @@ PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 __END_DECLS
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
 /*#define DEBUG_CMOS*/
 
@@ -109,18 +111,22 @@ __END_DECLS
 struct RTCState {
     uint8_t cmos_data[128];
     uint8_t cmos_index;
+    uint8_t Alignment0[7];
     struct tm current_tm;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && IN_GC
+    uint32_t Alignment1[3];
+#endif
     int32_t irq;
     /* periodic timer */
-    PTMTIMERHC  pPeriodicTimerHC;
     PTMTIMERGC  pPeriodicTimerGC;
+    PTMTIMERHC  pPeriodicTimerHC;
     int64_t next_periodic_time;
     /* second update */
     int64_t next_second_time;
     PTMTIMERHC      pSecondTimerHC;
     PTMTIMERGC      pSecondTimerGC;
-    PTMTIMERHC      pSecondTimer2HC;
     PTMTIMERGC      pSecondTimer2GC;
+    PTMTIMERHC      pSecondTimer2HC;
     /** Pointer to the device instance - HC Ptr. */
     PPDMDEVINSHC    pDevInsHC;
     /** Pointer to the device instance - GC Ptr. */
@@ -133,6 +139,7 @@ struct RTCState {
     HCPTRTYPE(PCPDMRTCHLP) pRtcHlpHC;
 };
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 static void rtc_set_time(RTCState *s);
 static void rtc_copy_date(RTCState *s);
 
@@ -947,4 +954,5 @@ const PDMDEVREG g_DeviceMC146818 =
     rtcInitComplete
 };
 #endif /* IN_RING3 */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
