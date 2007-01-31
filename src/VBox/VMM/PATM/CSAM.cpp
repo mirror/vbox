@@ -2161,7 +2161,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     if (EMIsRawRing0Enabled(pVM) == false)
     {
         /* Enabling interrupt gates only works when raw ring 0 is enabled. */
-        AssertFailed();
+        //AssertFailed();
         return VINF_SUCCESS;
     }
 
