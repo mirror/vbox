@@ -37,7 +37,7 @@
 #endif
 
 /* the compiled DSL */
-#ifdef IN_RING3
+#if defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
 #include <vboxaml.hex>
 #endif /* !IN_RING3 */
 
@@ -158,6 +158,7 @@ struct ACPIState
     uint16_t            pm1a_en;
     uint16_t            pm1a_sts;
     uint16_t            pm1a_ctl;
+    uint16_t            Alignment0;
     int64_t             pm_timer_initial;
     PTMTIMERHC          tsHC;
     PTMTIMERGC          tsGC;
@@ -182,11 +183,11 @@ struct ACPIState
     /** ACPI port interface. */
     PDMIACPIPORT        IACPIPort;
     /** Pointer to the device instance. */
-    PPDMDEVINS          pDevIns;
+    PPDMDEVINSR3        pDevIns;
     /** Pointer to the driver base interface */
-    PPDMIBASE           pDrvBase;
+    R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** Pointer to the driver connector interface */
-    PPDMIACPICONNECTOR  pDrv;
+    R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
 };
 
 #pragma pack(1)
@@ -400,6 +401,8 @@ AssertCompileSize(ACPITBLMADT, 64);
 
 #pragma pack()
 
+
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 __BEGIN_DECLS
 IO_READ_PROTO  (acpiPMTmrRead);
 #ifdef IN_RING3
@@ -1747,3 +1750,5 @@ const PDMDEVREG g_DeviceACPI =
 };
 
 #endif /* IN_RING3 */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
