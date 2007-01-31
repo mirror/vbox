@@ -2324,6 +2324,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
         }
         else if (strcmp(argv[i], "-lun") == 0)
         {
+            /** @todo move the LUN encoding algorithm into IISCSIHardDisk, add decoding */
             if (argc <= i + 1)
             {
                 return errorArgument("Missing argument to '%s'", argv[i]);
