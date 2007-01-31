@@ -32,7 +32,7 @@ typedef struct PCIIOREGION
     uint32_t                        addr;
     uint32_t                        size;
     uint8_t                         type; /* PCIADDRESSSPACE */
-    uint8_t                         padding[3];
+    uint8_t                         padding[HC_ARCH_BITS == 32 ? 3 : 7];
     /** Callback called when the region is mapped. */
     HCPTRTYPE(PFNPCIIOREGIONMAP)    map_func;
 } PCIIOREGION, PCIIORegion;
@@ -49,19 +49,19 @@ typedef void        (*PFNPCICONFIGWRITE)(PPCIDEVICE pPciDev, uint32_t u32CfgAddr
  */
 typedef struct PCIDEVICEINT
 {
+    /** I/O regions. */
+    PCIIOREGION                     aIORegions[PCI_NUM_REGIONS];
     /** Pointer to the PCI bus of the device. */
-    HCPTRTYPE(struct PCIBus *)      pBus;
+    R3PTRTYPE(struct PCIBus *)      pBus;
     /** Read config callback. */
-    HCPTRTYPE(PFNPCICONFIGREAD)     pfnConfigRead;
+    R3PTRTYPE(PFNPCICONFIGREAD)     pfnConfigRead;
     /** Write config callback. */
-    HCPTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
+    R3PTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
     /** The irq assigned to the device. */
     int32_t                         iIrq;
     /** Set if the specific device fun was requested by PDM.
      * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
     bool                            fRequestedDevFn;
-    /** I/O regions. */
-    PCIIOREGION                     aIORegions[PCI_NUM_REGIONS];
 } PCIDEVICEINT;
 
 /* Indicate that PCIDEVICE::Int.s can be declared. */
