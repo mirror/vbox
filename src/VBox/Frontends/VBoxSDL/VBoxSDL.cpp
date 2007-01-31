@@ -555,7 +555,6 @@ static void show_usage()
              "  -[no]patm                Enable or disable PATM\n"
              "  -[no]csam                Enable or disable CSAM\n"
              "  -[no]hwvirtex            Permit or deny the usage of VMX/SVN\n"
-             "  -warpdrive <1..20000>    The virtual time rate as percent, with 100 as the normal rate.\n"
 #endif
              "\n");
 }
