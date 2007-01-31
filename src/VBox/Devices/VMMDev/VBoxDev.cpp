@@ -69,6 +69,8 @@
       || ((RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
           && RT_LOWORD(additionsVersion) > RT_LOWORD(VMMDEV_VERSION))
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
 /* Whenever host wants to inform guest about something
  * an IRQ notification will be raised.
  *
@@ -1590,7 +1592,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fGetHostTimeDisabled = false;
     else if (VBOX_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, 
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean. (%Vrc)"),
                                    rc);
 
@@ -1818,4 +1820,5 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* pfnQueryInterface. */
     NULL
 };
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
