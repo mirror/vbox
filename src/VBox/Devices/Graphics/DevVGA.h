@@ -179,7 +179,7 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 /* bird: vram_offset have been remove, function pointers declared external,
          some type changes, and some padding have been added. */
 #define VGA_STATE_COMMON                                                \
-    R3PTRTYPE(uint8_t *) vram_ptrHC;                                    \
+    HCPTRTYPE(uint8_t *) vram_ptrHC;                                    \
     uint32_t vram_size;                                                 \
     uint32_t latch;                                                     \
     uint8_t sr_index;                                                   \
