@@ -1520,8 +1520,9 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
                 break;
         if (!pMapping)
         {
-            AssertMsgFailed(("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%VGv)\n",
-                             cPTs, szDesc, GCPtr));
+            LogRel(("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%VGv)\n",
+                    cPTs, szDesc, GCPtr));
+            AssertFailed();
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
 
@@ -1577,10 +1578,11 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
             ||  cb != pRam->cb
             ||  fHaveBits != !!pRam->pvHC)
         {
-            AssertMsgFailed(("Ram range: %VGp-%VGp %VGp bytes %s\n"
-                             "State    : %VGp-%VGp %VGp bytes %s\n",
-                             pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvHC ? "bits" : "nobits",
-                             GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits"));
+            LogRel(("Ram range: %VGp-%VGp %VGp bytes %s\n"
+                    "State    : %VGp-%VGp %VGp bytes %s\n",
+                    pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvHC ? "bits" : "nobits",
+                    GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits"));
+            AssertFailed();
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
 

@@ -1060,7 +1060,8 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         {
             if (pData->devices[i])
             {
-                AssertMsgFailed(("New device in slot %#x, %s\n", i, pData->devices[i]->name));
+                LogRel(("New device in slot %#x, %s\n", i, pData->devices[i]->name));
+                AssertFailed();
                 return VERR_SSM_LOAD_CONFIG_MISMATCH;
             }
         }
@@ -1069,7 +1070,8 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         pDev = pData->devices[i];
         if (!pDev)
         {
-            AssertMsgFailed(("Device in slot %#x have been removed!\n", i, pDev->name));
+            LogRel(("Device in slot %#x has been removed!\n", i, pDev->name));
+            AssertFailed();
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
 
@@ -1083,8 +1085,9 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         if (    DevTmp.config[0] != pDev->config[0]
             ||  DevTmp.config[1] != pDev->config[1])
         {
-            AssertMsgFailed(("Device in slot %#x (%s) vendor id mismatch! saved=%.4Vhxs current=%.4Vhxs\n",
-                             i, pDev->name, DevTmp.config, pDev->config));
+            LogRel(("Device in slot %#x (%s) vendor id mismatch! saved=%.4Vhxs current=%.4Vhxs\n",
+                    i, pDev->name, DevTmp.config, pDev->config));
+            AssertFailed();
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
 
