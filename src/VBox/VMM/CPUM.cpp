@@ -133,6 +133,10 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
         pVM->cpum.s.CR4.OrMask  = X86_CR4_OSFSXR;
     }
 
+#ifdef CPUM_TRAP_RDTSC
+    pVM->cpum.s.CR4.OrMask |= X86_CR4_TSD;
+#endif
+
     if (!pVM->cpum.s.CPUFeatures.edx.u1MMX)
     {
         Log(("The CPU doesn't support MMX!\n"));
