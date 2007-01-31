@@ -129,6 +129,9 @@ typedef struct PITState
     int32_t                 dummy_refresh_clock;
     /** Pointer to the device instance. */
     HCPTRTYPE(PPDMDEVINS)   pDevIns;
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignment0;
+#endif
     /** Number of IRQs that's been raised. */
     STAMCOUNTER             StatPITIrq;
     /** Profiling the timer callback handler. */
@@ -140,6 +143,7 @@ typedef struct PITState
 } PITState;
 
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -1093,4 +1097,5 @@ const PDMDEVREG g_DeviceI8254 =
 };
 
 #endif /* IN_RING3 */
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
