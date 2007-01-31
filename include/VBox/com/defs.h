@@ -88,18 +88,21 @@
 
 #define IUnknown nsISupports
 
-#define LONG int32_t
-#define ULONG uint32_t
-#define LONG64 int64_t
-#define ULONG64 uint64_t
-#define USHORT uint16_t
-#define SHORT int16_t
-#define BOOL PRBool
+#define BOOL    PRBool
+#define BYTE    PRUint8
+#define SHORT   PRInt16
+#define USHORT  PRUint16
+#define LONG    PRInt32
+#define ULONG   PRUint32
+#define LONG64  PRInt64
+#define ULONG64 PRUint64
+
+#define BSTR    PRUnichar *
+#define LPBSTR  BSTR *
+#define OLECHAR wchar_t
+
 #define FALSE PR_FALSE
 #define TRUE PR_TRUE
-#define BSTR PRUnichar*
-#define LPBSTR BSTR*
-#define OLECHAR wchar_t
 
 // makes the name of the getter interface function (n must be capitalized)
 #define COMGETTER(n)    Get##n

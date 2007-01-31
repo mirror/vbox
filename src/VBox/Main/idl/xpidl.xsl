@@ -79,10 +79,27 @@
  *  This IDL is automatically generated from the generic interface definition
  *  using XPCOM IDL (XPIDL) syntax.
  */
-    </xsl:text>
-    <xsl:text>&#x0A;</xsl:text>
-    <xsl:text>#include "nsISupports.idl"&#x0A;&#x0A;</xsl:text>
-    <xsl:text>#include "nsIException.idl"&#x0A;&#x0A;</xsl:text>
+
+#include "nsISupports.idl"
+#include "nsIException.idl"
+</xsl:text>
+    <!-- native typedefs for the 'mod="ptr"' attribute -->
+    <xsl:text>
+[ptr] native booeanPtr  (PRBool);
+[ptr] native octetPtr   (PRUint8);
+[ptr] native shortPtr   (PRInt16);
+[ptr] native ushortPtr  (PRUint16);
+[ptr] native longPtr    (PRInt32);
+[ptr] native llongPtr   (PRInt64);
+[ptr] native ulongPtr   (PRUint32);
+[ptr] native ullongPtr  (PRUint64);
+<!-- charPtr is already defined in nsrootidl.idl -->
+<!-- [ptr] native charPtr    (char) -->
+[ptr] native stringPtr  (string);
+[ptr] native wcharPtr   (wchar);
+[ptr] native wstringPtr (wstring);
+
+</xsl:text>    
     <xsl:apply-templates/>
 </xsl:template>
 
@@ -198,6 +215,10 @@
 -->
 <xsl:template match="interface//attribute | collection//attribute">
     <xsl:apply-templates select="@if" mode="begin"/>
+    <xsl:if test="@mod='ptr'">
+        <!-- attributes using native types must be non-scriptable -->
+        <xsl:text>    [noscript]&#x0A;</xsl:text>
+    </xsl:if>
     <xsl:text>    </xsl:text>
     <xsl:if test="@readonly='yes'">
         <xsl:text>readonly </xsl:text>
@@ -216,6 +237,10 @@
 -->
 <xsl:template match="interface//method | collection//method">
     <xsl:apply-templates select="@if" mode="begin"/>
+    <xsl:if test="param/@mod='ptr'">
+        <!-- methods using native types must be non-scriptable -->
+        <xsl:text>    [noscript]&#x0A;</xsl:text>
+    </xsl:if>
     <xsl:text>    void </xsl:text>
     <xsl:value-of select="@name"/>
     <xsl:if test="param">
@@ -438,80 +463,130 @@
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
     <xsl:choose>
-        <!-- standard types -->
-        <xsl:when test=".='result'">nsresult</xsl:when>
-        <xsl:when test=".='boolean'">boolean</xsl:when>
-        <xsl:when test=".='octet'">octet</xsl:when>
-        <xsl:when test=".='short'">short</xsl:when>
-        <xsl:when test=".='unsigned short'">unsigned short</xsl:when>
-        <xsl:when test=".='long'">long</xsl:when>
-        <xsl:when test=".='long long'">long long</xsl:when>
-        <xsl:when test=".='unsigned long'">unsigned long</xsl:when>
-        <xsl:when test=".='unsigned long long'">unsigned long long</xsl:when>
-        <xsl:when test=".='char'">char</xsl:when>
-        <xsl:when test=".='wchar'">wchar</xsl:when>
-        <xsl:when test=".='string'">string</xsl:when>
-        <xsl:when test=".='wstring'">wstring</xsl:when>
-        <!-- UUID type -->
-        <xsl:when test=".='uuid'">
+        <!-- modifiers (ignored for 'enumeration' attributes)-->
+        <xsl:when test="name(current())='type' and ../@mod">
+            <xsl:if test="../@array">
+                <xsl:message terminate="yes">
+                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                    <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
+                </xsl:message>
+            </xsl:if>
             <xsl:choose>
-                <xsl:when test="name(..)='attribute'">
+                <xsl:when test="../@mod='ptr'">
                     <xsl:choose>
-                        <xsl:when test="../@readonly='yes'">
-                            <xsl:text>nsIDPtr</xsl:text>
-                        </xsl:when>
+                        <!-- standard types -->
+                        <!--xsl:when test=".='result'">??</xsl:when-->
+                        <xsl:when test=".='boolean'">booeanPtr</xsl:when>
+                        <xsl:when test=".='octet'">octetPtr</xsl:when>
+                        <xsl:when test=".='short'">shortPtr</xsl:when>
+                        <xsl:when test=".='unsigned short'">ushortPtr</xsl:when>
+                        <xsl:when test=".='long'">longPtr</xsl:when>
+                        <xsl:when test=".='long long'">llongPtr</xsl:when>
+                        <xsl:when test=".='unsigned long'">ulongPtr</xsl:when>
+                        <xsl:when test=".='unsigned long long'">ullongPtr</xsl:when>
+                        <xsl:when test=".='char'">charPtr</xsl:when>
+                        <!--xsl:when test=".='string'">??</xsl:when-->
+                        <xsl:when test=".='wchar'">wcharPtr</xsl:when>
+                        <!--xsl:when test=".='wstring'">??</xsl:when-->
                         <xsl:otherwise>
                             <xsl:message terminate="yes">
-                                <xsl:value-of select="../@name"/>
-                                <xsl:text>: Non-readonly uuid attributes are not supported!</xsl:text>
+                                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                                <xsl:text>attribute 'mod=</xsl:text>
+                                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                                <xsl:text>' cannot be used with type </xsl:text>
+                                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
                             </xsl:message>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:when>
-                <xsl:when test="name(..)='param'">
-                    <xsl:choose>
-                        <xsl:when test="../@dir='in'">
-                            <xsl:text>nsIDRef</xsl:text>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:text>nsIDPtr</xsl:text>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:when>
-            </xsl:choose>
-        </xsl:when>
-        <!-- system interface types -->
-        <xsl:when test=".='$unknown'">nsISupports</xsl:when>
-        <xsl:otherwise>
-            <xsl:choose>
-                <!-- enum types -->
-                <xsl:when test="
-                    (ancestor::module/enum[@name=current()]) or
-                    (ancestor::module/if[@target=$self_target]/enum[@name=current()])
-                ">
-                    <xsl:text>PRUint32</xsl:text>
-                </xsl:when>
-                <!-- custom interface types -->
-                <xsl:when test="
-                    (name(current())='enumerator' and
-                     ((ancestor::module/enumerator[@name=current()]) or
-                      (ancestor::module/if[@target=$self_target]/enumerator[@name=current()]))
-                    ) or
-                    ((ancestor::module/interface[@name=current()]) or
-                     (ancestor::module/if[@target=$self_target]/interface[@name=current()])
-                    ) or
-                    ((ancestor::module/collection[@name=current()]) or
-                     (ancestor::module/if[@target=$self_target]/collection[@name=current()])
-                    )
-                ">
-                    <xsl:value-of select="."/>
-                </xsl:when>
-                <!-- other types -->
                 <xsl:otherwise>
                     <xsl:message terminate="yes">
-                        <xsl:text>Unknown parameter type: </xsl:text>
-                        <xsl:value-of select="."/>
+                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                        <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
+                        <xsl:text>of attibute 'mod' is invalid!</xsl:text>
                     </xsl:message>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:when>
+        <!-- no modifiers -->
+        <xsl:otherwise>
+            <xsl:choose>
+                <!-- standard types -->
+                <xsl:when test=".='result'">nsresult</xsl:when>
+                <xsl:when test=".='boolean'">boolean</xsl:when>
+                <xsl:when test=".='octet'">octet</xsl:when>
+                <xsl:when test=".='short'">short</xsl:when>
+                <xsl:when test=".='unsigned short'">unsigned short</xsl:when>
+                <xsl:when test=".='long'">long</xsl:when>
+                <xsl:when test=".='long long'">long long</xsl:when>
+                <xsl:when test=".='unsigned long'">unsigned long</xsl:when>
+                <xsl:when test=".='unsigned long long'">unsigned long long</xsl:when>
+                <xsl:when test=".='char'">char</xsl:when>
+                <xsl:when test=".='wchar'">wchar</xsl:when>
+                <xsl:when test=".='string'">string</xsl:when>
+                <xsl:when test=".='wstring'">wstring</xsl:when>
+                <!-- UUID type -->
+                <xsl:when test=".='uuid'">
+                    <xsl:choose>
+                        <xsl:when test="name(..)='attribute'">
+                            <xsl:choose>
+                                <xsl:when test="../@readonly='yes'">
+                                    <xsl:text>nsIDPtr</xsl:text>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:message terminate="yes">
+                                        <xsl:value-of select="../@name"/>
+                                        <xsl:text>: Non-readonly uuid attributes are not supported!</xsl:text>
+                                    </xsl:message>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:when>
+                        <xsl:when test="name(..)='param'">
+                            <xsl:choose>
+                                <xsl:when test="../@dir='in'">
+                                    <xsl:text>nsIDRef</xsl:text>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:text>nsIDPtr</xsl:text>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:when>
+                    </xsl:choose>
+                </xsl:when>
+                <!-- system interface types -->
+                <xsl:when test=".='$unknown'">nsISupports</xsl:when>
+                <xsl:otherwise>
+                    <xsl:choose>
+                        <!-- enum types -->
+                        <xsl:when test="
+                            (ancestor::module/enum[@name=current()]) or
+                            (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+                        ">
+                            <xsl:text>PRUint32</xsl:text>
+                        </xsl:when>
+                        <!-- custom interface types -->
+                        <xsl:when test="
+                            (name(current())='enumerator' and
+                             ((ancestor::module/enumerator[@name=current()]) or
+                              (ancestor::module/if[@target=$self_target]/enumerator[@name=current()]))
+                            ) or
+                            ((ancestor::module/interface[@name=current()]) or
+                             (ancestor::module/if[@target=$self_target]/interface[@name=current()])
+                            ) or
+                            ((ancestor::module/collection[@name=current()]) or
+                             (ancestor::module/if[@target=$self_target]/collection[@name=current()])
+                            )
+                        ">
+                            <xsl:value-of select="."/>
+                        </xsl:when>
+                        <!-- other types -->
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes">
+                                <xsl:text>Unknown parameter type: </xsl:text>
+                                <xsl:value-of select="."/>
+                            </xsl:message>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:otherwise>

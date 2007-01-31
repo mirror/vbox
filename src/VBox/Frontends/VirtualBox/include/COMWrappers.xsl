@@ -1031,55 +1031,106 @@ public:
             <xsl:text>return array parameters are not currently supported</xsl:text>
         </xsl:message>
     </xsl:if>
+
     <xsl:choose>
-        <!-- standard types -->
-        <xsl:when test=".='result'">HRESULT</xsl:when>
-        <xsl:when test=".='boolean'">BOOL</xsl:when>
-        <xsl:when test=".='octet'">BYTE</xsl:when>
-        <xsl:when test=".='short'">SHORT</xsl:when>
-        <xsl:when test=".='unsigned short'">USHORT</xsl:when>
-        <xsl:when test=".='long'">LONG</xsl:when>
-        <xsl:when test=".='long long'">LONG64</xsl:when>
-        <xsl:when test=".='unsigned long'">ULONG</xsl:when>
-        <xsl:when test=".='unsigned long long'">ULONG64</xsl:when>
-        <xsl:when test=".='char'">CHAR</xsl:when>
-        <xsl:when test=".='string'">CHAR *</xsl:when>
-        <xsl:when test=".='wchar'">OLECHAR</xsl:when>
-        <xsl:when test=".='wstring'">QString</xsl:when>
-        <!-- UUID type -->
-        <xsl:when test=".='uuid'">QUuid</xsl:when>
-        <!-- system interface types -->
-        <xsl:when test=".='$unknown'">CUnknown</xsl:when>
-        <xsl:otherwise>
+        <!-- modifiers (ignored for 'enumeration' attributes)-->
+        <xsl:when test="name(current())='type' and ../@mod">
+            <xsl:if test="../@array">
+                <xsl:message terminate="yes">
+                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                    <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
+                </xsl:message>
+            </xsl:if>
             <xsl:choose>
-                <!-- enum types -->
-                <xsl:when test="
-                    (ancestor::module/enum[@name=current()]) or
-                    (ancestor::module/if[@target=$self_target]/enum[@name=current()])
-                ">
-                    <xsl:value-of select="concat('CEnums::',string(.))"/>
+                <xsl:when test="../@mod='ptr'">
+                    <xsl:choose>
+                        <!-- standard types -->
+                        <!--xsl:when test=".='result'">??</xsl:when-->
+                        <xsl:when test=".='boolean'">BOOL *</xsl:when>
+                        <xsl:when test=".='octet'">BYTE *</xsl:when>
+                        <xsl:when test=".='short'">SHORT *</xsl:when>
+                        <xsl:when test=".='unsigned short'">USHORT *</xsl:when>
+                        <xsl:when test=".='long'">LONG *</xsl:when>
+                        <xsl:when test=".='long long'">LONG64 *</xsl:when>
+                        <xsl:when test=".='unsigned long'">ULONG *</xsl:when>
+                        <xsl:when test=".='unsigned long long'">ULONG64 *</xsl:when>
+                        <xsl:when test=".='char'">CHAR *</xsl:when>
+                        <!--<xsl:when test=".='string'">??</xsl:when-->
+                        <xsl:when test=".='wchar'">OLECHAR *</xsl:when>
+                        <!--<xsl:when test=".='wstring'">??</xsl:when-->
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes">
+                                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                                <xsl:text>attribute 'mod=</xsl:text>
+                                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                                <xsl:text>' cannot be used with type </xsl:text>
+                                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+                            </xsl:message>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:when>
-                <!-- custom interface types -->
-                <xsl:when test="
-                    (name(current())='enumerator' and
-                     ((ancestor::module/enumerator[@name=current()]) or
-                      (ancestor::module/if[@target=$self_target]/enumerator[@name=current()]))
-                    ) or
-                    ((ancestor::module/interface[@name=current()]) or
-                     (ancestor::module/if[@target=$self_target]/interface[@name=current()])
-                    ) or
-                    ((ancestor::module/collection[@name=current()]) or
-                     (ancestor::module/if[@target=$self_target]/collection[@name=current()])
-                    )
-                ">
-                    <xsl:value-of select="concat('C',substring(.,2))"/>
-                </xsl:when>
-                <!-- other types -->
                 <xsl:otherwise>
                     <xsl:message terminate="yes">
-                        <xsl:text>Unknown parameter type: </xsl:text>
-                        <xsl:value-of select="."/>
+                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                        <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
+                        <xsl:text>of attibute 'mod' is invalid!</xsl:text>
                     </xsl:message>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:when>
+        <!-- no modifiers -->
+        <xsl:otherwise>
+            <xsl:choose>
+                <!-- standard types -->
+                <xsl:when test=".='result'">HRESULT</xsl:when>
+                <xsl:when test=".='boolean'">BOOL</xsl:when>
+                <xsl:when test=".='octet'">BYTE</xsl:when>
+                <xsl:when test=".='short'">SHORT</xsl:when>
+                <xsl:when test=".='unsigned short'">USHORT</xsl:when>
+                <xsl:when test=".='long'">LONG</xsl:when>
+                <xsl:when test=".='long long'">LONG64</xsl:when>
+                <xsl:when test=".='unsigned long'">ULONG</xsl:when>
+                <xsl:when test=".='unsigned long long'">ULONG64</xsl:when>
+                <xsl:when test=".='char'">CHAR</xsl:when>
+                <xsl:when test=".='string'">CHAR *</xsl:when>
+                <xsl:when test=".='wchar'">OLECHAR</xsl:when>
+                <xsl:when test=".='wstring'">QString</xsl:when>
+                <!-- UUID type -->
+                <xsl:when test=".='uuid'">QUuid</xsl:when>
+                <!-- system interface types -->
+                <xsl:when test=".='$unknown'">CUnknown</xsl:when>
+                <xsl:otherwise>
+                    <xsl:choose>
+                        <!-- enum types -->
+                        <xsl:when test="
+                            (ancestor::module/enum[@name=current()]) or
+                            (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+                        ">
+                            <xsl:value-of select="concat('CEnums::',string(.))"/>
+                        </xsl:when>
+                        <!-- custom interface types -->
+                        <xsl:when test="
+                            (name(current())='enumerator' and
+                             ((ancestor::module/enumerator[@name=current()]) or
+                              (ancestor::module/if[@target=$self_target]/enumerator[@name=current()]))
+                            ) or
+                            ((ancestor::module/interface[@name=current()]) or
+                             (ancestor::module/if[@target=$self_target]/interface[@name=current()])
+                            ) or
+                            ((ancestor::module/collection[@name=current()]) or
+                             (ancestor::module/if[@target=$self_target]/collection[@name=current()])
+                            )
+                        ">
+                            <xsl:value-of select="concat('C',substring(.,2))"/>
+                        </xsl:when>
+                        <!-- other types -->
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes">
+                                <xsl:text>Unknown parameter type: </xsl:text>
+                                <xsl:value-of select="."/>
+                            </xsl:message>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:otherwise>
@@ -1088,7 +1139,7 @@ public:
 
 
 <!--
- *  generates a null initializer for all fundamental types (such as bool or long)
+ *  generates a null initializer for all scalar types (such as bool or long)
  *  and enum types in the form of ' = <null_initializer>', or nothing for other
  *  types.
 -->
@@ -1100,28 +1151,78 @@ public:
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
     <xsl:choose>
-        <!-- standard types that need a zero initializer -->
-        <xsl:when test=".='result'"> = S_OK</xsl:when>
-        <xsl:when test=".='boolean'"> = FALSE</xsl:when>
-        <xsl:when test=".='octet'"> = 0</xsl:when>
-        <xsl:when test=".='short'"> = 0</xsl:when>
-        <xsl:when test=".='unsigned short'"> = 0</xsl:when>
-        <xsl:when test=".='long'"> = 0</xsl:when>
-        <xsl:when test=".='long long'"> = 0</xsl:when>
-        <xsl:when test=".='unsigned long'"> = 0</xsl:when>
-        <xsl:when test=".='unsigned long long'"> = 0</xsl:when>
-        <xsl:when test=".='char'"> = 0</xsl:when>
-        <xsl:when test=".='string'"> = NULL</xsl:when>
-        <xsl:when test=".='wchar'"> = 0</xsl:when>
+        <!-- modifiers (ignored for 'enumeration' attributes)-->
+        <xsl:when test="name(current())='type' and ../@mod">
+            <xsl:if test="../@array">
+                <xsl:message terminate="yes">
+                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                    <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
+                </xsl:message>
+            </xsl:if>
+            <xsl:choose>
+                <xsl:when test="../@mod='ptr'">
+                    <xsl:choose>
+                        <!-- standard types -->
+                        <!--xsl:when test=".='result'">??</xsl:when-->
+                        <xsl:when test=".='boolean'"> = NULL</xsl:when>
+                        <xsl:when test=".='octet'"> = NULL</xsl:when>
+                        <xsl:when test=".='short'"> = NULL</xsl:when>
+                        <xsl:when test=".='unsigned short'"> = NULL</xsl:when>
+                        <xsl:when test=".='long'"> = NULL</xsl:when>
+                        <xsl:when test=".='long long'"> = NULL</xsl:when>
+                        <xsl:when test=".='unsigned long'"> = NULL</xsl:when>
+                        <xsl:when test=".='unsigned long long'"> = NULL</xsl:when>
+                        <xsl:when test=".='char'"> = NULL</xsl:when>
+                        <!--<xsl:when test=".='string'">??</xsl:when-->
+                        <xsl:when test=".='wchar'"> = NULL</xsl:when>
+                        <!--<xsl:when test=".='wstring'">??</xsl:when-->
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes">
+                                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                                <xsl:text>attribute 'mod=</xsl:text>
+                                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                                <xsl:text>' cannot be used with type </xsl:text>
+                                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+                            </xsl:message>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:message terminate="yes">
+                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                        <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
+                        <xsl:text>of attibute 'mod' is invalid!</xsl:text>
+                    </xsl:message>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:when>
+        <!-- no modifiers -->
         <xsl:otherwise>
             <xsl:choose>
-                <!-- enum types initialized with 0 -->
-                <xsl:when test="
-                    (ancestor::module/enum[@name=current()]) or
-                    (ancestor::module/if[@target=$self_target]/enum[@name=current()])
-                ">
-                    <xsl:value-of select="concat(' = (CEnums::',string(.),') 0')"/>
-                </xsl:when>
+                <!-- standard types that need a zero initializer -->
+                <xsl:when test=".='result'"> = S_OK</xsl:when>
+                <xsl:when test=".='boolean'"> = FALSE</xsl:when>
+                <xsl:when test=".='octet'"> = 0</xsl:when>
+                <xsl:when test=".='short'"> = 0</xsl:when>
+                <xsl:when test=".='unsigned short'"> = 0</xsl:when>
+                <xsl:when test=".='long'"> = 0</xsl:when>
+                <xsl:when test=".='long long'"> = 0</xsl:when>
+                <xsl:when test=".='unsigned long'"> = 0</xsl:when>
+                <xsl:when test=".='unsigned long long'"> = 0</xsl:when>
+                <xsl:when test=".='char'"> = 0</xsl:when>
+                <xsl:when test=".='string'"> = NULL</xsl:when>
+                <xsl:when test=".='wchar'"> = 0</xsl:when>
+                <xsl:otherwise>
+                    <xsl:choose>
+                        <!-- enum types initialized with 0 -->
+                        <xsl:when test="
+                            (ancestor::module/enum[@name=current()]) or
+                            (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+                        ">
+                            <xsl:value-of select="concat(' = (CEnums::',string(.),') 0')"/>
+                        </xsl:when>
+                    </xsl:choose>
+                </xsl:otherwise>
             </xsl:choose>
         </xsl:otherwise>
     </xsl:choose>
