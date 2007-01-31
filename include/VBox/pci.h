@@ -97,6 +97,15 @@ typedef struct PCIDevice
     /** PCI config space. */
     uint8_t                 config[256];
 
+    /** Internal data. */
+    union
+    {
+#ifdef __PCIDEVICEINT_DECLARED__
+        PCIDEVICEINT        s;
+#endif
+        char                padding[224];
+    } Int;
+
     /** Read only data.
      * @{
      */
@@ -108,15 +117,6 @@ typedef struct PCIDevice
     /** Pointer to the device instance which registered the device. */
     PPDMDEVINSR3            pDevIns;
     /**  @} */
-
-    /** Internal data. */
-    union
-    {
-#ifdef __PCIDEVICEINT_DECLARED__
-        PCIDEVICEINT        s;
-#endif
-        char                padding[224];
-    } Int;
 } PCIDEVICE;
 
 
