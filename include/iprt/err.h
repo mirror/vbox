@@ -449,7 +449,8 @@ __BEGIN_DECLS
 #define VERR_NET_SHUTDOWN                       (-458)
 /** Too many references: can't splice. */
 #define VERR_NET_TOO_MANY_REFERENCES            (-459)
-/* ETIMEDOUT is not net. */
+/** Too many references: can't splice. */
+#define VERR_NET_CONNECTION_TIMED_OUT           (-460)
 /** Connection refused. */
 #define VERR_NET_CONNECTION_REFUSED             (-461)
 /* ELOOP is not net. */
