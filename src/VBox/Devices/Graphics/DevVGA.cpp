@@ -118,21 +118,27 @@
 *******************************************************************************/
 __BEGIN_DECLS
 
-DECLEXPORT(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-DECLEXPORT(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-DECLEXPORT(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-DECLEXPORT(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-DECLEXPORT(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-DECLEXPORT(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-DECLEXPORT(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems);
-DECLEXPORT(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-DECLEXPORT(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-DECLEXPORT(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
-DECLEXPORT(int) vgaR0LFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
-#ifdef VBE_NEW_DYN_LIST
-DECLEXPORT(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-DECLEXPORT(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems);
+PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
+PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
+#ifdef IN_GC
+PDMBOTHCBDECL(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #endif
+#ifdef IN_RING0
+PDMBOTHCBDECL(int) vgaR0LFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+#endif
+#ifdef IN_RING3
+# ifdef VBE_NEW_DYN_LIST
+PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+# endif
+#endif /* IN_RING3 */
 
 
 __END_DECLS
@@ -2590,7 +2596,7 @@ static int vga_copy_screen_from(PVGASTATE s, uint8_t *buf, int x, int y, int wid
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-DECLEXPORT(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
     if (cb == 1)
@@ -2615,7 +2621,7 @@ DECLEXPORT(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, 
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-DECLEXPORT(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
     if (cb == 1)
@@ -2644,7 +2650,7 @@ DECLEXPORT(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, u
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-DECLEXPORT(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     VGAState *s = PDMINS2DATA(pDevIns, PVGASTATE);
 
@@ -2721,7 +2727,7 @@ DECLEXPORT(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-DECLEXPORT(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
 #ifdef VBE_BYTEWISE_IO
@@ -2762,7 +2768,7 @@ DECLEXPORT(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes to read.
  */
-DECLEXPORT(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
 #ifdef VBE_BYTEWISE_IO
@@ -2813,7 +2819,7 @@ DECLEXPORT(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes to read.
  */
-DECLEXPORT(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
 #ifdef VBE_BYTEWISE_IO
@@ -2891,7 +2897,7 @@ DECLEXPORT(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  * @param   cbItem      Size of data Item, only 1/2/4 bytes is allowed for now.
  * @param   cItems      Number of data items to write.
  */
-DECLEXPORT(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems)
+PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems)
 {
     PVGASTATE pData = PDMINS2DATA(pDevIns, PVGASTATE);
     uint32_t b;
@@ -3098,7 +3104,7 @@ DECLEXPORT(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAdd
  * @param   pv          Where to store readed data.
  * @param   cb          Bytes to read.
  */
-DECLEXPORT(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     PVGASTATE pData = PDMINS2DATA(pDevIns, PVGASTATE);
     STAM_PROFILE_START(&pData->StatGCMemoryRead, a);
@@ -3139,7 +3145,7 @@ DECLEXPORT(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAdd
  * @param   pv          Pointer to data.
  * @param   cb          Bytes to write.
  */
-DECLEXPORT(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     PVGASTATE pData = PDMINS2DATA(pDevIns, PVGASTATE);
     uint8_t  *pu8 = (uint8_t *)pv;
@@ -3241,7 +3247,7 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pData, RTGCPHYS GCPhys, RTGCPTR GCPtr
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument, ignored.
  */
-DECLEXPORT(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+PDMBOTHCBDECL(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     PVGASTATE   pData = (PVGASTATE)pvUser;
     Assert(pData);
@@ -3264,7 +3270,7 @@ DECLEXPORT(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument, ignored.
  */
-DECLEXPORT(int) vgaR0LFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+PDMBOTHCBDECL(int) vgaR0LFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     PVGASTATE   pData = (PVGASTATE)pvUser;
     Assert(pData);
@@ -3301,11 +3307,14 @@ static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *p
     AssertMsg(rc <= VINF_SUCCESS, ("rc=%Vrc\n", rc));
     return rc;
 }
+#endif /* IN_RING3 */
 
-#endif /* !IN_GC */
 
+/* -=-=-=-=-=- Ring 3 -=-=-=-=-=- */
 
-#ifdef VBE_NEW_DYN_LIST
+#ifdef IN_RING3
+
+# ifdef VBE_NEW_DYN_LIST
 /**
  * Port I/O Handler for VBE Extra OUT operations.
  *
@@ -3317,7 +3326,7 @@ static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *p
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-DECLEXPORT(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PVGASTATE pData = PDMINS2DATA(pDevIns, PVGASTATE);
     NOREF(pvUser);
@@ -3346,7 +3355,7 @@ DECLEXPORT(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-DECLEXPORT(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pData = PDMINS2DATA(pDevIns, PVGASTATE);
     NOREF(pvUser);
@@ -3387,13 +3396,10 @@ DECLEXPORT(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     Log(("vbeIOPortReadVBEExtra: Invalid cb=%d read from the VBE Extra port!!!\n", cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
-#endif
+# endif /* VBE_NEW_DYN_LIST */
 
 
 
-/* -=-=-=-=-=- Ring 3 -=-=-=-=-=- */
-
-#ifdef IN_RING3
 
 /* -=-=-=-=-=- Ring 3: VGA BIOS I/Os -=-=-=-=-=- */
 
