@@ -538,7 +538,7 @@ int pdmR3DevInit(PVM pVM)
     int rc = PDMR3GetSymbolGC(pVM, NULL, "g_pdmGCDevHlp", &pDevHlpGC);
     AssertReleaseRCReturn(rc, rc);
 
-    HCPTRTYPE(PCPDMDEVHLPR0) pDevHlpR0;
+    R0PTRTYPE(PCPDMDEVHLPR0) pDevHlpR0;
     rc = PDMR3GetSymbolR0(pVM, NULL, "g_pdmR0DevHlp", (void **)&pDevHlpR0);
     AssertReleaseRCReturn(rc, rc);
 
