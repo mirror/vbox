@@ -191,11 +191,8 @@ DECLINLINE(void) vga_reset_dirty(VGAState *pData, RTGCPHYS offVRAMStart, RTGCPHY
 //#define DEBUG_VGA_MEM
 //#define DEBUG_VGA_REG
 
-//#define DEBUG_S3
 #define DEBUG_BOCHS_VBE
 
-/* S3 VGA is deprecated - another graphic card will be emulated */
-//#define CONFIG_S3VGA
 #endif
 
 /* force some bits to zero */
@@ -399,11 +396,6 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
 #ifdef DEBUG_VGA_REG
             printf("vga: read CR%x = 0x%02x\n", s->cr_index, val);
 #endif
-#ifdef DEBUG_S3
-            if (s->cr_index >= 0x20)
-                printf("S3: CR read index=0x%x val=0x%x\n",
-                       s->cr_index, val);
-#endif
             break;
         case 0x3ba:
         case 0x3da:
@@ -539,42 +531,10 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             s->cr[s->cr_index] = val;
             break;
 
-#ifdef CONFIG_S3VGA
-            /* S3 registers */
-        case 0x2d:
-        case 0x2e:
-        case 0x2f:
-        case 0x30:
-            /* chip ID, cannot write */
-            break;
-        case 0x31:
-            /* update start address */
-            {
-                int v;
-                s->cr[s->cr_index] = val;
-                v = (val >> 4) & 3;
-                s->cr[0x69] = (s->cr[69] & ~0x03) | v;
-            }
-            break;
-        case 0x51:
-            /* update start address */
-            {
-                int v;
-                s->cr[s->cr_index] = val;
-                v = val & 3;
-                s->cr[0x69] = (s->cr[69] & ~0x0c) | (v << 2);
-            }
-            break;
-#endif
         default:
             s->cr[s->cr_index] = val;
             break;
         }
-#ifdef DEBUG_S3
-        if (s->cr_index >= 0x20)
-            printf("S3: CR write index=0x%x val=0x%x\n",
-                   s->cr_index, val);
-#endif
         break;
     case 0x3ba:
     case 0x3da:
@@ -597,22 +557,29 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
     VGAState *s = (VGAState*)opaque;
     uint32_t val;
 
-    if (s->vbe_index <= VBE_DISPI_INDEX_NB)
-#ifndef VBOX
+    if (s->vbe_index <= VBE_DISPI_INDEX_NB) {
+      if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_GETCAPS) {
+          switch(s->vbe_index) {
+                /* XXX: do not hardcode ? */
+            case VBE_DISPI_INDEX_XRES:
+                val = VBE_DISPI_MAX_XRES;
+                break;
+            case VBE_DISPI_INDEX_YRES:
+                val = VBE_DISPI_MAX_YRES;
+                break;
+            case VBE_DISPI_INDEX_BPP:
+                val = VBE_DISPI_MAX_BPP;
+                break;
+            default:
+                val = s->vbe_regs[s->vbe_index]; 
+                break;
+          }
+      } else {
         val = s->vbe_regs[s->vbe_index];
-#else /* VBOX */
-    {
-        /* VBE_DISPI_GETCAPS && VBE_DISPI_INDEX_BPP should */
-        /* return VBE_DISPI_MAX_BPP instead of current video mode BPP */
-        if (    (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_GETCAPS)
-            &&  s->vbe_index == VBE_DISPI_INDEX_BPP)
-            val = VBE_DISPI_MAX_BPP;
-        else
-            val = s->vbe_regs[s->vbe_index];
-    }
-#endif /* VBOX */
-    else
+      }
+    } else {
         val = 0;
+    }
 #ifdef DEBUG_BOCHS_VBE
     Log(("VBE: read index=0x%x val=0x%x\n", s->vbe_index, val));
 #endif
@@ -688,6 +655,11 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             }
             break;
         case VBE_DISPI_INDEX_BANK:
+            if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4) {
+              val &= (s->vbe_bank_mask >> 2);
+            } else {
+              val &= s->vbe_bank_mask;
+            }
             val &= s->vbe_bank_mask;
             s->vbe_regs[s->vbe_index] = val;
             s->bank_offset = (val << 16);
@@ -758,7 +730,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 s->cr[0x13] = s->vbe_line_offset >> 3;
                 /* width */
                 s->cr[0x01] = (s->vbe_regs[VBE_DISPI_INDEX_XRES] >> 3) - 1;
-                /* height */
+                /* height (only meaningful if < 1024) */
                 h = s->vbe_regs[VBE_DISPI_INDEX_YRES] - 1;
                 s->cr[0x12] = h;
                 s->cr[0x07] = (s->cr[0x07] & ~0x42) |
@@ -1307,37 +1279,33 @@ static int update_palette256(VGAState *s)
 
 static void vga_get_offsets(VGAState *s,
                             uint32_t *pline_offset,
-                            uint32_t *pstart_addr)
+                            uint32_t *pstart_addr,
+                            uint32_t *pline_compare)
 {
-    uint32_t start_addr, line_offset;
+    uint32_t start_addr, line_offset, line_compare;
 #ifdef CONFIG_BOCHS_VBE
     if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) {
         line_offset = s->vbe_line_offset;
         start_addr = s->vbe_start_addr;
+        line_compare = 65535;
     } else
 #endif
     {
         /* compute line_offset in bytes */
         line_offset = s->cr[0x13];
-#ifdef CONFIG_S3VGA
-        {
-            uinr32_t v;
-            v = (s->cr[0x51] >> 4) & 3; /* S3 extension */
-            if (v == 0)
-                v = (s->cr[0x43] >> 2) & 1; /* S3 extension */
-            line_offset |= (v << 8);
-        }
-#endif
         line_offset <<= 3;
 
         /* starting address */
         start_addr = s->cr[0x0d] | (s->cr[0x0c] << 8);
-#ifdef CONFIG_S3VGA
-        start_addr |= (s->cr[0x69] & 0x1f) << 16; /* S3 extension */
-#endif
+
+        /* line compare */
+        line_compare = s->cr[0x18] | 
+            ((s->cr[0x07] & 0x10) << 4) |
+            ((s->cr[0x09] & 0x40) << 3);
     }
     *pline_offset = line_offset;
     *pstart_addr = start_addr;
+    *pline_compare = line_compare;
 }
 
 /* update start_addr and line_offset. Return TRUE if modified */
@@ -1348,11 +1316,7 @@ static int update_basic_params(VGAState *s)
 
     full_update = 0;
 
-    s->get_offsets(s, &line_offset, &start_addr);
-    /* line compare */
-    line_compare = s->cr[0x18] |
-        ((s->cr[0x07] & 0x10) << 4) |
-        ((s->cr[0x09] & 0x40) << 3);
+    s->get_offsets(s, &line_offset, &start_addr, &line_compare);
 
     if (line_offset != s->line_offset ||
         start_addr != s->start_addr ||
@@ -1719,19 +1683,19 @@ static int vga_get_bpp(VGAState *s)
 static void vga_get_resolution(VGAState *s, int *pwidth, int *pheight)
 {
     int width, height;
-#if defined(VBOX) && defined(CONFIG_BOCHS_VBE)
-    if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)
-    {
-        *pwidth  = s->vbe_regs[VBE_DISPI_INDEX_XRES];
-        *pheight = s->vbe_regs[VBE_DISPI_INDEX_YRES];
-        return;
-    }
+#ifdef CONFIG_BOCHS_VBE
+    if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) {
+        width = s->vbe_regs[VBE_DISPI_INDEX_XRES];
+        height = s->vbe_regs[VBE_DISPI_INDEX_YRES];
+    } else
 #endif
-    width = (s->cr[0x01] + 1) * 8;
-    height = s->cr[0x12] |
-        ((s->cr[0x07] & 0x02) << 7) |
-        ((s->cr[0x07] & 0x40) << 3);
-    height = (height + 1);
+    {
+        width = (s->cr[0x01] + 1) * 8;
+        height = s->cr[0x12] |
+            ((s->cr[0x07] & 0x02) << 7) |
+            ((s->cr[0x07] & 0x40) << 3);
+        height = (height + 1);
+    }
     *pwidth = width;
     *pheight = height;
 }
@@ -1814,9 +1778,6 @@ static void vga_draw_graphic(VGAState *s, int full_update)
     uint8_t *d;
     uint32_t v, addr1, addr;
     vga_draw_line_func *vga_draw_line;
-#if defined(VBOX) && defined(CONFIG_BOCHS_VBE)
-    int line_compare;
-#endif
     bool offsets_changed;
 
     offsets_changed = update_basic_params(s);
@@ -2000,19 +1961,7 @@ static void vga_draw_graphic(VGAState *s, int full_update)
             multi_run--;
         }
         /* line compare acts on the displayed lines */
-#if defined(VBOX) && defined(CONFIG_BOCHS_VBE)
-        /* line_compare is determined from the VGA control registers.
-           However, the formula does not allow for values larger than
-           1023. So in the VBE case, we get it from the current
-           resolution instead. */
-        if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)
-            line_compare = s->vbe_regs[VBE_DISPI_INDEX_YRES] - 1;
-        else
-            line_compare = s->line_compare;
-        if (y == line_compare)
-#else
-        if (y == s->line_compare)
-#endif
+        if ((uint32_t)y == s->line_compare)
             addr1 = 0;
         d += linesize;
     }
@@ -2168,13 +2117,6 @@ void vga_invalidate_display(void)
 static void vga_reset(VGAState *s)
 {
     memset(s, 0, sizeof(VGAState));
-#ifdef CONFIG_S3VGA
-    /* chip ID for 8c968 */
-    s->cr[0x2d] = 0x88;
-    s->cr[0x2e] = 0xb0;
-    s->cr[0x2f] = 0x01; /* XXX: check revision code */
-    s->cr[0x30] = 0xe1;
-#endif
     s->graphic_mode = -1; /* force full update */
 }
 #endif /* !VBOX */
@@ -2625,16 +2567,6 @@ static int vga_copy_screen_from(PVGASTATE s, uint8_t *buf, int x, int y, int wid
 #endif
 
 #endif /* !VBOX || !IN_GC || !IN_RING0 */
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3875,7 +3807,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     uint32_t cbLineSrc;
     uint8_t *pu8Src;
 
-    uint32_t u32OffsetSrc;
+    uint32_t u32OffsetSrc, u32Dummy;
 
     PVGASTATE s = IDISPLAYPORT_2_VGASTATE(pInterface);
 
@@ -3901,18 +3833,14 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     if (x < 0)
     {
         x += w; /* Compute xRight which is also the new width. */
-
-        w = (x < 0)? 0: x;
-
+        w = (x < 0) ? 0 : x;
         x = 0;
     }
 
     if (y < 0)
     {
         y += h; /* Compute yBottom, which is also the new height. */
-
-        h = (y < 0)? 0: y;
-
+        h = (y < 0) ? 0 : y;
         y = 0;
     }
 
@@ -3988,7 +3916,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     pu8Dst     = s->pDrv->pu8Data + y * cbLineDst + x * cbPixelDst;
 
     cbPixelSrc = (s->get_bpp(s) + 7) / 8;
-    s->get_offsets (s, &cbLineSrc, &u32OffsetSrc);
+    s->get_offsets (s, &cbLineSrc, &u32OffsetSrc, &u32Dummy);
 
     /* Assume that rendering is performed only on visible part of VRAM.
      * This is true because coordinates were verified.
@@ -4012,8 +3940,6 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplayRect: completed.\n"));
 #endif /* DEBUG_sunlover */
-
-    return;
 }
 
 static DECLCALLBACK(int) vgaPortSetupVRAM (PPDMIDISPLAYPORT pInterface, void *pvBuffer, uint32_t cbBuffer)

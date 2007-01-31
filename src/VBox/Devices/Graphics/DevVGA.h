@@ -55,16 +55,13 @@
 #define CONFIG_BOCHS_VBE
 
 #ifdef VBOX
-#define VBE_DISPI_MAX_BPP               32
-#endif
-
-#ifdef VBOX
 #define VBE_DISPI_MAX_XRES              16384
 #define VBE_DISPI_MAX_YRES              16384
 #else
-#define VBE_DISPI_MAX_XRES              1024
-#define VBE_DISPI_MAX_YRES              768
+#define VBE_DISPI_MAX_XRES              1600
+#define VBE_DISPI_MAX_YRES              1200
 #endif
+#define VBE_DISPI_MAX_BPP               32
 
 #define VBE_DISPI_INDEX_ID              0x0
 #define VBE_DISPI_INDEX_XRES            0x1
@@ -84,10 +81,8 @@
 
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
-#ifdef VBOX
 #define VBE_DISPI_GETCAPS               0x02
 #define VBE_DISPI_8BIT_DAC              0x20
-#endif
 #define VBE_DISPI_LFB_ENABLED           0x40
 #define VBE_DISPI_NOCLEARMEM            0x80
 
@@ -140,7 +135,8 @@
     int (*get_bpp)(struct VGAState *s);                                 \
     void (*get_offsets)(struct VGAState *s,                             \
                         uint32_t *pline_offset,                         \
-                        uint32_t *pstart_addr);                         \
+                        uint32_t *pstart_addr,                          \
+                        uint32_t *pline_compare);                       \
     void (*get_resolution)(struct VGAState *s,                          \
                         int *pwidth,                                    \
                         int *pheight);                                  \
@@ -174,7 +170,7 @@
 
 struct VGAState;
 typedef int FNGETBPP(struct VGAState *s);
-typedef void FNGETOFFSETS(struct VGAState *s, uint32_t *pline_offset, uint32_t *pstart_addr);
+typedef void FNGETOFFSETS(struct VGAState *s, uint32_t *pline_offset, uint32_t *pstart_addr, uint32_t *pline_compare);
 typedef void FNGETRESOLUTION(struct VGAState *s, int *pwidth, int *pheight);
 typedef unsigned int FNRGBTOPIXEL(unsigned int r, unsigned int g, unsigned b);
 typedef void FNCURSORINVALIDATE(struct VGAState *s);
