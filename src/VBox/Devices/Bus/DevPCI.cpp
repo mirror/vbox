@@ -113,14 +113,14 @@ typedef struct PIIX3State
  */
 typedef struct PCIGLOBALS
 {
+    /** Irq levels for the four PCI Irqs. */
+    uint32_t            pci_irq_levels[4][PCI_IRQ_WORDS];
     /** The base address for PCI assigned MMIO addresses. */
     RTGCPHYS            pci_mem_base;
     /** The next I/O port address which the PCI BIOS will use. */
     uint32_t            pci_bios_io_addr;
     /** The next MMIO address which the PCI BIOS will use. */
     uint32_t            pci_bios_mem_addr;
-    /** Irq levels for the four PCI Irqs. */
-    uint32_t            pci_irq_levels[4][PCI_IRQ_WORDS];
     /** I/O APIC usage flag */
     bool                fUseIoApic;
     /** I/O APIC irq levels */
@@ -148,7 +148,7 @@ typedef struct PCIBus
     /** Config register. */
     uint32_t            uConfigReg;
     /** Array of PCI devices. */
-    PPCIDEVICE          devices[256];
+    HCPTRTYPE(PPCIDEVICE) devices[256];
 
     /** HC pointer to the device instance. */
     PPDMDEVINSHC        pDevInsHC;
@@ -183,6 +183,7 @@ typedef PCIBUS PCIBus;
 #define PCIBUS2PCIGLOBALS(pPciBus) ((PPCIGLOBALS)(&pPciBus->Globals))
 
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -1556,4 +1557,4 @@ const PDMDEVREG g_DevicePCI =
     NULL
 };
 #endif /* IN_RING3 */
-
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
