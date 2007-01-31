@@ -316,8 +316,8 @@ typedef struct CPUM
     /** CR4 mask */
     struct
     {
-        uint32_t Mask;
-        uint32_t OSFSXR;
+        uint32_t AndMask;
+        uint32_t OrMask;
     } CR4;
 
     /** Have we entered rawmode? */
