@@ -642,10 +642,13 @@ typedef struct PGMPOOLPAGE
 {
     /** AVL node code with the (HC) physical address of this page. */
     AVLOHCPHYSNODECORE  Core;
-    /** The guest physical address. */
-    RTGCPHYS            GCPhys;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && defined(IN_GC)
+    uint32_t            Alignment0; /**< Alignment. */
+#endif 
     /** Pointer to the HC mapping of the page. */
     HCPTRTYPE(void *)   pvPageHC;
+    /** The guest physical address. */
+    RTGCPHYS            GCPhys;
     /** The kind of page we're shadowing. (This is really a PGMPOOLKIND enum.) */
     uint8_t             enmKind;
     uint8_t             bPadding;
@@ -700,6 +703,9 @@ typedef struct PGMPOOLPAGE
      *       replaced by a list of pages which share access handler.
      */
     bool                fCR3Mix;
+#if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
+    bool                Alignment[4];   /**< Align the structure size on a 64-bit boundrary. */
+#endif 
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 
 
@@ -739,20 +745,20 @@ typedef struct PGMPOOL
     uint16_t        cMaxUsers;
     /** The number of present page table entries in the entire pool. */
     uint32_t        cPresent;
-    /** Pointer to the array of user nodes - HC pointer. */
-    HCPTRTYPE(PPGMPOOLUSER) paUsersHC;
     /** Pointer to the array of user nodes - GC pointer. */
     GCPTRTYPE(PPGMPOOLUSER) paUsersGC;
+    /** Pointer to the array of user nodes - HC pointer. */
+    HCPTRTYPE(PPGMPOOLUSER) paUsersHC;
 #endif /* PGMPOOL_WITH_USER_TRACKING */
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /** Head of the chain of free phys ext nodes. */
     uint16_t        iPhysExtFreeHead;
     /** The number of user nodes we've allocated. */
     uint16_t        cMaxPhysExts;
-    /** Pointer to the array of physical xref extent nodes - HC pointer. */
-    HCPTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsHC;
     /** Pointer to the array of physical xref extent - GC pointer. */
     GCPTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsGC;
+    /** Pointer to the array of physical xref extent nodes - HC pointer. */
+    HCPTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsHC;
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 #ifdef PGMPOOL_WITH_CACHE
     /** Hash table for GCPhys addresses. */
@@ -765,6 +771,10 @@ typedef struct PGMPOOL
     bool            fCacheEnabled;
 #endif /* PGMPOOL_WITH_CACHE */
 #ifdef PGMPOOL_WITH_MONITORING
+    /** Head of the list of modified pages. */
+    uint16_t        iModifiedHead;
+    /** The current number of modified pages. */
+    uint16_t        cModifiedPages;
     /** Access handler, GC. */
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnAccessHandlerGC;
     /** Access handler, R0. */
@@ -773,16 +783,13 @@ typedef struct PGMPOOL
     HCPTRTYPE(PFNPGMR3PHYSHANDLER)  pfnAccessHandlerR3;
     /** The access handler description (HC ptr). */
     HCPTRTYPE(const char *)         pszAccessHandler;
-    /** Head of the list of modified pages. */
-    uint16_t        iModifiedHead;
-    /** The current number of modified pages. */
-    uint16_t        cModifiedPages;
 #endif /* PGMPOOL_WITH_MONITORING */
     /** The number of pages currently in use. */
     uint16_t        cUsedPages;
 #ifdef VBOX_WITH_STATISTICS
     /** The high wather mark for cUsedPages. */
     uint16_t        cUsedPagesHigh;
+    uint32_t        Alignment1;         /**< Align the next member on a 64-bit boundrary. */
     /** Profiling pgmPoolAlloc(). */
     STAMPROFILEADV  StatAlloc;
     /** Profiling pgmPoolClearAll(). */
@@ -853,6 +860,7 @@ typedef struct PGMPOOL
     STAMCOUNTER     StatMonitorHCAsync;
     /** The high wather mark for cModifiedPages. */
     uint16_t        cModifiedPagesHigh;
+    uint16_t        Alignment2[3];      /**< Align the next member on a 64-bit boundrary. */
 # endif
 # ifdef PGMPOOL_WITH_CACHE
     /** The number of cache hits. */
@@ -871,6 +879,7 @@ typedef struct PGMPOOL
 #endif
     /** The AVL tree for looking up a page by its HC physical address. */
     AVLOHCPHYSTREE  HCPhysTree;
+    uint32_t        Alignment3;         /**< Align the next member on a 64-bit boundrary. */
     /** Array of pages. (cMaxPages in length)
      * The Id is the index into thist array.
      */
