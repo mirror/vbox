@@ -5,6 +5,10 @@
 #include "config-win32.h"
 #include "common.h"
 
+#ifdef VBOX
+#include <VBox/tapwin32.h>
+#endif
+
 /* VER_FILETYPE, VER_FILESUBTYPE, VER_FILEDESCRIPTION_STR
  * and VER_INTERNALNAME_STR must be defined before including COMMON.VER
  * The strings don't need a '\0', since common.ver has them.

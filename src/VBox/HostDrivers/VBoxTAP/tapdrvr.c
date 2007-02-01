@@ -68,6 +68,10 @@
 #include "dhcp.c"
 #include "instance.c"
 
+#ifdef VBOX
+#include <VBox/tapwin32.h>
+#endif
+
 #define IS_UP(ta) \
   ((ta)->m_InterfaceIsRunning && (ta)->m_Extension.m_TapIsRunning)
 
