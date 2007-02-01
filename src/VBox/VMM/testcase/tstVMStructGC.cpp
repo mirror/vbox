@@ -57,20 +57,13 @@
 #include "IOMInternal.h"
 #include "REMInternal.h"
 #include "HWACCMInternal.h"
-#ifdef VBOX_WITH_PATM
-# include "PATMInternal.h"
-#endif
+#include "PATMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
 #include "STAMInternal.h"
-#ifdef VBOX_WITH_CSAM
-# include "CSAMInternal.h"
-#endif
+#include "CSAMInternal.h"
 #include "EMInternal.h"
 #include "REMInternal.h"
-#ifdef VBOX_WITH_RRM
-# include "RRMInternal.h"
-#endif
 #include <VBox/vm.h>
 #include <VBox/param.h>
 #include <VBox/x86.h>
@@ -366,7 +359,7 @@ int main()
     GEN_CHECK_OFF(PGMPOOLPAGE, iUserHead);
     GEN_CHECK_OFF(PGMPOOLPAGE, cPresent);
     GEN_CHECK_OFF(PGMPOOLPAGE, iFirstPresent);
-#endif 
+#endif
 #ifdef PGMPOOL_WITH_MONITORING
     GEN_CHECK_OFF(PGMPOOLPAGE, cModifications);
     GEN_CHECK_OFF(PGMPOOLPAGE, iModifiedNext);
@@ -423,7 +416,7 @@ int main()
     GEN_CHECK_OFF(PGMPOOL, cUsedPagesHigh);
     GEN_CHECK_OFF(PGMPOOL, StatAlloc);
     GEN_CHECK_OFF(PGMPOOL, StatClearAll);
-#endif 
+#endif
     GEN_CHECK_OFF(PGMPOOL, HCPhysTree);
     GEN_CHECK_OFF(PGMPOOL, aPages);
     GEN_CHECK_OFF(PGMPOOL, aPages[1]);
@@ -576,6 +569,37 @@ int main()
     GEN_CHECK_OFF(RTCRITSECT, Strict.pszEnterFile);
     GEN_CHECK_OFF(RTCRITSECT, Strict.u32EnterLine);
     GEN_CHECK_OFF(RTCRITSECT, Strict.uEnterId);
+
+
+    GEN_CHECK_SIZE(CSAM);
+    GEN_CHECK_OFF(CSAM, offVM);
+    GEN_CHECK_OFF(CSAM, pPageTree);
+    GEN_CHECK_OFF(CSAM, aDangerousInstr);
+    GEN_CHECK_OFF(CSAM, aDangerousInstr[1]);
+    GEN_CHECK_OFF(CSAM, aDangerousInstr[CSAM_MAX_DANGR_INSTR - 1]);
+    GEN_CHECK_OFF(CSAM, cDangerousInstr);
+    GEN_CHECK_OFF(CSAM, iDangerousInstr);
+    GEN_CHECK_OFF(CSAM, pPDBitmapGC);
+    GEN_CHECK_OFF(CSAM, pPDHCBitmapGC);
+    GEN_CHECK_OFF(CSAM, pPDBitmapHC);
+    GEN_CHECK_OFF(CSAM, pPDGCBitmapHC);
+    GEN_CHECK_OFF(CSAM, savedstate);
+    GEN_CHECK_OFF(CSAM, savedstate.pSSM);
+    GEN_CHECK_OFF(CSAM, savedstate.cPageRecords);
+    GEN_CHECK_OFF(CSAM, savedstate.cPatchPageRecords);
+    GEN_CHECK_OFF(CSAM, cDirtyPages);
+    GEN_CHECK_OFF(CSAM, pvDirtyBasePage);
+    GEN_CHECK_OFF(CSAM, pvDirtyBasePage[1]);
+    GEN_CHECK_OFF(CSAM, pvDirtyBasePage[CSAM_MAX_DIRTY_PAGES - 1]);
+    GEN_CHECK_OFF(CSAM, pvDirtyFaultPage);
+    GEN_CHECK_OFF(CSAM, pvDirtyFaultPage[1]);
+    GEN_CHECK_OFF(CSAM, pvDirtyFaultPage[CSAM_MAX_DIRTY_PAGES - 1]);
+    GEN_CHECK_OFF(CSAM, fScanningStarted);
+    GEN_CHECK_OFF(CSAM, fGatesChecked);
+    GEN_CHECK_OFF(CSAM, StatNrTraps);
+    GEN_CHECK_OFF(CSAM, StatNrPages);
+
+    //GEN_CHECK_SIZE(PATM);
 
     return 0;
 }

@@ -143,6 +143,9 @@ typedef struct CSAM
     /** Offset to the VM structure.
      * See CSAM2VM(). */
     RTINT               offVM;
+#if HC_ARCH_BITS == 64
+    RTINT               Alignment0;     /**< Align pPageTree correctly. */
+#endif
 
     HCPTRTYPE(PAVLPVNODECORE) pPageTree;
 
@@ -161,7 +164,7 @@ typedef struct CSAM
     /* Temporary storage during load/save state */
     struct
     {
-        PSSMHANDLE      pSSM;
+        HCPTRTYPE(PSSMHANDLE) pSSM;
         uint32_t        cPageRecords;
         uint32_t        cPatchPageRecords;
     } savedstate;
@@ -176,6 +179,7 @@ typedef struct CSAM
 
     /* Set when the IDT gates have been checked for the first time. */
     bool                fGatesChecked;
+    bool                Alignment1[2]; /**< Align the stats on an 8-byte boundrary. */
 
     STAMCOUNTER         StatNrTraps;
     STAMCOUNTER         StatNrPages;
