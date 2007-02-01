@@ -988,7 +988,10 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     if (VBOX_SUCCESS(rc) && cb)
     {
         if (    (GCPhysFault >= pData->GCTDRA && GCPhysFault + cb < pcnetTdraAddr(pData, 0))
-            ||  (GCPhysFault >= pData->GCRDRA && GCPhysFault + cb < pcnetRdraAddr(pData, 0)))
+#ifdef PCNET_MONITOR_RECEIVE_RING
+            ||  (GCPhysFault >= pData->GCRDRA && GCPhysFault + cb < pcnetRdraAddr(pData, 0))
+#endif
+           )
         {
             int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
             if (VBOX_SUCCESS(rc))
@@ -1205,6 +1208,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
 
     /** @todo unregister order not correct! */
 
+#ifdef PCNET_MONITOR_RECEIVE_RING
     if (pData->GCRDRA != pData->RDRAPhysOld || CSR_RCVRL(pData) != pData->cbRDRAOld)
     {
         if (pData->RDRAPhysOld != 0)
@@ -1226,7 +1230,9 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
         pData->RDRAPhysOld = pData->GCRDRA;
         pData->cbRDRAOld   = pcnetRdraAddr(pData, 0);
     }
+#endif
 
+#ifdef PCNET_MONITOR_RECEIVE_RING
     /* 3 possibilities:
      * 1) TDRA on different physical page as RDRA
      * 2) TDRA completely on same physical page as RDRA
@@ -1240,6 +1246,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     if (    RDRAPageStart > TDRAPageEnd
         ||  TDRAPageStart > RDRAPageEnd)
     {
+#endif
         /* 1) */
         if (pData->GCTDRA != pData->TDRAPhysOld || CSR_XMTRL(pData) != pData->cbTDRAOld)
         {
@@ -1262,6 +1269,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
             pData->TDRAPhysOld = pData->GCTDRA;
             pData->cbTDRAOld   = pcnetTdraAddr(pData, 0);
         }
+#ifdef PCNET_MONITOR_RECEIVE_RING
     }
     else
     if (    RDRAPageStart != TDRAPageStart
@@ -1274,6 +1282,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
         AssertFailed();
     }
     /* else 2) */
+#endif
 }
 #endif /* PCNET_NO_POLLING */
 
