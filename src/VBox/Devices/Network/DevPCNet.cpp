@@ -108,11 +108,13 @@
 #define PCNET_IOPORT_SIZE               0x20
 #define PCNET_PNPMMIO_SIZE              0x20
 
-#define PCNET_SAVEDSTATE_VERSION        4
+#define PCNET_SAVEDSTATE_VERSION        5
 
 #define BCR_MAX_RAP                     50
 #define MII_MAX_REG                     32
 #define CSR_MAX_REG                     128
+
+#define PCNET_TRQUEUE_DEPTH             4
 
 typedef struct PCNetState_st PCNetState;
 
@@ -154,7 +156,7 @@ struct PCNetState_st
         /** The physical address of the frame if it was not copied to abFrameBuf.
          *  Set to NIL_RTR3PTR if frame was copied to abFrameBuf. */
         RTR3PTR  pvR3;
-    } aFrames[8];
+    } aFrames[PCNET_TRQUEUE_DEPTH];
     /** The current number of frames in aFrames to transmit. */
     uint32_t                            iFrame;
     /** The xmit buffer. */
@@ -251,8 +253,8 @@ struct PCNetState_st
     STAMPROFILEADV                      StatTransmitHC;
     STAMPROFILE                         StatXmitQueue;
     STAMPROFILEADV                      StatXmitQueueFlushGC;
-    STAMCOUNTER                         aStatFlushCounts[9];
-    STAMCOUNTER                         aStatXmitChainCounts[8];
+    STAMCOUNTER                         aStatFlushCounts[PCNET_TRQUEUE_DEPTH+1];
+    STAMCOUNTER                         aStatXmitChainCounts[PCNET_TRQUEUE_DEPTH];
     STAMPROFILEADV                      StatInterrupt;
     STAMPROFILEADV                      StatPollTimer;
     STAMCOUNTER                         StatMIIReads;
@@ -3863,6 +3865,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Assert(RT_ELEMENTS(pData->aBCR) == BCR_MAX_RAP);
     Assert(RT_ELEMENTS(pData->aMII) == MII_MAX_REG);
     Assert(sizeof(pData->abFrameBuf) == RT_ALIGN_Z(sizeof(pData->abFrameBuf), 16));
+    Assert(PCNET_TRQUEUE_DEPTH*1536 <= sizeof(pData->abFrameBuf));
 
     /*
      * Validate configuration.
