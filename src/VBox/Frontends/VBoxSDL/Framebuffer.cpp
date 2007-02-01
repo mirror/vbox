@@ -93,6 +93,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     mFixedSDLWidth  = u32FixedWidth;
     mFixedSDLHeight = u32FixedHeight;
     mFixedSDLBPP    = u32FixedBPP;
+    mDefaultSDLBPP  = 32;
     mCenterXOffset  = 0;
     mCenterYOffset  = 0;
     /* Start with standard screen dimensions. */
@@ -139,13 +140,20 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     signal(SIGQUIT, SIG_DFL);
 #endif
 
-    if (mfShowSDLConfig)
+    const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
+    Assert(videoInfo);
+    if (videoInfo)
     {
-        /* output what SDL is capable of */
-        const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
-        Assert(videoInfo);
-        if (videoInfo)
+        switch (videoInfo->vfmt->BitsPerPixel)
         {
+            case 16: mDefaultSDLBPP = 16; break;
+            case 24: mDefaultSDLBPP = 24; break;
+            default:
+            case 32: mDefaultSDLBPP = 32; break;
+        }
+
+        /* output what SDL is capable of */
+        if (mfShowSDLConfig)
             RTPrintf("SDL capabilities:\n"
                      "  Hardware surface support:                    %s\n"
                      "  Window manager available:                    %s\n"
@@ -171,7 +179,6 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
                          videoInfo->video_mem,
                          videoInfo->vfmt->BitsPerPixel,
                          getenv("SDL_VIDEODRIVER"));
-        }
     }
 
     if (12320 == g_cbIco64x01)
@@ -573,33 +580,19 @@ void VBoxSDLFB::resizeGuest()
     LogFlow(("VBoxSDL::resizeGuest() mGuestXRes: %d, mGuestYRes: %d\n", mGuestXRes, mGuestYRes));
     AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 
+    int      cBitsPerPixel = 32;
+    uint32_t Rmask, Gmask, Bmask, Amask = 0;
+
     /* pixel characteristics, default to fallback 32bpp format */
-    int bitsPerPixel = 32;
-    Uint32 Rmask = 0x00FF0000;
-    Uint32 Gmask = 0x0000FF00;
-    Uint32 Bmask = 0x000000FF;
-    Uint32 Amask = 0;
+    if (mPixelFormat == FramebufferPixelFormat_PixelFormatRGB16)
+        cBitsPerPixel = 16;
+    else if (mPixelFormat == FramebufferPixelFormat_PixelFormatRGB24)
+        cBitsPerPixel = 24;
 
-    /* a different format we support directly? */
-    switch (mPixelFormat)
+    switch (cBitsPerPixel)
     {
-        case FramebufferPixelFormat_PixelFormatRGB24:
-        {
-            bitsPerPixel = 24;
-            Rmask = 0x00FF0000;
-            Gmask = 0x0000FF00;
-            Bmask = 0x000000FF;
-            break;
-        }
-
-        case FramebufferPixelFormat_PixelFormatRGB16:
-        {
-            bitsPerPixel = 16;
-            Rmask = 0xF800;
-            Gmask = 0x07E0;
-            Bmask = 0x001F;
-            break;
-        }
+        case 16: Rmask = 0xF8000000; Gmask = 0x000007E0; Bmask = 0x0000001F; break;
+        default: Rmask = 0x00FF0000; Gmask = 0x0000FF00; Bmask = 0x000000FF; break;
     }
 
     /* first free the current surface */
@@ -613,13 +606,13 @@ void VBoxSDLFB::resizeGuest()
     if (mPixelFormat != FramebufferPixelFormat_PixelFormatDefault)
     {
         /* Create a source surface from guest VRAM. */
-        mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, bitsPerPixel, mLineSize,
-                                             Rmask, Gmask, Bmask, Amask);
+        mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, cBitsPerPixel,
+                                             mLineSize, Rmask, Gmask, Bmask, Amask);
     }
     else
     {
         /* Create a software surface for which SDL allocates the RAM */
-        mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, bitsPerPixel,
+        mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, cBitsPerPixel,
                                          Rmask, Gmask, Bmask, Amask);
     }
     LogFlow(("VBoxSDL:: created VRAM surface %p\n", mSurfVRAM));

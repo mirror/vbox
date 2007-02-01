@@ -147,6 +147,8 @@ private:
     uint32_t mFixedSDLHeight;
     /** fixed SDL bits per pixel (~0 = not set) */
     uint32_t mFixedSDLBPP;
+    /** default BPP */
+    uint32_t mDefaultSDLBPP;
     /** Y offset in pixels, i.e. guest-nondrawable area at the top */
     uint32_t mTopOffset;
     /** X offset for guest screen centering */
@@ -184,7 +186,6 @@ private:
 
     /** the application Icon */
     SDL_Surface *mWMIcon;
-
 };
 
 class VBoxSDLFBOverlay :
