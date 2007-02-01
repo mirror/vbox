@@ -635,7 +635,7 @@ PDMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
 static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
 {
     PPDMQUEUEITEMCORE pItems = (PPDMQUEUEITEMCORE)ASMAtomicXchgPtr((void * volatile *)&pQueue->pPendingHC, NULL);
-    AssertMsg(pItems || pQueue->pPendingGC, ("WTF? can't be NULL now!\n"));
+    AssertMsg(pItems || pQueue->pPendingGC, ("ERROR: can't be NULL now!\n"));
 
     /*
      * Reverse the list (it's inserted in LIFO order to avoid semaphores, remember).
