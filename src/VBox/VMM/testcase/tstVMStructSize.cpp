@@ -198,11 +198,13 @@ int main()
     CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalDeregister, u.padding);
     CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalModify, u.padding);
     CHECK_SIZE_ALIGNMENT(VMMR0JMPBUF, 8);
+    CHECK_SIZE_ALIGNMENT(PATCHINFO, 8);
 #if 0
     PRINT_OFFSET(VM, fForcedActions);
     PRINT_OFFSET(VM, StatQemuToGC);
     PRINT_OFFSET(VM, StatGCToQemu);
 #endif
+
 
 
     /*

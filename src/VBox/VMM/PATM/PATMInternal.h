@@ -223,8 +223,8 @@ typedef struct _PATCHINFO
     uint32_t        uOldState;
     uint32_t        uOpMode;
 
-    HCPTRTYPE(uint8_t *)  pPrivInstrHC;    //HC pointer of privileged instruction
     GCPTRTYPE(uint8_t *)  pPrivInstrGC;    //GC pointer of privileged instruction
+    HCPTRTYPE(uint8_t *)  pPrivInstrHC;    //HC pointer of privileged instruction
     uint8_t         aPrivInstr[MAX_INSTR_SIZE];
     uint32_t        cbPrivInstr;
     uint32_t        opcode;      //opcode for priv instr (OP_*)
@@ -236,6 +236,9 @@ typedef struct _PATCHINFO
     RTGCUINTPTR     pPatchBlockOffset;
     uint32_t        cbPatchBlockSize;
     uint32_t        uCurPatchOffset;
+#if HC_ARCH_BITS == 64
+    uint32_t        Alignment0;         /**< Align flags correctly. */
+#endif 
 
     uint64_t        flags;
 
@@ -250,8 +253,8 @@ typedef struct _PATCHINFO
     int32_t         nrFixups;
 
     /* Tree of jumps inside the generated patch code. */
-    HCPTRTYPE(PAVLPVNODECORE) JumpTree;
     int32_t         nrJumpRecs;
+    HCPTRTYPE(PAVLPVNODECORE) JumpTree;
 
     /**
      * Lookup trees for determining the corresponding guest address of an
@@ -260,12 +263,15 @@ typedef struct _PATCHINFO
     HCPTRTYPE(PAVLU32NODECORE) Patch2GuestAddrTree;
     HCPTRTYPE(PAVLGCPTRNODECORE) Guest2PatchAddrTree;
     uint32_t                  nrPatch2GuestRecs;
+#if HC_ARCH_BITS == 64
+    uint32_t        Alignment1;
+#endif 
 
     // Cache record for PATMGCVirtToHCVirt
     P2GLOOKUPREC    cacheRec;
 
     /* Temporary information during patch creation. Don't waste hypervisor memory for this. */
-    PPATCHINFOTEMP  pTempInfo;
+    HCPTRTYPE(PPATCHINFOTEMP) pTempInfo;
 
     /* Count the number of writes to the corresponding guest code. */
     uint32_t        cCodeWrites;
@@ -281,6 +287,7 @@ typedef struct _PATCHINFO
 
     /* First opcode byte, that's overwritten when a patch is marked dirty. */
     uint8_t         bDirtyOpcode;
+    uint8_t         Alignment2[7];      /**< Align the structure size on a 8-byte boundrary. */
 } PATCHINFO, *PPATCHINFO;
 
 #define PATCHCODE_PTR_GC(pPatch)    (RTGCPTR)  (pVM->patm.s.pPatchMemGC + (pPatch)->pPatchBlockOffset)
@@ -362,8 +369,8 @@ typedef struct PATM
     int32_t                 deltaReloc;
 
     /* GC PATM state pointers */
-    GCPTRTYPE(PPATMGCSTATE) pGCStateGC;
     HCPTRTYPE(PPATMGCSTATE) pGCStateHC;
+    GCPTRTYPE(PPATMGCSTATE) pGCStateGC;
 
     /** PATM stack page for call instruction execution. (2 parts: one for our private stack and one to store the original return address */
     GCPTRTYPE(RTGCPTR *)    pGCStackGC;
@@ -392,8 +399,8 @@ typedef struct PATM
     RTGCPTR                   pPatchedInstrGCHighest;
 
     /** Pointer to the patch tree for instructions replaced by 'int 3'. */
-    HCPTRTYPE(PPATMTREES)   PatchLookupTreeHC;
     GCPTRTYPE(PPATMTREES)   PatchLookupTreeGC;
+    HCPTRTYPE(PPATMTREES)   PatchLookupTreeHC;
 
     /** Global PATM lookup and call function (used by call patches). */
     RTGCPTR                 pfnHelperCallGC;
@@ -405,7 +412,7 @@ typedef struct PATM
     RTGCPTR                 pfnHelperIretGC;
 
     /** Fake patch record for global functions. */
-    PPATMPATCHREC           pGlobalPatchRec;
+    HCPTRTYPE(PPATMPATCHREC) pGlobalPatchRec;
 
     /** Pointer to original sysenter handler */
     RTGCPTR                 pfnSysEnterGC;
@@ -427,8 +434,11 @@ typedef struct PATM
     /* Temporary storage during load/save state */
     struct
     {
-        PSSMHANDLE          pSSM;
+        HCPTRTYPE(PSSMHANDLE) pSSM;
         uint32_t            cPatches;
+#if HC_ARCH_BITS == 64
+        uint32_t            Alignment0; /**< Align the structure size on a 8-byte boundrary. */
+#endif 
     } savedstate;
 
     STAMCOUNTER             StatNrOpcodeRead;
@@ -483,6 +493,7 @@ typedef struct PATM
     STAMCOUNTER             StatFunctionLookupReplace;
     STAMCOUNTER             StatFunctionLookupInsert;
     uint32_t                StatU32FunctionMaxSlotsUsed;
+    uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundrary. */
 } PATM, *PPATM;
 
 
