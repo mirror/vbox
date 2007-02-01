@@ -1054,12 +1054,19 @@ static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pv
     /* Writes done by our code don't require polling of course */
     if (PDMCritSectIsOwner(&pData->CritSect) == false)
     {
-        int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
-        AssertReleaseRC(rc);
-        /* Check if we can do something now */
-        pcnetPollRxTx(pData);
-        pcnetUpdateIrq(pData);
-        PDMCritSectLeave(&pData->CritSect);
+        if (    (GCPhys >= pData->GCTDRA && GCPhys + cbBuf < pcnetTdraAddr(pData, 0))
+#ifdef PCNET_MONITOR_RECEIVE_RING
+            ||  (GCPhys >= pData->GCRDRA && GCPhys + cbBuf < pcnetRdraAddr(pData, 0))
+#endif
+           )
+        {
+            int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+            AssertReleaseRC(rc);
+            /* Check if we can do something now */
+            pcnetPollRxTx(pData);
+            pcnetUpdateIrq(pData);
+            PDMCritSectLeave(&pData->CritSect);
+        }
     }
     return VINF_SUCCESS;
 }
