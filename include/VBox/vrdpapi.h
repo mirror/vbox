@@ -598,8 +598,8 @@ typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
 typedef DECLCALLBACK(int) FNVRDPCLIPBOARDCALLBACK (void *pvCallback,
                                                    uint32_t u32ClientId,
                                                    uint32_t u32Format,
-                                                   const void *pvRet,
-                                                   uint32_t cbRet);
+                                                   const void *pvData,
+                                                   uint32_t cbData);
                                              
 typedef FNVRDPCLIPBOARDCALLBACK *PFNVRDPCLIPBOARDCALLBACK;
 
