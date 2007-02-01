@@ -36,6 +36,7 @@
 // TAP IOCTLs
 //=============
 
+#ifndef VBOX
 #define TAP_CONTROL_CODE(request,method) \
   CTL_CODE (FILE_DEVICE_UNKNOWN, request, method, FILE_ANY_ACCESS)
 
@@ -48,6 +49,7 @@
 #define TAP_IOCTL_CONFIG_DHCP_MASQ      TAP_CONTROL_CODE (7, METHOD_BUFFERED)
 #define TAP_IOCTL_GET_LOG_LINE          TAP_CONTROL_CODE (8, METHOD_BUFFERED)
 #define TAP_IOCTL_CONFIG_DHCP_SET_OPT   TAP_CONTROL_CODE (9, METHOD_BUFFERED)
+#endif
 
 //=================
 // Registry keys
