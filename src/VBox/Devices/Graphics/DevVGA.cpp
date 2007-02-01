@@ -1970,7 +1970,6 @@ static void vga_draw_graphic(VGAState *s, int full_update)
             multi_run--;
         }
         /* line compare acts on the displayed lines */
-/** @todo r=bird: why was our change removed? I can't immediately spot and it wasn't mentioned in the commit message... */
         if ((uint32_t)y == s->line_compare)
             addr1 = 0;
         d += linesize;
