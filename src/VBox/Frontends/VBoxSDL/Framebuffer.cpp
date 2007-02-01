@@ -591,7 +591,7 @@ void VBoxSDLFB::resizeGuest()
 
     switch (cBitsPerPixel)
     {
-        case 16: Rmask = 0xF8000000; Gmask = 0x000007E0; Bmask = 0x0000001F; break;
+        case 16: Rmask = 0x0000F800; Gmask = 0x000007E0; Bmask = 0x0000001F; break;
         default: Rmask = 0x00FF0000; Gmask = 0x0000FF00; Bmask = 0x000000FF; break;
     }
 
