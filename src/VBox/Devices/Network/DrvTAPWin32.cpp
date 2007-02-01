@@ -533,6 +533,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         CloseHandle(pData->hFile);
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     }
+    /** @todo verify version */
 
     mediastatus.fConnect = TRUE;
     ret = DeviceIoControl(pData->hFile, TAP_IOCTL_SET_MEDIA_STATUS, &mediastatus, sizeof(mediastatus), NULL, 0, &length, NULL);
