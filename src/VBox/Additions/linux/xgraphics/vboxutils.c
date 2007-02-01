@@ -262,7 +262,7 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
                     "despite clearing the queue.  Switching to unaccelerated mode.\n");
         }
         /* Now copy the data into the buffer */
-        if (off32Data + sizeof(cmdHdr) < VBVA_RING_BUFFER_SIZE)
+        if (off32Free + sizeof(cmdHdr) < VBVA_RING_BUFFER_SIZE)
         {
             memcpy(&pMem->au8RingBuffer[off32Free], &cmdHdr,
                    sizeof(cmdHdr));
@@ -275,7 +275,8 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
             CARD8 *pu8Second = (CARD8 *)&cmdHdr + u32First;
             CARD32 u32Second = sizeof(cmdHdr) - u32First;
             memcpy(&pMem->au8RingBuffer[off32Free], &cmdHdr, u32First);
-            memcpy(&pMem->au8RingBuffer[0], (void *)pu8Second, u32Second);
+            if (u32Second)
+                memcpy(&pMem->au8RingBuffer[0], (void *)pu8Second, u32Second);
             pMem->off32Free = u32Second;
         }
         pRecord->cbRecord += sizeof(cmdHdr);
