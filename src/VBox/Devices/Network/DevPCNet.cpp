@@ -1203,6 +1203,8 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     Log(("pcnetUpdateRingHandlers TD %VGp size %x -> %VGp size %x\n", pData->TDRAPhysOld, pData->cbTDRAOld, pData->GCTDRA, pcnetTdraAddr(pData, 0)));
     Log(("pcnetUpdateRingHandlers RX %VGp size %x -> %VGp size %x\n", pData->RDRAPhysOld, pData->cbRDRAOld, pData->GCRDRA, pcnetRdraAddr(pData, 0)));
 
+    /** @todo unregister order not correct! */
+
     if (pData->GCRDRA != pData->RDRAPhysOld || CSR_RCVRL(pData) != pData->cbRDRAOld)
     {
         if (pData->RDRAPhysOld != 0)
@@ -2651,9 +2653,7 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
         switch (addr & 0x0f)
         {
             case 0x00: /* RDP */
-#ifndef PCNET_NO_POLLING
                 pcnetPollTimer(pData);
-#endif
                 val = pcnetCSRReadU16(pData, pData->u32RAP);
                 if (pData->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
@@ -2670,9 +2670,7 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
                 break;
         }
     }
-#ifndef PCNET_NO_POLLING
     pcnetUpdateIrq(pData);
-#endif
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
@@ -2730,9 +2728,7 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
         switch (addr & 0x0f)
         {
             case 0x00: /* RDP */
-#ifndef PCNET_NO_POLLING
                 pcnetPollTimer(pData);
-#endif
                 val = pcnetCSRReadU16(pData, pData->u32RAP);
                 if (pData->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
@@ -2749,9 +2745,7 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
                 break;
         }
     }
-#ifndef PCNET_NO_POLLING
     pcnetUpdateIrq(pData);
-#endif
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
