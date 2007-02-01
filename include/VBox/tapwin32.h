@@ -21,7 +21,8 @@
 #ifndef __VBox_tapwin32_h__
 #define __VBox_tapwin32_h__
 
-#include <windows.h>
+#define TAP_DRIVER_MAJOR_VERSION    8
+#define TAP_DRIVER_MINOR_VERSION    1
 
 //=============
 // TAP IOCTLs
@@ -29,9 +30,9 @@
 
 typedef struct
 {
-    DWORD major;
-    DWORD minor;
-    DWORD debug;
+    ULONG major;
+    ULONG minor;
+    ULONG debug;
 } TAP_VERSION;
 
 typedef struct
