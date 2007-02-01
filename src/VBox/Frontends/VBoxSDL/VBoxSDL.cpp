@@ -475,8 +475,20 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnRuntimeError)(BOOL fatal, INPTR BSTR id, INPTR BSTR message)
+    STDMETHOD(OnRuntimeError)(BOOL fFatal, INPTR BSTR id, INPTR BSTR message)
     {
+        MachineState_T machineState;
+        gMachine->COMGETTER(State)(&machineState);
+        const char *pszType;
+        bool fPaused = machineState == MachineState_Paused;
+        if (fFatal)
+            pszType = "FATAL ERROR";
+        else if (machineState == MachineState_Paused)
+            pszType = "Non-fatal ERROR";
+        else
+            pszType = "WARNING";
+        RTStrmPrintf(g_pStdErr, "\n%s: ** %lS **\n%lS\n%s\n", pszType, id, message,
+                     fPaused ? "The VM was paused. Continue with HostKey + P after you solved the problem.\n" : "");
         return S_OK;
     }
 
