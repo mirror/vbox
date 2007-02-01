@@ -487,7 +487,7 @@ public:
             pszType = "Non-fatal ERROR";
         else
             pszType = "WARNING";
-        RTStrmPrintf(g_pStdErr, "\n%s: ** %lS **\n%lS\n%s\n", pszType, id, message,
+        RTPrintf("\n%s: ** %lS **\n%lS\n%s\n", pszType, id, message,
                      fPaused ? "The VM was paused. Continue with HostKey + P after you solved the problem.\n" : "");
         return S_OK;
     }
