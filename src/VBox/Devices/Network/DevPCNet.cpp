@@ -995,6 +995,8 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 #endif
            )
         {
+            uint32_t offsetTDRA = (GCPhysFault - pData->GCTDRA);
+
             int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
             if (VBOX_SUCCESS(rc))
             {
@@ -1797,10 +1799,11 @@ DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
 {
     if (pData->iFrame)
     {
-        LogFlow(("#%d pcnetXmitFlushFrames: flushing %d frames\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
 #ifdef IN_RING3
+        Log(("#%d HC: pcnetXmitFlushFrames: flushing %d frames\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
         pcnetXmitQueueConsumer(CTXSUFF(pData->pDevIns), NULL);
 #else
+        Log(("#%d GC: pcnetXmitFlushFrames: flushing %d frames\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
         STAM_PROFILE_ADV_START(&pData->StatXmitQueueFlushGC, a);
         PDMQueueFlush(pData->CTXSUFF(pXmitQueue));
         STAM_PROFILE_ADV_STOP(&pData->StatXmitQueueFlushGC, a);
