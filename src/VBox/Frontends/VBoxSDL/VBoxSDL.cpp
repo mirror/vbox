@@ -721,10 +721,12 @@ int main(int argc, char *argv[])
 #ifdef VBOX_WIN32_UI
     bool fWin32UI = false;
 #endif
-    bool fShowSDLConfig = false;
-    uint32_t fixedWidth = ~(uint32_t)0;
-    uint32_t fixedHeight = ~(uint32_t)0;
-    uint32_t fixedBPP = ~(uint32_t)0;
+    bool fShowSDLConfig    = false;
+    uint32_t fixedWidth    = ~(uint32_t)0;
+    uint32_t fixedHeight   = ~(uint32_t)0;
+    uint32_t fixedBPP      = ~(uint32_t)0;
+    uint32_t uResizeWidth  = ~(uint32_t)0;
+    uint32_t uResizeHeight = ~(uint32_t)0;
 
     /* The damned GOTOs forces this to be up here - totally out of place. */
     /*
@@ -2241,6 +2243,20 @@ int main(int argc, char *argv[])
              */
             case SDL_ACTIVEEVENT:
             {
+                /**
+                 * @todo This is a workaround for synchronization problems between EMT and the
+                 *       SDL main thread. It can happen that the SDL thread already starts a
+                 *       new resize operation while the EMT is still busy with the old one
+                 *       leading to a deadlock. Therefore we call SetVideoModeHint only once
+                 *       when the mouse button was released.
+                 */
+                if (uResizeWidth != ~(uint32_t)0)
+                {
+                    /* communicate the resize event to the guest */
+                    gDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0);
+                    uResizeWidth = ~(uint32_t)0;
+                }
+
                 /*
                  * There is a strange behaviour in SDL when running without a window
                  * manager: When SDL_WM_GrabInput(SDL_GRAB_ON) is called we receive two
@@ -2265,11 +2281,10 @@ int main(int argc, char *argv[])
                 if (gDisplay)
                 {
 #ifdef VBOX_SECURELABEL
-                    /* communicate the resize event to the guest */
-                    gDisplay->SetVideoModeHint(event.resize.w, RT_MAX(0, event.resize.h - SECURE_LABEL_HEIGHT), 0);
+                    uResizeWidth  = event.resize.w;
+                    uResizeHeight = RT_MAX(0, event.resize.h - SECURE_LABEL_HEIGHT);
 #else
-                    /* communicate the resize event to the guest */
-                    gDisplay->SetVideoModeHint(event.resize.w, event.resize.h, 0);
+                    uResizeHeight = event.resize.h;
 #endif
                 }
                 break;
