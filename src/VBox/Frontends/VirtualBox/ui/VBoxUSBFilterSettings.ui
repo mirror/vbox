@@ -137,7 +137,10 @@
                                 <cstring>leUSBFilterVendorId</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>USB filter vendor ID</string>
+                                <string>Defines the vendor ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.</string>
                             </property>
                         </widget>
                         <widget class="QLineEdit" row="1" column="1">
@@ -145,7 +148,10 @@
                                 <cstring>leUSBFilterProductId</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>USB filter product ID</string>
+                                <string>Defines the product ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.</string>
                             </property>
                         </widget>
                         <widget class="QLineEdit" row="2" column="1">
@@ -153,7 +159,11 @@
                                 <cstring>leUSBFilterRevision</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>USB filter revision number</string>
+                                <string>Defines the revision number filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
+&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
+is a decimal digit of the fractional part. An emtpy string will match any
+value.</string>
                             </property>
                         </widget>
                         <widget class="QLineEdit" row="3" column="1">
@@ -161,7 +171,9 @@
                                 <cstring>leUSBFilterPort</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>USB filter port</string>
+                                <string>Defines the host USB port filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
                             </property>
                         </widget>
                     </grid>
@@ -256,7 +268,9 @@
                                 <cstring>leUSBFilterManufacturer</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>USB filter manufacturer name</string>
+                                <string>Defines the manufacturer filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
                             </property>
                         </widget>
                         <widget class="QLineEdit" row="1" column="1">
@@ -264,7 +278,9 @@
                                 <cstring>leUSBFilterProduct</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>USB filter product name</string>
+                                <string>Defines the product name filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
                             </property>
                         </widget>
                         <widget class="QLineEdit" row="2" column="1">
@@ -272,7 +288,9 @@
                                 <cstring>leUSBFilterSerial</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>USB filter serial number</string>
+                                <string>Defines the serial number filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
                             </property>
                         </widget>
                         <widget class="QComboBox" row="3" column="1">
@@ -280,7 +298,10 @@
                                 <cstring>cbRemote</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>Is this remote USB filter?</string>
+                                <string>Defines whether this filter applies
+to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
+to a VRDP client's computer (&lt;i&gt;Yes&lt;/i&gt;),
+or both (&lt;i&gt;Any&lt;/i&gt;).</string>
                             </property>
                         </widget>
                     </grid>
@@ -317,7 +338,7 @@
                         <enum>Sunken</enum>
                     </property>
                     <property name="whatsThis" stdset="0">
-                        <string>USB filter name</string>
+                        <string>Displays the filter name.</string>
                     </property>
                 </widget>
             </hbox>
@@ -327,12 +348,12 @@
 <tabstops>
     <tabstop>leUSBFilterName</tabstop>
     <tabstop>leUSBFilterVendorId</tabstop>
-    <tabstop>leUSBFilterProductId</tabstop>
-    <tabstop>leUSBFilterRevision</tabstop>
-    <tabstop>leUSBFilterPort</tabstop>
     <tabstop>leUSBFilterManufacturer</tabstop>
+    <tabstop>leUSBFilterProductId</tabstop>
     <tabstop>leUSBFilterProduct</tabstop>
+    <tabstop>leUSBFilterRevision</tabstop>
     <tabstop>leUSBFilterSerial</tabstop>
+    <tabstop>leUSBFilterPort</tabstop>
     <tabstop>cbRemote</tabstop>
 </tabstops>
 <includes>
