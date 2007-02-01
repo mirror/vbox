@@ -123,7 +123,7 @@ int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offs
 
 
 #define PATCHGEN_EPILOG(pPatch, size) \
-    Assert(size <= 512);              \
+    Assert(size <= 640);              \
     pPatch->uCurPatchOffset += size;
 
 
