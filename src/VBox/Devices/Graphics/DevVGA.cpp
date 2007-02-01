@@ -778,11 +778,11 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             s->vbe_regs[s->vbe_index] = val;
 #ifdef VBOX
 #ifdef IN_RING3
-        /* LFB video mode is either disabled or changed.
-         * This notification is used by the display to
-         * disable VBVA.
-         */
-        s->pDrv->pfnLFBModeChange(s->pDrv, (val & VBE_DISPI_ENABLED) != 0);
+            /*
+             * LFB video mode is either disabled or changed. This notification
+             * is used by the display to disable VBVA.
+             */
+            s->pDrv->pfnLFBModeChange(s->pDrv, (val & VBE_DISPI_ENABLED) != 0);
 #endif /* IN_RING3 */
 #endif /* VBOX */
             break;
@@ -1740,7 +1740,7 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
 {
     const unsigned cBits = s->get_bpp(s);
 #if 0 /** @todo kill the nasty resize deadlocks! */
-    int rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTXSUFF(vram_ptr), cx * ((cBits + 7) / 8), cx, cy);
+    int rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTXSUFF(vram_ptr), s->line_offset, cx, cy);
     if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
         return rc;
     AssertRC(rc);
