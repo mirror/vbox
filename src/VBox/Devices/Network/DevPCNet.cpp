@@ -2119,9 +2119,6 @@ static void pcnetTransmit(PCNetState *pData)
     /*
      * If we're in Ring-3 we should flush the queue now, in GC/R0 we'll queue a flush job.
      */
-#if 1
-    pcnetXmitFlushFrames(pData);
-#else
 #ifdef IN_RING3
     pcnetXmitFlushFrames(pData);
 #else
@@ -2135,7 +2132,6 @@ static void pcnetTransmit(PCNetState *pData)
             PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
 # endif
     }
-#endif
 #endif
 
 }
