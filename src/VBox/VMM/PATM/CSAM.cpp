@@ -572,7 +572,7 @@ static HCPTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
         STAM_PROFILE_STOP(&pVM->csam.s.StatTimeAddrConv, a);
         return NULL;
     }
-    Assert(sizeof(HCPTRTYPE(uint8_t*)) == sizeof(uint32_t));
+////invalid?    Assert(sizeof(HCPTRTYPE(uint8_t*)) == sizeof(uint32_t));
 
     pCacheRec->pPageLocStartHC = (HCPTRTYPE(uint8_t*))((RTHCUINTPTR)pHCPtr & PAGE_BASE_HC_MASK);
     pCacheRec->pGuestLoc      = pGCPtr & PAGE_BASE_GC_MASK;
