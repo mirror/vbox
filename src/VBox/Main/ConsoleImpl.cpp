@@ -1991,17 +1991,18 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
         return setError (E_FAIL,
             tr ("The shared folder path '%ls' on the host is not accessible."), aHostPath);
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC (autoVMCaller.rc());
-
     /// @todo (r=sander?) should move this into the shared folder class */
     if (mpVM && mVMMDev->getShFlClientId())
     {
         /*
-         *  if the VM is online and supports shared folders, share this folde
+         *  if the VM is online and supports shared folders, share this folder
          *  under the specified name. On error, return it to the caller.
          */
+
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller (this);
+        CheckComRCReturnRC (autoVMCaller.rc());
+
         VBOXHGCMSVCPARM  parms[2];
         SHFLSTRING      *pFolderName, *pMapName;
         int              cbString;
