@@ -114,7 +114,7 @@
 #define MII_MAX_REG                     32
 #define CSR_MAX_REG                     128
 
-#define PCNET_TRQUEUE_DEPTH             4
+#define PCNET_TRQUEUE_DEPTH             8
 
 typedef struct PCNetState_st PCNetState;
 
@@ -1759,7 +1759,7 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
     rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
     AssertReleaseRC(rc);
-    LogFlow(("#%d pcnetXmitQueueConsumer: iFrame=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
+    Log(("#%d pcnetXmitQueueConsumer: iFrame=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
 
     pData->fTransmitting = true;
     for (i = 0; i < pData->iFrame; i++)
@@ -2119,6 +2119,9 @@ static void pcnetTransmit(PCNetState *pData)
     /*
      * If we're in Ring-3 we should flush the queue now, in GC/R0 we'll queue a flush job.
      */
+#if 1
+    pcnetXmitFlushFrames(pData);
+#else
 #ifdef IN_RING3
     pcnetXmitFlushFrames(pData);
 #else
@@ -2133,6 +2136,8 @@ static void pcnetTransmit(PCNetState *pData)
 # endif
     }
 #endif
+#endif
+
 }
 
 /**
