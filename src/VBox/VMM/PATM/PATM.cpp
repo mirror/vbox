@@ -993,7 +993,7 @@ HCPTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(ui
         AssertMsg(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("MMR3PhysGCVirt2HCVirtEx failed for %08X\n", pGCPtr));
         return NULL;
     }
-    Assert(sizeof(HCPTRTYPE(uint8_t*)) == sizeof(uint32_t));
+////invalid?    Assert(sizeof(HCPTRTYPE(uint8_t*)) == sizeof(uint32_t));
 
     pPatch->cacheRec.pPatchLocStartHC = (HCPTRTYPE(uint8_t*))((RTHCUINTPTR)pHCPtr & PAGE_BASE_HC_MASK);
     pPatch->cacheRec.pGuestLoc        = pGCPtr & PAGE_BASE_GC_MASK;
