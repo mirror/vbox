@@ -4724,14 +4724,24 @@ invalid_write_loop_start:
 
                         if (pPatch->cInvalidWrites > PATM_MAX_INVALID_WRITES)
                         {
-                            LogRel(("PATM: Disable block at %VGv - invalid write %VGv-%VGv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
+                            /** @note possibly dangerous assumption that all future writes will be harmless. */
+                            if (pPatch->flags & PATMFL_IDTHANDLER)
+                            {
+                                LogRel(("PATM: Stop monitoring IDT handler pages at %VGv - invalid write %VGv-%VGv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
 
-                            PATMR3MarkDirtyPatch(pVM, pPatch);
-
+                                Assert(pPatch->flags & PATMFL_CODE_MONITORED);
+                                int rc = patmRemovePatchPages(pVM, pPatch);
+                                AssertRC(rc);
+                            }
+                            else
+                            {
+                                LogRel(("PATM: Disable block at %VGv - invalid write %VGv-%VGv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
+                                PATMR3MarkDirtyPatch(pVM, pPatch);
+                            }
                             /** @note jump back to the start as the pPatchPage has been deleted or changed */
                             goto invalid_write_loop_start;
                         }
-                    }
+                    } /* for */
                 }
             }
         }
