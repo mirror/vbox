@@ -139,6 +139,7 @@ static void    SetPointerShape(const PointerShapeChangeData *data);
 static void    HandleGuestCapsChanged(void);
 static int     HandleHostKey(const SDL_KeyboardEvent *pEv);
 static Uint32  StartupTimer(Uint32 interval, void *param);
+static Uint32  ResizeTimer(Uint32 interval, void *param);
 
 
 /*******************************************************************************
@@ -187,6 +188,7 @@ static Cursor      gpDefaultOrigX11Cursor;
 static SDL_Cursor *gpCustomCursor = NULL;
 static WMcursor   *gpCustomOrigWMcursor = NULL;
 static SDL_Cursor *gpOffCursor = NULL;
+static SDL_TimerID gSdlResizeTimer = NULL;
 
 #ifdef __LINUX__
 static SDL_SysWMinfo gSdlInfo;
@@ -2243,20 +2245,6 @@ int main(int argc, char *argv[])
              */
             case SDL_ACTIVEEVENT:
             {
-                /**
-                 * @todo This is a workaround for synchronization problems between EMT and the
-                 *       SDL main thread. It can happen that the SDL thread already starts a
-                 *       new resize operation while the EMT is still busy with the old one
-                 *       leading to a deadlock. Therefore we call SetVideoModeHint only once
-                 *       when the mouse button was released.
-                 */
-                if (uResizeWidth != ~(uint32_t)0)
-                {
-                    /* communicate the resize event to the guest */
-                    gDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0);
-                    uResizeWidth = ~(uint32_t)0;
-                }
-
                 /*
                  * There is a strange behaviour in SDL when running without a window
                  * manager: When SDL_WM_GrabInput(SDL_GRAB_ON) is called we receive two
@@ -2286,6 +2274,9 @@ int main(int argc, char *argv[])
 #else
                     uResizeHeight = event.resize.h;
 #endif
+                    if (gSdlResizeTimer)
+                        SDL_RemoveTimer(gSdlResizeTimer);
+                    gSdlResizeTimer = SDL_AddTimer(300, ResizeTimer, NULL);
                 }
                 break;
             }
@@ -2320,6 +2311,24 @@ int main(int argc, char *argv[])
                 #undef DECODEW
                 #undef DECODEH
                 break;
+            }
+
+            /*
+             * User event: Window resize done
+             */
+            case SDL_USER_EVENT_WINDOW_RESIZE_DONE:
+            {
+                /**
+                 * @todo This is a workaround for synchronization problems between EMT and the
+                 *       SDL main thread. It can happen that the SDL thread already starts a
+                 *       new resize operation while the EMT is still busy with the old one
+                 *       leading to a deadlock. Therefore we call SetVideoModeHint only once
+                 *       when the mouse button was released.
+                 */
+                /* communicate the resize event to the guest */
+                gDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0);
+                break;
+
             }
 
             /*
@@ -3815,4 +3824,18 @@ static Uint32 StartupTimer(Uint32 interval, void *param)
     event.user.type = SDL_USER_EVENT_TIMER;
     SDL_PushEvent(&event);
     return interval;
+}
+
+/**
+ * Timer callback function to check if resizing is finished
+ */
+static Uint32 ResizeTimer(Uint32 interval, void *param)
+{
+    /* post message so the window is actually resized */
+    SDL_Event event = {0};
+    event.type      = SDL_USEREVENT;
+    event.user.type = SDL_USER_EVENT_WINDOW_RESIZE_DONE;
+    SDL_PushEvent(&event);
+    /* one-shot */
+    return 0;
 }
