@@ -27,7 +27,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_TUN
-#include <VBox/tapwin32.h>
 #include <VBox/pdm.h>
 #include <VBox/cfgm.h>
 #include <VBox/mm.h>
@@ -43,6 +42,9 @@
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
 #endif
+
+#include <windows.h>
+#include <VBox/tapwin32.h>
 
 #include "Builtins.h"
 
