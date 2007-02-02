@@ -175,13 +175,34 @@ static DECLCALLBACK(int) drvTAPW32Send(PPDMINETWORKCONNECTOR pInterface, const v
  */
 static DECLCALLBACK(int) drvTAPW32SendEx(PPDMINETWORKCONNECTOR pInterface, uint32_t cPackets, PPDMINETWORKPACKET paPacket)
 {
-    int rc = VERR_INVALID_PARAMETER;
+    PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
+    int     rc = VERR_INVALID_PARAMETER;
 
-    for (uint32_t i=0;i<cPackets;i++)
+    if (pData->tapVersion.minor > 1)
     {
-        rc = drvTAPW32Send(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
-        if (VBOX_FAILURE(rc))
-            break;
+        TAP_SCATTER_GATHER_LIST_MAX list;
+        BOOL                        ret;
+        DWORD                       length;
+
+        list.cPackets = RT_MIN(cPackets, TAP_SCATTER_GATHER_MAX_PACKETS);
+        cPackets     -= list.cPackets;
+
+        ret = DeviceIoControl(pData->hFile, TAP_IOCTL_TRANSFER_ETHPACKETS, &list, RT_OFFSETOF(TAP_SCATTER_GATHER_LIST_MAX, aPacket[list.cPackets]),
+                              NULL, 0, &length, NULL);
+        if (ret == FALSE)
+            return RTErrConvertFromWin32(GetLastError());
+
+        if (cPackets)
+            return drvTAPW32SendEx(pInterface, cPackets, &paPacket[list.cPackets]);
+    }
+    else
+    {
+        for (uint32_t i=0;i<cPackets;i++)
+        {
+            rc = drvTAPW32Send(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
+            if (VBOX_FAILURE(rc))
+                break;
+        }
     }
     return rc;
 }
