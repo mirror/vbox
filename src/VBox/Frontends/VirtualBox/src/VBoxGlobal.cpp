@@ -2052,9 +2052,11 @@ void VBoxGlobal::cleanup()
 
     /* ensure CGuestOSType objects are no longer used */
     vm_os_types.clear();
-
-    /* ensure we don't use COM any more */
+    /* media list contains a lot of CUUnknown, release them */
+    media_list.clear();
+    /* the last step to ensure we don't use COM any more */
     vbox.detach();
+    
     COMBase::cleanupCOM();
 
     valid = false;
