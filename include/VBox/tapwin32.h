@@ -55,6 +55,13 @@ typedef struct
     ULONG                   cPackets;
     TAP_SCATTER_GATHER_ITEM aPacket[1];
 } TAP_SCATTER_GATHER_LIST, *PTAP_SCATTER_GATHER_LIST;
+
+typedef struct
+{
+    ULONG                   cPackets;
+    TAP_SCATTER_GATHER_ITEM aPacket[TAP_SCATTER_GATHER_MAX_PACKETS];
+} TAP_SCATTER_GATHER_LIST_MAX, *PTAP_SCATTER_GATHER_LIST_MAX;
+
 #pragma pack()
 
 #define TAP_CONTROL_CODE(request,method) \
