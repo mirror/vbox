@@ -2686,7 +2686,7 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
         {
             case 0x00: /* RDP */
                 /** @note if we're not polling, then the guest will tell us when to poll by setting TDMD in CSR0 */
-                /** Polling is then useless here and very expensive. */
+                /** Polling is then useless here and possibly expensive. */
                 if (!CSR_DPOLL(pData))
                     pcnetPollTimer(pData);
 
@@ -2765,7 +2765,7 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
         {
             case 0x00: /* RDP */
                 /** @note if we're not polling, then the guest will tell us when to poll by setting TDMD in CSR0 */
-                /** Polling is then useless here and very expensive. */
+                /** Polling is then useless here and possibly expensive. */
                 if (!CSR_DPOLL(pData))
                     pcnetPollTimer(pData);
 
