@@ -110,7 +110,7 @@ static DECLCALLBACK(int) drvNATSendEx(PPDMINETWORKCONNECTOR pInterface, uint32_t
 {
     int rc = VERR_INVALID_PARAMETER;
 
-    for (uint32_t i=0;i<cPackets;i++)
+    for (uint32_t i = 0; i < cPackets; i++)
     {
         rc = drvNATSend(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
         if (VBOX_FAILURE(rc))
