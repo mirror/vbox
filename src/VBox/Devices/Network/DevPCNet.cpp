@@ -160,7 +160,7 @@ struct PCNetState_st
     /** The current number of frames in aFrames to transmit. */
     uint32_t                            iFrame;
     /** The xmit buffer. */
-    uint8_t                             abFrameBuf[12288];
+    uint8_t                             abFrameBuf[PCNET_TRQUEUE_DEPTH*1536];
     /** The recv buffer. */
     uint8_t                             abRecvBuf[4096];
 
@@ -533,7 +533,7 @@ AssertCompileSize(RMD, 16);
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#define PRINT_TMD(T) Log((    \
+#define PRINT_TMD(T) Log2((    \
         "TMD0 : TBADR=0x%08x\n" \
         "TMD1 : OWN=%d, ERR=%d, FCS=%d, LTI=%d, "       \
         "ONE=%d, DEF=%d, STP=%d, ENP=%d,\n"             \
@@ -550,7 +550,7 @@ AssertCompileSize(RMD, 16);
         (T)->tmd2.lcol, (T)->tmd2.lcar, (T)->tmd2.rtry, \
         (T)->tmd2.tdr, (T)->tmd2.trc))
 
-#define PRINT_RMD(R) Log((    \
+#define PRINT_RMD(R) Log2((    \
         "RMD0 : RBADR=0x%08x\n" \
         "RMD1 : OWN=%d, ERR=%d, FRAM=%d, OFLO=%d, "     \
         "CRC=%d, BUFF=%d, STP=%d, ENP=%d,\n       "     \
@@ -1776,6 +1776,13 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
         }
     }
 
+#ifdef PCNET_DELAY_INT
+    /* Update TXSTRT and TINT. */
+    pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
+    pData->aCSR[0] |= 0x0200;    /* set TINT */
+    pcnetUpdateIrq(pData);
+#endif
+
     pData->fTransmitting = false;
 
     pData->aFrames[0].off  = 0;
@@ -1962,7 +1969,7 @@ static void pcnetTransmit(PCNetState *pData)
             break;
 
 #ifdef PCNET_DEBUG_TMD
-        Log(("#%d TMDLOAD 0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
+        Log2(("#%d TMDLOAD 0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
         PRINT_TMD(&tmd);
 #endif
         pcnetXmitScrapFrame(pData);
@@ -2101,15 +2108,16 @@ static void pcnetTransmit(PCNetState *pData)
             Log(("#%d pcnetTransmit: guest is giving us shit!\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
             break;
         }
-
         /* Update TDMD, TXSTRT and TINT. */
         pData->aCSR[0] &= ~0x0008;       /* clear TDMD */
+
+#ifndef PCNET_DELAY_INT
         pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
         if (    !CSR_TOKINTD(pData)      /* Transmit OK Interrupt Disable, no infl. on errors. */
             ||  (CSR_LTINTEN(pData) && tmd.tmd1.ltint)
             ||  tmd.tmd1.err)
             pData->aCSR[0] |= 0x0200;    /* set TINT */
-
+#endif
         STAM_COUNTER_INC(&pData->aStatXmitChainCounts[RT_MIN(cBuffers,
                                                       ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
     } while (CSR_TXON(pData));          /* transfer on */
@@ -2126,11 +2134,13 @@ static void pcnetTransmit(PCNetState *pData)
     {
         PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
         if (pItem)
+        {
 # if 0 /* send before resuming guest (last argument isn't implemented yet and read as 0). */
             PDMQueueInsertEx(CTXSUFF(pData->pXmitQueue), pItem, 50000);
 # else /* send when going back to r3. */
             PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
 # endif
+        }
     }
 #endif
 
@@ -2393,7 +2403,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
     int rc = VINF_SUCCESS;
     u32RAP &= 0x7f;
 #ifdef PCNET_DEBUG_BCR
-    Log(("#%d pcnetBCRWriteU16: u32RAP=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRWriteU16: u32RAP=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     switch (u32RAP)
@@ -2576,7 +2586,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP)
             break;
     }
 #ifdef PCNET_DEBUG_BCR
-    Log(("#%d pcnetBCRReadU16: u32RAP=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRReadU16: u32RAP=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     return val;
@@ -2640,7 +2650,7 @@ static int pcnetIoportWriteU16(PCNetState *pData, uint32_t addr, uint32_t val)
     int rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetIoportWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (!BCR_DWIO(pData))
@@ -2675,7 +2685,11 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
         switch (addr & 0x0f)
         {
             case 0x00: /* RDP */
-                pcnetPollTimer(pData);
+                /** @note if we're not polling, then the guest will tell us when to poll by setting TDMD in CSR0 */
+                /** Polling is then useless here and very expensive. */
+                if (!CSR_DPOLL(pData))
+                    pcnetPollTimer(pData);
+
                 val = pcnetCSRReadU16(pData, pData->u32RAP);
                 if (pData->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
@@ -2696,7 +2710,7 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetIoportReadU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportReadU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val & 0xffff));
 #endif
     return val;
@@ -2707,7 +2721,7 @@ static int pcnetIoportWriteU32(PCNetState *pData, uint32_t addr, uint32_t val)
     int rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetIoportWriteU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportWriteU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (RT_LIKELY(BCR_DWIO(pData)))
@@ -2732,7 +2746,7 @@ static int pcnetIoportWriteU32(PCNetState *pData, uint32_t addr, uint32_t val)
         /* switch device to dword I/O mode */
         pcnetBCRWriteU16(pData, BCR_BSBC, pcnetBCRReadU16(pData, BCR_BSBC) | 0x0080);
 #ifdef PCNET_DEBUG_IO
-        Log(("device switched into dword i/o mode\n"));
+        Log2(("device switched into dword i/o mode\n"));
 #endif
     }
 
@@ -2750,7 +2764,11 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
         switch (addr & 0x0f)
         {
             case 0x00: /* RDP */
-                pcnetPollTimer(pData);
+                /** @note if we're not polling, then the guest will tell us when to poll by setting TDMD in CSR0 */
+                /** Polling is then useless here and very expensive. */
+                if (!CSR_DPOLL(pData))
+                    pcnetPollTimer(pData);
+
                 val = pcnetCSRReadU16(pData, pData->u32RAP);
                 if (pData->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
@@ -2771,7 +2789,7 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetIoportReadU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportReadU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     return val;
@@ -2780,7 +2798,7 @@ skip_update_irq:
 static void pcnetMMIOWriteU8(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetMMIOWriteU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (!(addr & 0x10))
@@ -2793,7 +2811,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
     if (!(addr & 0x10))
         val = pcnetAPROMReadU8(pData, addr);
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetMMIOReadU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val & 0xff));
 #endif
     return val;
@@ -2802,7 +2820,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU16(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetMMIOWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (addr & 0x10)
@@ -2828,7 +2846,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr);
     }
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetMMIOReadU16: addr=0x%08x val = 0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU16: addr=0x%08x val = 0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val & 0xffff));
 #endif
     return val;
@@ -2837,7 +2855,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU32(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetMMIOWriteU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (addr & 0x10)
@@ -2869,7 +2887,7 @@ static uint32_t pcnetMMIOReadU32(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr  );
     }
 #ifdef PCNET_DEBUG_IO
-    Log(("#%d pcnetMMIOReadU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     return val;
