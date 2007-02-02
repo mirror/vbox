@@ -980,10 +980,9 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
     
         if (it != list.end() && vboxProblem().remindAboutInaccessibleMedia())
         {
-            /* pass the list we got in the argument to indicate that
-             * VBoxDiskImageManagerDlg should not start the enumeration at the
-             * beginning (i.e. if being shown for the first time) */
-            VBoxDiskImageManagerDlg::showModeless (&list);
+            /* Show the VDM dialog but don't refresh once more after a
+             * just-finished refresh */
+            VBoxDiskImageManagerDlg::showModeless (false /* aRefresh */);
         }
     }
     while (0);

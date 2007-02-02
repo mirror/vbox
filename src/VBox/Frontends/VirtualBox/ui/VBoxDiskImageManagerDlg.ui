@@ -602,7 +602,7 @@
     <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
     <function returnType="QUuid">getSelectedUuid()</function>
     <function returnType="QString">getSelectedPath()</function>
-    <function>setup( int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, const VBoxMediaList *mediaList = NULL, CMachine machine = 0 )</function>
+    <function>setup( int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, bool aRefresh = true, CMachine machine = NULL )</function>
     <function access="private" returnType="QListView*">getCurrentListView()</function>
     <function access="private" returnType="QListView*">getListView( VBoxDefs::DiskType )</function>
     <function returnType="bool">eventFilter( QObject *, QEvent * )</function>
@@ -623,7 +623,7 @@
     <function access="protected" returnType="QIRichLabel*">createInfoString( QString, QWidget*, int, int )</function>
     <function access="protected" returnType="QPushButton*">searchDefaultButton()</function>
     <function access="protected">setCurrentItem( QListView*, QListViewItem* )</function>
-    <function specifier="non virtual">static showModeless( const VBoxMediaList * = NULL )</function>
+    <function specifier="non virtual">static showModeless( bool aRefresh = true )</function>
     <function specifier="non virtual" returnType="QString">static composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function specifier="non virtual" returnType="QString">static composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function specifier="non virtual" returnType="QString">static composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
