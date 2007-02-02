@@ -1285,8 +1285,13 @@ BOOLEAN FASTCALL VBoxVideoResetDevice(
 {
    dprintf(("VBoxVideo::VBoxVideoResetDevice\n"));
 
+#if 0
+   /* Don't disable the extended video mode. This would only switch the video mode
+    * to <current width> x <current height> x 0 bpp which is not what we want. And
+    * even worse, it causes an disturbing additional mode switch */
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
+#endif
 
    return TRUE;
 }
