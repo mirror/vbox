@@ -207,7 +207,7 @@ tcp_newtcpcb(so)
 		return ((struct tcpcb *)0);
 	
 	memset((char *) tp, 0, sizeof(struct tcpcb));
-	tp->seg_next = tp->seg_prev = (tcpiphdrp_32)tp;
+	tp->seg_next = tp->seg_prev = ptr_to_u32((struct tcpiphdr *)tp);
 	tp->t_maxseg = tcp_mssdflt;
 	
 	tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;
@@ -283,11 +283,11 @@ tcp_close(tp)
 	DEBUG_ARG("tp = %lx", (long )tp);
 	
 	/* free the reassembly queue, if any */
-	t = (struct tcpiphdr *) tp->seg_next;
+	t = u32_to_ptr(tp->seg_next, struct tcpiphdr *);
 	while (t != (struct tcpiphdr *)tp) {
-		t = (struct tcpiphdr *)t->ti_next;
-		m = (struct mbuf *) REASS_MBUF((struct tcpiphdr *)t->ti_prev);
-		remque_32((struct tcpiphdr *) t->ti_prev);
+		t = u32_to_ptr(t->ti_next, struct tcpiphdr *);
+		m = REASS_MBUF_GET(u32_to_ptr(t->ti_prev, struct tcpiphdr *));
+		remque_32(u32_to_ptr(t->ti_prev, struct tcpiphdr *));
 		m_freem(m);
 	}
 	/* It's static */
@@ -295,6 +295,7 @@ tcp_close(tp)
  *		(void) m_free(dtom(tp->t_template));
  */
 /*	free(tp, M_PCB);  */
+	u32ptr_done(ptr_to_u32(ptr), tp);
 	free(tp);
 	so->so_tcpcb = 0;
 	soisfdisconnected(so);
@@ -1346,3 +1347,137 @@ tcp_ctl(so)
 #endif
 	}
 }
+
+#if defined(VBOX) && SIZEOF_CHAR_P != 4
+/** Hash table used for translating pointers to unique uint32_t entries. 
+* The 0 entry is reserved for NULL pointers. */
+void       *g_apvHash[16384];
+/** The number of currently used pointer hash entries. */
+uint32_t    g_cpvHashUsed = 1;
+/** The number of insert collisions. */
+uint32_t    g_cpvHashCollisions = 0;
+/** The number of hash inserts. */
+uint64_t    g_cpvHashInserts = 0;
+/** The number of done calls. */
+uint64_t    g_cpvHashDone = 0;
+
+/**
+ * Slow pointer hashing that deals with automatic inserting and collisions.
+ */
+uint32_t VBoxU32PtrHashSlow(void *pv)
+{
+    uint32_t i;
+    if (pv == NULL)
+        i = 0;
+    else
+    {
+        const uint32_t i1 = ((uintptr_t)pv >> 3) % RT_ELEMENTS(g_apvHash);
+        if (g_apvHash[i1] == pv)
+            i = i1;
+        else
+        {
+            /* 
+             * Try up to 10 times then assume it's an insertion. 
+             * If we didn't find a free entry by then, try another 100 times. 
+             * If that fails, give up.
+             */
+            const uint32_t  i2 = ((uintptr_t)pv >> 2) % 7867;
+            uint32_t        i1stFree = g_apvHash[i1] ? 0 : i1;
+            int             cTries = 10;
+            int             cTries2 = 100;
+
+            i = i1;
+            for (;;)
+            {
+                /* check if we should give in.*/
+                if (--cTries > 0) 
+                {
+                    if (i1stFree != 0)
+                    {
+                        i = i1stFree;
+                        g_apvHash[i] = pv;
+                        g_cpvHashUsed++;
+                        if (i != i1)
+                            g_cpvHashCollisions++;
+                        g_cpvHashInserts++;
+                        break;
+                    }
+                    if (!cTries2)
+                    {
+                        AssertReleaseMsgFailed(("NAT pointer hash error. pv=%p g_cpvHashUsed=%d g_cpvHashCollisions=%u\n", 
+                                                pv, g_cpvHashUsed, g_cpvHashCollisions));
+                        i = 0;
+                        break;
+                    }
+                    cTries = cTries2;
+                    cTries2 = 0;
+                }
+
+                /* advance to the next hash entry and test it. */
+                i = (i + i2) % RT_ELEMENTS(g_apvHash);
+                while (RT_UNLIKELY(!i))
+                    i = (i + i2) % RT_ELEMENTS(g_apvHash);
+                if (g_apvHash[i] == pv)
+                    break;
+                if (RT_UNLIKELY(!i1stFree && !g_apvHash[i]))
+                    i1stFree = i;
+            }
+        }
+    }
+    return i;
+}
+
+
+/**
+ * Removes the pointer from the hash table.
+ */
+void VBoxU32PtrDone(void *pv, uint32_t iHint)
+{
+    /* We don't count NULL pointers. */
+    if (pv == NULL)
+        return;
+    g_cpvHashDone++;
+
+    /* try the hint */
+    if (    iHint
+        &&  iHint < RT_ELEMENTS(g_apvHash)
+        &&  g_apvHash[iHint] == pv)
+    {
+        g_apvHash[iHint] = NULL;
+        g_cpvHashUsed--;
+        return;
+    }
+
+    iHint = ((uintptr_t)pv >> 3) % RT_ELEMENTS(g_apvHash);
+    if (RT_UNLIKELY(g_apvHash[iHint] != pv))
+    {
+        /* 
+         * Try up to 120 times then assert.
+         */
+        const uint32_t  i2 = ((uintptr_t)pv >> 2) % 7867;
+        int             cTries = 120;
+        for (;;)
+        {
+            /* advance to the next hash entry and test it. */
+            iHint = (iHint + i2) % RT_ELEMENTS(g_apvHash);
+            while (RT_UNLIKELY(!iHint))
+                iHint = (iHint + i2) % RT_ELEMENTS(g_apvHash);
+            if (g_apvHash[iHint] == pv)
+                break;
+
+            /* check if we should give in.*/
+            if (--cTries > 0)
+            {
+                AssertReleaseMsgFailed(("NAT pointer hash error. pv=%p g_cpvHashUsed=%u g_cpvHashCollisions=%u\n", 
+                                        pv, g_cpvHashUsed, g_cpvHashCollisions));
+                return;
+            }
+        }
+    }
+
+    /* found it */
+    g_apvHash[iHint] = NULL;
+    g_cpvHashUsed--;
+}
+
+#endif 

@@ -242,6 +242,10 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, PDMINTERF
 static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvNATDestruct:\n"));
+#if ARCH_BITS == 64
+    LogRel(("NAT: g_cpvHashUsed=%RU32 g_cpvHashCollisions=%RU32 g_cpvHashInserts=%RU64 g_cpvHashDone=%RU64\n",
+            g_cpvHashUsed, g_cpvHashCollisions, g_cpvHashInserts, g_cpvHashDone));
+#endif 
     slirp_term();
     g_pDrv = NULL;
 }

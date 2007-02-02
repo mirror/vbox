@@ -33,6 +33,12 @@ int slirp_init(void);
 void slirp_term(void);
 void slirp_link_up(void);
 void slirp_link_down(void);
+# if ARCH_BITS == 64
+extern uint32_t g_cpvHashUsed;
+extern uint32_t g_cpvHashCollisions;
+extern uint64_t g_cpvHashInserts;
+extern uint64_t g_cpvHashDone;
+# endif 
 #endif /* VBOX */
 
 void slirp_select_fill(int *pnfds,

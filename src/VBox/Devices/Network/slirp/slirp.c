@@ -354,7 +354,7 @@ void slirp_select_fill(int *pnfds,
 		 * in the fragment queue, or there are TCP connections active
 		 */
 		do_slowtimo = ((tcb.so_next != &tcb) ||
-			       ((struct ipasfrag *)&ipq != (struct ipasfrag *)ipq.next));
+			       ((struct ipasfrag *)&ipq != u32_to_ptr(ipq.next, struct ipasfrag *)));
 		
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
