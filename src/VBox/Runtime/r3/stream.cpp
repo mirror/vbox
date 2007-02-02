@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#if defined(__LINUX__) || defined(__FREEBSD__)
+#if defined(__LINUX__) /* PORTME: check for the _unlocked functions in stdio.h */
 #define HAVE_FWRITE_UNLOCKED
 #endif
 

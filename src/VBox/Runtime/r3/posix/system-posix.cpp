@@ -37,11 +37,13 @@
  */
 RTR3DECL(unsigned) RTSystemProcessorGetCount(void)
 {
+    int cCpus; NOREF(cCpus);
+    
     /*
      * The sysconf way (linux and others).
      */
 #ifdef _SC_NPROCESSORS_ONLN
-    int cCpus = sysconf(_SC_NPROCESSORS_ONLN);
+    cCpus = sysconf(_SC_NPROCESSORS_ONLN);
     if (cCpus >= 1)
         return cCpus;
 #endif
@@ -53,7 +55,7 @@ RTR3DECL(unsigned) RTSystemProcessorGetCount(void)
     int aiMib[2];
     aiMib[0] = CTL_HW;
     aiMib[1] = HW_NCPU;
-    int cCpus = -1;
+    cCpus = -1;
     size_t cb = sizeof(cCpus);
     int rc = sysctl(aiMib, ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
     if (rc != -1 && cCpus >= 1)

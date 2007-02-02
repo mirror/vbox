@@ -299,8 +299,12 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 # if defined(__WIN__)
         RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %ls\n", GetCommandLineW());
 
-# elif defined(__LINUX__)
+# elif defined(__LINUX__) || defined(__FREEBSD__)
+#  ifdef __LINUX__
         FILE *pFile = fopen("/proc/self/cmdline", "r");
+#  else        
+        FILE *pFile = fopen("/proc/curproc/cmdline", "r");
+#  endif        
         if (pFile)
         {
             /* braindead */
