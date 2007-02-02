@@ -1743,6 +1743,17 @@ typedef enum PDMNETWORKLINKSTATE
     PDMNETWORKLINKSTATE_DOWN_RESUME
 } PDMNETWORKLINKSTATE;
 
+
+/** 
+ * Network packet description
+ */
+typedef struct PDMINETWORKPACKET
+{
+    size_t      cb;
+    void       *pvBuf;
+} PDMINETWORKPACKET, *PPDMINETWORKPACKET;
+
+
 /** Pointer to a network connector interface */
 typedef struct PDMINETWORKCONNECTOR *PPDMINETWORKCONNECTOR;
 /**
@@ -1760,6 +1771,17 @@ typedef struct PDMINETWORKCONNECTOR
      * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(int, pfnSend,(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb));
+
+    /**
+     * Send multiple data packets to the network.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   cPackets        Number of packets
+     * @param   paPacket        Packet description array
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSendEx,(PPDMINETWORKCONNECTOR pInterface, uint32_t cPackets, PPDMINETWORKPACKET paPacket));
 
     /**
      * Set promiscuous mode.
