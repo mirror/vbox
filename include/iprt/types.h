@@ -68,7 +68,7 @@
 # endif
 #else /* no crt */
 # if defined(__GNUC__)
-#  ifndef __OS2__
+#  if !defined(__OS2__) && !defined(__FREEBSD__)
 #   include <stddef.h>
 #  endif
 #  ifndef _SIZE_T_DECLARED
