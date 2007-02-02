@@ -516,6 +516,7 @@
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
     <include location="local" impldecl="in declaration">VBoxProblemReporter.h</include>
+    <include location="local" impldecl="in implementation">VBoxDefs.h</include>
     <include location="local" impldecl="in implementation">VBoxNewHDWzd.h</include>
     <include location="local" impldecl="in implementation">VBoxToolBar.h</include>
     <include location="local" impldecl="in implementation">QIRichLabel.h</include>
@@ -596,8 +597,8 @@
     <function returnType="int">exec()</function>
     <function access="private">done( int )</function>
     <function access="private" returnType="DiskImageItem*">searchItem( QListView*, const QUuid &amp; )</function>
-    <function specifier="non virtual" access="private" returnType="QString">static getDVDImageUsage( const QUuid &amp; id )</function>
-    <function specifier="non virtual" access="private" returnType="QString">static getFloppyImageUsage( const QUuid &amp; id )</function>
+    <function specifier="static" access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; id )</function>
+    <function specifier="static" access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; id )</function>
     <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
     <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
     <function returnType="QUuid">getSelectedUuid()</function>
@@ -607,7 +608,7 @@
     <function access="private" returnType="QListView*">getListView( VBoxDefs::DiskType )</function>
     <function returnType="bool">eventFilter( QObject *, QEvent * )</function>
     <function access="private">addDroppedImages( QStringList* )</function>
-    <function access="private">addImageToList( QString aSource, VBoxDefs::DiskType aDiskType )</function>
+    <function access="private">addImageToList( const QString &amp; aSource, VBoxDefs::DiskType aDiskType )</function>
     <function access="private" returnType="DiskImageItem*">createImageNode( QListView *aList, DiskImageItem *aRoot )</function>
     <function access="private">updateHdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
     <function access="private">updateCdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
@@ -620,13 +621,13 @@
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function access="protected">keyPressEvent( QKeyEvent* )</function>
     <function access="protected">closeEvent( QCloseEvent* )</function>
-    <function access="protected" returnType="QIRichLabel*">createInfoString( QString, QWidget*, int, int )</function>
+    <function access="protected" returnType="QIRichLabel*">createInfoString( const QString &amp;, QWidget*, int, int )</function>
     <function access="protected" returnType="QPushButton*">searchDefaultButton()</function>
     <function access="protected">setCurrentItem( QListView*, QListViewItem* )</function>
-    <function specifier="non virtual">static showModeless( bool aRefresh = true )</function>
-    <function specifier="non virtual" returnType="QString">static composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
-    <function specifier="non virtual" returnType="QString">static composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
-    <function specifier="non virtual" returnType="QString">static composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
+    <function specifier="static"> showModeless( bool aRefresh = true )</function>
+    <function specifier="static" returnType="QString">composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
+    <function specifier="static" returnType="QString">composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
+    <function specifier="static" returnType="QString">composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
 </functions>
 <layoutdefaults spacing="10" margin="10"/>
