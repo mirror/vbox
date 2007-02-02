@@ -61,14 +61,14 @@ enum
 void VBoxGlobalSettingsDlg::init()
 {
     setCaption (tr ("VirtualBox Global Settings"));
-    setIcon (QPixmap::fromMimeSource ("settings_16px.png"));
+    setIcon (QPixmap::fromMimeSource ("global_settings_16px.png"));
 
     /*  all pages are initially valid */
     valid = true;
-    buttonOk->setEnabled( true );
-    warningSpacer->changeSize( 0, 0, QSizePolicy::Expanding );
-    warningLabel->setHidden( true );
-    warningPixmap->setHidden( true );
+    buttonOk->setEnabled (true);
+    warningSpacer->changeSize (0, 0, QSizePolicy::Expanding);
+    warningLabel->setHidden (true);
+    warningPixmap->setHidden (true);
 
     /*  disable unselecting items by clicking in the unused area of the list */
     new QIListViewSelectionPreserver (this, listView);

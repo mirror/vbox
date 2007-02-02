@@ -444,8 +444,8 @@ void VBoxVMSettingsDlg::init()
     lvUSBFilters_currentChanged (NULL);
 
     /* setup iconsets -- qdesigner is not capable... */
-    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_16px.png",
-                                                     "usb_disabled_16px.png"));
+    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_new_16px.png",
+                                                     "usb_new_disabled_16px.png"));
     tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
                                                          "usb_add_disabled_16px.png"));
     tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
