@@ -28,7 +28,7 @@
  * which normally contains the alloca() prototype.
  */
 #include <stdlib.h>
-#ifndef __DARWIN__
+#if !defined(__DARWIN__) && !defined(__FREEBSD__)
 # include <malloc.h>
 #endif
 
