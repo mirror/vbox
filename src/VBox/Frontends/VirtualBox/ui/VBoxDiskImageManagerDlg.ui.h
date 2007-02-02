@@ -1187,8 +1187,7 @@ void VBoxDiskImageManagerDlg::createHdChildren (DiskImageItem   *aRoot,
             subHd.GetAccessible() == TRUE ? VBoxMedia::Ok :
             subHd.isOk() ? VBoxMedia::Inaccessible :
             VBoxMedia::Error;
-        VBoxMedia media (CUnknown (subHd), VBoxDefs::HD, status);
-        createHdItem (0, aRoot, media);
+        createHdItem (0, aRoot, VBoxMedia (CUnknown (subHd), VBoxDefs::HD, status));
     }
 }
 
