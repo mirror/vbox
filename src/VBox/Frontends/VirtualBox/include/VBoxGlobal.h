@@ -382,9 +382,8 @@ signals:
 
     /**
      *  Emitted at the end of the enumeration process started
-     *  by #startEnumeratingMedia().
-     *  @note #currentMediaList() will return an empty list
-     *  when this signal is emitted, use the argument instead.
+     *  by #startEnumeratingMedia(). The @a aList argument is passed for
+     *  convenience, it is exactly the same as returned by #currentMediaList().
      */
     void mediaEnumFinished (const VBoxMediaList &aList);
 

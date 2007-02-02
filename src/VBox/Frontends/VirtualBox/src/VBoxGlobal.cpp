@@ -1065,30 +1065,32 @@ void VBoxGlobal::startEnumeratingMedia()
     /* check if already started but not yet finished */
     if (media_enum_thread)
         return;
+    
+    /* ignore the request during application termination */
+    if (vboxGlobal_cleanup)
+        return;
 
     /* composes a list of all currently known media */
     media_list.clear();
     {
         CHardDiskEnumerator enHD = vbox.GetHardDisks().Enumerate();
-        while (enHD.HasMore() && !vboxGlobal_cleanup)
+        while (enHD.HasMore())
         {
             CHardDisk hd = enHD.GetNext();
             media_list += VBoxMedia (CUnknown (hd), VBoxDefs::HD, VBoxMedia::Unknown);
         }
         CDVDImageEnumerator enCD = vbox.GetDVDImages().Enumerate();
-        while (enCD.HasMore() && !vboxGlobal_cleanup)
+        while (enCD.HasMore())
         {
             CDVDImage cd = enCD.GetNext();
             media_list += VBoxMedia (CUnknown (cd), VBoxDefs::CD, VBoxMedia::Unknown);
         }
         CFloppyImageEnumerator enFD = vbox.GetFloppyImages().Enumerate();
-        while (enFD.HasMore() && !vboxGlobal_cleanup)
+        while (enFD.HasMore())
         {
             CFloppyImage fd = enFD.GetNext();
             media_list += VBoxMedia (CUnknown (fd), VBoxDefs::FD, VBoxMedia::Unknown);
         }
-        if (!vboxGlobal_cleanup)
-            emit mediaEnumStarted();
     }
 
     /* enumeration thread class */
@@ -1096,7 +1098,7 @@ void VBoxGlobal::startEnumeratingMedia()
     {
     public:
 
-        Thread (VBoxMediaList &aList) : mList (aList) {}
+        Thread (const VBoxMediaList &aList) : mList (aList) {}
 
         virtual void run()
         {
@@ -1108,12 +1110,12 @@ void VBoxGlobal::startEnumeratingMedia()
 
             /* enumerating list */
             int index = 0;
-            VBoxMediaList::Iterator it;
+            VBoxMediaList::const_iterator it;
             for (it = mList.begin();
                  it != mList.end() && !vboxGlobal_cleanup;
                  ++ it, ++ index)
             {
-                VBoxMedia &media = *it;
+                VBoxMedia media = *it;
                 switch (media.type)
                 {
                     case VBoxDefs::HD:
@@ -1133,9 +1135,8 @@ void VBoxGlobal::startEnumeratingMedia()
                                     media.status = VBoxMedia::Ok;
                             }
                         }
-                        VBoxMedia newMedia (CUnknown(hd), VBoxDefs::HD, media.status);
                         QApplication::postEvent (target,
-                            new VBoxEnumerateMediaEvent (newMedia, index));
+                            new VBoxEnumerateMediaEvent (media, index));
                         break;
                     }
                     case VBoxDefs::CD:
@@ -1145,9 +1146,8 @@ void VBoxGlobal::startEnumeratingMedia()
                             cd.GetAccessible() == TRUE ? VBoxMedia::Ok :
                             cd.isOk() ? VBoxMedia::Inaccessible :
                             VBoxMedia::Error;
-                        VBoxMedia newMedia (CUnknown(cd), VBoxDefs::CD, media.status);
                         QApplication::postEvent (target,
-                            new VBoxEnumerateMediaEvent (newMedia, index));
+                            new VBoxEnumerateMediaEvent (media, index));
                         break;
                     }
                     case VBoxDefs::FD:
@@ -1157,9 +1157,8 @@ void VBoxGlobal::startEnumeratingMedia()
                             fd.GetAccessible() == TRUE ? VBoxMedia::Ok :
                             fd.isOk() ? VBoxMedia::Inaccessible :
                             VBoxMedia::Error;
-                        VBoxMedia newMedia (CUnknown(fd), VBoxDefs::FD, media.status);
                         QApplication::postEvent (target,
-                            new VBoxEnumerateMediaEvent (newMedia, index));
+                            new VBoxEnumerateMediaEvent (media, index));
                         break;
                     }
                     default:
@@ -1180,10 +1179,16 @@ void VBoxGlobal::startEnumeratingMedia()
 
     private:
 
-        VBoxMediaList &mList;
+        const VBoxMediaList &mList;
     };
 
     media_enum_thread = new Thread (media_list);
+	AssertReturnVoid (media_enum_thread);
+
+    /* emit mediaEnumStarted() after we set media_enum_thread to != NULL
+     * to cause isMediaEnumerationStarted() to return TRUE from slots */    
+    emit mediaEnumStarted();
+
     media_enum_thread->start();
 }
 

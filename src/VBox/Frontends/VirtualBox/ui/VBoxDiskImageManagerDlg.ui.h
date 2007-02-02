@@ -145,7 +145,7 @@ protected:
 VBoxDiskImageManagerDlg *VBoxDiskImageManagerDlg::mModelessDialog = 0;
 
 
-void VBoxDiskImageManagerDlg::showModeless (const VBoxMediaList *list /* = NULL */)
+void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
 {
     if (!mModelessDialog)
     {
@@ -154,7 +154,7 @@ void VBoxDiskImageManagerDlg::showModeless (const VBoxMediaList *list /* = NULL 
                                          "VBoxDiskImageManagerDlg",
                                          WType_TopLevel | WDestructiveClose);
         mModelessDialog->setup (VBoxDefs::HD | VBoxDefs::CD | VBoxDefs::FD,
-                                false, NULL, list);
+                                false, NULL, aRefresh);
 
         /* listen to events that may change the media status and refresh
          * the contents of the modeless dialog */
@@ -1210,9 +1210,9 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
 
 
 void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
-                                     const QUuid *aTargetVMId,
-                                     const VBoxMediaList *mediaList,
-                                     CMachine machine)
+                                     const QUuid *aTargetVMId /* = NULL */,
+                                     bool aRefresh /* = true */,
+                                     CMachine machine /* = NULL */)
 {
     cmachine = machine;
 
@@ -1250,53 +1250,50 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
     connect (&vboxGlobal(), SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
              this, SLOT (mediaRemoved (VBoxDefs::DiskType, const QUuid &)));
 
-    /* insert already enumerated media */
-    VBoxMediaList list = mediaList ?
-        *mediaList : vboxGlobal().currentMediaList();
-    prepareToRefresh (list.size());
-    VBoxMediaList::const_iterator it;
-    int index = 0;
-    for (it = list.begin(); it != list.end(); ++ it)
+    if (aRefresh && !vboxGlobal().isMediaEnumerationStarted())
     {
-        mediaAdded (*it);
-        if ((*it).status != VBoxMedia::Unknown)
-            mProgressBar->setProgress (index ++);
-    }
-    /* select first child */
-    setCurrentItem (hdsView, hdsView->firstChild());
-    setCurrentItem (cdsView, cdsView->firstChild());
-    setCurrentItem (fdsView, fdsView->firstChild());
-
-    if (mediaList)
-    {
-        mediaEnumFinished (list);
+        vboxGlobal().startEnumeratingMedia();
     }
     else
-    {
-        /* only start enumerating media if we haven't been supplied a list
-         * (it's ok if the enumeration has been already started, nothing will
-         * happen) */
-        vboxGlobal().startEnumeratingMedia();
+    {    
+        /* insert already enumerated media */
+        const VBoxMediaList &list = vboxGlobal().currentMediaList();
+        prepareToRefresh (list.size());
+        VBoxMediaList::const_iterator it;
+        int index = 0;
+        for (it = list.begin(); it != list.end(); ++ it)
+        {
+            mediaAdded (*it);
+            if ((*it).status != VBoxMedia::Unknown)
+                mProgressBar->setProgress (++ index);
+        }
+
+        /* select first child */
+        setCurrentItem (hdsView, hdsView->firstChild());
+        setCurrentItem (cdsView, cdsView->firstChild());
+        setCurrentItem (fdsView, fdsView->firstChild());
+        
+        /* emulate the finished signal to reuse the code */
+        if (!vboxGlobal().isMediaEnumerationStarted())
+            mediaEnumFinished (list);
     }
 }
 
 
 void VBoxDiskImageManagerDlg::mediaEnumStarted()
 {
-    VBoxMediaList list = vboxGlobal().currentMediaList();
-    prepareToRefresh (list.size());
-    /* clearing lists */
-    hdsView->clear(), cdsView->clear(), fdsView->clear();
     /* load current media list */
+    const VBoxMediaList &list = vboxGlobal().currentMediaList();
+    prepareToRefresh (list.size());
     VBoxMediaList::const_iterator it;
     for (it = list.begin(); it != list.end(); ++ it)
         mediaAdded (*it);
     /* select first child */
-    if (!hdsView->isSelected (hdsView->currentItem()))
+    if (!hdsView->currentItem())
         setCurrentItem (hdsView, hdsView->firstChild());
-    if (!cdsView->isSelected (cdsView->currentItem()))
+    if (!cdsView->currentItem())
         setCurrentItem (cdsView, cdsView->firstChild());
-    if (!fdsView->isSelected (fdsView->currentItem()))
+    if (!fdsView->currentItem())
         setCurrentItem (fdsView, fdsView->firstChild());
 
     processCurrentChanged();
@@ -1306,8 +1303,9 @@ void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMedia &aMedia,
                                                int aIndex)
 {
     mediaUpdated (aMedia);
+    Assert (aMedia.status != VBoxMedia::Unknown);
     if (aMedia.status != VBoxMedia::Unknown)
-        mProgressBar->setProgress (aIndex);
+        mProgressBar->setProgress (aIndex + 1);
 }
 
 void VBoxDiskImageManagerDlg::mediaEnumFinished (const VBoxMediaList &/* aList */)
@@ -1317,6 +1315,20 @@ void VBoxDiskImageManagerDlg::mediaEnumFinished (const VBoxMediaList &/* aList *
 
     imRefreshAction->setEnabled (true);
     unsetCursor();
+
+    /* adjust columns (it is strange to repeat but it works) */
+
+    hdsView->adjustColumn (1);
+    hdsView->adjustColumn (2);
+    hdsView->adjustColumn (1);
+
+    cdsView->adjustColumn (1);
+    cdsView->adjustColumn (2);
+    cdsView->adjustColumn (1);
+    
+    fdsView->adjustColumn (1);
+    fdsView->adjustColumn (2);
+    fdsView->adjustColumn (1);
 
     processCurrentChanged();
 }
@@ -1449,6 +1461,28 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
 
     imRefreshAction->setEnabled (false);
     setCursor (QCursor (BusyCursor));
+
+    /* store the current list selections */
+    
+    QListViewItem *item;
+    DiskImageItem *di;
+
+    item = hdsView->currentItem();
+    di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
+    hdSelectedId = di ? di->getUuid() : QUuid();
+ 
+    item = cdsView->currentItem();
+    di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
+    cdSelectedId = di ? di->getUuid() : QUuid(); 
+
+    item = fdsView->currentItem();
+    di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
+    fdSelectedId = di ? di->getUuid() : QUuid(); 
+
+    /* finally, clear all lists */
+    hdsView->clear();
+    cdsView->clear();
+    fdsView->clear();
 }
 
 
@@ -1527,10 +1561,6 @@ void VBoxDiskImageManagerDlg::setCurrentItem (QListView *aListView,
 
     aListView->setCurrentItem (aItem);
     aListView->setSelected (aListView->currentItem(), true);
-    /* it is strange repeat but it works */
-    aListView->adjustColumn (1);
-    aListView->adjustColumn (2);
-    aListView->adjustColumn (1);
 }
 
 
@@ -1607,19 +1637,16 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
             hdsPane3->setText (item->getInformation (item->getStorageType(), false));
             hdsPane4->setText (item->getInformation (item->getUsage()));
             hdsPane5->setText (item->getInformation (item->getSnapshotName()));
-            hdSelectedId = item->getUuid();
         }
         else if (item->listView() == cdsView)
         {
             cdsPane1->setText (item->getInformation (item->getPath(), true, "end"));
             cdsPane2->setText (item->getInformation (item->getUsage()));
-            cdSelectedId = item->getUuid();
         }
         else if (item->listView() == fdsView)
         {
             fdsPane1->setText (item->getInformation (item->getPath(), true, "end"));
             fdsPane2->setText (item->getInformation (item->getUsage()));
-            fdSelectedId = item->getUuid();
         }
     }
 }
