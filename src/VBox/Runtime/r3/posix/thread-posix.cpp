@@ -199,8 +199,11 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
     LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
     if (!cMillies)
     {
+        /* pthread_yield() isn't part of SuS, thus this fun. */
 #ifdef __DARWIN__
         pthread_yield_np();
+#elif defined(__FREEBSD__) /* void pthread_yield */
+        pthread_yield();
 #else
         if (!pthread_yield())
 #endif

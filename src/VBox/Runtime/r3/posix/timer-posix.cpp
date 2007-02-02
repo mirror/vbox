@@ -37,13 +37,13 @@
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #ifdef __LINUX__
-#include <linux/rtc.h>
+# include <linux/rtc.h>
 #endif
 #include <sys/time.h>
 #include <signal.h>
 #include <errno.h>
 #ifndef __OS2__
-#include <pthread.h>
+# include <pthread.h>
 #endif
 
 
@@ -223,7 +223,14 @@ RTR3DECL(int)     RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PF
     /*
      * Block SIGALRM from calling thread.
      */
+#if defined(__FREEBSD__) /* sighold is missing and I don't wish to break anything atm. */
+    sigset_t SigSet;
+    sigemptyset(&SigSet);
+    sigaddset(&SigSet, SIGALRM);
+    sigprocmask(SIG_BLOCK, &SigSet, NULL);
+#else     
     sighold(SIGALRM);
+#endif    
     static bool fDoneRTC;
     if (!fDoneRTC)
     {

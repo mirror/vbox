@@ -115,6 +115,9 @@ endif
 RuntimeR3_INCS.l4       = \
 	$(PATH_ROOT)/src/libs/libuuid \
 	$(L4_INCDIR)
+# for iconv.h
+RuntimeR3_INCS.freebsd  = \
+	/usr/local/include
 
 RuntimeR3_SOURCES       = \
 	alloc.cpp \
@@ -313,7 +316,32 @@ RuntimeR3_SOURCES.darwin = \
 	r3/linux/uuid-linux.cpp \
 	timesup.cpp \
 
+## @todo Make BSD sched.
+RuntimeR3_SOURCES.freebsd = \
+	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileMove-generic.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
+	generic/pathhost-generic.cpp \
+	generic/sched-generic.cpp \
+	generic/uuid-generic.cpp \
+	r3/freebsd/alloc-freebsd.cpp \
+	r3/posix/dir-posix.cpp \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/fs-posix.cpp \
+	r3/posix/ldrNative-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/process-posix.cpp \
+	r3/posix/sems-posix.cpp \
+	r3/posix/system-posix.cpp \
+	r3/posix/thread-posix.cpp \
+	r3/posix/time-posix.cpp \
+	r3/posix/timer-posix.cpp \
+	generic/utf16locale-generic.cpp \
+	r3/posix/utf8-posix.cpp \
+	timesup.cpp \
 
+## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
 
 #
@@ -590,6 +618,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm
 
+## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
 #
 # RuntimeW32GuestR0 - Win32 guest driver runtime.
