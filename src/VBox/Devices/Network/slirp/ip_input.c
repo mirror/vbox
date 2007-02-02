@@ -56,7 +56,7 @@ struct ipq ipq;
 void
 ip_init()
 {
-	ipq.next = ipq.prev = (ipqp_32)&ipq;
+	ipq.next = ipq.prev = ptr_to_u32(&ipq);
 	ip_id = tt.tv_sec & 0xffff;
 	udp_init();
 	tcp_init();
@@ -163,8 +163,8 @@ ip_input(m)
 		 * Look for queue of fragments
 		 * of this datagram.
 		 */
-		for (fp = (struct ipq *) ipq.next; fp != &ipq;
-		     fp = (struct ipq *) fp->next)
+		for (fp = u32_to_ptr(ipq.next, struct ipq *); fp != &ipq;
+		     fp = u32_to_ptr(fp->next, struct ipq *))
 		  if (ip->ip_id == fp->ipq_id &&
 		      ip->ip_src.s_addr == fp->ipq_src.s_addr &&
 		      ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
@@ -269,7 +269,7 @@ ip_reass(ip, fp)
 	  fp->ipq_ttl = IPFRAGTTL;
 	  fp->ipq_p = ip->ip_p;
 	  fp->ipq_id = ip->ip_id;
-	  fp->ipq_next = fp->ipq_prev = (ipasfragp_32)fp;
+	  fp->ipq_next = fp->ipq_prev = ptr_to_u32((struct ipasfrag *)fp);
 	  fp->ipq_src = ((struct ip *)ip)->ip_src;
 	  fp->ipq_dst = ((struct ip *)ip)->ip_dst;
 	  q = (struct ipasfrag *)fp;
@@ -279,8 +279,8 @@ ip_reass(ip, fp)
 	/*
 	 * Find a segment which begins after this one does.
 	 */
-	for (q = (struct ipasfrag *)fp->ipq_next; q != (struct ipasfrag *)fp;
-	    q = (struct ipasfrag *)q->ipf_next)
+	for (q = u32_to_ptr(fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
+	    q = u32_to_ptr(q->ipf_next, struct ipasfrag *))
 		if (q->ip_off > ip->ip_off)
 			break;
 
@@ -289,9 +289,9 @@ ip_reass(ip, fp)
 	 * our data already.  If so, drop the data from the incoming
 	 * segment.  If it provides all of our data, drop us.
 	 */
-	if (q->ipf_prev != (ipasfragp_32)fp) {
-		i = ((struct ipasfrag *)(q->ipf_prev))->ip_off +
-		  ((struct ipasfrag *)(q->ipf_prev))->ip_len - ip->ip_off;
+	if (u32_to_ptr(q->ipf_prev, struct ipq *) != fp) {
+		i = (u32_to_ptr(q->ipf_prev, struct ipasfrag *))->ip_off +
+		  (u32_to_ptr(q->ipf_prev, struct ipasfrag *))->ip_len - ip->ip_off;
 		if (i > 0) {
 			if (i >= ip->ip_len)
 				goto dropfrag;
@@ -313,9 +313,9 @@ ip_reass(ip, fp)
 			m_adj(dtom(q), i);
 			break;
 		}
-		q = (struct ipasfrag *) q->ipf_next;
-		m_freem(dtom((struct ipasfrag *) q->ipf_prev));
-		ip_deq((struct ipasfrag *) q->ipf_prev);
+		q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
+		m_freem(dtom(u32_to_ptr(q->ipf_prev, struct ipasfrag *)));
+		ip_deq(u32_to_ptr(q->ipf_prev, struct ipasfrag *));
 	}
 
 insert:
@@ -323,28 +323,28 @@ insert:
 	 * Stick new segment in its place;
 	 * check for complete reassembly.
 	 */
-	ip_enq(ip, (struct ipasfrag *) q->ipf_prev);
+	ip_enq(ip, u32_to_ptr(q->ipf_prev, struct ipasfrag *));
 	next = 0;
-	for (q = (struct ipasfrag *) fp->ipq_next; q != (struct ipasfrag *)fp;
-	     q = (struct ipasfrag *) q->ipf_next) {
+	for (q = u32_to_ptr(fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
+	     q = u32_to_ptr(q->ipf_next, struct ipasfrag *)) {
 		if (q->ip_off != next)
 			return (0);
 		next += q->ip_len;
 	}
-	if (((struct ipasfrag *)(q->ipf_prev))->ipf_mff & 1)
+	if (u32_to_ptr(q->ipf_prev, struct ipasfrag *)->ipf_mff & 1)
 		return (0);
 
 	/*
 	 * Reassembly is complete; concatenate fragments.
 	 */
-	q = (struct ipasfrag *) fp->ipq_next;
+	q = u32_to_ptr(fp->ipq_next, struct ipasfrag *);
 	m = dtom(q);
 
-	q = (struct ipasfrag *) q->ipf_next;
+	q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
 	while (q != (struct ipasfrag *)fp) {
 	  struct mbuf *t;
 	  t = dtom(q);
-	  q = (struct ipasfrag *) q->ipf_next;
+	  q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
 	  m_cat(m, t);
 	}
 
@@ -354,7 +354,7 @@ insert:
 	 * dequeue and discard fragment reassembly header.
 	 * Make header visible.
 	 */
-	ip = (struct ipasfrag *) fp->ipq_next;
+	ip = u32_to_ptr(fp->ipq_next, struct ipasfrag *);
 
 	/*
 	 * If the fragments concatenated to an mbuf that's
@@ -400,9 +400,9 @@ ip_freef(fp)
 {
 	register struct ipasfrag *q, *p;
 
-	for (q = (struct ipasfrag *) fp->ipq_next; q != (struct ipasfrag *)fp;
+	for (q = u32_to_ptr(fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
 	    q = p) {
-		p = (struct ipasfrag *) q->ipf_next;
+		p = u32_to_ptr(q->ipf_next, struct ipasfrag *);
 		ip_deq(q);
 		m_freem(dtom(q));
 	}
@@ -420,10 +420,10 @@ ip_enq(p, prev)
 {
 	DEBUG_CALL("ip_enq");
 	DEBUG_ARG("prev = %lx", (long)prev);
-	p->ipf_prev = (ipasfragp_32) prev;
+	p->ipf_prev = ptr_to_u32(prev);
 	p->ipf_next = prev->ipf_next;
-	((struct ipasfrag *)(prev->ipf_next))->ipf_prev = (ipasfragp_32) p;
-	prev->ipf_next = (ipasfragp_32) p;
+	u32_to_ptr(prev->ipf_next, struct ipasfrag *)->ipf_prev = ptr_to_u32(p);
+	prev->ipf_next = ptr_to_u32(p);
 }
 
 /*
@@ -433,8 +433,11 @@ void
 ip_deq(p)
 	register struct ipasfrag *p;
 {
-	((struct ipasfrag *)(p->ipf_prev))->ipf_next = p->ipf_next;
-	((struct ipasfrag *)(p->ipf_next))->ipf_prev = p->ipf_prev;
+	struct ipasfrag *prev = u32_to_ptr(p->ipf_prev, struct ipasfrag *);
+	struct ipasfrag *next = u32_to_ptr(p->ipf_next, struct ipasfrag *);
+	u32ptr_done(prev->ipf_next, p);
+	prev->ipf_next = p->ipf_next;
+	next->ipf_prev = p->ipf_prev;
 }
 
 /*
@@ -449,16 +452,16 @@ ip_slowtimo()
 	
 	DEBUG_CALL("ip_slowtimo");
 	
-	fp = (struct ipq *) ipq.next;
+	fp = u32_to_ptr(ipq.next, struct ipq *);
 	if (fp == 0)
 	   return;
 
 	while (fp != &ipq) {
 		--fp->ipq_ttl;
-		fp = (struct ipq *) fp->next;
-		if (((struct ipq *)(fp->prev))->ipq_ttl == 0) {
+		fp = u32_to_ptr(fp->next, struct ipq *);
+		if (u32_to_ptr(fp->prev, struct ipq *)->ipq_ttl == 0) {
 			ipstat.ips_fragtimeout++;
-			ip_freef((struct ipq *) fp->prev);
+			ip_freef(u32_to_ptr(fp->prev, struct ipq *));
 		}
 	}
 }

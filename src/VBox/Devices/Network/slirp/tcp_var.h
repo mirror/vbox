@@ -42,8 +42,49 @@
 
 #if SIZEOF_CHAR_P == 4
  typedef struct tcpiphdr *tcpiphdrp_32;
+  /* VBox change that's to much bother to #ifdef. */
+# define u32ptr_done(u32, ptr)  do {} while (0)
+# define ptr_to_u32(ptr)        (ptr)
+# define u32_to_ptr(u32, type)  ((type)(u32))
 #else
  typedef u_int32_t tcpiphdrp_32;
+# ifdef VBOX
+#  include <iprt/types.h> 
+#  include <iprt/assert.h>
+
+   /* VBox change that's to much bother to #ifdef. */
+#  define u32ptr_done(u32, ptr) VBoxU32PtrDone((ptr), (u32))    
+#  define ptr_to_u32(ptr)       VBoxU32PtrHash((ptr))
+#  define u32_to_ptr(u32, type) ((type)VBoxU32PtrLookup(u32))
+
+    extern void       *g_apvHash[16384];
+
+    extern void     VBoxU32PtrDone(void *pv, uint32_t iHint);
+    extern uint32_t VBoxU32PtrHashSlow(void *pv);
+    
+    /** Hash the pointer, inserting it if need be. */
+    DECLINLINE(uint32_t) VBoxU32PtrHash(void *pv)
+    {
+        uint32_t i = ((uintptr_t)pv >> 3) % RT_ELEMENTS(g_apvHash);
+        if (RT_LIKELY(g_apvHash[i] == pv && pv))
+            return i;
+        return VBoxU32PtrHashSlow(pv);
+    }
+    /** Lookup the hash value. */
+    DECLINLINE(void *) VBoxU32PtrLookup(uint32_t i)
+    {
+        void *pv;
+        Assert(i < RT_ELEMENTS(g_apvHash));
+        pv = g_apvHash[i];
+        Assert(pv || !i); 
+        return pv;
+    }
+# else /* !VBOX */
+   /* VBox change that's to much bother to #ifdef. */
+#  define u32ptr_done(u32, ptr)   do {} while (0)
+#  define ptr_to_u32(ptr)         (ptr)
+#  define u32_to_ptr(u32, type)   ((type)(u32))
+# endif /* !VBOX */
 #endif
 
 /*
@@ -180,10 +221,16 @@ struct tcpcb {
  */
 #if SIZEOF_CHAR_P == 4
 typedef struct mbuf *mbufp_32;
+/* VBox change which is too much bother to #ifdef */
+# define REASS_MBUF_SET(ti, p) (*(mbufp_32 *)&((ti)->ti_t)) = (p)
+# define REASS_MBUF_GET(ti)    ((struct mbuf *)(*(mbufp_32 *)&((ti)->ti_t)))
 #else
 typedef u_int32_t mbufp_32;
+/* VBox change which is too much bother to #ifdef */
+# define REASS_MBUF_SET(ti, p) (*(mbufp_32 *)&((ti)->ti_t)) = ptr_to_u32(p)
+# define REASS_MBUF_GET(ti)    u32_to_ptr((*(mbufp_32 *)&((ti)->ti_t)), struct mbuf *)
 #endif
-#define REASS_MBUF(ti) (*(mbufp_32 *)&((ti)->ti_t))
+/*#define REASS_MBUF(ti) (*(mbufp_32 *)&((ti)->ti_t)) - replaced by REASS_MBUF_GET/SET */
 
 /*
  * TCP statistics.

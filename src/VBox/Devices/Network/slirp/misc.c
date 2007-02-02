@@ -112,11 +112,12 @@ insque_32(a, b)
 {
 	register struct quehead_32 *element = (struct quehead_32 *) a;
 	register struct quehead_32 *head = (struct quehead_32 *) b;
+	struct quehead_32 *link = u32_to_ptr(head->qh_link, struct quehead_32 *);
+
 	element->qh_link = head->qh_link;
-	head->qh_link = (u_int32_t)element;
-	element->qh_rlink = (u_int32_t)head;
-	((struct quehead_32 *)(element->qh_link))->qh_rlink
-	= (u_int32_t)element;
+	element->qh_rlink = ptr_to_u32(head);
+        Assert(link->qh_rlink == element->qh_rlink);
+	link->qh_rlink = head->qh_link = ptr_to_u32(element);
 }
 
 inline void
@@ -124,8 +125,12 @@ remque_32(a)
 	void *a;
 {
 	register struct quehead_32 *element = (struct quehead_32 *) a;
-	((struct quehead_32 *)(element->qh_link))->qh_rlink = element->qh_rlink;
-	((struct quehead_32 *)(element->qh_rlink))->qh_link = element->qh_link;
+	struct quehead_32 *link = u32_to_ptr(element->qh_link, struct quehead_32 *);
+	struct quehead_32 *rlink = u32_to_ptr(element->qh_rlink, struct quehead_32 *);
+
+	u32ptr_done(link->qh_rlink, element);
+	link->qh_rlink = element->qh_rlink;
+	rlink->qh_link = element->qh_link;
 	element->qh_rlink = 0;
 }
 

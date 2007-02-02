@@ -109,9 +109,13 @@ m_free(m)
 	 * Either free() it or put it on the free list
 	 */
 	if (m->m_flags & M_DOFREE) {
+		u32ptr_done(ptr_to_u32(ptr), m);
 		free(m);
 		mbuf_alloced--;
 	} else if ((m->m_flags & M_FREELIST) == 0) {
+#if DEBUG_bird
+/*		u32ptr_done(ptr_to_u32(ptr), m);*/
+#endif
 		insque(m,&m_freelist);
 		m->m_flags = M_FREELIST; /* Clobber other flags */
 	}
