@@ -1749,9 +1749,16 @@ typedef enum PDMNETWORKLINKSTATE
  */
 typedef struct PDMINETWORKPACKET
 {
+    /** The size of the package. */
     size_t      cb;
+    /* Pointer to the packet.
+     * @todo Rename to const void *pvBuf as it's only for sending. */
     void       *pvBuf;
-} PDMINETWORKPACKET, *PPDMINETWORKPACKET;
+} PDMINETWORKPACKET;
+/** Pointer to a network packet descriptor. */
+typedef PDMINETWORKPACKET *PPDMINETWORKPACKET;
+/** Pointer to a const network packet descriptor. */
+typedef const PDMINETWORKPACKET *PCPDMINETWORKPACKET;
 
 
 /** Pointer to a network connector interface */
