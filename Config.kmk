@@ -200,7 +200,7 @@ ifeq ($(BUILD_TARGET),l4)
 endif
 
 # Most stuff doesn't build yet on the two new targets.
-ifneq ($(filter darwin os2,$(BUILD_TARGET)),)
+ifneq ($(filter darwin os2 freebsd,$(BUILD_TARGET)),)
  #VBOX_WITH_VBOXBFE=
  VBOX_WITH_MAIN=
  VBOX_WITH_QTGUI=
@@ -275,10 +275,7 @@ endif
 #
 # Image and object format config.
 #
-ifeq ($(BUILD_TARGET),linux)
- VBOX_LDR_FMT = elf
-endif
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(filter-out linux l4 freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
  VBOX_LDR_FMT = elf
 endif
 ifeq ($(BUILD_TARGET),darwin)
@@ -490,16 +487,20 @@ INCS += $(PATH_ROOT)/include $(PATH_CURRENT) $(PATH_OUT)
 DEFS += VBOX
 DEFS.debug := DEBUG DEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) DEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME))
 DEFS.profile = VBOX_WITH_STATISTICS
-DEFS.x86   = __X86__
-DEFS.amd64 = __AMD64__
-DEFS.darwin= __DARWIN__
-DEFS.l4    = __L4__ __L4ENV__ L4API_l4v2 __NO_CTYPE _FILE_OFFSET_BITS=64
+DEFS.x86     = __X86__
+DEFS.amd64   = __AMD64__
+DEFS.darwin  = __DARWIN__
+DEFS.freebsd = __FREEBSD__
+DEFS.l4      = __L4__ __L4ENV__ L4API_l4v2 __NO_CTYPE _FILE_OFFSET_BITS=64
 ifeq ($(L4_API),l4v2onv4)
- DEFS.l4  += L4API_l4v2onv4 STATIC_L4_INLINE
+ DEFS.l4    += L4API_l4v2onv4 STATIC_L4_INLINE
 endif
-DEFS.linux = __LINUX__ _FILE_OFFSET_BITS=64
-DEFS.os2   = __OS2__
-DEFS.win   = __WIN__
+DEFS.linux   = __LINUX__ _FILE_OFFSET_BITS=64
+DEFS.netbsd  = __NETBSD__
+DEFS.openbsd = __OPENBSD__
+DEFS.os2     = __OS2__
+DEFS.solaris = __SOLARIS__
+DEFS.win     = __WIN__
 DEFS.win.x86 = __WIN32__
 DEFS.win.amd64 = __WIN64__
 # optional defines (use environment or make commandline)
@@ -572,17 +573,14 @@ endif
 #
 # Add the output dir(s) to the dynamic loader search path.
 #
-ifeq ($(BUILD_TARGET),win)
- export PATH:=$(PATH_BIN);$(PATH_LIB);$(PATH)
-endif
-ifeq ($(BUILD_TARGET),linux)
- export LD_LIBRARY_PATH:=$(PATH_BIN):$(PATH_LIB):$(LD_LIBRARY_PATH)
-endif
-ifeq ($(BUILD_TARGET),l4)
+ifeq ($(filter-out linux l4 freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
  export LD_LIBRARY_PATH:=$(PATH_BIN):$(PATH_LIB):$(LD_LIBRARY_PATH)
 endif
 ifeq ($(BUILD_TARGET),os2)
  #fixme! export BEGINLIBPATH:=$(PATH_BIN);$(PATH_LIB);$(BEGINLIBPATH)
+endif
+ifeq ($(BUILD_TARGET),win)
+ export PATH:=$(PATH_BIN);$(PATH_LIB);$(PATH)
 endif
 
 #
@@ -604,7 +602,7 @@ ifeq ($(BUILD_TARGET),l4)
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_BIN)/VBoxREMImp.s.so
 endif
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(filter-out linux freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.so
  LIB_RUNTIME_EF  = $(PATH_LIB)/RuntimeEFCPP.a
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.so
@@ -1133,6 +1131,22 @@ TEMPLATE_VBOXR0DRV_LDFLAGS             = -static -nostdlib -r -Wl,-Y,1455 \
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
 endif
 
+ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)  # pure guess work just to avoid the warning below
+TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXR0DRV_DEFS                = __KERNEL__ IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_CFLAGS              = \
+	-Wall -Wstrict-prototypes -Wno-trigraphs $(VBOX_GCC_Wno-pointer-sign) \
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fno-common
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -msoft-float
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
+	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
+	-Wno-sign-compare -Wdeclaration-after-statement
+TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(filter-out -Wstrict-prototypes -Wno-pointer-sign,$(TEMPLATE_VBOXR0DRV_CFLAGS)) -fno-exceptions -fno-rtti
+TEMPLATE_VBOXR0DRV_SYSSUFF             = .ko
+TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386 -r
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64 -r
+endif
+
 ifdef VBOX_WITH_VBOXDRV
  ifndef TEMPLATE_VBOXR0DRV_TOOL
   $(warning Warning: VBox Build: Target $(BUILD_PLATFORM) is not officially supported!)
@@ -1204,36 +1218,37 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	-Wl,--rpath-link,$(L4_LIBDIR)
  ifeq ($(BUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m $(LIB_UUID) rt dl
- else
-  ifeq ($(BUILD_TARGET),l4)
+ else ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXR3EXE_LIBS                = \
 	$(L4_LIBDIR)/libvboxserver.s.so \
 	$(L4_LIBDIR)/libuc++.0.s.so \
 	supc++ gcc_eh gcc \
 	$(L4_LIBDIR)/libdl.s.so \
 	$(L4_LIBDIR)/libuc.0.s.so
-  else
-   ifeq ($(BUILD_TARGET),os2)
+ else ifeq ($(BUILD_TARGET),os2)
 TEMPLATE_VBOXR3EXE_TOOL                = GCC3OMF
 TEMPLATE_VBOXR3EXE_LIBS                = socket iconv
-   else
-    ifeq ($(BUILD_TARGET),darwin)
+ else ifeq ($(BUILD_TARGET),darwin)
 TEMPLATE_VBOXR3EXE_TOOL                = GCC4MACHO
 TEMPLATE_VBOXR3EXE_LIBS                =
 TEMPLATE_VBOXR3EXE_LDFLAGS             = -read_only_relocs suppress
-    else
+ else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
+TEMPLATE_VBOXR3EXE_TOOL                = GCC3
+TEMPLATE_VBOXR3EXE_LIBS                = 
+ else ifeq ($(BUILD_TARGET),solaris)
+$(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
+TEMPLATE_VBOXR3EXE_TOOL                = GCC3PLAIN
+TEMPLATE_VBOXR3EXE_LIBS                = rt
+ else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.profile    = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.release)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.krelease)
-    endif
-   endif
-  endif
  endif
 endif
 
 #
 # Template for building R3 shared objects / DLLs.
-# This is mostly identical to the VBOXR3EXE template.
+# This is mostly identical to the VBOXR3EXE template. (Avoid PIC if possible!)
 #
 TEMPLATE_VBOXR3  = VBox Ring 3 SO/DLLs
 TEMPLATE_VBOXR3_EXTENDS = VBOXR3EXE
@@ -1334,7 +1349,7 @@ else
  TEMPLATE_VBOXNOCRTGCC_ASTOOL           = $(VBOX_ASTOOL)
  TEMPLATE_VBOXNOCRTGCC_ASFLAGS          = $(VBOX_ASFLAGS)
  TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -nostdlib
- ifneq ($(filter-out os2 darwin,$(BUILD_TARGET)),)
+ ifneq ($(filter-out os2 darwin solaris,$(BUILD_TARGET)),)
   ifneq ($(BUILD_TARGET_ARCH),amd64)
    TEMPLATE_VBOXNOCRTGCC_LDFLAGS        += -Wl,--no-undefined
   endif
@@ -1407,25 +1422,26 @@ TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = -fno-inline
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
  ifeq ($(BUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m $(LIB_UUID) rt
- else
-  ifeq ($(BUILD_TARGET),l4)
+ else ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXMAINEXE_LIBS                =
 # no libs as yet in l4 target - must be added later
-  else
-   ifeq ($(BUILD_TARGET),os2)
+ else ifeq ($(BUILD_TARGET),os2)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC3OMF
 TEMPLATE_VBOXMAINEXE_LIBS                =
-   else
-    ifeq ($(BUILD_TARGET),darwin)
+ else ifeq ($(BUILD_TARGET),darwin)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC4MACHO
 TEMPLATE_VBOXMAINEXE_LIBS                =
-    else
+ else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
+TEMPLATE_VBOXMAINEXE_TOOL                = GCC3
+TEMPLATE_VBOXMAINEXE_LIBS                =
+ else ifeq ($(BUILD_TARGET),solaris)
+$(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
+TEMPLATE_VBOXMAINEXE_TOOL                = GCC3PLAIN
+TEMPLATE_VBOXMAINEXE_LIBS                = rt
+ else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
-    endif # !darwin
-   endif # !os2
-  endif # !l4
- endif # !linux
+ endif 
 
 endif # !win
 
@@ -1630,19 +1646,23 @@ TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.relea
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
  ifeq ($(BUILD_PLATFORM),linux)
 TEMPLATE_VBOXBLDPROG_LIBS                = pthread m $(LIB_UUID) rt dl
- else
-  ifeq ($(BUILD_PLATFORM),os2)
+ else ifeq ($(BUILD_PLATFORM),os2)
 TEMPLATE_VBOXBLDPROG_TOOL                = GCC3OMF
 TEMPLATE_VBOXBLDPROG_LIBS                = socket iconv
-  else
-   ifeq ($(BUILD_PLATFORM),darwin)
+ else ifeq ($(BUILD_PLATFORM),darwin)
 TEMPLATE_VBOXBLDPROG_TOOL                = GCC4MACHO
 TEMPLATE_VBOXBLDPROG_LIBS                =
-   else
+ else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_PLATFORM)),)
+TEMPLATE_VBOXBLDPROG_TOOL                = GCC3
+TEMPLATE_VBOXBLDPROG_LIBS                =
+ else ifeq ($(BUILD_PLATFORM),solaris)
 $(warning Warning: VBOX Build: Target $(BUILD_PLATFORM) is not officially supported!)
-   endif # !darwin
-  endif # !os2
- endif # !linux
+TEMPLATE_VBOXBLDPROG_TOOL                = GCC3PLAIN
+TEMPLATE_VBOXBLDPROG_LIBS                = rt
+ else 
+$(warning Warning: VBOX Build: Target $(BUILD_PLATFORM) is not officially supported!)
+ endif 
+
 endif # !win
 
 
