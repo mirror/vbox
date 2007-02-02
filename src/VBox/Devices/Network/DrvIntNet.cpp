@@ -155,6 +155,28 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
 
 
 /**
+ * Send multiple data packets to the network.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   cPackets        Number of packets
+ * @param   paPacket        Packet description array
+ * @thread  EMT
+ */
+static DECLCALLBACK(int) drvIntNetSendEx(PPDMINETWORKCONNECTOR pInterface, uint32_t cPackets, PPDMINETWORKPACKET paPacket)
+{
+    int rc = VERR_INVALID_PARAMETER;
+
+    for (uint32_t i=0;i<cPackets;i++)
+    {
+        rc = drvIntNetSend(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
+        if (VBOX_FAILURE(rc))
+            break;
+    }
+    return rc;
+}
+
+/**
  * Set promiscuous mode.
  *
  * This is called when the promiscuous mode is set. This means that there doesn't have
@@ -610,6 +632,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pDrvIns->IBase.pfnQueryInterface    = drvIntNetQueryInterface;
     /* INetwork */
     pThis->INetworkConnector.pfnSend                = drvIntNetSend;
+    pThis->INetworkConnector.pfnSendEx              = drvIntNetSendEx;
     pThis->INetworkConnector.pfnSetPromiscuousMode  = drvIntNetSetPromiscuousMode;
     pThis->INetworkConnector.pfnNotifyLinkChanged   = drvIntNetNotifyLinkChanged;
     pThis->INetworkConnector.pfnNotifyCanReceive    = drvIntNetNotifyCanReceive;

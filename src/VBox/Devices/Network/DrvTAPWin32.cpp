@@ -164,6 +164,28 @@ static DECLCALLBACK(int) drvTAPW32Send(PPDMINETWORKCONNECTOR pInterface, const v
     return rc;
 }
 
+/**
+ * Send multiple data packets to the network.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   cPackets        Number of packets
+ * @param   paPacket        Packet description array
+ * @thread  EMT
+ */
+static DECLCALLBACK(int) drvTAPW32SendEx(PPDMINETWORKCONNECTOR pInterface, uint32_t cPackets, PPDMINETWORKPACKET paPacket)
+{
+    int rc = VERR_INVALID_PARAMETER;
+
+    for (uint32_t i=0;i<cPackets;i++)
+    {
+        rc = drvTAPW32Send(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
+        if (VBOX_FAILURE(rc))
+            break;
+    }
+    return rc;
+}
+
 
 /**
  * Set promiscuous mode.
@@ -465,6 +487,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pDrvIns->IBase.pfnQueryInterface    = drvTAPW32QueryInterface;
     /* INetwork */
     pData->INetworkConnector.pfnSend                = drvTAPW32Send;
+    pData->INetworkConnector.pfnSendEx              = drvTAPW32SendEx;
     pData->INetworkConnector.pfnSetPromiscuousMode  = drvTAPW32SetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged   = drvTAPW32NotifyLinkChanged;
     pData->INetworkConnector.pfnNotifyCanReceive    = drvTAPW32NotifyCanReceive;
