@@ -251,6 +251,8 @@ struct PCNetState_st
     STAMPROFILEADV                      StatReceive;
     STAMPROFILEADV                      StatTransmitGC;
     STAMPROFILEADV                      StatTransmitHC;
+    STAMPROFILEADV                      StatTdtePollGC;
+    STAMPROFILEADV                      StatTdtePollHC;
     STAMPROFILE                         StatXmitQueue;
     STAMPROFILEADV                      StatXmitQueueFlushGC;
     STAMCOUNTER                         aStatFlushCounts[PCNET_TRQUEUE_DEPTH+1];
@@ -1499,6 +1501,7 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
  */
 static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
 {
+    STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatTdtePoll), a);
     if (RT_LIKELY(pData->GCTDRA))
     {
         RTGCPHYS cxda = pcnetTdraAddr(pData, CSR_XMTRC(pData));
@@ -1506,10 +1509,14 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
         pcnetTmdLoad(pData, tmd, PHYSADDR(pData, cxda));
 
         if (!tmd->tmd1.own)
+        {
+            STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTdtePoll), a);
             return 0;
+        }
 
         if (RT_UNLIKELY(tmd->tmd1.ones != 15))
         {
+            STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTdtePoll), a);
             LogRel(("PCNet#%d: BAD TMD XDA=0x%08x\n",
                     PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, cxda)));
             return 0;
@@ -1524,6 +1531,7 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
         CSR_CXDA(pData) = cxda;
         CSR_CXBC(pData) = tmd->tmd1.bcnt;
         CSR_CXST(pData) = ((uint32_t *)tmd)[1] >> 16;
+        STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTdtePoll), a);
         return CARD_IS_OWNER(CSR_CXST(pData));
     }
     else
@@ -1531,6 +1539,7 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
         /** @todo consistency with previous receive descriptor */
         CSR_CXDA(pData) = 0;
         CSR_CXBC(pData) = CSR_CXST(pData) = 0;
+        STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTdtePoll), a);
         return 0;
     }
 }
@@ -4129,6 +4138,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet receive",            "/Devices/PCNet%d/Receive", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet transmit in GC",     "/Devices/PCNet%d/TransmitGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet transmit in HC",     "/Devices/PCNet%d/TransmitHC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTdtePollGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in GC",     "/Devices/PCNet%d/TdtePollGC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTdtePollHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in HC",     "/Devices/PCNet%d/TdtePollHC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueue,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue",         "/Devices/PCNet%d/XmitQueue", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueFlushGC,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue flushes from GC", "/Devices/PCNet%d/XmitQueueFlushGC", iInstance);
     unsigned i;
