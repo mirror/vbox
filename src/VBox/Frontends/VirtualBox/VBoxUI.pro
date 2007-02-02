@@ -147,6 +147,8 @@ IMAGES	= images/tpixel.png \
 	images/nw_write_16px.png \
 	images/nw_disabled_16px.png \
 	images/usb_16px.png \
+	images/usb_new_16px.png \
+	images/usb_new_disabled_16px.png \
 	images/usb_disabled_16px.png \
 	images/usb_read_16px.png \
 	images/usb_write_16px.png \
@@ -184,6 +186,10 @@ IMAGES	= images/tpixel.png \
 	images/refresh_disabled_16px.png \
 	images/refresh_22px.png \
 	images/refresh_disabled_22px.png \
+	images/global_settings_16px.png \
+	images/global_settings_diasbled_16px.png \
+	images/vrdp_16px.png \
+	images/vrdp_disabled_16px.png \
 	images/vdm_add_16px.png \
 	images/vdm_add_disabled_16px.png \
 	images/vdm_add_22px.png \

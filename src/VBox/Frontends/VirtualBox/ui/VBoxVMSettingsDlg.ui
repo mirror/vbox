@@ -242,7 +242,7 @@
                 <string>#vrdp</string>
             </property>
             <property name="pixmap">
-                <pixmap>discard_cur_state_16px.png</pixmap>
+                <pixmap>vrdp_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>

@@ -229,7 +229,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     fileDiskMgrAction = new QAction( this, "fileDiskMgrAction" );
     fileDiskMgrAction->setIconSet (VBoxGlobal::iconSet ("diskim_16px.png"));
     fileSettingsAction = new QAction(this, "fileSettingsAction");
-    fileSettingsAction->setIconSet (VBoxGlobal::iconSet ("settings_16px.png"));
+    fileSettingsAction->setIconSet (VBoxGlobal::iconSet ("global_settings_16px.png"));
     fileExitAction = new QAction (this, "fileExitAction");
     fileExitAction->setIconSet (VBoxGlobal::iconSet ("exit_16px.png"));
 
