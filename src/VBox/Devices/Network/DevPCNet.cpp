@@ -1802,6 +1802,7 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     {
         if (pData->iFrame > 1)
         {
+            /** @todo Tip, use alloca() or a fixed sized stack array to save time and avoid the heap and it's locks. */
             PPDMINETWORKPACKET paPacket = (PPDMINETWORKPACKET)RTMemTmpAlloc(sizeof(PDMINETWORKPACKET)*pData->iFrame);
             unsigned           i;
 
