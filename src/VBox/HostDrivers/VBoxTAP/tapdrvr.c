@@ -1881,6 +1881,91 @@ TapDeviceHook (IN PDEVICE_OBJECT p_DeviceObject, IN PIRP p_IRP)
 	      break;
 	    }
 
+#ifdef VBOX
+        case TAP_IOCTL_TRANSFER_ETHPACKETS:
+        {
+            PTAP_SCATTER_GATHER_LIST pList;
+            ULONG                    i;
+            PMDL                     pMdlBuf = NULL;
+
+	        if (l_IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(TAP_SCATTER_GATHER_LIST))
+            {
+    		    NOTE_ERROR ();
+	    	    p_IRP->IoStatus.Status = l_Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+		    pList = (PTAP_SCATTER_GATHER_LIST)p_IRP->AssociatedIrp.SystemBuffer;
+
+            /* Sanity checks */
+            if (      pList->cPackets > TAP_SCATTER_GATHER_MAX_PACKETS
+                ||    l_IrpSp->Parameters.DeviceIoControl.InputBufferLength != sizeof(TAP_SCATTER_GATHER_LIST) + (pList->cPackets-1)*sizeof(TAP_SCATTER_GATHER_ITEM)
+               )
+            {
+    		    NOTE_ERROR ();
+	    	    p_IRP->IoStatus.Status = l_Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            __try
+            {
+                /* Send all packets. */
+                for (i=0;i<pList->cPackets;i++)
+                {
+                    char *pBuffer;
+
+                    DUMP_PACKET ("IRP_MJ_WRITE ETH", (unsigned char *) p_IRP->AssociatedIrp.SystemBuffer, l_IrpSp->Parameters.Write.Length);
+
+                    pMdlBuf = IoAllocateMdl(pList->aPacket[i].pPacket, pList->aPacket[i].cb, FALSE, FALSE, NULL);
+                    if (!pMdlBuf)
+                    {
+                        p_IRP->IoStatus.Status = l_Status = STATUS_NO_MEMORY;
+                        break;
+                    }
+
+                    /* Exceptions caught by top _try _except block */
+                    /** @todo really necessary to lock the pages?? */
+                    MmProbeAndLockPages(pMdlBuf, KernelMode, IoModifyAccess);
+
+                    pBuffer = MmGetSystemAddressForMdlSafe(pMdlBuf, NormalPagePriority);
+                    if (!pBuffer)
+                    {
+                        MmUnlockPages(pMdlBuf);
+                        IoFreeMdl(pMdlBuf);
+                        p_IRP->IoStatus.Status = l_Status = STATUS_NO_MEMORY;
+                        break;
+                    }
+
+                    NdisMEthIndicateReceive(l_Adapter->m_MiniportAdapterHandle, (NDIS_HANDLE) l_Adapter,
+                                            pBuffer,
+                                            ETHERNET_HEADER_SIZE,
+                                            pBuffer + ETHERNET_HEADER_SIZE,
+                                            pList->aPacket[i].cb - ETHERNET_HEADER_SIZE,
+                                            pList->aPacket[i].cb - ETHERNET_HEADER_SIZE);
+
+                    NdisMEthIndicateReceiveComplete (l_Adapter->m_MiniportAdapterHandle);
+
+                    MmUnlockPages(pMdlBuf);
+                    IoFreeMdl(pMdlBuf);
+                    pMdlBuf = NULL;
+
+                }
+         		p_IRP->IoStatus.Information = 1; // Simple boolean value
+            }
+            __except (EXCEPTION_EXECUTE_HANDLER)
+            {
+                DEBUGP (("[%s] NdisMEthIndicateReceive failed in IRP_MJ_WRITE\n",
+	                 NAME (l_Adapter)));
+                NOTE_ERROR ();
+                if (pMdlBuf)
+                    IoFreeMdl(pMdlBuf);
+
+                p_IRP->IoStatus.Status = l_Status = STATUS_UNSUCCESSFUL;
+                break;
+            } 
+            break;
+        }
+#endif
+
 	  default:
 	    {
 	      NOTE_ERROR ();
