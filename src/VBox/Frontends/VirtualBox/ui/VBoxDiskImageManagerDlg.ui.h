@@ -1268,15 +1268,15 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
                 mProgressBar->setProgress (++ index);
         }
 
-        /* select first child */
-        setCurrentItem (hdsView, hdsView->firstChild());
-        setCurrentItem (cdsView, cdsView->firstChild());
-        setCurrentItem (fdsView, fdsView->firstChild());
-        
         /* emulate the finished signal to reuse the code */
         if (!vboxGlobal().isMediaEnumerationStarted())
             mediaEnumFinished (list);
     }
+
+    /* for a newly opened dialog, select the first item */
+    setCurrentItem (hdsView, hdsView->firstChild());
+    setCurrentItem (cdsView, cdsView->firstChild());
+    setCurrentItem (fdsView, fdsView->firstChild());
 }
 
 
@@ -1288,12 +1288,14 @@ void VBoxDiskImageManagerDlg::mediaEnumStarted()
     VBoxMediaList::const_iterator it;
     for (it = list.begin(); it != list.end(); ++ it)
         mediaAdded (*it);
-    /* select first child */
-    if (!hdsView->currentItem())
+    
+    /* select the first item if the previous saved item is not found
+     * or no current item at all */
+    if (!hdsView->currentItem() || !hdSelectedId.isNull())
         setCurrentItem (hdsView, hdsView->firstChild());
-    if (!cdsView->currentItem())
+    if (!cdsView->currentItem() || !cdSelectedId.isNull())
         setCurrentItem (cdsView, cdsView->firstChild());
-    if (!fdsView->currentItem())
+    if (!fdsView->currentItem() || !fdSelectedId.isNull())
         setCurrentItem (fdsView, fdsView->firstChild());
 
     processCurrentChanged();
@@ -1346,17 +1348,26 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
         case VBoxDefs::HD:
             item = createHdItem (hdsView, 0, aMedia);
             if (item->getUuid() == hdSelectedId)
+            {
                 setCurrentItem (hdsView, item);
+                hdSelectedId = QUuid();
+            }
             break;
         case VBoxDefs::CD:
             item = createCdItem (cdsView, 0, aMedia);
             if (item->getUuid() == cdSelectedId)
+            {
                 setCurrentItem (cdsView, item);
+                cdSelectedId = QUuid();
+            }
             break;
         case VBoxDefs::FD:
             item = createFdItem (fdsView, 0, aMedia);
             if (item->getUuid() == fdSelectedId)
+            {
                 setCurrentItem (fdsView, item);
+                fdSelectedId = QUuid();
+            }
             break;
         default:
             AssertMsgFailed (("Invalid aMedia type\n"));
@@ -1469,15 +1480,15 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
 
     item = hdsView->currentItem();
     di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
-    hdSelectedId = di ? di->getUuid() : QUuid();
+    hdSelectedId = di ? di->getUuid() : QString::null;
  
     item = cdsView->currentItem();
     di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
-    cdSelectedId = di ? di->getUuid() : QUuid(); 
+    cdSelectedId = di ? di->getUuid() : QString::null; 
 
     item = fdsView->currentItem();
     di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
-    fdSelectedId = di ? di->getUuid() : QUuid(); 
+    fdSelectedId = di ? di->getUuid() : QString::null;
 
     /* finally, clear all lists */
     hdsView->clear();
