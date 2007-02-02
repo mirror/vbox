@@ -294,9 +294,9 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             pDevIns->pDevHlpGC = pDevHlpGC;
             pDevIns->pvInstanceDataGC = MMHyperHC2GC(pVM, pDevIns->pvInstanceDataHC);
             pDevIns->Internal.s.pVMGC = pVM->pVMGC;
-            if (pDevIns->Internal.s.pPciBusGC)
-                pDevIns->Internal.s.pPciBusGC = VM_GUEST_ADDR(pVM, pDevIns->Internal.s.pPciBusHC);
-            if (pDevIns->Internal.s.pPciDeviceGC)
+            if (pDevIns->Internal.s.pPciBusHC)
+                pDevIns->Internal.s.pPciBusGC = MMHyperHC2GC(pVM, pDevIns->Internal.s.pPciBusHC);
+            if (pDevIns->Internal.s.pPciDeviceHC)
                 pDevIns->Internal.s.pPciDeviceGC = MMHyperHC2GC(pVM, pDevIns->Internal.s.pPciDeviceHC);
             if (pDevIns->pDevReg->pfnRelocate)
             {
