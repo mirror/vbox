@@ -34,6 +34,34 @@
 #include <errno.h>
 #include <sys/mman.h>
 
+#if !defined(RT_USE_MMAP) && (defined(__LINUX__))
+# define RT_USE_MMAP
+#endif 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+#ifdef RT_USE_MMAP
+/** 
+ * RTMemExecAlloc() header used when using mmap for allocating the memory.
+ */
+typedef struct RTMEMEXECHDR
+{
+    /** Magic number (RTMEMEXECHDR_MAGIC). */
+    size_t      uMagic;
+    /** The size we requested from mmap. */
+    size_t      cb;
+# if ARCH_BITS == 32
+    uint32_t    Alignment[2];
+# endif 
+} RTMEMEXECHDR, *PRTMEMEXECHDR;
+
+/** MAgic for RTMEMEXECHDR. */
+#define RTMEMEXECHDR_MAGIC (~(size_t)0xfeedbabe)
+
+#endif  /* RT_USE_MMAP */
+
+
 
 #ifdef IN_RING3
 
@@ -48,12 +76,20 @@ RTDECL(void *) RTMemExecAlloc(size_t cb)
 {
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
 
-#if defined(__AMD64__) && defined(__LINUX__)
+#ifdef RT_USE_MMAP
     /*
      * Use mmap to get low memory.
      */
-    void *pv = mmap(NULL, RT_ALIGN_Z(cb, PAGE_SIZE), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_32BIT, -1, 0);
+    void *pv = mmap(NULL, RT_ALIGN_Z(cb, PAGE_SIZE), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS 
+#if defined(__AMD64__) && defined(MAP_32BIT)
+                    | MAP_32BIT
+#endif
+                    , -1, 0);
     AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
+    PRTMEMEXECHDR pHdr = (PRTMEMEXECHDR)pv;
+    pHdr->uMagic = RTMEMEXECHDR_MAGIC;
+    pHdr->cb = RT_ALIGN_Z(cb, PAGE_SIZE);
+    pv = pHdr + 1;
 
 #else
     /*
@@ -97,8 +133,11 @@ RTDECL(void)    RTMemExecFree(void *pv)
 {
     if (pv)
     {
-#if defined(__AMD64__) && defined(__LINUX__)
-        int rc = munmap(pv, 0);/** @todo fix me! */
+#ifdef RT_USE_MMAP
+        PRTMEMEXECHDR pHdr = (PRTMEMEXECHDR)pv - 1;
+        AssertMsgReturnVoid(RT_ALIGN_P(pHdr, PAGE_SIZE) == pHdr, ("pHdr=%p pv=%p\n", pHdr, pv));
+        AssertMsgReturnVoid(pHdr->uMagic == RTMEMEXECHDR_MAGIC, ("pHdr=%p(uMagic=%#zx) pv=%p\n", pHdr, pHdr->uMagic, pv));
+        int rc = munmap(pHdr, pHdr->cb);
         AssertMsg(!rc, ("munmap -> %d errno=%d\n", rc, errno));
 #else
         free(pv);
