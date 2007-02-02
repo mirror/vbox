@@ -612,11 +612,11 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
 
 #ifdef ASYNC_NETIO
+    pData->hHaltAsyncEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
+
     /* Create asynchronous thread */
     rc = RTThreadCreate(&pData->hThread, drvTAPW32AsyncIo, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "TAPWIN32");
     AssertRC(rc);
-
-    pData->hHaltAsyncEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     Assert(pData->hThread != NIL_RTTHREAD && pData->hHaltAsyncEventSem != NULL);
 #else
