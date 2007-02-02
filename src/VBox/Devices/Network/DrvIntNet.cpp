@@ -167,7 +167,7 @@ static DECLCALLBACK(int) drvIntNetSendEx(PPDMINETWORKCONNECTOR pInterface, uint3
 {
     int rc = VERR_INVALID_PARAMETER;
 
-    for (uint32_t i=0;i<cPackets;i++)
+    for (uint32_t i = 0; i < cPackets; i++)
     {
         rc = drvIntNetSend(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
         if (VBOX_FAILURE(rc))
