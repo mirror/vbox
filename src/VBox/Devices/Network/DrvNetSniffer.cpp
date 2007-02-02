@@ -39,8 +39,6 @@
 #include <iprt/critsect.h>
 #include <VBox/param.h>
 
-#include <string.h>
-
 #include "Builtins.h"
 
 
@@ -160,7 +158,7 @@ static DECLCALLBACK(int) drvNetSnifferSendEx(PPDMINETWORKCONNECTOR pInterface, u
 {
     int rc = VERR_INVALID_PARAMETER;
 
-    for (uint32_t i=0;i<cPackets;i++)
+    for (uint32_t i = 0; i < cPackets; i++)
     {
         rc = drvNetSnifferSend(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
         if (VBOX_FAILURE(rc))
