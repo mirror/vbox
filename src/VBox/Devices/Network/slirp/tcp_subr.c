@@ -295,7 +295,7 @@ tcp_close(tp)
  *		(void) m_free(dtom(tp->t_template));
  */
 /*	free(tp, M_PCB);  */
-	u32ptr_done(ptr_to_u32(ptr), tp);
+	u32ptr_done(ptr_to_u32(tp), tp);
 	free(tp);
 	so->so_tcpcb = 0;
 	soisfdisconnected(so);
