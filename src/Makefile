@@ -31,7 +31,7 @@ else
 endif
 
 SUBDIRS += bldprogs libs VBox
-ifeq ($(filter-out darwin.x86 darwin.amd64 win.amd64 linux.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
+ifeq ($(filter linux.x86 l4.x86 win.x86 os2.x86,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  SUBDIRS += recompiler/new
 else
  SUBDIRS += recompiler
