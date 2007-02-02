@@ -775,7 +775,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
     { \
         PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogRelDefaultInstance(); \
         if (LogRelIt_pLogger) \
-            _LogRelIt(pvInst, fFlags, iGroup, _LogRelRemoveParentheseis fmtargs); \
+            _LogRelIt(LogRelIt_pLogger, fFlags, iGroup, _LogRelRemoveParentheseis fmtargs); \
         LogIt(LOG_INSTANCE, fFlags, iGroup, fmtargs); \
     } while (0)
 #else
