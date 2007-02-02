@@ -4880,7 +4880,10 @@ PATMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTGCPTR pInstrGC)
 
             iGate = TRPMR3QueryGateByHandler(pVM, PATCHCODE_PTR_GC(pPatch));
             if (iGate != (uint32_t)~0)
+            {
                 TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
+                LogRel(("Disabling IDT %x patch handler %VGv\n", iGate, pInstrGC));
+            }
         }
 
         /* Mark the entry with a breakpoint in case somebody else calls it later on (cli patch used as a function, function, trampoline or idt patches) */
