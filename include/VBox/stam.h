@@ -189,6 +189,8 @@ typedef enum STAMUNIT
     STAMUNIT_GOOD_BAD,
     /** Megabytes. */
     STAMUNIT_MEGABYTES,
+    /** Kilobytes. */
+    STAMUNIT_KILOBYTES,
     /** The end (exclusive). */
     STAMUNIT_END
 } STAMUNIT;
