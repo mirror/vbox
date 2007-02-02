@@ -79,6 +79,13 @@
 /* Enable to handle frequent io reads in the guest context */
 #define PCNET_GC_ENABLED
 
+/* Enable to send multiple packets with one system call */
+/* #define PCNET_SEND_MULTIPLE_PACKETS */
+
+/* Enable to delay setting the TX interrupt until packets have been sent. */
+/** @note currently not technically correct (own bit) */
+/* #define PCNET_DELAY_INT */
+
 #ifdef __GNUC__
 #define PACKED __attribute__ ((packed))
 #else
