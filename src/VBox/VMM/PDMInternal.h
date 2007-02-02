@@ -78,23 +78,24 @@ typedef struct PDMDEVINSINT
 
     /** Pointer to the VM this instance was created for - HC Ptr. */
     HCPTRTYPE(PVM)                  pVMHC;
-    /** Pointer to the VM this instance was created for - GC Ptr. */
-    GCPTRTYPE(PVM)                  pVMGC;
-
     /** Pointer to the list of logical units associated with the device. (FIFO) */
     HCPTRTYPE(PPDMLUN)              pLunsHC;
-
     /** Configuration handle to the instance node. */
     HCPTRTYPE(PCFGMNODE)            pCfgHandle;
-
     /** HC pointer to associated PCI device structure. */
     HCPTRTYPE(struct PCIDevice *)   pPciDeviceHC;
-    /** GC pointer to associated PCI device structure. */
-    GCPTRTYPE(struct PCIDevice *)   pPciDeviceGC;
     /** HC pointer to associated PCI bus structure. */
     HCPTRTYPE(PPDMPCIBUS)           pPciBusHC;
+
+    /** GC pointer to associated PCI device structure. */
+    GCPTRTYPE(struct PCIDevice *)   pPciDeviceGC;
+    /** Pointer to the VM this instance was created for - GC Ptr. */
+    GCPTRTYPE(PVM)                  pVMGC;
     /** GC pointer to associated PCI bus structure. */
     GCPTRTYPE(PPDMPCIBUS)           pPciBusGC;
+#if GC_ARCH_BITS == 32
+    uint32_t                        Alignment0;
+#endif 
 } PDMDEVINSINT;
 
 
@@ -479,8 +480,6 @@ typedef struct PDMQUEUE
 {
     /** Pointer to the next queue in the list. */
     HCPTRTYPE(PPDMQUEUE)    pNext;
-    /** Queue type. */
-    PDMQUEUETYPE            enmType;
     /** Type specific data. */
     union
     {
@@ -515,26 +514,28 @@ typedef struct PDMQUEUE
             HCPTRTYPE(void *)           pvUser;
         } Ext;
     } u;
-    /** Pointer to the VM. */
-    HCPTRTYPE(PVM)                          pVMHC;
-    /** Pointer to the GC VM and indicator for GC enabled queue.
-     * If this is NULL, the queue cannot be used in GC.
-     */
-    GCPTRTYPE(PVM)                          pVMGC;
+    /** Queue type. */
+    PDMQUEUETYPE                            enmType;
     /** The interval between checking the queue for events.
      * The realtime timer below is used to do the waiting.
      * If 0, the queue will use the VM_FF_PDM_QUEUE forced action. */
     uint32_t                                cMilliesInterval;
     /** Interval timer. Only used if cMilliesInterval is non-zero. */
     PTMTIMERHC                              pTimer;
+    /** Pointer to the VM. */
+    HCPTRTYPE(PVM)                          pVMHC;
+    /** LIFO of pending items - HC. */
+    HCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pPendingHC;
+    /** Pointer to the GC VM and indicator for GC enabled queue.
+     * If this is NULL, the queue cannot be used in GC.
+     */
+    GCPTRTYPE(PVM)                          pVMGC;
+    /** LIFO of pending items - GC. */
+    GCPTRTYPE(PPDMQUEUEITEMCORE)            pPendingGC;
     /** Item size (bytes). */
     RTUINT                                  cbItem;
     /** Number of items in the queue. */
     RTUINT                                  cItems;
-    /** LIFO of pending items - HC. */
-    HCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pPendingHC;
-    /** LIFO of pending items - GC. */
-    GCPTRTYPE(PPDMQUEUEITEMCORE)            pPendingGC;
     /** Index to the free head (where we insert). */
     uint32_t volatile                       iFreeHead;
     /** Index to the free tail (where we remove). */
@@ -546,6 +547,9 @@ typedef struct PDMQUEUE
         HCPTRTYPE(PPDMQUEUEITEMCORE) volatile pItemHC;
         /** Pointer to the free item - GC Ptr. */
         GCPTRTYPE(PPDMQUEUEITEMCORE) volatile pItemGC;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+        uint32_t                              Alignment0;
+#endif 
     }                                       aFreeItems[1];
 } PDMQUEUE;
 
@@ -578,6 +582,9 @@ typedef struct PDMDEVHLPTASK
     HCPTRTYPE(PPDMDEVINS)   pDevInsHC;
     /** This operation to perform. */
     PDMDEVHLPTASKOP         enmOp;
+#if HC_ARCH_BITS == 64
+    uint32_t                Alignment0;
+#endif 
     /** Parameters to the operation. */
     union PDMDEVHLPTASKPARAMS
     {
