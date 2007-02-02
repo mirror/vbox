@@ -68,6 +68,7 @@
 #include <iprt/time.h>
 #ifdef IN_RING3
 #include <iprt/mem.h>
+#include <iprt/semaphore.h>
 #endif
 
 #include "Builtins.h"
@@ -84,7 +85,10 @@
 
 /* Enable to delay setting the TX interrupt until packets have been sent. */
 /** @note currently not technically correct (own bit) */
-/* #define PCNET_DELAY_INT */
+#define PCNET_DELAY_INT
+
+/* Enable to send packets in a seperate thread. */
+/* #define PCNET_ASYNC_SEND */
 
 #ifdef __GNUC__
 #define PACKED __attribute__ ((packed))
@@ -227,6 +231,12 @@ struct PCNetState_st
     /** Partner of ILeds. */
     HCPTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
 
+#ifdef PCNET_ASYNC_SEND
+    /** Async send thread */
+    RTSEMEVENT                          hEventSemSend;
+    RTTHREAD                            hSendThread;
+#endif
+
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
 
@@ -288,6 +298,10 @@ struct PCNetState_st
     STAMCOUNTER                         StatRingWriteOutsideRangeHC;
     STAMCOUNTER                         StatRingWriteOutsideRangeR0;
     STAMCOUNTER                         StatRingWriteOutsideRangeGC;
+# endif
+# ifdef PCNET_ASYNC_SEND
+    STAMCOUNTER                         StatSyncSend;
+    STAMCOUNTER                         StatAsyncSend;
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 };
@@ -1789,6 +1803,20 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     int         rc;
 
+#ifdef PCNET_ASYNC_SEND
+    /* If the calling threads isn't the async send thread and our queue isn't yet full, then kick off async sending. */
+    if (    pData->iFrame  != ELEMENTS(pData->aFrames)
+        &&  RTThreadSelf() != pData->hSendThread)
+    {
+        STAM_COUNTER_INC(&pData->StatAsyncSend);
+        rc = RTSemEventSignal(pData->hEventSemSend);
+        AssertRC(rc);
+        return VINF_SUCCESS;
+    }
+    if (RTThreadSelf() != pData->hSendThread)
+        STAM_COUNTER_INC(&pData->StatSyncSend);
+#endif /* PCNET_ASYNC_SEND */
+
     STAM_PROFILE_START(&pData->StatXmitQueue, a);
     STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
     rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
@@ -1889,6 +1917,28 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     NOREF(pItem);
     return true;
 }
+
+#ifdef PCNET_ASYNC_SEND
+/**
+ * Async I/O thread for delayed sending of packets.
+ */
+static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
+{
+    PCNetState *pData = (PCNetState *)pvUser;
+    RTSEMEVENT  hEventSemSend = pData->hEventSemSend;
+
+    while(1)
+    {
+        int rc = RTSemEventWait(pData->hEventSemSend, RT_INDEFINITE_WAIT);
+        if (VBOX_FAILURE(rc))
+            break;
+
+        pcnetXmitQueueConsumer(PCNETSTATE_2_DEVINS(pData), NULL);
+    }
+    return VINF_SUCCESS;
+}
+#endif /* PCNET_ASYNC_SEND */
+
 #endif /* IN_RING3 */
 
 
@@ -1909,10 +1959,12 @@ DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
         STAM_PROFILE_ADV_STOP(&pData->StatXmitQueueFlushGC, a);
 #endif
     }
+#ifndef PCNET_ASYNC_SEND
     pData->aFrames[0].off  = 0;
     pData->aFrames[0].cb   = -1;
     pData->aFrames[0].pvR3 = NIL_RTR3PTR;
     pData->iFrame = 0;
+#endif
 }
 
 
@@ -4206,6 +4258,21 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Reset the device state. (Do after attaching.)
      */
     pcnetHardReset(pData);
+
+#ifdef PCNET_ASYNC_SEND
+    /* Create event semaphore for the async send thread. */
+    rc = RTSemEventCreate(&pData->hEventSemSend);
+    AssertRC(rc);
+
+    /* Create asynchronous thread */
+    rc = RTThreadCreate(&pData->hSendThread, pcnetAsyncSend, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "PCNET_SEND");
+    AssertRC(rc);
+
+    Assert(pData->hSendThread != NIL_RTTHREAD && pData->hEventSemSend != NIL_RTSEMEVENT);
+
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatAsyncSend,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of async send operations",        "/Devices/PCNet%d/Send/Async", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatSyncSend,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of sync send operations",         "/Devices/PCNet%d/Send/Sync", iInstance);
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
