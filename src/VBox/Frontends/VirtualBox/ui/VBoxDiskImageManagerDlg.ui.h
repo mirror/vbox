@@ -393,7 +393,7 @@ void VBoxDiskImageManagerDlg::init()
 }
 
 
-QIRichLabel *VBoxDiskImageManagerDlg::createInfoString (QString name, QWidget *root, int row, int column)
+QIRichLabel *VBoxDiskImageManagerDlg::createInfoString (const QString &name, QWidget *root, int row, int column)
 {
     QLabel *nameLabel = new QLabel (name, root, "nameLabel");
     QIRichLabel *infoLabel = new QIRichLabel (root, "infoPane");
@@ -678,7 +678,7 @@ void VBoxDiskImageManagerDlg::addDroppedImages (QStringList *aDroppedList)
 }
 
 
-void VBoxDiskImageManagerDlg::addImageToList (QString aSource,
+void VBoxDiskImageManagerDlg::addImageToList (const QString &aSource,
                                               VBoxDefs::DiskType aDiskType)
 {
     if (aSource.isEmpty())
@@ -1187,7 +1187,7 @@ void VBoxDiskImageManagerDlg::createHdChildren (DiskImageItem   *aRoot,
             subHd.GetAccessible() == TRUE ? VBoxMedia::Ok :
             subHd.isOk() ? VBoxMedia::Inaccessible :
             VBoxMedia::Error;
-        const VBoxMedia media (CUnknown (subHd), VBoxDefs::HD, status);
+        VBoxMedia media (CUnknown (subHd), VBoxDefs::HD, status);
         createHdItem (0, aRoot, media);
     }
 }
