@@ -72,6 +72,8 @@ typedef struct
     DWORD                   dwNumberOfBytesRead;
     uint8_t                 readBuffer[4096];
 
+    TAP_VERSION             tapVersion;
+
 #ifdef ASYNC_NETIO
     /** The thread handle. NIL_RTTHREAD if no thread. */
     RTTHREAD                hThread;
@@ -498,7 +500,6 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: query for \"HostInterfaceName\" failed."));
 
-    TAP_VERSION version;
     TAP_MEDIASTATUS mediastatus;
     DWORD length;
     char szFullDriverName[256];
@@ -526,14 +527,24 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
                                 N_("Failed to open Host Interface Networking device driver"));
     }
 
-    BOOL ret = DeviceIoControl(pData->hFile, TAP_IOCTL_GET_VERSION, &version, sizeof (version),
-                               &version, sizeof(version), &length, NULL);
+    BOOL ret = DeviceIoControl(pData->hFile, TAP_IOCTL_GET_VERSION, &pData->tapVersion, sizeof (pData->tapVersion),
+                               &pData->tapVersion, sizeof(pData->tapVersion), &length, NULL);
     if (ret == FALSE)
     {
         CloseHandle(pData->hFile);
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_HIF_INVALID_VERSION,
+                                N_("Failed to get the Host Interface Networking device driver version."));;
     }
-    /** @todo verify version */
+    LogRel(("TAP version %d.%d\n", pData->tapVersion.major, pData->tapVersion.minor));
+
+    /* Must be at least version 8.1 */
+    if (    pData->tapVersion.major != 8
+        ||  pData->tapVersion.minor < 1)
+    {
+        CloseHandle(pData->hFile);
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_HIF_INVALID_VERSION,
+                                N_("Invalid Host Interface Networking device driver version."));;
+    }
 
     mediastatus.fConnect = TRUE;
     ret = DeviceIoControl(pData->hFile, TAP_IOCTL_SET_MEDIA_STATUS, &mediastatus, sizeof(mediastatus), NULL, 0, &length, NULL);
@@ -543,7 +554,6 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     }
 
-    Log(("TAP version %d.%d\n", version.major, version.minor));
     if (pszHostDriver)
         MMR3HeapFree(pszHostDriver);
 
