@@ -90,7 +90,7 @@ private slots:
 
     void vmListBoxCurrentChanged (bool aRefreshDetails = true,
                                   bool aRefreshSnapshots = true);
-    void mediaEnumerated (const VBoxMediaList &list);
+    void mediaEnumFinished (const VBoxMediaList &);
 
     /* VirtualBox callback events we're interested in */
 

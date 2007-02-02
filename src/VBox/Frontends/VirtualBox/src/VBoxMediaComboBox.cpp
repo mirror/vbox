@@ -22,7 +22,6 @@
 
 #include "VBoxMediaComboBox.h"
 #include "VBoxDiskImageManagerDlg.h"
-#include "VBoxGlobal.h"
 
 #include <qfileinfo.h>
 #include <qimage.h>
@@ -31,185 +30,211 @@
 #include <qtooltip.h>
 #include <qlistbox.h>
 
-VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName, int aType)
+VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
+                                      int aType, bool aUseEmptyItem)
     : QComboBox (aParent , aName),
-    mType (aType), mRequiredId (QUuid()), mUseEmptyItem (false), mToBeRefreshed (false)
+    mType (aType), mRequiredId (QUuid()), mUseEmptyItem (aUseEmptyItem)
 {
     setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
-    /* Media shortcuts creating */
-    connect (&vboxGlobal(), SIGNAL (mediaEnumerated (const VBoxMedia &)),
-             this, SLOT (mediaEnumerated (const VBoxMedia &)));
-    connect (&vboxGlobal(), SIGNAL (mediaEnumerated (const VBoxMediaList &)),
-             this, SLOT (listEnumerated (const VBoxMediaList &)));
+    /* setup enumeration handlers */
+    connect (&vboxGlobal(), SIGNAL (mediaEnumStarted()),
+             this, SLOT (mediaEnumStarted()));
+    connect (&vboxGlobal(), SIGNAL (mediaEnumerated (const VBoxMedia &, int)),
+             this, SLOT (mediaEnumerated (const VBoxMedia &, int)));
+    connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
+             this, SLOT (mediaEnumFinished (const VBoxMediaList &)));
+
+    /* setup update handlers */
+    connect (&vboxGlobal(), SIGNAL (mediaAdded (const VBoxMedia &)),
+             this, SLOT (mediaAdded (const VBoxMedia &)));
+    connect (&vboxGlobal(), SIGNAL (mediaUpdated (const VBoxMedia &)),
+             this, SLOT (mediaUpdated (const VBoxMedia &)));
+    connect (&vboxGlobal(), SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
+             this, SLOT (mediaRemoved (VBoxDefs::DiskType, const QUuid &)));
+
     connect (this, SIGNAL (activated (int)),
-             this, SLOT (updateToolTip (int)));
+             this, SLOT (processActivated (int)));
     connect (listBox(), SIGNAL (onItem (QListBoxItem*)),
              this, SLOT (processOnItem (QListBoxItem*)));
+
+    /* cache pixmaps as class members */
+    QImage img;
+    img = QMessageBox::standardIcon (QMessageBox::Warning).convertToImage();
+    if (!img.isNull())
+    {
+        img = img.smoothScale (14, 14);
+        mPmInacc.convertFromImage (img);
+    }
+    img = QMessageBox::standardIcon (QMessageBox::Critical).convertToImage();
+    if (!img.isNull())
+    {
+        img = img.smoothScale (14, 14);
+        mPmError.convertFromImage (img);
+    }
+
+    /* media shortcuts creating */
+    refresh();
 }
 
-void VBoxMediaComboBox::loadCleanContent()
+void VBoxMediaComboBox::refresh()
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    /* clearing lists */
+    clear(), mUuidList.clear(), mTipList.clear();
+    /* prepend empty item if used */
+    if (mUseEmptyItem)
+        appendItem (tr ("<no hard disk>"), QUuid(), tr ("No hard disk"), 0);
+    updateToolTip (currentItem());
+    /* load current media list */
+    VBoxMediaList list = vboxGlobal().currentMediaList();
+    VBoxMediaList::const_iterator it;
+    for (it = list.begin(); it != list.end(); ++ it)
+        mediaEnumerated (*it, 0);
+}
 
-    switch (mType)
+
+void VBoxMediaComboBox::mediaEnumStarted()
+{
+    refresh();
+}
+
+void VBoxMediaComboBox::mediaEnumerated (const VBoxMedia &aMedia, int /*aIndex*/)
+{
+    processMedia (aMedia);
+}
+
+void VBoxMediaComboBox::mediaEnumFinished (const VBoxMediaList &/*aList*/)
+{
+    emit activated (currentItem());
+}
+
+
+void VBoxMediaComboBox::mediaAdded (const VBoxMedia &aMedia)
+{
+    processMedia (aMedia);
+}
+
+void VBoxMediaComboBox::mediaUpdated (const VBoxMedia &aMedia)
+{
+    processMedia (aMedia);
+}
+
+void VBoxMediaComboBox::mediaRemoved (VBoxDefs::DiskType aType,
+                                     const QUuid &aId)
+{
+    if (!(aType & mType))
+        return;
+
+    /* search & remove media */
+    int index = mUuidList.findIndex (aId);
+    if (index != -1)
     {
-        /* load hd list */
-        case VBoxDefs::HD:
-        {
-            CHardDiskEnumerator en = vbox.GetHardDisks().Enumerate();
-            while (en.HasMore())
-            {
-                QUuid mediaId;
-                QString toolTip;
-                CHardDisk hd = en.GetNext();
-                QString src = hd.GetLocation();
-                QUuid machineId = hd.GetMachineId();
-                /* append list only with free hd */
-                if (machineId.isNull() || machineId == mMachineId)
-                {
-                    mediaId = hd.GetId();
-                    toolTip = VBoxDiskImageManagerDlg::composeHdToolTip (hd, VBoxMedia::Unknown);
-                }
-                if (!mediaId.isNull()) updateMedia (src, mediaId, toolTip, VBoxMedia::Unknown);
-            }
-            break;
-        }
-        /* load cd list */
-        case VBoxDefs::CD:
-        {
-            CDVDImageEnumerator en = vbox.GetDVDImages().Enumerate();
-            while (en.HasMore())
-            {
-                QUuid mediaId;
-                QString toolTip;
-                CDVDImage cd = en.GetNext();
-                QString src = cd.GetFilePath();
-                mediaId = cd.GetId();
-                toolTip = VBoxDiskImageManagerDlg::composeCdToolTip (cd, VBoxMedia::Unknown);
-                updateMedia (src, mediaId, toolTip, VBoxMedia::Unknown);
-            }
-            break;
-        }
-        /* load fd list */
-        case VBoxDefs::FD:
-        {
-            CFloppyImageEnumerator en = vbox.GetFloppyImages().Enumerate();
-            while (en.HasMore())
-            {
-                QUuid mediaId;
-                QString toolTip;
-                CFloppyImage fd = en.GetNext();
-                QString src = fd.GetFilePath();
-                mediaId = fd.GetId();
-                toolTip = VBoxDiskImageManagerDlg::composeFdToolTip (fd, VBoxMedia::Unknown);
-                updateMedia (src, mediaId, toolTip, VBoxMedia::Unknown);
-            }
-            break;
-        }
-        default:
-            AssertFailed();
+        removeItem (index);
+        mUuidList.remove (mUuidList.at (index));
+        mTipList.remove (mTipList.at (index));
+        updateToolTip (currentItem());
     }
 }
 
-void VBoxMediaComboBox::mediaEnumerated (const VBoxMedia &aMedia)
+
+void VBoxMediaComboBox::processMedia (const VBoxMedia &aMedia)
 {
-    if (!mToBeRefreshed) return;
     if (!(aMedia.type & mType))
         return;
-
-    QString src;
-    QUuid   mediaId;
-    QString toolTip;
 
     switch (aMedia.type)
     {
         case VBoxDefs::HD:
-        {
-            CHardDisk hd = aMedia.disk;
-            src = hd.GetLocation();
-            QUuid machineId = hd.GetMachineId();
-            /* append list only with free hd */
-            if (machineId.isNull() || machineId == mMachineId)
-            {
-                mediaId = hd.GetId();
-                toolTip = VBoxDiskImageManagerDlg::composeHdToolTip (hd, aMedia.status);
-            }
+            processHdMedia (aMedia);
             break;
-        }
         case VBoxDefs::CD:
-        {
-            CDVDImage dvd = aMedia.disk;
-            src = dvd.GetFilePath();
-            mediaId = dvd.GetId();
-            toolTip = VBoxDiskImageManagerDlg::composeCdToolTip (dvd, aMedia.status);
+            processCdMedia (aMedia);
             break;
-        }
         case VBoxDefs::FD:
-        {
-            CFloppyImage floppy = aMedia.disk;
-            src = floppy.GetFilePath();
-            mediaId = floppy.GetId();
-            toolTip = VBoxDiskImageManagerDlg::composeFdToolTip (floppy, aMedia.status);
+            processFdMedia (aMedia);
             break;
-        }
         default:
             AssertFailed();
     }
-    int updatedMedia = -1;
-    if (!mediaId.isNull())
-        updatedMedia = updateMedia (src, mediaId, toolTip, aMedia.status);
-    if (updatedMedia == -1) return;
-
-    /* update warning/error icons */
-    /// @todo (r=dmik) cache pixmaps as class members
-    QPixmap pixmap;
-    QImage img;
-    if (aMedia.status == VBoxMedia::Inaccessible)
-        img = QMessageBox::standardIcon (QMessageBox::Warning).convertToImage();
-    else if (aMedia.status == VBoxMedia::Error)
-        img = QMessageBox::standardIcon (QMessageBox::Critical).convertToImage();
-    if (!img.isNull())
-    {
-        img = img.smoothScale (14, 14);
-        pixmap.convertFromImage (img);
-    }
-    if (!pixmap.isNull())
-        changeItem (pixmap, text (updatedMedia), updatedMedia); 
 }
 
-int VBoxMediaComboBox::updateMedia (const QString &aSrc,
-                                    const QUuid   &aId,
-                                    const QString &aTip,
-                                    VBoxMedia::Status /* aStatus */)
+void VBoxMediaComboBox::processHdMedia (const VBoxMedia &aMedia)
 {
-    /* search & update media */
+    QUuid mediaId;
+    QString toolTip;
+    CHardDisk hd = aMedia.disk;
+    QString src = hd.GetLocation();
+    QUuid machineId = hd.GetMachineId();
+    /* append list only with free hd */
+    if (machineId.isNull() || machineId == mMachineId)
+    {
+        mediaId = hd.GetId();
+        toolTip = VBoxDiskImageManagerDlg::composeHdToolTip (hd, aMedia.status);
+    }
+    if (!mediaId.isNull())
+        updateShortcut (src, mediaId, toolTip, aMedia.status);
+}
+
+void VBoxMediaComboBox::processCdMedia (const VBoxMedia &aMedia)
+{
+    CDVDImage dvd = aMedia.disk;
+    QString src = dvd.GetFilePath();
+    QUuid mediaId = dvd.GetId();
+    QString toolTip = VBoxDiskImageManagerDlg::composeCdToolTip (dvd, aMedia.status);
+    updateShortcut (src, mediaId, toolTip, aMedia.status);
+}
+
+void VBoxMediaComboBox::processFdMedia (const VBoxMedia &aMedia)
+{
+    CFloppyImage floppy = aMedia.disk;
+    QString src = floppy.GetFilePath();
+    QUuid mediaId = floppy.GetId();
+    QString toolTip = VBoxDiskImageManagerDlg::composeFdToolTip (floppy, aMedia.status);
+    updateShortcut (src, mediaId, toolTip, aMedia.status);
+}
+
+void VBoxMediaComboBox::updateShortcut (const QString &aSrc,
+                                        const QUuid &aId,
+                                        const QString &aTip,
+                                        VBoxMedia::Status aStatus)
+{
+    /* compose item's name */
     QFileInfo fi (aSrc);
-    int index = mUuidList.findIndex (aId);
     QString name = QString ("%1 (%2)").arg (fi.fileName())
                    .arg (QDir::convertSeparators (fi.dirPath()));
-    index == -1 ? appendItem (name, aId, aTip) : replaceItem (index, name, aTip);
+    /* update warning/error icons */
+    QPixmap *pixmap = 0;
+    if (aStatus == VBoxMedia::Inaccessible)
+        pixmap = &mPmInacc;
+    else if (aStatus == VBoxMedia::Error)
+        pixmap = &mPmError;
+
+    /* search media */
+    int index = mUuidList.findIndex (aId);
+    /* create or update media */
+    if (index == -1)
+        appendItem (name, aId, aTip, pixmap);
+    else
+        replaceItem (index, name, aTip, pixmap);
+
     if (aId == mRequiredId)
     {
         int activatedItem = index == -1 ? count() - 1 : index;
         setCurrentItem (activatedItem);
-        emit activated (activatedItem);
     }
-    else
-        updateToolTip (currentItem());
-    return index == -1 ? count() - 1 : index;
 }
 
-void VBoxMediaComboBox::listEnumerated (const VBoxMediaList & /*aList*/)
+void VBoxMediaComboBox::processActivated (int aItem)
 {
-    emit activated (currentItem());
-    mToBeRefreshed = false;
+    mRequiredId = QUuid (mUuidList [aItem]);
+    updateToolTip (aItem);
 }
 
 void VBoxMediaComboBox::updateToolTip (int aItem)
 {
     /* combobox tooltip attaching */
     QToolTip::remove (this);
-    QToolTip::add (this, mTipList [aItem]);
+    if (!mTipList.isEmpty())
+        QToolTip::add (this, mTipList [aItem]);
 }
 
 void VBoxMediaComboBox::processOnItem (QListBoxItem* aItem)
@@ -220,29 +245,6 @@ void VBoxMediaComboBox::processOnItem (QListBoxItem* aItem)
     QToolTip::add (listBox()->viewport(), mTipList [index]);
 }
 
-void VBoxMediaComboBox::setReadyForRefresh()
-{
-    mToBeRefreshed = true;
-    /* clearing media combobox */
-    clear(), mUuidList.clear(), mTipList.clear();
-    /* prepend empty item if used */
-    if (mUseEmptyItem)
-        appendItem (tr ("<no hard disk>"), QUuid(), tr ("No hard disk"));
-    /* load all non-enumerated shortcuts */
-    if (!vboxGlobal().isInEnumeratingProcess()) loadCleanContent();
-    /* update already enumerated shortcuts */
-    VBoxMediaList list = vboxGlobal().currentMediaList();
-    for (VBoxMediaList::const_iterator it = list.begin(); it != list.end(); ++ it)
-        mediaEnumerated (*it);
-}
-
-void VBoxMediaComboBox::refresh()
-{
-    if (mToBeRefreshed) return;
-    setReadyForRefresh();
-    vboxGlobal().startEnumeratingMedia();
-}
-
 QUuid VBoxMediaComboBox::getId()
 {
     return mUuidList.isEmpty() ? QUuid() : QUuid (mUuidList [currentItem()]);
@@ -250,32 +252,21 @@ QUuid VBoxMediaComboBox::getId()
 
 void VBoxMediaComboBox::appendItem (const QString &aName,
                                     const QUuid   &aId,
-                                    const QString &aTip)
+                                    const QString &aTip,
+                                    QPixmap       *aPixmap)
 {
-    insertItem (aName);
+    aPixmap ? insertItem (*aPixmap, aName) : insertItem (aName);
     mUuidList << aId;
     mTipList  << aTip;
 }
 
-void VBoxMediaComboBox::replaceItem (int aNumber,
+void VBoxMediaComboBox::replaceItem (int            aNumber,
                                      const QString &aName,
-                                     const QString &aTip)
+                                     const QString &aTip,
+                                     QPixmap       *aPixmap)
 {
-    changeItem (aName, aNumber);
+    aPixmap ? changeItem (*aPixmap, aName, aNumber) : changeItem (aName, aNumber);
     mTipList [aNumber] = aTip;
-}
-
-void VBoxMediaComboBox::removeLastItem()
-{
-    if (count())
-        removeItem (count() - 1);
-    mUuidList.pop_back();
-    mTipList.pop_back();
-}
-
-void VBoxMediaComboBox::setRequiredItem (const QUuid &aId)
-{
-    mRequiredId = aId;
 }
 
 void VBoxMediaComboBox::setUseEmptyItem (bool aUseEmptyItem)
@@ -296,5 +287,13 @@ QUuid VBoxMediaComboBox::getBelongsTo()
 void VBoxMediaComboBox::setCurrentItem (int aIndex)
 {
     QComboBox::setCurrentItem (aIndex);
-    updateToolTip (aIndex);
+    emit activated (aIndex);
+}
+
+void VBoxMediaComboBox::setCurrentItem (const QUuid &aId)
+{
+    mRequiredId = aId;
+    int index = mUuidList.findIndex (mRequiredId);
+    if (index != -1)
+        setCurrentItem (index);
 }

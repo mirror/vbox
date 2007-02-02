@@ -244,7 +244,7 @@ public:
         }
         return toString (aHD.GetType());
     }
-    
+
     QString toString (CEnums::DiskControllerType t, LONG d) const;
 
     QString toString (CEnums::DeviceType t) const
@@ -320,11 +320,21 @@ public:
     bool startMachine (const QUuid &id);
 
     void startEnumeratingMedia();
-    bool isInEnumeratingProcess() { return media_enum_thread ? true : false; }
 
-    /** Returns a list of all currently enumerated media (it is empty if the
-     *  enumeration has been finished or never been started). */
-    VBoxMediaList currentMediaList() const { return media_list; }
+    /**
+     *  Returns a list of all currently registered media. This list is used
+     *  to globally track the accessiblity state of all media on a dedicated
+     *  thread. This the list is initially empty (before the first enumeration
+     *  process is started using #startEnumeratingMedia()).
+     */
+    const VBoxMediaList &currentMediaList() const { return media_list; }
+
+    /** Returns true if the media enumeration is in progress. */
+    bool isMediaEnumerationStarted() const { return media_enum_thread != NULL; }
+
+    void addMedia (const VBoxMedia &);
+    void updateMedia (const VBoxMedia &);
+    void removeMedia (VBoxDefs::DiskType, const QUuid &);
 
     /* various helpers */
 
@@ -359,16 +369,33 @@ public:
 signals:
 
     /**
-     *  Emitted during the enumeration process started
-     *  by #startEnumeratingMedia(). */
-    void mediaEnumerated (const VBoxMedia &media);
+     *  Emitted at the beginning of the enumeration process started
+     *  by #startEnumeratingMedia().
+     */
+    void mediaEnumStarted();
+
+    /**
+     *  Emitted when a new media item from the list has updated
+     *  its accessibility state.
+     */
+    void mediaEnumerated (const VBoxMedia &aMedia, int aIndex);
 
     /**
      *  Emitted at the end of the enumeration process started
      *  by #startEnumeratingMedia().
      *  @note #currentMediaList() will return an empty list
-     *  when this signal is emitted, use the argument instead. */
-    void mediaEnumerated (const VBoxMediaList &list);
+     *  when this signal is emitted, use the argument instead.
+     */
+    void mediaEnumFinished (const VBoxMediaList &aList);
+
+    /** Emitted when a new media is added using #addMedia(). */
+    void mediaAdded (const VBoxMedia &);
+
+    /** Emitted when the media is updated using #updateMedia(). */
+    void mediaUpdated (const VBoxMedia &);
+
+    /** Emitted when the media is removed using #removeMedia(). */
+    void mediaRemoved (VBoxDefs::DiskType, const QUuid &);
 
     /* signals emitted when the VirtualBox callback is called by the server
      * (not that currently these signals are emitted only when the application

@@ -98,14 +98,13 @@ void VBoxNewVMWzd::init()
              this, SLOT (enableNext (const QIWidgetValidator *)));
 
     /* HDD Images page */
-    mediaCombo = new VBoxMediaComboBox (grbHDA, "mediaCombo", VBoxDefs::HD);
-    mediaCombo->setUseEmptyItem (true);
-    mediaCombo->refresh();
+    mediaCombo = new VBoxMediaComboBox (grbHDA, "mediaCombo", VBoxDefs::HD, true);
     grbHDALayout->addMultiCellWidget (mediaCombo, 0, 0, 0, 2);
     setTabOrder (mediaCombo, pbNewHD);
     setTabOrder (pbNewHD, pbExistingHD);
     connect (mediaCombo, SIGNAL (activated (int)),
              this, SLOT (currentMediaChanged (int)));
+    vboxGlobal().startEnumeratingMedia();
 
     /// @todo (dmik) remove?
     wvalHDD = new QIWidgetValidator (pageHDD, this);
@@ -338,6 +337,7 @@ void VBoxNewVMWzd::ensureNewHardDiskDeleted()
 {
     if (!chd.isNull())
     {
+        QUuid hdId = chd.GetId();
         CVirtualBox vbox = vboxGlobal().virtualBox();
         vbox.UnregisterHardDisk (chd.GetId());
         if (!vbox.isOk())
@@ -354,7 +354,7 @@ void VBoxNewVMWzd::ensureNewHardDiskDeleted()
             }
         }
         chd.detach();
-        mediaCombo->removeLastItem();
+        vboxGlobal().removeMedia (VBoxDefs::HD, hdId);
     }
 }
 
@@ -367,21 +367,18 @@ void VBoxNewVMWzd::showVDIManager()
 {
     VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", WType_Dialog | WShowModal);
     dlg.setup (VBoxDefs::HD, true);
-    if (dlg.exec() == VBoxDiskImageManagerDlg::Accepted)
+    QUuid newId = dlg.exec() == VBoxDiskImageManagerDlg::Accepted ?
+        dlg.getSelectedUuid() : mediaCombo->getId();
+
+    if (uuidHD != newId)
     {
-        /* fetch uuid and name/path */
-        if (dlg.getSelectedUuid() != uuidHD)
-        {
-            ensureNewHardDiskDeleted();
-            uuidHD = dlg.getSelectedUuid();
-        }
-        /* refresh media combobox */
-        mediaCombo->setRequiredItem (uuidHD);
-        mediaCombo->refresh();
-        mediaCombo->setFocus();
-        /* revailidate */
-        wvalHDD->revalidate();
+        ensureNewHardDiskDeleted();
+        uuidHD = newId;
+        mediaCombo->setCurrentItem (uuidHD);
     }
+    mediaCombo->setFocus();
+    /* revailidate */
+    wvalHDD->revalidate();
 }
 
 void VBoxNewVMWzd::showNewVDIWizard()
@@ -400,12 +397,13 @@ void VBoxNewVMWzd::showNewVDIWizard()
         /* fetch uuid and name/path */
         uuidHD = chd.GetId();
         /* update media combobox */
-        QFileInfo fi (chd.GetLocation());
-        mediaCombo->appendItem (QString ("%1 (%2)")
-            .arg (fi.fileName())
-            .arg (QDir::convertSeparators (fi.dirPath())),
-            uuidHD, VBoxDiskImageManagerDlg::composeHdToolTip (chd));
-        mediaCombo->setCurrentItem (mediaCombo->count() - 1);
+        VBoxMedia::Status status =
+            chd.GetAccessible() == TRUE ? VBoxMedia::Ok :
+            chd.isOk() ? VBoxMedia::Inaccessible :
+            VBoxMedia::Error;
+        VBoxMedia media (CUnknown (chd), VBoxDefs::HD, status);
+        vboxGlobal().addMedia (media);
+        mediaCombo->setCurrentItem (uuidHD);
         mediaCombo->setFocus();
         /* revailidate */
         wvalHDD->revalidate();

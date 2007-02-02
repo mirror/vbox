@@ -51,20 +51,22 @@ class VBoxEnumerateMediaEvent : public QEvent
 public:
 
     /** Constructs a regular enum event */
-    VBoxEnumerateMediaEvent (const VBoxMedia &m)
+    VBoxEnumerateMediaEvent (const VBoxMedia &aMedia, int aIndex)
         : QEvent ((QEvent::Type) VBoxDefs::EnumerateMediaEventType)
-        , media (m), last (false)
+        , mMedia (aMedia), mLast (false), mIndex (aIndex)
         {}
     /** Constructs the last enum event */
     VBoxEnumerateMediaEvent()
         : QEvent ((QEvent::Type) VBoxDefs::EnumerateMediaEventType)
-        , last (true)
+        , mLast (true), mIndex (-1)
         {}
 
     /** the last enumerated media (not valid when #last is true) */
-    const VBoxMedia media;
+    const VBoxMedia mMedia;
     /** whether this is the last event for the given enumeration or not */
-    const bool last;
+    const bool mLast;
+    /** last enumerated media index (-1 when #last is true) */
+    const int mIndex;
 };
 
 // VirtualBox callback class
@@ -579,15 +581,15 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */) 
     QString details;
 
     CEnums::HardDiskType type = root.GetType();
-    
+
     if (type == CEnums::NormalHardDisk &&
         (aHD != root || (aPredict && root.GetChildren().GetCount() != 0)))
             details = tr ("Differencing", "hard disk");
     else
         details = hardDiskTypeString (root);
-    
+
     details += ", " + formatSize (root.GetSize() * _1M);
-    
+
     return details;
 }
 
@@ -610,11 +612,11 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
         if (!p.isEmpty())
             details += " " + p;
     }
-    ushort r = aDevice.GetRevision();                    
+    ushort r = aDevice.GetRevision();
     if (r != 0)
         details += QString().sprintf (" [%04hX]", r);
 
-    return details;        
+    return details;
 }
 
 /**
@@ -641,8 +643,8 @@ QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
         tip += QString (tr ("<br><nobr>State: %1</nobr>", "USB device tooltip"))
                         .arg (vboxGlobal().toString (hostDev.GetState()));
     }
-                        
-    return tip;        
+
+    return tip;
 }
 
 /**
@@ -1053,105 +1055,175 @@ bool VBoxGlobal::startMachine (const QUuid &id)
  *
  *  If the enumeration is already in progress, no new thread is started.
  *
- *  @see #currentMediaList()
+ *  @sa #currentMediaList()
+ *  @sa #isMediaEnumerationStarted()
  */
 void VBoxGlobal::startEnumeratingMedia()
 {
     Assert (valid);
-    if (!valid)
-        return;
 
-    // check if already started but not yet finished
+    /* check if already started but not yet finished */
     if (media_enum_thread)
         return;
 
+    /* composes a list of all currently known media */
+    media_list.clear();
+    {
+        CHardDiskEnumerator enHD = vbox.GetHardDisks().Enumerate();
+        while (enHD.HasMore() && !vboxGlobal_cleanup)
+        {
+            CHardDisk hd = enHD.GetNext();
+            media_list += VBoxMedia (CUnknown (hd), VBoxDefs::HD, VBoxMedia::Unknown);
+        }
+        CDVDImageEnumerator enCD = vbox.GetDVDImages().Enumerate();
+        while (enCD.HasMore() && !vboxGlobal_cleanup)
+        {
+            CDVDImage cd = enCD.GetNext();
+            media_list += VBoxMedia (CUnknown (cd), VBoxDefs::CD, VBoxMedia::Unknown);
+        }
+        CFloppyImageEnumerator enFD = vbox.GetFloppyImages().Enumerate();
+        while (enFD.HasMore() && !vboxGlobal_cleanup)
+        {
+            CFloppyImage fd = enFD.GetNext();
+            media_list += VBoxMedia (CUnknown (fd), VBoxDefs::FD, VBoxMedia::Unknown);
+        }
+        if (!vboxGlobal_cleanup)
+            emit mediaEnumStarted();
+    }
+
+    /* enumeration thread class */
     class Thread : public QThread
     {
     public:
 
+        Thread (VBoxMediaList &aList) : mList (aList) {}
+
         virtual void run()
         {
             LogFlow (("MediaEnumThread started.\n"));
-
             COMBase::initializeCOM();
 
             CVirtualBox vbox = vboxGlobal().virtualBox();
             QObject *target = &vboxGlobal();
 
-            CHardDiskEnumerator enHd = vbox.GetHardDisks().Enumerate();
-            while (enHd.HasMore() && !vboxGlobal_cleanup)
+            /* enumerating list */
+            int index = 0;
+            VBoxMediaList::Iterator it;
+            for (it = mList.begin();
+                 it != mList.end() && !vboxGlobal_cleanup;
+                 ++ it, ++ index)
             {
-                CHardDisk hd = enHd.GetNext();
-                VBoxMedia::Status status =
-                    hd.GetAllAccessible() == TRUE ? VBoxMedia::Ok :
-                    hd.isOk() ? VBoxMedia::Inaccessible :
-                    VBoxMedia::Error;
-
-                if (status == VBoxMedia::Inaccessible)
+                VBoxMedia &media = *it;
+                switch (media.type)
                 {
-                    // correct media status if the machine using the hard disk
-                    // is currently running (so the disk is actually accessed by it
-                    // in a normal way)
-                    QUuid machineId = hd.GetMachineId();
-                    if (!machineId.isNull())
+                    case VBoxDefs::HD:
                     {
-                        CMachine machine = vbox.GetMachine (machineId);
-                        if (!machine.isNull() && (machine.GetState() >= CEnums::Running))
-                            status = VBoxMedia::Ok;
+                        CHardDisk hd = media.disk;
+                        media.status =
+                            hd.GetAllAccessible() == TRUE ? VBoxMedia::Ok :
+                            hd.isOk() ? VBoxMedia::Inaccessible :
+                            VBoxMedia::Error;
+                        if (media.status == VBoxMedia::Inaccessible)
+                        {
+                            QUuid machineId = hd.GetMachineId();
+                            if (!machineId.isNull())
+                            {
+                                CMachine machine = vbox.GetMachine (machineId);
+                                if (!machine.isNull() && (machine.GetState() >= CEnums::Running))
+                                    media.status = VBoxMedia::Ok;
+                            }
+                        }
+                        VBoxMedia newMedia (CUnknown(hd), VBoxDefs::HD, media.status);
+                        QApplication::postEvent (target,
+                            new VBoxEnumerateMediaEvent (newMedia, index));
+                        break;
+                    }
+                    case VBoxDefs::CD:
+                    {
+                        CDVDImage cd = media.disk;
+                        media.status =
+                            cd.GetAccessible() == TRUE ? VBoxMedia::Ok :
+                            cd.isOk() ? VBoxMedia::Inaccessible :
+                            VBoxMedia::Error;
+                        VBoxMedia newMedia (CUnknown(cd), VBoxDefs::CD, media.status);
+                        QApplication::postEvent (target,
+                            new VBoxEnumerateMediaEvent (newMedia, index));
+                        break;
+                    }
+                    case VBoxDefs::FD:
+                    {
+                        CFloppyImage fd = media.disk;
+                        media.status =
+                            fd.GetAccessible() == TRUE ? VBoxMedia::Ok :
+                            fd.isOk() ? VBoxMedia::Inaccessible :
+                            VBoxMedia::Error;
+                        VBoxMedia newMedia (CUnknown(fd), VBoxDefs::FD, media.status);
+                        QApplication::postEvent (target,
+                            new VBoxEnumerateMediaEvent (newMedia, index));
+                        break;
+                    }
+                    default:
+                    {
+                        AssertMsgFailed (("Invalid aMedia type\n"));
+                        break;
                     }
                 }
-
-                VBoxMedia media =
-                    VBoxMedia (CUnknown (hd), VBoxDefs::HD, status);
-
-                QApplication::postEvent (target,
-                    new VBoxEnumerateMediaEvent (media));
             }
 
-            CDVDImageEnumerator enDVD = vbox.GetDVDImages().Enumerate();
-            while (enDVD.HasMore() && !vboxGlobal_cleanup)
-            {
-                CDVDImage dvd = enDVD.GetNext();
-                VBoxMedia::Status status =
-                    dvd.GetAccessible() == TRUE ? VBoxMedia::Ok :
-                    dvd.isOk() ? VBoxMedia::Inaccessible :
-                    VBoxMedia::Error;
-
-                VBoxMedia media =
-                    VBoxMedia (CUnknown (dvd), VBoxDefs::CD, status);
-
-                QApplication::postEvent (target,
-                    new VBoxEnumerateMediaEvent (media));
-            }
-
-            CFloppyImageEnumerator enFloppy = vbox.GetFloppyImages().Enumerate();
-            while (enFloppy.HasMore() && !vboxGlobal_cleanup)
-            {
-                CFloppyImage floppy = enFloppy.GetNext();
-                VBoxMedia::Status status =
-                    floppy.GetAccessible() == TRUE ? VBoxMedia::Ok :
-                    floppy.isOk() ? VBoxMedia::Inaccessible :
-                    VBoxMedia::Error;
-
-                VBoxMedia media =
-                    VBoxMedia (CUnknown (floppy), VBoxDefs::FD, status);
-
-                QApplication::postEvent (target,
-                    new VBoxEnumerateMediaEvent (media));
-            }
-
-            // post the last message to indicate the end of enumeration
+            /* post the last message to indicate the end of enumeration */
             if (!vboxGlobal_cleanup)
                 QApplication::postEvent (target, new VBoxEnumerateMediaEvent());
 
             COMBase::cleanupCOM();
-
             LogFlow (("MediaEnumThread finished.\n"));
         }
+
+    private:
+
+        VBoxMediaList &mList;
     };
 
-    media_enum_thread = new Thread();
+    media_enum_thread = new Thread (media_list);
     media_enum_thread->start();
+}
+
+/**
+ *  Adds a new media to the current media list.
+ *  @note Currently, this method does nothing but emits the mediaAdded() signal.
+ *        Later, it will be used to synchronize the current media list with
+ *        the actial media list on the server after a single media opetartion
+ *        performed from within one of our UIs.
+ *  @sa #currentMediaList()
+ */
+void VBoxGlobal::addMedia (const VBoxMedia &aMedia)
+{
+    emit mediaAdded (aMedia);
+}
+
+/**
+ *  Updates the media in the current media list.
+ *  @note Currently, this method does nothing but emits the mediaUpdated() signal.
+ *        Later, it will be used to synchronize the current media list with
+ *        the actial media list on the server after a single media opetartion
+ *        performed from within one of our UIs.
+ *  @sa #currentMediaList()
+ */
+void VBoxGlobal::updateMedia (const VBoxMedia &aMedia)
+{
+    emit mediaUpdated (aMedia);
+}
+
+/**
+ *  Removes the media from the current media list.
+ *  @note Currently, this method does nothing but emits the mediaRemoved() signal.
+ *        Later, it will be used to synchronize the current media list with
+ *        the actial media list on the server after a single media opetartion
+ *        performed from within one of our UIs.
+ *  @sa #currentMediaList()
+ */
+void VBoxGlobal::removeMedia (VBoxDefs::DiskType aType, const QUuid &aId)
+{
+    emit mediaRemoved (aType, aId);
 }
 
 /**
@@ -1356,7 +1428,7 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
 {
     AssertReturnVoid (aWidget);
     AssertReturnVoid (aWidget->isTopLevel());
-    
+
     QRect deskGeo, parentGeo;
     QWidget *w = aRelative;
     if (w)
@@ -1367,8 +1439,8 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         /* On X11/Gnome, geo/frameGeo.x() and y() are always 0 for top level
          * widgets with parents, what a shame. Use mapToGlobal() to workaround. */
         QPoint d = w->mapToGlobal (QPoint (0, 0));
-        d.rx() -= w->geometry().x() - w->x(); 
-        d.ry() -= w->geometry().y() - w->y(); 
+        d.rx() -= w->geometry().x() - w->x();
+        d.ry() -= w->geometry().y() - w->y();
         parentGeo.moveTopLeft (d);
     }
     else
@@ -1396,7 +1468,7 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
 
         framew = current->frameGeometry().width() - current->width();
         frameh = current->frameGeometry().height() - current->height();
-    
+
         extraw = QMAX (extraw, framew);
         extrah = QMAX (extrah, frameh);
     }
@@ -1412,21 +1484,21 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         extraw = 20;
     }
 #endif
-    
+
     /* On non-X11 platforms, the following would be enough instead of the
-     * above workaround: */    
+     * above workaround: */
     // QRect geo = frameGeometry();
     QRect geo = QRect (0, 0, aWidget->width() + extraw,
                              aWidget->height() + extrah);
 
     geo.moveCenter (QPoint (parentGeo.x() + (parentGeo.width() - 1) / 2,
                             parentGeo.y() + (parentGeo.height() - 1) / 2));
-    
+
     /* ensure the widget is within the available desktop area */
     QRect newGeo = normalizeGeometry (geo, deskGeo, aCanResize);
-    
+
     aWidget->move (newGeo.topLeft());
-    
+
     if (aCanResize &&
         (geo.width() != newGeo.width() || geo.height() != newGeo.height()))
         aWidget->resize (newGeo.width() - extraw, newGeo.height() - extrah);
@@ -1507,7 +1579,7 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
         Q_UINT64 hund = hundS.rightJustify (2, '0').toULongLong();
         hund = hund * denom / 100;
         intg = intg * denom + hund;
-        return intg; 
+        return intg;
     }
     else
         return 0;
@@ -1526,12 +1598,12 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
  *  <li>When \a mode is -1, the result is rounded to the largest two decimal
  *      digit number that is not greater than the result. This guarantees that
  *      converting the resulting string back to the integer value in bytes
- *      will not produce a value greater that the initial \a size parameter. 
+ *      will not produce a value greater that the initial \a size parameter.
  *  </li>
  *  <li>When \a mode is 1, the result is rounded to the smallest two decimal
  *      digit number that is not less than the result. This guarantees that
  *      converting the resulting string back to the integer value in bytes
- *      will not produce a value less that the initial \a size parameter. 
+ *      will not produce a value less that the initial \a size parameter.
  *  </li>
  *  </ul>
  *
@@ -1542,7 +1614,7 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
 /* static */
 QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
 {
-    static const char *Suffixes [] = { "B", "KB", "MB", "GB", "TB", "PB", NULL }; 
+    static const char *Suffixes [] = { "B", "KB", "MB", "GB", "TB", "PB", NULL };
 
     Q_UINT64 denom = 0;
     int suffix = 0;
@@ -1603,7 +1675,7 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
             if (intg == 1024 && Suffixes [suffix + 1] != NULL)
             {
                 intg /= 1024;
-                ++ suffix; 
+                ++ suffix;
             }
         }
         number = QString ("%1%2%3").arg (intg).arg (decimalSep())
@@ -1613,7 +1685,7 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
     {
         number = QString::number (intg);
     }
-    
+
     return QString ("%1 %2").arg (number).arg (Suffixes [suffix]);
 }
 
@@ -1634,7 +1706,7 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
  */
 QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 {
-    QString strFont; 
+    QString strFont;
     QString uuidFont;
     QString endFont;
     if (!aToolTip)
@@ -1643,7 +1715,7 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
         uuidFont = "<font color=#008000>";
         endFont = "</font>";
     }
-    
+
     QString text = aStr;
 
     /* mark strings in single quotes with color */
@@ -1681,34 +1753,27 @@ bool VBoxGlobal::event (QEvent *e)
         {
             VBoxEnumerateMediaEvent *ev = (VBoxEnumerateMediaEvent *) e;
 
-            if (!ev->last)
+            if (!ev->mLast)
             {
-                // gather all media to the list
-                media_list += ev->media;
-
-                if (ev->media.status == VBoxMedia::Error)
-                    vboxProblem().cannotGetMediaAccessibility (ev->media.disk);
-
-                emit mediaEnumerated (ev->media);
+                if (ev->mMedia.status == VBoxMedia::Error)
+                    vboxProblem().cannotGetMediaAccessibility (ev->mMedia.disk);
+                media_list [ev->mIndex] = ev->mMedia;
+                emit mediaEnumerated (media_list [ev->mIndex], ev->mIndex);
             }
             else
             {
-                // the thread has posted the last message, wait for termination
+                /* the thread has posted the last message, wait for termination */
                 media_enum_thread->wait();
                 delete media_enum_thread;
                 media_enum_thread = 0;
 
-                // this is the last event, clear the list (create a copy first)
-                VBoxMediaList list = media_list;
-                media_list.clear();
-
-                emit mediaEnumerated (list);
+                emit mediaEnumFinished (media_list);
             }
 
             return true;
         }
 
-        // VirtualBox callback events
+        /* VirtualBox callback events */
 
         case VBoxDefs::MachineStateChangeEventType:
         {
