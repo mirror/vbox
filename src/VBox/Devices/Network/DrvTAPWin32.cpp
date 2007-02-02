@@ -187,6 +187,12 @@ static DECLCALLBACK(int) drvTAPW32SendEx(PPDMINETWORKCONNECTOR pInterface, uint3
         list.cPackets = RT_MIN(cPackets, TAP_SCATTER_GATHER_MAX_PACKETS);
         cPackets     -= list.cPackets;
 
+        for (uint32_t i=0;i<list.cPackets;i++)
+        {
+            list.aPacket[i].pPacket = paPacket[i].pvBuf;
+            list.aPacket[i].cb      = paPacket[i].cb;
+        }
+
         ret = DeviceIoControl(pData->hFile, TAP_IOCTL_TRANSFER_ETHPACKETS, &list, RT_OFFSETOF(TAP_SCATTER_GATHER_LIST_MAX, aPacket[list.cPackets]),
                               NULL, 0, &length, NULL);
         if (ret == FALSE)
