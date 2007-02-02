@@ -422,6 +422,10 @@ VBoxRT_LIBS                    = \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 VBoxRT_LIBS.darwin             = \
 	iconv
+VBoxRT_LIBS.freebsd            = \
+	iconv
+VBoxRT_LIBPATH.freebsd         = \
+	/usr/local/lib	
 VBoxRT_LDFLAGS.darwin          = -framework IOKit
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
