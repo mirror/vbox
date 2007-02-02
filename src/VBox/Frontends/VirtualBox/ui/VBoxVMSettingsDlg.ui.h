@@ -657,26 +657,28 @@ void VBoxVMSettingsDlg::bootItemActivate (int row, int col, int /* button */,
 void VBoxVMSettingsDlg::updateShortcuts()
 {
     /* setup necessary combobox item */
-    cbHDA->setRequiredItem (uuidHDA);
-    cbHDB->setRequiredItem (uuidHDB);
-    cbHDD->setRequiredItem (uuidHDD);
-    cbISODVD->setRequiredItem (uuidISODVD);
-    cbISOFloppy->setRequiredItem (uuidISOFloppy);
-    /* request for refresh every combo-box */
-    cbHDA->setReadyForRefresh();
-    cbHDB->setReadyForRefresh();
-    cbHDD->setReadyForRefresh();
-    cbISODVD->setReadyForRefresh();
-    cbISOFloppy->setReadyForRefresh();
-    /* starting media-enumerating process */
-    vboxGlobal().startEnumeratingMedia();
+    cbHDA->setCurrentItem (uuidHDA);
+    cbHDB->setCurrentItem (uuidHDB);
+    cbHDD->setCurrentItem (uuidHDD);
+    cbISODVD->setCurrentItem (uuidISODVD);
+    cbISOFloppy->setCurrentItem (uuidISOFloppy);
+    /* check if the enumeration process has been started yet */
+    if (!vboxGlobal().isMediaEnumerationStarted())
+        vboxGlobal().startEnumeratingMedia();
+    else
+    {
+        cbHDA->refresh();
+        cbHDB->refresh();
+        cbHDD->refresh();
+        cbISODVD->refresh();
+        cbISOFloppy->refresh();
+    }
 }
 
 
 void VBoxVMSettingsDlg::hdaMediaChanged()
 {
     uuidHDA = grbHDA->isChecked() ? cbHDA->getId() : QUuid();
-    cbHDA->setRequiredItem (uuidHDA);
     txHDA->setText (getHdInfo (grbHDA, uuidHDA));
     /* revailidate */
     wvalHDD->revalidate();
@@ -686,7 +688,6 @@ void VBoxVMSettingsDlg::hdaMediaChanged()
 void VBoxVMSettingsDlg::hdbMediaChanged()
 {
     uuidHDB = grbHDB->isChecked() ? cbHDB->getId() : QUuid();
-    cbHDB->setRequiredItem (uuidHDB);
     txHDB->setText (getHdInfo (grbHDB, uuidHDB));
     /* revailidate */
     wvalHDD->revalidate();
@@ -696,7 +697,6 @@ void VBoxVMSettingsDlg::hdbMediaChanged()
 void VBoxVMSettingsDlg::hddMediaChanged()
 {
     uuidHDD = grbHDD->isChecked() ? cbHDD->getId() : QUuid();
-    cbHDD->setRequiredItem (uuidHDD);
     txHDD->setText (getHdInfo (grbHDD, uuidHDD));
     /* revailidate */
     wvalHDD->revalidate();
@@ -706,7 +706,6 @@ void VBoxVMSettingsDlg::hddMediaChanged()
 void VBoxVMSettingsDlg::cdMediaChanged()
 {
     uuidISODVD = bgDVD->isChecked() ? cbISODVD->getId() : QUuid();
-    cbISODVD->setRequiredItem (uuidISODVD);
     /* revailidate */
     wvalDVD->revalidate();
 }
@@ -715,7 +714,6 @@ void VBoxVMSettingsDlg::cdMediaChanged()
 void VBoxVMSettingsDlg::fdMediaChanged()
 {
     uuidISOFloppy = bgFloppy->isChecked() ? cbISOFloppy->getId() : QUuid();
-    cbISOFloppy->setRequiredItem (uuidISOFloppy);
     /* revailidate */
     wvalFloppy->revalidate();
 }
@@ -1287,9 +1285,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     }
 
     /* request for media shortcuts update */
-    cbHDA->setBelongsTo(machine.GetId());
-    cbHDB->setBelongsTo(machine.GetId());
-    cbHDD->setBelongsTo(machine.GetId());
+    cbHDA->setBelongsTo (machine.GetId());
+    cbHDB->setBelongsTo (machine.GetId());
+    cbHDD->setBelongsTo (machine.GetId());
     updateShortcuts();
 
     /* revalidate pages with custom validation */
@@ -1540,10 +1538,15 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
                                  WType_Dialog | WShowModal);
     QUuid machineId = cmachine.GetId();
     dlg.setup (type, true, &machineId, (const VBoxMediaList*)0, cmachine);
-    if (dlg.exec() == VBoxDiskImageManagerDlg::Accepted)
-        *id = dlg.getSelectedUuid();
-    updateShortcuts();
+    *id = dlg.exec() == VBoxDiskImageManagerDlg::Accepted ?
+        dlg.getSelectedUuid() : cbb->getId();
+    cbb->setCurrentItem (*id);
     cbb->setFocus();
+
+    /* revalidate pages with custom validation */
+    wvalHDD->revalidate();
+    wvalDVD->revalidate();
+    wvalFloppy->revalidate();
 }
 
 void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &adapter,

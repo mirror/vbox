@@ -414,8 +414,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         this, SLOT (vmSettings (const QString &)));
 
     /* listen to "media enumeration finished" signals */
-    connect (&vboxGlobal(), SIGNAL (mediaEnumerated (const VBoxMediaList &)),
-             this, SLOT (mediaEnumerated (const VBoxMediaList &)));
+    connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
+             this, SLOT (mediaEnumFinished (const VBoxMediaList &)));
 
     /* connect VirtualBox callback events */
     connect (&vboxGlobal(), SIGNAL (machineStateChanged (const VBoxMachineStateChangeEvent &)),
@@ -955,7 +955,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
     }
 }
 
-void VBoxSelectorWnd::mediaEnumerated (const VBoxMediaList &list)
+void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
 {
     /* refresh the current details to pick up hard disk sizes */
     vmListBoxCurrentChanged (true /* aRefreshDetails */);
@@ -991,8 +991,8 @@ void VBoxSelectorWnd::mediaEnumerated (const VBoxMediaList &list)
     /* we react to the media enumeration event only once (after media
      * emumeration started from main() at startup), and then disconnect
      * to avoid annoying the user */
-    disconnect (&vboxGlobal(), SIGNAL (mediaEnumerated (const VBoxMediaList &)),
-                this, SLOT (mediaEnumerated (const VBoxMediaList &)));
+    disconnect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
+                this, SLOT (mediaEnumFinished (const VBoxMediaList &)));
 }
 
 void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)

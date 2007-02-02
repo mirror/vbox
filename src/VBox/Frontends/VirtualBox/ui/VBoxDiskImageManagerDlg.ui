@@ -561,13 +561,19 @@
     <variable>QSizeGrip *sizeGrip;</variable>
     <variable>QPushButton *defaultButton;</variable>
     <variable access="private">static VBoxDiskImageManagerDlg *mModelessDialog;</variable>
-    <variable access="private">bool mToBeRefreshed;</variable>
     <variable access="private">QProgressBar *mProgressBar;</variable>
     <variable access="private">QLabel *mProgressText;</variable>
+    <variable access="private">QUuid hdSelectedId;</variable>
+    <variable access="private">QUuid cdSelectedId;</variable>
+    <variable access="private">QUuid fdSelectedId;</variable>
 </variables>
 <slots>
-    <slot access="protected">mediaEnumerated( const VBoxMedia &amp; media )</slot>
-    <slot access="protected">mediaEnumerated( const VBoxMediaList &amp; )</slot>
+    <slot access="protected">mediaEnumStarted()</slot>
+    <slot access="protected">mediaEnumerated( const VBoxMedia &amp;, int )</slot>
+    <slot access="protected">mediaEnumFinished( const VBoxMediaList &amp; )</slot>
+    <slot access="protected">mediaAdded( const VBoxMedia &amp; )</slot>
+    <slot access="protected">mediaUpdated( const VBoxMedia &amp; )</slot>
+    <slot access="protected">mediaRemoved( VBoxDefs::DiskType, const QUuid &amp; )</slot>
     <slot access="protected">machineStateChanged( const VBoxMachineStateChangeEvent &amp; )</slot>
     <slot>refreshAll()</slot>
     <slot access="protected">processCurrentChanged( QListViewItem * item )</slot>
@@ -585,13 +591,11 @@
 </slots>
 <functions>
     <function access="private">init()</function>
-    <function access="private">loadListViews()</function>
     <function access="private" returnType="int">result()</function>
     <function access="private">setResult( int )</function>
     <function returnType="int">exec()</function>
     <function access="private">done( int )</function>
-    <function access="private">updateMedia( const VBoxMedia &amp; media )</function>
-    <function access="private" returnType="DiskImageItem*">searchItem( QListView*, QUuid )</function>
+    <function access="private" returnType="DiskImageItem*">searchItem( QListView*, const QUuid &amp; )</function>
     <function specifier="non virtual" access="private" returnType="QString">static getDVDImageUsage( const QUuid &amp; id )</function>
     <function specifier="non virtual" access="private" returnType="QString">static getFloppyImageUsage( const QUuid &amp; id )</function>
     <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
@@ -600,14 +604,18 @@
     <function returnType="QString">getSelectedPath()</function>
     <function>setup( int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, const VBoxMediaList *mediaList = NULL, CMachine machine = 0 )</function>
     <function access="private" returnType="QListView*">getCurrentListView()</function>
+    <function access="private" returnType="QListView*">getListView( VBoxDefs::DiskType )</function>
     <function returnType="bool">eventFilter( QObject *, QEvent * )</function>
     <function access="private">addDroppedImages( QStringList* )</function>
-    <function access="private" returnType="DiskImageItem*">addImageToList( QString aSource, VBoxDefs::DiskType aDiskType )</function>
-    <function access="private" returnType="DiskImageItem*">createImageNode( QListView *aList, DiskImageItem *aRoot, QString aName, QString aLabel1 = QString::null, QString aLabel2 = QString::null, QString aLabel3 = QString::null, QString aLabel4 = QString::null, QString aLabel5 = QString::null, QString aLabel6 = QString::null, QString aLabel7 = QString::null )</function>
-    <function access="private" returnType="DiskImageItem*">createHdItem( QListView*, DiskImageItem*, CHardDisk &amp;, VBoxMedia::Status )</function>
-    <function access="private" returnType="DiskImageItem*">createCdItem( QListView*, DiskImageItem*, CDVDImage &amp;, VBoxMedia::Status )</function>
-    <function access="private" returnType="DiskImageItem*">createFdItem( QListView*, DiskImageItem*, CFloppyImage &amp;, VBoxMedia::Status )</function>
-    <function access="private">createHdChildren( DiskImageItem*, CHardDisk &amp;, VBoxMedia::Status )</function>
+    <function access="private">addImageToList( QString aSource, VBoxDefs::DiskType aDiskType )</function>
+    <function access="private" returnType="DiskImageItem*">createImageNode( QListView *aList, DiskImageItem *aRoot )</function>
+    <function access="private">updateHdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private">updateCdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private">updateFdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createHdItem( QListView*, DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createCdItem( QListView*, DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createFdItem( QListView*, DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private">createHdChildren( DiskImageItem*, const VBoxMedia &amp; )</function>
     <function access="protected">showEvent( QShowEvent * )</function>
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function access="protected">keyPressEvent( QKeyEvent* )</function>
@@ -619,7 +627,7 @@
     <function specifier="non virtual" returnType="QString">static composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function specifier="non virtual" returnType="QString">static composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function specifier="non virtual" returnType="QString">static composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
-    <function access="protected">prepareToRefresh()</function>
+    <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
 </functions>
 <layoutdefaults spacing="10" margin="10"/>
 </UI>
