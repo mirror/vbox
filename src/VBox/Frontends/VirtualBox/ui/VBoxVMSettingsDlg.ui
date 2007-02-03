@@ -1084,8 +1084,8 @@ The actual default path will be displayed after accepting the changes and openin
                                             </property>
                                             <property name="whatsThis" stdset="0">
                                                 <string>When checked, the virtual machine will support
-the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't activate
-this feature after installing a guest operating system into it!</string>
+the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
+this feature after having installed a Windows guest operating system!</string>
                                             </property>
                                         </widget>
                                         <widget class="QCheckBox">
@@ -1100,8 +1100,8 @@ this feature after installing a guest operating system into it!</string>
                                             </property>
                                             <property name="whatsThis" stdset="0">
                                                 <string>When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't activate
-this feature after installing a guest operating system into it!</string>
+the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable
+this feature after having installed a Windows guest operating system!</string>
                                             </property>
                                         </widget>
                                     </vbox>
