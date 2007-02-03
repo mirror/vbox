@@ -1685,8 +1685,7 @@ void VBoxDiskImageManagerDlg::newImage()
             hd.GetAccessible() ? VBoxMedia::Ok :
             hd.isOk() ? VBoxMedia::Inaccessible :
             VBoxMedia::Error;
-        VBoxMedia media (CUnknown (hd), VBoxDefs::HD, status);
-        vboxGlobal().addMedia (media);
+        vboxGlobal().addMedia (VBoxMedia (CUnknown (hd), VBoxDefs::HD, status));
     }
 }
 
