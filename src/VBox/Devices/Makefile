@@ -348,6 +348,13 @@ Drivers_SOURCES      := $(filter-out \
 Drivers_SOURCES.darwin =
 endif # darwin
 
+ifeq ($(BUILD_TARGET),freebsd)
+Drivers_SOURCES      := $(filter-out \
+	Storage/DrvHost% \
+	, $(Drivers_SOURCES))
+Drivers_SOURCES.freebsd =
+endif # freebsd
+
 
 ifeq ($(BUILD_TARGET),l4)
 Drivers_SOURCES       = \
