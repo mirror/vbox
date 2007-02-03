@@ -642,7 +642,7 @@ LIB_XCURSOR      ?= Xcursor
 #LIB_RUNTIME += $(LIB_RUNTIME_EF) $(LIB_RUNTIME)
 
 # Intel ASL compiler for ACPI
-VBOX_IASLCMD   ?= $(PATH_DEVTOOLS_BLD)/bin/iasl$(HOSTSUFF_EXE)
+VBOX_IASLCMD   ?= $(firstword $(wildcard $(PATH_DEVTOOLS_BLD)/bin/iasl$(HOSTSUFF_EXE)) iasl$(HOSTSUFF_EXE))
 
 # Bruce's C compile is a C-compiler for BIOS-related 8086 code
 VBOX_BCC       ?= $(PATH_DEVTOOLS_BLD)/bin/bcc$(HOSTSUFF_EXE) -B $(PATH_DEVTOOLS_BLD)/bin/
