@@ -1783,9 +1783,8 @@ a CD/DVD image to mount.</string>
                                     </sizepolicy>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Defines the host audio device driver to
-use for the virtual audio card. Selecting &lt;b&gt;Null Audio Driver&lt;/b&gt; will
-enable the virtual audio card hardware but will suppress all virtual machine's sounds.</string>
+                                    <string>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; 
+makes the guest see an audio card, however every access to it will be ignored.</string>
                                 </property>
                             </widget>
                             <spacer>
