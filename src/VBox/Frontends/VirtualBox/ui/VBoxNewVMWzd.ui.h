@@ -401,8 +401,7 @@ void VBoxNewVMWzd::showNewVDIWizard()
             chd.GetAccessible() == TRUE ? VBoxMedia::Ok :
             chd.isOk() ? VBoxMedia::Inaccessible :
             VBoxMedia::Error;
-        VBoxMedia media (CUnknown (chd), VBoxDefs::HD, status);
-        vboxGlobal().addMedia (media);
+        vboxGlobal().addMedia (VBoxMedia (CUnknown (chd), VBoxDefs::HD, status));
         mediaCombo->setCurrentItem (uuidHD);
         mediaCombo->setFocus();
         /* revailidate */
