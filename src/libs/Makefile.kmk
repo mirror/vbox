@@ -21,11 +21,8 @@
 DEPTH = ../..
 include $(PATH_KBUILD)/header.kmk
 
-subdirs      =
-subdirs.l4   = libuuid
-ifdef VBOX_WITH_MAIN
- subdirs.linux = xpcom18a4
-endif
+
+subdirs.l4 = libuuid ## @todo Use uuid-generic.cpp !
 subdirs := liblzf-1.51 $(subdirs.$(BUILD_TARGET))
 ifndef VBOX_OSE
  ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
@@ -41,24 +38,26 @@ ifdef VBOX_WITH_VRDP
  endif
 endif
 ifdef VBOX_WITH_MAIN
- # only build xerces if we don't use an external library
+ ifdef VBOX_WITH_XPCOM
+  subdirs += xpcom18a4
+ endif
+ # Only build xerces if we don't use an external library.
  ifeq ($(SDK_VBOX_XERCES_INCS),$(PATH_ROOT)/src/libs/xerces-2.6.0/src)
   subdirs += xerces-2.6.0
  endif
- # only build xalan if we don't use an external library
+ # Only build xalan if we don't use an external library.
  ifeq ($(SDK_VBOX_XALAN_INCS),$(PATH_ROOT)/src/libs/xalan-1.10.0)
   subdirs += xalan-1.10.0
  endif
 endif
 
 # optimized walking
-SUBDIRS_BLDPROGS.linux = xpcom18a4
+SUBDIRS_BLDPROGS       = $(filter xpcom18a4,$(subdirs))
 SUBDIRS_LIBRARIES      = $(subdirs)
-SUBDIRS_BINARIES.linux = xpcom18a4
-SUBDIRS_DLLS.linux     = xpcom18a4
-SUBDIRS_OTHERS.linux   = xpcom18a4
+SUBDIRS_BINARIES       = $(filter xpcom18a4,$(subdirs))
+SUBDIRS_DLLS           = $(filter xpcom18a4,$(subdirs))
+SUBDIRS_OTHERS         = $(filter xpcom18a4,$(subdirs))
 SUBDIRS_CLEAN          = $(subdirs)
+SUBDIRS_NOTHING        = $(subdirs)
 
-DEPTH = ../..
-include $(PATH_KBUILD)/rules.kmk
-
+include $(PATH_KBUILD)/footer.kmk
