@@ -1866,7 +1866,7 @@ static int csamRemovePageRecord(PVM pVM, RTGCPTR GCPtr)
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   cbBuf           How much it's reading/writing.
  */
-static void CSAMDelayedWriteHandler(PVM pVM, RTGCPTR GCPtr, size_t cbBuf)
+static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTGCPTR GCPtr, size_t cbBuf)
 {
     int rc = PATMR3PatchWrite(pVM, GCPtr, cbBuf);
     AssertRC(rc);
