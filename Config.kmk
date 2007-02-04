@@ -1417,6 +1417,7 @@ ifeq ($(BUILD_TARGET),win)
 
 else # the GCC guys:
 
+TEMPLATE_VBOXMAINEXE_DEFS               += VBOX_WITH_XPCOM
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wno-non-virtual-dtor -fshort-wchar -fpermissive $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug      = -fno-inline
@@ -1554,13 +1555,16 @@ ifeq ($(BUILD_TARGET),win)
 
 else # the gcc guys:
  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXQTGUIEXE_DEFS += _REENTRANT
+ TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM
+ TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
+
  TEMPLATE_VBOXQTGUIEXE_INCS += \
  	$(LIB_SDL_INC) \
  	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
  	-pipe -Wall -W -frtti -fno-exceptions -Wno-non-virtual-dtor \
- 	-Wno-long-long -fshort-wchar -pthread -fno-strict-aliasing
+ 	-Wno-long-long -fshort-wchar -fno-strict-aliasing
+ TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
  ## @todo no $(LIB_QTMAIN) here?
  TEMPLATE_VBOXQTGUIEXE_LIBS = \
  	$(LIB_QT) \
