@@ -156,27 +156,6 @@ static DECLCALLBACK(int) drvTAPSend(PPDMINETWORKCONNECTOR pInterface, const void
     return rc;
 }
 
-/**
- * Send multiple data packets to the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   cPackets        Number of packets
- * @param   paPacket        Packet description array
- * @thread  EMT
- */
-static DECLCALLBACK(int) drvTAPSendEx(PPDMINETWORKCONNECTOR pInterface, uint32_t cPackets, PPDMINETWORKPACKET paPacket)
-{
-    int rc = VERR_INVALID_PARAMETER;
-
-    for (uint32_t i = 0; i < cPackets; i++)
-    {
-        rc = drvTAPSend(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
-        if (VBOX_FAILURE(rc))
-            break;
-    }
-    return rc;
-}
 
 /**
  * Set promiscuous mode.
@@ -529,7 +508,6 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pDrvIns->IBase.pfnQueryInterface    = drvTAPQueryInterface;
     /* INetwork */
     pData->INetworkConnector.pfnSend                = drvTAPSend;
-    pData->INetworkConnector.pfnSendEx              = drvTAPSendEx;
     pData->INetworkConnector.pfnSetPromiscuousMode  = drvTAPSetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged   = drvTAPNotifyLinkChanged;
     pData->INetworkConnector.pfnNotifyCanReceive    = drvTAPNotifyCanReceive;

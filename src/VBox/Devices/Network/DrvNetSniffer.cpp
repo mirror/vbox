@@ -146,29 +146,6 @@ static DECLCALLBACK(int) drvNetSnifferSend(PPDMINETWORKCONNECTOR pInterface, con
 
 
 /**
- * Send multiple data packets to the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   cPackets        Number of packets
- * @param   paPacket        Packet description array
- * @thread  EMT
- */
-static DECLCALLBACK(int) drvNetSnifferSendEx(PPDMINETWORKCONNECTOR pInterface, uint32_t cPackets, PPDMINETWORKPACKET paPacket)
-{
-    int rc = VERR_INVALID_PARAMETER;
-
-    for (uint32_t i = 0; i < cPackets; i++)
-    {
-        rc = drvNetSnifferSend(pInterface, paPacket[i].pvBuf, paPacket[i].cb);
-        if (VBOX_FAILURE(rc))
-            break;
-    }
-    return rc;
-}
-
-
-/**
  * Set promiscuous mode.
  *
  * This is called when the promiscuous mode is set. This means that there doesn't have
@@ -354,7 +331,6 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pDrvIns->IBase.pfnQueryInterface    = drvNetSnifferQueryInterface;
     /* INetworkConnector */
     pData->INetworkConnector.pfnSend                = drvNetSnifferSend;
-    pData->INetworkConnector.pfnSendEx              = drvNetSnifferSendEx;
     pData->INetworkConnector.pfnSetPromiscuousMode  = drvNetSnifferSetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged   = drvNetSnifferNotifyLinkChanged;
     pData->INetworkConnector.pfnNotifyCanReceive    = drvNetSnifferNotifyCanReceive;

@@ -80,9 +80,6 @@
 /* Enable to handle frequent io reads in the guest context */
 #define PCNET_GC_ENABLED
 
-/* Enable to send multiple packets with one system call */
-/* #define PCNET_SEND_MULTIPLE_PACKETS */
-
 /* Enable to delay setting the TX interrupt until packets have been sent. */
 /** @note currently not technically correct (own bit) */
 #define PCNET_DELAY_INT
@@ -1825,59 +1822,6 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 
     pData->fTransmitting = true;
 
-#ifdef PCNET_SEND_MULTIPLE_PACKETS
-    if (pData->iFrame)
-    {
-        if (pData->iFrame > 1)
-        {
-            /** @todo Tip, use alloca() or a fixed sized stack array to save time and avoid the heap and it's locks. */
-            PPDMINETWORKPACKET paPacket = (PPDMINETWORKPACKET)RTMemTmpAlloc(sizeof(PDMINETWORKPACKET)*pData->iFrame);
-            unsigned           i;
-
-            Assert(paPacket);
-            if (paPacket)
-            {
-                for (i = 0; i < pData->iFrame; i++)
-                {
-                    paPacket[i].pvBuf = pData->aFrames[i].pvR3 != NIL_RTR3PTR
-                                      ? pData->aFrames[i].pvR3
-                                      : &pData->abFrameBuf[pData->aFrames[i].off];
-                    paPacket[i].cb    = pData->aFrames[i].cb;
-
-                    if (pData->aFrames[i].cb > 70) /* unqualified guess */
-                        pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
-                }
-
-                if (pcnetIsLinkUp(pData))
-                    pData->pDrv->pfnSendEx(pData->pDrv, pData->iFrame, paPacket);
-
-                RTMemTmpFree(paPacket);
-            }
-        }
-        else
-        {
-            RTR3PTR pv = pData->aFrames[0].pvR3 != NIL_RTR3PTR
-                       ? pData->aFrames[0].pvR3
-                       : &pData->abFrameBuf[pData->aFrames[0].off];
-            if (pData->aFrames[0].cb > 70) /* unqualified guess */
-                pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
-            if (pcnetIsLinkUp(pData))
-            {
-                pData->pDrv->pfnSend(pData->pDrv, pv, pData->aFrames[0].cb);
-                LOG_PACKET("xmit", pv, pData->aFrames[0].cb);
-            }
-        }
-
-#ifdef PCNET_DELAY_INT
-        /* Update TXSTRT and TINT. */
-        pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
-        pData->aCSR[0] |= 0x0200;    /* set TINT */
-        pcnetUpdateIrq(pData);
-#endif
-    }
-
-#else /* PCNET_SEND_MULTIPLE_PACKETS */
-
     for (unsigned i = 0; i < pData->iFrame; i++)
     {
         RTR3PTR pv = pData->aFrames[i].pvR3 != NIL_RTR3PTR
@@ -1901,8 +1845,6 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
         pcnetUpdateIrq(pData);
     }
 #endif
-
-#endif /* PCNET_SEND_MULTIPLE_PACKETS */
 
     pData->fTransmitting = false;
 
