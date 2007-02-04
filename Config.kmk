@@ -63,7 +63,7 @@ INST_SDK_SAMPLES     = $(INST_SDK)/samples
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call int-ge,$(KMK_REVISION),788),1)
+ifneq ($(call int-ge,$(KMK_REVISION),830),1)
  $(error You must update kBuild!)
 endif
 
@@ -1234,7 +1234,7 @@ TEMPLATE_VBOXR3EXE_LIBS                =
 TEMPLATE_VBOXR3EXE_LDFLAGS             = -read_only_relocs suppress
  else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXR3EXE_TOOL                = GCC3
-TEMPLATE_VBOXR3EXE_LIBS                = pthread 
+TEMPLATE_VBOXR3EXE_LIBS                = pthread
  else ifeq ($(BUILD_TARGET),solaris)
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXR3EXE_TOOL                = GCC3PLAIN
@@ -1441,7 +1441,7 @@ TEMPLATE_VBOXMAINEXE_LIBS                = rt
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
- endif 
+ endif
 
 endif # !win
 
@@ -1659,9 +1659,9 @@ TEMPLATE_VBOXBLDPROG_LIBS                =
 $(warning Warning: VBOX Build: Target $(BUILD_PLATFORM) is not officially supported!)
 TEMPLATE_VBOXBLDPROG_TOOL                = GCC3PLAIN
 TEMPLATE_VBOXBLDPROG_LIBS                = rt
- else 
+ else
 $(warning Warning: VBOX Build: Target $(BUILD_PLATFORM) is not officially supported!)
- endif 
+ endif
 
 endif # !win
 
