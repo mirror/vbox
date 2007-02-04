@@ -39,6 +39,8 @@
 #   define VBOX_XML_PLATFORM     "windows"
 #elif defined (__LINUX__)
 #   define VBOX_XML_PLATFORM     "linux"
+#elif defined (__DARWIN__)
+#   define VBOX_XML_PLATFORM     "macosx"
 #else
 #   error Unsupported platform!
 #endif

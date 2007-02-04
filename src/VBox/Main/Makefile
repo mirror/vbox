@@ -31,9 +31,15 @@ LIBRARIES        =
 DLLS             = VBoxXML VBoxC
 PROGRAMS         = VBoxSVC
 ifeq ($(BUILD_TARGET),win)
-LIBRARIES        = VBoxCOM
+ LIBRARIES       = VBoxCOM
 else
-LIBRARIES.linux  = VBoxXPCOM
+ ifndef VBOX_WITH_XPCOM
+  $(error "VBox: VBOX_WITH_XPCOM isn't defined")
+ endif
+ LIBRARIES       = VBoxXPCOM
+ DEFS           += VBOX_WITH_XPCOM
+ DEFS           += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+ DEFS           += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
 #PROGRAMS         = tstCFGLdr
 
@@ -117,25 +123,22 @@ ifneq ($(BUILD_TARGET),win)
 VBoxSVC_INCS += \
 	$(VBOX_XPCOM_INCS)
 endif
+ifdef VBOX_WITH_XPCOM
+VBoxSVC_LIBS += \
+	$(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL) \
+	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL) \
+	$(TARGET_VBoxXPCOM)
+VBoxSVC_LIBS += \
+	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+VBoxSVC_LIBS.darwin = \
+	$(LIB_REM)
+else
 VBoxSVC_LIBS = \
-	$(LIB_RUNTIME)
-VBoxSVC_LIBS.win = \
 	$(PATH_LIB)/VBoxDD$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxXML.lib \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
-VBoxSVC_LIBS.linux = \
-	$(PATH_BIN)/VBoxDD.so \
-	$(PATH_BIN)/VBoxXML.so \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
-	m \
-	util \
-	$(LIB_Z) \
-	$(LIB_PTHREAD) \
-	$(LIB_UUID) \
-	$(PATH_BIN)/VBoxXPCOM.so \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
-VBoxSVC_LIBPATH.linux = \
-	$(LIBPATH_XPCOM)
+endif
 VBoxSVC_SOURCES = \
 	Logging.cpp \
 	Matching.cpp \
@@ -176,8 +179,10 @@ VBoxSVC_SOURCES.win = \
 	win32/svchlp.cpp \
 	win32/VBoxSVC.rc
 
-VBoxSVC_SOURCES.linux = \
+ifdef VBOX_WITH_XPCOM
+VBoxSVC_SOURCES += \
 	linux/server.cpp
+endif
 
 ifdef VBOX_WITH_USB
 VBoxSVC_SOURCES.linux += linux/USBProxyServiceLinux.cpp
@@ -223,23 +228,18 @@ endif
 ifdef VBOX_USE_VCC80
 VBoxC_LDFLAGS.win = /MANIFEST
 endif
+ifdef VBOX_WITH_XPCOM
 VBoxC_LIBS = \
-	$(LIB_VMM) \
-	$(LIB_REM) \
-	$(LIB_RUNTIME)
-VBoxC_LIBS.win = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
-VBoxC_LIBS.linux = \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
-	m \
-	util \
-	$(LIB_Z) \
-	$(LIB_PTHREAD) \
-	$(LIB_UUID) \
-	$(PATH_BIN)/VBoxXPCOM.so \
+	$(TARGET_VBoxXPCOM) \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
-VBoxC_LIBPATH.linux = \
-	$(LIBPATH_XPCOM)
+else
+VBoxC_LIBS = \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
+endif
+VBoxC_LIBS += \
+	$(LIB_VMM) \
+	$(LIB_REM)
 VBoxC_SOURCES = \
 	Logging.cpp \
 	VBoxDll.cpp \
@@ -265,18 +265,20 @@ VBoxC_SOURCES.win = \
 	win32/dllmain.cpp \
 	win32/VBoxC.def \
 	win32/VBoxC.rc
-VBoxC_SOURCES.linux = \
+ifdef VBOX_WITH_XPCOM
+VBoxC_SOURCES += \
 	linux/module.cpp
+endif
 
 ifdef VBOX_WITH_HGCM
-VBoxC_SOURCES  += \
-        hgcm/HGCMObjects.cpp \
-        hgcm/HGCMThread.cpp \
-        hgcm/HGCM.cpp
+VBoxC_SOURCES += \
+	hgcm/HGCMObjects.cpp \
+	hgcm/HGCMThread.cpp \
+	hgcm/HGCM.cpp
 endif
 
 ifdef VBOX_WITH_USB
-VBoxC_SOURCES  += \
+VBoxC_SOURCES += \
 	RemoteUSBBackend.cpp
 endif
 
@@ -296,10 +298,11 @@ VBoxXML_INCS       = \
 VBoxXML_SOURCES    = \
 	xml/cfgldr.cpp \
 	xml/cfgldrhlp.cpp
+ifdef VBOX_WITH_XPCOM
 VBoxXML_LIBS       = \
-	$(LIB_RUNTIME)
-VBoxXML_LIBS.linux = \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB)
+	$(TARGET_VBoxXPCOM) \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+endif
 
 ## @todo (dmik): temporarily embed SettingsConverter.xsl into VBoxXML,
 #                later it should go to VBoxSVC as well
@@ -324,15 +327,12 @@ tstCFGLdr_SOURCES  = \
 tstCFGLdr_INCS     = \
 	include \
 	$(PATH_TARGET)
+ifdef VBOX_WITH_XPCOM
 tstCFGLdr_LIBS     = \
-	$(LIB_RUNTIME)
-tstCFGLdr_LIBS.linux = \
-	m \
-	util \
-	$(LIB_Z) \
-	$(LIB_PTHREAD) \
-	$(LIB_UUID) \
 	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB)
+endif
+tstCFGLdr_LIBS    += \
+	$(LIB_RUNTIME)
 
 
 #
@@ -393,6 +393,7 @@ VBOX_XML_ENTITIES        = $(PATH_TARGET)/VirtualBoxXMLUtil_entities.h
 VBOX_XML_ENTITIES_COMMON = $(PATH_TARGET)/VirtualBoxXMLUtil_common_entities.h
 
 VBOX_XML_SCHEMA_COMMON = xml/VirtualBox-settings-common.xsd
+VBOX_XML_SCHEMA.darwin = xml/VirtualBox-settings-macosx.xsd
 VBOX_XML_SCHEMA.linux  = xml/VirtualBox-settings-linux.xsd
 VBOX_XML_SCHEMA.win    = xml/VirtualBox-settings-windows.xsd
 
@@ -430,7 +431,7 @@ OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
 
 
 #
-# Creates the symlinks necessary for making XPCOM work. 
+# Creates the symlinks necessary for making XPCOM work.
 #
 xpcom-components_INST = bin/components/
 xpcom-components_SYMLINKS = \
@@ -535,7 +536,7 @@ updatenls:
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_HEADERS) -ts $(VBoxSVC_TRANSLATIONS)
 	$(VBOX_LUPDATE) $(VBoxC_SOURCES) $(VBoxC_HEADERS) -ts $(VBoxC_TRANSLATIONS)
 
-ifeq ($(BUILD_TARGET),linux)
+ifdef VBOX_WITH_XPCOM
 
 testidl: $(IDLFILE) $(IDLTYPELIB)
 testidlhdr: $(IDLHEADER)

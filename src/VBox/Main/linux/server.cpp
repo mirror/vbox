@@ -55,7 +55,7 @@
 #include <getopt.h>
 
 // for the backtrace signal handler
-#if defined(DEBUG)
+#if defined(DEBUG) && defined(__LINUX__)
 # define USE_BACKTRACE
 #endif
 #if defined(USE_BACKTRACE)

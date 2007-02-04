@@ -159,7 +159,7 @@ public:
 
         BOOL mAccessible;
         com::ErrorInfo mAccessError;
-        
+
         MachineState_T mMachineState;
         LONG64 mLastStateChange;
 
@@ -273,7 +273,7 @@ public:
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Machine)
-    
+
     DECLARE_NOT_AGGREGATABLE(Machine)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -413,7 +413,7 @@ public:
 
     int calculateFullPath (const char *aPath, Utf8Str &aResult);
     void calculateRelativePath (const char *aPath, Utf8Str &aResult);
-    
+
     void getLogFolder (Utf8Str &aLogFolder);
 
     HRESULT openSession (IInternalSessionControl *aControl);
@@ -439,7 +439,7 @@ protected:
     enum InstanceType { IsMachine, IsSessionMachine, IsSnapshotMachine };
 
     HRESULT registeredInit();
-    
+
     inline Machine *machine();
 
     void uninitDataAndChildObjects();
@@ -693,7 +693,7 @@ private:
 #if defined(__WIN__)
     HANDLE mIPCSem;
     Bstr mIPCSemName;
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
 #endif
 

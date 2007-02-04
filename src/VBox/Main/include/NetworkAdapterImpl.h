@@ -44,7 +44,7 @@ public:
 #ifdef __WIN__
             , mHostInterface ("") // cannot be null
 #endif
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
             , mTAPFD (NIL_RTFILE)
 #endif
             , mInternalNetwork ("") // cannot be null
@@ -60,7 +60,7 @@ public:
                     mCableConnected == that.mCableConnected &&
                     mTraceEnabled == that.mTraceEnabled &&
                     mHostInterface == that.mHostInterface &&
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
                     mTAPSetupApplication == that.mTAPSetupApplication &&
                     mTAPTerminateApplication == that.mTAPTerminateApplication &&
                     mTAPFD == that.mTAPFD &&
@@ -77,7 +77,7 @@ public:
         BOOL mTraceEnabled;
         Bstr mTraceFile;
         Bstr mHostInterface;
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
         Bstr mTAPSetupApplication;
         Bstr mTAPTerminateApplication;
         RTFILE mTAPFD;
@@ -116,7 +116,7 @@ public:
     STDMETHOD(COMGETTER(AttachmentType))(NetworkAttachmentType_T *attachmentType);
     STDMETHOD(COMGETTER(HostInterface))(BSTR *hostInterface);
     STDMETHOD(COMSETTER(HostInterface))(INPTR BSTR hostInterface);
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     STDMETHOD(COMGETTER(TAPFileDescriptor))(LONG *tapFileDescriptor);
     STDMETHOD(COMSETTER(TAPFileDescriptor))(LONG tapFileDescriptor);
     STDMETHOD(COMGETTER(TAPSetupApplication))(BSTR *tapSetupApplication);
