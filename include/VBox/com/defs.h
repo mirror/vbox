@@ -23,6 +23,13 @@
 #ifndef __VBox_com_defs_h__
 #define __VBox_com_defs_h__
 
+/*
+ * Include iprt/types.h now to make sure iprt get to stdint.h first,
+ * otherwise a system/xpcom header might beat us and we'll be without
+ * the macros that are optional in C++.
+ */
+#include <iprt/types.h>
+
 #if defined (__WIN__)
 
 // Windows COM
