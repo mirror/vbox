@@ -587,6 +587,30 @@ __BEGIN_DECLS
 #define VERR_DBGMOD_INVALID_ADDRESS             (-650)
 /** @} */
 
+/** @name Request Packet Status Codes.
+ * @{
+ */
+/** Invalid RT request type.
+ * For the RTReqAlloc() case, the caller just specified an illegal enmType. For
+ * all the other occurences it means indicates corruption, broken logic, or stupid
+ * interface user. */
+#define VERR_RT_REQUEST_INVALID_TYPE            (-700)
+/** Invalid RT request state.
+ * The state of the request packet was not the expected and accepted one(s). Either
+ * the interface user screwed up, or we've got corruption/broken logic. */
+#define VERR_RT_REQUEST_STATE                   (-701)
+/** Invalid RT request packet.
+ * One or more of the RT controlled packet members didn't contain the correct
+ * values. Some thing's broken. */
+#define VERR_RT_REQUEST_INVALID_PACKAGE         (-702)
+/** The status field has not been updated yet as the request is still
+ * pending completion. Someone queried the iStatus field before the request
+ * has been fully processed. */
+#define VERR_RT_REQUEST_STATUS_STILL_PENDING    (-703)
+/** The request has been freed, don't read the status now.
+ * Someone is reading the iStatus field of a freed request packet. */
+#define VERR_RT_REQUEST_STATUS_FREED            (-704)
+/** @} */
 
 /* SED-END */
 
