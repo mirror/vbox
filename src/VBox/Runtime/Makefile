@@ -162,6 +162,7 @@ RuntimeR3_SOURCES       = \
 	logformat.cpp \
 	md5.cpp \
 	path.cpp \
+        req.cpp \
 	r3/alloc-ef.cpp \
 	r3/alloc.cpp \
 	r3/init.cpp \
