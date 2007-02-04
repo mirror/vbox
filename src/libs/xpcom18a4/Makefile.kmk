@@ -45,7 +45,8 @@ TEMPLATE_XPCOM_CFLAGS.release      = -O
 TEMPLATE_XPCOM_CFLAGS.profile      = -O
 TEMPLATE_XPCOM_CFLAGS.l4           = -nostdinc
 TEMPLATE_XPCOM_CFLAGS.linux        = -pthread -ansi
-TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1
+TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1
+TEMPLATE_XPCOM_DEFS.x86            = i386=1
 TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\(a\,b\)=__builtin_va_copy\(a\,b\)
 TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" MOZ_DLL_SUFFIX=\".dylib\" XP_UNIX=1 XP_MACOSX=1
 TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  MOZ_DLL_SUFFIX=\".so\"    XP_UNIX=1
@@ -213,7 +214,11 @@ PROGRAMS = \
 	tstTestDeque \
 	tstTestAutoPtr \
 	tstTestMinStringAPI \
-	tstTestStrings
+	tstTestStrings \
+	tstPrimitiveTest \
+	tstSimpleTypeLib \
+	tstXptDump \
+	tstXptLink
 #   tstTestPermanentAtoms
 endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
@@ -583,9 +588,6 @@ VBox-xpcom-nspr_DEFS.openbsd = \
 VBox-xpcom-nspr_DEFS.os2 =
 VBox-xpcom-nspr_DEFS.solaris = \
 	_PR_PTHREADS
-VBox-xpcom-nspr_DEFS.x86   = i386=1
-VBox-xpcom-nspr_DEFS.amd64 = i386=1
-VBox-xpcom-nspr_DEFS.debug = NDEBUG
 VBox-xpcom-nspr_INCS = \
 	nsprpub/pr/include/private \
 	$(PATH_TARGET)/VBox-xpcom-nspr
@@ -1086,6 +1088,16 @@ tstTestMinStringAPI_TEMPLATE   = XPCOMEXE
 tstTestMinStringAPI_SOURCES    = xpcom/tests/TestMinStringAPI.cpp
 tstTestStrings_TEMPLATE        = XPCOMEXE
 tstTestStrings_SOURCES         = xpcom/tests/TestStrings.cpp
+tstPrimitiveTest_TEMPLATE      = XPCOMEXE
+tstPrimitiveTest_SOURCES       = xpcom/typelib/xpt/tests/PrimitiveTest.c
+tstSimpleTypeLib_TEMPLATE      = XPCOMEXE
+tstSimpleTypeLib_SOURCES       = xpcom/typelib/xpt/tests/SimpleTypeLib.c
+tstXptDump_TEMPLATE            = XPCOMEXE
+tstXptDump_SOURCES             = xpcom/typelib/xpt/tools/xpt_dump.c
+tstXptLink_TEMPLATE            = XPCOMEXE
+tstXptLink_SOURCES             = xpcom/typelib/xpt/tools/xpt_link.c
+
+
 
 
 IDLFILES = \
