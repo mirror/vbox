@@ -40,6 +40,10 @@ VBoxManage_LIBS.win = \
 VBoxManage_LIBS.linux = \
 	$(PATH_BIN)/VBoxDD.so \
 	$(PATH_BIN)/VBoxXML.so
+VBoxManage_LIBS.darwin = \
+	$(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL) \
+	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL) \
+	$(LIB_REM)
 
 
 include $(PATH_KBUILD)/footer.kmk
