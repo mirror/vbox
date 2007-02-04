@@ -202,7 +202,9 @@ endif
 # Most stuff doesn't build yet on the two new targets.
 ifneq ($(filter darwin os2 freebsd,$(BUILD_TARGET)),)
  #VBOX_WITH_VBOXBFE=
- VBOX_WITH_MAIN=
+ ifeq ($(filter darwin,$(BUILD_TARGET)),)
+  VBOX_WITH_MAIN=
+ endif
  VBOX_WITH_QTGUI=
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_DEBUGGER_GUI=
@@ -689,6 +691,7 @@ endif
 
 # XPCOM setup for all but win32.
 ifneq ($(BUILD_TARGET),win)
+ VBOX_WITH_XPCOM      = 1
  VBOX_XPIDL          ?= $(PATH_OBJ)/src/libs/xpcom18a4/xpidl/xpidl$(HOSTSUFF_EXE)
  VBOX_PATH_XPCOM_IDL ?= $(PATH_BIN)/sdk/idl
  VBOX_XPCOM_INCS     ?= \
@@ -780,6 +783,7 @@ VBOX_SUFF_LIB = .lib
 else
 VBOX_SUFF_LIB = .a
 endif
+VBOX_SUFF_DLL = $(SUFF_DLL)
 VBOXW32GUEST_SUFF_LIB = .lib
 VBOXLNX32GUEST_SUFF_LIB = .a
 
@@ -1475,8 +1479,10 @@ TEMPLATE_VBOXMAINCLIENT             = VBox MAIN Client
 TEMPLATE_VBOXMAINCLIENT_EXTENDS     = VBOXMAINEXE
 TEMPLATE_VBOXMAINCLIENT_INCS        = $(TEMPLATE_VBOXMAINEXE_INCS) \
 	$(PATH_BIN)/sdk/include
-TEMPLATE_VBOXMAINCLIENT_INCS.linux  = $(TEMPLATE_VBOXMAINEXE_INCS.linux) \
+ifdef VBOX_WITH_XPCOM
+TEMPLATE_VBOXMAINCLIENT_INCS       += \
     $(VBOX_XPCOM_INCS)
+endif
 TEMPLATE_VBOXMAINCLIENT_LIBS        = $(TEMPLATE_VBOXMAINEXE_LIBS) \
     $(LIB_RUNTIME)
 ifeq ($(BUILD_TARGET),win)
@@ -1489,14 +1495,21 @@ ifeq ($(BUILD_TARGET),win)
    $(PATH_SDK_WINPSDK_LIB)/OleAut32.Lib \
    $(PATH_SDK_WINPSDK_LIB)/Uuid.Lib
 else
- TEMPLATE_VBOXMAINCLIENT_LIBS.linux = $(TEMPLATE_VBOXMAINEXE_LIBS.linux) \
+ TEMPLATE_VBOXMAINCLIENT_LIBS = $(TEMPLATE_VBOXMAINEXE_LIBS) \
 	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM.so \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+	$(LIB_RUNTIME)
 
+ TEMPLATE_VBOXMAINCLIENT_DEFS = $(TEMPLATE_VBOXMAINEXE_DEFS) \
+	NDEBUG TRIMMED
+ ## Wonder why we compile main with defaults for these two and then drops it in the client executables...
+ TEMPLATE_VBOXMAINCLIENT_CXXFLAGS = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS) \
+	-fno-rtti -fno-exceptions
  TEMPLATE_VBOXMAINCLIENT_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) \
-	-DNDEBUG -DTRIMMED -Wall -fno-rtti -fno-exceptions \
-	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
+	-pthread
+ TEMPLATE_VBOXMAINCLIENT_LDFLAGS.darwin = $(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin) \
+   	-bind_at_load -framework Carbon
 endif
 
 
