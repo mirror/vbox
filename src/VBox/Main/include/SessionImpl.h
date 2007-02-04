@@ -29,6 +29,17 @@
 #include "win32/resource.h"
 #endif
 
+/** @def VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+ *  Use SYS V IPC for watching a session.
+ *  This is defined in the Makefile since it's also used by MachineImpl.h/cpp.
+ *
+ *  @todo Dmitry, feel free to completely change this (and/or write a better description).
+ *        (The same goes for the other darwin changes.)
+ */
+#ifdef __DOXYGEN__
+# define VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+#endif
+
 class ATL_NO_VTABLE Session :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <Session, ISession>,
@@ -116,8 +127,10 @@ private:
 #if defined(__WIN__)
     HANDLE mIPCSem;
     HANDLE mIPCThreadSem;
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
+#else
+# error "PORTME"
 #endif
 };
 

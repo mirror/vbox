@@ -305,7 +305,7 @@ HRESULT VirtualBox::init()
         /* start the client watcher thread */
 #if defined(__WIN__)
         unconst (mWatcherData.mUpdateReq) = ::CreateEvent (NULL, FALSE, FALSE, NULL);
-#elif defined(__LINUX__)
+#else
         RTSemEventCreate (&unconst (mWatcherData.mUpdateReq));
 #endif
         int vrc = RTThreadCreate (&unconst (mWatcherData.mThread),
@@ -446,7 +446,7 @@ void VirtualBox::uninit()
         ::CloseHandle (mWatcherData.mUpdateReq);
         unconst (mWatcherData.mUpdateReq) = NULL;
     }
-#elif defined(__LINUX__)
+#else
     if (mWatcherData.mUpdateReq != NIL_RTSEMEVENT)
     {
         RTSemEventDestroy (mWatcherData.mUpdateReq);
@@ -2113,13 +2113,13 @@ struct StartSVCHelperClientData
  *  all the function is supposed to do is to cleanup its aUser argument if
  *  necessary (it's assumed that the ownership of this argument is passed to
  *  the user function once #startSVCHelperClient() returns a success, thus
- *  making it responsible for the cleanup). 
+ *  making it responsible for the cleanup).
  *
  *  After the user function returns, the thread will send the SVCHlpMsg::Null
  *  message to indicate a process termination.
  *
  *  @param  aPrivileged |true| to start the SVC Hepler process as a privlieged
- *                      user that can perform administrative tasks 
+ *                      user that can perform administrative tasks
  *  @param  aFunc       user function to run
  *  @param  aUser       argument to the user function
  *  @param  aProgress   progress object that will track operation completion
@@ -2142,7 +2142,7 @@ HRESULT VirtualBox::startSVCHelperClient (bool aPrivileged,
 
     /* create the SVCHelperClientThread() argument */
     std::auto_ptr <StartSVCHelperClientData>
-        d (new StartSVCHelperClientData());    
+        d (new StartSVCHelperClientData());
     AssertReturn (d.get(), E_OUTOFMEMORY);
 
     d->that = this;
@@ -2153,7 +2153,7 @@ HRESULT VirtualBox::startSVCHelperClient (bool aPrivileged,
 
     RTTHREAD tid = NIL_RTTHREAD;
     int vrc = RTThreadCreate (&tid, SVCHelperClientThread,
-                              static_cast <void *> (d.get()),  
+                              static_cast <void *> (d.get()),
                               0, RTTHREADTYPE_MAIN_WORKER,
                               RTTHREADFLAGS_WAITABLE, "SVCHelper");
 
@@ -2167,7 +2167,7 @@ HRESULT VirtualBox::startSVCHelperClient (bool aPrivileged,
 }
 
 /**
- *  Worker thread for startSVCHelperClient(). 
+ *  Worker thread for startSVCHelperClient().
  */
 /* static */
 DECLCALLBACK(int)
@@ -2180,7 +2180,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
 
     HRESULT rc = S_OK;
     bool userFuncCalled = false;
-    
+
     do
     {
         AssertBreak (d.get(), rc = E_POINTER);
@@ -2228,14 +2228,14 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         if (d->privileged)
         {
             /* Attempt to start a privileged process using the Run As dialog */
-            
+
             Bstr file = exePath;
             Bstr parameters = argsStr;
 
             SHELLEXECUTEINFO shExecInfo;
-            
+
             shExecInfo.cbSize = sizeof (SHELLEXECUTEINFO);
-            
+
             shExecInfo.fMask = NULL;
             shExecInfo.hwnd = NULL;
             shExecInfo.lpVerb = L"runas";
@@ -2244,7 +2244,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
             shExecInfo.lpDirectory = NULL;
             shExecInfo.nShow = SW_NORMAL;
             shExecInfo.hInstApp = NULL;
-            
+
             if (!ShellExecuteEx (&shExecInfo))
             {
                 int vrc2 = RTErrConvertFromWin32 (GetLastError());
@@ -2289,7 +2289,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
                 vrc = vrc2;
         }
 
-        if (SUCCEEDED (rc) && VBOX_FAILURE (vrc))        
+        if (SUCCEEDED (rc) && VBOX_FAILURE (vrc))
         {
             rc = setError (E_FAIL,
                 tr ("Could not operate the communication channel (%Vrc)"), vrc);
@@ -2304,7 +2304,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
          * to let it free resources passed to in aUser */
         d->func (NULL, NULL, d->user, NULL);
     }
-    
+
     d->progress->notifyComplete (rc);
 
     LogFlowFuncLeave();
@@ -2329,7 +2329,7 @@ void VirtualBox::updateClientWatcher()
     /* sent an update request */
 #if defined(__WIN__)
     ::SetEvent (mWatcherData.mUpdateReq);
-#elif defined(__LINUX__)
+#else
     RTSemEventSignal (mWatcherData.mUpdateReq);
 #endif
 }
@@ -4296,7 +4296,7 @@ DECLCALLBACK(int) VirtualBox::clientWatcher (RTTHREAD thread, void *pvUser)
 
     ::CoUninitialize();
 
-#elif defined(__LINUX__)
+#else
 
     bool need_update = false;
 

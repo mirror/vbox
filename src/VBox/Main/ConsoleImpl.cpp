@@ -213,7 +213,7 @@ HRESULT Console::FinalConstruct()
     memset(mapIDELeds, 0, sizeof(mapIDELeds));
     memset(mapNetworkLeds, 0, sizeof(mapNetworkLeds));
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     Assert(ELEMENTS(maTapFD) == ELEMENTS(maTAPDeviceName));
     Assert(ELEMENTS(maTapFD) >= SchemaDefs::NetworkAdapterCount);
     for (unsigned i = 0; i < ELEMENTS(maTapFD); i++)
@@ -260,7 +260,7 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
 #ifdef VBOX_VRDP
     rc = mMachine->COMGETTER(VRDPServer) (unconst (mVRDPServer).asOutParam());
     AssertComRCReturn (rc, rc);
-#endif    
+#endif
 
     rc = mMachine->COMGETTER(DVDDrive) (unconst (mDVDDrive).asOutParam());
     AssertComRCReturn (rc, rc);
@@ -294,7 +294,7 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
 
     unconst (mConsoleVRDPServer) = new ConsoleVRDPServer (this);
     AssertReturn (mConsoleVRDPServer, E_FAIL);
-    
+
 #ifdef VRDP_MC
     m_cAudioRefs = 0;
 #endif /* VRDP_MC */
@@ -661,7 +661,7 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_AUDIO)
     {
         console->m_cAudioRefs--;
-        
+
         if (console->m_cAudioRefs <= 0)
         {
             if (console->mAudioSniffer)
@@ -717,7 +717,7 @@ DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser, bool fKeepHostAud
 #ifdef VBOX_VRDP
 #ifdef VRDP_MC
     console->m_cAudioRefs++;
-        
+
     if (console->m_cAudioRefs == 1)
     {
         if (console->mAudioSniffer)
@@ -2773,7 +2773,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
                 AssertMsgFailed (("Invalid *peState: %d\n", peState));
                 break;
         }
-    
+
         if (VBOX_FAILURE (rc))
         {
             rcRet = rc;
@@ -3318,7 +3318,7 @@ void Console::onAdditionsOutdated()
 
     AutoReaderLock alock (this);
 
-    /** @todo Use the On-Screen Display feature to report the fact. 
+    /** @todo Use the On-Screen Display feature to report the fact.
      *  The user should be told to install additions that are
      *  provided with the current VBox build:
      *  VBOX_VERSION_MAJOR.VBOX_VERSION_MINOR.VBOX_VERSION_BUILD
@@ -4057,19 +4057,19 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
     LogFlowFunc (("that={%p}\n", that));
 
     AssertReturn (that && aConfig && aUuid, VERR_INVALID_PARAMETER);
-    
+
 #ifdef VRDP_MC
     if (aRemote)
     {
         /* @todo aRemoteBackend input parameter is not needed. */
         Assert (aRemoteBackend == NULL);
-        
+
         RemoteUSBDevice *pRemoteUSBDevice = static_cast <RemoteUSBDevice *> (aHostDevice);
-        
+
         Guid guid (*aUuid);
 
         aRemoteBackend = that->consoleVRDPServer ()->USBBackendRequestPointer (pRemoteUSBDevice->clientId (), &guid);
-        
+
         if (aRemoteBackend == NULL)
         {
             /* The clientId is invalid then. */
@@ -4292,7 +4292,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertNode(pRoot,    "PDM", &pPDM);                                     RC_CHECK();
     rc = CFGMR3InsertNode(pPDM,     "Drivers", &pDrivers);                             RC_CHECK();
     rc = CFGMR3InsertNode(pDrivers, "VBoxC", &pMod);                                   RC_CHECK();
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
     // VBoxC is located in the components subdirectory
     char szPathProgram[RTPATH_MAX + sizeof("/components/VBoxC")];
     rc = RTPathProgram(szPathProgram, RTPATH_MAX);                                  AssertRC(rc);
@@ -5003,7 +5003,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 hrc = pConsole->attachToHostInterface(networkAdapter);
                 if (SUCCEEDED(hrc))
                 {
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
                     Assert (pConsole->maTapFD[ulInstance] >= 0);
                     if (pConsole->maTapFD[ulInstance] >= 0)
                     {
@@ -5019,7 +5019,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
                         rc = CFGMR3InsertInteger(pCfg, "FileHandle", pConsole->maTapFD[ulInstance]); RC_CHECK();
                     }
-#else /* !__LINUX__ */
+#elif defined(__WIN__)
                     if (fSniffer)
                     {
                         rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
@@ -5053,7 +5053,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                         strcat(szDriverGUID, "}");
                         rc = CFGMR3InsertBytes(pCfg, "GUID", szDriverGUID, sizeof(szDriverGUID)); RC_CHECK();
                     }
-#endif /* !__LINUX__ */
+#else
+# error "Port me"
+#endif
                 }
                 else
                 {
@@ -5179,7 +5181,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "dsound");                 RC_CHECK();
                 break;
             }
-#else /* !__WIN__ */
+#endif /* !__LINUX__ */
+#ifdef __LINUX__
             case AudioDriverType_OSSAudioDriver:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                    RC_CHECK();
@@ -5192,7 +5195,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 break;
             }
 #endif
-#endif /* !__WIN__ */
+#endif /* __LINUX__ */
         }
     }
 
@@ -5337,7 +5340,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             /* terminate the node and advance to the value */
             *pszCFGMValueName = '\0';
             pszCFGMValueName++;
-    
+
             /* does the node already exist? */
             pNode = CFGMR3GetChild(pRoot, pszExtraDataKey);
             if (pNode)
@@ -5432,7 +5435,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
 
     HRESULT rc = S_OK;
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     ULONG slot = 0;
     rc = networkAdapter->COMGETTER(Slot)(&slot);
     AssertComRC(rc);
@@ -5458,7 +5461,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
         rc = S_OK;
     }
     else
-#endif /* __LINUX */
+#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
     {
         /*
          * Allocate a host interface device
@@ -5543,8 +5546,13 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                     break;
             }
         }
-#elif
-#error "Unknown host OS"
+#elif defined(__DARWIN__)
+        /** @todo Implement tap networking for Darwin. */
+        int rcVBox = VERR_NOT_IMPLEMENTED;
+#elif defined(VBOX_WITH_UNIXY_TAP_NETWORKING)
+# error "PORTME: Implement OS specific TAP interface open/creation."
+#else
+# error "Unknown host OS"
 #endif
         /* in case of failure, cleanup. */
         if (VBOX_FAILURE(rcVBox) && SUCCEEDED(rc))
@@ -5552,7 +5560,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
             rc = setError(E_FAIL, tr ("General failure attaching to host interface"));
         }
     }
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     if (SUCCEEDED(rc))
     {
         /*
@@ -5618,7 +5626,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
             }
         }
     }
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
     return rc;
 }
 
@@ -5643,7 +5651,7 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
     Assert(attachment == NetworkAttachmentType_HostInterfaceNetworkAttachment);
 #endif /* DEBUG */
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
 
     ULONG slot = 0;
     rc = networkAdapter->COMGETTER(Slot)(&slot);
@@ -5826,7 +5834,7 @@ Console::setVMRuntimeErrorCallback (PVM pVM, void *pvUser, bool fFatal,
              "errorID=%s message=\"%s\"\n",
              fFatal, pszErrorID, message.raw()));
 
-    that->onRuntimeError (BOOL (fFatal), Bstr (pszErrorID), Bstr (message)); 
+    that->onRuntimeError (BOOL (fFatal), Bstr (pszErrorID), Bstr (message));
 
     LogFlowFuncLeave();
 }

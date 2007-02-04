@@ -182,7 +182,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     }
     while (*p);
     delete[] hostDrives;
-#else
+#elif defined(__LINUX__)
     // On Linux, the situation is much more complex. There is no simple API so
     // we will take a more creative approach. As there is only a heuristical
     // approach on Linux, we'll allow the user to specify a list of host CDROMs
@@ -225,6 +225,8 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
         // check the drives that can be mounted
         parseMountTable((char*)"/etc/fstab", list);
     }
+#else
+    /* PORTME */
 #endif
 
     ComObjPtr<HostDVDDriveCollection> collection;
@@ -269,7 +271,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     }
     while (*p);
     delete[] hostDrives;
-#else
+#elif defined(__LINUX__)
     // As with the CDROMs, on Linux we have to take a multi-level approach
     // involving parsing the mount tables. As this is not bulletproof, we'll
     // give the user the chance to override the detection by an environment
@@ -309,6 +311,8 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
             }
         }
     }
+#else
+    /* PORTME */
 #endif
 
     ComObjPtr<HostFloppyDriveCollection> collection;
@@ -669,9 +673,9 @@ Host::CreateHostNetworkInterface (INPTR BSTR aName,
 
     /* create the networkInterfaceHelperClient() argument */
     std::auto_ptr <NetworkInterfaceHelperClientData>
-        d (new NetworkInterfaceHelperClientData());    
+        d (new NetworkInterfaceHelperClientData());
     AssertReturn (d.get(), E_OUTOFMEMORY);
-    
+
     d->msgCode = SVCHlpMsg::CreateHostNetworkInterface;
     d->name = aName;
     d->iface = iface;
@@ -681,7 +685,7 @@ Host::CreateHostNetworkInterface (INPTR BSTR aName,
         networkInterfaceHelperClient,
         static_cast <void *> (d.get()),
         progress);
-    
+
     if (SUCCEEDED (rc))
     {
         /* d is now owned by networkInterfaceHelperClient(), so release it */
@@ -732,9 +736,9 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
 
     /* create the networkInterfaceHelperClient() argument */
     std::auto_ptr <NetworkInterfaceHelperClientData>
-        d (new NetworkInterfaceHelperClientData());    
+        d (new NetworkInterfaceHelperClientData());
     AssertReturn (d.get(), E_OUTOFMEMORY);
-    
+
     d->msgCode = SVCHlpMsg::RemoveHostNetworkInterface;
     d->guid = aId;
 
@@ -743,7 +747,7 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
         networkInterfaceHelperClient,
         static_cast <void *> (d.get()),
         progress);
-    
+
     if (SUCCEEDED (rc))
     {
         /* d is now owned by networkInterfaceHelperClient(), so release it */
@@ -1694,8 +1698,8 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
     LogFlowFuncEnter();
     LogFlowFunc (("Network connection name = '%s'\n", aName.raw()));
 
-    AssertReturn (aClient, VERR_INVALID_POINTER); 
-    AssertReturn (!aName.isNull(), VERR_INVALID_PARAMETER); 
+    AssertReturn (aClient, VERR_INVALID_POINTER);
+    AssertReturn (!aName.isNull(), VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
 
@@ -1718,20 +1722,20 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         PSP_DRVINFO_DETAIL_DATA pDriverInfoDetail;
         /* for our purposes, 2k buffer is more
          * than enough to obtain the hardware ID
-         * of the VBoxTAP driver. */    
+         * of the VBoxTAP driver. */
         DWORD detailBuf [2048];
-    
+
         HKEY hkey = NULL;
         DWORD cbSize;
         DWORD dwValueType;
-    
+
         /* initialize the structure size */
         DeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
         DriverInfoData.cbSize = sizeof(SP_DRVINFO_DATA);
-    
+
         /* copy the net class GUID */
         memcpy(&netGuid, &GUID_DEVCLASS_NET, sizeof(GUID_DEVCLASS_NET));
-    
+
         /* create an empty device info set associated with the net class GUID */
         hDeviceInfo = SetupDiCreateDeviceInfoList (&netGuid, NULL);
         if (hDeviceInfo == INVALID_HANDLE_VALUE)
@@ -1765,17 +1769,17 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         if (!ok)
             SetErrBreak (("SetupDiBuildDriverInfoList failed (0x%08X)",
                           GetLastError()));
-    
+
         destroyList = TRUE;
 
         /* enumerate the driver info list */
         while (TRUE)
         {
             BOOL ret;
-    
+
             ret = SetupDiEnumDriverInfo (hDeviceInfo, &DeviceInfoData,
                                          SPDIT_CLASSDRIVER, index, &DriverInfoData);
-    
+
             /* if the function failed and GetLastError() returned
              * ERROR_NO_MORE_ITEMS, then we have reached the end of the
              * list.  Othewise there was something wrong with this
@@ -1790,10 +1794,10 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
                     continue;
                 }
             }
-    
+
             pDriverInfoDetail = (PSP_DRVINFO_DETAIL_DATA) detailBuf;
             pDriverInfoDetail->cbSize = sizeof(SP_DRVINFO_DETAIL_DATA);
-    
+
             /* if we successfully find the hardware ID and it turns out to
              * be the one for the loopback driver, then we are done. */
             if (SetupDiGetDriverInfoDetail (hDeviceInfo,
@@ -1804,7 +1808,7 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
                                             NULL))
             {
                 TCHAR * t;
-    
+
                 /* pDriverInfoDetail->HardwareID is a MULTISZ string.  Go through the
                  * whole list and see if there is a match somewhere. */
                 t = pDriverInfoDetail->HardwareID;
@@ -1812,17 +1816,17 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
                 {
                     if (!_tcsicmp(t, DRIVERHWID))
                         break;
-    
+
                     t += _tcslen(t) + 1;
                 }
-    
+
                 if (t && *t && t < (TCHAR *) &detailBuf [sizeof(detailBuf) / sizeof (detailBuf[0])])
                 {
                     found = TRUE;
                     break;
                 }
             }
-    
+
             index ++;
         }
 
@@ -1836,17 +1840,17 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         if (!ok)
             SetErrBreak (("SetupDiSetSelectedDriver failed (0x%08X)",
                           GetLastError()));
-    
+
         /* register the phantom device to prepare for install */
         ok = SetupDiCallClassInstaller (DIF_REGISTERDEVICE, hDeviceInfo,
                                         &DeviceInfoData);
         if (!ok)
             SetErrBreak (("SetupDiCallClassInstaller failed (0x%08X)",
                           GetLastError()));
-    
+
         /* registered, but remove if errors occur in the following code */
         registered = TRUE;
-    
+
         /* ask the installer if we can install the device */
         ok = SetupDiCallClassInstaller (DIF_ALLOW_INSTALL, hDeviceInfo,
                                         &DeviceInfoData);
@@ -1864,7 +1868,7 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         if (!ok)
             SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLDEVICEFILES) failed (0x%08X)",
                           GetLastError()));
-    
+
         /* get the device install parameters and disable filecopy */
         DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
         ok = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
@@ -1882,14 +1886,14 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         /*
          * Register any device-specific co-installers for this device,
          */
-    
+
         ok = SetupDiCallClassInstaller (DIF_REGISTER_COINSTALLERS,
                                         hDeviceInfo,
                                         &DeviceInfoData);
         if (!ok)
             SetErrBreak (("SetupDiCallClassInstaller (DIF_REGISTER_COINSTALLERS) failed (0x%08X)",
                           GetLastError()));
-    
+
         /*
          * install any  installer-specified interfaces.
          * and then do the real install
@@ -1900,7 +1904,7 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         if (!ok)
             SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLINTERFACES) failed (0x%08X)",
                           GetLastError()));
-    
+
         ok = SetupDiCallClassInstaller (DIF_INSTALLDEVICE,
                                         hDeviceInfo,
                                         &DeviceInfoData);
@@ -1918,13 +1922,13 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         if (hkey == INVALID_HANDLE_VALUE)
             SetErrBreak (("SetupDiOpenDevRegKey failed (0x%08X)",
                           GetLastError()));
-    
+
         cbSize = sizeof (pCfgGuidString);
         DWORD ret;
         ret = RegQueryValueEx (hkey, _T ("NetCfgInstanceId"), NULL,
                                &dwValueType, (LPBYTE) pCfgGuidString, &cbSize);
         RegCloseKey (hkey);
-    
+
         ret = RenameConnection (pCfgGuidString, Bstr (aName));
         if (FAILED (ret))
             SetErrBreak (("Failed to set interface name (ret=0x%08X, "
@@ -1932,7 +1936,7 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
                            ret, pCfgGuidString, cbSize));
     }
     while (0);
-    
+
     /*
      * cleanup
      */
@@ -1942,9 +1946,9 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         /* an error has occured, but the device is registered, we must remove it */
         if (ret != 0 && registered)
             SetupDiCallClassInstaller (DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
-    
+
         found = SetupDiDeleteDeviceInfo (hDeviceInfo, &DeviceInfoData);
-    
+
         /* destroy the driver info list */
         if (destroyList)
             SetupDiDestroyDriverInfoList (hDeviceInfo, &DeviceInfoData,
@@ -1978,8 +1982,8 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
     LogFlowFuncEnter();
     LogFlowFunc (("Network connection GUID = {%Vuuid}\n", aGUID.raw()));
 
-    AssertReturn (aClient, VERR_INVALID_POINTER); 
-    AssertReturn (!aGUID.isEmpty(), VERR_INVALID_PARAMETER); 
+    AssertReturn (aClient, VERR_INVALID_POINTER);
+    AssertReturn (!aGUID.isEmpty(), VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
 
@@ -2006,14 +2010,14 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
                 SetErrBreak ((
                     tr ("Host interface network is not found in registry (%s) [1]"),
                     strRegLocation));
-    
+
             status = RegOpenKeyExA (hkeyNetwork, "Connection", 0,
                                     KEY_READ, &hkeyConnection);
             if ((status != ERROR_SUCCESS) || !hkeyConnection)
                 SetErrBreak ((
                     tr ("Host interface network is not found in registry (%s) [2]"),
                     strRegLocation));
-    
+
             DWORD len = sizeof (lszPnPInstanceId);
             DWORD dwKeyType;
             status = RegQueryValueExW (hkeyConnection, L"PnPInstanceID", NULL,
@@ -2039,7 +2043,7 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
          */
 
         HDEVINFO hDeviceInfo = INVALID_HANDLE_VALUE;
-        
+
         do
         {
             BOOL ok;
@@ -2049,26 +2053,26 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
             DWORD index = 0;
             BOOL found = FALSE;
             DWORD size = 0;
-    
+
             /* initialize the structure size */
             DeviceInfoData.cbSize = sizeof (SP_DEVINFO_DATA);
-        
+
             /* copy the net class GUID */
             memcpy (&netGuid, &GUID_DEVCLASS_NET, sizeof (GUID_DEVCLASS_NET));
-        
+
             /* return a device info set contains all installed devices of the Net class */
             hDeviceInfo = SetupDiGetClassDevs (&netGuid, NULL, NULL, DIGCF_PRESENT);
-        
+
             if (hDeviceInfo == INVALID_HANDLE_VALUE)
                 SetErrBreak (("SetupDiGetClassDevs failed (0x%08X)", GetLastError()));
-        
+
             /* enumerate the driver info list */
             while (TRUE)
             {
                 TCHAR *deviceHwid;
-        
+
                 ok = SetupDiEnumDeviceInfo (hDeviceInfo, index, &DeviceInfoData);
-        
+
                 if (!ok)
                 {
                     if (GetLastError() == ERROR_NO_MORE_ITEMS)
@@ -2079,7 +2083,7 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
                         continue;
                     }
                 }
-        
+
                 /* try to get the hardware ID registry property */
                 ok = SetupDiGetDeviceRegistryProperty (hDeviceInfo,
                                                        &DeviceInfoData,
@@ -2095,7 +2099,7 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
                         index++;
                         continue;
                     }
-        
+
                     deviceHwid = (TCHAR *) malloc (size);
                     ok = SetupDiGetDeviceRegistryProperty (hDeviceInfo,
                                                            &DeviceInfoData,
@@ -2118,7 +2122,7 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
                     index++;
                     continue;
                 }
-        
+
                 for (TCHAR *t = deviceHwid;
                      t && *t && t < &deviceHwid[size / sizeof(TCHAR)];
                      t += _tcslen (t) + 1)
@@ -2139,28 +2143,28 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
                           }
                     }
                 }
-        
+
                 if (deviceHwid)
                 {
                     free (deviceHwid);
                     deviceHwid = NULL;
                 }
-        
+
                 if (found)
                     break;
-        
+
                 index++;
             }
-        
+
             if (found == FALSE)
                 SetErrBreak ((tr ("Host Interface Network driver not found (0x%08X)"),
                               GetLastError()));
-        
+
             ok = SetupDiSetSelectedDevice (hDeviceInfo, &DeviceInfoData);
             if (!ok)
                 SetErrBreak (("SetupDiSetSelectedDevice failed (0x%08X)",
                               GetLastError()));
-        
+
             ok = SetupDiCallClassInstaller (DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
             if (!ok)
                 SetErrBreak (("SetupDiCallClassInstaller (DIF_REMOVE) failed (0x%08X)",
@@ -2195,12 +2199,12 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
     AssertReturn ((aClient == NULL && aProgress == NULL && aVrc == NULL) ||
                   (aClient != NULL && aProgress != NULL && aVrc != NULL),
-                  E_POINTER); 
+                  E_POINTER);
     AssertReturn (aUser, E_POINTER);
 
     std::auto_ptr <NetworkInterfaceHelperClientData>
         d (static_cast <NetworkInterfaceHelperClientData *> (aUser));
-        
+
     if (aClient == NULL)
     {
         /* "cleanup only" mode, just return (it will free aUser) */
@@ -2222,7 +2226,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
             if (VBOX_FAILURE (vrc)) break;
             vrc = aClient->write (Utf8Str (d->name));
             if (VBOX_FAILURE (vrc)) break;
-            
+
             /* wait for a reply */
             bool endLoop = false;
             while (!endLoop)
@@ -2231,7 +2235,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
                 vrc = aClient->read (reply);
                 if (VBOX_FAILURE (vrc)) break;
-                
+
                 switch (reply)
                 {
                     case SVCHlpMsg::CreateHostNetworkInterface_OK:
@@ -2270,7 +2274,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                     }
                 }
             }
-            
+
             break;
         }
         case SVCHlpMsg::RemoveHostNetworkInterface:
@@ -2283,7 +2287,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
             if (VBOX_FAILURE (vrc)) break;
             vrc = aClient->write (d->guid);
             if (VBOX_FAILURE (vrc)) break;
-            
+
             /* wait for a reply */
             bool endLoop = false;
             while (!endLoop)
@@ -2292,7 +2296,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
                 vrc = aClient->read (reply);
                 if (VBOX_FAILURE (vrc)) break;
-                
+
                 switch (reply)
                 {
                     case SVCHlpMsg::OK:
@@ -2323,7 +2327,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                     }
                 }
             }
-            
+
             break;
         }
         default:
@@ -2364,7 +2368,7 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 
             Guid guid;
             Utf8Str errMsg;
-            vrc = createNetworkInterface (aClient, name, guid, errMsg);  
+            vrc = createNetworkInterface (aClient, name, guid, errMsg);
 
             if (VBOX_SUCCESS (vrc))
             {
@@ -2396,7 +2400,7 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
             if (VBOX_FAILURE (vrc)) break;
 
             Utf8Str errMsg;
-            vrc = removeNetworkInterface (aClient, guid, errMsg);  
+            vrc = removeNetworkInterface (aClient, guid, errMsg);
 
             if (VBOX_SUCCESS (vrc))
             {

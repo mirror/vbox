@@ -384,7 +384,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR hostInterface)
     if (!hostInterface)
         return E_INVALIDARG;
 #endif
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     // empty strings are not allowed as path names
     if (hostInterface && !(*hostInterface))
         return E_INVALIDARG;
@@ -408,7 +408,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR hostInterface)
     return S_OK;
 }
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
 /**
  * Returns the TAP file descriptor the adapter is attached to
  *
@@ -564,7 +564,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication)(INPTR BSTR tapTe
     return S_OK;
 }
 
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
 
 /**
  * Returns the internal network the adapter is attached to
@@ -943,7 +943,7 @@ void NetworkAdapter::detach()
 #ifdef __WIN__
             mData->mHostInterface = "";
 #endif
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
             mData->mHostInterface.setNull();
             mData->mTAPFD = NIL_RTFILE;
 #endif

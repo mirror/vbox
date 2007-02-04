@@ -21,6 +21,9 @@
 
 #if defined(__WIN__)
 #elif defined(__LINUX__)
+#endif
+
+#ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
 #   include <errno.h>
 #   include <sys/types.h>
 #   include <sys/stat.h>
@@ -138,9 +141,9 @@ Machine::Data::~Data()
 Machine::UserData::UserData()
 {
     /* default values for a newly created machine */
-    
+
     mNameSync = TRUE;
-    
+
     /* mName, mOSType, mSnapshotFolder, mSnapshotFolderFull are initialized in
      * Machine::init() */
 }
@@ -207,7 +210,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         while (thatIt != thatFolders.end())
         {
             if ((*it)->name() == (*thatIt)->name() &&
-                RTPathCompare (Utf8Str ((*it)->hostPath()), 
+                RTPathCompare (Utf8Str ((*it)->hostPath()),
                                Utf8Str ((*thatIt)->hostPath())) == 0)
             {
                 thatFolders.erase (thatIt);
@@ -325,7 +328,7 @@ void Machine::FinalRelease()
  *                      mode (ignored otherwise).
  *  @param aId          UUID of the machine (used only for consistency
  *                      check when aMode is Init_Registered; must match UUID
- *                      stored in the settings file). 
+ *                      stored in the settings file).
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
@@ -363,7 +366,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     mUserData.allocate();
     mHWData.allocate();
     mHDData.allocate();
-    
+
     char configFileFull [RTPATH_MAX] = {0};
 
     /* memorize the config file name (as provided) */
@@ -379,12 +382,12 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     mData->mConfigFileFull = configFileFull;
 
     mData->mAccessible = TRUE;
-    
+
     if (aMode != Init_New)
     {
         /* lock the settings file */
         rc = lockConfig();
-     
+
         if (aMode == Init_Registered && FAILED (rc))
         {
             /* If the machine is registered, then, instead of returning a
@@ -477,11 +480,11 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
         {
             /* create the machine UUID */
             unconst (mData->mUuid).create();
-    
+
             /* initialize the default snapshots folder */
             rc = COMSETTER(SnapshotFolder) (NULL);
             AssertComRC (rc);
-            
+
             /* memorize the provided new machine's name */
             mUserData->mName = aName;
             mUserData->mNameSync = aNameSync;
@@ -527,7 +530,7 @@ HRESULT Machine::registeredInit()
 {
     AssertReturn (mType == IsMachine, E_FAIL);
     AssertReturn (!mData->mUuid.isEmpty(), E_FAIL);
-    
+
     HRESULT rc = S_OK;
 
     if (!mData->mAccessible)
@@ -537,7 +540,7 @@ HRESULT Machine::registeredInit()
      * called from loadSettings() succeed (isMutable() used in all setters
      * will return FALSE for a Machine instance if mRegistered is TRUE). */
     mData->mRegistered = FALSE;
-    
+
     if (SUCCEEDED (rc))
     {
         rc = loadSettings (true /* aRegistered */);
@@ -549,7 +552,7 @@ HRESULT Machine::registeredInit()
     if (SUCCEEDED (rc))
     {
         mData->mAccessible = TRUE;
-        
+
         /* commit all changes made during loading the settings file */
         commit();
 
@@ -577,7 +580,7 @@ HRESULT Machine::registeredInit()
 
     /* Restore the registered flag (even on failure) */
     mData->mRegistered = TRUE;
-    
+
     return rc;
 }
 
@@ -595,7 +598,7 @@ HRESULT Machine::registeredInit()
 void Machine::uninit()
 {
     LogFlowThisFuncEnter();
-    
+
     Assert (!isLockedOnCurrentThread());
 
     /* Enclose the state transition Ready->InUninit->NotReady */
@@ -697,27 +700,27 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
-    
+
     AutoLock alock (this);
 
     HRESULT rc = S_OK;
-    
+
     if (!mData->mAccessible)
     {
         /* try to initialize the VM once more if not accessible */
-        
+
         AutoReadySpan autoReadySpan (this);
         AssertReturn (autoReadySpan.isOk(), E_FAIL);
-        
+
         rc = registeredInit();
-        
+
         if (mData->mAccessible)
             autoReadySpan.setSucceeded();
     }
 
     if (SUCCEEDED (rc))
         *aAccessible = mData->mAccessible;
-    
+
     return rc;
 }
 
@@ -728,18 +731,18 @@ STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessErro
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
-    
+
     AutoReaderLock alock (this);
-    
+
     if (mData->mAccessible || !mData->mAccessError.isBasicAvailable())
     {
         /* return shortly */
         aAccessError = NULL;
         return S_OK;
     }
-    
+
     HRESULT rc = S_OK;
-    
+
     ComObjPtr <VirtualBoxErrorInfo> errorInfo;
     rc = errorInfo.createObject();
     if (SUCCEEDED (rc))
@@ -750,7 +753,7 @@ STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessErro
                          mData->mAccessError.getText());
         rc = errorInfo.queryInterfaceTo (aAccessError);
     }
-    
+
     return rc;
 }
 
@@ -981,8 +984,8 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
     //  2. Rename the folder on disk instead of just changing the property
     //     value (to be smart and not to leave garbage). Note that it cannot be
     //     done here because the change may be rolled back. Thus, the right
-    //     place is #saveSettings(). 
-    
+    //     place is #saveSettings().
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -2514,7 +2517,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
         mData->mSession.mProgress->notifyComplete (rc);
         mData->mSession.mProgress.setNull();
     }
-    
+
     /* uninitialize the created session machine on failure */
     if (FAILED (rc))
         sessionMachine->uninit();
@@ -2761,15 +2764,15 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
     if (!mData->mAccessible)
     {
         /* A special case: the machine is not accessible. */
-        
+
         /* inaccessible machines can only be unregistered */
         AssertReturn (!aRegistered, E_FAIL);
 
         /* Uninitialize ourselves here because currently there may be no
-         * unregistered that are inaccessible (this state combination is not 
+         * unregistered that are inaccessible (this state combination is not
          * supported). Note releasing the caller and leaving the lock before
          * calling uninit() */
-         
+
         alock.leave();
         autoCaller.release();
 
@@ -2777,9 +2780,9 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
         return S_OK;
     }
-    
+
     AssertReturn (autoCaller.state() == Ready, E_FAIL);
-    
+
     if (aRegistered)
     {
         if (mData->mRegistered)
@@ -3067,7 +3070,7 @@ HRESULT Machine::loadSettings (bool aRegistered)
             CFGLDRQueryBool (machineNode, "nameSync", &nameSync);
             mUserData->mNameSync = nameSync;
         }
-        
+
         /* OSType (required) */
         {
             Bstr osTypeId;
@@ -3781,7 +3784,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                 ComAssertBreak (!name.isNull(), rc = E_FAIL);
 #endif
                 mNetworkAdapters [slot]->COMSETTER(HostInterface) (name);
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
                 Bstr tapSetupApp;
                 CFGLDRQueryBSTR (attachmentNode, "TAPSetup", tapSetupApp.asOutParam());
                 Bstr tapTerminateApp;
@@ -3789,7 +3792,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
 
                 mNetworkAdapters [slot]->COMSETTER(TAPSetupApplication) (tapSetupApp);
                 mNetworkAdapters [slot]->COMSETTER(TAPTerminateApplication) (tapTerminateApp);
-#endif // __LINUX__
+#endif // VBOX_WITH_UNIXY_TAP_NETWORKING
                 mNetworkAdapters [slot]->AttachToHostInterface();
             }
             else
@@ -4085,7 +4088,7 @@ HRESULT Machine::openConfigLoader (CFGHANDLE *aLoader, bool aIsNew /* = false */
 
     /* The settings file must be created and locked at this point */
     ComAssertRet (isConfigLocked(), E_FAIL);
-    
+
     /* load the config file */
     int vrc = CFGLDRLoad (aLoader,
                           Utf8Str (mData->mConfigFileFull), mData->mHandleCfgFile,
@@ -4377,7 +4380,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
     HRESULT rc = S_OK;
 
     aRenamed = false;
-    
+
     /* if we're ready and isConfigLocked() is FALSE then it means
      * that no config file exists yet (we will create a virgin one) */
     aNew = !isConfigLocked();
@@ -4388,29 +4391,29 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
         mUserData.backedUpData()->mName != mUserData->mName)
     {
         aRenamed = true;
-        
+
         if (!aNew)
         {
             /* unlock the old config file */
             rc = unlockConfig();
             CheckComRCReturnRC (rc);
         }
-        
+
         bool dirRenamed = false;
         bool fileRenamed = false;
-        
+
         Utf8Str configFile, newConfigFile;
         Utf8Str configDir, newConfigDir;
-        
+
         do
         {
             int vrc = VINF_SUCCESS;
-            
+
             Utf8Str name = mUserData.backedUpData()->mName;
             Utf8Str newName = mUserData->mName;
 
             configFile = mData->mConfigFileFull;
-            
+
             /* first, rename the directory if it matches the machine name */
             configDir = configFile;
             RTPathStripFilename (configDir.mutableRaw());
@@ -4441,7 +4444,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
 
             newConfigFile = Utf8StrFmt ("%s%c%s.xml",
                 newConfigDir.raw(), RTPATH_DELIMITER, newName.raw());
-            
+
             /* then try to rename the settings file itself */
             if (newConfigFile != configFile)
             {
@@ -4464,7 +4467,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
                     fileRenamed = true;
                 }
             }
-            
+
             /* update mConfigFileFull amd mConfigFile */
             Bstr oldConfigFileFull = mData->mConfigFileFull;
             Bstr oldConfigFile = mData->mConfigFile;
@@ -4473,7 +4476,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
             Utf8Str path = newConfigFile;
             mParent->calculateRelativePath (path, path);
             mData->mConfigFile = path;
-            
+
             /* last, try to update the global settings with the new path */
             if (mData->mRegistered)
             {
@@ -4493,9 +4496,9 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
             {
                 path = Utf8StrFmt ("%s%s", newConfigDir.raw(),
                                    path.raw() + configDir.length());
-                mUserData->mSnapshotFolderFull = path; 
+                mUserData->mSnapshotFolderFull = path;
                 calculateRelativePath (path, path);
-                mUserData->mSnapshotFolder = path; 
+                mUserData->mSnapshotFolder = path;
             }
 
             /* update the saved state file path */
@@ -4504,9 +4507,9 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
             {
                 path = Utf8StrFmt ("%s%s", newConfigDir.raw(),
                                    path.raw() + configDir.length());
-                mSSData->mStateFilePath = path; 
+                mSSData->mStateFilePath = path;
             }
-            
+
             /* Update saved state file paths of all online snapshots.
              * Note that saveSettings() will recognize name change
              * and will save all snapshots in this case. */
@@ -4515,7 +4518,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
                                                               newConfigDir);
         }
         while (0);
-        
+
         if (FAILED (rc))
         {
             /* silently try to rename everything back */
@@ -4524,7 +4527,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
             if (dirRenamed)
                 RTPathRename (newConfigDir.raw(), configDir.raw(), 0);
         }
-        
+
         if (!aNew)
         {
             /* lock the config again */
@@ -4532,7 +4535,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
             if (SUCCEEDED (rc))
                 rc = rc2;
         }
-        
+
         CheckComRCReturnRC (rc);
     }
 
@@ -4555,9 +4558,9 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
                     path.raw(), vrc);
             }
         }
-        
+
         /* Note: open flags must correlated with RTFileOpen() in lockConfig() */
-        path = Utf8Str (mData->mConfigFileFull);        
+        path = Utf8Str (mData->mConfigFileFull);
         vrc = RTFileOpen (&mData->mHandleCfgFile, path,
                           RTFILE_O_READWRITE | RTFILE_O_CREATE |
                           RTFILE_O_DENY_WRITE);
@@ -4576,7 +4579,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
         }
         /* we do not close the file to simulate lockConfig() */
     }
-    
+
     return rc;
 }
 
@@ -4630,25 +4633,25 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
     }
 
     HRESULT rc = S_OK;
-    
+
     /* First, prepare to save settings. It will will care about renaming the
      * settings directory and file if the machine name was changed and about
      * creating a new settings file if this is a new machine. */
     bool isRenamed = false;
-    bool isNew = false; 
+    bool isNew = false;
     rc = prepareSaveSettings (isRenamed, isNew);
     CheckComRCReturnRC (rc);
-    
+
     /* then, open the settings file */
     CFGHANDLE configLoader = 0;
     rc = openConfigLoader (&configLoader, isNew);
     CheckComRCReturnRC (rc);
-    
+
     /* save all snapshots when the machine name was changed since
      * it may affect saved state file paths for online snapshots (see
      * #openConfigLoader() for details) */
     bool updateAllSnapshots = isRenamed;
-    
+
     /* commit before saving, since it may change settings
      * (for example, perform fixup of lazy hard disk changes) */
     rc = commit();
@@ -4685,7 +4688,7 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
             CFGLDRSetBool (machineNode, "nameSync", false);
         else
             CFGLDRDeleteAttribute (machineNode, "nameSync");
-        
+
         /* OSType (required) */
         {
             Bstr osTypeID;
@@ -4776,7 +4779,7 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
             if (FAILED (rc))
                 break;
         }
-        
+
         /* update all snapshots if requested */
         if (updateAllSnapshots)
             rc = saveSnapshotSettingsWorker (machineNode, NULL,
@@ -4820,7 +4823,7 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
 /**
  *  Wrapper for #saveSnapshotSettingsWorker() that opens the settings file
  *  and locates the <Machine> node in there. See #saveSnapshotSettingsWorker()
- *  for more details. 
+ *  for more details.
  *
  *  @param aSnapshot    Snapshot to operate on
  *  @param aOpFlags     Operation to perform, one of SaveSS_NoOp, SaveSS_AddOp
@@ -4854,9 +4857,9 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
     do
     {
         ComAssertBreak (machineNode, rc = E_FAIL);
-        
+
         rc = saveSnapshotSettingsWorker (machineNode, aSnapshot, aOpFlags);
-        
+
         CFGLDRReleaseNode (machineNode);
     }
     while (0);
@@ -4896,7 +4899,7 @@ HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
     AssertReturn (aMachineNode, E_FAIL);
 
     AssertReturn (isLockedOnCurrentThread(), E_FAIL);
-    
+
     int op = aOpFlags & SaveSS_OpMask;
     AssertReturn (
         (aSnapshot && (op == SaveSS_AddOp || op == SaveSS_UpdateAttrsOp ||
@@ -5531,11 +5534,11 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
 #ifdef __WIN__
                     Assert (!name.isNull());
 #endif
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
                     if (!name.isEmpty())
 #endif
                         CFGLDRSetBSTR (attachmentNode, "name", name);
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
                     const Bstr &tapSetupApp =
                         mNetworkAdapters [slot]->data()->mTAPSetupApplication;
                     if (!tapSetupApp.isEmpty())
@@ -5544,7 +5547,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                         mNetworkAdapters [slot]->data()->mTAPTerminateApplication;
                     if (!tapTerminateApp.isEmpty())
                         CFGLDRSetBSTR (attachmentNode, "TAPTerminate", tapTerminateApp);
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
                     break;
                 }
                 case NetworkAttachmentType_InternalNetworkAttachment:
@@ -6582,7 +6585,7 @@ bool Machine::isInOwnDir (Utf8Str *aSettingsDir /* = NULL */)
     /* if we don't rename anything on name change, return false shorlty */
     if (!mUserData->mNameSync)
         return false;
-    
+
     if (aSettingsDir)
         *aSettingsDir = settingsDir;
 
@@ -6906,7 +6909,7 @@ HRESULT SessionMachine::FinalConstruct()
 
 #if defined(__WIN__)
     mIPCSem = NULL;
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     mIPCSem = -1;
 #endif
 
@@ -6945,7 +6948,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
     mIPCSem = ::CreateMutex (NULL, FALSE, mIPCSemName);
     ComAssertMsgRet (mIPCSem, ("Cannot create IPC mutex, err=0x%08X", ::GetLastError()),
                      E_FAIL);
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     Utf8Str configFile = aMachine->mData->mConfigFileFull;
     char *pszConfigFile = NULL;
     RTStrUtf8ToCurrentCP (&pszConfigFile, configFile);
@@ -7049,7 +7052,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         if (mIPCSem)
             ::CloseHandle (mIPCSem);
         mIPCSem = NULL;
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         if (mIPCSem >= 0)
             ::semctl (mIPCSem, 0, IPC_RMID);
         mIPCSem = -1;
@@ -7161,7 +7164,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     /* remove the association between the peer machine and this session machine */
     Assert (mData->mSession.mMachine == this ||
             aReason == Uninit::Unexpected);
-    
+
     /* reset the rest of session data */
     mData->mSession.mMachine.setNull();
     mData->mSession.mState = SessionState_SessionClosed;
@@ -7171,7 +7174,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     if (mIPCSem)
         ::CloseHandle (mIPCSem);
     mIPCSem = NULL;
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     if (mIPCSem >= 0)
         ::semctl (mIPCSem, 0, IPC_RMID);
     mIPCSem = -1;
@@ -7228,7 +7231,7 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
 #if defined(__WIN__)
     mIPCSemName.cloneTo (id);
     return S_OK;
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     mData->mConfigFileFull.cloneTo (id);
     return S_OK;
 #else
@@ -7248,9 +7251,9 @@ STDMETHODIMP SessionMachine::GetLogFolder (BSTR *aLogFolder)
 
     Utf8Str logFolder;
     getLogFolder (logFolder);
-    
+
     Bstr (logFolder).cloneTo (aLogFolder);
-    
+
     return S_OK;
 }
 
@@ -7359,7 +7362,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
         /* The direct session is being normally closed by the client process
          * ----------------------------------------------------------------- */
-         
+
         /* go to the closing state (essential for all open*Session() calls and
          * for #checkForDeath()) */
         Assert (mData->mSession.mState == SessionState_SessionOpen);
@@ -7960,7 +7963,7 @@ bool SessionMachine::checkForDeath()
         }
 
         AutoLock alock (this);
-        
+
         /*
          *  Determine the reason of death: if the session state is Closing here,
          *  everything is fine. Otherwise it means that the client did not call
@@ -7973,7 +7976,7 @@ bool SessionMachine::checkForDeath()
         reason = mData->mSession.mState == SessionState_SessionClosing ?
                  Uninit::Normal :
                  Uninit::Abnormal;
-        
+
 #if defined(__WIN__)
 
         AssertMsg (mIPCSem, ("semaphore must be created"));
@@ -7995,7 +7998,7 @@ bool SessionMachine::checkForDeath()
 
         rc = true;
 
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
         AssertMsg (mIPCSem >= 0, ("semaphore must be created"));
 
@@ -8411,7 +8414,7 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask &aTask)
 
         /* finalize the progress after setting the state, for consistency */
         mSnapshotData.mServerProgress->notifyComplete (rc);
-        
+
         endTakingSnapshot (SUCCEEDED (rc));
     }
     else
@@ -9273,8 +9276,8 @@ HRESULT SessionMachine::updateMachineStateOnClient()
 
         if (mData->mSession.mState == SessionState_SessionClosing)
             return S_OK;
-        
-        AssertReturn (!directControl.isNull(), E_FAIL); 
+
+        AssertReturn (!directControl.isNull(), E_FAIL);
     }
 
     return directControl->UpdateMachineState (mData->mMachineState);

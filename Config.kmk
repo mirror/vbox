@@ -1410,6 +1410,7 @@ ifeq ($(BUILD_TARGET),win)
 	/DISALLOWLIB:libcmtd.lib \
 	/DISALLOWLIB:libcmt.lib
  TEMPLATE_VBOXMAINEXE_LIBS               = \
+	$(LIB_RUNTIME) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
@@ -1428,22 +1429,22 @@ TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprof
  ifeq ($(BUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m $(LIB_UUID) rt
  else ifeq ($(BUILD_TARGET),l4)
-TEMPLATE_VBOXMAINEXE_LIBS                =
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 # no libs as yet in l4 target - must be added later
  else ifeq ($(BUILD_TARGET),os2)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC3OMF
-TEMPLATE_VBOXMAINEXE_LIBS                =
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else ifeq ($(BUILD_TARGET),darwin)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC4MACHO
-TEMPLATE_VBOXMAINEXE_LIBS                =
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin      = -bind_at_load -framework Carbon
  else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC3
-TEMPLATE_VBOXMAINEXE_LIBS                =
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else ifeq ($(BUILD_TARGET),solaris)
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC3PLAIN
-TEMPLATE_VBOXMAINEXE_LIBS                = rt
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =

@@ -252,7 +252,7 @@ public:
     HRESULT updateSettings (const char *aOldPath, const char *aNewPath);
 
     const Bstr &settingsFileName() { return mData.mCfgFile.mName; }
-    
+
     /* for VirtualBoxSupportErrorInfoImpl */
     static const wchar_t *getComponentName() { return L"VirtualBox"; }
 
@@ -352,7 +352,7 @@ private:
         ClientWatcherData()
 #if defined(__WIN__)
             : mUpdateReq (NULL)
-#elif defined(__LINUX__)
+#else
             : mUpdateReq (NIL_RTSEMEVENT)
 #endif
             , mThread (NIL_RTTHREAD) {}
@@ -360,7 +360,7 @@ private:
         // const objects not requiring locking
 #if defined(__WIN__)
         const HANDLE mUpdateReq;
-#elif defined(__LINUX__)
+#else
         const RTSEMEVENT mUpdateReq;
 #endif
         const RTTHREAD mThread;

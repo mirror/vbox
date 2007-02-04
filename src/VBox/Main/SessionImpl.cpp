@@ -21,6 +21,9 @@
 
 #if defined(__WIN__)
 #elif defined(__LINUX__)
+#endif
+
+#ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
 #   include <errno.h>
 #   include <sys/types.h>
 #   include <sys/stat.h>
@@ -90,7 +93,7 @@ HRESULT Session::init()
 #if defined(__WIN__)
     mIPCSem = NULL;
     mIPCThreadSem = NULL;
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     mIPCSem = -1;
 #endif
 
@@ -626,7 +629,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
         mType = SessionType_InvalidSessionType;
 #if defined(__WIN32__)
         Assert (!mIPCSem && !mIPCThreadSem);
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         Assert (mIPCSem == -1);
 #endif
         LogFlowThisFuncLeave();
@@ -769,7 +772,7 @@ HRESULT Session::grabIPCSemaphore()
         rc = E_FAIL;
     }
 
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
     Utf8Str semName = ipcId;
     char *pszSemName = NULL;
@@ -810,7 +813,7 @@ void Session::releaseIPCSemaphore()
         ::WaitForSingleObject (mIPCThreadSem, INFINITE);
         ::CloseHandle (mIPCThreadSem);
     }
-#elif defined(__LINUX__)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     if (mIPCSem >= 0)
     {
         ::sembuf sop = { 0, 1, SEM_UNDO };

@@ -66,6 +66,14 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
             return setError (E_ACCESSDENIED, tr ("The console is not powered up")); \
     } while (0)
 
+/** @def VBOX_WITH_UNIXY_TAP_NETWORKING
+ *  Unixy style TAP networking. This is defined in the Makefile since it's also
+ *  used by NetworkAdapterImpl.h/cpp.
+ */
+#ifdef __DOXYGEN__
+# define VBOX_WITH_UNIXY_TAP_NETWORKING
+#endif
+
 // Console
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -394,7 +402,7 @@ private:
 
 #ifdef VRDP_MC
     int m_cAudioRefs;
-    
+
     static DECLCALLBACK(int)    vrdp_ClientLogon (void *pvUser, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     static DECLCALLBACK(void)   vrdp_ClientConnect (void *pvUser, uint32_t u32ClientId);
     static DECLCALLBACK(void)   vrdp_ClientDisconnect (void *pvUser, uint32_t u32ClientId, uint32_t fu32Intercepted);
@@ -462,7 +470,7 @@ private:
     PPDMLED     mapFDLeds[2];
     PPDMLED     mapIDELeds[4];
     PPDMLED     mapNetworkLeds[8];
-#ifdef __LINUX__
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     Utf8Str     maTAPDeviceName[8];
     RTFILE      maTapFD[8];
 #endif
