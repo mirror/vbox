@@ -68,7 +68,7 @@
 #include <iprt/time.h>
 #ifdef IN_RING3
 #include <iprt/mem.h>
-#include <iprt/semaphore.h>
+#include <iprt/req.h>
 #endif
 
 #include "Builtins.h"
@@ -230,7 +230,7 @@ struct PCNetState_st
 
 #ifdef PCNET_ASYNC_SEND
     /** Async send thread */
-    RTSEMEVENT                          hEventSemSend;
+    PRTREQQUEUE                         pSendQueue;
     RTTHREAD                            hSendThread;
 #endif
 
@@ -295,10 +295,6 @@ struct PCNetState_st
     STAMCOUNTER                         StatRingWriteOutsideRangeHC;
     STAMCOUNTER                         StatRingWriteOutsideRangeR0;
     STAMCOUNTER                         StatRingWriteOutsideRangeGC;
-# endif
-# ifdef PCNET_ASYNC_SEND
-    STAMCOUNTER                         StatSyncSend;
-    STAMCOUNTER                         StatAsyncSend;
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 };
@@ -1786,6 +1782,19 @@ DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pData)
 }
 
 #ifdef IN_RING3
+
+# ifdef PCNET_ASYNC_SEND
+/**
+ *  Send packet to the network driver.
+ */
+DECLCALLBACK(void) pcnetSendAsyncPacket(PCNetState *pData, const void *pvBuf, unsigned cb)
+{
+    Assert(pData && pData->pDrv && pData->pDrv->pfnSend);
+
+    pData->pDrv->pfnSend(pData->pDrv, pvBuf, cb);
+}
+# endif
+
 /**
  * Transmit queue consumer
  * This is just a very simple way of delaying sending to R3.
@@ -1799,20 +1808,6 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     int         rc;
-
-#ifdef PCNET_ASYNC_SEND
-    /* If the calling threads isn't the async send thread and our queue isn't yet full, then kick off async sending. */
-    if (    pData->iFrame  != ELEMENTS(pData->aFrames)
-        &&  RTThreadSelf() != pData->hSendThread)
-    {
-        STAM_COUNTER_INC(&pData->StatAsyncSend);
-        rc = RTSemEventSignal(pData->hEventSemSend);
-        AssertRC(rc);
-        return VINF_SUCCESS;
-    }
-    if (RTThreadSelf() != pData->hSendThread)
-        STAM_COUNTER_INC(&pData->StatSyncSend);
-#endif /* PCNET_ASYNC_SEND */
 
     STAM_PROFILE_START(&pData->StatXmitQueue, a);
     STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
@@ -1831,7 +1826,16 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
             pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
         if (pcnetIsLinkUp(pData))
         {
+#ifdef PCNET_ASYNC_SEND
+
+            /** @note we make a copy here as we don't wish to have to enter the critical section in the async send thread during the lengthy send process. */
+            uint8_t *pPacket = RTMemTmpAlloc(pData->aFrames[i].cb);
+            memcpy(pPacket, pv, pData->aFrames[i].cb);
+            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT, pcnetSendAsyncPacket, pData, pPacket, (unsigned)pData->aFrames[i].cb);
+            AssertRC(rc);
+#else
             pData->pDrv->pfnSend(pData->pDrv, pv, pData->aFrames[i].cb);
+#endif /* PCNET_ASYNC_SEND */
             LOG_PACKET("xmit", pv, pData->aFrames[i].cb);
         }
     }
@@ -1867,15 +1871,12 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
 {
     PCNetState *pData = (PCNetState *)pvUser;
-    RTSEMEVENT  hEventSemSend = pData->hEventSemSend;
 
     while(1)
     {
-        int rc = RTSemEventWait(pData->hEventSemSend, RT_INDEFINITE_WAIT);
+        int rc = RTReqProcess(pQueue);
         if (VBOX_FAILURE(rc))
             break;
-
-        pcnetXmitQueueConsumer(PCNETSTATE_2_DEVINS(pData), NULL);
     }
     return VINF_SUCCESS;
 }
@@ -3943,6 +3944,10 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+#ifdef PCNET_ASYNC_SEND
+    if (pData->pSendQueue)
+        RTReqDestroyQueue(pData->pSendQueue);
+#endif
     PDMR3CritSectDelete(&pData->CritSect);
     return VINF_SUCCESS;
 }
@@ -4202,18 +4207,15 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pcnetHardReset(pData);
 
 #ifdef PCNET_ASYNC_SEND
-    /* Create event semaphore for the async send thread. */
-    rc = RTSemEventCreate(&pData->hEventSemSend);
+    /* Create send queue for the async send thread. */
+    rc = RTReqCreateQueue(&pData->pSendQueue);
     AssertRC(rc);
 
     /* Create asynchronous thread */
     rc = RTThreadCreate(&pData->hSendThread, pcnetAsyncSend, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "PCNET_SEND");
     AssertRC(rc);
 
-    Assert(pData->hSendThread != NIL_RTTHREAD && pData->hEventSemSend != NIL_RTSEMEVENT);
-
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatAsyncSend,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of async send operations",        "/Devices/PCNet%d/Send/Async", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatSyncSend,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of sync send operations",         "/Devices/PCNet%d/Send/Sync", iInstance);
+    Assert(pData->hSendThread != NIL_RTTHREAD && pData->pSendQueue);
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
