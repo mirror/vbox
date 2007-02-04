@@ -68,8 +68,8 @@
 #include <iprt/time.h>
 #ifdef IN_RING3
 #include <iprt/mem.h>
-#include <iprt/req.h>
 #endif
+#include <iprt/req.h>
 
 #include "Builtins.h"
 #include "vl_vbox.h"
@@ -85,7 +85,7 @@
 #define PCNET_DELAY_INT
 
 /* Enable to send packets in a seperate thread. */
-/* #define PCNET_ASYNC_SEND */
+/* #define PCNET_ASYNC_SEND  */
 
 #ifdef __GNUC__
 #define PACKED __attribute__ ((packed))
@@ -1871,10 +1871,11 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
 {
     PCNetState *pData = (PCNetState *)pvUser;
+    PRTREQQUEUE pQueue = pData->pSendQueue;
 
     while(1)
     {
-        int rc = RTReqProcess(pQueue);
+        int rc = RTReqProcess(pQueue, RT_INDEFINITE_WAIT);
         if (VBOX_FAILURE(rc))
             break;
     }
