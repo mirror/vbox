@@ -87,7 +87,8 @@ TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
                                      -T$(L4_DIR)/lib/x86_586/main_rel.ld -nostdlib \
                                      # -Wl,--whole-archive,--no-allow-shlib-undefined
 TEMPLATE_XPCOM_LIBS.l4             = $(VBOX_GCC_LIBGCC)
-TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
+TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst))) \
+                                     $(PATH_VBox-xpcom-string)/idl_ts
 
 
 #
@@ -141,7 +142,7 @@ TEMPLATE_XPCOMBLDPROG_INCS              = $(PATH_BIN)/sdk/include \
                                           $(PATH_BIN)/sdk/include/xpcom/string \
                                           $(PATH_BIN)/sdk/include/xpcom/xpcom \
                                           $(PATH_BIN)/sdk/include/xpcom/ipcd
-TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(TEMPLATE_XPCOM_ORDERDEPS)
+TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
 #
@@ -1279,7 +1280,7 @@ OTHER_CLEAN += \
 	$(XPTFILES)
 
 # combined typelib library
-$(PATH_BIN)/VBoxXPCOMBase.xpt: $(XPTFILES)
+$(PATH_BIN)/VBoxXPCOMBase.xpt: $(XPTFILES) | $(TARGET_xp_link)
 	$(call MSG_L1,Linking $@)
 	$(QUIET)$(TARGET_xpt_link) $@ $^
 
@@ -1302,7 +1303,7 @@ $(PATH_VBox-xpcom-nspr)/_pl_bld.h:
 XPIDL_INCS = -I xpcom/base/ -I xpcom/ds/ -I xpcom/components/ -I xpcom/io/ -I xpcom/threads/ -I xpcom/reflect/xptinfo/public/
 define def_IDL
 $(addprefix $(PATH_BIN)/sdk/include/,$(notdir $(subst .idl,.h,$(idl)))) \
-            $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): $(idl)
+            $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): $(idl) | $(TARGET_xpidl)
 	$$(call MSG_L1,xpidl $$<)
 	$$(QUIET)$(MKDIR) -p $(PATH_BIN)/sdk/include $(PATH_BIN)/sdk/idl
 	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
@@ -1321,4 +1322,3 @@ $(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(PATH_BIN)/sdk/include/,$(notdir 
 # Manual dependency...
 xpcom/string/src/nsAString.cpp: $(PATH_VBox-xpcom-string)/idl_ts
 
-#/home/bird/pdp8/coding/vbox/svn/trunk/out/linux.x86/release/obj/src/libs/xpcom18a4/VBoxXPCOMGlue/xpcom/glue/nsMemory.o
