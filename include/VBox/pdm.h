@@ -372,6 +372,17 @@ PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect);
 PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
 
 /**
+ * Try enter a critical section.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_SEM_BUSY if the critsect was owned.
+ * @returns VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
+ * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
+ * @param   pCritSect   The critical section.
+ */
+PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
+
+/**
  * Deletes the critical section.
  *
  * @returns VBox status code.
