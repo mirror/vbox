@@ -42,11 +42,15 @@
 
 #include <sys/syscall.h>
 
+#ifdef XP_MACOSX
+#include <AvailabilityMacros.h>
+#endif
+
 #define PR_LINKER_ARCH	"darwin"
 #define _PR_SI_SYSNAME  "DARWIN"
-#ifdef i386
+#ifdef __i386__
 #define _PR_SI_ARCHITECTURE "x86"
-#else
+#elif defined(__ppc__)
 #define _PR_SI_ARCHITECTURE "ppc"
 #endif
 #define PR_DLL_SUFFIX		".dylib"
@@ -61,7 +65,7 @@
 #define USE_MACH_DYLD
 #define _PR_HAVE_SOCKADDR_LEN  
 #define _PR_STAT_HAS_ST_ATIMESPEC
-#define _PR_NO_LARGE_FILES
+#define _PR_HAVE_LARGE_OFF_T
 #define PR_HAVE_SYSV_NAMED_SHARED_MEMORY
 
 #define _PR_INET6
@@ -77,16 +81,25 @@
  * if you pass an IPv4-mapped IPv6 address to it.
  */
 #define _PR_GHBA_DISALLOW_V4MAPPED
+#ifdef XP_MACOSX
+#if !defined(MAC_OS_X_VERSION_10_3) || \
+    MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_3
 /*
  * socket(AF_INET6) fails with EPROTONOSUPPORT on Mac OS X 10.1.
  * IPv6 under OS X 10.2 and below is not complete (see bug 222031).
  */
-#if MACOS_DEPLOYMENT_TARGET < 100300
 #define _PR_INET6_PROBE
-#endif
+#endif /* DT < 10.3 */
+#if defined(MAC_OS_X_VERSION_10_2) && \
+    MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_2
 /* Mac OS X 10.2 has inet_ntop and inet_pton. */
-#if MACOS_DEPLOYMENT_TARGET >= 100200
 #define _PR_HAVE_INET_NTOP
+#endif /* DT >= 10.2 */
+#endif /* XP_MACOSX */
+#define _PR_IPV6_V6ONLY_PROBE
+/* The IPV6_V6ONLY socket option is not defined on Mac OS X 10.1. */
+#ifndef IPV6_V6ONLY
+#define IPV6_V6ONLY 27
 #endif
 
 #if defined(__ppc__)
@@ -100,7 +113,18 @@ extern PRInt32 _PR_DarwinPPC_AtomicSet(PRInt32 *val, PRInt32 newval);
 #define _MD_ATOMIC_SET(val, newval) _PR_DarwinPPC_AtomicSet(val, newval)
 extern PRInt32 _PR_DarwinPPC_AtomicAdd(PRInt32 *ptr, PRInt32 val);
 #define _MD_ATOMIC_ADD(ptr, val)    _PR_DarwinPPC_AtomicAdd(ptr, val)
-#endif /* __ppc__ */
+#elif defined(__i386__)
+#define _PR_HAVE_ATOMIC_OPS
+#define _MD_INIT_ATOMIC()
+extern PRInt32 _PR_Darwin_x86_AtomicIncrement(PRInt32 *val);
+#define _MD_ATOMIC_INCREMENT(val)   _PR_Darwin_x86_AtomicIncrement(val)
+extern PRInt32 _PR_Darwin_x86_AtomicDecrement(PRInt32 *val);
+#define _MD_ATOMIC_DECREMENT(val)   _PR_Darwin_x86_AtomicDecrement(val)
+extern PRInt32 _PR_Darwin_x86_AtomicSet(PRInt32 *val, PRInt32 newval);
+#define _MD_ATOMIC_SET(val, newval) _PR_Darwin_x86_AtomicSet(val, newval)
+extern PRInt32 _PR_Darwin_x86_AtomicAdd(PRInt32 *ptr, PRInt32 val);
+#define _MD_ATOMIC_ADD(ptr, val)    _PR_Darwin_x86_AtomicAdd(ptr, val)
+#endif /* __i386__ */
 
 #define USE_SETJMP
 
