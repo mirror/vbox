@@ -1831,7 +1831,7 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
             /** @note we make a copy here as we don't wish to have to enter the critical section in the async send thread during the lengthy send process. */
             void *pPacket = RTMemTmpAlloc(pData->aFrames[i].cb);
             memcpy(pPacket, pv, pData->aFrames[i].cb);
-            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT | RTREQFLAGS_VOID, (PFNRT)pcnetSendAsyncPacket, pData, pPacket, (unsigned)pData->aFrames[i].cb);
+            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT | RTREQFLAGS_VOID, (PFNRT)pcnetSendAsyncPacket, 3, pData, pPacket, (unsigned)pData->aFrames[i].cb);
             AssertRC(rc);
 #else
             pData->pDrv->pfnSend(pData->pDrv, pv, pData->aFrames[i].cb);
