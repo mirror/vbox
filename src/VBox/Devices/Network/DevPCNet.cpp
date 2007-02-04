@@ -2826,6 +2826,7 @@ static void pcnetHardReset(PCNetState *pData)
     pData->aBCR[BCR_FDC  ] = 0x0000;
     pData->aBCR[BCR_BSBC ] = 0x9001;
     pData->aBCR[BCR_EECAS] = 0x0002;
+    pData->aCSR[58       ] = /* CSR58 is an alias for BCR20 */
     pData->aBCR[BCR_SWS  ] = 0x0200;
     pData->iLog2DescSize   = 3;
     pData->aBCR[BCR_PLAT ] = 0xff06;
