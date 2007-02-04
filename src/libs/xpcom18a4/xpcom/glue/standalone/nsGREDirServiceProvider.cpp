@@ -88,13 +88,13 @@ PRBool GRE_GetPathFromConfigFile(const char* dirname, char* buffer);
 
 //*****************************************************************************
 // nsGREDirServiceProvider::nsISupports
-//*****************************************************************************   
+//*****************************************************************************
 
 NS_IMPL_ISUPPORTS1(nsGREDirServiceProvider, nsIDirectoryServiceProvider)
-  
+
 //*****************************************************************************
 // nsGREDirServiceProvider::nsIDirectoryServiceProvider
-//*****************************************************************************   
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsGREDirServiceProvider::GetFile(const char *prop, PRBool *persistant, nsIFile **_retval)
@@ -124,7 +124,7 @@ nsGREDirServiceProvider::GetFile(const char *prop, PRBool *persistant, nsIFile *
 
 //*****************************************************************************
 // Implementations from nsXPCOMGlue.h and helper functions.
-//*****************************************************************************   
+//*****************************************************************************
 
 PRBool
 GRE_GetCurrentProcessDirectory(char* buffer)
@@ -162,7 +162,11 @@ GRE_GetCurrentProcessDirectory(char* buffer)
             }
             CFRelease(bundleURL);
         }
+#if 0 /* bird: Causes crashes in objc_msgSend() later if released. I dunno why really.
+               Something could be seriously screwed up somewhere else, but this'll have
+               to do for now. (appBundle isn't released in the other place it's used.) */
         CFRelease(appBundle);
+#endif
     }
     if (*buffer) return PR_TRUE;
 
@@ -177,7 +181,7 @@ GRE_GetCurrentProcessDirectory(char* buffer)
         char buf2[MAXPATHLEN + 3];
         buf2[0] = '\0';
 
-        /* 
+        /*
          * Env.var. VBOX_XPCOM_HOME first.
          */
         char *psz = PR_GetEnv("VBOX_XPCOM_HOME");
@@ -185,7 +189,7 @@ GRE_GetCurrentProcessDirectory(char* buffer)
         {
             if (strlen(psz) < MAXPATHLEN)
             {
-                if (!realpath(psz, buf2)) 
+                if (!realpath(psz, buf2))
                     strcpy(buf2, psz);
                 strcat(buf2, "/x"); /* for the filename stripping */
             }
@@ -212,7 +216,7 @@ GRE_GetCurrentProcessDirectory(char* buffer)
         {
             char buf[MAXPATHLEN];
             int cchLink = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
-            if (cchLink > 0 || cchLink != sizeof(buf) - 1) 
+            if (cchLink > 0 || cchLink != sizeof(buf) - 1)
              {
                 buf[cchLink] = '\0';
                 if (!realpath(buf, buf2))
@@ -231,7 +235,7 @@ GRE_GetCurrentProcessDirectory(char* buffer)
                 p[p == buf2] = '\0';
             #ifdef DEBUG
                 printf("debug: (1) VBOX_XPCOM_HOME=%s\n", buf2);
-            #endif 
+            #endif
                 strcpy(szPath, buf2);
                 fPathSet = true;
             }
@@ -251,10 +255,10 @@ GRE_GetCurrentProcessDirectory(char* buffer)
 
     // The MOZ_DEFAULT_VBOX_XPCOM_HOME variable can be set at configure time with
     // a --with-default-mozilla-five-home=foo autoconf flag.
-    // 
+    //
     // The idea here is to allow for builds that have a default VBOX_XPCOM_HOME
     // regardless of the environment.  This makes it easier to write apps that
-    // embed mozilla without having to worry about setting up the environment 
+    // embed mozilla without having to worry about setting up the environment
     //
     // We do this py putenv()ing the default value into the environment.  Note that
     // we only do this if it is not already set.
@@ -332,7 +336,7 @@ GRE_GetCurrentProcessDirectory(char* buffer)
     }
 
 #endif
-    
+
   return PR_FALSE;
 }
 
@@ -349,9 +353,9 @@ GRE_GetGREPath()
   // we've already done this...
   if (*sGRELocation)
     return sGRELocation;
-    
+
   char buffer[MAXPATHLEN];
-    
+
   // If the xpcom library exists in the current process directory,
   // then we will not use any GRE.  The assumption here is that the
   // GRE is in the same directory as the executable.
@@ -361,7 +365,7 @@ GRE_GetGREPath()
 
     struct stat libStat;
     int statResult = stat(buffer, &libStat);
-        
+
     if (statResult != -1) {
       //found our xpcom lib in the current process directory
       buffer[pathlen] = '\0';
@@ -394,7 +398,7 @@ GRE_GetGREPath()
   env = PR_GetEnv("HOME");
   if (env && *env) {
     sprintf(buffer, "%s" XPCOM_FILE_PATH_SEPARATOR GRE_CONF_NAME, env);
-    
+
     if (GRE_GetPathFromConfigFile(buffer, sGRELocation)) {
       return sGRELocation;
     }
@@ -419,12 +423,12 @@ GRE_GetGREPath()
     return sGRELocation;
   }
 #endif
-  
+
 #if XP_WIN32
   char szKey[256];
   HKEY hRegKey = NULL;
   DWORD dwLength = MAXPATHLEN;
-    
+
   // A couple of key points here:
   // 1. Note the usage of the "Software\\Mozilla\\GRE" subkey - this allows
   //    us to have multiple versions of GREs on the same machine by having
@@ -437,7 +441,7 @@ GRE_GetGREPath()
   // more info.
   //
   strcpy(szKey, GRE_WIN_REG_LOC GRE_BUILD_ID);
-    
+
   if (::RegOpenKeyEx(HKEY_CURRENT_USER, szKey, 0, KEY_QUERY_VALUE, &hRegKey) == ERROR_SUCCESS) {
     if (::RegQueryValueEx(hRegKey, "GreHome", NULL, NULL, (BYTE *)sGRELocation, &dwLength) != ERROR_SUCCESS) {
       *sGRELocation = '\0';
@@ -566,7 +570,7 @@ GRE_GetGREDirectory(nsILocalFile* *_retval)
 
 static char sXPCOMPath[MAXPATHLEN];
 
-extern "C" const char* 
+extern "C" const char*
 GRE_GetXPCOMPath()
 {
   const char* grePath = GRE_GetGREPath();
