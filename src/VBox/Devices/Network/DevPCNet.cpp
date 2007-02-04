@@ -1787,8 +1787,8 @@ DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pData)
 /**
  *  Send packet to the network driver.
  */
-DECLCALLBACK(void) pcnetSendAsyncPacket(PCNetState *pData, const void *pvBuf, unsigned cb)
-{
+static DECLCALLBACK(void) pcnetSendAsyncPacket(PCNetState *pData, const void *pvBuf, unsigned cb)
+{ 
     Assert(pData && pData->pDrv && pData->pDrv->pfnSend);
 
     pData->pDrv->pfnSend(pData->pDrv, pvBuf, cb);
@@ -1829,9 +1829,9 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 #ifdef PCNET_ASYNC_SEND
 
             /** @note we make a copy here as we don't wish to have to enter the critical section in the async send thread during the lengthy send process. */
-            uint8_t *pPacket = RTMemTmpAlloc(pData->aFrames[i].cb);
+            void *pPacket = RTMemTmpAlloc(pData->aFrames[i].cb);
             memcpy(pPacket, pv, pData->aFrames[i].cb);
-            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT, pcnetSendAsyncPacket, pData, pPacket, (unsigned)pData->aFrames[i].cb);
+            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT | RTREQFLAGS_VOID, (PFNRT)pcnetSendAsyncPacket, pData, pPacket, (unsigned)pData->aFrames[i].cb);
             AssertRC(rc);
 #else
             pData->pDrv->pfnSend(pData->pDrv, pv, pData->aFrames[i].cb);
