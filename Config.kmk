@@ -1436,6 +1436,7 @@ TEMPLATE_VBOXMAINEXE_LIBS                =
  else ifeq ($(BUILD_TARGET),darwin)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC4MACHO
 TEMPLATE_VBOXMAINEXE_LIBS                =
+TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin      = -bind_at_load -framework Carbon
  else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC3
 TEMPLATE_VBOXMAINEXE_LIBS                =
@@ -1464,6 +1465,7 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
   TEMPLATE_VBOXMAIN_LDFLAGS  = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
  endif
 endif
+TEMPLATE_VBOXMAIN_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
 
 #
 # Template for building executables that is part of the VBox MAIN component.
