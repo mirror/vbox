@@ -71,7 +71,7 @@ typedef enum RTREQSTATE
 typedef enum RTREQFLAGS
 {
     /** The request returns a iprt status code. */
-    RTREQFLAGS_VBOX_STATUS  = 0,
+    RTREQFLAGS_IPRT_STATUS  = 0,
     /** The request is a void request and have no status code. */
     RTREQFLAGS_VOID         = 1,
     /** Return type mask. */
@@ -134,10 +134,10 @@ typedef struct RTREQQUEUE
     volatile PRTREQ         pReqs;
     /** The last index used during alloc/free. */
     volatile uint32_t       iReqFree;
-    /** Array of pointers to lists of free request packets. Atomic. */
-    volatile PRTREQ         apReqFree[9];
     /** Number of free request packets. */
     volatile uint32_t       cReqFree;
+    /** Array of pointers to lists of free request packets. Atomic. */
+    volatile PRTREQ         apReqFree[9];
     /** Requester event sem.
      * The request can use this event semaphore to wait/poll for new requests.
      */
