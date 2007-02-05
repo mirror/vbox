@@ -147,9 +147,6 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies)
 
         /*
          * Process the requests.
-         *
-         * Since this is a FF worker certain rules applies to the
-         * status codes. See the EM section in VBox/err.h and EM.cpp for details.
          */
         while (pReqs)
         {
@@ -197,7 +194,7 @@ RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNR
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = RTReqCallV(pQueue, ppReq, cMillies, RTREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
+    int rc = RTReqCallV(pQueue, ppReq, cMillies, RTREQFLAGS_IPRT_STATUS, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -502,7 +499,7 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
             ASMAtomicXchgSize(&pReq->pNext, NULL);
             pReq->enmState = RTREQSTATE_ALLOCATED;
             pReq->iStatus  = VERR_RT_REQUEST_STATUS_STILL_PENDING;
-            pReq->fFlags   = RTREQFLAGS_VBOX_STATUS;
+            pReq->fFlags   = RTREQFLAGS_IPRT_STATUS;
             pReq->enmType  = enmType;
 
             *ppReq = pReq;
@@ -537,7 +534,7 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
     pReq->enmState = RTREQSTATE_ALLOCATED;
     pReq->iStatus  = VERR_RT_REQUEST_STATUS_STILL_PENDING;
     pReq->fEventSemClear = true;
-    pReq->fFlags   = RTREQFLAGS_VBOX_STATUS;
+    pReq->fFlags   = RTREQFLAGS_IPRT_STATUS;
     pReq->enmType  = enmType;
 
     *ppReq = pReq;
@@ -741,7 +738,7 @@ RTDECL(int) RTReqWait(PRTREQ pReq, unsigned cMillies)
 /**
  * Process one request.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  *
  * @param   pReq        Request packet to process.
  */
