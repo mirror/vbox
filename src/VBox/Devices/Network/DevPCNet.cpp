@@ -238,6 +238,13 @@ struct PCNetState_st
     /** Async send thread */
     PRTREQQUEUE                         pSendQueue;
     RTTHREAD                            hSendThread;
+
+    struct
+    {
+        HCPTRTYPE(void *)               pBuffer;
+        uint32_t                        cb;
+        uint32_t                        fTaken;
+    } paMemCache[PCNET_TRQUEUE_DEPTH];
 #endif
 
     /** Access critical section. */
@@ -307,7 +314,10 @@ struct PCNetState_st
     STAMCOUNTER                         StatXmitSync;
     STAMCOUNTER                         StatXmitAsync;
     STAMCOUNTER                         StatXmitInTxThread;
-    STAMPROFILE                         StatXmitQueueAsync;
+    STAMPROFILE                         StatXmitQueueAsyncPrep;
+    STAMPROFILE                         StatXmitQueueAsyncReq;
+    STAMCOUNTER                         StatXmitQueueAsyncCacheMiss;
+    STAMCOUNTER                         StatXmitQueueAsyncCacheHit;
 #endif /* VBOX_WITH_STATISTICS */
 };
 
@@ -1799,7 +1809,7 @@ DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pData)
 /**
  *  Send packet(s) to the network driver.
  */
-static DECLCALLBACK(void) pcnetSendAsyncPacket(PCNetState *pData, unsigned cFrames, uint32_t *pacbFrame, uint8_t *pBuf)
+static DECLCALLBACK(void) pcnetSendAsyncPacket(PCNetState *pData, unsigned iCacheSlot, unsigned cFrames, uint32_t *pacbFrame, uint8_t *pBuf)
 { 
     Assert(pData && pData->pDrv && pData->pDrv->pfnSend);
     Assert(cFrames && pacbFrame && pBuf);
@@ -1809,7 +1819,28 @@ static DECLCALLBACK(void) pcnetSendAsyncPacket(PCNetState *pData, unsigned cFram
         pData->pDrv->pfnSend(pData->pDrv, pBuf, pacbFrame[i]);        
         pBuf += RT_ALIGN_32(pacbFrame[i], 16);
     }
-    RTMemFree(pacbFrame);
+    if (iCacheSlot < ELEMENTS(pData->paMemCache))
+    {
+        pData->paMemCache[iCacheSlot].fTaken = 0;
+    }
+    else
+        RTMemFree(pacbFrame);
+
+#ifdef PCNET_DELAY_INT
+    if (cFrames)
+    {
+        /** @note this part needs to be protected; perhaps we can change the code to drop this requirement. */
+        int rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+        AssertReleaseRC(rc);
+
+        /* Update TXSTRT and TINT. */
+        pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
+        pData->aCSR[0] |= 0x0200;    /* set TINT */
+        pcnetUpdateIrq(pData);
+
+        PDMCritSectLeave(&pData->CritSect);
+    }
+#endif
 }
 # endif
 
@@ -1845,14 +1876,37 @@ static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
     if (pData->iFrame)
     {
         uint32_t        cbTotal = 0;
-        uint32_t       *pacbFrame;
+        uint32_t       *pacbFrame = 0;
         uint8_t        *pBuf;
+        unsigned        i, iCacheSlot = ~0;
 
-        STAM_PROFILE_START(&pData->StatXmitQueueAsync, b);
-        for (unsigned i = 0; i < pData->iFrame; i++)
+        STAM_PROFILE_START(&pData->StatXmitQueueAsyncPrep, b);
+        for (i = 0; i < pData->iFrame; i++)
             cbTotal += RT_ALIGN_32(pData->aFrames[i].cb, 16);
 
-        pacbFrame = (uint32_t *)RTMemAlloc(cbTotal + sizeof(uint32_t) * pData->iFrame);
+        /* Plus room for size array */
+        cbTotal += sizeof(uint32_t) * pData->iFrame;
+
+        /* See if there's a free cache entry. */
+        for (i=0;i<ELEMENTS(pData->paMemCache);i++)
+        {
+            if (    pData->paMemCache[i].cb >= cbTotal
+                && !pData->paMemCache[i].fTaken)
+            {
+                pData->paMemCache[i].fTaken = 1;
+                pacbFrame  = (uint32_t *)pData->paMemCache[i].pBuffer;
+                iCacheSlot = i;
+                break;
+            }
+        }
+        if (!pacbFrame)
+        {
+            STAM_COUNTER_INC(&pData->StatXmitQueueAsyncCacheMiss);
+            pacbFrame = (uint32_t *)RTMemAlloc(cbTotal);
+        }
+        else
+            STAM_COUNTER_INC(&pData->StatXmitQueueAsyncCacheHit);
+
         Assert(pacbFrame);
         pBuf     = (uint8_t *)&pacbFrame[pData->iFrame];
         /** @note we make a copy here as we don't wish to have to enter the critical section in the async send thread during the lengthy send process. */
@@ -1873,14 +1927,16 @@ static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
 
             LOG_PACKET("xmit", pv, pData->aFrames[i].cb);
         }
+        STAM_PROFILE_STOP(&pData->StatXmitQueueAsyncPrep, b);
+        STAM_PROFILE_START(&pData->StatXmitQueueAsyncReq, c);
         if (pcnetIsLinkUp(pData))
         {
             pBuf = (uint8_t *)&pacbFrame[pData->iFrame];
 
-            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT | RTREQFLAGS_VOID, (PFNRT)pcnetSendAsyncPacket, 4, pData, pData->iFrame, pacbFrame, pBuf);
+            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT | RTREQFLAGS_VOID, (PFNRT)pcnetSendAsyncPacket, 5, pData, iCacheSlot, pData->iFrame, pacbFrame, pBuf);
             AssertRC(rc);
         }
-        STAM_PROFILE_STOP(&pData->StatXmitQueueAsync, b);
+        STAM_PROFILE_STOP(&pData->StatXmitQueueAsyncReq, c);
     }
 #else
     for (unsigned i = 0; i < pData->iFrame; i++)
@@ -1897,8 +1953,6 @@ static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
             LOG_PACKET("xmit", pv, pData->aFrames[i].cb);
         }
     }
-#endif /* PCNET_ASYNC_SEND */
-
 #ifdef PCNET_DELAY_INT
     if (pData->iFrame)
     {
@@ -1914,6 +1968,8 @@ static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
         PDMCritSectLeave(&pData->CritSect);
     }
 #endif
+
+#endif /* PCNET_ASYNC_SEND */
 
     pData->fTransmitting = false;
 
@@ -4322,6 +4378,15 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRC(rc);
 
     Assert(pData->hSendThread != NIL_RTTHREAD && pData->pSendQueue);
+
+    /* Create some buffer memory to avoid allocating every time we process an async send packet. */
+    for (unsigned j=0;j<ELEMENTS(pData->paMemCache);j++)
+    {
+        pData->paMemCache[j].cb      = sizeof(pData->abFrameBuf) + sizeof(uint32_t) * ELEMENTS(pData->abFrameBuf);
+        pData->paMemCache[j].fTaken  = 0;
+        pData->paMemCache[j].pBuffer = RTMemAlloc(pData->paMemCache[j].cb);
+        Assert(pData->paMemCache[j].pBuffer);
+    }
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
@@ -4349,7 +4414,11 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueue,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue",         "/Devices/PCNet%d/XmitQueue", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueFlushGC,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue flushes from GC", "/Devices/PCNet%d/XmitQueueFlushGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsync,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue async",   "/Devices/PCNet%d/XmitQueueAsync", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncPrep, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue async",   "/Devices/PCNet%d/XmitQueueASPrep", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncReq,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue async",   "/Devices/PCNet%d/XmitQueueASReq", iInstance);
+
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncCacheMiss, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr asycn mem cache misses",     "/Devices/PCNet%d/Xmit/Cache/Miss", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncCacheHit,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr asycn mem cache hits",       "/Devices/PCNet%d/Xmit/Cache/Hit", iInstance);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatDeferredXmit,       STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of deferred xmits queue flushes", "/Devices/PCNet%d/Xmit/Deferred", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatDeferredXmitPending,  STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of pending deferred xmits queue flushes", "/Devices/PCNet%d/Xmit/DeferredP", iInstance);
