@@ -2251,6 +2251,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
             {
                 viewport()->setCursor (QCursor (hAlphaCursor));
                 ok = true;
+                DestroyIcon (hAlphaCursor);
             }
         }
 
