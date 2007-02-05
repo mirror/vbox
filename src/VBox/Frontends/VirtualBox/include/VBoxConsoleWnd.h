@@ -214,6 +214,7 @@ private:
     VBoxConsoleView *console;
     QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light;
     QIStateIndicator *mouse_state, *hostkey_state;
+    QIStateIndicator *autoresize_state;
     QHBox *hostkey_hbox;
     QLabel *hostkey_name;
 

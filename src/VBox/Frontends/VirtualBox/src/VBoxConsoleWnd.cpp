@@ -183,7 +183,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     vmAutoresizeGuestAction = new QAction (runningActions, "vmAutoresizeGuestAction");
     vmAutoresizeGuestAction->setIconSet (
-        VBoxGlobal::iconSet ("auto_resize_16px.png", "auto_resize_disabled_16px.png"));
+        VBoxGlobal::iconSet ("auto_resize_on_16px.png", "auto_resize_on_disabled_16px.png"));
     vmAutoresizeGuestAction->setToggleAction (true);
 
     vmAdjustWindowAction = new QAction (this, "vmAdjustWindowAction");
@@ -371,8 +371,14 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     usb_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("usb_read_16px.png"));
     usb_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("usb_write_16px.png"));
     usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
-    /* mouse */
+    /* auto resize state */
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
+    autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", WNoAutoErase);
+    autoresize_state->setStateIcon (0, QPixmap::fromMimeSource ("auto_resize_off_disabled_16px.png"));
+    autoresize_state->setStateIcon (1, QPixmap::fromMimeSource ("auto_resize_off_16px.png"));
+    autoresize_state->setStateIcon (2, QPixmap::fromMimeSource ("auto_resize_on_disabled_16px.png"));
+    autoresize_state->setStateIcon (3, QPixmap::fromMimeSource ("auto_resize_on_16px.png"));
+    /* mouse */
     mouse_state = new QIStateIndicator (0, indicatorBox, "mouse_state", WNoAutoErase);
     mouse_state->setStateIcon (0, QPixmap::fromMimeSource ("mouse_disabled_16px.png"));
     mouse_state->setStateIcon (1, QPixmap::fromMimeSource ("mouse_16px.png"));
@@ -380,7 +386,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     mouse_state->setStateIcon (3, QPixmap::fromMimeSource ("mouse_can_seamless_16px.png"));
     mouse_state->setStateIcon (4, QPixmap::fromMimeSource ("mouse_seamless_disabled_16px.png"));
     /* host key */
-    (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
     hostkey_hbox = new QHBox (indicatorBox, "hostkey_hbox");
     hostkey_hbox->setSpacing (3);
     hostkey_state = new QIStateIndicator (0, hostkey_hbox, "hostkey_state");
@@ -388,9 +393,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     hostkey_state->setStateIcon (1, QPixmap::fromMimeSource ("hostkey_captured_16px.png"));
     hostkey_state->setStateIcon (2, QPixmap::fromMimeSource ("hostkey_pressed_16px.png"));
     hostkey_state->setStateIcon (3, QPixmap::fromMimeSource ("hostkey_captured_pressed_16px.png"));
-    hostkey_name = new QLabel (
-        QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()), hostkey_hbox, "hostkey_name"
-    );
+    hostkey_name = new QLabel (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()),
+                               hostkey_hbox, "hostkey_name");
     /* add to statusbar */
     statusBar()->addWidget (indicatorBox, 0, true);
 
@@ -1149,10 +1153,19 @@ void VBoxConsoleWnd::languageChange()
 
     /* status bar widgets */
 
+    QToolTip::add (autoresize_state,
+        tr ("Indicates whether the guest display auto-resize function is On "
+            "(<img src=auto_resize_on_16px.png/>) or Off (<img src=auto_resize_off_16px.png/>)"));
     QToolTip::add (mouse_state,
-        tr ("Indicates whether the host mouse pointer is captured by the guest OS"));
+        tr ("Indicates whether the host mouse pointer is captured by the guest OS:<br>"
+            "<nobr><img src=mouse_disabled_16px.png/>&nbsp;&nbsp;poinyrt is not captured</nobr><br>"
+            "<nobr><img src=mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
+            "<nobr><img src=mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
+            "<nobr><img src=mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
+            "<nobr><img src=mouse_seamless_disabled_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr>"));
     QToolTip::add (hostkey_state,
-        tr ("Indicates whether the keyboard is captured by the guest OS"));
+        tr ("Indicates whether the keyboard is captured by the guest OS "
+            "(<img src=hostkey_captured_16px.png/>) or not (<img src=hostkey_16px.png/>)"));
     QToolTip::add (hostkey_name,
         tr ("Shows the currently assigned host key"));
 
@@ -1452,8 +1465,15 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
 
 void VBoxConsoleWnd::vmAutoresizeGuest (bool on)
 {
-    if (console)
-        console->setAutoresizeGuest (on);
+    if (!console)
+        return;
+
+    /* Currently, we use only "off" and "on" icons. Later,
+     * we may want to use disabled versions of icons when no guest additions
+     * are available (to indicate that this function is ineffective). */
+    autoresize_state->setState (on ? 3 : 1);
+
+    console->setAutoresizeGuest (on);
 }
 
 void VBoxConsoleWnd::vmAdjustWindow()
