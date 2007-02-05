@@ -845,7 +845,7 @@ typedef const STAMPROFILEADV *PCSTAMPROFILEADV;
     do { \
         uint64_t Prefix##_tsNow; \
         STAM_GET_TS(Prefix##_tsNow); \
-        (pProfileAdv)->tsStart -= Prefix##_tsNow - Prefix##_tsSuspend; \
+        (pProfileAdv)->tsStart += Prefix##_tsNow - Prefix##_tsSuspend; \
     } while (0)
 #else
 # define STAM_REL_PROFILE_ADV_RESUME(pProfileAdv, Prefix) do { } while (0)
