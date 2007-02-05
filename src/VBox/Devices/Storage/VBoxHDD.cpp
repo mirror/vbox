@@ -1718,7 +1718,7 @@ IDER3DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf
     unsigned cbBlock  = getImageBlockSize(&pImage->Header);
 
     /* loop through blocks */
-    int rc;
+    int rc = VINF_SUCCESS;
     for (;;)
     {
         unsigned to_write;
@@ -1726,6 +1726,12 @@ IDER3DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf
             to_write = cbToWrite;
         else
             to_write = cbBlock - offWrite;
+
+        /* All callers write less than a VDI block right now (assuming
+         * default VDI block size). So not worth optimizing for the case
+         * where a full block is overwritten (no copying required).
+         * Checking whether a block is all zeroes after the write is too
+         * expensive (would require reading the rest of the block). */
 
         if (pDisk->cImages > 1)
         {
@@ -1753,8 +1759,27 @@ IDER3DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf
             }
         }
 
+        /* If the destination block is unallocated at this point, it's either
+         * a zero block or a block which hasn't been used so far (which also
+         * means that it's a zero block. Don't need to write anything to this
+         * block if the data consists of just zeroes. */
+        bool fBlockZeroed = false; /* assume data, for blocks already with data */
+        if (!IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
+        {
+            /* Check block for data. */
+            fBlockZeroed = true;    /* Block is zeroed flag. */
+            for (unsigned i = 0; i < (to_write >> 2); i++)
+                if (((uint32_t *)pvBuf)[i] != 0)
+                {
+                    /* Block is not zeroed! */
+                    fBlockZeroed = false;
+                    break;
+                }
+        }
+
         /* Actually write the data into block. */
-        rc = vdiWriteInBlock(pDisk, pImage, uBlock, offWrite, to_write, pvBuf);
+        if (!fBlockZeroed)
+            rc = vdiWriteInBlock(pDisk, pImage, uBlock, offWrite, to_write, pvBuf);
 
         cbToWrite -= to_write;
         if (    cbToWrite == 0
@@ -2482,7 +2507,6 @@ IDER3DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFilena
  * @param   pszFilename     Name of the image file to shrink.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
- * @remark  Only used by vditool
  */
 IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
@@ -2603,16 +2627,16 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
                 }
 
                 /* Check block for data. */
-                bool flBlockZeroed = true;    /* Block is zeroed flag. */
+                bool fBlockZeroed = true;    /* Block is zeroed flag. */
                 for (unsigned i = 0; i < (cbBlock >> 2); i++)
                     if (((uint32_t *)pvBuf)[i] != 0)
                     {
                         /* Block is not zeroed! */
-                        flBlockZeroed = false;
+                        fBlockZeroed = false;
                         break;
                     }
 
-                if (!flBlockZeroed)
+                if (!fBlockZeroed)
                 {
                     /* Block has a data, may be it must be moved. */
                     if (uBlockWrite < uBlock)
@@ -4100,7 +4124,7 @@ IDER3DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *pszF
 
 /**
  * internal: debug image dump.
- * 
+ *
  * @remark  Only used by tstVDI.
  */
 static void vdiDumpImage(PVDIIMAGEDESC pImage)
