@@ -156,6 +156,9 @@ typedef struct TRPM
     STAMCOUNTER     StatForwardFailGC;
     STAMCOUNTER     StatForwardFailHC;
 
+    STAMPROFILEADV  StatForwardProfGC;
+    STAMPROFILEADV  StatForwardProfHC;
+
     /* R3: Statistics for interrupt handlers (allocated on the hypervisor heap). */
     R3PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR3;
     /* R0: Statistics for interrupt handlers (allocated on the hypervisor heap). */

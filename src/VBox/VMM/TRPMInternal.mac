@@ -63,6 +63,9 @@ struc TRPM
     .StatForwardFailGC        resb STAMCOUNTER_size
     .StatForwardFailHC        resb STAMCOUNTER_size
 
+    .StatForwardProfGC        resb STAMPROFILEADV_size
+    .StatForwardProfHC        resb STAMPROFILEADV_size
+
     .paStatForwardedIRQR3  RTR3PTR_RES 1
     .paStatForwardedIRQR0  RTR0PTR_RES 1
     .paStatForwardedIRQGC  RTGCPTR_RES 1
