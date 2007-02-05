@@ -905,7 +905,7 @@ typedef RTNATIVETHREAD                             *PRTNATIVETHREAD;
 #define NIL_RTNATIVETHREAD                          (~(RTNATIVETHREAD)0)
 
 /** Process identifier. */
-typedef RTHCUINTPTR                                 RTPROCESS;
+typedef uint32_t                                    RTPROCESS;
 /** Pointer to a process identifier. */
 typedef RTPROCESS                                  *PRTPROCESS;
 /** Nil process identifier. */
