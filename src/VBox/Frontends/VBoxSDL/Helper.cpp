@@ -29,12 +29,14 @@
 #include "VBoxSDL.h"
 #include "Helper.h"
 
+#include <sys/select.h>
+
 /**
  * Globals
  */
 
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
 
 /** global flag indicating that the event queue thread should terminate */
 bool volatile   g_fTerminateXPCOMQueueThread = false;
@@ -61,10 +63,17 @@ DECLCALLBACK(int) xpcomEventThread(RTTHREAD thread, void *pvUser)
 
     do
     {
+#ifdef __DARWIN__
+        /** @todo figure out how this works here! */
+        RTThreadSleep(100);
+        int n = 1;
+#else
         fd_set fdset;
         FD_ZERO(&fdset);
         FD_SET(eqFD, &fdset);
         int n = select(eqFD + 1, &fdset, NULL, NULL, NULL);
+#endif
+
 
         /* are there any events to process? */
         if ((n > 0) && !g_fTerminateXPCOMQueueThread)
@@ -138,5 +147,5 @@ void terminateXPCOMQueueThread(void)
 
 
 
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_XPCOM */
 

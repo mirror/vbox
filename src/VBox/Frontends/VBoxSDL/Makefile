@@ -27,8 +27,16 @@ PROGRAMS = VBoxSDL tstSDL
 #
 # VBoxSDL
 #
-## @todo isn't the main program template more appropriate?
-VBoxSDL_TEMPLATE   = VBOXR3NPEXE
+ifneq ($(filter win linux,$(BUILD_TARGET)),)	## @todo Convert these two to the other template too!
+ VBoxSDL_TEMPLATE  = VBOXR3NPEXE
+ VBoxSDL_CXXFLAGS.win = \
+	-EHsc
+ VBoxSDL_CXXFLAGS.linux = \
+	-DNDEBUG -DTRIMMED -DVBOX_WITH_XPCOM -O -Wall -fno-rtti -fno-exceptions \
+	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
+else
+ VBoxSDL_TEMPLATE  = VBOXMAINCLIENT
+endif
 VBoxSDL_SDKS       = LIBSDL
 VBoxSDL_SOURCES    = \
 	VBoxSDL.cpp \
@@ -40,56 +48,55 @@ ifndef VBOX_OSE
 	win32/TitlebarButtons.cpp \
 	win32/VBoxSDL.rc
 endif
-VBoxSDL_DEFS       = IN_RING3 IN_RT_R3 _GNU_SOURCE
+VBoxSDL_DEFS       =
 ifdef VBOX_WITH_SECURELABEL
-VBoxSDL_DEFS      += VBOX_SECURELABEL
+ VBoxSDL_DEFS     += VBOX_SECURELABEL
 endif
 ifdef VBOX_WITH_VRDP
-VBoxSDL_DEFS      += VBOX_VRDP
+ VBoxSDL_DEFS     += VBOX_VRDP
+endif
+VBoxSDL_DEFS.linux = _GNU_SOURCE
+ifdef VBOX_OPENGL
+ #VBoxSDL_DEFS.linux += VBOX_OPENGL
 endif
 ifndef VBOX_OSE
- VBoxSDL_DEFS.win   = VBOX_WIN32_UI
+ VBoxSDL_DEFS.win  = VBOX_WIN32_UI
 endif
 VBoxSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
 VBoxSDL_DEFS.win.amd64 = _WIN32_WINNT=0x0510
-ifdef VBOX_OPENGL
-#VBoxSDL_DEFS.linux = VBOX_OPENGL
-endif
-VBoxSDL_RCDEFS     = \
-	VBOX_VERSION_MAJOR=\"$(VBOX_VERSION_MAJOR)\" \
-	VBOX_VERSION_MINOR=\"$(VBOX_VERSION_MINOR)\" \
-	VBOX_VERSION_BUILD=\"$(VBOX_VERSION_BUILD)\"
 VBoxSDL_INCS = \
-	$(PATH_VBoxSDL) \
 	$(PATH_BIN)/sdk/include
-VBoxSDL_INCS.win = \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
-VBoxSDL_INCS.linux = \
+ifdef VBOX_WITH_XPCOM
+ VBoxSDL_INCS = \
 	$(PATH_BIN)/sdk/include \
-	$(VBOX_XPCOM_INCS)
-VBoxSDL_LIBS = \
-	$(LIB_RUNTIME)
-VBoxSDL_LIBS.win = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
-VBoxSDL_LIBS.linux = \
+	$(VBOX_XPCOM_INCS) \
+	$(PATH_VBoxSDL)
+ VBoxSDL_LIBS = \
+    $(LIB_SDK_LIBSDL_SDLMAIN) \
 	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME) \
-	$(PATH_BIN)/VBoxXPCOM.so \
 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+ VBoxSDL_LIBS.linux = \
 	$(LIB_UUID) \
 	$(LIB_XCURSOR)
+ VBoxSDL_LDFLAGS.darwin = \
+    -framework Foundation -framework AppKit
+else # !VBOX_WITH_XPCOM
+ VBoxSDL_INCS.win = \
+	$(PATH_BIN)/sdk/include \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
+	$(PATH_VBoxSDL)
+ VBoxSDL_LIBS.win = \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib \
+	$(LIB_RUNTIME)
+endif # !VBOX_WITH_XPCOM
 ifdef VBOX_OPENGL
-#VBoxSDL_LIBS.linux += GL
+ #VBoxSDL_LIBS.linux += GL
 endif
 VBoxSDL_LIBPATH.linux = \
-	$(LIBPATH_XPCOM) \
 	/usr/X11R6/lib
-VBoxSDL_CXXFLAGS.win = \
-	-EHsc
-VBoxSDL_CXXFLAGS.linux = \
-	-DNDEBUG -DTRIMMED -O -Wall -fno-rtti -fno-exceptions \
-	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
 
 VBoxSDL_CLEAN = $(PATH_VBoxSDL)/Ico64x01.h
 Framebuffer.cpp_DEPS = $(PATH_VBoxSDL)/Ico64x01.h

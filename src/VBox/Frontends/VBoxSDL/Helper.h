@@ -23,7 +23,7 @@
 #ifndef __H_HELPER
 #define __H_HELPER
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
 
 /**
  * Creates the XPCOM event thread
