@@ -29,7 +29,6 @@
 #include "VBoxSDL.h"
 #include "Helper.h"
 
-#include <sys/select.h>
 
 /**
  * Globals
