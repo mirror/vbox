@@ -765,6 +765,9 @@ static void LogPkt(const char *name, const void *const src, int count)
          !!ETHER_IS_MULTICAST(hdr->ether_dhost)));                    \
 } while (0)
 
+
+#ifdef IN_RING3
+
 #define MULTICAST_FILTER_LEN 8
 
 DECLINLINE(uint32_t) lnc_mchash(const uint8_t *ether_addr)
@@ -925,6 +928,8 @@ static int ladr_match(PCNetState *pData, const uint8_t *buf, int size)
     }
     return 0;
 }
+
+#endif /* IN_RING3 */
 
 /**
  * Get the receive descriptor ring address with a given index.
@@ -1250,7 +1255,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
         pData->RDRAPhysOld = pData->GCRDRA;
         pData->cbRDRAOld   = pcnetRdraAddr(pData, 0);
     }
-#endif
+#endif /* PCNET_MONITOR_RECEIVE_RING */
 
 #ifdef PCNET_MONITOR_RECEIVE_RING
     /* 3 possibilities:
@@ -1266,7 +1271,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     if (    RDRAPageStart > TDRAPageEnd
         ||  TDRAPageStart > RDRAPageEnd)
     {
-#endif
+#endif /* PCNET_MONITOR_RECEIVE_RING */
         /* 1) */
         if (pData->GCTDRA != pData->TDRAPhysOld || CSR_XMTRL(pData) != pData->cbTDRAOld)
         {
@@ -1561,7 +1566,9 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
     }
 }
 
+
 #ifdef IN_RING3
+
 /**
  * Check if there is at least one free receive buffer available.
  */
@@ -1585,7 +1592,6 @@ static int pcnetCanReceiveNoSync(PCNetState *pData)
          4096 - CSR_CRBC(pData)));
     return 4096 - CSR_CRBC(pData);
 }
-#endif
 
 /**
  * Write data into guest receive buffers.
@@ -1765,7 +1771,6 @@ DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pData)
     return pData->pDrv && !pData->fLinkTempDown && pData->fLinkUp;
 }
 
-#ifdef IN_RING3
 
 /**
  * Transmit queue consumer
@@ -1786,10 +1791,6 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     return true;
 }
 
-#endif /* IN_RING3 */
-
-
-#ifdef IN_RING3
 
 /**
  * Scraps the top frame.
@@ -1935,6 +1936,7 @@ static void pcnetTransmit(PCNetState *pData)
 }
 
 #ifdef IN_RING3
+
 /**
  * Try to transmit frames
  */
