@@ -1025,29 +1025,30 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
  */
 bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &event)
 {
-//    Log (("### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X (kbd_captured=%d)\n",
-//              event.vkCode, event.scanCode, event.flags, event.dwExtraInfo, kbd_captured));
-//    char buf[256];
-//    sprintf (buf,
-//               "### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X",
-//             event.vkCode, event.scanCode, event.flags, event.dwExtraInfo);
-//    ((QMainWindow*)mainwnd)->statusBar()->message (buf);
+#if 0
+    LogFlow (("### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X (kbd_captured=%d)\n",
+              event.vkCode, event.scanCode, event.flags, event.dwExtraInfo, kbd_captured));
+    char buf [256];
+    sprintf (buf, "### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X",
+             event.vkCode, event.scanCode, event.flags, event.dwExtraInfo);
+    mainwnd->statusBar()->message (buf);
+#endif
 
-    // Sometimes it happens that Win inserts additional events on some key
-    // press/release. For example, it prepends ALT_GR in German layout with
-    // the VK_LCONTROL vkey with curious 0x21D scan code (seems to be necessary
-    // to specially treat ALT_GR to enter additional chars to regular apps).
-    // These events are definitely unwanted in VM, so filter them out.
+    /* Sometimes it happens that Win inserts additional events on some key
+     * press/release. For example, it prepends ALT_GR in German layout with
+     * the VK_LCONTROL vkey with curious 0x21D scan code (seems to be necessary
+     * to specially treat ALT_GR to enter additional chars to regular apps).
+     * These events are definitely unwanted in VM, so filter them out. */
     if (hasFocus() && (event.scanCode & ~0xFF))
         return true;
 
     if (!kbd_captured)
         return false;
 
-    // it's possible that a key has been pressed while the keyboard was not
-    // captured, but is being released under the capture. Detect this situation
-    // and return false to let Windows process the message normally and update
-    // its key state table (to avoid the stuck key effect).
+    /* it's possible that a key has been pressed while the keyboard was not
+     * captured, but is being released under the capture. Detect this situation
+     * and return false to let Windows process the message normally and update
+     * its key state table (to avoid the stuck key effect). */
     uint8_t what_pressed = (event.flags & 0x01) && (event.vkCode != VK_RSHIFT)
                            ? IsExtKeyPressed
                            : IsKeyPressed;
@@ -1065,12 +1066,12 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
         (event.scanCode & 0xFF) << 16 |
         (event.flags & 0xFF) << 24;
 
-    // Windows sets here the extended bit when the Right Shift key is pressed,
-    // which is totally wrong. Undo it.
+    /* Windows sets here the extended bit when the Right Shift key is pressed,
+     * which is totally wrong. Undo it. */
     if (event.vkCode == VK_RSHIFT)
         message.lParam &= ~0x1000000;
 
-    // we suppose here that this hook is always called on the main GUI thread
+    /* we suppose here that this hook is always called on the main GUI thread */
     return winEvent (&message);
 }
 
@@ -1087,45 +1088,45 @@ bool VBoxConsoleView::winEvent (MSG *msg)
     ))
         return false;
 
-    // check for the special flag possibly set at the end of this function
+    /* check for the special flag possibly set at the end of this function */
     if ((msg->lParam >> 25) & 0x1)
         return false;
 
-//    V_DEBUG((
-//        "*** WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d rzv=%01X ctx=%01d prev=%01d tran=%01d",
-//        msg->message, msg->wParam,
-//        (msg->lParam & 0xFFFF),
-//        ((msg->lParam >> 16) & 0xFF),
-//        ((msg->lParam >> 24) & 0x1),
-//        ((msg->lParam >> 25) & 0xF),
-//        ((msg->lParam >> 29) & 0x1),
-//        ((msg->lParam >> 30) & 0x1),
-//        ((msg->lParam >> 31) & 0x1)
-//    ));
-//    char buf[256];
-//    sprintf (buf,
-//             "WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d rzv=%01X ctx=%01d prev=%01d tran=%01d",
-//             msg->message, msg->wParam,
-//             (msg->lParam & 0xFFFF),
-//             ((msg->lParam >> 16) & 0xFF),
-//             ((msg->lParam >> 24) & 0x1),
-//             ((msg->lParam >> 25) & 0xF),
-//             ((msg->lParam >> 29) & 0x1),
-//             ((msg->lParam >> 30) & 0x1),
-//             ((msg->lParam >> 31) & 0x1));
-//    ((QMainWindow*)mainwnd)->statusBar()->message (buf);
+#if 0
+    LogFlow (("*** WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d rzv=%01X ctx=%01d prev=%01d tran=%01d",
+              msg->message, msg->wParam,
+              (msg->lParam & 0xFFFF),
+              ((msg->lParam >> 16) & 0xFF),
+              ((msg->lParam >> 24) & 0x1),
+              ((msg->lParam >> 25) & 0xF),
+              ((msg->lParam >> 29) & 0x1),
+              ((msg->lParam >> 30) & 0x1),
+              ((msg->lParam >> 31) & 0x1)));
+    char buf [256];
+    sprintf (buf, "WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d rzv=%01X ctx=%01d prev=%01d tran=%01d",
+             msg->message, msg->wParam,
+             (msg->lParam & 0xFFFF),
+             ((msg->lParam >> 16) & 0xFF),
+             ((msg->lParam >> 24) & 0x1),
+             ((msg->lParam >> 25) & 0xF),
+             ((msg->lParam >> 29) & 0x1),
+             ((msg->lParam >> 30) & 0x1),
+             ((msg->lParam >> 31) & 0x1));
+    mainwnd->statusBar()->message (buf);
+#endif
 
     int scan = (msg->lParam >> 16) & 0x7F;
-    // scancodes 0x80 and 0x00 are ignored
+    /* scancodes 0x80 and 0x00 are ignored */
     if (!scan)
         return true;
 
     int vkey = msg->wParam;
 
-    // When one of the SHIFT keys is held and one of the cursor movement
-    // keys is pressed, Windows duplicates SHIFT press/release messages,
-    // but with the virtual key code set to 0xFF. These virtual keys are also
-    // sent in some other situations (Pause, PrtScn, etc.). Ignore such messages.
+    /* When one of the SHIFT keys is held and one of the cursor movement
+     * keys is pressed, Windows duplicates SHIFT press/release messages,
+     * but with the virtual key code set to 0xFF. These virtual keys are also
+     * sent in some other situations (Pause, PrtScn, etc.). Ignore such
+     * messages. */
     if (vkey == 0xFF)
         return true;
 
@@ -1141,7 +1142,7 @@ bool VBoxConsoleView::winEvent (MSG *msg)
         case VK_CONTROL:
         case VK_MENU:
         {
-            // overcome stupid Win32 modifier key generalization
+            /* overcome stupid Win32 modifier key generalization */
             int keyscan = scan;
             if (flags & KeyExtended)
                 keyscan |= 0xE000;
@@ -1157,7 +1158,7 @@ bool VBoxConsoleView::winEvent (MSG *msg)
             break;
         }
         case VK_NUMLOCK:
-            // Win32 sets the extended bit for the NumLock key. Reset it.
+            /* Win32 sets the extended bit for the NumLock key. Reset it. */
             flags &= ~KeyExtended;
             break;
         case VK_SNAPSHOT:
@@ -1171,11 +1172,11 @@ bool VBoxConsoleView::winEvent (MSG *msg)
     bool result = keyEvent (vkey, scan, flags);
     if (!result && kbd_captured)
     {
-        // keyEvent() returned that it didn't process the message, but since the
-        // keyboard is captured, we don't want to pass it to Windows. We just want
-        // to let Qt process the message (to handle non-alphanumeric <HOST>+key
-        // shortcuts for example). So send it direcltly to the window with the
-        // special flag in the reserved area of lParam (to avoid recursion).
+        /* keyEvent() returned that it didn't process the message, but since the
+         * keyboard is captured, we don't want to pass it to Windows. We just want
+         * to let Qt process the message (to handle non-alphanumeric <HOST>+key
+         * shortcuts for example). So send it direcltly to the window with the
+         * special flag in the reserved area of lParam (to avoid recursion). */
         ::SendMessage (msg->hwnd, msg->message,
                        msg->wParam, msg->lParam | (0x1 << 25));
         return true;
@@ -1186,11 +1187,11 @@ bool VBoxConsoleView::winEvent (MSG *msg)
 #elif defined(Q_WS_X11)
 
 /**
- * This routine gets X11 events before they are processed by Qt. This is
- * used for our platform specific keyboard implementation. A return value
- * of TRUE indicates that the event has been processed by us.
+ *  This routine gets X11 events before they are processed by Qt. This is
+ *  used for our platform specific keyboard implementation. A return value
+ *  of TRUE indicates that the event has been processed by us.
  */
-bool VBoxConsoleView::x11Event(XEvent *event)
+bool VBoxConsoleView::x11Event (XEvent *event)
 {
     static WINEKEYBOARDINFO wineKeyboardInfo;
 
@@ -1200,23 +1201,25 @@ bool VBoxConsoleView::x11Event(XEvent *event)
         case XKeyRelease:
             if (attached)
                 break;
-            // else fall through
+            /*  else fall through */
         /// @todo (AH) later, we might want to handle these as well
         case KeymapNotify:
         case MappingNotify:
         default:
-            return false;  // pass the event to Qt
+            return false; /* pass the event to Qt */
     }
 
-    // perform the mega-complex translation using the wine algorithms
+    /* perform the mega-complex translation using the wine algorithms */
     handleXKeyEvent (this->x11Display(), event, &wineKeyboardInfo);
 
-//    char buf[256];
-//    sprintf (buf,
-//             "pressed=%d keycode=%08X state=%08X flags=%08X scan=%04X",
-//             event->type == XKeyPress ? 1 : 0, event->xkey.keycode,
-//             event->xkey.state, wineKeyboardInfo.dwFlags, wineKeyboardInfo.wScan);
-//    ((QMainWindow*)mainwnd)->statusBar()->message (buf);
+#if 0
+    char buf [256];
+    sprintf (buf, "pr=%d kc=%08X st=%08X fl=%08lX scan=%04X",
+             event->type == XKeyPress ? 1 : 0, event->xkey.keycode,
+             event->xkey.state, wineKeyboardInfo.dwFlags, wineKeyboardInfo.wScan);
+    mainwnd->statusBar()->message (buf);
+    LogFlow (("### %s\n", buf));
+#endif
 
     int scan = wineKeyboardInfo.wScan & 0x7F;
     // scancodes 0x00 (no valid translation) and 0x80 are ignored
@@ -1921,9 +1924,22 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
     if (kbd_captured == capture)
         return;
 
-    // on Win32, keyboard grabbing is ineffective,
-    // low-level keyboard hook is used instead
-#ifndef Q_WS_WIN32
+    /* On Win32, keyboard grabbing is ineffective, a low-level keyboard hook is
+     * used instead. On X11, we use XGrabKey instead of XGrabKeyboard (called
+     * by QWidget::grabKeyboard()) because the latter causes problems under
+     * metacity 2.16 (in particular, due to a bug, a window cannot be moved
+     * using the mouse if it is currently grabing the keyboard). */
+#if defined (Q_WS_WIN32)
+    /**/
+#elif defined (Q_WS_X11)
+	if (capture)
+		XGrabKey (x11Display(), AnyKey, AnyModifier,
+                  topLevelWidget()->winId(), False,
+                  GrabModeAsync, GrabModeAsync);
+	else
+		XUngrabKey (x11Display(),  AnyKey, AnyModifier,
+                    topLevelWidget()->winId());
+#else
     if (capture)
         grabKeyboard();
     else
