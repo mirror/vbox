@@ -290,7 +290,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
  * @returns number of bytes formatted.
  * @param   pfnOutput   Output worker.
  *                      Called in two ways. Normally with a string an it's length.
- *                      For termiation, it's called with NULL for string, 0 for length.
+ *                      For termination, it's called with NULL for string, 0 for length.
  * @param   pvArgOutput Argument to the output worker.
  * @param   pfnFormat   Custom format worker.
  * @param   pvArgFormat Argument to the format worker.
@@ -817,7 +817,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
  * @returns number of bytes formatted.
  * @param   pfnOutput   Output worker.
  *                      Called in two ways. Normally with a string an it's length.
- *                      For termiation, it's called with NULL for string, 0 for length.
+ *                      For termination, it's called with NULL for string, 0 for length.
  * @param   pvArgOutput Argument to the output worker.
  * @param   pfnFormat   Custom format worker.
  * @param   pvArgFormat Argument to the format worker.

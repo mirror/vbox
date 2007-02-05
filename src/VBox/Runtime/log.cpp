@@ -1108,8 +1108,10 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
             { "enabled",      sizeof("enabled"     ) - 1,   RTLOGFLAGS_DISABLED,            true  },
             { "buffered",     sizeof("buffered"    ) - 1,   RTLOGFLAGS_BUFFERED,            false },
             { "unbuffered",   sizeof("unbuffered"  ) - 1,   RTLOGFLAGS_BUFFERED,            true  },
+            { "usecrlf",      sizeof("usecrlf"     ) - 1,   RTLOGFLAGS_USECRLF,             true },
+            { "uself",        sizeof("uself"       ) - 1,   RTLOGFLAGS_USECRLF,             false  },
             { "rel",          sizeof("rel"         ) - 1,   RTLOGFLAGS_REL_TS,              false },
-            { "abs",          sizeof("rel"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
+            { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
             { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false },
             { "hex",          sizeof("hex"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          true  },
             { "flagno",       sizeof("flagno"      ) - 1,   RTLOGFLAGS_PREFIX_FLAG_NO,      false },
@@ -2052,8 +2054,13 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             const char *pszNewLine = (const char *)memchr(pachChars, '\n', cb);
             if (pszNewLine)
             {
-                pLogger->fPendingPrefix = true;
-                cb = pszNewLine - pachChars + 1;
+                if (pLogger->fFlags & RTLOGFLAGS_USECRLF)
+                    cb = pszNewLine - pachChars;
+                else
+                {
+                    cb = pszNewLine - pachChars + 1;
+                    pLogger->fPendingPrefix = true;
+                }
             }
 
             /* copy */
@@ -2063,6 +2070,18 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             pLogger->offScratch += cb;
             cbRet += cb;
             cbChars -= cb;
+
+            if (    pszNewLine
+                &&  pLogger->fFlags & RTLOGFLAGS_USECRLF
+                &&  pLogger->offScratch + 2 < sizeof(pLogger->achScratch))
+            {
+                memcpy(&pLogger->achScratch[pLogger->offScratch], "\r\n", 2);
+                pLogger->offScratch += 2;
+                cbRet++;
+                cbChars--;
+                cb++;
+                pLogger->fPendingPrefix = true;
+            }
 
             /* done? */
             if (cbChars <= 0)

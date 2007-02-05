@@ -278,6 +278,8 @@ typedef enum RTLOGFLAGS
     RTLOGFLAGS_DISABLED         = 0x00000001,
     /** The logger instance is using buffered output. */
     RTLOGFLAGS_BUFFERED         = 0x00000002,
+    /** The logger instance expands LF to CR/LF. */
+    RTLOGFLAGS_USECRLF          = 0x00000010,
     /** Show relative timestamps with PREFIX_TSC and PREFIX_TS */
     RTLOGFLAGS_REL_TS           = 0x00010000,
     /** Show decimal timestamps with PREFIX_TSC and PREFIX_TS */
@@ -1280,7 +1282,7 @@ typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
  * @returns number of bytes formatted.
  * @param   pfnOutput   Output worker.
  *                      Called in two ways. Normally with a string an it's length.
- *                      For termiation, it's called with NULL for string, 0 for length.
+ *                      For termination, it's called with NULL for string, 0 for length.
  * @param   pvArg       Argument to output worker.
  * @param   pszFormat   Format string.
  * @param   args        Argument list.
