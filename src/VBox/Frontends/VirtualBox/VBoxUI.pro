@@ -124,8 +124,10 @@ IMAGES	= images/tpixel.png \
 	images/acpi_disabled_16px.png \
 	images/adjust_win_size_16px.png \
 	images/adjust_win_size_disabled_16px.png \
-	images/auto_resize_16px.png \
-	images/auto_resize_disabled_16px.png \
+	images/auto_resize_on_16px.png \
+	images/auto_resize_on_disabled_16px.png \
+	images/auto_resize_off_16px.png \
+	images/auto_resize_off_disabled_16px.png \
 	images/exit_16px.png \
 	images/fd_unmount_16px.png \
 	images/fd_unmount_dis_16px.png \
