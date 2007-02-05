@@ -307,6 +307,7 @@ PDMR3DECL(void) PDMR3CritSectFF(PVM pVM)
     VM_FF_CLEAR(pVM, VM_FF_PDM_CRITSECT);
 }
 
+
 /**
  * Try enter a critical section.
  *
@@ -320,3 +321,4 @@ PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect)
 {
     return RTCritSectTryEnter(&pCritSect->s.Core);
 }
+
