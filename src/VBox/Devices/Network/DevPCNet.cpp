@@ -69,8 +69,8 @@
 #include <iprt/time.h>
 #ifdef IN_RING3
 #include <iprt/mem.h>
+#include <iprt/semaphore.h>
 #endif
-#include <iprt/req.h>
 
 #include "Builtins.h"
 #include "vl_vbox.h"
@@ -80,13 +80,6 @@
 
 /* Enable to handle frequent io reads in the guest context */
 #define PCNET_GC_ENABLED
-
-/* Enable to delay setting the TX interrupt until packets have been sent. */
-/** @note currently not technically correct (own bit) */
-#define PCNET_DELAY_INT
-
-/* Enable to send packets in a seperate thread. */
-/* #define PCNET_ASYNC_SEND */
 
 #ifdef __GNUC__
 #define PACKED __attribute__ ((packed))
@@ -126,18 +119,13 @@
 #define MII_MAX_REG                     32
 #define CSR_MAX_REG                     128
 
-#define PCNET_TRQUEUE_DEPTH             16
-
 /* Frame cache */
 typedef struct PCNETFRAME
 {
-    /** The buffer offset into abFrameBuf */
-    uint32_t off;
     /** The current frame size. Starts at -1. Only the top frame can be expanded. */
     int32_t  cb;
-    /** The physical address of the frame if it was not copied to abFrameBuf.
-     *  Set to NIL_RTR3PTR if frame was copied to abFrameBuf. */
-    RTR3PTR  pvR3;
+    /** The virtual address of the frame (copied or direct pointer) */
+    RTR3PTR  pvBuf;
 } PCNETFRAME;
 /* Pointer to PCNETFRAME */
 typedef PCNETFRAME *PPCNETFRAME;
@@ -173,11 +161,9 @@ struct PCNetState_st
     uint64_t                            u64LastPoll;
 
     /** Array of frames. */
-    PCNETFRAME                          aFrames[PCNET_TRQUEUE_DEPTH];
-    /** The current number of frames in aFrames to transmit. */
-    uint32_t                            iFrame;
+    PCNETFRAME                          SendFrame;
     /** The xmit buffer. */
-    uint8_t                             abFrameBuf[PCNET_TRQUEUE_DEPTH*1536];
+    uint8_t                             abSendBuf[4096];
     /** The recv buffer. */
     uint8_t                             abRecvBuf[4096];
 
@@ -218,9 +204,6 @@ struct PCNetState_st
     bool                                fLinkUp;
     /** If set the link is temporarily down because of a saved state load. */
     bool                                fLinkTempDown;
-    /** If set we're currently doing pfnSend(), so don't call pcnetTransmit() or
-     *  we might recurse for ever. */
-    bool                                fTransmitting;
 
     /** Number of times we've reported the link down. */
     RTUINT                              cLinkDownReported;
@@ -234,18 +217,9 @@ struct PCNetState_st
     /** Partner of ILeds. */
     HCPTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
 
-#ifdef PCNET_ASYNC_SEND
     /** Async send thread */
-    PRTREQQUEUE                         pSendQueue;
+    RTSEMEVENT                          hSendEventSem;
     RTTHREAD                            hSendThread;
-
-    struct
-    {
-        HCPTRTYPE(void *)               pBuffer;
-        uint32_t                        cb;
-        uint32_t                        fTaken;
-    } paMemCache[PCNET_TRQUEUE_DEPTH];
-#endif
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
@@ -279,18 +253,15 @@ struct PCNetState_st
     STAMPROFILEADV                      StatIOWriteHC;
     STAMPROFILEADV                      StatTimer;
     STAMPROFILEADV                      StatReceive;
-    STAMPROFILEADV                      StatTransmitGC;
-    STAMPROFILEADV                      StatTransmitHC;
+    STAMPROFILEADV                      StatTransmit;
+    STAMPROFILEADV                      StatTransmitSend;
     STAMPROFILEADV                      StatTdtePollGC;
     STAMPROFILEADV                      StatTdtePollHC;
     STAMPROFILEADV                      StatTmdStoreGC;
     STAMPROFILEADV                      StatTmdStoreHC;
     STAMPROFILEADV                      StatRdtePollGC;
     STAMPROFILEADV                      StatRdtePollHC;
-    STAMPROFILE                         StatXmitQueue;
-    STAMPROFILEADV                      StatXmitQueueFlushGC;
-    STAMCOUNTER                         aStatFlushCounts[PCNET_TRQUEUE_DEPTH+1];
-    STAMCOUNTER                         aStatXmitChainCounts[PCNET_TRQUEUE_DEPTH];
+    STAMCOUNTER                         aStatXmitChainCounts[8];
     STAMPROFILEADV                      StatInterrupt;
     STAMPROFILEADV                      StatPollTimer;
     STAMCOUNTER                         StatMIIReads;
@@ -309,15 +280,6 @@ struct PCNetState_st
     STAMCOUNTER                         StatRingWriteOutsideRangeR0;
     STAMCOUNTER                         StatRingWriteOutsideRangeGC;
 # endif
-    STAMCOUNTER                         StatDeferredXmit;
-    STAMCOUNTER                         StatDeferredXmitPending;
-    STAMCOUNTER                         StatXmitSync;
-    STAMCOUNTER                         StatXmitAsync;
-    STAMCOUNTER                         StatXmitInTxThread;
-    STAMPROFILE                         StatXmitQueueAsyncPrep;
-    STAMPROFILE                         StatXmitQueueAsyncReq;
-    STAMCOUNTER                         StatXmitQueueAsyncCacheMiss;
-    STAMCOUNTER                         StatXmitQueueAsyncCacheHit;
 #endif /* VBOX_WITH_STATISTICS */
 };
 
@@ -1805,183 +1767,6 @@ DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pData)
 
 #ifdef IN_RING3
 
-# ifdef PCNET_ASYNC_SEND
-/**
- *  Send packet(s) to the network driver.
- */
-static DECLCALLBACK(void) pcnetSendAsyncPacket(PCNetState *pData, unsigned iCacheSlot, unsigned cFrames, uint32_t *pacbFrame, uint8_t *pBuf)
-{ 
-    Assert(pData && pData->pDrv && pData->pDrv->pfnSend);
-    Assert(cFrames && pacbFrame && pBuf);
-
-    for (unsigned i=0;i<cFrames;i++)
-    {
-        pData->pDrv->pfnSend(pData->pDrv, pBuf, pacbFrame[i]);        
-        pBuf += RT_ALIGN_32(pacbFrame[i], 16);
-    }
-    if (iCacheSlot < ELEMENTS(pData->paMemCache))
-    {
-        pData->paMemCache[iCacheSlot].fTaken = 0;
-    }
-    else
-        RTMemFree(pacbFrame);
-
-#ifdef PCNET_DELAY_INT
-    if (cFrames)
-    {
-        /** @note this part needs to be protected; perhaps we can change the code to drop this requirement. */
-        int rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
-        AssertReleaseRC(rc);
-
-        /* Update TXSTRT and TINT. */
-        pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
-        pData->aCSR[0] |= 0x0200;    /* set TINT */
-        pcnetUpdateIrq(pData);
-
-        PDMCritSectLeave(&pData->CritSect);
-    }
-#endif
-}
-# endif
-
-/**
- * Transmit queue consumer
- * This is just a very simple way of delaying sending to R3.
- *
- * @param   pData       PCNet data structure
- */
-static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
-{
-    int         rc;
-
-    /** @note We must only access the queued transmit packets from EMT. Below we assume we don't need to grab the critical section while accessing
-      *       this data.
-      */
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
-
-    /* Return immediately if there's nothing to do. (grabbing the critical section can be expensive) */
-    if (RT_UNLIKELY(pData->iFrame == 0))
-    {
-        STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
-        return;
-    }
-
-    STAM_PROFILE_START(&pData->StatXmitQueue, a);
-    STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
-    Log(("#%d pcnetXmitQueueConsumer: iFrame=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
-
-    pData->fTransmitting = true;
-
-#ifdef PCNET_ASYNC_SEND
-    if (pData->iFrame)
-    {
-        uint32_t        cbTotal = 0;
-        uint32_t       *pacbFrame = 0;
-        uint8_t        *pBuf;
-        unsigned        i, iCacheSlot = ~0;
-
-        STAM_PROFILE_START(&pData->StatXmitQueueAsyncPrep, b);
-        for (i = 0; i < pData->iFrame; i++)
-            cbTotal += RT_ALIGN_32(pData->aFrames[i].cb, 16);
-
-        /* Plus room for size array */
-        cbTotal += sizeof(uint32_t) * pData->iFrame;
-
-        /* See if there's a free cache entry. */
-        for (i=0;i<ELEMENTS(pData->paMemCache);i++)
-        {
-            if (    pData->paMemCache[i].cb >= cbTotal
-                && !pData->paMemCache[i].fTaken)
-            {
-                pData->paMemCache[i].fTaken = 1;
-                pacbFrame  = (uint32_t *)pData->paMemCache[i].pBuffer;
-                iCacheSlot = i;
-                break;
-            }
-        }
-        if (!pacbFrame)
-        {
-            STAM_COUNTER_INC(&pData->StatXmitQueueAsyncCacheMiss);
-            pacbFrame = (uint32_t *)RTMemAlloc(cbTotal);
-        }
-        else
-            STAM_COUNTER_INC(&pData->StatXmitQueueAsyncCacheHit);
-
-        Assert(pacbFrame);
-        pBuf     = (uint8_t *)&pacbFrame[pData->iFrame];
-        /** @note we make a copy here as we don't wish to have to enter the critical section in the async send thread during the lengthy send process. */
-        for (unsigned i = 0; i < pData->iFrame; i++)
-        {
-            RTR3PTR pv = pData->aFrames[i].pvR3 != NIL_RTR3PTR
-                       ? pData->aFrames[i].pvR3
-                       : &pData->abFrameBuf[pData->aFrames[i].off];
-
-            if (pData->aFrames[i].cb > 70) /* unqualified guess */
-                pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
-
-            pacbFrame[i] = pData->aFrames[i].cb;
-            memcpy(pBuf, pv, pData->aFrames[i].cb);
-
-            pBuf += RT_ALIGN_32(pData->aFrames[i].cb, 16);
-            STAM_COUNTER_INC(&pData->StatXmitAsync);
-
-            LOG_PACKET("xmit", pv, pData->aFrames[i].cb);
-        }
-        STAM_PROFILE_STOP(&pData->StatXmitQueueAsyncPrep, b);
-        STAM_PROFILE_START(&pData->StatXmitQueueAsyncReq, c);
-        if (pcnetIsLinkUp(pData))
-        {
-            pBuf = (uint8_t *)&pacbFrame[pData->iFrame];
-
-            rc = RTReqCallEx(pData->pSendQueue, NULL, 0, RTREQFLAGS_NO_WAIT | RTREQFLAGS_VOID, (PFNRT)pcnetSendAsyncPacket, 5, pData, iCacheSlot, pData->iFrame, pacbFrame, pBuf);
-            AssertRC(rc);
-        }
-        STAM_PROFILE_STOP(&pData->StatXmitQueueAsyncReq, c);
-    }
-#else
-    for (unsigned i = 0; i < pData->iFrame; i++)
-    {
-        RTR3PTR pv = pData->aFrames[i].pvR3 != NIL_RTR3PTR
-                   ? pData->aFrames[i].pvR3
-                   : &pData->abFrameBuf[pData->aFrames[i].off];
-        if (pData->aFrames[i].cb > 70) /* unqualified guess */
-            pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
-        if (pcnetIsLinkUp(pData))
-        {
-            pData->pDrv->pfnSend(pData->pDrv, pv, pData->aFrames[i].cb);
-            STAM_COUNTER_INC(&pData->StatXmitSync);
-            LOG_PACKET("xmit", pv, pData->aFrames[i].cb);
-        }
-    }
-#ifdef PCNET_DELAY_INT
-    if (pData->iFrame)
-    {
-        /** @note this part needs to be protected; perhaps we can change the code to drop this requirement. */
-        rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
-        AssertReleaseRC(rc);
-
-        /* Update TXSTRT and TINT. */
-        pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
-        pData->aCSR[0] |= 0x0200;    /* set TINT */
-        pcnetUpdateIrq(pData);
-
-        PDMCritSectLeave(&pData->CritSect);
-    }
-#endif
-
-#endif /* PCNET_ASYNC_SEND */
-
-    pData->fTransmitting = false;
-
-    pData->aFrames[0].off  = 0;
-    pData->aFrames[0].cb   = -1;
-    pData->aFrames[0].pvR3 = NIL_RTR3PTR;
-    pData->iFrame = 0;
-    pData->Led.Actual.s.fWriting = 0;
-
-    STAM_PROFILE_STOP(&pData->StatXmitQueue, a);
-}
-
 /**
  * Transmit queue consumer
  * This is just a very simple way of delaying sending to R3.
@@ -1996,58 +1781,15 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     NOREF(pItem);
 
-    pcnetXmitSendPackets(pData);
+    int rc = RTSemEventSignal(pData->hSendEventSem);
+    AssertRC(rc);
     return true;
 }
-
-#ifdef PCNET_ASYNC_SEND
-/**
- * Async I/O thread for delayed sending of packets.
- */
-static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
-{
-    PCNetState *pData = (PCNetState *)pvUser;
-    PRTREQQUEUE pQueue = pData->pSendQueue;
-
-    while(1)
-    {
-        int rc = RTReqProcess(pQueue, RT_INDEFINITE_WAIT);
-        if (VBOX_FAILURE(rc))
-            break;
-    }
-    return VINF_SUCCESS;
-}
-#endif /* PCNET_ASYNC_SEND */
 
 #endif /* IN_RING3 */
 
 
-/**
- * Flushes queued frames.
- */
-DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
-{
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
-    if (pData->iFrame)
-    {
 #ifdef IN_RING3
-        Log(("#%d HC: pcnetXmitFlushFrames: flushing %d frames\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
-        pcnetXmitQueueConsumer(CTXSUFF(pData->pDevIns), NULL);
-#else
-        Log(("#%d GC: pcnetXmitFlushFrames: flushing %d frames\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
-        STAM_PROFILE_ADV_START(&pData->StatXmitQueueFlushGC, a);
-        PDMQueueFlush(pData->CTXSUFF(pXmitQueue));
-        STAM_PROFILE_ADV_STOP(&pData->StatXmitQueueFlushGC, a);
-#endif
-    }
-#ifndef PCNET_ASYNC_SEND
-    pData->aFrames[0].off  = 0;
-    pData->aFrames[0].cb   = -1;
-    pData->aFrames[0].pvR3 = NIL_RTR3PTR;
-    pData->iFrame = 0;
-#endif
-}
-
 
 /**
  * Scraps the top frame.
@@ -2055,45 +1797,20 @@ DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
  */
 DECLINLINE(void) pcnetXmitScrapFrame(PCNetState *pData)
 {
-    const uint32_t iFrame = pData->iFrame;
-
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
-
-    pData->aFrames[iFrame].cb = -1;
+    pData->SendFrame.pvBuf = NULL;
+    pData->SendFrame.cb    = -1;
 }
 
 
-/**
- * Ensures that we've got enough buffer space for the frame.
- */
-DECLINLINE(void) pcnetXmitEnsureSpace(PCNetState *pData, const unsigned cb, const bool fForceFlush)
-{
-    const uint32_t iFrame = pData->iFrame;
-
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
-
-    if (    fForceFlush
-        ||  cb > sizeof(pData->abFrameBuf) - pData->aFrames[iFrame].off)
-        pcnetXmitFlushFrames(pData);
-}
-
-
-#ifdef IN_RING3
 /**
  * If we are in RING3 don't copy the frame from GC here but only store the address. We
- * don't need to buffer the frames because we will flush all pending frames at the end of
- * pcnetTransmit anyway.
+ * don't need to buffer the frames because a direct address translation was possible.
  */
 DECLINLINE(void) pcnetXmitZeroCopyFrame(PCNetState *pData, RTR3PTR pv, const unsigned cbFrame)
 {
-    const uint32_t iFrame = pData->iFrame;
-
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
-
-    pData->aFrames[iFrame].pvR3 = pv;
-    pData->aFrames[iFrame].cb   = cbFrame;
+    pData->SendFrame.pvBuf = pv;
+    pData->SendFrame.cb    = cbFrame;
 }
-#endif
 
 
 /**
@@ -2101,14 +1818,13 @@ DECLINLINE(void) pcnetXmitZeroCopyFrame(PCNetState *pData, RTR3PTR pv, const uns
  */
 DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS GCPhysFrame, const unsigned cbFrame)
 {
-    const uint32_t iFrame = pData->iFrame;
-
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+    Assert(cbFrame < sizeof(pData->abSendBuf));
 
     PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame,
-                      &pData->abFrameBuf[pData->aFrames[iFrame].off],
+                      &pData->abSendBuf[0],
                       cbFrame);
-    pData->aFrames[iFrame].cb = cbFrame;
+    pData->SendFrame.pvBuf = pData->abSendBuf;
+    pData->SendFrame.cb    = cbFrame;
 }
 
 
@@ -2117,14 +1833,11 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS GCPhysFrame, const
  */
 DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, const unsigned cbFrame)
 {
-    const uint32_t iFrame = pData->iFrame;
-
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
-
+    Assert(pData->SendFrame.cb + cbFrame < sizeof(pData->abSendBuf));
     PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame,
-                      &pData->abFrameBuf[pData->aFrames[iFrame].off + pData->aFrames[iFrame].cb],
+                      &pData->abSendBuf[pData->SendFrame.cb],
                       cbFrame);
-    pData->aFrames[iFrame].cb += cbFrame;
+    pData->SendFrame.cb += cbFrame;
 }
 
 
@@ -2134,20 +1847,15 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, cons
  */
 DECLINLINE(void) pcnetXmitCompleteFrame(PCNetState *pData)
 {
-    const uint32_t iFrame = ++pData->iFrame;
+    /* Don't hold the critical section while transmitting data. */
+    PDMCritSectLeave(&pData->CritSect);
 
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+    STAM_PROFILE_ADV_START(&pData->StatTransmitSend, a);
+    pData->pDrv->pfnSend(pData->pDrv, pData->SendFrame.pvBuf, pData->SendFrame.cb);
+    STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
-    if (iFrame == ELEMENTS(pData->aFrames))
-        pcnetXmitFlushFrames(pData);
-    else
-    {
-        /* initialize next frame */
-        pData->aFrames[iFrame].off  = pData->aFrames[iFrame - 1].off
-                                    + RT_ALIGN_32(pData->aFrames[iFrame - 1].cb, 16);
-        pData->aFrames[iFrame].cb   = -1;
-        pData->aFrames[iFrame].pvR3 = NIL_RTR3PTR;
-    }
+    int rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    AssertReleaseRC(rc);
 }
 
 
@@ -2171,16 +1879,26 @@ static void pcnetXmitFailTMDLinkDown(PCNetState *pData, TMD *pTmd)
  */
 DECLINLINE(void) pcnetXmitLoopbackFrame(PCNetState *pData)
 {
-    Assert(pData->iFrame == 0);
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
-
     pData->Led.Asserted.s.fReading = pData->Led.Actual.s.fReading = 1;
     if (HOST_IS_OWNER(CSR_CRST(pData)))
         pcnetRdtePoll(pData);
-    pcnetReceiveNoSync(pData, &pData->abFrameBuf[pData->aFrames[0].off], pData->aFrames[0].cb);
+
+    Assert(pData->SendFrame.pvBuf);
+    pcnetReceiveNoSync(pData, (const uint8_t *)pData->SendFrame.pvBuf, pData->SendFrame.cb);
     pcnetXmitScrapFrame(pData);
     pData->Led.Actual.s.fReading = 0;
 }
+
+/**
+ * Flushes queued frames.
+ */
+DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
+{
+    pcnetXmitQueueConsumer(CTXSUFF(pData->pDevIns), NULL);
+}
+
+#endif /* IN_RING3 */
+
 
 
 /**
@@ -2188,15 +1906,41 @@ DECLINLINE(void) pcnetXmitLoopbackFrame(PCNetState *pData)
  */
 static void pcnetTransmit(PCNetState *pData)
 {
+    if (RT_UNLIKELY(!CSR_TXON(pData)))
+    {
+        pData->aCSR[0] &= ~0x0008; /* Clear TDMD */
+        return;
+    }
+
     /*
-     * Prevent various pollers (esp the one in pcnetReceiveNoSync) from causing
-     * recursion when flushing a queue.
+     * Check the current transmit descriptors.
      */
-    if (    pData->fTransmitting
-        ||  !VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))))
+    TMD tmd;
+    if (!pcnetTdtePoll(pData, &tmd))
         return;
 
-    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+    /* Update TDMD, TXSTRT and TINT. */
+    pData->aCSR[0] &= ~0x0008;       /* clear TDMD */
+
+    /*
+     * If we're in Ring-3 we should flush the queue now, in GC/R0 we'll queue a flush job.
+     */
+#ifdef IN_RING3
+    pcnetXmitFlushFrames(pData);
+#else
+    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
+    if (RT_LIKELY(pItem))
+        PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
+#endif
+}
+
+#ifdef IN_RING3
+/**
+ * Try to transmit frames
+ */
+static void pcnetAsyncTransmit(PCNetState *pData)
+{
+    Assert(PDMCritSectIsOwner(&pData->CritSect));
 
     if (RT_UNLIKELY(!CSR_TXON(pData)))
     {
@@ -2207,7 +1951,7 @@ static void pcnetTransmit(PCNetState *pData)
     /*
      * Iterate the transmit descriptors.
      */
-    STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatTransmit), a);
+    STAM_PROFILE_ADV_START(&pData->StatTransmit, a);
     do
     {
 #ifdef VBOX_WITH_STATISTICS
@@ -2233,16 +1977,14 @@ static void pcnetTransmit(PCNetState *pData)
             Log(("#%d pcnetTransmit: stp&enp: cb=%d xmtrc=%#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, cb, CSR_XMTRC(pData)));
             if (RT_LIKELY(pcnetIsLinkUp(pData) || CSR_LOOP(pData)))
             {
-#ifdef IN_RING3
                 RTR3PTR pv;
+
                 int rc = PDMDevHlpPhys2HCVirt(pData->pDevInsHC,
                                               PHYSADDR(pData, tmd.tmd0.tbadr), cb, &pv);
                 if (RT_SUCCESS(rc))
                     pcnetXmitZeroCopyFrame(pData, pv, cb);
                 else
-#endif
                 {
-                    pcnetXmitEnsureSpace(pData, cb, CSR_LOOP(pData));
                     pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
                 }
                 if (CSR_LOOP(pData))
@@ -2270,7 +2012,6 @@ static void pcnetTransmit(PCNetState *pData)
             const unsigned cbMaxFrame = 4096;
             bool fDropFrame = false;
             unsigned cb = 4096 - tmd.tmd1.bcnt;
-            pcnetXmitEnsureSpace(pData, cbMaxFrame, CSR_LOOP(pData));
             pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
             for (;;)
             {
@@ -2312,19 +2053,19 @@ static void pcnetTransmit(PCNetState *pData)
 #endif
                 pcnetTmdLoad(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)));
                 cb = 4096 - tmd.tmd1.bcnt;
-                if (    pData->aFrames[pData->iFrame].cb + cb < cbMaxFrame
+                if (    pData->SendFrame.cb + cb < cbMaxFrame
                     &&  !fDropFrame)
                     pcnetXmitReadMore(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
                 else
                 {
                     AssertMsg(fDropFrame, ("pcnetTransmit: Frame is too big!!! %d bytes\n",
-                                           pData->aFrames[pData->iFrame].cb + cb));
+                                           pData->SendFrame.cb + cb));
                     fDropFrame = true;
                 }
                 if (tmd.tmd1.enp)
                 {
                     Log(("#%d pcnetTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
-                         pData->aFrames[pData->iFrame].cb, iStart, CSR_XMTRC(pData)));
+                         pData->SendFrame.cb, iStart, CSR_XMTRC(pData)));
                     if (pcnetIsLinkUp(pData) && !fDropFrame)
                         pcnetXmitCompleteFrame(pData);
                     else if (CSR_LOOP(pData) && !fDropFrame)
@@ -2360,40 +2101,45 @@ static void pcnetTransmit(PCNetState *pData)
         /* Update TDMD, TXSTRT and TINT. */
         pData->aCSR[0] &= ~0x0008;       /* clear TDMD */
 
-#ifndef PCNET_DELAY_INT
         pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
         if (    !CSR_TOKINTD(pData)      /* Transmit OK Interrupt Disable, no infl. on errors. */
             ||  (CSR_LTINTEN(pData) && tmd.tmd1.ltint)
             ||  tmd.tmd1.err)
             pData->aCSR[0] |= 0x0200;    /* set TINT */
-#endif
+
         STAM_COUNTER_INC(&pData->aStatXmitChainCounts[RT_MIN(cBuffers,
                                                       ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
     } while (CSR_TXON(pData));          /* transfer on */
 
-    STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTransmit), a);
-
-    /*
-     * If we're in Ring-3 we should flush the queue now, in GC/R0 we'll queue a flush job.
-     */
-#ifdef IN_RING3
-    pcnetXmitFlushFrames(pData);
-#else
-    if (pData->iFrame)
-    {
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
-        if (pItem)
-        {
-# if 0 /* send before resuming guest (last argument isn't implemented yet and read as 0). */
-            PDMQueueInsertEx(CTXSUFF(pData->pXmitQueue), pItem, 50000);
-# else /* send when going back to r3. */
-            PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
-# endif
-        }
-    }
-#endif
-
+    pcnetUpdateIrq(pData);
+    STAM_PROFILE_ADV_STOP(&pData->StatTransmit, a);
 }
+
+/**
+ * Async I/O thread for delayed sending of packets.
+ */
+static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
+{
+    PCNetState *pData = (PCNetState *)pvUser;
+    RTSEMEVENT hEvent = pData->hSendEventSem;
+
+    while(1)
+    {
+        int rc = RTSemEventWait(hEvent, RT_INDEFINITE_WAIT);
+        if (VBOX_FAILURE(rc))
+            break;
+
+        rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+        AssertReleaseRC(rc);
+
+        pcnetAsyncTransmit(pData);
+
+        PDMCritSectLeave(&pData->CritSect);
+    }
+    return VINF_SUCCESS;
+}
+
+#endif /* IN_RING3 */
 
 /**
  * Poll for changes in RX and TX descriptor rings.
@@ -3847,9 +3593,6 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
                          ? 0
                          : (0xff00 & (uint32_t)pData->aCSR[2]) << 16;
 
-    /* Initialize stuff we don't store. */
-    pData->iFrame = 0;
-
     /* update promiscuous mode. */
     if (pData->pDrv)
         pData->pDrv->pfnSetPromiscuousMode(pData->pDrv, CSR_PROM(pData));
@@ -4140,8 +3883,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     Assert(RT_ELEMENTS(pData->aBCR) == BCR_MAX_RAP);
     Assert(RT_ELEMENTS(pData->aMII) == MII_MAX_REG);
-    Assert(sizeof(pData->abFrameBuf) == RT_ALIGN_Z(sizeof(pData->abFrameBuf), 16));
-    Assert(PCNET_TRQUEUE_DEPTH*1536 <= sizeof(pData->abFrameBuf));
+    Assert(sizeof(pData->abSendBuf) == RT_ALIGN_Z(sizeof(pData->abSendBuf), 16));
 
     /*
      * Validate configuration.
@@ -4368,26 +4110,13 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     pcnetHardReset(pData);
 
-#ifdef PCNET_ASYNC_SEND
     /* Create send queue for the async send thread. */
-    rc = RTReqCreateQueue(&pData->pSendQueue);
+    rc = RTSemEventCreate(&pData->hSendEventSem);
     AssertRC(rc);
 
     /* Create asynchronous thread */
     rc = RTThreadCreate(&pData->hSendThread, pcnetAsyncSend, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "PCNET_SEND");
     AssertRC(rc);
-
-    Assert(pData->hSendThread != NIL_RTTHREAD && pData->pSendQueue);
-
-    /* Create some buffer memory to avoid allocating every time we process an async send packet. */
-    for (unsigned j=0;j<ELEMENTS(pData->paMemCache);j++)
-    {
-        pData->paMemCache[j].cb      = sizeof(pData->abFrameBuf) + sizeof(uint32_t) * ELEMENTS(pData->abFrameBuf);
-        pData->paMemCache[j].fTaken  = 0;
-        pData->paMemCache[j].pBuffer = RTMemAlloc(pData->paMemCache[j].cb);
-        Assert(pData->paMemCache[j].pBuffer);
-    }
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
@@ -4402,8 +4131,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet IO writes in HC",    "/Devices/PCNet%d/IO/WriteHC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTimer,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet Timer",              "/Devices/PCNet%d/Timer", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet receive",            "/Devices/PCNet%d/Receive", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet transmit in GC",     "/Devices/PCNet%d/TransmitGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet transmit in HC",     "/Devices/PCNet%d/TransmitHC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet transmit in HC",     "/Devices/PCNet%d/Transmit/Total", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitSend,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet send transmit in HC",     "/Devices/PCNet%d/Transmit/Send", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTdtePollGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in GC",     "/Devices/PCNet%d/TdtePollGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTdtePollHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in HC",     "/Devices/PCNet%d/TdtePollHC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRdtePollGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet RdtePoll in GC",     "/Devices/PCNet%d/RdtePollGC", iInstance);
@@ -4412,25 +4141,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in GC",     "/Devices/PCNet%d/TmdStoreGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in HC",     "/Devices/PCNet%d/TmdStoreHC", iInstance);
     
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueue,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue",         "/Devices/PCNet%d/XmitQueue", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueFlushGC,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue flushes from GC", "/Devices/PCNet%d/XmitQueueFlushGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncPrep, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue async",   "/Devices/PCNet%d/XmitQueueASPrep", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncReq,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet xmit queue async",   "/Devices/PCNet%d/XmitQueueASReq", iInstance);
-
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncCacheMiss, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr asycn mem cache misses",     "/Devices/PCNet%d/Xmit/Cache/Miss", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitQueueAsyncCacheHit,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr asycn mem cache hits",       "/Devices/PCNet%d/Xmit/Cache/Hit", iInstance);
-
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatDeferredXmit,       STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of deferred xmits queue flushes", "/Devices/PCNet%d/Xmit/Deferred", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatDeferredXmitPending,  STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of pending deferred xmits queue flushes", "/Devices/PCNet%d/Xmit/DeferredP", iInstance);
-
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSync,           STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of sync packet xmits", "/Devices/PCNet%d/Xmit/Sync", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitAsync,          STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of async packet xmits", "/Devices/PCNet%d/Xmit/ASync", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitInTxThread,     STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of packet xmits in rx thread", "/Devices/PCNet%d/Xmit/RxThread", iInstance);
-
     unsigned i;
-    for (i = 0; i < ELEMENTS(pData->aStatFlushCounts); i++)
-        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatFlushCounts[i],STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "",                                   "/Devices/PCNet%d/FlushCounts/Depth-%d", iInstance, i);
-    Assert(ELEMENTS(pData->aStatFlushCounts) - 1 == ELEMENTS(pData->aFrames));
     for (i = 0; i < ELEMENTS(pData->aStatXmitChainCounts) - 1; i++)
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "",                                  "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
