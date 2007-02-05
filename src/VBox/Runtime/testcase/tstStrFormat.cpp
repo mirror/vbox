@@ -26,14 +26,7 @@
 #include <iprt/runtime.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
-
-#include <stdio.h>
-
-#ifdef _MSC_VER
-#define U64C(c) c
-#else
-#define U64C(c) c##ULL
-#endif
+#include <iprt/stream.h>
 
 int main()
 {
@@ -48,31 +41,31 @@ int main()
     size_t cch = RTStrPrintf(szStr, sizeof(szStr), "u32=%d u64=%lld u64=%#llx", u32, u64, u64);
     if (strcmp(szStr, "u32=16 u64=256 u64=0x100"))
     {
-        printf("error: '%s'\n"
+        RTPrintf("error: '%s'\n"
                "wanted 'u32=16 u64=256 u64=0x100'\n", szStr);
         cErrors++;
     }
 
     /* just big. */
-    u64 = U64C(0x7070605040302010);
+    u64 = UINT64_C(0x7070605040302010);
     cch = RTStrPrintf(szStr, sizeof(szStr), "u64=%#llx 42=%d u64=%lld 42=%d", u64, 42, u64, 42);
     if (strcmp(szStr, "u64=0x7070605040302010 42=42 u64=8102081627430068240 42=42"))
     {
-        printf("error: '%s'\n"
-               "wanted 'u64=0x8070605040302010 42=42 u64=8102081627430068240 42=42'\n", szStr);
-        printf("%d\n", (int)(u64 % 10));
+        RTPrintf("error: '%s'\n"
+                 "wanted 'u64=0x8070605040302010 42=42 u64=8102081627430068240 42=42'\n", szStr);
+        RTPrintf("%d\n", (int)(u64 % 10));
         cErrors++;
     }
 
     /* huge and negative. */
-    u64 = U64C(0x8070605040302010);
+    u64 = UINT64_C(0x8070605040302010);
     cch = RTStrPrintf(szStr, sizeof(szStr), "u64=%#llx 42=%d u64=%llu 42=%d u64=%lld 42=%d", u64, 42, u64, 42, u64, 42);
     /* Not sure if this is the correct decimal representation... But both */
     if (strcmp(szStr, "u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42"))
     {
-        printf("error: '%s'\n"
-               "wanted 'u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42'\n", szStr);
-        printf("%d\n", (int)(u64 % 10));
+        RTPrintf("error: '%s'\n"
+                 "wanted 'u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42'\n", szStr);
+        RTPrintf("%d\n", (int)(u64 % 10));
         cErrors++;
     }
 
@@ -81,8 +74,8 @@ int main()
     cch = RTStrPrintf(szStr, sizeof(szStr), "u64=%#llx 42=%d u64=%lld 42=%d", u64, 42, u64, 42);
     if (strcmp(szStr, "u64=0xa0000000 42=42 u64=2684354560 42=42"))
     {
-        printf("error: '%s'\n"
-               "wanted 'u64=0xa0000000 42=42 u64=2684354560 42=42'\n", szStr);
+        RTPrintf("error: '%s'\n"
+                 "wanted 'u64=0xa0000000 42=42 u64=2684354560 42=42'\n", szStr);
         cErrors++;
     }
 
@@ -94,9 +87,9 @@ int main()
     cch = RTStrPrintf(szStr, sizeof(szStr), "%Vuuid", &Uuid);
     if (strcmp(szStr, szCorrect))
     {
-        printf("error:    '%s'\n"
-               "expected: '%s'\n",
-               szStr, szCorrect);
+        RTPrintf("error:    '%s'\n"
+                 "expected: '%s'\n",
+                 szStr, szCorrect);
         cErrors++;
     }
 
@@ -105,20 +98,20 @@ int main()
     int cch2 = RTStrAPrintf(&psz, "Hey there! %s%s", "This is a test", "!");
     if (cch2 < 0)
     {
-        printf("error: RTStrAPrintf failed, cch2=%d\n", cch2);
+        RTPrintf("error: RTStrAPrintf failed, cch2=%d\n", cch2);
         cErrors++;
     }
     else if (strcmp(psz, "Hey there! This is a test!"))
     {
-        printf("error: RTStrAPrintf failed\n"
-               "got   : '%s'\n"
-               "wanted: 'Hey there! This is a test!'\n",
+        RTPrintf("error: RTStrAPrintf failed\n"
+                 "got   : '%s'\n"
+                 "wanted: 'Hey there! This is a test!'\n",
                psz);
         cErrors++;
     }
     else if ((int)strlen(psz) != cch2)
     {
-        printf("error: RTStrAPrintf failed, cch2 == %d expected %u\n", cch2, strlen(psz));
+        RTPrintf("error: RTStrAPrintf failed, cch2 == %d expected %u\n", cch2, strlen(psz));
         cErrors++;
     }
     RTStrFree(psz);
@@ -128,16 +121,16 @@ int main()
         cch = RTStrPrintf(szStr, sizeof(szStr), fmt " 42=%d " fmt " 42=%d", arg, 42, arg, 42); \
         if (strcmp(szStr, out " 42=42 " out " 42=42")) \
         { \
-            printf("error(%d): format '%s'\n" \
-                   "    output: '%s'\n"  \
-                   "    wanted: '%s'\n", \
-                   __LINE__, fmt, szStr, out " 42=42 " out " 42=42"); \
+            RTPrintf("error(%d): format '%s'\n" \
+                     "    output: '%s'\n"  \
+                     "    wanted: '%s'\n", \
+                     __LINE__, fmt, szStr, out " 42=42 " out " 42=42"); \
             cErrors++; \
         } \
         else if (cch != sizeof(out " 42=42 " out " 42=42") - 1) \
         { \
-            printf("error(%d): Invalid length %d returned, expected %u!\n", \
-                   __LINE__, cch, sizeof(out " 42=42 " out " 42=42") - 1); \
+            RTPrintf("error(%d): Invalid length %d returned, expected %u!\n", \
+                     __LINE__, cch, sizeof(out " 42=42 " out " 42=42") - 1); \
             cErrors++; \
         } \
     } while (0)
@@ -312,9 +305,9 @@ int main()
     cch = RTStrPrintf(szStr, sizeof(szStr), "%RTuuid", &Uuid);
     if (strcmp(szStr, szCorrect))
     {
-        printf("error:    '%s'\n"
-               "expected: '%s'\n",
-               szStr, szCorrect);
+        RTPrintf("error:    '%s'\n"
+                 "expected: '%s'\n",
+                 szStr, szCorrect);
         cErrors++;
     }
 
@@ -350,8 +343,8 @@ int main()
 #define CHECKSTR(Correct) \
     if (strcmp(szStr, Correct)) \
     { \
-        printf("error:    '%s'\n" \
-               "expected: '%s'\n", szStr, Correct); \
+        RTPrintf("error:    '%s'\n" \
+                 "expected: '%s'\n", szStr, Correct); \
         cErrors++; \
     }
 
@@ -400,9 +393,9 @@ int main()
      * Summarize and exit.
      */
     if (!cErrors)
-        printf("tstStrFormat: SUCCESS\n");
+        RTPrintf("tstStrFormat: SUCCESS\n");
     else
-        printf("tstStrFormat: FAILED - %d errors\n", cErrors);
+        RTPrintf("tstStrFormat: FAILED - %d errors\n", cErrors);
     return !!cErrors;
 }
 
