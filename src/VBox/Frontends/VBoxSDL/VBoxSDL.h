@@ -23,8 +23,10 @@
 #ifndef __H_VBOXSDL
 #define __H_VBOXSDL
 
+#ifdef __WIN__ /** @todo check why we need to do this on windows. */
 /* convince SDL to not overload main() */
 #define _SDL_main_h
+#endif
 /* include this first so Windows.h get's in before our stuff. */
 #include <SDL.h>
 

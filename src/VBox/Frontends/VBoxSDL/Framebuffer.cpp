@@ -40,7 +40,7 @@ using namespace com;
 #include "Framebuffer.h"
 #include "Ico64x01.h"
 
-#ifdef __LINUX__
+#if defined(VBOX_WITH_XPCOM)
 NS_IMPL_ISUPPORTS1_CI(VBoxSDLFB, IFramebuffer)
 NS_DECL_CLASSINFO(VBoxSDLFB)
 NS_IMPL_ISUPPORTS1_CI(VBoxSDLFBOverlay, IFramebufferOverlay)

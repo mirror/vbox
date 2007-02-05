@@ -57,9 +57,8 @@ using namespace com;
 #include <iprt/stream.h>
 #include <iprt/uuid.h>
 #include <iprt/ldr.h>
+#include <iprt/alloca.h>
 
-#include <stdlib.h> /* for alloca */
-#include <malloc.h> /* for alloca */
 #include <signal.h>
 
 #include <vector>
@@ -440,7 +439,7 @@ public:
              */
             event.type      = SDL_USEREVENT;
             event.user.type = SDL_USER_EVENT_TERMINATE;
-            event.user.code = machineState == MachineState_Aborted 
+            event.user.code = machineState == MachineState_Aborted
                                            ? VBOXSDL_TERM_ABEND
                                            : VBOXSDL_TERM_NORMAL;
         }
@@ -522,12 +521,12 @@ private:
     bool m_fIgnorePowerOffEvents;
 };
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
 NS_DECL_CLASSINFO(VBoxSDLCallback)
 NS_IMPL_ISUPPORTS1_CI(VBoxSDLCallback, IVirtualBoxCallback)
 NS_DECL_CLASSINFO(VBoxSDLConsoleCallback)
 NS_IMPL_ISUPPORTS1_CI(VBoxSDLConsoleCallback, IConsoleCallback)
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_XPCOM */
 
 static void show_usage()
 {
@@ -548,7 +547,7 @@ static void show_usage()
              "  -nograbonclick           Disable mouse/keyboard grabbing on mouse click w/o additions\n"
              "  -detecthostkey           Get the hostkey identifier and modifier state\n"
              "  -hostkey <key> {<key2>} <mod> Set the host key to the values obtained using -detecthostkey\n"
-#ifdef __LINUX__
+#if defined(__LINUX__) || defined(__DARWIN__) /** @todo UNIXISH_TAP stuff out of main and up to Config.kmk! */
              "  -tapdev<1-N> <dev>       Use existing persistent TAP device with the given name\n"
              "  -tapfd<1-N> <fd>         Use existing TAP device, don't allocate\n"
 #endif
@@ -847,10 +846,10 @@ int main(int argc, char *argv[])
     /// @todo
 //    EventQueue eventQ;
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
     nsCOMPtr<nsIEventQueue> eventQ;
     NS_GetMainEventQ(getter_AddRefs(eventQ));
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_XPCOM */
 
     /* Get the number of network adapters */
     ULONG NetworkAdapterCount = 0;
@@ -858,7 +857,7 @@ int main(int argc, char *argv[])
     virtualBox->COMGETTER(SystemProperties) (sysInfo.asOutParam());
     sysInfo->COMGETTER (NetworkAdapterCount) (&NetworkAdapterCount);
 
-#ifdef __LINUX__
+#if defined(__LINUX__) || defined(__DARWIN__)
     std::vector <Bstr> tapdev (NetworkAdapterCount);
     std::vector <int> tapfd (NetworkAdapterCount, 0);
 #endif
@@ -1029,7 +1028,7 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-#ifdef __LINUX__
+#if defined(__LINUX__) || defined(__DARWIN__)
         else if (strncmp(argv[curArg], "-tapdev", 7) == 0)
         {
             ULONG n = 0;
@@ -1056,7 +1055,7 @@ int main(int argc, char *argv[])
             tapfd[n - 1] = atoi(argv[curArg + 1]);
             curArg++;
         }
-#endif /* __LINUX__ */
+#endif /* __LINUX__ || __DARWIN__ */
 #ifdef VBOX_VRDP
         else if (strcmp(argv[curArg], "-vrdp") == 0)
         {
@@ -1691,7 +1690,7 @@ int main(int argc, char *argv[])
     // until we've tried to to start the VM, ignore power off events
     consoleCallback->ignorePowerOffEvents(true);
 
-#ifdef __LINUX__
+#if defined(__LINUX__) || defined(__DARWIN__)
     /*
      * Do we have a TAP device name or file descriptor? If so, communicate
      * it to the network adapter so that it doesn't allocate a new one
@@ -1728,7 +1727,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-#endif /* __LINUX__ */
+#endif /* __LINUX__ || __DARWIN__ */
 
 #ifdef VBOX_VRDP
     if (portVRDP != ~0)
@@ -1872,7 +1871,7 @@ int main(int argc, char *argv[])
         goto leave;
     }
 
-#ifdef __LINUX__
+#if defined(VBOX_WITH_XPCOM)
     /*
      * Before we starting to do stuff, we have to launch the XPCOM
      * event queue thread. It will wait for events and send messages
@@ -1882,7 +1881,7 @@ int main(int argc, char *argv[])
      * event queue buffer!
      */
     startXPCOMEventQueueThread(eventQ->GetEventQueueSelectFD());
-#endif /** __LINUX__ */
+#endif /* VBOX_WITH_XPCOM */
 
     /* termination flag */
     bool fTerminateDuringStartup;
@@ -1908,7 +1907,7 @@ int main(int argc, char *argv[])
              * change will send us an event. However, we have to
              * service the XPCOM event queue!
              */
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
             if (!fXPCOMEventThreadSignaled)
             {
                 signalXPCOMEventQueueThread();
@@ -1946,7 +1945,7 @@ int main(int argc, char *argv[])
                         break;
                     }
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
                     /*
                      * User specific XPCOM event queue event
                      */
@@ -1957,7 +1956,7 @@ int main(int argc, char *argv[])
                         signalXPCOMEventQueueThread();
                         break;
                     }
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_XPCOM */
 
                     /*
                      * Termination event from the on state change callback.
@@ -2035,7 +2034,7 @@ int main(int argc, char *argv[])
     /*
      * Main event loop
      */
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
     if (!fXPCOMEventThreadSignaled)
     {
         signalXPCOMEventQueueThread();
@@ -2095,7 +2094,7 @@ int main(int argc, char *argv[])
                                 enmHKeyState = HKEYSTATE_DOWN;
                                 break;
                             }
-                            enmHKeyState = event.type == SDL_KEYUP ? HKEYSTATE_NORMAL 
+                            enmHKeyState = event.type == SDL_KEYUP ? HKEYSTATE_NORMAL
                                                                  : HKEYSTATE_NOT_IT;
                             ProcessKey(&EvHKeyDown1.key);
                             ProcessKey(&event.key);
@@ -2343,7 +2342,7 @@ int main(int argc, char *argv[])
                 break;
             }
 
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
             /*
              * User specific XPCOM event queue event
              */
@@ -2354,7 +2353,7 @@ int main(int argc, char *argv[])
                 signalXPCOMEventQueueThread();
                 break;
             }
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_XPCOM */
 
             /*
              * User specific update title bar notification event
@@ -2426,10 +2425,10 @@ int main(int argc, char *argv[])
 
 leave:
     LogFlow(("leaving...\n"));
-#ifdef __LINUX__
+#ifdef VBOX_WITH_XPCOM
     /* make sure the XPCOM event queue thread doesn't do anything harmful */
     terminateXPCOMQueueThread();
-#endif /* __LINUX__ */
+#endif /* VBOX_WITH_XPCOM */
 
 #ifdef VBOX_VRDP
     if (gVrdpServer)
