@@ -150,6 +150,7 @@ main(int argc, char **argv)
     bench(1280, 1024, 16);  bench(1280, 1024, 24);  bench(1280, 1024, 32);
 
     RTPrintf("\nSuccess!\n");
+    return 0;
 }
 
 /**
