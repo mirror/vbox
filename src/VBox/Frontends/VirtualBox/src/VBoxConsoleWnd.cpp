@@ -1158,7 +1158,7 @@ void VBoxConsoleWnd::languageChange()
             "(<img src=auto_resize_on_16px.png/>) or Off (<img src=auto_resize_off_16px.png/>)"));
     QToolTip::add (mouse_state,
         tr ("Indicates whether the host mouse pointer is captured by the guest OS:<br>"
-            "<nobr><img src=mouse_disabled_16px.png/>&nbsp;&nbsp;poinyrt is not captured</nobr><br>"
+            "<nobr><img src=mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
             "<nobr><img src=mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
             "<nobr><img src=mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
             "<nobr><img src=mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
