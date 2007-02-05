@@ -521,6 +521,19 @@ DECLASM(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pvECX
 DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
 {
 # if RT_INLINE_ASM_GNU_STYLE
+#  ifdef __AMD64__
+    RTCCUINTREG uRAX, uRBX, uRCX, uRDX;
+    __asm__ ("cpuid\n\t"
+             : "=a" (uRAX),
+               "=b" (uRBX),
+               "=c" (uRCX),
+               "=d" (uRDX)
+             : "0" (uOperator));
+    *(uint32_t *)pvEAX = (uint32_t)uRAX;
+    *(uint32_t *)pvEBX = (uint32_t)uRBX;
+    *(uint32_t *)pvECX = (uint32_t)uRCX;
+    *(uint32_t *)pvEDX = (uint32_t)uRDX;
+#  else
     __asm__ ("xchgl %%ebx, %1\n\t"
              "cpuid\n\t"
              "xchgl %%ebx, %1\n\t"
@@ -529,6 +542,7 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
                "=c" (*(uint32_t *)pvECX),
                "=d" (*(uint32_t *)pvEDX)
              : "0" (uOperator));
+#  endif
 
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
@@ -593,20 +607,27 @@ DECLASM(uint32_t) ASMCpuId_EDX(uint32_t uOperator);
 #else
 DECLINLINE(uint32_t) ASMCpuId_EDX(uint32_t uOperator)
 {
-    uint32_t    u32EDX;
+    RTCCUINTREG xDX;
 # if RT_INLINE_ASM_GNU_STYLE
-#  if (defined(PIC) || defined(__DARWIN__)) && defined(__i386__) /* darwin: 4.0.1 compiler option / bug? */
+#  ifdef __AMD64__
+    RTCCUINTREG uSpill;
+    __asm__ ("cpuid"
+             : "=a" (uSpill),
+               "=d" (xDX)
+             : "0" (uOperator)
+             : "rbx", "rcx");
+#  elif (defined(PIC) || defined(__DARWIN__)) && defined(__i386__) /* darwin: PIC by default. */
     __asm__ ("push  %%ebx\n\t"
              "cpuid\n\t"
              "pop   %%ebx\n\t"
              : "=a" (uOperator),
-               "=d" (u32EDX)
+               "=d" (xDX)
              : "0" (uOperator)
              : "ecx");
 #  else
     __asm__ ("cpuid"
              : "=a" (uOperator),
-               "=d" (u32EDX)
+               "=d" (xDX)
              : "0" (uOperator)
              : "ebx", "ecx");
 #  endif
@@ -622,11 +643,11 @@ DECLINLINE(uint32_t) ASMCpuId_EDX(uint32_t uOperator)
         push    ebx
         mov     eax, [uOperator]
         cpuid
-        mov     [u32EDX], edx
+        mov     [xDX], edx
         pop     ebx
     }
 # endif
-    return u32EDX;
+    return (uint32_t)xDX;
 }
 #endif
 
@@ -642,20 +663,27 @@ DECLASM(uint32_t) ASMCpuId_ECX(uint32_t uOperator);
 #else
 DECLINLINE(uint32_t) ASMCpuId_ECX(uint32_t uOperator)
 {
-    uint32_t    u32ECX;
+    RTCCUINTREG xCX;
 # if RT_INLINE_ASM_GNU_STYLE
-#  if (defined(PIC) || defined(__DARWIN__)) && defined(__i386__) /* darwin: 4.0.1 compiler option / bug? */
+#  ifdef __AMD64__
+    RTCCUINTREG uSpill;
+    __asm__ ("cpuid"
+             : "=a" (uSpill),
+               "=c" (xCX)
+             : "0" (uOperator)
+             : "rbx", "rdx");
+#  elif (defined(PIC) || defined(__DARWIN__)) && defined(__i386__) /* darwin: 4.0.1 compiler option / bug? */
     __asm__ ("push  %%ebx\n\t"
              "cpuid\n\t"
              "pop   %%ebx\n\t"
              : "=a" (uOperator),
-               "=c" (u32ECX)
+               "=c" (xCX)
              : "0" (uOperator)
              : "edx");
 #  else
     __asm__ ("cpuid"
              : "=a" (uOperator),
-               "=c" (u32ECX)
+               "=c" (xCX)
              : "0" (uOperator)
              : "ebx", "edx");
 
@@ -664,7 +692,7 @@ DECLINLINE(uint32_t) ASMCpuId_ECX(uint32_t uOperator)
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
     __cpuid(aInfo, uOperator);
-    u32ECX = aInfo[2];
+    xCX = aInfo[2];
 
 # else
     __asm
@@ -672,11 +700,11 @@ DECLINLINE(uint32_t) ASMCpuId_ECX(uint32_t uOperator)
         push    ebx
         mov     eax, [uOperator]
         cpuid
-        mov     [u32ECX], ecx
+        mov     [xCX], ecx
         pop     ebx
     }
 # endif
-    return u32ECX;
+    return (uint32_t)xCX;
 }
 #endif
 

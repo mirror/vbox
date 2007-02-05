@@ -61,7 +61,7 @@ static unsigned g_cErrors;
     } while (0)
 
 
-#ifndef PIC
+#if !defined(PIC) || !defined(__X86__)
 const char *getCacheAss(unsigned u)
 {
     if (u == 0)
@@ -112,7 +112,10 @@ const char *getL2CacheAss(unsigned u)
 void tstASMCpuId(void)
 {
     unsigned    iBit;
-    uint32_t    uEAX, uEBX, uECX, uEDX;
+    struct 
+    {
+        uint32_t    uEBX, uEAX, uEDX, uECX;
+    } s;
     if (!ASMHasCpuId())
     {
         RTPrintf("tstInlineAsm: warning! CPU doesn't support CPUID\n");
@@ -122,27 +125,27 @@ void tstASMCpuId(void)
     /*
      * Try the 0 function and use that for checking the ASMCpuId_* variants.
      */
-    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+    ASMCpuId(0, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
 
     uint32_t u32 = ASMCpuId_ECX(0);
-    CHECKVAL(u32, uECX, "%x");
+    CHECKVAL(u32, s.uECX, "%x");
 
     u32 = ASMCpuId_EDX(0);
-    CHECKVAL(u32, uEDX, "%x");
+    CHECKVAL(u32, s.uEDX, "%x");
 
-    uint32_t uECX2 = uECX - 1;
-    uint32_t uEDX2 = uEDX - 1;
+    uint32_t uECX2 = s.uECX - 1;
+    uint32_t uEDX2 = s.uEDX - 1;
     ASMCpuId_ECX_EDX(0, &uECX2, &uEDX2);
 
-    CHECKVAL(uECX2, uECX, "%x");
-    CHECKVAL(uEDX2, uEDX, "%x");
+    CHECKVAL(uECX2, s.uECX, "%x");
+    CHECKVAL(uEDX2, s.uEDX, "%x");
 
     /*
      * Done testing, dump the information.
      */
     RTPrintf("tstInlineAsm: CPUID Dump\n");
-    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-    const uint32_t cFunctions = uEAX;
+    ASMCpuId(0, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+    const uint32_t cFunctions = s.uEAX;
 
     /* raw dump */
     RTPrintf("\n"
@@ -150,25 +153,25 @@ void tstASMCpuId(void)
              "Function  eax      ebx      ecx      edx\n");
     for (unsigned iStd = 0; iStd <= cFunctions + 3; iStd++)
     {
-        ASMCpuId(iStd, &uEAX, &uEBX, &uECX, &uEDX);
+        ASMCpuId(iStd, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("%08x  %08x %08x %08x %08x%s\n",
-                 iStd, uEAX, uEBX, uECX, uEDX, iStd <= cFunctions ? "" : "*");
+                 iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
     }
 
     /*
      * Understandable output
      */
-    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+    ASMCpuId(0, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
     RTPrintf("Name:                            %.04s%.04s%.04s\n"
              "Support:                         0-%u\n",
-             &uEBX, &uEDX, &uECX, uEAX);
+             &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
 
     /*
      * Get Features.
      */
     if (cFunctions >= 1)
     {
-        ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
+        ASMCpuId(1, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("Family:                          %d  \tExtended: %d \tEffectiv: %d\n"
                  "Model:                           %d  \tExtended: %d \tEffectiv: %d\n"
                  "Stepping:                        %d\n"
@@ -176,58 +179,58 @@ void tstASMCpuId(void)
                  "Logical CPUs:                    %d\n"
                  "CLFLUSH Size:                    %d\n"
                  "Brand ID:                        %#04x\n",
-                 (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ((uEAX >> 8) & 0xf) + (((uEAX >> 8) & 0xf) == 0xf ? (uEAX >> 20) & 0x7f : 0),
-                 (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ((uEAX >> 4) & 0xf) | (((uEAX >> 4) & 0xf) == 0xf ? (uEAX >> 16) & 0x0f : 0),
-                 (uEAX >> 0) & 0xf,
-                 (uEBX >> 24) & 0xff,
-                 (uEBX >> 16) & 0xff,
-                 (uEBX >>  8) & 0xff,
-                 (uEBX >>  0) & 0xff);
+                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ((s.uEAX >> 8) & 0xf) + (((s.uEAX >> 8) & 0xf) == 0xf ? (s.uEAX >> 20) & 0x7f : 0),
+                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ((s.uEAX >> 4) & 0xf) | (((s.uEAX >> 4) & 0xf) == 0xf ? (s.uEAX >> 16) & 0x0f : 0),
+                 (s.uEAX >> 0) & 0xf,
+                 (s.uEBX >> 24) & 0xff,
+                 (s.uEBX >> 16) & 0xff,
+                 (s.uEBX >>  8) & 0xff,
+                 (s.uEBX >>  0) & 0xff);
 
         RTPrintf("Features EDX:                   ");
-        if (uEDX & BIT(0))   RTPrintf(" FPU");
-        if (uEDX & BIT(1))   RTPrintf(" VME");
-        if (uEDX & BIT(2))   RTPrintf(" DE");
-        if (uEDX & BIT(3))   RTPrintf(" PSE");
-        if (uEDX & BIT(4))   RTPrintf(" TSC");
-        if (uEDX & BIT(5))   RTPrintf(" MSR");
-        if (uEDX & BIT(6))   RTPrintf(" PAE");
-        if (uEDX & BIT(7))   RTPrintf(" MCE");
-        if (uEDX & BIT(8))   RTPrintf(" CX8");
-        if (uEDX & BIT(9))   RTPrintf(" APIC");
-        if (uEDX & BIT(10))  RTPrintf(" 10");
-        if (uEDX & BIT(11))  RTPrintf(" SEP");
-        if (uEDX & BIT(12))  RTPrintf(" MTRR");
-        if (uEDX & BIT(13))  RTPrintf(" PGE");
-        if (uEDX & BIT(14))  RTPrintf(" MCA");
-        if (uEDX & BIT(15))  RTPrintf(" CMOV");
-        if (uEDX & BIT(16))  RTPrintf(" PAT");
-        if (uEDX & BIT(17))  RTPrintf(" PSE36");
-        if (uEDX & BIT(18))  RTPrintf(" PSN");
-        if (uEDX & BIT(19))  RTPrintf(" CLFSH");
-        if (uEDX & BIT(20))  RTPrintf(" 20");
-        if (uEDX & BIT(21))  RTPrintf(" DS");
-        if (uEDX & BIT(22))  RTPrintf(" ACPI");
-        if (uEDX & BIT(23))  RTPrintf(" MMX");
-        if (uEDX & BIT(24))  RTPrintf(" FXSR");
-        if (uEDX & BIT(25))  RTPrintf(" SSE");
-        if (uEDX & BIT(26))  RTPrintf(" SSE2");
-        if (uEDX & BIT(27))  RTPrintf(" SS");
-        if (uEDX & BIT(28))  RTPrintf(" HTT");
-        if (uEDX & BIT(29))  RTPrintf(" 29");
-        if (uEDX & BIT(30))  RTPrintf(" 30");
-        if (uEDX & BIT(31))  RTPrintf(" 31");
+        if (s.uEDX & BIT(0))   RTPrintf(" FPU");
+        if (s.uEDX & BIT(1))   RTPrintf(" VME");
+        if (s.uEDX & BIT(2))   RTPrintf(" DE");
+        if (s.uEDX & BIT(3))   RTPrintf(" PSE");
+        if (s.uEDX & BIT(4))   RTPrintf(" TSC");
+        if (s.uEDX & BIT(5))   RTPrintf(" MSR");
+        if (s.uEDX & BIT(6))   RTPrintf(" PAE");
+        if (s.uEDX & BIT(7))   RTPrintf(" MCE");
+        if (s.uEDX & BIT(8))   RTPrintf(" CX8");
+        if (s.uEDX & BIT(9))   RTPrintf(" APIC");
+        if (s.uEDX & BIT(10))  RTPrintf(" 10");
+        if (s.uEDX & BIT(11))  RTPrintf(" SEP");
+        if (s.uEDX & BIT(12))  RTPrintf(" MTRR");
+        if (s.uEDX & BIT(13))  RTPrintf(" PGE");
+        if (s.uEDX & BIT(14))  RTPrintf(" MCA");
+        if (s.uEDX & BIT(15))  RTPrintf(" CMOV");
+        if (s.uEDX & BIT(16))  RTPrintf(" PAT");
+        if (s.uEDX & BIT(17))  RTPrintf(" PSE36");
+        if (s.uEDX & BIT(18))  RTPrintf(" PSN");
+        if (s.uEDX & BIT(19))  RTPrintf(" CLFSH");
+        if (s.uEDX & BIT(20))  RTPrintf(" 20");
+        if (s.uEDX & BIT(21))  RTPrintf(" DS");
+        if (s.uEDX & BIT(22))  RTPrintf(" ACPI");
+        if (s.uEDX & BIT(23))  RTPrintf(" MMX");
+        if (s.uEDX & BIT(24))  RTPrintf(" FXSR");
+        if (s.uEDX & BIT(25))  RTPrintf(" SSE");
+        if (s.uEDX & BIT(26))  RTPrintf(" SSE2");
+        if (s.uEDX & BIT(27))  RTPrintf(" SS");
+        if (s.uEDX & BIT(28))  RTPrintf(" HTT");
+        if (s.uEDX & BIT(29))  RTPrintf(" 29");
+        if (s.uEDX & BIT(30))  RTPrintf(" 30");
+        if (s.uEDX & BIT(31))  RTPrintf(" 31");
         RTPrintf("\n");
 
         /** @todo check intel docs. */
         RTPrintf("Features ECX:                   ");
-        if (uECX & BIT(0))   RTPrintf(" SSE3");
+        if (s.uECX & BIT(0))   RTPrintf(" SSE3");
         for (iBit = 1; iBit < 13; iBit++)
-            if (uECX & BIT(iBit))
+            if (s.uECX & BIT(iBit))
                 RTPrintf(" %d", iBit);
-        if (uECX & BIT(13))  RTPrintf(" CX16");
+        if (s.uECX & BIT(13))  RTPrintf(" CX16");
         for (iBit = 14; iBit < 32; iBit++)
-            if (uECX & BIT(iBit))
+            if (s.uECX & BIT(iBit))
                 RTPrintf(" %d", iBit);
         RTPrintf("\n");
     }
@@ -237,13 +240,13 @@ void tstASMCpuId(void)
      * Implemented after AMD specs.
      */
     /** @todo check out the intel specs. */
-    ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
-    if (!uEAX && !uEBX && !uECX && !uEDX)
+    ASMCpuId(0x80000000, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+    if (!s.uEAX && !s.uEBX && !s.uECX && !s.uEDX)
     {
         RTPrintf("No extended CPUID info? Check the manual on how to detect this...\n");
         return;
     }
-    const uint32_t cExtFunctions = uEAX | 0x80000000;
+    const uint32_t cExtFunctions = s.uEAX | 0x80000000;
 
     /* raw dump */
     RTPrintf("\n"
@@ -251,75 +254,75 @@ void tstASMCpuId(void)
              "Function  eax      ebx      ecx      edx\n");
     for (unsigned iExt = 0x80000000; iExt <= cExtFunctions + 3; iExt++)
     {
-        ASMCpuId(iExt, &uEAX, &uEBX, &uECX, &uEDX);
+        ASMCpuId(iExt, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("%08x  %08x %08x %08x %08x%s\n",
-                 iExt, uEAX, uEBX, uECX, uEDX, iExt <= cExtFunctions ? "" : "*");
+                 iExt, s.uEAX, s.uEBX, s.uECX, s.uEDX, iExt <= cExtFunctions ? "" : "*");
     }
 
     /*
      * Understandable output
      */
-    ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
+    ASMCpuId(0x80000000, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
     RTPrintf("Ext Name:                        %.4s%.4s%.4s\n"
              "Ext Supports:                    0x80000000-%#010x\n",
-             &uEBX, &uEDX, &uECX, uEAX);
+             &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
 
     if (cExtFunctions >= 0x80000001)
     {
-        ASMCpuId(0x80000001, &uEAX, &uEBX, &uECX, &uEDX);
+        ASMCpuId(0x80000001, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("Family:                          %d  \tExtended: %d \tEffectiv: %d\n"
                  "Model:                           %d  \tExtended: %d \tEffectiv: %d\n"
                  "Stepping:                        %d\n"
                  "Brand ID:                        %#05x\n",
-                 (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ((uEAX >> 8) & 0xf) + (((uEAX >> 8) & 0xf) == 0xf ? (uEAX >> 20) & 0x7f : 0),
-                 (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ((uEAX >> 4) & 0xf) | (((uEAX >> 4) & 0xf) == 0xf ? (uEAX >> 16) & 0x0f : 0),
-                 (uEAX >> 0) & 0xf,
-                 uEBX & 0xfff);
+                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ((s.uEAX >> 8) & 0xf) + (((s.uEAX >> 8) & 0xf) == 0xf ? (s.uEAX >> 20) & 0x7f : 0),
+                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ((s.uEAX >> 4) & 0xf) | (((s.uEAX >> 4) & 0xf) == 0xf ? (s.uEAX >> 16) & 0x0f : 0),
+                 (s.uEAX >> 0) & 0xf,
+                 s.uEBX & 0xfff);
 
         RTPrintf("Features EDX:                   ");
-        if (uEDX & BIT(0))   RTPrintf(" FPU");
-        if (uEDX & BIT(1))   RTPrintf(" VME");
-        if (uEDX & BIT(2))   RTPrintf(" DE");
-        if (uEDX & BIT(3))   RTPrintf(" PSE");
-        if (uEDX & BIT(4))   RTPrintf(" TSC");
-        if (uEDX & BIT(5))   RTPrintf(" MSR");
-        if (uEDX & BIT(6))   RTPrintf(" PAE");
-        if (uEDX & BIT(7))   RTPrintf(" MCE");
-        if (uEDX & BIT(8))   RTPrintf(" CX8");
-        if (uEDX & BIT(9))   RTPrintf(" APIC");
-        if (uEDX & BIT(10))  RTPrintf(" 10");
-        if (uEDX & BIT(11))  RTPrintf(" SCR");
-        if (uEDX & BIT(12))  RTPrintf(" MTRR");
-        if (uEDX & BIT(13))  RTPrintf(" PGE");
-        if (uEDX & BIT(14))  RTPrintf(" MCA");
-        if (uEDX & BIT(15))  RTPrintf(" CMOV");
-        if (uEDX & BIT(16))  RTPrintf(" PAT");
-        if (uEDX & BIT(17))  RTPrintf(" PSE36");
-        if (uEDX & BIT(18))  RTPrintf(" 18");
-        if (uEDX & BIT(19))  RTPrintf(" 19");
-        if (uEDX & BIT(20))  RTPrintf(" NX");
-        if (uEDX & BIT(21))  RTPrintf(" 21");
-        if (uEDX & BIT(22))  RTPrintf(" ExtMMX");
-        if (uEDX & BIT(23))  RTPrintf(" MMX");
-        if (uEDX & BIT(24))  RTPrintf(" FXSR");
-        if (uEDX & BIT(25))  RTPrintf(" FastFXSR");
-        if (uEDX & BIT(26))  RTPrintf(" 26");
-        if (uEDX & BIT(27))  RTPrintf(" RDTSCP");
-        if (uEDX & BIT(28))  RTPrintf(" 29");
-        if (uEDX & BIT(29))  RTPrintf(" LongMode");
-        if (uEDX & BIT(30))  RTPrintf(" Ext3DNow");
-        if (uEDX & BIT(31))  RTPrintf(" 3DNow");
+        if (s.uEDX & BIT(0))   RTPrintf(" FPU");
+        if (s.uEDX & BIT(1))   RTPrintf(" VME");
+        if (s.uEDX & BIT(2))   RTPrintf(" DE");
+        if (s.uEDX & BIT(3))   RTPrintf(" PSE");
+        if (s.uEDX & BIT(4))   RTPrintf(" TSC");
+        if (s.uEDX & BIT(5))   RTPrintf(" MSR");
+        if (s.uEDX & BIT(6))   RTPrintf(" PAE");
+        if (s.uEDX & BIT(7))   RTPrintf(" MCE");
+        if (s.uEDX & BIT(8))   RTPrintf(" CX8");
+        if (s.uEDX & BIT(9))   RTPrintf(" APIC");
+        if (s.uEDX & BIT(10))  RTPrintf(" 10");
+        if (s.uEDX & BIT(11))  RTPrintf(" SCR");
+        if (s.uEDX & BIT(12))  RTPrintf(" MTRR");
+        if (s.uEDX & BIT(13))  RTPrintf(" PGE");
+        if (s.uEDX & BIT(14))  RTPrintf(" MCA");
+        if (s.uEDX & BIT(15))  RTPrintf(" CMOV");
+        if (s.uEDX & BIT(16))  RTPrintf(" PAT");
+        if (s.uEDX & BIT(17))  RTPrintf(" PSE36");
+        if (s.uEDX & BIT(18))  RTPrintf(" 18");
+        if (s.uEDX & BIT(19))  RTPrintf(" 19");
+        if (s.uEDX & BIT(20))  RTPrintf(" NX");
+        if (s.uEDX & BIT(21))  RTPrintf(" 21");
+        if (s.uEDX & BIT(22))  RTPrintf(" ExtMMX");
+        if (s.uEDX & BIT(23))  RTPrintf(" MMX");
+        if (s.uEDX & BIT(24))  RTPrintf(" FXSR");
+        if (s.uEDX & BIT(25))  RTPrintf(" FastFXSR");
+        if (s.uEDX & BIT(26))  RTPrintf(" 26");
+        if (s.uEDX & BIT(27))  RTPrintf(" RDTSCP");
+        if (s.uEDX & BIT(28))  RTPrintf(" 29");
+        if (s.uEDX & BIT(29))  RTPrintf(" LongMode");
+        if (s.uEDX & BIT(30))  RTPrintf(" Ext3DNow");
+        if (s.uEDX & BIT(31))  RTPrintf(" 3DNow");
         RTPrintf("\n");
 
         /** @todo Check intel docs. */
         RTPrintf("Features ECX:                   ");
-        if (uECX & BIT(0))   RTPrintf(" LAHF/SAHF");
-        if (uECX & BIT(1))   RTPrintf(" CMPL");
-        if (uECX & BIT(2))   RTPrintf(" 2");
-        if (uECX & BIT(3))   RTPrintf(" 3");
-        if (uECX & BIT(4))   RTPrintf(" CR8L");
+        if (s.uECX & BIT(0))   RTPrintf(" LAHF/SAHF");
+        if (s.uECX & BIT(1))   RTPrintf(" CMPL");
+        if (s.uECX & BIT(2))   RTPrintf(" 2");
+        if (s.uECX & BIT(3))   RTPrintf(" 3");
+        if (s.uECX & BIT(4))   RTPrintf(" CR8L");
         for (iBit = 5; iBit < 32; iBit++)
-            if (uECX & BIT(iBit))
+            if (s.uECX & BIT(iBit))
                 RTPrintf(" %d", iBit);
         RTPrintf("\n");
     }
@@ -336,82 +339,82 @@ void tstASMCpuId(void)
 
      if (cExtFunctions >= 0x80000005)
      {
-         ASMCpuId(0x80000005, &uEAX, &uEBX, &uECX, &uEDX);
+         ASMCpuId(0x80000005, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
          RTPrintf("TLB 2/4M Instr/Uni:              %s %3d entries\n"
                   "TLB 2/4M Data:                   %s %3d entries\n",
-                  getCacheAss((uEAX >>  8) & 0xff), (uEAX >>  0) & 0xff,
-                  getCacheAss((uEAX >> 24) & 0xff), (uEAX >> 16) & 0xff);
+                  getCacheAss((s.uEAX >>  8) & 0xff), (s.uEAX >>  0) & 0xff,
+                  getCacheAss((s.uEAX >> 24) & 0xff), (s.uEAX >> 16) & 0xff);
          RTPrintf("TLB 4K Instr/Uni:                %s %3d entries\n"
                   "TLB 4K Data:                     %s %3d entries\n",
-                  getCacheAss((uEBX >>  8) & 0xff), (uEBX >>  0) & 0xff,
-                  getCacheAss((uEBX >> 24) & 0xff), (uEBX >> 16) & 0xff);
+                  getCacheAss((s.uEBX >>  8) & 0xff), (s.uEBX >>  0) & 0xff,
+                  getCacheAss((s.uEBX >> 24) & 0xff), (s.uEBX >> 16) & 0xff);
          RTPrintf("L1 Instr Cache Line Size:        %d bytes\n"
                   "L1 Instr Cache Lines Per Tag:    %d\n"
                   "L1 Instr Cache Associativity:    %s\n"
                   "L1 Instr Cache Size:             %d KB\n",
-                  (uEDX >> 0) & 0xff,
-                  (uEDX >> 8) & 0xff,
-                  getCacheAss((uEDX >> 16) & 0xff),
-                  (uEDX >> 24) & 0xff);
+                  (s.uEDX >> 0) & 0xff,
+                  (s.uEDX >> 8) & 0xff,
+                  getCacheAss((s.uEDX >> 16) & 0xff),
+                  (s.uEDX >> 24) & 0xff);
          RTPrintf("L1 Data Cache Line Size:         %d bytes\n"
                   "L1 Data Cache Lines Per Tag:     %d\n"
                   "L1 Data Cache Associativity:     %s\n"
                   "L1 Data Cache Size:              %d KB\n",
-                  (uECX >> 0) & 0xff,
-                  (uECX >> 8) & 0xff,
-                  getCacheAss((uECX >> 16) & 0xff),
-                  (uECX >> 24) & 0xff);
+                  (s.uECX >> 0) & 0xff,
+                  (s.uECX >> 8) & 0xff,
+                  getCacheAss((s.uECX >> 16) & 0xff),
+                  (s.uECX >> 24) & 0xff);
      }
 
      if (cExtFunctions >= 0x80000006)
      {
-         ASMCpuId(0x80000006, &uEAX, &uEBX, &uECX, &uEDX);
+         ASMCpuId(0x80000006, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
          RTPrintf("L2 TLB 2/4M Instr/Uni:           %s %4d entries\n"
                   "L2 TLB 2/4M Data:                %s %4d entries\n",
-                  getL2CacheAss((uEAX >> 12) & 0xf),  (uEAX >>  0) & 0xfff,
-                  getL2CacheAss((uEAX >> 28) & 0xf),  (uEAX >> 16) & 0xfff);
+                  getL2CacheAss((s.uEAX >> 12) & 0xf),  (s.uEAX >>  0) & 0xfff,
+                  getL2CacheAss((s.uEAX >> 28) & 0xf),  (s.uEAX >> 16) & 0xfff);
          RTPrintf("L2 TLB 4K Instr/Uni:             %s %4d entries\n"
                   "L2 TLB 4K Data:                  %s %4d entries\n",
-                  getL2CacheAss((uEBX >> 12) & 0xf),  (uEBX >>  0) & 0xfff,
-                  getL2CacheAss((uEBX >> 28) & 0xf),  (uEBX >> 16) & 0xfff);
+                  getL2CacheAss((s.uEBX >> 12) & 0xf),  (s.uEBX >>  0) & 0xfff,
+                  getL2CacheAss((s.uEBX >> 28) & 0xf),  (s.uEBX >> 16) & 0xfff);
          RTPrintf("L2 Cache Line Size:              %d bytes\n"
                   "L2 Cache Lines Per Tag:          %d\n"
                   "L2 Cache Associativity:          %s\n"
                   "L2 Cache Size:                   %d KB\n",
-                  (uEDX >> 0) & 0xff,
-                  (uEDX >> 8) & 0xf,
-                  getL2CacheAss((uEDX >> 12) & 0xf),
-                  (uEDX >> 16) & 0xffff);
+                  (s.uEDX >> 0) & 0xff,
+                  (s.uEDX >> 8) & 0xf,
+                  getL2CacheAss((s.uEDX >> 12) & 0xf),
+                  (s.uEDX >> 16) & 0xffff);
      }
 
      if (cExtFunctions >= 0x80000007)
      {
-         ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
+         ASMCpuId(0x80000007, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
          RTPrintf("APM Features:                   ");
-         if (uEDX & BIT(0))   RTPrintf(" TS");
-         if (uEDX & BIT(1))   RTPrintf(" FID");
-         if (uEDX & BIT(2))   RTPrintf(" VID");
-         if (uEDX & BIT(3))   RTPrintf(" TTP");
-         if (uEDX & BIT(4))   RTPrintf(" TM");
-         if (uEDX & BIT(5))   RTPrintf(" STC");
+         if (s.uEDX & BIT(0))   RTPrintf(" TS");
+         if (s.uEDX & BIT(1))   RTPrintf(" FID");
+         if (s.uEDX & BIT(2))   RTPrintf(" VID");
+         if (s.uEDX & BIT(3))   RTPrintf(" TTP");
+         if (s.uEDX & BIT(4))   RTPrintf(" TM");
+         if (s.uEDX & BIT(5))   RTPrintf(" STC");
          for (iBit = 6; iBit < 32; iBit++)
-             if (uEDX & BIT(iBit))
+             if (s.uEDX & BIT(iBit))
                  RTPrintf(" %d", iBit);
          RTPrintf("\n");
      }
 
      if (cExtFunctions >= 0x80000008)
      {
-         ASMCpuId(0x80000008, &uEAX, &uEBX, &uECX, &uEDX);
+         ASMCpuId(0x80000008, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
          RTPrintf("Physical Address Width:          %d bits\n"
                   "Virtual Address Width:           %d bits\n",
-                  (uEAX >> 0) & 0xff,
-                  (uEAX >> 8) & 0xff);
+                  (s.uEAX >> 0) & 0xff,
+                  (s.uEAX >> 8) & 0xff);
          RTPrintf("Physical Core Count:             %d\n",
-                  (uECX >> 0) & 0xff);
+                  (s.uECX >> 0) & 0xff);
      }
 }
-#endif /* !PIC */
+#endif /* !PIC || !X86 */
 
 
 static void tstASMAtomicXchgU8(void)
@@ -526,7 +529,7 @@ static void tstASMAtomicXchgU64(void)
 }
 
 
-#ifdef __amd64__
+#ifdef __AMD64__
 static void tstASMAtomicXchgU128(void)
 {
     struct
@@ -803,14 +806,14 @@ int main(int argc, char *argv[])
     /*
      * Execute the tests.
      */
-#ifndef PIC
+#if !defined(PIC) || !defined(__X86__)
     tstASMCpuId();
 #endif
     tstASMAtomicXchgU8();
     tstASMAtomicXchgU16();
     tstASMAtomicXchgU32();
     tstASMAtomicXchgU64();
-#ifdef __amd64__
+#ifdef __AMD64__
     tstASMAtomicXchgU128();
 #endif
     tstASMAtomicXchgPtr();
