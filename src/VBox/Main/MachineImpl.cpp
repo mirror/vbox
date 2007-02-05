@@ -2389,8 +2389,8 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
          *  one started by #openRemoteSession().
          */
 
-        RTPROCESS pid = NIL_RTPROCESS;
-        aControl->GetPID ((ULONG *) &pid);
+        RTPROCESS pid = NIL_RTPROCESS; AssertCompile (sizeof (ULONG) == sizeof (RTPROCESS));
+        aControl->GetPID (&pid);
 
         LogFlowThisFunc (("mSession.mPid=%d(0x%x)\n",
                           mData->mSession.mPid, mData->mSession.mPid));

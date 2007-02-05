@@ -249,6 +249,7 @@ STDMETHODIMP Session::GetPID (ULONG *aPid)
     AutoReaderLock alock (this);
 
     *aPid = (ULONG) RTProcSelf();
+    AssertCompile (sizeof (*aPid) == sizeof (RTPROCESS));
 
     return S_OK;
 }
