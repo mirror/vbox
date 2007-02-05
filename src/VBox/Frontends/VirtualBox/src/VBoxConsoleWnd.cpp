@@ -579,11 +579,15 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     }
 
     /* initialize usb stuff */
-    bool isUSBEnabled = cmachine.GetUSBController().GetEnabled();
-    devicesUSBMenu->setEnabled (isUSBEnabled);
-    usb_light->setState (isUSBEnabled ? CEnums::DeviceIdle
+    CUSBController usbctl = cmachine.GetUSBController();
+    if (!usbctl.isNull())
+    {
+        bool isUSBEnabled =  usbctl.GetEnabled();
+        devicesUSBMenu->setEnabled (isUSBEnabled);
+        usb_light->setState (isUSBEnabled ? CEnums::DeviceIdle
                                       : CEnums::InvalidActivity);
-    mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
+        mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
+    }
 
     /* start an idle timer that will update device lighths */
     connect (idle_timer, SIGNAL (timeout()), SLOT (updateDeviceLights()));
@@ -1294,7 +1298,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     {
         /// @todo (r=dmik) do we really need to disable the control while
         //  in Pause? Check the same for CD/DVD above.
-        if (mUsbLedTip->isUSBEnabled())
+        if (mUsbLedTip && mUsbLedTip->isUSBEnabled())
             devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
     }
     if (element & PauseAction)
