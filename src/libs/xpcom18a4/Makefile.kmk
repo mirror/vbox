@@ -49,7 +49,7 @@ TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1
 TEMPLATE_XPCOM_DEFS.x86            = i386=1
 TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\(a\,b\)=__builtin_va_copy\(a\,b\)
 TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" MOZ_DLL_SUFFIX=\".dylib\" XP_UNIX=1 XP_MACOSX=1
-TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  MOZ_DLL_SUFFIX=\".so\"    XP_UNIX=1
+TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  MOZ_DLL_SUFFIX=\".so\"    XP_UNIX=1 _GNU_SOURCE
 TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     MOZ_DLL_SUFFIX=\".s.so\"  XP_UNIX=1 L4ENV
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2 4.5\"    OSARCH=\"OS/2\"   MOZ_DLL_SUFFIX=\".dll\"   XP_UNIX=1
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
@@ -708,7 +708,6 @@ VBox-xpcom-nspr_SOURCES.linux.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
 VBox-xpcom-nspr_SOURCES.linux.amd64 = nsprpub/pr/src/md/unix/os_Linux_x86_64.s
 
 
-nsprpub/pr/src/linking/prlink.c_DEFS = _GNU_SOURCE
 nsprpub/pr/src/prvrsion.c_DEPS = $(PATH_VBox-xpcom-nspr)/_pr_bld.h
 nsprpub/lib/ds/plvrsion.c_DEPS = $(PATH_VBox-xpcom-nspr)/_pl_bld.h
 
