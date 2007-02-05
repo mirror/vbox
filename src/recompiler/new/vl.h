@@ -48,13 +48,16 @@
 #define O_BINARY 0
 #endif
 
+#ifndef ENOMEDIUM
+#define ENOMEDIUM ENODEV
+#endif
+
 #ifdef _WIN32
 #ifndef VBOX 
 #include <windows.h>
 #define fsync _commit
 #define lseek _lseeki64
 #define ENOTSUP 4096
-#define ENOMEDIUM 4097
 extern int qemu_ftruncate64(int, int64_t);
 #define ftruncate qemu_ftruncate64
 
@@ -87,9 +90,6 @@ static inline char *realpath(const char *path, char *resolved_path)
 #include "audio/audio.h"
 #endif /* !VBOX */
 #include "cpu.h"
-#ifndef VBOX
-#include "gdbstub.h"
-#endif /* !VBOX */
 
 #endif /* !defined(QEMU_TOOL) */
 
@@ -112,16 +112,18 @@ static inline char *realpath(const char *path, char *resolved_path)
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
+/* cutils.c */
+void pstrcpy(char *buf, int buf_size, const char *str);
+char *pstrcat(char *buf, int buf_size, const char *s);
+int strstart(const char *str, const char *val, const char **ptr);
+int stristart(const char *str, const char *val, const char **ptr);
+
 /* vl.c */
 uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c);
 
 void hw_error(const char *fmt, ...);
 
 extern const char *bios_dir;
-
-void pstrcpy(char *buf, int buf_size, const char *str);
-char *pstrcat(char *buf, int buf_size, const char *s);
-int strstart(const char *str, const char *val, const char **ptr);
 
 extern int vm_running;
 
@@ -167,14 +169,19 @@ extern int win2k_install_hack;
 extern int usb_enabled;
 extern int smp_cpus;
 extern int no_quit;
+extern int semihosting_enabled;
+extern int autostart;
 
 #ifndef VBOX
+#define MAX_OPTION_ROMS 16
+extern const char *option_rom[MAX_OPTION_ROMS];
+extern int nb_option_roms;
 
 /* XXX: make it dynamic */
 #if defined (TARGET_PPC) || defined (TARGET_SPARC64)
 #define BIOS_SIZE ((512 + 32) * 1024)
 #elif defined(TARGET_MIPS)
-#define BIOS_SIZE (128 * 1024)
+#define BIOS_SIZE (4 * 1024 * 1024)
 #else
 #define BIOS_SIZE ((256 + 64) * 1024)
 #endif
@@ -188,12 +195,28 @@ extern int no_quit;
 typedef void QEMUPutKBDEvent(void *opaque, int keycode);
 typedef void QEMUPutMouseEvent(void *opaque, int dx, int dy, int dz, int buttons_state);
 
+typedef struct QEMUPutMouseEntry {
+    QEMUPutMouseEvent *qemu_put_mouse_event;
+    void *qemu_put_mouse_event_opaque;
+    int qemu_put_mouse_event_absolute;
+    char *qemu_put_mouse_event_name;
+
+    /* used internally by qemu for handling mice */
+    struct QEMUPutMouseEntry *next;
+} QEMUPutMouseEntry;
+
 void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque);
-void qemu_add_mouse_event_handler(QEMUPutMouseEvent *func, void *opaque, int absolute);
+QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                void *opaque, int absolute,
+                                                const char *name);
+void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry);
 
 void kbd_put_keycode(int keycode);
 void kbd_mouse_event(int dx, int dy, int dz, int buttons_state);
 int kbd_mouse_is_absolute(void);
+
+void do_info_mice(void);
+void do_mouse_set(int index);
 
 /* keysym is a unicode code except for special keys (see QEMU_KEY_xxx
    constants) */
@@ -252,11 +275,13 @@ int qemu_add_wait_object(HANDLE handle, WaitObjectFunc *func, void *opaque);
 void qemu_del_wait_object(HANDLE handle, WaitObjectFunc *func, void *opaque);
 #endif
 
+typedef struct QEMUBH QEMUBH;
+
 /* character device */
 
 #define CHR_EVENT_BREAK 0 /* serial break char */
 #define CHR_EVENT_FOCUS 1 /* focus to this terminal (modal input needed) */
-
+#define CHR_EVENT_RESET 2 /* new connection established */
 
 
 #define CHR_IOCTL_SERIAL_SET_PARAMS   1
@@ -279,24 +304,31 @@ typedef void IOEventHandler(void *opaque, int event);
 
 typedef struct CharDriverState {
     int (*chr_write)(struct CharDriverState *s, const uint8_t *buf, int len);
-    void (*chr_add_read_handler)(struct CharDriverState *s, 
-                                 IOCanRWHandler *fd_can_read, 
-                                 IOReadHandler *fd_read, void *opaque);
+    void (*chr_update_read_handler)(struct CharDriverState *s);
     int (*chr_ioctl)(struct CharDriverState *s, int cmd, void *arg);
     IOEventHandler *chr_event;
+    IOCanRWHandler *chr_can_read;
+    IOReadHandler *chr_read;
+    void *handler_opaque;
     void (*chr_send_event)(struct CharDriverState *chr, int event);
     void (*chr_close)(struct CharDriverState *chr);
     void *opaque;
+    QEMUBH *bh;
 } CharDriverState;
 
+CharDriverState *qemu_chr_open(const char *filename);
 void qemu_chr_printf(CharDriverState *s, const char *fmt, ...);
 int qemu_chr_write(CharDriverState *s, const uint8_t *buf, int len);
 void qemu_chr_send_event(CharDriverState *s, int event);
-void qemu_chr_add_read_handler(CharDriverState *s, 
-                               IOCanRWHandler *fd_can_read, 
-                               IOReadHandler *fd_read, void *opaque);
-void qemu_chr_add_event_handler(CharDriverState *s, IOEventHandler *chr_event);
+void qemu_chr_add_handlers(CharDriverState *s, 
+                           IOCanRWHandler *fd_can_read, 
+                           IOReadHandler *fd_read,
+                           IOEventHandler *fd_event,
+                           void *opaque);
 int qemu_chr_ioctl(CharDriverState *s, int cmd, void *arg);
+void qemu_chr_reset(CharDriverState *s);
+int qemu_chr_can_read(CharDriverState *s);
+void qemu_chr_read(CharDriverState *s, uint8_t *buf, int len);
 
 /* consoles */
 
@@ -505,7 +537,6 @@ void do_delvm(const char *name);
 void do_info_snapshots(void);
 
 /* bottom halves */
-typedef struct QEMUBH QEMUBH;
 typedef void QEMUBHFunc(void *opaque);
 
 QEMUBH *qemu_bh_new(QEMUBHFunc *cb, void *opaque);
@@ -608,9 +639,11 @@ void bdrv_flush(BlockDriverState *bs);
 #define BDRV_TYPE_HD     0
 #define BDRV_TYPE_CDROM  1
 #define BDRV_TYPE_FLOPPY 2
-#define BIOS_ATA_TRANSLATION_AUTO 0
-#define BIOS_ATA_TRANSLATION_NONE 1
-#define BIOS_ATA_TRANSLATION_LBA  2
+#define BIOS_ATA_TRANSLATION_AUTO   0
+#define BIOS_ATA_TRANSLATION_NONE   1
+#define BIOS_ATA_TRANSLATION_LBA    2
+#define BIOS_ATA_TRANSLATION_LARGE  3
+#define BIOS_ATA_TRANSLATION_RECHS  4
 
 void bdrv_set_geometry_hint(BlockDriverState *bs, 
                             int cyls, int heads, int secs);
@@ -778,7 +811,7 @@ typedef int (*pci_map_irq_fn)(PCIDevice *pci_dev, int irq_num);
 PCIBus *pci_register_bus(pci_set_irq_fn set_irq, pci_map_irq_fn map_irq,
                          void *pic, int devfn_min, int nirq);
 
-void pci_nic_init(PCIBus *bus, NICInfo *nd);
+void pci_nic_init(PCIBus *bus, NICInfo *nd, int devfn);
 void pci_data_write(void *opaque, uint32_t addr, uint32_t val, int len);
 uint32_t pci_data_read(void *opaque, uint32_t addr, int len);
 int pci_bus_num(PCIBus *s);
@@ -806,8 +839,10 @@ PCIBus *pci_vpb_init(void *pic, int irq, int realview);
 /* piix_pci.c */
 PCIBus *i440fx_init(PCIDevice **pi440fx_state);
 void i440fx_set_smm(PCIDevice *d, int val);
-int piix3_init(PCIBus *bus);
+int piix3_init(PCIBus *bus, int devfn);
 void i440fx_init_memory_mappings(PCIDevice *d);
+
+int piix4_init(PCIBus *bus, int devfn);
 
 /* openpic.c */
 typedef struct openpic_t openpic_t;
@@ -819,6 +854,9 @@ openpic_t *openpic_init (PCIBus *bus, int *pmem_index, int nb_cpus,
 typedef struct HeathrowPICS HeathrowPICS;
 void heathrow_pic_set_irq(void *opaque, int num, int level);
 HeathrowPICS *heathrow_pic_init(int *pmem_index);
+
+/* gt64xxx.c */
+PCIBus *pci_gt64120_init(void *pic);
 
 #ifdef HAS_AUDIO
 struct soundhw {
@@ -885,6 +923,9 @@ void cocoa_display_init(DisplayState *ds, int full_screen);
 /* vnc.c */
 void vnc_display_init(DisplayState *ds, const char *display);
 
+/* x_keymap.c */
+extern uint8_t _translate_keycode(const int key);
+
 /* ide.c */
 #define MAX_DISKS 4
 
@@ -941,15 +982,15 @@ int fdctrl_get_drive_type(fdctrl_t *fdctrl, int drive_num);
 /* ne2000.c */
 
 void isa_ne2000_init(int base, int irq, NICInfo *nd);
-void pci_ne2000_init(PCIBus *bus, NICInfo *nd);
+void pci_ne2000_init(PCIBus *bus, NICInfo *nd, int devfn);
 
 /* rtl8139.c */
 
-void pci_rtl8139_init(PCIBus *bus, NICInfo *nd);
+void pci_rtl8139_init(PCIBus *bus, NICInfo *nd, int devfn);
 
 /* pcnet.c */
 
-void pci_pcnet_init(PCIBus *bus, NICInfo *nd);
+void pci_pcnet_init(PCIBus *bus, NICInfo *nd, int devfn);
 void pcnet_h_reset(void *opaque);
 void *lance_init(NICInfo *nd, uint32_t leaddr, void *dma_opaque);
 
@@ -1020,10 +1061,16 @@ int pit_get_out(PITState *pit, int channel, int64_t current_time);
 void pcspk_init(PITState *);
 int pcspk_audio_init(AudioState *);
 
+#include "hw/smbus.h"
+
 /* acpi.c */
 extern int acpi_enabled;
 void piix4_pm_init(PCIBus *bus, int devfn);
+void piix4_smbus_register_device(SMBusDevice *dev, uint8_t addr);
 void acpi_bios_init(void);
+
+/* smbus_eeprom.c */
+SMBusDevice *smbus_eeprom_device_init(uint8_t addr, uint8_t *buf);
 
 /* pc.c */
 extern QEMUMachine pc_machine;
@@ -1040,6 +1087,12 @@ extern QEMUMachine heathrow_machine;
 
 /* mips_r4k.c */
 extern QEMUMachine mips_machine;
+
+/* mips_malta.c */
+extern QEMUMachine mips_malta_machine;
+
+/* mips_int */
+extern void cpu_mips_irq_request(void *opaque, int irq, int level);
 
 /* mips_timer.c */
 extern void cpu_mips_clock_init(CPUState *);
@@ -1239,31 +1292,9 @@ int scsi_write_data(SCSIDevice *s, uint32_t tag);
 void scsi_cancel_io(SCSIDevice *s, uint32_t tag);
 uint8_t *scsi_get_buf(SCSIDevice *s, uint32_t tag);
 
-enum scsi_host_adapters {
-    SCSI_LSI_53C895A,
-    SCSI_ESP
-};
-enum scsi_devices {
-    SCSI_CDROM,
-    SCSI_DISK,
-    SCSI_NONE
-};
-typedef enum scsi_host_adapters scsi_host_adapters;
-typedef enum scsi_devices scsi_devices;
-typedef struct SCSIDiskInfo {
-    scsi_host_adapters adapter;
-    int id;
-    scsi_devices device_type;
-} SCSIDiskInfo;
-
-#define MAX_SCSI_DISKS 7
-extern BlockDriverState *bs_scsi_table[MAX_SCSI_DISKS];
-extern SCSIDiskInfo scsi_disks_info[MAX_SCSI_DISKS];
-
 /* lsi53c895a.c */
 void lsi_scsi_attach(void *opaque, BlockDriverState *bd, int id);
 void *lsi_scsi_init(PCIBus *bus, int devfn);
-extern int scsi_hba_lsi; // Count of scsi disks/cdrom using this lsi adapter
 
 /* integratorcp.c */
 extern QEMUMachine integratorcp926_machine;
@@ -1315,7 +1346,7 @@ void *arm_gic_init(uint32_t base, void *parent, int parent_irq);
 
 /* arm_boot.c */
 
-void arm_load_kernel(int ram_size, const char *kernel_filename,
+void arm_load_kernel(CPUState *env, int ram_size, const char *kernel_filename,
                      const char *kernel_cmdline, const char *initrd_filename,
                      int board_id);
 
@@ -1349,6 +1380,8 @@ pflash_t *pflash_register (target_ulong base, ram_addr_t off,
                            target_ulong sector_len, int nb_blocs, int width,
                            uint16_t id0, uint16_t id1, 
                            uint16_t id2, uint16_t id3);
+
+#include "gdbstub.h"
 
 #endif /* defined(QEMU_TOOL) */
 

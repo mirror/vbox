@@ -35,7 +35,6 @@
 
 #define qemu_printf printf
 
-
 void *qemu_malloc(size_t size);
 void *qemu_mallocz(size_t size);
 void qemu_free(void *ptr);
