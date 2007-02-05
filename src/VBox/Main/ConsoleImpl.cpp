@@ -6187,7 +6187,11 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
         PRTLOGGER loggerRelease;
         static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-        vrc = RTLogCreate(&loggerRelease, RTLOGFLAGS_PREFIX_TIME_PROG, "all",
+        RTUINT fFlags = RTLOGFLAGS_PREFIX_TIME_PROG;
+#ifdef __WIN__
+        fFlags |= RTLOGFLAGS_USECRLF;
+#endif /* __WIN__ */
+        vrc = RTLogCreate(&loggerRelease, fFlags, "all",
                           "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
                           RTLOGDEST_FILE, logFile.raw());
         if (VBOX_SUCCESS(vrc))
