@@ -3177,7 +3177,6 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
     VM_ASSERT_EMT(pVM);
     Assert(pVM->em.s.enmState == EMSTATE_NONE || pVM->em.s.enmState == EMSTATE_SUSPENDED);
 
-    STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
     VMMR3Lock(pVM);
 
     int rc = setjmp(pVM->em.s.u.FatalLongJump);
@@ -3195,6 +3194,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
         bool fFFDone = false;
         rc = VINF_EM_RESCHEDULE;
         pVM->em.s.enmState = EMSTATE_REM;
+        STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
         for (;;)
         {
             /*
@@ -3375,6 +3375,9 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
             VMMR3Unlock(pVM);
             VMMR3Lock(pVM);
 
+            STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+            STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
+
             /*
              * Act on the state.
              */
@@ -3504,7 +3507,6 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
          * Fatal error.
          */
         LogFlow(("EMR3ExecuteVM: returns %Vrc (longjmp / fatal error)\n", rc));
-        STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
         TMVirtualPause(pVM);
         VMMR3FatalDump(pVM, rc);
         emR3Debug(pVM, rc);
