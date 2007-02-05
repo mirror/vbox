@@ -347,7 +347,10 @@ static DECLCALLBACK(int) drvTAPW32AsyncIo(RTTHREAD ThreadSelf, void *pvUser)
                 /* Check if the VM was terminated */
                 rc = WaitForSingleObject(haWait[1], 0);
                 if (rc == WAIT_OBJECT_0)
+                {
+                    STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
                     goto exit_thread;
+                }
 
                 cbMax = pData->pPort->pfnCanReceive(pData->pPort);
             }
