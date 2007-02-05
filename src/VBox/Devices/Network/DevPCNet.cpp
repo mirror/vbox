@@ -61,6 +61,7 @@
 #include <VBox/pdm.h>
 #include <VBox/pgm.h>
 #include <VBox/stam.h>
+#include <VBox/vm.h> /* for VM_IS_EMT */
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -238,7 +239,6 @@ struct PCNetState_st
     PRTREQQUEUE                         pSendQueue;
     RTTHREAD                            hSendThread;
 #endif
-    uint32_t                            fPendingSend;
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
@@ -306,6 +306,7 @@ struct PCNetState_st
     STAMCOUNTER                         StatDeferredXmitPending;
     STAMCOUNTER                         StatXmitSync;
     STAMCOUNTER                         StatXmitAsync;
+    STAMCOUNTER                         StatXmitInTxThread;
     STAMPROFILE                         StatXmitQueueAsync;
 #endif /* VBOX_WITH_STATISTICS */
 };
@@ -1000,40 +1001,6 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP);
 static int      pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val);
 
 
-#ifdef IN_RING3
-static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData);
-#endif
-
-/**
- * Wrapper for PDMCritSectEnter
- */
-#define PCNetCritSectEnter(pCritSect, rcBusy) \
-    PDMCritSectEnter(pCritSect, rcBusy);
-
-/**
- * Wrapper for PDMCritSectLeave
- *
- * Generic, but primarily intended for the receive thread that has grabbed the critical section
- */
-#ifdef IN_RING3
-#define PCNetCritSectLeave(pData)            \
-    if (ASMAtomicCmpXchgU32(&pData->fPendingSend, 0, 1))             \
-    {                                                                \
-        STAM_COUNTER_INC(&pData->StatDeferredXmit);                  \
-        pcnetXmitSendPackets(pData);                                 \
-    }                                                                \
-    PDMCritSectLeave(&pData->CritSect)
-#else
-#define PCNetCritSectLeave(pData)            \
-    PDMCritSectLeave(&pData->CritSect)
-#endif /* IN_RING3 */
-
-/**
- * Wrapper for PDMR3CritSectTryEnter
- */
-#define PCNetCritSectTryEnter(pData) \
-    PDMR3CritSectTryEnter(&pData->CritSect)
-
 #ifdef PCNET_NO_POLLING
 # ifndef IN_RING3
 
@@ -1067,7 +1034,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         {
             uint32_t offsetTDRA = (GCPhysFault - pData->GCTDRA);
 
-            int rc = PCNetCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+            int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
             if (VBOX_SUCCESS(rc))
             {
                 STAM_COUNTER_INC(&CTXALLSUFF(pData->StatRingWrite)); ;
@@ -1076,7 +1043,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
                 pcnetPollRxTx(pData);
                 pcnetUpdateIrq(pData);
 
-                PCNetCritSectLeave(pData);
+                PDMCritSectLeave(&pData->CritSect);
                 return VINF_SUCCESS;
             }
         }
@@ -1134,12 +1101,12 @@ static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pv
 #endif
            )
         {
-            int rc = PCNetCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+            int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
             AssertReleaseRC(rc);
             /* Check if we can do something now */
             pcnetPollRxTx(pData);
             pcnetUpdateIrq(pData);
-            PCNetCritSectLeave(pData);
+            PDMCritSectLeave(&pData->CritSect);
         }
     }
     return VINF_SUCCESS;
@@ -1856,31 +1823,20 @@ static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
 {
     int         rc;
 
-    STAM_PROFILE_START(&pData->StatXmitQueue, a);
-    STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
-    rc = PCNetCritSectTryEnter(pData);
-    if (rc != VINF_SUCCESS)
+    /** @note We must only access the queued transmit packets from EMT. Below we assume we don't need to grab the critical section while accessing
+      *       this data.
+      */
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
+    /* Return immediately if there's nothing to do. (grabbing the critical section can be expensive) */
+    if (RT_UNLIKELY(pData->iFrame == 0))
     {
-        /* Somebody else grabbed the critical section (most likely the receive thread) */
-        Assert(!pData->fPendingSend);
-
-        ASMAtomicCmpXchgU32(&pData->fPendingSend, 1, 0);
-
-        /* If we can't get the critsect now, then whoever owns it will send the packets for us (see PCNetCritSectLeave) */
-        rc = PCNetCritSectTryEnter(pData);
-        if (rc != VINF_SUCCESS)
-        {
-            STAM_COUNTER_INC(&pData->StatDeferredXmitPending);            
-            STAM_COUNTER_DEC(&pData->aStatFlushCounts[pData->iFrame]);
-            STAM_PROFILE_STOP(&pData->StatXmitQueue, a);
-            return;
-        }
-
-        /* We were too late (or got rescheduled in an unfortunate way (iFrame=0), so let's just continue. */
-        pData->fPendingSend = 0;
+        STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
+        return;
     }
 
-    AssertReleaseRC(rc);
+    STAM_PROFILE_START(&pData->StatXmitQueue, a);
+    STAM_COUNTER_INC(&pData->aStatFlushCounts[pData->iFrame]);
     Log(("#%d pcnetXmitQueueConsumer: iFrame=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->iFrame));
 
     pData->fTransmitting = true;
@@ -1946,10 +1902,16 @@ static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
 #ifdef PCNET_DELAY_INT
     if (pData->iFrame)
     {
+        /** @note this part needs to be protected; perhaps we can change the code to drop this requirement. */
+        rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+        AssertReleaseRC(rc);
+
         /* Update TXSTRT and TINT. */
         pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
         pData->aCSR[0] |= 0x0200;    /* set TINT */
         pcnetUpdateIrq(pData);
+
+        PDMCritSectLeave(&pData->CritSect);
     }
 #endif
 
@@ -1961,7 +1923,6 @@ static DECLCALLBACK(void) pcnetXmitSendPackets(PCNetState *pData)
     pData->iFrame = 0;
     pData->Led.Actual.s.fWriting = 0;
 
-    PCNetCritSectLeave(pData);
     STAM_PROFILE_STOP(&pData->StatXmitQueue, a);
 }
 
@@ -2010,6 +1971,7 @@ static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
  */
 DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
 {
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
     if (pData->iFrame)
     {
 #ifdef IN_RING3
@@ -2038,6 +2000,9 @@ DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pData)
 DECLINLINE(void) pcnetXmitScrapFrame(PCNetState *pData)
 {
     const uint32_t iFrame = pData->iFrame;
+
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
     pData->aFrames[iFrame].cb = -1;
 }
 
@@ -2048,6 +2013,9 @@ DECLINLINE(void) pcnetXmitScrapFrame(PCNetState *pData)
 DECLINLINE(void) pcnetXmitEnsureSpace(PCNetState *pData, const unsigned cb, const bool fForceFlush)
 {
     const uint32_t iFrame = pData->iFrame;
+
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
     if (    fForceFlush
         ||  cb > sizeof(pData->abFrameBuf) - pData->aFrames[iFrame].off)
         pcnetXmitFlushFrames(pData);
@@ -2063,6 +2031,9 @@ DECLINLINE(void) pcnetXmitEnsureSpace(PCNetState *pData, const unsigned cb, cons
 DECLINLINE(void) pcnetXmitZeroCopyFrame(PCNetState *pData, RTR3PTR pv, const unsigned cbFrame)
 {
     const uint32_t iFrame = pData->iFrame;
+
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
     pData->aFrames[iFrame].pvR3 = pv;
     pData->aFrames[iFrame].cb   = cbFrame;
 }
@@ -2075,6 +2046,9 @@ DECLINLINE(void) pcnetXmitZeroCopyFrame(PCNetState *pData, RTR3PTR pv, const uns
 DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS GCPhysFrame, const unsigned cbFrame)
 {
     const uint32_t iFrame = pData->iFrame;
+
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
     PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame,
                       &pData->abFrameBuf[pData->aFrames[iFrame].off],
                       cbFrame);
@@ -2088,6 +2062,9 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS GCPhysFrame, const
 DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, const unsigned cbFrame)
 {
     const uint32_t iFrame = pData->iFrame;
+
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
     PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame,
                       &pData->abFrameBuf[pData->aFrames[iFrame].off + pData->aFrames[iFrame].cb],
                       cbFrame);
@@ -2102,6 +2079,9 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, cons
 DECLINLINE(void) pcnetXmitCompleteFrame(PCNetState *pData)
 {
     const uint32_t iFrame = ++pData->iFrame;
+
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
     if (iFrame == ELEMENTS(pData->aFrames))
         pcnetXmitFlushFrames(pData);
     else
@@ -2136,6 +2116,8 @@ static void pcnetXmitFailTMDLinkDown(PCNetState *pData, TMD *pTmd)
 DECLINLINE(void) pcnetXmitLoopbackFrame(PCNetState *pData)
 {
     Assert(pData->iFrame == 0);
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
+
     pData->Led.Asserted.s.fReading = pData->Led.Actual.s.fReading = 1;
     if (HOST_IS_OWNER(CSR_CRST(pData)))
         pcnetRdtePoll(pData);
@@ -2154,8 +2136,11 @@ static void pcnetTransmit(PCNetState *pData)
      * Prevent various pollers (esp the one in pcnetReceiveNoSync) from causing
      * recursion when flushing a queue.
      */
-    if (pData->fTransmitting)
+    if (    pData->fTransmitting
+        ||  !VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))))
         return;
+
+    Assert(VM_IS_EMT(PDMDevHlpGetVM(PCNETSTATE_2_DEVINS(pData))));
 
     if (RT_UNLIKELY(!CSR_TXON(pData)))
     {
@@ -3122,11 +3107,11 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
     if (cb == 1)
     {
         STAM_PROFILE_ADV_START(&pData->StatAPROMRead, a);
-        rc = PCNetCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
             *pu32 = pcnetAPROMReadU8(pData, Port);
-            PCNetCritSectLeave(pData);
+            PDMCritSectLeave(&pData->CritSect);
         }
         STAM_PROFILE_ADV_STOP(&pData->StatAPROMRead, a);
     }
@@ -3158,11 +3143,11 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
     if (cb == 1)
     {
         STAM_PROFILE_ADV_START(&pData->StatAPROMWrite, a);
-        rc = PCNetCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
             pcnetAPROMWriteU8(pData, Port, u32);
-            PCNetCritSectLeave(pData);
+            PDMCritSectLeave(&pData->CritSect);
         }
         STAM_PROFILE_ADV_STOP(&pData->StatAPROMWrite, a);
     }
@@ -3195,7 +3180,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
     int         rc    = VINF_SUCCESS;
 
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatIORead), a);
-    rc = PCNetCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_READ);
+    rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
         switch (cb)
@@ -3206,7 +3191,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                 rc = VERR_IOM_IOPORT_UNUSED;
                 break;
         }
-        PCNetCritSectLeave(pData);
+        PDMCritSectLeave(&pData->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatIORead), a);
     LogFlow(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n",
@@ -3233,7 +3218,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
     int         rc    = VINF_SUCCESS;
 
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatIOWrite), a);
-    rc = PCNetCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+    rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
         switch (cb)
@@ -3245,7 +3230,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                 rc = VERR_INTERNAL_ERROR;
                 break;
         }
-        PCNetCritSectLeave(pData);
+        PDMCritSectLeave(&pData->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatIOWrite), a);
     LogFlow(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n",
@@ -3277,7 +3262,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
     if (GCPhysAddr - pData->MMIOBase < PCNET_PNPMMIO_SIZE)
     {
         STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatMMIORead), a);
-        rc = PCNetCritSectEnter(&pData->CritSect, VINF_IOM_HC_MMIO_READ);
+        rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_MMIO_READ);
         if (rc == VINF_SUCCESS)
         {
             switch (cb)
@@ -3290,7 +3275,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
                     rc = VERR_INTERNAL_ERROR;
                     break;
             }
-            PCNetCritSectLeave(pData);
+            PDMCritSectLeave(&pData->CritSect);
         }
         STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatMMIORead), a);
     }
@@ -3326,7 +3311,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     if (GCPhysAddr - pData->MMIOBase < PCNET_PNPMMIO_SIZE)
     {
         STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatMMIOWrite), a);
-        rc = PCNetCritSectEnter(&pData->CritSect, VINF_IOM_HC_MMIO_WRITE);
+        rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_MMIO_WRITE);
         if (rc == VINF_SUCCESS)
         {
             switch (cb)
@@ -3339,7 +3324,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
                     rc = VERR_INTERNAL_ERROR;
                     break;
             }
-            PCNetCritSectLeave(pData);
+            PDMCritSectLeave(&pData->CritSect);
         }
         // else rc == VINF_IOM_HC_MMIO_WRITE => handle in ring3
 
@@ -3365,12 +3350,12 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     int         rc;
 
     STAM_PROFILE_ADV_START(&pData->StatTimer, a);
-    rc = PCNetCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
     AssertReleaseRC(rc);
 
     pcnetPollTimer(pData);
 
-    PCNetCritSectLeave(pData);
+    PDMCritSectLeave(&pData->CritSect);
     STAM_PROFILE_ADV_STOP(&pData->StatTimer, a);
 }
 
@@ -3388,7 +3373,7 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
-    int         rc = PCNetCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    int         rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
@@ -3411,7 +3396,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
         Log(("#%d pcnetTimerRestore: cLinkDownReported=%d, wait another 1500ms...\n",
              pDevIns->iInstance, pData->cLinkDownReported));
 
-    PCNetCritSectLeave(pData);
+    PDMCritSectLeave(&pData->CritSect);
 }
 
 
@@ -3537,7 +3522,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     pData->IOPortBase, pData->MMIOBase, sizeof(pData->MacConfigured), &pData->MacConfigured,
                     pData->fAm79C973 ? "Am79C973" : "Am79C970A", pData->fGCEnabled ? " GC" : "", pData->fR0Enabled ? " R0" : "");
 
-    PCNetCritSectEnter(&pData->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
+    PDMCritSectEnter(&pData->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
     pHlp->pfnPrintf(pHlp,
                     "CSR0=%04RX32:\n",
@@ -3729,7 +3714,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
         }
     }
 
-    PCNetCritSectLeave(pData);
+    PDMCritSectLeave(&pData->CritSect);
 }
 
 
@@ -3876,12 +3861,12 @@ static DECLCALLBACK(size_t) pcnetCanReceive(PPDMINETWORKPORT pInterface)
     int    rc;
     PCNetState *pData = INETWORKPORT_2_DATA(pInterface);
 
-    rc = PCNetCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
     AssertReleaseRC(rc);
 
     cb = pcnetCanReceiveNoSync(pData);
 
-    PCNetCritSectLeave(pData);
+    PDMCritSectLeave(&pData->CritSect);
     return cb;
 }
 
@@ -3901,7 +3886,7 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
     int         rc;
 
     STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-    rc = PCNetCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
     AssertReleaseRC(rc);
 
     if (cb > 70) /* unqualified guess */
@@ -3909,7 +3894,7 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
     pcnetReceiveNoSync(pData, (const uint8_t*)pvBuf, cb);
     pData->Led.Actual.s.fReading = 0;
 
-    PCNetCritSectLeave(pData);
+    PDMCritSectLeave(&pData->CritSect);
     STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
 
     return VINF_SUCCESS;
@@ -4371,7 +4356,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSync,           STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of sync packet xmits", "/Devices/PCNet%d/Xmit/Sync", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitAsync,          STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of async packet xmits", "/Devices/PCNet%d/Xmit/ASync", iInstance);
-
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitInTxThread,     STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of packet xmits in rx thread", "/Devices/PCNet%d/Xmit/RxThread", iInstance);
 
     unsigned i;
     for (i = 0; i < ELEMENTS(pData->aStatFlushCounts); i++)
