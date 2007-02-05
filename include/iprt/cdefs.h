@@ -1028,16 +1028,24 @@
  * Pointer validation macro.
  * @param   ptr
  */
-#ifdef IN_RING3
-# ifdef __L4__
-#  define VALID_PTR(ptr) ( (uintptr_t)(ptr) + 0x10000 >= 0x11000 )
-# elif defined(__DARWIN__)
-#  define VALID_PTR(ptr) ( (uintptr_t)(ptr) + 0x200000 >= 0x201000 )
-# else
-#  define VALID_PTR(ptr) ( (uintptr_t)(ptr) + 0x10000 >= 0x20000 )
-# endif
+#if defined(__AMD64__)
+# ifdef IN_RING3
+#  if defined(__DARWIN__) /* first 4GB is reserved for legacy kernel. */
+#   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) >= _4G \
+                             && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
+#  else
+#   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                             && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
+#  endif                
+# else /* !IN_RING3 */
+#  define VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                             && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
+                                 || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
+# endif /* !IN_RING3 */
+#elif defined(__X86__)
+# define VALID_PTR(ptr)     ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 #else
-#  define VALID_PTR(ptr) ( (uintptr_t)(ptr) + 0x1000 >= 0x2000 )
+# error "Architecture identifier missing / not implemented." 
 #endif
 
 
