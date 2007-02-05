@@ -358,9 +358,11 @@ TRPMDECL(void) TRPMRestoreTrap(PVM pVM)
  */
 TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType)
 {
+#ifdef TRPM_FORWARD_TRAPS_IN_GC
     X86EFLAGS eflags;
 
-#ifdef TRPM_FORWARD_TRAPS_IN_GC
+    STAM_PROFILE_ADV_START(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+
     Log(("TRPMForwardTrap: eip=%VGv iGate=%d\n", pRegFrame->eip, iGate));
 
 #ifdef DEBUG
@@ -512,7 +514,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     if (rc != VINF_SUCCESS)
                     {
                         Log(("PGMPrefetchPage failed with rc=%Vrc\n", rc));
-                        return rc;
+                        goto failure;
                     }
 #ifdef IN_GC
                     rc = MMGCRamRead(pVM, &Desc, pGdtEntry, sizeof(Desc));
@@ -664,9 +666,11 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     eflags.Bits.u1IF   = 1;
                     eflags.Bits.u2IOPL = 0;
 
-                    STAM_COUNTER_INC(&pVM->trpm.s.CTXALLSUFF(paStatForwardedIRQ)[iGate]);
                     Assert(eflags.Bits.u1IF);
                     Assert(eflags.Bits.u2IOPL == 0);
+                    STAM_COUNTER_INC(&pVM->trpm.s.CTXALLSUFF(paStatForwardedIRQ)[iGate]);
+                    STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+
                     CPUMGCCallGuestTrapHandler(pRegFrame, GuestIdte.Gen.u16SegSel | 1, pVM->trpm.s.aGuestTrapHandler[iGate], eflags.u32, ss_r0, (RTGCPTR)esp_r0);
                     /* does not return */
 #else
@@ -680,6 +684,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     pRegFrame->cs         = GuestIdte.Gen.u16SegSel;
                     pRegFrame->esp        = esp_r0;
                     pRegFrame->ss         = ss_r0 & ~X86_SEL_RPL;     /* set rpl to ring 0 */
+                    STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
                     return VINF_SUCCESS;
 #endif
                 }
@@ -705,6 +710,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
     }
 failure:
     STAM_COUNTER_INC(&CTXSUFF(pVM->trpm.s.StatForwardFail));
+    STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
 
     Log(("TRAP%02X: forwarding to REM (ss rpl=%d eflags=%08X VMIF=%d handler=%08X\n", iGate, pRegFrame->ss & X86_SEL_RPL, pRegFrame->eflags.u32, PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame), pVM->trpm.s.aGuestTrapHandler[iGate]));
 #endif

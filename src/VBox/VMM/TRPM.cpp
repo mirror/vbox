@@ -509,6 +509,8 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->trpm.s.StatForwardFailGC,           STAMTYPE_COUNTER, "/TRPM/ForwardRaw/Fail/GC",             STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
     STAM_REG(pVM, &pVM->trpm.s.StatForwardFailHC,           STAMTYPE_COUNTER, "/TRPM/ForwardRaw/Fail/HC",             STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardProfGC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/GC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardProfHC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/HC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
 
     /*
      * Default action when entering raw mode for the first time
