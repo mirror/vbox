@@ -34,7 +34,10 @@ ifndef VBOX_ADDITIONS_LINUX_ONLY
   LIBRARIES += RuntimeW32GuestR0   RuntimeW32GuestR3 RuntimeW32NT4GuestR0
  endif
  ifdef VBOX_WITH_LINUX_ADDITIONS
-  LIBRARIES += RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
+  LIBRARIES += RuntimeLnx32GuestR3
+  ifeq ($(BUILD_PLATFORM_ARCH),x86) # (AMD64: can't build it and doesn't need it, so skip it.)
+   LIBRARIES += RuntimeLnx32GuestR0
+  endif
  endif
  LIBRARIES.l4= RuntimeR3L4
  DLLS = VBoxRT
@@ -120,6 +123,8 @@ RuntimeR3_INCS.freebsd  = \
 	/usr/local/include
 
 RuntimeR3_SOURCES       = \
+	misc/sanity-cpp.cpp \
+	misc/sanity-c.c \
 	alloc.cpp \
 	alloc/heapsimple.cpp \
 	assert.cpp \
@@ -384,9 +389,12 @@ RuntimeR3L4_SOURCES = \
 # RuntimeW32GuestR3 - Win32 guest program runtime.
 #
 RuntimeW32GuestR3_TEMPLATE     = VBOXW32GUESTR3LIB
-RuntimeW32GuestR3_SDKS         = $(RuntimeR3_SDKS.win) $(RuntimeR3_SDKS.win.x86) $(RuntimeR3_SDKS)
-RuntimeW32GuestR3_DEFS         = $(RuntimeR3_DEFS)
-RuntimeW32GuestR3_DEFS.$(BUILD_TYPE) = $(RuntimeR3_DEFS).$(BUILD_TYPE)
+RuntimeW32GuestR3_SDKS         = WINPSDK W2K3DDK
+RuntimeW32GuestR3_DEFS         = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
+ifdef IPRT_WITH_KLDR
+ RuntimeW32GuestR3_DEFS       += LDR_WITH_KLDR KLDR_USE_CRT
+ RuntimeW32GuestR3_DEFS.debug += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
+endif
 RuntimeW32GuestR3_SOURCES      = $(RuntimeR3_SOURCES.win) $(RuntimeR3_SOURCES)
 RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
 
@@ -395,8 +403,11 @@ RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
 # RuntimeLnx32GuestR3 - 32-bit Linux guest program runtime.
 #
 RuntimeLnx32GuestR3_TEMPLATE   = VBOXLNX32GUESTR3LIB
-RuntimeLnx32GuestR3_DEFS       = $(RuntimeR3_DEFS.linux)    $(RuntimeR3_DEFS)    IN_GUEST IN_GUEST_R3
-RuntimeLnx32GuestR3_DEFS.$(BUILD_TYPE) = $(RuntimeR3_DEFS.$(BUILD_TYPE))
+RuntimeLnx32GuestR3_DEFS       = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
+ifdef IPRT_WITH_KLDR
+ RuntimeLnx32GuestR3_DEFS     += LDR_WITH_KLDR KLDR_USE_CRT
+ RuntimeLnx32GuestR3_DEFS.debug += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
+endif
 RuntimeLnx32GuestR3_SOURCES    = $(RuntimeR3_SOURCES.linux) $(RuntimeR3_SOURCES)
 RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
 
@@ -426,7 +437,7 @@ VBoxRT_LIBS.darwin             = \
 VBoxRT_LIBS.freebsd            = \
 	iconv
 VBoxRT_LIBPATH.freebsd         = \
-	/usr/local/lib	
+	/usr/local/lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
@@ -450,6 +461,8 @@ VBoxRT_LIBS.l4                 = \
 #
 RuntimeR3NoCRTGCC_TEMPLATE = VBOXNOCRTGCC
 RuntimeR3NoCRTGCC_SOURCES  = \
+	misc/sanity-cpp.cpp \
+	misc/sanity-c.c \
 	\
 	math/ceill.asm \
 	math/cosl.asm \
@@ -498,6 +511,8 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 RuntimeR0_TEMPLATE      = VBOXR0
 RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
 RuntimeR0_SOURCES       = \
+	misc/sanity-cpp.cpp \
+	misc/sanity-c.c \
 	assert.cpp \
 	table/avlhcphys.cpp \
 	table/avlgcptr.cpp \
@@ -558,6 +573,8 @@ RuntimeR0Drv_INCS.linux = \
 	r0drv/linux
 
 RuntimeR0Drv_SOURCES    = \
+	misc/sanity-cpp.cpp \
+	misc/sanity-c.c \
 	assert.cpp \
 	log.cpp \
 	logcom.cpp \
@@ -630,8 +647,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 #
 RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
 RuntimeW32GuestR0_SDKS          = W2K3DDKX86 WINPSDKINCS
-RuntimeW32GuestR0_DEFS          = $(RuntimeR0Drv_DEFS.win) $(RuntimeR0Drv_DEFS.win.x86) $(RuntimeR0Drv_DEFS)
-RuntimeW32GuestR0_INCS          = $(RuntimeR0Drv_INCS.win) $(RuntimeR0Drv_INCS.win.x86) $(RuntimeR0Drv_INCS)
+RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS  IN_SUP_R0
 RuntimeW32GuestR0_SOURCES       = \
 	$(RuntimeR0Drv_SOURCES) \
 	$(RuntimeR0Drv_SOURCES.win) \
@@ -661,7 +677,8 @@ RuntimeW32NT4GuestR0_SOURCES       = $(RuntimeW32GuestR0_SOURCES)
 # RuntimeLnx32GuestR0 - 32-bit Linux guest driver runtime.
 #
 RuntimeLnx32GuestR0_TEMPLATE      = VBOXLNX32GUESTR0
-RuntimeLnx32GuestR0_DEFS          = $(RuntimeR0Drv_DEFS.linux) $(RuntimeR0Drv_DEFS) IN_GUEST IN_GUEST_R0
+RuntimeLnx32GuestR0_DEFS          = RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS IN_SUP_R0 \
+                                    MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\)
 RuntimeLnx32GuestR0_INCS          = $(RuntimeR0Drv_INCS.linux) $(RuntimeR0Drv_INCS)
 RuntimeLnx32GuestR0_SOURCES       = \
 	$(RuntimeR0Drv_SOURCES) \
@@ -674,6 +691,8 @@ RuntimeLnx32GuestR0_SOURCES       = \
 RuntimeGC_TEMPLATE      = VBOXGC
 RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
 RuntimeGC_SOURCES       = \
+	misc/sanity-cpp.cpp \
+	misc/sanity-c.c \
 	table/avlogcphys.cpp \
 	table/avlrogcphys.cpp \
 	table/avlogcptr.cpp \
