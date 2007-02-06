@@ -628,7 +628,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
 
         mState = SessionState_SessionClosed;
         mType = SessionType_InvalidSessionType;
-#if defined(__WIN32__)
+#if defined(__WIN__)
         Assert (!mIPCSem && !mIPCThreadSem);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         Assert (mIPCSem == -1);
