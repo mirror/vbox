@@ -24,10 +24,10 @@
  * This code is based on:
  *
  * Block driver for the VMDK format
- * 
+ *
  * Copyright (c) 2004 Fabrice Bellard
  * Copyright (c) 2005 Filip Navara
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -272,7 +272,7 @@ static int vmdk_open(BDRVVmdkState *s, const char *filename, bool fReadOnly)
         s->l1_entry_sectors = s->l2_size * s->cluster_sectors;
     } else if (magic == VMDK4_MAGIC) {
         VMDK4Header header;
-        
+
         rc = RTFileRead(s->File, &header, sizeof(header), NULL);
         AssertRC(rc);
         if (VBOX_FAILURE(rc))
@@ -286,7 +286,7 @@ static int vmdk_open(BDRVVmdkState *s, const char *filename, bool fReadOnly)
             rc = VERR_VDI_INVALID_HEADER;
             goto fail;
         }
-        s->l1_size = (s->total_sectors + s->l1_entry_sectors - 1) 
+        s->l1_size = (s->total_sectors + s->l1_entry_sectors - 1)
             / s->l1_entry_sectors;
         s->l1_table_offset = le64_to_cpu(header.rgd_offset) << 9;
         s->l1_backup_table_offset = le64_to_cpu(header.gd_offset) << 9;
@@ -363,7 +363,7 @@ static uint64_t get_cluster_offset(BDRVVmdkState *s,
     uint32_t min_count, *l2_table, tmp;
     uint64_t cluster_offset;
     int rc;
-    
+
     l1_index = (offset >> 9) / s->l1_entry_sectors;
     if (l1_index >= s->l1_size)
         return 0;
@@ -446,7 +446,7 @@ static uint64_t get_cluster_offset(BDRVVmdkState *s,
     return cluster_offset;
 }
 
-static int vmdk_is_allocated(BDRVVmdkState *s, int64_t sector_num, 
+static int vmdk_is_allocated(BDRVVmdkState *s, int64_t sector_num,
                              int nb_sectors, int *pnum)
 {
     int index_in_cluster, n;
@@ -461,12 +461,12 @@ static int vmdk_is_allocated(BDRVVmdkState *s, int64_t sector_num,
     return (cluster_offset != 0);
 }
 
-static int vmdk_read(BDRVVmdkState *s, int64_t sector_num, 
+static int vmdk_read(BDRVVmdkState *s, int64_t sector_num,
                     uint8_t *buf, int nb_sectors)
 {
     int index_in_cluster, n;
     uint64_t cluster_offset;
-    
+
     while (nb_sectors > 0) {
         cluster_offset = get_cluster_offset(s, sector_num << 9, 0);
         index_in_cluster = sector_num % s->cluster_sectors;
@@ -493,7 +493,7 @@ static int vmdk_read(BDRVVmdkState *s, int64_t sector_num,
     return VINF_SUCCESS;
 }
 
-static int vmdk_write(BDRVVmdkState *s, int64_t sector_num, 
+static int vmdk_write(BDRVVmdkState *s, int64_t sector_num,
                      const uint8_t *buf, int nb_sectors)
 {
     int index_in_cluster, n;
