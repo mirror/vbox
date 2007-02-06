@@ -88,8 +88,7 @@ static RTTHREAD         g_ThreadSelect;
  */
 static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVNAT    pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT    pData = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
 
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n"
@@ -131,8 +130,7 @@ static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterf
  */
 static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVNAT    pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDRVNAT    pData = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
 
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
