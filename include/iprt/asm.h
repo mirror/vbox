@@ -63,6 +63,8 @@
 #  pragma intrinsic(_bittestandset)
 #  pragma intrinsic(_bittestandreset)
 #  pragma intrinsic(_bittestandcomplement)
+#  pragma intrinsic(_byteswap_ushort)
+#  pragma intrinsic(_byteswap_ulong)
 #  pragma intrinsic(_interlockedbittestandset)
 #  pragma intrinsic(_interlockedbittestandreset)
 #  pragma intrinsic(_InterlockedAnd)
@@ -76,6 +78,7 @@
 #   pragma intrinsic(__stosq)
 #   pragma intrinsic(__readcr8)
 #   pragma intrinsic(__writecr8)
+#   pragma intrinsic(_byteswap_uint64)
 #   pragma intrinsic(_InterlockedExchange64)
 #  endif
 # endif
@@ -635,7 +638,7 @@ DECLINLINE(uint32_t) ASMCpuId_EDX(uint32_t uOperator)
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
     __cpuid(aInfo, uOperator);
-    u32EDX = aInfo[3];
+    xDX = aInfo[3];
 
 # else
     __asm
@@ -3880,7 +3883,9 @@ DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
  */
 DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32)
 {
-#if RT_INLINE_ASM_GNU_STYLE
+#if RT_INLINE_ASM_USES_INTRIN
+    u32 = _byteswap_ulong(u32);
+#elif RT_INLINE_ASM_GNU_STYLE
     __asm__ ("bswapl %0" : "=r" (u32) : "0" (u32));
 #else
     _asm
