@@ -131,8 +131,8 @@ endif
 # The kernel driver/module and related runtime libraries.
 VBOX_WITH_VBOXDRV = 1
 # build with secure label support
-ifneq ($(BUILD_TARGET),win64) # too much work with freetype and all that.
-VBOX_WITH_SECURELABEL  = 1
+ifeq ($(filter win.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),) # too much work with freetype and all that.
+VBOX_WITH_SECURELABEL = 1
 endif
 
 # the main api
