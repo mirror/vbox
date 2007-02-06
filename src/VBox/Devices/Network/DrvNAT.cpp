@@ -206,18 +206,12 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
  */
 int slirp_can_output(void)
 {
-    int rcCanSend = 0;
-
     Assert(RTCritSectIsOwner(&g_pDrv->CritSect));
-    RTCritSectLeave(&g_pDrv->CritSect);
 
     if (g_pDrv)
-        rcCanSend = g_pDrv->pPort->pfnCanReceive(g_pDrv->pPort);
+        return g_pDrv->pPort->pfnCanReceive(g_pDrv->pPort);
 
-    int rc = RTCritSectEnter(&g_pDrv->CritSect);
-    AssertReleaseRC(rc);
-
-    return rcCanSend;
+    return 0;
 }
 
 
@@ -233,13 +227,8 @@ void slirp_output(const uint8_t *pu8Buf, int cb)
     if (g_pDrv)
     {
         Assert(RTCritSectIsOwner(&g_pDrv->CritSect));
-        RTCritSectLeave(&g_pDrv->CritSect);
-
         int rc = g_pDrv->pPort->pfnReceive(g_pDrv->pPort, pu8Buf, cb);
         AssertRC(rc);
-
-        rc = RTCritSectEnter(&g_pDrv->CritSect);
-        AssertReleaseRC(rc);
     }
 }
 
