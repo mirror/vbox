@@ -158,6 +158,7 @@ typedef struct TRPM
 
     STAMPROFILEADV  StatForwardProfGC;
     STAMPROFILEADV  StatForwardProfHC;
+    STAMPROFILEADV  StatTrap0dDisasm;
 
     /* R3: Statistics for interrupt handlers (allocated on the hypervisor heap). */
     R3PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR3;
