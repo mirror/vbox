@@ -92,7 +92,7 @@
                 <sizepolicy>
                     <hsizetype>5</hsizetype>
                     <vsizetype>0</vsizetype>
-                    <horstretch>3</horstretch>
+                    <horstretch>5</horstretch>
                     <verstretch>0</verstretch>
                 </sizepolicy>
             </property>
