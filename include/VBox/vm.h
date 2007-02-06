@@ -507,7 +507,7 @@ typedef struct VM
 #ifdef __VMInternal_h__
         struct VMINT    s;
 #endif
-        char        padding[640];       /* multiple of 32 */
+        char        padding[672];       /* multiple of 32 */
     } vm;
 
     /** REM part. */
