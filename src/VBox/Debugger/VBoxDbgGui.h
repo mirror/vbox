@@ -23,10 +23,10 @@
 #define __VBoxDbgGui_h__
 
 // VirtualBox COM interfaces declarations (generated header)
-#if defined(__WIN32__)
-    #include <VirtualBox.h>
+#ifdef VBOX_WITH_XPCOM
+# include <VirtualBox_XPCOM.h>
 #else
-    #include <VirtualBox_XPCOM.h>
+# include <VirtualBox.h>
 #endif
 
 #include "VBoxDbgStats.h"
