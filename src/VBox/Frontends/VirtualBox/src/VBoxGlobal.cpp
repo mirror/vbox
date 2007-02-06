@@ -328,6 +328,7 @@ VBoxGlobal::VBoxGlobal()
     , diskTypes (CEnums::HardDiskType_COUNT)
     , diskStorageTypes (CEnums::HardDiskStorageType_COUNT)
     , vrdpAuthTypes (CEnums::VRDPAuthType_COUNT)
+    , usbFilterActionTypes (CEnums::USBDeviceFilterAction_COUNT)
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
     , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
@@ -1065,7 +1066,7 @@ void VBoxGlobal::startEnumeratingMedia()
     /* check if already started but not yet finished */
     if (media_enum_thread)
         return;
-    
+
     /* ignore the request during application termination */
     if (vboxGlobal_cleanup)
         return;
@@ -1183,10 +1184,10 @@ void VBoxGlobal::startEnumeratingMedia()
     };
 
     media_enum_thread = new Thread (media_list);
-	AssertReturnVoid (media_enum_thread);
+    AssertReturnVoid (media_enum_thread);
 
     /* emit mediaEnumStarted() after we set media_enum_thread to != NULL
-     * to cause isMediaEnumerationStarted() to return TRUE from slots */    
+     * to cause isMediaEnumerationStarted() to return TRUE from slots */
     emit mediaEnumStarted();
 
     media_enum_thread->start();
@@ -1282,6 +1283,11 @@ void VBoxGlobal::languageChange()
         tr ("External", "VRDPAuthType");
     vrdpAuthTypes [CEnums::VRDPAuthGuest] =
         tr ("Guest", "VRDPAuthType");
+
+    usbFilterActionTypes [CEnums::USBDeviceFilterIgnore] =
+        tr ("Ignore", "USBFilterActionType");
+    usbFilterActionTypes [CEnums::USBDeviceFilterHold] =
+        tr ("Hold", "USBFilterActionType");
 
     Assert (diskControllerDevices.count() == 3);
     diskControllerDevices [0] = tr ("Master", "DiskControllerDevice");
@@ -2056,7 +2062,7 @@ void VBoxGlobal::cleanup()
     media_list.clear();
     /* the last step to ensure we don't use COM any more */
     vbox.detach();
-    
+
     COMBase::cleanupCOM();
 
     valid = false;

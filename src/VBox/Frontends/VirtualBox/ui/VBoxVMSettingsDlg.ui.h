@@ -266,7 +266,7 @@ void VBoxVMSettingsDlg::init()
     whatsThisCandidate = NULL;
     whatsThisLabel->setTextFormat (Qt::RichText);
     whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
-                                      4 /* seems that RichText adds some margin */ +
+                                      6 /* seems that RichText adds some margin */ +
                                       whatsThisLabel->fontMetrics().lineSpacing() * 3);
 
     /*
@@ -440,7 +440,9 @@ void VBoxVMSettingsDlg::init()
     wstUSBFilters = new QWidgetStack (grbUSBFilters, "wstUSBFilters");
     grbUSBFiltersLayout->addWidget (wstUSBFilters);
     /* create a default (disabled) filter settings widget at index 0 */
-    wstUSBFilters->addWidget (new VBoxUSBFilterSettings (wstUSBFilters), 0);
+    VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
+    settings->setup (VBoxUSBFilterSettings::MachineType);
+    wstUSBFilters->addWidget (settings, 0);
     lvUSBFilters_currentChanged (NULL);
 
     /* setup iconsets -- qdesigner is not capable... */
@@ -454,9 +456,8 @@ void VBoxVMSettingsDlg::init()
                                                     "usb_moveup_disabled_16px.png"));
     tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
                                                       "usb_movedown_disabled_16px.png"));
-    usbDevicesMenu = new QPopupMenu (this, "usbDevicesMenu");
+    usbDevicesMenu = new VBoxUSBMenu (this);
     connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
-    connect (usbDevicesMenu, SIGNAL(highlighted(int)), this, SLOT(menuAddUSBFilterFrom_highlighted(int)));
     mLastUSBFilterNum = 0;
     mUSBFilterListModified = false;
 
@@ -1675,6 +1676,7 @@ void VBoxVMSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNe
         : lvUSBFilters->lastItem();
 
     VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
+    settings->setup (VBoxUSBFilterSettings::MachineType);
     settings->getFromFilter (aFilter);
 
     USBListItem *item = new USBListItem (lvUSBFilters, currentItem);
@@ -1751,59 +1753,12 @@ void VBoxVMSettingsDlg::tbAddUSBFilter_clicked()
 
 void VBoxVMSettingsDlg::tbAddUSBFilterFrom_clicked()
 {
-    usbDevicesMenu->clear();
-    usbDevicesMap.clear();
-    CHost host = vboxGlobal().virtualBox().GetHost();
-
-    bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
-    if (isUSBEmpty)
-    {
-        usbDevicesMenu->insertItem (
-            tr ("<no available devices>", "USB devices"),
-            USBDevicesMenuNoDevicesId);
-        usbDevicesMenu->setItemEnabled (USBDevicesMenuNoDevicesId, false);
-    }
-    else
-    {
-        CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
-        while (en.HasMore())
-        {
-            CHostUSBDevice iterator = en.GetNext();
-            CUSBDevice usb = CUnknown (iterator);
-            int id = usbDevicesMenu->insertItem (vboxGlobal().details (usb));
-            usbDevicesMap [id] = usb;
-        }
-    }
-
     usbDevicesMenu->exec (QCursor::pos());
-}
-
-void VBoxVMSettingsDlg::menuAddUSBFilterFrom_highlighted (int aIndex)
-{
-    /* the <no available devices> item is highlighted */
-    if (aIndex == USBDevicesMenuNoDevicesId)
-    {
-        QToolTip::add (usbDevicesMenu,
-            tr ("No supported devices connected to the host PC",
-                "USB device tooltip"));
-        return;
-    }
-
-    CUSBDevice usb = usbDevicesMap [aIndex];
-    /* if null then some other item but a USB device is highlighted */
-    if (usb.isNull())
-    {
-        QToolTip::remove (usbDevicesMenu);
-        return;
-    }
-
-    QToolTip::remove (usbDevicesMenu);
-    QToolTip::add (usbDevicesMenu, vboxGlobal().toolTip (usb));
 }
 
 void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
 {
-    CUSBDevice usb = usbDevicesMap [aIndex];
+    CUSBDevice usb = usbDevicesMenu->getUSB (aIndex);
     /* if null then some other item but a USB device is selected */
     if (usb.isNull())
         return;

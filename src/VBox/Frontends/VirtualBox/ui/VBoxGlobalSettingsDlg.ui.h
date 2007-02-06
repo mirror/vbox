@@ -58,6 +58,20 @@ enum
     listView_Link = 2,
 };
 
+
+class USBListItem : public QCheckListItem
+{
+public:
+
+    USBListItem (QListView *aParent, QListViewItem *aAfter)
+        : QCheckListItem (aParent, aAfter, QString::null, CheckBox)
+        , mId (-1) {}
+
+    int mId;
+};
+enum { lvUSBFilters_Name = 0 };
+
+
 void VBoxGlobalSettingsDlg::init()
 {
     setCaption (tr ("VirtualBox Global Settings"));
@@ -104,7 +118,7 @@ void VBoxGlobalSettingsDlg::init()
     whatsThisCandidate = NULL;
     whatsThisLabel->setTextFormat (Qt::RichText);
     whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
-                                      4 /* seems that RichText adds some margin */ +
+                                      6 /* seems that RichText adds some margin */ +
                                       whatsThisLabel->fontMetrics().lineSpacing() * 3);
     
     /*
@@ -143,6 +157,37 @@ void VBoxGlobalSettingsDlg::init()
     wvalKeyboard = new QIWidgetValidator( pageKeyboard, this );
     connect (wvalKeyboard, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk( const QIWidgetValidator *)));
+
+    /* USB page */
+
+    lvUSBFilters->header()->hide();
+    /* disable sorting */
+    lvUSBFilters->setSorting (-1);
+    /* disable unselecting items by clicking in the unused area of the list */
+    new QIListViewSelectionPreserver (this, lvUSBFilters);
+    wstUSBFilters = new QWidgetStack (grbUSBFilters, "wstUSBFilters");
+    grbUSBFiltersLayout->addWidget (wstUSBFilters);
+    /* create a default (disabled) filter settings widget at index 0 */
+    VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
+    settings->setup (VBoxUSBFilterSettings::HostType);
+    wstUSBFilters->addWidget (settings, 0);
+    lvUSBFilters_currentChanged (NULL);
+    /* setup toolbutton icons */
+    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_new_16px.png",
+                                                     "usb_new_disabled_16px.png"));
+    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
+                                                         "usb_add_disabled_16px.png"));
+    tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
+                                                        "usb_remove_disabled_16px.png"));
+    tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
+                                                    "usb_moveup_disabled_16px.png"));
+    tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
+                                                      "usb_movedown_disabled_16px.png"));
+    /* create menu of existing usb-devices */
+    usbDevicesMenu = new VBoxUSBMenu (this);
+    connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
+    mLastUSBFilterNum = 0;
+    mUSBFilterListModified = false;
 
     /*
      *  set initial values
@@ -258,6 +303,19 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
     hkeHostKey->setKey (gs.hostKey() );
     chbAutoCapture->setChecked (gs.autoCapture());
 
+    /* usb filters page */
+
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilterEnumerator en = host.GetUSBDeviceFilters().Enumerate();
+    while (en.HasMore())
+    {
+        CHostUSBDeviceFilter hostFilter = en.GetNext();
+        CUSBDeviceFilter filter = CUnknown (hostFilter);
+        addUSBFilter (filter, false);
+    }
+    lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
+    lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
+
 //    wvalXXXX->revalidate();
 }
 
@@ -282,6 +340,42 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
 
     gs.setHostKey (hkeHostKey->key());
     gs.setAutoCapture (chbAutoCapture->isChecked());
+
+    /* usb filter page */
+
+    /*
+     *  first, remove all old filters (only if the list is changed,
+     *  not only individual properties of filters)
+     */
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilter removedFilter;
+    if (mUSBFilterListModified)
+        for (ulong count = host.GetUSBDeviceFilters().GetCount(); count; -- count)
+            host.RemoveUSBDeviceFilter (0, removedFilter);
+
+    /* then add all new filters */
+    for (QListViewItem *item = lvUSBFilters->firstChild(); item;
+         item = item->nextSibling())
+    {
+        USBListItem *uli = static_cast <USBListItem *> (item);
+        VBoxUSBFilterSettings *settings =
+            static_cast <VBoxUSBFilterSettings *>
+                (wstUSBFilters->widget (uli->mId));
+        Assert (settings);
+
+        COMResult res = settings->putBackToFilter();
+        if (!res.isOk())
+            return;
+
+        CUSBDeviceFilter filter = settings->filter();
+        filter.SetActive (uli->isOn());
+
+        CHostUSBDeviceFilter insertedFilter = CUnknown (filter);
+        if (mUSBFilterListModified)
+            host.InsertUSBDeviceFilter (host.GetUSBDeviceFilters().GetCount(),
+                                        insertedFilter);
+    }
+    mUSBFilterListModified = false;
 }
 
 void VBoxGlobalSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
@@ -393,4 +487,175 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
         le->selectAll();
         le->insert (folder);
     }
+}
+
+// USB Filter stuff
+////////////////////////////////////////////////////////////////////////////////
+
+void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
+                                          bool aIsNew)
+{
+    QListViewItem *currentItem = aIsNew
+        ? lvUSBFilters->currentItem()
+        : lvUSBFilters->lastItem();
+
+    VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
+    settings->setup (VBoxUSBFilterSettings::HostType);
+    settings->getFromFilter (aFilter);
+
+    USBListItem *item = new USBListItem (lvUSBFilters, currentItem);
+    item->setOn (aFilter.GetActive());
+    item->setText (lvUSBFilters_Name, aFilter.GetName());
+
+    item->mId = wstUSBFilters->addWidget (settings);
+
+    /* fix the tab order so that main dialog's buttons are always the last */
+    setTabOrder (settings->focusProxy(), buttonHelp);
+    setTabOrder (buttonHelp, buttonOk);
+    setTabOrder (buttonOk, buttonCancel);
+
+    if (aIsNew)
+    {
+        lvUSBFilters->setSelected (item, true);
+        lvUSBFilters_currentChanged (item);
+        settings->leUSBFilterName->setFocus();
+    }
+
+    connect (settings->leUSBFilterName, SIGNAL (textChanged (const QString &)),
+             this, SLOT (lvUSBFilters_setCurrentText (const QString &)));
+
+    /* setup validation */
+
+    QIWidgetValidator *wval = new QIWidgetValidator (settings, settings);
+    connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
+             this, SLOT (enableOk (const QIWidgetValidator *)));
+
+    wval->revalidate();
+}
+
+void VBoxGlobalSettingsDlg::lvUSBFilters_currentChanged (QListViewItem *item)
+{
+    if (item && lvUSBFilters->selectedItem() != item)
+        lvUSBFilters->setSelected (item, true);
+
+    tbRemoveUSBFilter->setEnabled (!!item);
+
+    tbUSBFilterUp->setEnabled (!!item && item->itemAbove());
+    tbUSBFilterDown->setEnabled (!!item && item->itemBelow());
+
+    if (item)
+    {
+        USBListItem *uli = static_cast <USBListItem *> (item);
+        wstUSBFilters->raiseWidget (uli->mId);
+    }
+    else
+    {
+        /* raise the disabled widget */
+        wstUSBFilters->raiseWidget (0);
+    }
+}
+
+void VBoxGlobalSettingsDlg::lvUSBFilters_setCurrentText (const QString &aText)
+{
+    QListViewItem *item = lvUSBFilters->currentItem();
+    Assert (item);
+
+    item->setText (lvUSBFilters_Name, aText);
+}
+
+void VBoxGlobalSettingsDlg::tbAddUSBFilter_clicked()
+{
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilter hostFilter;
+    host.CreateUSBDeviceFilter (tr ("New Filter %1", "usb")
+                                    .arg (++ mLastUSBFilterNum), hostFilter);
+    hostFilter.SetAction (CEnums::USBDeviceFilterHold);
+
+    CUSBDeviceFilter filter = CUnknown (hostFilter);
+    filter.SetActive (true);
+    addUSBFilter (filter, true);
+
+    mUSBFilterListModified = true;
+}
+
+void VBoxGlobalSettingsDlg::tbAddUSBFilterFrom_clicked()
+{
+    usbDevicesMenu->exec (QCursor::pos());
+}
+
+void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
+{
+    CUSBDevice usb = usbDevicesMenu->getUSB (aIndex);
+
+    // if null then some other item but a USB device is selected
+    if (usb.isNull())
+        return;
+
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilter hostFilter;
+    host.CreateUSBDeviceFilter (vboxGlobal().details (usb), hostFilter);
+    hostFilter.SetAction (CEnums::USBDeviceFilterHold);
+
+    CUSBDeviceFilter filter = CUnknown (hostFilter);
+    filter.SetVendorId (QString().sprintf ("%04hX", usb.GetVendorId()));
+    filter.SetProductId (QString().sprintf ("%04hX", usb.GetProductId()));
+    filter.SetRevision (QString().sprintf ("%04hX", usb.GetRevision()));
+    filter.SetPort (QString().sprintf ("%04hX", usb.GetPort()));
+    filter.SetManufacturer (usb.GetManufacturer());
+    filter.SetProduct (usb.GetProduct());
+    filter.SetSerialNumber (usb.GetSerialNumber());
+    filter.SetRemote (usb.GetRemote() ? "yes" : "no");
+    filter.SetActive (true);
+    addUSBFilter (filter, true);
+
+    mUSBFilterListModified = true;
+}
+
+void VBoxGlobalSettingsDlg::tbRemoveUSBFilter_clicked()
+{
+    QListViewItem *item = lvUSBFilters->currentItem();
+    Assert (item);
+
+    USBListItem *uli = static_cast <USBListItem *> (item);
+    QWidget *settings = wstUSBFilters->widget (uli->mId);
+    Assert (settings);
+    wstUSBFilters->removeWidget (settings);
+    delete settings;
+
+    delete item;
+
+    lvUSBFilters->setSelected (lvUSBFilters->currentItem(), true);
+    mUSBFilterListModified = true;
+}
+
+void VBoxGlobalSettingsDlg::tbUSBFilterUp_clicked()
+{
+    QListViewItem *item = lvUSBFilters->currentItem();
+    Assert (item);
+
+    QListViewItem *itemAbove = item->itemAbove();
+    Assert (itemAbove);
+    itemAbove = itemAbove->itemAbove();
+
+    if (!itemAbove)
+        item->itemAbove()->moveItem (item);
+    else
+        item->moveItem (itemAbove);
+
+    lvUSBFilters_currentChanged (item);
+    mUSBFilterListModified = true;
+}
+
+void VBoxGlobalSettingsDlg::tbUSBFilterDown_clicked()
+{
+    QListViewItem *item = lvUSBFilters->currentItem();
+    Assert (item);
+
+    QListViewItem *itemBelow = item->itemBelow();
+    Assert (itemBelow);
+
+    item->moveItem (itemBelow);
+
+    lvUSBFilters_currentChanged (item);
+    mUSBFilterListModified = true;
 }
