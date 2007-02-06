@@ -3779,6 +3779,7 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR (this is probably wrong) */
             pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
         }
+        Assert(!PDMCritSectIsOwner(&pData->CritSect));
         pData->pDrv->pfnNotifyLinkChanged(pData->pDrv, enmState);
     }
     return VINF_SUCCESS;
