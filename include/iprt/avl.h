@@ -533,6 +533,9 @@ typedef struct _AVLOHCPhysNodeCore
     AVLOHCPHYS          pRight;
     /** Height of this tree: max(height(left), height(right)) + 1 */
     unsigned char       uchHeight;
+#if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
+    unsigned char       Padding[7]; /**< Alignment padding. */
+#endif 
 } AVLOHCPHYSNODECORE, *PAVLOHCPHYSNODECORE;
 
 /** A offset base tree with uint32_t keys. */
