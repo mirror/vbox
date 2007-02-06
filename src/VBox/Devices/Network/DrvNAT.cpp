@@ -206,7 +206,9 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
  */
 int slirp_can_output(void)
 {
-    Assert(RTCritSectIsOwner(&g_pDrv->CritSect));
+    /** Happens during termination */
+    if (!RTCritSectIsOwner(&g_pDrv->CritSect))
+        return 0;
 
     if (g_pDrv)
         return g_pDrv->pPort->pfnCanReceive(g_pDrv->pPort);
@@ -226,7 +228,10 @@ void slirp_output(const uint8_t *pu8Buf, int cb)
           cb, pu8Buf));
     if (g_pDrv)
     {
-        Assert(RTCritSectIsOwner(&g_pDrv->CritSect));
+        /** Happens during termination */
+        if (!RTCritSectIsOwner(&g_pDrv->CritSect))
+            return 0;
+
         int rc = g_pDrv->pPort->pfnReceive(g_pDrv->pPort, pu8Buf, cb);
         AssertRC(rc);
     }
