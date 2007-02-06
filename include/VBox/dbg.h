@@ -28,7 +28,8 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/dbgf.h>
-#include <stdarg.h>
+
+#include <iprt/stdarg.h>
 
 __BEGIN_DECLS
 
