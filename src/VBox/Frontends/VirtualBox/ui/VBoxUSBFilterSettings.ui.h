@@ -37,12 +37,15 @@ void VBoxUSBFilterSettings::init()
     // by default, the widget is entirely disabled
     setEnabled (false);
 
+    mType = VBoxUSBFilterSettings::WrongType;
+
     // set the dummy focus proxy to let others know which our child
     // is the last in the focus chain
-    setFocusProxy (cbRemote);
     cbRemote->insertItem (tr ("Any", "remote")); // 0
     cbRemote->insertItem (tr ("Yes", "remote")); // 1
     cbRemote->insertItem (tr ("No", "remote")); // 2
+    cbAction->insertItem (vboxGlobal().toString (CEnums::USBDeviceFilterIgnore)); // 0
+    cbAction->insertItem (vboxGlobal().toString (CEnums::USBDeviceFilterHold)); // 1
 }
 
 void VBoxUSBFilterSettings::getFromFilter (const CUSBDeviceFilter &aFilter)
@@ -61,14 +64,36 @@ void VBoxUSBFilterSettings::getFromFilter (const CUSBDeviceFilter &aFilter)
     leUSBFilterManufacturer->setText (aFilter.GetManufacturer());
     leUSBFilterProduct->setText (aFilter.GetProduct());
     leUSBFilterSerial->setText (aFilter.GetSerialNumber());
+    switch (mType)
     {
-        QCString remote = aFilter.GetRemote().latin1();
-        if (remote == "yes" || remote == "true" || remote == "1")
-            cbRemote->setCurrentItem (1);
-        else if (remote == "no" || remote == "false" || remote == "0")
-            cbRemote->setCurrentItem (2);
-        else
-            cbRemote->setCurrentItem (0);
+        case VBoxUSBFilterSettings::MachineType:
+        {
+            QCString remote = aFilter.GetRemote().latin1();
+            if (remote == "yes" || remote == "true" || remote == "1")
+                cbRemote->setCurrentItem (1);
+            else if (remote == "no" || remote == "false" || remote == "0")
+                cbRemote->setCurrentItem (2);
+            else
+                cbRemote->setCurrentItem (0);
+            break;
+        }
+        case VBoxUSBFilterSettings::HostType:
+        {
+            const CHostUSBDeviceFilter filter = CUnknown (aFilter);
+            CEnums::USBDeviceFilterAction action = filter.GetAction();
+            if (action == CEnums::USBDeviceFilterIgnore)
+                cbAction->setCurrentItem (0);
+            else if (action == CEnums::USBDeviceFilterHold)
+                cbAction->setCurrentItem (1);
+            else
+                AssertMsgFailed (("Invalid USBDeviceFilterAction type"));
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed (("Invalid VBoxUSBFilterSettings type"));
+            break;
+        }
     }
 
     setEnabled (true);
@@ -109,12 +134,31 @@ COMResult VBoxUSBFilterSettings::putBackToFilter()
         mFilter.SetSerialNumber (emptyToNull (leUSBFilterSerial->text()));
         if (!mFilter.isOk())
             break;
-        switch (cbRemote->currentItem())
+        switch (mType)
         {
-            case 1: mFilter.SetRemote ("yes"); break;
-            case 2: mFilter.SetRemote ("no"); break;
-            default: AssertMsgFailed (("Invalid combo box index"));
-            case 0: mFilter.SetRemote (QString::null); break;
+            case VBoxUSBFilterSettings::MachineType:
+            {
+                switch (cbRemote->currentItem())
+                {
+                    case 1: mFilter.SetRemote ("yes"); break;
+                    case 2: mFilter.SetRemote ("no"); break;
+                    default: AssertMsgFailed (("Invalid combo box index"));
+                    case 0: mFilter.SetRemote (QString::null); break;
+                }
+                break;
+            }
+            case VBoxUSBFilterSettings::HostType:
+            {
+                CHostUSBDeviceFilter filter = CUnknown (mFilter);
+                filter.SetAction (vboxGlobal().toUSBDevFilterAction (
+                    cbAction->currentText()));
+                break;
+            }
+            default:
+            {
+                AssertMsgFailed (("Invalid mType enum value"));
+                break;
+            }
         }
         if (!mFilter.isOk())
             break;
@@ -124,3 +168,15 @@ COMResult VBoxUSBFilterSettings::putBackToFilter()
     return !mFilter.isOk() ? COMResult (mFilter) : COMResult();
 }
 
+void VBoxUSBFilterSettings::setup (VBoxUSBFilterSettings::FilterType aType)
+{
+    mType = aType;
+    txUSBFilterRemote->setHidden (mType != VBoxUSBFilterSettings::MachineType);
+    cbRemote->setHidden (mType != VBoxUSBFilterSettings::MachineType);
+    txUSBFilterAction->setHidden (mType != VBoxUSBFilterSettings::HostType);
+    cbAction->setHidden (mType != VBoxUSBFilterSettings::HostType);
+    if (mType == VBoxUSBFilterSettings::MachineType)
+        setFocusProxy (cbRemote);
+    else if (mType == VBoxUSBFilterSettings::HostType)
+        setFocusProxy (cbAction);
+}

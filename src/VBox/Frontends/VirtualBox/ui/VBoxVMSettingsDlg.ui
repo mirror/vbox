@@ -1964,7 +1964,7 @@ USB device.</string>
                                                 </property>
                                                 <property name="whatsThis" stdset="0">
                                                     <string>Adds a new USB filter
-with all fields set to the values of the selected USB device attached to a host PC.</string>
+with all fields set to the values of the selected USB device attached to the host PC.</string>
                                                 </property>
                                             </widget>
                                             <widget class="QToolButton">
@@ -2660,7 +2660,7 @@ with all fields set to the values of the selected USB device attached to a host 
 <forwards>
     <forward>class VBoxMediaComboBox</forward>
     <forward>class VBoxDiskImageManagerDlg</forward>
-    <forward>class QPopupMenu</forward>
+    <forward>class VBoxUSBMenu</forward>
 </forwards>
 <variables>
     <variable access="private">bool polished;</variable>
@@ -2691,9 +2691,7 @@ with all fields set to the values of the selected USB device attached to a host 
     <variable access="private">VBoxMediaComboBox *cbHDD;</variable>
     <variable access="private">VBoxMediaComboBox *cbISODVD;</variable>
     <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
-    <variable access="private">QPopupMenu *usbDevicesMenu;</variable>
-    <variable access="private">QMap&lt;int, CUSBDevice&gt; usbDevicesMap;</variable>
-    <variable access="private">enum { USBDevicesMenuNoDevicesId = 1 };</variable>
+    <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
@@ -2720,7 +2718,6 @@ with all fields set to the values of the selected USB device attached to a host 
     <slot>tbAddUSBFilter_clicked()</slot>
     <slot>tbAddUSBFilterFrom_clicked()</slot>
     <slot>menuAddUSBFilterFrom_activated( int )</slot>
-    <slot>menuAddUSBFilterFrom_highlighted( int )</slot>
     <slot>tbRemoveUSBFilter_clicked()</slot>
     <slot>tbUSBFilterUp_clicked()</slot>
     <slot>tbUSBFilterDown_clicked()</slot>

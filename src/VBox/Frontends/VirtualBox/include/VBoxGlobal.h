@@ -33,6 +33,8 @@
 #include <qcolor.h>
 #include <quuid.h>
 #include <qthread.h>
+#include <qpopupmenu.h>
+#include <qtooltip.h>
 
 #include <qptrvector.h>
 #include <qvaluevector.h>
@@ -223,12 +225,26 @@ public:
         return vrdpAuthTypes [t];
     }
 
+    QString toString (CEnums::USBDeviceFilterAction t) const
+    {
+        AssertMsg (!usbFilterActionTypes [t].isNull(), ("No text for %d", t));
+        return usbFilterActionTypes [t];
+    }
+
     CEnums::VRDPAuthType toVRDPAuthType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (vrdpAuthTypes.begin(), vrdpAuthTypes.end(), s);
         AssertMsg (it != vrdpAuthTypes.end(), ("No value for {%s}", s.latin1()));
         return CEnums::VRDPAuthType (it - vrdpAuthTypes.begin());
+    }
+
+    CEnums::USBDeviceFilterAction toUSBDevFilterAction (const QString &s) const
+    {
+        QStringVector::const_iterator it =
+            qFind (usbFilterActionTypes.begin(), usbFilterActionTypes.end(), s);
+        AssertMsg (it != usbFilterActionTypes.end(), ("No value for {%s}", s.latin1()));
+        return CEnums::USBDeviceFilterAction (it - usbFilterActionTypes.begin());
     }
 
     /**
@@ -463,6 +479,7 @@ private:
     QStringVector diskTypes;
     QStringVector diskStorageTypes;
     QStringVector vrdpAuthTypes;
+    QStringVector usbFilterActionTypes;
     QStringVector diskControllerDevices;
     QStringVector audioDriverTypes;
     QStringVector networkAttachmentTypes;
@@ -476,5 +493,86 @@ private:
 
 inline VBoxGlobal &vboxGlobal() { return VBoxGlobal::instance(); }
 
-#endif /* __VBoxGlobal_h__ */
 
+/**
+ *  USB Popup Menu class.
+ *  This class provides the list of USB devices attached to the host.
+ */
+class VBoxUSBMenu : public QPopupMenu
+{
+    Q_OBJECT
+
+public:
+
+    enum { USBDevicesMenuNoDevicesId = 1 };
+
+    VBoxUSBMenu (QWidget *aParent) : QPopupMenu (aParent)
+    {
+        connect (this, SIGNAL (aboutToShow()),
+                 this, SLOT   (processAboutToShow()));
+        connect (this, SIGNAL (highlighted (int)),
+                 this, SLOT   (processHighlighted (int)));
+    }
+
+    const CUSBDevice& getUSB (int aIndex)
+    {
+        return usbDevicesMap [aIndex];
+    }
+
+private slots:
+
+    void processAboutToShow()
+    {
+        clear(), usbDevicesMap.clear();
+        CHost host = vboxGlobal().virtualBox().GetHost();
+
+        bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
+        if (isUSBEmpty)
+        {
+            insertItem (
+                tr ("<no available devices>", "USB devices"),
+                USBDevicesMenuNoDevicesId);
+            setItemEnabled (USBDevicesMenuNoDevicesId, false);
+        }
+        else
+        {
+            CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
+            while (en.HasMore())
+            {
+                CHostUSBDevice iterator = en.GetNext();
+                CUSBDevice usb = CUnknown (iterator);
+                int id = insertItem (vboxGlobal().details (usb));
+                usbDevicesMap [id] = usb;
+            }
+        }
+    }
+
+    void processHighlighted (int aIndex)
+    {
+        /* the <no available devices> item is highlighted */
+        if (aIndex == USBDevicesMenuNoDevicesId)
+        {
+            QToolTip::add (this,
+                tr ("No supported devices connected to the host PC",
+                    "USB device tooltip"));
+            return;
+        }
+
+        CUSBDevice usb = usbDevicesMap [aIndex];
+        /* if null then some other item but a USB device is highlighted */
+        if (usb.isNull())
+        {
+            QToolTip::remove (this);
+            return;
+        }
+
+        QToolTip::remove (this);
+        QToolTip::add (this, vboxGlobal().toolTip (usb));
+    }
+
+private:
+
+    QMap <int, CUSBDevice> usbDevicesMap;
+};
+
+#endif /* __VBoxGlobal_h__ */

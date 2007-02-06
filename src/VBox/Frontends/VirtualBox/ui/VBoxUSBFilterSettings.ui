@@ -49,265 +49,6 @@
         <property name="margin">
             <number>0</number>
         </property>
-        <widget class="QFrame" row="1" column="0">
-            <property name="name">
-                <cstring>frame45</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>5</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>3</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="frameShape">
-                <enum>NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-                <enum>Raised</enum>
-            </property>
-            <hbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <property name="margin">
-                    <number>0</number>
-                </property>
-                <widget class="QLayoutWidget">
-                    <property name="name">
-                        <cstring>layout144</cstring>
-                    </property>
-                    <grid>
-                        <property name="name">
-                            <cstring>unnamed</cstring>
-                        </property>
-                        <property name="margin">
-                            <number>0</number>
-                        </property>
-                        <property name="spacing">
-                            <number>3</number>
-                        </property>
-                        <widget class="QLabel" row="0" column="0">
-                            <property name="name">
-                                <cstring>textLabel1_2_2</cstring>
-                            </property>
-                            <property name="text">
-                                <string>&amp;Vendor ID</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leUSBFilterVendorId</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLabel" row="1" column="0">
-                            <property name="name">
-                                <cstring>textLabel1_2_2_2</cstring>
-                            </property>
-                            <property name="text">
-                                <string>&amp;Product ID</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leUSBFilterProductId</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLabel" row="2" column="0">
-                            <property name="name">
-                                <cstring>textLabel1_2_2_2_2</cstring>
-                            </property>
-                            <property name="text">
-                                <string>&amp;Revision</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leUSBFilterRevision</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLabel" row="3" column="0">
-                            <property name="name">
-                                <cstring>textLabel1_2_2_2_2_2</cstring>
-                            </property>
-                            <property name="text">
-                                <string>Por&amp;t</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leUSBFilterPort</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit" row="0" column="1">
-                            <property name="name">
-                                <cstring>leUSBFilterVendorId</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines the vendor ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
-value.</string>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit" row="1" column="1">
-                            <property name="name">
-                                <cstring>leUSBFilterProductId</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines the product ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
-value.</string>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit" row="2" column="1">
-                            <property name="name">
-                                <cstring>leUSBFilterRevision</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines the revision number filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
-&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
-value.</string>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit" row="3" column="1">
-                            <property name="name">
-                                <cstring>leUSBFilterPort</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</string>
-                            </property>
-                        </widget>
-                    </grid>
-                </widget>
-            </hbox>
-        </widget>
-        <widget class="QFrame" row="1" column="1">
-            <property name="name">
-                <cstring>frame46</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>5</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>4</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="frameShape">
-                <enum>NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-                <enum>Plain</enum>
-            </property>
-            <hbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <property name="margin">
-                    <number>0</number>
-                </property>
-                <widget class="QLayoutWidget">
-                    <property name="name">
-                        <cstring>layout145</cstring>
-                    </property>
-                    <grid>
-                        <property name="name">
-                            <cstring>unnamed</cstring>
-                        </property>
-                        <property name="margin">
-                            <number>0</number>
-                        </property>
-                        <property name="spacing">
-                            <number>3</number>
-                        </property>
-                        <widget class="QLabel" row="0" column="0">
-                            <property name="name">
-                                <cstring>textLabel1_2_2_3</cstring>
-                            </property>
-                            <property name="text">
-                                <string>&amp;Manufacturer</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leUSBFilterManufacturer</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLabel" row="1" column="0">
-                            <property name="name">
-                                <cstring>textLabel1_2_2_3_2</cstring>
-                            </property>
-                            <property name="text">
-                                <string>Pro&amp;duct</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leUSBFilterProduct</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLabel" row="2" column="0">
-                            <property name="name">
-                                <cstring>textLabel1_2_2_3_2_2</cstring>
-                            </property>
-                            <property name="text">
-                                <string>&amp;Serial No.</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leUSBFilterSerial</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLabel" row="3" column="0">
-                            <property name="name">
-                                <cstring>txUSBFilterRemote</cstring>
-                            </property>
-                            <property name="text">
-                                <string>R&amp;emote</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>cbRemote</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit" row="0" column="1">
-                            <property name="name">
-                                <cstring>leUSBFilterManufacturer</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</string>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit" row="1" column="1">
-                            <property name="name">
-                                <cstring>leUSBFilterProduct</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</string>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit" row="2" column="1">
-                            <property name="name">
-                                <cstring>leUSBFilterSerial</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</string>
-                            </property>
-                        </widget>
-                        <widget class="QComboBox" row="3" column="1">
-                            <property name="name">
-                                <cstring>cbRemote</cstring>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>Defines whether this filter applies
-to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
-to a VRDP client's computer (&lt;i&gt;Yes&lt;/i&gt;),
-or both (&lt;i&gt;Any&lt;/i&gt;).</string>
-                            </property>
-                        </widget>
-                    </grid>
-                </widget>
-            </hbox>
-        </widget>
         <widget class="QLayoutWidget" row="0" column="0" rowspan="1" colspan="2">
             <property name="name">
                 <cstring>layout141</cstring>
@@ -343,6 +84,255 @@ or both (&lt;i&gt;Any&lt;/i&gt;).</string>
                 </widget>
             </hbox>
         </widget>
+        <widget class="QFrame" row="1" column="1">
+            <property name="name">
+                <cstring>frame46</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>5</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>3</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="frameShape">
+                <enum>NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+                <enum>Plain</enum>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <property name="margin">
+                    <number>0</number>
+                </property>
+                <widget class="QLabel" row="0" column="0">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_3</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Manufacturer</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>leUSBFilterManufacturer</cstring>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="1" column="0">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_3_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Pro&amp;duct</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>leUSBFilterProduct</cstring>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="2" column="0">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_3_2_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Serial No.</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>leUSBFilterSerial</cstring>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="0" column="1">
+                    <property name="name">
+                        <cstring>leUSBFilterManufacturer</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines the manufacturer filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="1" column="1">
+                    <property name="name">
+                        <cstring>leUSBFilterProduct</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines the product name filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="2" column="1">
+                    <property name="name">
+                        <cstring>leUSBFilterSerial</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines the serial number filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
+                    </property>
+                </widget>
+                <widget class="QComboBox" row="3" column="1">
+                    <property name="name">
+                        <cstring>cbRemote</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines whether this filter applies
+to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
+to a VRDP client's computer (&lt;i&gt;Yes&lt;/i&gt;),
+or both (&lt;i&gt;Any&lt;/i&gt;).</string>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="3" column="0">
+                    <property name="name">
+                        <cstring>txUSBFilterRemote</cstring>
+                    </property>
+                    <property name="text">
+                        <string>R&amp;emote</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>cbRemote</cstring>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="4" column="0">
+                    <property name="name">
+                        <cstring>txUSBFilterAction</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Action</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>cbAction</cstring>
+                    </property>
+                </widget>
+                <widget class="QComboBox" row="4" column="1">
+                    <property name="name">
+                        <cstring>cbAction</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines an action performed by the host
+computer when a matching device is attached: give it up to the host OS
+(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
+(&lt;i&gt;Hold&lt;/i&gt;).</string>
+                    </property>
+                </widget>
+            </grid>
+        </widget>
+        <widget class="QFrame" row="1" column="0">
+            <property name="name">
+                <cstring>frame45</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>5</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>3</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="frameShape">
+                <enum>NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+                <enum>Raised</enum>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <property name="margin">
+                    <number>0</number>
+                </property>
+                <widget class="QLabel" row="0" column="0">
+                    <property name="name">
+                        <cstring>textLabel1_2_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Vendor ID</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>leUSBFilterVendorId</cstring>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="1" column="0">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Product ID</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>leUSBFilterProductId</cstring>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="2" column="0">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_2_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Revision</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>leUSBFilterRevision</cstring>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="3" column="0">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_2_2_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Por&amp;t</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>leUSBFilterPort</cstring>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="0" column="1">
+                    <property name="name">
+                        <cstring>leUSBFilterVendorId</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines the vendor ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.</string>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="1" column="1">
+                    <property name="name">
+                        <cstring>leUSBFilterProductId</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines the product ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.</string>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="2" column="1">
+                    <property name="name">
+                        <cstring>leUSBFilterRevision</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines the revision number filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
+&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
+is a decimal digit of the fractional part. An emtpy string will match any
+value.</string>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="3" column="1">
+                    <property name="name">
+                        <cstring>leUSBFilterPort</cstring>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Defines the host USB port filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.</string>
+                    </property>
+                </widget>
+            </grid>
+        </widget>
     </grid>
 </widget>
 <tabstops>
@@ -359,15 +349,19 @@ or both (&lt;i&gt;Any&lt;/i&gt;).</string>
 <includes>
     <include location="global" impldecl="in implementation">qvalidator.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
 </includes>
 <variables>
+    <variable access="public">enum FilterType { WrongType = 0, HostType = 1, MachineType = 2 };</variable>
     <variable access="private">CUSBDeviceFilter mFilter;</variable>
+    <variable access="private">FilterType mType;</variable>
 </variables>
 <functions>
     <function access="private">init()</function>
     <function>getFromFilter( const CUSBDeviceFilter &amp; aFilter )</function>
     <function returnType="COMResult">putBackToFilter()</function>
     <function returnType="CUSBDeviceFilter">filter() { return mFilter; }</function>
+    <function>setup( VBoxUSBFilterSettings::FilterType )</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
