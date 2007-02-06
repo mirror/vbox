@@ -93,12 +93,12 @@ ifeq ($(BUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
   bin_SOURCES.amd64 += \
-	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
-	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
-	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
-	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
-	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
-	$(PATH_TOOL_VCCAMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
+	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
+	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
+	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
+	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
  else
   include $(PATH_KBUILD)/tools/VCC70.kmk
   ## @todo Move these defines to VCC70.
