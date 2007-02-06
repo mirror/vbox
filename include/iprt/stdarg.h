@@ -21,7 +21,12 @@
 #ifndef __iprt_stdarg_h__
 #define __iprt_stdarg_h__
 
-#include <stdarg.h>
+#ifndef IPRT_NO_CRT
+# include <stdarg.h>
+#else
+# include <iprt/types.h>
+# include <iprt/nocrt/compiler/compiler.h>
+#endif
 
 /*
  * MSC doesn't implement va_copy.

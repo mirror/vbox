@@ -29,26 +29,16 @@ typedef uint64_t size_t;
 #endif 
 #define _SIZE_T_DECLARED
 
-#ifdef __SSIZE_TYPE__
-typedef __SSIZE_TYPE__ ssize_t;  
-#elif ARCH_BITS == 32
-typedef int32_t ssize_t;
-#elif ARCH_BITS == 64
-typedef int64_t ssize_t;
-#else
-# define ARCH_BITS 123123
-# error "ARCH_BITS is undefined or incorrect."
-#endif 
-#define _SSIZE_T_DECLARED
-
-#ifdef __WCHAR_TYPE__
+#ifndef __cplusplus
+# ifdef __WCHAR_TYPE__
 typedef __WCHAR_TYPE__ wchar_t;
-#elif defined(__OS2__) || defined(__WIN__) 
+# elif defined(__OS2__) || defined(__WIN__) 
 typedef uint16_t wchar_t;
-#else
+# else
 typedef int wchar_t;
+# endif
+# define _WCHAR_T_DECLARED
 #endif
-#define _WCHAR_T_DECLARED
 
 #ifdef __WINT_TYPE__
 typedef __WINT_TYPE__ wint_t;
@@ -74,5 +64,28 @@ typedef unsigned int wint_t;
 #  define offsetof(type, memb) ((size_t)&((type *)0)->memb)
 # endif                                        
 #endif                                        
+
+
+/* sys/types.h */
+#ifdef __SSIZE_TYPE__
+typedef __SSIZE_TYPE__ ssize_t;  
+#elif ARCH_BITS == 32
+typedef int32_t ssize_t;
+#elif ARCH_BITS == 64
+typedef int64_t ssize_t;
+#else
+# define ARCH_BITS 123123
+# error "ARCH_BITS is undefined or incorrect."
+#endif 
+#define _SSIZE_T_DECLARED
+
+
+/* stdarg.h */
+typedef __builtin_va_list   va_list;
+#define va_start(va, arg)   __builtin_va_start(va, arg)
+#define va_end(va)          __builtin_va_end(va)
+#define va_arg(va, type)    __builtin_va_arg(va, type)
+#define va_copy(dst, src)   __builtin_va_copy(dst, src)
+
 
 #endif
