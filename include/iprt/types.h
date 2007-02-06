@@ -67,32 +67,7 @@
    typedef intptr_t ssize_t;
 # endif
 #else /* no crt */
-# if defined(__GNUC__)
-#  if defined(__OS2__) || defined(__FREEBSD__)
-#   include <iprt/nocrt/compiler/gcc.h>
-#  else
-#   include <stddef.h>
-#   ifndef _SIZE_T_DECLARED
-#    define _SIZE_T_DECLARED
-#    if defined(__X86__)
-      typedef unsigned int size_t;
-#    else
-      typedef uintptr_t size_t;
-#    endif
-#   endif
-#   ifndef _SSIZE_T_DECLARED
-#    define _SSIZE_T_DECLARED
-#    if defined(__X86__)
-      typedef int ssize_t;
-#    else
-      typedef intptr_t ssize_t;
-#    endif
-#   endif
-#  endif
-# else /* !__GNUC__ */
-   typedef uintptr_t size_t;
-   typedef intptr_t ssize_t;
-# endif /* !__GNUC__ */
+# include <iprt/nocrt/compiler/gcc.h>
 #endif /* no crt */
 
 
