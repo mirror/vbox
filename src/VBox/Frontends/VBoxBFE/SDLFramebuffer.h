@@ -97,7 +97,7 @@ private:
     /** secure label height in pixels */
     uint32_t mLabelHeight;
 #endif
-#ifdef __WIN32__
+#ifdef __WIN__
     long refcnt;
 #endif
 };

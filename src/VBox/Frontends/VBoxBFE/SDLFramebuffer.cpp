@@ -50,7 +50,7 @@ SDLFramebuffer::SDLFramebuffer()
     int rc;
     LogFlow(("SDLFramebuffer::SDLFramebuffer\n"));
 
-#if defined (__WIN32__)
+#if defined (__WIN__)
     refcnt = 0;
 #endif
 
@@ -342,7 +342,7 @@ void SDLFramebuffer::resize()
     if (mfFullscreen)
     {
         sdlFlags |= SDL_FULLSCREEN;
-#ifdef __WIN32__
+#ifdef __WIN__
         /* this flag causes a crash on Windows, mScreen->pixels is NULL */
         sdlFlags &= ~SDL_HWSURFACE;
         sdlFlags |= SDL_SWSURFACE;
