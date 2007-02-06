@@ -35,6 +35,7 @@
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
+#include <iprt/critsect.h>
 
 #include "Builtins.h"
 
@@ -53,7 +54,8 @@ typedef struct DRVNAT
     PPDMINETWORKPORT        pPort;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
-
+    /** Slirp critical section. */
+    RTCRITSECT              CritSect;
 } DRVNAT, *PDRVNAT;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
@@ -72,8 +74,6 @@ static PDRVNAT          g_pDrv = NULL;
 static bool             g_fThreadTerm = false;
 /** The thread id of the select thread (drvNATSelectThread()). */
 static RTTHREAD         g_ThreadSelect;
-
-static RTCRITSECT       g_CritSectSlirp;
 #endif
 
 
@@ -88,11 +88,19 @@ static RTCRITSECT       g_CritSectSlirp;
  */
 static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
 {
+    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVNAT    pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n"
           "%.*Vhxd\n",
           pvBuf, cb, cb, pvBuf));
+
+    int rc = RTCritSectEnter(&pData->CritSect);
+    AssertReleaseRC(rc);
+
     slirp_input((uint8_t *)pvBuf, cb);
+    RTCritSectLeave(&pData->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -123,21 +131,30 @@ static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterf
  */
 static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
+    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVNAT    pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
+
+    int rc = RTCritSectEnter(&pData->CritSect);
+    AssertReleaseRC(rc);
     switch (enmLinkState)
     {
         case PDMNETWORKLINKSTATE_UP:
             LogRel(("NAT: link up\n"));
             slirp_link_up();
             break;
+
         case PDMNETWORKLINKSTATE_DOWN:
         case PDMNETWORKLINKSTATE_DOWN_RESUME:
             LogRel(("NAT: link down\n"));
             slirp_link_down();
             break;
+
         default:
             AssertMsgFailed(("drvNATNotifyLinkChanged: unexpected link state %d\n", enmLinkState));
     }
+    RTCritSectLeave(&pData->CritSect);
 }
 
 
@@ -161,6 +178,7 @@ static DECLCALLBACK(void) drvNATNotifyCanReceive(PPDMINETWORKCONNECTOR pInterfac
  */
 static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
 {
+    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
     fd_set  ReadFDs;
     fd_set  WriteFDs;
     fd_set  XcptFDs;
@@ -168,12 +186,18 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
     FD_ZERO(&ReadFDs);
     FD_ZERO(&WriteFDs);
     FD_ZERO(&XcptFDs);
+
+    int rc = RTCritSectEnter(&pData->CritSect);
+    AssertReleaseRC(rc);
+
     slirp_select_fill(&cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 
     struct timeval tv = {0, 0}; /* no wait */
     int cReadFDs = select(cFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
     if (cReadFDs >= 0)
         slirp_select_poll(&ReadFDs, &WriteFDs, &XcptFDs);
+
+    RTCritSectLeave(&pData->CritSect);
 }
 
 
@@ -184,9 +208,18 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
  */
 int slirp_can_output(void)
 {
+    int rcCanSend = 0;
+
+    Assert(RTCritSectIsOwner(&g_pDrv->CritSect));
+    RTCritSectLeave(&g_pDrv->CritSect);
+
     if (g_pDrv)
-        return g_pDrv->pPort->pfnCanReceive(g_pDrv->pPort);
-    return 0;
+        rcCanSend = g_pDrv->pPort->pfnCanReceive(g_pDrv->pPort);
+
+    int rc = RTCritSectEnter(&g_pDrv->CritSect);
+    AssertReleaseRC(rc);
+
+    return rcCanSend;
 }
 
 
@@ -201,8 +234,14 @@ void slirp_output(const uint8_t *pu8Buf, int cb)
           cb, pu8Buf));
     if (g_pDrv)
     {
+        Assert(RTCritSectIsOwner(&g_pDrv->CritSect));
+        RTCritSectLeave(&g_pDrv->CritSect);
+
         int rc = g_pDrv->pPort->pfnReceive(g_pDrv->pPort, pu8Buf, cb);
-        AssertRC(rc); NOREF(rc);
+        AssertRC(rc);
+
+        rc = RTCritSectEnter(&g_pDrv->CritSect);
+        AssertReleaseRC(rc);
     }
 }
 
@@ -241,12 +280,16 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, PDMINTERF
  */
 static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 {
+    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+
     LogFlow(("drvNATDestruct:\n"));
+
 #if ARCH_BITS == 64
     LogRel(("NAT: g_cpvHashUsed=%RU32 g_cpvHashCollisions=%RU32 g_cpvHashInserts=%RU64 g_cpvHashDone=%RU64\n",
             g_cpvHashUsed, g_cpvHashCollisions, g_cpvHashInserts, g_cpvHashDone));
 #endif 
     slirp_term();
+    RTCritSectDelete(&pData->CritSect);
     g_pDrv = NULL;
 }
 
@@ -367,13 +410,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't export the network port interface!\n"));
 
-#if 0
     /*
-     * The slirp lock and thread sem.
+     * The slirp lock..
      */
-    int rc = RTCritSectInit(&g_CritSectSlirp);
+    int rc = RTCritSectInit(&pData->CritSect);
     if (VBOX_FAILURE(rc))
         return rc;
+#if 0
     rc = RTSemEventCreate(&g_EventSem);
     if (VBOX_SUCCESS(rc))
     {
@@ -385,7 +428,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         if (VBOX_SUCCESS(rc))
         {
 #endif
-            int rc;
             /*
              * Initialize slirp.
              */
@@ -427,8 +469,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         RTSemEventDestroy(g_EventSem);
         g_EventSem = NULL;
     }
-    RTCritSectDelete(&g_CritSectSlirp);
 #endif
+    RTCritSectDelete(&pData->CritSect);
     return rc;
 }
 
