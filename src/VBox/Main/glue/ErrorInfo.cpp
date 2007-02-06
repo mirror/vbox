@@ -284,17 +284,15 @@ void ErrorInfo::print (const char *aPrefix /* = NULL */)
     if (aPrefix == NULL)
         aPrefix = "";
 
-    RTPrintf ("%sFull error info available  = %RTbool\n", aPrefix, mIsFullAvailable);
-    RTPrintf ("%sBasic error info available = %RTbool\n", aPrefix, mIsBasicAvailable);
+    RTPrintf ("%sFull error info present: %RTbool, basic error info present: %RTbool\n", aPrefix,
+              mIsFullAvailable, mIsBasicAvailable);
     if (mIsFullAvailable || mIsBasicAvailable)
     {
         RTPrintf ("%sResult Code = %Rwa\n", aPrefix, mResultCode);
-        RTPrintf ("%sText        = {%ls}\n", aPrefix, mText.raw());
-        RTPrintf ("%sComponent   = {%ls}\n", aPrefix, mComponent.raw());
-        RTPrintf ("%sInterface   = {%ls}\n", aPrefix, mInterfaceName.raw());
-        RTPrintf ("%sIID         = {%s}\n", aPrefix, mInterfaceID.toString().raw());
-        RTPrintf ("%sCallee Name = {%ls}\n", aPrefix, mCalleeName.raw());
-        RTPrintf ("%sCallee IID  = {%s}\n", aPrefix, mCalleeIID.toString().raw());
+        RTPrintf ("%sText        = %ls\n", aPrefix, mText.raw());
+        RTPrintf ("%sComponent   = %ls, Interface: %ls, {%s}\n", aPrefix,
+                  mInterfaceName.raw(), mInterfaceID.toString().raw());
+        RTPrintf ("%sCallee      = %ls, {%s}\n", aPrefix, mCalleeName.raw(), mCalleeIID.toString().raw());
     }
 }
 
