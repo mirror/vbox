@@ -25,11 +25,11 @@
 
 #include <VBox/VBoxGuest.h>
 
-#ifndef __WIN32__
+#ifndef __WINs__
 /* These appear to be standard Windows ddk macros */
 #define FILE_DEVICE_VIDEO 0x23
 #define FILE_ANY_ACCESS 0
-#endif  /* not __WIN32__ */
+#endif  /* not __WIN__ */
 
 /** Called by the display driver when it is ready to
  *  switch to VBVA operation mode.
