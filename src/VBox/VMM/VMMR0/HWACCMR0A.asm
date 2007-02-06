@@ -702,3 +702,32 @@ BEGINPROC SVMVMRun
     ret
 ENDPROC SVMVMRun
 
+%ifdef __AMD64__
+%ifdef __WIN__
+
+;;
+; Executes INVLPGA
+; 
+; @param   pPageGC  msc:ecx  gcc:edi  x86:[esp+04]  Virtual page to invalidate
+; @param   uASID    msc:edx  gcc:esi  x86:[esp+08]  Tagged TLB id
+; 
+;DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID);
+BEGINPROC SVMInvlpgA
+%ifdef __AMD64__
+ %ifdef ASM_CALL64_GCC
+    mov     eax, edi                    ;; @todo 64-bit guest.
+    mov     ecx, esi
+ %else
+    mov     eax, ecx                    ;; @todo 64-bit guest.
+    mov     ecx, edx
+ %endif
+    invlpga rax, ecx
+%else
+    mov     eax, [esp + 4]
+    mov     ecx, [esp + 8]
+    invlpga eax, ecx
+%endif
+    ret
+ENDPROC SVMInvlpgA
+%endif
+%endif
