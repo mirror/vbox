@@ -419,6 +419,9 @@ endif
 # Decide which Visual C++ compiler version we're using by default.
 #
 ifndef VBOX_VCC_TOOL
+ ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.amd64)
+  VBOX_USE_VCC80 ?= 1 # Enforce VCC80 when targetting AMD64.
+ endif
  ifdef VBOX_USE_VCC80
   ifeq ($(BUILD_TARGET_ARCH),x86)
    VBOX_VCC_TOOL := VCC80X86
@@ -1166,7 +1169,7 @@ endif
 TEMPLATE_VBOXR3EXE                     = VBox Ring 3 Exe
 TEMPLATE_VBOXR3EXE_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXR3EXE_ASFLAGS             = $(VBOX_ASFLAGS)
-TEMPLATE_VBOXR3EXE_DEFS                = IN_RING3
+TEMPLATE_VBOXR3EXE_DEFS                = IN_RING3 $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXR3EXE_LIBS.kprofile       = $(LIB_KPROFILE)
 ifeq ($(BUILD_TARGET),win)
  TEMPLATE_VBOXR3EXE_TOOL               = $(VBOX_VCC_TOOL)
@@ -1330,10 +1333,10 @@ TEMPLATE_VBOXNOCRTGCC_INCS              = $(VBOX_PATH_GCC_INCS) $(PATH_ROOT)/inc
 ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.amd64)
  # cross compile to 64-bit ELF (linux).
  TEMPLATE_VBOXNOCRTGCC_TOOL             = XGCCAMD64LINUX
- TEMPLATE_VBOXNOCRTGCC_ASTOOL           = yasm
+ TEMPLATE_VBOXNOCRTGCC_ASTOOL           = YASM
  TEMPLATE_VBOXNOCRTGCC_ASFLAGS          = -f elf64 -DASM_FORMAT_ELF -D__YASM__ -w+orphan-labels -g dwarf2
- TEMPLATE_VBOXNOCRTGCC_INCS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701/libc/gcc/x86_64-unknown-linux-gnu/3.4.6/include
- TEMPLATE_VBOXNOCRTGCC_LIBS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701/libc/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
+ TEMPLATE_VBOXNOCRTGCC_INCS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/include
+ TEMPLATE_VBOXNOCRTGCC_LIBS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
  TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -nostdlib
 
 else ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.x86)
@@ -1696,7 +1699,7 @@ TEMPLATE_VBOXW32GUESTR3_INST                = $(INST_ADDITIONS)
 TEMPLATE_VBOXW32GUESTR3_BLD_TRG             = win
 TEMPLATE_VBOXW32GUESTR3_BLD_TRG_ARCH        = x86
 TEMPLATE_VBOXW32GUESTR3_BLD_TRG_CPU         = i386
-TEMPLATE_VBOXW32GUESTR3_DEFS                = IN_GUEST IN_GUEST_R3 IN_RT_R3 IN_RING3 __WIN32__ __WIN__
+TEMPLATE_VBOXW32GUESTR3_DEFS                = IN_GUEST IN_GUEST_R3 IN_RT_R3 IN_RING3 __WIN32__ __WIN__ HC_ARCH_BITS=32 GC_ARCH_BITS=32
 TEMPLATE_VBOXW32GUESTR3_RCDEFS              = \
 	VBOX_VERSION_MAJOR=\"$(VBOX_VERSION_MAJOR)\" \
 	VBOX_VERSION_MINOR=\"$(VBOX_VERSION_MINOR)\" \
