@@ -61,6 +61,11 @@ int foo(int i, int iZero, int iMinusOne)
 
 DECLCALLBACK(int) tst2(intptr_t i)
 {
+    if (i < 0 || i > 8192)
+    {
+        RTPrintf("tstVMMR0CallHost-1: FAILURE - i=%d is out of range [0..8192]\n", i);
+        return 1;
+    }
     int iExpect = (i % 7) == 0 ? i + 10000 : i;
     int rc = foo(i, 0, -1);
     if (rc != iExpect)
