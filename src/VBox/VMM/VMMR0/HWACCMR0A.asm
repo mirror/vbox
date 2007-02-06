@@ -329,7 +329,7 @@ BEGINPROC VMXResumeVM
  %ifdef ASM_CALL64_GCC
     mov     rsi, rdi        ; pCtx
  %else
-    mov     rsi, ecx        ; pCtx
+    mov     rsi, rcx        ; pCtx
  %endif
 %else
     mov     esi, [ebp + 8]  ; pCtx
@@ -496,7 +496,7 @@ BEGINPROC VMXEnable
  %ifdef ASM_CALL64_GCC
     push    rdi
  %else
-    push    ecx
+    push    rcx
  %endif
     vmxon   [rsp]
 %else
@@ -540,7 +540,7 @@ BEGINPROC VMXClearVMCS
  %ifdef ASM_CALL64_GCC
     push    rdi
  %else
-    push    ecx
+    push    rcx
  %endif
     vmclear [rsp]
 %else
@@ -568,7 +568,7 @@ BEGINPROC VMXActivateVMCS
  %ifdef ASM_CALL64_GCC
     push    rdi
  %else
-    push    ecx
+    push    rcx
  %endif
     vmclear [rsp]
 %else
