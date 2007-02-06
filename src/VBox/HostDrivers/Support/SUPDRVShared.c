@@ -2724,7 +2724,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
         uint8_t     u8Idt = 0;
         static uint8_t au8Ints[] =
         {
-#ifdef __WIN32__ /* We don't use 0xef and above because they are system stuff on linux (ef is IPI,
+#ifdef __WIN__   /* We don't use 0xef and above because they are system stuff on linux (ef is IPI,
                   * local apic timer, or some other frequently fireing thing). */
             0xef, 0xee, 0xed, 0xec,
 #endif
@@ -2961,7 +2961,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     *u.pb++ = 0x8e;                     //  mov     es, eax
     *u.pb++ = 0xc0;
 
-#ifdef __WIN32__
+#ifdef __WIN__
     *u.pb++ = 0xb8;                     //  mov     eax, KernelFS
     *u.pu32++ = ASMGetFS();
 
