@@ -342,18 +342,18 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
 
         Utf8Str filename = authLibrary;
 
-        LogRel(("ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
+        LogRel(("VRDPAUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
 
         int rc = RTLdrLoad (filename.raw(), &mAuthLibrary);
         if (VBOX_FAILURE (rc))
-            LogRel(("Failed to load external authentication library. Error code: %Vrc\n", rc));
+            LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Vrc\n", rc));
 
         if (VBOX_SUCCESS (rc))
         {
             /* Get the entry point. */
             rc = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
             if (VBOX_FAILURE (rc))
-                LogRel(("Failed to resolve import 'VRDPAuth'. Error code: %Vrc\n", rc));
+                LogRel(("VRDPAUTH: Failed to resolve import 'VRDPAuth'. Error code: %Vrc\n", rc));
         }
 
         if (VBOX_FAILURE (rc))
@@ -379,16 +379,16 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
     switch (result)
     {
         case VRDPAuthAccessDenied:
-            LogRel(("VRDP: external authentication module returned 'access denied'\n"));
+            LogRel(("VRDPAUTH: external authentication module returned 'access denied'\n"));
             break;
         case VRDPAuthAccessGranted:
-            LogRel(("VRDP: external authentication module returned 'access granted'\n"));
+            LogRel(("VRDPAUTH: external authentication module returned 'access granted'\n"));
             break;
         case VRDPAuthDelegateToGuest:
-            LogRel(("VRDP: external authentication module returned 'delegate request to guest'\n"));
+            LogRel(("VRDPAUTH: external authentication module returned 'delegate request to guest'\n"));
             break;
         default:
-            LogRel(("VRDP: external authentication module returned incorrect return code %d\n", result));
+            LogRel(("VRDPAUTH: external authentication module returned incorrect return code %d\n", result));
             result = VRDPAuthAccessDenied;
     }
 
