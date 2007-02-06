@@ -566,8 +566,14 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
         }
 #endif
         /* call the device. */
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfIn), a);
+#endif
         int rc = pRange->pfnInCallback(pRange->pDevIns, pRange->pvUser, Port, pu32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfIn), a);
         if (rc == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
 # ifndef IN_RING3
@@ -700,8 +706,15 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
         }
 #endif
         /* call the device. */
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfIn), a);
+#endif
+
         int rc = pRange->pfnInStrCallback(pRange->pDevIns, pRange->pvUser, Port, pGCPtrDst, pcTransfers, cb);
 #ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfIn), a);
         if (rc == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
 # ifndef IN_RING3
@@ -811,9 +824,15 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
         }
 #endif
         /* call the device. */
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfOut), a);
+#endif
         int rc = pRange->pfnOutCallback(pRange->pDevIns, pRange->pvUser, Port, u32Value, cbValue);
 
 #ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfOut), a);
         if (rc == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
 # ifndef IN_RING3
@@ -922,8 +941,14 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
         }
 #endif
         /* call the device. */
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfOut), a);
+#endif
         int rc = pRange->pfnOutStrCallback(pRange->pDevIns, pRange->pvUser, Port, pGCPtrSrc, pcTransfers, cb);
 #ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfOut), a);
         if (rc == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
 # ifndef IN_RING3

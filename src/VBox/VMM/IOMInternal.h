@@ -121,6 +121,18 @@ typedef struct IOMMMIOSTATS
     STAMCOUNTER                 ReadGC;
     /** Number of writes to this address from GC. */
     STAMCOUNTER                 WriteGC;
+    /** Profiling read handler overhead in R3. */
+    STAMPROFILEADV              ProfReadR3;
+    /** Profiling write handler overhead in R3. */
+    STAMPROFILEADV              ProfWriteR3;
+    /** Profiling read handler overhead in R0. */
+    STAMPROFILEADV              ProfReadR0;
+    /** Profiling write handler overhead in R0. */
+    STAMPROFILEADV              ProfWriteR0;
+    /** Profiling read handler overhead in GC. */
+    STAMPROFILEADV              ProfReadGC;
+    /** Profiling write handler overhead in GC. */
+    STAMPROFILEADV              ProfWriteGC;
     /** Number of reads to this address from R0 which was serviced in R3. */
     STAMCOUNTER                 ReadR0ToR3;
     /** Number of writes to this address from R0 which was serviced in R3. */
@@ -220,6 +232,18 @@ typedef struct IOMIOPORTSTATS
     STAMCOUNTER                 InGC;
     /** Number of OUTs to this port from GC. */
     STAMCOUNTER                 OutGC;
+    /** Profiling IN handler overhead in R3. */
+    STAMPROFILEADV              ProfInR3;
+    /** Profiling OUT handler overhead in R3. */
+    STAMPROFILEADV              ProfOutR3;
+    /** Profiling IN handler overhead in R0. */
+    STAMPROFILEADV              ProfInR0;
+    /** Profiling OUT handler overhead in R0. */
+    STAMPROFILEADV              ProfOutR0;
+    /** Profiling IN handler overhead in GC. */
+    STAMPROFILEADV              ProfInGC;
+    /** Profiling OUT handler overhead in GC. */
+    STAMPROFILEADV              ProfOutGC;
     /** Number of INs to this port from R0 which was serviced in R3. */
     STAMCOUNTER                 InR0ToR3;
     /** Number of OUTs to this port from R0 which was serviced in R3. */
