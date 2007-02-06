@@ -27,16 +27,17 @@ PROGRAMS += tstVDI
 endif
 
 TEMPLATE        = VBOXR3EXE
-LIBS            = $(LIB_RUNTIME)
-LIBS.darwin     = $(PATH_BIN)/VBoxDD.dylib
-LIBS.linux      = $(PATH_BIN)/VBoxDD.so
-LIBS.l4         = $(PATH_BIN)/VBoxDD.s.so
-LIBS.os2        = $(PATH_BIN)/VBoxDD.dll
-LIBS.win        = $(PATH_LIB)/VBoxDD.lib
+ifeq ($(filter-out win,$(BUILD_TARGET)),)
+LIBS            = $(PATH_LIB)/VBoxDD.lib
+else
+LIBS            = $(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL)
+endif
+LIBS           += $(LIB_RUNTIME)
 
-tstVDI_SOURCES  = VHDDtest.cpp
+vditool_SOURCES = vditool.cpp
 
-vditool_SOURCES = vhddtool.cpp
+tstVDI_SOURCES  = tstVDI.cpp
+tstVDI_INST = $(INST_TESTCASE)
 
 include	$(PATH_KBUILD)/footer.kmk
 
