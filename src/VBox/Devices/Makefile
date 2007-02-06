@@ -33,6 +33,7 @@ OTHER_CLEAN = \
 	$(PATH_TARGET)/vboxaml.aml
 
 SUBDIRS   = \
+	testcase \
 	PC/BIOS \
 	PC/Etherboot-src \
 	Graphics/BIOS
