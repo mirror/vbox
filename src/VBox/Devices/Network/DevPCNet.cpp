@@ -2684,7 +2684,7 @@ static int pcnetIoportWriteU16(PCNetState *pData, uint32_t addr, uint32_t val)
     Log2(("#%d pcnetIoportWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
-    if (RT_LIKELY(!!BCR_DWIO(pData)))
+    if (RT_LIKELY(!BCR_DWIO(pData)))
     {
         switch (addr & 0x0f)
         {
