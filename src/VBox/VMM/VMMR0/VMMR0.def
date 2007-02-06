@@ -33,6 +33,9 @@ EXPORTS
     PGMShwModifyPage
     RTLogDefaultInstance
     RTLogRelDefaultInstance
+    RTLogLogger
+    RTLogLoggerEx
+    RTLogLoggerExV
     RTTimeMilliTS
     TMTimerGet
     TMTimerGetFreq
