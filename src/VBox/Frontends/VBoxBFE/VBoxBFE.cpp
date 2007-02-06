@@ -1582,11 +1582,11 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
         rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          CHECK_RC();
         rc = CFGMR3InsertString(pLunL0, "Driver",               "AUDIO");           CHECK_RC();
         rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           CHECK_RC();
-#ifdef __WIN32__
+#ifdef __WIN__
         rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");                      CHECK_RC();
-#else /* !__WIN32__ */
+#else /* !__WIN__ */
         rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                        CHECK_RC();
-#endif /* !__WIN32__ */
+#endif /* !__WIN__ */
     }
 
 #ifdef VBOXBFE_WITH_USB

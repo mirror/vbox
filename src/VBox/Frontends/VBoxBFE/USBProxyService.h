@@ -214,9 +214,9 @@ private:
 #endif /* __LINUX__ */
 
 
-#ifdef __WIN32__
+#ifdef __WIN__
 /**
- * The Win32 hosted USB Proxy Service.
+ * The Win32/Win64 hosted USB Proxy Service.
  */
 class USBProxyServiceWin32 : public USBProxyService
 {

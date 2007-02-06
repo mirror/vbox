@@ -55,7 +55,7 @@
 
 #if defined(DEBUG) || defined(LOG_ENABLED)
 #   define V_DEBUG(m)           V_LOG(m)
-#if defined(__WIN32__)
+#if defined(__WIN__)
 #   define V_LOG(m)             \
     do { Log (("[MAIN:%05u] ", GetCurrentThreadId())); Log (m); Log (("\n")); } while (0)
 #   define V_LOG2(m)            \
