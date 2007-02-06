@@ -1849,6 +1849,7 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, cons
 DECLINLINE(void) pcnetXmitCompleteFrame(PCNetState *pData)
 {
     /* Don't hold the critical section while transmitting data. */
+    /** @note also avoids deadlocks with NAT as it can call us right back. */
     PDMCritSectLeave(&pData->CritSect);
 
     STAM_PROFILE_ADV_START(&pData->StatTransmitSend, a);
