@@ -302,7 +302,7 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
 
     HRESULT rc = E_FAIL;
 
-#if defined (__WIN32__)
+#if defined (__WIN__)
 
     if (callee)
     {
@@ -349,7 +349,7 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
         }
     }
 
-#else // !defined (__WIN32__)
+#else // !defined (__WIN__)
 
     nsCOMPtr <nsIExceptionService> es;
     es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
@@ -402,7 +402,7 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
 
     AssertComRC (rc);
 
-#endif // !defined (__WIN32__)
+#endif // !defined (__WIN__)
 
     if (callee && calleeIID && mIsBasicAvailable)
     {
@@ -416,7 +416,7 @@ QString COMErrorInfo::getInterfaceNameFromIID (const QUuid &id)
 {
     QString name;
 
-#if defined (__WIN32__)
+#if defined (__WIN__)
 
     LONG rc;
     LPOLESTR iidStr = NULL;
