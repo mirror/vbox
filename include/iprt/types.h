@@ -341,62 +341,6 @@ typedef FNRT *PFNRT;
  * @{
  */
 
-/** @def ARCH_BITS
- * Defines the bit count of the current context.
- */
-#ifndef ARCH_BITS
-# if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64) || defined(_M_IA64) || defined(__AMD64__)
-#  define ARCH_BITS 64
-# else
-#  define ARCH_BITS 32
-# endif
-#endif
-
-/** @def HC_ARCH_BITS
- * Defines the host architechture bit count.
- */
-#ifndef HC_ARCH_BITS
-# ifndef IN_GC
-#  define HC_ARCH_BITS ARCH_BITS
-# else
-#  define HC_ARCH_BITS 32
-# endif
-#endif
-
-/** @def R3_ARCH_BITS
- * Defines the host ring-3 architechture bit count.
- */
-#ifndef R3_ARCH_BITS
-# ifdef IN_RING3
-#  define R3_ARCH_BITS ARCH_BITS
-# else
-#  define R3_ARCH_BITS HC_ARCH_BITS
-# endif
-#endif
-
-/** @def R0_ARCH_BITS
- * Defines the host ring-0 architechture bit count.
- */
-#ifndef R0_ARCH_BITS
-# ifdef IN_RING0
-#  define R0_ARCH_BITS ARCH_BITS
-# else
-#  define R0_ARCH_BITS HC_ARCH_BITS
-# endif
-#endif
-
-/** @def GC_ARCH_BITS
- * Defines the guest architechture bit count.
- */
-#ifndef GC_ARCH_BITS
-# ifdef IN_GC
-#  define GC_ARCH_BITS ARCH_BITS
-# else
-#  define GC_ARCH_BITS 32
-# endif
-#endif
-
-
 /** Signed integer which can contain both GC and HC pointers. */
 #if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
 typedef int32_t         RTINTPTR;

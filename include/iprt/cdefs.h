@@ -32,7 +32,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 # if defined(__LINUX__) && defined(__KERNEL__)
 #  error "oops"
-# endif 
+# endif
 # include <sys/cdefs.h>
 #else
 
@@ -72,6 +72,11 @@
 #define RT_STRICT
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
+#define ARCH_BITS
+#define HC_ARCH_BITS
+#define R3_ARCH_BITS
+#define R0_ARCH_BITS
+#define GC_ARCH_BITS
 #endif /* __DOXYGEN__ */
 
 /** @def __X86__
@@ -82,13 +87,15 @@
  * Indicates that we're compiling for the AMD64 architecture.
  */
 #if !defined(__X86__) && !defined(__AMD64__)
-# if defined(__amd64__) || defined(_M_X64)
+# if defined(__amd64__) || defined(__x86_64__) || defined(_M_X64)
 #  define __AMD64__
 # elif defined(__i386__) || defined(_M_IX86)
 #  define __X86__
 # else
 #  error "Check what predefined stuff your compiler uses to indicate architecture."
 # endif
+#elif defined(__X86__) && defined(__AMD64__)
+# error "Both __X86__ and __AMD64__ cannot be defined at the same time!"
 #endif
 
 /** @def IN_RING0
@@ -108,6 +115,68 @@
 #if !defined(IN_RING3) && !defined(IN_RING0) && !defined(IN_GC)
 # error "You must defined which context the compiled code should run in; IN_RING3, IN_RING0 or IN_GC"
 #endif
+#if (defined(IN_RING3) && (defined(IN_RING0) || defined(IN_GC)) ) \
+ || (defined(IN_RING0) && (defined(IN_RING3) || defined(IN_GC)) ) \
+ || (defined(IN_GC)    && (defined(IN_RING3) || defined(IN_RING0)) )
+# error "Only one of the IN_RING3, IN_RING0, IN_GC defines should be defined."
+#endif
+
+
+/** @def ARCH_BITS
+ * Defines the bit count of the current context.
+ */
+#ifndef ARCH_BITS
+# if defined(__AMD64__)
+#  define ARCH_BITS 64
+# else
+#  define ARCH_BITS 32
+# endif
+#endif
+
+/** @def HC_ARCH_BITS
+ * Defines the host architechture bit count.
+ */
+#ifndef HC_ARCH_BITS
+# ifndef IN_GC
+#  define HC_ARCH_BITS ARCH_BITS
+# else
+#  define HC_ARCH_BITS 32
+# endif
+#endif
+
+/** @def R3_ARCH_BITS
+ * Defines the host ring-3 architechture bit count.
+ */
+#ifndef R3_ARCH_BITS
+# ifdef IN_RING3
+#  define R3_ARCH_BITS ARCH_BITS
+# else
+#  define R3_ARCH_BITS HC_ARCH_BITS
+# endif
+#endif
+
+/** @def R0_ARCH_BITS
+ * Defines the host ring-0 architechture bit count.
+ */
+#ifndef R0_ARCH_BITS
+# ifdef IN_RING0
+#  define R0_ARCH_BITS ARCH_BITS
+# else
+#  define R0_ARCH_BITS HC_ARCH_BITS
+# endif
+#endif
+
+/** @def GC_ARCH_BITS
+ * Defines the guest architechture bit count.
+ */
+#ifndef GC_ARCH_BITS
+# ifdef IN_GC
+#  define GC_ARCH_BITS ARCH_BITS
+# else
+#  define GC_ARCH_BITS 32
+# endif
+#endif
+
 
 /** @def CTXTYPE
  * Declare a type differently in GC, R3 and R0.
@@ -459,7 +528,7 @@
 
 /** @def IN_RT_R3
  * Used to indicate whether we're inside the same link module as
- * the HC Ring-3 Runtime Library.  
+ * the HC Ring-3 Runtime Library.
  */
 /** @def RTR3DECL(type)
  * Runtime Library HC Ring-3 export or import declaration.
@@ -510,12 +579,12 @@
 
 /** @def RT_NOCRT
  * Symbol name wrapper for the No-CRT bits.
- * 
- * In order to coexist in the same process as other CRTs, we need to 
+ *
+ * In order to coexist in the same process as other CRTs, we need to
  * decorate the symbols such that they don't conflict the ones in the
  * other CRTs. The result of such conflicts / duplicate symbols can
  * confuse the dynamic loader on unix like systems.
- * 
+ *
  * Define RT_WITHOUT_NOCRT_WRAPPERS to drop the wrapping.
  */
 /** @def RT_NOCRT_STR
@@ -527,7 +596,7 @@
 #else
 # define RT_NOCRT(name) name
 # define RT_NOCRT_STR(name) #name
-#endif 
+#endif
 
 
 
@@ -1036,7 +1105,7 @@
 #  else
 #   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
                              && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
-#  endif                
+#  endif
 # else /* !IN_RING3 */
 #  define VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
                              && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
@@ -1045,7 +1114,7 @@
 #elif defined(__X86__)
 # define VALID_PTR(ptr)     ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 #else
-# error "Architecture identifier missing / not implemented." 
+# error "Architecture identifier missing / not implemented."
 #endif
 
 
