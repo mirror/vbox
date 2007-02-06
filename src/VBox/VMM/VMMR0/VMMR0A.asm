@@ -45,7 +45,7 @@ BEGINCODE
 ; @returns  VINF_SUCCESS on success or whatever is passed to vmmR0CallHostLongJmp.
 ; @param    pJmpBuf msc:rcx gcc:rdi x86:[esp+4]     Our jmp_buf.
 ; @param    pfn     msc:rdx gcc:rsi x86:[esp+8]     The function to be called when not resuming.
-; @param    pVM     msc:r8  gcc:rcx x86:[esp+c]     The argument of that function.
+; @param    pVM     msc:r8  gcc:rdx x86:[esp+c]     The argument of that function.
 ;
 BEGINPROC vmmR0CallHostSetJmp
 %ifdef __X86__
@@ -131,8 +131,11 @@ BEGINPROC vmmR0CallHostSetJmp
     ; Save the registers.
     ;
  %ifdef ASM_CALL64_MSC
-    xchg    rdx, rcx                    ; rdx=pJmpBuf rcx=pfn
+    mov     r11, rdx                    ; pfn
+    mov     rdx, rcx                    ; pJmpBuf;
  %else
+    mov     r8, rdx                     ; pVM (save it like MSC)
+    mov     r11, rsi                    ; pfn
     mov     rdx, rdi                    ; pJmpBuf
  %endif
     mov     [rdx + VMMR0JMPBUF.rbx], rbx
@@ -158,13 +161,11 @@ BEGINPROC vmmR0CallHostSetJmp
 
     push    rdx                         ; Save it and fix stack alignment (16).
  %ifdef ASM_CALL64_MSC
-    mov     rax, rcx                    ; pfn
     mov     rcx, r8                     ; pVM -> arg0
  %else
-    mov     rax, rsi                    ; pfn
-    mov     rdi, rcx                    ; pVM -> arg0
+    mov     rdi, r8                     ; pVM -> arg0
  %endif
-    call    rax
+    call    r11
     pop     rdx                         ; pJmpBuf
     and     qword [rdx + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
     ret
