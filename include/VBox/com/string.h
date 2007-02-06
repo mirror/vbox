@@ -76,7 +76,7 @@ public:
     {
         if (aSize)
         {
-            UINT size = (UINT)aSize; Assert(size == aSize);
+            unsigned int size = (unsigned int)aSize; Assert(size == aSize);
             bstr = ::SysAllocStringLen (NULL, size - 1);
             if (bstr)
                 bstr [0] = 0;
