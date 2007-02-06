@@ -230,7 +230,7 @@ void slirp_output(const uint8_t *pu8Buf, int cb)
     {
         /** Happens during termination */
         if (!RTCritSectIsOwner(&g_pDrv->CritSect))
-            return 0;
+            return;
 
         int rc = g_pDrv->pPort->pfnReceive(g_pDrv->pPort, pu8Buf, cb);
         AssertRC(rc);
