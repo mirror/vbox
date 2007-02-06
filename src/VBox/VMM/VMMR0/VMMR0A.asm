@@ -213,17 +213,22 @@ BEGINPROC vmmR0CallHostLongJmp
 ENDPROC vmmR0CallHostLongJmp
 
 
-%ifdef __X86__      ; The other architecture(s) use(s) C99 variadict macros.
 ;;
 ; Internal R0 logger worker: Logger wrapper.
 ;
 ; @cproto VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...)
 ;
 EXPORTEDNAME vmmR0LoggerWrapper
+%ifdef __X86__      ; The other architecture(s) use(s) C99 variadict macros.
     push    0                           ; assumes we're the wrapper for a default instance.
     call    IMP(RTLogLogger)
     add     esp, byte 4
     ret
-ENDPROC vmmR0LoggerWrapper
+%else
+    int3
+    int3
+    int3
+    ret
 %endif
+ENDPROC vmmR0LoggerWrapper
 
