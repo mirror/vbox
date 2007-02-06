@@ -268,6 +268,9 @@ void VBoxVMSettingsDlg::init()
     whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
                                       6 /* seems that RichText adds some margin */ +
                                       whatsThisLabel->fontMetrics().lineSpacing() * 3);
+    whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
+                                     6 /* seems that RichText adds some margin */ +
+                                     whatsThisLabel->fontMetrics().width ('m') * 40);
 
     /*
      *  setup connections and set validation for pages

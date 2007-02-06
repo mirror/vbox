@@ -74,6 +74,8 @@ enum { lvUSBFilters_Name = 0 };
 
 void VBoxGlobalSettingsDlg::init()
 {
+    polished = false;
+
     setCaption (tr ("VirtualBox Global Settings"));
     setIcon (QPixmap::fromMimeSource ("global_settings_16px.png"));
 
@@ -120,21 +122,23 @@ void VBoxGlobalSettingsDlg::init()
     whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
                                       6 /* seems that RichText adds some margin */ +
                                       whatsThisLabel->fontMetrics().lineSpacing() * 3);
+    whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
+                                     6 /* seems that RichText adds some margin */ +
+                                     whatsThisLabel->fontMetrics().width ('m') * 40);
     
     /*
      *  create and layout non-standard widgets
      *  ----------------------------------------------------------------------
      */
 
-    hkeHostKey = new QIHotKeyEdit( pageKeyboard, "hkeHostKey" );
-    hkeHostKey->setSizePolicy(
-        QSizePolicy( QSizePolicy::Preferred, QSizePolicy::Fixed ));
+    hkeHostKey = new QIHotKeyEdit (grbKeyboard, "hkeHostKey");
+    hkeHostKey->setSizePolicy (QSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed));
     QWhatsThis::add (hkeHostKey,
         tr ("Displays the key used as a Host Key in the VM window. Activate the "
             "entry field and press a new Host Key. Note that alphanumeric, "
             "cursor movement and editing keys cannot be used as a Host Key."));
-    layoutHostKey->addWidget( hkeHostKey );
-    txHostKey->setBuddy( hkeHostKey );
+    layoutHostKey->addWidget (hkeHostKey);
+    txHostKey->setBuddy (hkeHostKey);
     setTabOrder (listView, hkeHostKey);
 
     /*
@@ -237,6 +241,27 @@ bool VBoxGlobalSettingsDlg::eventFilter (QObject *object, QEvent *event)
     }
 
     return QDialog::eventFilter (object, event);
+}
+
+void VBoxGlobalSettingsDlg::showEvent (QShowEvent *e)
+{
+    QDialog::showEvent (e);
+
+    /* one may think that QWidget::polish() is the right place to do things
+     * below, but apparently, by the time when QWidget::polish() is called,
+     * the widget style & layout are not fully done, at least the minimum
+     * size hint is not properly calculated. Since this is sometimes necessary,
+     * we provide our own "polish" implementation. */
+
+    if (polished)
+        return;
+
+    polished = true;
+
+    /* resize to the miminum possible size */
+    resize (minimumSize());
+
+    VBoxGlobal::centerWidget (this, parentWidget());
 }
 
 void VBoxGlobalSettingsDlg::listView_currentChanged (QListViewItem *item)

@@ -26,7 +26,7 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>520</width>
+            <width>580</width>
             <height>370</height>
         </rect>
     </property>
@@ -418,68 +418,79 @@ default virtual machine folder.</string>
                     <property name="margin">
                         <number>0</number>
                     </property>
-                    <property name="spacing">
-                        <number>10</number>
-                    </property>
-                    <widget class="QLayoutWidget">
+                    <widget class="QGroupBox">
                         <property name="name">
-                            <cstring>layout47</cstring>
+                            <cstring>grbKeyboard</cstring>
                         </property>
-                        <hbox>
+                        <property name="title">
+                            <string>&amp;Keyboard</string>
+                        </property>
+                        <vbox>
                             <property name="name">
                                 <cstring>unnamed</cstring>
                             </property>
                             <widget class="QLayoutWidget">
                                 <property name="name">
-                                    <cstring>layoutHostKey</cstring>
+                                    <cstring>layout47</cstring>
                                 </property>
                                 <hbox>
                                     <property name="name">
                                         <cstring>unnamed</cstring>
                                     </property>
-                                    <widget class="QLabel">
+                                    <widget class="QLayoutWidget">
                                         <property name="name">
-                                            <cstring>txHostKey</cstring>
+                                            <cstring>layoutHostKey</cstring>
                                         </property>
-                                        <property name="text">
-                                            <string>Host &amp;Key</string>
-                                        </property>
+                                        <hbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QLabel">
+                                                <property name="name">
+                                                    <cstring>txHostKey</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>&amp;Host Key</string>
+                                                </property>
+                                            </widget>
+                                        </hbox>
                                     </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer22</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>40</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
                                 </hbox>
                             </widget>
-                            <spacer>
+                            <widget class="QCheckBox">
                                 <property name="name">
-                                    <cstring>spacer22</cstring>
+                                    <cstring>chbAutoCapture</cstring>
                                 </property>
-                                <property name="orientation">
-                                    <enum>Horizontal</enum>
+                                <property name="text">
+                                    <string>&amp;Auto capture keyboard</string>
                                 </property>
-                                <property name="sizeType">
-                                    <enum>Expanding</enum>
+                                <property name="accel">
+                                    <string>Alt+A</string>
                                 </property>
-                                <property name="sizeHint">
-                                    <size>
-                                        <width>40</width>
-                                        <height>20</height>
-                                    </size>
+                                <property name="whatsThis" stdset="0">
+                                    <string>When checked, the keyboard is automatically
+captured every time the VM window is activated. When the keyboard is captured, 
+all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
                                 </property>
-                            </spacer>
-                        </hbox>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>chbAutoCapture</cstring>
-                        </property>
-                        <property name="text">
-                            <string>&amp;Auto capture keyboard</string>
-                        </property>
-                        <property name="accel">
-                            <string>Alt+A</string>
-                        </property>
-                        <property name="whatsThis" stdset="0">
-                            <string>When checked, the keyboard is automatically
-captured every time the VM window is activated.</string>
-                        </property>
+                            </widget>
+                        </vbox>
                     </widget>
                     <spacer>
                         <property name="name">
@@ -494,7 +505,7 @@ captured every time the VM window is activated.</string>
                         <property name="sizeHint">
                             <size>
                                 <width>20</width>
-                                <height>120</height>
+                                <height>40</height>
                             </size>
                         </property>
                     </spacer>
@@ -1016,6 +1027,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <forward>class VBoxUSBMenu</forward>
 </forwards>
 <variables>
+    <variable access="private">bool polished;</variable>
     <variable access="private">bool valid;</variable>
     <variable access="private">QTimer *whatsThisTimer;</variable>
     <variable access="private">QWidget *whatsThisCandidate;</variable>
@@ -1047,6 +1059,7 @@ with all fields set to the values of the selected USB device attached to the hos
 </slots>
 <functions>
     <function access="private">init()</function>
+    <function access="protected">showEvent( QShowEvent * )</function>
     <function>getFrom( const CSystemProperties &amp; props, const VMGlobalSettings &amp; gs )</function>
     <function>putBackTo( CSystemProperties &amp; props, VMGlobalSettings &amp; gs )</function>
     <function access="protected">setWarning( const QString &amp; )</function>
