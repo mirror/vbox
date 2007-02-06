@@ -264,7 +264,8 @@ struct PCNetState_st
     STAMPROFILEADV                      StatTmdStoreHC;
     STAMPROFILEADV                      StatRdtePollGC;
     STAMPROFILEADV                      StatRdtePollHC;
-    STAMCOUNTER                         aStatXmitChainCounts[8];
+    STAMCOUNTER                         aStatXmitFlush[16];
+    STAMCOUNTER                         aStatXmitChainCounts[16];
     STAMCOUNTER                         StatXmitSkipCurrent;
     STAMPROFILEADV                      StatInterrupt;
     STAMPROFILEADV                      StatPollTimer;
@@ -1961,6 +1962,10 @@ static void pcnetTransmit(PCNetState *pData)
  */
 static void pcnetAsyncTransmit(PCNetState *pData)
 {
+#ifdef VBOX_WITH_STATISTICS
+    unsigned cFlushIrq = 0;
+#endif
+
     Assert(PDMCritSectIsOwner(&pData->CritSect));
 
     if (RT_UNLIKELY(!CSR_TXON(pData)))
@@ -2126,12 +2131,21 @@ static void pcnetAsyncTransmit(PCNetState *pData)
         if (    !CSR_TOKINTD(pData)      /* Transmit OK Interrupt Disable, no infl. on errors. */
             ||  (CSR_LTINTEN(pData) && tmd.tmd1.ltint)
             ||  tmd.tmd1.err)
+        {
+#ifdef VBOX_WITH_STATISTICS
+            cFlushIrq++;
+#endif
             pData->aCSR[0] |= 0x0200;    /* set TINT */
+        }
 
         STAM_COUNTER_INC(&pData->aStatXmitChainCounts[RT_MIN(cBuffers,
                                                       ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
     } while (CSR_TXON(pData));          /* transfer on */
 
+#ifdef VBOX_WITH_STATISTICS
+    if (cFlushIrq) 
+        STAM_COUNTER_INC(&pData->aStatXmitFlush[RT_MIN(cFlushIrq, ELEMENTS(pData->aStatXmitFlush)) - 1]);
+#endif
     pcnetUpdateIrq(pData);
     STAM_PROFILE_ADV_STOP(&pData->StatTransmit, a);
 }
@@ -2670,7 +2684,7 @@ static int pcnetIoportWriteU16(PCNetState *pData, uint32_t addr, uint32_t val)
     Log2(("#%d pcnetIoportWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
-    if (!BCR_DWIO(pData))
+    if (RT_LIKELY(!!BCR_DWIO(pData)))
     {
         switch (addr & 0x0f)
         {
@@ -4164,9 +4178,14 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in HC",     "/Devices/PCNet%d/TmdStoreHC", iInstance);
     
     unsigned i;
+    for (i = 0; i < ELEMENTS(pData->aStatXmitFlush) - 1; i++)
+        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "",                                       "/Devices/PCNet%d/XmitFlushIrq/%d", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/XmitFlushIrq/%d+", iInstance, i + 1);
+
     for (i = 0; i < ELEMENTS(pData->aStatXmitChainCounts) - 1; i++)
-        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "",                                  "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "",                                  "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,    "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
+
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
     
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet interrupt checks",   "/Devices/PCNet%d/Interrupt", iInstance);
