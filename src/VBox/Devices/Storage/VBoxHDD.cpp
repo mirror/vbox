@@ -502,6 +502,10 @@ struct VDIDISK
      */
     unsigned        cbBuf;
 
+    /** Flag whether zero writes should be handled normally or optimized
+     * away if possible. */
+    bool            fHonorZeroWrites;
+
     /** The media interface. */
     PDMIMEDIA       IMedia;
     /** Pointer to the driver instance. */
@@ -1583,10 +1587,35 @@ static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock
         return VERR_WRITE_PROTECT;
     }
 
+    /* This could be optimized a little (not setting it when writing zeroes
+     * to a zeroed block). Won't buy us much, because it's very unlikely
+     * that only such zero data block writes occur while the VDI is opened. */
     vdiSetModifiedFlag(pImage);
 
     if (!IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
     {
+        if (!pDisk->fHonorZeroWrites)
+        {
+            /* If the destination block is unallocated at this point, it's either
+             * a zero block or a block which hasn't been used so far (which also
+             * means that it's a zero block. Don't need to write anything to this
+             * block if the data consists of just zeroes. */
+            bool fBlockZeroed = true; /* Block is zeroed flag. */
+            for (unsigned i = 0; i < (cbToWrite >> 2); i++)
+                if (((uint32_t *)pvBuf)[i] != 0)
+                {
+                    /* Block is not zeroed! */
+                    fBlockZeroed = false;
+                    break;
+                }
+
+            if (fBlockZeroed)
+            {
+                pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
+                return VINF_SUCCESS;
+            }
+        }
+
         /* need to allocate a new block in image file */
 
         /* expand file by one block */
@@ -1718,7 +1747,7 @@ IDER3DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf
     unsigned cbBlock  = getImageBlockSize(&pImage->Header);
 
     /* loop through blocks */
-    int rc = VINF_SUCCESS;
+    int rc;
     for (;;)
     {
         unsigned to_write;
@@ -1759,27 +1788,8 @@ IDER3DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf
             }
         }
 
-        /* If the destination block is unallocated at this point, it's either
-         * a zero block or a block which hasn't been used so far (which also
-         * means that it's a zero block. Don't need to write anything to this
-         * block if the data consists of just zeroes. */
-        bool fBlockZeroed = false; /* assume data, for blocks already with data */
-        if (!IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
-        {
-            /* Check block for data. */
-            fBlockZeroed = true;    /* Block is zeroed flag. */
-            for (unsigned i = 0; i < (to_write >> 2); i++)
-                if (((uint32_t *)pvBuf)[i] != 0)
-                {
-                    /* Block is not zeroed! */
-                    fBlockZeroed = false;
-                    break;
-                }
-        }
-
         /* Actually write the data into block. */
-        if (!fBlockZeroed)
-            rc = vdiWriteInBlock(pDisk, pImage, uBlock, offWrite, to_write, pvBuf);
+        rc = vdiWriteInBlock(pDisk, pImage, uBlock, offWrite, to_write, pvBuf);
 
         cbToWrite -= to_write;
         if (    cbToWrite == 0
@@ -3185,6 +3195,7 @@ static void vdiInitVDIDisk(PVDIDISK pDisk)
     pDisk->pLast   = NULL;
     pDisk->cbBlock = VDI_IMAGE_DEFAULT_BLOCK_SIZE;
     pDisk->cbBuf   = VDIDISK_DEFAULT_BUFFER_SIZE;
+    pDisk->fHonorZeroWrites = false;
 }
 
 /**
@@ -4224,6 +4235,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     PVDIDISK pData = PDMINS2DATA(pDrvIns, PVDIDISK);
     char *pszName;      /**< The path of the disk image file. */
     bool fReadOnly;     /**< True if the media is readonly. */
+    bool fHonorZeroWrites = false;
 
     /*
      * Init the static parts.
@@ -4245,7 +4257,6 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->IMedia.pfnBiosGetTranslation = vdiBiosGetTranslation;
     pData->IMedia.pfnBiosSetTranslation = vdiBiosSetTranslation;
 
-#if 1 /** @todo someone review this! it's a shot in the dark from my side. */
     /*
      * Validate configuration and find the great to the level of umpteen grandparent.
      * The parents are found in the 'Parent' subtree, so it's sorta up side down
@@ -4255,7 +4266,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     PCFGMNODE   pCurNode = pCfgHandle;
     for (;;)
     {
-        if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0ReadOnly\0"))
+        if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0ReadOnly\0HonorZeroWrites\0"))
             return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
         PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");
@@ -4289,6 +4300,19 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
                                     N_("VHDD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
         }
 
+        if (!fHonorZeroWrites)
+        {
+            rc = CFGMR3QueryBool(pCfgHandle, "HonorZeroWrites", &fHonorZeroWrites);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                fHonorZeroWrites = false;
+            else if (VBOX_FAILURE(rc))
+            {
+                MMR3HeapFree(pszName);
+                return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                        N_("VHDD: Configuration error: Querying \"HonorZeroWrites\" as boolean failed"));
+            }
+        }
+
         /*
          * Open the image.
          */
@@ -4306,40 +4330,11 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         pCurNode = CFGMR3GetParent(pCurNode);
     }
 
-    /* On failure, vdiDestruct will be called, so no need to clean up here. */
-
-#else /* old */
-    /*
-     * Validate and read top level configuration.
-     */
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
-    if (VBOX_FAILURE(rc))
-        return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("VHDD: Configuration error: Querying \"Path\" as string failed"));
-
-    rc = CFGMR3QueryBool(pCfgHandle, "ReadOnly", &fReadOnly);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fReadOnly = false;
-    else if (VBOX_FAILURE(rc))
-    {
-        MMR3HeapFree(pszName);
-        return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("VHDD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
-    }
-
-    /*
-     * Open the image.
-     */
-    rc = VDIDiskOpenImage(pData, pszName, fReadOnly ? VDI_OPEN_FLAGS_READONLY
-                                                    : VDI_OPEN_FLAGS_NORMAL);
+    /* If any of the images has the flag set, handle zero writes like normal. */
     if (VBOX_SUCCESS(rc))
-        Log(("vdiConstruct: Opened '%s' in %s mode\n", pszName, VDIDiskIsReadOnly(pData) ? "read-only" : "read-write"));
-    else
-        AssertMsgFailed(("Failed to open image '%s' rc=%Vrc\n", pszName, rc));
+        pData->fHonorZeroWrites = fHonorZeroWrites;
 
-    MMR3HeapFree(pszName);
-    pszName = NULL;
-#endif
+    /* On failure, vdiDestruct will be called, so no need to clean up here. */
 
     if (rc == VERR_ACCESS_DENIED)
         /* This should never happen here since this case is covered by Console::PowerUp */
