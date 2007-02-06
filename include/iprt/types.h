@@ -345,7 +345,7 @@ typedef FNRT *PFNRT;
  * Defines the bit count of the current context.
  */
 #ifndef ARCH_BITS
-# if defined(__x86_64__) || defined(__amd64__) /** @todo MSC */ /** @todo get this right with gcc32. */
+# if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64) || defined(_M_IA64) || defined(__AMD64__)
 #  define ARCH_BITS 64
 # else
 #  define ARCH_BITS 32
