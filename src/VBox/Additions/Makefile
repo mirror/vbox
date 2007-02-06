@@ -90,7 +90,10 @@ $(PATH_BIN)/additions/VBoxGuestAdditions.iso: \
 
 # build the Linux installer on a remote machine
 $(LINUXINSTALLER_CROSS):
-	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Runtime BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
-	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Additions/common BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
-	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Additions/linux BUILD_TYPE=release all packing"
+	ssh vbox@tinderdeb "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Runtime BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
+	ssh vbox@tinderdeb "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/common BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
+	ssh vbox@tinderdeb "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/linux BUILD_TYPE=release all packing"
+#	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Runtime BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
+#	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Additions/common BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
+#	ssh vbox@tinderrhel3 "cd /mnt/tinderwin_vbox/w32-rel ; ./tools/env.sh --no-wine kmk -C src/VBox/Additions/linux BUILD_TYPE=release all packing"
 
