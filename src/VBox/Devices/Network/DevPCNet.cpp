@@ -2697,7 +2697,7 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
 
     *pRC = VINF_SUCCESS;
 
-    if (!BCR_DWIO(pData))
+    if (RT_LIKELY(!BCR_DWIO(pData)))
     {
         switch (addr & 0x0f)
         {
