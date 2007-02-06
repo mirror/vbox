@@ -246,7 +246,9 @@
 #define VERR_PATCH_ALREADY_DISABLED         (-1405)
 /** Patch was already enabled */
 #define VERR_PATCH_ALREADY_ENABLED          (-1406)
-/** Patch was removed. */
+/** Patch was removed. 
+ * @todo r=bird: This duplicate makes tstErrUnique fail... I don't know if it's intentional or not, so I leave it to you. 
+ */
 #define VWRN_PATCH_REMOVED                  1407
 
 /** Reason for leaving GC: \#GP with EIP pointing to patch code. */
