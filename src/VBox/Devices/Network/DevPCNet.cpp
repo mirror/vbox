@@ -224,6 +224,9 @@ struct PCNetState_st
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
 
+    /** Pending send packet counter. */
+    uint32_t                            cPendingSends;
+
 #ifdef PCNET_NO_POLLING
     RTGCPHYS                            TDRAPhysOld;
     uint32_t                            cbTDRAOld;
@@ -262,6 +265,7 @@ struct PCNetState_st
     STAMPROFILEADV                      StatRdtePollGC;
     STAMPROFILEADV                      StatRdtePollHC;
     STAMCOUNTER                         aStatXmitChainCounts[8];
+    STAMCOUNTER                         StatXmitSkipCurrent;
     STAMPROFILEADV                      StatInterrupt;
     STAMPROFILEADV                      StatPollTimer;
     STAMCOUNTER                         StatMIIReads;
@@ -1786,6 +1790,8 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     NOREF(pItem);
 
+    /* Clear counter .*/
+    ASMAtomicAndU32(&pData->cPendingSends, 0);
     int rc = RTSemEventSignal(pData->hSendEventSem);
     AssertRC(rc);
     return true;
@@ -1930,9 +1936,21 @@ static void pcnetTransmit(PCNetState *pData)
 #ifdef IN_RING3
     pcnetXmitFlushFrames(pData);
 #else
+
+#if 1
     PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
-    if (RT_LIKELY(pItem))
+    if (RT_UNLIKELY(pItem))
         PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
+#else
+    if (ASMAtomicIncU32(&pData->cPendingSends) < 16)
+    {
+        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
+        if (RT_UNLIKELY(pItem))
+            PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
+    }
+    else
+        PDMQueueFlush(CTXSUFF(pData->pXmitQueue));
+#endif
 #endif
 }
 
@@ -4149,6 +4167,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     for (i = 0; i < ELEMENTS(pData->aStatXmitChainCounts) - 1; i++)
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "",                                  "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
+    
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet interrupt checks",   "/Devices/PCNet%d/Interrupt", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet poll timer",         "/Devices/PCNet%d/PollTimer", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMIIReads,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of MII reads",                "/Devices/PCNet%d/MIIReads", iInstance);
