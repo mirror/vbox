@@ -103,7 +103,6 @@ else
 SUPR3_TEMPLATE      = VBOXR3
 endif
 SUPR3_DEFS          = IN_SUP_R3 IN_RT_R3
-SUPR3_DEFS.l4       = IN_RING0  # makes sure that we incorporate _all_ prototypes from VBox/sup.h
 SUPR3_INCS          = $(VBOX_PATH_SUPPORT)
 SUPR3_INCS.l4       = $(L4_INCDIR)
 ifneq ($(BUILD_TARGET),win) ## @todo rename win32 -> win!
