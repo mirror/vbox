@@ -69,7 +69,7 @@ OTHER_CLEAN           = \
 # All the AMD64 target must use the no-crt path because ELF doesn't like op.c 
 # when stuffed into a shared library and windows doesn't have 64-bit gcc (yet).
 #
-ifeq ($(filter-out l4 darwin,$(BUILD_TARGET)),)
+ifeq ($(filter-out l4 darwin freebsd,$(BUILD_TARGET)),)
  REM_USE_NOCRT := 1
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
