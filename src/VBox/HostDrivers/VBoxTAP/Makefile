@@ -31,7 +31,8 @@ INSTALLS.win += VBoxTAP-inf
 #
 VBoxTAP_TEMPLATE    = VBOXR0DRV
 VBoxTAP_SDKS        = W2K3DDK WINPSDKINCS
-VBoxTAP_LDFLAGS     = -Entry:DriverEntry@8
+VBoxTAP_LDFLAGS.x86 = -Entry:DriverEntry@8
+VBoxTAP_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxTAP_SOURCES     = \
 	$(VBOX_PATH_VBOXTAP)/tapdrvr.c \
 	$(VBOX_PATH_VBOXTAP)/VBoxTAP.rc
