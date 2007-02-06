@@ -30,6 +30,7 @@
 #include <iprt/assert.h>
 
 #include <iprt/alloc.h>
+#include <iprt/asm.h>
 
 #ifdef VBOX_GUI_DEBUG
 
@@ -80,24 +81,7 @@ class VMCPUTimer : public QThread // for crossplatform msleep()
 {
 public:
     inline static uint64_t ticks() {
-#if defined (Q_CC_MSVC)
-        union {
-            uint64_t ll;
-            struct {
-                uint32_t low, high;
-            } l;
-        } val;
-        __asm rdtsc
-        __asm mov val.l.low, eax
-        __asm mov val.l.high, edx
-         return val.ll;
-#elif defined (Q_CC_GNU)
-        uint64_t val;
-        asm volatile ("rdtsc" : "=A" (val));
-        return val;
-#else
-        return 0;
-#endif
+        return ASMReadTSC();
     }
     inline static uint64_t msecs( uint64_t tcks ) {
         return tcks / ticks_per_msec;
