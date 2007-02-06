@@ -105,7 +105,10 @@ struct quehead_32 {
 	u_int32_t qh_rlink;
 };
 
-inline void
+#ifndef _MSC_VER
+inline
+#endif
+void
 insque_32(a, b)
 	void *a;
 	void *b;
@@ -120,7 +123,10 @@ insque_32(a, b)
 	link->qh_rlink = head->qh_link = ptr_to_u32(element);
 }
 
-inline void
+#ifndef _MSC_VER
+inline 
+#endif
+void
 remque_32(a)
 	void *a;
 {
