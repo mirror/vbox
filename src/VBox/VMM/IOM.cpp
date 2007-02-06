@@ -352,27 +352,27 @@ PIOMIOPORTSTATS iomr3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDe
 
             /* Profiling */
             RTStrPrintf(szName, sizeof(szName), "/IOM/Ports/%04x-In-R3/Prof", Port);
-            rc = STAMR3Register(pVM, &pPort->InR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pPort->ProfInR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/Ports/%04x-Out-R3/Prof", Port);
-            rc = STAMR3Register(pVM, &pPort->OutR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pPort->ProfOutR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/Ports/%04x-In-GC/Prof", Port);
-            rc = STAMR3Register(pVM, &pPort->InGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pPort->ProfInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/Ports/%04x-Out-GC/Prof", Port);
-            rc = STAMR3Register(pVM, &pPort->OutGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pPort->ProfOutGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/Ports/%04x-In-R0/Prof", Port);
-            rc = STAMR3Register(pVM, &pPort->InR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pPort->ProfInR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/Ports/%04x-Out-R0/Prof", Port);
-            rc = STAMR3Register(pVM, &pPort->OutR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pPort->ProfOutR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             return pPort;
@@ -453,27 +453,27 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
 
             /* Profiling */
             RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-R3/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pStats->ProfReadR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-R3/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pStats->ProfWriteR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-GC/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pStats->ProfReadGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-GC/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pStats->ProfWriteGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-R0/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pStats->ProfReadR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-R0/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3Register(pVM, &pStats->ProfWriteR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
             AssertRC(rc);
 
             return pStats;
