@@ -512,6 +512,8 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->trpm.s.StatForwardProfGC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/GC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
     STAM_REG(pVM, &pVM->trpm.s.StatForwardProfHC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/HC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
 
+    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dDisasm,        STAMTYPE_PROFILE_ADV, "/TRPM/Trap0d/Prof/Disasm",         STAMUNIT_TICKS_PER_CALL, "Profiling trpmGCTrap0dHandler.");
+
     /*
      * Default action when entering raw mode for the first time
      */

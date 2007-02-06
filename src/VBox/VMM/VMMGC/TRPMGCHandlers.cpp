@@ -693,6 +693,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     }
 #endif
 
+    STAM_PROFILE_ADV_START(&pVM->trpm.s.StatTrap0dDisasm, a);
     /*
      * Decode the instruction.
      */
@@ -702,6 +703,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     {
         Log(("trpmGCTrap0dHandler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n",
              pRegFrame->cs, pRegFrame->eip, pRegFrame->ss & X86_SEL_RPL, rc));
+        STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
         return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
     }
 
@@ -709,7 +711,11 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     uint32_t    cbOp;
     rc = EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
     if (VBOX_FAILURE(rc))
+    {
+        STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
+    }
+    STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
 
     /*
      * Deal with I/O port access.
