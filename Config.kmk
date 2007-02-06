@@ -1327,15 +1327,13 @@ TEMPLATE_VBOXNOCRTGCC_CFLAGS.release    = -O2 -fno-strict-aliasing
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.profile    = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS.release)
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.kprofile   = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS.release)
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.darwin     = -mdynamic-no-pic
-TEMPLATE_VBOXNOCRTGCC_INCS              = $(VBOX_PATH_GCC_INCS) $(PATH_ROOT)/include/iprt/nocrt
-#TEMPLATE_VBOXNOCRTGCC_INCS.l4           = $(VBOX_PATH_GCC_INCS) $(L4_INCDIR) - enable if necessary.
+TEMPLATE_VBOXNOCRTGCC_INCS              = $(PATH_ROOT)/include/iprt/nocrt
 
 ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.amd64)
  # cross compile to 64-bit ELF (linux).
  TEMPLATE_VBOXNOCRTGCC_TOOL             = XGCCAMD64LINUX
  TEMPLATE_VBOXNOCRTGCC_ASTOOL           = YASM
  TEMPLATE_VBOXNOCRTGCC_ASFLAGS          = -f elf64 -DASM_FORMAT_ELF -D__YASM__ -w+orphan-labels -g dwarf2
- TEMPLATE_VBOXNOCRTGCC_INCS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/include
  TEMPLATE_VBOXNOCRTGCC_LIBS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
  TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -nostdlib
 
@@ -1362,7 +1360,11 @@ else
    TEMPLATE_VBOXNOCRTGCC_LDFLAGS        += -Wl,--no-undefined
   endif
  endif
- TEMPLATE_VBOXNOCRTGCC_LIBS             = $(VBOX_GCC_LIBGCC)
+ ifneq ($(filter-out freebsd,$(BUILD_TARGET)),)
+  TEMPLATE_VBOXNOCRTGCC_LIBS            = # FIXME - has unwind mess.
+ else
+  TEMPLATE_VBOXNOCRTGCC_LIBS            = $(VBOX_GCC_LIBGCC)
+ endif
 endif
 
 
