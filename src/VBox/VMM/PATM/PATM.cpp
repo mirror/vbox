@@ -5588,6 +5588,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     Log(("patmR3HandleDirtyInstr: dirty instruction at %VGv (%VGv)\n", pEip, pPatchToGuestRec->pOrgInstrGC));
 
     pRec             = pPatchToGuestRec;
+    pCurInstrGC      = pPatchToGuestRec->pOrgInstrGC;
     pCurPatchInstrGC = pEip;
     cbDirty          = 0;
     pPatchInstrHC    = patmPatchGCPtr2PatchHCPtr(pVM, pCurPatchInstrGC);
@@ -5633,7 +5634,6 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
         pCurPatchInstrHC = pPatchInstrHC;
         pCurPatchInstrGC = pEip;
-        pCurInstrGC      = pPatchToGuestRec->pOrgInstrGC;
         cbLeft           = cbDirty;
 
         while (cbLeft && VBOX_SUCCESS(rc))
