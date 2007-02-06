@@ -838,7 +838,7 @@ typedef struct
  * The IOCTL number algorithm corresponds to CTL_CODE on Windows but for Linux IOCTLs,
  * we also encode the data size, so we need an additional parameter.
  */
-#if defined(__WIN32__)
+#if defined(__WIN__)
 #define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
     ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 #else /* unix: */
