@@ -68,23 +68,25 @@
 # endif
 #else /* no crt */
 # if defined(__GNUC__)
-#  if !defined(__OS2__) && !defined(__FREEBSD__)
+#  if defined(__OS2__) || defined(__FREEBSD__)
+#   include <iprt/nocrt/compiler/gcc.h>
+#  else
 #   include <stddef.h>
-#  endif
-#  ifndef _SIZE_T_DECLARED
-#   define _SIZE_T_DECLARED
-#   if defined(__X86__)
-     typedef unsigned int size_t;
-#   else
-     typedef uintptr_t size_t;
+#   ifndef _SIZE_T_DECLARED
+#    define _SIZE_T_DECLARED
+#    if defined(__X86__)
+      typedef unsigned int size_t;
+#    else
+      typedef uintptr_t size_t;
+#    endif
 #   endif
-#  endif
-#  ifndef _SSIZE_T_DECLARED
-#   define _SSIZE_T_DECLARED
-#   if defined(__X86__)
-     typedef int ssize_t;
-#   else
-     typedef intptr_t ssize_t;
+#   ifndef _SSIZE_T_DECLARED
+#    define _SSIZE_T_DECLARED
+#    if defined(__X86__)
+      typedef int ssize_t;
+#    else
+      typedef intptr_t ssize_t;
+#    endif
 #   endif
 #  endif
 # else /* !__GNUC__ */
