@@ -256,7 +256,7 @@ typedef struct EM
     {
         /** Padding used in the other rings.
          * This must be larger than jmp_buf on any supported platform. */
-        char                achPaddingFatalLongJump[HC_ARCH_BITS == 32 ? 176 : 208];
+        char                achPaddingFatalLongJump[HC_ARCH_BITS == 32 ? 176 : 256];
 #ifdef IN_RING3
         /** Long buffer jump for fatal VM errors.
          * It will jump to before the outer EM loop is entered. */
@@ -307,8 +307,10 @@ typedef struct EM
     /** Tree for keeping track of cli occurances (debug only). */
     HCPTRTYPE(PAVLPVNODECORE) pCliStatTree;
     STAMCOUNTER             StatTotalClis;
+#if 0
     /** 64-bit Visual C++ rounds the struct size up to 16 byte. */
     uint64_t                padding1;
+#endif
 
 } EM;
 /** Pointer to EM VM instance data. */
