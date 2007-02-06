@@ -124,6 +124,9 @@ typedef struct PCNETFRAME
 {
     /** The current frame size. Starts at -1. Only the top frame can be expanded. */
     int32_t  cb;
+#if HC_ARCH_BITS == 64
+    uint32_t Alignment;
+#endif 
     /** The virtual address of the frame (copied or direct pointer) */
     RTR3PTR  pvBuf;
 } PCNETFRAME;
@@ -167,6 +170,9 @@ struct PCNetState_st
     /** The recv buffer. */
     uint8_t                             abRecvBuf[4096];
 
+    /** Pending send packet counter. */
+    uint32_t                            cPendingSends;
+
     /** Size of a RX/TX descriptor (8 or 16 bytes according to SWSTYLE */
     int                                 iLog2DescSize;
     /** Bits 16..23 in 16-bit mode */
@@ -207,6 +213,9 @@ struct PCNetState_st
 
     /** Number of times we've reported the link down. */
     RTUINT                              cLinkDownReported;
+#if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
+    RTUINT                              Alignment;
+#endif 
     /** The configured MAC address. */
     PDMMAC                              MacConfigured;
 
@@ -223,9 +232,6 @@ struct PCNetState_st
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
-
-    /** Pending send packet counter. */
-    uint32_t                            cPendingSends;
 
 #ifdef PCNET_NO_POLLING
     RTGCPHYS                            TDRAPhysOld;
