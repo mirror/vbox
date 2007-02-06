@@ -23,71 +23,98 @@
 #include <VBox/VBoxHDD.h>
 #include <iprt/runtime.h>
 #include <iprt/string.h>
+#include <iprt/stream.h>
+#include <iprt/mem.h>
 
-#include <stdio.h>
-#include <stdlib.h>
 
-int main ()
+int dotest(const char *pszBaseFilename, const char *pszDiffFilename)
 {
-    int rc;
-    RTR3Init();
+    PVDIDISK pVdi = VDIDiskCreate();
 
-    PVDIDISK vhdd = VDIDiskCreate();
+#define CHECK(str) \
+    do \
+    { \
+        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        if (VBOX_FAILURE(rc)) \
+        { \
+            VDIDiskCloseAllImages(pVdi); \
+            return rc; \
+        } \
+    } while (0)
 
-    rc = VDIDiskOpenImage(vhdd, "testimg.vdi", VDI_OPEN_FLAGS_NORMAL);
-    printf("openImage() rc=%d\r\n", rc);
 
+    int rc = VDIDiskOpenImage(pVdi, pszBaseFilename, VDI_OPEN_FLAGS_NORMAL);
+    RTPrintf("openImage() rc=%Vrc\n", rc);
     if (VBOX_FAILURE(rc))
     {
-        rc = VDICreateBaseImage("testimg.vdi", VDI_IMAGE_TYPE_NORMAL,
+        rc = VDICreateBaseImage(pszBaseFilename, VDI_IMAGE_TYPE_NORMAL,
 #ifdef _MSC_VER
                                 (1000 * 1024 * 1024UI64),
 #else
                                 (1000 * 1024 * 1024ULL),
 #endif
                                 "Test image", NULL, NULL);
-        printf ("createImage() rc=%d\r\n", rc);
+        CHECK("createImage()");
 
-        rc = VDIDiskOpenImage(vhdd, "testimg.vdi", VDI_OPEN_FLAGS_NORMAL);
-        printf ("openImage() rc=%d\r\n", rc);
+        rc = VDIDiskOpenImage(pVdi, pszBaseFilename, VDI_OPEN_FLAGS_NORMAL);
+        CHECK("openImage()");
     }
 
-    void *buf = malloc(1*1124*1024);
+    void *pvBuf = RTMemAlloc(1*1124*1024);
 
-    memset(buf, 0x33, 1*1124*1024);
-    rc = VDIDiskWrite(vhdd, 20*1024*1024 + 594040, buf, 1024*1024);
-    printf ("write() rc=%d\r\n", rc);
+    memset(pvBuf, 0x33, 1*1124*1024);
+    rc = VDIDiskWrite(pVdi, 20*1024*1024 + 594040, pvBuf, 1024*1024);
+    CHECK("write()");
 
-    memset(buf, 0x46, 1*1124*1024);
-    rc = VDIDiskWrite(vhdd, 20*1024*1024 + 594040, buf, 1024);
-    printf ("write() rc=%d\r\n", rc);
+    memset(pvBuf, 0x46, 1*1124*1024);
+    rc = VDIDiskWrite(pVdi, 20*1024*1024 + 594040, pvBuf, 1024);
+    CHECK("write()");
 
-    memset(buf, 0x51, 1*1124*1024);
-    rc = VDIDiskWrite(vhdd, 40*1024*1024 + 594040, buf, 1024);
-    printf ("write() rc=%d\r\n", rc);
+    memset(pvBuf, 0x51, 1*1124*1024);
+    rc = VDIDiskWrite(pVdi, 40*1024*1024 + 594040, pvBuf, 1024);
+    CHECK("write()");
 
-    rc = VDIDiskCreateOpenDifferenceImage(vhdd, "diffimg.vdi", "Test diff image", NULL, NULL);
-    printf("create undo rc=%d\r\n", rc);
-//    rc = VHDDOpenSecondImage(vhdd, "undoimg.vdi");
-//    printf ("open undo rc=%d\r\n", rc);
+    rc = VDIDiskCreateOpenDifferenceImage(pVdi, pszDiffFilename, "Test diff image", NULL, NULL);
+    CHECK("create undo");
+//    rc = VHDDOpenSecondImage(pVdi, "undoimg.vdi");
+//    RTPrintf("open undo rc=%Vrc\n", rc);
 
-    memset(buf, '_', 1*1124*1024);
-    rc = VDIDiskWrite(vhdd, 20*1024*1024 + 594040, buf, 512);
-    printf("write() rc=%d\r\n", rc);
+    memset(pvBuf, '_', 1*1124*1024);
+    rc = VDIDiskWrite(pVdi, 20*1024*1024 + 594040, pvBuf, 512);
+    CHECK("write()");
 
-    rc = VDIDiskWrite(vhdd, 22*1024*1024 + 594040, buf, 78263);
-    printf("write() rc=%d\r\n", rc);
-    rc = VDIDiskWrite(vhdd, 13*1024*1024 + 594040, buf, 782630);
-    printf("write() rc=%d\r\n", rc);
-    rc = VDIDiskWrite(vhdd, 44*1024*1024 + 594040, buf, 67899);
-    printf("write() rc=%d\r\n", rc);
+    rc = VDIDiskWrite(pVdi, 22*1024*1024 + 594040, pvBuf, 78263);
+    CHECK("write()");
+    rc = VDIDiskWrite(pVdi, 13*1024*1024 + 594040, pvBuf, 782630);
+    CHECK("write()");
+    rc = VDIDiskWrite(pVdi, 44*1024*1024 + 594040, pvBuf, 67899);
+    CHECK("write()");
 
-    printf("committing..\r\n");
-    VDIDiskDumpImages(vhdd);
-    rc = VDIDiskCommitLastDiff(vhdd, NULL, NULL);
-    printf("commit last diff rc=%d\r\n", rc);
-    VDIDiskCloseAllImages(vhdd);
+    RTPrintf("committing..\n");
+    VDIDiskDumpImages(pVdi);
+    rc = VDIDiskCommitLastDiff(pVdi, NULL, NULL);
+    CHECK("commit last diff");
+    VDIDiskCloseAllImages(pVdi);
+#undef CHECK
+    return 0;
+}
 
-    return (0);
+
+int main()
+{
+    RTR3Init();
+
+    RTFileDelete("tstVdiBase.vdi");
+    RTFileDelete("tstVdiDiff.vdi");
+
+    int rc = dotest("tstVdiBase.vdi", "tstVdiDiff.vdi");
+    if (!rc)
+        RTPrintf("tstVDI: SUCCESS\n");
+    else
+        RTPrintf("tstVDI: FAILURE\n");
+
+    RTFileDelete("tstVdiBase.vdi");
+    RTFileDelete("tstVdiDiff.vdi");
+    return !!rc;
 }
 
