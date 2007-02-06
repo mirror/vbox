@@ -43,6 +43,10 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 
+#if defined(_MSC_VER) && defined(__AMD64__) /** @todo check this with with VC7! */
+#  pragma intrinsic(_AddressOfReturnAddress)
+#endif
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -458,8 +462,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
 # if defined(__GNUC__)
                     void *pvRet = (uint8_t *)__builtin_frame_address(0) + sizeof(void *);
 # elif defined(_MSC_VER) && defined(__AMD64__) /** @todo check this with with VC7! */
-#  pragma intrinsic(_AddressOfReturnAddress)
-                    void *pvRet = (uint8_t *)_AddressOfReturnAddress;
+                    void *pvRet = (uint8_t *)_AddressOfReturnAddress();
 # elif defined(__X86__)
                     void *pvRet = (uint8_t *)&pVM - sizeof(pVM);
 # else
