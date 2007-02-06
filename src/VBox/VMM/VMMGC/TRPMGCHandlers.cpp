@@ -121,6 +121,8 @@ __END_DECLS
  */
 static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
 {
+    uint32_t uOldActiveVector = pVM->trpm.s.uActiveVector;
+
     /* Reset trap? */
     if (    rc != VINF_EM_RAW_GUEST_TRAP
         &&  rc != VINF_EM_RAW_RING_SWITCH_INT)
@@ -192,8 +194,14 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
             /* can't return if successful */
             Assert(rc != VINF_SUCCESS);
 
+            /* Stop the profile counter that was started in TRPMGCHandlersA.asm */
+            Assert(uOldActiveVector <= 16);
+            STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
+
             /* Assert the trap and go to the recompiler to dispatch it. */
             TRPMAssertTrap(pVM, u8Interrupt, false);
+
+            STAM_PROFILE_ADV_START(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
             rc = VINF_EM_RAW_INTERRUPT_PENDING;
         }
         /*
