@@ -540,7 +540,7 @@ MMR3DECL(void) MMR3HeapFree(void *pv)
     if (pHdr->pNext)
         pHdr->pNext->pPrev = pHdr->pPrev;
     else
-        pHeap->pTail = pHdr->pNext;
+        pHeap->pTail = pHdr->pPrev;
 
     RTCritSectLeave(&pHeap->Lock);
 
