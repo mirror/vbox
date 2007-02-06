@@ -37,9 +37,15 @@
 #endif
 
 #ifndef __WIN__
-extern "C" DECLVBGL(void *) vboxadd_cmc_open (void);
-extern "C" DECLVBGL(void) vboxadd_cmc_close (void *);
-extern "C" DECLVBGL(int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
+# ifdef __cplusplus
+extern "C" {
+# endif
+extern DECLVBGL(void *) vboxadd_cmc_open (void);
+extern DECLVBGL(void) vboxadd_cmc_close (void *);
+extern DECLVBGL(int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
+# ifdef __cplusplus
+}
+# endif
 #endif
 
 int vbglDriverOpen (VBGLDRIVER *pDriver)
@@ -67,7 +73,7 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
 #else
     void *opaque;
 
-    opaque = vboxadd_cmc_open ();
+    opaque = (void *) vboxadd_cmc_open ();
     if (!opaque)
     {
         return VERR_NOT_IMPLEMENTED;

@@ -286,6 +286,9 @@ static void vbglPhysHeapExcludeBlock (VBGLPHYSHEAPBLOCK *pBlock)
 
 static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
 {
+    RTCCPHYS physAddr;
+    VBGLPHYSHEAPCHUNK *pChunk;
+    VBGLPHYSHEAPBLOCK *pBlock;
     VBGL_PH_dprintf(("Allocating new chunk of size %d\n", cbSize));
 
     /* Compute chunk size to allocate */
@@ -300,8 +303,8 @@ static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
         cbSize = (cbSize + (VBGL_PH_CHUNKSIZE - 1)) & ~(VBGL_PH_CHUNKSIZE - 1);
     }
 
-    RTCCPHYS physAddr = 0;
-    VBGLPHYSHEAPCHUNK *pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc (&physAddr, cbSize);
+    physAddr = 0;
+    pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc (&physAddr, cbSize);
 
     if (!pChunk)
     {
@@ -316,7 +319,7 @@ static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
     pChunk->pPrev            = NULL;
 
     /* Initialize the free block, which now occupies entire chunk. */
-    VBGLPHYSHEAPBLOCK *pBlock = (VBGLPHYSHEAPBLOCK *)((char *)pChunk + sizeof (VBGLPHYSHEAPCHUNK));
+    pBlock = (VBGLPHYSHEAPBLOCK *)((char *)pChunk + sizeof (VBGLPHYSHEAPCHUNK));
 
     vbglPhysHeapInitBlock (pBlock, pChunk, cbSize - sizeof (VBGLPHYSHEAPCHUNK) - sizeof (VBGLPHYSHEAPBLOCK));
 
@@ -332,6 +335,7 @@ static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
 
 void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 {
+    char *p;
     VBGL_PH_ASSERT(pChunk != NULL);
     VBGL_PH_ASSERTMsg(pChunk->u32Signature == VBGL_PH_CHUNKSIGNATURE,
                      ("pChunk->u32Signature = %08X\n", pChunk->u32Signature));
@@ -340,7 +344,7 @@ void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 
     /* first scan the chunk and exclude all blocks from lists */
 
-    char *p = (char *)pChunk + sizeof (VBGLPHYSHEAPCHUNK);
+    p = (char *)pChunk + sizeof (VBGLPHYSHEAPCHUNK);
 
     while (p < (char *)pChunk + pChunk->cbSize)
     {
@@ -382,6 +386,7 @@ void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 
 DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
 {
+    VBGLPHYSHEAPBLOCK *pBlock;
     int rc = vbglPhysHeapEnter ();
 
     if (VBOX_FAILURE(rc))
@@ -391,7 +396,7 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
 
     dumpheap ("pre alloc");
 
-    VBGLPHYSHEAPBLOCK *pBlock = NULL;
+    pBlock = NULL;
 
     /* If there are free blocks in the heap, look at them. */
     VBGLPHYSHEAPBLOCK *iter = g_vbgldata.pFreeBlocksHead;
@@ -502,6 +507,8 @@ DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p)
 
 DECLVBGL(void) VbglPhysHeapFree (void *p)
 {
+    VBGLPHYSHEAPBLOCK *pBlock;
+    VBGLPHYSHEAPBLOCK *pNeighbour;
     int rc = vbglPhysHeapEnter ();
 
     if (VBOX_FAILURE(rc))
@@ -511,7 +518,7 @@ DECLVBGL(void) VbglPhysHeapFree (void *p)
 
     dumpheap ("pre free");
 
-    VBGLPHYSHEAPBLOCK *pBlock = vbglPhysHeapData2Block (p);
+    pBlock = vbglPhysHeapData2Block (p);
 
     if (!pBlock)
     {
@@ -548,7 +555,7 @@ DECLVBGL(void) VbglPhysHeapFree (void *p)
      * and in that case the merging will work.
      */
 
-    VBGLPHYSHEAPBLOCK *pNeighbour = (VBGLPHYSHEAPBLOCK *)((char *)p + pBlock->cbDataSize);
+    pNeighbour = (VBGLPHYSHEAPBLOCK *)((char *)p + pBlock->cbDataSize);
 
     if ((char *)pNeighbour < (char *)pBlock->pChunk + pBlock->pChunk->cbSize
         && (pNeighbour->fu32Flags & VBGL_PH_BF_ALLOCATED) == 0)

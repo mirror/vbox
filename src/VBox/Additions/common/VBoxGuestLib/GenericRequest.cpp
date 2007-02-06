@@ -33,6 +33,7 @@
 DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevRequestType reqType)
 {
     int rc = VbglEnter ();
+    VMMDevRequestHeader *pReq;
 
     if (VBOX_FAILURE(rc))
     {
@@ -45,7 +46,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
         return VERR_INVALID_PARAMETER;
     }
 
-    VMMDevRequestHeader *pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc (cbSize);
+    pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc (cbSize);
 
     if (!pReq)
     {
@@ -71,6 +72,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
 
 DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq)
 {
+    RTCCPHYS physaddr;
     int rc = VbglEnter ();
 
     if (VBOX_FAILURE(rc))
@@ -88,7 +90,7 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq)
         return VERR_VBGL_NOT_INITIALIZED;
     }
 
-    RTCCPHYS physaddr = VbglPhysHeapGetPhysAddr (pReq);
+    physaddr = VbglPhysHeapGetPhysAddr (pReq);
 
     if (!physaddr)
     {

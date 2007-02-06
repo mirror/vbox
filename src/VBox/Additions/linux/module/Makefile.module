@@ -23,7 +23,14 @@ MODULE = vboxadd
 OBJS   = \
 	cmc.o \
 	vboxmod.o \
-	VBoxGuestLibBaseLinux.a \
+	GenericRequest.o \
+	SysHlp.o \
+	PhysHeap.o \
+	Init.o \
+	VMMDev.o \
+	HGCM.o \
+	HGCMInternal.o \
+	VBoxCalls.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o
@@ -94,7 +101,7 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/  /include /r0drv/linux)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -D_X86_ -DIN_RT_R0 -DIN_SUP_R0 -DVBGL_VBOXGUEST -DVBGL_HGCM -DVBOX_HGCM
+KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -D_X86_ -DIN_RT_R0 -DIN_SUP_R0 -DVBGL_VBOXGUEST -DVBGL_HGCM -DVBOX_HGCM -DLOG_TO_BACKDOOR
 #ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
 #KFLAGS   += -DDEBUG
 #endif

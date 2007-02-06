@@ -53,12 +53,13 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
                                VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData,
                                uint32_t u32AsyncData)
 {
+    VMMDevHGCMConnect *pHGCMConnect;
     if (!pConnectInfo || !pAsyncCallback)
     {
         return VERR_INVALID_PARAMETER;
     }
 
-    VMMDevHGCMConnect *pHGCMConnect = NULL;
+    pHGCMConnect = NULL;
 
     /* Allocate request */
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMConnect, sizeof (VMMDevHGCMConnect), VMMDevReq_HGCMConnect);
@@ -101,12 +102,13 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
 DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
                                   VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
+    VMMDevHGCMDisconnect *pHGCMDisconnect;
     if (!pDisconnectInfo || !pAsyncCallback)
     {
         return VERR_INVALID_PARAMETER;
     }
 
-    VMMDevHGCMDisconnect *pHGCMDisconnect = NULL;
+    pHGCMDisconnect = NULL;
 
     /* Allocate request */
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMDisconnect, sizeof (VMMDevHGCMDisconnect), VMMDevReq_HGCMDisconnect);
@@ -143,6 +145,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
 DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                             VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
+    VMMDevHGCMCall *pHGCMCall;
     if (!pCallInfo || !pAsyncCallback)
     {
         return VERR_INVALID_PARAMETER;
@@ -150,7 +153,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
     dprintf (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
 
-    VMMDevHGCMCall *pHGCMCall = NULL;
+    pHGCMCall = NULL;
 
     uint32_t cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
 

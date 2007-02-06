@@ -23,6 +23,14 @@
 #ifndef __VBGLINTERNAL__H
 #define __VBGLINTERNAL__H
 
+/* I have added this include here as
+   a) This file is always included before VBGLInternal and
+   b) It contains a definition for VBGLHGCMHANDLE, so we definitely do not
+      need to redefine that here.  The C (without ++) compiler was complaining
+      that it was defined twice.
+*/
+#include <VBox/VBoxGuestLib.h>
+
 #if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
 #include <VBox/log.h>
 # define dprintf(a) RTLogBackdoorPrintf a
@@ -46,8 +54,6 @@ struct VBGLHGCMHANDLEDATA
     uint32_t fAllocated;
     VBGLDRIVER driver;
 };
-
-typedef struct VBGLHGCMHANDLEDATA *VBGLHGCMHANDLE;
 #endif
 
 enum VbglLibStatus
@@ -59,7 +65,7 @@ enum VbglLibStatus
 
 typedef struct _VBGLDATA
 {
-    VbglLibStatus status;
+    enum VbglLibStatus status;
 
     VBGLIOPORT portVMMDev;
 
