@@ -1040,8 +1040,14 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
         /*
          * Perform the read and deal with the result.
          */
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfRead), a);
+#endif
         int rc = pRange->pfnReadCallback(pRange->pDevIns, pRange->pvUser, GCPhys, pu32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfRead), a);
         if (pStats && rc != VINF_IOM_HC_MMIO_READ)
             STAM_COUNTER_INC(&pStats->CTXALLSUFF(Read));
 #endif
@@ -1136,8 +1142,14 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
     if (pRange && pRange->pfnWriteCallback)
 #endif /* !IN_RING3 */
     {
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfWrite), a);
+#endif
         int rc = pRange->pfnWriteCallback(pRange->pDevIns, pRange->pvUser, GCPhys, &u32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfWrite), a);
         if (pStats && rc != VINF_IOM_HC_MMIO_WRITE)
             STAM_COUNTER_INC(&pStats->CTXALLSUFF(Write));
 #endif
