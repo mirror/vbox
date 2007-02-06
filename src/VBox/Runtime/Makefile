@@ -462,6 +462,7 @@ VBoxRT_LIBS.l4                 = \
 # This is used together with VBoxRT.
 #
 RuntimeR3NoCRTGCC_TEMPLATE = VBOXNOCRTGCC
+RuntimeR3NoCRTGCC_LIBSUFF = $(VBOX_SUFF_LIB)
 RuntimeR3NoCRTGCC_SOURCES  = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
