@@ -27,7 +27,7 @@
 #include <VBox/vmm.h>
 #include <VBox/log.h>
 
-#include <stdarg.h>
+#include <iprt/stdarg.h>
 
 __BEGIN_DECLS
 
