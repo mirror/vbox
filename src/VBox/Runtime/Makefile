@@ -85,6 +85,8 @@ RuntimeWin64ASM_SOURCES = \
 	win64/ASMGetFS.asm \
 	win64/ASMGetGS.asm \
 	win64/ASMGetIDTR.asm \
+	win64/ASMGetGDTR.asm \
+	win64/ASMGetTR.asm \
 	win64/ASMGetSS.asm \
 	win64/ASMProbeReadByte.asm \
 	win64/ASMSetFlags.asm \
