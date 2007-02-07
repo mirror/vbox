@@ -46,7 +46,7 @@ LIBSDLMAIN="-lSDLmain"
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBXCURSOR="-lXcursor"
-LIBX11="-lXext -lX11"
+LIBX11="-L/usr/X11R6/lib -lXext -lX11"
 INCZ=""
 LIBZ="-lz"
 INCPNG=""
@@ -74,7 +74,7 @@ fi
 
 function cleanup()
 {
-  rm -f .tmp_src.cc .tmp_src.c .tmp_out
+  rm -f .tmp_src.cc .tmp_src.c .tmp_out .test_execute.log
 }
 
 function fail()
@@ -175,9 +175,9 @@ function test_compile()
 function test_execute()
 {
   echo "executing the binary" >> $LOG
-  log=`./.tmp_out`
+  ./.tmp_out > .test_execute.log
   rc=$?
-  echo $log | tee -a $LOG
+  cat .test_execute.log | tee -a $LOG
   if (($rc!=0)); then
     fail $1
     return 1
@@ -429,11 +429,11 @@ extern "C" int main(void)
 {
   printf("found version %d.%d.%d",
          XALAN_VERSION_MAJOR, XALAN_VERSION_MINOR, XALAN_VERSION_REVISION);
-#if _XALAN_VERSION >= 11000
+#if _XALAN_VERSION >= 10800
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 1.10.0 or higher\n");
+  printf(", expected version 1.8.0 or higher\n");
   return 1;
 #endif
 }
@@ -459,11 +459,11 @@ extern "C" int main(void)
 {
   printf("found version %d.%d.%d",
          XERCES_VERSION_MAJOR, XERCES_VERSION_MINOR, XERCES_VERSION_REVISION);
-#if _XERCES_VERSION >= 20600
+#if _XERCES_VERSION >= 20500
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 2.6.0 or higher");
+  printf(", expected version 2.5.0 or higher");
   return 1;
 #endif
 }
@@ -655,6 +655,7 @@ extern "C" int main(void)
 #
 # Check for pam, needed by VRDPAuth
 # Version 79 was introduced in 9/2005, do we support older versions?
+# Debian/sarge uses 76
 #
 function check_pam()
 {
@@ -665,14 +666,14 @@ function check_pam()
 extern "C" int main(void)
 {
   printf("found version %d", __LIBPAM_VERSION);
-  if (__LIBPAM_VERSION >= 79)
+  if (__LIBPAM_VERSION >= 76)
   {
     printf(", OK.\n");
     return 0;
   }
   else
   {
-    printf(", expected version 79 or higher\n");
+    printf(", expected version 76 or higher\n");
     return 1;
   }
 }
@@ -724,6 +725,11 @@ function check_sdl_ttf()
   echo '
 #include <cstdio>
 #include <SDL/SDL_ttf.h>
+#ifndef SDL_TTF_MAJOR_VERSION
+#define SDL_TTF_MAJOR_VERSION TTF_MAJOR_VERSION
+#define SDL_TTF_MINOR_VERSION TTF_MINOR_VERSION
+#define SDL_TTF_PATCHLEVEL    TTF_PATCHLEVEL
+#endif
 extern "C" int main(void)
 {
   printf("found version %d.%d.%d",
@@ -822,7 +828,7 @@ extern "C" int main(void)
     echo "compiling the following source file:" >> $LOG
     cat .tmp_src.cc >> $LOG
     echo "using the following command line:" >> $LOG
-    echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc \"-I$q/include -L$q/lib -lqt-mt\"" >> $LOG
+    echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/lib -lqt-mt" >> $LOG
     $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/lib -lqt-mt >> $LOG 2>&1
     if (($?==0)); then
       if test_execute; then
