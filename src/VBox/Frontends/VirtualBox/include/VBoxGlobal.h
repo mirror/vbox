@@ -506,73 +506,22 @@ public:
 
     enum { USBDevicesMenuNoDevicesId = 1 };
 
-    VBoxUSBMenu (QWidget *aParent) : QPopupMenu (aParent)
-    {
-        connect (this, SIGNAL (aboutToShow()),
-                 this, SLOT   (processAboutToShow()));
-        connect (this, SIGNAL (highlighted (int)),
-                 this, SLOT   (processHighlighted (int)));
-    }
+    VBoxUSBMenu (QWidget *);
 
-    const CUSBDevice& getUSB (int aIndex)
-    {
-        return usbDevicesMap [aIndex];
-    }
+    const CUSBDevice& getUSB (int);
+
+    void setConsole (const CConsole &);
 
 private slots:
 
-    void processAboutToShow()
-    {
-        clear(), usbDevicesMap.clear();
-        CHost host = vboxGlobal().virtualBox().GetHost();
+    void processAboutToShow();
 
-        bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
-        if (isUSBEmpty)
-        {
-            insertItem (
-                tr ("<no available devices>", "USB devices"),
-                USBDevicesMenuNoDevicesId);
-            setItemEnabled (USBDevicesMenuNoDevicesId, false);
-        }
-        else
-        {
-            CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
-            while (en.HasMore())
-            {
-                CHostUSBDevice iterator = en.GetNext();
-                CUSBDevice usb = CUnknown (iterator);
-                int id = insertItem (vboxGlobal().details (usb));
-                usbDevicesMap [id] = usb;
-            }
-        }
-    }
-
-    void processHighlighted (int aIndex)
-    {
-        /* the <no available devices> item is highlighted */
-        if (aIndex == USBDevicesMenuNoDevicesId)
-        {
-            QToolTip::add (this,
-                tr ("No supported devices connected to the host PC",
-                    "USB device tooltip"));
-            return;
-        }
-
-        CUSBDevice usb = usbDevicesMap [aIndex];
-        /* if null then some other item but a USB device is highlighted */
-        if (usb.isNull())
-        {
-            QToolTip::remove (this);
-            return;
-        }
-
-        QToolTip::remove (this);
-        QToolTip::add (this, vboxGlobal().toolTip (usb));
-    }
+    void processHighlighted (int);
 
 private:
 
-    QMap <int, CUSBDevice> usbDevicesMap;
+    QMap <int, CUSBDevice> mUSBDevicesMap;
+    CConsole mConsole;
 };
 
 #endif /* __VBoxGlobal_h__ */
