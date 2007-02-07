@@ -1859,8 +1859,10 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, cons
  * Completes the current frame.
  * If we've reached the maxium number of frames, they will be flushed.
  */
-DECLINLINE(void) pcnetXmitCompleteFrame(PCNetState *pData)
+DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
 {
+    HSEMEVENT hSem = pData->hSendEventSem;
+
     /* Don't hold the critical section while transmitting data. */
     /** @note also avoids deadlocks with NAT as it can call us right back. */
     PDMCritSectLeave(&pData->CritSect);
@@ -1869,8 +1871,7 @@ DECLINLINE(void) pcnetXmitCompleteFrame(PCNetState *pData)
     pData->pDrv->pfnSend(pData->pDrv, pData->SendFrame.pvBuf, pData->SendFrame.cb);
     STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
-    int rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
-    AssertReleaseRC(rc);
+    return PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
 }
 
 
@@ -1966,7 +1967,7 @@ static void pcnetTransmit(PCNetState *pData)
 /**
  * Try to transmit frames
  */
-static void pcnetAsyncTransmit(PCNetState *pData)
+static int pcnetAsyncTransmit(PCNetState *pData)
 {
 #ifdef VBOX_WITH_STATISTICS
     unsigned cFlushIrq = 0;
@@ -2022,7 +2023,11 @@ static void pcnetAsyncTransmit(PCNetState *pData)
                 if (CSR_LOOP(pData))
                     pcnetXmitLoopbackFrame(pData);
                 else
-                    pcnetXmitCompleteFrame(pData);
+                {
+                    int rc = pcnetXmitCompleteFrame(pData);
+                    if (VBOX_FAILURE(rc))
+                        return rc; /* can happen during termination */
+                }
             }
             else
                 pcnetXmitFailTMDLinkDown(pData, &tmd);
@@ -2099,7 +2104,11 @@ static void pcnetAsyncTransmit(PCNetState *pData)
                     Log(("#%d pcnetTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
                          pData->SendFrame.cb, iStart, CSR_XMTRC(pData)));
                     if (pcnetIsLinkUp(pData) && !fDropFrame)
-                        pcnetXmitCompleteFrame(pData);
+                    {
+                        int rc = pcnetXmitCompleteFrame(pData);
+                        if (VBOX_FAILURE(rc))
+                            return rc; /* can happen during termination */
+                    }
                     else if (CSR_LOOP(pData) && !fDropFrame)
                         pcnetXmitLoopbackFrame(pData);
                     else
@@ -2154,6 +2163,8 @@ static void pcnetAsyncTransmit(PCNetState *pData)
 #endif
     pcnetUpdateIrq(pData);
     STAM_PROFILE_ADV_STOP(&pData->StatTransmit, a);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2163,18 +2174,18 @@ static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
 {
     PCNetState *pData = (PCNetState *)pvUser;
     RTSEMEVENT hEvent = pData->hSendEventSem;
+    int        rc     = VINF_SUCCESS;
 
-    while(1)
+    while(rc == VINF_SUCCESS)
     {
-        int rc = RTSemEventWait(hEvent, RT_INDEFINITE_WAIT);
+        rc = RTSemEventWait(hEvent, RT_INDEFINITE_WAIT);
         if (VBOX_FAILURE(rc))
             break;
 
         rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
         AssertReleaseRC(rc);
 
-        pcnetAsyncTransmit(pData);
-
+        rc = pcnetAsyncTransmit(pData);
         PDMCritSectLeave(&pData->CritSect);
     }
     return VINF_SUCCESS;
@@ -3891,10 +3902,14 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
-#ifdef PCNET_ASYNC_SEND
-    if (pData->pSendQueue)
-        RTReqDestroyQueue(pData->pSendQueue);
-#endif
+
+    int rc = PDMCritSectEnter(&pData->CritSect, VERR_ACCESS_DENIED);
+    AssertReleaseRC(rc);
+
+    RTSemEventDestroy(pData->hSendEventSem);
+    pData->hSendEventSem = 0;
+    PDMCritSectLeave(&pData->CritSect);
+
     PDMR3CritSectDelete(&pData->CritSect);
     return VINF_SUCCESS;
 }
