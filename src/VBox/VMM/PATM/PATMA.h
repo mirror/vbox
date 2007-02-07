@@ -89,6 +89,7 @@
 #define PATM_ACTION_LOG_PUSHF                   9
 #define PATM_ACTION_LOG_IRET                    10
 #define PATM_ACTION_LOG_RET                     11
+#define PATM_ACTION_LOG_CALL                    12
 
 /* Magic dword found in ecx for patm pending actions. */
 #define PATM_ACTION_MAGIC                       0xABCD4321

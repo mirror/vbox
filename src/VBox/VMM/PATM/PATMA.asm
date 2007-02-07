@@ -1673,6 +1673,24 @@ PATMLookupAndCall_SearchEnd:
     pop     edx
     pop     eax
     add     esp, 24                             ; parameters + return address pushed by caller (changes the flags, but that shouldn't matter)
+
+%ifdef PATM_LOG_IF_CHANGES
+    push    eax
+    push    ebx
+    push    ecx
+    push    edx
+    mov     ebx, dword [esp - 20 - 16]               ; original guest return address
+    mov     edx, dword [esp - 40 + 4 - 16]           ; duplicated patch function
+    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_CALL
+    mov     eax, PATM_ACTION_LOG_RET
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     ebx
+    pop     eax
+%endif
+
     push    dword [esp - 20]                    ; push original guest return address
 
     ; the called function will set PATM_INTERRUPTFLAG (!!)
@@ -1689,7 +1707,11 @@ GLOBALNAME PATMLookupAndCallRecord
     DD      0
     DD      0
     DD      PATMLookupAndCallEnd - PATMLookupAndCallStart
+%ifdef PATM_LOG_IF_CHANGES
+    DD      6
+%else
     DD      5
+%endif
     DD      PATM_PENDINGACTION
     DD      0
     DD      PATM_PATCHBASE
@@ -1700,6 +1722,10 @@ GLOBALNAME PATMLookupAndCallRecord
     DD      0
     DD      PATM_STACKBASE_GUEST
     DD      0
+%ifdef PATM_LOG_IF_CHANGES
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      0ffffffffh
 
 

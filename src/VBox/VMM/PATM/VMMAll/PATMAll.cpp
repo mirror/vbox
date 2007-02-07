@@ -639,6 +639,11 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 Log(("PATMGC: RET to %VGv iopl=%d\n", pRegFrame->edx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
+
+            case PATM_ACTION_LOG_CALL:
+                Log(("PATMGC: CALL to %VGv return addr %VGv iopl=%d\n", pRegFrame->edx, pRegFrame->ebx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
+                pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
+                return VINF_SUCCESS;
 #endif
             default:
                 AssertFailed();
