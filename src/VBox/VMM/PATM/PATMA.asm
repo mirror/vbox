@@ -37,6 +37,10 @@
 %include "VBox/vm.mac"
 %include "PATMA.mac"
 
+%ifdef DEBUG
+; Noisy, but useful for debugging certain problems
+;;;%define PATM_LOG_PATCHINSTR
+%endif
 
 BEGINCODE
 
@@ -274,7 +278,7 @@ BEGINPROC   PATMCliReplacement
 PATMCliStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_CLI
@@ -303,14 +307,14 @@ GLOBALNAME PATMCliRecord
     DD      0
     DD      0
     DD      PATMCliEnd - PATMCliStart
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      4
 %else
     DD      3
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -326,7 +330,7 @@ PATMStiStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     mov     dword [ss:PATM_INHIBITIRQADDR], PATM_NEXTINSTRADDR
     pushf
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_STI
@@ -349,7 +353,7 @@ GLOBALNAME PATMStiRecord
     DD      0
     DD      0
     DD      PATMStiEnd - PATMStiStart
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      6
 %else
     DD      5
@@ -360,7 +364,7 @@ GLOBALNAME PATMStiRecord
     DD      0
     DD      PATM_NEXTINSTRADDR
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -593,7 +597,7 @@ GLOBALNAME PATMIntEntryRecordErrorCode
 BEGINPROC   PATMPopf32Replacement
 PATMPopf32Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_POPF_IF1
@@ -653,14 +657,14 @@ GLOBALNAME PATMPopf32Record
     DD      0
     DD      0
     DD      PATMPopf32End - PATMPopf32Start
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      13
 %else
     DD      12
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -692,7 +696,7 @@ GLOBALNAME PATMPopf32Record
 BEGINPROC   PATMPopf32Replacement_NoExit
 PATMPopf32_NoExitStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_POPF_IF1
@@ -747,14 +751,14 @@ GLOBALNAME PATMPopf32Record_NoExit
     DD      0
     DD      0
     DD      PATMPopf32_NoExitEnd - PATMPopf32_NoExitStart
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      14
 %else
     DD      13
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -916,7 +920,7 @@ BEGINPROC   PATMPushf32Replacement
 PATMPushf32Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushfd
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_PUSHF
@@ -947,14 +951,14 @@ GLOBALNAME PATMPushf32Record
     DD      0
     DD      0
     DD      PATMPushf32End - PATMPushf32Start
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      4
 %else
     DD      3
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -1065,7 +1069,7 @@ PATMIretStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushfd
 
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     push    edx
@@ -1212,14 +1216,14 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      0
     DD      PATMIretEnd- PATMIretStart
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      22
 %else
     DD      21
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -1600,6 +1604,9 @@ PATMLookupAndCallStart:
     push    edi
     push    ecx
 
+    mov     eax, dword [esp+16+4]                   ; guest return address
+    mov     dword [ss:PATM_CALL_RETURN_ADDR], eax                               ; temporary storage
+
     mov     edx, dword [esp+16+20]  ; pushed target address
 
     xor     eax, eax                ; default result -> nothing found
@@ -1666,35 +1673,28 @@ PATMLookupAndCall_SearchEnd:
     mov     eax, dword [esp+16+4]               ; guest return address
     mov     dword [ss:edi], eax
 
-    push    ecx                                 ; temporarily store the target address on the stack
-    add     esp, 4
+    mov     dword [ss:PATM_CALL_PATCH_TARGET_ADDR], ecx       ; temporarily store the target address
     pop     ecx
     pop     edi
     pop     edx
     pop     eax
     add     esp, 24                             ; parameters + return address pushed by caller (changes the flags, but that shouldn't matter)
 
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
-    push    ebx
     push    ecx
-    push    edx
-    mov     ebx, dword [esp - 20 - 16]               ; original guest return address
-    mov     edx, dword [esp - 40 + 4 - 16]           ; duplicated patch function
     lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_CALL
     mov     eax, PATM_ACTION_LOG_CALL
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
-    pop     edx
     pop     ecx
-    pop     ebx
     pop     eax
 %endif
 
-    push    dword [esp - 20]                    ; push original guest return address
+    push    dword [ss:PATM_CALL_RETURN_ADDR]   ; push original guest return address
 
     ; the called function will set PATM_INTERRUPTFLAG (!!)
-    jmp     dword [esp-40]                      ; call duplicated patch function
+    jmp     dword [ss:PATM_CALL_PATCH_TARGET_ADDR] 
 
 PATMLookupAndCallEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
@@ -1707,11 +1707,13 @@ GLOBALNAME PATMLookupAndCallRecord
     DD      0
     DD      0
     DD      PATMLookupAndCallEnd - PATMLookupAndCallStart
-%ifdef PATM_LOG_IF_CHANGES
-    DD      6
+%ifdef PATM_LOG_PATCHINSTR
+    DD      10
 %else
-    DD      5
+    DD      9
 %endif
+    DD      PATM_CALL_RETURN_ADDR
+    DD      0
     DD      PATM_PENDINGACTION
     DD      0
     DD      PATM_PATCHBASE
@@ -1722,10 +1724,16 @@ GLOBALNAME PATMLookupAndCallRecord
     DD      0
     DD      PATM_STACKBASE_GUEST
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+    DD      PATM_CALL_PATCH_TARGET_ADDR
+    DD      0
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
+    DD      PATM_CALL_RETURN_ADDR
+    DD      0
+    DD      PATM_CALL_PATCH_TARGET_ADDR
+    DD      0
     DD      0ffffffffh
 
 
@@ -2120,7 +2128,7 @@ PATMRetFunction_Start:
     mov     eax, dword [ss:eax]                 ; relative patm return address
     add     eax, PATM_PATCHBASE
 
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     push    edx
@@ -2179,7 +2187,7 @@ PATMRetFunction_SearchEnd:
 
     add     eax, PATM_PATCHBASE
 
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     push    edx
@@ -2215,7 +2223,7 @@ GLOBALNAME PATMRetFunctionRecord
     DD      0
     DD      0
     DD      PATMRetFunction_End - PATMRetFunction_Start
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      9
 %else
     DD      7
@@ -2230,7 +2238,7 @@ GLOBALNAME PATMRetFunctionRecord
     DD      0
     DD      PATM_PATCHBASE
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -2238,7 +2246,7 @@ GLOBALNAME PATMRetFunctionRecord
     DD      0
     DD      PATM_PATCHBASE
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
@@ -2265,7 +2273,7 @@ PATMCheckIF_Safe:
     ; invalidate the PATM stack as we'll jump back to guest code
     mov     dword [ss:PATM_STACKPTR], PATM_STACK_SIZE
 
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_IF1
@@ -2291,7 +2299,7 @@ GLOBALNAME PATMCheckIFRecord
     DD      0
     DD      0
     DD      PATMCheckIF_End - PATMCheckIF_Start
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      6
 %else
     DD      5
@@ -2304,7 +2312,7 @@ GLOBALNAME PATMCheckIFRecord
     DD      0
     DD      PATM_STACKPTR
     DD      0
-%ifdef PATM_LOG_IF_CHANGES
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_PENDINGACTION
     DD      0
 %endif
