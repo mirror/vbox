@@ -88,6 +88,10 @@ typedef struct PATMGCSTATE
     /* PATM inhibit irq address (used by sti) */
     RTGCPTR   GCPtrInhibitInterrupts;
 
+    /* Scratch room for call patch */
+    RTGCPTR   GCCallPatchTargetAddr;
+    RTGCPTR   GCCallReturnAddr;
+
     /* Temporary storage for guest registers. */
     struct
     {
