@@ -61,6 +61,7 @@ static const char  *g_apszExclude[] =
     "testcase/tstMove",
     "testcase/tstRunTestcases",
     "testcase/tstSDL",
+    "testcase/tstTime-3",
     "./tstRunTestcases",
     "./tstAnimate",
     "./tstAPI",
@@ -69,10 +70,18 @@ static const char  *g_apszExclude[] =
     "./tstMicroGC",
     "./tstVBoxDbg",
     "./tstVMM-2",
+    "./tstTestServMgr",
+    "./tstXptDump",
+    "./tstnsIFileEnumerator",
+    "./tstSimpleTypeLib",
+    "./tstTestAtoms",
+    "./tstXptLink",
+    "./tstTestCallTemplates",
 #if 1 // later
     "testcase/tstIntNetR0",
     "./tstVMM",
     "./tstVMReq",
+    "./tstVMREQ",
 #endif
     /* final entry*/
     ""
