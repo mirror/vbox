@@ -53,6 +53,7 @@
 #include <VBox/cpumdis.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
+#include <VBox/dbgf.h>
 
 #include <VBox/log.h>
 #include <iprt/thread.h>
@@ -883,9 +884,10 @@ static int emR3RawStep(PVM pVM)
     int         rc;
     PCPUMCTX    pCtx   = pVM->em.s.pCtx;
     bool        fGuest = pVM->em.s.enmState != EMSTATE_DEBUG_HYPER;
+#ifndef DEBUG_sandervl
     Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVM),
          fGuest ? CPUMGetGuestEIP(pVM) : CPUMGetHyperEIP(pVM), fGuest ? CPUMGetGuestEFlags(pVM) : CPUMGetHyperEFlags(pVM)));
-
+#endif
     if (fGuest)
     {
         /*
@@ -917,8 +919,10 @@ static int emR3RawStep(PVM pVM)
             rc = VMMR3ResumeHyper(pVM);
         else
             rc = VMMR3RawRunGC(pVM);
+#ifndef DEBUG_sandervl
         Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - GC rc %Vrc\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVM),
              fGuest ? CPUMGetGuestEIP(pVM) : CPUMGetHyperEIP(pVM), fGuest ? CPUMGetGuestEFlags(pVM) : CPUMGetHyperEFlags(pVM), rc));
+#endif
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
     rc = CPUMRawLeave(pVM, NULL, rc);
@@ -942,6 +946,20 @@ static int emR3RawStep(PVM pVM)
     return rc;
 }
 
+#ifdef DEBUG_sandervl
+void emR3SingleStepExec(PVM pVM, uint32_t cIterations)
+{
+    EMSTATE enmOldState = pVM->em.s.enmState;
+    pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
+    for(uint32_t i=0;i<cIterations;i++)
+    {
+        DBGFR3PrgStep(pVM);
+        emR3RawStep(pVM);
+        DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
+    }
+    pVM->em.s.enmState = enmOldState;
+}
+#endif
 
 /**
  * Executes one (or perhaps a few more) instruction(s).
