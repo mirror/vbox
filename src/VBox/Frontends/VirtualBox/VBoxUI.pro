@@ -96,11 +96,11 @@ IMAGES	= images/tpixel.png \
 	images/hd_write_16px.png \
 	images/hd_disabled_16px.png \
 	images/mouse_16px.png \
-	images/mouse_disable_16px.png \
 	images/mouse_disabled_16px.png \
 	images/mouse_seamless_16px.png \
 	images/mouse_can_seamless_16px.png \
-	images/mouse_seamless_disabled_16px.png \
+	images/mouse_can_seamless_disabled_16px.png \
+	images/mouse_can_seamless_uncaptured_16px.png \
 	images/hostkey_16px.png \
 	images/hostkey_pressed_16px.png \
 	images/hostkey_captured_16px.png \
