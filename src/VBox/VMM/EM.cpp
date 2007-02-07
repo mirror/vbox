@@ -951,12 +951,16 @@ void emR3SingleStepExec(PVM pVM, uint32_t cIterations)
 {
     EMSTATE enmOldState = pVM->em.s.enmState;
     pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
+
+    Log(("Single step BEGIN:\n"));
     for(uint32_t i=0;i<cIterations;i++)
     {
         DBGFR3PrgStep(pVM);
         emR3RawStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
     }
+    Log(("Single step END:\n"));
+    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
     pVM->em.s.enmState = enmOldState;
 }
 #endif
