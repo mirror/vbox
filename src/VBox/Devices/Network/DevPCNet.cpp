@@ -1861,8 +1861,6 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, cons
  */
 DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
 {
-    HSEMEVENT hSem = pData->hSendEventSem;
-
     /* Don't hold the critical section while transmitting data. */
     /** @note also avoids deadlocks with NAT as it can call us right back. */
     PDMCritSectLeave(&pData->CritSect);
