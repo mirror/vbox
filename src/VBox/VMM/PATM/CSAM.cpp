@@ -71,7 +71,6 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
 static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr);
 
 bool                csamIsCodeScanned(PVM pVM, RTGCPTR pInstr, PCSAMPAGE *pPage);
-int                 csamR3FlushPageRecord(PVM pVM, PCSAMPAGE pPage);
 int                 csamR3CheckPageRecord(PVM pVM, RTGCPTR pInstr);
 static PCSAMPAGE    csamCreatePageRecord(PVM pVM, RTGCPTR GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation = false);
 static int          csamRemovePageRecord(PVM pVM, RTGCPTR GCPtr);
@@ -1387,40 +1386,6 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTGCPTR pInstr)
 
 
 /**
- * Flush a page record
- *
- * @returns VBox status code. (trap handled or not)
- * @param   pVM         The VM to operate on.
- * @param   pPage       Page record ptr
- */
-int csamR3FlushPageRecord(PVM pVM, PCSAMPAGE pPage)
-{
-    RTGCPHYS oldPhys = pPage->GCPhys;
-    Log(("csamR3FlushPageRecord: page %VGv has changed -> FLUSH\n", pPage->pPageGC));
-
-    int rc = PGMGstGetPage(pVM, pPage->pPageGC, &pPage->fFlags, &pPage->GCPhys);
-    AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
-
-    Log(("Old GCPhys %VGp new %VGp\n", oldPhys, pPage->GCPhys));
-    if (pPage->pBitmap == NULL)
-    {
-        pPage->pBitmap = (uint8_t *)MMR3HeapAllocZ(pVM, MM_TAG_CSAM_PATCH, CSAM_PAGE_BITMAP_SIZE);
-        Assert(pPage->pBitmap);
-        if (pPage->pBitmap == NULL)
-        {
-            return VERR_NO_MEMORY;
-        }
-    }
-    else
-    {
-        memset(pPage->pBitmap, 0, CSAM_PAGE_BITMAP_SIZE);
-    }
-    pPage->u64Hash  = csamR3CalcPageHash(pVM, pPage->pPageGC);
-
-    return VINF_SUCCESS;
-}
-
-/**
  * Notify CSAM of a page flush
  *
  * @returns VBox status code
@@ -1500,6 +1465,16 @@ static int csamFlushPage(PVM pVM, RTGCPTR addr, bool fRemovePage)
             rc = PGMGstGetPage(pVM, addr, &pPageRec->page.fFlags, &pPageRec->page.GCPhys);
             if (rc == VINF_SUCCESS)
                 pPageRec->page.u64Hash = csamR3CalcPageHash(pVM, addr);
+
+            if (pPageRec->page.pBitmap == NULL)
+            {
+                pPageRec->page.pBitmap = (uint8_t *)MMR3HeapAllocZ(pVM, MM_TAG_CSAM_PATCH, CSAM_PAGE_BITMAP_SIZE);
+                Assert(pPageRec->page.pBitmap);
+                if (pPageRec->page.pBitmap == NULL)
+                    return VERR_NO_MEMORY;
+            }
+            else
+                memset(pPageRec->page.pBitmap, 0, CSAM_PAGE_BITMAP_SIZE);
         }
 
 
@@ -1549,14 +1524,11 @@ int csamR3CheckPageRecord(PVM pVM, RTGCPTR pInstrGC)
     {
         u64hash = csamR3CalcPageHash(pVM, pInstrGC);
         if (u64hash != pPageRec->page.u64Hash)
-        {
-            csamR3FlushPageRecord(pVM, &pPageRec->page);
-        }
+            csamFlushPage(pVM, pInstrGC, false /* don't remove page record */);
     }
     else
-    {
         return VWRN_CSAM_PAGE_NOT_FOUND;
-    }
+
     return VINF_SUCCESS;
 }
 
