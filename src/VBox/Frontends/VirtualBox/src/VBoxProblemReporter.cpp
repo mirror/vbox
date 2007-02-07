@@ -1129,50 +1129,48 @@ void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
 bool VBoxProblemReporter::remindAboutInputCapture()
 {
-    int rc = message (
-        &vboxGlobal().consoleWnd(),
-        Info,
-        tr (
-            "<p>You have <b>clicked the mouse</b> inside the Virtual Machine display "
+    int rc = message (&vboxGlobal().consoleWnd(), Info,
+        tr ("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display "
             "or pressed the <b>host key</b>. This will cause the Virtual Machine to "
             "<b>capture</b> the host mouse pointer (only if the mouse pointer "
             "integration is not currently supported by the guest OS) and the "
             "keyboard, which will make them unavailable to other applications "
-            "running on your host machine.</p>"
-            "<p>You can press the host key at any time to <b>uncapture</b> the "
+            "running on your host machine."
+            "</p>"
+            "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
             "keyboard and mouse (if it is captured) and return them to normal "
             "operation. The currently assigned host key is shown on the status bar "
-            "at the bottom of the Virtual Machine window. "
-            "There are also a keyboard icon and a mouse icon indicating the "
-            "current keyboard and mouse capture state.</p>"
-        ),
-        "remindAboutInputCapture"
-    );
+            "at the bottom of the Virtual Machine window, next to the&nbsp;"
+            "<img src=hostkey_16px.png/>&nbsp;icon. This icon, together "
+            "with the mouse icon placed nearby, indicate the current keyboard "
+            "and mouse capture state."
+            "</p>"),
+        "remindAboutInputCapture");
+
     return !(rc & AutoConfirmed);
 }
 
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
 bool VBoxProblemReporter::remindAboutAutoCapture()
 {
-    int rc = message (
-        &vboxGlobal().consoleWnd(),
-        Info,
-        tr (
-            "<p>You have the <b>Auto capture keyboard</b> option turned on. "
+    int rc = message ( &vboxGlobal().consoleWnd(), Info,
+        tr ("<p>You have the <b>Auto capture keyboard</b> option turned on. "
             "This will cause the Virtual Machine to automatically <b>capture</b> "
             "the keyboard every time the VM window is activated and make it "
             "unavailable to other applications running on your host machine: "
             "when the keyboard is captured, all keystrokes (including system ones "
-            "like Alt-Tab) will be directed to the VM.</p>"
+            "like Alt-Tab) will be directed to the VM."
+            "</p>"
             "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
             "keyboard and mouse (if it is captured) and return them to normal "
             "operation. The currently assigned host key is shown on the status bar "
-            "at the bottom of the Virtual Machine window. "
-            "There are also a keyboard icon and a mouse icon indicating the "
-            "current keyboard and mouse capture state.</p>"
-        ),
-        "remindAboutAutoCapture"
-    );
+            "at the bottom of the Virtual Machine window, next to the&nbsp;"
+            "<img src=hostkey_16px.png/>&nbsp;icon. This icon, together "
+            "with the mouse icon placed nearby, indicate the current keyboard "
+            "and mouse capture state."
+            "</p>"),
+        "remindAboutAutoCapture");
+
     return !(rc & AutoConfirmed);
 }
 
@@ -1185,52 +1183,49 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
         "remindAboutMouseIntegrationOn"
     };
 
-    // close the previous reminder if it is still active -- already outdated
-    // (the name of the modal window will correspond to autoConfirmId if
-    // it is our reminder)
+    /* close the previous reminder if it is still active -- already outdated
+     * (the name of the modal window will correspond to autoConfirmId if
+     * it is our reminder) */
     QWidget *modal = QApplication::activeModalWidget();
     if (modal && !strcmp (modal->name(), names [int (!supportsAbsolute)]))
         modal->close();
 
     if (supportsAbsolute)
     {
-        int rc = message (
-            &vboxGlobal().consoleWnd(),
-            Info,
-            tr (
-                "<p>The Virtual Machine reports that the guest OS supports the "
-                "<b>mouse pointer integration</b>. This means that you do not need "
-                "to capture the host mouse pointer to be able to use it in "
-                "your guest OS -- all "
+        int rc = message (&vboxGlobal().consoleWnd(), Info,
+            tr ("<p>The Virtual Machine reports that the guest OS supports "
+                "<b>mouse pointer integration</b>. This means that you do not "
+                "need to <i>capture</i> the mouse pointer to be able to use it "
+                "in your guest OS -- all "
                 "mouse actions you perform when the mouse pointer is over the "
-                "Virtual Machine's display are directly sent to the guest OS."
+                "Virtual Machine's display are directly sent to the guest OS. "
                 "If the mouse is currently captured, it will be automatically "
-                "uncaptured.</p>"
-                "<p>The mouse icon on the status bar displays arrows around "
-                "the mouse when the guest OS supports the pointer integration.</p>"
-                "<p><b>Note</b>: some applications may behave incorrectly in "
+                "uncaptured."
+                "</p>"
+                "<p>The mouse icon on the status bar will look like&nbsp;"
+                "<img src=mouse_seamless_16px.png/>&nbsp;to inform you that mouse "
+                "pointer integration is supported by the guest OS and is "
+                "currently turned on."
+                "</p>"
+                "<p><b>Note</b>: Some applications may behave incorrectly in "
                 "mouse pointer integration mode. You can always disable it for "
-                "the current session (and enable again) by selecting the "
-                "corresponding action from the menu bar.</p>"
-            ),
-            names [1] // autoConfirmId
-        );
+                "the current session (and enable it again) by selecting the "
+                "corresponding action from the menu bar."
+                "</p>"),
+            names [1] /* autoConfirmId */);
+
         return !(rc & AutoConfirmed);
     }
     else
     {
-        int rc = message (
-            &vboxGlobal().consoleWnd(),
-            Info,
-            tr (
-                "<p>The Virtual Machine reports that the guest OS does not "
+        int rc = message (&vboxGlobal().consoleWnd(), Info,
+            tr ("<p>The Virtual Machine reports that the guest OS does not "
                 "support <b>mouse pointer integration</b> in the current video "
                 "mode. You need to capture the mouse (by clicking over the VM "
                 "display or pressing the host key) in order to use the "
-                "mouse inside the guest OS.</p>"
-            ),
-            names [0] // autoConfirmId
-        );
+                "mouse inside the guest OS.</p>"),
+            names [0] /* autoConfirmId */);
+
         return !(rc & AutoConfirmed);
     }
 }
