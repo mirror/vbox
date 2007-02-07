@@ -166,9 +166,10 @@ public:
 
     void updatePaths (const char *aOldPath, const char *aNewPath);
 
-    /* these must be are called from under the lock */
+    /* the following must be called from under the lock */
     bool isBusy() { isLockedOnCurrentThread(); return mBusy; }
     unsigned readers() { isLockedOnCurrentThread(); return mReaders; }
+    const Bstr &lastAccessError() const { return mLastAccessError; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HardDisk"; }

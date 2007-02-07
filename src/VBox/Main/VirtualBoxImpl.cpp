@@ -3832,10 +3832,8 @@ HRESULT VirtualBox::unregisterHardDisk (HardDisk *aHardDisk)
 
     AutoLock alock (this);
 
-    /*
-     *  Lock the hard disk to ensure nobody registers it again before we delete
-     *  the differencing image (sanity check actually -- should never happen).
-     */
+    /* Lock the hard disk to ensure nobody registers it again before we delete
+     * the differencing image (sanity check actually -- should never happen). */
     AutoLock hdLock (aHardDisk);
 
     /* try to unregister */
@@ -3847,18 +3845,18 @@ HRESULT VirtualBox::unregisterHardDisk (HardDisk *aHardDisk)
 
     if (!aHardDisk->parent())
     {
-        /*
-         *  non-differencing hard disk:
-         *  remove from the collection of top-level hard disks
-         */
+        /* non-differencing hard disk:
+         * remove from the collection of top-level hard disks */
         mData.mHardDisks.remove (aHardDisk);
     }
     else
     {
         Assert (aHardDisk->isDifferencing());
 
-        /* differencing hard disk: uninitialize */
-        rc = aHardDisk->asVDI()->DeleteImage();
+        /* differencing hard disk: delete (only if the last access check
+         * succeeded) and uninitialize */
+        if (aHardDisk->asVDI()->lastAccessError().isNull())
+            rc = aHardDisk->asVDI()->DeleteImage();
         aHardDisk->uninit();
     }
 
