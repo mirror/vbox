@@ -50,6 +50,8 @@
 %define PATM_TEMP_EDI                           0xF1ABCD15      ;/** Location for original EDI register */
 %define PATM_TEMP_EFLAGS                        0xF1ABCD16      ;/** Location for original eflags */
 %define PATM_TEMP_RESTORE_FLAGS                 0xF1ABCD17      ;/** Which registers to restore */
+%define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
+%define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
 
 ;/* Anything larger doesn't require a fixup */
 %define PATM_NO_FIXUP        0xF1ABCE00

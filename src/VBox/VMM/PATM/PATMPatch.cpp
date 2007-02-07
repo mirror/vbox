@@ -287,6 +287,12 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
                 case PATM_TEMP_RESTORE_FLAGS:
                     dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uFlags);
                     break;
+                case PATM_CALL_PATCH_TARGET_ADDR:
+                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCCallPatchTargetAddr);
+                    break;
+                case PATM_CALL_RETURN_ADDR:
+                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCCallReturnAddr);
+                    break;
 
                 /* Relative address of global patm lookup and call function. */
                 case PATM_LOOKUP_AND_CALL_FUNCTION:
