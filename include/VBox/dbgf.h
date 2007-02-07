@@ -485,6 +485,18 @@ DBGFR3DECL(int) DBGFR3Resume(PVM pVM);
  */
 DBGFR3DECL(int) DBGFR3Step(PVM pVM);
 
+/**
+ * Call this to single step rawmode or recompiled mode.
+ *
+ * You must pass down the return code to the EM loop! That's
+ * where the actual single stepping take place (at least in the
+ * current implementation).
+ *
+ * @returns VINF_EM_DBG_STEP
+ * @thread  EMT
+ */
+DBGFR3DECL(int) DBGFR3PrgStep(PVM pVM);
+
 
 /** Breakpoint type. */
 typedef enum DBGFBPTYPE
