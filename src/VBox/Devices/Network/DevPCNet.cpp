@@ -1976,7 +1976,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
     if (RT_UNLIKELY(!CSR_TXON(pData)))
     {
         pData->aCSR[0] &= ~0x0008; /* Clear TDMD */
-        return;
+        return VINF_SUCCESS;
     }
 
     /*
