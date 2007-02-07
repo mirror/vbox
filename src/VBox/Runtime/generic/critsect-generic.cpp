@@ -287,6 +287,10 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
         RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, NULL, &ThreadSelf);
 #endif
 
+    /** If the critical section has already been destroyed, then inform the caller. */
+    if (pCritSect->u32Magic != RTCRITSECT_MAGIC)
+        return VERR_SEM_DESTROYED;
+
     /*
      * Increment the waiter counter.
      * This becomes 0 when the section is free.
