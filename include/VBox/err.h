@@ -246,31 +246,29 @@
 #define VERR_PATCH_ALREADY_DISABLED         (-1405)
 /** Patch was already enabled */
 #define VERR_PATCH_ALREADY_ENABLED          (-1406)
-/** Patch was removed. 
- * @todo r=bird: This duplicate makes tstErrUnique fail... I don't know if it's intentional or not, so I leave it to you. 
- */
-#define VWRN_PATCH_REMOVED                  1407
+/** Patch was removed. */
+#define VWRN_PATCH_REMOVED                  1408
 
 /** Reason for leaving GC: \#GP with EIP pointing to patch code. */
-#define VINF_PATM_PATCH_TRAP_GP             1407
+#define VINF_PATM_PATCH_TRAP_GP             1408
 /** First leave GC code. */
 #define VINF_PATM_LEAVEGC_FIRST             VINF_PATM_PATCH_TRAP_GP
 /** Reason for leaving GC: \#PF with EIP pointing to patch code. */
-#define VINF_PATM_PATCH_TRAP_PF             1408
+#define VINF_PATM_PATCH_TRAP_PF             1409
 /** Reason for leaving GC: int3 with EIP pointing to patch code. */
-#define VINF_PATM_PATCH_INT3                1409
+#define VINF_PATM_PATCH_INT3                1410
 /** Reason for leaving GC: \#PF for monitored patch page. */
-#define VINF_PATM_CHECK_PATCH_PAGE          1410
+#define VINF_PATM_CHECK_PATCH_PAGE          1411
 /** Reason for leaving GC: duplicate instruction called at current eip. */
-#define VINF_PATM_DUPLICATE_FUNCTION        1411
+#define VINF_PATM_DUPLICATE_FUNCTION        1412
 /** Execute one instruction with the recompiler */
-#define VINF_PATCH_EMULATE_INSTR            1412
+#define VINF_PATCH_EMULATE_INSTR            1413
 /** Reason for leaving GC: attempt to patch MMIO write. */
-#define VINF_PATM_HC_MMIO_PATCH_WRITE       1413
+#define VINF_PATM_HC_MMIO_PATCH_WRITE       1414
 /** Reason for leaving GC: attempt to patch MMIO read. */
-#define VINF_PATM_HC_MMIO_PATCH_READ        1414
+#define VINF_PATM_HC_MMIO_PATCH_READ        1415
 /** Reason for leaving GC: pending irq after iret that sets IF. */
-#define VINF_PATM_PENDING_IRQ_AFTER_IRET    1415
+#define VINF_PATM_PENDING_IRQ_AFTER_IRET    1416
 /** Last leave GC code. */
 #define VINF_PATM_LEAVEGC_LAST              VINF_PATM_PENDING_IRQ_AFTER_IRET
 
