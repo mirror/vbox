@@ -74,9 +74,9 @@ public:
         QToolTip (aWidget), mConsole (aConsole), mUSBEnabled (aUSBEnabled) {}
 
     ~VBoxUSBLedTip() { remove (parentWidget()); }
-    
+
     bool isUSBEnabled() const { return mUSBEnabled; }
-    
+
 protected:
 
     void maybeTip (const QPoint &/* aPoint */)
@@ -239,6 +239,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUnmountDVDAction->setIconSet (VBoxGlobal::iconSet ("cd_unmount_16px.png",
                                                      "cd_unmount_dis_16px.png"));
 
+    devicesSwitchVrdpAction = new QAction (this, "devicesSwitchVrdpAction");
+    devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet ("vrdp_16px.png",
+                                                              "vrdp_disabled_16px.png"));
+    devicesSwitchVrdpAction->setToggleAction (true);
+
     devicesInstallGuestToolsAction = new QAction (runningActions, "devicesInstallGuestToolsAction");
     devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png",
                                                             "guesttools_disabled_16px.png"));
@@ -297,7 +302,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* two dynamic submenus */
     devicesMountFloppyMenu = new QPopupMenu (devicesMenu, "devicesMountFloppyMenu");
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
-    devicesUSBMenu = new QPopupMenu (devicesMenu, "devicesUSBMenu");
+    devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
+    devicesVRDPMenu = new QPopupMenu (devicesMenu, "devicesVRDPMenu");
 
     devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
         QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
@@ -309,7 +315,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesMenu->insertSeparator();
     devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
-    devicesMenu->insertSeparator();
+    devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
+    devicesSwitchVrdpAction->addTo (devicesMenu);
+    devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
     devicesInstallGuestToolsAction->addTo (devicesMenu);
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
 
@@ -371,8 +379,17 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     usb_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("usb_read_16px.png"));
     usb_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("usb_write_16px.png"));
     usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
-    /* auto resize state */
+
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
+
+    /* vrdp state */
+    vrdp_state = new QIStateIndicator (0, indicatorBox, "vrdp_state", WNoAutoErase);
+    vrdp_state->setStateIcon (0, QPixmap::fromMimeSource ("vrdp_disabled_16px.png"));
+    vrdp_state->setStateIcon (1, QPixmap::fromMimeSource ("vrdp_16px.png"));
+
+    (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
+
+    /* auto resize state */
     autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", WNoAutoErase);
     autoresize_state->setStateIcon (0, QPixmap::fromMimeSource ("auto_resize_off_disabled_16px.png"));
     autoresize_state->setStateIcon (1, QPixmap::fromMimeSource ("auto_resize_off_16px.png"));
@@ -430,17 +447,18 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesUnmountFloppyAction, SIGNAL(activated()), this, SLOT(devicesUnmountFloppy()));
     connect (devicesMountDVDImageAction, SIGNAL(activated()), this, SLOT(devicesMountDVDImage()));
     connect (devicesUnmountDVDAction, SIGNAL(activated()), this, SLOT(devicesUnmountDVD()));
+    connect (devicesSwitchVrdpAction, SIGNAL(activated()), this, SLOT(devicesSwitchVrdp()));
     connect (devicesInstallGuestToolsAction, SIGNAL(activated()), this, SLOT(devicesInstallGuestAdditions()));
 
 
     connect (devicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
     connect (devicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
-    connect (devicesUSBMenu, SIGNAL(aboutToShow()), this, SLOT(prepareUSBMenu()));
+    connect (devicesVRDPMenu, SIGNAL(aboutToShow()), this, SLOT(prepareVRDPMenu()));
 
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
-    connect (devicesUSBMenu, SIGNAL(highlighted(int)), this, SLOT(makeUSBToolTip(int)));
+    connect (devicesVRDPMenu, SIGNAL(activated(int)), this, SLOT(devicesSwitchVrdp()));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -454,6 +472,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (cd_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (usb_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+    connect (vrdp_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
 
     /* watch global settings changes */
@@ -586,11 +606,22 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     CUSBController usbctl = cmachine.GetUSBController();
     if (!usbctl.isNull())
     {
-        bool isUSBEnabled =  usbctl.GetEnabled();
+        bool isUSBEnabled = usbctl.GetEnabled();
         devicesUSBMenu->setEnabled (isUSBEnabled);
+        devicesUSBMenu->setConsole (cconsole);
         usb_light->setState (isUSBEnabled ? CEnums::DeviceIdle
                                       : CEnums::InvalidActivity);
         mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
+    }
+
+    /* initialize vrdp stuff */
+    CVRDPServer vrdpsrv = cmachine.GetVRDPServer();
+    if (vrdpsrv.isNull())
+    {
+        /* hide vrdp_menu_action & vrdp_separator & vrdp_status_icon */
+        devicesSwitchVrdpAction->setVisible (false);
+        devicesMenu->setItemVisible (devicesVRDPMenuSeparatorId, false);
+        vrdp_state->setHidden (true);
     }
 
     /* start an idle timer that will update device lighths */
@@ -1111,6 +1142,10 @@ void VBoxConsoleWnd::languageChange()
     devicesUnmountDVDAction->setStatusTip (
         tr ("Unmount the currently mounted CD/DVD-ROM media"));
 
+    devicesSwitchVrdpAction->setMenuText (tr ("Remote Dis&play"));
+    devicesSwitchVrdpAction->setStatusTip (
+        tr ("Enable or disable remote desktop (RDP) connections to this machine"));
+
     devicesInstallGuestToolsAction->setMenuText (tr ("&Install Guest Additions..."));
     devicesInstallGuestToolsAction->setStatusTip (
         tr ("Mount the Guest Additions installation image"));
@@ -1313,6 +1348,31 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         //  in Pause? Check the same for CD/DVD above.
         if (mUsbLedTip && mUsbLedTip->isUSBEnabled())
             devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
+    }
+    if (element & VRDPStuff)
+    {
+        CVRDPServer vrdpsrv = csession.GetMachine().GetVRDPServer();
+        if (vrdpsrv.isNull())
+            return;
+
+        /* update menu&status icon state */
+        bool isVRDPEnabled = vrdpsrv.GetEnabled();
+        devicesSwitchVrdpAction->setOn (isVRDPEnabled);
+        vrdp_state->setState (isVRDPEnabled ? 1 : 0);
+
+        /// @todo (r=dsen) do we really need to disable the control while
+        //  in Pause? We'll check the same for USB above.
+        devicesSwitchVrdpAction->setEnabled (machine_state == CEnums::Running);
+        devicesVRDPMenu->setEnabled (machine_state == CEnums::Running);
+
+        /* compose status icon tooltip */
+        QString tip = tr ("Indicates whether the Remote Display (VRDP Server) "
+                          "is enabled (<img src=vrdp_16px.png/>) or not "
+                          "(<img src=vrdp_disabled_16px.png/>)"
+        );
+        if (vrdpsrv.GetEnabled())
+            tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
+        QToolTip::add (vrdp_state, tip);
     }
     if (element & PauseAction)
     {
@@ -1670,6 +1730,18 @@ void VBoxConsoleWnd::devicesMountDVDImage()
     }
 }
 
+void VBoxConsoleWnd::devicesSwitchVrdp()
+{
+    if (!console) return;
+
+    CVRDPServer vrdpServer = csession.GetMachine().GetVRDPServer();
+    /* this method should not be executed if vrdpServer is null */
+    Assert (!vrdpServer.isNull());
+
+    vrdpServer.SetEnabled (!vrdpServer.GetEnabled());
+    updateAppearanceOf (VRDPStuff);
+}
+
 void VBoxConsoleWnd::devicesInstallGuestAdditions()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1818,41 +1890,15 @@ void VBoxConsoleWnd::prepareDVDMenu()
 }
 
 /**
- *  Prepares the "USB Devices" menu by populating the existent host
- *  USB Devices.
+ *  Prepares the "VRDP enable/disable" menu.
  */
-void VBoxConsoleWnd::prepareUSBMenu()
+void VBoxConsoleWnd::prepareVRDPMenu()
 {
     if (!console) return;
 
-    devicesUSBMenu->clear();
-    hostUSBMap.clear();
-
-    CHost host = vboxGlobal().virtualBox().GetHost();
-
-    bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
-    if (isUSBEmpty)
-    {
-        devicesUSBMenu->insertItem (
-            tr ("<no available devices>", "USB devices"),
-            devicesUSBMenuNoDevicesId);
-        devicesUSBMenu->setItemEnabled (devicesUSBMenuNoDevicesId, false);
-        return;
-    }
-
-    CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
-    while (en.HasMore())
-    {
-        CHostUSBDevice iterator = en.GetNext();
-        CUSBDevice usb = CUnknown (iterator);
-        int id = devicesUSBMenu->insertItem (vboxGlobal().details (usb));
-        hostUSBMap [id] = usb;
-        CUSBDevice attachedUSB =
-            csession.GetConsole().GetUSBDevices().FindById (usb.GetId());
-        devicesUSBMenu->setItemChecked (id, !attachedUSB.isNull());
-        devicesUSBMenu->setItemEnabled (id, iterator.GetState() !=
-                                            CEnums::USBDeviceUnavailable);
-    }
+    CVRDPServer vrdpServer = csession.GetMachine().GetVRDPServer();
+    devicesVRDPMenu->clear();
+    devicesVRDPMenu->insertItem (vrdpServer.GetEnabled() ? tr ("Disable") : tr ("Enable"));
 }
 
 /**
@@ -1911,10 +1957,7 @@ void VBoxConsoleWnd::switchUSB (int id)
     CConsole cconsole = csession.GetConsole();
     AssertWrapperOk (csession);
 
-    /* the <no available devices> item should be always disabled */
-    AssertReturnVoid (id != devicesUSBMenuNoDevicesId);
-    
-    CUSBDevice usb = hostUSBMap [id];
+    CUSBDevice usb = devicesUSBMenu->getUSB (id);
     /* if null then some other item but a USB device is selected */
     if (usb.isNull())
         return;
@@ -1941,34 +1984,6 @@ void VBoxConsoleWnd::switchUSB (int id)
                                                  vboxGlobal().details (usb));
         }
     }
-}
-
-/**
- *  Update tooltip for highlighted USB Device.
- */
-void VBoxConsoleWnd::makeUSBToolTip (int id)
-{
-    if (!console) return;
-
-    /* the <no available devices> item is highlighted */
-    if (id == devicesUSBMenuNoDevicesId)
-    {
-        QToolTip::add (devicesUSBMenu,
-            tr ("No supported devices connected to the host PC",
-                "USB device tooltip"));
-        return;
-    }
-    
-    CUSBDevice usb = hostUSBMap [id];
-    /* if null then some other item but a USB device is highlighted */
-    if (usb.isNull())
-    {
-        QToolTip::remove (devicesUSBMenu);
-        return;
-    }
-
-    QToolTip::remove (devicesUSBMenu);
-    QToolTip::add (devicesUSBMenu, vboxGlobal().toolTip (usb));
 }
 
 void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e)
@@ -1998,6 +2013,11 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
             devicesUSBMenu->exec (e->globalPos());
             devicesMenu->setItemParameter (devicesUSBMenuId, 0);
         }
+    }
+    else
+    if (ind == vrdp_state)
+    {
+        devicesVRDPMenu->exec (e->globalPos());
     }
 }
 
@@ -2063,7 +2083,8 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
 
         machine_state = state;
 
-        updateAppearanceOf (Caption | FloppyStuff | DVDStuff | USBStuff | PauseAction |
+        updateAppearanceOf (Caption | FloppyStuff | DVDStuff |
+                            USBStuff | VRDPStuff | PauseAction |
                             DisableMouseIntegrAction );
 
         if (state < CEnums::Running)

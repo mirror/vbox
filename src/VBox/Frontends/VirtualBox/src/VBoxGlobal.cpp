@@ -2073,3 +2073,86 @@ void VBoxGlobal::cleanup()
  *  Shortcut to the static VBoxGlobal::instance() method, for convenience.
  */
 
+
+/**
+ *  USB Popup Menu class methods
+ *  This class provides the list of USB devices attached to the host.
+ */
+VBoxUSBMenu::VBoxUSBMenu (QWidget *aParent) : QPopupMenu (aParent)
+{
+    connect (this, SIGNAL (aboutToShow()),
+             this, SLOT   (processAboutToShow()));
+    connect (this, SIGNAL (highlighted (int)),
+             this, SLOT   (processHighlighted (int)));
+}
+
+const CUSBDevice& VBoxUSBMenu::getUSB (int aIndex)
+{
+    return mUSBDevicesMap [aIndex];
+}
+
+void VBoxUSBMenu::setConsole (const CConsole &aConsole)
+{
+    mConsole = aConsole;
+}
+
+void VBoxUSBMenu::processAboutToShow()
+{
+    clear();
+    mUSBDevicesMap.clear();
+
+    CHost host = vboxGlobal().virtualBox().GetHost();
+
+    bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
+    if (isUSBEmpty)
+    {
+        insertItem (
+            tr ("<no available devices>", "USB devices"),
+            USBDevicesMenuNoDevicesId);
+        setItemEnabled (USBDevicesMenuNoDevicesId, false);
+    }
+    else
+    {
+        CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
+        while (en.HasMore())
+        {
+            CHostUSBDevice iterator = en.GetNext();
+            CUSBDevice usb = CUnknown (iterator);
+            int id = insertItem (vboxGlobal().details (usb));
+            mUSBDevicesMap [id] = usb;
+            /* check if created item was alread attached to this session */
+            if (!mConsole.isNull())
+            {
+                CUSBDevice attachedUSB =
+                    mConsole.GetUSBDevices().FindById (usb.GetId());
+                setItemChecked (id, !attachedUSB.isNull());
+                setItemEnabled (id, iterator.GetState() !=
+                                CEnums::USBDeviceUnavailable);
+            }
+        }
+    }
+}
+
+void VBoxUSBMenu::processHighlighted (int aIndex)
+{
+    /* the <no available devices> item is highlighted */
+    if (aIndex == USBDevicesMenuNoDevicesId)
+    {
+        QToolTip::add (this,
+            tr ("No supported devices connected to the host PC",
+                "USB device tooltip"));
+        return;
+    }
+
+    CUSBDevice usb = mUSBDevicesMap [aIndex];
+    /* if null then some other item but a USB device is highlighted */
+    if (usb.isNull())
+    {
+        QToolTip::remove (this);
+        return;
+    }
+
+    QToolTip::remove (this);
+    QToolTip::add (this, vboxGlobal().toolTip (usb));
+}
+

@@ -43,6 +43,7 @@ class QLabel;
 class VBoxConsoleView;
 class QIStateIndicator;
 
+class VBoxUSBMenu;
 class VBoxUSBLedTip;
 
 class VBoxConsoleWnd : public QMainWindow
@@ -93,6 +94,7 @@ private:
         DisableMouseIntegrAction    = 0x20,
         Caption                     = 0x40,
         USBStuff                    = 0x80,
+        VRDPStuff                   = 0x100,
         AllStuff                    = 0xFF,
     };
 
@@ -121,16 +123,16 @@ private slots:
     void devicesUnmountFloppy();
     void devicesMountDVDImage();
     void devicesUnmountDVD();
+    void devicesSwitchVrdp();
     void devicesInstallGuestAdditions();
 
     void prepareFloppyMenu();
     void prepareDVDMenu();
-    void prepareUSBMenu();
+    void prepareVRDPMenu();
 
     void captureFloppy (int id);
     void captureDVD (int id);
     void switchUSB (int id);
-    void makeUSBToolTip (int id);
 
     void showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e);
 
@@ -170,6 +172,7 @@ private:
     QAction *devicesUnmountFloppyAction;
     QAction *devicesMountDVDImageAction;
     QAction *devicesUnmountDVDAction;
+    QAction *devicesSwitchVrdpAction;
     QAction *devicesInstallGuestToolsAction;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -187,7 +190,11 @@ private:
     QPopupMenu *devicesMenu;
     QPopupMenu *devicesMountFloppyMenu;
     QPopupMenu *devicesMountDVDMenu;
-    QPopupMenu *devicesUSBMenu;
+    VBoxUSBMenu *devicesUSBMenu;
+    QPopupMenu *devicesVRDPMenu;
+
+    int devicesUSBMenuSeparatorId;
+    int devicesVRDPMenuSeparatorId;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
@@ -201,7 +208,6 @@ private:
         devicesMountFloppyMenuId,
         devicesMountDVDMenuId,
         devicesUSBMenuId,
-        devicesUSBMenuNoDevicesId,
 #ifdef VBOX_WITH_DEBUGGER_GUI
         dbgMenuId,
 #endif
@@ -215,6 +221,7 @@ private:
     QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light;
     QIStateIndicator *mouse_state, *hostkey_state;
     QIStateIndicator *autoresize_state;
+    QIStateIndicator *vrdp_state;
     QHBox *hostkey_hbox;
     QLabel *hostkey_name;
 
@@ -228,7 +235,6 @@ private:
 
     QMap <int, CHostDVDDrive> hostDVDMap;
     QMap <int, CHostFloppyDrive> hostFloppyMap;
-    QMap <int, CUSBDevice> hostUSBMap;
 
     QPoint normal_pos;
     QSize normal_size;
