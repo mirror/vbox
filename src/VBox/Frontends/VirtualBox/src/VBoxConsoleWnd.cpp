@@ -222,7 +222,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     vmDisableMouseIntegrAction = new QAction (this, "vmDisableMouseIntegrAction");
     vmDisableMouseIntegrAction->setIconSet (VBoxGlobal::iconSet (
-        "mouse_can_seamless_16px.png", "mouse_seamless_disabled_16px.png"));
+        "mouse_can_seamless_16px.png", "mouse_can_seamless_disabled_16px.png"));
     vmDisableMouseIntegrAction->setToggleAction (true);
 
     /* Devices menu actions */
@@ -384,7 +384,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     mouse_state->setStateIcon (1, QPixmap::fromMimeSource ("mouse_16px.png"));
     mouse_state->setStateIcon (2, QPixmap::fromMimeSource ("mouse_seamless_16px.png"));
     mouse_state->setStateIcon (3, QPixmap::fromMimeSource ("mouse_can_seamless_16px.png"));
-    mouse_state->setStateIcon (4, QPixmap::fromMimeSource ("mouse_seamless_disabled_16px.png"));
+    mouse_state->setStateIcon (4, QPixmap::fromMimeSource ("mouse_can_seamless_uncaptured_16px.png"));
     /* host key */
     hostkey_hbox = new QHBox (indicatorBox, "hostkey_hbox");
     hostkey_hbox->setSpacing (3);
@@ -1162,7 +1162,7 @@ void VBoxConsoleWnd::languageChange()
             "<nobr><img src=mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
             "<nobr><img src=mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
             "<nobr><img src=mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
-            "<nobr><img src=mouse_seamless_disabled_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr>"));
+            "<nobr><img src=mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr>"));
     QToolTip::add (hostkey_state,
         tr ("Indicates whether the keyboard is captured by the guest OS "
             "(<img src=hostkey_captured_16px.png/>) or not (<img src=hostkey_16px.png/>)"));
