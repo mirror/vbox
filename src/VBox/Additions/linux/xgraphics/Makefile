@@ -21,32 +21,28 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-LIBRARIES   = vboxvideo vboxvideo_so_70 vboxvideo_so_71
-OTHERS      = \
-	$(PATH_BIN)/additions/vboxvideo_drv.o \
-	$(PATH_BIN)/additions/vboxvideo_drv_70.so \
-	$(PATH_BIN)/additions/vboxvideo_drv_71.so
-OTHER_CLEAN = $(OTHERS)
+SYSMODS = vboxvideo_drv
+DLLS = vboxvideo_drv_70 vboxvideo_drv_71
 
-vboxvideo_NOINST   = 1
-vboxvideo_TEMPLATE = VBOXLNX32GUESTR3
-vboxvideo_SOURCES  = \
-	vboxvideo.c \
-	vboxutils.c
 
-vboxvideo_so_70_NOINST   = 1
-vboxvideo_so_70_TEMPLATE = VBOXLNX32GUESTR3
-vboxvideo_so_70_SOURCES  = \
-	$(vboxvideo_SOURCES)
-
-vboxvideo_so_71_NOINST   = 1
-vboxvideo_so_71_TEMPLATE = VBOXLNX32GUESTR3
-vboxvideo_so_71_SOURCES  = \
-	$(vboxvideo_SOURCES)
-
+vboxvideo_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
+vboxvideo_drv_SYSSUFF = .o
+vboxvideo_drv_DEFS = \
+	linux __i386__ _POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
+	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
+	XCSECURITY TOGCUP XF86BIGFONT DPMSExtension PIXPRIV PANORAMIX RENDER \
+	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
+	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
+	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
+	IN_MODULE XFree86Module \
+	IN_RING3 VBOX
+vboxvideo_drv_CFLAGS.linux := \
+	-fno-merge-constants -Wno-conversion -Wno-unused-parameter \
+	$(VBOX_GCC_Wno-variadic-macros)
+vboxvideo_drv_LDFLAGS.release = -S
 ARGB_CURSORS=1
 ifdef ARGB_CURSORS
-vboxvideo_INCS = \
+vboxvideo_drv_INCS = \
 	../x11include/4.3/include \
 	../x11include/4.3/include/extensions \
 	../x11include/4.3/include/fonts \
@@ -74,7 +70,7 @@ vboxvideo_INCS = \
 	../x11include/4.3/programs/Xserver/render \
 	../x11include/4.3/programs/Xserver/Xext
 else
-vboxvideo_INCS = \
+vboxvideo_drv_INCS = \
 	../x11include/4.2/exports/include/X11 \
 	../x11include/4.2/include \
 	../x11include/4.2/include/extensions \
@@ -102,55 +98,38 @@ vboxvideo_INCS = \
 	../x11include/4.2/programs/Xserver/render \
 	../x11include/4.2/programs/Xserver/Xext
 endif
+vboxvideo_drv_SOURCES = \
+	vboxvideo.c \
+	vboxutils.c
 
-vboxvideo_so_70_INCS = \
+
+vboxvideo_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+vboxvideo_drv_70_DEFS := \
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER \
+	IN_RING3 VBOX XORG_7X PIC RENDER=1
+vboxvideo_drv_70_CFLAGS.linux := \
+	-Wno-conversion -Wno-unused-parameter \
+	$(VBOX_GCC_Wno-variadic-macros)
+vboxvideo_drv_70_LDFLAGS = -s
+vboxvideo_drv_70_INCS = \
 	../x11include/7.0 \
 	../x11include/7.0/X11 \
 	../x11include/7.0/xorg
+vboxvideo_drv_70_SOURCES  = \
+	$(vboxvideo_drv_SOURCES)
 
-vboxvideo_so_71_INCS = \
+
+vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+vboxvideo_drv_71_DEFS := $(vboxvideo_drv_70_DEFS)
+vboxvideo_drv_71_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
+vboxvideo_drv_71_LDFLAGS = -s 
+vboxvideo_drv_71_INCS = \
 	../x11include/7.1 \
 	../x11include/7.1/X11 \
 	../x11include/7.1/xorg
+vboxvideo_drv_71_SOURCES  = \
+	$(vboxvideo_drv_SOURCES)
 
-vboxvideo_DEFS = \
-	linux __i386__ _POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
-	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
-	XCSECURITY TOGCUP XF86BIGFONT DPMSExtension PIXPRIV PANORAMIX RENDER \
-	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
-	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
-	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
-	IN_MODULE XFree86Module \
-	IN_RING3 VBOX
-
-vboxvideo_CFLAGS.linux := \
-	-fno-merge-constants -Wno-conversion -Wno-unused-parameter \
-	$(VBOX_GCC_Wno-variadic-macros)
-
-vboxvideo_so_70_DEFS := \
-	XFree86Server IN_MODULE XFree86Module XFree86LOADER \
-	IN_RING3 VBOX XORG_7X PIC RENDER=1
-vboxvideo_so_71_DEFS := $(vboxvideo_so_70_DEFS)
-
-vboxvideo_so_70_CFLAGS.linux := \
-	-fPIC -Wno-conversion -Wno-unused-parameter \
-	$(VBOX_GCC_Wno-variadic-macros)
-vboxvideo_so_71_CFLAGS.linux := $(vboxvideo_so_70_CFLAGS.linux)
 
 include	$(PATH_KBUILD)/footer.kmk
-
-$(PATH_BIN)/additions/vboxvideo_drv.o: vboxvideo.c vboxutils.c
-	$(call MSG_L1,Linking $@)
-	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-	$(QUIET)ld -r -o $@ $(PATH_vboxvideo)/vboxvideo.o $(PATH_vboxvideo)/vboxutils.o
-
-$(PATH_BIN)/additions/vboxvideo_drv_70.so: vboxvideo.c vboxutils.c
-	$(call MSG_L1,Linking $@)
-	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -shared -s -o $@ $(PATH_vboxvideo_so_70)/vboxvideo.o $(PATH_vboxvideo_so_70)/vboxutils.o
-
-$(PATH_BIN)/additions/vboxvideo_drv_71.so: vboxvideo.c vboxutils.c
-	$(call MSG_L1,Linking $@)
-	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -shared -s -o $@ $(PATH_vboxvideo_so_71)/vboxvideo.o $(PATH_vboxvideo_so_71)/vboxutils.o
 

@@ -22,7 +22,9 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 INSTALLS = vboxmod-bin
-SYSMODS.linux = vboxadd
+ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
+SYSMODS = vboxadd
+endif
 
 vboxmod-bin_INST    = bin/additions/src/vboxadd/
 vboxmod-bin_MODE    = a+r,u+w

@@ -25,20 +25,14 @@ include	$(PATH_KBUILD)/header.kmk
 
 PROGRAMS = vboxadd-timesync
 
-vboxadd-timesync_TEMPLATE = VBOXLNX32GUESTR3EXE
+vboxadd-timesync_TEMPLATE = VBOXLNX32GUESTR3EXENOCPP
 vboxadd-timesync_SOURCES  = \
-    vboxadd_timesync.c supc++.c
+    vboxadd_timesync.c \
+    supc++.c
 vboxadd-timesync_LIBS     = \
-    $(PATH_LIB)/VBoxGuestLibLinux.a \
     $(PATH_LIB)/RuntimeLnx32GuestR3.a
+#    $(PATH_LIB)/VBoxGuestLibLinux.a - what was this doing here? it's ring-0 library from what I can tell...
 vboxadd-timesync_DEFS     = _GNU_SOURCE
-
-# use gcc not g++ as linker to not depend on libstdc++
-TOOL_GCC3_LD              = $(TOOL_$(VBOX_GCC32_TOOL)_CC)
-
-# prevent generation of cross reference table (broken with some binutils)
-## @todo r=bird: Why is this only a problem here and not for the 50 other binaries?
-TOOL_GCC3_LD_MAP          = -Wl,-Map -Wl,$(1)
 
 include	$(PATH_KBUILD)/footer.kmk
 
