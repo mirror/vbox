@@ -1683,10 +1683,13 @@ PATMLookupAndCall_SearchEnd:
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
+    push    edx
+    lea     edx, [esp + 12 - 4]                 ; stack address to store return address
     lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_CALL
     mov     eax, PATM_ACTION_LOG_CALL
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
     pop     ecx
     pop     eax
 %endif
@@ -2130,15 +2133,18 @@ PATMRetFunction_Start:
 
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
+    push    ebx
     push    ecx
     push    edx
     mov     edx, eax                            ; return address
+    lea     ebx, [esp+16+12+16]                 ; stack address containing the return address
     lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_RET
     mov     eax, PATM_ACTION_LOG_RET
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
     pop     ecx
+    pop     ebx
     pop     eax
 %endif
 
@@ -2189,15 +2195,18 @@ PATMRetFunction_SearchEnd:
 
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
+    push    ebx
     push    ecx
     push    edx
     mov     edx, eax                            ; return address
+    lea     ebx, [esp+16+12+16]                 ; stack address containing the return address
     lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_RET
     mov     eax, PATM_ACTION_LOG_RET
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
     pop     ecx
+    pop     ebx
     pop     eax
 %endif
 
