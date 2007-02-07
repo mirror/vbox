@@ -1682,7 +1682,7 @@ PATMLookupAndCall_SearchEnd:
     mov     ebx, dword [esp - 20 - 16]               ; original guest return address
     mov     edx, dword [esp - 40 + 4 - 16]           ; duplicated patch function
     lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_CALL
-    mov     eax, PATM_ACTION_LOG_RET
+    mov     eax, PATM_ACTION_LOG_CALL
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
