@@ -35,6 +35,7 @@
 #include <iprt/uuid.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
+#include <iprt/asm.h>
 
 #include "Builtins.h"
 
@@ -1600,16 +1601,8 @@ static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock
              * a zero block or a block which hasn't been used so far (which also
              * means that it's a zero block. Don't need to write anything to this
              * block if the data consists of just zeroes. */
-            bool fBlockZeroed = true; /* Block is zeroed flag. */
-            for (unsigned i = 0; i < (cbToWrite >> 2); i++)
-                if (((uint32_t *)pvBuf)[i] != 0)
-                {
-                    /* Block is not zeroed! */
-                    fBlockZeroed = false;
-                    break;
-                }
-
-            if (fBlockZeroed)
+            Assert(cbToWrite % 4 == 0);
+            if (ASMBitFirstSet((volatile void *)pvBuf, cbToWrite * 8) == -1)
             {
                 pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
                 return VINF_SUCCESS;
@@ -2637,16 +2630,8 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
                 }
 
                 /* Check block for data. */
-                bool fBlockZeroed = true;    /* Block is zeroed flag. */
-                for (unsigned i = 0; i < (cbBlock >> 2); i++)
-                    if (((uint32_t *)pvBuf)[i] != 0)
-                    {
-                        /* Block is not zeroed! */
-                        fBlockZeroed = false;
-                        break;
-                    }
-
-                if (!fBlockZeroed)
+                Assert(cbBlock % 4 == 0);
+                if (ASMBitFirstSet(pvBuf, cbBlock * 8) != -1)
                 {
                     /* Block has a data, may be it must be moved. */
                     if (uBlockWrite < uBlock)
