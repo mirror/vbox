@@ -31,7 +31,7 @@ ifdef VBOX_WITH_WIN32_ADDITIONS
 	VBoxGuestLibBase
  endif
 endif
-ifdef VBOX_WITH_LINUX_ADDITIONS
+ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
  LIBRARIES += \
 	VBoxGuestLibLinux \
 	VBoxGuestLibBaseLinux
