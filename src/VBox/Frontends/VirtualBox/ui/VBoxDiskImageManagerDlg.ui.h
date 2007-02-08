@@ -1371,8 +1371,10 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
         default:
             AssertMsgFailed (("Invalid aMedia type\n"));
     }
+
     if (!item)
         return;
+
     if (!vboxGlobal().isMediaEnumerationStarted())
         setCurrentItem (getListView (aMedia.type), item);
 }
@@ -1413,10 +1415,15 @@ void VBoxDiskImageManagerDlg::mediaUpdated (const VBoxMedia &aMedia)
         default:
             AssertMsgFailed (("Invalid aMedia type\n"));
     }
+
     if (!item)
         return;
-    if (!vboxGlobal().isMediaEnumerationStarted())
-        setCurrentItem (getListView (aMedia.type), item);
+
+    /* note: current items on invisible tabs are not updated because
+     * it is always done in processCurrentChanged() when the user switches
+     * to an invisible tab */
+    if (item == getCurrentListView()->currentItem())
+        processCurrentChanged (item);
 }
 
 void VBoxDiskImageManagerDlg::mediaRemoved (VBoxDefs::DiskType aType,
