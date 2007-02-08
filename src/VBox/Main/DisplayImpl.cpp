@@ -1272,6 +1272,9 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
     {
+        /* Must leave the lock here because the changeFramebuffer will also obtain it. */
+        lock.leave ();
+
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
@@ -1280,6 +1283,8 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
         if (VBOX_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
+
+        lock.enter ();
 
         ComAssertRCRet (vrc, E_FAIL);
     }
