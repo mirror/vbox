@@ -20,12 +20,6 @@
 DEPTH = .
 include $(PATH_KBUILD)/header.kmk
 
-ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),linux.amd64) # temp hack
-SUBDIRS_PACKING := $(NO_SUCH_VARIABLE)
-SUBDIRS_AFTER_PACKING := $(NO_SUCH_VARIABLE)
-VBOX_WITH_DOCS =
-endif
-
 ifdef VBOX_WITH_DOCS
  SUBDIRS = doc/manual
 endif
