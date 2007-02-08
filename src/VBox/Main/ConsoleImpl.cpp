@@ -2350,6 +2350,28 @@ STDMETHODIMP Console::RegisterCallback (IConsoleCallback *aCallback)
     AutoLock alock (this);
 
     mCallbacks.push_back (CallbackList::value_type (aCallback));
+
+#if 0
+    /* @todo dmik please implement this.
+     * Inform the callback about the current status, because the new callback
+     * must know at least the current mouse capabilities and the pointer shape.
+     */
+    aCallback->OnMousePointerShapeChange (mCallbacksStatus.pointerShape.fVisible,
+                                          mCallbackStatus.pointerShape.fAlpha,
+                                          mCallbackStatus.pointerShape.xHot,
+                                          mCallbackStatus.pointerShape.yHot,
+                                          mCallbackStatus.pointerShape.width,
+                                          mCallbackStatus.pointerShape.height,
+                                          mCallbackStatus.pointerShape.pShape);
+    aCallback->OnMouseCapabilityChange (mCallbackStatus.mouseCapability.supportsAbsolute,
+                                        mCallbackStatus.mouseCapability.needsHostCursor);
+    aCallback->OnStateChange (mCallbackStatus.machineState);
+    aCallback->OnAdditionsStateChange();
+    aCallback->OnKeyboardLedsChange(mCallbackStatus.keyboardLeds.fNumLock,
+                                    mCallbackStatus.keyboardLeds.fCapsLock,
+                                    mCallbackStatus.keyboardLeds.fScrollLock);
+#endif
+
     return S_OK;
 }
 
