@@ -56,6 +56,8 @@ typedef struct DRVNAT
     PPDMDRVINS              pDrvIns;
     /** Slirp critical section. */
     RTCRITSECT              CritSect;
+    /** Link state */
+    PDMNETWORKLINKSTATE     enmLinkState;
 } DRVNAT, *PDRVNAT;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
@@ -98,7 +100,9 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     int rc = RTCritSectEnter(&pData->CritSect);
     AssertReleaseRC(rc);
 
-    slirp_input((uint8_t *)pvBuf, cb);
+    Assert(pData->enmLinkState == PDMNETWORKLINKSTATE_UP);
+    if (pData->enmLinkState == PDMNETWORKLINKSTATE_UP)
+        slirp_input((uint8_t *)pvBuf, cb);
     RTCritSectLeave(&pData->CritSect);
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
@@ -137,6 +141,8 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
 
     int rc = RTCritSectEnter(&pData->CritSect);
     AssertReleaseRC(rc);
+    pData->enmLinkState = enmLinkState;
+
     switch (enmLinkState)
     {
         case PDMNETWORKLINKSTATE_UP:
@@ -438,6 +444,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 {
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
                     g_pDrv = pData;
+
+                    pData->enmLinkState = PDMNETWORKLINKSTATE_UP;
 #if 0
                     RTSemEventSignal(g_EventSem);
                     RTThreadSleep(0);
