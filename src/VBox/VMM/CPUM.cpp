@@ -223,7 +223,6 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_FEATURE_EDX_CX8
                                        //| X86_CPUID_FEATURE_EDX_APIC  - set by the APIC device if present.
                                        /** @note we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see #1757) */
-                                       /** @todo this doesn't apply to hwaccm -> we find out much later whether it's enabled or not */
                                        //| X86_CPUID_FEATURE_EDX_SEP
                                        //| X86_CPUID_FEATURE_EDX_MTRR  - no MTRRs.
                                        | X86_CPUID_FEATURE_EDX_PGE
@@ -266,7 +265,6 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_AMD_FEATURE_EDX_CX8
                                        //| X86_CPUID_AMD_FEATURE_EDX_APIC   - set by the APIC device if present.
                                        /** @note we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see #1757) */
-                                       /** @todo this doesn't apply to hwaccm -> we find out much later whether it's enabled or not */
                                        //| X86_CPUID_AMD_FEATURE_EDX_SEP
                                        //| X86_CPUID_AMD_FEATURE_EDX_MTRR   - not virtualized.
                                        | X86_CPUID_AMD_FEATURE_EDX_PGE
