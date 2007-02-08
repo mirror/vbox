@@ -299,6 +299,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
 
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.vmx.fEnabled = true;
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
                 LogRel(("HWACCM: VMX enabled!\n"));
             }
             else
@@ -326,14 +327,11 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
-#if 1
-                LogRel(("HWACCM: SVM supported; disabled currently\n"));
-#else
                 hwaccmr3DisableRawMode(pVM);
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
 
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.svm.fEnabled = true;
-#endif
             }
             else
             {
