@@ -1923,21 +1923,29 @@ static bool atapiGetConfigurationSS(ATADevState *s)
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 32);
-    /* Accept request type of 0 or 1 only, and only starting feature 0. */
-    if (((s->aATAPICmd[1] & 0x03) != 0 && (s->aATAPICmd[1] & 0x03) != 1) || ataBE2H_U16(&s->aATAPICmd[2]) != 0)
+    /* Accept valid request types only, and only starting feature 0. */
+    if ((s->aATAPICmd[1] & 0x03) == 3 || ataBE2H_U16(&s->aATAPICmd[2]) != 0)
     {
         atapiCmdError(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
         return false;
     }
     memset(pbBuf, '\0', 32);
-    ataH2BE_U32(pbBuf, 12);
-    ataH2BE_U16(pbBuf + 6, 8); /* current profile: cd-rom read-only */
+    ataH2BE_U32(pbBuf, 16);
+    /** @todo implement switching between CD-ROM and DVD-ROM profile (the only
+     * way to differentiate them right now is based on the image size). Also
+     * implement signalling "no current profile" if no medium is loaded. */
+    ataH2BE_U16(pbBuf + 6, 0x08); /* current profile: read-only CD */
 
     ataH2BE_U16(pbBuf + 8, 0); /* feature 0: list of profiles supported */
     pbBuf[10] = (0 << 2) | (1 << 1) | (1 || 0); /* version 0, persistent, current */
-    pbBuf[11] = 4; /* additional bytes for profiles */
-    ataH2BE_U16(pbBuf + 12, 8); /* profile: cd-rom read-only */
-    pbBuf[14] = (1 << 0); /* current profile */
+    pbBuf[11] = 8; /* additional bytes for profiles */
+    /* The MMC-3 spec says that DVD-ROM read capability should be reported
+     * before CD-ROM read capability. */
+    ataH2BE_U16(pbBuf + 12, 0x10); /* profile: read-only DVD */
+    pbBuf[14] = (0 << 0); /* NOT current profile */
+    ataH2BE_U16(pbBuf + 16, 0x08); /* profile: read only CD */
+    pbBuf[18] = (1 << 0); /* current profile */
+    /* Other profiles we might want to add in the future: 0x40 (BD-ROM) and 0x50 (HDDVD-ROM) */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
     return false;
@@ -2590,17 +2598,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
             ataStartTransfer(s, RT_MIN(cbMax, 36), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_TRACK_INFORMATION, true);
             break;
         case SCSI_GET_CONFIGURATION:
-            if (s->cNotifiedMediaChange > 0)
-            {
-                s->cNotifiedMediaChange-- ;
-                atapiCmdError(s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
-                break;
-            }
-            else if (!s->pDrvMount->pfnIsMounted(s->pDrvMount))
-            {
-                atapiCmdError(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
-                break;
-            }
+            /* No media change stuff here, it can confuse Linux guests. */
             cbMax = ataBE2H_U16(pbPacket + 7);
             ataStartTransfer(s, RT_MIN(cbMax, 32), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_CONFIGURATION, true);
             break;
