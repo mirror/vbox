@@ -386,7 +386,7 @@ void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 
 DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
 {
-    VBGLPHYSHEAPBLOCK *pBlock;
+    VBGLPHYSHEAPBLOCK *pBlock, *iter;
     int rc = vbglPhysHeapEnter ();
 
     if (VBOX_FAILURE(rc))
@@ -399,7 +399,7 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
     pBlock = NULL;
 
     /* If there are free blocks in the heap, look at them. */
-    VBGLPHYSHEAPBLOCK *iter = g_vbgldata.pFreeBlocksHead;
+    iter = g_vbgldata.pFreeBlocksHead;
 
     /* There will be not many blocks in the heap, so
      * linear search would be fast enough.

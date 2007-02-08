@@ -54,6 +54,8 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
                                uint32_t u32AsyncData)
 {
     VMMDevHGCMConnect *pHGCMConnect;
+    int rc;
+
     if (!pConnectInfo || !pAsyncCallback)
     {
         return VERR_INVALID_PARAMETER;
@@ -62,7 +64,7 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
     pHGCMConnect = NULL;
 
     /* Allocate request */
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMConnect, sizeof (VMMDevHGCMConnect), VMMDevReq_HGCMConnect);
+    rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMConnect, sizeof (VMMDevHGCMConnect), VMMDevReq_HGCMConnect);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -103,6 +105,8 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
                                   VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMDisconnect *pHGCMDisconnect;
+    int rc;
+
     if (!pDisconnectInfo || !pAsyncCallback)
     {
         return VERR_INVALID_PARAMETER;
@@ -111,7 +115,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
     pHGCMDisconnect = NULL;
 
     /* Allocate request */
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMDisconnect, sizeof (VMMDevHGCMDisconnect), VMMDevReq_HGCMDisconnect);
+    rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMDisconnect, sizeof (VMMDevHGCMDisconnect), VMMDevReq_HGCMDisconnect);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -146,6 +150,9 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                             VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMCall *pHGCMCall;
+    uint32_t cbParms;
+    int rc;
+
     if (!pCallInfo || !pAsyncCallback)
     {
         return VERR_INVALID_PARAMETER;
@@ -155,10 +162,10 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
     pHGCMCall = NULL;
 
-    uint32_t cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
+    cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
 
     /* Allocate request */
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
+    rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
 
     dprintf (("VbglHGCMCall Allocated gr %p, rc = %Vrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
 

@@ -90,11 +90,10 @@ struct VBGLHGCMHANDLEDATA *vbglHGCMHandleAlloc (void)
 {
     struct VBGLHGCMHANDLEDATA *p;
     int rc = vbglHandleHeapEnter ();
+    uint32_t i;
 
     if (VBOX_FAILURE (rc))
-    {
         return NULL;
-    }
 
     p = NULL;
 
@@ -102,16 +101,12 @@ struct VBGLHGCMHANDLEDATA *vbglHGCMHandleAlloc (void)
      * @todo bitmap for faster search and other obvious optimizations.
      */
 
-    uint32_t i;
-
     for (i = 0; i < ELEMENTS(g_vbgldata.aHGCMHandleData); i++)
     {
         if (!g_vbgldata.aHGCMHandleData[i].fAllocated)
         {
             p = &g_vbgldata.aHGCMHandleData[i];
-
             p->fAllocated = 1;
-
             break;
         }
     }
@@ -129,24 +124,18 @@ void vbglHGCMHandleFree (struct VBGLHGCMHANDLEDATA *pHandle)
     int rc;
 
     if (!pHandle)
-    {
        return;
-    }
 
     rc = vbglHandleHeapEnter ();
 
     if (VBOX_FAILURE (rc))
-    {
         return;
-    }
 
     VBGL_HGCM_ASSERTMsg(pHandle->fAllocated,
                         ("Freeing not allocated handle.\n"));
 
     memset(pHandle, 0, sizeof (struct VBGLHGCMHANDLEDATA));
-
     vbglHandleHeapLeave ();
-
     return;
 }
 
@@ -156,9 +145,7 @@ DECLVBGL(int) VbglHGCMConnect (VBGLHGCMHANDLE *pHandle, VBoxGuestHGCMConnectInfo
     struct VBGLHGCMHANDLEDATA *pHandleData;
 
     if (!pHandle || !pData)
-    {
         return VERR_INVALID_PARAMETER;
-    }
 
     pHandleData = vbglHGCMHandleAlloc ();
 

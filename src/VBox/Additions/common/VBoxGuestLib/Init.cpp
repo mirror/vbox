@@ -85,6 +85,8 @@ static int vbglQueryVMMDevPort (void)
 
 int VbglEnter (void)
 {
+    int rc;
+
 #ifndef VBGL_VBOXGUEST
     if (g_vbgldata.status == VbglStatusInitializing)
     {
@@ -92,7 +94,7 @@ int VbglEnter (void)
     }
 #endif
 
-    int rc = g_vbgldata.status != VbglStatusNotInitialized? VINF_SUCCESS: VERR_VBGL_NOT_INITIALIZED;
+    rc = g_vbgldata.status != VbglStatusNotInitialized? VINF_SUCCESS: VERR_VBGL_NOT_INITIALIZED;
     
     // dprintf(("VbglEnter: rc = %d\n", rc));
     
