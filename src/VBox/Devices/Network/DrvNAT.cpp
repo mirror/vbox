@@ -100,6 +100,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     slirp_input((uint8_t *)pvBuf, cb);
     RTCritSectLeave(&pData->CritSect);
+    LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
 }
 
@@ -222,6 +223,7 @@ int slirp_can_output(void)
  */
 void slirp_output(const uint8_t *pu8Buf, int cb)
 {
+    LogFlow(("slirp_output BEGING %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (g_pDrv=%p)\n"
           "%.*Vhxd\n",
           pu8Buf, cb, g_pDrv,
@@ -235,6 +237,7 @@ void slirp_output(const uint8_t *pu8Buf, int cb)
         int rc = g_pDrv->pPort->pfnReceive(g_pDrv->pPort, pu8Buf, cb);
         AssertRC(rc);
     }
+    LogFlow(("slirp_output END %x %d\n", pu8Buf, cb));
 }
 
 /**
