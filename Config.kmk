@@ -712,6 +712,14 @@ ifneq ($(BUILD_TARGET),win)
  	$(PATH_BIN)/sdk/include/xpcom/ipcd
 endif
 
+# The X11 LIBPATH. (The amd64 hack is for RHEL4.)
+ifeq ($(BUILD_TARGET),amd64)
+ VBOX_LIBPATH_X11 ?= /usr/X11R6/lib /usr/X11R6/lib64
+else
+ VBOX_LIBPATH_X11 ?= /usr/X11R6/lib
+endif
+
+
 #
 # GCC stuff properties.
 #
@@ -1596,8 +1604,7 @@ else # the gcc guys:
 
  TEMPLATE_VBOXQTGUIEXE_LIBPATH = \
  	$(VBOX_PATH_QT)/lib \
- 	/usr/X11R6/lib \
-	/usr/X11R6/lib64
+	$(VBOX_LIBPATH_X11)
 
 endif
 
