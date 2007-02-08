@@ -607,7 +607,7 @@ void MachineDebugger::flushQueuedSettings()
         COMSETTER(LogEnabled)(mLogEnabledQueued);
         mLogEnabledQueued = ~0;
     }
-    if (mVirtualTimeRateQueued != ~0)
+    if (mVirtualTimeRateQueued != ~(uint32_t)0)
     {
         COMSETTER(VirtualTimeRate)(mVirtualTimeRateQueued);
         mVirtualTimeRateQueued = ~0;
