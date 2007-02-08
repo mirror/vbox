@@ -251,7 +251,9 @@ typedef enum CPUMCPUIDFEATURE
 {
     CPUMCPUIDFEATURE_INVALID = 0,
     /** The APIC feature bit. (Std+Ext) */
-    CPUMCPUIDFEATURE_APIC
+    CPUMCPUIDFEATURE_APIC,
+    /** The sysenter/sysexit feature bit. (Std+Ext) */
+    CPUMCPUIDFEATURE_SEP
 } CPUMCPUIDFEATURE;
 
 
