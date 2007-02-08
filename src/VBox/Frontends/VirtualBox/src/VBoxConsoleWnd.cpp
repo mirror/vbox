@@ -387,8 +387,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vrdp_state->setStateIcon (0, QPixmap::fromMimeSource ("vrdp_disabled_16px.png"));
     vrdp_state->setStateIcon (1, QPixmap::fromMimeSource ("vrdp_16px.png"));
 
-    (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
-
     /* auto resize state */
     autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", WNoAutoErase);
     autoresize_state->setStateIcon (0, QPixmap::fromMimeSource ("auto_resize_off_disabled_16px.png"));
