@@ -43,6 +43,8 @@ typedef struct ALSAVoiceIn {
     void *pcm_buf;
 } ALSAVoiceIn;
 
+/* latency = period_size * periods / (rate * bytes_per_frame) */
+
 static struct {
     int size_in_usec_in;
     int size_in_usec_out;
@@ -287,14 +289,21 @@ static int alsa_open (int in, struct alsa_params_req *req,
         SND_PCM_NONBLOCK
         );
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to open `%s':\n", pcm_name);
+#else
         LogRel(("Audio/ALSA: Failed to open '%s' as %s\n", pcm_name, typ));
+#endif
         return -1;
     }
 
     err = snd_pcm_hw_params_any (handle, hw_params);
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to initialize hardware parameters\n");
+#else
+        LogRel(("Audio/ALSA: Failed to initialize hardware parameters\n"));
+#endif
         goto err;
     }
 
@@ -304,19 +313,31 @@ static int alsa_open (int in, struct alsa_params_req *req,
         SND_PCM_ACCESS_RW_INTERLEAVED
         );
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to set access type\n");
+#else
+        LogRel(("Audio/ALSA: Failed to set access type\n"));
+#endif
         goto err;
     }
 
     err = snd_pcm_hw_params_set_format (handle, hw_params, req->fmt);
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to set format %d\n", req->fmt);
+#else
+        LogRel(("Audio/ALSA: Failed to set format %d\n", req->fmt));
+#endif
         goto err;
     }
 
     err = snd_pcm_hw_params_set_rate_near (handle, hw_params, &freq, 0);
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to set frequency %d\n", req->freq);
+#else
+        LogRel(("Audio/ALSA: Failed to set frequency %dHz\n", req->freq));
+#endif
         goto err;
     }
 
@@ -326,15 +347,23 @@ static int alsa_open (int in, struct alsa_params_req *req,
         &nchannels
         );
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to set number of channels %d\n",
                       req->nchannels);
+#else
+        LogRel(("Audio/ALSA: Failed to set number of channels to %d\n", req->nchannels));
+#endif
         goto err;
     }
 
     if (nchannels != 1 && nchannels != 2) {
+#ifndef VBOX
         alsa_logerr2 (err, typ,
                       "Can not handle obtained number of channels %d\n",
                       nchannels);
+#else
+        LogRel(("Audio/ALSA: Cannot handle obtained number of channels (%d)\n", nchannels));
+#endif
         goto err;
     }
 
@@ -355,9 +384,13 @@ static int alsa_open (int in, struct alsa_params_req *req,
                     0
                     );
                 if (err < 0) {
+#ifndef VBOX
                     alsa_logerr2 (err, typ,
                                   "Failed to set period time %d\n",
                                   req->period_size);
+#else
+                    LogRel(("Audio/ALSA: Failed to set period time %d\n", req->period_size));
+#endif
                     goto err;
                 }
             }
@@ -370,9 +403,13 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 );
 
             if (err < 0) {
+#ifndef VBOX
                 alsa_logerr2 (err, typ,
                               "Failed to set buffer time %d\n",
                               req->buffer_size);
+#else
+                LogRel(("Audio/ALSA: Failed to set buffer time %d\n", req->buffer_size));
+#endif
                 goto err;
             }
         }
@@ -390,13 +427,18 @@ static int alsa_open (int in, struct alsa_params_req *req,
                     &dir
                     );
                 if (err < 0) {
+#ifndef VBOX
                     alsa_logerr (
                         err,
                         "Could not get minmal period size for %s\n",
                         typ
                         );
+#else
+                    LogRel(("Audio/ALSA: Could not get minimal period size for %s\n", typ));
+#endif
                 }
                 else {
+                    dolog("minimal period size %ld\n", minval);
                     if (period_size < minval) {
                         if ((in && conf.period_size_in_overriden)
                             || (!in && conf.period_size_out_overriden)) {
@@ -410,18 +452,39 @@ static int alsa_open (int in, struct alsa_params_req *req,
                     }
                 }
 
+#ifndef VBOX
                 err = snd_pcm_hw_params_set_period_size (
                     handle,
                     hw_params,
                     period_size,
                     0
                     );
+#else
+                err = snd_pcm_hw_params_set_period_size_near (
+                    handle,
+                    hw_params,
+                    (snd_pcm_uframes_t*)&period_size,
+                    0
+                    );
+#endif
+                dolog("PERIOD_SIZE %d\n", period_size);
                 if (err < 0) {
+#ifndef VBOX
                     alsa_logerr2 (err, typ, "Failed to set period size %d\n",
-                                  req->period_size);
+                                  period_size);
+#else
+                    LogRel(("Audio/ALSA: Failed to set period size %d (%s)\n",
+                            period_size, snd_strerror(err)));
+#endif
                     goto err;
                 }
             }
+
+#ifdef VBOX
+            /* Calculate default buffer size here since it might have been changed
+             * in the _near functions */
+            buffer_size = 4 * period_size;
+#endif
 
             minval = buffer_size;
             err = snd_pcm_hw_params_get_buffer_size_min (
@@ -429,8 +492,12 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 &minval
                 );
             if (err < 0) {
+#ifndef VBOX
                 alsa_logerr (err, "Could not get minmal buffer size for %s\n",
                              typ);
+#else
+                LogRel(("Audio/ALSA: Could not get minimal buffer size for %s\n", typ));
+#endif
             }
             else {
                 if (buffer_size < minval) {
@@ -448,14 +515,20 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 }
             }
 
-            err = snd_pcm_hw_params_set_buffer_size (
+            err = snd_pcm_hw_params_set_buffer_size_near (
                 handle,
                 hw_params,
-                buffer_size
+                (snd_pcm_uframes_t*)&buffer_size
                 );
+            dolog("BUFFER_SIZE %d\n", buffer_size);
             if (err < 0) {
+#ifndef VBOX
                 alsa_logerr2 (err, typ, "Failed to set buffer size %d\n",
-                              req->buffer_size);
+                              buffer_size);
+#else
+                LogRel(("Audio/ALSA: Failed to set buffer size %d (%s)\n",
+                        buffer_size, snd_strerror(err)));
+#endif
                 goto err;
             }
         }
@@ -466,15 +539,28 @@ static int alsa_open (int in, struct alsa_params_req *req,
 
     err = snd_pcm_hw_params (handle, hw_params);
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to apply audio parameters\n");
+#else
+        LogRel(("Audio/ALSA: Failed to apply audio parameters\n"));
+#endif
         goto err;
     }
 
     err = snd_pcm_hw_params_get_buffer_size (hw_params, &obt_buffer_size);
     if (err < 0) {
+#ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to get buffer size\n");
+#else
+        LogRel(("Audio/ALSA: Failed to get buffer size\n"));
+#endif
         goto err;
     }
+
+#ifdef VBOX
+    LogRel(("Audio/ALSA: %s frequency %dHz, period size %d, buffer size %d\n",
+             typ, req->freq, period_size, obt_buffer_size));
+#endif
 
     err = snd_pcm_prepare (handle);
     if (err < 0) {
@@ -618,9 +704,6 @@ static int alsa_run_out (HWVoiceOut *hw)
                 }
             }
 
-#if 0
-            mixeng_sniff_and_clear (hw, src, dst, written);
-#endif
             rpos = (rpos + written) % hw->samples;
             samples -= written;
             len -= written;

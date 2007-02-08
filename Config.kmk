@@ -163,7 +163,7 @@ VBOX_WITH_USB = 1
 # Enable the ISCSI feature.
 VBOX_WITH_ISCSI = 1
 # Disable ALSA support for Linux (currently broken).
-VBOX_WITH_ALSA =
+VBOX_WITH_ALSA = 1
 # Enable the kchmviewer
 VBOX_WITH_KCHMVIEWER = 1
 # Build the testsuite.
