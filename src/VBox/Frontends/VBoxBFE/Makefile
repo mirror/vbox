@@ -113,7 +113,7 @@ VBoxBFE_LDFLAGS.darwin = -framework Foundation -framework AppKit
 
 VBoxBFE_LIBPATH.linux = \
 	$(LIBPATH_XPCOM) \
-	/usr/X11R6/lib
+	$(VBOX_LIBPATH_X11)
 
 
 VBoxBFE_CXXFLAGS.win = \
