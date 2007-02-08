@@ -1596,7 +1596,8 @@ else # the gcc guys:
 
  TEMPLATE_VBOXQTGUIEXE_LIBPATH = \
  	$(VBOX_PATH_QT)/lib \
- 	/usr/X11R6/lib
+ 	/usr/X11R6/lib \
+	/usr/X11R6/lib64
 
 endif
 
