@@ -96,7 +96,7 @@ ifdef VBOX_OPENGL
  #VBoxSDL_LIBS.linux += GL
 endif
 VBoxSDL_LIBPATH.linux = \
-	/usr/X11R6/lib
+	$(VBOX_LIBPATH_X11)
 
 VBoxSDL_CLEAN = $(PATH_VBoxSDL)/Ico64x01.h
 Framebuffer.cpp_DEPS = $(PATH_VBoxSDL)/Ico64x01.h
@@ -128,7 +128,7 @@ ifdef VBOX_OPENGL
 tstSDL_LIBS.linux += GL
 endif
 tstSDL_LIBPATH.linux = \
-	/usr/X11R6/lib
+	$(VBOX_LIBPATH_X11)
 tstSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
 
