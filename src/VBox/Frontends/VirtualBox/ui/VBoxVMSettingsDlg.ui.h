@@ -1543,7 +1543,7 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
     VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg",
                                  WType_Dialog | WShowModal);
     QUuid machineId = cmachine.GetId();
-    dlg.setup (type, true, &machineId, (const VBoxMediaList*)0, cmachine);
+    dlg.setup (type, true, &machineId, true /* aRefresh */, cmachine);
     *id = dlg.exec() == VBoxDiskImageManagerDlg::Accepted ?
         dlg.getSelectedUuid() : cbb->getId();
     cbb->setCurrentItem (*id);
