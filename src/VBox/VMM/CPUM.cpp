@@ -253,7 +253,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | 0;
 
 #if 1 /* we didn't used to do this, but I guess we should */
-    /* ASSUMES that this is ALLWAYS the AMD define feature set if present. */
+    /* ASSUMES that this is ALWAYS the AMD define feature set if present. */
     pCPUM->aGuestCpuIdExt[1].edx      &= X86_CPUID_AMD_FEATURE_EDX_FPU
                                        //| X86_CPUID_AMD_FEATURE_EDX_VME    - recompiler doesn't do this.
                                        | X86_CPUID_AMD_FEATURE_EDX_DE
