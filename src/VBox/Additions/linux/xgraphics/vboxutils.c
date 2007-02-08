@@ -37,7 +37,9 @@
 #define VBOX_MAX_CURSOR_WIDTH 64
 #define VBOX_MAX_CURSOR_HEIGHT 64
 
+#if 0
 #define DEBUG_X
+#endif
 #ifdef DEBUG_X
 #define TRACE_ENTRY() for (;;) {                \
     ErrorF ("%s\n", __FUNCTION__);              \
