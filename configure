@@ -749,6 +749,32 @@ extern "C" int main(void)
 }
 
 #
+# Check for libasound, needed by the ALSA audio backend
+#
+function check_alsa()
+{
+  test_header ALSA
+  echo '
+#include <alsa/asoundlib.h>
+extern "C" int main(void)
+{
+  printf("found version %d.%d.%d",
+         SND_LIB_MAJOR, SND_LIB_MINOR, SND_LIB_SUBMINOR);
+#if 10000*SND_LIB_MAJOR + 100*SND_LIB_MINOR + SND_LIB_SUBMINOR >= 10008
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.0.8 or higher\n");
+  return 1;
+#endif
+}
+' > .tmp_src.cc
+  if test_compile "-lasound" asound asound; then
+    test_execute
+  fi
+}
+
+#
 # Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
 #
 function check_xcursor()
@@ -1122,6 +1148,7 @@ check_gcc
 (($OSE==0)) && check_pam
 [ "$OS" != "darwin" ] && check_sdl
 (($OSE==0)) && check_sdl_ttf
+[ "$OS" != "darwin" ] && check_alsa
 [ "$OS" != "darwin" ] && check_xcursor
 [ "$OS" != "darwin" ] && check_x
 (($XPCOM==1)) && check_qt
