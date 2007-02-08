@@ -280,9 +280,13 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     LogRel(("NAT: g_cpvHashUsed=%RU32 g_cpvHashCollisions=%RU32 g_cpvHashInserts=%RU64 g_cpvHashDone=%RU64\n",
             g_cpvHashUsed, g_cpvHashCollisions, g_cpvHashInserts, g_cpvHashDone));
 #endif 
+    int rc = RTCritSectEnter(&pData->CritSect);
+    AssertReleaseRC(rc);
     slirp_term();
-    RTCritSectDelete(&pData->CritSect);
     g_pDrv = NULL;
+    RTCritSectLeave(&pData->CritSect);
+
+    RTCritSectDelete(&pData->CritSect);
 }
 
 
