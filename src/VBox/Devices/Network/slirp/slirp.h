@@ -31,11 +31,17 @@ typedef int socklen_t;
 #else /* VBOX */
 # define LOG_GROUP LOG_GROUP_DRV_NAT
 # include <VBox/log.h>
+# include <iprt/mem.h>
 # ifdef __WIN__
 #  include <windows.h>
 #  include <io.h>
 # endif
 # include <VBox/types.h>
+
+#define malloc(a)       RTMemAllocZ(a)
+#define free(a)         RTMemFree(a)
+#define realloc(a,b)    RTMemRealloc(a, b)
+
 #endif /* VBOX */
 #include "slirp_config.h"
 
