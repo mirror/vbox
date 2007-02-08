@@ -112,6 +112,7 @@ public:
     void cannotLoadMachineSettings (const CMachine &machine,
                                     bool strict = true,
                                     QWidget *parent = 0);
+    void cannotGetUSBController (const CMachine &machine);
 
     void cannotStartMachine (const CConsole &console);
     void cannotStartMachine (const CProgress &progress);

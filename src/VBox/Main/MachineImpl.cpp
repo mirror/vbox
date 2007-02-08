@@ -1133,18 +1133,21 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController * *a_ppUSBControll
             return setError (E_FAIL,
                 tr ("Could not load the USB proxy service (%Vrc), "
                     "the virtual USB Controller is not available."
-                    "The service may not be installed on the host computer."),
+                    "The service may not be installed on the host computer"),
                 usbProxyService->getLastError());
         else
             return setError (E_FAIL,
                 tr ("Could not load the USB proxy service (%Vrc), "
-                    "the virtual USB Controller is not available."),
+                    "the virtual USB Controller is not available"),
                 usbProxyService->getLastError());
     }
 
     mUSBController.queryInterfaceTo (a_ppUSBController);
     return S_OK;
 #else
+    /* Note: The GUI depends on this method returning E_NOTIMPL with no
+     * extended error info to indicate that USB is simply not available
+     * (w/o treting it as a failure), for example, as in OSE */
     return E_NOTIMPL;
 #endif
 }
