@@ -3580,7 +3580,13 @@ HRESULT Console::powerDown()
         if (mConsoleVRDPServer)
         {
             LogFlowThisFunc (("Stopping VRDP server...\n"));
+
+            /* Leave the lock since EMT will call us back as addVMCaller in updateDisplayData(). */
+            alock.leave();
+
             mConsoleVRDPServer->Stop();
+
+            alock.enter();
         }
 
         releaseAllUSBDevices();
