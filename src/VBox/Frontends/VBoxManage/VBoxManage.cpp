@@ -4490,17 +4490,24 @@ static int handleShowVDIInfo(int argc, char *argv[],
     ComPtr<IVirtualDiskImage> vdi;
     Bstr filepath;
 
+    bool registered = true;
+
     /* first guess is that it's a UUID */
     Guid uuid(argv[0]);
     rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
-    if (!hardDisk)
+    if (FAILED (rc))
     {
         filepath = argv[0];
-        virtualBox->FindVirtualDiskImage(filepath, vdi.asOutParam());
+        rc = virtualBox->FindVirtualDiskImage(filepath, vdi.asOutParam());
         /* no? well, then it's an unregistered image */
-        CHECK_ERROR(virtualBox, OpenVirtualDiskImage(filepath, vdi.asOutParam()));
-        hardDisk = vdi;
+        if (FAILED (rc))
+        {
+            registered = false;
+            CHECK_ERROR(virtualBox, OpenVirtualDiskImage(filepath, vdi.asOutParam()));
+        }
+        if (SUCCEEDED (rc))
+            hardDisk = vdi;
     }
     else
     {
@@ -4511,19 +4518,35 @@ static int handleShowVDIInfo(int argc, char *argv[],
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         RTPrintf("UUID:                 %s\n", uuid.toString().raw());
 
-        Bstr description;
-        hardDisk->COMGETTER(Description)(description.asOutParam());
-        if (description)
-        {
-            RTPrintf("Description:          %lS\n", description.raw());
-        }
+        RTPrintf("Registered:           %s\n", registered ? "yes" : "no");
 
-        ULONG64 size;
-        hardDisk->COMGETTER(Size)(&size);
-        RTPrintf("Size:                 %llu MBytes\n", size);
-        ULONG64 actualSize;
-        hardDisk->COMGETTER(ActualSize)(&actualSize);
-        RTPrintf("Current size on disk: %llu MBytes\n", actualSize >> 20);
+        /* check for accessibility */
+        BOOL accessible = FALSE;
+        CHECK_ERROR_RET (hardDisk, COMGETTER(Accessible)(&accessible), 1);
+        RTPrintf("Accessible:           %s\n", accessible ? "yes" : "no");
+
+        if (accessible)
+        {
+            Bstr description;
+            hardDisk->COMGETTER(Description)(description.asOutParam());
+            if (description)
+            {
+                RTPrintf("Description:          %lS\n", description.raw());
+            }
+
+            ULONG64 size;
+            hardDisk->COMGETTER(Size)(&size);
+            RTPrintf("Size:                 %llu MBytes\n", size);
+            ULONG64 actualSize;
+            hardDisk->COMGETTER(ActualSize)(&actualSize);
+            RTPrintf("Current size on disk: %llu MBytes\n", actualSize >> 20);
+        }
+        else
+        {
+            Bstr err;
+            CHECK_ERROR_RET (hardDisk, COMGETTER(LastAccessError)(err.asOutParam()), 1);
+            RTPrintf("Access Error:         %lS\n", err.raw());
+        }
 
         HardDiskType_T type;
         hardDisk->COMGETTER(Type)(&type);
@@ -4556,15 +4579,25 @@ static int handleShowVDIInfo(int argc, char *argv[],
         }
         RTPrintf("Storage type:         %s\n", storageTypeStr);
 
-        hardDisk->COMGETTER(MachineId)(uuid.asOutParam());
-        RTPrintf("In use by VM:         %s\n", uuid ? uuid.toString().raw() : "<none>");
+        if (registered)
+        {
+            hardDisk->COMGETTER(MachineId)(uuid.asOutParam());
+            RTPrintf("In use by VM:         %s\n", uuid ? uuid.toString().raw() : "<none>");
+        }
 
-        /* VDI specific information */
         if (vdi)
         {
+            /* VDI specific information */
             vdi->COMGETTER(FilePath)(filepath.asOutParam());
             RTPrintf("Path:                 %lS\n", filepath.raw());
 
+        }
+        else
+        {
+            /* Generic location information */
+            Bstr loc;
+            hardDisk->COMGETTER(Location)(loc.asOutParam());
+            RTPrintf("Location:             %lS\n", loc.raw());
         }
     }
     return SUCCEEDED(rc) ? 0 : 1;
