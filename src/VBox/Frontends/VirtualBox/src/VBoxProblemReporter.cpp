@@ -556,6 +556,23 @@ void VBoxProblemReporter::cannotLoadMachineSettings (const CMachine &machine,
              formatErrorInfo (errInfo));
 }
 
+void VBoxProblemReporter::cannotGetUSBController (const CMachine &machine)
+{
+    /* if there is no error info available, it should mean that
+     * IMachine::GetUSBController returned just E_NOTIMPL, as for the OSE
+     * version. Don't show the error message in this case since it's normal. */
+    COMErrorInfo errInfo = machine.errorInfo();
+    if (errInfo.resultCode() == E_NOTIMPL && !errInfo.isBasicAvailable())
+        return;
+
+    message (mainWindowShown(), Error,
+             tr ("Failed to access the USB controller of the virtual "
+                 "machine <b>%1</b>.")
+                 .arg (machine.GetName()),
+             formatErrorInfo (errInfo),
+             "cannotGetUSBController");
+}
+
 void VBoxProblemReporter::cannotStartMachine (const CConsole &console)
 {
     // below, we use CConsole (console) to preserve current error info
