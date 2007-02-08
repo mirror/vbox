@@ -1191,6 +1191,9 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
     {
+        /* Must leave the lock here because the changeFramebuffer will also obtain it. */
+        lock.leave ();
+
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
@@ -1200,6 +1203,8 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
         if (VBOX_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
+
+        lock.enter ();
 
         ComAssertRCRet (vrc, E_FAIL);
     }
