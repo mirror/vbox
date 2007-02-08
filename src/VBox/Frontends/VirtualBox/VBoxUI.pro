@@ -162,6 +162,8 @@ IMAGES	= images/tpixel.png \
 	images/usb_moveup_disabled_16px.png \
 	images/usb_remove_16px.png \
 	images/usb_remove_disabled_16px.png \
+	images/usb_unavailable_16px.png \
+	images/usb_unavailable_disabled_16px.png \
 	images/select_file_16px.png \
 	images/select_file_dis_16px.png \
 	images/discard_cur_state_16px.png \
