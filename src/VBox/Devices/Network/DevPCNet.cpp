@@ -119,6 +119,9 @@
 #define MII_MAX_REG                     32
 #define CSR_MAX_REG                     128
 
+/* Maximum number of times we report a link down to the guest (failure to send frame) */
+#define PCNET_MAX_LINKDOWN_REPORTED     3
+
 /* Frame cache */
 typedef struct PCNETFRAME
 {
@@ -1992,6 +1995,12 @@ static int pcnetAsyncTransmit(PCNetState *pData)
         if (!pcnetTdtePoll(pData, &tmd))
             break;
 
+        /* Don't continue sending packets when the link is down. */
+        if (RT_UNLIKELY(   !pcnetIsLinkUp(pData)
+                        &&  pData->cLinkDownReported > PCNET_MAX_LINKDOWN_REPORTED)
+            )
+            break;
+
 #ifdef PCNET_DEBUG_TMD
         Log2(("#%d TMDLOAD 0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
         PRINT_TMD(&tmd);
@@ -2183,8 +2192,7 @@ static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
         rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
         AssertReleaseRC(rc);
 
-        if (RT_LIKELY(pcnetIsLinkUp(pData)))
-            rc = pcnetAsyncTransmit(pData);
+        rc = pcnetAsyncTransmit(pData);
         PDMCritSectLeave(&pData->CritSect);
     }
     return VINF_SUCCESS;
@@ -3230,7 +3238,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
-    if (pData->cLinkDownReported <= 3)
+    if (pData->cLinkDownReported <= PCNET_MAX_LINKDOWN_REPORTED)
         rc = TMTimerSetMillies(pData->pTimerRestore, 1500);
     if (VBOX_FAILURE(rc))
     {
