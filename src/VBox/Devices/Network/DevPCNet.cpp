@@ -623,11 +623,11 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS addr)
     }
     /* Double check the own bit; guest drivers might be buggy and lock prefixes in the recompiler are ignored by other threads. */
 #ifdef DEBUG
-    if (tmd->tmd1.own == 0 && (ownbyte & 0x80))
+    if (tmd->tmd1.own == 1 && !(ownbyte & 0x80))
         Log(("pcnetTmdLoad: own bit flipped while reading!!\n"));
 #endif
-    if (ownbyte & 0x80)
-        tmd->tmd1.own = 1;
+    if (!(ownbyte & 0x80))
+        tmd->tmd1.own = 0;
 }
 
 /**
@@ -708,11 +708,11 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
     }
     /* Double check the own bit; guest drivers might be buggy and lock prefixes in the recompiler are ignored by other threads. */
 #ifdef DEBUG
-    if (rmd->rmd1.own == 0 && (ownbyte & 0x80))
-        Log(("pcnetRmdLoad: own bit flipped while reading!!\n"));
+    if (rmd->rmd1.own == 1 && !(ownbyte & 0x80))
+        Log(("pcnetTmdLoad: own bit flipped while reading!!\n"));
 #endif
-    if (ownbyte & 0x80)
-        rmd->rmd1.own = 1;
+    if (!(ownbyte & 0x80))
+        rmd->rmd1.own = 0;
 }
 
 /**
