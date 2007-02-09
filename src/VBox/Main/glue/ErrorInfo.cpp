@@ -291,7 +291,7 @@ void ErrorInfo::print (const char *aPrefix /* = NULL */)
         RTPrintf ("%sResult Code = %Rwa\n", aPrefix, mResultCode);
         RTPrintf ("%sText        = %ls\n", aPrefix, mText.raw());
         RTPrintf ("%sComponent   = %ls, Interface: %ls, {%s}\n", aPrefix,
-                  mInterfaceName.raw(), mInterfaceID.toString().raw());
+                  mComponent.raw(), mInterfaceName.raw(), mInterfaceID.toString().raw());
         RTPrintf ("%sCallee      = %ls, {%s}\n", aPrefix, mCalleeName.raw(), mCalleeIID.toString().raw());
     }
 }
