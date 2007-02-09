@@ -1021,6 +1021,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <include location="local" impldecl="in declaration">VMGlobalSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxUSBFilterSettings.h</include>
 </includes>
 <forwards>

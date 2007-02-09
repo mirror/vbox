@@ -114,6 +114,9 @@ public:
     void onUSBDeviceDetached (HostUSBDevice *aDevice);
     void onUSBDeviceStateChanged (HostUSBDevice *aDevice);
 
+    HRESULT checkUSBProxyService();
+    
+    /* must be called from under this object's lock */ 
     USBProxyService *usbProxyService() { return mUSBProxyService; }
 
 #ifdef __WIN__

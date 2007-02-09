@@ -125,7 +125,7 @@ void VBoxGlobalSettingsDlg::init()
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
                                      6 /* seems that RichText adds some margin */ +
                                      whatsThisLabel->fontMetrics().width ('m') * 40);
-    
+
     /*
      *  create and layout non-standard widgets
      *  ----------------------------------------------------------------------
@@ -214,7 +214,7 @@ bool VBoxGlobalSettingsDlg::eventFilter (QObject *object, QEvent *event)
 {
     if (!object->isWidgetType())
         return QDialog::eventFilter (object, event);
-    
+
     QWidget *widget = static_cast <QWidget *> (object);
     if (widget->topLevelWidget() != this)
         return QDialog::eventFilter (object, event);
@@ -331,17 +331,35 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
     /* usb filters page */
 
     CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostUSBDeviceFilterEnumerator en = host.GetUSBDeviceFilters().Enumerate();
-    while (en.HasMore())
+    CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
+    if (coll.isNull())
     {
-        CHostUSBDeviceFilter hostFilter = en.GetNext();
-        CUSBDeviceFilter filter = CUnknown (hostFilter);
-        addUSBFilter (filter, false);
-    }
-    lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
-    lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
+        /* disable the USB host filters category if the USB is
+         * not available (i.e. in VirtualBox OSE) */
 
-//    wvalXXXX->revalidate();
+        QListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
+        Assert (usbItem);
+        usbItem->setVisible (false);
+
+        /* disable validators if any */
+        pageUSB->setEnabled (false);
+        
+        /* Show an error message (if there is any).
+         * This message box may be suppressed if the user wishes so. */
+        vboxProblem().cannotAccessUSB (host);
+    }
+    else
+    {
+        CHostUSBDeviceFilterEnumerator en = coll.Enumerate();
+        while (en.HasMore())
+        {
+            CHostUSBDeviceFilter hostFilter = en.GetNext();
+            CUSBDeviceFilter filter = CUnknown (hostFilter);
+            addUSBFilter (filter, false);
+        }
+        lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
+        lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
+    }
 }
 
 /**
@@ -439,7 +457,7 @@ void VBoxGlobalSettingsDlg::setWarning (const QString &warning)
     warningString = warning;
     if (!warning.isEmpty())
         warningString = QString ("<font color=red>%1</font>").arg (warning);
-    
+
     if (!warningString.isEmpty())
         whatsThisLabel->setText (warningString);
     else

@@ -490,6 +490,22 @@ void VBoxProblemReporter::cannotSetSystemProperties (const CSystemProperties &pr
     );
 }
 
+void VBoxProblemReporter::cannotAccessUSB (const COMBase &obj)
+{
+    /* if there is no error info available, it should mean that
+     * IMachine::GetUSBController(), IHost::GetUSBDevices() etc. just returned
+     * E_NOTIMPL, as for the OSE version. Don't show the error message in this
+     * case since it's normal. */
+    COMErrorInfo errInfo = obj.errorInfo();
+    if (obj.lastRC() == E_NOTIMPL && !errInfo.isBasicAvailable())
+        return;
+
+    message (mainWindowShown(), Error,
+             tr ("Failed to access the USB subsystem."),
+             formatErrorInfo (errInfo),
+             "cannotAccessUSB");
+}
+
 void VBoxProblemReporter::cannotCreateMachine (const CVirtualBox &vbox,
                                                QWidget *parent /* = 0 */)
 {
@@ -554,23 +570,6 @@ void VBoxProblemReporter::cannotLoadMachineSettings (const CMachine &machine,
              tr ("Failed to load the settings of the virtual machine <b>%1</b>.")
                  .arg (machine.GetName()),
              formatErrorInfo (errInfo));
-}
-
-void VBoxProblemReporter::cannotGetUSBController (const CMachine &machine)
-{
-    /* if there is no error info available, it should mean that
-     * IMachine::GetUSBController returned just E_NOTIMPL, as for the OSE
-     * version. Don't show the error message in this case since it's normal. */
-    COMErrorInfo errInfo = machine.errorInfo();
-    if (machine.lastRC() == E_NOTIMPL && !errInfo.isBasicAvailable())
-        return;
-
-    message (mainWindowShown(), Error,
-             tr ("Failed to access the USB controller of the virtual "
-                 "machine <b>%1</b>.")
-                 .arg (machine.GetName()),
-             formatErrorInfo (errInfo),
-             "cannotGetUSBController");
 }
 
 void VBoxProblemReporter::cannotStartMachine (const CConsole &console)
