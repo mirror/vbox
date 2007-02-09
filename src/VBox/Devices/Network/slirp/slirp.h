@@ -38,9 +38,9 @@ typedef int socklen_t;
 # endif
 # include <VBox/types.h>
 
-#define malloc(a)       RTMemAllocZ(a)
-#define free(a)         RTMemFree(a)
-#define realloc(a,b)    RTMemRealloc(a, b)
+# define malloc(a)       RTMemAllocZ(a)
+# define free(a)         RTMemFree(a)
+# define realloc(a,b)    RTMemRealloc(a, b)
 
 #endif /* VBOX */
 #include "slirp_config.h"
