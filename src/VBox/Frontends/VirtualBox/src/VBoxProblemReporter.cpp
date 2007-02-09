@@ -562,7 +562,7 @@ void VBoxProblemReporter::cannotGetUSBController (const CMachine &machine)
      * IMachine::GetUSBController returned just E_NOTIMPL, as for the OSE
      * version. Don't show the error message in this case since it's normal. */
     COMErrorInfo errInfo = machine.errorInfo();
-    if (errInfo.resultCode() == E_NOTIMPL && !errInfo.isBasicAvailable())
+    if (machine.lastRC() == E_NOTIMPL && !errInfo.isBasicAvailable())
         return;
 
     message (mainWindowShown(), Error,
