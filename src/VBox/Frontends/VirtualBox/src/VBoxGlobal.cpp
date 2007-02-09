@@ -2156,3 +2156,35 @@ void VBoxUSBMenu::processHighlighted (int aIndex)
     QToolTip::add (this, vboxGlobal().toolTip (usb));
 }
 
+
+/**
+ *  Enable/Disable Menu class.
+ *  This class provides enable/disable menu items.
+ */
+VBoxSwitchMenu::VBoxSwitchMenu (QWidget *aParent, QAction *aAction,
+                                const QString &aTip, bool aInverted)
+    : QPopupMenu (aParent), mAction (aAction)
+    , mTip (aTip), mInverted (aInverted)
+{
+    /* this menu works only with toggle action */
+    Assert (aAction->isToggleAction());
+    connect (this, SIGNAL (aboutToShow()),
+             this, SLOT   (processAboutToShow()));
+    connect (this, SIGNAL (activated (int)),
+             this, SLOT   (processActivated (int)));
+}
+
+void VBoxSwitchMenu::processAboutToShow()
+{
+    clear();
+    QString text = mAction->isOn() ^ mInverted ? tr ("Disable") : tr ("Enable");
+    int id = insertItem (text);
+    setItemEnabled (id, mAction->isEnabled());
+    QToolTip::add (this, tr ("%1 %2").arg (text).arg (mTip));
+}
+
+void VBoxSwitchMenu::processActivated (int /*aIndex*/)
+{
+    mAction->setOn (!mAction->isOn());
+}
+

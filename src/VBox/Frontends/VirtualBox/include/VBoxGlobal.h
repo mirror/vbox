@@ -42,6 +42,8 @@
 #include <qdict.h>
 #include <qintdict.h>
 
+class QAction;
+
 // Auxiliary types
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -522,6 +524,32 @@ private:
 
     QMap <int, CUSBDevice> mUSBDevicesMap;
     CConsole mConsole;
+};
+
+
+/**
+ *  Enable/Disable Menu class.
+ *  This class provides enable/disable menu items.
+ */
+class VBoxSwitchMenu : public QPopupMenu
+{
+    Q_OBJECT
+
+public:
+
+    VBoxSwitchMenu (QWidget *, QAction *, const QString &, bool aInverted = false);
+
+private slots:
+
+    void processAboutToShow();
+
+    void processActivated (int);
+
+private:
+
+    QAction *mAction;
+    QString  mTip;
+    bool     mInverted;
 };
 
 #endif /* __VBoxGlobal_h__ */

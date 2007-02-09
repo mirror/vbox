@@ -239,7 +239,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUnmountDVDAction->setIconSet (VBoxGlobal::iconSet ("cd_unmount_16px.png",
                                                      "cd_unmount_dis_16px.png"));
 
-    devicesSwitchVrdpAction = new QAction (this, "devicesSwitchVrdpAction");
+    devicesSwitchVrdpAction = new QAction (runningActions, "devicesSwitchVrdpAction");
     devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet ("vrdp_16px.png",
                                                               "vrdp_disabled_16px.png"));
     devicesSwitchVrdpAction->setToggleAction (true);
@@ -294,6 +294,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmMenu->insertSeparator();
     vmCloseAction->addTo (vmMenu);
     menuBar()->insertItem (QString::null, vmMenu, vmMenuId);
+    vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction,
+                                           tr ("Auto-resize Guest Display",
+                                               "enable/disable..."));
+    vmDisMouseIntegrMenu = new VBoxSwitchMenu (vmMenu, vmDisableMouseIntegrAction,
+                                               tr ("Mouse Integration",
+                                                   "enable/disable..."),
+                                               true /* inverted toggle state */);
 
     /* Devices popup menu */
 
@@ -303,7 +310,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesMountFloppyMenu = new QPopupMenu (devicesMenu, "devicesMountFloppyMenu");
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
-    devicesVRDPMenu = new QPopupMenu (devicesMenu, "devicesVRDPMenu");
+    devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction,
+                                          tr ("Remote Desktop (RDP) Server",
+                                              "enable/disable..."));
 
     devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
         QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
@@ -439,24 +448,22 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     connect (vmTakeSnapshotAction, SIGNAL(activated()), this, SLOT(vmTakeSnapshot()));
 
-    connect (vmDisableMouseIntegrAction, SIGNAL(activated()), this, SLOT(vmDisableMouseIntegr()));
+    connect (vmDisableMouseIntegrAction, SIGNAL(toggled (bool)), this, SLOT(vmDisableMouseIntegr (bool)));
 
     connect (devicesMountFloppyImageAction, SIGNAL(activated()), this, SLOT(devicesMountFloppyImage()));
     connect (devicesUnmountFloppyAction, SIGNAL(activated()), this, SLOT(devicesUnmountFloppy()));
     connect (devicesMountDVDImageAction, SIGNAL(activated()), this, SLOT(devicesMountDVDImage()));
     connect (devicesUnmountDVDAction, SIGNAL(activated()), this, SLOT(devicesUnmountDVD()));
-    connect (devicesSwitchVrdpAction, SIGNAL(activated()), this, SLOT(devicesSwitchVrdp()));
+    connect (devicesSwitchVrdpAction, SIGNAL(toggled (bool)), this, SLOT(devicesSwitchVrdp (bool)));
     connect (devicesInstallGuestToolsAction, SIGNAL(activated()), this, SLOT(devicesInstallGuestAdditions()));
 
 
     connect (devicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
     connect (devicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
-    connect (devicesVRDPMenu, SIGNAL(aboutToShow()), this, SLOT(prepareVRDPMenu()));
 
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
-    connect (devicesVRDPMenu, SIGNAL(activated(int)), this, SLOT(devicesSwitchVrdp()));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -472,6 +479,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (usb_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (vrdp_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+    connect (autoresize_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+    connect (mouse_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
 
     /* watch global settings changes */
@@ -602,13 +613,20 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     /* initialize usb stuff */
     CUSBController usbctl = cmachine.GetUSBController();
-    if (!usbctl.isNull())
+    if (usbctl.isNull())
+    {
+        /* hide usb_menu & usb_separator & usb_status_led */
+        devicesMenu->setItemVisible (devicesUSBMenuId, false);
+        devicesMenu->setItemVisible (devicesUSBMenuSeparatorId, false);
+        usb_light->setHidden (true);
+    }
+    else
     {
         bool isUSBEnabled = usbctl.GetEnabled();
         devicesUSBMenu->setEnabled (isUSBEnabled);
         devicesUSBMenu->setConsole (cconsole);
         usb_light->setState (isUSBEnabled ? CEnums::DeviceIdle
-                                      : CEnums::InvalidActivity);
+                                          : CEnums::InvalidActivity);
         mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
     }
 
@@ -1188,19 +1206,24 @@ void VBoxConsoleWnd::languageChange()
 
     QToolTip::add (autoresize_state,
         tr ("Indicates whether the guest display auto-resize function is On "
-            "(<img src=auto_resize_on_16px.png/>) or Off (<img src=auto_resize_off_16px.png/>)"));
+            "(<img src=auto_resize_on_16px.png/>) or Off (<img src=auto_resize_off_16px.png/>). "
+            "Note that this function requires Guest Additions to be installed in the guest OS."));
     QToolTip::add (mouse_state,
         tr ("Indicates whether the host mouse pointer is captured by the guest OS:<br>"
             "<nobr><img src=mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
             "<nobr><img src=mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
             "<nobr><img src=mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
             "<nobr><img src=mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
-            "<nobr><img src=mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr>"));
+            "<nobr><img src=mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
+            "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
     QToolTip::add (hostkey_state,
         tr ("Indicates whether the keyboard is captured by the guest OS "
             "(<img src=hostkey_captured_16px.png/>) or not (<img src=hostkey_16px.png/>)"));
     QToolTip::add (hostkey_name,
-        tr ("Shows the currently assigned host key"));
+        tr ("Shows the currently assigned Host key.<br>"
+            "This key, when pressed alone, toggles the the keyboard and mouse "
+            "capture state. It can also be used in combination with other keys "
+            "to quickly perform actions from the main menu." ));
 
     updateAppearanceOf (AllStuff);
 }
@@ -1357,11 +1380,6 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         bool isVRDPEnabled = vrdpsrv.GetEnabled();
         devicesSwitchVrdpAction->setOn (isVRDPEnabled);
         vrdp_state->setState (isVRDPEnabled ? 1 : 0);
-
-        /// @todo (r=dsen) do we really need to disable the control while
-        //  in Pause? We'll check the same for USB above.
-        devicesSwitchVrdpAction->setEnabled (machine_state == CEnums::Running);
-        devicesVRDPMenu->setEnabled (machine_state == CEnums::Running);
 
         /* compose status icon tooltip */
         QString tip = tr ("Indicates whether the Remote Display (VRDP Server) "
@@ -1660,12 +1678,11 @@ void VBoxConsoleWnd::vmTakeSnapshot()
         console->pause (false);
 }
 
-void VBoxConsoleWnd::vmDisableMouseIntegr()
+void VBoxConsoleWnd::vmDisableMouseIntegr (bool aOff)
 {
     if (console)
     {
-        bool on = vmDisableMouseIntegrAction->isOn();
-        console->setMouseIntegrationEnabled (!on);
+        console->setMouseIntegrationEnabled (!aOff);
         updateAppearanceOf (DisableMouseIntegrAction);
     }
 }
@@ -1728,7 +1745,7 @@ void VBoxConsoleWnd::devicesMountDVDImage()
     }
 }
 
-void VBoxConsoleWnd::devicesSwitchVrdp()
+void VBoxConsoleWnd::devicesSwitchVrdp (bool aOn)
 {
     if (!console) return;
 
@@ -1736,7 +1753,7 @@ void VBoxConsoleWnd::devicesSwitchVrdp()
     /* this method should not be executed if vrdpServer is null */
     Assert (!vrdpServer.isNull());
 
-    vrdpServer.SetEnabled (!vrdpServer.GetEnabled());
+    vrdpServer.SetEnabled (aOn);
     updateAppearanceOf (VRDPStuff);
 }
 
@@ -1888,18 +1905,6 @@ void VBoxConsoleWnd::prepareDVDMenu()
 }
 
 /**
- *  Prepares the "VRDP enable/disable" menu.
- */
-void VBoxConsoleWnd::prepareVRDPMenu()
-{
-    if (!console) return;
-
-    CVRDPServer vrdpServer = csession.GetMachine().GetVRDPServer();
-    devicesVRDPMenu->clear();
-    devicesVRDPMenu->insertItem (vrdpServer.GetEnabled() ? tr ("Disable") : tr ("Enable"));
-}
-
-/**
  *  Captures a floppy device corresponding to a given menu id.
  */
 void VBoxConsoleWnd::captureFloppy (int id)
@@ -2016,6 +2021,16 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     if (ind == vrdp_state)
     {
         devicesVRDPMenu->exec (e->globalPos());
+    }
+    else
+    if (ind == autoresize_state)
+    {
+        vmAutoresizeMenu->exec (e->globalPos());
+    }
+    else
+    if (ind == mouse_state)
+    {
+        vmDisMouseIntegrMenu->exec (e->globalPos());
     }
 }
 
