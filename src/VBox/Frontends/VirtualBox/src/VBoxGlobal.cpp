@@ -759,7 +759,7 @@ QString VBoxGlobal::detailsReport (
                 .arg (QString ("%1 %2")
                     .arg (toString (hda.GetController()))
                     .arg (toString (hda.GetController(), hda.GetDeviceNumber())))
-                .arg (QString ("%1<br>[%2]")
+                .arg (QString ("%1 [<nobr>%2</nobr>]")
                     .arg (prepareFileNameForHTML (src))
                     .arg (details (hd, isNewVM /* predict */)));
             ++ rows;
@@ -935,10 +935,17 @@ QString VBoxGlobal::detailsReport (
                 CNetworkAdapter adapter = m.GetNetworkAdapter (slot);
                 if (adapter.GetEnabled())
                 {
+                    CEnums::NetworkAttachmentType type = adapter.GetAttachmentType();
+                    QString attType = vboxGlobal().toString (type);
+                    if (type == CEnums::HostInterfaceNetworkAttachment)
+                        attType += " \"" + adapter.GetHostInterface() + "\"";
+                    if (type == CEnums::InternalNetworkAttachment)
+                        attType += " \"" + adapter.GetInternalNetwork() + "\"";
+                    
                     item += QString (sSectionItemTpl)
-                        .arg (tr ("Adapter (Slot %1)", "details report (network)")
+                        .arg (tr ("Adapter %1", "details report (network)")
                               .arg (adapter.GetSlot()))
-                        .arg (vboxGlobal().toString (adapter.GetAttachmentType()));
+                        .arg (attType);
                     ++ rows;
                 }
             }
@@ -986,6 +993,32 @@ QString VBoxGlobal::detailsReport (
                     .arg ("usb_16px.png", /* icon */
                           "#usb", /* link */
                           tr ("USB Controller", "details report"), /* title */
+                          item); /* items */
+            }
+        }
+        /* VRDP */
+        {
+            CVRDPServer srv = m.GetVRDPServer();
+            if (!srv.isNull())
+            {
+                /* the VRDP server may be unavailable (i.e. in VirtualBox OSE) */
+
+                if (srv.GetEnabled())
+                {
+                    item = QString (sSectionItemTpl)
+                        .arg (tr ("VRDP Server Port", "details report (VRDP)"),
+                              tr ("%1", "details report (VRDP)")
+                                  .arg (srv.GetPort()));
+                }
+                else
+                    item = QString (sSectionItemTpl)
+                        .arg (tr ("Disabled", "details report (VRDP)"), "");
+
+                detailsReport += sectionTpl
+                    .arg (2 + 1) /* rows */
+                    .arg ("vrdp_16px.png", /* icon */
+                          "#vrdp", /* link */
+                          tr ("Remote Display", "details report"), /* title */
                           item); /* items */
             }
         }
@@ -1261,9 +1294,9 @@ void VBoxGlobal::languageChange()
     deviceTypes [CEnums::NetworkDevice] =   tr ("Network", "DeviceType");
 
     diskControllerTypes [CEnums::IDE0Controller] =
-        tr ("IDE&nbsp;0", "DiskControllerType");
+        tr ("Primary", "DiskControllerType");
     diskControllerTypes [CEnums::IDE1Controller] =
-        tr ("IDE&nbsp;1", "DiskControllerType");
+        tr ("Secondary", "DiskControllerType");
 
     diskTypes [CEnums::NormalHardDisk] =
         tr ("Normal", "DiskType");
