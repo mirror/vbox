@@ -2183,7 +2183,7 @@ static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
         rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
         AssertReleaseRC(rc);
 
-        if (pData->fLinkUp)
+        if (RT_LIKELY(pcnetIsLinkUp(pData)))
             rc = pcnetAsyncTransmit(pData);
         PDMCritSectLeave(&pData->CritSect);
     }
