@@ -1695,7 +1695,8 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
                           "HostAudioNotResponding",
                           N_("Some audio devices could not be opened. Guest applications "
                              "generating audio output or depending on audio input may hang. "
-                             "Make sure your host audio device is working properly."));
+                             "Make sure your host audio device is working properly. Check "
+                             "the logfile for error messages of the audio subsystem."));
 
     return VINF_SUCCESS;
 }
