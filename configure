@@ -45,8 +45,8 @@ LIBSDL="-lSDL"
 LIBSDLMAIN="-lSDLmain"
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
-LIBXCURSOR="-lXcursor"
 LIBX11="-L/usr/X11R6/lib -lXext -lX11"
+LIBXCURSOR="-lXcursor"
 INCZ=""
 LIBZ="-lz"
 INCPNG=""
@@ -787,7 +787,7 @@ extern "C" int main(void)
   return 0;
 }
 ' > .tmp_src.cc
-  if test_compile $LIBXCURSOR Xcursor Xcursor; then
+  if test_compile "$LIBX11 $LIBXCURSOR" Xcursor Xcursor; then
     log_success "found"
     cnf_append "LIB_XCURSOR" `echo $LIBXCURSOR|sed 's+-l++'`
   fi
@@ -1148,8 +1148,8 @@ check_gcc
 [ "$OS" != "darwin" ] && check_sdl
 (($OSE==0)) && check_sdl_ttf
 [ "$OS" != "darwin" ] && check_alsa
-[ "$OS" != "darwin" ] && check_xcursor
 [ "$OS" != "darwin" ] && check_x
+[ "$OS" != "darwin" ] && check_xcursor
 (($XPCOM==1)) && check_qt
 
 # Linux-specific
