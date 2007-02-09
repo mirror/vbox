@@ -101,6 +101,7 @@ public:
     void cannotLoadGlobalConfig (const CVirtualBox &vbox, const QString &error);
     void cannotSaveGlobalConfig (const CVirtualBox &vbox);
     void cannotSetSystemProperties (const CSystemProperties &props);
+    void cannotAccessUSB (const COMBase &obj);
 
     void cannotCreateMachine (const CVirtualBox &vbox,
                               QWidget *parent = 0);
@@ -112,7 +113,6 @@ public:
     void cannotLoadMachineSettings (const CMachine &machine,
                                     bool strict = true,
                                     QWidget *parent = 0);
-    void cannotGetUSBController (const CMachine &machine);
 
     void cannotStartMachine (const CConsole &console);
     void cannotStartMachine (const CProgress &progress);

@@ -1241,10 +1241,10 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             /* disable validators if any */
             pageUSB->setEnabled (false);
 
-            /* If machine has something to say, show the message.
+            /* Show an error message (if there is any).
              * Note that we don't use the generic cannotLoadMachineSettings()
              * call here because we want this message to be suppressable. */
-            vboxProblem().cannotGetUSBController (machine);
+            vboxProblem().cannotAccessUSB (machine);
         }
         else
         {
