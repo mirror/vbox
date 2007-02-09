@@ -5689,6 +5689,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                 /* Restore the old lookup record for the duplicated instruction. */
                 patmr3AddP2GLookupRecord(pVM, &pPatch->patch, pCurPatchInstrHC, pCurInstrGC, PATM_LOOKUP_BOTHDIR);
 
+                /** @todo in theory we need to restore the lookup records for the remaining dirty instructions too! */
                 rc = VERR_PATCHING_REFUSED;
                 break;
             }
