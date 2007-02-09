@@ -1970,9 +1970,7 @@ static void pcnetTransmit(PCNetState *pData)
  */
 static int pcnetAsyncTransmit(PCNetState *pData)
 {
-#ifdef VBOX_WITH_STATISTICS
     unsigned cFlushIrq = 0;
-#endif
 
     Assert(PDMCritSectIsOwner(&pData->CritSect));
 
@@ -2154,9 +2152,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             ||  (CSR_LTINTEN(pData) && tmd.tmd1.ltint)
             ||  tmd.tmd1.err)
         {
-#ifdef VBOX_WITH_STATISTICS
             cFlushIrq++;
-#endif
             pData->aCSR[0] |= 0x0200;    /* set TINT */
         }
 
@@ -2164,11 +2160,12 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                                                       ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
     } while (CSR_TXON(pData));          /* transfer on */
 
-#ifdef VBOX_WITH_STATISTICS
     if (cFlushIrq) 
+    {
         STAM_COUNTER_INC(&pData->aStatXmitFlush[RT_MIN(cFlushIrq, ELEMENTS(pData->aStatXmitFlush)) - 1]);
-#endif
-    pcnetUpdateIrq(pData);
+        pcnetUpdateIrq(pData);
+    }
+
     STAM_PROFILE_ADV_STOP(&pData->StatTransmit, a);
 
     return VINF_SUCCESS;
