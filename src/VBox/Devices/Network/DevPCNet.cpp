@@ -588,13 +588,18 @@ AssertCompileSize(RMD, 16);
 
 /**
  * Load transmit message descriptor
+ * Make sure we read the own flag first.
  */
 DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS addr)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
+    uint8_t    ownbyte;
+
     if (!BCR_SWSTYLE(pData))
     {
         uint16_t xda[4];
+
+        PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(xda));
         ((uint32_t *)tmd)[0] = (uint32_t)xda[0] | ((uint32_t)(xda[1] & 0x00ff) << 16);
         ((uint32_t *)tmd)[1] = (uint32_t)xda[2] | ((uint32_t)(xda[1] & 0xff00) << 16);
@@ -602,16 +607,27 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS addr)
         ((uint32_t *)tmd)[3] = 0;
     }
     else if (BCR_SWSTYLE(pData) != 3)
+    {
+        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         PDMDevHlpPhysRead(pDevIns, addr, (void*)tmd, 16);
+    }
     else
     {
         uint32_t xda[4];
+        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(xda));
         ((uint32_t *)tmd)[0] = xda[2];
         ((uint32_t *)tmd)[1] = xda[1];
         ((uint32_t *)tmd)[2] = xda[0];
         ((uint32_t *)tmd)[3] = xda[3];
     }
+    /* Double check the own bit; guest drivers might be buggy and lock prefixes in the recompiler are ignored by other threads. */
+#ifdef DEBUG
+    if (tmd->tmd1.own == 0 && (ownbyte & 0x80))
+        Log(("pcnetTmdLoad: own bit flipped while reading!!\n"));
+#endif
+    if (ownbyte & 0x80)
+        tmd->tmd1.own = 1;
 }
 
 /**
@@ -662,9 +678,12 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS add
 DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
+    uint8_t    ownbyte;
+
     if (!BCR_SWSTYLE(pData))
     {
         uint16_t rda[4];
+        PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = (uint32_t)rda[0] | ((rda[1] & 0x00ff) << 16);
         ((uint32_t *)rmd)[1] = (uint32_t)rda[2] | ((rda[1] & 0xff00) << 16);
@@ -672,16 +691,27 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
         ((uint32_t *)rmd)[3] = 0;
     }
     else if (BCR_SWSTYLE(pData) != 3)
+    {
+        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         PDMDevHlpPhysRead(pDevIns, addr, (void*)rmd, 16);
+    }
     else
     {
         uint32_t rda[4];
+        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = rda[2];
         ((uint32_t *)rmd)[1] = rda[1];
         ((uint32_t *)rmd)[2] = rda[0];
         ((uint32_t *)rmd)[3] = rda[3];
     }
+    /* Double check the own bit; guest drivers might be buggy and lock prefixes in the recompiler are ignored by other threads. */
+#ifdef DEBUG
+    if (rmd->rmd1.own == 0 && (ownbyte & 0x80))
+        Log(("pcnetTmdLoad: own bit flipped while reading!!\n"));
+#endif
+    if (ownbyte & 0x80)
+        rmd->rmd1.own = 1;
 }
 
 /**
