@@ -674,6 +674,7 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS add
 
 /**
  * Load receive message descriptor
+ * Make sure we read the own flag first.
  */
 DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
 {
@@ -708,7 +709,7 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
     /* Double check the own bit; guest drivers might be buggy and lock prefixes in the recompiler are ignored by other threads. */
 #ifdef DEBUG
     if (rmd->rmd1.own == 0 && (ownbyte & 0x80))
-        Log(("pcnetTmdLoad: own bit flipped while reading!!\n"));
+        Log(("pcnetRmdLoad: own bit flipped while reading!!\n"));
 #endif
     if (ownbyte & 0x80)
         rmd->rmd1.own = 1;
