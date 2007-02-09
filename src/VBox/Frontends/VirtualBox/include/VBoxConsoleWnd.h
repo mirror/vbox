@@ -44,6 +44,7 @@ class VBoxConsoleView;
 class QIStateIndicator;
 
 class VBoxUSBMenu;
+class VBoxSwitchMenu;
 class VBoxUSBLedTip;
 
 class VBoxConsoleWnd : public QMainWindow
@@ -117,18 +118,17 @@ private slots:
     void vmACPIShutdown();
     void vmClose();
     void vmTakeSnapshot();
-    void vmDisableMouseIntegr();
+    void vmDisableMouseIntegr (bool);
 
     void devicesMountFloppyImage();
     void devicesUnmountFloppy();
     void devicesMountDVDImage();
     void devicesUnmountDVD();
-    void devicesSwitchVrdp();
+    void devicesSwitchVrdp (bool);
     void devicesInstallGuestAdditions();
 
     void prepareFloppyMenu();
     void prepareDVDMenu();
-    void prepareVRDPMenu();
 
     void captureFloppy (int id);
     void captureDVD (int id);
@@ -167,6 +167,10 @@ private:
     QAction *vmTakeSnapshotAction;
     QAction *vmDisableMouseIntegrAction;
 
+    // VM popup menus
+    VBoxSwitchMenu *vmAutoresizeMenu;
+    VBoxSwitchMenu *vmDisMouseIntegrMenu;
+
     // Devices actions
     QAction *devicesMountFloppyImageAction;
     QAction *devicesUnmountFloppyAction;
@@ -191,7 +195,7 @@ private:
     QPopupMenu *devicesMountFloppyMenu;
     QPopupMenu *devicesMountDVDMenu;
     VBoxUSBMenu *devicesUSBMenu;
-    QPopupMenu *devicesVRDPMenu;
+    VBoxSwitchMenu *devicesVRDPMenu;
 
     int devicesUSBMenuSeparatorId;
     int devicesVRDPMenuSeparatorId;
