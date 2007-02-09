@@ -5686,6 +5686,9 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                 DBGFR3DisasInstr(pVM, pCtx->cs, pCurInstrGC, szBuf, sizeof(szBuf));
                 Log(("NEW:   %s (FAILED)\n", szBuf));
 #endif
+                /* Restore the old lookup record for the duplicated instruction. */
+                patmr3AddP2GLookupRecord(pVM, &pPatch->patch, pCurPatchInstrHC, pCurInstrGC, PATM_LOOKUP_BOTHDIR);
+
                 rc = VERR_PATCHING_REFUSED;
                 break;
             }
