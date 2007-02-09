@@ -1921,6 +1921,19 @@ static void pcnetXmitFailTMDLinkDown(PCNetState *pData, TMD *pTmd)
          PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
 }
 
+/**
+ * Fails a TMD with a generic error.
+ */
+static void pcnetXmitFailTMDGeneric(PCNetState *pData, TMD *pTmd)
+{
+    /* make carrier error - hope this is correct. */
+    pTmd->tmd2.lcar = pTmd->tmd1.err = 1;
+    pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR */
+    pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
+    Log(("#%d pcnetTransmit: Signaling send error. swstyle=%#x\n",
+         PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
+}
+
 
 /**
  * Transmit a loopback frame.
@@ -2044,25 +2057,36 @@ static int pcnetAsyncTransmit(PCNetState *pData)
         {
             const unsigned cb = 4096 - tmd.tmd1.bcnt;
             Log(("#%d pcnetTransmit: stp&enp: cb=%d xmtrc=%#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, cb, CSR_XMTRC(pData)));
+
             if (RT_LIKELY(pcnetIsLinkUp(pData) || CSR_LOOP(pData)))
             {
                 RTR3PTR pv;
 
-                int rc = PDMDevHlpPhys2HCVirt(pData->pDevInsHC,
-                                              PHYSADDR(pData, tmd.tmd0.tbadr), cb, &pv);
-                if (RT_SUCCESS(rc))
-                    pcnetXmitZeroCopyFrame(pData, pv, cb);
-                else
+                if (RT_LIKELY(cb < 4096))
                 {
-                    pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
+                    int rc = PDMDevHlpPhys2HCVirt(pData->pDevInsHC,
+                                                  PHYSADDR(pData, tmd.tmd0.tbadr), cb, &pv);
+                    if (RT_SUCCESS(rc))
+                        pcnetXmitZeroCopyFrame(pData, pv, cb);
+                    else
+                    {
+                        pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
+                    }
+                    if (CSR_LOOP(pData))
+                        pcnetXmitLoopbackFrame(pData);
+                    else
+                    {
+                        int rc = pcnetXmitCompleteFrame(pData);
+                        if (VBOX_FAILURE(rc))
+                            return rc; /* can happen during termination */
+                    }
                 }
-                if (CSR_LOOP(pData))
-                    pcnetXmitLoopbackFrame(pData);
                 else
                 {
-                    int rc = pcnetXmitCompleteFrame(pData);
-                    if (VBOX_FAILURE(rc))
-                        return rc; /* can happen during termination */
+                    /* This is only acceptable if it's not the last buffer in the chain (stp=1, enp=0) */
+                    LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> signalling error\n"));
+
+                    pcnetXmitFailTMDGeneric(pData, &tmd);
                 }
             }
             else
@@ -2172,6 +2196,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
              * We underflowed in a previous transfer, or the driver is giving us shit.
              * Simply stop the transmitting for now.
              */
+            /** @todo according to the specs we're supposed to clear the own bit and move on to the next one. */
             Log(("#%d pcnetTransmit: guest is giving us shit!\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
             break;
         }
@@ -2186,6 +2211,8 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             cFlushIrq++;
             pData->aCSR[0] |= 0x0200;    /* set TINT */
         }
+
+        /** @todo should we continue after an error (tmd.tmd1.err) or not? */
 
         STAM_COUNTER_INC(&pData->aStatXmitChainCounts[RT_MIN(cBuffers,
                                                       ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
