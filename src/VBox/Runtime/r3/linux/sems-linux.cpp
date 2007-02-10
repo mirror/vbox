@@ -180,33 +180,45 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     for (unsigned i = 0;; i++)
     {
         int32_t iCur = pIntEventSem->cWaiters;
-        if (iCur < 0)
-            break; /* already signaled */
         if (iCur == 0)
         {
             if (ASMAtomicCmpXchgS32(&pIntEventSem->cWaiters, -1, 0))
                 break; /* nobody is waiting */
         }
-        else if (ASMAtomicCmpXchgS32(&pIntEventSem->cWaiters, iCur - 1, iCur))
+        else if (iCur < 0)
+            break; /* already signaled */
+        else 
         {
-            /* somebody is waiting, wake up one. */
+            /* somebody is waiting, try wake up one of them. */
             long cWoken = sys_futex(&pIntEventSem->cWaiters, FUTEX_WAKE, 1, NULL, NULL, 0);
-            if (cWoken == 1)
+            if (RT_LIKELY(cWoken == 1))
+            {
+                ASMAtomicDecS32(&pIntEventSem->cWaiters);
                 break;
-            ASMAtomicIncS32(&pIntEventSem->cWaiters);
+            }
             AssertMsg(cWoken == 0, ("%ld\n", cWoken));
 
             /* 
-             * We're waiting for the threads to start executing, that's kind of 
-             * silly really. But for now, take care that we don't prevent them 
-             * from executing.
+             * This path is taken in two situations:
+             *      1) A waiting thread is returning from the sys_futex call with a 
+             *         non-zero return value.
+             *      2) There are two threads signaling the event at the 
+             *         same time and only one thread waiting.
+             *
+             * At this point we know that nobody is activly waiting on the event but 
+             * at the same time, we are racing someone updating the state. The current 
+             * strategy is to spin till the thread racing us is done, this is kind of 
+             * brain dead and need fixing of course.
              */
-            if ((i % 128) == 127)
-                usleep(1000);
-            else if ((i % 16) == 15)
-                pthread_yield();
-            else
-                Assert(i < 1024);
+            if (RT_UNLIKELY(i > 32))
+            {
+                if ((i % 128) == 127)
+                    usleep(1000);
+                else if (!(i % 4))
+                    pthread_yield();
+                else
+                    AssertReleaseMsg(i < 4096, ("iCur=%#x pIntEventSem=%p\n", iCur, pIntEventSem));
+            }
         }
     }
     return VINF_SUCCESS;
@@ -259,10 +271,12 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
             long rc = sys_futex(&pIntEventSem->cWaiters, FUTEX_WAIT, iNew, pTimeout, NULL, 0);
             if (RT_UNLIKELY(pIntEventSem->iMagic != RTSEMEVENT_MAGIC))
                 return VERR_SEM_DESTROYED;
+
+            /* Did somebody wake us up us from RTSemEventSignal()? */
             if (rc == 0)
                 return VINF_SUCCESS; 
 
-            /* don't count us among the waiters. */
+            /* No, then the kernel woke us up or we failed going to sleep. Adjust the accounting. */
             iNew = ASMAtomicDecS32(&pIntEventSem->cWaiters);
             Assert(iNew >= 0);
 
@@ -290,20 +304,10 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
         }
         else
         {
-            /*
-             * Somebody is signaling the semaphore, let's try again.
-             * But take care to yield and sleep after a while like always. 
-             * (Could probably change this to string only and return right away...)
-             */
-            ASMAtomicDecS32(&pIntEventSem->cWaiters);
-            if ((i % 128) == 127) 
-                usleep(1000);
-            else if ((i % 16) == 15)
-                pthread_yield();
-            else
-                AssertReleaseMsg(i < 4096, ("iNew=%d\n", iNew));
+            /* this can't happen. */
             if (RT_UNLIKELY(pIntEventSem->iMagic != RTSEMEVENT_MAGIC))
                 return VERR_SEM_DESTROYED;
+            AssertReleaseMsgFailed(("iNew=%d\n", iNew));
         }
     }
 }
