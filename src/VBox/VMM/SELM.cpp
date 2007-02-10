@@ -201,7 +201,7 @@ SELMR3DECL(int) SELMR3InitFinalize(PVM pVM)
      */
     bool f;
     int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "DoubleFault", &f);
-#if !defined(DEBUG_bird)
+#if !defined(DEBUG_bird) && !defined(__AMD64__) /** @todo Remember to remove __AMD64__ here! */
     if (VBOX_SUCCESS(rc) && f)
 #endif
     {
