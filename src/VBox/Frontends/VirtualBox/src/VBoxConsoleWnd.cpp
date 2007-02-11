@@ -557,6 +557,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     /* restore the position of the window and some options */
     {
         QString on = cmachine.GetExtraData (GUI_Fullscreen);
+#ifdef Q_WS_X11
+        /* Workaround: When switching to fullscreen, the display is sometimes not updated */
+        console->setFrameStyle (QFrame::NoFrame);
+#endif
         if (on == "on")
             vmFullscreenAction->setOn (on);
 
@@ -1517,7 +1521,7 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
             ((QWidget *) obj)->show();
         hidden_children.clear();
         /* restore normal values */
-        setMinimumSize (QSize());
+        setMinimumSize (QSize(0, 0));
         setMaximumSize (QSize (QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
         move (normal_pos);
         resize (normal_size);
