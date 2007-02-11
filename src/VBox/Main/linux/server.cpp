@@ -976,7 +976,7 @@ int main (int argc, char **argv)
             for (int i=iSize; i>0; i--)
                 putchar('*');
             printf ("\n%s\n", szBuf);
-            printf ("(C) 2004-2006 InnoTek Systemberatung GmbH\n");
+            printf ("(C) 2004-2007 InnoTek Systemberatung GmbH\n");
             printf ("All rights reserved.\n");
 #ifdef DEBUG
             printf ("Debug version.\n");
