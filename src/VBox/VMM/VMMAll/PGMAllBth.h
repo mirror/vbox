@@ -1953,6 +1953,22 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                         /* Make shadow PTE. */
                         RTHCPHYS    HCPhys = pRam->aHCPhys[iHCPage];
                         SHWPTE      PteDst;
+
+                        /* Make sure the RAM has already been allocated. */
+                        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
+                        {
+                            if (RT_UNLIKELY(!(pRam->aHCPhys[iHCPage] & X86_PTE_PAE_PG_MASK)))
+                            {
+#ifdef IN_RING3
+                                int rc = pgmr3PhysGrowRange(pVM, GCPhys);
+#else
+                                int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
+#endif
+                                if (rc != VINF_SUCCESS)
+                                    return rc;
+                            }
+                        }
+
                         if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
                         {
                             if (!(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL)))
