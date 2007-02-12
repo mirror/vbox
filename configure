@@ -652,6 +652,7 @@ extern "C" int main(void)
 # Check for pam, needed by VRDPAuth
 # Version 79 was introduced in 9/2005, do we support older versions?
 # Debian/sarge uses 76
+# OpenSUSE comes with 0.99.xxx where they changed the versioning scheme.
 #
 function check_pam()
 {
@@ -670,6 +671,30 @@ extern "C" int main(void)
   else
   {
     printf(", expected version 76 or higher\n");
+    return 1;
+  }
+}
+' > .tmp_src.cc
+  if test_compile "-lpam" pam pam nofatal; then
+    if test_execute nofatal; then
+      return 0;
+    fi
+  fi
+  test_header linux_pam
+  echo '
+#include <cstdio>
+#include <security/pam_appl.h>
+extern "C" int main(void)
+{
+  printf("found version %d.%d", __LINUX_PAM__, __LINUX_PAM_MINOR__);
+  if (__LINUX_PAM__ >= 1)
+  {
+    printf(", OK.\n");
+    return 0;
+  }
+  else
+  {
+    printf(", expected version 1.0 or higher\n");
     return 1;
   }
 }
