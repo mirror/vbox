@@ -179,7 +179,7 @@ PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr)
 {
 #ifdef PGM_DYNAMIC_RAM_ALLOC
-    if ((GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK) != ((GCPhys+cbRange) & PGM_DYNAMIC_CHUNK_BASE_MASK))
+    if ((GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK) != ((GCPhys+cbRange-1) & PGM_DYNAMIC_CHUNK_BASE_MASK))
     {
         AssertMsgFailed(("PGMPhysGCPhys2HCPtr %VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
         return VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY;
