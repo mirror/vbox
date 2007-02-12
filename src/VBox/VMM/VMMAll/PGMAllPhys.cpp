@@ -169,12 +169,23 @@ PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
  *          page but has no physical backing.
  * @returns VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid
  *          GC physical address.
+ * @returns VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY if the range crosses
+ *          a dynamic ram chunk boundary
  * @param   pVM     The VM handle.
  * @param   GCPhys  The GC physical address to convert.
+ * @param   cbRange Physical range
  * @param   pHCPtr  Where to store the HC pointer on success.
  */
-PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
+PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr)
 {
+#ifdef PGM_DYNAMIC_RAM_ALLOC
+    if ((GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK) != ((GCPhys+cbRange) & PGM_DYNAMIC_CHUNK_BASE_MASK))
+    {
+        AssertMsgFailed(("PGMPhysGCPhys2HCPtr %VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
+        return VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY;
+    }
+#endif
+
     for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
          pRam;
          pRam = CTXSUFF(pRam->pNext))
@@ -525,7 +536,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
     RTGCPHYS GCPhys;
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (VBOX_SUCCESS(rc))
-        rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPtr);
+        rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within on page */, pHCPtr);
     /** @todo real mode & protected mode? */
     return rc;
 }
@@ -562,7 +573,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
             {
                 if ((fFlags & X86_CR4_PSE) && Pde.b.u1Size)
                 {   /* (big page) */
-                    rc = PGMPhysGCPhys2HCPtr(pVM, (Pde.u & X86_PDE4M_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_4M_OFFSET_MASK), pHCPtr);
+                    rc = PGMPhysGCPhys2HCPtr(pVM, (Pde.u & X86_PDE4M_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_4M_OFFSET_MASK), 1 /* we always stay within on page */, pHCPtr);
                 }
                 else
                 {   /* (normal page) */
@@ -572,7 +583,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
                     {
                         VBOXPTE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_SHIFT) & X86_PT_MASK];
                         if (Pte.n.u1Present)
-                            return PGMPhysGCPhys2HCPtr(pVM, (Pte.u & X86_PTE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPtr);
+                            return PGMPhysGCPhys2HCPtr(pVM, (Pte.u & X86_PTE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within on page */, pHCPtr);
                         rc = VERR_PAGE_NOT_PRESENT;
                     }
                 }
@@ -600,7 +611,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
                     {
                         if ((fFlags & X86_CR4_PSE) && Pde.b.u1Size)
                         {   /* (big page) */
-                            rc = PGMPhysGCPhys2HCPtr(pVM, (Pde.u & X86_PDE4M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_4M_OFFSET_MASK), pHCPtr);
+                            rc = PGMPhysGCPhys2HCPtr(pVM, (Pde.u & X86_PDE4M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_4M_OFFSET_MASK), 1 /* we always stay within on page */, pHCPtr);
                         }
                         else
                         {   /* (normal page) */
@@ -610,7 +621,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
                             {
                                 X86PTEPAE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK];
                                 if (Pte.n.u1Present)
-                                    return PGMPhysGCPhys2HCPtr(pVM, (Pte.u & X86_PTE_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPtr);
+                                    return PGMPhysGCPhys2HCPtr(pVM, (Pte.u & X86_PTE_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within on page */, pHCPtr);
                                 rc = VERR_PAGE_NOT_PRESENT;
                             }
                         }

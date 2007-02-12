@@ -261,7 +261,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 # ifdef IN_GC
             rc = PGMGCDynMapGCPage(pVM, PdeSrc.u & X86_PDE_PG_MASK, (void **)&pPTSrc);
 # else
-            pPTSrc = (PVBOXPT)MMPhysGCPhys2HCVirt(pVM, PdeSrc.u & X86_PDE_PG_MASK);
+            pPTSrc = (PVBOXPT)MMPhysGCPhys2HCVirt(pVM, PdeSrc.u & X86_PDE_PG_MASK, sizeof(*pPTSrc));
             if (pPTSrc == 0)
                 rc = VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 # endif
@@ -2303,7 +2303,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
 
     Assert(pPDSrc);
 #ifndef IN_GC
-    Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK)) == pPDSrc);
+    Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 #endif
 
     /*
