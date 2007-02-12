@@ -610,6 +610,7 @@ static const REMPARMDESC g_aArgsPGMPhysGCPhys2HCPtr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT) },
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTHCPTR) }
 };
 static const REMPARMDESC g_aArgsPGMPhysGCPtr2HCPtrByGstCR3[] =
