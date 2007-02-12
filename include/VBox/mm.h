@@ -580,10 +580,11 @@ MMDECL(int) MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
  * @returns HC virtual address.
  * @param   pVM         VM Handle
  * @param   GCPhys      Guest context physical address.
+ * @param   cbRange     Physical range
  * @thread  The Emulation Thread.
  * @deprecated
  */
-MMDECL(void *) MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys);
+MMDECL(void *) MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 
 /**
  * Convert GC virtual address to HC virtual address.

@@ -786,9 +786,10 @@ PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys);
  *          GC physical address.
  * @param   pVM     The VM handle.
  * @param   GCPhys  The GC physical address to convert.
+ * @param   cbRange Physical range
  * @param   pHCPtr  Where to store the HC pointer on success.
  */
-PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr);
+PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr);
 
 /**
  * Validates a HC pointer.
