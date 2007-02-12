@@ -80,7 +80,8 @@ RTDECL(void *) RTMemExecAlloc(size_t cb)
     /*
      * Use mmap to get low memory.
      */
-    void *pv = mmap(NULL, RT_ALIGN_Z(cb, PAGE_SIZE), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS 
+    size_t cbAlloc = RT_ALIGN_Z(cb + sizeof(RTMEMEXECHDR), PAGE_SIZE);
+    void *pv = mmap(NULL, cbAlloc, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS 
 #if defined(__AMD64__) && defined(MAP_32BIT)
                     | MAP_32BIT
 #endif
@@ -88,7 +89,7 @@ RTDECL(void *) RTMemExecAlloc(size_t cb)
     AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
     PRTMEMEXECHDR pHdr = (PRTMEMEXECHDR)pv;
     pHdr->uMagic = RTMEMEXECHDR_MAGIC;
-    pHdr->cb = RT_ALIGN_Z(cb, PAGE_SIZE);
+    pHdr->cb = cbAlloc;
     pv = pHdr + 1;
 
 #else
