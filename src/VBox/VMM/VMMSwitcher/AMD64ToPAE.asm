@@ -20,6 +20,7 @@
 ;
 
 ;%define DEBUG_STUFF 1
+%define STRICT_IF 1
 
 ;*******************************************************************************
 ;*  Defined Constants And Macros                                               *
@@ -65,6 +66,16 @@ BEGINPROC vmmR0HostToGuest
 %ifdef DEBUG_STUFF
     COM64_S_NEWLINE
     COM64_S_CHAR '^'
+%endif
+
+%ifdef STRICT_IF
+    pushf
+    pop     rax
+    test    eax, X86_EFL_IF
+    jz      .if_clear_in
+    mov     eax, 0c0ffee00h
+    ret
+.if_clear_in:
 %endif
 
     ;
@@ -706,6 +717,15 @@ vmmGCGuestToHostAsm_EIPDone:
 
     ; special registers which may change.
 vmmGCGuestToHostAsm_SkipHyperRegs:
+%ifdef STRICT_IF
+    pushf
+    pop     ecx
+    test    ecx, X86_EFL_IF
+    jz      .if_clear_out
+    mov     eax, 0c0ffee01h
+    cli
+.if_clear_out:
+%endif
     ; str     [edx + CPUM.Hyper.tr] - double fault only, and it won't be right then either.
     sldt    [edx + CPUM.Hyper.ldtr]
 
