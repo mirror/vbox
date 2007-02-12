@@ -661,7 +661,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     /* the low ROM mapping. */
     unsigned cb = RT_MIN(g_cbPcBiosBinary, 128 * _1K);
-    const uint8_t *pb1 = (uint8_t *)MMPhysGCPhys2HCVirt(pVM, 0x00100000 - cb);
+    const uint8_t *pb1 = (uint8_t *)MMPhysGCPhys2HCVirt(pVM, 0x00100000 - cb, cb);
     AssertRelease(pb1);
     const uint8_t *pb2 = &g_abPcBiosBinary[g_cbPcBiosBinary - cb];
     if (memcmp(pb1, pb2, cb))
@@ -674,7 +674,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     }
 
     /* the high ROM mapping. */
-    pb1 = (uint8_t *)MMPhysGCPhys2HCVirt(pVM, (uint32_t)-g_cbPcBiosBinary);
+    pb1 = (uint8_t *)MMPhysGCPhys2HCVirt(pVM, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary);
     AssertRelease(pb1);
     pb2 = &g_abPcBiosBinary[0];
     if (memcmp(pb1, pb2, g_cbPcBiosBinary))
