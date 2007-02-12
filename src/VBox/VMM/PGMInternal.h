@@ -237,7 +237,7 @@
 #ifdef IN_GC
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMGCDynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #else
-# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
 
 /** @def PGM_GCPHYS_2_PTR_EX
@@ -255,7 +255,7 @@
 #ifdef IN_GC
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMGCDynMapGCPageEx(pVM, GCPhys, (void **)(ppv))
 #else
-# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
 
 /** @def PGM_INVL_PG

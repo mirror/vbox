@@ -3104,8 +3104,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_Phys2HCVirt: caller='%s'/%d: GCPhys=%VGp cbRange=%#x ppvHC=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, cbRange, ppvHC));
 
-    /** @todo make an specific PGMR3Phys api for this later which uses cbRange! For now we assume no trouble! */
-    int rc = PGMPhysGCPhys2HCPtr(pDevIns->Internal.s.pVMHC, GCPhys, ppvHC);
+    int rc = PGMPhysGCPhys2HCPtr(pDevIns->Internal.s.pVMHC, GCPhys, cbRange, ppvHC);
 
     LogFlow(("pdmR3DevHlp_Phys2HCVirt: caller='%s'/%d: returns %Vrc *ppvHC=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *ppvHC));
 

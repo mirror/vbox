@@ -937,7 +937,7 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint32_t cr3, bool fRawR0) /** @to
      */
     PVBOXPD pPD = pVM->pgm.s.pGuestPDHC; /** @todo Fix PAE! */
     Assert(pPD);
-    Assert(pPD == (PVBOXPD)MMPhysGCPhys2HCVirt(pVM, cr3 & X86_CR3_PAGE_MASK));
+    Assert(pPD == (PVBOXPD)MMPhysGCPhys2HCVirt(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
 
     /*
      * Iterate mappings.

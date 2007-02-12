@@ -1756,7 +1756,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
      */
     PVBOXPD     pPDSrc = pVM->pgm.s.pGuestPDHC;
     Assert(pPDSrc);
-    Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK)) == pPDSrc);
+    Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 
     /*
      * Iterate the page directory.

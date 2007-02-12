@@ -42,12 +42,13 @@
  * @returns HC virtual address.
  * @param   pVM         VM Handle
  * @param   GCPhys      Guest context physical address.
+ * @param   cbRange     Physical range
  * @deprecated
  */
-MMDECL(void *) MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys)
+MMDECL(void *) MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
 {
     void *pv;
-    int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, &pv);
+    int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, &pv);
     if (VBOX_SUCCESS(rc))
         return pv;
     AssertMsgFailed(("Invalid address GCPhys=%x\n", GCPhys));
