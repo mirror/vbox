@@ -377,6 +377,8 @@
  * This is an internal status code used to communicate back to the \#PF handler
  * that the PDE was (probably) marked not-present and it should restart the instruction. */
 #define VINF_PGM_SYNCPAGE_MODIFIED_PDE      1625
+/** Physical range crosses dynamic ram chunk boundary; translation to HC ptr not safe. */
+#define VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY  (-1626)
 /** @} */
 
 
