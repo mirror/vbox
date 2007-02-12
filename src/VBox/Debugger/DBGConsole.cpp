@@ -4566,7 +4566,7 @@ static DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
         case DBGCVAR_TYPE_GC_PHYS:
             Assert(pDbgc->pVM);
             pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
-            rc = PGMPhysGCPhys2HCPtr(pDbgc->pVM, pArg->u.GCPhys, &pResult->u.pvHCFlat);
+            rc = PGMPhysGCPhys2HCPtr(pDbgc->pVM, pArg->u.GCPhys, 1, &pResult->u.pvHCFlat);
             if (VBOX_SUCCESS(rc))
                 return 0;
             return VERR_PARSE_CONVERSION_FAILED;
