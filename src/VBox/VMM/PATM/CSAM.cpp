@@ -27,6 +27,7 @@
 #include <VBox/stam.h>
 #include <VBox/patm.h>
 #include <VBox/csam.h>
+#include <VBox/cpumdis.h>
 #include <VBox/pgm.h>
 #include <VBox/iom.h>
 #include <VBox/sup.h>
@@ -2233,15 +2234,30 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                 Log(("CSAMCheckGates: csamAnalyseCodeStream failed with %d\n", rc));
                 continue;
             }
+            /* OpenBSD guest specific patch test. */
             if (iGate >= 0x20)
             {
-                /* OpenBSD guest specific patch test (3.7 & 3.8) */
-                rc = PATMR3InstallPatch(pVM, pHandler - 3, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
-                if (VBOX_FAILURE(rc))
-                    /* OpenBSD guest specific patch test (3.9 & 4.0) */
-                    rc = PATMR3InstallPatch(pVM, pHandler - 0x2B, PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
-                if (VBOX_SUCCESS(rc))
-                    Log(("Installed OpenBSD interrupt handler prefix instruction (push cs) patch\n"));
+                PCPUMCTX    pCtx;
+                DISCPUSTATE cpu;
+                RTGCUINTPTR aOpenBsdPushCSOffset[3] = {0x03,       /* OpenBSD 3.7 & 3.8 */
+                                                       0x2B,       /* OpenBSD 4.0 installation ISO */
+                                                       0x2F};      /* OpenBSD 4.0 after install */
+
+                rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
+                AssertRC(rc);   /* can't fail */
+
+                for (int i=0;i<ELEMENTS(aOpenBsdPushCSOffset);i++)
+                {
+                    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pHandler - aOpenBsdPushCSOffset[i], &cpu, NULL);
+                    if (    rc == VINF_SUCCESS
+                        &&  cpu.pCurInstr->opcode == OP_PUSH
+                        &&  cpu.pCurInstr->param1 == OP_PARM_REG_CS)
+                    {
+                        rc = PATMR3InstallPatch(pVM, pHandler - aOpenBsdPushCSOffset[i], PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
+                        if (VBOX_SUCCESS(rc))
+                            Log(("Installed OpenBSD interrupt handler prefix instruction (push cs) patch\n"));
+                    }
+                }
             }
 
             /* Trap gates and certain interrupt gates. */
