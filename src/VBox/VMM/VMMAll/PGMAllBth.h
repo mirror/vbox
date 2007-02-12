@@ -1966,6 +1966,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
 #endif
                                 if (rc != VINF_SUCCESS)
                                     return rc;
+
+                                HCPhys = pRam->aHCPhys[iHCPage];
                             }
                         }
 
