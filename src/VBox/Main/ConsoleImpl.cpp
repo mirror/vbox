@@ -1840,7 +1840,9 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     //  Paused, Starting, Saving, Stopping, etc? if not, we should make a
     //  stricter check (mMachineState != MachineState_Running).
     if (mMachineState < MachineState_Running)
-        return setError (E_FAIL, tr ("Cannot attach a USB device to a machine which is not running.  (Machine state: %d)"), mMachineState);
+        return setError (E_FAIL,
+            tr ("Cannot attach a USB device to a machine which is not running "
+                "(machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1850,7 +1852,8 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     PPDMIBASE pBase = NULL;
     int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
     if (VBOX_FAILURE (vrc))
-        return setError (E_FAIL, tr ("The virtual machine does not have a USB controller."));
+        return setError (E_FAIL,
+            tr ("The virtual machine does not have a USB controller"));
 
     PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
         pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
