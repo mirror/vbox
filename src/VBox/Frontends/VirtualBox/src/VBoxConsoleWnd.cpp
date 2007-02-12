@@ -556,32 +556,32 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     /* restore the position of the window and some options */
     {
-        QString on = cmachine.GetExtraData (GUI_Fullscreen);
+        QString str = cmachine.GetExtraData (GUI_Fullscreen);
 #ifdef Q_WS_X11
         /* Workaround: When switching to fullscreen, the display is sometimes not updated */
         console->setFrameStyle (QFrame::NoFrame);
 #endif
-        if (on == "on")
-            vmFullscreenAction->setOn (on);
+        if (str == "on")
+            vmFullscreenAction->setOn (true);
 
-        on = cmachine.GetExtraData (GUI_AutoresizeGuest);
-        if (on == "on")
-            vmAutoresizeGuestAction->setOn (on);
+        str = cmachine.GetExtraData (GUI_AutoresizeGuest);
+        if (str != "off")
+            vmAutoresizeGuestAction->setOn (true);
 
-        QString winPos = cmachine.GetExtraData (GUI_LastWindowPosition);
+        str = cmachine.GetExtraData (GUI_LastWindowPosition);
 
         QRect ar = QApplication::desktop()->availableGeometry (this);
         bool ok = false, max = false;
         int x = 0, y = 0, w = 0, h = 0;
-        x = winPos.section (',', 0, 0).toInt (&ok);
+        x = str.section (',', 0, 0).toInt (&ok);
         if (ok)
-            y = winPos.section (',', 1, 1).toInt (&ok);
+            y = str.section (',', 1, 1).toInt (&ok);
         if (ok)
-            w = winPos.section (',', 2, 2).toInt (&ok);
+            w = str.section (',', 2, 2).toInt (&ok);
         if (ok)
-            h = winPos.section (',', 3, 3).toInt (&ok);
+            h = str.section (',', 3, 3).toInt (&ok);
         if (ok)
-            max = winPos.section (',', 4, 4) == GUI_LastWindowPosition_Max;
+            max = str.section (',', 4, 4) == GUI_LastWindowPosition_Max;
         if (ok)
         {
             normal_pos = QPoint (x, y);
