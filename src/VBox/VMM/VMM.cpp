@@ -2775,6 +2775,24 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         }
 
         /*
+         * Interrupt masking.
+         */
+        RTPrintf("VMM: interrupt masking...\n"); RTStrmFlush(g_pStdOut); RTThreadSleep(250);
+        for (i = 0; i < 10000; i++)
+        {
+            uint64_t StartTick = ASMReadTSC();
+            rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_INTERRUPT_MASKING, 0);
+            if (rc != VINF_SUCCESS)
+            {
+                RTPrintf("VMM: Interrupt masking failed: rc=%Vrc\n", rc);
+                return rc;
+            }
+            uint64_t Ticks = ASMReadTSC() - StartTick;
+            if (Ticks < (g_pSUPGlobalInfoPage->u64CpuHz / 10000))
+                RTPrintf("Warning: Ticks=%RU64 (< %RU64)\n", Ticks, g_pSUPGlobalInfoPage->u64CpuHz / 10000);
+        }
+
+        /*
          * Interrupt forwarding.
          */
         CPUMHyperSetCtxCore(pVM, NULL);
