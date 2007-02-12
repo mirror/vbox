@@ -3455,7 +3455,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     else
     {
         /* physical address */
-        int rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, &pvPC);
+        int rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16, &pvPC);
         if (VBOX_FAILURE(rc))
             return false;
     }
@@ -3547,7 +3547,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     {
 
         /* physical address */
-        int rc = PGMPhysGCPhys2HCPtr(pVM, (RTGCPHYS)GCPtrPC, &pvPC);
+        int rc = PGMPhysGCPhys2HCPtr(pVM, (RTGCPHYS)GCPtrPC, 16, &pvPC);
         if (VBOX_FAILURE(rc))
             return false;
     }
