@@ -944,8 +944,8 @@ endif
 
 ifeq ($(VBOX_LDR_FMT32),macho)
 TEMPLATE_VBOXGC_TOOL                = GCC4MACHO
-TEMPLATE_VBOXGC_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-common -msoft-float -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-common -msoft-float -Wno-trigraphs -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-common -msoft-float -static -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-common -msoft-float -static -Wno-trigraphs -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXGC_LDFLAGS             = -dynamic -nostdlib
 #TEMPLATE_VBOXGC_LDFLAGS.release     = -Wl,-S ???
 TEMPLATE_VBOXGC_LIBS                = \
@@ -1041,8 +1041,8 @@ endif
 
 ifeq ($(VBOX_LDR_FMT),macho)
 TEMPLATE_VBOXR0_TOOL                = GCC4MACHO
-TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-common -msoft-float -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXR0_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-common -msoft-float -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-common -msoft-float -static -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXR0_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-common -msoft-float -static -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXR0_LDFLAGS             = -dynamic -nostdlib
 #TEMPLATE_VBOXR0_LDFLAGS.release     = -Wl,-S ???
 TEMPLATE_VBOXR0_LIBS                = \
