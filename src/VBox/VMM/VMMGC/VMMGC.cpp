@@ -27,6 +27,7 @@
 #include <VBox/vmm.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/sup.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -91,6 +92,30 @@ VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg)
          */
         case VMMGC_DO_TESTCASE_NOP:
             return 0;
+
+        /*
+         * Delay for ~100us.
+         */
+        case VMMGC_DO_TESTCASE_INTERRUPT_MASKING:
+        {
+            uint64_t u64MaxTicks = (g_pSUPGlobalInfoPage ? g_pSUPGlobalInfoPage->u64CpuHz : _2G) / 10000;
+            uint64_t u64StartTSC = ASMReadTSC();
+            uint64_t u64TicksNow;
+            uint32_t volatile i = 0;
+
+            do
+            {
+                /* waste some time and protect against getting stuck. */
+                for (uint32_t volatile j = 0; j < 1000; j++, i++)
+                    if (i > _2G32)
+                        return VERR_GENERAL_FAILURE;
+
+                /* check if we're done.*/
+                u64TicksNow = ASMReadTSC() - u64StartTSC;
+            } while (u64TicksNow < u64MaxTicks);
+
+            return VINF_SUCCESS;
+        }
 
         /*
          * Trap testcases and unknown operations.
