@@ -806,6 +806,22 @@ VMR3DECL(int) VMR3Suspend(PVM pVM)
 
 
 /**
+ * Suspends a running VM and prevent state saving until the VM is resumed or stopped.
+ *
+ * @returns 0 on success.
+ * @returns VBox error code on failure.
+ * @param   pVM     VM to suspend.
+ * @thread      Any thread.
+ * @vmstate     Running
+ * @vmstateto   Suspended
+ */
+VMR3DECL(int) VMR3SuspendNoSave(PVM pVM)
+{
+    pVM->vm.s.fPreventSaveState = true;
+    return VMR3Suspend(PVM pVM);
+}
+
+/**
  * Suspends a running VM.
  *
  * @returns 0 on success.
@@ -899,6 +915,7 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
     /*
      * Change the state, notify the components and resume the execution.
      */
+    pVM->vm.s.fPreventSaveState = false;
     vmR3SetState(pVM, VMSTATE_RUNNING);
     PDMR3Resume(pVM);
 
@@ -979,6 +996,13 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRES
     {
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
         return VERR_VM_INVALID_VM_STATE;
+    }
+
+    /* If we are in an inconsistent state, then we don't allow state saving. */
+    if (pVM->vm.s.fPreventSaveState)
+    {
+        LogRel(("VMM: vmR3Save: saving the VM state is not allowed at this moment\n")); 
+        return VERR_VM_SAVE_STATE_NOT_ALLOWED; 
     }
 
     /*
