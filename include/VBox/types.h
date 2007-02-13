@@ -103,8 +103,6 @@ typedef enum VMSTATE
     VMSTATE_SAVING,
     /** The VM is suspended. */
     VMSTATE_SUSPENDED,
-    /** The VM is suspended in a state, that doesn't allow saving. */
-    VMSTATE_SUSPENDED_NOSAVE,
     /** The VM is being reset. */
     VMSTATE_RESETTING,
     /** The VM is in guru meditation over a fatal failure. */
