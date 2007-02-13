@@ -22,7 +22,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_MM_PAGE
+#define LOG_GROUP LOG_GROUP_MM_POOL
 #include <VBox/mm.h>
 #include <VBox/pgm.h>
 #include <VBox/stam.h>
