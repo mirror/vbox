@@ -41,8 +41,6 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
              this, SLOT (mediaEnumStarted()));
     connect (&vboxGlobal(), SIGNAL (mediaEnumerated (const VBoxMedia &, int)),
              this, SLOT (mediaEnumerated (const VBoxMedia &, int)));
-    connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
-             this, SLOT (mediaEnumFinished (const VBoxMediaList &)));
 
     /* setup update handlers */
     connect (&vboxGlobal(), SIGNAL (mediaAdded (const VBoxMedia &)),
@@ -71,9 +69,6 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
         img = img.smoothScale (14, 14);
         mPmError.convertFromImage (img);
     }
-
-    /* media shortcuts creating */
-    refresh();
 }
 
 void VBoxMediaComboBox::refresh()
@@ -83,12 +78,13 @@ void VBoxMediaComboBox::refresh()
     /* prepend empty item if used */
     if (mUseEmptyItem)
         appendItem (tr ("<no hard disk>"), QUuid(), tr ("No hard disk"), 0);
-    updateToolTip (currentItem());
     /* load current media list */
     VBoxMediaList list = vboxGlobal().currentMediaList();
     VBoxMediaList::const_iterator it;
     for (it = list.begin(); it != list.end(); ++ it)
         mediaEnumerated (*it, 0);
+    /* activate item selected during current list loading */
+    processActivated (currentItem());
 }
 
 
@@ -100,11 +96,6 @@ void VBoxMediaComboBox::mediaEnumStarted()
 void VBoxMediaComboBox::mediaEnumerated (const VBoxMedia &aMedia, int /*aIndex*/)
 {
     processMedia (aMedia);
-}
-
-void VBoxMediaComboBox::mediaEnumFinished (const VBoxMediaList &/*aList*/)
-{
-    emit activated (currentItem());
 }
 
 
@@ -119,7 +110,7 @@ void VBoxMediaComboBox::mediaUpdated (const VBoxMedia &aMedia)
 }
 
 void VBoxMediaComboBox::mediaRemoved (VBoxDefs::DiskType aType,
-                                     const QUuid &aId)
+                                      const QUuid &aId)
 {
     if (!(aType & mType))
         return;
@@ -131,7 +122,8 @@ void VBoxMediaComboBox::mediaRemoved (VBoxDefs::DiskType aType,
         removeItem (index);
         mUuidList.remove (mUuidList.at (index));
         mTipList.remove (mTipList.at (index));
-        updateToolTip (currentItem());
+        /* emit signal to ensure parent dialog process selection changes */
+        emit activated (currentItem());
     }
 }
 
@@ -216,16 +208,17 @@ void VBoxMediaComboBox::updateShortcut (const QString &aSrc,
     else
         replaceItem (index, name, aTip, pixmap);
 
+    /* activate required item if it was updated */
     if (aId == mRequiredId)
-    {
-        int activatedItem = index == -1 ? count() - 1 : index;
-        setCurrentItem (activatedItem);
-    }
+        setCurrentItem (aId);
+    /* select last added item if there is no item selected */
+    else if (currentText().isEmpty())
+        QComboBox::setCurrentItem (index == -1 ? count() - 1 : index);
 }
 
 void VBoxMediaComboBox::processActivated (int aItem)
 {
-    mRequiredId = QUuid (mUuidList [aItem]);
+    mRequiredId = mUuidList.isEmpty() || aItem < 0 ? QUuid() : QUuid (mUuidList [aItem]);
     updateToolTip (aItem);
 }
 
@@ -233,7 +226,7 @@ void VBoxMediaComboBox::updateToolTip (int aItem)
 {
     /* combobox tooltip attaching */
     QToolTip::remove (this);
-    if (!mTipList.isEmpty())
+    if (!mTipList.isEmpty() && aItem >= 0)
         QToolTip::add (this, mTipList [aItem]);
 }
 
@@ -284,16 +277,13 @@ QUuid VBoxMediaComboBox::getBelongsTo()
     return mMachineId;
 }
 
-void VBoxMediaComboBox::setCurrentItem (int aIndex)
-{
-    QComboBox::setCurrentItem (aIndex);
-    emit activated (aIndex);
-}
-
 void VBoxMediaComboBox::setCurrentItem (const QUuid &aId)
 {
     mRequiredId = aId;
     int index = mUuidList.findIndex (mRequiredId);
     if (index != -1)
-        setCurrentItem (index);
+    {
+        QComboBox::setCurrentItem (index);
+        emit activated (index);
+    }
 }

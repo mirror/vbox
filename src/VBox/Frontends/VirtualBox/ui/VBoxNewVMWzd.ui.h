@@ -104,7 +104,10 @@ void VBoxNewVMWzd::init()
     setTabOrder (pbNewHD, pbExistingHD);
     connect (mediaCombo, SIGNAL (activated (int)),
              this, SLOT (currentMediaChanged (int)));
-    vboxGlobal().startEnumeratingMedia();
+    if (!vboxGlobal().isMediaEnumerationStarted())
+        vboxGlobal().startEnumeratingMedia();
+    else
+        mediaCombo->refresh();
 
     /// @todo (dmik) remove?
     wvalHDD = new QIWidgetValidator (pageHDD, this);
