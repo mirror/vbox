@@ -508,6 +508,16 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86SetGamma(pScrn, gzeros);
 
+    /* If no modes where specified for this display, add a default mode */
+    if (!pScrn->display->modes || !*pScrn->display->modes)
+    {
+        if ((pScrn->display->modes = xnfalloc(2 * sizeof(char*))))
+        {
+            pScrn->display->modes[0] = "1024x768";
+            pScrn->display->modes[1] = NULL;
+        }
+    }
+
     /* Filter out video modes not supported by the virtual hardware
        we described.  All modes used by the Windows additions should
        work fine. */
