@@ -499,6 +499,8 @@
 #define VERR_VM_DRIVER_OPEN_ERROR               (-1911)
 /** The installed support driver doesn't match the version of the user. */
 #define VERR_VM_DRIVER_VERSION_MISMATCH         (-1912)
+/** Saving the VM state is temporarily not allowed. Try again later. */
+#define VERR_VM_SAVE_STATE_NOT_ALLOWED          (-1913)
 /** @} */
 
 
