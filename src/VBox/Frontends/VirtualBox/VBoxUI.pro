@@ -186,6 +186,8 @@ IMAGES	= images/tpixel.png \
 	images/show_snapshot_details_22px.png \
 	images/show_snapshot_details_dis_16px.png \
 	images/show_snapshot_details_dis_22px.png \
+	images/eraser_16px.png \
+	images/eraser_disabled_16px.png \
 	images/refresh_16px.png \
 	images/refresh_disabled_16px.png \
 	images/refresh_22px.png \

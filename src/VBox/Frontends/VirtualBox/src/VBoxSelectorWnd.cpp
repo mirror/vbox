@@ -184,10 +184,13 @@ void VBoxVMDetailsView::languageChange()
     if (mRefreshAction && mRefreshButton)
     {
         mRefreshButton->setText (mRefreshAction->menuText());
-//        mRefreshButton->setText (mRefreshAction->text());
-//        mRefreshButton->setAccel (mRefreshAction->accel());
-//        mRefreshButton->setTextLabel (mRefreshAction->text());
-//        mRefreshButton->setIconSet (mRefreshAction->iconSet());
+        /* If we set the combination of the text label and icon
+         * below, we lose the Alt+R shortcut functionality... */
+        mRefreshButton->setTextLabel (mRefreshAction->text());
+        mRefreshButton->setAccel (mRefreshAction->accel());
+        mRefreshButton->setIconSet (mRefreshAction->iconSet());
+        mRefreshButton->setTextPosition (QToolButton::BesideIcon);
+        mRefreshButton->setUsesTextLabel (true);
     }
 }
 
@@ -252,7 +255,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         "vm_discard.png", "discard_16px.png",
         "vm_discard_dis.png", "discard_dis_16px.png"));
     vmRefreshAction = new QAction (this, "vmRefreshAction");
-    /// @todo (r=dmik) set icon set
+    vmRefreshAction->setIconSet (VBoxGlobal::iconSet (
+        "refresh_16px.png", "refresh_disabled_16px.png"));
     
     helpContentsAction = new QAction (this, "helpContentsAction");
     helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
