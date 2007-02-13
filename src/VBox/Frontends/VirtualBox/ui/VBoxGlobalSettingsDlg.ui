@@ -294,7 +294,7 @@ used, if not explicitly specified otherwise, when adding existing or creating ne
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>delete_16px.png</iconset>
+                                    <iconset>eraser_16px.png</iconset>
                                 </property>
                                 <property name="autoRaise">
                                     <bool>true</bool>
@@ -315,7 +315,7 @@ The actual default path will be displayed after accepting the changes and openin
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>delete_16px.png</iconset>
+                                    <iconset>eraser_16px.png</iconset>
                                 </property>
                                 <property name="autoRaise">
                                     <bool>true</bool>

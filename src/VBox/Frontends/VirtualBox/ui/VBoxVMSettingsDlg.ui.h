@@ -297,8 +297,8 @@ void VBoxVMSettingsDlg::init()
 
     tbSelectSavedStateFolder->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                                                "select_file_dis_16px.png"));
-    tbResetSavedStateFolder->setIconSet (VBoxGlobal::iconSet ("delete_16px.png",
-                                                              "delete_dis_16px.png"));
+    tbResetSavedStateFolder->setIconSet (VBoxGlobal::iconSet ("eraser_16px.png",
+                                                              "eraser_disabled_16px.png"));
 
     /* HDD Images page */
 
