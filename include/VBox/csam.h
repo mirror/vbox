@@ -209,14 +209,14 @@ CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr);
 
 
 /**
- * Scan and analyze code starting at specified EIP
+ * Scan and analyse code
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pEip        Instruction pointer
- * @param   fCode32     16 of 32 bits code
+ * @param   pCtx        CPU context
+ * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckEIP(PVM pVM, RTGCPTR pEip, bool fCode32);
+CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, PCPUMCTX pCtx, RTGCPTR pInstrGC);
 
 /**
  * Flush dirty code pages
