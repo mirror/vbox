@@ -3908,6 +3908,7 @@ PATMR3DECL(int) PATMR3AddHint(PVM pVM, RTGCPTR pInstrGC, uint32_t flags)
 PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
 {
     DISCPUSTATE cpu;
+    PCPUMCTX    pCtx;
     HCPTRTYPE(uint8_t *) pInstrHC;
     uint32_t opsize;
     PPATMPATCHREC pPatchRec;
@@ -3922,6 +3923,8 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
 
     if (PATMIsEnabled(pVM) == false)
         return VERR_PATCHING_REFUSED;
+
+    CPUMQueryGuestCtxPtr(pVM, &pCtx);
 
     /* Test for patch conflict only with patches that actually change guest code. */
     if (!(flags & (PATMFL_GUEST_SPECIFIC|PATMFL_IDTHANDLER|PATMFL_INTHANDLER|PATMFL_TRAMPOLINE)))
@@ -3947,7 +3950,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
     if (!(flags & PATMFL_GUEST_SPECIFIC))
     {
         /* New code. Make sure CSAM has a go at it first. */
-        CSAMR3CheckEIP(pVM, pInstrGC, !!(flags & PATMFL_CODE32));
+        CSAMR3CheckCode(pVM, pCtx, pInstrGC);
     }
 
     /** @note obsolete */
