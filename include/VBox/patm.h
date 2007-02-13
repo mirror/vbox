@@ -495,7 +495,7 @@ PATMR3DECL(int) PATMR3AllowPatching(PVM pVM, uint32_t fAllowPatching);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pInstr      Guest context point to privileged instruction
+ * @param   pInstr      Guest context pointer to privileged instruction
  * @param   flags       Patch flags
  *
  * @note    returns failure if patching is not allowed or possible
