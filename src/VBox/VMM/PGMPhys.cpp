@@ -391,7 +391,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         LogRel(("pgmr3PhysGrowRange: out of memory. pause until the user resumes execution.\n"));
         VMSetRuntimeError(pVM, false, "HostMemoryLow", "Unable to allocate and lock memory. The virtual machine will be paused. Please close applications to free up memory or save and close the VM.");
  
-        rc = VMR3Suspend(pVM);
+        rc = VMR3SuspendNoSave(pVM);
         AssertRC(rc);
 
         /* Wait for resume event; will only return in that case. If the VM is stopped, the EMT thread will be destroyed. */
