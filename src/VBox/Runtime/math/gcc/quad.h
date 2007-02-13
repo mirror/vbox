@@ -51,17 +51,19 @@
  * with 48-bit ints.
  */
 
-#if 0 /* bird */
+#if 0 /* iprt */
 #include <sys/types.h>
 #if !defined(_KERNEL) && !defined(_STANDALONE)
 #include <limits.h>
 #else
 #include <machine/limits.h>
 #endif
-#else /* bird */
+#else /* iprt */
 # include <iprt/types.h>
 # include <limits.h>
+# undef __P
 # define __P(a) a
+# undef __GNUC_PREREQ__
 # define __GNUC_PREREQ__(m1,m2) 1
 # if 1 /* ASSUMES: little endian */
 #  define _QUAD_HIGHWORD        1
@@ -74,7 +76,7 @@
    typedef int64_t quad_t;
    typedef uint64_t u_quad_t;
    typedef quad_t *qaddr_t;
-#endif /* bird */
+#endif /* iprt */
 
 /*
  * Depending on the desired operation, we view a `long long' (aka quad_t) in
