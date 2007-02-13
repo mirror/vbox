@@ -72,7 +72,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
             break;
 
         /*
-         * Pending requests which need servicing?
+         * Pending requests which needs servicing?
          *
          * We check for state changes in addition to status codes when
          * servicing requests. (Look after the ifs.)
@@ -179,7 +179,7 @@ VMR3DECL(int) VMR3WaitForResume(PVM pVM)
     {
 
         /*
-         * Pending requests which need servicing?
+         * Pending requests which needs servicing?
          *
          * We check for state changes in addition to status codes when
          * servicing requests. (Look after the ifs.)
