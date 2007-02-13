@@ -255,6 +255,9 @@ typedef struct VMINT
      * If clear the VMR3Destroy() caller does so. */
     bool                            fEMTDoesTheCleanup;
 
+    /** Set by VMR3SuspendNoSave; cleared by VMR3Resume; signals the VM is in an inconsistent state and saving is not allowed. */
+    bool                            fPreventSaveState;
+
     /** vmR3EmulationThread longjmp buffer 
      * @todo r=bird: requires union with padding. See EMInternal.h. */
     jmp_buf                         emtJumpEnv;
