@@ -2755,7 +2755,7 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     {
         if (pVM->rem.s.aPhysReg[i].GCPhys == GCPhys)
         {
-            pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvRam;
+            pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvCopy;
             pVM->rem.s.aPhysReg[i].cb     = cb;
             break;
         }
@@ -2763,7 +2763,7 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     if (i == pVM->rem.s.cPhysRegistrations)
     {
         pVM->rem.s.aPhysReg[i].GCPhys = GCPhys;
-        pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvRam;
+        pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvCopy;
         pVM->rem.s.aPhysReg[i].cb     = cb;
         pVM->rem.s.cPhysRegistrations++;
     }
