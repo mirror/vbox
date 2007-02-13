@@ -38,7 +38,7 @@ __BEGIN_DECLS
 
 /** Chunk size for dynamically allocated physical memory. */
 #define PGM_DYNAMIC_CHUNK_SIZE          (1*1024*1024)
-/** Shift GC physical address by 22 bits to get the offset into the pvHCChunkHC array. */
+/** Shift GC physical address by 20 bits to get the offset into the pvHCChunkHC array. */
 #define PGM_DYNAMIC_CHUNK_SHIFT         20
 /** Dynamic chunk offset mask. */
 #define PGM_DYNAMIC_CHUNK_OFFSET_MASK   0xfffff
