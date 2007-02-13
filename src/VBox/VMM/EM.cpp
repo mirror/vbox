@@ -1514,12 +1514,8 @@ static int emR3RawGuestTrap(PVM pVM)
     if (    (pCtx->ss & X86_SEL_RPL) <= 1
         &&  pCtx->eflags.Bits.u1VM == 0)
     {
-        RTGCPTR pInstrGC;
         Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
-
-        pInstrGC = SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, (RTGCPTR)pCtx->eip);
-
-        CSAMR3CheckEIP(pVM, pInstrGC, SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid));
+        CSAMR3CheckCode(pVM, pCtx, pCtx->eip);
     }
 
     if (u8TrapNo == 6) /* (#UD) Invalid opcode. */
@@ -2485,7 +2481,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
             STAM_PROFILE_ADV_SUSPEND(&pVM->em.s.StatRAWEntry, b);
-            CSAMR3CheckEIP(pVM, pCtx->eip, SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid));
+            CSAMR3CheckCode(pVM, pCtx, pCtx->eip);
             STAM_PROFILE_ADV_RESUME(&pVM->em.s.StatRAWEntry, b);
         }
 
@@ -3020,9 +3016,12 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_ISSET(pVM, VM_FF_CSAM_SCAN_PAGE))
         {
+            PCPUMCTX pCtx = pVM->em.s.pCtx;
+
             /** @todo: check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VM_FF_CSAM_SCAN_PAGE\n"));
-            CSAMR3CheckEIP(pVM, CPUMGetGuestEIP(pVM), true);
+
+            CSAMR3CheckCode(pVM, pCtx, pCtx->eip);
             VM_FF_CLEAR(pVM, VM_FF_CSAM_SCAN_PAGE);
         }
 
