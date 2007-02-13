@@ -628,9 +628,7 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.apInterPaePDs[2] = (PX86PDPAE)MMR3PageAlloc(pVM);
     pVM->pgm.s.apInterPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
     pVM->pgm.s.pInterPaePDPTR   = (PX86PDPTR)MMR3PageAllocLow(pVM);
-#if 1
     pVM->pgm.s.pInterPaePDPTR64 = (PX86PDPTR)MMR3PageAllocLow(pVM);
-#endif
     pVM->pgm.s.pInterPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);
     if (    !pVM->pgm.s.pInterPD
         ||  !pVM->pgm.s.apInterPTs[0]
@@ -642,9 +640,7 @@ static int pgmR3InitPaging(PVM pVM)
         ||  !pVM->pgm.s.apInterPaePDs[2]
         ||  !pVM->pgm.s.apInterPaePDs[3]
         ||  !pVM->pgm.s.pInterPaePDPTR
-#if 1
         ||  !pVM->pgm.s.pInterPaePDPTR64
-#endif
         ||  !pVM->pgm.s.pInterPaePML4)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
@@ -658,7 +654,6 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.HCPhysInterPaePML4 = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePML4);
     AssertRelease(pVM->pgm.s.HCPhysInterPaePML4 != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPaePML4 & PAGE_OFFSET_MASK));
 
-#if 1 /* let's see if this is the cause of the problems... */
     /*
      * Initialize the pages, setting up the PML4 and PDPTR for repetitive 4GB action.
      */
@@ -688,30 +683,6 @@ static int pgmR3InitPaging(PVM pVM)
     for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.pInterPaePML4->a); i++)
         pVM->pgm.s.pInterPaePML4->a[i].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A | PGM_PLXFLAGS_PERMANENT
                                          | HCPhysInterPaePDPTR64;
-#else
-    /*
-     * Initialize the pages, setting up the PML4 and PDPTR for action below 4GB.
-     */
-    ASMMemZero32(pVM->pgm.s.pInterPD, PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.apInterPTs[0], PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.apInterPTs[1], PAGE_SIZE);
-
-    ASMMemZero32(pVM->pgm.s.apInterPaePTs[0], PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.apInterPaePTs[1], PAGE_SIZE);
-
-    ASMMemZero32(pVM->pgm.s.pInterPaePDPTR, PAGE_SIZE);
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apInterPaePDs); i++)
-    {
-        ASMMemZero32(pVM->pgm.s.apInterPaePDs[i], PAGE_SIZE);
-        pVM->pgm.s.pInterPaePDPTR->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT
-                                          | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[i]);
-    }
-
-    ASMMemZero32(pVM->pgm.s.pInterPaePML4, PAGE_SIZE);
-    pVM->pgm.s.pInterPaePML4->a[0].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A
-                                     | pVM->pgm.s.HCPhysInterPaePDPTR;
-#endif
-
 
     /*
      * Allocate pages for the three possible guest contexts (AMD64, PAE and plain 32-Bit).
@@ -807,6 +778,19 @@ static int pgmR3InitPaging(PVM pVM)
     if (VBOX_SUCCESS(rc))
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
+#if HC_ARCH_BITS == 64
+LogRel(("Debug: HCPhys32BitPD=%VHp aHCPhysPaePDs={%VHp,%VHp,%VHp,%VHp} HCPhysPaePDPTR=%VHp HCPhysPaePML4=%VHp\n",
+        pVM->pgm.s.HCPhys32BitPD, pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3], 
+        pVM->pgm.s.HCPhysPaePDPTR, pVM->pgm.s.HCPhysPaePML4));
+LogRel(("Debug: HCPhysInterPD=%VHp HCPhysInterPaePDPTR=%VHp HCPhysInterPaePML4=%VHp\n",
+        pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPTR, pVM->pgm.s.HCPhysInterPaePML4));
+LogRel(("Debug: apInterPTs={%VHp,%VHp} apInterPaePTs={%VHp,%VHp} apInterPaePDs={%VHp,%VHp,%VHp,%VHp} pInterPaePDPTR64=%VHp\n",
+        MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[1]),
+        MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[1]),
+        MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[1]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[2]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[3]), 
+        MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPTR64)));
+#endif
+
         return VINF_SUCCESS;
     }
 
@@ -1530,6 +1514,9 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         if (pMapping->GCPtr != GCPtr)
         {
             AssertMsg((GCPtr >> PGDIR_SHIFT << PGDIR_SHIFT) == GCPtr, ("GCPtr=%VGv\n", GCPtr));
+#if HC_ARCH_BITS == 64
+LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc));
+#endif
             pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr >> PGDIR_SHIFT, GCPtr >> PGDIR_SHIFT);
         }
         else
