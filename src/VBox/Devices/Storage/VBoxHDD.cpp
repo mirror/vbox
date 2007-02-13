@@ -1595,7 +1595,7 @@ static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock
 
     if (!IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
     {
-        if (!pDisk->fHonorZeroWrites)
+        if (!pDisk || !pDisk->fHonorZeroWrites)
         {
             /* If the destination block is unallocated at this point, it's either
              * a zero block or a block which hasn't been used so far (which also
