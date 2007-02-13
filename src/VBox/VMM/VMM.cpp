@@ -302,6 +302,9 @@ static int vmmR3InitCoreCode(PVM pVM)
         if (VBOX_SUCCESS(rc))
         {
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+            LogRel(("CoreCode: R3=%VHv R0=%VHv GC=%VGv Phys=%VHp cb=%#x\n",
+                    pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.pvGCCoreCode, pVM->vmm.s.HCPhysCoreCode, pVM->vmm.s.cbCoreCode));
+
             /*
              * Finally, PGM probably have selected a switcher already but we need
              * to do get the addresses so we'll reselect it.
