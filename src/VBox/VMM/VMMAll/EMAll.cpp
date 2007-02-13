@@ -1688,7 +1688,7 @@ static int emInterpretSti(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     pGCState->uVMFlags |= X86_EFL_IF;
 
     Assert(pRegFrame->eflags.u32 & X86_EFL_IF);
-    Assert(pvFault == (RTGCPTR)pRegFrame->eip);
+    Assert(pvFault == SELMToFlat(pVM, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip));
 
     pVM->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pCpu->opsize;
     VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);
