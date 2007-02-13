@@ -723,12 +723,20 @@ int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages)
     unsigned    iPage;
     unsigned    cPages = pMem->cb >> PAGE_SHIFT;
     unsigned long pv = (unsigned long)pMem->pvR3;
+    struct vm_area_struct **papVMAs;
 
     /*
      * Allocate page pointer array.
      */
     papPages = vmalloc(cPages * sizeof(*papPages));
     if (!papPages)
+        return SUPDRV_ERR_NO_MEMORY;
+
+    /*
+     * Allocate the VMA pointer array.
+     */
+    papVMAs = vmalloc(cPages * sizeof(*papVMAs));
+    if (!papVMAs)
         return SUPDRV_ERR_NO_MEMORY;
 
     /*
@@ -742,7 +750,7 @@ int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages)
                         1,                      /* Write to memory. */
                         0,                      /* force. */
                         papPages,               /* Page array. */
-                        NULL);                  /* vmas */
+                        papVMAs);               /* vmas */
     if (rc != cPages)
     {
         up_read(&current->mm->mmap_sem);
@@ -758,13 +766,16 @@ int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages)
     pMem->u.locked.cPages = cPages;
 
     /*
-     * Get addresses.
+     * Get addresses, protect against fork()
      */
     for (iPage = 0; iPage < cPages; iPage++)
     {
         paPages[iPage].Phys = page_to_phys(papPages[iPage]);
         paPages[iPage].uReserved = 0;
+        papVMAs[iPage]->vm_flags |= VM_DONTCOPY;
     }
+
+    vfree(papVMAs);
 
     dprintf2(("supdrvOSLockMemOne: pvR3=%p cb=%d papPages=%p\n",
               pMem->pvR3, pMem->cb, pMem->u.locked.papPages));
