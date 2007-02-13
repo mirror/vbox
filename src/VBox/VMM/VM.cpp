@@ -890,7 +890,8 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
     /*
      * Validate input.
      */
-    if (pVM->enmVMState != VMSTATE_SUSPENDED)
+    if (    pVM->enmVMState != VMSTATE_SUSPENDED
+        &&  pVM->enmVMState != VMSTATE_SUSPENDED_NOSAVE)
     {
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
         return VERR_VM_INVALID_VM_STATE;
