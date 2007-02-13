@@ -422,6 +422,18 @@ VMR3DECL(int)   VMR3PowerOn(PVM pVM);
 VMR3DECL(int)   VMR3Suspend(PVM pVM);
 
 /**
+ * Suspends a running VM and prevent state saving until the VM is resumed or stopped.
+ *
+ * @returns 0 on success.
+ * @returns VBox error code on failure.
+ * @param   pVM     VM to suspend.
+ * @thread      Any thread.
+ * @vmstate     Running
+ * @vmstateto   Suspended
+ */
+VMR3DECL(int) VMR3SuspendNoSave(PVM pVM);
+
+/**
  * Resume VM execution.
  *
  * @returns VBox status.
