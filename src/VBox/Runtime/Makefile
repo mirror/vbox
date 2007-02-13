@@ -508,10 +508,7 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	string/memset_alias.c
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
-	math/x86/fenv-x86.c
-
-ifeq (0,1) # on some platforms we can't use libgcc, enable later today.
-RuntimeR3NoCRTGCC_SOURCES.x86 += \
+	math/x86/fenv-x86.c \
 	math/gcc/adddi3.c \
 	math/gcc/anddi3.c \
 	math/gcc/ashldi3.c \
@@ -531,7 +528,6 @@ RuntimeR3NoCRTGCC_SOURCES.x86 += \
 	math/gcc/udivdi3.c \
 	math/gcc/umoddi3.c \
 	math/gcc/xordi3.c
-endif
 
 
 ## @todo stop using the old memcpy.c and memset.c code.
@@ -577,6 +573,28 @@ RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 RuntimeR0_SOURCES.os2 = \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm
+
+RuntimeR0_SOURCES.darwin.x86 = \
+	math/gcc/adddi3.c \
+	math/gcc/anddi3.c \
+	math/gcc/ashldi3.c \
+	math/gcc/ashrdi3.c \
+	math/gcc/cmpdi2.c \
+	math/gcc/divdi3.c \
+	math/gcc/iordi3.c \
+	math/gcc/lshldi3.c \
+	math/gcc/lshrdi3.c \
+	math/gcc/moddi3.c \
+	math/gcc/muldi3.c \
+	math/gcc/negdi2.c \
+	math/gcc/notdi2.c \
+	math/gcc/qdivrem.c \
+	math/gcc/subdi3.c \
+	math/gcc/ucmpdi2.c \
+	math/gcc/udivdi3.c \
+	math/gcc/umoddi3.c \
+	math/gcc/xordi3.c
+
 
 string/memchr.cpp_CXXFLAGS.win = -Oi-
 string/memcmp.cpp_CXXFLAGS.win = -Oi-
@@ -753,6 +771,27 @@ RuntimeGC_SOURCES       = \
 ifeq ($(VBOX_LDR_FMT32),lx)
 RuntimeGC_SOURCES += os2/sys0.asm
 endif
+
+RuntimeGC_SOURCES.darwin = \
+	math/gcc/adddi3.c \
+	math/gcc/anddi3.c \
+	math/gcc/ashldi3.c \
+	math/gcc/ashrdi3.c \
+	math/gcc/cmpdi2.c \
+	math/gcc/divdi3.c \
+	math/gcc/iordi3.c \
+	math/gcc/lshldi3.c \
+	math/gcc/lshrdi3.c \
+	math/gcc/moddi3.c \
+	math/gcc/muldi3.c \
+	math/gcc/negdi2.c \
+	math/gcc/notdi2.c \
+	math/gcc/qdivrem.c \
+	math/gcc/subdi3.c \
+	math/gcc/ucmpdi2.c \
+	math/gcc/udivdi3.c \
+	math/gcc/umoddi3.c \
+	math/gcc/xordi3.c
 
 
 #
