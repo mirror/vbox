@@ -575,6 +575,13 @@ SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PSUPPAGE paPages)
                 *ppvPages = pOut->pvVirt;
                 AssertCompile(sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
                 memcpy(paPages, &pOut->aPages[0], sizeof(paPages[0]) * cPages);
+#if HC_ARCH_BITS == 64 /* -> strict only */
+                for (unsigned i = 0; i < cPages; i++)
+                    AssertReleaseMsg(   paPages[i].Phys <= 0xfffff000
+                                     && !(paPages[i].Phys & PAGE_OFFSET_MASK)
+                                     && paPages[i].Phys > 0,
+                                     ("[%d]=%VHp\n", paPages[i].Phys));
+#endif
             }
             RTMemFree(pOut);
         }
