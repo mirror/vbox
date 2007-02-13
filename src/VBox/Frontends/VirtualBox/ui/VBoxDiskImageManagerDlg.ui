@@ -628,6 +628,7 @@
     <function specifier="static" returnType="QString">composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function specifier="static" returnType="QString">composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function specifier="static" returnType="QString">composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
+    <function access="protected">clearInfoPanes()</function>
     <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
 </functions>
 <layoutdefaults spacing="10" margin="10"/>

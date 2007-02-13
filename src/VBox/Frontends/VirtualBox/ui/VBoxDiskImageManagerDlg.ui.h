@@ -1254,7 +1254,7 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
         vboxGlobal().startEnumeratingMedia();
     }
     else
-    {    
+    {
         /* insert already enumerated media */
         const VBoxMediaList &list = vboxGlobal().currentMediaList();
         prepareToRefresh (list.size());
@@ -1287,7 +1287,7 @@ void VBoxDiskImageManagerDlg::mediaEnumStarted()
     VBoxMediaList::const_iterator it;
     for (it = list.begin(); it != list.end(); ++ it)
         mediaAdded (*it);
-    
+
     /* select the first item if the previous saved item is not found
      * or no current item at all */
     if (!hdsView->currentItem() || !hdSelectedId.isNull())
@@ -1326,7 +1326,7 @@ void VBoxDiskImageManagerDlg::mediaEnumFinished (const VBoxMediaList &/* aList *
     cdsView->adjustColumn (1);
     cdsView->adjustColumn (2);
     cdsView->adjustColumn (1);
-    
+
     fdsView->adjustColumn (1);
     fdsView->adjustColumn (2);
     fdsView->adjustColumn (1);
@@ -1377,6 +1377,8 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
 
     if (!vboxGlobal().isMediaEnumerationStarted())
         setCurrentItem (getListView (aMedia.type), item);
+    if (item == getCurrentListView()->currentItem())
+        processCurrentChanged (item);
 }
 
 void VBoxDiskImageManagerDlg::mediaUpdated (const VBoxMedia &aMedia)
@@ -1459,14 +1461,20 @@ void VBoxDiskImageManagerDlg::machineStateChanged (const VBoxMachineStateChangeE
 }
 
 
-void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
+void VBoxDiskImageManagerDlg::clearInfoPanes()
 {
-    /* info panel clearing */
     hdsPane1->clear();
     hdsPane2->clear(), hdsPane3->clear();
     hdsPane4->clear(), hdsPane5->clear();
     cdsPane1->clear(), cdsPane2->clear();
     fdsPane1->clear(), fdsPane2->clear();
+}
+
+
+void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
+{
+    /* info panel clearing */
+    clearInfoPanes();
 
     /* prepare progressbar */
     if (mProgressBar)
@@ -1480,17 +1488,17 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
     setCursor (QCursor (BusyCursor));
 
     /* store the current list selections */
-    
+
     QListViewItem *item;
     DiskImageItem *di;
 
     item = hdsView->currentItem();
     di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
     hdSelectedId = di ? di->getUuid() : QString::null;
- 
+
     item = cdsView->currentItem();
     di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
-    cdSelectedId = di ? di->getUuid() : QString::null; 
+    cdSelectedId = di ? di->getUuid() : QString::null;
 
     item = fdsView->currentItem();
     di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
@@ -1666,6 +1674,8 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
             fdsPane2->setText (item->getInformation (item->getUsage()));
         }
     }
+    else
+        clearInfoPanes();
 }
 
 
