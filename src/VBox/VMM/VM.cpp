@@ -975,6 +975,12 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRES
     /*
      * Validate input.
      */
+    if (pVM->enmVMState == VMSTATE_SUSPENDED_NOSAVE)
+    {
+        LogRel(("VMM: vmR3Save: saving the VM state is not allowed at this moment\n"));
+        return VERR_VM_SAVE_STATE_NOT_ALLOWED;
+    }
+
     if (pVM->enmVMState != VMSTATE_SUSPENDED)
     {
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
@@ -1158,6 +1164,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
      */
     if (    pVM->enmVMState != VMSTATE_RUNNING
         &&  pVM->enmVMState != VMSTATE_SUSPENDED
+        &&  pVM->enmVMState != VMSTATE_SUSPENDED_NOSAVE
         &&  pVM->enmVMState != VMSTATE_LOAD_FAILURE
         &&  pVM->enmVMState != VMSTATE_GURU_MEDITATION)
     {
@@ -1612,7 +1619,8 @@ VMR3DECL(int)   VMR3Reset(PVM pVM)
     if (!pVM)
         return VERR_INVALID_PARAMETER;
     if (    pVM->enmVMState != VMSTATE_RUNNING
-        &&  pVM->enmVMState != VMSTATE_SUSPENDED)
+        &&  pVM->enmVMState != VMSTATE_SUSPENDED
+        &&  pVM->enmVMState != VMSTATE_SUSPENDED_NOSAVE)
     {
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
         return VERR_VM_INVALID_VM_STATE;
@@ -1663,7 +1671,7 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
      * (If VMR3Reset was not called from EMT we might have change state... let's ignore that fact for now.)
      */
     VMSTATE enmVMState = pVM->enmVMState;
-    Assert(enmVMState == VMSTATE_SUSPENDED || enmVMState == VMSTATE_RUNNING);
+    Assert(enmVMState == VMSTATE_SUSPENDED || enmVMState == VMSTATE_SUSPENDED_NOSAVE || enmVMState == VMSTATE_RUNNING);
     vmR3SetState(pVM, VMSTATE_RESETTING);
     vmR3CheckIntegrity(pVM);
 
@@ -2054,6 +2062,7 @@ VMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
         case VMSTATE_LOAD_FAILURE:      return "LOAD_FAILURE";
         case VMSTATE_SAVING:            return "SAVING";
         case VMSTATE_SUSPENDED:         return "SUSPENDED";
+        case VMSTATE_SUSPENDED_NOSAVE:  return "SUSPENDED_NOSAVE";
         case VMSTATE_RESETTING:         return "RESETTING";
         case VMSTATE_GURU_MEDITATION:   return "GURU_MEDIATION";
         case VMSTATE_OFF:               return "OFF";
