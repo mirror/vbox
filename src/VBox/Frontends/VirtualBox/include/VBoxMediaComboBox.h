@@ -50,7 +50,6 @@ protected slots:
 
     void mediaEnumStarted();
     void mediaEnumerated (const VBoxMedia &, int);
-    void mediaEnumFinished (const VBoxMediaList &);
     void mediaAdded (const VBoxMedia &);
     void mediaUpdated (const VBoxMedia &);
     void mediaRemoved (VBoxDefs::DiskType, const QUuid &);
@@ -60,7 +59,6 @@ protected slots:
 protected:
 
     void updateToolTip (int);
-    void setCurrentItem (int);
     void processMedia (const VBoxMedia &);
     void processHdMedia (const VBoxMedia &);
     void processCdMedia (const VBoxMedia &);
