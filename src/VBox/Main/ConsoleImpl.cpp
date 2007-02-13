@@ -305,6 +305,8 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     unconst (mAudioSniffer) = new AudioSniffer(this);
     AssertReturn (mAudioSniffer, E_FAIL);
 
+    memset (&mCallbackData, 0, sizeof (mCallbackData));    
+    
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -418,11 +420,17 @@ void Console::uninit()
     unconst (mControl).setNull();
     unconst (mMachine).setNull();
 
-    // Release all callbacks. Do this after uninitializing the components,
-    // as some of them are well-behaved and unregister their callbacks.
-    // These would trigger error messages complaining about trying to
-    // unregister a non-registered callback.
+    /* Release all callbacks. Do this after uninitializing the components,
+     * as some of them are well-behaved and unregister their callbacks.
+     * These would trigger error messages complaining about trying to
+     * unregister a non-registered callback. */
     mCallbacks.clear();
+
+    /* dynamically allocated members of mCallbackData are uninitialized
+     * at the end of powerDown() */
+    Assert (!mCallbackData.mpsc.valid && mCallbackData.mpsc.shape == NULL);
+    Assert (!mCallbackData.mcc.valid);
+    Assert (!mCallbackData.klc.valid);
 
     LogFlowThisFuncLeave();
 }
@@ -2354,26 +2362,29 @@ STDMETHODIMP Console::RegisterCallback (IConsoleCallback *aCallback)
 
     mCallbacks.push_back (CallbackList::value_type (aCallback));
 
-#if 0
-    /* @todo dmik please implement this.
-     * Inform the callback about the current status, because the new callback
-     * must know at least the current mouse capabilities and the pointer shape.
-     */
-    aCallback->OnMousePointerShapeChange (mCallbacksStatus.pointerShape.fVisible,
-                                          mCallbackStatus.pointerShape.fAlpha,
-                                          mCallbackStatus.pointerShape.xHot,
-                                          mCallbackStatus.pointerShape.yHot,
-                                          mCallbackStatus.pointerShape.width,
-                                          mCallbackStatus.pointerShape.height,
-                                          mCallbackStatus.pointerShape.pShape);
-    aCallback->OnMouseCapabilityChange (mCallbackStatus.mouseCapability.supportsAbsolute,
-                                        mCallbackStatus.mouseCapability.needsHostCursor);
-    aCallback->OnStateChange (mCallbackStatus.machineState);
+    /* Inform the callback about the current status (for example, the new
+     * callback must know the current mouse capabilities and the pointer
+     * shape in order to properly integrate the mouse pointer). */
+
+    if (mCallbackData.mpsc.valid)
+        aCallback->OnMousePointerShapeChange (mCallbackData.mpsc.visible,
+                                              mCallbackData.mpsc.alpha,
+                                              mCallbackData.mpsc.xHot,
+                                              mCallbackData.mpsc.yHot,
+                                              mCallbackData.mpsc.width,
+                                              mCallbackData.mpsc.height,
+                                              mCallbackData.mpsc.shape);
+    if (mCallbackData.mcc.valid)
+        aCallback->OnMouseCapabilityChange (mCallbackData.mcc.supportsAbsolute,
+                                            mCallbackData.mcc.needsHostCursor);
+
+    aCallback->OnStateChange (mMachineState);
     aCallback->OnAdditionsStateChange();
-    aCallback->OnKeyboardLedsChange(mCallbackStatus.keyboardLeds.fNumLock,
-                                    mCallbackStatus.keyboardLeds.fCapsLock,
-                                    mCallbackStatus.keyboardLeds.fScrollLock);
-#endif
+
+    if (mCallbackData.klc.valid)
+        aCallback->OnKeyboardLedsChange (mCallbackData.klc.numLock,
+                                         mCallbackData.klc.capsLock,
+                                         mCallbackData.klc.scrollLock);
 
     return S_OK;
 }
@@ -3263,7 +3274,7 @@ HRESULT Console::updateMachineState (MachineState_T aMachineState)
 }
 
 /**
- *  @note Locks this object for reading.
+ *  @note Locks this object for writing.
  */
 void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                         uint32_t xHot, uint32_t yHot,
@@ -3274,7 +3285,32 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
                       "height=%d, shape=%p\n",
                       fVisible, fAlpha, xHot, yHot, width, height, pShape));
 
-    AutoReaderLock alock (this);
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* We need a write lock because we alter the cached callback data */
+    AutoLock alock (this);
+
+    /* save the callback arguments */
+    mCallbackData.mpsc.visible = fVisible;
+    mCallbackData.mpsc.alpha = fAlpha;
+    mCallbackData.mpsc.xHot = xHot;
+    mCallbackData.mpsc.yHot = yHot;
+    mCallbackData.mpsc.width = width;
+    mCallbackData.mpsc.height = height;
+    
+    if (pShape != NULL)
+    {
+        size_t cb = (width + 7) / 8 * height; /* size of the AND mask */
+        cb += (cb + 3) & ~3 + width * 4 * height; /* + gap + size of the XOR mask */
+        mCallbackData.mpsc.shape = (BYTE *) RTMemAllocZ (cb);
+        AssertReturnVoid (mCallbackData.mpsc.shape);
+        memcpy (mCallbackData.mpsc.shape, pShape, cb);
+    }
+    else
+        mCallbackData.mpsc.shape = NULL;
+
+    mCallbackData.mpsc.valid = true;
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
@@ -3283,7 +3319,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
 }
 
 /**
- *  @note Locks this object for reading.
+ *  @note Locks this object for writing.
  */
 void Console::onMouseCapabilityChange (BOOL supportsAbsolute, BOOL needsHostCursor)
 {
@@ -3293,8 +3329,14 @@ void Console::onMouseCapabilityChange (BOOL supportsAbsolute, BOOL needsHostCurs
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    /* We need a write lock because we alter the cached callback data */
+    AutoLock alock (this);
 
+    /* save the callback arguments */
+    mCallbackData.mcc.supportsAbsolute = supportsAbsolute;
+    mCallbackData.mcc.needsHostCursor = needsHostCursor;
+    mCallbackData.mcc.valid = true;
+    
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
     {
@@ -3351,14 +3393,21 @@ void Console::onAdditionsOutdated()
 }
 
 /**
- *  @note Locks this object for reading.
+ *  @note Locks this object for writing.
  */
 void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    /* We need a write lock because we alter the cached callback data */
+    AutoLock alock (this);
+
+    /* save the callback arguments */
+    mCallbackData.klc.numLock = fNumLock;
+    mCallbackData.klc.capsLock = fCapsLock;
+    mCallbackData.klc.scrollLock = fScrollLock;
+    mCallbackData.klc.valid = true;
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
@@ -3656,6 +3705,17 @@ HRESULT Console::powerDown()
     if (mpVM == NULL)
         mVMDestroying = false;
 
+    if (SUCCEEDED (rc))
+    {
+        /* uninit dynamically allocated members of mCallbackData */
+        if (mCallbackData.mpsc.valid)
+        {
+            if (mCallbackData.mpsc.shape != NULL)
+                RTMemFree (mCallbackData.mpsc.shape);
+        }
+        memset (&mCallbackData, 0, sizeof (mCallbackData));    
+    }
+    
     LogFlowThisFuncLeave();
     return rc;
 }
