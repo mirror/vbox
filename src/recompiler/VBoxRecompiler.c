@@ -2631,7 +2631,7 @@ void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
             return (void *)(pVM->rem.s.aPhysReg[i].HCVirt + off);
         }
     }
-    Assert(addr < phys_ram_size);
+    AssertMsg(addr < phys_ram_size, ("remR3GCPhys2HCVirt: unknown physical address %x\n", addr));
     Log(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK)));
     return (void *)(pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #else
@@ -2682,7 +2682,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
             return pVM->rem.s.aPhysReg[i].GCPhys + off;
         }
     }
-    AssertReleaseMsgFailed(("No translation for physical address %p???\n", addr));
+    AssertReleaseMsgFailed(("No translation for physical address %VHv???\n", addr));
     return 0;
 #else
     return (target_ulong)addr - (target_ulong)phys_ram_base;
