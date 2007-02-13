@@ -818,7 +818,7 @@ VMR3DECL(int) VMR3Suspend(PVM pVM)
 VMR3DECL(int) VMR3SuspendNoSave(PVM pVM)
 {
     pVM->vm.s.fPreventSaveState = true;
-    return VMR3Suspend(PVM pVM);
+    return VMR3Suspend(pVM);
 }
 
 /**
