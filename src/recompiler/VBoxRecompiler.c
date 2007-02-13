@@ -416,10 +416,6 @@ REMR3DECL(void) REMR3Reset(PVM pVM)
     pVM->rem.s.fIgnoreCR3Load = false;
     pVM->rem.s.fIgnoreInvlPg = false;
     pVM->rem.s.fIgnoreCpuMode = false;
-
-#ifdef PGM_DYNAMIC_RAM_ALLOC
-    pVM->rem.s.cPhysRegistrations = 0;
-#endif
 }
 
 
@@ -2527,13 +2523,27 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
         cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_RAM_MISSING);
     else
     {
+        uint32_t i;
+
         cpu_register_physical_memory(GCPhys, cb, GCPhys | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
 
         AssertRelease(pVM->rem.s.cPhysRegistrations < REM_MAX_PHYS_REGISTRATIONS);
-        pVM->rem.s.aPhysReg[pVM->rem.s.cPhysRegistrations].GCPhys = GCPhys;
-        pVM->rem.s.aPhysReg[pVM->rem.s.cPhysRegistrations].HCVirt = (RTHCUINTPTR)pvRam;
-        pVM->rem.s.aPhysReg[pVM->rem.s.cPhysRegistrations].cb     = cb;
-        pVM->rem.s.cPhysRegistrations++;
+        for (i=0;i<pVM->rem.s.cPhysRegistrations;i++)
+        {
+            if (pVM->rem.s.aPhysReg[i].GCPhys == GCPhys)
+            {
+                pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvRam;
+                pVM->rem.s.aPhysReg[i].cb     = cb;
+                break;
+            }
+        }
+        if (i == pVM->rem.s.cPhysRegistrations)
+        {
+            pVM->rem.s.aPhysReg[i].GCPhys = GCPhys;
+            pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvRam;
+            pVM->rem.s.aPhysReg[i].cb     = cb;
+            pVM->rem.s.cPhysRegistrations++;
+        }
     }
 #else
     cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvRam - (uintptr_t)phys_ram_base)
@@ -2720,6 +2730,9 @@ void remR3GrowDynRange(unsigned long physaddr)
  */
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy)
 {
+#ifdef PGM_DYNAMIC_RAM_ALLOC
+    uint32_t i;
+#endif
     Log(("REMR3NotifyPhysRomRegister: GCPhys=%VGp cb=%d pvCopy=%p\n", GCPhys, cb, pvCopy));
     VM_ASSERT_EMT(pVM);
 
@@ -2738,10 +2751,22 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 #ifdef PGM_DYNAMIC_RAM_ALLOC
     cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_ROM);
     AssertRelease(pVM->rem.s.cPhysRegistrations < REM_MAX_PHYS_REGISTRATIONS);
-    pVM->rem.s.aPhysReg[pVM->rem.s.cPhysRegistrations].GCPhys = GCPhys;
-    pVM->rem.s.aPhysReg[pVM->rem.s.cPhysRegistrations].HCVirt = (RTHCUINTPTR)pvCopy;
-    pVM->rem.s.aPhysReg[pVM->rem.s.cPhysRegistrations].cb     = cb;
-    pVM->rem.s.cPhysRegistrations++;
+    for (i=0;i<pVM->rem.s.cPhysRegistrations;i++)
+    {
+        if (pVM->rem.s.aPhysReg[i].GCPhys == GCPhys)
+        {
+            pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvRam;
+            pVM->rem.s.aPhysReg[i].cb     = cb;
+            break;
+        }
+    }
+    if (i == pVM->rem.s.cPhysRegistrations)
+    {
+        pVM->rem.s.aPhysReg[i].GCPhys = GCPhys;
+        pVM->rem.s.aPhysReg[i].HCVirt = (RTHCUINTPTR)pvRam;
+        pVM->rem.s.aPhysReg[i].cb     = cb;
+        pVM->rem.s.cPhysRegistrations++;
+    }
 #else
     AssertRelease(phys_ram_base);
     cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvCopy - (uintptr_t)phys_ram_base) | IO_MEM_ROM);
