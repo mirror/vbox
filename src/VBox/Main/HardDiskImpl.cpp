@@ -563,25 +563,44 @@ HRESULT HardDisk::trySetRegistered (BOOL aRegistered)
 
 /**
  *  Checks basic accessibility of this hard disk only (w/o parents).
- *  Must be always called by every reimplementation in the first place.
+ *  Must be always called by every HardDisk::getAccessible() reimplementation
+ *  in the first place.
  *
- *  @param aAccessError on output, a null string indicates the hard disk is
+ *  When @a aCheckBusy is true, this method checks that mBusy = false and
+ *  mReaders = 0 (and returns an appropriate error if not). This lets
+ *  reimplementations successfully call setBusy() to lock the disk for the
+ *  duration of the check if they need. Note that in this case, the
+ *  reimplementation must enter the object lock before calling this method
+ *  and not leave it before calling setBusy() to avoid race condition.
+ *
+ *  @param aAccessError On output, a null string indicates the hard disk is
  *                      accessible, otherwise contains a message describing
  *                      the reason of inaccessibility.
+ *  @param aCheckBusy   Whether to do the busy check or not.
  */
-HRESULT HardDisk::getAccessible (Bstr &aAccessError)
+HRESULT HardDisk::getBaseAccessible (Bstr &aAccessError,
+                                     bool aCheckBusy /* = false */)
 {
     AutoLock alock (this);
     CHECK_READY();
 
-    if (mBusy)
+    aAccessError.setNull();
+
+    if (aCheckBusy)
     {
-        aAccessError =
-            Utf8StrFmt (tr ("Hard disk '%ls' is being used by another task"),
-                        toString().raw());
+        if (mBusy)
+        {
+            aAccessError = Utf8StrFmt (
+                tr ("Hard disk '%ls' is being exclusively used by another task"),
+                toString().raw());
+        }
+        else if (mReaders > 0)
+        {
+            aAccessError = Utf8StrFmt (
+                tr ("Hard disk '%ls' is being used by another task (%d readers)"),
+                toString().raw(), mReaders);
+        }
     }
-    else
-        aAccessError.setNull();
 
     return S_OK;
 }
@@ -1564,7 +1583,7 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
     }
 
     /* check the basic accessibility */
-    HRESULT rc = HardDisk::getAccessible (aAccessError);
+    HRESULT rc = getBaseAccessible (aAccessError, true /* aCheckBusy */);
     if (FAILED (rc) || !aAccessError.isNull())
         return rc;
 
@@ -3006,7 +3025,7 @@ HRESULT HISCSIHardDisk::getAccessible (Bstr &aAccessError)
     CHECK_READY();
 
     /* check the basic accessibility */
-    HRESULT rc = HardDisk::getAccessible (aAccessError);
+    HRESULT rc = getBaseAccessible (aAccessError);
     if (FAILED (rc) || !aAccessError.isNull())
         return rc;
 

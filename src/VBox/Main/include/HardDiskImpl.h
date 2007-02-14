@@ -128,10 +128,12 @@ public:
 
     ComObjPtr <HardDisk> root() const;
 
+    HRESULT getBaseAccessible (Bstr &aAccessError, bool aCheckBusy = false);
+
     // virtual methods that need to be [re]implemented by every subclass
 
     virtual HRESULT trySetRegistered (BOOL aRegistered);
-    virtual HRESULT getAccessible (Bstr &aAccessError);
+    virtual HRESULT getAccessible (Bstr &aAccessError) = 0;
 
     virtual HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode) = 0;
 
