@@ -44,6 +44,7 @@
 #include <sys/statfs.h>
 #include <sys/poll.h>
 #include <unistd.h>
+#include <linux/compiler.h>
 #include <linux/usbdevice_fs.h>
 
 
