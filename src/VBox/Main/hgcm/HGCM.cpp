@@ -1163,6 +1163,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 }
             } break;
 
+#if 0
             case HGCMMSGID_LOADSTATE:
             {
                 LogFlow(("HGCMMSGID_LOADSTATE\n"));
@@ -1171,9 +1172,9 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
 
                 rc = VINF_SUCCESS;
-                if (pClient && pSvc->m_fntable.pfnLoadState)
+                if (pClient && pService->m_fntable.pfnLoadState)
                 {
-                    rc = pSvc->m_fntable.pfnLoadState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                    rc = pService->m_fntable.pfnLoadState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pService, pClient), pMsg->pSSM);
                     hgcmObjDereference (pClient);
                 }
                 break;
@@ -1187,14 +1188,14 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
 
                 rc = VINF_SUCCESS;
-                if (pClient && pSvc->m_fntable.pfnSaveState)
+                if (pClient && pService->m_fntable.pfnSaveState)
                 {
-                    rc = pSvc->m_fntable.pfnSaveState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                    rc = pService->m_fntable.pfnSaveState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pService, pClient), pMsg->pSSM);
                     hgcmObjDereference (pClient);
                 }
                 break;
             }
-            
+#endif       
             default:
             {
                 Log(("hgcmThread: Unsupported message number %08X!!!\n", pMsgCore->MsgId ()));
