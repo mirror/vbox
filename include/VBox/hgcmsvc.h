@@ -43,6 +43,7 @@
  *
  * Revision history.
  * 1.1->2.1 Because the pfnConnect now also has the pvClient parameter.
+ * 2.1->2.2 Because pfnSaveState and pfnLoadState were added
  */
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0002)
@@ -138,6 +139,12 @@ typedef struct _VBOXHGCMSVCFNTABLE
      *  Return code is passed to pfnCallComplete callback.
      */
     DECLCALLBACKMEMBER(void, pfnHostCall) (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+ 
+    /** Inform the service about a VM save operation. */
+    DECLCALLBACKMEMBER(int, pfnSaveState) (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM);
+
+    /** Inform the service about a VM load operation. */
+    DECLCALLBACKMEMBER(int, pfnLoadState) (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM);
 
 } VBOXHGCMSVCFNTABLE;
 #pragma pack()
