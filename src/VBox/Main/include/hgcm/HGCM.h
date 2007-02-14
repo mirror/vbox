@@ -29,6 +29,9 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/hgcmsvc.h>
 
+/* HGCM saved state version */
+#define HGCM_SSM_VERSION    1
+
 __BEGIN_DECLS
 int hgcmInit (void);
 
@@ -38,6 +41,10 @@ int hgcmConnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, PHGCMSER
 int hgcmDisconnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, bool fBlock);
 int hgcmGuestCallInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[], bool fBlock);
 int hgcmHostCallInternal (const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
+
+int hgcmSaveStateInternal (PPDMIHGCMPORT pHGCMPort, uint32_t clientID, PSSMHANDLE pSSM);
+int hgcmLoadStateInternal (PPDMIHGCMPORT pHGCMPort, uint32_t clientID, PSSMHANDLE pSSM);
+
 __END_DECLS
 
 #endif /* __HGCM_h__ */

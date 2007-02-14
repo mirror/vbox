@@ -271,8 +271,9 @@ class HGCMMsgCall: public HGCMMsgHeader
 #define HGCMMSGID_CONNECT    (10)
 #define HGCMMSGID_DISCONNECT (11)
 #define HGCMMSGID_LOAD       (12)
-
 #define HGCMMSGID_HOSTCALL   (13)
+#define HGCMMSGID_LOADSTATE  (14)
+#define HGCMMSGID_SAVESTATE  (15)
 
 class HGCMMsgConnect: public HGCMMsgHeader
 {
@@ -290,6 +291,14 @@ class HGCMMsgDisconnect: public HGCMMsgHeader
     public:
         /* client identifier */
         uint32_t u32ClientID;
+};
+
+class HGCMMsgLoadSaveState: public HGCMMsgHeader
+{
+    public:
+        /* client identifier */
+        uint32_t    u32ClientID;
+        PSSMHANDLE  pSSM;
 };
 
 class HGCMMsgLoad: public HGCMMsgHeader
@@ -387,6 +396,8 @@ HGCMMsgCore *hgcmMessageAlloc (uint32_t u32MsgId)
         case HGCMMSGID_DISCONNECT:      return new HGCMMsgDisconnect ();
         case HGCMMSGID_LOAD:            return new HGCMMsgLoad ();
         case HGCMMSGID_HOSTCALL:        return new HGCMMsgHostCall ();
+        case HGCMMSGID_LOADSTATE:      
+        case HGCMMSGID_SAVESTATE:       return new HGCMMsgLoadSaveState ();
         default:
             Log(("hgcmMessageAlloc::Unsupported message number %08X\n", u32MsgId));
     }
@@ -519,6 +530,38 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
                 rc = VINF_SUCCESS;
             } break;
+
+            case HGCMMSGID_LOADSTATE:
+            {
+                LogFlow(("HGCMMSGID_LOADSTATE\n"));
+
+                HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)pMsgCore;
+                HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
+
+                rc = VINF_SUCCESS;
+                if (pClient && pSvc->m_fntable.pfnLoadState)
+                {
+                    rc = pSvc->m_fntable.pfnLoadState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                    hgcmObjDereference (pClient);
+                }
+                break;
+            }
+
+            case HGCMMSGID_SAVESTATE:
+            {
+                LogFlow(("HGCMMSGID_SAVESTATE\n"));
+
+                HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)pMsgCore;
+                HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
+
+                rc = VINF_SUCCESS;
+                if (pClient && pSvc->m_fntable.pfnSaveState)
+                {
+                    rc = pSvc->m_fntable.pfnSaveState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                    hgcmObjDereference (pClient);
+                }
+                break;
+            }
 
             default:
             {
@@ -1270,6 +1313,82 @@ int hgcmDisconnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t
         Log(("MAIN::hgcmDisconnectInternal: Message allocation failed: %Vrc\n", rc));
     }
 
+
+    return rc;
+}
+
+int hgcmSaveStateInternal (PPDMIHGCMPORT pHGCMPort, uint32_t u32ClientID, PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlow(("MAIN::hgcmSaveStateInternal: pHGCMPort = %p, u32ClientID = %d\n",
+             pHGCMPort, u32ClientID));
+
+    if (!pHGCMPort)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    HGCMMSGHANDLE hMsg = 0;
+
+    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_SAVESTATE, sizeof (HGCMMsgLoadSaveState), hgcmMessageAlloc);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)hgcmObjReference (hMsg);
+
+        AssertRelease(pMsg);
+
+        pMsg->pHGCMPort   = pHGCMPort;
+        pMsg->u32ClientID = u32ClientID;
+        pMsg->pSSM        = pSSM;
+
+        rc = hgcmMsgSend (hMsg);
+
+        hgcmObjDereference (pMsg);
+    }
+    else
+    {
+        Log(("MAIN::hgcmSaveStateInternal: Message allocation failed: %Vrc\n", rc));
+    }
+
+    return rc;
+}
+
+int hgcmLoadStateInternal (PPDMIHGCMPORT pHGCMPort, uint32_t u32ClientID, PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlow(("MAIN::hgcmLoadStateInternal: pHGCMPort = %p, u32ClientID = %d\n",
+             pHGCMPort, u32ClientID));
+
+    if (!pHGCMPort)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    HGCMMSGHANDLE hMsg = 0;
+
+    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_LOADSTATE, sizeof (HGCMMsgLoadSaveState), hgcmMessageAlloc);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)hgcmObjReference (hMsg);
+
+        AssertRelease(pMsg);
+
+        pMsg->pHGCMPort   = pHGCMPort;
+        pMsg->u32ClientID = u32ClientID;
+        pMsg->pSSM        = pSSM;
+
+        rc = hgcmMsgSend (hMsg);
+
+        hgcmObjDereference (pMsg);
+    }
+    else
+    {
+        Log(("MAIN::hgcmLoadStateInternal: Message allocation failed: %Vrc\n", rc));
+    }
 
     return rc;
 }
