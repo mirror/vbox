@@ -91,11 +91,11 @@ static int rtkldrConvertErrorFromIPRT(int rc);
 
 static int      rtkldrRdrCreate(  PPKLDRRDR ppRdr, const char *pszFilename);
 static int      rtkldrRdrDestroy( PKLDRRDR pRdr);
-static int      rtkldrRdrRead(    PKLDRRDR pRdr, void *pvBuf, size_t cb, off_t off);
+static int      rtkldrRdrRead(    PKLDRRDR pRdr, void *pvBuf, size_t cb, KLDRFOFF off);
 static int      rtkldrRdrAllMap(  PKLDRRDR pRdr, const void **ppvBits);
 static int      rtkldrRdrAllUnmap(PKLDRRDR pRdr, const void *pvBits);
-static off_t    rtkldrRdrSize(    PKLDRRDR pRdr);
-static off_t    rtkldrRdrTell(    PKLDRRDR pRdr);
+static KLDRFOFF rtkldrRdrSize(    PKLDRRDR pRdr);
+static KLDRFOFF rtkldrRdrTell(    PKLDRRDR pRdr);
 static const char * rtkldrRdrName(PKLDRRDR pRdr);
 static size_t   rtkldrRdrPageSize(PKLDRRDR pRdr);
 static int      rtkldrRdrMap(     PKLDRRDR pRdr, void **ppvBase, uint32_t cSegments, PCKLDRSEG paSegments, unsigned fFixed);
@@ -382,7 +382,7 @@ static int      rtkldrRdrDestroy( PKLDRRDR pRdr)
 
 
 /** @copydoc KLDRRDROPS::pfnRead */
-static int      rtkldrRdrRead(    PKLDRRDR pRdr, void *pvBuf, size_t cb, off_t off)
+static int      rtkldrRdrRead(    PKLDRRDR pRdr, void *pvBuf, size_t cb, KLDRFOFF off)
 {
     PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
     int rc = pReader->pfnRead(pReader, pvBuf, cb, off);
@@ -409,18 +409,18 @@ static int      rtkldrRdrAllUnmap(PKLDRRDR pRdr, const void *pvBits)
 
 
 /** @copydoc KLDRRDROPS::pfnSize */
-static off_t    rtkldrRdrSize(    PKLDRRDR pRdr)
+static KLDRFOFF rtkldrRdrSize(    PKLDRRDR pRdr)
 {
     PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
-    return (off_t)pReader->pfnSize(pReader);
+    return (KLDRFOFF)pReader->pfnSize(pReader);
 }
 
 
 /** @copydoc KLDRRDROPS::pfnTell */
-static off_t    rtkldrRdrTell(    PKLDRRDR pRdr)
+static KLDRFOFF rtkldrRdrTell(    PKLDRRDR pRdr)
 {
     PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
-    return (off_t)pReader->pfnTell(pReader);
+    return (KLDRFOFF)pReader->pfnTell(pReader);
 }
 
 
@@ -622,6 +622,12 @@ static int rtkldrGetImportWrapper(PKLDRMOD pMod, uint32_t iImport, uint32_t iSym
         psz[cchSymbol] = '\0';
         pszSymbol = psz;
     }
+
+#if defined(__OS2__) || (defined(__DARWIN__) && defined(__X86__))
+    /* skip the underscore prefix. */
+    if (*pszSymbol == '_')
+        pszSymbol++;
+#endif
 
     /* get the import module name - TODO: cache this */
     const char *pszModule = NULL;
