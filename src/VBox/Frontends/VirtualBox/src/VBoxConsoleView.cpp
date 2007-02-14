@@ -301,7 +301,7 @@ public:
     STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTRPARAM id, IN_BSTRPARAM message)
     {
         QApplication::postEvent (
-            view, new RuntimeErrorEvent (!!fatal, QString::fromUcs2 (id), 
+            view, new RuntimeErrorEvent (!!fatal, QString::fromUcs2 (id),
                                          QString::fromUcs2 (message)));
         return S_OK;
     }
@@ -354,6 +354,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , muNumLockAdaptionCnt (2)
     , muCapsLockAdaptionCnt (2)
     , mode (rm)
+#if defined(Q_WS_WIN)
+    , mAlphaCursor (NULL)
+#endif
 {
     Assert (!cconsole.isNull() &&
             !cconsole.GetDisplay().isNull() &&
@@ -476,6 +479,8 @@ VBoxConsoleView::~VBoxConsoleView()
     if (g_kbdhook)
         UnhookWindowsHookEx (g_kbdhook);
     g_view = 0;
+    if (mAlphaCursor)
+        DestroyIcon (mAlphaCursor);
 #endif
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
@@ -671,7 +676,7 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
 void VBoxConsoleView::onFullscreenChange (bool /* on */)
 {
     /// @todo (r=dmik) not currently sure is this method necessary to
-    //  fix fullscreen toggle problems (invalid areas) on Linux/SDL    
+    //  fix fullscreen toggle problems (invalid areas) on Linux/SDL
 //    if (fb)
 //    {
 //        VBoxResizeEvent e (fb->pixelFormat(), fb->address(), fb->colorDepth(),
@@ -2154,7 +2159,6 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         BITMAPV5HEADER bi;
         HBITMAP hBitmap;
         void *lpBits;
-        HCURSOR hAlphaCursor = NULL;
 
         ::ZeroMemory (&bi, sizeof (BITMAPV5HEADER));
         bi.bV5Size = sizeof (BITMAPV5HEADER);
@@ -2261,13 +2265,15 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
             ii.hbmMask = hMonoBitmap;
             ii.hbmColor = hBitmap;
 
-            hAlphaCursor = CreateIconIndirect (&ii);
+            HCURSOR hAlphaCursor = CreateIconIndirect (&ii);
             Assert (hAlphaCursor);
             if (hAlphaCursor)
             {
                 viewport()->setCursor (QCursor (hAlphaCursor));
                 ok = true;
-                DestroyIcon (hAlphaCursor);
+                if (mAlphaCursor)
+                    DestroyIcon (mAlphaCursor);
+                mAlphaCursor = hAlphaCursor;
             }
         }
 

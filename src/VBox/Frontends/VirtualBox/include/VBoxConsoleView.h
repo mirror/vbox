@@ -82,7 +82,7 @@ public:
     void setAutoresizeGuest (bool on);
 
     void onFullscreenChange (bool on);
-    
+
     void fixModifierState (LONG *codes, uint *count);
 
 signals:
@@ -204,6 +204,10 @@ private:
     QTimer *resize_hint_timer;
 
     VBoxDefs::RenderMode mode;
+
+#if defined(Q_WS_WIN)
+    HCURSOR mAlphaCursor;
+#endif
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
     QPixmap pm;
