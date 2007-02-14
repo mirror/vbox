@@ -477,12 +477,50 @@ private:
 
     bool mVMStateChangeCallbackDisabled;
 
-    // local state value
+    /* Local machine state value */
     MachineState_T mMachineState;
 
     typedef std::list <ComPtr <IConsoleCallback> > CallbackList;
     CallbackList mCallbacks;
 
+    struct
+    {
+        /** OnMousePointerShapeChange() cache */
+        struct
+        {
+            bool valid;
+            bool visible;
+            bool alpha;
+            uint32_t xHot;
+            uint32_t yHot;
+            uint32_t width;
+            uint32_t height;
+            BYTE *shape;
+            size_t shapeSize;
+        }
+        mpsc;
+
+        /** OnMouseCapabilityChange() cache */
+        struct
+        {
+            bool valid;
+            BOOL supportsAbsolute;
+            BOOL needsHostCursor;
+        }
+        mcc;
+
+        /** OnKeyboardLedsChange() cache */
+        struct
+        {
+            bool valid;
+            bool numLock;
+            bool capsLock;
+            bool scrollLock;
+        }
+        klc;
+    }
+    mCallbackData;
+    
     friend struct VMTask;
 };
 
