@@ -59,22 +59,22 @@ AssertCompileSize(RTHCINT, 4);
 AssertCompileSize(RTHCUINT, 4);
 AssertCompileSize(RTHCINTPTR, 8);
 AssertCompileSize(RTHCUINTPTR, 8);
-//AssertCompileSize(RTHCINTREG, 8);
+/*AssertCompileSize(RTHCINTREG, 8);*/
 AssertCompileSize(RTHCUINTREG, 8);
 AssertCompileSize(RTR0PTR, 8);
-//AssertCompileSize(RTR0INT, 4);
-//AssertCompileSize(RTR0UINT, 4);
+/*AssertCompileSize(RTR0INT, 4);*/
+/*AssertCompileSize(RTR0UINT, 4);*/
 AssertCompileSize(RTR0INTPTR, 8);
 AssertCompileSize(RTR0UINTPTR, 8);
-//AssertCompileSize(RTR3PTR, 8);
-//AssertCompileSize(RTR3INT, 4);
-//AssertCompileSize(RTR3UINT, 4);
+/*AssertCompileSize(RTR3PTR, 8);*/
+/*AssertCompileSize(RTR3INT, 4);*/
+/*AssertCompileSize(RTR3UINT, 4);*/
 AssertCompileSize(RTR3INTPTR, 8);
 AssertCompileSize(RTR3UINTPTR, 8);
 AssertCompileSize(RTUINTPTR, 8);
 
 # if defined(IN_RING3) || defined(IN_RING0)
-//AssertCompileSize(RTCCINTREG, 8);
+/*AssertCompileSize(RTCCINTREG, 8);*/
 AssertCompileSize(RTCCUINTREG, 8);
 # endif
 
@@ -83,16 +83,16 @@ AssertCompileSize(RTCCUINTREG, 8);
 AssertCompileSize(RTHCPTR, 4);
 AssertCompileSize(RTHCINT, 4);
 AssertCompileSize(RTHCUINT, 4);
-//AssertCompileSize(RTHCINTPTR, 4);
+/*AssertCompileSize(RTHCINTPTR, 4);*/
 AssertCompileSize(RTHCUINTPTR, 4);
 AssertCompileSize(RTR0PTR, 4);
-//AssertCompileSize(RTR0INT, 4);
-//AssertCompileSize(RTR0UINT, 4);
+/*AssertCompileSize(RTR0INT, 4);*/
+/*AssertCompileSize(RTR0UINT, 4);*/
 AssertCompileSize(RTR0INTPTR, 4);
 AssertCompileSize(RTR0UINTPTR, 4);
-//AssertCompileSize(RTR3PTR, 4);
-//AssertCompileSize(RTR3INT, 4);
-//AssertCompileSize(RTR3UINT, 4);
+/*AssertCompileSize(RTR3PTR, 4);*/
+/*AssertCompileSize(RTR3INT, 4);*/
+/*AssertCompileSize(RTR3UINT, 4);*/
 AssertCompileSize(RTR3INTPTR, 4);
 AssertCompileSize(RTR3UINTPTR, 4);
 # if GC_ARCH_BITS == 64
@@ -102,7 +102,7 @@ AssertCompileSize(RTUINTPTR, 4);
 # endif
 
 # if defined(IN_RING3) || defined(IN_RING0)
-//AssertCompileSize(RTCCINTREG, 4);
+/*AssertCompileSize(RTCCINTREG, 4);*/
 AssertCompileSize(RTCCUINTREG, 4);
 # endif
 
@@ -120,11 +120,11 @@ AssertCompileSize(RTGCINT, 4);
 AssertCompileSize(RTGCUINT, 4);
 AssertCompileSize(RTGCINTPTR, 8);
 AssertCompileSize(RTGCUINTPTR, 8);
-//AssertCompileSize(RTGCINTREG, 8);
+/*AssertCompileSize(RTGCINTREG, 8);*/
 AssertCompileSize(RTGCUINTREG, 8);
 
 # ifdef IN_GC
-//AssertCompileSize(RTCCINTREG, 8);
+/*AssertCompileSize(RTCCINTREG, 8);*/
 AssertCompileSize(RTCCUINTREG, 8);
 # endif
 
@@ -134,11 +134,11 @@ AssertCompileSize(RTGCINT, 4);
 AssertCompileSize(RTGCUINT, 4);
 AssertCompileSize(RTGCINTPTR, 4);
 AssertCompileSize(RTGCUINTPTR, 4);
-//AssertCompileSize(RTGCINTREG, 4);
+/*AssertCompileSize(RTGCINTREG, 4);*/
 AssertCompileSize(RTGCUINTREG, 4);
 
 # ifdef IN_GC
-//AssertCompileSize(RTCCINTREG, 4);
+/*AssertCompileSize(RTCCINTREG, 4);*/
 AssertCompileSize(RTCCUINTREG, 4);
 # endif
 
