@@ -26,6 +26,7 @@
 #include <iprt/uuid.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
 
 
 int main(int argc, char **argv)
@@ -55,6 +56,35 @@ int main(int argc, char **argv)
     RTUUID Uuid2;
     rc = RTUuidFromStr(&Uuid2, sz); CHECK_RC();
     CHECK_EXPR(RTUuidCompare(&Uuid, &Uuid2) == 0);
+
+    /* 
+     * Check the binary representation. 
+     */
+    RTUUID Uuid3;
+    Uuid3.au8[0]  = 0x01;
+    Uuid3.au8[1]  = 0x23;
+    Uuid3.au8[2]  = 0x45;
+    Uuid3.au8[3]  = 0x67;
+    Uuid3.au8[4]  = 0x89;
+    Uuid3.au8[5]  = 0xab;
+    Uuid3.au8[6]  = 0xcd;
+    Uuid3.au8[7]  = 0x4f;
+    Uuid3.au8[8]  = 0x10;
+    Uuid3.au8[9]  = 0xb2;
+    Uuid3.au8[10] = 0x54;
+    Uuid3.au8[11] = 0x76;
+    Uuid3.au8[12] = 0x98;
+    Uuid3.au8[13] = 0xba;
+    Uuid3.au8[14] = 0xdc;
+    Uuid3.au8[15] = 0xfe;
+    Uuid3.Gen.u16ClockSeq = (Uuid3.Gen.u16ClockSeq & 0x3fff) | 0x8000;
+    Uuid3.Gen.u16TimeHiAndVersion = (Uuid3.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+    const char *pszUuid3 = "67452301-ab89-4fcd-10b2-547698badcfe";
+    rc = RTUuidToStr(&Uuid3, sz, sizeof(sz)); CHECK_RC();
+    CHECK_EXPR(strcmp(sz, pszUuid3) == 0);
+    rc = RTUuidFromStr(&Uuid, pszUuid3); CHECK_RC();
+    CHECK_EXPR(RTUuidCompare(&Uuid, &Uuid3) == 0);
+    CHECK_EXPR(memcmp(&Uuid3, &Uuid, sizeof(Uuid)) == 0);
 
     /*
      * Summary.
