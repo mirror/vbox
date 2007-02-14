@@ -316,6 +316,39 @@ static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGC
     return hgcmGuestCallInternal (pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms, false);
 }
 
+/**
+ * Execute state save operation.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         Driver instance of the driver which registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ */
+static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
+    
+    return hgcmSaveStateInternal (pDrv->pHGCMPort, pDrv->pVMMDev->mSharedFolderClientId, pSSM);
+}
+
+
+/**
+ * Execute state load operation.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         Driver instance of the driver which registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @param   u32Version      Data layout version.
+ */
+static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
+
+    if (u32Version != HGCM_SSM_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    return hgcmLoadStateInternal (pDrv->pHGCMPort, pDrv->pVMMDev->mSharedFolderClientId, pSSM);
+}
+
 int VMMDev::hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary)
 {
     return hgcmLoadInternal (pszServiceName, pszServiceLibrary);
@@ -541,6 +574,9 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         rc = VINF_SUCCESS;
         pData->pVMMDev->mSharedFolderClientId = 0;
     }
+#if 0 /* enable later */
+    pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
+#endif 
 #endif
 
     return VINF_SUCCESS;
