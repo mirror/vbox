@@ -245,8 +245,8 @@ static int vmmR3InitCoreCode(PVM pVM)
             /* try more allocations. */
             struct
             {
-                void *pvR0;
-                void *pvR3;
+                RTR0PTR  pvR0;
+                void    *pvR3;
                 RTHCPHYS HCPhys;
             } aBadTries[16];
             unsigned i = 0;
@@ -359,6 +359,9 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     else
         AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Vrc\n", rc), rc);
 
+    /* GC switchers are enabled by default. Turned off by HWACCM. */
+    pVM->vmm.s.fSwitcherDisabled = false;
+
     /*
      * Register the saved state data unit.
      */
@@ -368,8 +371,14 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /* GC switchers are enabled by default. Turned off by HWACCM. */
-    pVM->vmm.s.fSwitcherDisabled = false;
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+    /*
+     * Register the Ring-0 VM handle with the session for fast ioctl calls.
+     */
+    rc = SUPSetVMForFastIOCtl(pVM->pVMR0);
+    if (VBOX_FAILURE(rc))
+        return rc;
+#endif
 
     /*
      * Init core code.
@@ -614,7 +623,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPCallVMMR0(pVM, VMMR0_DO_VMMR0_INIT, (void *)VBOX_VERSION);
+        rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_VMMR0_INIT, (void *)VBOX_VERSION);
 #endif
         if (    pVM->vmm.s.pR0Logger
             &&  pVM->vmm.s.pR0Logger->Logger.offScratch > 0)
@@ -674,7 +683,7 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
             //rc = VERR_GENERAL_FAILURE;
             rc = VINF_SUCCESS;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_CALL_HYPERVISOR, NULL);
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_CALL_HYPERVISOR, NULL);
 #endif
 #ifdef LOG_ENABLED
             PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
@@ -1044,18 +1053,18 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
             {
                 uint32_t offCPUM = *u.pu32++;
                 Assert(offCPUM < sizeof(pVM->cpum));
-                *uSrc.pu32 = (uint32_t)((uintptr_t)&pVM->cpum + offCPUM);
+                *uSrc.pu32 = (uint32_t)pVM->pVMR0 + RT_OFFSETOF(VM, cpum) + offCPUM;
                 break;
             }
 
             /*
-             * Make 32-bit HC pointer given VM offset.
+             * Make 32-bit R0 pointer given VM offset.
              */
             case FIX_HC_VM_OFF:
             {
                 uint32_t offVM = *u.pu32++;
                 Assert(offVM < sizeof(VM));
-                *uSrc.pu32 = (uint32_t)(uintptr_t)pVM + offVM;
+                *uSrc.pu32 = (uint32_t)pVM->pVMR0 + offVM;
                 break;
             }
 
@@ -1239,7 +1248,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
             case FIX_HC_64BIT_CPUM:
             {
                 Assert(offSrc < pSwitcher->cbCode);
-                *uSrc.pu64 = (uintptr_t)&pVM->cpum;
+                *uSrc.pu64 = pVM->pVMR0 + RT_OFFSETOF(VM, cpum);
                 break;
             }
 #endif
@@ -1833,7 +1842,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1881,7 +1890,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_HWACC_RUN, NULL);
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1962,7 +1971,7 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -2016,7 +2025,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -2543,7 +2552,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
-    return SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
+    return SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
 }
 
 
@@ -2577,7 +2586,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
-    rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
+    rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
     bool fDump = false;
     if (rc != rcExpect)
     {
@@ -2655,7 +2664,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
     if (VBOX_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
-        
+
         /*
          * Test various crashes which we must be able to recover from.
          */
@@ -2817,7 +2826,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         uint64_t    TickStart = ASMReadTSC();
         do
         {
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
             if (VBOX_FAILURE(rc))
             {
                 Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
@@ -2868,7 +2877,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
 
             uint64_t TickThisStart = ASMReadTSC();
-            rc = SUPCallVMMR0(pVM, VMMR0_DO_RAW_RUN, NULL);
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_RAW_RUN, NULL);
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (VBOX_FAILURE(rc))
             {

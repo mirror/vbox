@@ -109,12 +109,12 @@ typedef struct VMMR0JMPBUF
     uint32_t    esp;
     uint32_t    eip;
     uint32_t    u32Padding;
-#endif 
+#endif
 #if HC_ARCH_BITS == 64
     uint64_t    rbx;
 # ifdef __WIN__
-    uint64_t    rsi;            
-    uint64_t    rdi;            
+    uint64_t    rsi;
+    uint64_t    rdi;
 # endif
     uint64_t    rbp;
     uint64_t    r12;
@@ -123,7 +123,7 @@ typedef struct VMMR0JMPBUF
     uint64_t    r15;
     uint64_t    rsp;
     uint64_t    rip;
-#endif 
+#endif
     /** @} */
 
     /** Flag that indicates that we've done a ring-3 call. */
@@ -156,10 +156,10 @@ typedef struct VMM
 /** @todo pvHCCoreCodeR3 -> pvCoreCodeR3, pvHCCoreCodeR0 -> pvCoreCodeR0 */
     /** Pointer to core code ring-3 mapping - contiguous memory.
      * At present this only means the context switcher code. */
-    RTHCPTR                     pvHCCoreCodeR3;
+    RTR3PTR                     pvHCCoreCodeR3;
     /** Pointer to core code ring-0 mapping - contiguous memory.
      * At present this only means the context switcher code. */
-    RTHCPTR                     pvHCCoreCodeR0;
+    RTR0PTR                     pvHCCoreCodeR0;
     /** Pointer to core code guest context mapping. */
     RTGCPTR                     pvGCCoreCode;
 #ifdef VBOX_WITH_NMI
@@ -249,7 +249,7 @@ typedef struct VMM
     /** The Ring-0 jmp buffer. */
     VMMR0JMPBUF                 CallHostR0JmpBuf;
     /** @} */
-    
+
     /** Number of VMMR0_DO_RUN_GC calls. */
     STAMCOUNTER                 StatRunGC;
     /** Statistics for each of the GC return codes.

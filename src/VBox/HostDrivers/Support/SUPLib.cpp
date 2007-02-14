@@ -78,7 +78,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef DECLCALLBACK(int) FNCALLVMMR0(PVM pVM, unsigned uOperation, void *pvArg);
+typedef DECLCALLBACK(int) FNCALLVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
 typedef FNCALLVMMR0 *PFNCALLVMMR0;
 
 
@@ -355,7 +355,7 @@ SUPR3DECL(SUPPAGINGMODE) SUPGetPagingMode(void)
     return Out.enmMode;
 }
 
-SUPR3DECL(int) SUPCallVMMR0Ex(PVM pVM, unsigned uOperation, void *pvArg, unsigned cbArg)
+SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, void *pvArg, unsigned cbArg)
 {
     /*
      * Issue IOCtl to the SUPDRV kernel module.
@@ -363,7 +363,7 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVM pVM, unsigned uOperation, void *pvArg, unsigne
     SUPCALLVMMR0_IN In;
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
-    In.pVM              = pVM;
+    In.pVMR0            = pVMR0;
     In.uOperation       = uOperation;
     In.cbArg            = cbArg;
     In.pvArg            = pvArg;
@@ -376,18 +376,18 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVM pVM, unsigned uOperation, void *pvArg, unsigne
 }
 
 
-SUPR3DECL(int) SUPCallVMMR0(PVM pVM, unsigned uOperation, void *pvArg)
+SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg)
 {
 #ifndef VBOX_WITHOUT_IDT_PATCHING
-    return g_pfnCallVMMR0(pVM, uOperation, pvArg);
+    return g_pfnCallVMMR0(pVMR0, uOperation, pvArg);
 
 #else
-    if (uOperation == VMMR0_DO_RAW_RUN)
+    if (RT_LIKELY(uOperation == VMMR0_DO_RAW_RUN))
     {
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_RAW_RUN);
     }
-    if (uOperation == VMMR0_DO_HWACC_RUN)
+    if (RT_LIKELY(uOperation == VMMR0_DO_HWACC_RUN))
     {
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_HWACC_RUN);
@@ -397,7 +397,7 @@ SUPR3DECL(int) SUPCallVMMR0(PVM pVM, unsigned uOperation, void *pvArg)
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_NOP);
     }
-    return SUPCallVMMR0Ex(pVM, uOperation, pvArg, pvArg ? sizeof(pvArg) : 0);
+    return SUPCallVMMR0Ex(pVMR0, uOperation, pvArg, pvArg ? sizeof(pvArg) : 0);
 #endif
 }
 
@@ -477,11 +477,11 @@ SUPR3DECL(int) SUPPageUnlock(void *pvStart)
 
 SUPR3DECL(void *) SUPContAlloc(unsigned cb, PRTHCPHYS pHCPhys)
 {
-    return SUPContAlloc2(cb, NULL, pHCPhys);
+    return SUPContAlloc2(cb, NIL_RTR0PTR, pHCPhys);
 }
 
 
-SUPR3DECL(void *) SUPContAlloc2(unsigned cb, void **ppvR0, PRTHCPHYS pHCPhys)
+SUPR3DECL(void *) SUPContAlloc2(unsigned cb, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys)
 {
     /*
      * Validate.
@@ -489,6 +489,9 @@ SUPR3DECL(void *) SUPContAlloc2(unsigned cb, void **ppvR0, PRTHCPHYS pHCPhys)
     AssertMsg(cb > 64 && cb < PAGE_SIZE * 256, ("cb=%d must be > 64 and < %d (256 pages)\n", cb, PAGE_SIZE * 256));
     AssertPtr(pHCPhys);
     *pHCPhys = NIL_RTHCPHYS;
+    AssertPtrNull(pR0Ptr);
+    if (pR0Ptr)
+        *pR0Ptr = NIL_RTR0PTR;
 
     /*
      * Issue IOCtl to the SUPDRV kernel module.
@@ -505,13 +508,13 @@ SUPR3DECL(void *) SUPContAlloc2(unsigned cb, void **ppvR0, PRTHCPHYS pHCPhys)
     {
         rc = SUPPageAlloc(In.cb >> PAGE_SHIFT, &Out.pvR3);
         Out.HCPhys = (uintptr_t)Out.pvR3 + (PAGE_SHIFT * 1024);
-        Out.pvR0 = Out.pvR3;
+        Out.pvR0 = (uintptr_t)Out.pvR3;
     }
     if (VBOX_SUCCESS(rc))
     {
         *pHCPhys = (RTHCPHYS)Out.HCPhys;
-        if (ppvR0)
-            *ppvR0 = Out.pvR0;
+        if (pR0Ptr)
+            *pR0Ptr = Out.pvR0;
         return Out.pvR3;
     }
 
@@ -716,7 +719,7 @@ static int suplibGenerateCallVMMR0(uint8_t u8Interrupt)
     /*
      * reg params:
      *      <GCC>   <MSC>   <argument>
-     *      rdi     rcx     pVM
+     *      rdi     rcx     pVMR0
      *      esi     edx     uOperation
      *      rdx     r8      pvArg
      *

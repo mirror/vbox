@@ -168,14 +168,14 @@ extern DECLIMPORT(const SUPGLOBALINFOPAGE) g_SUPGlobalInfoPage;
 DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
 {
     PCSUPGLOBALINFOPAGE pGIP;
-    __asm__ __volatile__ ("movabs g_SUPGlobalInfoPage,%0\n\t" 
+    __asm__ __volatile__ ("movabs g_SUPGlobalInfoPage,%0\n\t"
                           : "=a" (pGIP));
     return pGIP;
 }
 #  define g_pSUPGlobalInfoPage         (SUPGetGIP())
 # else
 #  define g_pSUPGlobalInfoPage         (&g_SUPGlobalInfoPage)
-#endif 
+#endif
 #else
 extern DECLIMPORT(PCSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
 #endif
@@ -250,11 +250,11 @@ SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0);
  * See VMMR0Entry() for more details.
  *
  * @returns error code specific to uFunction.
- * @param   pVM         Pointer to the Host Context mapping of the VM structure.
+ * @param   pVMR0       Pointer to the Ring-0 (Host Context) mapping of the VM structure.
  * @param   uOperation  Operation to execute.
  * @param   pvArg       Argument.
  */
-SUPR3DECL(int) SUPCallVMMR0(PVM pVM, unsigned uOperation, void *pvArg);
+SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
 
 /**
  * Calls the HC R0 VMM entry point, in a safer but slower manner than SUPCallVMMR0.
@@ -264,14 +264,14 @@ SUPR3DECL(int) SUPCallVMMR0(PVM pVM, unsigned uOperation, void *pvArg);
  * See VMMR0Entry() for more details.
  *
  * @returns error code specific to uFunction.
- * @param   pVM         Pointer to the Host Context mapping of the VM structure.
+ * @param   pVMR0       Pointer to the Ring-0 (Host Context) mapping of the VM structure.
  * @param   uOperation  Operation to execute.
  * @param   pvArg       Pointer to argument structure or if cbArg is 0 just an value.
  * @param   cbArg       The size of the argument. This is used to copy whatever the argument
  *                      points at into a kernel buffer to avoid problems like the user page
  *                      being invalidated while we're executing the call.
  */
-SUPR3DECL(int) SUPCallVMMR0Ex(PVM pVM, unsigned uOperation, void *pvArg, unsigned cbArg);
+SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, void *pvArg, unsigned cbArg);
 
 /**
  * Queries the paging mode of the host OS.
@@ -348,14 +348,14 @@ SUPR3DECL(void *) SUPContAlloc(unsigned cb, PRTHCPHYS pHCPhys);
  *          The returned memory must be freed using SUPContFree().
  * @returns NULL on failure.
  * @param   cb          Number of bytes to allocate.
- * @param   ppvR0       Where to store the ring-0 mapping of the allocation. (optional)
+ * @param   pR0Ptr      Where to store the ring-0 mapping of the allocation. (optional)
  * @param   pHCPhys     Where to store the physical address of the memory block.
  *
  * @remark  This 2nd version of this API exists because we're not able to map the
  *          ring-3 mapping executable on WIN64. This is a serious problem in regard to
  *          the world switchers.
  */
-SUPR3DECL(void *) SUPContAlloc2(unsigned cb, void **ppvR0, PRTHCPHYS pHCPhys);
+SUPR3DECL(void *) SUPContAlloc2(unsigned cb, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys);
 
 /**
  * Frees memory allocated with SUPContAlloc().
@@ -485,7 +485,7 @@ SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const 
 
 SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, void *pvR3, unsigned cb, PSUPPAGE paPages);
 SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, void *pvR3);
-SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, void **ppvR3, PRTHCPHYS pHCPhys);
+SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
 SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, void *pv);
 SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **ppvR3, PSUPPAGE paPages);
 SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, void *pv);

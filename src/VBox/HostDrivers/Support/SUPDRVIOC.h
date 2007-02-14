@@ -299,9 +299,9 @@ typedef struct SUPCONTALLOC_IN
 typedef struct SUPCONTALLOC_OUT
 {
     /** The address of the ring-0 mapping of the allocated memory. */
-    void       *pvR0;
+    RTR0PTR     pvR0;
     /** The address of the ring-3 mapping of the allocated memory. */
-    void       *pvR3;
+    RTR3PTR     pvR3;
     /** The physical address of the allocation. */
     RTHCPHYS    HCPhys;
 } SUPCONTALLOC_OUT, *PSUPCONTALLOC_OUT;
@@ -457,7 +457,7 @@ typedef struct SUPCALLVMMR0_IN
     /** Session cookie. */
     uint32_t    u32SessionCookie;
     /** The VM handle. */
-    PVM         pVM;
+    PVMR0       pVMR0;
     /** Which operation to execute. */
     uint32_t    uOperation;
     /** The size of the buffer pointed to by pvArg. */

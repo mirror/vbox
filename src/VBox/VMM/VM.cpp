@@ -187,7 +187,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
          * Allocate memory for the VM structure.
          */
         RTHCPHYS HCPhysVM;
-        PVM pVM = (PVM)SUPContAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE), &HCPhysVM);
+        PVMR0 pVMR0;
+        PVM pVM = (PVM)SUPContAlloc2(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE), &pVMR0, &HCPhysVM);
         if (pVM)
         {
             Log(("VMR3Create: Allocated pVM=%p HCPhysVM=%VHp\n", pVM, HCPhysVM));
@@ -197,6 +198,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
              */
             memset(pVM, 0, sizeof(*pVM));
             pVM->pVMHC = pVM;
+            pVM->pVMR0 = pVMR0;
+            pVM->pVMR3 = pVM;
             pVM->HCPhysVM = HCPhysVM;
             pVM->pSession = pSession;
             pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
@@ -1001,8 +1004,8 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRES
     /* If we are in an inconsistent state, then we don't allow state saving. */
     if (pVM->vm.s.fPreventSaveState)
     {
-        LogRel(("VMM: vmR3Save: saving the VM state is not allowed at this moment\n")); 
-        return VERR_VM_SAVE_STATE_NOT_ALLOWED; 
+        LogRel(("VMM: vmR3Save: saving the VM state is not allowed at this moment\n"));
+        return VERR_VM_SAVE_STATE_NOT_ALLOWED;
     }
 
     /*
@@ -1172,7 +1175,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
      * request which was not completed yet. Later, the Windows guest shuts down via
      * ACPI and we find the VMSTATE_OFF. Just ignore the second power-off request.
      */
-    /** @todo r=bird: We should find a proper solution to this problem. This is just a workaround. 
+    /** @todo r=bird: We should find a proper solution to this problem. This is just a workaround.
      * Guest code should really run after we've entered VMSTATE_OFF really... */
     if (pVM->enmVMState == VMSTATE_OFF)
         return VINF_EM_OFF;
@@ -2706,7 +2709,7 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIME
  * Ellipsis to va_list wrapper for calling pfnAtRuntimeError.
  */
 static void vmR3SetRuntimeErrorWorkerDoCall(PVM pVM, PVMATRUNTIMEERROR pCur, bool fFatal,
-                                            const char *pszErrorID, 
+                                            const char *pszErrorID,
                                             const char *pszFormat, ...)
 {
     va_list va;
