@@ -520,9 +520,8 @@ xpidl_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 
 # We do these ONCE.
-libIDL_config        := $(firstword $(shell which libIDL-config-2 libIDL-config 2> /dev/null))
-libIDL_config_cflags := $(shell $(libIDL_config) --cflags)
-libIDL_config_libs   := $(shell $(libIDL_config) --libs)
+libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
+libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
 xpidl_CFLAGS = \
 	$(libIDL_config_cflags)
 xpidl_LDFLAGS = \
