@@ -620,7 +620,7 @@ show_bmp:
         Bit16u width, height, compr, clr_used;
         Bit16u pad_bytes, depth, planes, palette_size, palette_data;
         Bit16u bidx, didx;
-        signed x, y;
+        int x, y;
 
         // Check the size of the information header that indicates
         // the structure type
