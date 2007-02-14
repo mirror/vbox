@@ -175,7 +175,7 @@ typedef struct SUPCOOKIE_IN
 /** SUPCOOKIE_IN magic word. */
 #define SUPCOOKIE_MAGIC             "The Magic Word!"
 /** Current interface version. */
-#define SUPDRVIOC_VERSION           0x00030001
+#define SUPDRVIOC_VERSION           0x00030002
 
 /** SUP_IOCTL_COOKIE Output. */
 typedef struct SUPCOOKIE_OUT
