@@ -240,45 +240,47 @@ RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
     AssertReturn(pUuid, VERR_INVALID_PARAMETER);
     AssertReturn(pszString, VERR_INVALID_PARAMETER);
 
+#define MY_CHECK(expr) do { if (RT_UNLIKELY(!(expr))) return VERR_INVALID_UUID_FORMAT; } while (0)
 #define MY_ISXDIGIT(ch) (s_aDigits[(ch) & 0xff] != 0xff)
-    AssertReturn(MY_ISXDIGIT(pszString[ 0]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 1]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 2]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 3]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 4]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 5]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 6]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 7]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(pszString[ 8] == '-',    VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[ 9]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[10]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[11]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[12]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(pszString[13] == '-',    VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[14]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[15]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[16]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[17]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(pszString[18] == '-',    VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[19]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[20]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[21]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[22]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(pszString[23] == '-',    VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[24]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[25]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[26]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[27]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[28]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[29]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[30]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[31]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[32]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[33]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[34]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(MY_ISXDIGIT(pszString[35]), VERR_INVALID_UUID_FORMAT);
-    AssertReturn(!pszString[36], VERR_INVALID_UUID_FORMAT);
+    MY_CHECK(MY_ISXDIGIT(pszString[ 0]));
+    MY_CHECK(MY_ISXDIGIT(pszString[ 1]));
+    MY_CHECK(MY_ISXDIGIT(pszString[ 2]));
+    MY_CHECK(MY_ISXDIGIT(pszString[ 3]));
+    MY_CHECK(MY_ISXDIGIT(pszString[ 4]));
+    MY_CHECK(MY_ISXDIGIT(pszString[ 5]));
+    MY_CHECK(MY_ISXDIGIT(pszString[ 6]));
+    MY_CHECK(MY_ISXDIGIT(pszString[ 7]));
+    MY_CHECK(pszString[ 8] == '-');
+    MY_CHECK(MY_ISXDIGIT(pszString[ 9]));
+    MY_CHECK(MY_ISXDIGIT(pszString[10]));
+    MY_CHECK(MY_ISXDIGIT(pszString[11]));
+    MY_CHECK(MY_ISXDIGIT(pszString[12]));
+    MY_CHECK(pszString[13] == '-');
+    MY_CHECK(MY_ISXDIGIT(pszString[14]));
+    MY_CHECK(MY_ISXDIGIT(pszString[15]));
+    MY_CHECK(MY_ISXDIGIT(pszString[16]));
+    MY_CHECK(MY_ISXDIGIT(pszString[17]));
+    MY_CHECK(pszString[18] == '-');
+    MY_CHECK(MY_ISXDIGIT(pszString[19]));
+    MY_CHECK(MY_ISXDIGIT(pszString[20]));
+    MY_CHECK(MY_ISXDIGIT(pszString[21]));
+    MY_CHECK(MY_ISXDIGIT(pszString[22]));
+    MY_CHECK(pszString[23] == '-');
+    MY_CHECK(MY_ISXDIGIT(pszString[24]));
+    MY_CHECK(MY_ISXDIGIT(pszString[25]));
+    MY_CHECK(MY_ISXDIGIT(pszString[26]));
+    MY_CHECK(MY_ISXDIGIT(pszString[27]));
+    MY_CHECK(MY_ISXDIGIT(pszString[28]));
+    MY_CHECK(MY_ISXDIGIT(pszString[29]));
+    MY_CHECK(MY_ISXDIGIT(pszString[30]));
+    MY_CHECK(MY_ISXDIGIT(pszString[31]));
+    MY_CHECK(MY_ISXDIGIT(pszString[32]));
+    MY_CHECK(MY_ISXDIGIT(pszString[33]));
+    MY_CHECK(MY_ISXDIGIT(pszString[34]));
+    MY_CHECK(MY_ISXDIGIT(pszString[35]));
+    MY_CHECK(!pszString[36]);
 #undef MY_ISXDIGIT
+#undef MY_CHECK
 
     /*
      * Inverse of RTUuidToStr (see above).
