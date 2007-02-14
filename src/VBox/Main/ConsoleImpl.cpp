@@ -3303,6 +3303,8 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     mCallbackData.mpsc.width = width;
     mCallbackData.mpsc.height = height;
 
+    /* start with not valid */
+    bool wasValid = mCallbackData.mpsc.valid;
     mCallbackData.mpsc.valid = false;
 
     if (pShape != NULL)
@@ -3310,7 +3312,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
         size_t cb = (width + 7) / 8 * height; /* size of the AND mask */
         cb += ((cb + 3) & ~3) + width * 4 * height; /* + gap + size of the XOR mask */
         /* try to reuse the old shape buffer if the size is the same */
-        if (!mCallbackData.mpsc.valid)
+        if (!wasValid)
             mCallbackData.mpsc.shape = NULL;
         else
         if (mCallbackData.mpsc.shape != NULL && mCallbackData.mpsc.shapeSize != cb)
@@ -3328,7 +3330,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     }
     else
     {
-        if (mCallbackData.mpsc.valid && mCallbackData.mpsc.shape != NULL)
+        if (wasValid && mCallbackData.mpsc.shape != NULL)
             RTMemFree (mCallbackData.mpsc.shape);
         mCallbackData.mpsc.shape = NULL;
         mCallbackData.mpsc.shapeSize = 0;
