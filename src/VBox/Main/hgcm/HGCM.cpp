@@ -531,38 +531,6 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 rc = VINF_SUCCESS;
             } break;
 
-            case HGCMMSGID_LOADSTATE:
-            {
-                LogFlow(("HGCMMSGID_LOADSTATE\n"));
-
-                HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)pMsgCore;
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
-
-                rc = VINF_SUCCESS;
-                if (pClient && pSvc->m_fntable.pfnLoadState)
-                {
-                    rc = pSvc->m_fntable.pfnLoadState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
-                    hgcmObjDereference (pClient);
-                }
-                break;
-            }
-
-            case HGCMMSGID_SAVESTATE:
-            {
-                LogFlow(("HGCMMSGID_SAVESTATE\n"));
-
-                HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)pMsgCore;
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
-
-                rc = VINF_SUCCESS;
-                if (pClient && pSvc->m_fntable.pfnSaveState)
-                {
-                    rc = pSvc->m_fntable.pfnSaveState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
-                    hgcmObjDereference (pClient);
-                }
-                break;
-            }
-
             default:
             {
                 Log(("hgcmServiceThread::Unsupported message number %08X\n", pMsgCore->MsgId ()));
@@ -1194,6 +1162,38 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                     pService->HostCall (NULL, 0, pMsg->u32Function, pMsg->cParms, pMsg->paParms);
                 }
             } break;
+
+            case HGCMMSGID_LOADSTATE:
+            {
+                LogFlow(("HGCMMSGID_LOADSTATE\n"));
+
+                HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)pMsgCore;
+                HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
+
+                rc = VINF_SUCCESS;
+                if (pClient && pSvc->m_fntable.pfnLoadState)
+                {
+                    rc = pSvc->m_fntable.pfnLoadState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                    hgcmObjDereference (pClient);
+                }
+                break;
+            }
+
+            case HGCMMSGID_SAVESTATE:
+            {
+                LogFlow(("HGCMMSGID_SAVESTATE\n"));
+
+                HGCMMsgLoadSaveState *pMsg = (HGCMMsgLoadSaveState *)pMsgCore;
+                HGCMClient *pClient = (HGCMClient *)hgcmObjReference (pMsg->u32ClientID);
+
+                rc = VINF_SUCCESS;
+                if (pClient && pSvc->m_fntable.pfnSaveState)
+                {
+                    rc = pSvc->m_fntable.pfnSaveState (pMsg->u32ClientID, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                    hgcmObjDereference (pClient);
+                }
+                break;
+            }
             
             default:
             {
