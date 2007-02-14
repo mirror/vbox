@@ -63,9 +63,7 @@ PROGRAMS.linux = \
 	tstInlineAsmPIC3
 PROGRAMS.l4 = \
 	tstIoCtl
-ifneq ($(BUILD_TARGET),darwin) #until we've figured out how to link R0/GC modules on Mac OS X.
 SYSMODS = tstLdrObj
-endif
 # tstSems
 endif # VBOX_WITH_TESTCASES
 
@@ -135,13 +133,20 @@ tstLdrObj_DEFS    += VBOX_SOME_IMPORT_FUNCTION
 endif
 tstLdrObj_LIBS     = \
 	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
 ifeq ($(VBOX_LDR_FMT32),pe)
 tstLdrObj_LDFLAGS  = -Entry:Entrypoint
+tstLdrObj_LIBS    += \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
 endif # PE
 ifeq ($(VBOX_LDR_FMT32),elf)
 tstLdrObj_LDFLAGS  = -entry=Entrypoint
+tstLdrObj_LIBS    += \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+endif
+ifeq ($(VBOX_LDR_FMT32),lx)
+tstLdrObj_LIBS    += \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
 endif
 
 tstLdr-3_SOURCES = tstLdr-3.cpp
