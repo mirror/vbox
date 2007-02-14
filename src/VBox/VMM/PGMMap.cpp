@@ -454,16 +454,15 @@ PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The virtual machine.
- * @param   pvAddr      Intermediate context address of the mapping. This must be entriely below 4GB!
+ * @param   Addr        Intermediate context address of the mapping.
  * @param   HCPhys      Start of the range of physical pages. This must be entriely below 4GB!
  * @param   cbPages     Number of bytes to map.
  *
  * @remark  This API shall not be used to anything but mapping the switcher code.
- * @todo pvAddr must be a RTUINTPTR!
  */
-PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, void *pvAddr, RTHCPHYS HCPhys, unsigned cbPages)
+PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages)
 {
-    LogFlow(("PGMR3MapIntermediate: pvAddr=%p HCPhys=%VHp cbPages=%#x\n", pvAddr, HCPhys, cbPages));
+    LogFlow(("PGMR3MapIntermediate: Addr=%RTptr HCPhys=%VHp cbPages=%#x\n", Addr, HCPhys, cbPages));
 
     /*
      * Adjust input.
@@ -471,9 +470,9 @@ PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, void *pvAddr, RTHCPHYS HCPhys, unsi
     cbPages += (uint32_t)HCPhys & PAGE_OFFSET_MASK;
     cbPages  = RT_ALIGN(cbPages, PAGE_SIZE);
     HCPhys  &= X86_PTE_PAE_PG_MASK;
-    pvAddr   = (void *)((RTUINTPTR)pvAddr & PAGE_BASE_MASK);
+    Addr    &= PAGE_BASE_MASK;
     /* We only care about the first 4GB, because on AMD64 we'll be repeating them all over the address space. */
-    uint32_t uAddress = (uint32_t)(uintptr_t)pvAddr;
+    uint32_t uAddress = (uint32_t)Addr;
 
     /*
      * Assert input and state.
@@ -481,7 +480,7 @@ PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, void *pvAddr, RTHCPHYS HCPhys, unsi
     AssertMsg(pVM->pgm.s.offVM, ("Bad init order\n"));
     AssertMsg(pVM->pgm.s.pInterPD, ("Bad init order, paging.\n"));
     AssertMsg(cbPages <= (512 << PAGE_SHIFT), ("The mapping is too big %d bytes\n", cbPages));
-    AssertMsg(HCPhys < _4G && HCPhys + cbPages < _4G, ("pvAddr=%p HCPhys=%VHp cbPages=%d\n", pvAddr, HCPhys, cbPages));
+    AssertMsg(HCPhys < _4G && HCPhys + cbPages < _4G, ("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages));
 
     /*
      * Check for internal conflicts between the virtual address and the physical address.
@@ -493,8 +492,8 @@ PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, void *pvAddr, RTHCPHYS HCPhys, unsi
             )
        )
     {
-        AssertMsgFailed(("pvAddr=%p HCPhys=%VHp cbPages=%d\n", pvAddr, HCPhys, cbPages));
-        LogRel(("pvAddr=%p HCPhys=%VHp cbPages=%d\n", pvAddr, HCPhys, cbPages));
+        AssertMsgFailed(("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages));
+        LogRel(("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages));
         return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo new error code */
     }
 

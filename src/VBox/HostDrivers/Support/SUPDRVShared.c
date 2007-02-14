@@ -1144,7 +1144,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /*
              * Execute.
              */
-            pOut->rc = pDevExt->pfnVMMR0Entry(pIn->pVM, pIn->uOperation, pIn->pvArg);
+            pOut->rc = pDevExt->pfnVMMR0Entry(pIn->pVMR0, pIn->uOperation, pIn->pvArg);
             *pcbReturned = sizeof(*pOut);
             return 0;
         }
@@ -1836,7 +1836,7 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, void *pvR3)
  * @param   ppvR3       Where to put the address of Ring-3 mapping the allocated memory.
  * @param   pHCPhys     Where to put the physical address of allocated memory.
  */
-SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, void **ppvR3, PRTHCPHYS pHCPhys)
+SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
@@ -2831,9 +2831,9 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     *u.pb++ = 0x01;
     *u.pb++ = 0xf8;
 
-    /* 
+    /*
      * Call VMMR0Entry
-     *      We don't have to push the arguments here, but we have to 
+     *      We don't have to push the arguments here, but we have to
      *      reserve some stack space for the interrupt forwarding.
      */
 # ifdef __WIN__

@@ -19,7 +19,7 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__DARWIN__) ||defined(__OS2__)
+#if defined(__OS2__)
 # define PDMLDR_FAKE_MODE
 #endif
 

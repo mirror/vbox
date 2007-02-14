@@ -88,11 +88,12 @@ int main(int argc, char **argv)
              */
             PVMR0 pVMR0;
             RTHCPHYS HCPhysVM;
-            PVM pVM = (PVM)SUPContAlloc2(sizeof(*pVM), (void **)&pVMR0, &HCPhysVM);
+            PVM pVM = (PVM)SUPContAlloc2(sizeof(*pVM), &pVMR0, &HCPhysVM);
             if (pVM)
             {
                 pVM->pVMGC = 0;
-                pVM->pVMHC = pVM;
+                pVM->pVMR3 = pVM;
+                pVM->pVMR0 = pVMR0;
                 pVM->HCPhysVM = HCPhysVM;
                 pVM->pSession = pSession;
 
@@ -107,7 +108,7 @@ int main(int argc, char **argv)
                      */
                     for (i = cIterations; i > 0; i--)
                     {
-                        rc = SUPCallVMMR0((PVM)pVMR0, VMMR0_DO_NOP, NULL);
+                        rc = SUPCallVMMR0(pVMR0, VMMR0_DO_NOP, NULL);
                         if (rc != VINF_SUCCESS)
                         {
                             RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
@@ -129,7 +130,7 @@ int main(int argc, char **argv)
                         for (i = 0; i < 1000000; i++)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0((PVM)pVMR0, VMMR0_DO_NOP, NULL);
+                            rc = SUPCallVMMR0(pVMR0, VMMR0_DO_NOP, NULL);
                             uint64_t Ticks = ASMReadTSC() - OneStartTick;
                             if (Ticks < MinTicks)
                                 MinTicks = Ticks;

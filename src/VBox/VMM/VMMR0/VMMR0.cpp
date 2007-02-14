@@ -136,6 +136,9 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
         &&  (   VBOX_GET_VERSION_MAJOR(uVersion) != VBOX_VERSION_MAJOR
              || VBOX_GET_VERSION_MINOR(uVersion) < VBOX_VERSION_MINOR))
         return VERR_VERSION_MISMATCH;
+    if (    !VALID_PTR(pVM)
+        ||  pVM->pVMR0 != pVM)
+        return VERR_INVALID_PARAMETER;
 
     /*
      * Register the EMT R0 logger instance.
@@ -448,7 +451,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                     /* fall thru */
 #else
                     return rc;
-#endif 
+#endif
 
                 /*
                  * We'll let TRPM change the stack frame so our return is different.
@@ -460,9 +463,9 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
 #ifdef VBOX_WITHOUT_IDT_PATCHING
                     TRPMR0DispatchHostInterrupt(pVM);
 #else /* !VBOX_WITHOUT_IDT_PATCHING */
-                    /* 
+                    /*
                      * Don't trust the compiler to get this right.
-                     * gcc -fomit-frame-pointer screws up big time here. This works fine in 64-bit 
+                     * gcc -fomit-frame-pointer screws up big time here. This works fine in 64-bit
                      * mode too because we push the arguments on the stack in the IDT patch code.
                      */
 # if defined(__GNUC__)
@@ -474,7 +477,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
 # else
 #  error "huh?"
 # endif
-                    if (    ((uintptr_t *)pvRet)[1] == (uintptr_t)pVM 
+                    if (    ((uintptr_t *)pvRet)[1] == (uintptr_t)pVM
                         &&  ((uintptr_t *)pvRet)[2] == (uintptr_t)uOperation
                         &&  ((uintptr_t *)pvRet)[3] == (uintptr_t)pvArg)
                         TRPMR0SetupInterruptDispatcherFrame(pVM, pvRet);

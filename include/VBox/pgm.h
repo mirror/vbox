@@ -1381,13 +1381,13 @@ PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM);
  *
  * @returns VBox status code.
  * @param   pVM         The virtual machine.
- * @param   pvAddr      Intermediate context address of the mapping. This must be entriely below 4GB!
+ * @param   Addr        Intermediate context address of the mapping.
  * @param   HCPhys      Start of the range of physical pages. This must be entriely below 4GB!
  * @param   cbPages     Number of bytes to map.
  *
  * @remark  This API shall not be used to anything but mapping the switcher code.
  */
-PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, void *pvAddr, RTHCPHYS HCPhys, unsigned cbPages);
+PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
 
 /**
  * Checks guest PD for conflicts with VMM GC mappings.
