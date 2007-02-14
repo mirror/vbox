@@ -60,6 +60,7 @@ static char *ExeDirFile(char *pszFile, const char *pszArgv0, const char *pszFile
 int main(int argc, char **argv)
 {
     int rcRet = 0;
+    int i;
     int rc;
     int cIterations = argc > 1 ? RTStrToUInt32(argv[1]) : 32;
     if (cIterations == 0)
@@ -69,9 +70,8 @@ int main(int argc, char **argv)
      * Init.
      */
     RTR3Init();
-    VM vm;
-    memset(&vm, 0, sizeof(vm));
-    rc = SUPInit(&vm.pSession);
+    PSUPDRVSESSION pSession;
+    rc = SUPInit(&pSession);
     rcRet += rc != 0;
     RTPrintf("tstInt: SUPInit -> rc=%Vrc\n", rc);
     if (!rc)
@@ -81,36 +81,100 @@ int main(int argc, char **argv)
          */
         char    szFile[RTPATH_MAX];
         rc = SUPLoadVMM(ExeDirFile(szFile, argv[0], "VMMR0.r0"));
-        rcRet += rc != 0;
         if (!rc)
         {
             /*
-             * Call VMM code with invalid function.
+             * Create a fake 'VM'.
              */
-            for (int i = cIterations; i > 0; i--)
+            PVMR0 pVMR0;
+            RTHCPHYS HCPhysVM;
+            PVM pVM = (PVM)SUPContAlloc2(sizeof(*pVM), (void **)&pVMR0, &HCPhysVM);
+            if (pVM)
             {
-                rc = SUPCallVMMR0(&vm, VMMR0_DO_NOP, NULL);
-                if (rc != VINF_SUCCESS)
+                pVM->pVMGC = 0;
+                pVM->pVMHC = pVM;
+                pVM->HCPhysVM = HCPhysVM;
+                pVM->pSession = pSession;
+
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+                rc = SUPSetVMForFastIOCtl(pVMR0);
+#endif
+                if (!rc)
                 {
-                    RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+
+                    /*
+                     * Call VMM code with invalid function.
+                     */
+                    for (i = cIterations; i > 0; i--)
+                    {
+                        rc = SUPCallVMMR0((PVM)pVMR0, VMMR0_DO_NOP, NULL);
+                        if (rc != VINF_SUCCESS)
+                        {
+                            RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                            rcRet++;
+                            break;
+                        }
+                    }
+                    RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Vrc)\n", cIterations, rc);
+
+                    /*
+                     * Profile it.
+                     */
+                    if (!rc)
+                    {
+                        RTTimeNanoTS();
+                        uint64_t StartTS = RTTimeNanoTS();
+                        uint64_t StartTick = ASMReadTSC();
+                        uint64_t MinTicks = UINT64_MAX;
+                        for (i = 0; i < 1000000; i++)
+                        {
+                            uint64_t OneStartTick = ASMReadTSC();
+                            rc = SUPCallVMMR0((PVM)pVMR0, VMMR0_DO_NOP, NULL);
+                            uint64_t Ticks = ASMReadTSC() - OneStartTick;
+                            if (Ticks < MinTicks)
+                                MinTicks = Ticks;
+
+                            if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                            {
+                                RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                rcRet++;
+                                break;
+                            }
+                        }
+                        uint64_t Ticks = ASMReadTSC() - StartTick;
+                        uint64_t NanoSecs = RTTimeNanoTS() - StartTS;
+
+                        RTPrintf("tstInt: %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
+                                 i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
+                    }
+                }
+                else
+                {
+                    RTPrintf("tstInt: SUPSetVMForFastIOCtl failed: %Vrc\n", rc);
                     rcRet++;
-                    break;
                 }
             }
-            RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Vrc)\n", cIterations, rc);
-
-            /** @todo profile it! */
+            else
+            {
+                RTPrintf("tstInt: SUPContAlloc2(%#zx,,) failed\n", sizeof(*pVM));
+                rcRet++;
+            }
 
             /*
              * Unload VMM.
              */
             rc = SUPUnloadVMM();
-            rcRet += rc != 0;
             if (rc)
+            {
                 RTPrintf("tstInt: SUPUnloadVMM failed with rc=%Vrc\n", rc);
+                rcRet++;
+            }
         }
         else
+        {
             RTPrintf("tstInt: SUPLoadVMM failed with rc=%Vrc\n", rc);
+            rcRet++;
+        }
 
         /*
          * Terminate.
