@@ -506,6 +506,16 @@ SSMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *ps
 SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName);
 
 /**
+ * Deregister an external data unit.
+ *
+ * @returns VBox status.
+ * @param   pVM             The VM handle.
+ * @param   pszName         Data unit name.
+ * @remark  Only for dynmaic data units.
+ */
+SSMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName);
+
+/**
  * Start VM save operation.
  *
  * The caller must be the emulation thread!
