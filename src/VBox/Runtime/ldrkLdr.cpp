@@ -107,20 +107,20 @@ static void     rtkldrRdrDone(    PKLDRRDR pRdr);
 
 static DECLCALLBACK(int) rtkldrClose(PRTLDRMODINTERNAL pMod);
 static DECLCALLBACK(int) rtkldrDone(PRTLDRMODINTERNAL pMod);
-static DECLCALLBACK(int) rtkldrEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits, 
+static DECLCALLBACK(int) rtkldrEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits,
                                            RTUINTPTR BaseAddress,PFNRTLDRENUMSYMS pfnCallback, void *pvUser);
-static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol, 
+static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol,
                                     const char *pchSymbol, size_t cchSymbol, const char *pszVersion,
                                     KLDRADDR uValue, uint32_t fKind, void *pvUser);
 static DECLCALLBACK(size_t) rtkldrGetImageSize(PRTLDRMODINTERNAL pMod);
-static DECLCALLBACK(int) rtkldrGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress, 
+static DECLCALLBACK(int) rtkldrGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress,
                                        PFNRTLDRIMPORT pfnGetImport, void *pvUser);
-static DECLCALLBACK(int) rtkldrRelocate(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress, 
+static DECLCALLBACK(int) rtkldrRelocate(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
                                         RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
 static int rtkldrGetImportWrapper(PKLDRMOD pMod, uint32_t iImport, uint32_t iSymbol, const char *pchSymbol, size_t cchSymbol,
                                   const char *pszVersion, PKLDRADDR puValue, uint32_t *pfKind, void *pvUser);
 
-static DECLCALLBACK(int) rtkldrGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress, 
+static DECLCALLBACK(int) rtkldrGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
                                            const char *pszSymbol, RTUINTPTR *pValue);
 
 
@@ -139,7 +139,7 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_NO_MEMORY:                            return VERR_NO_MEMORY;
 
 
-        case KLDR_ERR_UNKNOWN_FORMAT:                       
+        case KLDR_ERR_UNKNOWN_FORMAT:
         case KLDR_ERR_MZ_NOT_SUPPORTED:                     return VERR_MZ_EXE_NOT_SUPPORTED;
         case KLDR_ERR_NE_NOT_SUPPORTED:                     return VERR_NE_EXE_NOT_SUPPORTED;
         case KLDR_ERR_LX_NOT_SUPPORTED:                     return VERR_LX_EXE_NOT_SUPPORTED;
@@ -162,44 +162,44 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_NOT_MAPPED:                           return VERR_WRONG_ORDER;
         case KLDR_ERR_ADDRESS_OVERFLOW:                     return VERR_NUMBER_TOO_BIG;
 
-        case KLDR_ERR_NOT_LOADED_DYNAMICALLY:               
-        case KLDR_ERR_ARCH_CPU_NOT_COMPATIBLE:              
-        case KLDR_ERR_TOO_LONG_FORWARDER_CHAIN:             
-        case KLDR_ERR_MODULE_TERMINATING:                   
-        case KLDR_ERR_PREREQUISITE_MODULE_TERMINATING:      
-        case KLDR_ERR_MODULE_INIT_FAILED:                   
-        case KLDR_ERR_PREREQUISITE_MODULE_INIT_FAILED:      
-        case KLDR_ERR_MODULE_INIT_FAILED_ALREADY:           
+        case KLDR_ERR_NOT_LOADED_DYNAMICALLY:
+        case KLDR_ERR_ARCH_CPU_NOT_COMPATIBLE:
+        case KLDR_ERR_TOO_LONG_FORWARDER_CHAIN:
+        case KLDR_ERR_MODULE_TERMINATING:
+        case KLDR_ERR_PREREQUISITE_MODULE_TERMINATING:
+        case KLDR_ERR_MODULE_INIT_FAILED:
+        case KLDR_ERR_PREREQUISITE_MODULE_INIT_FAILED:
+        case KLDR_ERR_MODULE_INIT_FAILED_ALREADY:
         case KLDR_ERR_PREREQUISITE_MODULE_INIT_FAILED_ALREADY:
-        case KLDR_ERR_PREREQUISITE_RECURSED_TOO_DEEPLY:     
-        case KLDR_ERR_THREAD_ATTACH_FAILED:                
+        case KLDR_ERR_PREREQUISITE_RECURSED_TOO_DEEPLY:
+        case KLDR_ERR_THREAD_ATTACH_FAILED:
         case KLDR_ERR_TOO_MANY_MAPPINGS:
         case KLDR_ERR_NOT_DLL:
         case KLDR_ERR_NOT_EXE:
             return VERR_GENERAL_FAILURE;
 
 
-        case KLDR_ERR_PE_UNSUPPORTED_MACHINE:                     
-        case KLDR_ERR_PE_BAD_FILE_HEADER:                         
-        case KLDR_ERR_PE_BAD_OPTIONAL_HEADER:                     
-        case KLDR_ERR_PE_BAD_SECTION_HEADER:                      
-        case KLDR_ERR_PE_BAD_FORWARDER:                           
-        case KLDR_ERR_PE_FORWARDER_IMPORT_NOT_FOUND:              
-        case KLDR_ERR_PE_BAD_FIXUP:                               
-        case KLDR_ERR_PE_BAD_IMPORT:                              
+        case KLDR_ERR_PE_UNSUPPORTED_MACHINE:
+        case KLDR_ERR_PE_BAD_FILE_HEADER:
+        case KLDR_ERR_PE_BAD_OPTIONAL_HEADER:
+        case KLDR_ERR_PE_BAD_SECTION_HEADER:
+        case KLDR_ERR_PE_BAD_FORWARDER:
+        case KLDR_ERR_PE_FORWARDER_IMPORT_NOT_FOUND:
+        case KLDR_ERR_PE_BAD_FIXUP:
+        case KLDR_ERR_PE_BAD_IMPORT:
             return VERR_GENERAL_FAILURE;
 
-        case KLDR_ERR_LX_BAD_HEADER:                              
-        case KLDR_ERR_LX_BAD_LOADER_SECTION:                      
-        case KLDR_ERR_LX_BAD_FIXUP_SECTION:                       
-        case KLDR_ERR_LX_BAD_OBJECT_TABLE:                        
-        case KLDR_ERR_LX_BAD_PAGE_MAP:                            
-        case KLDR_ERR_LX_BAD_ITERDATA:                            
-        case KLDR_ERR_LX_BAD_ITERDATA2:                           
-        case KLDR_ERR_LX_BAD_BUNDLE:                              
-        case KLDR_ERR_LX_NO_SONAME:                               
-        case KLDR_ERR_LX_BAD_SONAME:                              
-        case KLDR_ERR_LX_BAD_FORWARDER:                           
+        case KLDR_ERR_LX_BAD_HEADER:
+        case KLDR_ERR_LX_BAD_LOADER_SECTION:
+        case KLDR_ERR_LX_BAD_FIXUP_SECTION:
+        case KLDR_ERR_LX_BAD_OBJECT_TABLE:
+        case KLDR_ERR_LX_BAD_PAGE_MAP:
+        case KLDR_ERR_LX_BAD_ITERDATA:
+        case KLDR_ERR_LX_BAD_ITERDATA2:
+        case KLDR_ERR_LX_BAD_BUNDLE:
+        case KLDR_ERR_LX_NO_SONAME:
+        case KLDR_ERR_LX_BAD_SONAME:
+        case KLDR_ERR_LX_BAD_FORWARDER:
         case KLDR_ERR_LX_NRICHAIN_NOT_SUPPORTED:
             return VERR_GENERAL_FAILURE;
 
@@ -231,10 +231,10 @@ static int rtkldrConvertErrorFromIPRT(int rc)
 }
 
 
-/* 
- * 
- * 
- * Misc Helpers Implemented using IPRT instead of kLdr/native APIs. 
+/*
+ *
+ *
+ * Misc Helpers Implemented using IPRT instead of kLdr/native APIs.
  *
  *
  *
@@ -442,7 +442,8 @@ static size_t   rtkldrRdrPageSize(PKLDRRDR pRdr)
 /** @copydoc KLDRRDROPS::pfnMap */
 static int      rtkldrRdrMap(     PKLDRRDR pRdr, void **ppvBase, uint32_t cSegments, PCKLDRSEG paSegments, unsigned fFixed)
 {
-    PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
+    //PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
+    AssertFailed();
     return -1;
 }
 
@@ -531,7 +532,7 @@ static DECLCALLBACK(int) rtkldrEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFla
     Args.u.pfnEnumSyms = pfnCallback;
     Args.pMod = (PRTLDRMODKLDR)pMod;
     Args.pvBits = pvBits;
-    int rc = kLdrModEnumSymbols(pModkLdr, pvBits, BaseAddress, 
+    int rc = kLdrModEnumSymbols(pModkLdr, pvBits, BaseAddress,
                                 fFlags & RTLDR_ENUM_SYMBOL_FLAGS_ALL ? KLDRMOD_ENUM_SYMS_FLAGS_ALL : 0,
                                 rtkldrEnumSymbolsWrapper, &Args);
     return rtkldrConvertError(rc);
@@ -539,7 +540,7 @@ static DECLCALLBACK(int) rtkldrEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFla
 
 
 /** @copydoc FNKLDRMODENUMSYMS */
-static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol, 
+static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol,
                                     const char *pchSymbol, size_t cchSymbol, const char *pszVersion,
                                     KLDRADDR uValue, uint32_t fKind, void *pvUser)
 {
@@ -554,6 +555,12 @@ static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol,
         psz[cchSymbol] = '\0';
         pszSymbol = psz;
     }
+
+#if defined(__OS2__) || (defined(__DARWIN__) && defined(__X86__))
+    /* skip the underscore prefix. */
+    if (*pszSymbol == '_')
+        pszSymbol++;
+#endif
 
     int rc = pArgs->u.pfnEnumSyms(&pArgs->pMod->Core, pszSymbol, iSymbol, uValue, pArgs->pvUser);
     if (RT_FAILURE(rc))
@@ -571,7 +578,7 @@ static DECLCALLBACK(size_t) rtkldrGetImageSize(PRTLDRMODINTERNAL pMod)
 
 
 /** @copydoc RTLDROPS::pfnGetBits */
-static DECLCALLBACK(int) rtkldrGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress, 
+static DECLCALLBACK(int) rtkldrGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress,
                                        PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     PKLDRMOD pModkLdr = ((PRTLDRMODKLDR)pMod)->pMod;
@@ -586,7 +593,7 @@ static DECLCALLBACK(int) rtkldrGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTU
 
 
 /** @copydoc RTLDROPS::pfnRelocate */
-static DECLCALLBACK(int) rtkldrRelocate(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress, 
+static DECLCALLBACK(int) rtkldrRelocate(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
                                         RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     PKLDRMOD pModkLdr = ((PRTLDRMODKLDR)pMod)->pMod;
@@ -641,12 +648,27 @@ static int rtkldrGetImportWrapper(PKLDRMOD pMod, uint32_t iImport, uint32_t iSym
 
 
 /** @copydoc RTLDROPS::pfnGetSymbolEx */
-static DECLCALLBACK(int) rtkldrGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress, 
+static DECLCALLBACK(int) rtkldrGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
                                            const char *pszSymbol, RTUINTPTR *pValue)
 {
     PKLDRMOD pModkLdr = ((PRTLDRMODKLDR)pMod)->pMod;
     KLDRADDR uValue;
-    int rc = kLdrModQuerySymbol(pModkLdr, pvBits, BaseAddress, 
+
+#if defined(__OS2__) || (defined(__DARWIN__) && defined(__X86__))
+    /*
+     * Add underscore prefix.
+     */
+    if (pszSymbol)
+    {
+        size_t cch = strlen(pszSymbol);
+        char *psz = (char *)alloca(cch + 2);
+        memcpy(psz + 1, pszSymbol, cch + 1);
+        *psz = '_';
+        pszSymbol = psz;
+    }
+#endif
+
+    int rc = kLdrModQuerySymbol(pModkLdr, pvBits, BaseAddress,
                                 NIL_KLDRMOD_SYM_ORDINAL, pszSymbol, strlen(pszSymbol), NULL,
                                 NULL, NULL, &uValue, NULL);
     if (!rc)

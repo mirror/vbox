@@ -55,6 +55,7 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod)
     int rc = pReader->pfnRead(pReader, &uSign, sizeof(uSign), 0);
     if (RT_FAILURE(rc))
         return rc;
+#ifndef LDR_WITH_KLDR
     if (    uSign.au16[0] != IMAGE_DOS_SIGNATURE
         &&  uSign.u32     != IMAGE_NT_SIGNATURE
         &&  uSign.u32     != IMAGE_ELF_SIGNATURE
@@ -63,6 +64,7 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod)
         Log(("rtldrOpenWithReader: %s: unknown magic %#x / '%.4s\n", pReader->pfnLogName(pReader), uSign.u32, &uSign.ach[0]));
         return VERR_INVALID_EXE_SIGNATURE;
     }
+#endif
     uint32_t offHdr = 0;
     if (uSign.au16[0] == IMAGE_DOS_SIGNATURE)
     {
@@ -135,13 +137,15 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod)
 #else
         rc = VERR_AOUT_EXE_NOT_SUPPORTED;
 #endif
-#ifndef LDR_WITH_KLDR
     else
     {
+#ifndef LDR_WITH_KLDR
         Log(("rtldrOpenWithReader: %s: the format isn't implemented %#x / '%.4s\n", pReader->pfnLogName(pReader), uSign.u32, &uSign.ach[0]));
+#endif
         rc = VERR_INVALID_EXE_SIGNATURE;
     }
-#else
+
+#ifdef LDR_WITH_KLDR
     /* Try kLdr if it's a format we don't recognize. */
     if (rc <= VERR_INVALID_EXE_SIGNATURE && rc > VERR_BAD_EXE_FORMAT)
         rc = rtldrkLdrOpen(pReader, phMod);
