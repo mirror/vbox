@@ -194,6 +194,7 @@ RuntimeR3_SOURCES       = \
 	utf-16.cpp \
 	utf-8.cpp \
 	zip.cpp \
+	misc/rand.cpp \
 
 ifdef IPRT_WITH_KLDR
  RuntimeR3_SOURCES += \
@@ -224,6 +225,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/semsrw-generic.cpp \
 	generic/semnoint-generic.cpp \
+	generic/rand-stubs-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	win32/errmsgwin.cpp \
 	r3/win32/alloc-win32.cpp \
@@ -255,8 +257,8 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/pathhost-generic.cpp \
+	generic/uuid-generic.cpp \
 	r3/linux/sched-linux.cpp \
-	r3/linux/uuid-linux.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -264,6 +266,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
+	r3/posix/rand-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
@@ -277,13 +280,13 @@ else
  RuntimeR3_SOURCES.linux += r3/posix/sems-posix.cpp
 endif
 
-
 RuntimeR3_SOURCES.os2   = \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/pathhost-generic.cpp \
+	generic/rand-stubs-generic.cpp \
 	generic/semsrw-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/sched-generic.cpp \
@@ -311,6 +314,10 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/pathhost-generic.cpp \
+	generic/sched-generic.cpp \
+	generic/timer-generic.cpp \
+	generic/utf16locale-generic.cpp \
+	generic/uuid-generic.cpp\
 	r3/darwin/alloc-darwin.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -318,15 +325,12 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
-	generic/sched-generic.cpp \
+	r3/posix/rand-posix.cpp \
 	r3/posix/sems-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
-	r3/darwin/time-darwin.cpp \
-	generic/timer-generic.cpp \
-	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
-	r3/linux/uuid-linux.cpp \
+	r3/darwin/time-darwin.cpp \
 	timesup.cpp \
 
 ## @todo Make BSD sched.
@@ -345,6 +349,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
+	r3/posix/rand-posix.cpp \
 	r3/posix/sems-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
@@ -375,6 +380,7 @@ RuntimeR3L4_SOURCES = \
 	generic/sched-generic.cpp \
 	generic/semsrw-generic.cpp \
 	generic/semnoint-generic.cpp \
+	generic/uuid-generic.cpp \
 	l4/l4-errno.cpp \
 	l4/process-l4env.cpp \
 	l4/sems-l4env.cpp \
@@ -383,12 +389,12 @@ RuntimeR3L4_SOURCES = \
 	l4/timer-l4env.cpp \
 	generic/utf16locale-generic.cpp \
 	l4/utf8-l4env.cpp \
-	r3/linux/uuid-linux.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/rand-posix.cpp \
 	r3/posix/time-posix.cpp \
 	timesup.cpp
 

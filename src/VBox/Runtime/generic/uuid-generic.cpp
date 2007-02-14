@@ -28,6 +28,7 @@
 #include <iprt/err.h>
 #include <iprt/time.h>
 #include <iprt/asm.h>
+#include <iprt/rand.h>
 
 
 /* WARNING: This implementation ASSUMES little endian. */
@@ -44,14 +45,7 @@ RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
     /* validate input. */
     AssertReturn(pUuid, VERR_INVALID_PARAMETER);
 
-    /*
-     * We don't have any good random sources in IPRT yet, so
-     * for the time being we'll use Nano time and the cpu TSC
-     * (which of course isn't very good at all!).
-     */
-    RTTIMESPEC Now;
-    pUuid->au64[0] = RTTimeSpecGetNano(RTTimeNow(&Now));
-    pUuid->au64[1] = ASMReadTSC();
+    RTRandBytes(pUuid, sizeof(*pUuid));
     pUuid->Gen.u16ClockSeq = (pUuid->Gen.u16ClockSeq & 0x3fff) | 0x8000;
     pUuid->Gen.u16TimeHiAndVersion = (pUuid->Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
 
