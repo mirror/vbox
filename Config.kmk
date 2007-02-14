@@ -902,6 +902,21 @@ ifneq ($(filter linux l4,$(BUILD_TARGET)),)
    export VBOX_LINUX_SRC           := /usr/src/linux
   endif
  endif
+ ifeq ($(origin VBOX_LINUX_INCS),undefined)
+  export VBOX_LINUX_INCS           := $(VBOX_LINUX_SRC)/include
+  # support splitted Linux kernels (make O=<build directory>)
+  kernelsrc := $(shell sed -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
+  ifneq ($(kernelsrc),)
+   kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelsrc))
+   VBOX_LINUX_INCS                 += $(VBOX_LINUX_SRC)/include2 $(kernelpath)/include
+  else
+   kernelpath := $(VBOX_LINUX_SRC)
+  endif
+  ifeq ($(BUILD_TARGET_ARCH),x86)
+    VBOX_LINUX_INCS                += $(kernelpath)/include/asm-i386/mach-default
+  endif
+  $(warning LINUX=$(VBOX_LINUX_INCS))
+ endif
 endif
 
 
@@ -1095,11 +1110,8 @@ endif
 ifeq ($(BUILD_TARGET),linux)
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = __KERNEL__ MODULE IN_RING0 IN_RT_R0
-TEMPLATE_VBOXR0DRV_INCS.x86            = \
-	$(VBOX_LINUX_SRC)/include \
-	$(VBOX_LINUX_SRC)/include/asm-i386/mach-default
-TEMPLATE_VBOXR0DRV_INCS.amd64          = \
-	$(VBOX_LINUX_SRC)/include
+TEMPLATE_VBOXR0DRV_INCS.x86            = $(VBOX_LINUX_INCS)
+TEMPLATE_VBOXR0DRV_INCS.amd64          = $(VBOX_LINUX_INCS)
 TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include \
 	-Wall -Wstrict-prototypes -Wno-trigraphs $(VBOX_GCC_Wno-pointer-sign) \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fno-common
@@ -1857,9 +1869,7 @@ TEMPLATE_VBOXLNX32GUESTR0         = Template for *syntax checking* linux guest a
 TEMPLATE_VBOXLNX32GUESTR0_TOOL    = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXLNX32GUESTR0_BLD_TRG = linux
 TEMPLATE_VBOXLNX32GUESTR0_DEFS    = __KERNEL__ MODULE IN_RING0 IN_RT_R0 IN_GUEST_R0
-TEMPLATE_VBOXLNX32GUESTR0_INCS    = \
-	$(VBOX_LINUX_SRC)/include \
-	$(VBOX_LINUX_SRC)/include/asm-i386/mach-default
+TEMPLATE_VBOXLNX32GUESTR0_INCS    = $(VBOX_LINUX_INCS)
 TEMPLATE_VBOXLNX32GUESTR0_CFLAGS  = -nostdinc -iwithprefix include \
 	-O2 -Wall -Wstrict-prototypes -Wno-trigraphs $(VBOX_GCC_Wno-pointer-sign) \
 	$(VBOX_GCC_fno-stack-protector) -fno-strict-aliasing -fno-common \
