@@ -152,7 +152,7 @@ __END_DECLS
  */
 DECLINLINE(void) vga_set_dirty(VGAState *pData, RTGCPHYS offVRAM)
 {
-    Assert(offVRAM < pData->vram_size);
+    AssertMsg(offVRAM < pData->vram_size, ("offVRAM = %p, pData->vram_size = %p\n", offVRAM, pData->vram_size));
     ASMBitSet(&pData->au32DirtyBitmap[0], offVRAM >> PAGE_SHIFT);
     pData->fHaveDirtyBits = true;
 }
@@ -167,7 +167,7 @@ DECLINLINE(void) vga_set_dirty(VGAState *pData, RTGCPHYS offVRAM)
  */
 DECLINLINE(bool) vga_is_dirty(VGAState *pData, RTGCPHYS offVRAM)
 {
-    Assert(offVRAM < pData->vram_size);
+    AssertMsg(offVRAM < pData->vram_size, ("offVRAM = %p, pData->vram_size = %p\n", offVRAM, pData->vram_size));
     return ASMBitTest(&pData->au32DirtyBitmap[0], offVRAM >> PAGE_SHIFT);
 }
 
@@ -181,7 +181,7 @@ DECLINLINE(bool) vga_is_dirty(VGAState *pData, RTGCPHYS offVRAM)
 DECLINLINE(void) vga_reset_dirty(VGAState *pData, RTGCPHYS offVRAMStart, RTGCPHYS offVRAMEnd)
 {
     Assert(offVRAMStart < pData->vram_size);
-    Assert(offVRAMEnd < pData->vram_size);
+    Assert(offVRAMEnd <= pData->vram_size);
     Assert(offVRAMStart < offVRAMEnd);
     ASMBitClearRange(&pData->au32DirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
 }
@@ -1887,7 +1887,12 @@ static void vga_draw_graphic(VGAState *s, int full_update)
            width, height, v, line_offset, s->cr[9], s->cr[0x17], s->line_compare, s->sr[0x01]));
 #endif
     addr1 = (s->start_addr * 4);
+#ifndef VBOX
     bwidth = width * 4;
+#else /* VBOX */
+    /* The width of VRAM scanline. */
+    bwidth = s->line_offset;
+#endif /* VBOX */ 
     y_start = -1;
     page_min = 0x7fffffff;
     page_max = -1;
