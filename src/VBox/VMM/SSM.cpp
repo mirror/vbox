@@ -564,16 +564,16 @@ SSMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *ps
     return rc;
 }
 
-
 /**
- * Deregister a internal data unit.
+ * Deregister a data unit.
  *
  * @returns VBox status.
  * @param   pVM             The VM handle.
+ * @param   enmType         Unit type
  * @param   pszName         Data unit name.
  * @remark  Only for dynmaic data units.
  */
-SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
+static int ssmR3DeregisterByNameAndType(PVM pVM, const char *pszName, SSMUNITTYPE enmType)
 {
     /*
      * Validate input.
@@ -593,7 +593,7 @@ SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
     PSSMUNIT    pUnit = pVM->ssm.s.pHead;
     while (pUnit)
     {
-        if (    pUnit->enmType == SSMUNITTYPE_INTERNAL
+        if (    pUnit->enmType == enmType
             &&  pUnit->cchName == cchName
             &&  !memcmp(pUnit->szName, pszName, cchName))
         {
@@ -606,7 +606,7 @@ SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
                 pUnitPrev->pNext = pUnit;
             else
                 pVM->ssm.s.pHead = pUnit;
-            Log(("SSM: Removed data unit '%s' (internal).\n", pFree->szName));
+            Log(("SSM: Removed data unit '%s' (type=%d).\n", pFree->szName, enmType));
             MMR3HeapFree(pFree);
             return VINF_SUCCESS;
         }
@@ -619,6 +619,32 @@ SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
     return rc;
 }
 
+/**
+ * Deregister an internal data unit.
+ *
+ * @returns VBox status.
+ * @param   pVM             The VM handle.
+ * @param   pszName         Data unit name.
+ * @remark  Only for dynmaic data units.
+ */
+SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
+{
+    return ssmR3DeregisterByNameAndType(pVM, pszName, SSMUNITTYPE_INTERNAL);
+}
+
+
+/**
+ * Deregister an external data unit.
+ *
+ * @returns VBox status.
+ * @param   pVM             The VM handle.
+ * @param   pszName         Data unit name.
+ * @remark  Only for dynmaic data units.
+ */
+SSMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
+{
+    return ssmR3DeregisterByNameAndType(pVM, pszName, SSMUNITTYPE_EXTERNAL);
+}
 
 /**
  * Calculate the checksum of a file portion.
