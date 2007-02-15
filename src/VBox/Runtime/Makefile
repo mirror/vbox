@@ -225,6 +225,7 @@ endif
 # VBox specific stuff.
 RuntimeR3_SOURCES += \
 	VBox/strformat-vbox.cpp \
+	VBox/RTAssertDoBreakpoint-vbox.cpp \
 	VBox/log-vbox.cpp
 
 RuntimeR3_SOURCES.win = \
@@ -235,6 +236,7 @@ RuntimeR3_SOURCES.win = \
 	generic/rand-stubs-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	win32/errmsgwin.cpp \
+	r3/posix/env-posix.cpp \
 	r3/win32/alloc-win32.cpp \
 	r3/win32/dir-win32.cpp \
 	r3/win32/fileio-win32.cpp \
@@ -268,6 +270,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/sched-linux.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
@@ -304,6 +307,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/os2/thread-os2.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
@@ -327,6 +331,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/uuid-generic.cpp\
 	r3/darwin/alloc-darwin.cpp \
 	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
@@ -351,6 +356,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/uuid-generic.cpp \
 	r3/freebsd/alloc-freebsd.cpp \
 	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
@@ -397,6 +403,7 @@ RuntimeR3L4_SOURCES = \
 	generic/utf16locale-generic.cpp \
 	l4/utf8-l4env.cpp \
 	r3/posix/alloc-posix.cpp \
+	r3/posix/env-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
@@ -554,6 +561,7 @@ RuntimeR0_SOURCES       = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
 	assert.cpp \
+	generic/RTAssertDoBreakpoint-generic.cpp \
 	table/avlhcphys.cpp \
 	table/avlgcptr.cpp \
 	table/avlogcphys.cpp \
@@ -638,6 +646,7 @@ RuntimeR0Drv_SOURCES    = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
 	assert.cpp \
+	generic/RTAssertDoBreakpoint-generic.cpp \
 	log.cpp \
 	logcom.cpp \
 	logformat.cpp \
@@ -764,6 +773,7 @@ RuntimeGC_SOURCES       = \
 	table/avloioport.cpp \
 	table/avlroioport.cpp \
 	assert.cpp \
+	generic/RTAssertDoBreakpoint-generic.cpp \
 	log.cpp \
 	logcom.cpp \
 	logformat.cpp \
