@@ -136,7 +136,7 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg);
  * Get the last error as an iprt status code.
  * @returns iprt status code.
  */
-inline int rtTcpError(void)
+DECLINLINE(int) rtTcpError(void)
 {
 #ifdef __WIN__
     return RTErrConvertFromWin32(WSAGetLastError());
@@ -152,7 +152,7 @@ inline int rtTcpError(void)
  * @param   pSock   The socket variable to update.
  * @param   Sock    The new value.
  */
-inline RTSOCKET rtTcpAtomicXchgSock(RTSOCKET volatile *pSock, const RTSOCKET Sock)
+DECLINLINE(RTSOCKET) rtTcpAtomicXchgSock(RTSOCKET volatile *pSock, const RTSOCKET Sock)
 {
     switch (sizeof(RTSOCKET))
     {
@@ -167,7 +167,7 @@ inline RTSOCKET rtTcpAtomicXchgSock(RTSOCKET volatile *pSock, const RTSOCKET Soc
 /**
  * Changes the TCP server state.
  */
-inline bool rtTcpServerSetState(PRTTCPSERVER pServer, RTTCPSERVERSTATE enmStateNew, RTTCPSERVERSTATE enmStateOld)
+DECLINLINE(bool) rtTcpServerSetState(PRTTCPSERVER pServer, RTTCPSERVERSTATE enmStateNew, RTTCPSERVERSTATE enmStateOld)
 {
     bool fRc;
     ASMAtomicCmpXchgSize(&pServer->enmState, enmStateNew, enmStateOld, fRc);
@@ -440,9 +440,7 @@ static int rtTcpServerDestroyClientSock(RTSOCKET volatile *pSock, const char *ps
 {
     RTSOCKET Sock = rtTcpAtomicXchgSock(pSock, NIL_RTSOCKET);
     if (Sock != NIL_RTSOCKET)
-    {
-       shutdown(Sock, SHUT_RDWR);
-    }
+        shutdown(Sock, SHUT_RDWR);
     return rtTcpClose(Sock, pszMsg);
 }
 
