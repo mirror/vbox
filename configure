@@ -486,6 +486,8 @@ check_libidl()
       fail
     else
       log_success "found version $libidl_ver"
+      cnf_append "VBOX_LIBIDL_CONFIG" \
+        "PKG_CONFIG_PATH=`libIDL-config-2 --prefix`/lib/pkgconfig `which_wrapper libIDL-config-2`"
     fi
   elif check_avail "libIDL-config" libIDL-config; then
     libidl_ver=`libIDL-config --version`
@@ -494,6 +496,7 @@ check_libidl()
       fail
     else
       log_success "found version $libidl_ver"
+      cnf_append "VBOX_LIBIDL_CONFIG" `which_wrapper libIDL-config`
     fi
   fi
 }
