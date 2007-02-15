@@ -31,8 +31,10 @@ struct timeval tt;
 FILE *lfd;
 struct ex_list *exec_list;
 
+#ifndef VBOX
 /* XXX: suppress those select globals */
 fd_set *global_readfds, *global_writefds, *global_xfds;
+#endif /* !VBOX */
 
 char slirp_hostname[33];
 
@@ -56,7 +58,7 @@ static int get_dns_addr(struct in_addr *pdns_addr)
         }
         FixedInfo = GlobalAlloc(GPTR, BufLen);
     }
-	
+
     if ((ret = GetNetworkParams(FixedInfo, &BufLen)) != ERROR_SUCCESS) {
 #ifndef VBOX
         printf("GetNetworkParams failed. ret = %08x\n", (u_int)ret );
@@ -321,10 +323,10 @@ static void updtime(void)
 static void updtime(void)
 {
 	gettimeofday(&tt, 0);
-	
+
 	curtime = (u_int)tt.tv_sec * (u_int)1000;
 	curtime += (u_int)tt.tv_usec / (u_int)1000;
-	
+
 	if ((tt.tv_usec % 1000) >= 500)
 	   curtime++;
 }
@@ -338,10 +340,12 @@ void slirp_select_fill(int *pnfds,
     int nfds;
     int tmp_time;
 
+#ifndef VBOX
     /* fail safe */
     global_readfds = NULL;
     global_writefds = NULL;
     global_xfds = NULL;
+#endif /* !VBOX */
 
     nfds = *pnfds;
 	/*
@@ -355,23 +359,23 @@ void slirp_select_fill(int *pnfds,
 		 */
 		do_slowtimo = ((tcb.so_next != &tcb) ||
 			       ((struct ipasfrag *)&ipq != u32_to_ptr(ipq.next, struct ipasfrag *)));
-		
+
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
-			
+
 			/*
 			 * See if we need a tcp_fasttimo
 			 */
 			if (time_fasttimo == 0 && so->so_tcpcb->t_flags & TF_DELACK)
 			   time_fasttimo = curtime; /* Flag when we want a fasttimo */
-			
+
 			/*
 			 * NOFDREF can include still connecting to local-host,
 			 * newly socreated() sockets etc. Don't want to select these.
 	 		 */
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
-			
+
 			/*
 			 * Set for reading sockets which are accepting
 			 */
@@ -380,7 +384,7 @@ void slirp_select_fill(int *pnfds,
 				UPD_NFDS(so->s);
 				continue;
 			}
-			
+
 			/*
 			 * Set for writing sockets which are connecting
 			 */
@@ -389,7 +393,7 @@ void slirp_select_fill(int *pnfds,
 				UPD_NFDS(so->s);
 				continue;
 			}
-			
+
 			/*
 			 * Set for writing if we are connected, can send more, and
 			 * we have something to send
@@ -398,7 +402,7 @@ void slirp_select_fill(int *pnfds,
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
 			}
-			
+
 			/*
 			 * Set for reading (and urgent data) if we are connected, can
 			 * receive more, and we have room for it XXX /2 ?
@@ -409,13 +413,13 @@ void slirp_select_fill(int *pnfds,
 				UPD_NFDS(so->s);
 			}
 		}
-		
+
 		/*
 		 * UDP sockets
 		 */
 		for (so = udb.so_next; so != &udb; so = so_next) {
 			so_next = so->so_next;
-			
+
 			/*
 			 * See if it's timed out
 			 */
@@ -426,7 +430,7 @@ void slirp_select_fill(int *pnfds,
 				} else
 					do_slowtimo = 1; /* Let socket expire */
 			}
-			
+
 			/*
 			 * When UDP packets are received from over the
 			 * link, they're sendto()'d straight away, so
@@ -443,11 +447,11 @@ void slirp_select_fill(int *pnfds,
 			}
 		}
 	}
-	
+
 	/*
 	 * Setup timeout to use minimum CPU usage, especially when idle
 	 */
-	
+
 	/*
 	 * First, see the timeout needed by *timo
 	 */
@@ -465,33 +469,35 @@ void slirp_select_fill(int *pnfds,
 		   timeout.tv_usec = 0;
 		else if (timeout.tv_usec > 510000)
 		   timeout.tv_usec = 510000;
-		
+
 		/* Can only fasttimo if we also slowtimo */
 		if (time_fasttimo) {
 			tmp_time = (200 - (curtime - time_fasttimo)) * 1000;
 			if (tmp_time < 0)
 			   tmp_time = 0;
-			
+
 			/* Choose the smallest of the 2 */
 			if (tmp_time < timeout.tv_usec)
 			   timeout.tv_usec = (u_int)tmp_time;
 		}
 	}
         *pnfds = nfds;
-}	
+}
 
 void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 {
     struct socket *so, *so_next;
     int ret;
 
+#ifndef VBOX
     global_readfds = readfds;
     global_writefds = writefds;
     global_xfds = xfds;
+#endif /* !VBOX */
 
 	/* Update time */
 	updtime();
-	
+
 	/*
 	 * See if anything has timed out
 	 */
@@ -506,7 +512,7 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 			last_slowtimo = curtime;
 		}
 	}
-	
+
 	/*
 	 * Check sockets
 	 */
@@ -516,14 +522,14 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 		 */
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
-			
+
 			/*
 			 * FD_ISSET is meaningless on these sockets
 			 * (and they can crash the program)
 			 */
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
-			
+
 			/*
 			 * Check for URG data
 			 * This will soread as well, so no need to
@@ -543,12 +549,12 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 					continue;
 				} /* else */
 				ret = soread(so);
-				
+
 				/* Output it if we read something */
 				if (ret > 0)
 				   tcp_output(sototcpcb(so));
 			}
-			
+
 			/*
 			 * Check sockets for writing
 			 */
@@ -559,19 +565,19 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 			  if (so->so_state & SS_ISFCONNECTING) {
 			    /* Connected */
 			    so->so_state &= ~SS_ISFCONNECTING;
-			
+
 			    ret = send(so->s, &ret, 0, 0);
 			    if (ret < 0) {
 			      /* XXXXX Must fix, zero bytes is a NOP */
 			      if (errno == EAGAIN || errno == EWOULDBLOCK ||
 				  errno == EINPROGRESS || errno == ENOTCONN)
 				continue;
-			
+
 			      /* else failed */
 			      so->so_state = SS_NOFDREF;
 			    }
 			    /* else so->so_state &= ~SS_ISFCONNECTING; */
-			
+
 			    /*
 			     * Continue tcp_input
 			     */
@@ -586,7 +592,7 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 			   * a window probe to get things going again
 			   */
 			}
-			
+
 			/*
 			 * Probe a still-connecting, non-blocking socket
 			 * to check if it's still alive
@@ -594,16 +600,16 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 #ifdef PROBE_CONN
 			if (so->so_state & SS_ISFCONNECTING) {
 			  ret = recv(so->s, (char *)&ret, 0,0);
-			
+
 			  if (ret < 0) {
 			    /* XXX */
 			    if (errno == EAGAIN || errno == EWOULDBLOCK ||
 				errno == EINPROGRESS || errno == ENOTCONN)
 			      continue; /* Still connecting, continue */
-			
+
 			    /* else failed */
 			    so->so_state = SS_NOFDREF;
-			
+
 			    /* tcp_input will take care of it */
 			  } else {
 			    ret = send(so->s, &ret, 0,0);
@@ -616,13 +622,13 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 			      so->so_state = SS_NOFDREF;
 			    } else
 			      so->so_state &= ~SS_ISFCONNECTING;
-			
+
 			  }
 			  tcp_input((struct mbuf *)NULL, sizeof(struct ip),so);
 			} /* SS_ISFCONNECTING */
 #endif
 		}
-		
+
 		/*
 		 * Now UDP sockets.
 		 * Incoming packets are sent straight away, they're not buffered.
@@ -630,19 +636,20 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 		 */
 		for (so = udb.so_next; so != &udb; so = so_next) {
 			so_next = so->so_next;
-			
+
 			if (so->s != -1 && FD_ISSET(so->s, readfds)) {
                             sorecvfrom(so);
                         }
 		}
 	}
-	
+
 	/*
 	 * See if we can start outputting
 	 */
 	if (if_queued && link_up)
 	   if_start();
 
+#ifndef VBOX
 	/* clear global file descriptor sets.
 	 * these reside on the stack in vl.c
 	 * so they're unusable if we're not in
@@ -651,6 +658,7 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 	 global_readfds = NULL;
 	 global_writefds = NULL;
 	 global_xfds = NULL;
+#endif /* !VBOX */
 }
 
 #define ETH_ALEN 6
