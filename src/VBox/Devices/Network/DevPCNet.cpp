@@ -1921,6 +1921,19 @@ static void pcnetXmitFailTMDLinkDown(PCNetState *pData, TMD *pTmd)
          PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
 }
 
+/**
+ * Fails a TMD with a generic error.
+ */
+static void pcnetXmitFailTMDGeneric(PCNetState *pData, TMD *pTmd)
+{
+    /* make carrier error - hope this is correct. */
+    pTmd->tmd2.lcar = pTmd->tmd1.err = 1;
+    pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR */
+    pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
+    Log(("#%d pcnetTransmit: Signaling send error. swstyle=%#x\n",
+         PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
+}
+
 
 /**
  * Transmit a loopback frame.
@@ -2049,11 +2062,11 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             {
                 RTR3PTR pv;
 
-                /* From the manual: ``A zero length buffers is acceptable as
+                /* From the manual: ``A zero length buffer is acceptable as
                  * long as it is not the last buffer in a chain (STP = 0 and
                  * ENP = 1).'' That means that the first buffer might have a
                  * zero length if it is not the last one in the chain. */
-                if (RT_LIKELY(cb < 4096))
+                if (RT_LIKELY(cb <= 1536))
                 {
                     int rc = PDMDevHlpPhys2HCVirt(pData->pDevInsHC,
                                                   PHYSADDR(pData, tmd.tmd0.tbadr), cb, &pv);
@@ -2088,6 +2101,14 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                     LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n"));
                     pcnetTmdStorePassHost(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)));
                     break;
+                }
+                else
+                {
+                    /* Signal error, as this violates the Ethernet specs. */
+                    /** @todo check if the correct error is generated. */
+                    LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> signalling error\n"));
+
+                    pcnetXmitFailTMDGeneric(pData, &tmd);
                 }
             }
             else
