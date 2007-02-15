@@ -44,7 +44,9 @@
 #include <sys/statfs.h>
 #include <sys/poll.h>
 #include <unistd.h>
-#include <linux/compiler.h>
+#ifndef NO_COMPILER_H
+# include <linux/compiler.h>
+#endif
 #include <linux/usbdevice_fs.h>
 
 

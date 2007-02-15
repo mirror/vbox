@@ -425,6 +425,9 @@ Drivers_SOURCES       += \
 endif
 
 Drivers_DEFS.linux    += VUSB_HAVE_USBPROXY_DEVICE
+ifdef NO_COMPILER_H
+Drivers_DEFS          += NO_COMPILER_H
+endif
 Drivers_SOURCES.linux += \
 	USB/USBProxyDevice.cpp \
 	USB/linux/USBProxyDevice-linux.cpp
