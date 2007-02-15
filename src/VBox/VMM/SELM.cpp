@@ -72,6 +72,7 @@
 *******************************************************************************/
 static DECLCALLBACK(int) selmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(void) selmR3InfoGdt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) selmR3InfoLdt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -145,7 +146,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
      */
     rc = SSMR3RegisterInternal(pVM, "selm", 1, SELM_SAVED_STATE_VERSION, sizeof(SELM),
                                NULL, selmR3Save, NULL,
-                               NULL, selmR3Load, NULL);
+                               NULL, selmR3Load, selmR3LoadDone);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -685,8 +686,44 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sync the GDT, LDT and TSS after loading the state.
+ * 
+ * Just to play save, we set the FFs to force syncing before 
+ * executing GC code.
+ * 
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pSSM            SSM operation handle.
+ */
+static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
+{
+    LogFlow(("selmR3LoadDone:\n"));
+
+    /* 
+     * Don't do anything if it's a load failure.
+     */
+    int rc = SSMR3HandleGetStatus(pSSM);
+    if (VBOX_FAILURE(rc))
+        return VINF_SUCCESS;
+
     /*
-     * Flag everything for resync.
+     * Do the syncing if we're in protected mode.
+     */
+    if (PGMGetGuestMode(pVM) != PGMMODE_REAL)
+    {
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        SELMR3UpdateFromCPUM(pVM);
+    }
+
+    /*
+     * Flag everything for resync on next raw mode entry.
      */
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
@@ -694,8 +731,6 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
     return VINF_SUCCESS;
 }
-
-
 
 
 /**
