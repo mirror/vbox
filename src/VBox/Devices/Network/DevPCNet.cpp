@@ -129,7 +129,7 @@ typedef struct PCNETFRAME
     int32_t  cb;
 #if HC_ARCH_BITS == 64
     uint32_t Alignment;
-#endif 
+#endif
     /** The virtual address of the frame (copied or direct pointer) */
     RTR3PTR  pvBuf;
 } PCNETFRAME;
@@ -218,7 +218,7 @@ struct PCNetState_st
     RTUINT                              cLinkDownReported;
 #if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
     RTUINT                              Alignment;
-#endif 
+#endif
     /** The configured MAC address. */
     PDMMAC                              MacConfigured;
 
@@ -2081,6 +2081,18 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                             return rc; /* can happen during termination */
                     }
                 }
+                else if (cb == 4096)
+                {
+                    /* The Windows NT4 pcnet driver sometimes marks the first
+                     * unused descriptor as owned by us. Ignore that (by
+                     * passing it back). Do not update the ring counter in this
+                     * case (otherwise that driver becomes even more confused,
+                     * which causes transmit to stall for about 10 seconds).
+                     * This is just a workaround, not a final solution. */
+                    LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n"));
+                    pcnetTmdStorePassHost(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)));
+                    break;
+                }
                 else
                 {
                     /* This is only acceptable if it's not the last buffer in the chain (stp=1, enp=0) */
@@ -2106,7 +2118,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             /*
              * Read TMDs until end-of-packet or tdte poll fails (underflow).
              */
-            const unsigned cbMaxFrame = 4096;
+            const unsigned cbMaxFrame = 1536;
             bool fDropFrame = false;
             unsigned cb = 4096 - tmd.tmd1.bcnt;
             pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
@@ -2218,7 +2230,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                                                       ELEMENTS(pData->aStatXmitChainCounts)) - 1]);
     } while (CSR_TXON(pData));          /* transfer on */
 
-    if (cFlushIrq) 
+    if (cFlushIrq)
     {
         STAM_COUNTER_INC(&pData->aStatXmitFlush[RT_MIN(cFlushIrq, ELEMENTS(pData->aStatXmitFlush)) - 1]);
         pcnetUpdateIrq(pData);
@@ -4259,7 +4271,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in GC",     "/Devices/PCNet%d/TmdStoreGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in HC",     "/Devices/PCNet%d/TmdStoreHC", iInstance);
-    
+
     unsigned i;
     for (i = 0; i < ELEMENTS(pData->aStatXmitFlush) - 1; i++)
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "",                                       "/Devices/PCNet%d/XmitFlushIrq/%d", iInstance, i + 1);
@@ -4270,7 +4282,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,    "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
-    
+
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet interrupt checks",   "/Devices/PCNet%d/Interrupt", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet poll timer",         "/Devices/PCNet%d/PollTimer", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMIIReads,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of MII reads",                "/Devices/PCNet%d/MIIReads", iInstance);
