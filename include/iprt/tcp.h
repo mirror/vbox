@@ -115,6 +115,14 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer);
 RTR3DECL(int) RTTcpServerListen(PRTTCPSERVER pServer, PFNRTTCPSERVE pfnServe, void *pvUser);
 
 /**
+ * Terminate the open connection to the server.
+ *
+ * @returns iprt status code.
+ * @param   pServer         Handle to the server.
+ */
+RTR3DECL(int) RTTcpServerDisconnectClient(PRTTCPSERVER pServer);
+
+/**
  * Connect (as a client) to a TCP Server.
  *
  * @returns iprt status code.

@@ -433,6 +433,19 @@ RTR3DECL(int) RTTcpServerListen(PRTTCPSERVER pServer, PFNRTTCPSERVE pfnServe, vo
 }
 
 
+/**
+ * Closes the client socket.
+ */
+static int rtTcpServerDestroyClientSock(RTSOCKET volatile *pSock, const char *pszMsg)
+{
+    RTSOCKET Sock = rtTcpAtomicXchgSock(pSock, NIL_RTSOCKET);
+    if (Sock != NIL_RTSOCKET)
+    {
+       shutdown(Sock, SHUT_RDWR);
+    }
+    return rtTcpClose(Sock, pszMsg);
+}
+
 
 /**
  * Internal worker common for RTTcpServerListen and the thread created by RTTcpServerCreate().
@@ -478,7 +491,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
             break;
         rtTcpAtomicXchgSock(&pServer->SockClient, Socket);
         rc = pServer->pfnServe(Socket, pServer->pvUser);
-        rtTcpClose(rtTcpAtomicXchgSock(&pServer->SockClient, NIL_RTSOCKET), "Listener: client");
+        rtTcpServerDestroyClientSock(&pServer->SockClient, "Listener: client");
 
         /*
          * Stop the server?
@@ -553,6 +566,29 @@ static void rcTcpServerListenCleanup(PRTTCPSERVER pServer)
 
 
 /**
+ * Terminate the open connection to the server.
+ *
+ * @returns iprt status code.
+ * @param   pServer         Handle to the server.
+ */
+RTR3DECL(int) RTTcpServerDisconnectClient(PRTTCPSERVER pServer)
+{
+    /*
+     * Validate input.
+     */
+    if (    !pServer
+        ||  pServer->enmState <= RTTCPSERVERSTATE_INVALID
+        ||  pServer->enmState >= RTTCPSERVERSTATE_FREED)
+    {
+        AssertMsgFailed(("Invalid parameter!\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    return rtTcpServerDestroyClientSock(&pServer->SockClient, "DisconnectClient: client");
+}
+
+
+/**
  * Closes down and frees a TCP Server.
  * This will also terminate any open connections to the server.
  *
@@ -593,12 +629,8 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer)
                 if (rtTcpServerSetState(pServer, RTTCPSERVERSTATE_SIGNALING, enmState))
                 {
                     /* client */
-                    RTSOCKET SockClient = rtTcpAtomicXchgSock(&pServer->SockClient, NIL_RTSOCKET);
-                    if (SockClient != NIL_RTSOCKET)
-                    {
-                        shutdown(SockClient, SHUT_RDWR);
-                        rtTcpClose(SockClient, "Destroyer: client");
-                    }
+                    rtTcpServerDestroyClientSock(&pServer->SockClient, "Destroyer: client");
+
                     bool fRc = rtTcpServerSetState(pServer, RTTCPSERVERSTATE_DESTROYING, RTTCPSERVERSTATE_SIGNALING);
                     Assert(fRc); NOREF(fRc);
 
