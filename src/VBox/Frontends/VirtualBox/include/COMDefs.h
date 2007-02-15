@@ -230,7 +230,7 @@ public:
      *  by the wrapper instance or the result of CInterface::createInstance()
      *  operation.
      */
-    HRESULT lastRC() const { return rc; }
+    HRESULT lastRC() const { return mRC; }
 
     /**
      *  Returns error info set by the last unsuccessfully invoked interface
@@ -242,15 +242,15 @@ public:
 protected:
 
     /* no arbitrary instance creations */
-    COMBase() : rc (S_OK) {};
+    COMBase() : mRC (S_OK) {};
 
 #if !defined (Q_OS_WIN32)
-    static nsIComponentManager *componentManager;
-    static nsIEventQueue* eventQ;
-    static ipcIDConnectService *dconnectService;
-    static PRUint32 vboxServerID;
+    static nsIComponentManager *gComponentManager;
+    static nsIEventQueue* gEventQ;
+    static ipcIDConnectService *gDConnectService;
+    static PRUint32 gVBoxServerID;
 
-    static XPCOMEventQSocketListener *socketListener;
+    static XPCOMEventQSocketListener *gSocketListener;
 #endif
 
     /** Adapter to pass QString as input BSTR params */
@@ -359,7 +359,7 @@ protected:
 
     void fetchErrorInfo (IUnknown * /*callee*/, const GUID * /*calleeIID*/) const {}
 
-    mutable HRESULT rc;
+    mutable HRESULT mRC;
 
     friend class COMErrorInfo;
 };
@@ -380,7 +380,7 @@ public:
      *  method. Returned error info is useful only if CInterface::lastRC()
      *  represents a failure (i.e. CInterface::isOk() is false).
      */
-    COMErrorInfo errorInfo() const { return errInfo; }
+    COMErrorInfo errorInfo() const { return mErrInfo; }
 
 protected:
 
@@ -388,10 +388,10 @@ protected:
     COMBaseWithEI() : COMBase () {};
 
     void fetchErrorInfo (IUnknown *callee, const GUID *calleeIID) const {
-        errInfo.fetchFromCurrentThread (callee, calleeIID);
+        mErrInfo.fetchFromCurrentThread (callee, calleeIID);
     }
 
-    mutable COMErrorInfo errInfo;
+    mutable COMErrorInfo mErrInfo;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -457,39 +457,40 @@ public:
 
     /* constructors & destructor */
 
-    CInterface() : iface (NULL) {}
+    CInterface() : mIface (NULL) {}
 
-    CInterface (const CInterface &that) : B (that), iface (that.iface) {
-        addref (iface);
+    CInterface (const CInterface &that) : B (that), mIface (that.mIface)
+    {
+        addref (mIface);
     }
 
     CInterface (const CUnknown &that);
 
-    CInterface (I *i) : iface (i) { addref (iface); }
+    CInterface (I *i) : mIface (i) { addref (mIface); }
 
-    virtual ~CInterface() { release (iface); }
+    virtual ~CInterface() { release (mIface); }
 
     /* utility methods */
 
-    void createInstance (const CLSID &clsid) {
-        AssertMsg (!iface, ("Instance is already non-NULL\n"));
-        if (!iface)
+    void createInstance (const CLSID &clsid)
+    {
+        AssertMsg (!mIface, ("Instance is already non-NULL\n"));
+        if (!mIface)
         {
 #if defined (Q_OS_WIN32)
-            B::rc = CoCreateInstance (clsid, NULL, CLSCTX_ALL,
-                                   _ATL_IIDOF (I), (void**) &iface);
+            B::mRC = CoCreateInstance (clsid, NULL, CLSCTX_ALL,
+                                       _ATL_IIDOF (I), (void**) &mIface);
 #else
             /* first, try to create an instance within the in-proc server
              * (for compatibility with Win32) */
-            B::rc = B::componentManager->CreateInstance (
-                clsid, nsnull, NS_GET_IID (I), (void**) &iface
-            );
-            if (FAILED (B::rc) && B::dconnectService && B::vboxServerID) {
+            B::mRC = B::gComponentManager->
+                CreateInstance (clsid, nsnull, NS_GET_IID (I), (void**) &mIface);
+            if (FAILED (B::mRC) && B::gDConnectService && B::gVBoxServerID)
+            {
                 /* now try the out-of-proc server if it exists */
-                B::rc = B::dconnectService->CreateInstance (
-                    B::vboxServerID, clsid,
-                    NS_GET_IID (I), (void**) &iface
-                );
+                B::mRC = B::gDConnectService->
+                    CreateInstance (B::gVBoxServerID, clsid,
+                                    NS_GET_IID (I), (void**) &mIface);
             }
 #endif
             /* fetch error info, but don't assert if it's missing -- many other
@@ -499,51 +500,50 @@ public:
         }
     }
 
-    void attach (I *i) {
+    void attach (I *i)
+    {
         /* be aware of self (from COM point of view) assignment */
-        I *old_iface = iface;
-        iface = i;
-        addref (iface);
+        I *old_iface = mIface;
+        mIface = i;
+        addref (mIface);
         release (old_iface);
-        B::rc = S_OK;
+        B::mRC = S_OK;
     };
 
-    void attachUnknown (IUnknown *i) {
+    void attachUnknown (IUnknown *i)
+    {
         /* be aware of self (from COM point of view) assignment */
-        I *old_iface = iface;
-        iface = NULL;
-        B::rc = S_OK;
+        I *old_iface = mIface;
+        mIface = NULL;
+        B::mRC = S_OK;
         if (i)
 #if defined (Q_OS_WIN32)
-            B::rc = i->QueryInterface (_ATL_IIDOF (I), (void**) &iface);
+            B::mRC = i->QueryInterface (_ATL_IIDOF (I), (void**) &mIface);
 #else
-            B::rc = i->QueryInterface (NS_GET_IID (I), (void**) &iface);
+            B::mRC = i->QueryInterface (NS_GET_IID (I), (void**) &mIface);
 #endif
         release (old_iface);
     };
 
-    void detach() { release (iface); iface = NULL; }
+    void detach() { release (mIface); mIface = NULL; }
 
-    bool isNull() const { return iface == NULL; }
+    bool isNull() const { return mIface == NULL; }
 
-    bool isOk() const { return !isNull() && SUCCEEDED (B::rc); }
+    bool isOk() const { return !isNull() && SUCCEEDED (B::mRC); }
 
     /* utility operators */
 
-    CInterface &operator= (const CInterface &that) {
-        attach (that.iface);
+    CInterface &operator= (const CInterface &that)
+    {
+        attach (that.mIface);
         B::operator= (that);
         return *this;
     }
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** @todo bird: dmik, perhaps I missed something, but I didn't find anything equivalent
-     * to this. feel free to fix &/| remove this hack. */
-    I *getInterface() { return iface; }
-#endif
+    I *iface() const { return mIface; }
 
-    bool operator== (const CInterface &that) const { return iface == that.iface; }
-    bool operator!= (const CInterface &that) const { return iface != that.iface; }
+    bool operator== (const CInterface &that) const { return mIface == that.mIface; }
+    bool operator!= (const CInterface &that) const { return mIface != that.mIface; }
 
     CInterface &operator= (const CUnknown &that);
 
@@ -552,7 +552,7 @@ protected:
     static void addref (I *i) { if (i) i->AddRef(); }
     static void release (I *i) { if (i) i->Release(); }
 
-    mutable I *iface;
+    mutable I *mIface;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -564,73 +564,74 @@ public:
     CUnknown() : CInterface <IUnknown, COMBaseWithEI> () {}
 
     template <class C>
-    explicit CUnknown (const C &that) {
-        iface = NULL;
-        if (that.iface)
+    explicit CUnknown (const C &that)
+    {
+        mIface = NULL;
+        if (that.mIface)
 #if defined (Q_OS_WIN32)
-            rc = that.iface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &iface);
+            mRC = that.mIface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &mIface);
 #else
-            rc = that.iface->QueryInterface (NS_GET_IID (IUnknown), (void**) &iface);
+            mRC = that.mIface->QueryInterface (NS_GET_IID (IUnknown), (void**) &mIface);
 #endif
-        if (SUCCEEDED (rc)) {
-            rc = that.lastRC();
-            errInfo = that.errorInfo();
+        if (SUCCEEDED (mRC)) {
+            mRC = that.lastRC();
+            mErrInfo = that.errorInfo();
         }
     }
     /* specialization for CUnknown */
     CUnknown (const CUnknown &that) : CInterface <IUnknown, COMBaseWithEI> () {
-        iface = that.iface;
-        addref (iface);
+        mIface = that.mIface;
+        addref (mIface);
         COMBaseWithEI::operator= (that);
     }
 
     template <class C>
     CUnknown &operator= (const C &that) {
         /* be aware of self (from COM point of view) assignment */
-        IUnknown *old_iface = iface;
-        iface = NULL;
-        rc = S_OK;
+        IUnknown *old_iface = mIface;
+        mIface = NULL;
+        mRC = S_OK;
 #if defined (Q_OS_WIN32)
-        if (that.iface)
-            rc = that.iface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &iface);
+        if (that.mIface)
+            mRC = that.mIface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &mIface);
 #else
-        if (that.iface)
-            rc = that.iface->QueryInterface (NS_GET_IID (IUnknown), (void**) &iface);
+        if (that.mIface)
+            mRC = that.mIface->QueryInterface (NS_GET_IID (IUnknown), (void**) &mIface);
 #endif
-        if (SUCCEEDED (rc)) {
-            rc = that.lastRC();
-            errInfo = that.errorInfo();
+        if (SUCCEEDED (mRC)) {
+            mRC = that.lastRC();
+            mErrInfo = that.errorInfo();
         }
         release (old_iface);
         return *this;
     }
     /* specialization for CUnknown */
     CUnknown &operator= (const CUnknown &that) {
-        attach (that.iface);
+        attach (that.mIface);
         COMBaseWithEI::operator= (that);
         return *this;
     }
 
-    IUnknown *&ifaceRef() { return iface; };
-    IUnknown *ifaceRef() const { return iface; };
+    /* @internal Used in wrappers. */
+    IUnknown *&ifaceRef() { return mIface; };
 };
 
 /* inlined CInterface methods that use CUnknown */
 
 template <class I, class B>
 inline CInterface <I, B>::CInterface (const CUnknown &that)
-    : iface (NULL)
+    : mIface (NULL)
 {
-    attachUnknown (that.ifaceRef());
-    if (SUCCEEDED (B::rc))
+    attachUnknown (that.iface());
+    if (SUCCEEDED (B::mRC))
         B::operator= ((B &) that);
 }
 
 template <class I, class B>
 inline CInterface <I, B> &CInterface <I, B>::operator =(const CUnknown &that)
 {
-    attachUnknown (that.ifaceRef());
-    if (SUCCEEDED (B::rc))
+    attachUnknown (that.iface());
+    if (SUCCEEDED (B::mRC))
         B::operator= ((B &) that);
     return *this;
 }

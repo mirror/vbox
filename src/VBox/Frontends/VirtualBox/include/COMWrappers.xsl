@@ -464,9 +464,9 @@ public:
         <xsl:value-of select="substring(@name,2)"/>
         <xsl:text>::GetCount () const {&#x0A;</xsl:text>
         <xsl:text>    ULONG count = 0;&#x0A;</xsl:text>
-        <xsl:text>    Assert (iface);&#x0A;</xsl:text>
-        <xsl:text>    if (!iface)&#x0A;        return count;&#x0A;</xsl:text>
-        <xsl:text>    rc = iface->COMGETTER(Count) (&amp;count);&#x0A;</xsl:text>
+        <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
+        <xsl:text>    if (!mIface)&#x0A;        return count;&#x0A;</xsl:text>
+        <xsl:text>    mRC = mIface->COMGETTER(Count) (&amp;count);&#x0A;</xsl:text>
         <xsl:call-template name="tryComposeFetchErrorInfo"/>
         <xsl:text>    return count;&#x0A;</xsl:text>
         <xsl:text>}&#x0A;&#x0A;</xsl:text>
@@ -478,9 +478,9 @@ public:
         <xsl:text>::GetItemAt (ULONG index) const {&#x0A;</xsl:text>
         <xsl:text>    </xsl:text><xsl:apply-templates select="@type"/>
         <xsl:text> item;&#x0A;</xsl:text>
-        <xsl:text>    Assert (iface);&#x0A;</xsl:text>
-        <xsl:text>    if (!iface)&#x0A;        return item;&#x0A;</xsl:text>
-        <xsl:text>    rc = iface->GetItemAt (index, &amp;item.iface);&#x0A;</xsl:text>
+        <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
+        <xsl:text>    if (!mIface)&#x0A;        return item;&#x0A;</xsl:text>
+        <xsl:text>    mRC = mIface->GetItemAt (index, &amp;item.mIface);&#x0A;</xsl:text>
         <xsl:call-template name="tryComposeFetchErrorInfo"/>
         <xsl:text>    return item;&#x0A;</xsl:text>
         <xsl:text>}&#x0A;&#x0A;</xsl:text>
@@ -492,9 +492,9 @@ public:
         <xsl:text>::Enumerate () const {&#x0A;</xsl:text>
         <xsl:text>    </xsl:text><xsl:apply-templates select="@enumerator"/>
         <xsl:text> enumerator;&#x0A;</xsl:text>
-        <xsl:text>    Assert (iface);&#x0A;</xsl:text>
-        <xsl:text>    if (!iface)&#x0A;        return enumerator;&#x0A;</xsl:text>
-        <xsl:text>    rc = iface->Enumerate (&amp;enumerator.iface);&#x0A;</xsl:text>
+        <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
+        <xsl:text>    if (!mIface)&#x0A;        return enumerator;&#x0A;</xsl:text>
+        <xsl:text>    mRC = mIface->Enumerate (&amp;enumerator.mIface);&#x0A;</xsl:text>
         <xsl:call-template name="tryComposeFetchErrorInfo"/>
         <xsl:text>    return enumerator;&#x0A;</xsl:text>
         <xsl:text>}&#x0A;&#x0A;</xsl:text>
@@ -506,9 +506,9 @@ public:
         <xsl:value-of select="substring(@name,2)"/>
         <xsl:text>::HasMore () const {&#x0A;</xsl:text>
         <xsl:text>    BOOL more = FALSE;&#x0A;</xsl:text>
-        <xsl:text>    Assert (iface);&#x0A;</xsl:text>
-        <xsl:text>    if (!iface)&#x0A;        return more;&#x0A;</xsl:text>
-        <xsl:text>    rc = iface->HasMore (&amp;more);&#x0A;</xsl:text>
+        <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
+        <xsl:text>    if (!mIface)&#x0A;        return more;&#x0A;</xsl:text>
+        <xsl:text>    mRC = mIface->HasMore (&amp;more);&#x0A;</xsl:text>
         <xsl:call-template name="tryComposeFetchErrorInfo"/>
         <xsl:text>    return more;&#x0A;</xsl:text>
         <xsl:text>}&#x0A;&#x0A;</xsl:text>
@@ -520,9 +520,9 @@ public:
         <xsl:text>::GetNext () const {&#x0A;</xsl:text>
         <xsl:text>    </xsl:text><xsl:apply-templates select="@type"/>
         <xsl:text> next;&#x0A;</xsl:text>
-        <xsl:text>    Assert (iface);&#x0A;</xsl:text>
-        <xsl:text>    if (!iface)&#x0A;        return next;&#x0A;</xsl:text>
-        <xsl:text>    rc = iface->GetNext (&amp;next.iface);&#x0A;</xsl:text>
+        <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
+        <xsl:text>    if (!mIface)&#x0A;        return next;&#x0A;</xsl:text>
+        <xsl:text>    mRC = mIface->GetNext (&amp;next.mIface);&#x0A;</xsl:text>
         <xsl:call-template name="tryComposeFetchErrorInfo"/>
         <xsl:text>    return next;&#x0A;</xsl:text>
         <xsl:text>}&#x0A;&#x0A;</xsl:text>
@@ -621,8 +621,8 @@ public:
             <xsl:if test="$define">
                 <xsl:text> {&#x0A;</xsl:text>
                 <!-- iface assertion -->
-                <xsl:text>    Assert (iface);&#x0A;</xsl:text>
-                <xsl:text>    if (!iface)&#x0A;        return;&#x0A;</xsl:text>
+                <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
+                <xsl:text>    if (!mIface)&#x0A;        return;&#x0A;</xsl:text>
                 <!-- method call -->
                 <xsl:call-template name="composeMethodCall">
                     <xsl:with-param name="isSetter" select="'yes'"/>
@@ -666,8 +666,8 @@ public:
                 <xsl:apply-templates select="$return/@type" mode="initializer"/>
                 <xsl:text>;&#x0A;</xsl:text>
                 <!-- iface assertion -->
-                <xsl:text>    Assert (iface);&#x0A;</xsl:text>
-                <xsl:text>    if (!iface)&#x0A;        return a_</xsl:text>
+                <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
+                <xsl:text>    if (!mIface)&#x0A;        return a_</xsl:text>
                 <!-- ### xsl:call-template name="capitalize">
                     <xsl:with-param name="str" select="$return/@name"/>
                 </xsl:call-template-->
@@ -761,7 +761,7 @@ public:
 
 <xsl:template name="composeMethodCall">
     <xsl:param name="isSetter" select="''"/>
-    <xsl:text>    rc = iface-></xsl:text>
+    <xsl:text>    mRC = mIface-></xsl:text>
     <xsl:choose>
         <!-- attribute method call -->
         <xsl:when test="name()='attribute'">
@@ -849,11 +849,11 @@ public:
         </xsl:when>
         <xsl:otherwise>
             <xsl:if test="$supports='strict' or $supports='yes'">
-                <xsl:text>    if (FAILED (rc)) {&#x0A;</xsl:text>
-                <xsl:text>        fetchErrorInfo (iface, &amp;COM_IIDOF (Base::Iface));&#x0A;</xsl:text>
+                <xsl:text>    if (FAILED (mRC)) {&#x0A;</xsl:text>
+                <xsl:text>        fetchErrorInfo (mIface, &amp;COM_IIDOF (Base::Iface));&#x0A;</xsl:text>
                 <xsl:if test="$supports='strict'">
                     <xsl:text>        AssertMsg (errInfo.isFullAvailable(), </xsl:text>
-                    <xsl:text>("for RC=0x%08X\n", rc));&#x0A;</xsl:text>
+                    <xsl:text>("for RC=0x%08X\n", mRC));&#x0A;</xsl:text>
                 </xsl:if>
                 <xsl:text>    }&#x0A;</xsl:text>
             </xsl:if>
@@ -961,10 +961,10 @@ public:
                     <xsl:value-of select="@name"/>
                     <xsl:choose>
                         <xsl:when test="@type='$unknown'">
-                            <xsl:text>.ifaceRef()</xsl:text>
+                            <xsl:text>.iface()</xsl:text>
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:text>.iface</xsl:text>
+                            <xsl:text>.mIface</xsl:text>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:when>
@@ -979,7 +979,7 @@ public:
                             <xsl:text>.ifaceRef()</xsl:text>
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:text>.iface</xsl:text>
+                            <xsl:text>.mIface</xsl:text>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:when>
