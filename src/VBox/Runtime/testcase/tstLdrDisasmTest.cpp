@@ -46,7 +46,7 @@ extern "C" DECLIMPORT(int) MyPrintf(const char *pszFormat, ...);
 *******************************************************************************/
 
 /* 32-bit code */
-static uint8_t g_ab32BitCode[] =
+static const uint8_t g_ab32BitCode[] =
 {
     0x55,               // 1000ab50 55              push    ebp
     0x8b,0xec,          // 1000ab51 8bec            mov     ebp,esp
