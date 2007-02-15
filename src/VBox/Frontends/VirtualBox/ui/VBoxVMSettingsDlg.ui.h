@@ -1298,7 +1298,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
 
     /* shared folders */
     {
-        mSharedFolders->loadFromMachine (machine);
+        mSharedFolders->getFromMachine (machine);
     }
 
     /* request for media shortcuts update */
@@ -1533,7 +1533,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* shared folders */
     {
-        mSharedFolders->saveToMachine (cmachine);
+        mSharedFolders->putBackToMachine (cmachine);
     }
 
     return COMResult();
