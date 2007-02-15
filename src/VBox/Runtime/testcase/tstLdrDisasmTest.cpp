@@ -33,7 +33,7 @@
 #include <VBox/disopcode.h>
 #include <iprt/string.h>
 
-#if 0 && defined(IN_RING0)
+#if defined(IN_RING0) && !defined(__WIN__) && !defined(__OS2__) /* Too lazy to make import libs. */
 extern "C" DECLIMPORT(int) MyPrintf(const char *pszFormat, ...);
 # define MY_PRINTF(a) MyPrintf a
 #else
@@ -74,7 +74,6 @@ static uint8_t g_ab32BitCode[] =
 };
 
 
-
 DECLCALLBACK(int32_t) DisasmTest1ReadCode(RTUINTPTR SrcAddr, uint8_t *pbDst, uint32_t cb, RTUINTPTR uUser)
 {
     while (cb > 0)
@@ -89,17 +88,31 @@ DECLCALLBACK(int32_t) DisasmTest1ReadCode(RTUINTPTR SrcAddr, uint8_t *pbDst, uin
 }
 
 
+/*
+ * Use an inline function here just to test '__textcoal_nt' sections on darwin.
+ */
+inline int MyDisasm(uintptr_t CodeIndex, PDISCPUSTATE pCpu, uint32_t *pcb)
+{
+    uint32_t cb;
+    int rc = DISCoreOneEx(CodeIndex, CPUMODE_32BIT, DisasmTest1ReadCode, 0, pCpu, &cb);
+    *pcb = cb;
+    MY_PRINTF(("DISCoreOneEx -> rc=%d cb=%d  Cpu: opcode=%#x pCurInstr=%p (42=%d)\n", \
+               rc, cb, pCpu->opcode, pCpu->pCurInstr, 42)); \
+    return rc;
+}
+
+
 extern "C" DECLEXPORT(int) DisasmTest1(void)
 {
     DISCPUSTATE Cpu = {0};
     uintptr_t CodeIndex = 0;
     uint32_t cb;
     int rc;
+    MY_PRINTF(("DisasmTest1: %p\n", &DisasmTest1));
+
 #define DISAS_AND_CHECK(cbInstr, enmOp) \
         do { \
-            rc = DISCoreOneEx(CodeIndex, CPUMODE_32BIT, DisasmTest1ReadCode, 0, &Cpu, &cb); \
-            MY_PRINTF(("%d: rc=%d cb=%d Cpu: opcode=%#x pCurInstr=%p pfnReadBytes=%p (42=42)\n", \
-                       __LINE__, rc, cb, Cpu.opcode, Cpu.pCurInstr, Cpu.pfnReadBytes, 42)); \
+            rc = MyDisasm(CodeIndex, &Cpu, &cb); \
             if (RT_FAILURE(rc)) \
                 return CodeIndex | 0xf000; \
             if (Cpu.pCurInstr->opcode != (enmOp)) \
