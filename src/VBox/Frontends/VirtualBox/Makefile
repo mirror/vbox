@@ -70,7 +70,8 @@ endif
 
 # UI headers (ui.h) containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCUIHDRS = \
-	ui/VBoxVMSettingsDlg.ui.h
+	ui/VBoxVMSettingsDlg.ui.h \
+	ui/VBoxSharedFoldersSettings.ui.h
 
 VirtualBox_GENSRCS = \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCHDRS))), $(PATH_VirtualBox)/moc/moc_$(moc).cpp) \
