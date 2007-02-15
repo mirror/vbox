@@ -1921,19 +1921,6 @@ static void pcnetXmitFailTMDLinkDown(PCNetState *pData, TMD *pTmd)
          PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
 }
 
-/**
- * Fails a TMD with a generic error.
- */
-static void pcnetXmitFailTMDGeneric(PCNetState *pData, TMD *pTmd)
-{
-    /* make carrier error - hope this is correct. */
-    pTmd->tmd2.lcar = pTmd->tmd1.err = 1;
-    pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR */
-    pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
-    Log(("#%d pcnetTransmit: Signaling send error. swstyle=%#x\n",
-         PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
-}
-
 
 /**
  * Transmit a loopback frame.
@@ -2062,6 +2049,10 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             {
                 RTR3PTR pv;
 
+                /* From the manual: ``A zero length buffers is acceptable as
+                 * long as it is not the last buffer in a chain (STP = 0 and
+                 * ENP = 1).'' That means that the first buffer might have a
+                 * zero length if it is not the last one in the chain. */
                 if (RT_LIKELY(cb < 4096))
                 {
                     int rc = PDMDevHlpPhys2HCVirt(pData->pDevInsHC,
@@ -2089,16 +2080,14 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                      * case (otherwise that driver becomes even more confused,
                      * which causes transmit to stall for about 10 seconds).
                      * This is just a workaround, not a final solution. */
+                    /* r=frank: IMHO this is the correct implementation. The
+                     * manual says: ``If the OWN bit is set and the buffer
+                     * length is 0, the OWN bit will be cleared. In the C-LANCE
+                     * the buffer length of 0 is interpreted as a 4096-byte
+                     * buffer.'' */
                     LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n"));
                     pcnetTmdStorePassHost(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)));
                     break;
-                }
-                else
-                {
-                    /* This is only acceptable if it's not the last buffer in the chain (stp=1, enp=0) */
-                    LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> signalling error\n"));
-
-                    pcnetXmitFailTMDGeneric(pData, &tmd);
                 }
             }
             else
