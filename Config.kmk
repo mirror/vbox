@@ -915,7 +915,6 @@ ifneq ($(filter linux l4,$(BUILD_TARGET)),)
   ifeq ($(BUILD_TARGET_ARCH),x86)
     VBOX_LINUX_INCS                += $(kernelpath)/include/asm-i386/mach-default
   endif
-  $(warning LINUX=$(VBOX_LINUX_INCS))
  endif
 endif
 
