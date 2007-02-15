@@ -485,6 +485,12 @@ void VBoxVMSettingsDlg::init()
     connect (leVRDPPort, SIGNAL (textChanged (const QString&)), wvalFloppy, SLOT (revalidate()));
     connect (leVRDPTimeout, SIGNAL (textChanged (const QString&)), wvalFloppy, SLOT (revalidate()));
 
+    /* Shared Folders Page */
+
+    QVBoxLayout* pageFoldersLayout = new QVBoxLayout (pageFolders, 0, 10, "pageFoldersLayout");
+    mSharedFolders = new VBoxSharedFoldersSettings (pageFolders, "sharedFolders");
+    pageFoldersLayout->addWidget (mSharedFolders);
+
     /*
      *  set initial values
      *  ----------------------------------------------------------------------
@@ -1290,6 +1296,11 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
     }
 
+    /* shared folders */
+    {
+        mSharedFolders->loadFromMachine (machine);
+    }
+
     /* request for media shortcuts update */
     cbHDA->setBelongsTo (machine.GetId());
     cbHDB->setBelongsTo (machine.GetId());
@@ -1518,6 +1529,11 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
             vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (cbVRDPAuthType->currentText()));
             vrdp.SetAuthTimeout (leVRDPTimeout->text().toULong());
         }
+    }
+
+    /* shared folders */
+    {
+        mSharedFolders->saveToMachine (cmachine);
     }
 
     return COMResult();

@@ -251,6 +251,26 @@
                 <pixmap></pixmap>
             </property>
         </item>
+        <item>
+            <property name="text">
+                <string> Shared Folders </string>
+            </property>
+            <property name="text">
+                <string>8</string>
+            </property>
+            <property name="text">
+                <string>#sfolders</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>select_file_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
             <property name="name">
                 <cstring>listView</cstring>
             </property>
@@ -2284,6 +2304,14 @@ with all fields set to the values of the selected USB device attached to the hos
                     </spacer>
                 </vbox>
             </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageFolders</cstring>
+                </property>
+                <attribute name="id">
+                    <number>8</number>
+                </attribute>
+            </widget>
         </widget>
         <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
             <property name="name">
@@ -2654,6 +2682,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxVMNetworkSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxUSBFilterSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxSharedFoldersSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
     <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
 </includes>
@@ -2661,6 +2690,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <forward>class VBoxMediaComboBox</forward>
     <forward>class VBoxDiskImageManagerDlg</forward>
     <forward>class VBoxUSBMenu</forward>
+    <forward>class VBoxSharedFoldersSettings</forward>
 </forwards>
 <variables>
     <variable access="private">bool polished;</variable>
@@ -2685,6 +2715,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <variable access="private">ulong mLastUSBFilterNum;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
     <variable access="private">QTabWidget* tbwNetwork;</variable>
+    <variable access="private">VBoxSharedFoldersSettings* mSharedFolders;</variable>
     <variable access="private">QString warningString;</variable>
     <variable access="private">VBoxMediaComboBox *cbHDA;</variable>
     <variable access="private">VBoxMediaComboBox *cbHDB;</variable>

@@ -27,6 +27,7 @@ LANGUAGE	= C++
 FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxVMNetworkSettings.ui \
 	ui/VBoxUSBFilterSettings.ui \
+	ui/VBoxSharedFoldersSettings.ui \
 	ui/VBoxNewVMWzd.ui \
 	ui/VBoxCloseVMDlg.ui \
 	ui/VBoxTakeSnapshotDlg.ui \
