@@ -447,3 +447,41 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
     return rc;
 }
 
+
+/**
+ * Checks if the path exists.
+ * 
+ * Symbolic links will all be attempted resolved.
+ * 
+ * @returns true if it exists and false if it doesn't
+ * @param   pszPath     The path to check.
+ */
+RTDECL(bool) RTPathExists(const char *pszPath)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszPath, false);
+    AssertReturn(*pszPath, false);
+
+    /*
+     * Try query file info.
+     */
+#ifndef RT_DONT_CONVERT_FILENAMES
+    PRTUCS2 puszPath;
+    int rc = RTStrUtf8ToUcs2(&puszPath, pszPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (GetFileAttributesW(puszPath) == INVALID_FILE_ATTRIBUTES)
+            rc = VERR_GENERAL_FAILURE;
+        RTStrUcs2Free(puszPath);
+    }
+#else
+    int rc = VINF_SUCCESS;
+    if (GetFileAttributesExA(pszPath) == INVALID_FILE_ATTRIBUTES)
+        rc = VERR_GENERAL_FAILURE;
+#endif
+
+    return RT_SUCCESS(rc);
+}
+

@@ -763,3 +763,29 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
     return rc;
 }
 
+
+RTDECL(bool) RTPathExists(const char *pszPath)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszPath, false);
+    AssertReturn(*pszPath, false);
+
+    /*
+     * Convert the path and check if it exists using stat().
+     */
+    char *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath);
+    if (RT_SUCCESS(rc))
+    {
+        struct stat Stat;
+        if (!stat(pszNativePath, &Stat))
+            rc = VINF_SUCCESS;
+        else
+            rc = VERR_GENERAL_FAILURE;
+        RTStrFree(pszNativePath);
+    }
+    return RT_SUCCESS(rc);
+}
+
