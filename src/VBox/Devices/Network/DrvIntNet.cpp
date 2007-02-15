@@ -199,7 +199,7 @@ static DECLCALLBACK(void) drvIntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
             fLinkDown = false;
             break;
     }
-    LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d %d->%d\n", enmLinkState, pThis->fLinkDown, fLinkDown));
+    LogFlow(("drvIntNetNotifyLinkChanged: enmLinkState=%d %d->%d\n", enmLinkState, pThis->fLinkDown, fLinkDown));
     ASMAtomicXchgSize(&pThis->fLinkDown, fLinkDown);
 }
 
