@@ -40,16 +40,14 @@
 #ifdef RT_STRICT
 # ifdef __GNUC__
 #  ifndef __L4ENV__
-#   define AssertBreakpoint()   do { __asm__ __volatile__ ("int3\n\tnop"); } while (0)
+#   define AssertBreakpoint()   do { if (RTAssertDoBreakpoint()) { __asm__ __volatile__ ("int3\n\tnop"); } } while (0)
 #  else
-#   define AssertBreakpoint()   do { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
+#   define AssertBreakpoint()   do { if (RTAssertDoBreakpoint()) { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } } while (0)
 #  endif
+# elif defined(_MSC_VER)
+#  define AssertBreakpoint()    do { if (RTAssertDoBreakpoint()) { __debugbreak(); } } while (0)
 # else
-#  ifdef IN_RING0
-#   define AssertBreakpoint()   do { if (RTAssertDoBreakpoint()) __debugbreak(); } while (0)
-#  else
-#   define AssertBreakpoint()   __debugbreak()
-#  endif
+#  error "Unknown compiler"
 # endif
 #else
 # define AssertBreakpoint()     do { } while (0)
@@ -483,8 +481,10 @@ extern int RTASSERTVAR[1];
 # else
 #  define AssertReleaseBreakpoint()   do { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
 # endif
-#else
+#elif defined(_MSC_VER)
 # define AssertReleaseBreakpoint()      __debugbreak()
+#else
+# error "Unknown compiler"
 #endif
 
 
@@ -1084,10 +1084,15 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
 RTDECL(void)    AssertMsg2(const char *pszFormat, ...);
 
 /**
- * Check if we really want to hit a breakpoint.
- * Can jump back to ring-3 when the longjmp is armed.
+ * Overridable function that decides whether assertions executes the breakpoint or not. 
+ * 
+ * The generic implementation will return true.
+ * 
+ * @returns true if the breakpoint should be hit, false if it should be ignored.
+ * @remark  The RTDECL() makes this a bit difficult to override on windows. Sorry.
  */
-RTDECL(bool) RTAssertDoBreakpoint(void);
+RTDECL(bool)    RTAssertDoBreakpoint(void);
+
 
 /** The last assert message, 1st part. */
 extern RTDATADECL(char) g_szRTAssertMsg1[1024];
