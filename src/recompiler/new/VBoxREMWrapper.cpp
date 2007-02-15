@@ -1003,6 +1003,7 @@ static REMFNDESC g_aRTImports[] =
 {
     { "AssertMsg1",                             (void *)(uintptr_t)&AssertMsg1,                     &g_aArgsAssertMsg1[0],                      ELEMENTS(g_aArgsAssertMsg1),                        REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "AssertMsg2",                             (void *)(uintptr_t)&AssertMsg2,                     &g_aArgsAssertMsg2[0],                      ELEMENTS(g_aArgsAssertMsg2),                        REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
+    { "RTAssertDoBreakpoint",                   (void *)(uintptr_t)&RTAssertDoBreakpoint,           NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "RTLogDefaultInstance",                   (void *)(uintptr_t)&RTLogDefaultInstance,           NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
     { "RTLogRelDefaultInstance",                (void *)(uintptr_t)&RTLogRelDefaultInstance,        NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
     { "RTLogFlags",                             (void *)(uintptr_t)&RTLogFlags,                     &g_aArgsRTLogFlags[0],                      ELEMENTS(g_aArgsRTLogFlags),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
