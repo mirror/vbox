@@ -2219,7 +2219,7 @@ bool VBoxConsoleWnd::dbgCreated()
 {
     if (dbg_gui)
         return true;
-    int rc = DBGGuiCreate (csession.getInterface(), &dbg_gui);
+    int rc = DBGGuiCreate (csession.iface(), &dbg_gui);
     if (VBOX_SUCCESS (rc))
     {
         dbgAdjustRelativePos();

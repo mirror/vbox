@@ -65,12 +65,12 @@
 #undef ASSERT
 #include <VBox/com/assert.h>
 
-nsIComponentManager *COMBase::componentManager = nsnull;
-nsIEventQueue* COMBase::eventQ = nsnull;
-ipcIDConnectService *COMBase::dconnectService = nsnull;
-PRUint32 COMBase::vboxServerID = 0;
+nsIComponentManager *COMBase::gComponentManager = nsnull;
+nsIEventQueue* COMBase::gEventQ = nsnull;
+ipcIDConnectService *COMBase::gDConnectService = nsnull;
+PRUint32 COMBase::gVBoxServerID = 0;
 
-XPCOMEventQSocketListener *COMBase::socketListener = 0;
+XPCOMEventQSocketListener *COMBase::gSocketListener = 0;
 
 /**
  *  Internal class to asyncronously handle IPC events on the GUI thread
@@ -82,27 +82,24 @@ class XPCOMEventQSocketListener : public QObject
 
 public:
 
-    XPCOMEventQSocketListener (nsIEventQueue *eq) {
-        eventQ = eq;
-        notifier = new QSocketNotifier (
-            eventQ->GetEventQueueSelectFD(), QSocketNotifier::Read,
-            this, "XPCOMEventQSocketNotifier"
-        );
-        QObject::connect(
-            notifier, SIGNAL( activated (int) ),
-            this, SLOT( processEvents() )
-        );
+    XPCOMEventQSocketListener (nsIEventQueue *eq)
+    {
+        mEventQ = eq;
+        mNotifier = new QSocketNotifier (mEventQ->GetEventQueueSelectFD(),
+                                         QSocketNotifier::Read, this,
+                                         "XPCOMEventQSocketNotifier");
+        QObject::connect (mNotifier, SIGNAL (activated (int)),
+                          this, SLOT (processEvents()));
     }
 
 public slots:
 
-    void processEvents() {
-        eventQ->ProcessPendingEvents();
-    }
+    void processEvents() { mEventQ->ProcessPendingEvents(); }
 
 private:
-    QSocketNotifier *notifier;
-    nsIEventQueue *eventQ;
+
+    QSocketNotifier *mNotifier;
+    nsIEventQueue *mEventQ;
 };
 
 #endif // !defined (Q_OS_WIN32)
@@ -128,7 +125,7 @@ HRESULT COMBase::initializeCOM()
 
 #else
 
-    if (componentManager)
+    if (gComponentManager)
     {
         LogFlow (("COMBase::initializeCOM(): END\n"));
         return S_OK;
@@ -173,19 +170,19 @@ HRESULT COMBase::initializeCOM()
 
             // get the component manager
             rc = registrar->QueryInterface (NS_GET_IID (nsIComponentManager),
-                                            (void**) &componentManager);
+                                            (void**) &gComponentManager);
             if (SUCCEEDED (rc))
             {
                 // get the main thread's event queue (afaik, the dconnect service always
                 // gets created upon XPCOM startup, so it will use the main (this)
                 // thread's event queue to receive IPC events)
-                rc = NS_GetMainEventQ (&eventQ);
+                rc = NS_GetMainEventQ (&gEventQ);
 #ifdef DEBUG
                 BOOL isNative = FALSE;
-                eventQ->IsQueueNative (&isNative);
+                gEventQ->IsQueueNative (&isNative);
                 AssertMsg (isNative, ("The event queue must be native"));
 #endif
-                socketListener = new XPCOMEventQSocketListener (eventQ);
+                gSocketListener = new XPCOMEventQSocketListener (gEventQ);
 
                 // get the IPC service
                 nsCOMPtr <ipcIService> ipcServ =
@@ -194,15 +191,14 @@ HRESULT COMBase::initializeCOM()
                 {
                     // get the VirtualBox out-of-proc server ID
                     rc = ipcServ->ResolveClientName ("VirtualBoxServer",
-                                                     &vboxServerID);
+                                                     &gVBoxServerID);
                     if (SUCCEEDED (rc))
                     {
                         // get the DConnect service
-                        rc = serviceManager->GetServiceByContractID (
-                            IPC_DCONNECTSERVICE_CONTRACTID,
-                            NS_GET_IID (ipcIDConnectService),
-                            (void **) &dconnectService
-                        );
+                        rc = serviceManager->
+                            GetServiceByContractID (IPC_DCONNECTSERVICE_CONTRACTID,
+                                                    NS_GET_IID (ipcIDConnectService),
+                                                    (void **) &gDConnectService);
                     }
                 }
             }
@@ -228,22 +224,22 @@ HRESULT COMBase::cleanupCOM()
 #if defined (Q_OS_WIN32)
     CoUninitialize();
 #else
-    if (componentManager)
+    if (gComponentManager)
     {
         PRBool isOnCurrentThread = true;
-        if (eventQ)
-            eventQ->IsOnCurrentThread (&isOnCurrentThread);
+        if (gEventQ)
+            gEventQ->IsOnCurrentThread (&isOnCurrentThread);
 
         if (isOnCurrentThread)
         {
             LogFlow (("COMBase::cleanupCOM(): doing cleanup...\n"));
-            if (socketListener)
-                delete socketListener;
-            if (dconnectService)
-                dconnectService->Release();
-            if (eventQ)
-                eventQ->Release();
-            componentManager->Release();
+            if (gSocketListener)
+                delete gSocketListener;
+            if (gDConnectService)
+                gDConnectService->Release();
+            if (gEventQ)
+                gEventQ->Release();
+            gComponentManager->Release();
             NS_ShutdownXPCOM (nsnull);
             XPCOMGlueShutdown();
         }
