@@ -987,6 +987,27 @@ function check_kbuild()
   fi
 }
 
+
+#
+# Check for compiler.h
+# Some Linux distributions include "compiler.h" in their libc linux 
+# headers package, some don't.  Most don't need it, building might (!) 
+# not succeed on openSUSE without it.
+#
+# See http://www.mail-archive.com/qemu-devel%40nongnu.org/msg07980.html
+#
+function check_compiler_h
+{
+  test_header compiler.h
+  if ! test -f "/usr/include/linux/compiler.h"; then
+    cnf_append "NO_COMPILER_H" "1"
+    log_success "compiler.h not found"
+  else
+    log_success "compiler.h found"
+  fi
+}
+
+
 #
 # Show help
 #
@@ -1182,6 +1203,7 @@ check_gcc
 
 # Linux-specific
 [ "$OS" = "linux" ] && check_linux
+[ "$OS" = "linux" ] && check_compiler_h
 
 # success!
 echo
