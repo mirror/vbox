@@ -28,6 +28,7 @@ PROGRAMS = \
 	tstLdr \
 	tstLdr-2 \
 	tstLdr-3 \
+	tstLdr-4 \
 	tstLdrLoad \
 	tstAvl \
 	tstTimer \
@@ -63,7 +64,9 @@ PROGRAMS.linux = \
 	tstInlineAsmPIC3
 PROGRAMS.l4 = \
 	tstIoCtl
-SYSMODS = tstLdrObj
+SYSMODS = \
+	tstLdrObj \
+	tstLdrObjR0
 # tstSems
 endif # VBOX_WITH_TESTCASES
 
@@ -127,7 +130,7 @@ tstLdrObj_TEMPLATE = VBOXGC
 tstLdrObj_INST     = $(INST_TESTCASE)
 tstLdrObj_SYSSUFF  = .gc
 tstLdrObj_SOURCES  = tstLdrObj.cpp
-tstLdrObj_DEFS     = IN_DIS_GC IN_RT_GC
+tstLdrObj_DEFS     = IN_DIS_GC IN_RT_GC DIS_CORE_ONLY
 ifeq ($(VBOX_LDR_FMT32),elf)
 tstLdrObj_DEFS    += VBOX_SOME_IMPORT_FUNCTION
 endif
@@ -149,9 +152,39 @@ tstLdrObj_LIBS    += \
 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
 endif
 
+
 tstLdr-3_SOURCES = tstLdr-3.cpp
 tstLdr-3_DEFS    = IN_DIS_R3
 tstLdr-3_LIBS    = \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+
+tstLdrObjR0_TEMPLATE = VBOXR0
+tstLdrObjR0_INST     = $(INST_TESTCASE)
+tstLdrObjR0_SYSSUFF  = .r0
+tstLdrObjR0_SOURCES  = tstLdrObjR0.cpp tstLdrDisasmTest.cpp
+tstLdrObjR0_DEFS     = IN_DIS_R0 IN_RT_R0 DIS_CORE_ONLY
+ifeq ($(VBOX_LDR_FMT32),elf)
+ tstLdrObjR0_DEFS   += VBOX_SOME_IMPORT_FUNCTION
+endif
+tstLdrObjR0_LIBS     = \
+	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+ifeq ($(VBOX_LDR_FMT),pe)
+ tstLdrObjR0_LDFLAGS = -Entry:Entrypoint
+ tstLdrObjR0_LIBS   += \
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+ifeq ($(VBOX_LDR_FMT),elf)
+ tstLdrObjR0_LDFLAGS = -entry=Entrypoint
+endif
+ifeq ($(VBOX_LDR_FMT),lx)
+ tstLdrObjR0_LIBS   += \
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+
+tstLdr-4_SOURCES = tstLdr-4.cpp tstLdrDisasmTest.cpp
+tstLdr-4_DEFS    = IN_DIS_R3
+tstLdr-4_LIBS    = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
 tstLdrLoad_SOURCES = tstLdrLoad.cpp
