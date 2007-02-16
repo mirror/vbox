@@ -444,10 +444,6 @@ BEGINPROC vmmGCCallTrampoline
     COM_S_CHAR 't'
     COM_S_CHAR '!'
 %endif
-    ; Clear fs and gs.
-    xor     eax, eax
-    mov     gs, eax
-    mov     fs, eax
 
     ; call routine
     pop     eax                         ; call address
