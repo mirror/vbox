@@ -143,7 +143,7 @@ public:
     void cannotDeleteHardDiskImage (QWidget *parent, const CVirtualDiskImage &vdi);
 
     int confirmHardDiskUnregister (QWidget *parent, const QString &src);
-    
+
     void cannotCreateHardDiskImage (
         QWidget *parent, const CVirtualBox &vbox, const QString &src,
         const CVirtualDiskImage &vdi, const CProgress &progress);
@@ -163,7 +163,7 @@ public:
 
     void cannotGetMediaAccessibility (const CUnknown &unk);
 
-/// @todo (r=dmik) later    
+/// @todo (r=dmik) later
 //    void cannotMountMedia (const CUnknown &unk);
 //    void cannotUnmountMedia (const CUnknown &unk);
 
@@ -182,6 +182,11 @@ public:
 
     void cannotAttachUSBDevice (const CConsole &console, const QString &device);
     void cannotDetachUSBDevice (const CConsole &console, const QString &device);
+
+    void cannotCreateSharedFolder (QWidget *, const CMachine &,
+                                   const QString &, const QString &);
+    void cannotRemoveSharedFolder (QWidget *, const CMachine &,
+                                   const QString &, const QString &);
 
     bool confirmReleaseImage (QWidget*, QString);
 

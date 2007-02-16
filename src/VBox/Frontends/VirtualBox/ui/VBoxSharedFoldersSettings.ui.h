@@ -100,7 +100,7 @@ protected:
                         break;
                     case EllipsisFile:
                     {
-                        QRegExp regExp ("([\\/][^\\^/]+[\\/]?$)");
+                        QRegExp regExp ("([\\\\/][^\\\\^/]+[\\\\/]?$)");
                         int newFinish = regExp.search (oneString);
                         if (newFinish != -1)
                             finish = newFinish;
@@ -195,18 +195,33 @@ private slots:
 
     void showFileDialog()
     {
-        QString folderName = QFileDialog::getExistingDirectory (
-                                          QDir::rootDirPath(),
-                                          this, "AddSharedFolderDialog",
-                                          tr ("Select a folder to share"),
-                                          false /* show dir only */);
-        /* compose folder path */
-        mLePath->setText (folderName);
-        /* compose folder name */
-        QRegExp regExp ("[\\/]([^\\^/]+)[\\/]?$");
-        int lastFolderPos = regExp.search (folderName);
-        if (lastFolderPos != -1)
-            mLeName->setText (regExp.cap (1));
+        QFileDialog dlg (QDir::rootDirPath(), QString::null, this);
+        dlg.setMode (QFileDialog::DirectoryOnly);
+        dlg.setCaption (tr ("Add Share"));
+        if (dlg.exec() == QDialog::Accepted)
+        {
+            QString folderName = QDir::convertSeparators (dlg.selectedFile());
+            QRegExp commonRule ("[\\\\/]([^\\\\^/]+)[\\\\/]?$");
+            QRegExp rootRule ("(([a-zA-Z])[^\\\\^/])?[\\\\/]$");
+            if (commonRule.search (folderName) != -1)
+            {
+                /* processing non-root folder */
+                mLePath->setText (folderName.remove (QRegExp ("[\\\\/]$")));
+                mLeName->setText (commonRule.cap (1));
+            }
+            else if (rootRule.search (folderName) != -1)
+            {
+                /* processing root folder */
+                mLePath->setText (folderName);
+#if defined(Q_WS_WIN32)
+                mLeName->setText (rootRule.cap (2) + "_DRIVE");
+#elif defined(Q_WS_X11)
+                mLeName->setText ("ROOT");
+#endif
+            }
+            else
+                return; /* hm, what type of folder it was? */
+        }
     }
 
 private:
@@ -226,6 +241,7 @@ private:
 void VBoxSharedFoldersSettings::init()
 {
     new QIListViewSelectionPreserver (this, listView);
+    listView->setShowToolTips (false);
     tbAdd->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                             "select_file_dis_16px.png"));
     tbRemove->setIconSet (VBoxGlobal::iconSet ("eraser_16px.png",
@@ -234,27 +250,29 @@ void VBoxSharedFoldersSettings::init()
     connect (tbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));
     connect (listView, SIGNAL (currentChanged (QListViewItem *)),
              this, SLOT (processCurrentChanged (QListViewItem *)));
+    connect (listView, SIGNAL (onItem (QListViewItem *)),
+             this, SLOT (processOnItem (QListViewItem *)));
 
-    isListViewChanged = false;
+    mIsListViewChanged = false;
 }
 
 
 void VBoxSharedFoldersSettings::getFromGlobal()
 {
-    loadFrom (vboxGlobal().virtualBox().GetSharedFolders().Enumerate());
+    getFrom (vboxGlobal().virtualBox().GetSharedFolders().Enumerate());
 }
 
 void VBoxSharedFoldersSettings::getFromMachine (const CMachine &aMachine)
 {
-    loadFrom (aMachine.GetSharedFolders().Enumerate());
+    getFrom (aMachine.GetSharedFolders().Enumerate());
 }
 
 void VBoxSharedFoldersSettings::getFromConsole (const CConsole &aConsole)
 {
-    loadFrom (aConsole.GetSharedFolders().Enumerate());
+    getFrom (aConsole.GetSharedFolders().Enumerate());
 }
 
-void VBoxSharedFoldersSettings::loadFrom (const CSharedFolderEnumerator &aEn)
+void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn)
 {
     while (aEn.HasMore())
     {
@@ -276,11 +294,19 @@ void VBoxSharedFoldersSettings::putBackToGlobal()
 void VBoxSharedFoldersSettings::putBackToMachine (CMachine &aMachine)
 {
     /* first deleting all existing folders if the list is changed */
-    if (isListViewChanged)
+    if (mIsListViewChanged)
     {
         CSharedFolderEnumerator en = aMachine.GetSharedFolders().Enumerate();
         while (en.HasMore())
-            aMachine.RemoveSharedFolder (en.GetNext().GetName());
+        {
+            CSharedFolder sf = en.GetNext();
+            const QString &name = sf.GetName();
+            const QString &path = sf.GetHostPath();
+            aMachine.RemoveSharedFolder (name);
+            if (!aMachine.isOk())
+                vboxProblem().cannotRemoveSharedFolder (this, aMachine,
+                                                        name, path);
+        }
     }
     else return;
 
@@ -292,7 +318,13 @@ void VBoxSharedFoldersSettings::putBackToMachine (CMachine &aMachine)
         if (it.current()->rtti() == VBoxRichListItem::QIRichListItemId)
             item = static_cast<VBoxRichListItem*> (it.current());
         if (item)
+        {
             aMachine.CreateSharedFolder (item->getText (0), item->getText (1));
+            if (!aMachine.isOk())
+                vboxProblem().cannotCreateSharedFolder (this, aMachine,
+                                                        item->getText (0),
+                                                        item->getText (1));
+        }
         else
             AssertMsgFailed (("Incorrect listview item type\n"));
         ++it;
@@ -308,6 +340,7 @@ void VBoxSharedFoldersSettings::putBackToConsole (CConsole &/*aConsole*/)
 
 void VBoxSharedFoldersSettings::tbAddPressed()
 {
+    /* Invoke Add-Box Dialog */
     VBoxAddSFDialog dlg (this);
     if (dlg.exec() != QDialog::Accepted)
         return;
@@ -318,19 +351,31 @@ void VBoxSharedFoldersSettings::tbAddPressed()
 
     VBoxRichListItem *item = new VBoxRichListItem (VBoxRichListItem::EllipsisFile,
                                                    listView, name, path);
+    listView->ensureItemVisible (item);
     listView->setCurrentItem (item);
     processCurrentChanged (item);
     listView->setFocus();
-    isListViewChanged = true;
+    mIsListViewChanged = true;
 }
 
 void VBoxSharedFoldersSettings::tbRemovePressed()
 {
     Assert (listView->selectedItem());
     delete listView->selectedItem();
-    isListViewChanged = true;
+    mIsListViewChanged = true;
 }
 
+
+void VBoxSharedFoldersSettings::processOnItem (QListViewItem *aItem)
+{
+    VBoxRichListItem *item = 0;
+    if (aItem->rtti() == VBoxRichListItem::QIRichListItemId)
+        item = static_cast<VBoxRichListItem*> (aItem);
+    Assert (item);
+    QString tip = tr ("<nobr>Name: %1</nobr><br><nobr>Path: %2</nobr>")
+                      .arg (item->getText (0)).arg (item->getText (1));
+    QToolTip::add (listView->viewport(), listView->itemRect (aItem), tip);
+}
 
 void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
 {
