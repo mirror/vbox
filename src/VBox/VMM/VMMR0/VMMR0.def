@@ -22,8 +22,6 @@ EXPORTS
     ; data
 
     ; code
-    AssertMsg1
-    AssertMsg2
     PDMCritSectEnter
     PDMCritSectLeave
     PDMQueueAlloc
@@ -47,4 +45,9 @@ EXPORTS
     vmmR0LoggerWrapper
     VMSetError
     VMSetErrorV
+
+    ; runtime
+    AssertMsg1
+    AssertMsg2
+    RTAssertDoBreakpoint
 
