@@ -96,7 +96,7 @@
                         <enum>AllColumns</enum>
                     </property>
                     <property name="whatsThis" stdset="0">
-                        <string>&lt;qt&gt;Lists all shared folders defined for this machine.
+                        <string>&lt;qt&gt;Lists all shared folders accessible to this machine.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or

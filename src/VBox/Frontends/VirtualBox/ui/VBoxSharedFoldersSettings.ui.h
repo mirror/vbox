@@ -354,7 +354,7 @@ void VBoxSharedFoldersSettings::getFromGlobal()
     AssertMsgFailed (("Global shared folders are not implemented yet\n"));
 
     /*
-    QString name = tr (" Global Shared Folders");
+    QString name = tr (" Global Folders");
     QString key (QString::number (GlobalType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
                                                    listView, name, QString::null, key);
@@ -365,7 +365,7 @@ void VBoxSharedFoldersSettings::getFromGlobal()
 void VBoxSharedFoldersSettings::getFromMachine (const CMachine &aMachine)
 {
     mMachine = aMachine;
-    QString name = tr (" Machine Shared Folders");
+    QString name = tr (" Machine Folders");
     QString key (QString::number (MachineType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
                                                    listView, name, QString::null, key);
@@ -375,7 +375,7 @@ void VBoxSharedFoldersSettings::getFromMachine (const CMachine &aMachine)
 void VBoxSharedFoldersSettings::getFromConsole (const CConsole &aConsole)
 {
     mConsole = aConsole;
-    QString name = tr (" Transient Shared Folders");
+    QString name = tr (" Transient Folders");
     QString key (QString::number (ConsoleType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
                                                    listView, name, QString::null, key);
@@ -509,7 +509,8 @@ void VBoxSharedFoldersSettings::processOnItem (QListViewItem *aItem)
     if (aItem->rtti() == VBoxRichListItem::QIRichListItemId)
         item = static_cast<VBoxRichListItem*> (aItem);
     Assert (item);
-    QString tip = tr ("<nobr>Name: %1</nobr><br><nobr>Path: %2</nobr>")
+    QString tip = tr ("<nobr>Name:&nbsp;&nbsp;%1</nobr><br>"
+                      "<nobr>Path:&nbsp;&nbsp;%2</nobr>")
                       .arg (item->getText (0)).arg (item->getText (1));
     if (!item->getText (0).isEmpty() && !item->getText (1).isEmpty())
         QToolTip::add (listView->viewport(), listView->itemRect (aItem), tip);

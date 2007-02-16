@@ -1151,8 +1151,8 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
     COMErrorInfo errInfo = aMachine.errorInfo();
 
     message (aParent, Error,
-             tr ("Failed to create shared folder <b>%1</b> "
-                 "with path <b>%2</b> "
+             tr ("Failed to create a shared folder <b>%1</b> "
+                 "(pointing to <nobr><b>%2</b></nobr>)"
                  "for the virtual machine <b>%3</b>.")
                  .arg (aName)
                  .arg (aPath)
@@ -1169,8 +1169,8 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
     COMErrorInfo errInfo = aMachine.errorInfo();
 
     message (aParent, Error,
-             tr ("Failed to remove shared folder <b>%1</b> "
-                 "with path <b>%2</b> "
+             tr ("Failed to remove the shared folder <b>%1</b> "
+                 "(pointing to <nobr><b>%2</b></nobr>)"
                  "from the virtual machine <b>%3</b>.")
                  .arg (aName)
                  .arg (aPath)
