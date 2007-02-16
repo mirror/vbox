@@ -185,6 +185,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <variable access="public">enum SFDialogType { WrongType = 0, GlobalType = 1, MachineType = 2, ConsoleType = 3 };</variable>
     <variable access="private">bool mIsListViewChanged;</variable>
     <variable access="private">SFDialogType mDialogType;</variable>
+    <variable access="private">CMachine mMachine;</variable>
+    <variable access="private">CConsole mConsole;</variable>
 </variables>
 <slots>
     <slot>tbAddPressed()</slot>
@@ -195,14 +197,17 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 <functions>
     <function access="private">init()</function>
     <function>setDialogType( VBoxSharedFoldersSettings::SFDialogType )</function>
-    <function access="private" returnType="bool">isEditable( const QString &amp; )</function>
+    <function access="private">removeSharedFolder( const QString &amp;, const QString &amp;, VBoxSharedFoldersSettings::SFDialogType )</function>
+    <function access="private">createSharedFolder( const QString &amp;, const QString &amp;, VBoxSharedFoldersSettings::SFDialogType )</function>
     <function>getFromGlobal()</function>
     <function>getFromMachine( const CMachine &amp; )</function>
     <function>getFromConsole( const CConsole &amp; )</function>
     <function access="private">getFrom( const CSharedFolderEnumerator &amp;, QListViewItem* )</function>
     <function>putBackToGlobal()</function>
-    <function>putBackToMachine( CMachine &amp; )</function>
-    <function>putBackToConsole( CConsole &amp; )</function>
+    <function>putBackToMachine()</function>
+    <function>putBackToConsole()</function>
+    <function access="private">putBackTo( CSharedFolderEnumerator &amp;, QListViewItem* )</function>
+    <function access="private" returnType="bool">isEditable( const QString &amp; )</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>

@@ -30,6 +30,7 @@
 #include <qmap.h>
 #include <qobjectlist.h>
 #include <qcolor.h>
+#include <qdialog.h>
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 #include <VBox/dbggui.h>
@@ -125,6 +126,7 @@ private slots:
     void devicesMountDVDImage();
     void devicesUnmountDVD();
     void devicesSwitchVrdp (bool);
+    void devicesToggleSFDialog (bool);
     void devicesInstallGuestAdditions();
 
     void prepareFloppyMenu();
@@ -177,6 +179,7 @@ private:
     QAction *devicesMountDVDImageAction;
     QAction *devicesUnmountDVDAction;
     QAction *devicesSwitchVrdpAction;
+    QAction *devicesSFDialogAction;
     QAction *devicesInstallGuestToolsAction;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -199,6 +202,7 @@ private:
 
     int devicesUSBMenuSeparatorId;
     int devicesVRDPMenuSeparatorId;
+    int devicesSFMenuSeparatorId;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
@@ -256,5 +260,33 @@ private:
     PDBGGUI dbg_gui;
 #endif
 };
+
+
+class VBoxSharedFoldersSettings;
+class VBoxSFDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+
+    VBoxSFDialog (QWidget*, CSession&, QAction*);
+    ~VBoxSFDialog();
+
+protected slots:
+
+    virtual void accept();
+    virtual void suicide (bool);
+
+protected:
+
+    void showEvent (QShowEvent*);
+
+private:
+
+    VBoxSharedFoldersSettings *mSettings;
+    CSession &mSession;
+    QAction *mAction;
+};
+
 
 #endif // __VBoxConsoleWnd_h__
