@@ -110,9 +110,14 @@ VirtualBox_SOURCES.win += \
 VirtualBox_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp
 
+ifdef XKEYBOARD_NEW
+VirtualBox_SOURCES.linux = \
+	src/linux/XKeyboardNew.cpp
+else
 VirtualBox_SOURCES.linux = \
 	src/linux/XKeyboard.cpp \
 	src/linux/keyboard.c
+endif
 
 VirtualBox_CXXFLAGS.win = \
 	-nologo -Zm200 -W3 -MD -EHsc -DUNICODE -DQT_DLL -DQT_THREAD_SUPPORT -DQT_NO_DEBUG
