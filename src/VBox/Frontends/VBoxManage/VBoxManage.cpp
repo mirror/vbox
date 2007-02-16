@@ -4940,8 +4940,10 @@ static int handleSetExtraData(int argc, char *argv[],
     {
         if (argc < 3)
             CHECK_ERROR(virtualBox, SetExtraData(Bstr(argv[1]), NULL));
-        else
+        else if (argc == 3)
             CHECK_ERROR(virtualBox, SetExtraData(Bstr(argv[1]), Bstr(argv[2])));
+        else
+            return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
     }
     else
     {
@@ -4957,8 +4959,10 @@ static int handleSetExtraData(int argc, char *argv[],
         {
             if (argc < 3)
                 CHECK_ERROR(machine, SetExtraData(Bstr(argv[1]), NULL));
-            else
+            else if (argc == 3)
                 CHECK_ERROR(machine, SetExtraData(Bstr(argv[1]), Bstr(argv[2])));
+            else
+                return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
         }
     }
     return SUCCEEDED(rc) ? 0 : 1;
