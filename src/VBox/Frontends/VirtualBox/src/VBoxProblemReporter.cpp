@@ -547,7 +547,7 @@ void VBoxProblemReporter::cannotSaveMachineSettings (const CMachine &machine,
 {
     /* preserve the current error info before calling the object again */
     COMErrorInfo errInfo = machine.errorInfo();
-     
+
     message (parent ? parent : mainWindowShown(), Error,
              tr ("Failed to save the settings of the virtual machine <b>%1</b>.")
                  .arg (machine.GetName()),
@@ -822,7 +822,7 @@ bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
 {
     QString msg;
     QString name;
-    
+
     if (machine.GetAccessible())
     {
         name = machine.GetName();
@@ -843,7 +843,7 @@ bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
                   "GUI.</p>")
                   .arg (name);
     }
-    
+
     return messageYesNo (&vboxGlobal().selectorWnd(), Question, msg);
 }
 
@@ -897,7 +897,7 @@ int VBoxProblemReporter::confirmHardDiskImageDeletion (QWidget *parent,
         tr ("<p>Do you want to delete this hard disk's image file "
             "<nobr><b>%1</b>?</nobr></p>"
             "<p>If you select <b>No</b> then the virtual hard disk will be "
-            "unregistered and removed from the collection, but the image file " 
+            "unregistered and removed from the collection, but the image file "
             "will be left on your physical disk.</p>"
             "<p>If you select <b>Yes</b> then the image file will be permanently "
             "deleted after unregistering the hard disk. This operation "
@@ -982,7 +982,7 @@ void VBoxProblemReporter::cannotRegisterMedia (
                     QString::null;
 
     Assert (!media.isNull());
-    
+
     message (parent, Error,
         tr ("Failed to register the %1 <nobr><b>%2</b></nobr>.")
             .arg (media)
@@ -1140,6 +1140,42 @@ void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
             .arg (device)
             .arg (console.GetMachine().GetName()),
         formatErrorInfo (errInfo));
+}
+
+void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
+                                                    const CMachine &aMachine,
+                                                    const QString  &aName,
+                                                    const QString  &aPath)
+{
+    /* preserve the current error info before calling the object again */
+    COMErrorInfo errInfo = aMachine.errorInfo();
+
+    message (aParent, Error,
+             tr ("Failed to create shared folder <b>%1</b> "
+                 "with path <b>%2</b> "
+                 "for the virtual machine <b>%3</b>.")
+                 .arg (aName)
+                 .arg (aPath)
+                 .arg (aMachine.GetName()),
+             formatErrorInfo (errInfo));
+}
+
+void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
+                                                    const CMachine &aMachine,
+                                                    const QString  &aName,
+                                                    const QString  &aPath)
+{
+    /* preserve the current error info before calling the object again */
+    COMErrorInfo errInfo = aMachine.errorInfo();
+
+    message (aParent, Error,
+             tr ("Failed to remove shared folder <b>%1</b> "
+                 "with path <b>%2</b> "
+                 "from the virtual machine <b>%3</b>.")
+                 .arg (aName)
+                 .arg (aPath)
+                 .arg (aMachine.GetName()),
+             formatErrorInfo (errInfo));
 }
 
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
@@ -1338,7 +1374,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
         type = Warning;
         severity = tr ("<nobr>Warning</nobr>", "runtime error info");
     }
-    
+
     QString formatted;
 
     if (!errorMsg.isEmpty())
@@ -1358,10 +1394,10 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                                     errorID)
                               .arg (tr ("Severity: ", "runtime error info"),
                                     severity);
-    
+
     if (!formatted.isEmpty())
         formatted = "<qt>" + formatted + "</qt>";
- 
+
     int rc = 0;
 
     if (type == Critical)
@@ -1372,7 +1408,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                 "use the clipboard to copy the following error message for "
                 "further examination:</p>"),
             formatted);
-        
+
         /* always power down after a fatal error */
         console.PowerDown();
     }
