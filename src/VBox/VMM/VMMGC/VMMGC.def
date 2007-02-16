@@ -22,8 +22,6 @@ EXPORTS
     ; data
 
     ; code
-    AssertMsg1
-    AssertMsg2
     CPUMGCResumeGuest
     CPUMGCResumeGuestV86
     PDMCritSectEnter
@@ -64,4 +62,7 @@ EXPORTS
     memcpy
     memchr
     memcmp
+    AssertMsg1
+    AssertMsg2
+    RTAssertDoBreakpoint
 
