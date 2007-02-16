@@ -489,6 +489,7 @@ void VBoxVMSettingsDlg::init()
 
     QVBoxLayout* pageFoldersLayout = new QVBoxLayout (pageFolders, 0, 10, "pageFoldersLayout");
     mSharedFolders = new VBoxSharedFoldersSettings (pageFolders, "sharedFolders");
+    mSharedFolders->setDialogType (VBoxSharedFoldersSettings::MachineType);
     pageFoldersLayout->addWidget (mSharedFolders);
 
     /*
