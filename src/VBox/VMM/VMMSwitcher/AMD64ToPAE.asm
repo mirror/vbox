@@ -370,6 +370,9 @@ GLOBALNAME JmpGCTarget
     mov     eax, 0ffffh
     mov     ds, eax
     mov     es, eax
+    xor     eax, eax
+    mov     gs, eax
+    mov     fs, eax
     ; Load pCpum into EDX
     FIXUP FIX_GC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
@@ -474,10 +477,6 @@ BEGINPROC vmmGCCallTrampoline
     COM32_S_CHAR 't'
     COM32_S_CHAR '!'
 %endif
-    ; Clear fs and gs.
-    xor     eax, eax
-    mov     gs, eax
-    mov     fs, eax
 
     ; call routine
     pop     eax                         ; call address
