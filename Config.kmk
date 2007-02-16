@@ -670,13 +670,6 @@ endif
 # bin2c (convert binary files into C arrays)
 VBOX_BIN2C     ?= $(PATH_OBJ)/src/bldprogs/bin2c/bin2c$(HOSTSUFF_EXE)
 
-# libIDL-config (for xpcom18a4)
-ifdef VBOX_WITH_XPCOM
- ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
-  export VBOX_LIBIDL_CONFIG := $(firstword $(shell which libIDL-config-2 libIDL-config 2> /dev/null))
- endif
-endif
-
 # mkisofs
 ifeq ($(BUILD_PLATFORM),win)
  VBOX_MKISOFS  ?= $(PATH_DEVTOOLS_BLD)/bin/mkisofs.exe
@@ -715,6 +708,10 @@ ifneq ($(BUILD_TARGET),win)
  	$(PATH_BIN)/sdk/include/xpcom/string \
  	$(PATH_BIN)/sdk/include/xpcom/xpcom \
  	$(PATH_BIN)/sdk/include/xpcom/ipcd
+ # libIDL-config (for xpcom18a4)
+ ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
+  export VBOX_LIBIDL_CONFIG := $(firstword $(shell which libIDL-config-2 libIDL-config 2> /dev/null))
+ endif
 endif
 
 # The X11 LIBPATH. (The amd64 hack is for RHEL4.)
