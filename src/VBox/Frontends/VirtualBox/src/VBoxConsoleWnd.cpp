@@ -241,15 +241,15 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUnmountDVDAction->setIconSet (VBoxGlobal::iconSet ("cd_unmount_16px.png",
                                                      "cd_unmount_dis_16px.png"));
 
+    devicesSFDialogAction = new QAction (runningActions, "devicesSFDialogAction");
+    devicesSFDialogAction->setToggleAction (true);
+    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
+                                                            "select_file_dis_16px.png"));
+
     devicesSwitchVrdpAction = new QAction (runningActions, "devicesSwitchVrdpAction");
     devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet ("vrdp_16px.png",
                                                               "vrdp_disabled_16px.png"));
     devicesSwitchVrdpAction->setToggleAction (true);
-
-    devicesSFDialogAction = new QAction (runningActions, "devicesSFDialogAction");
-    devicesSFDialogAction->setToggleAction (true);
-    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                                                 "select_file_dis_16px.png"));
 
     devicesInstallGuestToolsAction = new QAction (runningActions, "devicesInstallGuestToolsAction");
     devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png",
@@ -332,10 +332,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
     devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
-    devicesSwitchVrdpAction->addTo (devicesMenu);
-    devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
     devicesSFDialogAction->addTo (devicesMenu);
     devicesSFMenuSeparatorId = devicesMenu->insertSeparator();
+    devicesSwitchVrdpAction->addTo (devicesMenu);
+    devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
     devicesInstallGuestToolsAction->addTo (devicesMenu);
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
 
@@ -1186,9 +1186,9 @@ void VBoxConsoleWnd::languageChange()
     devicesSwitchVrdpAction->setStatusTip (
         tr ("Enable or disable remote desktop (RDP) connections to this machine"));
 
-    devicesSFDialogAction->setMenuText (tr ("&Shared Folders List"));
+    devicesSFDialogAction->setMenuText (tr ("&Shared Folders"));
     devicesSFDialogAction->setStatusTip (
-        tr ("Open Shared Folders List"));
+        tr ("Open the dialog to operate on shared folders"));
 
     devicesInstallGuestToolsAction->setMenuText (tr ("&Install Guest Additions..."));
     devicesInstallGuestToolsAction->setStatusTip (
@@ -2293,7 +2293,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession, QAction *aAct
     , mSettings (0), mSession (aSession), mAction (aAction)
 {
     /* Setup Dialog's title */
-    setCaption (tr ("Shared Folders List"));
+    setCaption (tr ("Shared Folders"));
     setIcon (QPixmap::fromMimeSource ("select_file_16px.png"));
 
     /* Setup main dialog's layout */
