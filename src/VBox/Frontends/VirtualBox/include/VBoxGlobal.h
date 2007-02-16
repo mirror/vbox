@@ -322,14 +322,14 @@ public:
 
     /* details generators */
 
-    QString details (const CHardDisk &aHD, bool aPredict = false) const;
+    QString details (const CHardDisk &aHD, bool aPredict = false);
 
     QString details (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDevice &aDevice) const;
 
     QString prepareFileNameForHTML (const QString &fn) const;
 
-    QString detailsReport (const CMachine &m, bool isNewVM, bool withLinks) const;
+    QString detailsReport (const CMachine &m, bool isNewVM, bool withLinks);
 
     /* VirtualBox helpers */
 
@@ -353,6 +353,8 @@ public:
     void addMedia (const VBoxMedia &);
     void updateMedia (const VBoxMedia &);
     void removeMedia (VBoxDefs::DiskType, const QUuid &);
+
+    bool findMedia (const CUnknown &, VBoxMedia &) const;
 
     /* various helpers */
 

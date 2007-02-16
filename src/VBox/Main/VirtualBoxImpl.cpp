@@ -958,13 +958,54 @@ STDMETHODIMP VirtualBox::CreateHardDisk (HardDiskStorageType_T aStorageType,
             break;
         }
 
-        /// @todo (dmik) later
-//        case HardDiskStorageType_PhysicalVolume:
-//        {
-//            break;
-//        }
+       case HardDiskStorageType_VMDKImage:
+       {
+            ComObjPtr <HVMDKImage> vmdk;
+            vmdk.createObject();
+            rc = vmdk->init (this, NULL, NULL);
+            hardDisk = vmdk;
+            break;
+       }
+       default:
+           AssertFailed();
     };
 
+    if (SUCCEEDED (rc))
+        hardDisk.queryInterfaceTo (aHardDisk);
+
+    return rc;
+}
+
+/** @note Locks mSystemProperties object for reading. */
+STDMETHODIMP VirtualBox::OpenHardDisk (INPTR BSTR aLocation, IHardDisk **aHardDisk)
+{
+    /* null and empty strings are not allowed locations */
+    if (!aLocation || !(*aLocation))
+        return E_INVALIDARG;
+
+    if (!aHardDisk)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* Currently, the location is always a path. So, append the
+     * default path if only a name is given. */
+    Bstr location = aLocation;
+    {
+        Utf8Str loc = aLocation;
+        if (!RTPathHavePath (loc))
+        {
+            AutoLock propsLock (mData.mSystemProperties);
+            location = Utf8StrFmt ("%ls%c%s",
+                                   mData.mSystemProperties->defaultVDIFolder().raw(),
+                                   RTPATH_DELIMITER,
+                                   loc.raw());
+        }
+    }
+
+    ComObjPtr <HardDisk> hardDisk;
+    HRESULT rc = HardDisk::openHardDisk (this, location, hardDisk);
     if (SUCCEEDED (rc))
         hardDisk.queryInterfaceTo (aHardDisk);
 

@@ -303,6 +303,15 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnMediaRegistered) (INPTR GUIDPARAM mediaId, DeviceType_T mediaType,
+                                  BOOL registered)
+    {
+        NOREF (mediaId);
+        NOREF (mediaType);
+        NOREF (registered);
+        return S_OK;
+    }
+
     STDMETHOD(OnMachineRegistered)(INPTR GUIDPARAM machineId, BOOL registered)
     {
         return S_OK;

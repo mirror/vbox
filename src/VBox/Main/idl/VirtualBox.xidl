@@ -405,7 +405,7 @@
 
     <interface
         name="IVirtualBoxCallback" extends="$unknown"
-        uuid="FD443EC1-2007-4F5B-9282-D72760A66916"
+        uuid="1293842f-0380-47cf-80b5-e4f821861b26"
     >
         <method name="onMachineStateChange">
             <desc>
@@ -482,11 +482,49 @@
             </param>
         </method>
 
+        <method name="onMediaRegistered">
+            <desc>
+                The given media was registered or unregistered
+                within this VirtualBox installation.
+
+                The @a mediaType parameter describes what type of
+                media the specified @a mediaId refers to. Possible
+                values are:
+
+                - <link to="HardDiskDevice"/>: the media is a hard disk
+                  that, if registered, can be obtained using the
+                  <link to="IVirtualBox::getHardDisk"/> call.
+                - <link to="DVDDevice"/>: the media is a CD/DVD image
+                  that, if registered, can be obtained using the
+                  <link to="IVirtualBox::getDVDImage"/> call.
+                - <link to="FloppyDevice"/>: the media is a Floppy image
+                  that, if registered, can be obtained using the
+                  <link to="IVirtualBox::getFloppyImage"/> call.
+
+                Note that if this is a deregistration notification,
+                there is no way to access the object representing the
+                unregistered media. It is supposed that the
+                application will do required cleanup based on the @a
+                mediaId value.
+            </desc>
+            <param name="mediaId" type="uuid" dir="in">
+                <desc>ID of the media this event relates to.</desc>
+            </param>
+            <param name="mediaType" type="DeviceType" dir="in">
+                <desc>Type of the media this event relates to.</desc>
+            </param>
+            <param name="registered" type="boolean" dir="in">
+                <desc>
+                    If true, the media was registered, otherwise it was
+                    unregistered.
+                </desc>
+            </param>
+        </method>
+
         <method name="onMachineRegistered">
             <desc>
-                The given machine was registered within this VirtualBox
-                installation or unregistered, as described by the
-                boolean argument.
+                The given machine was registered or unregistered
+                within this VirtualBox installation.
             </desc>
             <param name="machineId" type="uuid" dir="in">
                 <desc>ID of the machine this event relates to.</desc>
@@ -494,7 +532,7 @@
             <param name="registered" type="boolean" dir="in">
                 <desc>
                     If true, the machine was registered, otherwise it was
-                    deregistered.
+                    unregistered.
                 </desc>
             </param>
         </method>
@@ -566,7 +604,7 @@
 
     <interface
         name="IVirtualBox" extends="$dispatched"
-        uuid="E1D95593-F579-4F47-B489-0B67181014E1"
+        uuid="00f4e8eb-d737-4c88-9ccb-b434edf8b912"
     >
         <desc>
             The main interface exposed by the product that provides
@@ -859,6 +897,48 @@
                 <desc>Created hard disk object of the given storage type.</desc>
             </param>
 
+        </method>
+
+        <method name="openHardDisk">
+            <desc>
+
+                Opens a hard disk from an existing location.
+
+                This method tries to guess the
+                <link to="HardDiskStorageType">hard disk storage
+                type</link>
+                from the format of the location string and from the
+                contens of the resource the location points
+                to. Currently, a <i>file path</i> is the only supported
+                format for the location string which must point to
+                either a VDI file or to a VMDK file. On success,
+                an IHardDisk object will be returned that also
+                implements the corresponding interface (IVirtualDiskImage
+                or IVMDKImage, respectively). The <link
+                to="IHardDisk::storageType"/> property may also be
+                used to determine the storage type of the returned
+                object (instead of trying to query one of these interfaces).
+
+                <note>The specified file path can be absolute (full path) or
+                relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
+                home directory</link>. If only a file name without any path is
+                given, the <link to="ISystemProperties::defaultVDIFolder">
+                default VDI folder</link> will be used as a path to the image
+                file.</note>
+
+                The opened hard disk remains unregistered
+                until <link to="#registerHardDisk()"/> is called.
+
+            </desc>
+
+            <param name="location" type="wstring" dir="in">
+                <desc>
+                    Location of the resource that contains a valid hard disk.
+                </desc>
+            </param>
+            <param name="hardDisk" type="IHardDisk" dir="return">
+                <desc>Opened hard disk object.</desc>
+            </param>
         </method>
 
         <method name="openVirtualDiskImage">
@@ -4057,7 +4137,7 @@
 
     <enum
         name="HardDiskStorageType"
-        uuid="e45e2303-38fd-4f75-a791-5cb321759f53"
+        uuid="48138584-ad99-479d-a36f-eb82a7663685"
     >
         <desc>
             Virtual hard disk storage type.
@@ -4074,6 +4154,12 @@
                 iSCSI Remote Disk (a disk accessed via the Internet
                 SCSI protocol over a TCP/IP network, see
                 <link to="IISCSIHardDisk"/>)
+            </desc>
+        </const>
+        <const name="VMDKImage" value="2">
+            <desc>
+                WMware Virtual Machine Disk image (a regular file in the file
+                system of the host OS, see <link to="IVMDKImage"/>)
             </desc>
         </const>
     </enum>
@@ -4177,6 +4263,10 @@
                 <li><i>iSCSI Remote Disk</i>, a disk accessed via the Internet
                 SCSI protocol over a TCP/IP network link (represented by the
                 <link to="IISCSIHardDisk"/> interface).</li>
+
+                <li><i>WMware VMDK Image</i>, a regular file in the file
+                system of the host OS (represented by the <link
+                to="IVMDKImage"/> interface).</li>
 
             </ul>
 
@@ -4284,6 +4374,12 @@
             Whether to create a differencing hard disk or not depends on the
             type of the hard disk attached to the virtual machine. This is
             explained below.
+
+            Note that in the current implementation, only the
+            <link to="VirtualDiskImage"/> storage type is used to
+            represent differencing hard disks. In other words, all
+            differencing hard disks are <link to="IVirtualDiskImage"/>
+            objects.
 
             <b>Normal Hard Disks</b>
 
@@ -4833,12 +4929,13 @@
             Objects that support this interface also support the <link
             to="IHardDisk"/> interface.
 
-            The <link to="IHardDisk::description">description</link> the iSCSI
-            hard disk is stored in the VirtualBox configuration file, so it can
-            be changed (at appropriate times) even when <link
-            to="IHardDisk::accessible">accessible</link> returns <tt>false</tt>.
-            However, the hard disk may not be attached to a running virtual
-            machine.
+            The <link to="IHardDisk::description">description</link>
+            of the iSCSI hard disk is stored in the VirtualBox
+            configuration file, so it can be changed (at appropriate
+            times) even when
+            <link to="IHardDisk::accessible">accessible</link> returns
+            <tt>false</tt>.  However, the hard disk must not be
+            attached to a running virtual machine.
 
             <note>In the current imlementation, the type of all iSCSI hard disks
             is <link to="HardDiskType::WritethroughHardDisk">Writethrough</link>
@@ -4899,6 +4996,157 @@
 
             </desc>
         </attribute>
+
+    </interface>
+
+    <!--
+    // IVMDKImage
+    /////////////////////////////////////////////////////////////////////////
+    -->
+
+    <interface
+        name="IVMDKImage" extends="$unknown"
+        uuid="178398f5-8559-4fee-979e-420af5b53eef"
+    >
+        <desc>
+
+            The IVMDKImage interface represents <link
+            to="IHardDisk">virtual hard disks</link> that use 
+            WMware Virtual Machine Disk image files to store hard disk data.
+
+            Hard disks using VMDK images can be either opened using
+            <link to="IVirtualBox::openHardDisk()"/> or created from
+            scratch using <link to="IVirtualBox::createHardDisk()"/>.
+
+            Objects that support this interface also support the <link
+            to="IHardDisk"/> interface.
+
+            When a new hard disk object is created from scatch, an image file
+            for it is not automatically created. To do it, you need to specify a
+            valid <link to="#filePath">file path</link>, and call <link
+            to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
+            When it is done, the hard disk object can be registered by calling
+            <link to="IVirtualBox::registerHardDisk()"/> and then
+            <link to="IMachine::attachHardDisk()">attached</link> to
+            virtual machines.
+
+            The <link to="IHardDisk::description">description</link>
+            of the VMDK hard disk is stored in the VirtualBox
+            configuration file, so it can be changed (at appropriate
+            times) even when
+            <link to="IHardDisk::accessible">accessible</link> returns
+            <tt>false</tt>.  However, the hard disk must not be
+            attached to a running virtual machine.
+
+            <note>In the current imlementation, the type of all VMDK hard disks
+            is <link to="HardDiskType::WritethroughHardDisk">Writethrough</link>
+            and cannot be changed.</note>
+
+        </desc>
+
+        <attribute name="filePath" type="wstring">
+            <desc>
+
+                Full file name of the VMDK image of this hard disk. For
+                newly created hard disk objects, this value is <tt>null</tt>.
+
+                When assigning a new path, it can be absolute (full path) or
+                relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
+                home directory</link>. If only a file name without any path is
+                given, the <link to="ISystemProperties::defaultVDIFolder">
+                default VDI folder</link> will be used as a path to the image
+                file.
+
+                When reading this propery, a full path is always returned.
+
+                <note>This property cannot be changed when <link to="#created"/>
+                returns <tt>true</tt>. In this case, the specified file name can
+                be absolute (full path) or relative to the <link
+                to="IVirtualBox::homeFolder"> VirtualBox home directory</link>.
+                If only a file name without any path is given, the <link
+                to="ISystemProperties::defaultVDIFolder"> default VDI
+                folder</link> will be used as a path to the image file.</note>
+
+            </desc>
+        </attribute>
+
+        <attribute name="created" type="boolean" readonly="yes">
+            <desc>
+
+                Whether the virual disk image is created or not. For newly
+                created hard disk objects or after a successful invocation of
+                <link to="#deleteImage()"/>, this value is <tt>false</tt> until
+                <link to="#createFixedImage()"/> or <link
+                to="#createDynamicImage()"/> is called.
+
+            </desc>
+        </attribute>
+
+        <method name="createDynamicImage">
+
+            <desc>
+
+                Starts creating a dymically expanding hard disk image in the
+                background. The previous image associated with this object, if
+                any, must be deleted using <link to="#deleteImage"/>, otherwise
+                the operation will fail.
+
+                <note>After the returned progress object reports that the
+                operation is complete, this hard disk object can be
+                <link to="IVirtualBox::registerHardDisk()">registered</link>
+                within this VirtualBox installation.</note>
+
+            </desc>
+
+            <param name="size" type="unsigned long long" dir="in">
+                <desc>Maximum logical size of the hard disk in megabytes.</desc>
+            </param>
+            <param name="progress" type="IProgress" dir="return">
+                <desc>Progress object to track the operation completion.</desc>
+            </param>
+
+        </method>
+
+        <method name="createFixedImage">
+            <desc>
+
+                Starts creating a fixed-size hard disk image in the background.
+                The previous image, if any, must be deleted using <link
+                to="#deleteImage"/>, otherwise the operation will fail.
+
+                <note>After the returned progress object reports that the
+                operation is complete, this hard disk object can be
+                <link to="IVirtualBox::registerHardDisk()">registered</link>
+                within this VirtualBox installation.</note>
+
+            </desc>
+
+            <param name="size" type="unsigned long long" dir="in">
+                <desc>Logical size of the hard disk in megabytes.</desc>
+            </param>
+            <param name="progress" type="IProgress" dir="return">
+                <desc>Progress object to track the operation completion.</desc>
+            </param>
+
+        </method>
+
+        <method name="deleteImage">
+            <desc>
+
+                Deletes the existing hard disk image. The hard disk must not be
+                registered within this VirtualBox installation, otherwise the
+                operation will fail.
+
+                <note>After this operation succeeds, it will be impossible to
+                register the hard disk until the image file is created
+                again.</note>
+
+                <note>This operation is valid only for non-differencing hard
+                disks, after they are unregistered using <link
+                to="IVirtualBox::unregisterHardDisk()"/>.</note>
+
+            </desc>
+        </method>
 
     </interface>
 
