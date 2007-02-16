@@ -173,6 +173,9 @@ public:
     unsigned readers() { isLockedOnCurrentThread(); return mReaders; }
     const Bstr &lastAccessError() const { return mLastAccessError; }
 
+    static HRESULT openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
+                                 ComObjPtr <HardDisk> &hardDisk);
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HardDisk"; }
 
@@ -421,6 +424,112 @@ private:
     ULONG64 mLun;
     Bstr mUserName;
     Bstr mPassword;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class ATL_NO_VTABLE HVMDKImage :
+    public HardDisk,
+    public VirtualBoxSupportTranslation <HVMDKImage>,
+    public IVMDKImage
+{
+
+public:
+
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(HVMDKImage)
+
+    DECLARE_NOT_AGGREGATABLE(HVMDKImage)
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(HVMDKImage)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IHardDisk)
+        COM_INTERFACE_ENTRY(IVMDKImage)
+    END_COM_MAP()
+
+    NS_DECL_ISUPPORTS
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    // public initializer/uninitializer for internal purposes only
+
+    HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
+                  CFGNODE aHDNode, CFGNODE aVMDKNode);
+    HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
+                  INPTR BSTR aFilePath, BOOL aRegistered = FALSE);
+    void uninit();
+
+    // IHardDisk properties
+    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
+    STDMETHOD(COMSETTER(Description)) (INPTR BSTR aDescription);
+    STDMETHOD(COMGETTER(Size)) (ULONG64 *aSize);
+    STDMETHOD(COMGETTER(ActualSize)) (ULONG64 *aActualSize);
+
+    // IVirtualDiskImage properties
+    STDMETHOD(COMGETTER(FilePath)) (BSTR *aFilePath);
+    STDMETHOD(COMSETTER(FilePath)) (INPTR BSTR aFilePath);
+    STDMETHOD(COMGETTER(Created)) (BOOL *aCreated);
+
+    // IVirtualDiskImage methods
+    STDMETHOD(CreateDynamicImage) (ULONG64 aSize, IProgress **aProgress);
+    STDMETHOD(CreateFixedImage) (ULONG64 aSize, IProgress **aProgress);
+    STDMETHOD(DeleteImage)();
+
+    // public methods for internal purposes only
+
+    const Bstr &filePath() const { return mFilePath; }
+    const Bstr &filePathFull() const { return mFilePathFull; }
+
+    HRESULT trySetRegistered (BOOL aRegistered);
+    HRESULT getAccessible (Bstr &aAccessError);
+
+    HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode);
+
+    void updatePath (const char *aOldPath, const char *aNewPath);
+
+    Bstr toString (bool aShort = false);
+
+    HRESULT cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
+                          Progress *aProgress);
+    HRESULT createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
+                             Progress *aProgress);
+
+    // for VirtualBoxSupportErrorInfoImpl
+    static const wchar_t *getComponentName() { return L"VMDKImage"; }
+
+private:
+
+    HRESULT setFilePath (const BSTR aFilePath);
+    HRESULT queryInformation (Bstr *aAccessError);
+    HRESULT createImage (ULONG64 aSize, BOOL aDynamic, IProgress **aProgress);
+
+    /** VDI asynchronous operation thread function */
+    static DECLCALLBACK(int) vdiTaskThread (RTTHREAD thread, void *pvUser);
+
+    enum State
+    {
+        NotCreated,
+        Created,
+        /* the following must be greater than Created */
+        Accessible,
+    };
+
+    State mState;
+    
+    RTSEMEVENTMULTI mStateCheckSem;
+    ULONG mStateCheckWaiters;
+
+    Bstr mDescription;
+
+    ULONG64 mSize;
+    ULONG64 mActualSize;
+
+    Bstr mFilePath;
+    Bstr mFilePathFull;
+
+    friend class HardDisk;
 };
 
 

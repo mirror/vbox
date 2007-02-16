@@ -190,6 +190,16 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnMediaRegistered) (IN_GUIDPARAM id, DeviceType_T type,
+                                  BOOL registered)
+    {
+        /** @todo */
+        Q_UNUSED (id);
+        Q_UNUSED (type);
+        Q_UNUSED (registered);
+        return S_OK;
+    }
+
     STDMETHOD(OnMachineRegistered) (IN_GUIDPARAM id, BOOL registered)
     {
         postEvent (new VBoxMachineRegisteredEvent (COMBase::toQUuid (id),
@@ -574,9 +584,20 @@ QStringList VBoxGlobal::deviceTypeStrings() const
  *                  Otherwise, a real type of the given image is returned
  *                  (with the exception mentioned above).
  */
-QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */) const
+QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */)
 {
     Assert (!aPredict || aHD.GetParent().isNull());
+
+/// @todo (r=dmik) later: we need to keep *all* media (including all hard disk
+//  children) in the current media list in order for the following to work.
+//    VBoxMedia media;
+//    if (!findMedia (CUnknown (aHD), media))
+//    {
+//        /* media may be new and not alredy in the media list, request refresh */
+//        startEnumeratingMedia();
+//        if (!findMedia (CUnknown (aHD), media))
+//            AssertFailed();
+//    }
 
     CHardDisk root = aHD.GetRoot();
     QString details;
@@ -589,7 +610,26 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */) 
     else
         details = hardDiskTypeString (root);
 
-    details += ", " + formatSize (root.GetSize() * _1M);
+    details += ", ";
+
+    /// @todo (r=dmik) prepend the details with the warning/error
+    //  icon when not accessible
+
+/// @todo (r=dmik) later: we need to keep *all* media (including all hard disk
+//  children) in the current media list in order for the following to work.
+//    switch (media.status)
+//    {
+//        case VBoxMedia::Unknown:
+//            details += tr ("<i>Checking...</i>", "hard disk");
+//            break;
+//        case VBoxMedia::Ok:
+            details += formatSize (root.GetSize() * _1M);
+//            break;
+//        case VBoxMedia::Error:
+//        case VBoxMedia::Inaccessible:
+//            details += tr ("Inaccessible", "hard disk");
+//            break;
+//    }
 
     return details;
 }
@@ -673,8 +713,8 @@ QString VBoxGlobal::prepareFileNameForHTML (const QString &fn) const
  *  @param isNewVM      true when called by the New VM Wizard
  *  @param withLinks    true if section titles should be hypertext links
  */
-QString VBoxGlobal::detailsReport (
-    const CMachine &m, bool isNewVM, bool withLinks) const
+QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
+                                   bool withLinks)
 {
     static const char *sTableTpl =
         "<table border=0 cellspacing=0 cellpadding=0 width=100%>%1</table>";
@@ -1266,6 +1306,26 @@ void VBoxGlobal::removeMedia (VBoxDefs::DiskType aType, const QUuid &aId)
 }
 
 /**
+ *  Searches for a VBoxMedia object representing the given COM media object.
+ *
+ *  @return true if found and false otherwise.
+ */
+bool VBoxGlobal::findMedia (const CUnknown &aObj, VBoxMedia &aMedia) const
+{
+    for (VBoxMediaList::ConstIterator it = media_list.begin();
+         it != media_list.end(); ++ it)
+    {
+        if ((*it).disk == aObj)
+        {            
+            aMedia = (*it);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
  *  Changes the language of all global string constants according to the
  *  currently installed translations tables.
  */
@@ -1285,7 +1345,7 @@ void VBoxGlobal::languageChange()
     sessionStates [CEnums::SessionClosed] =     tr ("Closed", "SessionState");
     sessionStates [CEnums::SessionOpen] =       tr ("Open", "SessionState");
     sessionStates [CEnums::SessionSpawning] =   tr ("Spawning", "SessionState");
-    sessionStates [CEnums::SessionClosing] =   tr ("Closing", "SessionState");
+    sessionStates [CEnums::SessionClosing] =    tr ("Closing", "SessionState");
 
     deviceTypes [CEnums::NoDevice] =        tr ("None", "DeviceType");
     deviceTypes [CEnums::FloppyDevice] =    tr ("Floppy", "DeviceType");

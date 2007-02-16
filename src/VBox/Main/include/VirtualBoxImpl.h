@@ -137,6 +137,7 @@ public:
     STDMETHOD(UnregisterMachine) (INPTR GUIDPARAM aId, IMachine **aMachine);
 
     STDMETHOD(CreateHardDisk) (HardDiskStorageType_T aStorageType, IHardDisk **aHardDisk);
+    STDMETHOD(OpenHardDisk) (INPTR BSTR aLocation, IHardDisk **aHardDisk);
     STDMETHOD(OpenVirtualDiskImage) (INPTR BSTR aFilePath, IVirtualDiskImage **aImage);
     STDMETHOD(RegisterHardDisk) (IHardDisk *aHardDisk);
     STDMETHOD(GetHardDisk) (INPTR GUIDPARAM id, IHardDisk **hardDisk);
