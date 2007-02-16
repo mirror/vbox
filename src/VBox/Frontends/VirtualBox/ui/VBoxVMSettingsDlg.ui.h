@@ -1534,7 +1534,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* shared folders */
     {
-        mSharedFolders->putBackToMachine (cmachine);
+        mSharedFolders->putBackToMachine();
     }
 
     return COMResult();

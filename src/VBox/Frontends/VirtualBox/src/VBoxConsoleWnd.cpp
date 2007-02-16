@@ -30,6 +30,7 @@
 #include "VBoxCloseVMDlg.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxDiskImageManagerDlg.h"
+#include "VBoxSharedFoldersSettings.h"
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
 #include "QIHotKeyEdit.h"
@@ -45,6 +46,7 @@
 #include <qtextedit.h>
 #include <qtooltip.h>
 #include <qdir.h>
+#include <qpushbutton.h>
 
 #include <qeventloop.h>
 
@@ -244,6 +246,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
                                                               "vrdp_disabled_16px.png"));
     devicesSwitchVrdpAction->setToggleAction (true);
 
+    devicesSFDialogAction = new QAction (runningActions, "devicesSFDialogAction");
+    devicesSFDialogAction->setToggleAction (true);
+    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
+                                                                 "select_file_dis_16px.png"));
+
     devicesInstallGuestToolsAction = new QAction (runningActions, "devicesInstallGuestToolsAction");
     devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png",
                                                             "guesttools_disabled_16px.png"));
@@ -327,6 +334,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
     devicesSwitchVrdpAction->addTo (devicesMenu);
     devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
+    devicesSFDialogAction->addTo (devicesMenu);
+    devicesSFMenuSeparatorId = devicesMenu->insertSeparator();
     devicesInstallGuestToolsAction->addTo (devicesMenu);
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
 
@@ -455,6 +464,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesMountDVDImageAction, SIGNAL(activated()), this, SLOT(devicesMountDVDImage()));
     connect (devicesUnmountDVDAction, SIGNAL(activated()), this, SLOT(devicesUnmountDVD()));
     connect (devicesSwitchVrdpAction, SIGNAL(toggled (bool)), this, SLOT(devicesSwitchVrdp (bool)));
+    connect (devicesSFDialogAction, SIGNAL(toggled (bool)), this, SLOT(devicesToggleSFDialog (bool)));
     connect (devicesInstallGuestToolsAction, SIGNAL(activated()), this, SLOT(devicesInstallGuestAdditions()));
 
 
@@ -642,6 +652,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         devicesSwitchVrdpAction->setVisible (false);
         devicesMenu->setItemVisible (devicesVRDPMenuSeparatorId, false);
         vrdp_state->setHidden (true);
+    }
+
+    /* initialize shared folders stuff */
+    CSharedFolderCollection sfcoll = cconsole.GetSharedFolders();
+    if (sfcoll.isNull())
+    {
+        /* hide shared folders menu action & sf_separator & sf_status_icon */
+        devicesSFDialogAction->setVisible (false);
+        devicesMenu->setItemVisible (devicesSFMenuSeparatorId, false);
+        //vrdp_state->setHidden (true);
     }
 
     /* start an idle timer that will update device lighths */
@@ -1165,6 +1185,10 @@ void VBoxConsoleWnd::languageChange()
     devicesSwitchVrdpAction->setMenuText (tr ("Remote Dis&play"));
     devicesSwitchVrdpAction->setStatusTip (
         tr ("Enable or disable remote desktop (RDP) connections to this machine"));
+
+    devicesSFDialogAction->setMenuText (tr ("&Shared Folders List"));
+    devicesSFDialogAction->setStatusTip (
+        tr ("Open Shared Folders List"));
 
     devicesInstallGuestToolsAction->setMenuText (tr ("&Install Guest Additions..."));
     devicesInstallGuestToolsAction->setStatusTip (
@@ -1761,6 +1785,14 @@ void VBoxConsoleWnd::devicesSwitchVrdp (bool aOn)
     updateAppearanceOf (VRDPStuff);
 }
 
+void VBoxConsoleWnd::devicesToggleSFDialog (bool aOn)
+{
+    if (!console) return;
+
+    if (aOn)
+        (new VBoxSFDialog (console, csession, devicesSFDialogAction))->show();
+}
+
 void VBoxConsoleWnd::devicesInstallGuestAdditions()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -2253,3 +2285,62 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 }
 
 #endif
+
+VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession, QAction *aAction)
+    : QDialog (aParent, "VBoxSFDialog", false /* modal */,
+               WStyle_Customize | WStyle_Title | WStyle_SysMenu |
+               WStyle_MinMax | WDestructiveClose)
+    , mSettings (0), mSession (aSession), mAction (aAction)
+{
+    /* Setup Dialog's title */
+    setCaption (tr ("Shared Folders List"));
+    setIcon (QPixmap::fromMimeSource ("select_file_16px.png"));
+
+    /* Setup main dialog's layout */
+    QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+
+    /* Setup settings layout */
+    mSettings = new VBoxSharedFoldersSettings (this, "mSettings");
+    mSettings->setDialogType (VBoxSharedFoldersSettings::ConsoleType);
+    mSettings->getFromMachine (aSession.GetMachine());
+    mSettings->getFromConsole (aSession.GetConsole());
+    mainLayout->addWidget (mSettings);
+
+    /* Setup button's layout */
+    QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
+    QPushButton *pbOk = new QPushButton ("OK", this, "pbOk");
+    QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    QPushButton *pbCancel = new QPushButton ("Cancel", this, "pbCancel");
+    connect (pbOk, SIGNAL (clicked()), this, SLOT (accept()));
+    connect (pbCancel, SIGNAL (clicked()), this, SLOT (reject()));
+    buttonLayout->addWidget (pbOk);
+    buttonLayout->addItem (spacer);
+    buttonLayout->addWidget (pbCancel);
+
+    /* Setup destruction handler */
+    connect (mAction, SIGNAL (toggled (bool)), this, SLOT (suicide (bool)));
+}
+
+VBoxSFDialog::~VBoxSFDialog()
+{
+    mAction->setOn (false);
+}
+
+void VBoxSFDialog::accept()
+{
+    mSettings->putBackToConsole();
+    QDialog::accept();
+}
+
+void VBoxSFDialog::suicide (bool aNo)
+{
+    if (!aNo) close();
+}
+
+void VBoxSFDialog::showEvent (QShowEvent *aEvent)
+{
+    QDialog::showEvent (aEvent);
+    setMinimumWidth (400);
+    VBoxGlobal::centerWidget (this, parentWidget());
+}
+

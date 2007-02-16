@@ -273,31 +273,113 @@ void VBoxSharedFoldersSettings::setDialogType (
 }
 
 
+void VBoxSharedFoldersSettings::removeSharedFolder (const QString & aName,
+                                                    const QString & aPath,
+                                                    SFDialogType aType)
+{
+    switch (aType)
+    {
+        case GlobalType:
+        {
+            /* This feature is not implemented yet */
+            AssertMsgFailed (("Global shared folders are not implemented yet\n"));
+            break;
+        }
+        case MachineType:
+        {
+            Assert (!mMachine.isNull());
+            mMachine.RemoveSharedFolder (aName);
+            if (!mMachine.isOk())
+                vboxProblem().cannotRemoveSharedFolder (this, mMachine,
+                                                        aName, aPath);
+            break;
+        }
+        case ConsoleType:
+        {
+            Assert (!mConsole.isNull());
+            mConsole.RemoveSharedFolder (aName);
+            if (!mConsole.isOk())
+                vboxProblem().cannotRemoveSharedFolder (this, mConsole.GetMachine(),
+                                                        aName, aPath);
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed (("Incorrect shared folder type\n"));
+        }
+    }
+}
+
+void VBoxSharedFoldersSettings::createSharedFolder (const QString & aName,
+                                                    const QString & aPath,
+                                                    SFDialogType aType)
+{
+    switch (aType)
+    {
+        case GlobalType:
+        {
+            /* This feature is not implemented yet */
+            AssertMsgFailed (("Global shared folders are not implemented yet\n"));
+            break;
+        }
+        case MachineType:
+        {
+            Assert (!mMachine.isNull());
+            mMachine.CreateSharedFolder (aName, aPath);
+            if (!mMachine.isOk())
+                vboxProblem().cannotCreateSharedFolder (this, mMachine,
+                                                        aName, aPath);
+            break;
+        }
+        case ConsoleType:
+        {
+            Assert (!mConsole.isNull());
+            mConsole.CreateSharedFolder (aName, aPath);
+            if (!mConsole.isOk())
+                vboxProblem().cannotCreateSharedFolder (this, mConsole.GetMachine(),
+                                                        aName, aPath);
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed (("Incorrect shared folder type\n"));
+        }
+    }
+}
+
+
 void VBoxSharedFoldersSettings::getFromGlobal()
 {
+    /* This feature is not implemented yet */
+    AssertMsgFailed (("Global shared folders are not implemented yet\n"));
+
+    /*
     QString name = tr (" Global Shared Folders");
-    QString key ("1");
+    QString key (QString::number (GlobalType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
                                                    listView, name, QString::null, key);
     getFrom (vboxGlobal().virtualBox().GetSharedFolders().Enumerate(), root);
+    */
 }
 
 void VBoxSharedFoldersSettings::getFromMachine (const CMachine &aMachine)
 {
+    mMachine = aMachine;
     QString name = tr (" Machine Shared Folders");
-    QString key ("2");
+    QString key (QString::number (MachineType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
                                                    listView, name, QString::null, key);
-    getFrom (aMachine.GetSharedFolders().Enumerate(), root);
+    getFrom (mMachine.GetSharedFolders().Enumerate(), root);
 }
 
 void VBoxSharedFoldersSettings::getFromConsole (const CConsole &aConsole)
 {
+    mConsole = aConsole;
     QString name = tr (" Transient Shared Folders");
-    QString key ("3");
+    QString key (QString::number (ConsoleType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
                                                    listView, name, QString::null, key);
-    getFrom (aConsole.GetSharedFolders().Enumerate(), root);
+    getFrom (mConsole.GetSharedFolders().Enumerate(), root);
 }
 
 void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
@@ -311,8 +393,8 @@ void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
                               sf.GetName(), sf.GetHostPath());
     }
     listView->setOpen (aRoot, true);
-    listView->setCurrentItem (aRoot->firstChild());
-    processCurrentChanged (aRoot->firstChild());
+    listView->setCurrentItem (aRoot);
+    processCurrentChanged (aRoot);
 }
 
 
@@ -320,55 +402,73 @@ void VBoxSharedFoldersSettings::putBackToGlobal()
 {
     /* This feature is not implemented yet */
     AssertMsgFailed (("Global shared folders are not implemented yet\n"));
+
+    /*
+    if (!mIsListViewChanged) return;
+    // This function is only available for GlobalType dialog
+    Assert (mDialogType == GlobalType);
+    // Searching for GlobalType item's root
+    QListViewItem *root = listView->findItem (QString::number (GlobalType), 2);
+    Assert (root);
+    CSharedFolderEnumerator en = vboxGlobal().virtualBox().GetSharedFolders().Enumerate();
+    putBackTo (en, root);
+    */
 }
 
-void VBoxSharedFoldersSettings::putBackToMachine (CMachine &aMachine)
+void VBoxSharedFoldersSettings::putBackToMachine()
 {
-    /* first deleting all existing folders if the list is changed */
-    if (mIsListViewChanged)
+    if (!mIsListViewChanged)
+        return;
+
+    /* This function is only available for MachineType dialog */
+    Assert (mDialogType == MachineType);
+    /* Searching for MachineType item's root */
+    QListViewItem *root = listView->findItem (QString::number (MachineType), 2);
+    Assert (root);
+    CSharedFolderEnumerator en = mMachine.GetSharedFolders().Enumerate();
+    putBackTo (en, root);
+}
+
+void VBoxSharedFoldersSettings::putBackToConsole()
+{
+    if (!mIsListViewChanged)
+        return;
+
+    /* This function is only available for ConsoleType dialog */
+    Assert (mDialogType == ConsoleType);
+    /* Searching for ConsoleType item's root */
+    QListViewItem *root = listView->findItem (QString::number (ConsoleType), 2);
+    Assert (root);
+    CSharedFolderEnumerator en = mConsole.GetSharedFolders().Enumerate();
+    putBackTo (en, root);
+}
+
+void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
+                                           QListViewItem *aRoot)
+{
+    SFDialogType type = (SFDialogType)aRoot->text (2).toInt();
+    Assert (type);
+
+    /* deleting all existing folders if the list */
+    while (aEn.HasMore())
     {
-        CSharedFolderEnumerator en = aMachine.GetSharedFolders().Enumerate();
-        while (en.HasMore())
-        {
-            CSharedFolder sf = en.GetNext();
-            const QString &name = sf.GetName();
-            const QString &path = sf.GetHostPath();
-            aMachine.RemoveSharedFolder (name);
-            if (!aMachine.isOk())
-                vboxProblem().cannotRemoveSharedFolder (this, aMachine,
-                                                        name, path);
-        }
+        CSharedFolder sf = aEn.GetNext();
+        removeSharedFolder (sf.GetName(), sf.GetHostPath(), type);
     }
-    else return;
 
     /* saving all machine related list view items */
-	Assert (mDialogType == 2);
-    QListViewItem *root = listView->findItem (QString::number (mDialogType), 2);
-    Assert (root);
-    QListViewItem *iterator = root->firstChild();
+    QListViewItem *iterator = aRoot->firstChild();
     while (iterator)
     {
         VBoxRichListItem *item = 0;
         if (iterator->rtti() == VBoxRichListItem::QIRichListItemId)
             item = static_cast<VBoxRichListItem*> (iterator);
         if (item)
-        {
-            aMachine.CreateSharedFolder (item->getText (0), item->getText (1));
-            if (!aMachine.isOk())
-                vboxProblem().cannotCreateSharedFolder (this, aMachine,
-                                                        item->getText (0),
-                                                        item->getText (1));
-        }
+            createSharedFolder (item->getText (0), item->getText (1), type);
         else
             AssertMsgFailed (("Incorrect listview item type\n"));
         iterator = iterator->nextSibling();
     }
-}
-
-void VBoxSharedFoldersSettings::putBackToConsole (CConsole &/*aConsole*/)
-{
-    /* This feature is not implemented yet */
-    AssertMsgFailed (("Transient shared folders are not implemented yet\n"));
 }
 
 
@@ -421,7 +521,8 @@ void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
 {
     if (aItem && listView->selectedItem() != aItem)
         listView->setSelected (aItem, true);
-    bool removeEnabled = aItem && aItem->parent();
+    bool removeEnabled = aItem && aItem->parent() &&
+                         isEditable (aItem->parent()->text (2));
     bool addEnabled = aItem &&
                       (isEditable (aItem->text (2)) ||
                        aItem->parent() && isEditable (aItem->parent()->text (2)));
