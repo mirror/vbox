@@ -35,6 +35,9 @@ include $(PATH_KBUILD)/header.kmk
 
 PROGRAMS = VirtualBox
 
+INSTALLS.darwin = VirtualBox.app
+
+
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
@@ -191,6 +194,25 @@ OTHER_CLEAN           = \
 	$(VirtualBox_GENHDRS) \
 	$(PATH_VirtualBox)/ui/vbox_image_collection.txt \
 	$(WRAPPERSFILE)
+
+
+#
+# On Mac OS X (darwin) we need to install icon resources and compusory bundle contents.
+#
+VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
+VirtualBox.app_SOURCES = \
+	src/darwin/PkgInfo \
+	$(PATH_TARGET)/Info.plist \
+	images/ico64x01.icns=>Resources/VirtualBox.icns
+
+$(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
+	$(call MSG_L1,Generating $@)
+	$(xQUIET)$(RM) -f $@
+	$(xQUIET)$(SED) \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		$< > $@
 
 
 include $(PATH_KBUILD)/footer.kmk
