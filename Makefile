@@ -34,7 +34,7 @@ SUBDIRS += src
 #
 INSTALLS = bin
 
-bin_INST = bin/
+bin_INST = $(INST_BIN)
 
 # The SDL DLLs
 ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
