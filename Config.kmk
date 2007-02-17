@@ -203,14 +203,14 @@ ifeq ($(BUILD_TARGET),l4)
 endif
 
 # Most stuff doesn't build yet on the two new targets.
-ifneq ($(filter darwin os2 freebsd,$(BUILD_TARGET)),)
+ifeq ($(filter-out darwin os2 freebsd,$(BUILD_TARGET)),)
  #VBOX_WITH_VBOXBFE=
- ifeq ($(filter darwin,$(BUILD_TARGET)),)
+ ifneq ($(filter-out darwin,$(BUILD_TARGET)),)
   VBOX_WITH_MAIN=
   VBOX_WITH_VBOXSDL=
+  VBOX_WITH_QTGUI=
+  VBOX_WITH_DEBUGGER_GUI=
  endif
- VBOX_WITH_QTGUI=
- VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_INSTALLER=
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP=
@@ -859,7 +859,8 @@ SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
 
 
 #
-# Qt build tools, for Linux we require it to be present on the system
+# Qt build tools and libraries.
+# For *NIX we require it to be present on the system.
 #
 ## @todo convert this into SDK and integrate the Qt stuff into kBuild.
 ifeq ($(BUILD_TARGET),win)
@@ -871,6 +872,15 @@ ifeq ($(BUILD_TARGET),win)
   LIB_QT ?= $(VBOX_PATH_QT)/lib/dynamic/qt-mt336.lib
  endif
   LIB_QTMAIN ?= $(VBOX_PATH_QT)/lib/dynamic/qtmain.lib
+ ifndef QTDIR
+  QTDIR := $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/v*))
+  QTDIR := $(call lastword,$(QTDIR))
+ endif
+
+else ifeq ($(BUILD_TARGET),darwin)
+ VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.8
+ LIB_QT ?= $(VBOX_PATH_QT)/lib/libqt-mt.3.dylib
+ LIB_QTMAIN ?= $(NO_SUCH_VARIABLE)
  ifndef QTDIR
   QTDIR := $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/v*))
   QTDIR := $(call lastword,$(QTDIR))
@@ -1601,21 +1611,33 @@ else # the gcc guys:
  ## @todo no $(LIB_QTMAIN) here?
  TEMPLATE_VBOXQTGUIEXE_LIBS = \
  	$(LIB_QT) \
- 	Xext \
- 	X11 \
- 	m \
 	$(LIB_SDL) \
-	$(LIB_PTHREAD) \
  	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
  	$(LIB_RUNTIME) \
  	$(LIB_REM) \
  	$(LIB_VMM) \
- 	$(PATH_BIN)/VBoxXPCOM.so \
- 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
+ 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
+ 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
  TEMPLATE_VBOXQTGUIEXE_LIBPATH = \
- 	$(VBOX_PATH_QT)/lib \
+ 	$(VBOX_PATH_QT)/lib
+
+ ifeq ($(BUILD_TARGET),darwin)
+  TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -framework Carbon -bind_at_load
+  TEMPLATE_VBOXQTGUIEXE_LIBS +=
+  TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
+ else ifeq ($(BUILD_TARGET),os2)
+  TEMPLATE_VBOXQTGUIEXE_LIBS +=
+  TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
+ else
+  TEMPLATE_VBOXQTGUIEXE_LIBS += \
+ 	Xext \
+ 	X11 \
+ 	m \
+	$(LIB_PTHREAD)
+  TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
 	$(VBOX_LIBPATH_X11)
+ endif
 
 endif
 
@@ -1624,7 +1646,10 @@ endif
 #
 TEMPLATE_VBOXQTGUI = VBox Qt GUI Components
 TEMPLATE_VBOXQTGUI_EXTENDS = VBOXQTGUIEXE
-TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN) $(PATH_BIN)/VBoxXML.so,$(TEMPLATE_VBOXQTGUIEXE_LIBS))
+TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN) $(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
+ifeq ($(BUILD_TARGET),darwin)
+ TEMPLATE_VBOXQTGUI_LDFLAGS = $(filter-out -framework Carbon -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS))
+endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  ifneq ($(BUILD_TARGET),win)
   TEMPLATE_VBOXQTGUI_DEFS     = PIC $(TEMPLATE_VBOXQTGUIEXE_DEFS)
