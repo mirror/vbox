@@ -110,6 +110,18 @@ nsresult XPCOMGlueStartup(const char* xpcomFile)
             libSpec.value.pathname = xpcomFile;
 
         xpcomLib = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY|PR_LD_GLOBAL);
+#ifdef __DARWIN__
+        /* works around bundle problem. */
+        if (!xpcomLib) {
+            const char *home = PR_GetEnv("VBOX_XPCOM_HOME");
+            if (home) {
+                char path[PATH_MAX];
+                snprintf(path, sizeof(path), "%s/%s", home, libSpec.value.pathname);
+                libSpec.value.pathname = path;
+                xpcomLib = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY|PR_LD_GLOBAL);
+            }
+        }
+#endif
         if (!xpcomLib)
             return NS_ERROR_FAILURE;
 
@@ -161,7 +173,7 @@ nsresult XPCOMGlueShutdown()
         PR_UnloadLibrary(xpcomLib);
         xpcomLib = nsnull;
     }
-    
+
     memset(&xpcomFunctions, 0, sizeof(xpcomFunctions));
     return NS_OK;
 #endif
@@ -169,7 +181,7 @@ nsresult XPCOMGlueShutdown()
 
 #ifndef XPCOM_GLUE_NO_DYNAMIC_LOADING
 extern "C" NS_COM nsresult
-NS_InitXPCOM2(nsIServiceManager* *result, 
+NS_InitXPCOM2(nsIServiceManager* *result,
               nsIFile* binDirectory,
               nsIDirectoryServiceProvider* appFileLocationProvider)
 {
@@ -441,10 +453,10 @@ GRE_AddGREToEnvironment()
           PR_SetEnv(sEnvString);
       }
   }
-                 
+
 #if XP_WIN32
-  // On windows, the current directory is searched before the 
-  // PATH environment variable.  This is a very bad thing 
+  // On windows, the current directory is searched before the
+  // PATH environment variable.  This is a very bad thing
   // since libraries in the cwd will be picked up before
   // any that are in either the application or GRE directory.
 
@@ -464,7 +476,7 @@ nsresult GRE_Startup()
 
     // Startup the XPCOM Glue that links us up with XPCOM.
     nsresult rv = XPCOMGlueStartup(xpcomLocation);
-    
+
     if (NS_FAILED(rv)) {
         NS_WARNING("gre: XPCOMGlueStartup failed");
         return rv;

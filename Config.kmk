@@ -48,16 +48,52 @@ gplexport: pass_gplexport
 
 # Install paths.
 PATH_INS            := $(PATH_OUT)
-PATH_BIN             = $(PATH_INS)/bin
-PATH_DLL             = $(PATH_INS)/bin
-PATH_SYS             = $(PATH_INS)/bin
-PATH_LIB             = $(PATH_INS)/lib
-PATH_DOC             = $(PATH_INS)/doc
-INST_TESTCASE        = bin/testcase/
-INST_ADDITIONS       = bin/additions/
-INST_ADDITIONS_LIB   = lib/additions/
-INST_SDK             = bin/sdk
-INST_SDK_SAMPLES     = $(INST_SDK)/samples
+ifeq ($(BUILD_TARGET),darwin)
+ INST_DIST            = dist/
+ INST_SDK             = $(INST_DIST)sdk/
+ INST_SDK_SAMPLES     = $(INST_SDK)samples
+
+ # the bundles
+ INST_VIRTUALBOX      = $(INST_DIST)VirtualBox.app/
+ INST_VBOXDRV         = $(INST_DIST)VBoxDrv.kext/
+ INST_VBOXTAP         = $(INST_DIST)VBoxTAP.kext/
+ INST_VBOXUSB         = $(INST_DIST)VBoxUSB.kext/
+
+ # put everything in the VirtualBox app bundle.
+ INST_BIN             = $(INST_VIRTUALBOX)Contents/MacOS/
+ INST_DLL             = $(INST_BIN)
+ INST_SYS             = $(INST_BIN)
+ INST_TESTCASE        = $(INST_BIN)testcase/
+ INST_ADDITIONS       = $(INST_BIN)MacOS/additions/
+
+ # other paths
+ INST_LIB             = lib/
+ INST_ADDITIONS_LIB   = $(PATH_LIB)/additions/
+
+else
+
+ INST_BIN             = bin/
+ INST_DIST            = $(INST_BIN)
+ INST_DLL             = $(INST_BIN)
+ INST_SDK             = $(INST_BIN)sdk/
+ INST_SDK_SAMPLES     = $(INST_SDK)samples
+ INST_DLL             = $(INST_BIN)
+ INST_SYS             = $(INST_BIN)
+ INST_TESTCASE        = $(INST_BIN)testcase/
+ INST_ADDITIONS       = $(INST_BIN)additions/
+
+ INST_LIB             = lib/
+ INST_ADDITIONS_LIB   = $(INST_LIB)additions/
+endif
+
+PATH_BIN              = $(patsubst %/,%,$(PATH_INS)/$(INST_BIN))
+PATH_DLL              = $(patsubst %/,%,$(PATH_INS)/$(INST_DLL))
+PATH_SYS              = $(patsubst %/,%,$(PATH_INS)/$(INST_SYS))
+PATH_LIB              = $(patsubst %/,%,$(PATH_INS)/$(INST_LIB))
+PATH_DOC              = $(PATH_OUT)/doc
+VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
+
+
 
 # Delete targets on failure.
 .DELETE_ON_ERROR:
@@ -601,7 +637,7 @@ ifeq ($(BUILD_TARGET),darwin)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.dylib
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.dylib
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- LIB_REM         = $(PATH_BIN)/VBoxREMImp.dylib
+ LIB_REM         = $(PATH_LIB)/VBoxREMImp.dylib
 endif
 ifeq ($(BUILD_TARGET),l4)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.s.so
@@ -700,14 +736,14 @@ endif
 ifneq ($(BUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
  VBOX_XPIDL          ?= $(PATH_OBJ)/src/libs/xpcom18a4/xpidl/xpidl$(HOSTSUFF_EXE)
- VBOX_PATH_XPCOM_IDL ?= $(PATH_BIN)/sdk/idl
+ VBOX_PATH_XPCOM_IDL ?= $(VBOX_PATH_SDK)/idl
  VBOX_XPCOM_INCS     ?= \
- 	$(PATH_BIN)/sdk/include \
- 	$(PATH_BIN)/sdk/include/xpcom \
- 	$(PATH_BIN)/sdk/include/xpcom/nsprpub \
- 	$(PATH_BIN)/sdk/include/xpcom/string \
- 	$(PATH_BIN)/sdk/include/xpcom/xpcom \
- 	$(PATH_BIN)/sdk/include/xpcom/ipcd
+ 	$(VBOX_PATH_SDK)/include \
+ 	$(VBOX_PATH_SDK)/include/xpcom \
+ 	$(VBOX_PATH_SDK)/include/xpcom/nsprpub \
+ 	$(VBOX_PATH_SDK)/include/xpcom/string \
+ 	$(VBOX_PATH_SDK)/include/xpcom/xpcom \
+ 	$(VBOX_PATH_SDK)/include/xpcom/ipcd
  # libIDL-config (for xpcom18a4)
  ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
   export VBOX_LIBIDL_CONFIG := $(firstword $(shell which libIDL-config-2 libIDL-config 2> /dev/null))
@@ -1522,7 +1558,7 @@ TEMPLATE_VBOXMAIN_EXTENDS = VBOXMAINEXE
 TEMPLATE_VBOXMAINCLIENT             = VBox MAIN Client
 TEMPLATE_VBOXMAINCLIENT_EXTENDS     = VBOXMAINEXE
 TEMPLATE_VBOXMAINCLIENT_INCS        = $(TEMPLATE_VBOXMAINEXE_INCS) \
-	$(PATH_BIN)/sdk/include
+	$(VBOX_PATH_SDK)/include
 ifdef VBOX_WITH_XPCOM
 TEMPLATE_VBOXMAINCLIENT_INCS       += \
     $(VBOX_XPCOM_INCS)
@@ -1563,7 +1599,7 @@ endif
 TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
 TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXQTGUIEXE_INCS = \
-	$(PATH_BIN)/sdk/include \
+	$(VBOX_PATH_SDK)/include \
 	$(VBOX_PATH_QT)/include
 
 ifeq ($(BUILD_TARGET),win)
@@ -1784,7 +1820,7 @@ TEMPLATE_VBOXW32GUESTR3_CFLAGS.release      = $(TEMPLATE_VBOXW32GUESTR3_CXXFLAGS
 TEMPLATE_VBOXW32GUESTR3_CFLAGS.profile      = $(TEMPLATE_VBOXW32GUESTR3_CXXFLAGS.profile)
 TEMPLATE_VBOXW32GUESTR3_CFLAGS.kprofile     = $(TEMPLATE_VBOXW32GUESTR3_CXXFLAGS.kprofile)
 TEMPLATE_VBOXW32GUESTR3_INCS                = \
-	$(PATH_BIN)/sdk/include
+	$(VBOX_PATH_SDK)/include
 TEMPLATE_VBOXW32GUESTR3_LDFLAGS             = \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LARGEADDRESSAWARE \
 	/DISALLOWLIB:libc.lib \

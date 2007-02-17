@@ -5,12 +5,12 @@
 # There are a few of complicating factors here, esp. on AMD64 systems:
 #
 #   * op.c doesn't compile work correctly with gcc 4. For this we've
-#     checked in op.S, which is the reason why we don't compile op.c 
+#     checked in op.S, which is the reason why we don't compile op.c
 #     directly but always compile via the assembly file.s
 #   * On 64-bit Windows we lack a compiler and have to resort to a
 #     linux cross compiler building an ELF relocatable module which
 #     we then load using a wrapper module. Thus the REM_MOD mess.
-#   * On platforms using the 64-bit GCC ABI, we're not allowed to 
+#   * On platforms using the 64-bit GCC ABI, we're not allowed to
 #     generate non-PIC shared objects, and op.c requires the code
 #     to be non-PIC. We apply the same trick as we developed for
 #     64-bit windows.
@@ -66,7 +66,7 @@ OTHER_CLEAN           = \
 #
 # L4 must use the no-crt path because it's lacking math stuff it seems...
 # Darwin must use the non-crt path because it can't compile op.c nativly.
-# All the AMD64 target must use the no-crt path because ELF doesn't like op.c 
+# All the AMD64 target must use the no-crt path because ELF doesn't like op.c
 # when stuffed into a shared library and windows doesn't have 64-bit gcc (yet).
 #
 ifeq ($(filter-out l4 darwin freebsd,$(BUILD_TARGET)),)
@@ -98,7 +98,7 @@ dyngen_INCS           = \
 	target-i386 \
 	fpu
 dyngen_SOURCES        = dyngen.c
-                                
+
 
 #
 # The VBoxREM.[dll|so|..] or VBoxREM2.rel.
@@ -157,8 +157,9 @@ ifdef REM_USE_NOCRT
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
   $(REM_MOD)_LIBS.darwin    = \
-  	$(PATH_BIN)/VBoxREMImp.dylib
-  $(REM_MOD)_LDFLAGS.darwin = -read_only_relocs suppress
+  	$(TARGET_VBoxREMImp)
+#  	$(PATH_BIN)/VBoxREMImp.dylib
+  $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -multiply_defined warning  #-install_name @executable_path/$(REM_MOD).dylib#
  else
   $(REM_MOD)_LIBS           = \
 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
@@ -181,13 +182,14 @@ else # !REM_USE_NOCRT
  ifeq ($(BUILD_TARGET),l4)
   $(REM_MOD)_INCS          += $(VBOX_L4_GCC3_INCS) $(L4_INCDIR)
  endif
- 
+
  $(REM_MOD)_DEFS           += IN_RING3 LOG_USE_C99
  #$(REM_MOD)_DEFS          += DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
  # these defines are probably all irrelevant now:
  $(REM_MOD)_DEFS           += _GNU_SOURCE _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _REENTRANT
 
  $(REM_MOD)_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib -Wl,--no-undefined
+ $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -install_name @executable_path/$(REM_MOD).dylib -multiple_defined warning
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   $(REM_MOD)_LIBS           = $(FILE_TOOL_GCC3_LIBGCC)
  else # x86
@@ -222,7 +224,7 @@ cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing 
 
 #
 # The math testcase as a standalone program for testing and debugging purposes.
-# 
+#
 ## @todo This is a bit messy because of MINGW32.
 #BLDPROGS += testmath
 testmath_TOOL           = GCC3
@@ -258,6 +260,7 @@ VBoxREM_DEFS           = IN_REM_R3
 VBoxREM_SOURCES        = \
 	VBoxREMWrapper.cpp \
 	VBoxREMWrapperA.asm
+VBoxREM_LDFLAGS.darwin = -install_name @executable_path/VBoxREM.dylib
 VBoxREM_LIBS           = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
@@ -268,6 +271,9 @@ endif
 # The VBoxREM import library.
 #
 VBoxREMImp_TEMPLATE         = VBOXR3
+ifeq ($(BUILD_TARGET),darwin)
+VBoxREMImp_INST             = $(INST_LIB)
+endif
 VBoxREMImp_SOURCES.win      = VBoxREM.def
 VBoxREMImp_SOURCES.os2      = $(PATH_TARGET)/VBoxREMOS2.def
 ifeq ($(filter win os2,$(BUILD_TARGET)),)
@@ -276,7 +282,8 @@ VBoxREMImp_CLEAN            = $(PATH_TARGET)/VBoxREMImp.c
 endif
 VBoxREMImp_SONAME.linux     = VBoxREM.so
 VBoxREMImp_SONAME.l4        = VBoxREM.s.so
-VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
+VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
+#VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
 $(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def deftoimp.sed | $(call DIRDEP,$(PATH_TARGET))
@@ -300,12 +307,12 @@ include $(PATH_KBUILD)/footer.kmk
 #
 # Generate the op.S file somehow...
 #
-# Gathering the flags, defines and include dirs for the command is a lot 
-# of work. Unfortunately, there is only a highly specialized kBuild function 
+# Gathering the flags, defines and include dirs for the command is a lot
+# of work. Unfortunately, there is only a highly specialized kBuild function
 # for doing this, so we're currently left to our own devices here.
 #
-# Add something like VBOX_RECOMPILER_OP_GCC = gcc-3.4.6 to LocalConfig.kmk 
-# to be 100% sure that you get a working op.S. My gcc 4.1.1 seems to work 
+# Add something like VBOX_RECOMPILER_OP_GCC = gcc-3.4.6 to LocalConfig.kmk
+# to be 100% sure that you get a working op.S. My gcc 4.1.1 seems to work
 # fine, so feel free to try VBOX_RECOMPILER_OP_GCC = gcc.
 #
 # The op-undefined.lst is generated by finding all the undefined symbols
@@ -324,7 +331,7 @@ ifndef VBOX_RECOMPILER_OP_GCC
   VBOX_RECOMPILER_OP_GCC := $(TOOL_$(VBOX_GCC_TOOL)_CC)
   VBOX_RECOMPILER_OP_GCC_OK := dunno
  endif
-else 
+else
  # If set, assume it's an OK compiler.
  VBOX_RECOMPILER_OP_GCC_OK := yes
 endif

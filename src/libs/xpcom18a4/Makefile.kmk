@@ -76,12 +76,12 @@ TEMPLATE_XPCOM_INCS                = $(PATH_TARGET) \
                                      ipc/ipcd/extensions/transmngr/src \
                                      ipc/ipcd/extensions/dconnect/src \
                                      ipc/ipcd/extensions/transmngr/common \
-                                     $(PATH_BIN)/sdk/include \
-                                     $(PATH_BIN)/sdk/include/xpcom \
-                                     $(PATH_BIN)/sdk/include/xpcom/nsprpub \
-                                     $(PATH_BIN)/sdk/include/xpcom/string \
-                                     $(PATH_BIN)/sdk/include/xpcom/xpcom \
-                                     $(PATH_BIN)/sdk/include/xpcom/ipcd
+                                     $(VBOX_PATH_SDK)/include \
+                                     $(VBOX_PATH_SDK)/include/xpcom \
+                                     $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
+                                     $(VBOX_PATH_SDK)/include/xpcom/string \
+                                     $(VBOX_PATH_SDK)/include/xpcom/xpcom \
+                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd
 TEMPLATE_XPCOM_INCS.darwin         = /Developer/SDKs/MacOSX10.4u.sdk/Developer/Headers/FlatCarbon
 TEMPLATE_XPCOM_INCS.l4             = $(L4_INCDIR) $(VBOX_L4_GCC3_INCS)
 TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
@@ -98,13 +98,14 @@ TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(IN
 TEMPLATE_XPCOMEXE                  = XPCOM executable files (testcases)
 TEMPLATE_XPCOMEXE_EXTENDS          = XPCOM
 ## @todo undo -fPIC.
-TEMPLATE_XPCOMEXE_INCS             = $(PATH_TARGET) ipc/ipcd/shared/src \
-                                     $(PATH_BIN)/sdk/include \
-                                     $(PATH_BIN)/sdk/include/xpcom \
-                                     $(PATH_BIN)/sdk/include/xpcom/nsprpub \
-                                     $(PATH_BIN)/sdk/include/xpcom/string \
-                                     $(PATH_BIN)/sdk/include/xpcom/xpcom \
-                                     $(PATH_BIN)/sdk/include/xpcom/ipcd
+TEMPLATE_XPCOMEXE_INCS             = $(PATH_TARGET) \
+                                     ipc/ipcd/shared/src \
+                                     $(VBOX_PATH_SDK)/include \
+                                     $(VBOX_PATH_SDK)/include/xpcom \
+                                     $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
+                                     $(VBOX_PATH_SDK)/include/xpcom/string \
+                                     $(VBOX_PATH_SDK)/include/xpcom/xpcom \
+                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd
 TEMPLATE_XPCOMEXE_LIBS             = \
 	$(TARGET_VBox-xpcom-ipcshared) \
 	$(TARGET_VBoxXPCOM)
@@ -137,12 +138,12 @@ TEMPLATE_XPCOMBLDPROG_CFLAGS            = -pipe -ansi -Wall -Wno-unused
 TEMPLATE_XPCOMBLDPROG_CFLAGS.linux      = -pthread
 TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
-TEMPLATE_XPCOMBLDPROG_INCS              = $(PATH_BIN)/sdk/include \
-                                          $(PATH_BIN)/sdk/include/xpcom \
-                                          $(PATH_BIN)/sdk/include/xpcom/nsprpub \
-                                          $(PATH_BIN)/sdk/include/xpcom/string \
-                                          $(PATH_BIN)/sdk/include/xpcom/xpcom \
-                                          $(PATH_BIN)/sdk/include/xpcom/ipcd
+TEMPLATE_XPCOMBLDPROG_INCS              = $(VBOX_PATH_SDK)/include \
+                                          $(VBOX_PATH_SDK)/include/xpcom \
+                                          $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
+                                          $(VBOX_PATH_SDK)/include/xpcom/string \
+                                          $(VBOX_PATH_SDK)/include/xpcom/xpcom \
+                                          $(VBOX_PATH_SDK)/include/xpcom/ipcd
 TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
@@ -506,7 +507,7 @@ IPCD-HEADERS_SOURCES = \
 xpidl_TEMPLATE = XPCOMBLDPROG
 xpidl_DEFS = EXPORT_XPT_API
 ## @todo This assumes HOST == TARGET.
-xpidl_INST = bin/ $(INST_SDK)/bin/
+xpidl_INST = $(INST_SDK)/bin/
 xpidl_SOURCES = \
 	xpcom/typelib/xpidl/xpidl.c \
 	xpcom/typelib/xpidl/xpidl_idl.c \
@@ -952,6 +953,7 @@ VBoxXPCOM_LDFLAGS.linux = -Wl,--whole-archive \
 # EF heap
 #VBoxXPCOM_LIBS += $(LIB_RUNTIME_EF)
 #VBoxXPCOM_LDFLAGS = -Wl,--whole-archive $(VBoxXPCOM_LIBS) -Wl,--no-whole-archive $(LIB_RUNTIME)
+VBoxXPCOM_LDFLAGS.darwin = -install_name @executable_path/VBoxXPCOM.dylib
 
 ifdef VBOX_IPC_RELEASE_LOG
 IPC_LOGGING = 1
@@ -1020,6 +1022,7 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp \
 	ipc/ipcd/extensions/dconnect/src/ipcDConnectService.cpp
+VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name @executable_path/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \
 	$(TARGET_VBox-xpcom-ipcutils) \
 	$(TARGET_VBox-xpcom-ipcshared) \
@@ -1194,9 +1197,9 @@ IDLFILES = \
 
 OTHER_CLEAN += \
 	$(PATH_VBox-xpcom-string)/idl_ts \
-	$(addprefix $(PATH_BIN)/sdk/include/,$(notdir $(subst .idl,.h,$(IDLFILES)))) \
-	$(addprefix $(PATH_BIN)/sdk/include/,$(notdir $(subst .idl,.xpt,$(IDLFILES)))) \
-	$(addprefix $(PATH_BIN)/sdk/idl/,$(notdir $(IDLFILES)))
+	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(IDLFILES)))) \
+	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.xpt,$(IDLFILES)))) \
+	$(addprefix $(VBOX_PATH_SDK)/idl/,$(notdir $(IDLFILES)))
 
 
 # generate rules
@@ -1312,19 +1315,19 @@ $(PATH_VBox-xpcom-nspr)/_pl_bld.h:
 # @param idl     The filename with everything.
 XPIDL_INCS = -I xpcom/base/ -I xpcom/ds/ -I xpcom/components/ -I xpcom/io/ -I xpcom/threads/ -I xpcom/reflect/xptinfo/public/
 define def_IDL
-$(addprefix $(PATH_BIN)/sdk/include/,$(notdir $(subst .idl,.h,$(idl)))) \
+$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(idl)))) \
             $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): $(idl) | $(TARGET_xpidl)
 	$$(call MSG_L1,xpidl $$<)
-	$$(QUIET)$(MKDIR) -p $(PATH_BIN)/sdk/include $(PATH_BIN)/sdk/idl
+	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/include $(VBOX_PATH_SDK)/idl
 	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
 	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
-	$$(QUIET)$(CP) $$< $$(PATH_BIN)/sdk/idl
+	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/idl
 endef
 
 $(foreach idl, $(IDLFILES), $(eval $(def_IDL)))
 
 # dummy target.
-$(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(PATH_BIN)/sdk/include/,$(notdir $(subst .idl,.h,$(IDLFILES))))
+$(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(IDLFILES))))
 	$(call MSG_L1,IDL processing completed.)
 	$(QUIET)$(MKDIR) -p $(dir $@)
 	$(QUIET)$(ECHO_EXT) > $@

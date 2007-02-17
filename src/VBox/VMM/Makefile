@@ -190,7 +190,7 @@ VMMGC_LIBS      = \
 ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
 VMMGC_LIBS     += \
 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
-endif	
+endif
 ifeq ($(VBOX_LDR_FMT32),pe)
 VMMGC_LDFLAGS   = -Entry:VMMGCEntry
 endif
@@ -346,6 +346,7 @@ VBoxVMM_LIBS     = \
 VBoxVMM_LIBS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 VBoxVMM_LDFLAGS.win = /DELAYLOAD:dbghelp.dll
 VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined
+VBoxVMM_LDFLAGS.darwin = -install_name @executable_path/VBoxVMM.dylib
 
 include	$(PATH_KBUILD)/footer.kmk
 

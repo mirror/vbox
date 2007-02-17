@@ -94,6 +94,7 @@ VBoxDD_LIBS.darwin      = \
 	$(LIB_REM)
 VBoxDD_LIBS.os2         = \
 	$(PATH_BIN)/VBoxDD2.dll
+VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib
 VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
@@ -116,12 +117,13 @@ VBoxDD2_LIBS            = \
 	$(PATH_LIB)/NetBiosBin$(VBOX_SUFF_LIB) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
-VBoxDD2_LDFLAGS.linux   = -Wl,--no-undefined
 ifeq ($(BUILD_TARGET),l4)
 VBoxDD2_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
 VBoxDD2_LIBS.darwin    += $(LIB_REM)
+VBoxDD2_LDFLAGS.darwin  = -install_name @executable_path/VBoxDD2.dylib
+VBoxDD2_LDFLAGS.linux   = -Wl,--no-undefined
 VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 
 

@@ -43,6 +43,7 @@ VBoxManage_LIBS.linux = \
 VBoxManage_LIBS.darwin = \
 	$(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL) \
 	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL) \
+	$(LIB_VMM) \
 	$(LIB_REM)
 
 

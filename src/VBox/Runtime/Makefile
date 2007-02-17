@@ -444,6 +444,9 @@ RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
 #
 VBoxRT_TEMPLATE                = VBOXR3
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
+ifeq ($(BUILD_TARGET),darwin)
+VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
+endif
 VBoxRT_DEFS                    = $(RuntimeR3_DEFS) IN_SUP_R3 IN_SUP_R3
 VBoxRT_DEFS.$(BUILD_TYPE)      = $(RuntimeR3_DEFS.$(BUILD_TYPE))
 VBoxRT_SOURCES                 = \
@@ -465,7 +468,7 @@ VBoxRT_LIBS.freebsd            = \
 	iconv
 VBoxRT_LIBPATH.freebsd         = \
 	/usr/local/lib
-VBoxRT_LDFLAGS.darwin          = -framework IOKit
+VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name @executable_path/VBoxRT.dylib
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
 endif
@@ -481,6 +484,7 @@ endif
 VBoxRT_LIBS.l4                 = \
 	$(PATH_LIB)/VBox-uuid$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
+
 
 #
 # RuntimeR3NoCRTGCC - CRT replacement lib for VBoxREM.

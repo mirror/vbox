@@ -45,21 +45,21 @@ endif
 
 ifeq ($(BUILD_TARGET),win)
  OTHERS          = $(PATH_BIN)/comregister.cmd
- IDLFILE         = $(PATH_BIN)/sdk/idl/VirtualBox.idl
+ IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox.idl
  OTHER_CLEAN     = \
 	$(PATH_BIN)/comregister.cmd \
- 	$(PATH_BIN)/sdk/include/VirtualBox.h \
+ 	$(VBOX_PATH_SDK)/include/VirtualBox.h \
  	$(IDLFILE) \
- 	$(PATH_BIN)/sdk/lib/VirtualBox.tlb \
- 	$(PATH_BIN)/sdk/lib/VirtualBox_i.c \
+ 	$(VBOX_PATH_SDK)/lib/VirtualBox.tlb \
+ 	$(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
  	$(PATH_VBoxCOM)/VirtualBox.h \
  	$(PATH_VBoxCOM)/VirtualBox_i.c \
  	$(PATH_VBoxCOM)/VirtualBox.tlb
 else
  INSTALLS        = xpcom-components
- IDLFILE         = $(PATH_BIN)/sdk/idl/VirtualBox_XPCOM.idl
+ IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox_XPCOM.idl
  IDLTYPELIB      = $(PATH_BIN)/VirtualBox_XPCOM.xpt
- IDLHEADER       = $(PATH_BIN)/sdk/include/VirtualBox_XPCOM.h
+ IDLHEADER       = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
  OTHERS          = $(IDLTYPELIB)
  OTHER_CLEAN     = \
  	$(IDLFILE) \
@@ -121,7 +121,7 @@ VBoxSVC_INCS = \
 	include \
 	$(PATH_VBoxSVC) \
 	$(PATH_VBoxCOM) \
-	$(PATH_BIN)/sdk/include
+	$(VBOX_PATH_SDK)/include
 ifneq ($(BUILD_TARGET),win)
 VBoxSVC_INCS += \
 	$(VBOX_XPCOM_INCS)
@@ -135,6 +135,7 @@ VBoxSVC_LIBS += \
 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 VBoxSVC_LIBS.darwin = \
+	$(LIB_VMM) \
 	$(LIB_REM)
 else
 VBoxSVC_LIBS = \
@@ -223,11 +224,12 @@ VBoxC_INCS          = \
 	include \
 	$(PATH_VBoxC) \
 	$(PATH_VBoxCOM) \
-	$(PATH_BIN)/sdk/include
+	$(VBOX_PATH_SDK)/include
 ifneq ($(BUILD_TARGET),win)
 VBoxC_INCS          += \
 	$(VBOX_XPCOM_INCS)
 endif
+VBoxC_LDFLAGS.darwin = -install_name @executable_path/VBoxC.dylib
 ifdef VBOX_USE_VCC80
 VBoxC_LDFLAGS.win = /MANIFEST
 endif
@@ -306,6 +308,7 @@ VBoxXML_LIBS       = \
 	$(TARGET_VBoxXPCOM) \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 endif
+VBoxXML_LDFLAGS.darwin = -install_name @executable_path/VBoxXML.dylib -Wl,-x # no debug info please.
 
 ## @todo (dmik): temporarily embed SettingsConverter.xsl into VBoxXML,
 #                later it should go to VBoxSVC as well
@@ -354,7 +357,7 @@ VBoxCOM_SOURCES = \
 	$(VBoxCOM_COMMON_SOURCES) \
 	$(PATH_VBoxCOM)/VirtualBox_i.c
 VBoxCOM_INCS = \
-	$(PATH_BIN)/sdk/include
+	$(VBOX_PATH_SDK)/include
 
 
 #
@@ -365,7 +368,7 @@ VBoxXPCOM_SOURCES = \
 	$(VBoxCOM_COMMON_SOURCES) \
 	linux/helpers.cpp
 VBoxXPCOM_INCS = \
-	$(PATH_BIN)/sdk/include \
+	$(VBOX_PATH_SDK)/include \
 	include \
 	$(VBOX_XPCOM_INCS)
 
@@ -437,7 +440,7 @@ OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
 #
 # Creates the symlinks necessary for making XPCOM work.
 #
-xpcom-components_INST = bin/components/
+xpcom-components_INST = $(INST_BIN)components/
 xpcom-components_SYMLINKS = \
 	VBoxC$(SUFF_DLL)=>../VBoxC$(SUFF_DLL) \
 	VBoxXPCOMIPCC$(SUFF_DLL)=>../VBoxXPCOMIPCC$(SUFF_DLL) \
@@ -490,7 +493,7 @@ endif
 
 $(IDLFILE): idl/midl.xsl $(XIDLFILE)
 	$(call MSG_L1,xsltproc $<,=> $@)
-	$(QUIET)$(MKDIR) -p $(PATH_BIN)/sdk/idl
+	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
 ## @todo r=bird: last changes to this rule showed incorrect dependencies here as it broke testcase (see testboxwin2).
@@ -505,11 +508,11 @@ $(PATH_VBoxCOM)/VirtualBox_i.c: $(IDLFILE) | $(call DIRDEP,$(PATH_VBoxCOM))
 		/I $(subst /,\\,$(PATH_SDK_WINPSDK_INC)) \
 		/I idl \
 		$(subst /,\\,$<)
-	$(MKDIR) -p $(PATH_BIN)/sdk/include
-	$(CP) $(PATH_VBoxCOM)/VirtualBox.h $(PATH_BIN)/sdk/include
-	$(MKDIR) -p $(PATH_BIN)/sdk/lib
-	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(PATH_BIN)/sdk/lib
-	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(PATH_BIN)/sdk/lib
+	$(MKDIR) -p $(VBOX_PATH_SDK)/include
+	$(CP) $(PATH_VBoxCOM)/VirtualBox.h $(VBOX_PATH_SDK)/include
+	$(MKDIR) -p $(VBOX_PATH_SDK)/lib
+	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(VBOX_PATH_SDK)/lib
+	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/lib
 
 endif
 

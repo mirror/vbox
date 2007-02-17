@@ -28,9 +28,13 @@ endif
 
 TEMPLATE        = VBOXR3EXE
 ifeq ($(filter-out win,$(BUILD_TARGET)),)
-LIBS            = $(PATH_LIB)/VBoxDD.lib
+ LIBS           = $(PATH_LIB)/VBoxDD.lib
 else
-LIBS            = $(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL)
+ LIBS           = \
+	$(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL) \
+	$(PATH_BIN)/VBoxDD2$(VBOX_SUFF_DLL) \
+	$(LIB_VMM) \
+	$(LIB_REM)
 endif
 LIBS           += $(LIB_RUNTIME)
 
