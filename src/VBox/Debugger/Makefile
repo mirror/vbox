@@ -47,15 +47,15 @@ Debugger_SOURCES   = \
 tstVBoxDbg_TEMPLATE     = VBOXQTGUIEXE
 tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
 tstVBoxDbg_LIBS         = \
-	$(LIB_RUNTIME) \
-	$(LIB_VMM)
-tstVBoxDbg_LIBS.win     = \
-	$(PATH_LIB)/VBoxDbg.lib
-tstVBoxDbg_LIBS.linux   = \
-	$(PATH_BIN)/VBoxDbg.so
-tstVBoxDbg_LIBS         = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
+ifeq ($(BUILD_TARGET),win)
+tstVBoxDbg_LIBS        += \
+	$(PATH_LIB)/VBoxDbg.lib
+else
+tstVBoxDbg_LIBS        += \
+	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
+endif
 
 
 #

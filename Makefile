@@ -67,10 +67,17 @@ ifeq ($(filter-out win,$(BUILD_TARGET)),)
   #else ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),os2.x86)
   # VBOX_DLL_QT ?= $(PATH_DEVTOOLS)/os2.x86/Qt/v3.3.6/bin/qt-mt336.dll=>qt-mt336.dll
   endif
-  ifdef VBOX_DLL_QT 
+  ifdef VBOX_DLL_QT
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
   endif
+ endif
+endif
+
+ifeq ($(BUILD_TARGET),darwin)
+ ifdef LIB_QT
+  bin_SOURCES += \
+	$(LIB_QT)
  endif
 endif
 

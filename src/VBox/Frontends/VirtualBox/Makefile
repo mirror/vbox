@@ -38,6 +38,7 @@ PROGRAMS = VirtualBox
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
+VirtualBox_SDKS.darwin = LIBSDL
 
 
 # bird:
@@ -64,7 +65,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxProblemReporter.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
-ifeq ($(BUILD_TARGET),linux)
+ifneq ($(BUILD_TARGET),win)
 VirtualBox_QT_MOCSRCS = src/COMDefs.cpp
 endif
 
@@ -84,7 +85,7 @@ VirtualBox_GENHDRS = \
 	$(foreach ui,$(basename $(VirtualBox_QT_UISRCS)), $(PATH_VirtualBox)/$(ui).h)
 
 
-VirtualBox_SOURCES    = \
+VirtualBox_SOURCES = \
 	$(VirtualBox_GENSRCS) \
 	src/main.cpp \
 	src/COMDefs.cpp \
@@ -119,34 +120,33 @@ VirtualBox_SOURCES.linux = \
 	src/linux/keyboard.c
 endif
 
-VirtualBox_CXXFLAGS.win = \
-	-nologo -Zm200 -W3 -MD -EHsc -DUNICODE -DQT_DLL -DQT_THREAD_SUPPORT -DQT_NO_DEBUG
-VirtualBox_CXXFLAGS.linux = \
-	-DQT_NO_DEBUG -DQT_THREAD_SUPPORT -D_REENTRANT
-
+VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox_DEFS           += VBOX_GUI_SEPARATE_VM_PROCESS
-
+VirtualBox_DEFS.win       = UNICODE QT_DLL
 ifeq ($(BUILD_TYPE),release)
-VirtualBox_DEFS.win       += VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.linux     += VBOX_GUI_USE_SDL
+ VirtualBox_DEFS.win     += VBOX_GUI_USE_QIMAGE
+ VirtualBox_DEFS.linux   += VBOX_GUI_USE_SDL
+ VirtualBox_DEFS.darwin  += VBOX_GUI_USE_SDL
 else
-VirtualBox_DEFS           += VBOX_WITH_DEBUGGER_GUI_MENU
-VirtualBox_DEFS.win       += \
+ VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
+ VirtualBox_DEFS.win     += \
 	VBOX_GUI_USE_REFRESH_TIMER \
 	VBOX_GUI_USE_QIMAGE \
 	VBOX_GUI_USE_DDRAW
-VirtualBox_DEFS.linux     += \
+ VirtualBox_DEFS.linux   += \
+	VBOX_GUI_USE_REFRESH_TIMER \
+	VBOX_GUI_USE_QIMAGE \
+	VBOX_GUI_USE_SDL
+ VirtualBox_DEFS.darwin  += \
 	VBOX_GUI_USE_REFRESH_TIMER \
 	VBOX_GUI_USE_QIMAGE \
 	VBOX_GUI_USE_SDL
 endif
-
-ifdef VBOX_OSE
- VirtualBox_DEFS          += VBOX_OSE
-endif
 ifdef VBOX_WITH_ALSA
- VirtualBox_DEFS          += VBOX_WITH_ALSA
+ VirtualBox_DEFS         += VBOX_WITH_ALSA
+endif
+ifdef VBOX_OSE
+ VirtualBox_DEFS         += VBOX_OSE
 endif
 
 VirtualBox_INCS           = \
@@ -159,31 +159,24 @@ VirtualBox_INCS           = \
 ifeq ($(BUILD_TYPE),release)
  VirtualBox_LDFLAGS.win  += /SUBSYSTEM:windows
 else
- VirtualBox_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
+ VirtualBox_LDFLAGS.linux+= -rdynamic # for backtrace_symbols()
  ifeq ($(USERNAME),dmik)
   VirtualBox_LDFLAGS.win += /SUBSYSTEM:windows
  else
   VirtualBox_LDFLAGS.win += /SUBSYSTEM:console
  endif
 endif
-VirtualBox_LIBS.win   = \
+VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 
-VirtualBox_LIBS.linux     = \
-	$(LIB_QT) Xext X11 m $(LIB_PTHREAD) \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
-	$(LIB_RUNTIME) \
-	$(PATH_BIN)/VBoxXML.so \
-	$(LIB_REM) \
-	$(LIB_VMM) \
-	$(PATH_BIN)/VBoxXPCOM.so \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
-
 ifdef VBOX_WITH_DEBUGGER_GUI
-VirtualBox_LIBS.win   += $(PATH_LIB)/VBoxDbg.lib
-VirtualBox_LIBS.linux += $(PATH_DLL)/VBoxDbg.so
+ ifeq ($(BUILD_TARGET),win)
+  VirtualBox_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
+ else
+  VirtualBox_LIBS        += $(PATH_DLL)/VBoxDbg$(VBOX_SUFF_DLL)
+ endif
 endif
 
 WRAPPERSFILE        = $(PATH_VirtualBox)/include/COMWrappers.h
