@@ -272,16 +272,16 @@ void VBoxNewHDWzd::setRecommendedSize (Q_UINT64 aSize)
 QString VBoxNewHDWzd::imageFileName()
 {
     QString name = QDir::convertSeparators (leName->text());
-    
+
     /* remove all trailing dots to avoid multiple dots before .vdi */
     int len;
     while (len = name.length(), len > 0 && name [len - 1] == '.')
         name.truncate (len - 1);
-    
+
     QString ext = QFileInfo (name).extension();
     /* compare against the proper case */
 #if defined (Q_OS_LINUX)
-#elif defined (Q_OS_WIN) || defined (Q_OS_OS2)
+#elif defined (Q_OS_WIN) || defined (Q_OS_OS2) || defined (Q_OS_MACX)
     ext = ext.lower();
 #else
     #error Port me!
