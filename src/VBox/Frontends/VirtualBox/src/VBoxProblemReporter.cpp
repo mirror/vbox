@@ -1152,7 +1152,7 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
 
     message (aParent, Error,
              tr ("Failed to create a shared folder <b>%1</b> "
-                 "(pointing to <nobr><b>%2</b></nobr>)"
+                 "(pointing to <nobr><b>%2</b></nobr>) "
                  "for the virtual machine <b>%3</b>.")
                  .arg (aName)
                  .arg (aPath)
@@ -1170,11 +1170,47 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
 
     message (aParent, Error,
              tr ("Failed to remove the shared folder <b>%1</b> "
-                 "(pointing to <nobr><b>%2</b></nobr>)"
+                 "(pointing to <nobr><b>%2</b></nobr>) "
                  "from the virtual machine <b>%3</b>.")
                  .arg (aName)
                  .arg (aPath)
                  .arg (aMachine.GetName()),
+             formatErrorInfo (errInfo));
+}
+
+void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
+                                                    const CConsole &aConsole,
+                                                    const QString  &aName,
+                                                    const QString  &aPath)
+{
+    /* preserve the current error info before calling the object again */
+    COMErrorInfo errInfo = aConsole.errorInfo();
+
+    message (aParent, Error,
+             tr ("Failed to create a shared folder <b>%1</b> "
+                 "(pointing to <nobr><b>%2</b></nobr>) "
+                 "for the virtual machine <b>%3</b>.")
+                 .arg (aName)
+                 .arg (aPath)
+                 .arg (aConsole.GetMachine().GetName()),
+             formatErrorInfo (errInfo));
+}
+
+void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
+                                                    const CConsole &aConsole,
+                                                    const QString  &aName,
+                                                    const QString  &aPath)
+{
+    /* preserve the current error info before calling the object again */
+    COMErrorInfo errInfo = aConsole.errorInfo();
+
+    message (aParent, Error,
+             tr ("Failed to remove the shared folder <b>%1</b> "
+                 "(pointing to <nobr><b>%2</b></nobr>) "
+                 "from the virtual machine <b>%3</b>.")
+                 .arg (aName)
+                 .arg (aPath)
+                 .arg (aConsole.GetMachine().GetName()),
              formatErrorInfo (errInfo));
 }
 

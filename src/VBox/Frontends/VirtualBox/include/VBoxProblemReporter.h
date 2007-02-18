@@ -187,6 +187,10 @@ public:
                                    const QString &, const QString &);
     void cannotRemoveSharedFolder (QWidget *, const CMachine &,
                                    const QString &, const QString &);
+    void cannotCreateSharedFolder (QWidget *, const CConsole &,
+                                   const QString &, const QString &);
+    void cannotRemoveSharedFolder (QWidget *, const CConsole &,
+                                   const QString &, const QString &);
 
     bool confirmReleaseImage (QWidget*, QString);
 
