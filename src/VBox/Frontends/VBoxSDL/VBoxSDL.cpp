@@ -3235,11 +3235,76 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
                                                  : keycode & 0x7f);
 }
 
+#ifdef __DARWIN__
+#include <Carbon/Carbon.h>
+__BEGIN_DECLS
+/* Private interface in 10.3 and later. */
+typedef int CGSConnection;
+typedef enum
+{
+    kCGSGlobalHotKeyEnable = 0,
+    kCGSGlobalHotKeyDisable,
+    kCGSGlobalHotKeyInvalid = -1 /* bird */
+} CGSGlobalHotKeyOperatingMode;
+extern CGSConnection _CGSDefaultConnection(void);
+extern CGError CGSGetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode *enmMode);
+extern CGError CGSSetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode enmMode);
+__END_DECLS
+
+/** Keeping track of whether we disabled the hotkeys or not. */
+static bool g_fHotKeysDisabled = false;
+/** Whether we've connected or not. */
+static bool g_fConnectedToCGS = false;
+/** Cached connection. */
+static CGSConnection g_CGSConnection;
+
+/**
+ * Disables or enabled global hot keys.
+ */
+static void DisableGlobalHotKeys(bool fDisable)
+{
+    if (!g_fConnectedToCGS)
+    {
+        g_CGSConnection = _CGSDefaultConnection();
+        g_fConnectedToCGS = true;
+    }
+
+    /* get current mode. */
+    CGSGlobalHotKeyOperatingMode enmMode = kCGSGlobalHotKeyInvalid;
+    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmMode);
+
+    /* calc new mode. */
+    if (fDisable)
+    {
+        if (enmMode != kCGSGlobalHotKeyEnable)
+            return;
+        enmMode = kCGSGlobalHotKeyDisable;
+    }
+    else
+    {
+        if (    enmMode != kCGSGlobalHotKeyDisable
+            /*||  !g_fHotKeysDisabled*/)
+            return;
+        enmMode = kCGSGlobalHotKeyEnable;
+    }
+
+    /* try set it and check the actual result. */
+    CGSSetGlobalHotKeyOperatingMode(g_CGSConnection, enmMode);
+    CGSGlobalHotKeyOperatingMode enmNewMode = kCGSGlobalHotKeyInvalid;
+    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmNewMode);
+    if (enmNewMode == enmMode)
+        g_fHotKeysDisabled = enmMode == kCGSGlobalHotKeyDisable;
+}
+#endif /* __DARWIN__ */
+
 /**
  * Start grabbing the mouse.
  */
 static void InputGrabStart(void)
 {
+#ifdef __DARWIN__
+    DisableGlobalHotKeys(true);
+#endif
     if (!gfGuestNeedsHostCursor)
         SDL_ShowCursor(SDL_DISABLE);
     SDL_WM_GrabInput(SDL_GRAB_ON);
@@ -3257,6 +3322,9 @@ static void InputGrabEnd(void)
     SDL_WM_GrabInput(SDL_GRAB_OFF);
     if (!gfGuestNeedsHostCursor)
         SDL_ShowCursor(SDL_ENABLE);
+#ifdef __DARWIN__
+    DisableGlobalHotKeys(false);
+#endif
     gfGrabbed = FALSE;
     UpdateTitlebar(TITLEBAR_NORMAL);
 }
