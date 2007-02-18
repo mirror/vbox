@@ -70,7 +70,13 @@ nsIEventQueue* COMBase::gEventQ = nsnull;
 ipcIDConnectService *COMBase::gDConnectService = nsnull;
 PRUint32 COMBase::gVBoxServerID = 0;
 
+/* Mac OS X (Carbon mode) and OS/2 will notify the native queue
+   internally in plevent.c. Because moc doesn't seems to respect
+   #ifdefs, we still have to include the definition of the class.
+   very silly. */
+# if !defined (Q_OS_MAC)  && !defined (Q_OS_OS2)
 XPCOMEventQSocketListener *COMBase::gSocketListener = 0;
+# endif
 
 /**
  *  Internal class to asyncronously handle IPC events on the GUI thread
@@ -182,7 +188,9 @@ HRESULT COMBase::initializeCOM()
                 gEventQ->IsQueueNative (&isNative);
                 AssertMsg (isNative, ("The event queue must be native"));
 #endif
+# if !defined (__DARWIN__) && !defined (__OS2__)
                 gSocketListener = new XPCOMEventQSocketListener (gEventQ);
+# endif
 
                 // get the IPC service
                 nsCOMPtr <ipcIService> ipcServ =
@@ -233,8 +241,10 @@ HRESULT COMBase::cleanupCOM()
         if (isOnCurrentThread)
         {
             LogFlow (("COMBase::cleanupCOM(): doing cleanup...\n"));
+# if !defined (__DARWIN__) && !defined (__OS2__)
             if (gSocketListener)
                 delete gSocketListener;
+# endif
             if (gDConnectService)
                 gDConnectService->Release();
             if (gEventQ)

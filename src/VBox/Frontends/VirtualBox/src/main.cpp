@@ -115,6 +115,7 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
  */
 static void DarwinInit (void)
 {
+    /* This probably belongs else where. */
     static struct
     {
         char var[sizeof ("VBOX_XPCOM_HOME=") - 1];
@@ -131,6 +132,8 @@ static void DarwinInit (void)
 
     if (!RTEnvGet ("VBOX_XPCOM_HOME"))
         RTEnvPut (s.var);
+
+    /** @todo automatically start VBoxSVC. */
 }
 #endif
 
