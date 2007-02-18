@@ -704,7 +704,9 @@ int main(int argc, char *argv[])
     VBoxSDLConsoleCallback *consoleCallback = NULL;
     bool fFullscreen = false;
     bool fResizable = true;
+#ifdef USE_XPCOM_QUEUE_THREAD
     bool fXPCOMEventThreadSignaled = false;
+#endif
     bool fListVMs = false;
     char *hdaFile   = NULL;
     char *cdromFile = NULL;
@@ -855,10 +857,10 @@ int main(int argc, char *argv[])
     /// @todo
 //    EventQueue eventQ;
 
-#ifdef VBOX_WITH_XPCOM
+#ifdef USE_XPCOM_QUEUE_THREAD
     nsCOMPtr<nsIEventQueue> eventQ;
     NS_GetMainEventQ(getter_AddRefs(eventQ));
-#endif /* VBOX_WITH_XPCOM */
+#endif /* USE_XPCOM_QUEUE_THREAD */
 
     /* Get the number of network adapters */
     ULONG NetworkAdapterCount = 0;
@@ -1880,7 +1882,7 @@ int main(int argc, char *argv[])
         goto leave;
     }
 
-#if defined(VBOX_WITH_XPCOM)
+#ifdef USE_XPCOM_QUEUE_THREAD
     /*
      * Before we starting to do stuff, we have to launch the XPCOM
      * event queue thread. It will wait for events and send messages
@@ -1890,7 +1892,7 @@ int main(int argc, char *argv[])
      * event queue buffer!
      */
     startXPCOMEventQueueThread(eventQ->GetEventQueueSelectFD());
-#endif /* VBOX_WITH_XPCOM */
+#endif /* USE_XPCOM_QUEUE_THREAD */
 
     /* termination flag */
     bool fTerminateDuringStartup;
@@ -1916,7 +1918,7 @@ int main(int argc, char *argv[])
              * change will send us an event. However, we have to
              * service the XPCOM event queue!
              */
-#ifdef VBOX_WITH_XPCOM
+#ifdef USE_XPCOM_QUEUE_THREAD
             if (!fXPCOMEventThreadSignaled)
             {
                 signalXPCOMEventQueueThread();
@@ -1954,7 +1956,7 @@ int main(int argc, char *argv[])
                         break;
                     }
 
-#ifdef VBOX_WITH_XPCOM
+#ifdef USE_XPCOM_QUEUE_THREAD
                     /*
                      * User specific XPCOM event queue event
                      */
@@ -1965,7 +1967,7 @@ int main(int argc, char *argv[])
                         signalXPCOMEventQueueThread();
                         break;
                     }
-#endif /* VBOX_WITH_XPCOM */
+#endif /* USE_XPCOM_QUEUE_THREAD */
 
                     /*
                      * Termination event from the on state change callback.
@@ -2043,7 +2045,7 @@ int main(int argc, char *argv[])
     /*
      * Main event loop
      */
-#ifdef VBOX_WITH_XPCOM
+#ifdef USE_XPCOM_QUEUE_THREAD
     if (!fXPCOMEventThreadSignaled)
     {
         signalXPCOMEventQueueThread();
@@ -2351,7 +2353,7 @@ int main(int argc, char *argv[])
                 break;
             }
 
-#ifdef VBOX_WITH_XPCOM
+#ifdef USE_XPCOM_QUEUE_THREAD
             /*
              * User specific XPCOM event queue event
              */
@@ -2362,7 +2364,7 @@ int main(int argc, char *argv[])
                 signalXPCOMEventQueueThread();
                 break;
             }
-#endif /* VBOX_WITH_XPCOM */
+#endif /* USE_XPCOM_QUEUE_THREAD */
 
             /*
              * User specific update title bar notification event
@@ -2434,7 +2436,7 @@ int main(int argc, char *argv[])
 
 leave:
     LogFlow(("leaving...\n"));
-#ifdef VBOX_WITH_XPCOM
+#if defined(VBOX_WITH_XPCOM) && !defined(__DARWIN__) && !defined(__OS2__)
     /* make sure the XPCOM event queue thread doesn't do anything harmful */
     terminateXPCOMQueueThread();
 #endif /* VBOX_WITH_XPCOM */
@@ -3518,6 +3520,7 @@ void SaveState(void)
      * the title bar in the mean while.
      */
     LONG    cPercent = 0;
+#ifndef __DARWIN__ /* don't break the other guys yet. */
     for (;;)
     {
         BOOL fCompleted = false;
@@ -3540,6 +3543,78 @@ void SaveState(void)
             break;
         /// @todo process gui events.
     }
+
+#else /* new loop which processes GUI events while saving. */
+
+    /* start regular timer so we don't starve in the event loop */
+    SDL_TimerID sdlTimer;
+    sdlTimer = SDL_AddTimer(100, StartupTimer, NULL);
+
+    for (;;)
+    {
+        /*
+         * Check for completion.
+         */
+        BOOL fCompleted = false;
+        rc = gProgress->COMGETTER(Completed)(&fCompleted);
+        if (FAILED(rc) || fCompleted)
+            break;
+        LONG cPercentNow;
+        rc = gProgress->COMGETTER(Percent)(&cPercentNow);
+        if (FAILED(rc))
+            break;
+        if (cPercentNow != cPercent)
+        {
+            UpdateTitlebar(TITLEBAR_SAVE, cPercent);
+            cPercent = cPercentNow;
+        }
+
+        /*
+         * Wait for and process GUI a event.
+         * This is necessary for XPCOM IPC and for updating the
+         * title bar on the Mac.
+         */
+        SDL_Event event;
+        if (SDL_WaitEvent(&event))
+        {
+            switch (event.type)
+            {
+                /*
+                 * Timer event preventing us from getting stuck.
+                 */
+                case SDL_USER_EVENT_TIMER:
+                    break;
+
+#ifdef USE_XPCOM_QUEUE_THREAD
+                /*
+                 * User specific XPCOM event queue event
+                 */
+                case SDL_USER_EVENT_XPCOM_EVENTQUEUE:
+                {
+                    LogFlow(("SDL_USER_EVENT_XPCOM_EVENTQUEUE: processing XPCOM event queue...\n"));
+                    eventQ->ProcessPendingEvents();
+                    signalXPCOMEventQueueThread();
+                    break;
+                }
+#endif /* USE_XPCOM_QUEUE_THREAD */
+
+
+                /*
+                 * Ignore all other events.
+                 */
+                case SDL_USER_EVENT_RESIZE:
+                case SDL_USER_EVENT_TERMINATE:
+                default:
+                    break;
+            }
+        }
+    }
+
+    /* kill the timer */
+    SDL_RemoveTimer(sdlTimer);
+    sdlTimer = 0;
+
+#endif /* __DARWIN__ */
 
     /*
      * What's the result of the operation?
