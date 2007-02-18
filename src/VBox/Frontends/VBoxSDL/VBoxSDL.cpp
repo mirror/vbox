@@ -2735,7 +2735,7 @@ static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
             return 0;
     }
 }
-#endif
+#endif /* __DARWIN__ */
 
 /**
  * Converts an SDL keyboard eventcode to a XT scancode.
