@@ -64,7 +64,11 @@ public:
 
     int rtti() const { return QIRichListItemId; }
 
-    const QString& getText (int aIndex) { return mTextList [aIndex]; }
+    QString getText (int aIndex)
+    {
+        return aIndex >= 0 && aIndex < (int)mTextList.size() ?
+            mTextList [aIndex] : QString::null;
+    }
 
 protected:
 
@@ -77,8 +81,9 @@ protected:
 
     void processColumn (int aColumn, int aWidth)
     {
-        QString oneString = mTextList [aColumn];
-        if (oneString.isEmpty())
+        QString oneString = aColumn >= 0 && aColumn < (int)mTextList.size() ?
+            mTextList [aColumn] : QString::null;
+        if (oneString.isNull())
             return;
         int oldSize = listView()->fontMetrics().width (oneString);
         int indentSize = listView()->fontMetrics().width ("...x");
@@ -146,6 +151,7 @@ public:
         QDialog (aParent, "VBoxAddSFDialog", true /* modal */),
         mLePath (0), mLeName (0)
     {
+        setCaption (tr ("Add Share"));
         QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
 
         /* Setup Input layout */
@@ -206,7 +212,6 @@ private slots:
     {
         QFileDialog dlg (QDir::rootDirPath(), QString::null, this);
         dlg.setMode (QFileDialog::DirectoryOnly);
-        dlg.setCaption (tr ("Add Share"));
         if (dlg.exec() == QDialog::Accepted)
         {
             QString folderName = QDir::convertSeparators (dlg.selectedFile());
@@ -252,6 +257,7 @@ void VBoxSharedFoldersSettings::init()
     mDialogType = WrongType;
     new QIListViewSelectionPreserver (this, listView);
     listView->setShowToolTips (false);
+    listView->setRootIsDecorated (true);
     tbAdd->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                             "select_file_dis_16px.png"));
     tbRemove->setIconSet (VBoxGlobal::iconSet ("eraser_16px.png",
@@ -299,7 +305,7 @@ void VBoxSharedFoldersSettings::removeSharedFolder (const QString & aName,
             Assert (!mConsole.isNull());
             mConsole.RemoveSharedFolder (aName);
             if (!mConsole.isOk())
-                vboxProblem().cannotRemoveSharedFolder (this, mConsole.GetMachine(),
+                vboxProblem().cannotRemoveSharedFolder (this, mConsole,
                                                         aName, aPath);
             break;
         }
@@ -336,7 +342,7 @@ void VBoxSharedFoldersSettings::createSharedFolder (const QString & aName,
             Assert (!mConsole.isNull());
             mConsole.CreateSharedFolder (aName, aPath);
             if (!mConsole.isOk())
-                vboxProblem().cannotCreateSharedFolder (this, mConsole.GetMachine(),
+                vboxProblem().cannotCreateSharedFolder (this, mConsole,
                                                         aName, aPath);
             break;
         }
@@ -446,8 +452,8 @@ void VBoxSharedFoldersSettings::putBackToConsole()
 void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
                                            QListViewItem *aRoot)
 {
+    Assert (!aRoot->text (2).isNull());
     SFDialogType type = (SFDialogType)aRoot->text (2).toInt();
-    Assert (type);
 
     /* deleting all existing folders if the list */
     while (aEn.HasMore())
@@ -463,7 +469,7 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
         VBoxRichListItem *item = 0;
         if (iterator->rtti() == VBoxRichListItem::QIRichListItemId)
             item = static_cast<VBoxRichListItem*> (iterator);
-        if (item)
+        if (item && !item->getText (0).isNull() && !item->getText (1).isNull())
             createSharedFolder (item->getText (0), item->getText (1), type);
         else
             AssertMsgFailed (("Incorrect listview item type\n"));
@@ -512,7 +518,7 @@ void VBoxSharedFoldersSettings::processOnItem (QListViewItem *aItem)
     QString tip = tr ("<nobr>Name:&nbsp;&nbsp;%1</nobr><br>"
                       "<nobr>Path:&nbsp;&nbsp;%2</nobr>")
                       .arg (item->getText (0)).arg (item->getText (1));
-    if (!item->getText (0).isEmpty() && !item->getText (1).isEmpty())
+    if (!item->getText (0).isNull() && !item->getText (1).isNull())
         QToolTip::add (listView->viewport(), listView->itemRect (aItem), tip);
     else
         QToolTip::remove (listView->viewport());
@@ -520,7 +526,7 @@ void VBoxSharedFoldersSettings::processOnItem (QListViewItem *aItem)
 
 void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
 {
-    if (aItem && listView->selectedItem() != aItem)
+    if (aItem && aItem->isSelectable() && listView->selectedItem() != aItem)
         listView->setSelected (aItem, true);
     bool removeEnabled = aItem && aItem->parent() &&
                          isEditable (aItem->parent()->text (2));
