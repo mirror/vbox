@@ -212,6 +212,7 @@ private slots:
     {
         QFileDialog dlg (QDir::rootDirPath(), QString::null, this);
         dlg.setMode (QFileDialog::DirectoryOnly);
+        dlg.setCaption (tr ("Select a folder to share"));
         if (dlg.exec() == QDialog::Accepted)
         {
             QString folderName = QDir::convertSeparators (dlg.selectedFile());
