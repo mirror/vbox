@@ -747,6 +747,11 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
 }
 
 #if defined (Q_WS_X11)
+/**
+ * Start the kchmviewer application with the VBox help file.
+ *
+ * @param pvUser an array of strings which are the path to and the arguments for kchmviewer
+ */
 DECLCALLBACK(int) showHelpContentsThread(RTTHREAD  /* ThreadSelf */, void *pvUser)
 {
     char **papszArgs = reinterpret_cast<char **>(pvUser);
