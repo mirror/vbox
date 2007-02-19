@@ -83,11 +83,6 @@ endif
 # includes
 ifndef $(KERN_INCL)
  KERN_INCL = $(KERN_DIR)/include
-# Instead of sticking to the standards, OpenSUSE 10.2 only puts a few include
-# files in /lib/modules/$(uname -r)/build/include, and puts the rest in
-# /lib/modules/$(uname -r)/source/include, which points into the kernel sources
- EXTRA_INCL = /lib/modules/$(shell uname -r)/source/include
- $(info Info: using $(KERN_INCL) as the include directory of your Linux kernel. If this is not correct, specify KERN_INCL=<directory> and run Make again.)
 endif
 ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
  $(error Error: unable to find the include directory for your current Linux kernel. Specify $KERN_INCL=<directory> and run Make again.)
@@ -99,7 +94,7 @@ ifndef MODULE_DIR
  ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
   MODULE_DIR := $(MODULE_DIR_TST)/misc
  else
-  $(error Error: could not find the module directory for your current Linux kernel)
+  $(error Unable to find the folder to install the support driver to)
  endif
 endif # MODULE_DIR unspecified
 
@@ -182,4 +177,3 @@ endif # eq($(MAKECMDGOALS),clean)
 clean:
 	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers
-
