@@ -31,9 +31,9 @@
 *   Global Variables                                                         *
 *****************************************************************************/
 
-/** Lookup table to translate X keysyms of extended scancodes.  Fake shifts, CTRL-PrtScn, and
-    non-standard 105-key KB keys are not yet handled.  See
-    http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
+/** Lookup table to translate X keysyms of extended scancodes.  CTRL-PrtScn and keys not found on
+    a 105-key keyboard are not yet handled.  See
+    http://www.win.tue.nl/~aeb/linux/kbd/scancodes.html
     and the Xorg keyboard configuration files in /etc/X11/xkb for interesting information. */
 static int ExtKeySymToScanCode[21] =
 {

@@ -18,6 +18,10 @@
 # license agreement apply instead of the previous paragraph.
 #
 
+ifeq ($(BUILD_TARGET),linux)
+XKEYBOARD_NEW := 1
+endif
+
 # include qmake project file
 include VBoxUI.pro
 
