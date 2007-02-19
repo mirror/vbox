@@ -21,7 +21,7 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-INSTALLS = vboxmod-bin
+INSTALLS = vboxmod-bin vboxmod-sh
 ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
 SYSMODS = vboxadd
 endif
@@ -73,6 +73,11 @@ vboxmod-bin_SOURCES = \
 	vboxmod.h=>vboxmod.h \
 	waitcompat.h=>waitcompat.h \
 	Makefile.module=>Makefile
+
+vboxmod-sh_INST    = bin/additions/src/vboxadd/
+vboxmod-sh_MODE    = a+rx,u+w
+vboxmod-sh_SOURCES = \
+	$(PATH_ROOT)/src/VBox/Additions/linux/installer/build_in_tmp=>build_in_tmp
 
 #
 # The module.
