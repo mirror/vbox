@@ -2329,6 +2329,11 @@ void ata_detect( )
       }
     }
 
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
+
     type=read_byte(ebda_seg,&EbdaData->ata.devices[device].type);
 
     // Now we send a IDENTIFY command to ATA device
@@ -2663,7 +2668,12 @@ Bit32u lba;
 
 #ifdef VBOX
   status = inb(iobase1 + ATA_CB_STAT);
-  if (status & ATA_CB_STAT_BSY) return 1;
+  if (status & ATA_CB_STAT_BSY)
+  {
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+    return 1;
+  }
 #endif /* VBOX */
 
   // sector will be 0 only on lba access. Convert to lba-chs
@@ -2715,9 +2725,17 @@ Bit32u lba;
 
   if (status & ATA_CB_STAT_ERR) {
     BX_DEBUG_ATA("ata_cmd_data_in : read error\n");
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
     return 2;
     } else if ( !(status & ATA_CB_STAT_DRQ) ) {
     BX_DEBUG_ATA("ata_cmd_data_in : DRQ not set (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
     return 3;
   }
 
@@ -2783,6 +2801,10 @@ ASM_END
       if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
           != ATA_CB_STAT_RDY ) {
         BX_DEBUG_ATA("ata_cmd_data_in : no sectors left (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+        // Enable interrupts
+        outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
         return 4;
         }
       break;
@@ -2791,6 +2813,10 @@ ASM_END
       if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
           != (ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ) ) {
         BX_DEBUG_ATA("ata_cmd_data_in : more sectors left (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+        // Enable interrupts
+        outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
         return 5;
       }
       continue;
@@ -2834,7 +2860,12 @@ Bit32u lba;
 
 #ifdef VBOX
   status = inb(iobase1 + ATA_CB_STAT);
-  if (status & ATA_CB_STAT_BSY) return 1;
+  if (status & ATA_CB_STAT_BSY)
+  {
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+    return 1;
+  }
 #endif /* VBOX */
 
   // sector will be 0 only on lba access. Convert to lba-chs
@@ -2886,9 +2917,17 @@ Bit32u lba;
 
   if (status & ATA_CB_STAT_ERR) {
     BX_DEBUG_ATA("ata_cmd_data_out : read error\n");
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
     return 2;
     } else if ( !(status & ATA_CB_STAT_DRQ) ) {
     BX_DEBUG_ATA("ata_cmd_data_out : DRQ not set (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
     return 3;
     }
 
@@ -2956,6 +2995,10 @@ ASM_END
       if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DF | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
           != ATA_CB_STAT_RDY ) {
         BX_DEBUG_ATA("ata_cmd_data_out : no sectors left (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+        // Enable interrupts
+        outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
         return 6;
         }
       break;
@@ -2964,6 +3007,10 @@ ASM_END
       if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
           != (ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ) ) {
         BX_DEBUG_ATA("ata_cmd_data_out : more sectors left (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+        // Enable interrupts
+        outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
         return 7;
       }
       continue;
@@ -3044,9 +3091,17 @@ Bit32u length;
 
   if (status & ATA_CB_STAT_ERR) {
     BX_DEBUG_ATA("ata_cmd_packet : error, status is %02x\n",status);
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
     return 3;
     } else if ( !(status & ATA_CB_STAT_DRQ) ) {
     BX_DEBUG_ATA("ata_cmd_packet : DRQ not set (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
     return 4;
     }
 
@@ -3095,6 +3150,10 @@ ASM_END
 
       if (status & ATA_CB_STAT_ERR) {
         BX_DEBUG_ATA("ata_cmd_packet : error (status %02x)\n",status);
+#ifdef VBOX
+        // Enable interrupts
+        outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
         return 3;
       }
 
@@ -3102,6 +3161,10 @@ ASM_END
       if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
             != (ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ) ) {
         BX_DEBUG_ATA("ata_cmd_packet : not ready (status %02x)\n", status);
+#ifdef VBOX
+        // Enable interrupts
+        outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
         return 4;
         }
 
@@ -3246,6 +3309,10 @@ ASM_END
   if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DF | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
          != ATA_CB_STAT_RDY ) {
     BX_DEBUG_ATA("ata_cmd_packet : not ready (status %02x)\n", (unsigned) status);
+#ifdef VBOX
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+#endif /* VBOX */
     return 4;
     }
 
@@ -4325,7 +4392,7 @@ ASM_END
                 }
                 extended_memory_size *= 1024;
                 extended_memory_size += (16L * 1024 * 1024);
-                
+
                 if(extended_memory_size <= (16L * 1024 * 1024)) {
                     extended_memory_size = inb_cmos(0x31);
                     extended_memory_size <<= 8;
@@ -4386,8 +4453,8 @@ ASM_END
                         return;
                         break;
                     case 4:
-                        set_e820_range(ES, regs.u.r16.di, 
-                                       extended_memory_size - ACPI_DATA_SIZE, 
+                        set_e820_range(ES, regs.u.r16.di,
+                                       extended_memory_size - ACPI_DATA_SIZE,
                                        extended_memory_size, 3); // ACPI RAM
                         regs.u.r32.ebx = 5;
                         regs.u.r32.eax = 0x534D4150;
@@ -9935,7 +10002,7 @@ rombios32_05:
   mov esi, #0xfffe0000
   mov edi, #0x00040000
   mov ecx, #0x10000 / 4
-  rep 
+  rep
     movsd
 
   ;; init the stack pointer
@@ -9990,7 +10057,7 @@ rombios32_real_mode:
 
 rombios32_gdt_48:
   dw 0x30
-  dw rombios32_gdt                  
+  dw rombios32_gdt
   dw 0x000f
 
 rombios32_gdt:
