@@ -619,6 +619,7 @@ static int ssmR3DeregisterByNameAndType(PVM pVM, const char *pszName, SSMUNITTYP
     return rc;
 }
 
+
 /**
  * Deregister an internal data unit.
  *
@@ -645,6 +646,7 @@ SSMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
 {
     return ssmR3DeregisterByNameAndType(pVM, pszName, SSMUNITTYPE_EXTERNAL);
 }
+
 
 /**
  * Calculate the checksum of a file portion.
