@@ -170,7 +170,7 @@ static DECLCALLBACK(int32_t) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *p
                     pState->rc = VERR_INVALID_POINTER;
             }
             else if (pState->enmMode <= PGMMODE_PROTECTED)
-                pState->rc = PGMPhysGCPhys2HCPtr(pState->pVM, pState->pvPageGC, cbRead, &pState->pvPageHC);
+                pState->rc = PGMPhysGCPhys2HCPtr(pState->pVM, pState->pvPageGC, PAGE_SIZE, &pState->pvPageHC);
             else
                 pState->rc = PGMPhysGCPtr2HCPtr(pState->pVM, pState->pvPageGC, &pState->pvPageHC);
             if (VBOX_FAILURE(pState->rc))
@@ -253,8 +253,9 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
     SELMSELINFO SelInfo;
     const PGMMODE enmMode = PGMGetGuestMode(pVM);
     bool fRealModeAddress = false;
-    if (    (pCtxCore && pCtxCore->eflags.Bits.u1VM == 1)
-        ||  enmMode == PGMMODE_REAL)
+    if (    !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
+        &&  (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
+             ||  enmMode == PGMMODE_REAL) )
     {   /* V86 mode or real mode - real mode addressing */
         SelInfo.GCPtrBase           = Sel * 16;
         SelInfo.cbLimit             = ~0;
