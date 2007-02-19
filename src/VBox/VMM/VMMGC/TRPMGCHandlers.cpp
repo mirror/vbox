@@ -36,6 +36,7 @@
 #include <VBox/cpum.h>
 #include "TRPMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/param.h>
 
 #include <VBox/err.h>
 #include <VBox/dis.h>
@@ -977,14 +978,31 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
     if (uUser & TRPM_TRAP_IN_HYPER)
     {
         /*
-         * Just zero the register in question.
-         * We're ASSUMING that esp points to it.
+         * Check that there is still some stack left, if not we'll flag 
+         * a guru meditation (the alternative is a triple fault).
          */
+        RTGCUINTPTR cbStackUsed = (RTGCUINTPTR)VMMGetStackGC(pVM) - pRegFrame->esp;
+        if (cbStackUsed > VMM_STACK_SIZE - _1K)
+        {
+            LogRel(("trpmGCTrapInGeneric: ran out of stack: esp=#x cbStackUsed=%#x\n", pRegFrame->esp, cbStackUsed));
+            return VERR_TRPM_DONT_PANIC;
+        }
+
+        /*
+         * Just zero the register containing the selector in question.
+         * We'll deal with the actual stale or troublesome selector value in 
+         * the outermost trap frame.
+         */
+        PCPUMCTXCORE pCoreCtx = (PCPUMCTXCORE)pRegFrame->esp;
         switch (uUser & TRPM_TRAP_IN_OP_MASK)
         {
             case TRPM_TRAP_IN_MOV_GS:
+                pRegFrame->eax = 0;
+                pRegFrame->gs = 0; /* prevent recursive trouble. */
+                break;
             case TRPM_TRAP_IN_MOV_FS:
-                *(PRTSEL)pRegFrame->esp = 0;
+                pRegFrame->eax = 0;
+                pRegFrame->fs = 0; /* prevent recursive trouble. */
                 return VINF_SUCCESS;
 
             default:
@@ -1013,7 +1031,7 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
             case TRPM_TRAP_IN_MOV_ES:
             case TRPM_TRAP_IN_MOV_DS:
             {
-                PCPUMCTXCORE pTempGuestCtx = (PCPUMCTXCORE) pEsp;
+                PCPUMCTXCORE pTempGuestCtx = (PCPUMCTXCORE)pEsp;
 
                 /* Just copy the whole thing; several selector registers, eip (etc) and eax are not yet in pRegFrame. */
                 CtxCore = *pTempGuestCtx;
