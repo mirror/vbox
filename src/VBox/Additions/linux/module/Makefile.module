@@ -35,42 +35,40 @@ OBJS   = \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o
 
-#
-# Where is everything?
-#
-ifeq ($(KERN_DIR),)
-KERN_DIR_CUR := /lib/modules/$(shell uname -r)/build
-ifeq ($(shell if test -d $(KERN_DIR_CUR); then echo yes; fi),yes)
-KERN_DIR := $(KERN_DIR_CUR)
-else
-KERN_DIR = /usr/src/linux
-$(warning Warning: defaulting kernel sources to $(KERN_DIR). Specify KERN_DIR=<right-place> if this is not right.)
-endif
-endif
+ifneq ($(MAKECMDGOALS),clean)
 
-# includes
-ifeq ($(KERN_INCL),)
- ifeq ($(shell if test -d $(KERN_DIR)/include; then echo yes; fi),yes)
- KERN_INCL = $(KERN_DIR)/include
-# Instead of sticking to the standards, OpenSUSE 10.2 only puts a few include
-# files in /lib/modules/$(uname -r)/build/include, and puts the rest in
-# /lib/modules/$(uname -r)/source/include, which points into the kernel sources
-  EXTRA_INCL = /lib/modules/$(shell uname -r)/source/include
- else
- KERN_INCL = /usr/src/linux/include
- $(warning Warning: defaulting to the includes in $(KERN_INCL). Specify KERN_INCL=<right-place> if this is not right.)
+# kernel base directory
+ifndef $(KERN_DIR)
+ KERN_DIR := /lib/modules/$(shell uname -r)/build
+ ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+  KERN_DIR := /usr/src/linux
+  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+   $(error Error: unable to find the sources of your current Linux kernel. Specify KERN_DIR=<directory> and run Make again.)
+  endif
+  $(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
+ endif
+else
+ ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+  $(error Error: KERN_DIR does not point to a directory.)
  endif
 endif
 
-# Module install dir.
-ifndef MODULE_DIR
-MODULE_DIR_TST := /lib/modules/$(shell uname -r)
-ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
-MODULE_DIR := $(MODULE_DIR_TST)/misc
-else
-# MODULE_DIR := .
-$(error Unable to find the folder to install the additions driver to)
+# includes
+ifndef $(KERN_INCL)
+ KERN_INCL = $(KERN_DIR)/include
 endif
+ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
+ $(error Error: unable to find the include directory for your current Linux kernel. Specify $KERN_INCL=<directory> and run Make again.)
+endif
+
+# module install dir.
+ifndef MODULE_DIR
+ MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+ ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+  MODULE_DIR := $(MODULE_DIR_TST)/misc
+ else
+  $(error Unable to find the folder to install the additions driver to)
+ endif
 endif # MODULE_DIR unspecified
 
 # guess kernel version (24 or 26)
@@ -98,10 +96,11 @@ ifndef INCL
  ifndef KBUILD_EXTMOD
   KBUILD_EXTMOD := $(shell pwd)
  endif
- INCL    += $(addprefix -I$(KBUILD_EXTMOD),/  /include /r0drv/linux)
+ INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -D_X86_ -DIN_RT_R0 -DIN_SUP_R0 -DVBGL_VBOXGUEST -DVBGL_HGCM -DVBOX_HGCM -DLOG_TO_BACKDOOR
+KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -D_X86_ -DIN_RT_R0 -DIN_SUP_R0 \
+	    -DVBGL_VBOXGUEST -DVBOX_HGCM -DLOG_TO_BACKDOOR
 #ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
 #KFLAGS   += -DDEBUG
 #endif
@@ -146,7 +145,10 @@ endif
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
 	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
-        PATH="$(PATH):/bin:/sbin" depmod -ae;
+	PATH="$(PATH):/bin:/sbin" depmod -ae;
+
+endif # eq($(MAKECMDGOALS),clean)
 
 clean:
-	rm -rf *.o .*.cmd .*.flags
+	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers
