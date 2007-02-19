@@ -2594,7 +2594,8 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
         if (rc != VERR_NOT_IMPLEMENTED)
             fDump = true;
     }
-    else if (    u8Trap != 8 /* double fault doesn't dare setting TrapNo. */
+    else if (    rcExpect != VINF_SUCCESS
+             &&  u8Trap != 8 /* double fault doesn't dare set TrapNo. */
              &&  u8Trap != 3 /* guest only, we're not in guest. */
              &&  u8Trap != 1 /* guest only, we're not in guest. */
              &&  u8Trap != TRPMGetTrapNo(pVM))
@@ -2614,7 +2615,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
             fDump = true;
         }
     }
-    else
+    else if (rcExpect != VINF_SUCCESS)
     {
         if (CPUMGetHyperSS(pVM) == SELMGetHyperDS(pVM))
             RTPrintf("VMM: FAILURE - ss=%x expected %x\n", CPUMGetHyperSS(pVM), SELMGetHyperDS(pVM));
@@ -2692,6 +2693,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 
         vmmR3DoTrapTest(pVM, 0xe, 0, VERR_TRPM_DONT_PANIC,  0x00000000, "vmmGCTestTrap0e_FaultEIP", "#PF (NULL)");
         vmmR3DoTrapTest(pVM, 0xe, 1, VERR_TRPM_DONT_PANIC,  0x00000000, "vmmGCTestTrap0e_FaultEIP", "#PF (NULL) WP");
+        vmmR3DoTrapTest(pVM, 0xe, 2, VINF_SUCCESS,          0x00000000, NULL,                       "#PF w/Tmp Handler");
+        vmmR3DoTrapTest(pVM, 0xe, 4, VINF_SUCCESS,          0x00000000, NULL,                       "#PF w/Tmp Handler and bad fs");
 
         /*
          * Set a debug register and perform a context switch.

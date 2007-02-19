@@ -236,6 +236,7 @@ VMMGC_SOURCES   = \
 	VMMAll/TMAllVirtual.cpp \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/VMAll.cpp \
+	VMMAll/VMMAll.cpp \
 	PATM/VMMGC/CSAMGC.cpp \
 	PATM/VMMAll/CSAMAll.cpp \
 	PATM/VMMGC/PATMGC.cpp \

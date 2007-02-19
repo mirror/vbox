@@ -209,5 +209,10 @@ EXPORTEDNAME vmmGCTestTrap0e_FaultEIP
     RestoreAll
     mov     eax, 0ffffffffh
     ret
+
+EXPORTEDNAME vmmGCTestTrap0e_ResumeEIP
+    RestoreAll
+    xor     eax, eax
+    ret
 ENDPROC vmmGCTestTrap0e
 

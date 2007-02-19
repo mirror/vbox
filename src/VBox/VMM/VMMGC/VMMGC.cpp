@@ -25,6 +25,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm.h>
+#include <VBox/trpm.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/sup.h>
@@ -46,6 +47,8 @@ extern "C" DECLIMPORT(RTLOGGERGC)   g_RelLogger;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg);
+static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame);
+static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 
 
@@ -263,6 +266,22 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
         {
             if (uArg <= 1)
                 rc = vmmGCTestTrap0e();
+            else if (uArg == 2 || uArg == 4)
+            {
+                /*
+                 * Test the use of a temporary #PF handler.
+                 */
+                rc = TRPMGCSetTempHandler(pVM, X86_XCPT_PF, uArg != 4 ? vmmGCTestTmpPFHandler : vmmGCTestTmpPFHandlerCorruptFS);
+                if (VBOX_SUCCESS(rc))
+                {
+                    rc = vmmGCTestTrap0e();
+
+                    /* in case it didn't fire. */
+                    int rc2 = TRPMGCSetTempHandler(pVM, X86_XCPT_PF, NULL);
+                    if (VBOX_FAILURE(rc2) && VBOX_SUCCESS(rc))
+                        rc = rc2;
+                }
+            }
             break;
         }
     }
@@ -273,6 +292,41 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
     if (uArg & 1)
         vmmGCDisableWP();
 
+    return rc;
+}
+
+
+/**
+ * Temporary #PF trap handler for the #PF test case.
+ *
+ * @returns VBox status code (appropriate for GC return).
+ *          In this context VBOX_SUCCESS means to restart the instruction.
+ * @param   pVM         VM handle.
+ * @param   pRegFrame   Trap register frame.
+ */
+static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    if (pRegFrame->eip == (uintptr_t)vmmGCTestTrap0e_FaultEIP)
+    {
+        pRegFrame->eip = (uintptr_t)vmmGCTestTrap0e_ResumeEIP;
+        return VINF_SUCCESS;
+    }
+    return VERR_INTERNAL_ERROR;
+}
+
+
+/**
+ * Temporary #PF trap handler for the #PF test case, this one messes up the fs selector.
+ *
+ * @returns VBox status code (appropriate for GC return).
+ *          In this context VBOX_SUCCESS means to restart the instruction.
+ * @param   pVM         VM handle.
+ * @param   pRegFrame   Trap register frame.
+ */
+static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    int rc = vmmGCTestTmpPFHandler(pVM, pRegFrame);
+    pRegFrame->fs = 0x30;
     return rc;
 }
 
