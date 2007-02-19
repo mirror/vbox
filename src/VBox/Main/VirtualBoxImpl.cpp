@@ -4133,7 +4133,7 @@ HRESULT VirtualBox::registerGuestOSTypes()
         { "win2k",      "Windows 2000",        OSTypeWin2k,      168,   4,  4000 },
         { "winxp",      "Windows XP",          OSTypeWinXP,      192,   4, 10000 },
         { "win2k3",     "Windows Server 2003", OSTypeWin2k3,     256,   4, 20000 },
-        { "winvista",   "Windows Vista",       OSTypeWinVista,   256,   4, 20000 },
+        { "winvista",   "Windows Vista",       OSTypeWinVista,   512,   4, 20000 },
         { "os2warp3",   "OS/2 Warp 3",         OSTypeOS2Warp3,    48,   4,  1000 },
         { "os2warp4",   "OS/2 Warp 4",         OSTypeOS2Warp4,    64,   4,  2000 },
         { "os2warp45",  "OS/2 Warp 4.5",       OSTypeOS2Warp45,   96,   4,  2000 },
