@@ -2720,6 +2720,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
          */
         /** @todo we MUST change this detection to try grab an entry which is NOT in use. This can be
          * combined with gathering info about which guest system call gates we can hook up directly. */
+        unsigned    i;
         uint8_t     u8Idt = 0;
         static uint8_t au8Ints[] =
         {
@@ -2734,7 +2735,6 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
         };
 #if defined(__AMD64__) && defined(DEBUG)
         static int  s_iWobble = 0;
-        unsigned    i;
         unsigned    iMax = !(s_iWobble++ % 2) ? 0x80 : 0x100;
         dprintf(("IDT: Idtr=%p:%#x\n", (void *)Idtr.pIdt, (unsigned)Idtr.cbIdt));
         for (i = iMax - 0x80; i*16+15 < Idtr.cbIdt && i < iMax; i++)
