@@ -44,7 +44,7 @@
 #include <sys/statfs.h>
 #include <sys/poll.h>
 #include <unistd.h>
-#ifndef NO_COMPILER_H
+#ifndef VBOX_WITHOUT_LINUX_COMPILER_H
 # include <linux/compiler.h>
 #endif
 #include <linux/usbdevice_fs.h>
