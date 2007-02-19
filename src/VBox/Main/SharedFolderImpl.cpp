@@ -132,24 +132,28 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
 HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildren *aParent,
                                      const BSTR aName, const BSTR aHostPath)
 {
-    LogFlowMember (("SharedFolder::protectedInit(): aName={%ls}, aHostPath={%ls}\n",
-                    aName, aHostPath));
+    LogFlowThisFunc (("aName={%ls}, aHostPath={%ls}\n", aName, aHostPath));
 
     ComAssertRet (aParent && aName && aHostPath, E_INVALIDARG);
 
     Utf8Str hostPath = Utf8Str (aHostPath);
     size_t hostPathLen = hostPath.length();
     
-    /* Remove the trailng path unless it's a DOS-like root directory
+    /* Remove the trailng slash unless it's a root directory
      * (otherwise the comparison with the RTPathAbs() result will fail at least
      * on Linux). Note that this isn't really necessary for the shared folder
      * itself, since adding a mapping eventually results into a
      * RTDirOpenFiltered() call (see HostServices/SharedFolders) that seems to
      * accept both the slashified paths and not. */
+#if defined (__OS2__) || defined (__WIN__)
     if (hostPathLen > 2 &&
         RTPATH_IS_SEP (hostPath.raw()[hostPathLen - 1]) &&
         RTPATH_IS_VOLSEP (hostPath.raw()[hostPathLen - 2]))
         ;
+#else
+    if (hostPathLen == 1 && RTPATH_IS_SEP (hostPath[0]))
+        ;
+#endif
     else
         RTPathStripTrailingSlash (hostPath.mutableRaw());
     
