@@ -172,6 +172,10 @@ install: $(MODULE)
 	PATH="$(PATH):/bin:/sbin" depmod -ae; \
 	rm -f /etc/vbox/module_not_compiled
 
+install_rpm: $(MODULE)
+	@mkdir -p $(MODULE_DIR); \
+	install -m 0664 $(MODULE).$(MODULE_EXT) $(MODULE_DIR)
+
 endif # eq($(MAKECMDGOALS),clean)
 
 clean:
