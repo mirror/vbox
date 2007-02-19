@@ -1000,7 +1000,7 @@ function check_compiler_h
 {
   test_header compiler.h
   if ! test -f "/usr/include/linux/compiler.h"; then
-    cnf_append "NO_COMPILER_H" "1"
+    cnf_append "VBOX_WITHOUT_LINUX_COMPILER_H" "1"
     log_success "compiler.h not found"
   else
     log_success "compiler.h found"
