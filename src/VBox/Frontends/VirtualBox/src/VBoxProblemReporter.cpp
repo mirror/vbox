@@ -496,13 +496,13 @@ void VBoxProblemReporter::cannotAccessUSB (const COMBase &obj)
      * IMachine::GetUSBController(), IHost::GetUSBDevices() etc. just returned
      * E_NOTIMPL, as for the OSE version. Don't show the error message in this
      * case since it's normal. */
-    COMErrorInfo errInfo = obj.errorInfo();
-    if (obj.lastRC() == E_NOTIMPL && !errInfo.isBasicAvailable())
+    COMResult res (obj);
+    if (res.rc() == E_NOTIMPL && !res.errorInfo().isBasicAvailable())
         return;
 
     message (mainWindowShown(), Error,
              tr ("Failed to access the USB subsystem."),
-             formatErrorInfo (errInfo),
+             formatErrorInfo (res),
              "cannotAccessUSB");
 }
 
@@ -546,12 +546,12 @@ void VBoxProblemReporter::cannotSaveMachineSettings (const CMachine &machine,
                                                      QWidget *parent /* = 0 */)
 {
     /* preserve the current error info before calling the object again */
-    COMErrorInfo errInfo = machine.errorInfo();
+    COMResult res (machine);
 
     message (parent ? parent : mainWindowShown(), Error,
              tr ("Failed to save the settings of the virtual machine <b>%1</b>.")
                  .arg (machine.GetName()),
-             formatErrorInfo (errInfo));
+             formatErrorInfo (res));
 }
 
 /**
@@ -562,28 +562,25 @@ void VBoxProblemReporter::cannotLoadMachineSettings (const CMachine &machine,
                                                      bool strict /* = true */,
                                                      QWidget *parent /* = 0 */)
 {
-    COMErrorInfo errInfo = machine.errorInfo();
-    if (!strict && !errInfo.isBasicAvailable())
+    COMResult res (machine);
+    if (!strict && !res.errorInfo().isBasicAvailable())
         return;
 
     message (parent ? parent : mainWindowShown(), Error,
              tr ("Failed to load the settings of the virtual machine <b>%1</b>.")
                  .arg (machine.GetName()),
-             formatErrorInfo (errInfo));
+             formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotStartMachine (const CConsole &console)
 {
-    // below, we use CConsole (console) to preserve current error info
-    // for formatErrorInfo()
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(), Error,
         tr ("Failed to start the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console)
-    );
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotStartMachine (const CProgress &progress)
@@ -603,44 +600,35 @@ void VBoxProblemReporter::cannotStartMachine (const CProgress &progress)
 
 void VBoxProblemReporter::cannotPauseMachine (const CConsole &console)
 {
-    /* below, we use CConsole (console) to preserve current error info
-     * for formatErrorInfo() */
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(), Error,
         tr ("Failed to pause the execution of the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console)
-    );
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotResumeMachine (const CConsole &console)
 {
-    /* below, we use CConsole (console) to preserve current error info
-     * for formatErrorInfo() */
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(),  Error,
         tr ("Failed to resume the execution of the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console)
-    );
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotSaveMachineState (const CConsole &console)
 {
-    // below, we use CConsole (console) to preserve current error info
-    // for formatErrorInfo()
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(), Error,
         tr ("Failed to save the state of the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console)
-    );
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotSaveMachineState (const CProgress &progress)
@@ -660,16 +648,13 @@ void VBoxProblemReporter::cannotSaveMachineState (const CProgress &progress)
 
 void VBoxProblemReporter::cannotTakeSnapshot (const CConsole &console)
 {
-    // below, we use CConsole (console) to preserve current error info
-    // for formatErrorInfo()
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(), Error,
         tr ("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console)
-    );
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotTakeSnapshot (const CProgress &progress)
@@ -689,45 +674,36 @@ void VBoxProblemReporter::cannotTakeSnapshot (const CProgress &progress)
 
 void VBoxProblemReporter::cannotStopMachine (const CConsole &console)
 {
-    // below, we use CConsole (console) to preserve current error info
-    // for formatErrorInfo()
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(), Error,
         tr ("Failed to stop the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console)
-    );
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotDeleteMachine (const CVirtualBox &vbox,
                                                const CMachine &machine)
 {
-    // below, we use CMachine (machine) to preserve current error info
-    // for formatErrorInfo()
+    /* preserve the current error info before calling the object again */
+    COMResult res (machine);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(), Error,
         tr ("Failed to remove the virtual machine <b>%1</b>.")
-            .arg (CMachine (machine).GetName()),
-        !vbox.isOk() ? formatErrorInfo (vbox) : formatErrorInfo (machine)
-    );
+            .arg (machine.GetName()),
+        !vbox.isOk() ? formatErrorInfo (vbox) : formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotDiscardSavedState (const CConsole &console)
 {
-    // below, we use CConsole (console) to preserve current error info
-    // for formatErrorInfo()
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
 
-    message (
-        mainWindowShown(),
-        Error,
+    message (mainWindowShown(), Error,
         tr ("Failed to discard the saved state of the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console)
-    );
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotDiscardSnapshot (const CConsole &console,
@@ -1118,28 +1094,28 @@ void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
                                                  const QString &device)
 {
     /* preserve the current error info before calling the object again */
-    COMErrorInfo errInfo = console.errorInfo();
+    COMResult res (console);
 
     message (&vboxGlobal().consoleWnd(), Error,
         tr ("Failed to attach the USB device <b>%1</b> "
             "to the virtual machine <b>%2</b>.")
             .arg (device)
             .arg (console.GetMachine().GetName()),
-        formatErrorInfo (errInfo));
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
                                                  const QString &device)
 {
     /* preserve the current error info before calling the object again */
-    COMErrorInfo errInfo = console.errorInfo();
+    COMResult res (console);
 
     message (&vboxGlobal().consoleWnd(), Error,
         tr ("Failed to detach the USB device <b>%1</b> "
             "from the virtual machine <b>%2</b>.")
             .arg (device)
             .arg (console.GetMachine().GetName()),
-        formatErrorInfo (errInfo));
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
@@ -1148,7 +1124,7 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
                                                     const QString  &aPath)
 {
     /* preserve the current error info before calling the object again */
-    COMErrorInfo errInfo = aMachine.errorInfo();
+    COMResult res (aMachine);
 
     message (aParent, Error,
              tr ("Failed to create a shared folder <b>%1</b> "
@@ -1157,7 +1133,7 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
                  .arg (aName)
                  .arg (aPath)
                  .arg (aMachine.GetName()),
-             formatErrorInfo (errInfo));
+             formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
@@ -1166,7 +1142,7 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
                                                     const QString  &aPath)
 {
     /* preserve the current error info before calling the object again */
-    COMErrorInfo errInfo = aMachine.errorInfo();
+    COMResult res (aMachine);
 
     message (aParent, Error,
              tr ("Failed to remove the shared folder <b>%1</b> "
@@ -1175,7 +1151,7 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
                  .arg (aName)
                  .arg (aPath)
                  .arg (aMachine.GetName()),
-             formatErrorInfo (errInfo));
+             formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
@@ -1184,7 +1160,7 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
                                                     const QString  &aPath)
 {
     /* preserve the current error info before calling the object again */
-    COMErrorInfo errInfo = aConsole.errorInfo();
+    COMResult res (aConsole);
 
     message (aParent, Error,
              tr ("Failed to create a shared folder <b>%1</b> "
@@ -1193,7 +1169,7 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
                  .arg (aName)
                  .arg (aPath)
                  .arg (aConsole.GetMachine().GetName()),
-             formatErrorInfo (errInfo));
+             formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
@@ -1202,7 +1178,7 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
                                                     const QString  &aPath)
 {
     /* preserve the current error info before calling the object again */
-    COMErrorInfo errInfo = aConsole.errorInfo();
+    COMResult res (aConsole);
 
     message (aParent, Error,
              tr ("Failed to remove the shared folder <b>%1</b> "
@@ -1211,7 +1187,7 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
                  .arg (aName)
                  .arg (aPath)
                  .arg (aConsole.GetMachine().GetName()),
-             formatErrorInfo (errInfo));
+             formatErrorInfo (res));
 }
 
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
