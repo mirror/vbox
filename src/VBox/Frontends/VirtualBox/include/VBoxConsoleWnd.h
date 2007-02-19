@@ -135,6 +135,7 @@ private slots:
     void captureFloppy (int id);
     void captureDVD (int id);
     void switchUSB (int id);
+    void activateSFMenu();
 
     void showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e);
 
@@ -197,6 +198,7 @@ private:
     QPopupMenu *devicesMenu;
     QPopupMenu *devicesMountFloppyMenu;
     QPopupMenu *devicesMountDVDMenu;
+    QPopupMenu *devicesSharedFolders;
     VBoxUSBMenu *devicesUSBMenu;
     VBoxSwitchMenu *devicesVRDPMenu;
 
@@ -230,6 +232,7 @@ private:
     QIStateIndicator *mouse_state, *hostkey_state;
     QIStateIndicator *autoresize_state;
     QIStateIndicator *vrdp_state;
+    QIStateIndicator *sf_state;
     QHBox *hostkey_hbox;
     QLabel *hostkey_name;
 

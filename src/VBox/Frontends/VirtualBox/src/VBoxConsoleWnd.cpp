@@ -316,6 +316,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* two dynamic submenus */
     devicesMountFloppyMenu = new QPopupMenu (devicesMenu, "devicesMountFloppyMenu");
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
+
+    devicesSharedFolders = new QPopupMenu (devicesMenu, "devicesSharedFolders");
+    devicesSharedFolders->insertItem (tr ("Shared Folders"));
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction,
                                           tr ("Remote Desktop (RDP) Server",
@@ -404,7 +407,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vrdp_state = new QIStateIndicator (0, indicatorBox, "vrdp_state", WNoAutoErase);
     vrdp_state->setStateIcon (0, QPixmap::fromMimeSource ("vrdp_disabled_16px.png"));
     vrdp_state->setStateIcon (1, QPixmap::fromMimeSource ("vrdp_16px.png"));
-
+    /* shared folders state */
+    sf_state = new QIStateIndicator (0, indicatorBox, "sf_state", WNoAutoErase);
+    sf_state->setStateIcon (0, QPixmap::fromMimeSource ("select_file_16px.png"));
+    sf_state->setStateIcon (1, QPixmap::fromMimeSource ("select_file_dis_16px.png"));
     /* auto resize state */
     autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", WNoAutoErase);
     autoresize_state->setStateIcon (0, QPixmap::fromMimeSource ("auto_resize_off_disabled_16px.png"));
@@ -474,6 +480,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
+    connect (devicesSharedFolders, SIGNAL(activated(int)), this, SLOT(activateSFMenu()));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -489,6 +496,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (usb_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (vrdp_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+    connect (sf_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (autoresize_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
@@ -661,7 +670,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         /* hide shared folders menu action & sf_separator & sf_status_icon */
         devicesSFDialogAction->setVisible (false);
         devicesMenu->setItemVisible (devicesSFMenuSeparatorId, false);
-        //vrdp_state->setHidden (true);
+        sf_state->setHidden (true);
     }
 
     /* start an idle timer that will update device lighths */
@@ -1252,6 +1261,8 @@ void VBoxConsoleWnd::languageChange()
             "This key, when pressed alone, toggles the the keyboard and mouse "
             "capture state. It can also be used in combination with other keys "
             "to quickly perform actions from the main menu." ));
+    QToolTip::add (sf_state,
+        tr ("Press right mouse button to open the dialog to operate on shared folders."));
 
     updateAppearanceOf (AllStuff);
 }
@@ -2025,6 +2036,15 @@ void VBoxConsoleWnd::switchUSB (int id)
     }
 }
 
+/**
+ *  Show Shared Folders list.
+ */
+void VBoxConsoleWnd::activateSFMenu()
+{
+    if (!devicesSFDialogAction->isOn())
+        devicesSFDialogAction->setOn (true);
+}
+
 void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e)
 {
     if (ind == cd_light)
@@ -2067,6 +2087,11 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     if (ind == mouse_state)
     {
         vmDisMouseIntegrMenu->exec (e->globalPos());
+    }
+    else
+    if (ind == sf_state)
+    {
+        devicesSharedFolders->exec (e->globalPos());
     }
 }
 
