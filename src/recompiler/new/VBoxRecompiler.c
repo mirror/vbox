@@ -252,7 +252,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
      * Assert sanity.
      */
     AssertReleaseMsg(sizeof(pVM->rem.padding) >= sizeof(pVM->rem.s), ("%#x >= %#x; sizeof(Env)=%#x\n", sizeof(pVM->rem.padding), sizeof(pVM->rem.s), sizeof(pVM->rem.s.Env)));
-    //AssertReleaseMsg(sizeof(pVM->rem.s.Env) <= REM_ENV_SIZE, ("%#x == %#x\n", sizeof(pVM->rem.s.Env), REM_ENV_SIZE));
+    AssertReleaseMsg(sizeof(pVM->rem.s.Env) <= REM_ENV_SIZE, ("%#x == %#x\n", sizeof(pVM->rem.s.Env), REM_ENV_SIZE));
     AssertReleaseMsg(!(RT_OFFSETOF(VM, rem) & 31), ("off=%#x\n", RT_OFFSETOF(VM, rem)));
     Assert(!testmath());
     ASSERT_STRUCT_TABLE(Misc);
@@ -283,6 +283,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
         return rc;
     }
     AssertMsg(MMR3PhysGetRamSize(pVM) == 0, ("Init order have changed! REM depends on notification about ALL physical memory registrations\n"));
+
+    /* ignore all notifications */
+    pVM->rem.s.fIgnoreAll = true;
 
     /*
      * Init the recompiler.
@@ -318,6 +321,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     pVM->rem.s.iHandlerMemType = cpu_register_io_memory(-1, g_apfnHandlerRead, g_apfnHandlerWrite, pVM);
     AssertReleaseMsg(pVM->rem.s.iHandlerMemType >= 0, ("pVM->rem.s.iHandlerMemType=%d\n", pVM->rem.s.iHandlerMemType));
     Log2(("REM: iMMIOMemType=%d iHandlerMemType=%d\n", pVM->rem.s.iMMIOMemType, pVM->rem.s.iHandlerMemType));
+
+    /* stop ignoring. */
+    pVM->rem.s.fIgnoreAll = false;
 
     /*
      * Register the saved state data unit.
@@ -421,19 +427,13 @@ REMR3DECL(int) REMR3Term(PVM pVM)
  */
 REMR3DECL(void) REMR3Reset(PVM pVM)
 {
-    pVM->rem.s.fIgnoreCR3Load = true;
-    pVM->rem.s.fIgnoreInvlPg = true;
-    pVM->rem.s.fIgnoreCpuMode = true;
-
     /*
      * Reset the REM cpu.
      */
+    pVM->rem.s.fIgnoreAll = true;
     cpu_reset(&pVM->rem.s.Env);
     pVM->rem.s.cInvalidatedPages = 0;
-
-    pVM->rem.s.fIgnoreCR3Load = false;
-    pVM->rem.s.fIgnoreInvlPg = false;
-    pVM->rem.s.fIgnoreCpuMode = false;
+    pVM->rem.s.fIgnoreAll = false;
 }
 
 
@@ -501,11 +501,9 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
     /*
      * Ignore all ignorable notifications.
-     * Not doing this will cause big trouble.
+     * (Not doing this will cause serious trouble.)
      */
-    pVM->rem.s.fIgnoreCR3Load = true;
-    pVM->rem.s.fIgnoreInvlPg = true;
-    pVM->rem.s.fIgnoreCpuMode = true;
+    pVM->rem.s.fIgnoreAll = true;
 
     /*
      * Load the required CPU Env bits.
@@ -575,9 +573,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Stop ignoring ignornable notifications.
      */
-    pVM->rem.s.fIgnoreCpuMode = false;
-    pVM->rem.s.fIgnoreInvlPg = false;
-    pVM->rem.s.fIgnoreCR3Load = false;
+    pVM->rem.s.fIgnoreAll = false;
 
     return VINF_SUCCESS;
 }
@@ -1336,9 +1332,10 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
      * When we're replaying invlpg instructions or restoring a saved
      * state we disable this path.
      */
-    if (pVM->rem.s.fIgnoreInvlPg)
+    if (pVM->rem.s.fIgnoreInvlPg || pVM->rem.s.fIgnoreAll)
         return;
     Log(("remR3FlushPage: GCPtr=%VGv\n", GCPtr));
+    Assert(pVM->rem.s.fInREM);
 
     //RAWEx_ProfileStop(env, STATS_QEMU_TOTAL);
 
@@ -1370,6 +1367,9 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 void remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int prot, int is_user)
 {
     target_ulong phys_addr, virt_addr, addend;
+    if (env->pVM->rem.s.fIgnoreSetPage || env->pVM->rem.s.fIgnoreAll)
+        return;
+    Assert(env->pVM->rem.s.fInREM || env->pVM->rem.s.fInStateSync);
 
     if(!is_user && !(env->state & CPU_RAW_RING0))
     {
@@ -1471,6 +1471,7 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int p
  */
 void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
 {
+    Assert(env->pVM->rem.s.fInREM);
     if (     (env->cr[0] & X86_CR0_PG)                      /* paging must be enabled */
         &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
         &&   (((env->hflags >> HF_CPL_SHIFT) & 3) == 0)     /* supervisor mode only */
@@ -1494,8 +1495,9 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
      * When we're replaying invlpg instructions or restoring a saved
      * state we disable this path.
      */
-    if (pVM->rem.s.fIgnoreCR3Load)
+    if (pVM->rem.s.fIgnoreCR3Load || pVM->rem.s.fIgnoreAll)
         return;
+    Assert(pVM->rem.s.fInREM);
 
     /*
      * The caller doesn't check cr4, so we have to do that for ourselves.
@@ -1533,8 +1535,9 @@ void remR3ChangeCpuMode(CPUState *env)
      * When we're replaying loads or restoring a saved
      * state this path is disabled.
      */
-    if (pVM->rem.s.fIgnoreCpuMode)
+    if (pVM->rem.s.fIgnoreCpuMode || pVM->rem.s.fIgnoreAll)
         return;
+    Assert(pVM->rem.s.fInREM);
 
     /*
      * Update the control registers before calling PGMR3ChangeMode()
@@ -1676,6 +1679,8 @@ REMR3DECL(int) REMR3State(PVM pVM)
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
     register const CPUMCTX *pCtx = pVM->rem.s.pCtx;
     register unsigned fFlags;
+
+    pVM->rem.s.fInStateSync = true;
 
     /*
      * Copy the registers which requires no special handling.
@@ -2075,6 +2080,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
      * We're now in REM mode.
      */
     pVM->rem.s.fInREM = true;
+    pVM->rem.s.fInStateSync = false;
     pVM->rem.s.cCanExecuteRaw = 0;
     STAM_PROFILE_STOP(&pVM->rem.s.StatsState, a);
     Log2(("REMR3State: returns VINF_SUCCESS\n"));
@@ -2624,9 +2630,14 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     /*
      * Register the ram.
      */
+    Assert(!pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = true;
+
     AssertRelease(phys_ram_base);
     cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvRam - (uintptr_t)phys_ram_base)
                                              | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
+    Assert(pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = false;
 }
 
 
@@ -2655,9 +2666,15 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     /*
      * Register the rom.
      */
+    Assert(!pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = true;
+
     AssertRelease(phys_ram_base);
     cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvCopy - (uintptr_t)phys_ram_base) | IO_MEM_ROM);
     Log2(("%.64Vhxd\n", (char *)pvCopy + cb - 64));
+
+    Assert(pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = false;
 }
 
 
@@ -2683,7 +2700,13 @@ REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
     /*
      * Unassigning the memory.
      */
+    Assert(!pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = true;
+
     cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+
+    Assert(pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = false;
 }
 
 
@@ -2707,18 +2730,19 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
 
-    bool fIgnoreCR3Load = pVM->rem.s.fIgnoreCR3Load;
-    pVM->rem.s.fIgnoreCR3Load = true;
-
     if (pVM->rem.s.cHandlerNotifications)
         REMR3ReplayHandlerNotifications(pVM);
+
+    Assert(!pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = true;
 
     if (enmType == PGMPHYSHANDLERTYPE_MMIO)
         cpu_register_physical_memory(GCPhys, cb, pVM->rem.s.iMMIOMemType);
     else if (fHasHCHandler)
         cpu_register_physical_memory(GCPhys, cb, pVM->rem.s.iHandlerMemType);
 
-    pVM->rem.s.fIgnoreCR3Load = fIgnoreCR3Load;
+    Assert(pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = false;
 }
 
 
@@ -2738,11 +2762,11 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
              enmType, GCPhys, cb, fHasHCHandler, pvHCPtr, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
 
-    bool fIgnoreCR3Load = pVM->rem.s.fIgnoreCR3Load;
-    pVM->rem.s.fIgnoreCR3Load = true;
-
     if (pVM->rem.s.cHandlerNotifications)
         REMR3ReplayHandlerNotifications(pVM);
+
+    Assert(!pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = true;
 
     if (enmType == PGMPHYSHANDLERTYPE_MMIO)
         cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
@@ -2763,7 +2787,8 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
         }
     }
 
-    pVM->rem.s.fIgnoreCR3Load = fIgnoreCR3Load;
+    Assert(pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = false;
 }
 
 
@@ -2785,14 +2810,14 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
 
-    bool fIgnoreCR3Load = pVM->rem.s.fIgnoreCR3Load;
-    pVM->rem.s.fIgnoreCR3Load = true;
-
     if (pVM->rem.s.cHandlerNotifications)
         REMR3ReplayHandlerNotifications(pVM);
 
     if (fHasHCHandler)
     {
+        Assert(!pVM->rem.s.fIgnoreAll);
+        pVM->rem.s.fIgnoreAll = true;
+
         /*
          * Reset the old page.
          */
@@ -2814,9 +2839,10 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
         Assert(RT_ALIGN_T(GCPhysNew, PAGE_SIZE, RTGCPHYS) == GCPhysNew);
         Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
         cpu_register_physical_memory(GCPhysNew, cb, pVM->rem.s.iHandlerMemType);
-    }
 
-    pVM->rem.s.fIgnoreCR3Load = fIgnoreCR3Load;
+        Assert(pVM->rem.s.fIgnoreAll);
+        pVM->rem.s.fIgnoreAll = false;
+    }
 }
 
 

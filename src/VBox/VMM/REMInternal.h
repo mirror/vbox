@@ -157,13 +157,20 @@ typedef struct REM
     /** In REM mode.
      * I.e. the correct CPU state and some other bits are with REM. */
     bool                    fInREM;
+    /** In REMR3State. */
+    bool                    fInStateSync;
 
+    /** Ignore all that can be ignored. */
+    bool                    fIgnoreAll;
     /** Ignore CR3 load notifications from the REM. */
     bool                    fIgnoreCR3Load;
     /** Ignore invlpg notifications from the REM. */
     bool                    fIgnoreInvlPg;
     /** Ignore CR0, CR4 and EFER load. */
     bool                    fIgnoreCpuMode;
+    /** Ignore set page. */
+    bool                    fIgnoreSetPage;
+
     /** Number of times REMR3CanExecuteRaw has been called.
      * It is used to prevent rescheduling on the first call. */
     RTUINT                  cCanExecuteRaw;
@@ -171,8 +178,8 @@ typedef struct REM
     /** Pending interrupt (~0 -> nothing). */
     RTUINT                  u32PendingInterrupt;
 
-#if HC_ARCH_BITS == 32
-    /** Padding for MS / GC alignment difference. */
+#if HC_ARCH_BITS == 64
+    /** Alignment padding. */
     uint32_t                u32Padding;
 #endif 
     /** Number of recorded invlpg instructions. */
@@ -185,7 +192,8 @@ typedef struct REM
     RTUINT                  padding0; /**< Padding. */
     /** Array of recorded handler noticications.
      * These are replayed when entering REM. */
-    REMHANDLERNOTIFICATION  aHandlerNotifications[32];
+//    REMHANDLERNOTIFICATION  aHandlerNotifications[32];
+    REMHANDLERNOTIFICATION  aHandlerNotifications[12];
 
     /** Pointer to an array of hc virt to gc phys records. */
     HCPTRTYPE(PREMCHUNKINFO) paHCVirtToGCPhys;
@@ -227,7 +235,7 @@ typedef struct REM
 
 #if HC_ARCH_BITS != 32
     /** Padding the CPUX86State structure to 32 byte. */
-    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 0 : 6];
+    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 0 : 4];
 #endif
 
 #define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6440 : 0xb4a0)
