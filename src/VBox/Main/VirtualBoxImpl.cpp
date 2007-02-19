@@ -2261,11 +2261,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
 
         RTPROCESS pid = NIL_RTPROCESS;
 
-        /// @todo (r=dmik) running the process as privileged on Vista doesn't
-        //  really help to create TAP interfaces there (they can be created,
-        //  but cannot be used). Therefore, d->privileged is ignored for now
-        //  to avoid the annoying Run As dialog box.
-#if 0
+        /// @todo avoid annoying runas dialog on Win < Vista
         if (d->privileged)
         {
             /* Attempt to start a privileged process using the Run As dialog */
@@ -2302,7 +2298,6 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
             }
         }
         else
-#endif
         {
             const char *args[] = { exePath, "/Helper", client.name(), 0 };
             vrc = RTProcCreate (exePath, args, NULL, 0, &pid);
