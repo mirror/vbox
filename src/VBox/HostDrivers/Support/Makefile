@@ -72,6 +72,7 @@ EXPORT_FILE_PAIRS = \
 	include/internal/thread.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/thread.h \
 	linux/SUPDrv-linux.c=$(VBOX_PATH_SUPPORT)/linux/SUPDrv-linux.c \
 	Makefile=$(VBOX_PATH_SUPPORT)/linux/Makefile \
+	build_in_tmp=$(VBOX_PATH_SUPPORT)/linux/build_in_tmp \
 	alloc/heapsimple.c=$(PATH_ROOT)/src/VBox/Runtime/alloc/heapsimple.cpp \
 	r0drv/alloc-r0drv.c=$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.cpp \
 	r0drv/alloc-r0drv.h=$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.h \
