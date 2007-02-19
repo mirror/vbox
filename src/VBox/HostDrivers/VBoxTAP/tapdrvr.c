@@ -49,6 +49,17 @@
 #define ALSO_DBGPRINT      1
 #define DEBUGP_AT_DISPATCH 0
 
+//========================================================
+// EXPERIMENTAL -- Configure TAP device object to be
+// accessible from non-administrative accounts, based
+// on an advanced properties setting.
+//
+// Duplicates the functionality of OpenVPN's
+// --allow-nonadmin directive.
+//========================================================
+#define ENABLE_NONADMIN 1         // JYFIXME
+
+
 #include <ndis.h>
 #include <ntstrsafe.h>
 
@@ -276,7 +287,13 @@ NDIS_STATUS AdapterCreate
   NDIS_MEDIUM l_PreferredMedium = NdisMedium802_3; // Ethernet
   BOOLEAN l_MacFromRegistry = FALSE;
   UINT l_Index;
+#ifndef VBOX
   NDIS_STATUS status;
+#endif
+
+#if ENABLE_NONADMIN
+  BOOLEAN enable_non_admin = FALSE;
+#endif
 
   //====================================
   // Make sure adapter type is supported
@@ -459,6 +476,25 @@ NDIS_STATUS AdapterCreate
 	    }
 	}
 
+#if ENABLE_NONADMIN
+	/* Read AllowNonAdmin setting from registry */
+	{
+	  NDIS_STRING key = NDIS_STRING_CONST("AllowNonAdmin");
+	  NdisReadConfiguration (&status, &parm, configHandle,
+				 &key, NdisParameterInteger);
+	  if (status == NDIS_STATUS_SUCCESS)
+	    {
+	      if (parm->ParameterType == NdisParameterInteger)
+		{
+		  if (parm->ParameterData.IntegerData)
+		    {
+			enable_non_admin = TRUE;
+		    }
+		}
+	    }
+	}
+#endif
+
 	/* Read optional MAC setting from registry */
 	{
 	  NDIS_STRING key = NDIS_STRING_CONST("MAC");
@@ -526,6 +562,11 @@ NDIS_STATUS AdapterCreate
     }
 
   l_Adapter->m_InterfaceIsRunning = TRUE;
+
+#if ENABLE_NONADMIN
+  if (enable_non_admin)
+    AllowNonAdmin (&l_Adapter->m_Extension);
+#endif
 
   return NDIS_STATUS_SUCCESS;
 }
@@ -940,7 +981,9 @@ NDIS_STATUS AdapterQuery
   TapAdapterQuery l_Query, *l_QueryPtr = &l_Query;
   NDIS_STATUS l_Status = NDIS_STATUS_SUCCESS;
   UINT l_QueryLength = 4;
+#ifndef VBOX
   BOOLEAN lock_succeeded;
+#endif
 
   NdisZeroMemory (&l_Query, sizeof (l_Query));
 
@@ -1184,7 +1227,9 @@ NDIS_STATUS AdapterModify
   TapAdapterQueryPointer l_Query = (TapAdapterQueryPointer) p_Buffer;
   TapAdapterPointer l_Adapter = (TapAdapterPointer) p_AdapterContext;
   NDIS_STATUS l_Status = NDIS_STATUS_INVALID_OID;
+#ifndef VBOX
   ULONG l_Long;
+#endif
 
   switch (p_OID)
     {
@@ -1602,7 +1647,9 @@ TapDeviceHook (IN PDEVICE_OBJECT p_DeviceObject, IN PIRP p_IRP)
   TapAdapterPointer l_Adapter = LookupAdapterInInstanceList (p_DeviceObject);
   PIO_STACK_LOCATION l_IrpSp;
   NTSTATUS l_Status = STATUS_SUCCESS;
+#ifndef VBOX
   BOOLEAN accessible;
+#endif
 
   l_IrpSp = IoGetCurrentIrpStackLocation (p_IRP);
 
@@ -2664,6 +2711,83 @@ VOID ResetTapAdapterState (TapAdapterPointer p_Adapter)
   p_Adapter->m_dhcp_bad_requests = 0;
   NdisZeroMemory (p_Adapter->m_dhcp_server_mac, sizeof (MACADDR));
 }
+
+#if ENABLE_NONADMIN
+
+//===================================================================
+// Set TAP device handle to be accessible without admin privileges.
+//===================================================================
+VOID AllowNonAdmin (TapExtensionPointer p_Extension)
+{
+  NTSTATUS stat;
+  SECURITY_DESCRIPTOR sd;
+  OBJECT_ATTRIBUTES oa;
+  IO_STATUS_BLOCK isb;
+  HANDLE hand = NULL;
+
+  NdisZeroMemory (&sd, sizeof (sd));
+  NdisZeroMemory (&oa, sizeof (oa));
+  NdisZeroMemory (&isb, sizeof (isb));
+
+  if (!p_Extension->m_CreatedUnicodeLinkName)
+    {
+      DEBUGP (("[TAP] AllowNonAdmin: UnicodeLinkName is uninitialized\n"));
+      NOTE_ERROR ();
+      return;
+    }
+
+  stat = RtlCreateSecurityDescriptor (&sd, SECURITY_DESCRIPTOR_REVISION);
+  if (stat != STATUS_SUCCESS)
+    {
+      DEBUGP (("[TAP] AllowNonAdmin: RtlCreateSecurityDescriptor failed\n"));
+      NOTE_ERROR ();
+      return;
+    }
+
+  InitializeObjectAttributes (
+    &oa,
+    &p_Extension->m_UnicodeLinkName,
+    OBJ_KERNEL_HANDLE,
+    NULL,
+    NULL
+    );
+
+  stat = ZwOpenFile (
+    &hand,
+    WRITE_DAC,
+    &oa,
+    &isb,
+    0,
+    0
+    );
+  if (stat != STATUS_SUCCESS)
+    {
+      DEBUGP (("[TAP] AllowNonAdmin: ZwOpenFile failed, status=0x%08x\n", (unsigned int)stat));
+      NOTE_ERROR ();
+      return;
+    }
+
+  stat = ZwSetSecurityObject (hand, DACL_SECURITY_INFORMATION, &sd);
+  if (stat != STATUS_SUCCESS)
+    {
+      DEBUGP (("[TAP] AllowNonAdmin: ZwSetSecurityObject failed\n"));
+      NOTE_ERROR ();
+      return;
+    }
+
+  stat = ZwClose (hand);
+  if (stat != STATUS_SUCCESS)
+    {
+      DEBUGP (("[TAP] AllowNonAdmin: ZwClose failed\n"));
+      NOTE_ERROR ();
+      return;
+    }
+
+  DEBUGP (("[TAP] AllowNonAdmin: SUCCEEDED\n"));
+}
+
+#endif
+
 //======================================================================
 //                                    End of Source
 //======================================================================

@@ -184,4 +184,23 @@ VOID CheckIfDhcpAndPointToPointMode
 
 VOID HookDispatchFunctions();
 
+#if ENABLE_NONADMIN
+
+typedef struct _SECURITY_DESCRIPTOR {
+  unsigned char opaque[20];
+} SECURITY_DESCRIPTOR;
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+ZwSetSecurityObject (
+  IN HANDLE  Handle,
+  IN SECURITY_INFORMATION  SecurityInformation,
+  IN PSECURITY_DESCRIPTOR  SecurityDescriptor);
+
+VOID AllowNonAdmin (TapExtensionPointer p_Extension);
+
+#endif
+
+
 #endif

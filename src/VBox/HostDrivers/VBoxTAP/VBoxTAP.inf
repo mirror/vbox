@@ -25,7 +25,7 @@
 
 ; This version number should match the version
 ; number given in SOURCES.
-   DriverVer=08/31/2006,8.00.00.0004
+   DriverVer=02/19/2007,8.00.00.0005
 
 [Strings]
 ; Note; there are hardcoded checks for these strings!!
@@ -72,22 +72,29 @@
    HKR, ,               ProductName,  0, "%DeviceDescription%"
 
 [VBoxTAP.params.reg]
-   HKR, Ndi\params\MTU,                ParamDesc, 0, "MTU"
-   HKR, Ndi\params\MTU,                Type,      0, "int"
-   HKR, Ndi\params\MTU,                Default,   0, "1500"
-   HKR, Ndi\params\MTU,                Optional,  0, "0"
-   HKR, Ndi\params\MTU,                Min,       0, "100"
-   HKR, Ndi\params\MTU,                Max,       0, "1500"
-   HKR, Ndi\params\MTU,                Step,      0, "1"
-   HKR, Ndi\params\MediaStatus,        ParamDesc, 0, "Media Status"
-   HKR, Ndi\params\MediaStatus,        Type,      0, "enum"
-   HKR, Ndi\params\MediaStatus,        Default,   0, "0"
-   HKR, Ndi\params\MediaStatus,        Optional,  0, "0"
-   HKR, Ndi\params\MediaStatus\enum,   "0",       0, "Application Controlled"
-   HKR, Ndi\params\MediaStatus\enum,   "1",       0, "Always Connected"
-   HKR, Ndi\params\MAC,                ParamDesc, 0, "MAC Address"
-   HKR, Ndi\params\MAC,                Type,      0, "edit"
-   HKR, Ndi\params\MAC,                Optional,  0, "1"
+   HKR, Ndi\params\MTU,                  ParamDesc, 0, "MTU"
+   HKR, Ndi\params\MTU,                  Type,      0, "int"
+   HKR, Ndi\params\MTU,                  Default,   0, "1500"
+   HKR, Ndi\params\MTU,                  Optional,  0, "0"
+   HKR, Ndi\params\MTU,                  Min,       0, "100"
+   HKR, Ndi\params\MTU,                  Max,       0, "1500"
+   HKR, Ndi\params\MTU,                  Step,      0, "1"
+   HKR, Ndi\params\MediaStatus,          ParamDesc, 0, "Media Status"
+   HKR, Ndi\params\MediaStatus,          Type,      0, "enum"
+   HKR, Ndi\params\MediaStatus,          Default,   0, "0"
+   HKR, Ndi\params\MediaStatus,          Optional,  0, "0"
+   HKR, Ndi\params\MediaStatus\enum,     "0",       0, "Application Controlled"
+   HKR, Ndi\params\MediaStatus\enum,     "1",       0, "Always Connected"
+   HKR, Ndi\params\MAC,                  ParamDesc, 0, "MAC Address"
+   HKR, Ndi\params\MAC,                  Type,      0, "edit"
+   HKR, Ndi\params\MAC,                  Optional,  0, "1"
+   HKR, Ndi\params\AllowNonAdmin,        ParamDesc, 0, "Non-Admin Access"
+   HKR, Ndi\params\AllowNonAdmin,        Type,      0, "enum"
+   HKR, Ndi\params\AllowNonAdmin,        Default,   0, "1"
+   HKR, Ndi\params\AllowNonAdmin,        Optional,  0, "0"
+   HKR, Ndi\params\AllowNonAdmin\enum,   "0",       0, "Not Allowed"
+   HKR, Ndi\params\AllowNonAdmin\enum,   "1",       0, "Allowed"
+
 
 ;----------------------------------------------------------------
 ;                             Service Section
