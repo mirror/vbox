@@ -196,6 +196,11 @@ void     remR3PhysWriteU8(uint8_t *pbDstPhys, uint8_t val);
 void     remR3PhysWriteU16(uint8_t *pbDstPhys, uint16_t val);
 void     remR3PhysWriteU32(uint8_t *pbDstPhys, uint32_t val);
 void     remR3PhysWriteU64(uint8_t *pbDstPhys, uint64_t val);
+# ifdef PGM_DYNAMIC_RAM_ALLOC
+void    *remR3GCPhys2HCVirt(void *env, target_ulong addr);
+target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
+void     remR3GrowDynRange(unsigned long physaddr);
+# endif
 #endif
 
 static inline int ldub_p(void *ptr)
@@ -960,14 +965,16 @@ int cpu_inl(CPUState *env, int addr);
 #ifndef VBOX
 extern int phys_ram_size;
 extern int phys_ram_fd;
-#endif /* !VBOX */
+extern int phys_ram_size;
+#else /* VBOX */
 extern RTGCPHYS phys_ram_size;
-extern uint8_t *phys_ram_base;
-extern uint8_t *phys_ram_dirty;
-#ifdef VBOX
-/* This is required for bounds checking the phys_ram_dirty accesses. */
+/** This is required for bounds checking the phys_ram_dirty accesses. */
 extern uint32_t phys_ram_dirty_size;
 #endif /* VBOX */
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
+extern uint8_t *phys_ram_base;
+#endif
+extern uint8_t *phys_ram_dirty;
 
 /* physical memory access */
 #define TLB_INVALID_MASK   (1 << 3)
@@ -978,6 +985,9 @@ extern uint32_t phys_ram_dirty_size;
 #define IO_MEM_ROM         (1 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_UNASSIGNED  (2 << IO_MEM_SHIFT)
 #define IO_MEM_NOTDIRTY    (4 << IO_MEM_SHIFT) /* used internally, never use directly */
+#if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
+#define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
+#endif
 /* acts like a ROM when read and like a device when written. As an
    exception, the write memory callback gets the ram offset instead of
    the physical address */
