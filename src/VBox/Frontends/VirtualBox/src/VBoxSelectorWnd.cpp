@@ -41,6 +41,7 @@
 #include <qtabwidget.h>
 #include <qwidgetstack.h>
 #include <qbutton.h>
+#include <qprocess.h>
 
 #include <qlayout.h>
 #include <qvbox.h>
@@ -746,29 +747,6 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
         vmListBoxCurrentChanged (aDetails, aSnapshots);
 }
 
-#if defined (Q_WS_X11)
-/**
- * Start the kchmviewer application with the VBox help file.
- *
- * @param pvUser an array of strings which are the path to and the arguments for kchmviewer
- */
-DECLCALLBACK(int) showHelpContentsThread(RTTHREAD  /* ThreadSelf */, void *pvUser)
-{
-    char **papszArgs = reinterpret_cast<char **>(pvUser);
-    int rc;
-    RTPROCESS hProcess;
-
-    rc = RTProcCreate(papszArgs[0], papszArgs, 0, 0, &hProcess);
-    if (rc == VINF_SUCCESS)
-    {
-        RTPROCSTATUS ProcStatus;
-
-        return RTProcWait(hProcess, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus);
-    }
-    return rc;
-}
-#endif
-
 void VBoxSelectorWnd::showHelpContents()
 {
 #if defined (Q_WS_WIN32)
@@ -781,24 +759,11 @@ void VBoxSelectorWnd::showHelpContents()
     char szPathProg[RTPATH_MAX];
     if (RTPathProgram(szPathProg, sizeof(szPathProg)) == VINF_SUCCESS)
     {
-        const char szViewer[] = "/kchmviewer";
-        const char szHelpFile[] = "/VirtualBox.chm";
-        char szViewerPath[RTPATH_MAX], szFilePath[RTPATH_MAX];
-        char *papszArgs[3] = { szViewerPath, szFilePath, 0 };
-        RTTHREAD hThread;
-        int cPathLen;
-
-        cPathLen = strlen(szPathProg);
-        AssertReturn(cPathLen + sizeof(szHelpFile) < RTPATH_MAX, (void) 0);  /* is there a cleaner way? */
-        strcpy(szViewerPath, szPathProg);
-        strncpy(szViewerPath + cPathLen, szViewer, sizeof(szViewerPath) - cPathLen);
-        szViewerPath[sizeof(szViewerPath) - 1] = 0;
-        strcpy(szFilePath, szPathProg);
-        strncpy(szFilePath + cPathLen, szHelpFile, sizeof(szFilePath) - cPathLen);
-        szFilePath[sizeof(szFilePath) - 1] = 0;
-        /* For now we just start the process and do not worry about anything else. */
-        RTThreadCreate(&hThread, showHelpContentsThread, papszArgs, 0,
-                       RTTHREADTYPE_INFREQUENT_POLLER, 0, "HelpViewer");
+        QString kchmViewerName(QString (szPathProg) + "/kchmviewer");
+        QString kchmViewerArg (QString (szPathProg) + "/VirtualBox.chm");
+        QProcess kchmViewer(kchmViewerName);
+        kchmViewer.addArgument(kchmViewerArg);
+        kchmViewer.launch("");
     }
 # endif
 #endif
