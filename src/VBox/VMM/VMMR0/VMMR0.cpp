@@ -584,7 +584,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                 return VERR_INVALID_POINTER;
             if (!VALID_PTR(pVM))
                 return VERR_INVALID_POINTER;
-            if (pVM->pVMHC != pVM)
+            if (pVM->pVMR0 != pVM)
                 return VERR_INVALID_POINTER;
             if (!VALID_PTR(pVM->pSession))
                 return VERR_INVALID_POINTER;
