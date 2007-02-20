@@ -77,7 +77,7 @@ vboxmod-bin_SOURCES = \
 vboxmod-sh_INST    = bin/additions/src/vboxadd/
 vboxmod-sh_MODE    = a+rx,u+w
 vboxmod-sh_SOURCES = \
-	$(PATH_ROOT)/src/VBox/Additions/linux/installer/build_in_tmp=>build_in_tmp
+	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp=>build_in_tmp
 
 #
 # The module.
