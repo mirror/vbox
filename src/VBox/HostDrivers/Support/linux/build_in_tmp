@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# find a unique temp directory
+num=0
+while true; do
+  tmpdir="/tmp/vbox.$num"
+  if mkdir -m 0755 "$tmpdir" 2> /dev/null; then
+    break
+  fi
+  num=`expr $num + 1`
+  if  [ $num -gt 200 ]; then
+    echo "Could not find a valid tmp directory"
+    exit 1
+  fi
+done
+
+# copy
+cp -a ${0%/*}/* $tmpdir/
+
+# make, cleanup if success
+cd "$tmpdir"
+if make "$@"; then
+  rm -rf $tmpdir
+  exit 0
+fi
+
+# failure
+exit 1
