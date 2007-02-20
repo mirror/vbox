@@ -1402,6 +1402,8 @@ void VBoxGlobal::languageChange()
         tr ("NAT", "NetworkAttachmentType");
     networkAttachmentTypes [CEnums::HostInterfaceNetworkAttachment] =
         tr ("Host Interface", "NetworkAttachmentType");
+    networkAttachmentTypes [CEnums::InternalNetworkAttachment] =
+        tr ("Internal Network", "NetworkAttachmentType");
 
     USBDeviceStates [CEnums::USBDeviceNotSupported] =
         tr ("Not supported", "USBDeviceState");
