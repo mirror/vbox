@@ -35,15 +35,19 @@
     a 105-key keyboard are not yet handled.  See
     http://www.win.tue.nl/~aeb/linux/kbd/scancodes.html
     and the Xorg keyboard configuration files in /etc/X11/xkb for interesting information. */
-static int ExtKeySymToScanCode[21] =
+static int ExtKeySymToScanCode[37] =
 {
-    0x47 /* 97 non-KP-home */, 0x48 /* 98 non-KP-up */, 0x49 /* 99 non-KP-PgUp */,
-    0x4b /* 100 non-KP-left */, 0 /* 101 empty */, 0x4d /* 102 non-KP-right */,
-    0x4f /* 103 non-KP-end */, 0x50 /* 104 non-KP-down */, 0x51 /* 105 non-KP-PgDn */,
-    0x52 /* 106 non-KP-insert */, 0x53 /* 107 non-KP-del */, 0x1c /* 108 KP ENTER */,
-    0x1d /* 109 RCTRL */, 0 /* 110 pause */, 0 /* 111 PrtScn */, 0x35 /* 112 / (KP) */,
-    0x38 /* 113 R-ALT, */, 0 /* 114 break */, 0x5b /* 115 left-Windows */,
-    0x5c /* 116 right-Windows */, 0x5d /* 117 Windows-Menu */
+    0x147 /* 97 non-KP-home */, 0x148 /* 98 non-KP-up */, 0x149 /* 99 non-KP-PgUp */,
+    0x14b /* 100 non-KP-left */, 0 /* 101 empty */, 0x14d /* 102 non-KP-right */,
+    0x14f /* 103 non-KP-end */, 0x150 /* 104 non-KP-down */, 0x151 /* 105 non-KP-PgDn */,
+    0x152 /* 106 non-KP-insert */, 0x153 /* 107 non-KP-del */, 0x11c /* 108 KP ENTER */,
+    0x11d /* 109 RCTRL */, 0 /* 110 pause */, 0 /* 111 PrtScn */, 0x135 /* 112 / (KP) */,
+    0x138 /* 113 R-ALT */, 0 /* 114 break */, 0x15b /* 115 left-Windows */,
+    0x15c /* 116 right-Windows */, 0x15d /* 117 Windows-Menu */, 0 /* 118 */, 0 /* 119 */,
+    0 /* 120 */, 0xf1 /* 121 Korean Hangul to Latin */, 0xf2 /* 122 Korean Hangul to Hanja */,
+    0 /* 123 */, 0 /* 124 */, 0 /* 125 */, 0 /* 126 */, 0 /* 127 */, 0 /* 128 */,
+    0x79 /* 129 Japanese Henkan */, 0 /* 130 */, 0x7b /* 131 Japanese Muhenkan */, 0 /* 132 */,
+    0x7d /* 133 Japanese Yen */
 };
 
 static int keysyms_per_keycode;  /** Number of keyboard language layouts the host has */
@@ -81,12 +85,16 @@ void handleXKeyEvent(Display * /* dpy */, XEvent *event, WINEKEYBOARDINFO *wineK
         return;
     }
     /* Extended scancodes need to be looked up in a table. */
-    if ((uKeyCode >= 97) && (uKeyCode <= 117))
+    if ((uKeyCode >= 97) && (uKeyCode <= 133))
     {
-        wineKbdInfo->wScan = ExtKeySymToScanCode[uKeyCode - 97];
-        wineKbdInfo->dwFlags = 1;
+        wineKbdInfo->wScan = ExtKeySymToScanCode[uKeyCode - 97] & 255;
+        wineKbdInfo->dwFlags = ExtKeySymToScanCode[uKeyCode - 97] >> 8;
         return;
     }
+    if (uKeyCode == 208) /* Japanese Hiragana to Katakana */
+        wineKbdInfo->wScan = 0x70;
+    else if (uKeyCode == 211) /* Japanese backslash/underscore */
+        wineKbdInfo->wScan = 0x73;
     /* If we couldn't find a translation, we just return 0. */
     return;
 }
