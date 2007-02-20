@@ -37,6 +37,7 @@ EXPORTS
     REMR3ReplayInvalidatedPages
     REMR3ReplayHandlerNotifications
     REMR3NotifyPhysRamRegister
+    REMR3NotifyPhysRamChunkRegister
     REMR3NotifyPhysReserve
     REMR3NotifyPhysRomRegister
     REMR3NotifyHandlerPhysicalModify
