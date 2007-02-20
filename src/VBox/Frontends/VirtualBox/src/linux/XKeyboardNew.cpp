@@ -32,7 +32,8 @@
 *****************************************************************************/
 
 /** Lookup table to translate X keysyms of extended scancodes.  CTRL-PrtScn and keys not found on
-    a 105-key keyboard are not yet handled.  See
+    a 105-key keyboard are not yet handled.  Japanese and Korean keyboards should work but have
+    not been tested yet.  See
     http://www.win.tue.nl/~aeb/linux/kbd/scancodes.html
     and the Xorg keyboard configuration files in /etc/X11/xkb for interesting information. */
 static int ExtKeySymToScanCode[37] =
