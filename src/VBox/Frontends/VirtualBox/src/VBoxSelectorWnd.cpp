@@ -756,15 +756,10 @@ void VBoxSelectorWnd::showHelpContents()
               HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
 # ifndef VBOX_OSE
-    char szPathProg[RTPATH_MAX];
-    if (RTPathProgram(szPathProg, sizeof(szPathProg)) == VINF_SUCCESS)
-    {
-        QString kchmViewerName(QString (szPathProg) + "/kchmviewer");
-        QString kchmViewerArg (QString (szPathProg) + "/VirtualBox.chm");
-        QProcess kchmViewer(kchmViewerName);
-        kchmViewer.addArgument(kchmViewerArg);
-        kchmViewer.launch("");
-    }
+    QString fullProgPath = qApp->applicationDirPath();
+    QProcess kchmViewer (fullProgPath + "/kchmviewer");
+    kchmViewer.addArgument (fullProgPath + "/VirtualBox.chm");
+    kchmViewer.launch ("");
 # endif
 #endif
 }
