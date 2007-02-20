@@ -688,7 +688,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenArgs, sizeof(OpenArgs));
     if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to open/create the network '%s', cbRecv=%RU32, cbSend=%RU32. rc=%VRc\n",
+        AssertMsgFailed(("Failed to open/create the network '%s', cbRecv=%RU32, cbSend=%RU32. rc=%Vrc\n",
                          pThis->szNetwork, OpenArgs.cbRecv, OpenArgs.cbSend, rc));
         return rc;
     }
@@ -705,7 +705,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferArgs, sizeof(GetRing3BufferArgs));
     if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to get ring-3 buffer for the newly created interface to '%s'. rc=%VRc\n",
+        AssertMsgFailed(("Failed to get ring-3 buffer for the newly created interface to '%s'. rc=%Vrc\n",
                          pThis->szNetwork, rc));
         return rc;
     }
