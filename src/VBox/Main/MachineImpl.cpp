@@ -4588,6 +4588,8 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
 HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
                                bool aInformCallbacksAnyway /* = false */)
 {
+    LogFlowThisFuncEnter();
+
     /// @todo (dmik) I guess we should lock all our child objects here
     //  (such as mVRDPServer etc.) to ensure they are not changed
     //  until completely saved to disk and committed
@@ -4802,6 +4804,8 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
             mParent->onMachineDataChange (mData->mUuid);
     }
 
+    LogFlowThisFunc (("rc=%08X\n", rc));
+    LogFlowThisFuncLeave();
     return rc;
 }
 

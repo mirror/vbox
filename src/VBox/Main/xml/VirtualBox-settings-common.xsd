@@ -211,6 +211,11 @@
           <xsd:attribute name="password" type="xsd:token"/>
         </xsd:complexType>
       </xsd:element>
+      <xsd:element name="VMDKImage">
+        <xsd:complexType>
+          <xsd:attribute name="filePath" type="TLocalFile" use="required"/>
+        </xsd:complexType>
+      </xsd:element>
       <xsd:element name="PhysicalVolume">
         <xsd:complexType>
           <xsd:attribute name="path" type="TLocalFile" use="required"/>

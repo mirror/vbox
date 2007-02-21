@@ -1025,6 +1025,8 @@ void HardDisk::updatePaths (const char *aOldPath, const char *aNewPath)
 HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
                                 ComObjPtr <HardDisk> &hardDisk)
 {
+    LogFlowFunc (("aLocation=\"%ls\"\n", aLocation));
+
     AssertReturn (aVirtualBox, E_POINTER);
 
     /* null and empty strings are not allowed locations */
@@ -1039,7 +1041,7 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
 
     HardDiskStorageType_T order [2];
 
-    if (RTPathCompare (ext, "vmdk") == 0)
+    if (RTPathCompare (ext, ".vmdk") == 0)
     {
         order [0] = HardDiskStorageType_VMDKImage;
         order [1] = HardDiskStorageType_VirtualDiskImage;
@@ -1050,7 +1052,7 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
         order [1] = HardDiskStorageType_VMDKImage;
     }
 
-    for (size_t i = 0; i < ELEMENTS (order) && SUCCEEDED (rc); ++ i)
+    for (size_t i = 0; i < ELEMENTS (order); ++ i)
     {
         switch (order [i])
         {
@@ -1082,8 +1084,7 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
             }
             default:
             {
-                rc = E_FAIL;
-                ComAssertComRCBreak (E_FAIL, rc = rc);
+                ComAssertComRCRetRC (E_FAIL);
             }
         }
     }
@@ -2810,6 +2811,7 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox)
 
         /* we have to generate a new UUID */
         mId.create();
+        /* currently, all iSCSI hard disks are writethrough */
         mType = HardDiskType_WritethroughHardDisk;
         mRegistered = FALSE;
     }
@@ -3332,6 +3334,15 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         rc = loadSettings (aHDNode);
         CheckComRCBreakRC (rc);
 
+        if (mType != HardDiskType_WritethroughHardDisk)
+        {
+            rc = setError (E_FAIL,
+                tr ("Currently, non-Writethrough VMDK images are not "
+                    "allowed ('%ls')"),
+                toString().raw());
+            break;
+        }
+
         mState = Created;
         mRegistered = TRUE;
 
@@ -3362,7 +3373,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                           const BSTR aFilePath, BOOL aRegistered /* = FALSE */)
 {
-    LogFlowMember (("HVirtualDiskImage::init (aFilePath='%ls', aRegistered=%d)\n",
+    LogFlowMember (("HVMDKImage::init (aFilePath='%ls', aRegistered=%d)\n",
                     aFilePath, aRegistered));
 
     AssertReturn (aParent == NULL, E_FAIL);
@@ -3370,7 +3381,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
     AutoLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
-    mStorageType = HardDiskStorageType_VirtualDiskImage;
+    mStorageType = HardDiskStorageType_VMDKImage;
 
     HRESULT rc = S_OK;
 
@@ -3384,6 +3395,9 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
         rc = setFilePath (aFilePath);
         CheckComRCBreakRC (rc);
+
+        /* currently, all VMDK hard disks are writethrough */
+        mType = HardDiskType_WritethroughHardDisk;
 
         Assert (mId.isEmpty());
         
@@ -3465,7 +3479,7 @@ STDMETHODIMP HVMDKImage::COMSETTER(Description) (INPTR BSTR aDescription)
     return E_NOTIMPL;
 
 /// @todo (r=dmik) implement
-
+//
 //     if (mState >= Created)
 //     {
 //         int vrc = VDISetImageComment (Utf8Str (mFilePathFull), Utf8Str (aDescription));
@@ -3475,7 +3489,7 @@ STDMETHODIMP HVMDKImage::COMSETTER(Description) (INPTR BSTR aDescription)
 //                     "(%Vrc)"),
 //                 toString().raw(), vrc);
 //     }
-
+//
 //     mDescription = aDescription;
 //     return S_OK;
 }
@@ -3488,8 +3502,8 @@ STDMETHODIMP HVMDKImage::COMGETTER(Size) (ULONG64 *aSize)
     AutoLock alock (this);
     CHECK_READY();
 
-/// @todo (r=dmik) later
-
+/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
+//
 //     /* only a non-differencing image knows the logical size */
 //     if (isDifferencing())
 //         return root()->COMGETTER(Size) (aSize);
@@ -3598,26 +3612,34 @@ STDMETHODIMP HVMDKImage::DeleteImage()
     CHECK_READY();
     CHECK_BUSY_AND_READERS();
 
-    if (mRegistered)
-        return setError (E_ACCESSDENIED,
-             tr ("Cannot delete an image of the registered hard disk image '%ls"),
-             mFilePathFull.raw());
-    if (mState == NotCreated)
-        return setError (E_FAIL,
-             tr ("Hard disk image has been already deleted or never created"));
+    return E_NOTIMPL;
 
-    int vrc = RTFileDelete (Utf8Str (mFilePathFull));
-    if (VBOX_FAILURE (vrc))
-        return setError (E_FAIL, tr ("Could not delete the image file '%ls' (%Vrc)"),
-                         mFilePathFull.raw(), vrc);
-
-    mState = NotCreated;
-
-    /* reset the fields */
-    mSize = 0;
-    mActualSize = 0;
-
-    return S_OK;
+/// @todo (r=dmik) later
+// We will need to parse the file in order to delete all related delta and
+// sparse images etc. We may also want to obey the .vmdk.lck file
+// which is (as far as I understood) created when the VMware VM is
+// running or saved etc.
+//
+//     if (mRegistered)
+//         return setError (E_ACCESSDENIED,
+//              tr ("Cannot delete an image of the registered hard disk image '%ls"),
+//              mFilePathFull.raw());
+//     if (mState == NotCreated)
+//         return setError (E_FAIL,
+//              tr ("Hard disk image has been already deleted or never created"));
+//
+//     int vrc = RTFileDelete (Utf8Str (mFilePathFull));
+//     if (VBOX_FAILURE (vrc))
+//         return setError (E_FAIL, tr ("Could not delete the image file '%ls' (%Vrc)"),
+//                          mFilePathFull.raw(), vrc);
+//
+//     mState = NotCreated;
+//
+//     /* reset the fields */
+//     mSize = 0;
+//     mActualSize = 0;
+//
+//     return S_OK;
 }
 
 // public/protected methods for internal purposes only
@@ -3638,7 +3660,8 @@ HRESULT HVMDKImage::trySetRegistered (BOOL aRegistered)
             return setError (E_FAIL,
                 tr ("Image file '%ls' is not yet created for this hard disk"),
                 mFilePathFull.raw());
-/// @todo (r=dmik) later?
+
+/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
 //         if (isDifferencing())
 //             return setError (E_FAIL,
 //                 tr ("Hard disk '%ls' is differencing and cannot be unregistered "
@@ -3801,7 +3824,7 @@ HVMDKImage::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
     ComAssertMsgFailed (("Not implemented"));
     return E_NOTIMPL;
 
-/// @todo (r=dmik) later?
+/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
 //  Use code from HVirtualDiskImage::cloneToImage as an example.
 }
 
@@ -3821,7 +3844,7 @@ HVMDKImage::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
     ComAssertMsgFailed (("Not implemented"));
     return E_NOTIMPL;
 
-/// @todo (r=dmik) later?
+/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
 //  Use code from HVirtualDiskImage::createDiffImage as an example.
 }
 
@@ -3900,7 +3923,11 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
 
     do
     {
-/// @todo (r=dmik) implement
+        /// @todo remove when the code below is implemented
+        if (mId.isEmpty())
+            mId.create();
+
+/// @todo  implement
 //
 //         /* check the image file */
 //         Guid id, parentId;
@@ -4050,7 +4077,7 @@ HRESULT HVMDKImage::createImage (ULONG64 aSize, BOOL aDynamic,
     ComAssertMsgFailed (("Not implemented"));
     return E_NOTIMPL;
 
-/// @todo (r=dmik) later?
+/// @todo (r=dmik) later
 //  Use code from HVirtualDiskImage::createImage as an example.
 }
 
@@ -4060,6 +4087,6 @@ DECLCALLBACK(int) HVMDKImage::vdiTaskThread (RTTHREAD thread, void *pvUser)
     AssertMsgFailed (("Not implemented"));
     return VERR_GENERAL_FAILURE;
 
-/// @todo (r=dmik) later?
+/// @todo (r=dmik) later
 //  Use code from HVirtualDiskImage::vdiTaskThread as an example.
 }

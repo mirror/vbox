@@ -3491,6 +3491,15 @@ HRESULT VirtualBox::loadHardDisks (CFGNODE aNode)
                     break;
                 }
 
+                CFGLDRGetChildNode (hdNode, "VMDKImage", 0, &storageNode);
+                if (storageNode)
+                {
+                    ComObjPtr <HVMDKImage> vmdk;
+                    vmdk.createObject();
+                    rc = vmdk->init (this, NULL, hdNode, storageNode);
+                    break;
+                }
+
                 /// @todo (dmik) later
 //                CFGLDRGetChildNode (hdNode, "PhysicalVolume", 0, &storageNode);
 //                if (storageNode)
@@ -3498,8 +3507,8 @@ HRESULT VirtualBox::loadHardDisks (CFGNODE aNode)
 //                    break;
 //                }
 
-                  ComAssertMsgFailedBreak (("No valid hard disk storage node!\n"),
-                                           rc = E_FAIL);
+                ComAssertMsgFailedBreak (("No valid hard disk storage node!\n"),
+                                         rc = E_FAIL);
             }
             while (0);
 
@@ -3738,6 +3747,14 @@ HRESULT VirtualBox::saveHardDisks (CFGNODE aNode)
             case HardDiskStorageType_ISCSIHardDisk:
             {
                 CFGLDRAppendChildNode (hdNode, "ISCSIHardDisk", &storageNode);
+                ComAssertBreak (storageNode, rc = E_FAIL);
+                rc = hd->saveSettings (hdNode, storageNode);
+                break;
+            }
+
+            case HardDiskStorageType_VMDKImage:
+            {
+                CFGLDRAppendChildNode (hdNode, "VMDKImage", &storageNode);
                 ComAssertBreak (storageNode, rc = E_FAIL);
                 rc = hd->saveSettings (hdNode, storageNode);
                 break;
