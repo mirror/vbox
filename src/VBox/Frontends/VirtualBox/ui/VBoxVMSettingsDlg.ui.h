@@ -264,13 +264,29 @@ void VBoxVMSettingsDlg::init()
     whatsThisTimer = new QTimer (this);
     connect (whatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     whatsThisCandidate = NULL;
+
+    whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
+    VBoxVMSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
+
+    whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
+    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
+    whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
+    whatsThisLabel->setFrameShape (QLabel::Box);
+    whatsThisLabel->setFrameShadow (QLabel::Sunken);
+    whatsThisLabel->setMargin (7);
+    whatsThisLabel->setScaledContents (FALSE);
+    whatsThisLabel->setAlignment (int (QLabel::WordBreak |
+                                       QLabel::AlignJustify |
+                                       QLabel::AlignTop));
+
     whatsThisLabel->setTextFormat (Qt::RichText);
-    whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
-                                      6 /* seems that RichText adds some margin */ +
-                                      whatsThisLabel->fontMetrics().lineSpacing() * 3);
+    whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
+                                    6 /* seems that RichText adds some margin */ +
+                                    whatsThisLabel->fontMetrics().lineSpacing() * 3);
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
                                      6 /* seems that RichText adds some margin */ +
                                      whatsThisLabel->fontMetrics().width ('m') * 40);
+    connect (whatsThisLabel, SIGNAL (textChanged()), this, SLOT (processAdjustSize()));
 
     /*
      *  setup connections and set validation for pages
@@ -654,6 +670,14 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
     resize (minimumSize());
 
     VBoxGlobal::centerWidget (this, parentWidget());
+}
+
+void VBoxVMSettingsDlg::processAdjustSize()
+{
+    int newHeight = minimumSize().height();
+    int oldHeight = height();
+    if (newHeight > oldHeight)
+        resize (minimumSize());
 }
 
 void VBoxVMSettingsDlg::bootItemActivate (int row, int col, int /* button */,

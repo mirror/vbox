@@ -91,6 +91,7 @@ QIRichLabel::~QIRichLabel()
 
 void QIRichLabel::init()
 {
+   baseheight = 0;
    lpixmap = 0;
    lmovie = 0;
    lbuddy = 0;
@@ -106,13 +107,20 @@ void QIRichLabel::init()
 
    d = new QLabelPrivate;
 
-   copyAction = new QAction (this, "copyAction");
+   QAction *copyAction = new QAction (this, "copyAction");
    connect (copyAction, SIGNAL (activated()),
       this, SLOT (putToClipBoard()));
    copyAction->setMenuText (tr ("Copy to clipboard"));
 
    popupMenu = new QPopupMenu (this, "contextMenu");
    copyAction->addTo (popupMenu);
+}
+
+
+void QIRichLabel::setFixedHeight (int aHeight)
+{
+    baseheight = aHeight;
+    QFrame::setFixedHeight (baseheight);
 }
 
 
@@ -155,11 +163,15 @@ void QIRichLabel::setText (const QString &text)
       doc = new QSimpleRichText (compressText(0), font());
    }
 
-  // If there is QSimpleRichText:
-  if (useRichText)
-      setFocusPolicy (doc ? QWidget::StrongFocus : QWidget::NoFocus);
-
    updateLabel (osh);
+
+   if (baseheight == 0)
+       baseheight = heightForWidth (width());
+   if ((int)baseheight < heightForWidth (width()))
+       QFrame::setFixedHeight (heightForWidth (width()));
+   else
+       QFrame::setFixedHeight (baseheight);
+   emit textChanged();
 }
 
 
@@ -440,7 +452,8 @@ void QIRichLabel::keyPressEvent (QKeyEvent *aEvent)
 
 void QIRichLabel::contextMenuEvent (QContextMenuEvent *aEvent)
 {
-   popupMenu->popup(aEvent->globalPos());
+   if (hasFocus())
+      popupMenu->popup(aEvent->globalPos());
 }
 
 
@@ -547,10 +560,11 @@ void QIRichLabel::drawContents (QPainter *p)
          QToolTip::remove (this);
          QString filteredText = compressText();
          doc = new QSimpleRichText (filteredText, font());
-         doc->setWidth (p, cr.width());
+         /* focus indent */
+         int xo = 3;
+         doc->setWidth (p, cr.width() - 2*xo);
          int rh = doc->height();
          int yo = 0;
-         int xo = 3;
          if (align & AlignVCenter)
             yo = (cr.height()-rh)/2;
          else if (align & AlignBottom)
