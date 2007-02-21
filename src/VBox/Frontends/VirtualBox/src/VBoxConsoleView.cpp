@@ -843,7 +843,32 @@ bool VBoxConsoleView::event (QEvent *e)
                 QKeyEvent *ke = (QKeyEvent *) e;
                 if (hostkey_pressed)
                 {
-                    if (ke->key() == Key_F10)
+                    if (ke->key() >= Key_F1 && ke->key() <= Key_F12)
+                    {
+                        LONG combo [6];
+                        combo [0] = 0x1d; /* Ctrl down */
+                        combo [1] = 0x38; /* Alt  down */
+                        combo [4] = 0xb8; /* Alt  up   */
+                        combo [5] = 0x9d; /* Ctrl up   */
+                        if (ke->key() >= Key_F1 && ke->key() <= Key_F10)
+                        {
+                            combo [2] = 0x3b + (ke->key() - Key_F1); /* F1-F10 down */
+                            combo [3] = 0xbb + (ke->key() - Key_F1); /* F1-F10 up   */
+                        }
+                        /* some scan slice */
+                        else if (ke->key() >= Key_F11 && ke->key() <= Key_F12)
+                        {
+                            combo [2] = 0x57 + (ke->key() - Key_F11); /* F11-F12 down */
+                            combo [3] = 0xd7 + (ke->key() - Key_F11); /* F11-F12 up   */
+                        }
+                        else
+                            Assert (0);
+
+                        CKeyboard keyboard = cconsole.GetKeyboard();
+                        Assert (!keyboard.isNull());
+                        keyboard.PutScancodes (combo, 6);
+                    }
+                    else if (ke->key() == Key_Home)
                     {
                         mainwnd->menuBar()->setFocus();
                     }
