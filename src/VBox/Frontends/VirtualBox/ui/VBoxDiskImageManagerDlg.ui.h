@@ -398,6 +398,9 @@ QIRichLabel *VBoxDiskImageManagerDlg::createInfoString (const QString &name, QWi
     QLabel *nameLabel = new QLabel (name, root, "nameLabel");
     QIRichLabel *infoLabel = new QIRichLabel (root, "infoPane");
 
+    /* Setup focus policy <strong> default for info pane */
+    infoLabel->setFocusPolicy (QWidget::StrongFocus);
+
     /* prevent the name columns from being expanded */
     nameLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 

@@ -77,6 +77,7 @@ public:
    int          heightForWidth(int) const;
 
    void setFont( const QFont &f );
+   void setFixedHeight (int);
 
 public slots:
    virtual void setText( const QString &);
@@ -87,6 +88,9 @@ public slots:
    virtual void setNum( double );
    void         clear();
 
+protected slots:
+   void         putToClipBoard();
+
 protected:
    void         drawContents ( QPainter * );
    void         fontChange ( const QFont & );
@@ -95,8 +99,8 @@ protected:
    void         keyPressEvent ( QKeyEvent* );
    void         contextMenuEvent (QContextMenuEvent*);
 
-protected slots:
-   void         putToClipBoard();
+signals:
+   void         textChanged();
 
 private slots:
    void         acceleratorSlot();
@@ -115,13 +119,13 @@ private:
    QPixmap    *lpixmap;
    QPicture   *lpicture;
    QMovie     *lmovie;
-   QAction    *copyAction;
    QPopupMenu *popupMenu;
    QWidget    *lbuddy;
    ushort      align;
    short       extraMargin;
    uint        autoresize:1;
    uint        scaledcontents :1;
+   uint        baseheight;
    TextFormat  textformat;
    QAccel     *accel;
    QLabelPrivate *d;
