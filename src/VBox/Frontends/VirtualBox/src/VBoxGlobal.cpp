@@ -1199,6 +1199,8 @@ void VBoxGlobal::startEnumeratingMedia()
                             hd.GetAllAccessible() == TRUE ? VBoxMedia::Ok :
                             hd.isOk() ? VBoxMedia::Inaccessible :
                             VBoxMedia::Error;
+                        /* assign back to store error info if any */
+                        media.disk = hd;
                         if (media.status == VBoxMedia::Inaccessible)
                         {
                             QUuid machineId = hd.GetMachineId();
@@ -1220,6 +1222,8 @@ void VBoxGlobal::startEnumeratingMedia()
                             cd.GetAccessible() == TRUE ? VBoxMedia::Ok :
                             cd.isOk() ? VBoxMedia::Inaccessible :
                             VBoxMedia::Error;
+                        /* assign back to store error info if any */
+                        media.disk = cd;
                         QApplication::postEvent (target,
                             new VBoxEnumerateMediaEvent (media, index));
                         break;
@@ -1231,6 +1235,8 @@ void VBoxGlobal::startEnumeratingMedia()
                             fd.GetAccessible() == TRUE ? VBoxMedia::Ok :
                             fd.isOk() ? VBoxMedia::Inaccessible :
                             VBoxMedia::Error;
+                        /* assign back to store error info if any */
+                        media.disk = fd;
                         QApplication::postEvent (target,
                             new VBoxEnumerateMediaEvent (media, index));
                         break;
@@ -1369,6 +1375,8 @@ void VBoxGlobal::languageChange()
         tr ("Virtual Disk Image", "DiskStorageType");
     diskStorageTypes [CEnums::ISCSIHardDisk] =
         tr ("iSCSI", "DiskStorageType");
+    diskStorageTypes [CEnums::VMDKImage] =
+        tr ("VMDK Image", "DiskStorageType");
 
     vrdpAuthTypes [CEnums::VRDPAuthNull] =
         tr ("Null", "VRDPAuthType");
