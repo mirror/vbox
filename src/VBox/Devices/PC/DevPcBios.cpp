@@ -407,7 +407,18 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                     enmTranslation = PDMBIOSTRANSLATION_NONE;
                 }
                 else if (cCylinders <= 1024 && cHeads <= 16 && cSectors <= 63)
+                {
+                    /* Disk <= 512 MByte not needing LBA translation. */
                     enmTranslation = PDMBIOSTRANSLATION_NONE;
+                }
+                else if (cSectors != 63 || (cHeads != 16 && cHeads != 32 && cHeads != 64 && cHeads != 128 && cHeads != 255))
+                {
+                    /* Disk with strange geometry. Using LBA here can
+                     * break booting of the guest OS. Especially operating
+                     * systems from Microsoft are sensitive to BIOS CHS not
+                     * matching what the partition table says. */
+                    enmTranslation = PDMBIOSTRANSLATION_NONE;
+                }
                 else
                     enmTranslation = PDMBIOSTRANSLATION_LBA;
             }
@@ -747,7 +758,7 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, const cha
     int rc = CFGMR3QueryStringAlloc(pCfgHandle, pszParam, &psz);
     if (VBOX_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Configuration error: Querying \"%s\" as a string failed"), 
+                                   N_("Configuration error: Querying \"%s\" as a string failed"),
                                    pszParam);
     if (!strcmp(psz, "DVD") || !strcmp(psz, "CDROM"))
         *penmBoot = DEVPCBIOSBOOT_DVD;
@@ -938,7 +949,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               &g_abPcBiosBinary[g_cbPcBiosBinary - cb], "PC BIOS - 0xfffff");
     if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary, 
+    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary,
                               &g_abPcBiosBinary[0], "PC BIOS - 0xffffffff");
     if (VBOX_FAILURE(rc))
         return rc;
@@ -946,7 +957,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register the MMIO region for the BIOS Logo: 0x000d0000 to 0x000dffff (64k)
      */
-    rc = PDMDevHlpMMIORegister(pDevIns, 0x000d0000, 0x00010000, 0, 
+    rc = PDMDevHlpMMIORegister(pDevIns, 0x000d0000, 0x00010000, 0,
                                logoMMIOWrite, logoMMIORead, NULL, "PC BIOS - Logo Buffer");
     if (VBOX_FAILURE(rc))
         return rc;
