@@ -3660,8 +3660,9 @@ static int ataGuessDiskLCHS(ATADevState *s, uint32_t *pcCylinders, uint32_t *pcH
             cCHSHeads = iEndHead + 1;
             cCHSSectors = iEndSector;
             cCHSCylinders = s->cTotalSectors / (cCHSHeads * cCHSSectors);
-            if (cCHSCylinders >= 1 && cCHSCylinders <= 16383)
+            if (cCHSCylinders >= 1)
             {
+                cCHSCylinders = RT_MIN(cCHSCylinders, 16383);
                 *pcHeads = cCHSHeads;
                 *pcSectors = cCHSSectors;
                 *pcCylinders = cCHSCylinders;
@@ -5219,25 +5220,42 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         }
         else if (VBOX_FAILURE(rc))
         {
-            rc = ataGuessDiskLCHS(pIf, &pIf->cCHSCylinders, &pIf->cCHSHeads, &pIf->cCHSSectors);
-            if (VBOX_SUCCESS(rc) && pIf->cCHSHeads <= 16 /* if cCHSHeads > 16, it means that a BIOS LBA translation was active, so the default hardware geometry is OK. */
-                )
+            PDMBIOSTRANSLATION enmTranslation;
+            rc = pIf->pDrvBlockBios->pfnGetTranslation(pIf->pDrvBlockBios, &enmTranslation);
+            AssertRC(rc);
+
+            if (enmTranslation == PDMBIOSTRANSLATION_AUTO)
             {
-                /* Disable any translation to be in sync with the logical geometry */
-                PDMBIOSTRANSLATION enmTranslation;
-                rc = pIf->pDrvBlockBios->pfnGetTranslation(pIf->pDrvBlockBios, &enmTranslation);
-                if (VBOX_FAILURE(rc) || enmTranslation == PDMBIOSTRANSLATION_AUTO)
-                    pIf->pDrvBlockBios->pfnSetTranslation(pIf->pDrvBlockBios, PDMBIOSTRANSLATION_NONE);
+                /* Image contains no geometry information, detect geometry. */
+                rc = ataGuessDiskLCHS(pIf, &pIf->cCHSCylinders, &pIf->cCHSHeads, &pIf->cCHSSectors);
+                if (VBOX_SUCCESS(rc))
+                {
+                    /* Set the disk geometry information. */
+                    rc = pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
+                }
+                else
+                {
+                    /* Flag geometry as invalid, will be replaced below by the
+                     * default geometry. */
+                    pIf->cCHSCylinders = 0;
+                }
             }
-            else
+            /* If there is no geometry, use standard physical disk geometry.
+             * This uses LCHS to LBA translation in the BIOS (which selects
+             * the logical sector count 63 and the logical head count to be
+             * the smallest of 16,32,64,128,255 which makes the logical
+             * cylinder count smaller than 1024 - if that's not possible, it
+             * uses 255 heads, so up to about 8 GByte maximum with the
+             * standard int13 interface, which supports 1024 cylinders). */
+            if (!pIf->cCHSCylinders)
             {
-                /* If no geometry, use a standard physical disk geometry. */
                 uint64_t cCHSCylinders = pIf->cTotalSectors / (16 * 63);
-                pIf->cCHSCylinders = (uint32_t)RT_MIN(RT_MAX(cCHSCylinders, 2), 16383);
+                pIf->cCHSCylinders = (uint32_t)RT_MIN(RT_MAX(cCHSCylinders, 1), 16383);
                 pIf->cCHSHeads = 16;
                 pIf->cCHSSectors = 63;
+                /* Set the disk geometry information. */
+                rc = pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
             }
-            pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
         }
         LogRel(("PIIX3 ATA: LUN#%d: disk, CHS=%d/%d/%d, total number of sectors %Ld\n", pIf->iLUN, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors, pIf->cTotalSectors));
     }
