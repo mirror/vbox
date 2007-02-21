@@ -657,22 +657,31 @@ void VBoxDiskImageManagerDlg::addDroppedImages (QStringList *aDroppedList)
     for (QStringList::Iterator it = (*aDroppedList).begin();
          it != (*aDroppedList).end(); ++it)
     {
-        // Checking dropped media type
+        QString src = *it;
+        /* Check dropped media type */
+        /// @todo On OS/2 and windows (and mac?) extension checks should be case
+        /// insensitive, as OPPOSED to linux and the rest where case matters.
         VBoxDefs::DiskType type = VBoxDefs::InvalidType;
-        if      ((*it).endsWith ("iso", false))
+        if      (src.endsWith (".iso", false))
         {
             if (currentList == cdsView) type = VBoxDefs::CD;
         }
-        else if ((*it).endsWith ("img", false))
+        else if (src.endsWith (".img", false))
         {
             if (currentList == fdsView) type = VBoxDefs::FD;
         }
-        else if ((*it).endsWith ("vdi", false))
+        else if (src.endsWith (".vdi", false) ||
+                 src.endsWith (".vmdk", false))
         {
             if (currentList == hdsView) type = VBoxDefs::HD;
         }
-        // If media type has been determined - attach this device
-        if (type) addImageToList (*it, type);
+        /* If media type has been determined - attach this device */
+        if (type)
+        {
+            addImageToList (*it, type);
+            if (!vbox.isOk())
+                vboxProblem().cannotRegisterMedia (this, vbox, type, src);
+        }
     }
     delete aDroppedList;
 }
@@ -690,10 +699,9 @@ void VBoxDiskImageManagerDlg::addImageToList (const QString &aSource,
     {
         case VBoxDefs::HD:
         {
-            CVirtualDiskImage vdi = vbox.OpenVirtualDiskImage (aSource);
+            CHardDisk hd = vbox.OpenHardDisk (aSource);
             if (vbox.isOk())
             {
-                CHardDisk hd = CUnknown (vdi);
                 vbox.RegisterHardDisk (hd);
                 if (vbox.isOk())
                 {
@@ -1712,7 +1720,7 @@ void VBoxDiskImageManagerDlg::addImage()
     QListView *currentList = getCurrentListView();
     DiskImageItem *item =
         currentList->currentItem() && currentList->currentItem()->rtti() == 1001 ?
-        static_cast<DiskImageItem*> (currentList->currentItem()) : 0;
+        static_cast <DiskImageItem*> (currentList->currentItem()) : 0;
 
     QString dir;
     if (item && item->getStatus() == VBoxMedia::Ok)
@@ -1728,25 +1736,35 @@ void VBoxDiskImageManagerDlg::addImage()
     QString filter;
     VBoxDefs::DiskType type = VBoxDefs::InvalidType;
 
-    if (currentList == hdsView) {
-        filter = tr( "Hard disk images (*.vdi)" );
-        title = tr( "Select a hard disk image file" );
+    if (currentList == hdsView)
+    {
+        filter = tr ("All hard disk images (*.vdi; *.vmdk);;"
+                     "Virtual Disk images (*.vdi);;"
+                     "VMDK images (*.vmdk);;"
+                     "All files (*)");
+        title = tr ("Select a hard disk image file");
         type = VBoxDefs::HD;
-    } else if (currentList == cdsView) {
-        filter = tr( "CDROM images (*.iso)" );
-        title = tr( "Select a DVD/CD-ROM disk image file" );
+    }
+    else if (currentList == cdsView)
+    {
+        filter = tr( "CD/DVD-ROM images (*.iso)");
+        title = tr( "Select a CD/DVD-ROM disk image file" );
         type = VBoxDefs::CD;
-    } else if (currentList == fdsView) {
+    }
+    else if (currentList == fdsView)
+    {
         filter = tr( "Floppy images (*.img)" );
         title = tr( "Select a floppy disk image file" );
         type = VBoxDefs::FD;
-    } else {
+    } else
+    {
         AssertMsgFailed (("Root list should be equal to hdsView, cdsView or fdsView"));
     }
 
     QString src = QFileDialog::getOpenFileName (dir, filter,
                                                 this, "AddDiskImageDialog",
                                                 title);
+    src =  QDir::convertSeparators (src);
 
     addImageToList (src, type);
     if (!vbox.isOk())
@@ -1770,22 +1788,22 @@ void VBoxDiskImageManagerDlg::removeImage()
     {
         type = VBoxDefs::HD;
         int deleteImage;
+        /// @todo When creation of VMDK is implemented, we should
+        /// enable image deletion for  them as well (use
+        /// GetStorageType() to define the correct cast).
         if (vbox.GetHardDisk (uuid).GetStorageType() == CEnums::VirtualDiskImage &&
             item->getStatus() == VBoxMedia::Ok)
-        {
             deleteImage = vboxProblem().confirmHardDiskImageDeletion (this, src);
-        }
         else
-        {
             deleteImage = vboxProblem().confirmHardDiskUnregister (this, src);
-        }
         if (deleteImage == QIMessageBox::Cancel)
             return;
         CHardDisk hd = vbox.UnregisterHardDisk (uuid);
         if (vbox.isOk() && deleteImage == QIMessageBox::Yes)
         {
-            /// @todo (dmik) later, change wrappers so that converting
-            //  to CUnknown is not necessary for cross-assignments
+            /// @todo When creation of VMDK is implemented, we should
+            /// enable image deletion for  them as well (use
+            /// GetStorageType() to define the correct cast).
             CVirtualDiskImage vdi = CUnknown (hd);
             if (vdi.isOk())
                 vdi.DeleteImage();

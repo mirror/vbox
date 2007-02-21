@@ -4835,15 +4835,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         hardDisk->COMGETTER(StorageType)(&hddType);
         if (hddType == HardDiskStorageType_VirtualDiskImage)
         {
+            ComPtr<IVirtualDiskImage> vdiDisk = hardDisk;
+            AssertBreak (!vdiDisk.isNull(), hrc = E_FAIL);
+
             rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",           "VBoxHDD");             RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver",         "VBoxHDD");               RC_CHECK();
             rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-            /// @todo (dmik) we temporarily use the location property to
-            //  determine the image file name. This is subject to change
-            //  when iSCSI disks are here (we should either query a
-            //  storage-specific interface from IHardDisk, or "standardize"
-            //  the location property)
-            hrc = hardDisk->COMGETTER(Location)(&str);                                  H();
+            hrc = vdiDisk->COMGETTER(FilePath)(&str);                                   H();
             STR_CONV();
             rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
             STR_FREE();
@@ -4857,14 +4855,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 if (!curHardDisk)
                     break;
 
+                vdiDisk = curHardDisk;
+                AssertBreak (!vdiDisk.isNull(), hrc = E_FAIL);
+
                 PCFGMNODE pCur;
                 rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
-                /// @todo (dmik) we temporarily use the location property to
-                //  determine the image file name. This is subject to change
-                //  when iSCSI disks are here (we should either query a
-                //  storage-specific interface from IHardDisk, or "standardize"
-                //  the location property)
-                hrc = curHardDisk->COMGETTER(Location)(&str);                           H();
+                hrc = vdiDisk->COMGETTER(FilePath)(&str);                               H();
                 STR_CONV();
                 rc = CFGMR3InsertString(pCur,  "Path", psz);                            RC_CHECK();
                 STR_FREE();
@@ -4877,9 +4873,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         else if (hddType == HardDiskStorageType_ISCSIHardDisk)
         {
             ComPtr<IISCSIHardDisk> iSCSIDisk = hardDisk;
+            AssertBreak (!iSCSIDisk.isNull(), hrc = E_FAIL);
 
             rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",           "iSCSI");               RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver",         "iSCSI");                 RC_CHECK();
             rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
 
             /* Set up the iSCSI initiator driver configuration. */
@@ -4939,6 +4936,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pLunL2);                 RC_CHECK();
             rc = CFGMR3InsertString(pLunL2, "Driver",           "iSCSITCP");            RC_CHECK();
             /* Currently the transport driver has no config options. */
+        }
+        else if (hddType == HardDiskStorageType_VMDKImage)
+        {
+            ComPtr<IVMDKImage> vmdkDisk = hardDisk;
+            AssertBreak (!vmdkDisk.isNull(), hrc = E_FAIL);
+
+            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver",         "VmdkHDD");               RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+            hrc = vmdkDisk->COMGETTER(FilePath)(&str);                                  H();
+            STR_CONV();
+            rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
+            STR_FREE();
         }
         else
            AssertFailed();

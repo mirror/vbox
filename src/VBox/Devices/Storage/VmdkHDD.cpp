@@ -223,10 +223,12 @@ static int vmdk_probe(const uint8_t *buf, int buf_size, const char *filename)
         return 0;
 }
 
-static int vmdk_open(BDRVVmdkState *s, const char *filename, bool fReadOnly)
+static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
 {
     uint32_t magic, i;
     int l1_size;
+
+    BDRVVmdkState *s = &pDisk->VmdkState;
 
     /*
      * Open the image.
@@ -257,7 +259,8 @@ static int vmdk_open(BDRVVmdkState *s, const char *filename, bool fReadOnly)
         goto fail;
 
     magic = be32_to_cpu(magic);
-    if (magic == VMDK3_MAGIC) {
+    if (magic == VMDK3_MAGIC)
+    {
         VMDK3Header header;
         rc = RTFileRead(s->File, &header, sizeof(header), NULL);
         AssertRC(rc);
@@ -270,7 +273,15 @@ static int vmdk_open(BDRVVmdkState *s, const char *filename, bool fReadOnly)
         s->l1_table_offset = le32_to_cpu(header.l1dir_offset) << 9;
         s->l1_backup_table_offset = 0;
         s->l1_entry_sectors = s->l2_size * s->cluster_sectors;
-    } else if (magic == VMDK4_MAGIC) {
+
+        /* fill in the geometry structure */
+        pDisk->Geometry.cCylinders = le32_to_cpu(header.cylinders);
+        pDisk->Geometry.cHeads = le32_to_cpu(header.heads);
+        pDisk->Geometry.cSectors = le32_to_cpu(header.sectors_per_track);
+        pDisk->Geometry.cbSector = VMDK_GEOMETRY_SECTOR_SIZE;
+    }
+    else if (magic == VMDK4_MAGIC)
+    {
         VMDK4Header header;
 
         rc = RTFileRead(s->File, &header, sizeof(header), NULL);
@@ -290,7 +301,19 @@ static int vmdk_open(BDRVVmdkState *s, const char *filename, bool fReadOnly)
             / s->l1_entry_sectors;
         s->l1_table_offset = le64_to_cpu(header.rgd_offset) << 9;
         s->l1_backup_table_offset = le64_to_cpu(header.gd_offset) << 9;
-    } else {
+
+        /* fill in the geometry structure */
+        /// @todo we should read these properties from the DDB section
+        //  of the Disk DescriptorFile. So, the below values are just a
+        //  quick hack.
+        pDisk->Geometry.cCylinders = (le64_to_cpu(header.capacity) /
+                                      (16 * 63));
+        pDisk->Geometry.cHeads = 16;
+        pDisk->Geometry.cSectors = 63;
+        pDisk->Geometry.cbSector = VMDK_GEOMETRY_SECTOR_SIZE;
+    }
+    else
+    {
         rc = VERR_VDI_INVALID_HEADER;
         goto fail;
     }
@@ -600,14 +623,29 @@ IDER3DECL(int) VMDKDiskGetGeometry(PVMDKDISK pDisk, unsigned *pcCylinders, unsig
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VMDKDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-    /** @todo not initialized */
-    if (pcCylinders)
-        *pcCylinders = pDisk->Geometry.cCylinders;
-    if (pcHeads)
-        *pcHeads = pDisk->Geometry.cHeads;
-    if (pcSectors)
-        *pcSectors = pDisk->Geometry.cSectors;
-    return VINF_SUCCESS;
+    PVMDKDISKGEOMETRY pGeometry = &pDisk->Geometry;
+
+    LogFlow(("VDIDiskGetGeometry: C/H/S = %u/%u/%u\n",
+             pGeometry->cCylinders, pGeometry->cHeads, pGeometry->cSectors));
+
+    int rc = VINF_SUCCESS;
+
+    if (    pGeometry->cCylinders > 0
+        &&  pGeometry->cHeads > 0
+        &&  pGeometry->cSectors > 0)
+    {
+        if (pcCylinders)
+            *pcCylinders = pDisk->Geometry.cCylinders;
+        if (pcHeads)
+            *pcHeads = pDisk->Geometry.cHeads;
+        if (pcSectors)
+            *pcSectors = pDisk->Geometry.cSectors;
+    }
+    else
+        rc = VERR_VDI_GEOMETRY_NOT_SET;
+
+    LogFlow(("VDIDiskGetGeometry: returns %Vrc\n", rc));
+    return rc;
 }
 
 /**
@@ -677,6 +715,13 @@ static DECLCALLBACK(int) vmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pDrvIns->IBase.pfnQueryInterface    = vmdkQueryInterface;
     pData->pDrvIns = pDrvIns;
 
+    pData->u32Signature = VMDKDISK_SIGNATURE;
+
+    pData->Geometry.cCylinders = 0;
+    pData->Geometry.cHeads = 0;
+    pData->Geometry.cSectors = 0;
+    pData->Geometry.cbSector = 0;
+
     /* IMedia */
     pData->IMedia.pfnRead               = vmdkRead;
     pData->IMedia.pfnWrite              = vmdkWrite;
@@ -713,7 +758,7 @@ static DECLCALLBACK(int) vmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     /*
      * Open the image.
      */
-    rc = vmdk_open(&pData->VmdkState, pszName, fReadOnly);
+    rc = vmdk_open(pData, pszName, fReadOnly);
     if (VBOX_SUCCESS(rc))
         Log(("vmdkConstruct: Opened '%s' in %s mode\n", pszName, VMDKDiskIsReadOnly(pData) ? "read-only" : "read-write"));
     else
@@ -945,7 +990,7 @@ const PDMDRVREG g_DrvVmdkHDD =
     /* u32Version */
     PDM_DRVREG_VERSION,
     /* szDriverName */
-    "VdmkHDD",
+    "VmdkHDD",
     /* pszDescription */
     "VMDK media driver.",
     /* fFlags */
