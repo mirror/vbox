@@ -1054,7 +1054,7 @@ CFGMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE
                     }
 
                     /* does it exist? */
-                    PCFGMNODE pChild = CFGMR3GetChild(pNode, pszName);
+                    PCFGMNODE pChild = CFGMR3GetChild(pNode, psz);
                     if (!pChild)
                     {
                         /* no, insert it */
