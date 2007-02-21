@@ -981,7 +981,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                         attType += " \"" + adapter.GetHostInterface() + "\"";
                     if (type == CEnums::InternalNetworkAttachment)
                         attType += " \"" + adapter.GetInternalNetwork() + "\"";
-                    
+
                     item += QString (sSectionItemTpl)
                         .arg (tr ("Adapter %1", "details report (network)")
                               .arg (adapter.GetSlot()))
@@ -1322,12 +1322,12 @@ bool VBoxGlobal::findMedia (const CUnknown &aObj, VBoxMedia &aMedia) const
          it != media_list.end(); ++ it)
     {
         if ((*it).disk == aObj)
-        {            
+        {
             aMedia = (*it);
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -2265,9 +2265,8 @@ void VBoxUSBMenu::processHighlighted (int aIndex)
  *  This class provides enable/disable menu items.
  */
 VBoxSwitchMenu::VBoxSwitchMenu (QWidget *aParent, QAction *aAction,
-                                const QString &aTip, bool aInverted)
-    : QPopupMenu (aParent), mAction (aAction)
-    , mTip (aTip), mInverted (aInverted)
+                                bool aInverted)
+    : QPopupMenu (aParent), mAction (aAction), mInverted (aInverted)
 {
     /* this menu works only with toggle action */
     Assert (aAction->isToggleAction());
@@ -2275,6 +2274,11 @@ VBoxSwitchMenu::VBoxSwitchMenu (QWidget *aParent, QAction *aAction,
              this, SLOT   (processAboutToShow()));
     connect (this, SIGNAL (activated (int)),
              this, SLOT   (processActivated (int)));
+}
+
+void VBoxSwitchMenu::setToolTip (const QString &aTip)
+{
+    mTip = aTip;
 }
 
 void VBoxSwitchMenu::processAboutToShow()

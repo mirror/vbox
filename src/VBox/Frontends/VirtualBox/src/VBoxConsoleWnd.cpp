@@ -301,12 +301,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmMenu->insertSeparator();
     vmCloseAction->addTo (vmMenu);
     menuBar()->insertItem (QString::null, vmMenu, vmMenuId);
-    vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction,
-                                           tr ("Auto-resize Guest Display",
-                                               "enable/disable..."));
+    vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction);
     vmDisMouseIntegrMenu = new VBoxSwitchMenu (vmMenu, vmDisableMouseIntegrAction,
-                                               tr ("Mouse Integration",
-                                                   "enable/disable..."),
                                                true /* inverted toggle state */);
 
     /* Devices popup menu */
@@ -318,11 +314,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
 
     devicesSharedFolders = new QPopupMenu (devicesMenu, "devicesSharedFolders");
-    devicesSharedFolders->insertItem (tr ("Open"));
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
-    devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction,
-                                          tr ("Remote Desktop (RDP) Server",
-                                              "enable/disable..."));
+    devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
 
     devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
         QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
@@ -1136,6 +1129,10 @@ void VBoxConsoleWnd::languageChange()
     vmFullscreenAction->setMenuText (tr ("&Fullscreen Mode") + "\tHost+F");
     vmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
 
+    vmDisMouseIntegrMenu->setToolTip (tr ("Mouse Integration",
+                                          "enable/disable..."));
+    vmAutoresizeMenu->setToolTip (tr ("Auto-resize Guest Display",
+                                      "enable/disable..."));
     vmAutoresizeGuestAction->setMenuText (tr ("Auto-resize &Guest Display") +
                                           "\tHost+G");
     vmAutoresizeGuestAction->setStatusTip (
@@ -1191,10 +1188,13 @@ void VBoxConsoleWnd::languageChange()
     devicesUnmountDVDAction->setStatusTip (
         tr ("Unmount the currently mounted CD/DVD-ROM media"));
 
+    devicesVRDPMenu->setToolTip (tr ("Remote Desktop (RDP) Server",
+                                     "enable/disable..."));
     devicesSwitchVrdpAction->setMenuText (tr ("Remote Dis&play"));
     devicesSwitchVrdpAction->setStatusTip (
         tr ("Enable or disable remote desktop (RDP) connections to this machine"));
 
+    devicesSharedFolders->insertItem (tr ("Open"));
     devicesSFDialogAction->setMenuText (tr ("&Shared Folders"));
     devicesSFDialogAction->setStatusTip (
         tr ("Open the dialog to operate on shared folders"));

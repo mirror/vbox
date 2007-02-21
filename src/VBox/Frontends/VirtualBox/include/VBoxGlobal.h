@@ -539,7 +539,9 @@ class VBoxSwitchMenu : public QPopupMenu
 
 public:
 
-    VBoxSwitchMenu (QWidget *, QAction *, const QString &, bool aInverted = false);
+    VBoxSwitchMenu (QWidget *, QAction *, bool aInverted = false);
+
+    void setToolTip (const QString &);
 
 private slots:
 
