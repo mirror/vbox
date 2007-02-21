@@ -115,25 +115,26 @@ private:
  */
 HRESULT COMBase::initializeCOM()
 {
-    LogFlow (("COMBase::initializeCOM(): BEGIN\n"));
+    LogFlowFuncEnter();
 
 #if defined (Q_OS_WIN32)
 
-    // disable this damn CoInitialize* somehow made by Qt during creation of
-    // the QApplication instance (didn't explore deeply why does it do this)
+    /* disable this damn CoInitialize* somehow made by Qt during
+     * creation of the QApplication instance (didn't explore deeply
+     * why does it do this) */
     CoUninitialize();
-    CoInitializeEx (
-        NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY
-    );
+    CoInitializeEx (NULL, COINIT_MULTITHREADED |
+                          COINIT_DISABLE_OLE1DDE |
+                          COINIT_SPEED_OVER_MEMORY);
 
-    LogFlow (("COMBase::initializeCOM(): END\n"));
+    LogFlowFuncLeave();
     return S_OK;
 
 #else
 
     if (gComponentManager)
     {
-        LogFlow (("COMBase::initializeCOM(): END\n"));
+        LogFlowFuncLeave();
         return S_OK;
     }
 
@@ -142,7 +143,7 @@ HRESULT COMBase::initializeCOM()
 
     nsCOMPtr <nsIServiceManager> serviceManager;
 
-    // create a file object containing the path to the executable
+    /* create a file object containing the path to the executable */
     QCString appDir;
 #ifdef DEBUG
     appDir = getenv ("VIRTUALBOX_APP_HOME");
@@ -159,29 +160,30 @@ HRESULT COMBase::initializeCOM()
         nsCOMPtr <nsIFile> fAppDir = do_QueryInterface (lfAppDir, &rc);
         if (SUCCEEDED( rc ))
         {
-            // initialize XPCOM and get the service manager
+            /* initialize XPCOM and get the service manager */
             rc = NS_InitXPCOM2 (getter_AddRefs (serviceManager), fAppDir, nsnull);
         }
     }
 
     if (SUCCEEDED (rc))
     {
-        // get the registrar
+        /* get the registrar */
         nsCOMPtr <nsIComponentRegistrar> registrar =
             do_QueryInterface (serviceManager, &rc);
         if (SUCCEEDED (rc))
         {
-            // autoregister components from a component directory
+            /* autoregister components from a component directory */
             registrar->AutoRegister (nsnull);
 
-            // get the component manager
+            /* get the component manager */
             rc = registrar->QueryInterface (NS_GET_IID (nsIComponentManager),
                                             (void**) &gComponentManager);
             if (SUCCEEDED (rc))
             {
-                // get the main thread's event queue (afaik, the dconnect service always
-                // gets created upon XPCOM startup, so it will use the main (this)
-                // thread's event queue to receive IPC events)
+                /* get the main thread's event queue (afaik, the
+                 * dconnect service always gets created upon XPCOM
+                 * startup, so it will use the main (this) thread's
+                 * event queue to receive IPC events) */
                 rc = NS_GetMainEventQ (&gEventQ);
 #ifdef DEBUG
                 BOOL isNative = FALSE;
@@ -192,17 +194,17 @@ HRESULT COMBase::initializeCOM()
                 gSocketListener = new XPCOMEventQSocketListener (gEventQ);
 # endif
 
-                // get the IPC service
+                /* get the IPC service */
                 nsCOMPtr <ipcIService> ipcServ =
                     do_GetService (IPC_SERVICE_CONTRACTID, serviceManager, &rc);
                 if (SUCCEEDED (rc))
                 {
-                    // get the VirtualBox out-of-proc server ID
+                    /* get the VirtualBox out-of-proc server ID */
                     rc = ipcServ->ResolveClientName ("VirtualBoxServer",
                                                      &gVBoxServerID);
                     if (SUCCEEDED (rc))
                     {
-                        // get the DConnect service
+                        /* get the DConnect service */
                         rc = serviceManager->
                             GetServiceByContractID (IPC_DCONNECTSERVICE_CONTRACTID,
                                                     NS_GET_IID (ipcIDConnectService),
@@ -216,7 +218,7 @@ HRESULT COMBase::initializeCOM()
     if (FAILED (rc))
         cleanupCOM();
 
-    LogFlow (("COMBase::initializeCOM(): END: rc=%08X\n", rc));
+    LogFlowFuncLeave();
     return rc;
 
 #endif
@@ -227,7 +229,7 @@ HRESULT COMBase::initializeCOM()
  */
 HRESULT COMBase::cleanupCOM()
 {
-    LogFlow (("COMBase::cleanupCOM(): BEGIN\n"));
+    LogFlowFuncEnter();
 
 #if defined (Q_OS_WIN32)
     CoUninitialize();
@@ -240,23 +242,32 @@ HRESULT COMBase::cleanupCOM()
 
         if (isOnCurrentThread)
         {
-            LogFlow (("COMBase::cleanupCOM(): doing cleanup...\n"));
+            LogFlowFunc (("Doing cleanup...\n"));
 # if !defined (__DARWIN__) && !defined (__OS2__)
             if (gSocketListener)
                 delete gSocketListener;
 # endif
             if (gDConnectService)
+            {
                 gDConnectService->Release();
+                gDConnectService = nsnull;
+            }
             if (gEventQ)
+            {
                 gEventQ->Release();
+                gEventQ = nsnull;
+            }
             gComponentManager->Release();
+            gComponentManager = nsnull;
+            /* note: gComponentManager = nsnull indicates that we're
+             * cleaned up */
             NS_ShutdownXPCOM (nsnull);
             XPCOMGlueShutdown();
         }
     }
 #endif
 
-    LogFlow (("COMBase::cleanupCOM(): END\n"));
+    LogFlowFuncLeave();
     return S_OK;
 }
 
