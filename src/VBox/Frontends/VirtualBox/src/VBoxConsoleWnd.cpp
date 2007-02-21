@@ -318,7 +318,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
 
     devicesSharedFolders = new QPopupMenu (devicesMenu, "devicesSharedFolders");
-    devicesSharedFolders->insertItem (tr ("Shared Folders"));
+    devicesSharedFolders->insertItem (tr ("Open"));
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction,
                                           tr ("Remote Desktop (RDP) Server",
@@ -400,6 +400,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     usb_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("usb_read_16px.png"));
     usb_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("usb_write_16px.png"));
     usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
+    /// @todo add proper read/write states for shared folders when it is implemented
+    sf_state = new QIStateIndicator (0, indicatorBox, "sf_state", WNoAutoErase);
+    sf_state->setStateIcon (0, QPixmap::fromMimeSource ("select_file_16px.png"));
+    sf_state->setStateIcon (1, QPixmap::fromMimeSource ("select_file_dis_16px.png"));
 
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
 
@@ -407,10 +411,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vrdp_state = new QIStateIndicator (0, indicatorBox, "vrdp_state", WNoAutoErase);
     vrdp_state->setStateIcon (0, QPixmap::fromMimeSource ("vrdp_disabled_16px.png"));
     vrdp_state->setStateIcon (1, QPixmap::fromMimeSource ("vrdp_16px.png"));
-    /* shared folders state */
-    sf_state = new QIStateIndicator (0, indicatorBox, "sf_state", WNoAutoErase);
-    sf_state->setStateIcon (0, QPixmap::fromMimeSource ("select_file_16px.png"));
-    sf_state->setStateIcon (1, QPixmap::fromMimeSource ("select_file_dis_16px.png"));
     /* auto resize state */
     autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", WNoAutoErase);
     autoresize_state->setStateIcon (0, QPixmap::fromMimeSource ("auto_resize_off_disabled_16px.png"));
@@ -1262,7 +1262,10 @@ void VBoxConsoleWnd::languageChange()
             "capture state. It can also be used in combination with other keys "
             "to quickly perform actions from the main menu." ));
     QToolTip::add (sf_state,
-        tr ("Press right mouse button to open the dialog to operate on shared folders."));
+/// @todo add later, when activity is actually reported
+//        tr ("Indicates the activity of shared folders."));
+        tr ("Provides quick access to shared folders (by a right mouse button click). "
+            "Note that the shared folders feature requires Guest Additions to be installed in the guest OS."));
 
     updateAppearanceOf (AllStuff);
 }
