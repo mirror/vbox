@@ -2287,12 +2287,18 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, 
             pDevExt->cGipUsers++;
             if (pDevExt->cGipUsers == 1)
             {
+                PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+                unsigned i;
+
                 dprintf(("SUPR0GipMap: Resumes GIP updating\n"));
-                ASMAtomicXchgU32(&pDevExt->pGip->u32TransactionId,
-                                 pDevExt->pGip->u32TransactionId & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
-                ASMAtomicXchgU64(&pDevExt->pGip->u64NanoTSLastUpdateHz, 0);
+
+                for (i = 0; i < RT_ELEMENTS(pGip->aCPUs); i++)
+                    ASMAtomicXchgU32(&pGip->aCPUs[i].u32TransactionId, pGip->aCPUs[i].u32TransactionId & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
+                ASMAtomicXchgU64(&pGip->u64NanoTSLastUpdateHz, 0);
+
 #ifdef USE_NEW_OS_INTERFACE
-                rc = RTTimerStart(pDevExt->pGipTimer, 0); AssertRC(rc); rc = 0;
+                rc = RTTimerStart(pDevExt->pGipTimer, 0);
+                AssertRC(rc); rc = 0;
 #else
                 supdrvOSGipResume(pDevExt);
 #endif
@@ -4004,31 +4010,40 @@ static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser)
  */
 int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz)
 {
+    unsigned i;
     dprintf(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz));
 
+    /*
+     * Initialize the structure.
+     */
     memset(pGip, 0, PAGE_SIZE);
     pGip->u32Magic          = SUPGLOBALINFOPAGE_MAGIC;
+    pGip->u32Mode           = SUPGIPMODE_SYNC_TSC;
     pGip->u32UpdateHz       = uUpdateHz;
     pGip->u32UpdateIntervalNS = 1000000000 / uUpdateHz;
-    pGip->u32TransactionId  = 2;
-    pGip->u64NanoTS         = u64NanoTS;
     pGip->u64NanoTSLastUpdateHz = u64NanoTS;
-    pGip->u64TSC            = ASMReadTSC();
 
-    /*
-     * We don't know the following values until we've executed updates.
-     * So, we'll just insert very high values.
-     */
-    pGip->u64CpuHz          = _4G + 1;
-    pGip->u32UpdateIntervalTSC = _2G / 4;
-    pGip->au32TSCHistory[0] = _2G / 4;
-    pGip->au32TSCHistory[1] = _2G / 4;
-    pGip->au32TSCHistory[2] = _2G / 4;
-    pGip->au32TSCHistory[3] = _2G / 4;
-    pGip->au32TSCHistory[4] = _2G / 4;
-    pGip->au32TSCHistory[5] = _2G / 4;
-    pGip->au32TSCHistory[6] = _2G / 4;
-    pGip->au32TSCHistory[7] = _2G / 4;
+    for (i = 0; i < RT_ELEMENTS(pGip->aCPUs); i++)
+    {
+        pGip->aCPUs[i].u32TransactionId  = 2;
+        pGip->aCPUs[i].u64NanoTS         = u64NanoTS;
+        pGip->aCPUs[i].u64TSC            = ASMReadTSC();
+    
+        /*
+         * We don't know the following values until we've executed updates.
+         * So, we'll just insert very high values.
+         */
+        pGip->aCPUs[i].u64CpuHz          = _4G + 1;
+        pGip->aCPUs[i].u32UpdateIntervalTSC = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[0] = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[1] = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[2] = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[3] = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[4] = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[5] = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[6] = _2G / 4;
+        pGip->aCPUs[i].au32TSCHistory[7] = _2G / 4;
+    }
 
     /*
      * Link it to the device extension.
@@ -4036,6 +4051,16 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
     pDevExt->pGip = pGip;
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
+
+    /*
+     * Check if we should switch to async TSC mode.
+     */
+#if 0
+    if (supdrvOSGetCPUCount() > 1)
+    {
+        ASMCpuId(0, 
+    }
+#endif 
 
     return 0;
 }
@@ -4048,11 +4073,107 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
  */
 void VBOXCALL supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
 {
-    pGip->iTSCHistoryHead = ~0;
-    pGip->u64NanoTS = 0;
-    pGip->u64TSC = 0;
+    unsigned i;
     pGip->u32Magic = 0;
-    pGip->iTSCHistoryHead = 0;
+    for (i = 0; i < RT_ELEMENTS(pGip->aCPUs); i++)
+    {
+        pGip->aCPUs[i].u64NanoTS = 0;
+        pGip->aCPUs[i].u64TSC = 0;
+        pGip->aCPUs[i].iTSCHistoryHead = 0;
+    }
+}
+
+
+/**
+ * Worker routine for supdrvGipUpdate and supdrvGipUpdatePerCpu that
+ * updates all the per cpu data except the transaction id.
+ * 
+ * @param   pGip            The GIP.
+ * @param   pGipCpu         Pointer to the per cpu data.
+ * @param   u64NanoTS       The current time stamp.
+ */
+static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
+{
+    uint64_t    u64TSC;
+    uint64_t    u64TSCDelta;
+    uint32_t    u32UpdateIntervalTSC;
+    uint32_t    u32UpdateIntervalTSCSlack;
+    unsigned    iTSCHistoryHead;
+    uint64_t    u64CpuHz;
+
+    /*
+     * Update the NanoTS.
+     */
+    ASMAtomicXchgU64(&pGipCpu->u64NanoTS, u64NanoTS);
+
+    /*
+     * Calc TSC delta.
+     */
+    /** @todo validate the NanoTS delta, don't trust the OS to call us when it should... */
+    u64TSC = ASMReadTSC();
+    u64TSCDelta = u64TSC - pGipCpu->u64TSC;
+    ASMAtomicXchgU64(&pGipCpu->u64TSC, u64TSC);
+
+    if (u64TSCDelta >> 32)
+    {
+        u64TSCDelta = pGipCpu->u32UpdateIntervalTSC;
+        pGipCpu->cErrors++;
+    }
+
+    /*
+     * TSC History.
+     */
+    Assert(ELEMENTS(pGipCpu->au32TSCHistory) == 8);
+
+    iTSCHistoryHead = (pGipCpu->iTSCHistoryHead + 1) & 7;
+    ASMAtomicXchgU32(&pGipCpu->iTSCHistoryHead, iTSCHistoryHead);
+    ASMAtomicXchgU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
+
+    /*
+     * UpdateIntervalTSC = average of last 8,2,1 intervals depending on update HZ.
+     */
+    if (pGip->u32UpdateHz >= 1000)
+    {
+        uint32_t u32;
+        u32  = pGipCpu->au32TSCHistory[0];
+        u32 += pGipCpu->au32TSCHistory[1];
+        u32 += pGipCpu->au32TSCHistory[2];
+        u32 += pGipCpu->au32TSCHistory[3];
+        u32 >>= 2;
+        u32UpdateIntervalTSC  = pGipCpu->au32TSCHistory[4];
+        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[5];
+        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[6];
+        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[7];
+        u32UpdateIntervalTSC >>= 2;
+        u32UpdateIntervalTSC += u32;
+        u32UpdateIntervalTSC >>= 1;
+
+        /* Value choosen for a 2GHz Athlon64 running linux 2.6.10/11, . */
+        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 14;
+    }
+    else if (pGip->u32UpdateHz >= 90)
+    {
+        u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
+        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[(iTSCHistoryHead - 1) & 7];
+        u32UpdateIntervalTSC >>= 1;
+
+        /* value choosen on a 2GHz thinkpad running windows */
+        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 7;
+    }
+    else
+    {
+        u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
+
+        /* This value hasn't be checked yet.. waiting for OS/2 and 33Hz timers.. :-) */
+        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 6;
+    }
+    ASMAtomicXchgU32(&pGipCpu->u32UpdateIntervalTSC, u32UpdateIntervalTSC + u32UpdateIntervalTSCSlack);
+
+    /*
+     * CpuHz.
+     */
+    u64CpuHz = ASMMult2xU32RetU64(u32UpdateIntervalTSC, pGip->u32UpdateHz);
+    ASMAtomicXchgU64(&pGipCpu->u64CpuHz, u64CpuHz);
 }
 
 
@@ -4064,31 +4185,36 @@ void VBOXCALL supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
  */
 void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
 {
-    uint64_t    u64TSC;
-    uint64_t    u64TSCDelta;
-    uint32_t    u32UpdateIntervalTSC;
-    uint32_t    u32UpdateIntervalTSCSlack;
-    unsigned    iTSCHistoryHead;
-    uint64_t    u64CpuHz;
+    /*
+     * Determin the relevant CPU data.
+     */
+    PSUPGIPCPU pGipCpu;
+    if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+        pGipCpu = &pGip->aCPUs[0];
+    else
+    {
+        unsigned iCpu = ASMGetApicId();
+        if (RT_LIKELY(iCpu >= RT_ELEMENTS(pGip->aCPUs)))
+            return;
+        pGipCpu = &pGip->aCPUs[iCpu];
+    }
 
     /*
      * Start update transaction.
      */
-    if (!(ASMAtomicIncU32(&pGip->u32TransactionId) & 1))
+    if (!(ASMAtomicIncU32(&pGipCpu->u32TransactionId) & 1))
     {
         /* this can happen on win32 if we're taking to long and there are more CPUs around. shouldn't happen though. */
-        AssertMsgFailed(("Invalid transaction id, %#x, not odd!\n", pGip->u32TransactionId));
-        ASMAtomicIncU32(&pGip->u32TransactionId);
-        pGip->cErrors++;
+        AssertMsgFailed(("Invalid transaction id, %#x, not odd!\n", pGipCpu->u32TransactionId));
+        ASMAtomicIncU32(&pGipCpu->u32TransactionId);
+        pGipCpu->cErrors++;
         return;
     }
-
-    ASMAtomicXchgU64(&pGip->u64NanoTS, u64NanoTS);
 
     /*
      * Recalc the update frequency every 0x800th time.
      */
-    if (!(pGip->u32TransactionId & (GIP_UPDATEHZ_RECALC_FREQ * 2 - 2)))
+    if (!(pGipCpu->u32TransactionId & (GIP_UPDATEHZ_RECALC_FREQ * 2 - 2)))
     {
         if (pGip->u64NanoTSLastUpdateHz)
         {
@@ -4106,78 +4232,53 @@ void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
     }
 
     /*
-     * Calc TSC delta.
+     * Update the data.
      */
-    /** @todo validate the NanoTS delta, don't trust the OS to call us when it should... */
-    u64TSC = ASMReadTSC();
-    u64TSCDelta = u64TSC - pGip->u64TSC;
-    ASMAtomicXchgU64(&pGip->u64TSC, u64TSC);
-
-    if (u64TSCDelta >> 32)
-    {
-        u64TSCDelta = pGip->u32UpdateIntervalTSC;
-        pGip->cErrors++;
-    }
-
-    /*
-     * TSC History.
-     */
-    Assert(ELEMENTS(pGip->au32TSCHistory) == 8);
-
-    iTSCHistoryHead = (pGip->iTSCHistoryHead + 1) & 7;
-    ASMAtomicXchgU32(&pGip->iTSCHistoryHead, iTSCHistoryHead);
-    ASMAtomicXchgU32(&pGip->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
-
-    /*
-     * UpdateIntervalTSC = average of last 8,2,1 intervals depending on update HZ.
-     */
-    if (pGip->u32UpdateHz >= 1000)
-    {
-        uint32_t u32;
-        u32  = pGip->au32TSCHistory[0];
-        u32 += pGip->au32TSCHistory[1];
-        u32 += pGip->au32TSCHistory[2];
-        u32 += pGip->au32TSCHistory[3];
-        u32 >>= 2;
-        u32UpdateIntervalTSC  = pGip->au32TSCHistory[4];
-        u32UpdateIntervalTSC += pGip->au32TSCHistory[5];
-        u32UpdateIntervalTSC += pGip->au32TSCHistory[6];
-        u32UpdateIntervalTSC += pGip->au32TSCHistory[7];
-        u32UpdateIntervalTSC >>= 2;
-        u32UpdateIntervalTSC += u32;
-        u32UpdateIntervalTSC >>= 1;
-
-        /* Value choosen for a 2GHz Athlon64 running linux 2.6.10/11, . */
-        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 14;
-    }
-    else if (pGip->u32UpdateHz >= 90)
-    {
-        u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
-        u32UpdateIntervalTSC += pGip->au32TSCHistory[(iTSCHistoryHead - 1) & 7];
-        u32UpdateIntervalTSC >>= 1;
-
-        /* value choosen on a 2GHz thinkpad running windows */
-        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 7;
-    }
-    else
-    {
-        u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
-
-        /* This value hasn't be checked yet.. waiting for OS/2 and 33Hz timers.. :-) */
-        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 6;
-    }
-    ASMAtomicXchgU32(&pGip->u32UpdateIntervalTSC, u32UpdateIntervalTSC + u32UpdateIntervalTSCSlack);
-
-    /*
-     * CpuHz.
-     */
-    u64CpuHz = ASMMult2xU32RetU64(u32UpdateIntervalTSC, pGip->u32UpdateHz);
-    ASMAtomicXchgU64(&pGip->u64CpuHz, u64CpuHz);
+    supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS);
 
     /*
      * Complete transaction.
      */
-    ASMAtomicIncU32(&pGip->u32TransactionId);
+    ASMAtomicIncU32(&pGipCpu->u32TransactionId);
+}
+
+
+/**
+ * Updates the per cpu GIP data for the calling cpu.
+ *
+ * @param   pGip        Pointer to the GIP.
+ * @param   u64NanoTS   The current nanosecond timesamp.
+ * @param   iCpu        The CPU index.
+ */
+void VBOXCALL   supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, unsigned iCpu)
+{
+    PSUPGIPCPU  pGipCpu;
+
+    if (RT_LIKELY(iCpu <= RT_ELEMENTS(pGip->aCPUs)))
+    {
+        pGipCpu = &pGip->aCPUs[iCpu];
+
+        /*
+         * Start update transaction.
+         */
+        if (!(ASMAtomicIncU32(&pGipCpu->u32TransactionId) & 1))
+        {
+            AssertMsgFailed(("Invalid transaction id, %#x, not odd!\n", pGipCpu->u32TransactionId));
+            ASMAtomicIncU32(&pGipCpu->u32TransactionId);
+            pGipCpu->cErrors++;
+            return;
+        }
+
+        /*
+         * Update the data.
+         */
+        supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS);
+
+        /*
+         * Complete transaction.
+         */
+        ASMAtomicIncU32(&pGipCpu->u32TransactionId);
+    }
 }
 
 

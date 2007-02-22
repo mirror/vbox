@@ -74,24 +74,60 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
     /*
      * Read the data.
      */
-    do
+    for (;;)
     {
         pGip = g_pSUPGlobalInfoPage;
 #ifdef IN_RING3
         if (!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC)
             return RTTimeSystemNanoTS();
 #endif
-        u32TransactionId = pGip->u32TransactionId;
+
+        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+        {
+            u32TransactionId = pGip->aCPUs[0].u32TransactionId;
 #ifdef __L4__
-        Assert((u32TransactionId & 1) == 0);
+            Assert((u32TransactionId & 1) == 0);
 #endif
-        u32UpdateIntervalTSC = pGip->u32UpdateIntervalTSC;
-        u64NanoTS = pGip->u64NanoTS;
-        u64TSC = pGip->u64TSC;
-        u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
-        u64Delta = ASMReadTSC();
-    } while (   pGip->u32TransactionId != u32TransactionId
-             || (u32TransactionId & 1));
+            u32UpdateIntervalTSC = pGip->aCPUs[0].u32UpdateIntervalTSC;
+            u64NanoTS = pGip->aCPUs[0].u64NanoTS;
+            u64TSC = pGip->aCPUs[0].u64TSC;
+            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
+            u64Delta = ASMReadTSC();
+            if (RT_UNLIKELY(    pGip->aCPUs[0].u32TransactionId != u32TransactionId
+                            ||  (u32TransactionId & 1)))
+                continue;
+        }
+        else
+        {
+            /* SUPGIPMODE_ASYNC_TSC */
+            PCSUPGIPCPU pGipCpu;
+
+            uint8_t u8ApicId = ASMGetApicId();
+            if (RT_LIKELY(u8ApicId < RT_ELEMENTS(pGip->aCPUs)))
+                pGipCpu = &pGip->aCPUs[u8ApicId];
+            else
+            {
+                AssertMsgFailed(("%x\n", u8ApicId));
+                pGipCpu = &pGip->aCPUs[0];
+            }
+
+            u32TransactionId = pGipCpu->u32TransactionId;
+#ifdef __L4__
+            Assert((u32TransactionId & 1) == 0);
+#endif
+            u32UpdateIntervalTSC = pGipCpu->u32UpdateIntervalTSC;
+            u64NanoTS = pGipCpu->u64NanoTS;
+            u64TSC = pGipCpu->u64TSC;
+            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
+            u64Delta = ASMReadTSC();
+            if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))
+                continue;
+            if (RT_UNLIKELY(    pGipCpu->u32TransactionId != u32TransactionId
+                            ||  (u32TransactionId & 1)))
+                continue;
+        }
+        break;
+    }
 
     /*
      * Calc NanoTS delta.

@@ -2803,8 +2803,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
                 return rc;
             }
             uint64_t Ticks = ASMReadTSC() - StartTick;
-            if (Ticks < (g_pSUPGlobalInfoPage->u64CpuHz / 10000))
-                RTPrintf("Warning: Ticks=%RU64 (< %RU64)\n", Ticks, g_pSUPGlobalInfoPage->u64CpuHz / 10000);
+            if (Ticks < (SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage) / 10000))
+                RTPrintf("Warning: Ticks=%RU64 (< %RU64)\n", Ticks, SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage) / 10000);
         }
 
         /*

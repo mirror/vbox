@@ -611,7 +611,7 @@ TMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
         {
             PCSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
             if (pGip)
-                return pGip->u64CpuHz;
+                return SUPGetCpuHzFromGIP(pGip) ;
             return pTimer->CTXALLSUFF(pVM)->tm.s.cTSCTicksPerSecond;
         }
 

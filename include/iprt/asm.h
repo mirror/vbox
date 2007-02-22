@@ -762,6 +762,63 @@ DECLINLINE(bool) ASMHasCpuId(void)
 
 
 /**
+ * Gets the APIC ID of the current CPU.
+ *
+ * @returns the APIC ID.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint8_t) ASMGetApicId(void);
+#else
+DECLINLINE(uint8_t) ASMGetApicId(void)
+{
+    RTCCUINTREG xBX;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef __AMD64__
+    RTCCUINTREG uSpill;
+    __asm__ ("cpuid"
+             : "=a" (uSpill),
+               "=b" (xBX)
+             : "0" (1)
+             : "rcx", "rdx");
+#  elif (defined(PIC) || defined(__DARWIN__)) && defined(__i386__)
+    RTCCUINTREG uSpill;
+    __asm__ ("push  %%ebx\n\t"
+             "cpuid\n\t"
+             "xchgl %%ebx, %%ecx\n\t"
+             "pop   %%ebx\n\t"
+             : "=a" (uSpill),
+               "=c" (xBX)
+             : "0" (1)
+             : "edx");
+#  else
+    RTCCUINTREG uSpill;
+    __asm__ ("cpuid"
+             : "=a" (uSpill),
+               "=b" (xBX)
+             : "0" (1)
+             : "ecx", "edx");
+#  endif
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    int aInfo[4];
+    __cpuid(aInfo, 1);
+    xBX = aInfo[1];
+
+# else
+    __asm
+    {
+        push    ebx
+        mov     eax, 1
+        cpuid
+        mov     [xBX], ebx
+        pop     ebx
+    }
+# endif
+    return (uint8_t)(xBX >> 24);
+}
+#endif
+
+/**
  * Get cr0.
  * @returns cr0.
  */

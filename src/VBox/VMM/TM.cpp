@@ -288,12 +288,22 @@ static uint64_t tmR3Calibrate(void)
      */
     uint64_t    u64Hz;
     PCSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    if (pGip && (u64Hz = pGip->u64CpuHz) && u64Hz != ~(uint64_t)0)
+    if (    pGip 
+        &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
     {
-        RTThreadSleep(32);              /* To preserve old behaviour and to get a good CpuHz at startup. */
-        pGip = g_pSUPGlobalInfoPage;
-        if (pGip && (u64Hz = pGip->u64CpuHz) && u64Hz != ~(uint64_t)0)
-            return u64Hz;
+        unsigned iCpu = pGip->u32Mode != SUPGIPMODE_ASYNC_TSC ? 0 : ASMGetApicId();
+        if (iCpu >= RT_ELEMENTS(pGip->aCPUs))
+            AssertReleaseMsgFailed(("iCpu=%d - the ApicId is too high. send VBox.log and hardware specs!\n", iCpu));
+        else
+        {
+            RTThreadSleep(32);              /* To preserve old behaviour and to get a good CpuHz at startup. */
+            pGip = g_pSUPGlobalInfoPage;
+            if (    pGip
+                &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+                &&  (u64Hz = pGip->aCPUs[iCpu].u64CpuHz) 
+                &&  u64Hz != ~(uint64_t)0)
+                return u64Hz;
+        }
     }
 
     /* call this once first to make sure it's initialized. */

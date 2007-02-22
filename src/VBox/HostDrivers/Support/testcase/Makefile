@@ -64,9 +64,6 @@ tstPin_SOURCES        = $(VBOX_PATH_SUPPORT)/testcase/tstPin.cpp
 tstPage_TEMPLATE      = VBOXR3TSTEXE
 tstPage_SOURCES       = $(VBOX_PATH_SUPPORT)/testcase/tstPage.cpp
 
-tstGIP-1_TEMPLATE     = VBOXR3TSTEXE
-tstGIP-1_SOURCES      = $(VBOX_PATH_SUPPORT)/testcase/tstGIP-1.c
-
 tstGIP-2_TEMPLATE     = VBOXR3TSTEXE
 tstGIP-2_SOURCES      = $(VBOX_PATH_SUPPORT)/testcase/tstGIP-2.cpp
 

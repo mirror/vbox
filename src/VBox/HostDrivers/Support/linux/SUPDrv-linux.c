@@ -1360,17 +1360,49 @@ static int VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt)
 static void     VBoxSupGipTimer(unsigned long ulUser)
 {
     PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)ulUser;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
     unsigned long ulNow    = jiffies;
     unsigned long ulDiff   = ulNow - pDevExt->ulLastJiffies;
+    uint64_t u64Monotime;
     pDevExt->ulLastJiffies = ulNow;
 #ifdef TICK_NSEC
-    pDevExt->u64LastMonotime += ulDiff * TICK_NSEC;
+    u64Monotime = pDevExt->u64LastMonotime + ulDiff * TICK_NSEC;
 #else
-    pDevExt->u64LastMonotime += ulDiff * (1000000 / HZ);
+    u64Monotime = pDevExt->u64LastMonotime + ulDiff * (1000000 / HZ);
 #endif
-    supdrvGipUpdate(pDevExt->pGip, pDevExt->u64LastMonotime);
+    ASMAtomicXchgU64(&pDevExt->u64LastMonotime, u64Monotime);
+    if (RT_LIKELY(pGip))
+    {
+#ifdef CONFIG_SMP
+        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+#endif 
+            supdrvGipUpdate(pDevExt->pGip, u64Monotime);
+#ifdef CONFIG_SMP
+        else
+        {
+            smp_call_function(VBoxSupDrvGipPerCpu, pDevExt, 0 /* don't retry? */, 0 /* don't wait */);
+            supdrvGipUpdate(pDevExt->pGip, u64Monotime);
+        }
+#endif
+    }
     mod_timer(&g_GipTimer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
 }
+
+
+#ifdef CONFIG_SMP
+/**
+ * smp_call_function callback.
+ * This is invoked on all the other CPUs.
+ * 
+ * @param   pvUser  Pointer to the device extension.
+ */
+static void VBoxSupDrvGipPerCpu(void *pvUser)
+{
+    PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)ulUser;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    supdrvGipUpdatePerCpu(pGip, pDevExt->u64LastMonotime, ASMGetApicId());
+}
+#endif  /* CONFIG_SMP */
 
 
 /**
@@ -1492,6 +1524,24 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
     dprintf2(("supdrvOSGipSuspend:\n"));
     if (timer_pending(&g_GipTimer))
         del_timer(&g_GipTimer);
+}
+
+
+/**
+ * Get the current CPU count.
+ * @returns Number of cpus.
+ */
+unsigned VBOXCALL supdrvOSGetCPUCount(void)
+{
+#ifdef CONFIG_SMP
+# ifdef num_present_cpus
+    return num_present_cpus();
+# else
+    return smp_num_cpus;
+# endif
+#else
+    return 1;
+#endif 
 }
 
 
