@@ -153,11 +153,6 @@ udp_input(m, iphlen)
             goto bad;
         }
 
-#ifndef VBOX
-/* Disable this for now (security leak, allows the guest to read any file
- * from the current directory and the directories in it on the host).
- * Reenable it after adding a way to optionally configure the tftp root
- * directory (the existing tftp prefix setting is not sufficient). */
         /*
          *  handle TFTP
          */
@@ -165,7 +160,6 @@ udp_input(m, iphlen)
             tftp_input(m);
             goto bad;
         }
-#endif /* !VBOX */
 
 	/*
 	 * Locate pcb for datagram.
