@@ -249,6 +249,7 @@ static void    *VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsig
 static int      VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt);
 static void     VBoxSupGipTimer(unsigned long ulUser);
+static void     VBoxSupDrvGipPerCpu(void *pvUser);
 static int      VBoxSupDrvOrder(unsigned long size);
 static int      VBoxSupDrvErr2LinuxErr(int);
 
@@ -1398,7 +1399,7 @@ static void     VBoxSupGipTimer(unsigned long ulUser)
  */
 static void VBoxSupDrvGipPerCpu(void *pvUser)
 {
-    PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)ulUser;
+    PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
     supdrvGipUpdatePerCpu(pGip, pDevExt->u64LastMonotime, ASMGetApicId());
 }
