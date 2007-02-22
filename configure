@@ -22,10 +22,12 @@ LC_ALL=C
 export LC_ALL
 
 #
-# Default positions
+# Defaults
 #
 OSE=1
-XPCOM=1
+WITH_XPCOM=1
+WITH_LIBIDL=1
+WITH_QT=1
 CC="gcc"
 CXX="g++"
 BCC="bcc"
@@ -51,7 +53,7 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
-QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/share/qt3"
+QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3"
 KBUILDDIR="`cd $(dirname $0); pwd`/kBuild"
 DEVDIR="`cd $(dirname $0); pwd`/tools"
 if [ -d /lib/modules/`uname -r`/build ]; then
@@ -225,8 +227,10 @@ function check_environment()
   log_success "Determined $OS.$MACHINE"
 
   # Automatically disable XPCOM on darwin.
-  if [ "$OS" = "darwin" -a $XPCOM -eq 1 ]; then
-    XPCOM=0
+  if [ "$OS" = "darwin" -a $WITH_XPCOM -eq 1 ]; then
+    WITH_XPCOM=0
+    WITH_LIBIDL=0
+    WITH_QT=0
     echo "Disabling checks for XPCOM related components."
   fi
 }
@@ -784,11 +788,11 @@ extern "C" int main(void)
 {
   printf("found version %d.%d.%d",
          SND_LIB_MAJOR, SND_LIB_MINOR, SND_LIB_SUBMINOR);
-#if 10000*SND_LIB_MAJOR + 100*SND_LIB_MINOR + SND_LIB_SUBMINOR >= 10008
+#if 10000*SND_LIB_MAJOR + 100*SND_LIB_MINOR + SND_LIB_SUBMINOR >= 10006
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 1.0.8 or higher\n");
+  printf(", expected version 1.0.6 or higher\n");
   return 1;
 #endif
 }
@@ -1084,7 +1088,7 @@ for option; do
       LIBXERCES=`echo $option | cut -d'=' -f2`
       ;;
     --disable-xpcom)
-      XPCOM=0
+      WITH_XPCOM=0
       ;;
     --disable-qt)
       WITH_QT=0
@@ -1185,9 +1189,9 @@ check_gcc
 (($OSE==0)) && check_mkisofs
 
 # the libraries
-(($XPCOM==1)) && check_xalan
-(($XPCOM==1)) && check_xerces
-(($XPCOM==1)) && check_libidl
+(($WITH_XPCOM==1)) && check_xalan
+(($WITH_XPCOM==1)) && check_xerces
+(($WITH_LIBIDL==1)) && check_libidl
 [ "$OS" != "darwin" ] && check_uuid
 (($OSE==0)) && check_ssl
 [ "$OS" != "darwin" ] && check_pthread
@@ -1199,7 +1203,7 @@ check_gcc
 [ "$OS" != "darwin" ] && check_alsa
 [ "$OS" != "darwin" ] && check_x
 [ "$OS" != "darwin" ] && check_xcursor
-(($XPCOM==1)) && check_qt
+(($WITH_QT==1)) && check_qt
 
 # Linux-specific
 [ "$OS" = "linux" ] && check_linux
