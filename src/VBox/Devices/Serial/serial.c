@@ -64,11 +64,19 @@
 #include "Builtins.h"
 #include "../vl_vbox.h"
 
+#define VBOX_SERIAL_PCI
+
+#ifdef VBOX_SERIAL_PCI
+#include <VBox/pci.h>
+#endif /* VBOX_SERIAL_PCI */
+
+#define SERIAL_SAVED_STATE_VERSION 2
+
 #endif /* VBOX */
 
 #ifndef VBOX
 #include "vl.h"
-#endif
+#endif /* !VBOX */
 
 //#define DEBUG_SERIAL
 
@@ -130,19 +138,35 @@ struct SerialState {
     /* NOTE: this hidden state is necessary for tx irq generation as
        it can be reset while reading iir */
     int thr_ipending;
+#ifndef VBOX
     SetIRQFunc *set_irq;
     void *irq_opaque;
+#endif /* !VBOX */
     int irq;
 #ifdef VBOX
+#ifdef VBOX_SERIAL_PCI
+    PCIDEVICE dev;
+#endif /* VBOX_SERIAL_PCI */
     /* Be careful with pointers in the structure; load just gets the whole structure from the saved state */
     PPDMDEVINS pDevIns;
-#else
-    CharDriverState *chr;
+#if 0
+    PDMICHAR pDevChar;
 #endif
+#else /* !VBOX */
+    CharDriverState *chr;
+#endif /* !VBOX */
     int last_break_enable;
     target_ulong base;
+#ifndef VBOX
     int it_shift;
+#endif /* !VBOX */
 };
+
+#ifdef VBOX
+#ifdef VBOX_SERIAL_PCI
+#define PCIDEV_2_SERIALSTATE(pPciDev) ( (SerialState *)((uintptr_t)(pPciDev) - RT_OFFSETOF(SerialState, dev)) )
+#endif /* VBOX_SERIAL_PCI */
+#endif /* VBOX */
 
 static void serial_update_irq(SerialState *s)
 {
@@ -156,15 +180,15 @@ static void serial_update_irq(SerialState *s)
     if (s->iir != UART_IIR_NO_INT) {
 #ifdef VBOX
         s->pDevIns->pDevHlp->pfnISASetIrq (s->pDevIns, s->irq, 1);
-#else
+#else /* !VBOX */
         s->set_irq(s->irq_opaque, s->irq, 1);
-#endif
+#endif /* !VBOX */
     } else {
 #ifdef VBOX
         s->pDevIns->pDevHlp->pfnISASetIrq (s->pDevIns, s->irq, 0);
-#else
+#else /* !VBOX */
         s->set_irq(s->irq_opaque, s->irq, 0);
-#endif
+#endif /* !VBOX */
     }
 }
 
@@ -195,7 +219,7 @@ static void serial_update_parameters(SerialState *s)
     ssp.stop_bits = stop_bits;
 #ifndef VBOX
     qemu_chr_ioctl(s->chr, CHR_IOCTL_SERIAL_SET_PARAMS, &ssp);
-#endif
+#endif /* !VBOX */
 #if 0
     printf("speed=%d parity=%c data=%d stop=%d\n",
            speed, parity, data_bits, stop_bits);
@@ -222,9 +246,17 @@ static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             s->lsr &= ~UART_LSR_THRE;
             serial_update_irq(s);
             ch = val;
-#ifndef VBOX
-            qemu_chr_write(s->chr, &ch, 1);
+#ifdef VBOX
+#if 0
+            if (s->pDrvChar)
+            {
+                int rc = s->pDrvChar->pfnWrite(s->pDrvChar, &ch, 1);
+                AssertRC(rc);
+            }
 #endif
+#else /* !VBOX */
+            qemu_chr_write(s->chr, &ch, 1);
+#endif /* !VBOX */
             s->thr_ipending = 1;
             s->lsr |= UART_LSR_THRE;
             s->lsr |= UART_LSR_TEMT;
@@ -256,7 +288,7 @@ static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 #ifndef VBOX
                 qemu_chr_ioctl(s->chr, CHR_IOCTL_SERIAL_SET_BREAK,
                                &break_enable);
-#endif
+#endif /* !VBOX */
             }
         }
         break;
@@ -334,7 +366,10 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr)
     return ret;
 }
 
-#ifndef VBOX
+#ifdef VBOX
+/* Provide non-blocking functions to receive data from the host system. */
+
+#else /* !VBOX */
 static int serial_can_receive(SerialState *s)
 {
     return !(s->lsr & UART_LSR_DR);
@@ -524,9 +559,9 @@ SerialState *serial_mm_init (SetIRQFunc *set_irq, void *opaque,
     qemu_chr_add_event_handler(chr, serial_event);
     return s;
 }
+#endif
 
-#else
-
+#ifdef VBOX
 static DECLCALLBACK(int) serial_io_write (PPDMDEVINS pDevIns,
                                        void *pvUser,
                                        RTIOPORT Port,
@@ -534,6 +569,7 @@ static DECLCALLBACK(int) serial_io_write (PPDMDEVINS pDevIns,
                                        unsigned cb)
 {
     if (cb == 1) {
+        Log(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
         serial_ioport_write (pvUser, Port, u32);
     }
     else {
@@ -549,7 +585,9 @@ static DECLCALLBACK(int) serial_io_read (PPDMDEVINS pDevIns,
                                       unsigned cb)
 {
     if (cb == 1) {
+        Log(("%s: port %#06x\n", __FUNCTION__, Port));
         *pu32 = serial_ioport_read (pvUser, Port);
+        Log(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
         return VINF_SUCCESS;
     }
     else {
@@ -557,29 +595,50 @@ static DECLCALLBACK(int) serial_io_read (PPDMDEVINS pDevIns,
     }
 }
 
-static DECLCALLBACK(int) SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
+                                        PSSMHANDLE pSSMHandle)
 {
     SerialState *s = PDMINS2DATA (pDevIns, SerialState *);
-    SSMR3PutMem(pSSMHandle, s, sizeof(*s));
+    SSMR3PutU16(pSSMHandle, s->divider);
+    SSMR3PutU8(pSSMHandle, s->rbr);
+    SSMR3PutU8(pSSMHandle, s->ier);
+    SSMR3PutU8(pSSMHandle, s->lcr);
+    SSMR3PutU8(pSSMHandle, s->mcr);
+    SSMR3PutU8(pSSMHandle, s->lsr);
+    SSMR3PutU8(pSSMHandle, s->msr);
+    SSMR3PutU8(pSSMHandle, s->scr);
+    SSMR3PutU32(pSSMHandle, s->thr_ipending);
+    SSMR3PutU32(pSSMHandle, s->irq);
+    SSMR3PutU32(pSSMHandle, s->last_break_enable);
+    SSMR3PutU32(pSSMHandle, s->base);
     return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
 }
 
-static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns,
-                                   PSSMHANDLE pSSMHandle,
-                                   uint32_t u32Version)
+static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
+                                        PSSMHANDLE pSSMHandle,
+                                        uint32_t u32Version)
 {
     int rc;
     uint32_t u32;
     SerialState *s = PDMINS2DATA (pDevIns, SerialState *);
 
-    if (u32Version != 2) {
+    if (u32Version != SERIAL_SAVED_STATE_VERSION) {
         AssertMsgFailed(("u32Version=%d\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    rc = SSMR3GetMem(pSSMHandle, s, sizeof(*s));
-    if (VBOX_FAILURE(rc))
-        return rc;
+    SSMR3GetU16(pSSMHandle, &s->divider);
+    SSMR3GetU8(pSSMHandle, &s->rbr);
+    SSMR3GetU8(pSSMHandle, &s->ier);
+    SSMR3GetU8(pSSMHandle, &s->lcr);
+    SSMR3GetU8(pSSMHandle, &s->mcr);
+    SSMR3GetU8(pSSMHandle, &s->lsr);
+    SSMR3GetU8(pSSMHandle, &s->msr);
+    SSMR3GetU8(pSSMHandle, &s->scr);
+    SSMR3GetU32(pSSMHandle, &s->thr_ipending);
+    SSMR3GetU32(pSSMHandle, &s->irq);
+    SSMR3GetU32(pSSMHandle, &s->last_break_enable);
+    SSMR3GetU32(pSSMHandle, &s->base);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
     if (VBOX_FAILURE(rc))
@@ -589,11 +648,36 @@ static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns,
         AssertMsgFailed(("u32=%#x expected ~0\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-    /* Be careful with pointers in the structure; load just gets the whole structure from the saved state */
+    /* Be careful with pointers in the structure; they are not preserved
+     * in the saved state. */
     s->pDevIns = pDevIns;
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_SERIAL_PCI
+
+static DECLCALLBACK(int) serialIOPortRegionMap(PPCIDEVICE pPciDev, /* unsigned */ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+{
+    SerialState *pData = PCIDEV_2_SERIALSTATE(pPciDev);
+    int rc = VINF_SUCCESS;
+
+    Assert(enmType == PCI_ADDRESS_SPACE_IO);
+    Assert(iRegion == 0);
+    Assert(cb == 8);
+    AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
+
+    pData->base = (RTIOPORT)GCPhysAddress;
+
+    /*
+     * Register our port IO handlers.
+     */
+    rc = pPciDev->pDevIns->pDevHlp->pfnIOPortRegister(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress, 8, (void *)pData,
+                                                      serial_io_write, serial_io_read, NULL, NULL, "SERIAL");
+    AssertRC(rc);
+    return rc;
+}
+
+#endif /* VBOX_SERIAL_PCI */
 
 /**
  * Construct a device instance for a VM.
@@ -646,7 +730,31 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     s->irq = irq_lvl;
     s->lsr = UART_LSR_TEMT | UART_LSR_THRE;
     s->iir = UART_IIR_NO_INT;
-
+    s->msr = UART_MSR_DCD | UART_MSR_DSR | UART_MSR_CTS;
+#ifdef VBOX_SERIAL_PCI
+    s->base = -1;
+    s->dev.config[0x00] = 0xee; /* Vendor: ??? */
+    s->dev.config[0x01] = 0x80;
+    s->dev.config[0x02] = 0x01; /* Device: ??? */
+    s->dev.config[0x03] = 0x01;
+    s->dev.config[0x04] = PCI_COMMAND_IOACCESS;
+    s->dev.config[0x09] = 0x01; /* Programming interface: 16450 */
+    s->dev.config[0x0a] = 0x00; /* Subclass: Serial controller */
+    s->dev.config[0x0b] = 0x07; /* Class: Communication controller */
+    s->dev.config[0x0e] = 0x00; /* Header type: standard */
+    s->dev.config[0x3c] = irq_lvl; /* preconfigure IRQ number (0 = autoconfig)*/
+    s->dev.config[0x3d] = 1;    /* interrupt pin 0 */
+    rc = pDevIns->pDevHlp->pfnPCIRegister(pDevIns, &s->dev);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    /*
+     * Register the PCI I/O ports.
+     */
+    rc = pDevIns->pDevHlp->pfnPCIIORegionRegister(pDevIns, 0, 8, PCI_ADDRESS_SPACE_IO, serialIOPortRegionMap);
+    if (VBOX_FAILURE(rc))
+        return rc;
+#else /* !VBOX_SERIAL_PCI */
+    s->base = io_base;
     rc = pDevIns->pDevHlp->pfnIOPortRegister (
         pDevIns,
         io_base,
@@ -660,18 +768,19 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     if (VBOX_FAILURE (rc)) {
         return rc;
     }
+#endif /* !VBOX_SERIAL_PCI */
 
     rc = pDevIns->pDevHlp->pfnSSMRegister (
         pDevIns,                /* pDevIns */
         pDevIns->pDevReg->szDeviceName, /* pszName */
         iInstance,              /* u32Instance */
-        2                       /* u32Version */,
+        SERIAL_SAVED_STATE_VERSION, /* u32Version */
         sizeof (*s),            /* cbGuess */
         NULL,                   /* pfnSavePrep */
-        SaveExec,               /* pfnSaveExec */
+        serialSaveExec,         /* pfnSaveExec */
         NULL,                   /* pfnSaveDone */
         NULL,                   /* pfnLoadPrep */
-        LoadExec,               /* pfnLoadExec */
+        serialLoadExec,         /* pfnLoadExec */
         NULL                    /* pfnLoadDone */
         );
     if (VBOX_FAILURE(rc))
@@ -726,4 +835,4 @@ const PDMDEVREG g_DeviceSerialPort =
     /* pfnQueryInterface. */
     NULL
 };
-#endif
+#endif /* VBOX */

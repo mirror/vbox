@@ -75,8 +75,6 @@ typedef RTGCPHYS                target_phys_addr_t;
 typedef PCIDEVICE               PCIDevice;
 typedef RTGCUINTREG             target_ulong;
 
-typedef void SetIRQFunc(void *opaque, int irq_num, int level);
-
 typedef struct SerialState SerialState;
 typedef struct {
     int speed;
