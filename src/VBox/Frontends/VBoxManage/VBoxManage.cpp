@@ -5532,8 +5532,9 @@ static int handleSharedFolder (int argc, char *argv[],
 
             CHECK_ERROR(machine, CreateSharedFolder(Bstr(name), Bstr(hostpath)));
 
-            /* commit and close the session */
-            CHECK_ERROR(machine, SaveSettings());
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(machine, SaveSettings());
+
             aSession->Close();
         }
     }
