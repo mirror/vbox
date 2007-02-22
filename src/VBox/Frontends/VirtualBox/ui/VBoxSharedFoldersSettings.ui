@@ -134,6 +134,23 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
                         </widget>
                         <widget class="QToolButton">
                             <property name="name">
+                                <cstring>tbEdit</cstring>
+                            </property>
+                            <property name="focusPolicy">
+                                <enum>TabFocus</enum>
+                            </property>
+                            <property name="text">
+                                <string>Edit</string>
+                            </property>
+                            <property name="autoRaise">
+                                <bool>true</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Edit selected shared folder definition.</string>
+                            </property>
+                        </widget>
+                        <widget class="QToolButton">
+                            <property name="name">
                                 <cstring>tbRemove</cstring>
                             </property>
                             <property name="focusPolicy">
@@ -190,6 +207,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 </variables>
 <slots>
     <slot>tbAddPressed()</slot>
+    <slot>tbEditPressed()</slot>
     <slot>tbRemovePressed()</slot>
     <slot>processOnItem( QListViewItem* )</slot>
     <slot>processCurrentChanged( QListViewItem* )</slot>

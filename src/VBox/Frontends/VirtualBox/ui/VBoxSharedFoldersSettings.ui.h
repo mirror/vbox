@@ -70,6 +70,12 @@ public:
             mTextList [aIndex] : QString::null;
     }
 
+    void updateText (int aColumn, const QString &aText)
+    {
+        if (aColumn >= 0 && aColumn < (int)mTextList.size())
+            mTextList [aColumn] = aText;
+    }
+
 protected:
 
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
@@ -147,11 +153,23 @@ class VBoxAddSFDialog : public QDialog
 
 public:
 
-    VBoxAddSFDialog (QWidget *aParent) :
+    enum DialogType { AddDType, EditDType };
+
+    VBoxAddSFDialog (QWidget *aParent, VBoxAddSFDialog::DialogType aType) :
         QDialog (aParent, "VBoxAddSFDialog", true /* modal */),
         mLePath (0), mLeName (0)
     {
-        setCaption (tr ("Add Share"));
+        switch (aType)
+        {
+            case AddDType:
+                setCaption (tr ("Add Share"));
+                break;
+            case EditDType:
+                setCaption (tr ("Edit Share"));
+                break;
+            default:
+                AssertMsgFailed (("Incorrect SF Dialog type\n"));
+        }
         QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
 
         /* Setup Input layout */
@@ -198,8 +216,10 @@ public:
     ~VBoxAddSFDialog() {}
 
     QString getPath() { return mLePath->text(); }
-
     QString getName() { return mLeName->text(); }
+
+    void setPath (const QString &aPath) { mLePath->setText (aPath); }
+    void setName (const QString &aName) { mLeName->setText (aName); }
 
 private slots:
 
@@ -261,9 +281,15 @@ void VBoxSharedFoldersSettings::init()
     listView->setRootIsDecorated (true);
     tbAdd->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                             "select_file_dis_16px.png"));
+    tbEdit->setIconSet (VBoxGlobal::iconSet ("global_settings_16px.png",
+                                             "global_settings_diasbled_16px.png"));
     tbRemove->setIconSet (VBoxGlobal::iconSet ("eraser_16px.png",
                                                "eraser_disabled_16px.png"));
+    QToolTip::add (tbAdd, tr ("Add new shared folder"));
+    QToolTip::add (tbEdit, tr ("Edit selected shared folder"));
+    QToolTip::add (tbRemove, tr ("Remove selected shared folder"));
     connect (tbAdd, SIGNAL (clicked()), this, SLOT (tbAddPressed()));
+    connect (tbEdit, SIGNAL (clicked()), this, SLOT (tbEditPressed()));
     connect (tbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));
     connect (listView, SIGNAL (currentChanged (QListViewItem *)),
              this, SLOT (processCurrentChanged (QListViewItem *)));
@@ -482,7 +508,7 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
 void VBoxSharedFoldersSettings::tbAddPressed()
 {
     /* Invoke Add-Box Dialog */
-    VBoxAddSFDialog dlg (this);
+    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::AddDType);
     if (dlg.exec() != QDialog::Accepted)
         return;
     QString name = dlg.getName();
@@ -499,6 +525,30 @@ void VBoxSharedFoldersSettings::tbAddPressed()
     listView->setCurrentItem (item);
     processCurrentChanged (item);
     listView->setFocus();
+    mIsListViewChanged = true;
+}
+
+void VBoxSharedFoldersSettings::tbEditPressed()
+{
+    /* Check selected item */
+    QListViewItem *selectedItem = listView->selectedItem();
+    VBoxRichListItem *item = 0;
+    if (selectedItem->rtti() == VBoxRichListItem::QIRichListItemId)
+        item = static_cast<VBoxRichListItem*> (selectedItem);
+    Assert (item);
+    /* Invoke Add-Box Dialog */
+    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::EditDType);
+    dlg.setPath (item->getText (1));
+    dlg.setName (item->getText (0));
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+    QString name = dlg.getName();
+    QString path = dlg.getPath();
+    /* Shared folder's name & path could not be empty */
+    Assert (!name.isEmpty() && !path.isEmpty());
+    /* Updating an edited listview item */
+    item->updateText (1, path);
+    item->updateText (0, name);
     mIsListViewChanged = true;
 }
 
@@ -529,13 +579,14 @@ void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
 {
     if (aItem && aItem->isSelectable() && listView->selectedItem() != aItem)
         listView->setSelected (aItem, true);
-    bool removeEnabled = aItem && aItem->parent() &&
-                         isEditable (aItem->parent()->text (2));
     bool addEnabled = aItem &&
                       (isEditable (aItem->text (2)) ||
                        aItem->parent() && isEditable (aItem->parent()->text (2)));
-    tbRemove->setEnabled (removeEnabled);
+    bool removeEnabled = aItem && aItem->parent() &&
+                         isEditable (aItem->parent()->text (2));
     tbAdd->setEnabled (addEnabled);
+    tbEdit->setEnabled (removeEnabled);
+    tbRemove->setEnabled (removeEnabled);
 }
 
 bool VBoxSharedFoldersSettings::isEditable (const QString &aKey)
@@ -553,4 +604,3 @@ bool VBoxSharedFoldersSettings::isEditable (const QString &aKey)
 
 
 #include "VBoxSharedFoldersSettings.ui.moc"
-
