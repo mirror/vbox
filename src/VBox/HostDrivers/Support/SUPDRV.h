@@ -616,6 +616,8 @@ typedef struct SUPDRVDEVEXT
     KTIMER                  GipTimer;
     /** The GIP DPC object associated with GipTimer. */
     KDPC                    GipDpc;
+    /** The GIP DPC objects for updating per-cpu data. */
+    KDPC                    aGipCpuDpcs[32];
     /** Pointer to the MDL for the pGip page. */
     PMDL                    pGipMdl;
     /** GIP timer interval (ms). */
@@ -625,7 +627,7 @@ typedef struct SUPDRVDEVEXT
     /** The last jiffies. */
     unsigned long           ulLastJiffies;
     /** The last mono time stamp. */
-    uint64_t                u64LastMonotime;
+    uint64_t volatile       u64LastMonotime;
 #endif
 } SUPDRVDEVEXT;
 
@@ -651,6 +653,7 @@ int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip
 int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE pGip);
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt);
 void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
+unsigned VBOXCALL supdrvOSGetCPUCount(void);
 #endif
 
 
@@ -670,6 +673,7 @@ void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSess
 int  VBOXCALL   supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz);
 void VBOXCALL   supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
 void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS);
+void VBOXCALL   supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, unsigned iCpu);
 
 __END_DECLS
 

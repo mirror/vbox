@@ -69,6 +69,7 @@ static NTSTATUS            VBoxSupDrvErr2NtStatus(int rc);
 static NTSTATUS            VBoxSupDrvGipInit(PSUPDRVDEVEXT pDevExt);
 static void                VBoxSupDrvGipTerm(PSUPDRVDEVEXT pDevExt);
 static void     _stdcall   VBoxSupDrvGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
+static void     _stdcall   VBoxSupDrvGipPerCpuDpc(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
 
 
 /*******************************************************************************
@@ -788,16 +789,31 @@ static NTSTATUS VBoxSupDrvGipInit(PSUPDRVDEVEXT pDevExt)
                  * Initialize the timer.
                  */
                 KeInitializeTimerEx(&pDevExt->GipTimer, SynchronizationTimer);
-                KeInitializeDpc(&pDevExt->GipDpc, VBoxSupDrvGipTimer, pGip);
+                KeInitializeDpc(&pDevExt->GipDpc, VBoxSupDrvGipTimer, pDevExt);
+
+                /*
+                 * Initialize the DPCs we're using to update the per-cpu GIP data.
+                 * (Not sure if we need to be this careful with KeSetTargetProcessorDpc...)
+                 */
+                UNICODE_STRING  RoutineName;
+                RtlInitUnicodeString(&RoutineName, L"KeSetTargetProcessorDpc");
+                VOID (*pfnKeSetTargetProcessorDpc)(IN PRKDPC, IN CCHAR) = (VOID (*)(IN PRKDPC, IN CCHAR))MmGetSystemRoutineAddress(&RoutineName);
+
+                for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->aGipCpuDpcs); i++)
+                {
+                    KeInitializeDpc(&pDevExt->aGipCpuDpcs[i], VBoxSupDrvGipPerCpuDpc, pGip);
+                    KeSetImportanceDpc(&pDevExt->aGipCpuDpcs[i], HighImportance);
+                    if (pfnKeSetTargetProcessorDpc)
+                        pfnKeSetTargetProcessorDpc(&pDevExt->aGipCpuDpcs[i], i);
+                }
+
                 dprintf(("VBoxSupDrvGipInit: ulClockFreq=%ld ulClockInterval=%ld ulClockIntervalActual=%ld Phys=%x%08x\n",
                          ulClockFreq, ulClockInterval, ulClockIntervalActual, Phys.HighPart, Phys.LowPart));
                 return STATUS_SUCCESS;
             }
-            else
-            {
-                dprintf(("VBoxSupDrvInitGip: IoAllocateMdl failed for %p/PAGE_SIZE\n", pGip));
-                rc = STATUS_NO_MEMORY;
-            }
+
+            dprintf(("VBoxSupDrvInitGip: IoAllocateMdl failed for %p/PAGE_SIZE\n", pGip));
+            rc = STATUS_NO_MEMORY;
         }
         else
         {
@@ -862,12 +878,53 @@ static void VBoxSupDrvGipTerm(PSUPDRVDEVEXT pDevExt)
 
 /**
  * Timer callback function.
- * The ulUser parameter is the GIP pointer.
+ * The pvUser parameter is the pDevExt pointer.
  */
-static void __stdcall VBoxSupDrvGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+static void _stdcall VBoxSupDrvGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+{
+    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    if (pGip)
+    {
+        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+            supdrvGipUpdate(pGip, supdrvOSMonotime());
+        else
+        {
+            RTCCUINTREG xFL = ASMGetFlags();
+            ASMIntDisable();
+
+            /* 
+             * We cannot do other than assume a 1:1 relation ship between the 
+             * affinity mask and the process despite the warnings in the docs. 
+             * If someone knows a better way to get this done, please let bird know.
+             */
+            unsigned iSelf = KeGetCurrentProcessorNumber();
+            KAFFINITY Mask = KeQueryActiveProcessors();
+
+            for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->aGipCpuDpcs); i++)
+            {
+                if (    i != iSelf 
+                    &&  (Mask & (1 << i)))
+                    KeInsertQueueDpc(&pDevExt->aGipCpuDpcs[i], 0, 0);
+            }
+
+            /* Run the normal update. */
+            supdrvGipUpdate(pGip, supdrvOSMonotime());
+
+            ASMSetFlags(xFL);
+        }
+    }
+}
+
+
+/**
+ * Per cpu callback callback function.
+ * The pvUser parameter is the pGip pointer.
+ */
+static void _stdcall VBoxSupDrvGipPerCpuDpc(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
     PSUPGLOBALINFOPAGE pGip = (PSUPGLOBALINFOPAGE)pvUser;
-    supdrvGipUpdate(pGip, supdrvOSMonotime());
+    supdrvGipUpdatePerCpu(pGip, supdrvOSMonotime(), ASMGetApicId());
 }
 
 

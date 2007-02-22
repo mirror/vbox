@@ -56,20 +56,20 @@ int main(void)
             {
                 RTPrintf("tstGIP-2: %2d: %016llx %016llx %08x %d %08x %15llu %08x %08x %08x %08x %08x %08x %08x %08x\n",
                          i,
-                         g_pSUPGlobalInfoPage->u64NanoTS,
-                         g_pSUPGlobalInfoPage->u64TSC,
-                         g_pSUPGlobalInfoPage->u32UpdateIntervalTSC,
-                         g_pSUPGlobalInfoPage->iTSCHistoryHead,
-                         g_pSUPGlobalInfoPage->u32TransactionId,
-                         g_pSUPGlobalInfoPage->u64CpuHz,
-                         g_pSUPGlobalInfoPage->au32TSCHistory[0],
-                         g_pSUPGlobalInfoPage->au32TSCHistory[1],
-                         g_pSUPGlobalInfoPage->au32TSCHistory[2],
-                         g_pSUPGlobalInfoPage->au32TSCHistory[3],
-                         g_pSUPGlobalInfoPage->au32TSCHistory[4],
-                         g_pSUPGlobalInfoPage->au32TSCHistory[5],
-                         g_pSUPGlobalInfoPage->au32TSCHistory[6],
-                         g_pSUPGlobalInfoPage->au32TSCHistory[7]);
+                         g_pSUPGlobalInfoPage->aCPUs[0].u64NanoTS,
+                         g_pSUPGlobalInfoPage->aCPUs[0].u64TSC,
+                         g_pSUPGlobalInfoPage->aCPUs[0].u32UpdateIntervalTSC,
+                         g_pSUPGlobalInfoPage->aCPUs[0].iTSCHistoryHead,
+                         g_pSUPGlobalInfoPage->aCPUs[0].u32TransactionId,
+                         g_pSUPGlobalInfoPage->aCPUs[0].u64CpuHz,
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[0],
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[1],
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[2],
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[3],
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[4],
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[5],
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[6],
+                         g_pSUPGlobalInfoPage->aCPUs[0].au32TSCHistory[7]);
                 RTThreadSleep(9);
             }
         }

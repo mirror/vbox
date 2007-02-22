@@ -23,6 +23,8 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <iprt/assert.h>
+#include <iprt/asm.h>
 
 __BEGIN_DECLS
 
@@ -73,56 +75,24 @@ typedef enum SUPPAGINGMODE
 } SUPPAGINGMODE;
 
 
-#pragma pack(1)
+#pragma pack(1) /* paranoia */
+
 /**
- * Global Information Page.
- *
- * This page contains useful information and can be mapped into any
- * process or VM. It can be accessed thru the g_pSUPGlobalInfoPage
- * pointer when a session is open.
- *
- * How to read data from this structure:
- *
- * @code
- *      PSUPGLOBALINFOPAGE pGIP;
- *      uint32_t u32TransactionId;
- *      do
- *      {
- *          pGIP = g_pSUPGlobalInfoPage;
- *          if (!pGIP)
- *              return VERR_GIP_NOT_PRESENT;
- *          u32TransactionId = pGIP->u32TransactionId;
- *          ... read stuff to local variables ...
- *      } while (   pGIP->u32TransactionId != u32TransactionId
- *               || (u32TransactionId & 1));
- * @endcode
- *
- * @remark This is currently an optional feature.
+ * Per CPU data.
+ * This is only used when 
  */
-typedef struct SUPGLOBALINFOPAGE
+typedef struct SUPGIPCPU
 {
-    /** Magic (SUPGLOBALINFOPAGE_MAGIC). */
-    uint32_t            u32Magic;
-
-    /** The update frequency of the of the NanoTS. */
-    volatile uint32_t   u32UpdateHz;
-    /** The update interval in nanoseconds. (10^9 / u32UpdateHz) */
-    volatile uint32_t   u32UpdateIntervalNS;
-
-    /** Padding / reserved space for future const variables. */
-    uint32_t            au32Padding0[5];
-
     /** Update transaction number.
      * This number is incremented at the start and end of each update. It follows
      * thusly that odd numbers indicates update in progress, while even numbers
      * indicate stable data. Use this to make sure that the data items you fetch
-     * are consistent.
-     */
+     * are consistent. */
     volatile uint32_t   u32TransactionId;
     /** The interval in TSC ticks between two NanoTS updates.
      * This is the average interval over the last 2, 4 or 8 updates + a little slack.
      * The slack makes the time go a tiny tiny bit slower and extends the interval enough
-     * to avoid getting ending up with too many 1ns increments. */
+     * to avoid ending up with too many 1ns increments. */
     volatile uint32_t   u32UpdateIntervalTSC;
     /** Current nanosecond timestamp. */
     volatile uint64_t   u64NanoTS;
@@ -140,17 +110,75 @@ typedef struct SUPGLOBALINFOPAGE
      * This history is used to calculate u32UpdateIntervalTSC.
      */
     volatile uint32_t   au32TSCHistory[8];
+    /** Reserved for future per processor data. */
+    volatile uint32_t   au32Reserved[6];
+} SUPGIPCPU;
+AssertCompileSize(SUPGIPCPU, 96);
+/*AssertCompileMemberAlignment(SUPGIPCPU, u64TSC, 8); -fixme */
+
+/** Pointer to per cpu data. */
+typedef SUPGIPCPU *PSUPGIPCPU;
+/** Pointer to const per cpu data. */
+typedef const SUPGIPCPU *PCSUPGIPCPU;
+
+/**
+ * Global Information Page.
+ *
+ * This page contains useful information and can be mapped into any
+ * process or VM. It can be accessed thru the g_pSUPGlobalInfoPage
+ * pointer when a session is open.
+ */
+typedef struct SUPGLOBALINFOPAGE
+{
+    /** Magic (SUPGLOBALINFOPAGE_MAGIC). */
+    uint32_t            u32Magic;
+
+    /** The GIP update mode, see SUPGIPMODE. */
+    uint32_t            u32Mode;
+
+    /** The update frequency of the of the NanoTS. */
+    volatile uint32_t   u32UpdateHz;
+    /** The update interval in nanoseconds. (10^9 / u32UpdateHz) */
+    volatile uint32_t   u32UpdateIntervalNS;
     /** The timestamp of the last time we update the update frequency. */
     volatile uint64_t   u64NanoTSLastUpdateHz;
+
+    /** Padding / reserved space for future data. */
+    uint32_t            au32Padding0[10];
+
+    /** Array of per-cpu data.
+     * If u32Mode == SUPGIPMODE_SYNC_TSC then only the first entry is used.
+     * If u32Mode == SUPGIPMODE_ASYNC_TSC then the CPU ACPI ID is used as an
+     * index into the array. */
+    SUPGIPCPU           aCPUs[32];
 } SUPGLOBALINFOPAGE;
-#pragma pack()
+AssertCompile(sizeof(SUPGLOBALINFOPAGE) <= 0x1000);
+/* AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPU, 32); - fixme */
+
 /** Pointer to the global info page. */
 typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** Const pointer to the global info page. */
 typedef const SUPGLOBALINFOPAGE *PCSUPGLOBALINFOPAGE;
 
-/** Current value of the SUPGLOBALINFOPAGE::u32Magic field. */
-#define SUPGLOBALINFOPAGE_MAGIC     (0xbeef0001)
+#pragma pack() /* end of paranoia */
+
+/** The value of the SUPGLOBALINFOPAGE::u32Magic field. (Soryo Fuyumi) */
+#define SUPGLOBALINFOPAGE_MAGIC     0x19590106
+
+/** 
+ * SUPGLOBALINFOPAGE::u32Mode values.
+ */
+typedef enum SUPGIPMODE
+{
+    /** The usual invalid null entry. */
+    SUPGIPMODE_INVALID = 0,
+    /** The TSC of the cores and cpus in the system is in sync. */
+    SUPGIPMODE_SYNC_TSC,
+    /** Each core has it's own TSC. */
+    SUPGIPMODE_ASYNC_TSC,
+    /** The usual 32-bit hack. */
+    SUPGIPMODE_32BIT_HACK = 0x7fffffff
+} SUPGIPMODE;
 
 /** Pointer to the Global Information Page.
  *
@@ -180,6 +208,31 @@ DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
 extern DECLIMPORT(PCSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
 #endif
 
+
+/**
+ * Gets the TSC frequency of the calling CPU.
+ * 
+ * @returns TSC frequency.
+ * @param   pGip        The GIP pointer.
+ */
+DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PCSUPGLOBALINFOPAGE pGip)
+{
+    unsigned iCpu;
+
+    if (RT_UNLIKELY(!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC))
+        return ~(uint64_t)0;
+
+    if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+        iCpu = 0;
+    else
+    {
+        iCpu = ASMGetApicId();
+        if (RT_UNLIKELY(iCpu >= RT_ELEMENTS(pGip->aCPUs)))
+            return ~(uint64_t)0;
+    }
+
+    return pGip->aCPUs[iCpu].u64CpuHz;
+}
 
 
 #ifdef IN_RING3
