@@ -5224,7 +5224,12 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             rc = pIf->pDrvBlockBios->pfnGetTranslation(pIf->pDrvBlockBios, &enmTranslation);
             AssertRC(rc);
 
-            if (enmTranslation == PDMBIOSTRANSLATION_AUTO)
+            if (    enmTranslation == PDMBIOSTRANSLATION_AUTO
+                &&  (   pIf->cCHSCylinders == 0
+                     || pIf->cCHSHeads == 0
+                     || pIf->cCHSSectors == 0
+                    )
+               )
             {
                 /* Image contains no geometry information, detect geometry. */
                 rc = ataGuessDiskLCHS(pIf, &pIf->cCHSCylinders, &pIf->cCHSHeads, &pIf->cCHSSectors);
