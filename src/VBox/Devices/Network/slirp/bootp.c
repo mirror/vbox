@@ -220,7 +220,11 @@ static void bootp_reply(struct bootp_t *bp)
     }
 
     if (bootp_filename)
+#ifndef VBOX
         snprintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
+#else
+        RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
+#endif
 
 #ifdef VBOX
     {

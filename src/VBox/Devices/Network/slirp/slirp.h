@@ -36,6 +36,7 @@ typedef int socklen_t;
 #  include <windows.h>
 #  include <io.h>
 # endif
+# include <iprt/string.h>
 # include <VBox/types.h>
 
 # define malloc(a)       RTMemAllocZ(a)

@@ -105,8 +105,13 @@ static int tftp_read_data(struct tftp_session *spt, u_int16_t block_nr,
   char buffer[1024];
   int n;
 
+#ifndef VBOX
   n = snprintf(buffer, sizeof(buffer), "%s/%s",
 	       tftp_prefix, spt->filename);
+#else
+  n = RTStrPrintf(buffer, sizeof(buffer), "%s/%s",
+	       tftp_prefix, spt->filename);
+#endif
   if (n >= sizeof(buffer))
     return -1;
 
@@ -381,8 +386,13 @@ static void tftp_handle_rrq(struct tftp_t *tp, int pktlen)
 	      char buffer[1024];
 	      int len;
 
+#ifndef VBOX
 	      len = snprintf(buffer, sizeof(buffer), "%s/%s",
 			     tftp_prefix, spt->filename);
+#else
+	      len = RTStrPrintf(buffer, sizeof(buffer), "%s/%s",
+			     tftp_prefix, spt->filename);
+#endif
 
 	      if (stat(buffer, &stat_p) == 0)
 		  tsize = stat_p.st_size;
