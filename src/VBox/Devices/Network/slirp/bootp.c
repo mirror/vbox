@@ -38,6 +38,8 @@ typedef struct {
 
 BOOTPClient bootp_clients[NB_ADDR];
 
+const char *bootp_filename;
+
 static const uint8_t rfc1533_cookie[] = { RFC1533_COOKIE };
 
 #ifndef VBOX
@@ -216,6 +218,10 @@ static void bootp_reply(struct bootp_t *bp)
             goto new_addr;
         }
     }
+
+    if (bootp_filename)
+        snprintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
+
 #ifdef VBOX
     {
         uint32_t addr = ntohl(daddr.sin_addr.s_addr);
