@@ -4078,9 +4078,13 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
             if (   ((uEAX >> 8) & 0xf) == 0xf && ((uEAX >> 20) & 0x7f) == 0 /* family=15 */
                 && (uEDX & BIT(27) /*RDTSCP*/))
             {
-                /** @todo when we get the model / family numbers of barcelona and other amd cores with proper TSC,
-                 * add the appropriate model checks here. */
-                return SUPGIPMODE_ASYNC_TSC;
+                /* Check the power specs for <check the docs what this actually is>. */
+                ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
+                if (uEAX < 0x80000007)
+                    return SUPGIPMODE_ASYNC_TSC;
+                ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
+                if (!(uEDX & BIT(8)))
+                    return SUPGIPMODE_ASYNC_TSC;
             }
         }
     }
