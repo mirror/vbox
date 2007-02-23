@@ -28,6 +28,7 @@ OSE=1
 WITH_XPCOM=1
 WITH_LIBIDL=1
 WITH_QT=1
+WITH_SDL_TTF=1
 CC="gcc"
 CXX="g++"
 BCC="bcc"
@@ -1028,6 +1029,7 @@ Configuration:
   -h, --help              display this help and exit
   --nofatal               don't abort on errors
   --disable-xpcom         disable XPCOM and related stuff
+  --disable-sdl-ttf       disable SDL_ttf detection
 
 Paths:
   --with-gcc=PATH         position of the gcc compiler [$CC]
@@ -1093,6 +1095,9 @@ for option; do
       ;;
     --disable-xpcom)
       WITH_XPCOM=0
+      ;;
+    --disable-sdl-ttf)
+      WITH_SDL_TTF=0
       ;;
     --disable-qt)
       WITH_QT=0
@@ -1203,7 +1208,7 @@ check_gcc
 (($OSE==0)) && check_png
 (($OSE==0)) && [ "$OS" = "linux" ] && check_pam
 [ "$OS" != "darwin" ] && check_sdl
-(($OSE==0)) && check_sdl_ttf
+(($WITH_SDL_TTF==1)) && (($OSE==0)) && check_sdl_ttf
 [ "$OS" != "darwin" ] && check_alsa
 [ "$OS" != "darwin" ] && check_x
 [ "$OS" != "darwin" ] && check_xcursor
