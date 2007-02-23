@@ -57,7 +57,7 @@
 #  define ptr_to_u32(ptr)       VBoxU32PtrHash((pData), (ptr))
 #  define u32_to_ptr(u32, type) ((type)VBoxU32PtrLookup((pData), (u32)))
 
-    extern void     VBoxU32PtrDone(PNATSTate pData, void *pv, uint32_t iHint);
+    extern void     VBoxU32PtrDone(PNATState pData, void *pv, uint32_t iHint);
     extern uint32_t VBoxU32PtrHashSlow(PNATState pData, void *pv);
 
     /** Hash the pointer, inserting it if need be. */
