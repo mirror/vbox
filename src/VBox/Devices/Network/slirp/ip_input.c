@@ -37,7 +37,7 @@
 /*
  * Changes and additions relating to SLiRP are
  * Copyright (c) 1995 Danny Gasparovski.
- * 
+ *
  * Please read the file COPYRIGHT for the
  * terms and conditions of the copyright.
  */
@@ -45,22 +45,36 @@
 #include <slirp.h>
 #include "ip_icmp.h"
 
+#ifndef VBOX
 int ip_defttl;
 struct ipstat ipstat;
 struct ipq ipq;
+#endif /* !VBOX */
 
 /*
  * IP initialization: fill in IP protocol switch table.
  * All protocols not implemented in kernel go to raw IP protocol handler.
  */
 void
+#ifdef VBOX
+ip_init(PNATState pData)
+#else /* !VBOX */
 ip_init()
+#endif /* !VBOX */
 {
 	ipq.next = ipq.prev = ptr_to_u32(&ipq);
+#ifdef VBOX
+	ip_currid = tt.tv_sec & 0xffff;
+	udp_init(pData);
+	tcp_init(pData);
+#else /* !VBOX */
 	ip_id = tt.tv_sec & 0xffff;
 	udp_init();
 	tcp_init();
+#endif /* !VBOX */
+#ifndef VBOX
 	ip_defttl = IPDEFTTL;
+#endif /* !VBOX */
 }
 
 /*
@@ -68,25 +82,29 @@ ip_init()
  * try to reassemble.  Process options.  Pass to next level.
  */
 void
+#ifdef VBOX
+ip_input(PNATState pData, struct mbuf *m)
+#else /* !VBOX */
 ip_input(m)
 	struct mbuf *m;
+#endif /* !VBOX */
 {
 	register struct ip *ip;
 	int hlen;
-	
+
 	DEBUG_CALL("ip_input");
 	DEBUG_ARG("m = %lx", (long)m);
 	DEBUG_ARG("m_len = %d", m->m_len);
 
 	ipstat.ips_total++;
-	
+
 	if (m->m_len < sizeof (struct ip)) {
 		ipstat.ips_toosmall++;
 		return;
 	}
-	
+
 	ip = mtod(m, struct ip *);
-	
+
 	if (ip->ip_v != IPVERSION) {
 		ipstat.ips_badvers++;
 		goto bad;
@@ -99,8 +117,8 @@ ip_input(m)
 	}
 
         /* keep ip header intact for ICMP reply
-	 * ip->ip_sum = cksum(m, hlen); 
-	 * if (ip->ip_sum) { 
+	 * ip->ip_sum = cksum(m, hlen);
+	 * if (ip->ip_sum) {
 	 */
 	if(cksum(m,hlen)) {
 	  ipstat.ips_badsum++;
@@ -134,7 +152,11 @@ ip_input(m)
 
 	/* check ip_ttl for a correct ICMP reply */
 	if(ip->ip_ttl==0 || ip->ip_ttl==1) {
+#ifdef VBOX
+	  icmp_error(pData, m, ICMP_TIMXCEED,ICMP_TIMXCEED_INTRANS, 0,"ttl");
+#else /* !VBOX */
 	  icmp_error(m, ICMP_TIMXCEED,ICMP_TIMXCEED_INTRANS, 0,"ttl");
+#endif /* !VBOX */
 	  goto bad;
 	}
 
@@ -154,17 +176,17 @@ ip_input(m)
 	 * (We could look in the reassembly queue to see
 	 * if the packet was previously fragmented,
 	 * but it's not worth the time; just let them time out.)
-	 * 
+	 *
 	 * XXX This should fail, don't fragment yet
 	 */
 	if (ip->ip_off &~ IP_DF) {
-	  register struct ipq *fp;
+	  register struct ipq_t *fp;
 		/*
 		 * Look for queue of fragments
 		 * of this datagram.
 		 */
-		for (fp = u32_to_ptr(ipq.next, struct ipq *); fp != &ipq;
-		     fp = u32_to_ptr(fp->next, struct ipq *))
+		for (fp = u32_to_ptr(ipq.next, struct ipq_t *); fp != &ipq;
+		     fp = u32_to_ptr(fp->next, struct ipq_t *))
 		  if (ip->ip_id == fp->ipq_id &&
 		      ip->ip_src.s_addr == fp->ipq_src.s_addr &&
 		      ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
@@ -181,7 +203,7 @@ ip_input(m)
 		ip->ip_len -= hlen;
 		if (ip->ip_off & IP_MF)
 		  ((struct ipasfrag *)ip)->ipf_mff |= 1;
-		else 
+		else
 		  ((struct ipasfrag *)ip)->ipf_mff &= ~1;
 
 		ip->ip_off <<= 3;
@@ -193,14 +215,26 @@ ip_input(m)
 		 */
 		if (((struct ipasfrag *)ip)->ipf_mff & 1 || ip->ip_off) {
 			ipstat.ips_fragments++;
+#ifdef VBOX
+			ip = ip_reass(pData, (struct ipasfrag *)ip, fp);
+#else /* !VBOX */
 			ip = ip_reass((struct ipasfrag *)ip, fp);
+#endif /* !VBOX */
 			if (ip == 0)
 				return;
 			ipstat.ips_reassembled++;
+#ifdef VBOX
+			m = dtom(pData, ip);
+#else /* !VBOX */
 			m = dtom(ip);
+#endif /* !VBOX */
 		} else
 			if (fp)
+#ifdef VBOX
+		   	   ip_freef(pData, fp);
+#else /* !VBOX */
 		   	   ip_freef(fp);
+#endif /* !VBOX */
 
 	} else
 		ip->ip_len -= hlen;
@@ -211,21 +245,41 @@ ip_input(m)
 	ipstat.ips_delivered++;
 	switch (ip->ip_p) {
 	 case IPPROTO_TCP:
+#ifdef VBOX
+		tcp_input(pData, m, hlen, (struct socket *)NULL);
+#else /* !VBOX */
 		tcp_input(m, hlen, (struct socket *)NULL);
+#endif /* !VBOX */
 		break;
 	 case IPPROTO_UDP:
+#ifdef VBOX
+		udp_input(pData, m, hlen);
+#else /* !VBOX */
 		udp_input(m, hlen);
+#endif /* !VBOX */
 		break;
 	 case IPPROTO_ICMP:
+#ifdef VBOX
+		icmp_input(pData, m, hlen);
+#else /* !VBOX */
 		icmp_input(m, hlen);
+#endif /* !VBOX */
 		break;
 	 default:
 		ipstat.ips_noproto++;
+#ifdef VBOX
+		m_free(pData, m);
+#else /* !VBOX */
 		m_free(m);
+#endif /* !VBOX */
 	}
 	return;
 bad:
+#ifdef VBOX
+	m_freem(pData, m);
+#else /* !VBOX */
 	m_freem(m);
+#endif /* !VBOX */
 	return;
 }
 
@@ -236,15 +290,23 @@ bad:
  * is given as fp; otherwise have to make a chain.
  */
 struct ip *
+#ifdef VBOX
+ip_reass(PNATState pData, register struct ipasfrag *ip, register struct ipq_t *fp)
+#else /* !VBOX */
 ip_reass(ip, fp)
 	register struct ipasfrag *ip;
-	register struct ipq *fp;
+	register struct ipq_t *fp;
+#endif /* !VBOX */
 {
+#ifdef VBOX
+	register struct mbuf *m = dtom(pData, ip);
+#else /* !VBOX */
 	register struct mbuf *m = dtom(ip);
+#endif /* !VBOX */
 	register struct ipasfrag *q;
 	int hlen = ip->ip_hl << 2;
 	int i, next;
-	
+
 	DEBUG_CALL("ip_reass");
 	DEBUG_ARG("ip = %lx", (long)ip);
 	DEBUG_ARG("fp = %lx", (long)fp);
@@ -263,8 +325,12 @@ ip_reass(ip, fp)
 	 */
 	if (fp == 0) {
 	  struct mbuf *t;
+#ifdef VBOX
+	  if ((t = m_get(pData)) == NULL) goto dropfrag;
+#else /* !VBOX */
 	  if ((t = m_get()) == NULL) goto dropfrag;
-	  fp = mtod(t, struct ipq *);
+#endif /* !VBOX */
+	  fp = mtod(t, struct ipq_t *);
 	  insque_32(fp, &ipq);
 	  fp->ipq_ttl = IPFRAGTTL;
 	  fp->ipq_p = ip->ip_p;
@@ -275,7 +341,7 @@ ip_reass(ip, fp)
 	  q = (struct ipasfrag *)fp;
 	  goto insert;
 	}
-	
+
 	/*
 	 * Find a segment which begins after this one does.
 	 */
@@ -289,13 +355,17 @@ ip_reass(ip, fp)
 	 * our data already.  If so, drop the data from the incoming
 	 * segment.  If it provides all of our data, drop us.
 	 */
-	if (u32_to_ptr(q->ipf_prev, struct ipq *) != fp) {
+	if (u32_to_ptr(q->ipf_prev, struct ipq_t *) != fp) {
 		i = (u32_to_ptr(q->ipf_prev, struct ipasfrag *))->ip_off +
 		  (u32_to_ptr(q->ipf_prev, struct ipasfrag *))->ip_len - ip->ip_off;
 		if (i > 0) {
 			if (i >= ip->ip_len)
 				goto dropfrag;
+#ifdef VBOX
+			m_adj(dtom(pData, ip), i);
+#else /* !VBOX */
 			m_adj(dtom(ip), i);
+#endif /* !VBOX */
 			ip->ip_off += i;
 			ip->ip_len -= i;
 		}
@@ -310,11 +380,15 @@ ip_reass(ip, fp)
 		if (i < q->ip_len) {
 			q->ip_len -= i;
 			q->ip_off += i;
+#ifdef VBOX
+			m_adj(dtom(pData, q), i);
+#else /* !VBOX */
 			m_adj(dtom(q), i);
+#endif /* !VBOX */
 			break;
 		}
 		q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
-		m_freem(dtom(u32_to_ptr(q->ipf_prev, struct ipasfrag *)));
+		m_freem(pData, dtom(pData, u32_to_ptr(q->ipf_prev, struct ipasfrag *)));
 		ip_deq(u32_to_ptr(q->ipf_prev, struct ipasfrag *));
 	}
 
@@ -338,14 +412,26 @@ insert:
 	 * Reassembly is complete; concatenate fragments.
 	 */
 	q = u32_to_ptr(fp->ipq_next, struct ipasfrag *);
+#ifdef VBOX
+	m = dtom(pData, q);
+#else /* !VBOX */
 	m = dtom(q);
+#endif /* !VBOX */
 
 	q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
 	while (q != (struct ipasfrag *)fp) {
 	  struct mbuf *t;
+#ifdef VBOX
+	  t = dtom(pData, q);
+#else /* !VBOX */
 	  t = dtom(q);
+#endif /* !VBOX */
 	  q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
+#ifdef VBOX
+	  m_cat(pData, m, t);
+#else /* !VBOX */
 	  m_cat(m, t);
+#endif /* !VBOX */
 	}
 
 	/*
@@ -369,7 +455,7 @@ insert:
 	  ip = (struct ipasfrag *)(m->m_ext + delta);
 	}
 
-	/* DEBUG_ARG("ip = %lx", (long)ip); 
+	/* DEBUG_ARG("ip = %lx", (long)ip);
 	 * ip=(struct ipasfrag *)m->m_data; */
 
 	ip->ip_len = next;
@@ -377,8 +463,13 @@ insert:
 	((struct ip *)ip)->ip_src = fp->ipq_src;
 	((struct ip *)ip)->ip_dst = fp->ipq_dst;
 	remque_32(fp);
+#ifdef VBOX
+	(void) m_free(pData, dtom(pData, fp));
+	m = dtom(pData, ip);
+#else /* !VBOX */
 	(void) m_free(dtom(fp));
 	m = dtom(ip);
+#endif /* !VBOX */
 	m->m_len += (ip->ip_hl << 2);
 	m->m_data -= (ip->ip_hl << 2);
 
@@ -386,7 +477,11 @@ insert:
 
 dropfrag:
 	ipstat.ips_fragdropped++;
+#ifdef VBOX
+	m_freem(pData, m);
+#else /* !VBOX */
 	m_freem(m);
+#endif /* !VBOX */
 	return (0);
 }
 
@@ -395,8 +490,12 @@ dropfrag:
  * associated datagrams.
  */
 void
+#ifdef VBOX
+ip_freef(PNATState pData, struct ipq_t *fp)
+#else /* !VBOX */
 ip_freef(fp)
-	struct ipq *fp;
+	struct ipq_t *fp;
+#endif /* !VBOX */
 {
 	register struct ipasfrag *q, *p;
 
@@ -404,10 +503,18 @@ ip_freef(fp)
 	    q = p) {
 		p = u32_to_ptr(q->ipf_next, struct ipasfrag *);
 		ip_deq(q);
+#ifdef VBOX
+		m_freem(pData, dtom(pData, q));
+#else /* !VBOX */
 		m_freem(dtom(q));
+#endif /* !VBOX */
 	}
 	remque_32(fp);
+#ifdef VBOX
+	(void) m_free(pData, dtom(pData, fp));
+#else /* !VBOX */
 	(void) m_free(dtom(fp));
+#endif /* !VBOX */
 }
 
 /*
@@ -446,22 +553,26 @@ ip_deq(p)
  * queue, discard it.
  */
 void
+#ifdef VBOX
+ip_slowtimo(PNATState pData)
+#else /* !VBOX */
 ip_slowtimo()
+#endif /* !VBOX */
 {
-	register struct ipq *fp;
-	
+	register struct ipq_t *fp;
+
 	DEBUG_CALL("ip_slowtimo");
-	
-	fp = u32_to_ptr(ipq.next, struct ipq *);
+
+	fp = u32_to_ptr(ipq.next, struct ipq_t *);
 	if (fp == 0)
 	   return;
 
 	while (fp != &ipq) {
 		--fp->ipq_ttl;
-		fp = u32_to_ptr(fp->next, struct ipq *);
-		if (u32_to_ptr(fp->prev, struct ipq *)->ipq_ttl == 0) {
+		fp = u32_to_ptr(fp->next, struct ipq_t *);
+		if (u32_to_ptr(fp->prev, struct ipq_t *)->ipq_ttl == 0) {
 			ipstat.ips_fragtimeout++;
-			ip_freef(u32_to_ptr(fp->prev, struct ipq *));
+			ip_freef(pData, u32_to_ptr(fp->prev, struct ipq_t *));
 		}
 	}
 }
@@ -695,6 +806,6 @@ ip_stripoptions(m, mopt)
 	i = m->m_len - (sizeof (struct ip) + olen);
 	memcpy(opts, opts  + olen, (unsigned)i);
 	m->m_len -= olen;
-	
+
 	ip->ip_hl = sizeof(struct ip) >> 2;
 }

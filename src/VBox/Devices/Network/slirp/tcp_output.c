@@ -37,8 +37,8 @@
 /*
  * Changes and additions relating to SLiRP
  * Copyright (c) 1995 Danny Gasparovski.
- * 
- * Please read the file COPYRIGHT for the 
+ *
+ * Please read the file COPYRIGHT for the
  * terms and conditions of the copyright.
  */
 
@@ -48,16 +48,24 @@
  * Since this is only used in "stats socket", we give meaning
  * names instead of the REAL names
  */
+#ifdef VBOX
+const char * const tcpstates[] = {
+#else /* !VBOX */
 char *tcpstates[] = {
+#endif /* !VBOX */
 /*	"CLOSED",       "LISTEN",       "SYN_SENT",     "SYN_RCVD", */
 	"REDIRECT",	"LISTEN",	"SYN_SENT",     "SYN_RCVD",
 	"ESTABLISHED",  "CLOSE_WAIT",   "FIN_WAIT_1",   "CLOSING",
 	"LAST_ACK",     "FIN_WAIT_2",   "TIME_WAIT",
 };
 
+#ifdef VBOX
+static const u_char  tcp_outflags[TCP_NSTATES] = {
+#else /* !VBOX */
 u_char  tcp_outflags[TCP_NSTATES] = {
+#endif /* !VBOX */
 	TH_RST|TH_ACK, 0,      TH_SYN,        TH_SYN|TH_ACK,
-	TH_ACK,        TH_ACK, TH_FIN|TH_ACK, TH_FIN|TH_ACK, 
+	TH_ACK,        TH_ACK, TH_FIN|TH_ACK, TH_FIN|TH_ACK,
 	TH_FIN|TH_ACK, TH_ACK, TH_ACK,
 };
 
@@ -68,8 +76,12 @@ u_char  tcp_outflags[TCP_NSTATES] = {
  * Tcp output routine: figure out what should be sent and send it.
  */
 int
+#ifdef VBOX
+tcp_output(PNATState pData, register struct tcpcb *tp)
+#else /* !VBOX */
 tcp_output(tp)
 	register struct tcpcb *tp;
+#endif /* !VBOX */
 {
 	register struct socket *so = tp->t_socket;
 	register long len, win;
@@ -79,10 +91,10 @@ tcp_output(tp)
 	u_char opt[MAX_TCPOPTLEN];
 	unsigned optlen, hdrlen;
 	int idle, sendalot;
-	
+
 	DEBUG_CALL("tcp_output");
 	DEBUG_ARG("tp = %lx", (long )tp);
-	
+
 	/*
 	 * Determine length of data that should be transmitted,
 	 * and flags that will be used.
@@ -103,9 +115,9 @@ again:
 	win = min(tp->snd_wnd, tp->snd_cwnd);
 
 	flags = tcp_outflags[tp->t_state];
-	
+
 	DEBUG_MISC((dfd, " --- tcp_output flags = 0x%x\n",flags));
-	
+
 	/*
 	 * If in persist timeout with window of 0, send 1 byte.
 	 * Otherwise, if window is small but nonzero
@@ -158,7 +170,7 @@ again:
 			tp->snd_nxt = tp->snd_una;
 		}
 	}
-	
+
 	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
 		sendalot = 1;
@@ -200,7 +212,7 @@ again:
 	 * window, then want to send a window update to peer.
 	 */
 	if (win > 0) {
-		/* 
+		/*
 		 * "adv" is the amount we can increase the window,
 		 * taking into account that we are limited by
 		 * TCP_MAXWIN << tp->rcv_scale.
@@ -264,7 +276,7 @@ again:
 	 * No reason to send a segment, just return.
 	 */
 	tcpstat.tcps_didnuttin++;
-	
+
 	return (0);
 
 send:
@@ -285,7 +297,11 @@ send:
 
 			opt[0] = TCPOPT_MAXSEG;
 			opt[1] = 4;
+#ifdef VBOX
+			mss = htons((u_int16_t) tcp_mss(pData, tp, 0));
+#else /* !VBOX */
 			mss = htons((u_int16_t) tcp_mss(tp, 0));
+#endif /* !VBOX */
 			memcpy((caddr_t)(opt + 2), (caddr_t)&mss, sizeof(mss));
 			optlen = 4;
 
@@ -302,9 +318,9 @@ send:
  */
 		}
  	}
- 
+
  	/*
-	 * Send a timestamp and echo-reply if this is a SYN and our side 
+	 * Send a timestamp and echo-reply if this is a SYN and our side
 	 * wants to use timestamps (TF_REQ_TSTMP is set) or both our side
 	 * and our peer have sent timestamps in our SYN's.
  	 */
@@ -322,7 +338,7 @@ send:
  *	}
  */
  	hdrlen += optlen;
- 
+
 	/*
 	 * Adjust data length if insertion of options will
 	 * bump the packet length beyond the t_maxseg length.
@@ -348,7 +364,11 @@ send:
 			tcpstat.tcps_sndbyte += len;
 		}
 
+#ifdef VBOX
+		m = m_get(pData);
+#else /* !VBOX */
 		m = m_get();
+#endif /* !VBOX */
 		if (m == NULL) {
 /*			error = ENOBUFS; */
 			error = 1;
@@ -356,8 +376,8 @@ send:
 		}
 		m->m_data += if_maxlinkhdr;
 		m->m_len = hdrlen;
-		
-		/* 
+
+		/*
 		 * This will always succeed, since we make sure our mbufs
 		 * are big enough to hold one MSS packet + header + ... etc.
 		 */
@@ -390,7 +410,11 @@ send:
 		else
 			tcpstat.tcps_sndwinup++;
 
+#ifdef VBOX
+		m = m_get(pData);
+#else /* !VBOX */
 		m = m_get();
+#endif /* !VBOX */
 		if (m == NULL) {
 /*			error = ENOBUFS; */
 			error = 1;
@@ -401,7 +425,7 @@ send:
 	}
 
 	ti = mtod(m, struct tcpiphdr *);
-	
+
 	memcpy((caddr_t)ti, &tp->t_template, sizeof (struct tcpiphdr));
 
 	/*
@@ -409,7 +433,7 @@ send:
 	 * window for use in delaying messages about window sizes.
 	 * If resending a FIN, be sure not to use a new sequence number.
 	 */
-	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN && 
+	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN &&
 	    tp->snd_nxt == tp->snd_max)
 		tp->snd_nxt--;
 	/*
@@ -446,10 +470,10 @@ send:
 	if (win < (long)(tp->rcv_adv - tp->rcv_nxt))
 		win = (long)(tp->rcv_adv - tp->rcv_nxt);
 	ti->ti_win = htons((u_int16_t) (win>>tp->rcv_scale));
-	
+
 	if (SEQ_GT(tp->snd_up, tp->snd_una)) {
 		ti->ti_urp = htons((u_int16_t)(tp->snd_up - ntohl(ti->ti_seq)));
-#ifdef notdef		
+#ifdef notdef
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = htons((u_int16_t)(tp->snd_up - tp->snd_nxt));
 #endif
@@ -531,23 +555,27 @@ send:
 	 * the template, but need a way to checksum without them.
 	 */
 	m->m_len = hdrlen + len; /* XXX Needed? m_len should be correct */
-	
+
     {
-	    
+
 	((struct ip *)ti)->ip_len = m->m_len;
 
 	((struct ip *)ti)->ip_ttl = ip_defttl;
 	((struct ip *)ti)->ip_tos = so->so_iptos;
-	    
+
 /* #if BSD >= 43 */
 	/* Don't do IP options... */
 /*	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
  *	    so->so_options & SO_DONTROUTE, 0);
  */
+#ifdef VBOX
+	error = ip_output(pData, so, m);
+#else /* !VBOX */
 	error = ip_output(so, m);
+#endif /* !VBOX */
 
 /* #else
- *	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route, 
+ *	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route,
  *	    so->so_options & SO_DONTROUTE);
  * #endif
  */

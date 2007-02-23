@@ -69,12 +69,12 @@ struct m_hdr {
 
 	int	mh_size;		/* Size of data */
 	struct	socket *mh_so;
-	
+
 	caddr_t	mh_data;		/* Location of data */
 	int	mh_len;			/* Amount of data in this mbuf */
 };
 
-/* 
+/*
  * How much room is in the mbuf, from m_data to the end of the mbuf
  */
 #define M_ROOM(m) ((m->m_flags & M_EXT)? \
@@ -126,7 +126,7 @@ struct mbuf {
 
 struct mbstat {
 	int mbs_alloced;		/* Number of mbufs allocated */
-	
+
 };
 
 extern struct	mbstat mbstat;
@@ -134,14 +134,26 @@ extern int mbuf_alloced;
 extern struct mbuf m_freelist, m_usedlist;
 extern int mbuf_max;
 
+#ifdef VBOX
+void m_init _P((PNATState));
+void msize_init _P((PNATState));
+struct mbuf * m_get _P((PNATState));
+void m_free _P((PNATState, struct mbuf *));
+void m_cat _P((PNATState, register struct mbuf *, register struct mbuf *));
+#else /* !VBOX */
 void m_init _P((void));
 void msize_init _P((void));
 struct mbuf * m_get _P((void));
 void m_free _P((struct mbuf *));
 void m_cat _P((register struct mbuf *, register struct mbuf *));
+#endif /* !VBOX */
 void m_inc _P((struct mbuf *, int));
 void m_adj _P((struct mbuf *, int));
 int m_copy _P((struct mbuf *, struct mbuf *, int, int));
+#ifdef VBOX
+struct mbuf * dtom _P((PNATState, void *));
+#else /* !VBOX */
 struct mbuf * dtom _P((void *));
+#endif /* !VBOX */
 
 #endif

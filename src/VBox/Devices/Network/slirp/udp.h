@@ -72,7 +72,11 @@ struct udpiphdr {
 #define ui_ulen         ui_u.uh_ulen
 #define ui_sum          ui_u.uh_sum
 
+#ifdef VBOX
+struct udpstat_t {
+#else /* !VBOX */
 struct udpstat {
+#endif /* !VBOX */
 	                                /* input statistics: */
 	        u_long  udps_ipackets;          /* total input packets */
 	        u_long  udps_hdrops;            /* packet shorter than header */
@@ -96,15 +100,35 @@ extern struct udpstat udpstat;
 extern struct socket udb;
 struct mbuf;
 
+#ifdef VBOX
+void udp_init _P((PNATState));
+void udp_input _P((PNATState, register struct mbuf *, int));
+int udp_output _P((PNATState, struct socket *, struct mbuf *, struct sockaddr_in *));
+int udp_attach _P((PNATState, struct socket *));
+void udp_detach _P((PNATState, struct socket *));
+#else /* !VBOX */
 void udp_init _P((void));
 void udp_input _P((register struct mbuf *, int));
 int udp_output _P((struct socket *, struct mbuf *, struct sockaddr_in *));
 int udp_attach _P((struct socket *));
 void udp_detach _P((struct socket *));
+#endif /* !VBOX */
 u_int8_t udp_tos _P((struct socket *));
-void udp_emu _P((struct socket *, struct mbuf *));
-struct socket * udp_listen _P((u_int, u_int32_t, u_int, int));
-int udp_output2(struct socket *so, struct mbuf *m, 
+#ifdef VBOX
+#else /* !VBOX */
+#endif /* !VBOX */
+#ifdef VBOX
+void udp_emu _P((PNATState, struct socket *, struct mbuf *));
+struct socket * udp_listen _P((PNATState, u_int, u_int32_t, u_int, int));
+int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
                 struct sockaddr_in *saddr, struct sockaddr_in *daddr,
                 int iptos);
+#else /* !VBOX */
+void udp_emu _P((struct socket *, struct mbuf *));
+struct socket * udp_listen _P((u_int, u_int32_t, u_int, int));
+int udp_output2(struct socket *so, struct mbuf *m,
+                struct sockaddr_in *saddr, struct sockaddr_in *daddr,
+                int iptos);
+#endif /* !VBOX */
+
 #endif

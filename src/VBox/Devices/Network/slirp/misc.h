@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1995 Danny Gasparovski.
- * 
- * Please read the file COPYRIGHT for the 
+ *
+ * Please read the file COPYRIGHT for the
  * terms and conditions of the copyright.
  */
 
@@ -17,7 +17,9 @@ struct ex_list {
 };
 
 extern struct ex_list *exec_list;
+#ifndef VBOX
 extern u_int curtime, time_fasttimo, last_slowtimo, detach_time, detach_wait;
+#endif /* !VBOX */
 
 #ifndef VBOX
 extern int (*lprint_print) _P((void *, const char *, va_list));
@@ -71,12 +73,20 @@ extern int x_port, x_server, x_display;
 
 int show_x _P((char *, struct socket *));
 void redir_x _P((u_int32_t, int, int, int));
+#ifdef VBOX
+void getouraddr _P((PNATState));
+#else /* !VBOX */
 void getouraddr _P((void));
+#endif /* !VBOX */
 inline  void slirp_insque  _P((void *, void *));
 inline  void slirp_remque  _P((void *));
 int add_exec _P((struct ex_list **, int, char *, int, int));
 int slirp_openpty _P((int *, int *));
+#ifdef VBOX
+int fork_exec _P((PNATState, struct socket *, char *, int));
+#else /* !VBOX */
 int fork_exec _P((struct socket *, char *, int));
+#endif /* !VBOX */
 void snooze_hup _P((int));
 void snooze _P((void));
 void relay _P((int));

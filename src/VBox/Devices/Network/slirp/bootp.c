@@ -1,8 +1,8 @@
 /*
  * QEMU BOOTP/DHCP server
- * 
+ *
  * Copyright (c) 2004 Fabrice Bellard
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -25,6 +25,7 @@
 
 /* XXX: only DHCP is supported */
 
+#ifndef VBOX
 #define NB_ADDR 16
 
 #define START_ADDR 15
@@ -39,6 +40,7 @@ typedef struct {
 BOOTPClient bootp_clients[NB_ADDR];
 
 const char *bootp_filename;
+#endif /* !VBOX */
 
 static const uint8_t rfc1533_cookie[] = { RFC1533_COOKIE };
 
@@ -57,11 +59,15 @@ DECLINLINE(void) dprintf(const char *pszFormat, ...)
     va_start(args, pszFormat);
     Log(("dhcp: %N", pszFormat, &args));
     va_end(args);
-#endif 
+#endif
 }
 #endif /* VBOX */
 
+#ifdef VBOX
+static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
+#else /* !VBOX */
 static BOOTPClient *get_new_addr(struct in_addr *paddr)
+#endif /* !VBOX */
 {
     BOOTPClient *bc;
     int i;
@@ -79,7 +85,7 @@ static BOOTPClient *get_new_addr(struct in_addr *paddr)
 }
 
 #ifdef VBOX
-static void release_addr(struct in_addr *paddr)
+static void release_addr(PNATState pData, struct in_addr *paddr)
 {
     int i;
 
@@ -91,7 +97,11 @@ static void release_addr(struct in_addr *paddr)
 }
 #endif /* VBOX */
 
+#ifdef VBOX
+static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint8_t *macaddr)
+#else /* !VBOX */
 static BOOTPClient *find_addr(struct in_addr *paddr, const uint8_t *macaddr)
+#endif /* !VBOX */
 {
     BOOTPClient *bc;
     int i;
@@ -114,7 +124,7 @@ static void dhcp_decode(const uint8_t *buf, int size,
     const uint8_t *p, *p_end;
     int len, tag;
 
-    *pmsg_type = 0;    
+    *pmsg_type = 0;
 
     p = buf;
     p_end = buf + size;
@@ -126,7 +136,7 @@ static void dhcp_decode(const uint8_t *buf, int size,
     while (p < p_end) {
         tag = p[0];
         if (tag == RFC1533_PAD) {
-            p++; 
+            p++;
         } else if (tag == RFC1533_END) {
             break;
         } else {
@@ -149,27 +159,35 @@ static void dhcp_decode(const uint8_t *buf, int size,
     }
 }
 
+#ifdef VBOX
+static void bootp_reply(PNATState pData, struct bootp_t *bp)
+#else /* !VBOX */
 static void bootp_reply(struct bootp_t *bp)
+#endif /* !VBOX */
 {
     BOOTPClient *bc;
     struct mbuf *m;
     struct bootp_t *rbp;
     struct sockaddr_in saddr, daddr;
+#ifdef VBOX
+    struct in_addr dns_addr_dhcp;
+#else /* !VBOX */
     struct in_addr dns_addr;
+#endif /* !VBOX */
     int dhcp_msg_type, val;
     uint8_t *q;
 
     /* extract exact DHCP msg type */
     dhcp_decode(bp->bp_vend, DHCP_OPT_LEN, &dhcp_msg_type);
     dprintf("bootp packet op=%d msgtype=%d\n", bp->bp_op, dhcp_msg_type);
-    
+
     if (dhcp_msg_type == 0)
         dhcp_msg_type = DHCPREQUEST; /* Force reply for old BOOTP clients */
-        
+
 #ifdef VBOX
     if (dhcp_msg_type == DHCPRELEASE) {
         uint32_t addr = ntohl(bp->bp_ciaddr.s_addr);
-        release_addr(&bp->bp_ciaddr);
+        release_addr(pData, &bp->bp_ciaddr);
         LogRel(("NAT: DHCP released IP address %u.%u.%u.%u\n",
                 addr >> 24, (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff));
         dprintf("released addr=%08x\n", ntohl(bp->bp_ciaddr.s_addr));
@@ -177,13 +195,17 @@ static void bootp_reply(struct bootp_t *bp)
         return;
     }
 #endif /* VBOX */
-    if (dhcp_msg_type != DHCPDISCOVER && 
+    if (dhcp_msg_type != DHCPDISCOVER &&
         dhcp_msg_type != DHCPREQUEST)
         return;
     /* XXX: this is a hack to get the client mac address */
     memcpy(client_ethaddr, bp->bp_hwaddr, 6);
-    
+
+#ifdef VBOX
+    if ((m = m_get(pData)) == NULL)
+#else /* !VBOX */
     if ((m = m_get()) == NULL)
+#endif /* !VBOX */
         return;
     m->m_data += if_maxlinkhdr;
     rbp = (struct bootp_t *)m->m_data;
@@ -193,12 +215,16 @@ static void bootp_reply(struct bootp_t *bp)
     if (dhcp_msg_type == DHCPDISCOVER) {
 #ifdef VBOX
         /* Do not allocate a new lease for clients that forgot that they had a lease. */
-        bc = find_addr(&daddr.sin_addr, bp->bp_hwaddr);
+        bc = find_addr(pData, &daddr.sin_addr, bp->bp_hwaddr);
         if (bc)
             goto reuse_lease;
 #endif /* VBOX */
     new_addr:
+#ifdef VBOX
+        bc = get_new_addr(pData, &daddr.sin_addr);
+#else /* !VBOX */
         bc = get_new_addr(&daddr.sin_addr);
+#endif /* !VBOX */
         if (!bc) {
 #ifdef VBOX
             LogRel(("NAT: DHCP no IP address left\n"));
@@ -211,7 +237,11 @@ static void bootp_reply(struct bootp_t *bp)
     reuse_lease: ;
 #endif /* VBOX */
     } else {
+#ifdef VBOX
+        bc = find_addr(pData, &daddr.sin_addr, bp->bp_hwaddr);
+#else /* !VBOX */
         bc = find_addr(&daddr.sin_addr, bp->bp_hwaddr);
+#endif /* !VBOX */
         if (!bc) {
             /* if never assigned, behaves as if it was already
                assigned (windows fix because it remembers its address) */
@@ -229,7 +259,7 @@ static void bootp_reply(struct bootp_t *bp)
 #ifdef VBOX
     {
         uint32_t addr = ntohl(daddr.sin_addr.s_addr);
-        LogRel(("NAT: DHCP offered IP address %u.%u.%u.%u\n", 
+        LogRel(("NAT: DHCP offered IP address %u.%u.%u.%u\n",
                 addr >> 24, (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff));
     }
 #endif /* VBOX */
@@ -262,7 +292,7 @@ static void bootp_reply(struct bootp_t *bp)
         *q++ = 1;
         *q++ = DHCPACK;
     }
-        
+
     if (dhcp_msg_type == DHCPDISCOVER ||
         dhcp_msg_type == DHCPREQUEST) {
         *q++ = RFC2132_SRV_ID;
@@ -276,16 +306,21 @@ static void bootp_reply(struct bootp_t *bp)
         *q++ = 0xff;
         *q++ = 0xff;
         *q++ = 0x00;
-        
+
         *q++ = RFC1533_GATEWAY;
         *q++ = 4;
         memcpy(q, &saddr.sin_addr, 4);
         q += 4;
-        
+
         *q++ = RFC1533_DNS;
         *q++ = 4;
+#ifdef VBOX
+        dns_addr_dhcp.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
+        memcpy(q, &dns_addr_dhcp, 4);
+#else /* !VBOX */
         dns_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
         memcpy(q, &dns_addr, 4);
+#endif /* !VBOX */
         q += 4;
 
         *q++ = RFC2132_LEASE_TIME;
@@ -303,21 +338,31 @@ static void bootp_reply(struct bootp_t *bp)
         }
     }
     *q++ = RFC1533_END;
-    
-    m->m_len = sizeof(struct bootp_t) - 
+
+    m->m_len = sizeof(struct bootp_t) -
         sizeof(struct ip) - sizeof(struct udphdr);
 #ifdef VBOX
     /* Reply to the broadcast address, as some clients perform paranoid checks. */
     daddr.sin_addr.s_addr = INADDR_BROADCAST;
-#endif /* VBOX */
+    udp_output2(pData, NULL, m, &saddr, &daddr, IPTOS_LOWDELAY);
+#else /* !VBOX */
     udp_output2(NULL, m, &saddr, &daddr, IPTOS_LOWDELAY);
+#endif /* !VBOX */
 }
 
+#ifdef VBOX
+void bootp_input(PNATState pData, struct mbuf *m)
+#else /* !VBOX */
 void bootp_input(struct mbuf *m)
+#endif /* !VBOX */
 {
     struct bootp_t *bp = mtod(m, struct bootp_t *);
 
     if (bp->bp_op == BOOTP_REQUEST) {
+#ifdef VBOX
+        bootp_reply(pData, bp);
+#else /* !VBOX */
         bootp_reply(bp);
+#endif /* !VBOX */
     }
 }

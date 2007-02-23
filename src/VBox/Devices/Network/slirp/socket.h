@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1995 Danny Gasparovski.
- * 
- * Please read the file COPYRIGHT for the 
+ *
+ * Please read the file COPYRIGHT for the
  * terms and conditions of the copyright.
  */
 
@@ -33,21 +33,21 @@ struct socket {
   struct in_addr so_laddr;	   /* local host table entry */
   u_int16_t so_fport;		   /* foreign port */
   u_int16_t so_lport;		   /* local port */
-  
+
   u_int8_t	so_iptos;	/* Type of service */
   u_int8_t	so_emu;		/* Is the socket emulated? */
-  
+
   u_char	so_type;		/* Type of socket, UDP or TCP */
   int	so_state;		/* internal state flags SS_*, below */
-  
+
   struct 	tcpcb *so_tcpcb;	/* pointer to TCP protocol control block */
   u_int	so_expire;		/* When the socket will expire */
-  
+
   int	so_queued;		/* Number of packets queued from this socket */
   int	so_nqueued;		/* Number of packets queued in a row
 				 * Used to determine when to "downgrade" a session
 					 * from fastq to batchq */
-	
+
   struct sbuf so_rcv;		/* Receive buffer */
   struct sbuf so_snd;		/* Send buffer */
   void * extra;			/* Extra pointer */
@@ -84,14 +84,27 @@ struct iovec {
 void so_init _P((void));
 struct socket * solookup _P((struct socket *, struct in_addr, u_int, struct in_addr, u_int));
 struct socket * socreate _P((void));
+#ifdef VBOX
+void sofree _P((PNATState, struct socket *));
+int soread _P((PNATState, struct socket *));
+void sorecvoob _P((PNATState, struct socket *));
+#else /* !VBOX */
 void sofree _P((struct socket *));
 int soread _P((struct socket *));
 void sorecvoob _P((struct socket *));
+#endif /* !VBOX */
 int sosendoob _P((struct socket *));
+#ifdef VBOX
+int sowrite _P((PNATState, struct socket *));
+void sorecvfrom _P((PNATState, struct socket *));
+int sosendto _P((PNATState, struct socket *, struct mbuf *));
+struct socket * solisten _P((PNATState, u_int, u_int32_t, u_int, int));
+#else /* !VBOX */
 int sowrite _P((struct socket *));
 void sorecvfrom _P((struct socket *));
 int sosendto _P((struct socket *, struct mbuf *));
 struct socket * solisten _P((u_int, u_int32_t, u_int, int));
+#endif /* !VBOX */
 void sorwakeup _P((struct socket *));
 void sowwakeup _P((struct socket *));
 void soisfconnecting _P((register struct socket *));

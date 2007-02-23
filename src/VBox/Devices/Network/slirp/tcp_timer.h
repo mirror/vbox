@@ -126,17 +126,32 @@ char *tcptimers[] =
 		(tv) = (tvmax); \
 }
 
+#ifndef VBOX
 extern int tcp_keepidle;		/* time before keepalive probes begin */
 extern int tcp_keepintvl;		/* time between keepalive probes */
 extern int tcp_maxidle;			/* time to drop after starting probes */
+#endif /* !VBOX */
 extern int tcp_ttl;			/* time to live for TCP segs */
+#ifdef VBOX
+extern const int tcp_backoff[];
+#else /* !VBOX */
 extern int tcp_backoff[];
+#endif /* !VBOX */
 
 struct tcpcb;
 
+#ifdef VBOX
+void tcp_fasttimo _P((PNATState));
+void tcp_slowtimo _P((PNATState));
+#else /* !VBOX */
 void tcp_fasttimo _P((void));
 void tcp_slowtimo _P((void));
+#endif /* !VBOX */
 void tcp_canceltimers _P((struct tcpcb *));
+#ifdef VBOX
+struct tcpcb * tcp_timers _P((PNATState, register struct tcpcb *, int));
+#else /* !VBOX */
 struct tcpcb * tcp_timers _P((register struct tcpcb *, int));
+#endif /* !VBOX */
 
 #endif

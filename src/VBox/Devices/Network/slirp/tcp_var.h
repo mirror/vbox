@@ -49,11 +49,11 @@
 #else
  typedef u_int32_t tcpiphdrp_32;
 # ifdef VBOX
-#  include <iprt/types.h> 
+#  include <iprt/types.h>
 #  include <iprt/assert.h>
 
    /* VBox change that's to much bother to #ifdef. */
-#  define u32ptr_done(u32, ptr) VBoxU32PtrDone((ptr), (u32))    
+#  define u32ptr_done(u32, ptr) VBoxU32PtrDone((ptr), (u32))
 #  define ptr_to_u32(ptr)       VBoxU32PtrHash((ptr))
 #  define u32_to_ptr(u32, type) ((type)VBoxU32PtrLookup(u32))
 
@@ -61,7 +61,7 @@
 
     extern void     VBoxU32PtrDone(void *pv, uint32_t iHint);
     extern uint32_t VBoxU32PtrHashSlow(void *pv);
-    
+
     /** Hash the pointer, inserting it if need be. */
     DECLINLINE(uint32_t) VBoxU32PtrHash(void *pv)
     {
@@ -76,7 +76,7 @@
         void *pv;
         Assert(i < RT_ELEMENTS(g_apvHash));
         pv = g_apvHash[i];
-        Assert(pv || !i); 
+        Assert(pv || !i);
         return pv;
     }
 # else /* !VBOX */
@@ -237,7 +237,11 @@ typedef u_int32_t mbufp_32;
  * Many of these should be kept per connection,
  * but that's inconvenient at the moment.
  */
+#ifdef VBOX
+struct tcpstat_t {
+#else /* !VBOX */
 struct tcpstat {
+#endif /* !VBOX */
 	u_long	tcps_connattempt;	/* connections initiated */
 	u_long	tcps_accepts;		/* connections accepted */
 	u_long	tcps_connects;		/* connections established */
@@ -293,7 +297,9 @@ struct tcpstat {
 	u_long	tcps_didnuttin;		/* Times tcp_output didn't do anything XXX */
 };
 
+#ifndef VBOX
 extern struct	tcpstat tcpstat;	/* tcp statistics */
 extern u_int32_t	tcp_now;		/* for RFC 1323 timestamps */
+#endif /* !VBOX */
 
 #endif

@@ -36,6 +36,7 @@
 
 #include <slirp.h>
 
+#ifndef VBOX
 int	tcp_keepidle = TCPTV_KEEP_IDLE;
 int	tcp_keepintvl = TCPTV_KEEPINTVL;
 int	tcp_maxidle;
@@ -43,18 +44,23 @@ int	so_options = DO_KEEPALIVE;
 
 struct   tcpstat tcpstat;        /* tcp statistics */
 u_int32_t        tcp_now;                /* for RFC 1323 timestamps */
+#endif /* !VBOX */
 
 /*
  * Fast timeout routine for processing delayed acks
  */
 void
+#ifdef VBOX
+tcp_fasttimo(PNATState pData)
+#else /* !VBOX */
 tcp_fasttimo()
+#endif /* !VBOX */
 {
 	register struct socket *so;
 	register struct tcpcb *tp;
 
 	DEBUG_CALL("tcp_fasttimo");
-	
+
 	so = tcb.so_next;
 	if (so)
 	for (; so != &tcb; so = so->so_next)
@@ -63,7 +69,11 @@ tcp_fasttimo()
 			tp->t_flags &= ~TF_DELACK;
 			tp->t_flags |= TF_ACKNOW;
 			tcpstat.tcps_delack++;
+#ifdef VBOX
+			(void) tcp_output(pData, tp);
+#else /*! VBOX */
 			(void) tcp_output(tp);
+#endif /* !VBOX */
 		}
 }
 
@@ -73,15 +83,21 @@ tcp_fasttimo()
  * causes finite state machine actions if timers expire.
  */
 void
+#ifdef VBOX
+tcp_slowtimo(PNATState pData)
+#else /* !VBOX */
 tcp_slowtimo()
+#endif /* !VBOX */
 {
 	register struct socket *ip, *ipnxt;
 	register struct tcpcb *tp;
 	register int i;
 
 	DEBUG_CALL("tcp_slowtimo");
-	
+
+#ifndef VBOX
 	tcp_maxidle = TCPTV_KEEPCNT * tcp_keepintvl;
+#endif /* !VBOX */
 	/*
 	 * Search through tcb's and update active timers.
 	 */
@@ -95,7 +111,11 @@ tcp_slowtimo()
 			continue;
 		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (tp->t_timer[i] && --tp->t_timer[i] == 0) {
+#ifdef VBOX
+				tcp_timers(pData, tp,i);
+#else /* !VBOX */
 				tcp_timers(tp,i);
+#endif /* !VBOX */
 				if (ipnxt->so_prev != ip)
 					goto tpgone;
 			}
@@ -127,21 +147,29 @@ tcp_canceltimers(tp)
 		tp->t_timer[i] = 0;
 }
 
+#ifdef VBOX
+const int	tcp_backoff[TCP_MAXRXTSHIFT + 1] =
+#else /* !VBOX */
 int	tcp_backoff[TCP_MAXRXTSHIFT + 1] =
+#endif /* !VBOX */
    { 1, 2, 4, 8, 16, 32, 64, 64, 64, 64, 64, 64, 64 };
 
 /*
  * TCP timer processing.
  */
 struct tcpcb *
+#ifdef VBOX
+tcp_timers(PNATState pData, register struct tcpcb *tp, int timer)
+#else /* !VBOX */
 tcp_timers(tp, timer)
 	register struct tcpcb *tp;
 	int timer;
+#endif /* !VBOX */
 {
 	register int rexmt;
-	
+
 	DEBUG_CALL("tcp_timers");
-	
+
 	switch (timer) {
 
 	/*
@@ -155,7 +183,11 @@ tcp_timers(tp, timer)
 		    tp->t_idle <= tcp_maxidle)
 			tp->t_timer[TCPT_2MSL] = tcp_keepintvl;
 		else
+#ifdef VBOX
+			tp = tcp_close(pData, tp);
+#else /* !VBOX */
 			tp = tcp_close(tp);
+#endif /* !VBOX */
 		break;
 
 	/*
@@ -164,12 +196,12 @@ tcp_timers(tp, timer)
 	 * to a longer retransmit interval and retransmit one segment.
 	 */
 	case TCPT_REXMT:
-		
+
 		/*
 		 * XXXXX If a packet has timed out, then remove all the queued
 		 * packets for that session.
 		 */
-		
+
 		if (++tp->t_rxtshift > TCP_MAXRXTSHIFT) {
 			/*
 			 * This is a hack to suit our terminal server here at the uni of canberra
@@ -178,14 +210,14 @@ tcp_timers(tp, timer)
 			 * keep retransmitting it, it'll keep eating the zeroes, so we keep
 			 * retransmitting, and eventually the connection dies...
 			 * (this only happens on incoming data)
-			 * 
+			 *
 			 * So, if we were gonna drop the connection from too many retransmits,
 			 * don't... instead halve the t_maxseg, which might break up the NULLs and
 			 * let them through
-			 * 
+			 *
 			 * *sigh*
 			 */
-			
+
 			tp->t_maxseg >>= 1;
 			if (tp->t_maxseg < 32) {
 				/*
@@ -193,11 +225,15 @@ tcp_timers(tp, timer)
 				 */
 				tp->t_rxtshift = TCP_MAXRXTSHIFT;
 				tcpstat.tcps_timeoutdrop++;
+#ifdef VBOX
+				tp = tcp_drop(pData, tp, tp->t_softerror);
+#else /* !VBOX */
 				tp = tcp_drop(tp, tp->t_softerror);
+#endif /* !VBOX */
 				/* tp->t_softerror : ETIMEDOUT); */ /* XXX */
 				return (tp); /* XXX */
 			}
-			
+
 			/*
 			 * Set rxtshift to 6, which is still at the maximum
 			 * backoff time
@@ -240,7 +276,7 @@ tcp_timers(tp, timer)
 		 * size increase exponentially with time.  If the
 		 * window is larger than the path can handle, this
 		 * exponential growth results in dropped packet(s)
-		 * almost immediately.  To get more time between 
+		 * almost immediately.  To get more time between
 		 * drops but still "push" the network to take advantage
 		 * of improving conditions, we switch from exponential
 		 * to linear window opening at some threshold size.
@@ -259,7 +295,11 @@ tcp_timers(tp, timer)
 		tp->snd_ssthresh = win * tp->t_maxseg;
 		tp->t_dupacks = 0;
 		}
+#ifdef VBOX
+		(void) tcp_output(pData, tp);
+#else /* !VBOX */
 		(void) tcp_output(tp);
+#endif /* !VBOX */
 		break;
 
 	/*
@@ -270,7 +310,11 @@ tcp_timers(tp, timer)
 		tcpstat.tcps_persisttimeo++;
 		tcp_setpersist(tp);
 		tp->t_force = 1;
+#ifdef VBOX
+		(void) tcp_output(pData, tp);
+#else /* !VBOX */
 		(void) tcp_output(tp);
+#endif /* !VBOX */
 		tp->t_force = 0;
 		break;
 
@@ -308,8 +352,13 @@ tcp_timers(tp, timer)
 			tcp_respond(tp, &tp->t_template, (struct mbuf *)NULL,
 			    tp->rcv_nxt - 1, tp->snd_una - 1, 0);
 #else
+#ifdef VBOX
+			tcp_respond(pData, tp, &tp->t_template, (struct mbuf *)NULL,
+			    tp->rcv_nxt, tp->snd_una - 1, 0);
+#else /* !VBOX */
 			tcp_respond(tp, &tp->t_template, (struct mbuf *)NULL,
 			    tp->rcv_nxt, tp->snd_una - 1, 0);
+#endif /* !VBOX */
 #endif
 			tp->t_timer[TCPT_KEEP] = tcp_keepintvl;
 		} else
@@ -318,7 +367,11 @@ tcp_timers(tp, timer)
 
 	dropit:
 		tcpstat.tcps_keepdrops++;
+#ifdef VBOX
+		tp = tcp_drop(pData, tp, 0); /* ETIMEDOUT); */
+#else /* !VBOX */
 		tp = tcp_drop(tp, 0); /* ETIMEDOUT); */
+#endif /* !VBOX */
 		break;
 	}
 
