@@ -48,7 +48,11 @@ char slirp_hostname[33];
 
 #ifdef _WIN32
 
+#ifdef VBOX
+static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
+#else /* !VBOX */
 static int get_dns_addr(struct in_addr *pdns_addr)
+#endif /* !VBOX */
 {
     FIXED_INFO *FixedInfo=NULL;
     ULONG    BufLen;

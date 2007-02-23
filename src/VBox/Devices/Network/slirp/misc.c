@@ -239,10 +239,14 @@ strerror(error)
 #ifdef _WIN32
 
 int
+#ifdef VBOX
+fork_exec(PNATState pData, struct socket *so, char *ex, int do_pty)
+#else /* !VBOX */
 fork_exec(so, ex, do_pty)
 	struct socket *so;
 	char *ex;
 	int do_pty;
+#endif /* !VBOX */
 {
     /* not implemented */
     return 0;
