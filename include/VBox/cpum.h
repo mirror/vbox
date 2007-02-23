@@ -742,6 +742,19 @@ CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, GCPTRTYPE(PCPUMCTX) *ppCtx);
 CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM);
 #endif
 
+/**
+ * API for controlling a few of the CPU features found in CR4.
+ * 
+ * Currently only X86_CR4_TSD is accepted as input.
+ * 
+ * @returns VBox status code.
+ * 
+ * @param   pVM     The VM handle.
+ * @param   fOr     The CR4 OR mask.
+ * @param   fAnd    The CR4 AND mask.
+ */
+CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
+
 /** @} */
 #endif
 

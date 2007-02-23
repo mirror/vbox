@@ -133,10 +133,6 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
         pVM->cpum.s.CR4.OrMask  = X86_CR4_OSFSXR;
     }
 
-#ifdef CPUM_TRAP_RDTSC
-    pVM->cpum.s.CR4.OrMask |= X86_CR4_TSD;
-#endif
-
     if (!pVM->cpum.s.CPUFeatures.edx.u1MMX)
     {
         Log(("The CPU doesn't support MMX!\n"));
@@ -814,6 +810,7 @@ static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Hypervisor CPUM state: %s\n", pszComment);
     cpumR3InfoOne(&pVM->cpum.s.Hyper, pVM->cpum.s.pHyperCoreHC, pHlp, enmType, ".");
+    pHlp->pfnPrintf(pHlp, "CR4OrMask=%#x CR4AndMask=%#x\n", pVM->cpum.s.CR4.OrMask, pVM->cpum.s.CR4.AndMask);
 }
 
 
@@ -1673,3 +1670,27 @@ CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
     pVM->cpum.s.GuestEntry = pVM->cpum.s.Guest;
 }
 #endif
+
+
+/**
+ * API for controlling a few of the CPU features found in CR4.
+ * 
+ * Currently only X86_CR4_TSD is accepted as input.
+ * 
+ * @returns VBox status code.
+ * 
+ * @param   pVM     The VM handle.
+ * @param   fOr     The CR4 OR mask.
+ * @param   fAnd    The CR4 AND mask.
+ */
+CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
+{
+    AssertMsgReturn(!(fOr & ~(X86_CR4_TSD)), ("%#x\n", fOr), VERR_INVALID_PARAMETER);
+    AssertMsgReturn((fAnd & ~(X86_CR4_TSD)) == ~(X86_CR4_TSD), ("%#x\n", fAnd), VERR_INVALID_PARAMETER);
+
+    pVM->cpum.s.CR4.OrMask &= fAnd;
+    pVM->cpum.s.CR4.OrMask |= fOr;
+
+    return VINF_SUCCESS;
+}
+
