@@ -96,7 +96,7 @@ typedef struct NATState
     tcp_seq tcp_iss;
 #if ARCH_BITS == 64
     /* Stuff from tcp_subr.c */
-    void *apvHash[1024];
+    void *apvHash[16384];
     uint32_t cpvHashUsed;
     uint32_t cpvHashCollisions;
     uint64_t cpvHashInserts;
