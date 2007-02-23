@@ -41,7 +41,11 @@
  * Variables related to this implementation
  * of the internet control message protocol.
  */
+#ifdef VBOX
+struct icmpstat_t {
+#else /* !VBOX */
 struct icmpstat {
+#endif /* !VBOX */
 /* statistics related to input messages processed */
 	u_long  icps_received;		/* #ICMP packets received */
 	u_long	icps_tooshort;		/* packet < ICMP_MINLEN */
@@ -64,6 +68,8 @@ struct icmpstat {
 	{ "stats", CTLTYPE_STRUCT }, \
 }
 
+#ifndef VBOX
 extern struct icmpstat icmpstat;
+#endif /* !VBOX */
 
 #endif

@@ -58,19 +58,16 @@ typedef struct DRVNAT
     RTCRITSECT              CritSect;
     /** Link state */
     PDMNETWORKLINKSTATE     enmLinkState;
+    /** NAT state for this instance. */
+    PNATState               pNATState;
 } DRVNAT, *PDRVNAT;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
 #define PDMINETWORKCONNECTOR_2_DRVNAT(pInterface)   ( (PDRVNAT)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAT, INetworkConnector)) )
 
-
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** @todo change this into a MAC -> PDRVNAT translation list. */
-/** Pointer to the driver instance.
- * This is required by slirp. */
-static PDRVNAT          g_pDrv = NULL;
 #if 0
 /** If set the thread should terminate. */
 static bool             g_fThreadTerm = false;
@@ -102,7 +99,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     Assert(pData->enmLinkState == PDMNETWORKLINKSTATE_UP);
     if (pData->enmLinkState == PDMNETWORKLINKSTATE_UP)
-        slirp_input((uint8_t *)pvBuf, cb);
+        slirp_input(pData->pNATState, (uint8_t *)pvBuf, cb);
     RTCritSectLeave(&pData->CritSect);
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
@@ -147,13 +144,13 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
     {
         case PDMNETWORKLINKSTATE_UP:
             LogRel(("NAT: link up\n"));
-            slirp_link_up();
+            slirp_link_up(pData->pNATState);
             break;
 
         case PDMNETWORKLINKSTATE_DOWN:
         case PDMNETWORKLINKSTATE_DOWN_RESUME:
             LogRel(("NAT: link down\n"));
-            slirp_link_down();
+            slirp_link_down(pData->pNATState);
             break;
 
         default:
@@ -195,12 +192,12 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
     int rc = RTCritSectEnter(&pData->CritSect);
     AssertReleaseRC(rc);
 
-    slirp_select_fill(&cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+    slirp_select_fill(pData->pNATState, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 
     struct timeval tv = {0, 0}; /* no wait */
     int cReadFDs = select(cFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
     if (cReadFDs >= 0)
-        slirp_select_poll(&ReadFDs, &WriteFDs, &XcptFDs);
+        slirp_select_poll(pData->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
 
     RTCritSectLeave(&pData->CritSect);
 }
@@ -211,14 +208,17 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
  * @returns 1 if possible.
  * @returns 0 if not possible.
  */
-int slirp_can_output(void)
+int slirp_can_output(void *pvUser)
 {
+    PDRVNAT pData = (PDRVNAT)pvUser;
+
+    Assert(pData);
+
     /** Happens during termination */
-    if (!RTCritSectIsOwner(&g_pDrv->CritSect))
+    if (!RTCritSectIsOwner(&pData->CritSect))
         return 0;
 
-    if (g_pDrv)
-        return g_pDrv->pPort->pfnCanReceive(g_pDrv->pPort);
+    return pData->pPort->pfnCanReceive(pData->pPort);
 
     return 0;
 }
@@ -227,22 +227,24 @@ int slirp_can_output(void)
 /**
  * Function called by slirp to feed incoming data to the network port.
  */
-void slirp_output(const uint8_t *pu8Buf, int cb)
+void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
 {
-    LogFlow(("slirp_output BEGING %x %d\n", pu8Buf, cb));
-    Log2(("slirp_output: pu8Buf=%p cb=%#x (g_pDrv=%p)\n"
-          "%.*Vhxd\n",
-          pu8Buf, cb, g_pDrv,
-          cb, pu8Buf));
-    if (g_pDrv)
-    {
-        /** Happens during termination */
-        if (!RTCritSectIsOwner(&g_pDrv->CritSect))
-            return;
+    PDRVNAT pData = (PDRVNAT)pvUser;
 
-        int rc = g_pDrv->pPort->pfnReceive(g_pDrv->pPort, pu8Buf, cb);
-        AssertRC(rc);
-    }
+    LogFlow(("slirp_output BEGING %x %d\n", pu8Buf, cb));
+    Log2(("slirp_output: pu8Buf=%p cb=%#x (pData=%p)\n"
+          "%.*Vhxd\n",
+          pu8Buf, cb, pData,
+          cb, pu8Buf));
+
+    Assert(pData);
+
+    /** Happens during termination */
+    if (!RTCritSectIsOwner(&pData->CritSect))
+        return;
+
+    int rc = pData->pPort->pfnReceive(pData->pPort, pu8Buf, cb);
+    AssertRC(rc);
     LogFlow(("slirp_output END %x %d\n", pu8Buf, cb));
 }
 
@@ -288,11 +290,11 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 #if ARCH_BITS == 64
     LogRel(("NAT: g_cpvHashUsed=%RU32 g_cpvHashCollisions=%RU32 g_cpvHashInserts=%RU64 g_cpvHashDone=%RU64\n",
             g_cpvHashUsed, g_cpvHashCollisions, g_cpvHashInserts, g_cpvHashDone));
-#endif 
+#endif
     int rc = RTCritSectEnter(&pData->CritSect);
     AssertReleaseRC(rc);
-    slirp_term();
-    g_pDrv = NULL;
+    slirp_term(pData->pNATState);
+    pData->pNATState = NULL;
     RTCritSectLeave(&pData->CritSect);
 
     RTCritSectDelete(&pData->CritSect);
@@ -305,7 +307,7 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
  * @returns VBox status code.
  * @param   pCfgHandle      The drivers configuration handle.
  */
-static int drvNATConstructRedir(PCFGMNODE pCfgHandle)
+static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
 {
     /*
      * Enumerate redirections.
@@ -362,7 +364,7 @@ static int drvNATConstructRedir(PCFGMNODE pCfgHandle)
          * Call slirp about it.
          */
         Log(("drvNATConstruct: Redir %d -> %s:%d\n", iHostPort, szGuestIP, iGuestPort));
-        if (slirp_redir(fUDP, iHostPort, GuestIP, iGuestPort) < 0)
+        if (slirp_redir(pData->pNATState, fUDP, iHostPort, GuestIP, iGuestPort) < 0)
         {
             AssertMsgFailed(("Configuration error: failed to setup redirection of %d to %s:%d. Probably a conflict with existing services or other rules.\n",
                              iHostPort, szGuestIP, iGuestPort));
@@ -387,6 +389,7 @@ static int drvNATConstructRedir(PCFGMNODE pCfgHandle)
 static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    char szNetAddr[16];
     LogFlow(("drvNATConstruct:\n"));
 
     /*
@@ -406,6 +409,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->INetworkConnector.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
     pData->INetworkConnector.pfnNotifyCanReceive   = drvNATNotifyCanReceive;
+    
+    pData->pNATState                    = NULL;
 
     /*
      * Query the network port interface.
@@ -414,6 +419,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (!pData->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't export the network port interface!\n"));
+
+    /* Generate a network address for this network card. */
+    RTStrPrintf(szNetAddr, sizeof(szNetAddr), "10.0.%d.0", pDrvIns->iInstance + 2);
 
     /*
      * The slirp lock..
@@ -436,14 +444,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             /*
              * Initialize slirp.
              */
-            rc = slirp_init();
+            rc = slirp_init(&pData->pNATState, &szNetAddr[0], pData);
             if (VBOX_SUCCESS(rc))
             {
-                rc = drvNATConstructRedir(pCfgHandle);
+                rc = drvNATConstructRedir(pData, pCfgHandle);
                 if (VBOX_SUCCESS(rc))
                 {
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
-                    g_pDrv = pData;
 
                     pData->enmLinkState = PDMNETWORKLINKSTATE_UP;
 #if 0
@@ -453,7 +460,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                     return VINF_SUCCESS;
                 }
                 /* failure path */
-                slirp_term();
+                slirp_term(pData->pNATState);
+                pData->pNATState = NULL;
             }
             else
             {
@@ -499,7 +507,7 @@ const PDMDRVREG g_DrvNAT =
     /* fClass. */
     PDM_DRVREG_CLASS_NETWORK,
     /* cMaxInstances */
-    1,
+    16,
     /* cbInstance */
     sizeof(DRVNAT),
     /* pfnConstruct */

@@ -113,4 +113,8 @@ struct bootp_t {
     uint8_t bp_vend[DHCP_OPT_LEN];
 };
 
+#ifdef VBOX
+void bootp_input(PNATState, struct mbuf *m);
+#else /* !VBOX */
 void bootp_input(struct mbuf *m);
+#endif /* !VBOX */

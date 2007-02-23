@@ -44,7 +44,9 @@
 
 #include <slirp.h>
 
+#ifndef VBOX
 u_int16_t ip_id;
+#endif /* !VBOX */
 
 /*
  * IP output.  The packet in mbuf chain m contains a skeletal IP
@@ -53,9 +55,13 @@ u_int16_t ip_id;
  * The mbuf opt, if present, will not be freed.
  */
 int
+#ifdef VBOX
+ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
+#else /* !VBOX */
 ip_output(so, m0)
 	struct socket *so;
 	struct mbuf *m0;
+#endif /* !VBOX */
 {
 	register struct ip *ip;
 	register struct mbuf *m = m0;
@@ -65,7 +71,7 @@ ip_output(so, m0)
 	DEBUG_CALL("ip_output");
 	DEBUG_ARG("so = %lx", (long)so);
 	DEBUG_ARG("m0 = %lx", (long)m0);
-	
+
 	/* We do no options */
 /*	if (opt) {
  *		m = ip_insertoptions(m, opt, &len);
@@ -78,7 +84,11 @@ ip_output(so, m0)
 	 */
 	ip->ip_v = IPVERSION;
 	ip->ip_off &= IP_DF;
+#ifdef VBOX
+	ip->ip_id = htons(ip_currid++);
+#else /* !VBOX */
 	ip->ip_id = htons(ip_id++);
+#endif /* !VBOX */
 	ip->ip_hl = hlen >> 2;
 	ipstat.ips_localout++;
 
@@ -92,7 +102,7 @@ ip_output(so, m0)
  *		goto bad;
  *	}
  */
-	
+
 	/*
 	 * If small enough for interface, can just send directly.
 	 */
@@ -102,7 +112,11 @@ ip_output(so, m0)
 		ip->ip_sum = 0;
 		ip->ip_sum = cksum(m, hlen);
 
+#ifdef VBOX
+		if_output(pData, so, m);
+#else /* !VBOX */
 		if_output(so, m);
+#endif /* !VBOX */
 		goto done;
 	}
 
@@ -115,7 +129,7 @@ ip_output(so, m0)
 		ipstat.ips_cantfrag++;
 		goto bad;
 	}
-	
+
 	len = (if_mtu - hlen) &~ 7;       /* ip databytes per packet */
 	if (len < 8) {
 		error = -1;
@@ -134,7 +148,11 @@ ip_output(so, m0)
 	mhlen = sizeof (struct ip);
 	for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len) {
 	  register struct ip *mhip;
+#ifdef VBOX
+	  m = m_get(pData);
+#else /* !VBOX */
 	  m = m_get();
+#endif /* !VBOX */
 	  if (m == 0) {
 	    error = -1;
 	    ipstat.ips_odropped++;
@@ -143,7 +161,7 @@ ip_output(so, m0)
 	  m->m_data += if_maxlinkhdr;
 	  mhip = mtod(m, struct ip *);
 	  *mhip = *ip;
-		
+
 		/* No options */
 /*		if (hlen > sizeof (struct ip)) {
  *			mhlen = ip_optcopy(ip, mhip) + sizeof (struct ip);
@@ -156,15 +174,15 @@ ip_output(so, m0)
 	    mhip->ip_off |= IP_MF;
 	  if (off + len >= (u_int16_t)ip->ip_len)
 	    len = (u_int16_t)ip->ip_len - off;
-	  else 
+	  else
 	    mhip->ip_off |= IP_MF;
 	  mhip->ip_len = htons((u_int16_t)(len + mhlen));
-	  
+
 	  if (m_copy(m, m0, off, len) < 0) {
 	    error = -1;
 	    goto sendorfree;
 	  }
-	  
+
 	  mhip->ip_off = htons((u_int16_t)mhip->ip_off);
 	  mhip->ip_sum = 0;
 	  mhip->ip_sum = cksum(m, mhlen);
@@ -187,9 +205,17 @@ sendorfree:
 		m0 = m->m_nextpkt;
 		m->m_nextpkt = 0;
 		if (error == 0)
+#ifdef VBOX
+			if_output(pData, so, m);
+#else /* !VBOX */
 			if_output(so, m);
+#endif /* !VBOX */
 		else
+#ifdef VBOX
+			m_freem(pData, m);
+#else /* !VBOX */
 			m_freem(m);
+#endif /* !VBOX */
 	}
 
 	if (error == 0)
@@ -200,6 +226,10 @@ done:
 	return (error);
 
 bad:
+#ifdef VBOX
+	m_freem(pData, m0);
+#else /* !VBOX */
 	m_freem(m0);
+#endif /* !VBOX */
 	goto done;
 }

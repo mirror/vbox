@@ -67,11 +67,19 @@ socreate()
  * remque and free a socket, clobber cache
  */
 void
+#ifdef VBOX
+sofree(PNATState pData, struct socket *so)
+#else /* !VBOX */
 sofree(so)
 	struct socket *so;
+#endif /* !VBOX */
 {
   if (so->so_emu==EMU_RSH && so->extra) {
+#ifdef VBOX
+	sofree(pData, so->extra);
+#else /* !VBOX */
 	sofree(so->extra);
+#endif /* !VBOX */
 	so->extra=NULL;
   }
   if (so == tcp_last_so)
@@ -79,7 +87,11 @@ sofree(so)
   else if (so == udp_last_so)
     udp_last_so = &udb;
 
+#ifdef VBOX
+  m_free(pData, so->so_m);
+#else /* !VBOX */
   m_free(so->so_m);
+#endif /* !VBOX */
 
   if(so->so_next && so->so_prev)
     remque(so);  /* crashes if so is not in a queue */
@@ -93,8 +105,12 @@ sofree(so)
  * a read() of 0 (or less) means it's disconnected
  */
 int
+#ifdef VBOX
+soread(PNATState pData, struct socket *so)
+#else /* !VBOX */
 soread(so)
 	struct socket *so;
+#endif /* !VBOX */
 {
 	int n, nn, lss, total;
 	struct sbuf *sb = &so->so_snd;
@@ -163,7 +179,11 @@ soread(so)
 		else {
 			DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n", nn, errno,strerror(errno)));
 			sofcantrcvmore(so);
+#ifdef VBOX
+			tcp_sockclosed(pData, sototcpcb(so));
+#else /* !VBOX */
 			tcp_sockclosed(sototcpcb(so));
+#endif /* !VBOX */
 			return -1;
 		}
 	}
@@ -204,8 +224,12 @@ soread(so)
  * in the send buffer is sent as urgent data
  */
 void
+#ifdef VBOX
+sorecvoob(PNATState pData, struct socket *so)
+#else /* !VBOX */
 sorecvoob(so)
 	struct socket *so;
+#endif /* !VBOX */
 {
 	struct tcpcb *tp = sototcpcb(so);
 
@@ -220,10 +244,18 @@ sorecvoob(so)
 	 * urgent data, or the read() doesn't return all the
 	 * urgent data.
 	 */
+#ifdef VBOX
+	soread(pData, so);
+#else /* !VBOX */
 	soread(so);
+#endif /* !VBOX */
 	tp->snd_up = tp->snd_una + so->so_snd.sb_cc;
 	tp->t_force = 1;
+#ifdef VBOX
+	tcp_output(pData, tp);
+#else /* !VBOX */
 	tcp_output(tp);
+#endif /* !VBOX */
 	tp->t_force = 0;
 }
 
@@ -291,8 +323,12 @@ sosendoob(so)
  * updating all sbuf field as necessary
  */
 int
+#ifdef VBOX
+sowrite(PNATState pData, struct socket *so)
+#else /* !VBOX */
 sowrite(so)
 	struct socket *so;
+#endif /* !VBOX */
 {
 	int  n,nn;
 	struct sbuf *sb = &so->so_rcv;
@@ -350,7 +386,11 @@ sowrite(so)
 		DEBUG_MISC((dfd, " --- sowrite disconnected, so->so_state = %x, errno = %d\n",
 			so->so_state, errno));
 		sofcantsendmore(so);
+#ifdef VBOX
+		tcp_sockclosed(pData, sototcpcb(so));
+#else /* !VBOX */
 		tcp_sockclosed(sototcpcb(so));
+#endif /* !VBOX */
 		return -1;
 	}
 
@@ -384,8 +424,12 @@ sowrite(so)
  * recvfrom() a UDP socket
  */
 void
+#ifdef VBOX
+sorecvfrom(PNATState pData, struct socket *so)
+#else /* !VBOX */
 sorecvfrom(so)
 	struct socket *so;
+#endif /* !VBOX */
 {
 	struct sockaddr_in addr;
 #ifndef VBOX
@@ -413,18 +457,34 @@ sorecvfrom(so)
 
 	    DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
 			errno,strerror(errno)));
+#ifdef VBOX
+	    icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
+#else /* !VBOX */
 	    icmp_error(so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
+#endif /* !VBOX */
 	  } else {
+#ifdef VBOX
+	    icmp_reflect(pData, so->so_m);
+#else /* !VBOX */
 	    icmp_reflect(so->so_m);
+#endif /* !VBOX */
 	    so->so_m = 0; /* Don't m_free() it again! */
 	  }
 	  /* No need for this socket anymore, udp_detach it */
+#ifdef VBOX
+	  udp_detach(pData, so);
+#else /* !VBOX */
 	  udp_detach(so);
+#endif /* !VBOX */
 	} else {                            	/* A "normal" UDP packet */
 	  struct mbuf *m;
 	  int len, n;
 
+#ifdef VBOX
+	  if (!(m = m_get(pData))) return;
+#else /* !VBOX */
 	  if (!(m = m_get())) return;
+#endif /* !VBOX */
 	  m->m_data += if_maxlinkhdr;
 
 	  /*
@@ -453,8 +513,13 @@ sorecvfrom(so)
 	    else if(errno == ENETUNREACH) code=ICMP_UNREACH_NET;
 
 	    DEBUG_MISC((dfd," rx error, tx icmp ICMP_UNREACH:%i\n", code));
+#ifdef VBOX
+	    icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
+	    m_free(pData, m);
+#else /* !VBOX */
 	    icmp_error(so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
 	    m_free(m);
+#endif /* !VBOX */
 	  } else {
 	  /*
 	   * Hack: domain name lookup will be used the most for UDP,
@@ -479,7 +544,11 @@ sorecvfrom(so)
 	     * If this packet was destined for CTL_ADDR,
 	     * make it look like that's where it came from, done by udp_output
 	     */
+#ifdef VBOX
+	    udp_output(pData, so, m, &addr);
+#else /* !VBOX */
 	    udp_output(so, m, &addr);
+#endif /* !VBOX */
 	  } /* rx error */
 	} /* if ping packet */
 }
@@ -488,9 +557,13 @@ sorecvfrom(so)
  * sendto() a socket
  */
 int
+#ifdef VBOX
+sosendto(PNATState pData, struct socket *so, struct mbuf *m)
+#else /* !VBOX */
 sosendto(so, m)
 	struct socket *so;
 	struct mbuf *m;
+#endif /* !VBOX */
 {
 	int ret;
 	struct sockaddr_in addr;
@@ -537,11 +610,15 @@ sosendto(so, m)
  * XXX This should really be tcp_listen
  */
 struct socket *
+#ifdef VBOX
+solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
+#else /* !VBOX */
 solisten(port, laddr, lport, flags)
 	u_int port;
 	u_int32_t laddr;
 	u_int lport;
 	int flags;
+#endif /* !VBOX */
 {
 	struct sockaddr_in addr;
 	struct socket *so;
@@ -603,13 +680,13 @@ solisten(port, laddr, lport, flags)
 #ifdef __WIN__
 		int tmperrno = WSAGetLastError(); /* Don't clobber the real reason we failed */
 		closesocket(s);
-		sofree(so);
+		sofree(pData, so);
 		/* Restore the real errno */
 		WSASetLastError(tmperrno);
 #else
                 int tmperrno = errno; /* Don't clobber the real reason we failed */
 		close(s);
-		sofree(so);
+		sofree(pData, so);
 		/* Restore the real errno */
 		errno = tmperrno;
 #endif

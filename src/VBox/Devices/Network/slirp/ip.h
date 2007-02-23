@@ -212,7 +212,7 @@ typedef u_int32_t caddr32_t;
 #endif
 
 #if SIZEOF_CHAR_P == 4
-typedef struct ipq *ipqp_32;
+typedef struct ipq_t *ipqp_32;
 typedef struct ipasfrag *ipasfragp_32;
 #else
 typedef caddr32_t ipqp_32;
@@ -238,7 +238,7 @@ struct ipovly {
  * be reclaimed if memory becomes tight.
  * size 28 bytes
  */
-struct ipq {
+struct ipq_t {
 	ipqp_32 next,prev;	/* to other reass headers */
 	u_int8_t	ipq_ttl;		/* time for reass q to live */
 	u_int8_t	ipq_p;			/* protocol of this fragment */
@@ -299,7 +299,11 @@ struct ipoption {
  * passed to ip_output when IP multicast options are in use.
  */
 
+#ifdef VBOX
+struct	ipstat_t {
+#else /* !VBOX */
 struct	ipstat {
+#endif /* !VBOX */
 	u_long	ips_total;		/* total packets received */
 	u_long	ips_badsum;		/* checksum bad */
 	u_long	ips_tooshort;		/* packet too short */
@@ -327,9 +331,11 @@ struct	ipstat {
 	u_long	ips_unaligned;		/* times the ip packet was not aligned */
 };
 
+#ifndef VBOX
 extern struct	ipstat	ipstat;
 extern struct	ipq	ipq;			/* ip reass. queue */
 extern u_int16_t	ip_id;				/* ip packet ctr, for ids */
 extern int	ip_defttl;			/* default IP ttl */
+#endif /* !VBOX */
 
 #endif

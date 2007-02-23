@@ -7,6 +7,7 @@
 # include <iprt/assert.h>
 #endif
 
+#ifndef VBOX
 /* host address */
 struct in_addr our_addr;
 /* host dns address */
@@ -18,11 +19,17 @@ struct in_addr loopback_addr;
 struct in_addr special_addr;
 /* virtual address alias for host */
 struct in_addr alias_addr;
+#endif /* !VBOX */
 
+#ifdef VBOX
+static const uint8_t special_ethaddr[6] = {
+#else /* !VBOX */
 const uint8_t special_ethaddr[6] = {
+#endif /* !VBOX */
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
 };
 
+#ifndef VBOX
 uint8_t client_ethaddr[6];
 
 int do_slowtimo;
@@ -30,13 +37,14 @@ int link_up;
 struct timeval tt;
 FILE *lfd;
 struct ex_list *exec_list;
+#endif /* !VBOX */
 
 #ifndef VBOX
 /* XXX: suppress those select globals */
 fd_set *global_readfds, *global_writefds, *global_xfds;
-#endif /* !VBOX */
 
 char slirp_hostname[33];
+#endif /* !VBOX */
 
 #ifdef _WIN32
 
@@ -105,7 +113,11 @@ static int get_dns_addr(struct in_addr *pdns_addr)
 
 #else
 
+#ifdef VBOX
+static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
+#else /* !VBOX */
 static int get_dns_addr(struct in_addr *pdns_addr)
+#endif /* !VBOX */
 {
     char buff[512];
     char buff2[256];
@@ -192,13 +204,14 @@ void slirp_init(void)
     /*    debug_init("/tmp/slirp.log", DEBUG_DEFAULT); */
 #else /* VBOX */
 /** Number of slirp users. Used for making sure init and term are only executed once. */
-static int g_cUsers = 0;
-int slirp_init(void)
+int slirp_init(PNATState *ppData, const char *pszNetAddr, void *pvUser)
 {
-    if (g_cUsers != 0) {
-        g_cUsers++;
-        return VINF_SUCCESS;
-    }
+    PNATState pData = malloc(sizeof(NATState));
+    *ppData = pData;
+    if (!pData)
+        return VERR_NO_MEMORY;
+    memset(pData, '\0', sizeof(NATState));
+    pData->pvUser = pvUser;
 #endif /* VBOX */
 
 #ifdef _WIN32
@@ -216,16 +229,29 @@ int slirp_init(void)
 #endif /* VBOX */
     link_up = 1;
 
+#ifdef VBOX
+    if_init(pData);
+    ip_init(pData);
+#else /* !VBOX */
     if_init();
     ip_init();
+#endif /* !VBOX */
 
     /* Initialise mbufs *after* setting the MTU */
+#ifdef VBOX
+    m_init(pData);
+#else /* !VBOX */
     m_init();
+#endif /* !VBOX */
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
 
+#ifdef VBOX
+    if (get_dns_addr(pData, &dns_addr) < 0) {
+#else /* !VBOX */
     if (get_dns_addr(&dns_addr) < 0) {
+#endif /* !VBOX */
 #ifndef VBOX
         dns_addr = loopback_addr;
         fprintf (stderr, "Warning: No DNS servers found\n");
@@ -234,20 +260,25 @@ int slirp_init(void)
 #endif
     }
 
-    inet_aton(CTL_SPECIAL, &special_addr);
-    alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
-    getouraddr();
 #ifdef VBOX
-    g_cUsers++;
+    inet_aton(pszNetAddr, &special_addr);
+#else /* !VBOX */
+    inet_aton(CTL_SPECIAL, &special_addr);
+#endif /* !VBOX */
+    alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
+#ifdef VBOX
+    getouraddr(pData);
     return VINF_SUCCESS;
-#endif
+#else /* !VBOX */
+    getouraddr();
+#endif /* !VBOX */
 }
 
 #ifdef VBOX
 /**
  * Marks the link as up, making it possible to establish new connections.
  */
-void slirp_link_up(void)
+void slirp_link_up(PNATState pData)
 {
     link_up = 1;
 }
@@ -255,20 +286,20 @@ void slirp_link_up(void)
 /**
  * Marks the link as down and cleans up the current connections.
  */
-void slirp_link_down(void)
+void slirp_link_down(PNATState pData)
 {
     struct socket *so;
 
     while ((so = tcb.so_next) != &tcb)
     {
         if (so->so_state & SS_NOFDREF || so->s == -1)
-            sofree(so);
+            sofree(pData, so);
         else
-            tcp_drop(sototcpcb(so), 0);
+            tcp_drop(pData, sototcpcb(so), 0);
     }
 
     while ((so = udb.so_next) != &udb)
-        udp_detach(so);
+        udp_detach(pData, so);
 
     link_up = 0;
 }
@@ -276,11 +307,9 @@ void slirp_link_down(void)
 /**
  * Terminates the slirp component.
  */
-void slirp_term(void)
+void slirp_term(PNATState pData)
 {
-    if (--g_cUsers > 0)
-        return;
-    slirp_link_down();
+    slirp_link_down(pData);
 #ifdef WIN32
     WSACleanup();
 #endif
@@ -289,16 +318,17 @@ void slirp_term(void)
          "NAT statistics\n"
          "--------------\n"
          "\n"));
-    ipstats();
-    tcpstats();
-    udpstats();
-    icmpstats();
-    mbufstats();
-    sockstats();
+    ipstats(pData);
+    tcpstats(pData);
+    udpstats(pData);
+    icmpstats(pData);
+    mbufstats(pData);
+    sockstats(pData);
     Log(("\n"
          "\n"
          "\n"));
 #endif
+    free(pData);
 }
 #endif /* VBOX */
 
@@ -311,7 +341,11 @@ void slirp_term(void)
  * curtime kept to an accuracy of 1ms
  */
 #ifdef _WIN32
+#ifdef VBOX
+static void updtime(PNATState pData)
+#else /* !VBOX */
 static void updtime(void)
+#endif /* !VBOX */
 {
     struct _timeb tb;
 
@@ -320,7 +354,11 @@ static void updtime(void)
     curtime += (u_int)tb.millitm;
 }
 #else
+#ifdef VBOX
+static void updtime(PNATState pData)
+#else /* !VBOX */
 static void updtime(void)
+#endif /* !VBOX */
 {
 	gettimeofday(&tt, 0);
 
@@ -332,8 +370,13 @@ static void updtime(void)
 }
 #endif
 
+#ifdef VBOX
+void slirp_select_fill(PNATState pData, int *pnfds,
+                       fd_set *readfds, fd_set *writefds, fd_set *xfds)
+#else /* !VBOX */
 void slirp_select_fill(int *pnfds,
                        fd_set *readfds, fd_set *writefds, fd_set *xfds)
+#endif /* !VBOX */
 {
     struct socket *so, *so_next;
     struct timeval timeout;
@@ -425,7 +468,11 @@ void slirp_select_fill(int *pnfds,
 			 */
 			if (so->so_expire) {
 				if (so->so_expire <= curtime) {
+#ifdef VBOX
+					udp_detach(pData, so);
+#else /* !VBOX */
 					udp_detach(so);
+#endif /* !VBOX */
 					continue;
 				} else
 					do_slowtimo = 1; /* Let socket expire */
@@ -484,7 +531,11 @@ void slirp_select_fill(int *pnfds,
         *pnfds = nfds;
 }
 
+#ifdef VBOX
+void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds)
+#else /* !VBOX */
 void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
+#endif /* !VBOX */
 {
     struct socket *so, *so_next;
     int ret;
@@ -496,19 +547,32 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 #endif /* !VBOX */
 
 	/* Update time */
+#ifdef VBOX
+	updtime(pData);
+#else /* !VBOX */
 	updtime();
+#endif /* !VBOX */
 
 	/*
 	 * See if anything has timed out
 	 */
 	if (link_up) {
 		if (time_fasttimo && ((curtime - time_fasttimo) >= 2)) {
+#ifdef VBOX
+			tcp_fasttimo(pData);
+#else /* !VBOX */
 			tcp_fasttimo();
+#endif /* !VBOX */
 			time_fasttimo = 0;
 		}
 		if (do_slowtimo && ((curtime - last_slowtimo) >= 499)) {
+#ifdef VBOX
+			ip_slowtimo(pData);
+			tcp_slowtimo(pData);
+#else /* !VBOX */
 			ip_slowtimo();
 			tcp_slowtimo();
+#endif /* !VBOX */
 			last_slowtimo = curtime;
 		}
 	}
@@ -536,7 +600,11 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 			 * test for readfds below if this succeeds
 			 */
 			if (FD_ISSET(so->s, xfds))
+#ifdef VBOX
+			   sorecvoob(pData, so);
+#else /* !VBOX */
 			   sorecvoob(so);
+#endif /* !VBOX */
 			/*
 			 * Check sockets for reading
 			 */
@@ -545,14 +613,26 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 				 * Check for incoming connections
 				 */
 				if (so->so_state & SS_FACCEPTCONN) {
+#ifdef VBOX
+					tcp_connect(pData, so);
+#else /* !VBOX */
 					tcp_connect(so);
+#endif /* !VBOX */
 					continue;
 				} /* else */
+#ifdef VBOX
+				ret = soread(pData, so);
+#else /* !VBOX */
 				ret = soread(so);
+#endif /* !VBOX */
 
 				/* Output it if we read something */
 				if (ret > 0)
+#ifdef VBOX
+				   tcp_output(pData, sototcpcb(so));
+#else /* !VBOX */
 				   tcp_output(sototcpcb(so));
+#endif /* !VBOX */
 			}
 
 			/*
@@ -581,10 +661,18 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 			    /*
 			     * Continue tcp_input
 			     */
+#ifdef VBOX
+			    tcp_input(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+#else /* !VBOX */
 			    tcp_input((struct mbuf *)NULL, sizeof(struct ip), so);
+#endif /* !VBOX */
 			    /* continue; */
 			  } else
+#ifdef VBOX
+			    ret = sowrite(pData, so);
+#else /* !VBOX */
 			    ret = sowrite(so);
+#endif /* !VBOX */
 			  /*
 			   * XXXXX If we wrote something (a lot), there
 			   * could be a need for a window update.
@@ -638,7 +726,11 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 			so_next = so->so_next;
 
 			if (so->s != -1 && FD_ISSET(so->s, readfds)) {
+#ifdef VBOX
+                            sorecvfrom(pData, so);
+#else /* !VBOX */
                             sorecvfrom(so);
+#endif /* !VBOX */
                         }
 		}
 	}
@@ -647,7 +739,11 @@ void slirp_select_poll(fd_set *readfds, fd_set *writefds, fd_set *xfds)
 	 * See if we can start outputting
 	 */
 	if (if_queued && link_up)
+#ifdef VBOX
+	   if_start(pData);
+#else /* !VBOX */
 	   if_start();
+#endif /* !VBOX */
 
 #ifndef VBOX
 	/* clear global file descriptor sets.
@@ -696,8 +792,10 @@ struct arphdr
 
 #ifdef VBOX
 static
-#endif
+void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
+#else /* !VBOX */
 void arp_input(const uint8_t *pkt, int pkt_len)
+#endif /* !VBOX */
 {
     struct ethhdr *eh = (struct ethhdr *)pkt;
     struct arphdr *ah = (struct arphdr *)(pkt + ETH_HLEN);
@@ -737,7 +835,11 @@ void arp_input(const uint8_t *pkt, int pkt_len)
             memcpy(rah->ar_sip, ah->ar_tip, 4);
             memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
             memcpy(rah->ar_tip, ah->ar_sip, 4);
+#ifdef VBOX
+            slirp_output(pData->pvUser, arp_reply, sizeof(arp_reply));
+#else /* !VBOX */
             slirp_output(arp_reply, sizeof(arp_reply));
+#endif /* !VBOX */
         }
         break;
     default:
@@ -745,7 +847,11 @@ void arp_input(const uint8_t *pkt, int pkt_len)
     }
 }
 
+#ifdef VBOX
+void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
+#else /* !VBOX */
 void slirp_input(const uint8_t *pkt, int pkt_len)
+#endif /* !VBOX */
 {
     struct mbuf *m;
     int proto;
@@ -756,10 +862,18 @@ void slirp_input(const uint8_t *pkt, int pkt_len)
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto) {
     case ETH_P_ARP:
+#ifdef VBOX
+        arp_input(pData, pkt, pkt_len);
+#else /* !VBOX */
         arp_input(pkt, pkt_len);
+#endif /* !VBOX */
         break;
     case ETH_P_IP:
+#ifdef VBOX
+        m = m_get(pData);
+#else /* !VBOX */
         m = m_get();
+#endif /* !VBOX */
         if (!m)
             return;
         /* Note: we add to align the IP header */
@@ -769,7 +883,11 @@ void slirp_input(const uint8_t *pkt, int pkt_len)
         m->m_data += 2 + ETH_HLEN;
         m->m_len -= 2 + ETH_HLEN;
 
+#ifdef VBOX
+        ip_input(pData, m);
+#else /* !VBOX */
         ip_input(m);
+#endif /* !VBOX */
         break;
     default:
         break;
@@ -777,7 +895,11 @@ void slirp_input(const uint8_t *pkt, int pkt_len)
 }
 
 /* output the IP packet to the ethernet device */
+#ifdef VBOX
+void if_encap(PNATState pData, const uint8_t *ip_data, int ip_data_len)
+#else /* !VBOX */
 void if_encap(const uint8_t *ip_data, int ip_data_len)
+#endif /* !VBOX */
 {
     uint8_t buf[1600];
     struct ethhdr *eh = (struct ethhdr *)buf;
@@ -791,26 +913,45 @@ void if_encap(const uint8_t *ip_data, int ip_data_len)
     eh->h_source[5] = CTL_ALIAS;
     eh->h_proto = htons(ETH_P_IP);
     memcpy(buf + sizeof(struct ethhdr), ip_data, ip_data_len);
+#ifdef VBOX
+    slirp_output(pData->pvUser, buf, ip_data_len + ETH_HLEN);
+#else /* !VBOX */
     slirp_output(buf, ip_data_len + ETH_HLEN);
+#endif /* !VBOX */
 }
 
-int slirp_redir(int is_udp, int host_port,
+int slirp_redir(PNATState pData, int is_udp, int host_port,
                 struct in_addr guest_addr, int guest_port)
 {
     if (is_udp) {
+#ifdef VBOX
+        if (!udp_listen(pData, htons(host_port), guest_addr.s_addr,
+                        htons(guest_port), 0))
+#else /* !VBOX */
         if (!udp_listen(htons(host_port), guest_addr.s_addr,
                         htons(guest_port), 0))
+#endif /* !VBOX */
             return -1;
     } else {
+#ifdef VBOX
+        if (!solisten(pData, htons(host_port), guest_addr.s_addr,
+                      htons(guest_port), 0))
+#else /* !VBOX */
         if (!solisten(htons(host_port), guest_addr.s_addr,
                       htons(guest_port), 0))
+#endif /* !VBOX */
             return -1;
     }
     return 0;
 }
 
+#ifdef VBOX
+int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
+                  int guest_port)
+#else /* !VBOX */
 int slirp_add_exec(int do_pty, const char *args, int addr_low_byte,
                   int guest_port)
+#endif /* !VBOX */
 {
     return add_exec(&exec_list, do_pty, (char *)args,
                     addr_low_byte, htons(guest_port));

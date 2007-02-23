@@ -1,15 +1,20 @@
 /*
  * Copyright (c) 1995 Danny Gasparovski.
- * 
- * Please read the file COPYRIGHT for the 
+ *
+ * Please read the file COPYRIGHT for the
  * terms and conditions of the copyright.
  */
 
 #define PRN_STDERR	1
 #define PRN_SPRINTF	2
 
+#ifdef VBOX
+/* Unused anyway, using VBox Log facility. */
+#define dfd NULL
+#else /* !VBOX */
 extern FILE *dfd;
 extern FILE *lfd;
+#endif /* !VBOX */
 extern int dostats;
 extern int slirp_debug;
 
@@ -86,15 +91,22 @@ DECLINLINE(void) __debug_log(FILE *pIgnore, const char *pszFormat, ...)
 void debug_init _P((char *, int));
 /*void ttystats _P((struct ttys *)); */
 void allttystats _P((void));
+#ifdef VBOX
+void ipstats _P((PNATState));
+void tcpstats _P((PNATState));
+void udpstats _P((PNATState));
+void icmpstats _P((PNATState));
+void mbufstats _P((PNATState));
+void sockstats _P((PNATState));
+#else /* !VBOX */
 void ipstats _P((void));
-#ifndef VBOX
 void vjstats _P((void));
-#endif /* VBOX */
 void tcpstats _P((void));
 void udpstats _P((void));
 void icmpstats _P((void));
 void mbufstats _P((void));
 void sockstats _P((void));
+#endif /* VBOX */
 #ifndef VBOX
 void slirp_exit _P((int));
 #endif /* VBOX */

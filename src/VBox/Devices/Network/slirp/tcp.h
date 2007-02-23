@@ -179,8 +179,14 @@ struct tcphdr {
 
 #define TCP_ISSINCR     (125*1024)      /* increment for tcp_iss each second */
 
+#ifndef VBOX
 extern tcp_seq tcp_iss;                /* tcp initial send seq # */
+#endif /* !VBOX */
 
+#ifdef VBOX
+extern const char * const tcpstates[];
+#else /* !VBOX */
 extern char *tcpstates[];
+#endif /* !VBOX */
 
 #endif

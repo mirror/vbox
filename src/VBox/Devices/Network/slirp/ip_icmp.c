@@ -37,14 +37,24 @@
 #include "slirp.h"
 #include "ip_icmp.h"
 
+#ifndef VBOX
 struct icmpstat icmpstat;
+#endif /* !VBOX */
 
 /* The message sent when emulating PING */
 /* Be nice and tell them it's just a psuedo-ping packet */
+#ifdef VBOX
+static const char icmp_ping_msg[] = "This is a psuedo-PING packet used by Slirp to emulate ICMP ECHO-REQUEST packets.\n";
+#else /* !VBOX */
 char icmp_ping_msg[] = "This is a psuedo-PING packet used by Slirp to emulate ICMP ECHO-REQUEST packets.\n";
+#endif /* !VBOX */
 
 /* list of actions for icmp_error() on RX of an icmp message */
+#ifdef VBOX
+static const int icmp_flush[19] = {
+#else /* !VBOX */
 static int icmp_flush[19] = {
+#endif /* !VBOX */
 /*  ECHO REPLY (0)  */   0,
 		         1,
 		         1,
@@ -63,28 +73,32 @@ static int icmp_flush[19] = {
 /* INFO (15) */          0,
 /* INFO REPLY (16) */    0,
 /* ADDR MASK (17) */     0,
-/* ADDR MASK REPLY (18) */ 0 
+/* ADDR MASK REPLY (18) */ 0
 };
 
 /*
  * Process a received ICMP message.
  */
 void
+#ifdef VBOX
+icmp_input(PNATState pData, struct mbuf *m, int hlen)
+#else /* !VBOX */
 icmp_input(m, hlen)
      struct mbuf *m;
      int hlen;
+#endif /* !VBOX */
 {
   register struct icmp *icp;
   register struct ip *ip=mtod(m, struct ip *);
   int icmplen=ip->ip_len;
   /* int code; */
-	
+
   DEBUG_CALL("icmp_input");
   DEBUG_ARG("m = %lx", (long )m);
   DEBUG_ARG("m_len = %d", m->m_len);
 
   icmpstat.icps_received++;
-	
+
   /*
    * Locate icmp structure in mbuf, and check
    * that its not corrupted and of at least minimum length.
@@ -92,7 +106,11 @@ icmp_input(m, hlen)
   if (icmplen < ICMP_MINLEN) {          /* min 8 bytes payload */
     icmpstat.icps_tooshort++;
   freeit:
+#ifdef VBOX
+    m_freem(pData, m);
+#else /* !VBOX */
     m_freem(m);
+#endif /* !VBOX */
     goto end_error;
   }
 
@@ -105,7 +123,7 @@ icmp_input(m, hlen)
   }
   m->m_len += hlen;
   m->m_data -= hlen;
-  
+
   /*	icmpstat.icps_inhist[icp->icmp_type]++; */
   /* code = icp->icmp_code; */
 
@@ -115,16 +133,29 @@ icmp_input(m, hlen)
     icp->icmp_type = ICMP_ECHOREPLY;
     ip->ip_len += hlen;	             /* since ip_input subtracts this */
     if (ip->ip_dst.s_addr == alias_addr.s_addr) {
+#ifdef VBOX
+      icmp_reflect(pData, m);
+#else /* !VBOX */
       icmp_reflect(m);
+#endif /* !VBOX */
     } else {
       struct socket *so;
       struct sockaddr_in addr;
       if ((so = socreate()) == NULL) goto freeit;
+#ifdef VBOX
+      if(udp_attach(pData, so) == -1) {
+#else /* !VBOX */
       if(udp_attach(so) == -1) {
-	DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n", 
+#endif /* !VBOX */
+	DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
 		    errno,strerror(errno)));
+#ifdef VBOX
+	sofree(pData, so);
+	m_free(pData, m);
+#else /* !VBOX */
 	sofree(so);
 	m_free(m);
+#endif /* !VBOX */
 	goto end_error;
       }
       so->so_m = m;
@@ -135,7 +166,7 @@ icmp_input(m, hlen)
       so->so_iptos = ip->ip_tos;
       so->so_type = IPPROTO_ICMP;
       so->so_state = SS_ISFCONNECTED;
-      
+
       /* Send the packet */
       addr.sin_family = AF_INET;
       if ((so->so_faddr.s_addr & htonl(0xffffff00)) == special_addr.s_addr) {
@@ -157,8 +188,13 @@ icmp_input(m, hlen)
 		(struct sockaddr *)&addr, sizeof(addr)) == -1) {
 	DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
 		    errno,strerror(errno)));
-	icmp_error(m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno)); 
+#ifdef VBOX
+	icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
+	udp_detach(pData, so);
+#else /* !VBOX */
+	icmp_error(m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
 	udp_detach(so);
+#endif /* !VBOX */
       }
     } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
     break;
@@ -171,12 +207,20 @@ icmp_input(m, hlen)
   case ICMP_MASKREQ:
   case ICMP_REDIRECT:
     icmpstat.icps_notsupp++;
+#ifdef VBOX
+    m_freem(pData, m);
+#else /* !VBOX */
     m_freem(m);
+#endif /* !VBOX */
     break;
-    
+
   default:
     icmpstat.icps_badtype++;
+#ifdef VBOX
+    m_freem(pData, m);
+#else /* !VBOX */
     m_freem(m);
+#endif /* !VBOX */
   } /* swith */
 
 end_error:
@@ -199,7 +243,7 @@ end_error:
  * mbuf *msrc is used as a template, but is NOT m_free()'d.
  * It is reported as the bad ip packet.  The header should
  * be fully correct and in host byte order.
- * ICMP fragmentation is illegal.  All machines must accept 576 bytes in one 
+ * ICMP fragmentation is illegal.  All machines must accept 576 bytes in one
  * packet.  The maximum payload is 576-20(ip hdr)-8(icmp hdr)=548
  */
 
@@ -213,7 +257,7 @@ icmp_error(msrc, type, code, minsize, message)
      int minsize;
      char *message;
 #else /* VBOX */
-void icmp_error(struct mbuf *msrc, u_char type, u_char code, int minsize, char *message)
+void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, int minsize, char *message)
 #endif /* VBOX */
 {
   unsigned hlen, shlen, s_ip_len;
@@ -230,7 +274,7 @@ void icmp_error(struct mbuf *msrc, u_char type, u_char code, int minsize, char *
   /* check msrc */
   if(!msrc) goto end_error;
   ip = mtod(msrc, struct ip *);
-#if DEBUG  
+#if DEBUG
   { char bufa[20], bufb[20];
     strcpy(bufa, inet_ntoa(ip->ip_src));
     strcpy(bufb, inet_ntoa(ip->ip_dst));
@@ -251,7 +295,11 @@ void icmp_error(struct mbuf *msrc, u_char type, u_char code, int minsize, char *
   }
 
   /* make a copy */
+#ifdef VBOX
+  if(!(m=m_get(pData))) goto end_error;               /* get mbuf */
+#else /* !VBOX */
   if(!(m=m_get())) goto end_error;               /* get mbuf */
+#endif /* !VBOX */
   { int new_m_size;
     new_m_size=sizeof(struct ip )+ICMP_MINLEN+msrc->m_len+ICMP_MAXDATALEN;
     if(new_m_size>m->m_size) m_inc(m, new_m_size);
@@ -262,9 +310,9 @@ void icmp_error(struct mbuf *msrc, u_char type, u_char code, int minsize, char *
   /* make the header of the reply packet */
   ip  = mtod(m, struct ip *);
   hlen= sizeof(struct ip );     /* no options in reply */
-  
+
   /* fill in icmp */
-  m->m_data += hlen;                  
+  m->m_data += hlen;
   m->m_len -= hlen;
 
   icp = mtod(m, struct icmp *);
@@ -273,7 +321,7 @@ void icmp_error(struct mbuf *msrc, u_char type, u_char code, int minsize, char *
   else if(s_ip_len>ICMP_MAXDATALEN)         /* maximum size */
     s_ip_len=ICMP_MAXDATALEN;
 
-  m->m_len=ICMP_MINLEN+s_ip_len;        /* 8 bytes ICMP header */  
+  m->m_len=ICMP_MINLEN+s_ip_len;        /* 8 bytes ICMP header */
 
   /* min. size = 8+sizeof(struct ip)+8 */
 
@@ -308,7 +356,7 @@ void icmp_error(struct mbuf *msrc, u_char type, u_char code, int minsize, char *
   /* fill in ip */
   ip->ip_hl = hlen >> 2;
   ip->ip_len = m->m_len;
-  
+
   ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
 
   ip->ip_ttl = MAXTTL;
@@ -316,8 +364,12 @@ void icmp_error(struct mbuf *msrc, u_char type, u_char code, int minsize, char *
   ip->ip_dst = ip->ip_src;    /* ip adresses */
   ip->ip_src = alias_addr;
 
+#ifdef VBOX
+  (void ) ip_output(pData, (struct socket *)NULL, m);
+#else /* !VBOX */
   (void ) ip_output((struct socket *)NULL, m);
-  
+#endif /* !VBOX */
+
   icmpstat.icps_reflect++;
 
 end_error:
@@ -329,8 +381,12 @@ end_error:
  * Reflect the ip packet back to the source
  */
 void
+#ifdef VBOX
+icmp_reflect(PNATState pData, struct mbuf *m)
+#else /* !VBOX */
 icmp_reflect(m)
      struct mbuf *m;
+#endif /* !VBOX */
 {
   register struct ip *ip = mtod(m, struct ip *);
   int hlen = ip->ip_hl << 2;
@@ -373,7 +429,11 @@ icmp_reflect(m)
     ip->ip_src = icmp_dst;
   }
 
+#ifdef VBOX
+  (void ) ip_output(pData, (struct socket *)NULL, m);
+#else /* !VBOX */
   (void ) ip_output((struct socket *)NULL, m);
+#endif /* !VBOX */
 
   icmpstat.icps_reflect++;
 }
