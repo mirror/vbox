@@ -75,9 +75,11 @@ ifeq ($(filter-out win,$(BUILD_TARGET)),)
 endif
 
 ifeq ($(BUILD_TARGET),darwin)
- ifdef LIB_QT
-  bin_SOURCES += \
+ ifneq ($(VBOX_WITH_QTGUI),)
+  ifdef LIB_QT
+   bin_SOURCES += \
 	$(LIB_QT)
+  endif
  endif
 endif
 
