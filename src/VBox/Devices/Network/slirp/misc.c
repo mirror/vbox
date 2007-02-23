@@ -364,6 +364,9 @@ fork_exec(so, ex, do_pty)
 	if (do_pty == 2) {
 #ifdef VBOX
                 AssertRelease(do_pty != 2);
+                /* shut up gcc */
+                s = 0;
+                master = 0;
 #else /* !VBOX */
 		if (slirp_openpty(&master, &s) == -1) {
 			lprint("Error: openpty failed: %s\n", strerror(errno));
