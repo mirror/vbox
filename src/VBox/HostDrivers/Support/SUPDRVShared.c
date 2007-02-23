@@ -4064,6 +4064,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
  */
 static SUPGIPMODE supdrvGipDeterminTscMode(void)
 {
+#ifndef USE_NEW_OS_INTERFACE
     if (supdrvOSGetCPUCount() > 1)
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
@@ -4083,6 +4084,7 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
             }
         }
     }
+#endif
     return SUPGIPMODE_SYNC_TSC;
 }
 
