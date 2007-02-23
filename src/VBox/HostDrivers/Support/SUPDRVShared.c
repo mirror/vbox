@@ -162,6 +162,7 @@ static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
 static void     supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static int      supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut);
+static SUPGIPMODE supdrvGipDeterminTscMode(void);
 #ifdef USE_NEW_OS_INTERFACE
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static int      supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
@@ -4018,7 +4019,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
      */
     memset(pGip, 0, PAGE_SIZE);
     pGip->u32Magic          = SUPGLOBALINFOPAGE_MAGIC;
-    pGip->u32Mode           = SUPGIPMODE_SYNC_TSC;
+    pGip->u32Mode           = supdrvGipDeterminTscMode();
     pGip->u32UpdateHz       = uUpdateHz;
     pGip->u32UpdateIntervalNS = 1000000000 / uUpdateHz;
     pGip->u64NanoTSLastUpdateHz = u64NanoTS;
@@ -4052,17 +4053,37 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
 
-    /*
-     * Check if we should switch to async TSC mode.
-     */
-#if 0
+    return 0;
+}
+
+
+/**
+ * Determin the GIP TSC mode.
+ * 
+ * @returns The most suitable TSC mode.
+ */
+static SUPGIPMODE supdrvGipDeterminTscMode(void)
+{
     if (supdrvOSGetCPUCount() > 1)
     {
-        ASMCpuId(0, 
-    }
-#endif 
+        uint32_t uEAX, uEBX, uECX, uEDX;
 
-    return 0;
+        /* Check for "AuthenticAMD" */
+        ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+        if (uEAX >= 1 && uEBX == 0x68747541 && uECX == 0x444d4163 && uEDX == 0x69746e65)
+        {
+            /* Check for family 15 and the RDTSCP feature - hope that's is sufficient. */
+            ASMCpuId(0x80000001, &uEAX, &uEBX, &uECX, &uEDX);
+            if (   ((uEAX >> 8) & 0xf) == 0xf && ((uEAX >> 20) & 0x7f) == 0 /* family=15 */
+                && (uEDX & BIT(27) /*RDTSCP*/))
+            {
+                /** @todo when we get the model / family numbers of barcelona and other amd cores with proper TSC,
+                 * add the appropriate model checks here. */
+                return SUPGIPMODE_ASYNC_TSC;
+            }
+        }
+    }
+    return SUPGIPMODE_SYNC_TSC;
 }
 
 
