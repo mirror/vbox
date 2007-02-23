@@ -57,26 +57,6 @@
 #  define ptr_to_u32(ptr)       VBoxU32PtrHash((pData), (ptr))
 #  define u32_to_ptr(u32, type) ((type)VBoxU32PtrLookup((pData), (u32)))
 
-    extern void     VBoxU32PtrDone(PNATState pData, void *pv, uint32_t iHint);
-    extern uint32_t VBoxU32PtrHashSlow(PNATState pData, void *pv);
-
-    /** Hash the pointer, inserting it if need be. */
-    DECLINLINE(uint32_t) VBoxU32PtrHash(PNATState pData, void *pv)
-    {
-        uint32_t i = ((uintptr_t)pv >> 3) % RT_ELEMENTS(pData->apvHash);
-        if (RT_LIKELY(pData->apvHash[i] == pv && pv))
-            return i;
-        return VBoxU32PtrHashSlow(pData, pv);
-    }
-    /** Lookup the hash value. */
-    DECLINLINE(void *) VBoxU32PtrLookup(PNATState pData, uint32_t i)
-    {
-        void *pv;
-        Assert(i < RT_ELEMENTS(pData->apvHash));
-        pv = pData->apvHash[i];
-        Assert(pv || !i);
-        return pv;
-    }
 # else /* !VBOX */
    /* VBox change that's to much bother to #ifdef. */
 #  define u32ptr_done(u32, ptr)   do {} while (0)
