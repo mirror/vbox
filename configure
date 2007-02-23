@@ -1201,7 +1201,7 @@ check_gcc
 [ "$OS" != "darwin" ] && check_pthread
 [ "$OS" != "darwin" ] && check_z
 (($OSE==0)) && check_png
-(($OSE==0)) && check_pam
+(($OSE==0)) && [ "$OS" = "linux" ] && check_pam
 [ "$OS" != "darwin" ] && check_sdl
 (($OSE==0)) && check_sdl_ttf
 [ "$OS" != "darwin" ] && check_alsa
