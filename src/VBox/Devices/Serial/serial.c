@@ -78,7 +78,7 @@
 #include "vl.h"
 #endif /* !VBOX */
 
-//#define DEBUG_SERIAL
+/* #define DEBUG_SERIAL */
 
 #define UART_LCR_DLAB	0x80	/* Divisor latch access bit */
 
@@ -607,9 +607,9 @@ static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
     SSMR3PutU8(pSSMHandle, s->lsr);
     SSMR3PutU8(pSSMHandle, s->msr);
     SSMR3PutU8(pSSMHandle, s->scr);
-    SSMR3PutU32(pSSMHandle, s->thr_ipending);
-    SSMR3PutU32(pSSMHandle, s->irq);
-    SSMR3PutU32(pSSMHandle, s->last_break_enable);
+    SSMR3PutS32(pSSMHandle, s->thr_ipending);
+    SSMR3PutS32(pSSMHandle, s->irq);
+    SSMR3PutS32(pSSMHandle, s->last_break_enable);
     SSMR3PutU32(pSSMHandle, s->base);
     return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
 }
@@ -635,9 +635,9 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     SSMR3GetU8(pSSMHandle, &s->lsr);
     SSMR3GetU8(pSSMHandle, &s->msr);
     SSMR3GetU8(pSSMHandle, &s->scr);
-    SSMR3GetU32(pSSMHandle, &s->thr_ipending);
-    SSMR3GetU32(pSSMHandle, &s->irq);
-    SSMR3GetU32(pSSMHandle, &s->last_break_enable);
+    SSMR3GetS32(pSSMHandle, &s->thr_ipending);
+    SSMR3GetS32(pSSMHandle, &s->irq);
+    SSMR3GetS32(pSSMHandle, &s->last_break_enable);
     SSMR3GetU32(pSSMHandle, &s->base);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
