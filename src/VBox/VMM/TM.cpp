@@ -96,6 +96,7 @@ static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser);
 static void                 tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue);
 static DECLCALLBACK(void)   tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
 /**
@@ -177,10 +178,75 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
     /*
-     * Calibrate the cpu timestamp counter.
+     * Determin the TSC configuration and frequency.
      */
-    pVM->tm.s.cTSCTicksPerSecond = tmR3Calibrate();
-    Log(("TM: cTSCTicksPerSecond=%#RX64 (%RU64)\n", pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond));
+    /* mode */
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "TSCVirtualized", &pVM->tm.s.fTSCVirtualized);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+#if 0 /* seems to kind of work... */
+        pVM->tm.s.fTSCVirtualized = true;
+#else
+        pVM->tm.s.fTSCVirtualized = false;
+#endif 
+    else if (VBOX_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS, 
+                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc); 
+
+    /* source */
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "UseRealTSC", &pVM->tm.s.fTSCTicking);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+#if 1 /* doesn't seem to work reliably yet... xp takes several ~2 min to shutdown now. darn. */
+        pVM->tm.s.fTSCUseRealTSC = false; /* virtualize it */
+#else
+        pVM->tm.s.fTSCUseRealTSC = true; /* don't virtualize it */
+#endif 
+    else if (VBOX_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS, 
+                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc); 
+    if (!pVM->tm.s.fTSCUseRealTSC)
+        pVM->tm.s.fTSCVirtualized = true;
+
+    /* frequency */
+    rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "TSCTicksPerSecond", &pVM->tm.s.cTSCTicksPerSecond);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+#if 0  /* when tmCpuTickGetRawVirtual is done */
+        pVM->tm.s.cTSCTicksPerSecond = tmR3Calibrate();
+#else
+        if (pVM->tm.s.fTSCUseRealTSC)
+            pVM->tm.s.cTSCTicksPerSecond = tmR3Calibrate();
+        else
+            pVM->tm.s.cTSCTicksPerSecond = TMCLOCK_FREQ_VIRTUAL;/* same as the virtual clock. */
+#endif 
+    }
+    else if (VBOX_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS, 
+                          N_("Configuration error: Failed to querying uint64_t value \"TSCTicksPerSecond\". (%Vrc)"), rc); 
+#if 0 /* when tmCpuTickGetRawVirtual is done */
+    else if (   pVM->tm.s.cTSCTicksPerSecond < _1M
+             || pVM->tm.s.cTSCTicksPerSecond > _1E)
+        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, 
+                          N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not in the range 1MHz..1EHz!"),
+                          pVM->tm.s.cTSCTicksPerSecond);
+#else
+    else if (pVM->tm.s.cTSCTicksPerSecond != TMCLOCK_FREQ_VIRTUAL)
+        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, 
+                          N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not 1GHz! (temporary restriction)"),
+                          pVM->tm.s.cTSCTicksPerSecond);
+#endif
+    else
+    {
+        pVM->tm.s.fTSCUseRealTSC = false;
+        pVM->tm.s.fTSCVirtualized = true;
+    }
+
+    /* setup and report */
+    if (pVM->tm.s.fTSCUseRealTSC)
+        CPUMR3SetCR4Feature(pVM, 0, ~X86_CR4_TSD);
+    else
+        CPUMR3SetCR4Feature(pVM, X86_CR4_TSD, ~X86_CR4_TSD);
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool\n", 
+            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC));
 
     /*
      * Register saved state.
@@ -271,6 +337,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
      */
     DBGFR3InfoRegisterInternal(pVM, "timers",       "Dumps all timers. No arguments.",          tmR3TimerInfo);
     DBGFR3InfoRegisterInternal(pVM, "activetimers", "Dumps active all timers. No arguments.",   tmR3TimerInfoActive);
+    DBGFR3InfoRegisterInternal(pVM, "clocks",       "Display the time of the various clocks.",  tmR3InfoClocks);
 
     return VINF_SUCCESS;
 }
@@ -1191,3 +1258,59 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
     }
 }
 
+
+/**
+ * Display all clocks.
+ *
+ * @param   pVM         VM Handle.
+ * @param   pHlp        The info helpers.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    NOREF(pszArgs);
+
+    /* TSC */
+    uint64_t u64 = TMCpuTickGet(pVM);
+    pHlp->pfnPrintf(pHlp,
+                    "Cpu Tick: %#RX64 (%RU64) %RU64Hz %s%s", 
+                    u64, u64, TMCpuTicksPerSecond(pVM),
+                    pVM->tm.s.fTSCTicking ? "ticking" : "paused",
+                    pVM->tm.s.fTSCVirtualized ? " - virtualized" : "");
+    if (pVM->tm.s.fTSCUseRealTSC)
+    {
+        pHlp->pfnPrintf(pHlp, "- real tsc");
+        if (pVM->tm.s.u64TSCOffset)
+            pHlp->pfnPrintf(pHlp, "\n          offset %#RX64", pVM->tm.s.u64TSCOffset);
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "- virtual clock");
+    pHlp->pfnPrintf(pHlp, "\n");
+
+    /* virtual */
+    u64 = TMVirtualGet(pVM);
+    pHlp->pfnPrintf(pHlp,
+                    " Virtual: %#RX64 (%RU64) %RU64Hz %s",
+                    u64, u64, TMVirtualGetFreq(pVM),
+                    pVM->tm.s.fVirtualTicking ? "ticking" : "paused");
+    if (pVM->tm.s.fVirtualWarpDrive)
+        pHlp->pfnPrintf(pHlp, " WarpDrive %RU32 %%", pVM->tm.s.u32VirtualWarpDrivePercentage);
+    pHlp->pfnPrintf(pHlp, "\n");
+
+    /* virtual sync */
+    u64 = TMVirtualGetSync(pVM);
+    pHlp->pfnPrintf(pHlp,
+                    "VirtSync: %#RX64 (%RU64) %s%s",
+                    u64, u64, 
+                    pVM->tm.s.fVirtualSyncTicking ? "ticking" : "paused",
+                    pVM->tm.s.fVirtualSyncCatchUp ? " - catchup" : "");
+    if (pVM->tm.s.u64VirtualSyncOffset)
+        pHlp->pfnPrintf(pHlp, "\n          offset %#RX64", pVM->tm.s.u64VirtualSyncOffset);
+    pHlp->pfnPrintf(pHlp, "\n");
+
+    /* real */
+    u64 = TMRealGet(pVM);
+    pHlp->pfnPrintf(pHlp,
+                    "    Real: %#RX64 (%RU64) %RU64Hz\n",
+                    u64, u64, TMRealGetFreq(pVM));
+}

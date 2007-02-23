@@ -27,11 +27,23 @@
 #include <VBox/tm.h>
 #include "TMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/sup.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+
+
+/**
+ * Gets the raw cpu tick from current virtual time.
+ */
+DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM)
+{
+    uint64_t u64 = TMVirtualGet(pVM);
+    /** @todo calc tsc from virtual time. */
+    return u64;
+}
 
 
 /**
@@ -45,9 +57,13 @@ TMDECL(int) TMCpuTickResume(PVM pVM)
     if (!pVM->tm.s.fTSCTicking)
     {
         pVM->tm.s.fTSCTicking = true;
-#ifndef TM_REAL_CPU_TICK
-        pVM->tm.s.u64TSCOffset = ASMReadTSC() - pVM->tm.s.u64TSC;
-#endif
+        if (pVM->tm.s.fTSCVirtualized)
+        {
+            if (pVM->tm.s.fTSCUseRealTSC)
+                pVM->tm.s.u64TSCOffset = ASMReadTSC() - pVM->tm.s.u64TSC;
+            else
+                pVM->tm.s.u64TSCOffset = tmCpuTickGetRawVirtual(pVM) - pVM->tm.s.u64TSC;
+        }
         return VINF_SUCCESS;
     }
     AssertFailed();
@@ -65,9 +81,13 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
 {
     if (pVM->tm.s.fTSCTicking)
     {
-#ifndef TM_REAL_CPU_TICK
-        pVM->tm.s.u64TSC = ASMReadTSC() - pVM->tm.s.u64TSCOffset;
-#endif
+        if (!pVM->tm.s.fTSCVirtualized)
+        {
+            if (pVM->tm.s.fTSCUseRealTSC)
+                pVM->tm.s.u64TSC = ASMReadTSC() - pVM->tm.s.u64TSCOffset;
+            else
+                pVM->tm.s.u64TSC = tmCpuTickGetRawVirtual(pVM) - pVM->tm.s.u64TSCOffset;
+        }
         pVM->tm.s.fTSCTicking = false;
         return VINF_SUCCESS;
     }
@@ -85,13 +105,22 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
  */
 TMDECL(uint64_t) TMCpuTickGet(PVM pVM)
 {
-#ifdef TM_REAL_CPU_TICK
-    return ASMReadTSC();
-#else
-    if (pVM->tm.s.fTSCTicking)
-        return ASMReadTSC() - pVM->tm.s.u64TSCOffset;
-    return pVM->tm.s.u64TSC;
-#endif
+    uint64_t u64;
+    if (pVM->tm.s.fTSCUseRealTSC)
+        u64 = ASMReadTSC();
+    else
+    {
+        if (pVM->tm.s.fTSCTicking)
+        {
+            if (pVM->tm.s.fTSCUseRealTSC)
+                u64 = ASMReadTSC() - pVM->tm.s.u64TSCOffset;
+            else
+                u64 = tmCpuTickGetRawVirtual(pVM) - pVM->tm.s.u64TSCOffset;
+        }
+        else
+            u64 = pVM->tm.s.u64TSC;
+    }
+    return u64;
 }
 
 
@@ -118,6 +147,12 @@ TMDECL(int) TMCpuTickSet(PVM pVM, uint64_t u64Tick)
  */
 TMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM)
 {
+    if (pVM->tm.s.fTSCUseRealTSC)
+    {
+        uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+        if (RT_LIKELY(cTSCTicksPerSecond != ~(uint64_t)0))
+            return cTSCTicksPerSecond;
+    }
     return pVM->tm.s.cTSCTicksPerSecond;
 }
 

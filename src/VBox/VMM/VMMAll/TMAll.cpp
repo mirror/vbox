@@ -608,12 +608,7 @@ TMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
             return TMCLOCK_FREQ_REAL;
 
         case TMCLOCK_TSC:
-        {
-            PCSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-            if (pGip)
-                return SUPGetCpuHzFromGIP(pGip) ;
-            return pTimer->CTXALLSUFF(pVM)->tm.s.cTSCTicksPerSecond;
-        }
+            return TMCpuTicksPerSecond(pTimer->CTXALLSUFF(pVM));
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));

@@ -304,7 +304,7 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
      * The CPU TSC is running while halted,
      * and the yielder is suspended.
      */
-    TMCpuTickResume(pVM);
+//    TMCpuTickResume(pVM);
     VMMR3YieldSuspend(pVM);
 
     /*
@@ -415,7 +415,7 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
      * Pause the TSC, it's restarted when we start executing,
      * and resume the yielder.
      */
-    TMCpuTickPause(pVM);
+//    TMCpuTickPause(pVM);
     VMMR3YieldResume(pVM);
 
 

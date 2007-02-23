@@ -3216,6 +3216,8 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
          */
         rc = TMVirtualResume(pVM);
         Assert(rc == VINF_SUCCESS);
+        rc = TMCpuTickResume(pVM);
+        Assert(rc == VINF_SUCCESS);
 
         /*
          * The Outer Main Loop.
@@ -3335,6 +3337,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     pVM->em.s.enmState = EMSTATE_TERMINATING;
                     Log2(("EMR3ExecuteVM: returns VINF_EM_OFF (%d -> %d)\n", pVM->em.s.enmState, EMSTATE_TERMINATING));
                     TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
                     STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return rc;
@@ -3346,6 +3349,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     pVM->em.s.enmState = EMSTATE_TERMINATING;
                     Log(("EMR3ExecuteVM returns VINF_EM_TERMINATE (%d -> %d)\n", pVM->em.s.enmState, EMSTATE_TERMINATING));
                     TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
                     STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return rc;
 
@@ -3454,6 +3458,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                  */
                 case EMSTATE_SUSPENDED:
                     TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
                     STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return VINF_EM_SUSPEND;
@@ -3464,8 +3469,10 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 case EMSTATE_DEBUG_GUEST_REM:
                 case EMSTATE_DEBUG_GUEST_RAW:
                     TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
                     rc = emR3Debug(pVM, rc);
                     TMVirtualResume(pVM);
+                    TMCpuTickResume(pVM);
                     Log2(("EMR3ExecuteVM: enmr3Debug -> %Vrc (state %d)\n", rc, pVM->em.s.enmState));
                     break;
 
@@ -3475,6 +3482,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 case EMSTATE_DEBUG_HYPER:
                 {
                     TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
                     STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
 
                     rc = emR3Debug(pVM, rc);
@@ -3489,6 +3497,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
 
                     STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
                     TMVirtualResume(pVM);
+                    TMCpuTickResume(pVM);
                     break;
                 }
 
@@ -3499,6 +3508,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 {
                     /** @todo this ain't entirely safe. make a better return code check and specify this in DBGF/emR3Debug. */
                     TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
                     VMMR3FatalDump(pVM, rc);
                     int rc2 = emR3Debug(pVM, rc);
                     if (rc2 == VERR_DBGF_NOT_ATTACHED)
@@ -3509,6 +3519,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                         return rc;
                     }
                     TMVirtualResume(pVM);
+                    TMCpuTickResume(pVM);
                     rc = rc2;
                     /** @todo we're not doing the right thing in emR3Debug and will cause code to be executed on disconnect and stuff.. */
                     Log2(("EMR3ExecuteVM: enmr3Debug -> %Vrc (state %d)\n", rc, pVM->em.s.enmState));
@@ -3524,6 +3535,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     AssertMsgFailed(("EMR3ExecuteVM: Invalid state %d!\n", pVM->em.s.enmState));
                     pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
                     STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return VERR_EM_INTERNAL_ERROR;
@@ -3537,6 +3549,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
          */
         LogFlow(("EMR3ExecuteVM: returns %Vrc (longjmp / fatal error)\n", rc));
         TMVirtualPause(pVM);
+        TMCpuTickPause(pVM);
         VMMR3FatalDump(pVM, rc);
         emR3Debug(pVM, rc);
         VMMR3Unlock(pVM);
