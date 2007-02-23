@@ -35,13 +35,6 @@ int slirp_init(PNATState *, const char *, void *);
 void slirp_term(PNATState);
 void slirp_link_up(PNATState);
 void slirp_link_down(PNATState);
-# if ARCH_BITS == 64
-error fix the last remaining global variables.....
-extern uint32_t g_cpvHashUsed;
-extern uint32_t g_cpvHashCollisions;
-extern uint64_t g_cpvHashInserts;
-extern uint64_t g_cpvHashDone;
-# endif
 #endif /* VBOX */
 
 #ifdef VBOX

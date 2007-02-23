@@ -132,7 +132,7 @@ m_free(m)
 	 * Either free() it or put it on the free list
 	 */
 	if (m->m_flags & M_DOFREE) {
-		u32ptr_done(ptr_to_u32(m), m);
+		u32ptr_done(pData, ptr_to_u32(pData, m), m);
 		free(m);
 		mbuf_alloced--;
 	} else if ((m->m_flags & M_FREELIST) == 0) {

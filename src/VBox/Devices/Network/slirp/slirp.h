@@ -373,17 +373,16 @@ void ip_init _P((PNATState));
 void ip_input _P((PNATState, struct mbuf *));
 struct ip * ip_reass _P((PNATState, register struct ipasfrag *, register struct ipq_t *));
 void ip_freef _P((PNATState, struct ipq_t *));
+void ip_enq _P((PNATState, register struct ipasfrag *, register struct ipasfrag *));
+void ip_deq _P((PNATState, register struct ipasfrag *));
+void ip_slowtimo _P((PNATState));
 #else /* !VBOX */
 void ip_init _P((void));
 void ip_input _P((struct mbuf *));
 struct ip * ip_reass _P((register struct ipasfrag *, register struct ipq *));
 void ip_freef _P((struct ipq *));
-#endif /* !VBOX */
 void ip_enq _P((register struct ipasfrag *, register struct ipasfrag *));
 void ip_deq _P((register struct ipasfrag *));
-#ifdef VBOX
-void ip_slowtimo _P((PNATState));
-#else /* !VBOX */
 void ip_slowtimo _P((void));
 #endif /* !VBOX */
 void ip_stripoptions _P((register struct mbuf *, struct mbuf *));
@@ -427,13 +426,11 @@ void tcp_init _P((void));
 void tcp_template _P((struct tcpcb *));
 #ifdef VBOX
 void tcp_respond _P((PNATState, struct tcpcb *, register struct tcpiphdr *, register struct mbuf *, tcp_seq, tcp_seq, int));
-#else /* !VBOX */
-void tcp_respond _P((struct tcpcb *, register struct tcpiphdr *, register struct mbuf *, tcp_seq, tcp_seq, int));
-#endif /* !VBOX */
-struct tcpcb * tcp_newtcpcb _P((struct socket *));
-#ifdef VBOX
+struct tcpcb * tcp_newtcpcb _P((PNATState, struct socket *));
 struct tcpcb * tcp_close _P((PNATState, register struct tcpcb *));
 #else /* !VBOX */
+void tcp_respond _P((struct tcpcb *, register struct tcpiphdr *, register struct mbuf *, tcp_seq, tcp_seq, int));
+struct tcpcb * tcp_newtcpcb _P((struct socket *));
 struct tcpcb * tcp_close _P((register struct tcpcb *));
 #endif /* !VBOX */
 void tcp_drain _P((void));
