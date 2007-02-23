@@ -782,14 +782,13 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
              : "rcx", "rdx");
 #  elif (defined(PIC) || defined(__DARWIN__)) && defined(__i386__)
     RTCCUINTREG uSpill;
-    __asm__ ("push  %%ebx\n\t"
+    __asm__ ("mov   %%ebx,%%edi\n\t"
              "cpuid\n\t"
-             "xchgl %%ebx, %%ecx\n\t"
-             "pop   %%ebx\n\t"
+             "xchgl %%edi,%%ebx\n\t"
              : "=a" (uSpill),
-               "=c" (xBX)
+               "=D" (xBX)
              : "0" (1)
-             : "edx");
+             : "ecx", "edx");
 #  else
     RTCCUINTREG uSpill;
     __asm__ ("cpuid"
