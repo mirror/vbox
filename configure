@@ -252,8 +252,12 @@ function check_gcc()
         log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
         fail really
       elif (($cc_maj>3)); then
-        log_success "found version $cc_ver, using precompiled objects for recompiler"
-        cnf_append "VBOX_USING_GCC4" "1"
+        if [ "$MACHINE" = "x86" ]; then
+          log_success "found version $cc_ver, using precompiled objects for recompiler"
+          cnf_append "VBOX_USING_GCC4" "1"
+        else
+          log_success "found version $cc_ver"
+        fi
       elif (($cc_maj<3 || $cc_min<2)); then
         log_failure "gcc version $cc_ver found, expected at least gcc version 3.2"
         fail really
