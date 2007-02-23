@@ -74,7 +74,7 @@ tcp_seq tcp_iss;                /* tcp initial send seq # */
 #ifdef TCP_ACK_HACK
 #define TCP_REASS(pData, tp, ti, m, so, flags) {\
        if ((ti)->ti_seq == (tp)->rcv_nxt && \
-           u32_to_ptr((tp)->seg_next, struct tcpcb *) == (tp) && \
+           u32_to_ptr((pData), (tp)->seg_next, struct tcpcb *) == (tp) && \
            (tp)->t_state == TCPS_ESTABLISHED) {\
                if (ti->ti_flags & TH_PUSH) \
                        tp->t_flags |= TF_ACKNOW; \
@@ -97,7 +97,7 @@ tcp_seq tcp_iss;                /* tcp initial send seq # */
 #else
 #define	TCP_REASS(pData, tp, ti, m, so, flags) { \
 	if ((ti)->ti_seq == (tp)->rcv_nxt && \
-	    u32_to_ptr((tp)->seg_next, struct tcpcb *) == (tp) && \
+	    u32_to_ptr((pData), (tp)->seg_next, struct tcpcb *) == (tp) && \
 	    (tp)->t_state == TCPS_ESTABLISHED) { \
 		tp->t_flags |= TF_DELACK; \
 		(tp)->rcv_nxt += (ti)->ti_len; \
@@ -186,8 +186,8 @@ tcp_reass(tp, ti, m)
 	/*
 	 * Find a segment which begins after this one does.
 	 */
-	for (q = u32_to_ptr(tp->seg_next, struct tcpiphdr *); q != (struct tcpiphdr *)tp;
-	    q = u32_to_ptr(q->ti_next, struct tcpiphdr *))
+	for (q = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *); q != (struct tcpiphdr *)tp;
+	    q = u32_to_ptr(pData, q->ti_next, struct tcpiphdr *))
 		if (SEQ_GT(q->ti_seq, ti->ti_seq))
 			break;
 
@@ -196,9 +196,9 @@ tcp_reass(tp, ti, m)
 	 * our data already.  If so, drop the data from the incoming
 	 * segment.  If it provides all of our data, drop us.
 	 */
-	if (u32_to_ptr(q->ti_prev, struct tcpiphdr *) != (struct tcpiphdr *)tp) {
+	if (u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *) != (struct tcpiphdr *)tp) {
 		register int i;
-		q = u32_to_ptr(q->ti_prev, struct tcpiphdr *);
+		q = u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *);
 		/* conversion to int (in i) handles seq wraparound */
 		i = q->ti_seq + q->ti_len - ti->ti_seq;
 		if (i > 0) {
@@ -222,7 +222,7 @@ tcp_reass(tp, ti, m)
 			ti->ti_len -= i;
 			ti->ti_seq += i;
 		}
-		q = u32_to_ptr(q->ti_next, struct tcpiphdr *);
+		q = u32_to_ptr(pData, q->ti_next, struct tcpiphdr *);
 	}
 	tcpstat.tcps_rcvoopack++;
 	tcpstat.tcps_rcvoobyte += ti->ti_len;
@@ -242,9 +242,9 @@ tcp_reass(tp, ti, m)
 			m_adj(REASS_MBUF_GET(q), i);
 			break;
 		}
-		q = u32_to_ptr(q->ti_next, struct tcpiphdr *);
-		m = REASS_MBUF_GET(u32_to_ptr(q->ti_prev, struct tcpiphdr *));
-		remque_32(u32_to_ptr(q->ti_prev, struct tcpiphdr *));
+		q = u32_to_ptr(pData, q->ti_next, struct tcpiphdr *);
+		m = REASS_MBUF_GET(u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
+		remque_32(u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
 #ifdef VBOX
 		m_freem(pData, m);
 #else /* !VBOX */
@@ -255,7 +255,7 @@ tcp_reass(tp, ti, m)
 	/*
 	 * Stick new segment in its place.
 	 */
-	insque_32(ti, u32_to_ptr(q->ti_prev, struct tcpiphdr *));
+	insque_32(ti, u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
 
 present:
 	/*
@@ -264,7 +264,7 @@ present:
 	 */
 	if (!TCPS_HAVEESTABLISHED(tp->t_state))
 		return (0);
-	ti = u32_to_ptr(tp->seg_next, struct tcpiphdr *);
+	ti = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
 	if (ti == (struct tcpiphdr *)tp || ti->ti_seq != tp->rcv_nxt)
 		return (0);
 	if (tp->t_state == TCPS_SYN_RECEIVED && ti->ti_len)
@@ -274,7 +274,7 @@ present:
 		flags = ti->ti_flags & TH_FIN;
 		remque_32(ti);
 		m = REASS_MBUF_GET(ti); /* XXX */
-		ti = u32_to_ptr(ti->ti_next, struct tcpiphdr *);
+		ti = u32_to_ptr(pData, ti->ti_next, struct tcpiphdr *);
 /*		if (so->so_state & SS_FCANTRCVMORE) */
 		if (so->so_state & SS_FCANTSENDMORE)
 #ifdef VBOX
@@ -646,7 +646,7 @@ findso:
 				return;
 			}
 		} else if (ti->ti_ack == tp->snd_una &&
-		    u32_to_ptr(tp->seg_next, struct tcpcb *) == tp &&
+		    u32_to_ptr(pData, tp->seg_next, struct tcpcb *) == tp &&
 		    ti->ti_len <= sbspace(&so->so_rcv)) {
 			/*
 			 * this is a pure, in-sequence data packet

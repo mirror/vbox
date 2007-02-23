@@ -641,7 +641,7 @@ solisten(port, laddr, lport, flags)
 	}
 
 	/* Don't tcp_attach... we don't need so_snd nor so_rcv */
-	if ((so->so_tcpcb = tcp_newtcpcb(so)) == NULL) {
+	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL) {
 		free(so);
 		return NULL;
 	}

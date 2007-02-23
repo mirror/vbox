@@ -216,6 +216,9 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, void *pvUser)
         return VERR_NO_MEMORY;
     memset(pData, '\0', sizeof(NATState));
     pData->pvUser = pvUser;
+#if ARCH_BITS == 64
+    pData->cpvHashUsed = 1;
+#endif
 #endif /* VBOX */
 
 #ifdef _WIN32
@@ -313,6 +316,11 @@ void slirp_link_down(PNATState pData)
  */
 void slirp_term(PNATState pData)
 {
+#if ARCH_BITS == 64
+    LogRel(("NAT: cpvHashUsed=%RU32 cpvHashCollisions=%RU32 cpvHashInserts=%RU64 cpvHashDone=%RU64\n",
+            pData->cpvHashUsed, pData->cpvHashCollisions, pData->cpvHashInserts, pData->cpvHashDone));
+#endif
+
     slirp_link_down(pData);
 #ifdef WIN32
     WSACleanup();
@@ -405,7 +413,7 @@ void slirp_select_fill(int *pnfds,
 		 * in the fragment queue, or there are TCP connections active
 		 */
 		do_slowtimo = ((tcb.so_next != &tcb) ||
-			       ((struct ipasfrag *)&ipq != u32_to_ptr(ipq.next, struct ipasfrag *)));
+			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
 
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;

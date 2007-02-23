@@ -94,6 +94,14 @@ typedef struct NATState
     struct socket tcb;
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
+#if ARCH_BITS == 64
+    /* Stuff from tcp_subr.c */
+    void *apvHash[1024];
+    uint32_t cpvHashUsed;
+    uint32_t cpvHashCollisions;
+    uint64_t cpvHashInserts;
+    uint64_t cpvHashDone;
+#endif
     /* Stuff from tcp_timer.c */
     struct tcpstat_t tcpstat;
     uint32_t tcp_now;

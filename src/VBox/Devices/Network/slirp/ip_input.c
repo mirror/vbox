@@ -62,7 +62,7 @@ ip_init(PNATState pData)
 ip_init()
 #endif /* !VBOX */
 {
-	ipq.next = ipq.prev = ptr_to_u32(&ipq);
+	ipq.next = ipq.prev = ptr_to_u32(pData, &ipq);
 #ifdef VBOX
 	ip_currid = tt.tv_sec & 0xffff;
 	udp_init(pData);
@@ -185,8 +185,8 @@ ip_input(m)
 		 * Look for queue of fragments
 		 * of this datagram.
 		 */
-		for (fp = u32_to_ptr(ipq.next, struct ipq_t *); fp != &ipq;
-		     fp = u32_to_ptr(fp->next, struct ipq_t *))
+		for (fp = u32_to_ptr(pData, ipq.next, struct ipq_t *); fp != &ipq;
+		     fp = u32_to_ptr(pData, fp->next, struct ipq_t *))
 		  if (ip->ip_id == fp->ipq_id &&
 		      ip->ip_src.s_addr == fp->ipq_src.s_addr &&
 		      ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
@@ -335,7 +335,7 @@ ip_reass(ip, fp)
 	  fp->ipq_ttl = IPFRAGTTL;
 	  fp->ipq_p = ip->ip_p;
 	  fp->ipq_id = ip->ip_id;
-	  fp->ipq_next = fp->ipq_prev = ptr_to_u32((struct ipasfrag *)fp);
+	  fp->ipq_next = fp->ipq_prev = ptr_to_u32(pData, (struct ipasfrag *)fp);
 	  fp->ipq_src = ((struct ip *)ip)->ip_src;
 	  fp->ipq_dst = ((struct ip *)ip)->ip_dst;
 	  q = (struct ipasfrag *)fp;
@@ -345,8 +345,8 @@ ip_reass(ip, fp)
 	/*
 	 * Find a segment which begins after this one does.
 	 */
-	for (q = u32_to_ptr(fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
-	    q = u32_to_ptr(q->ipf_next, struct ipasfrag *))
+	for (q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
+	    q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *))
 		if (q->ip_off > ip->ip_off)
 			break;
 
@@ -355,9 +355,9 @@ ip_reass(ip, fp)
 	 * our data already.  If so, drop the data from the incoming
 	 * segment.  If it provides all of our data, drop us.
 	 */
-	if (u32_to_ptr(q->ipf_prev, struct ipq_t *) != fp) {
-		i = (u32_to_ptr(q->ipf_prev, struct ipasfrag *))->ip_off +
-		  (u32_to_ptr(q->ipf_prev, struct ipasfrag *))->ip_len - ip->ip_off;
+	if (u32_to_ptr(pData, q->ipf_prev, struct ipq_t *) != fp) {
+		i = (u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *))->ip_off +
+		  (u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *))->ip_len - ip->ip_off;
 		if (i > 0) {
 			if (i >= ip->ip_len)
 				goto dropfrag;
@@ -387,9 +387,9 @@ ip_reass(ip, fp)
 #endif /* !VBOX */
 			break;
 		}
-		q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
-		m_freem(pData, dtom(pData, u32_to_ptr(q->ipf_prev, struct ipasfrag *)));
-		ip_deq(u32_to_ptr(q->ipf_prev, struct ipasfrag *));
+		q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
+		m_freem(pData, dtom(pData, u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *)));
+		ip_deq(pData, u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *));
 	}
 
 insert:
@@ -397,28 +397,28 @@ insert:
 	 * Stick new segment in its place;
 	 * check for complete reassembly.
 	 */
-	ip_enq(ip, u32_to_ptr(q->ipf_prev, struct ipasfrag *));
+	ip_enq(pData, ip, u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *));
 	next = 0;
-	for (q = u32_to_ptr(fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
-	     q = u32_to_ptr(q->ipf_next, struct ipasfrag *)) {
+	for (q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
+	     q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *)) {
 		if (q->ip_off != next)
 			return (0);
 		next += q->ip_len;
 	}
-	if (u32_to_ptr(q->ipf_prev, struct ipasfrag *)->ipf_mff & 1)
+	if (u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *)->ipf_mff & 1)
 		return (0);
 
 	/*
 	 * Reassembly is complete; concatenate fragments.
 	 */
-	q = u32_to_ptr(fp->ipq_next, struct ipasfrag *);
+	q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *);
 #ifdef VBOX
 	m = dtom(pData, q);
 #else /* !VBOX */
 	m = dtom(q);
 #endif /* !VBOX */
 
-	q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
+	q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
 	while (q != (struct ipasfrag *)fp) {
 	  struct mbuf *t;
 #ifdef VBOX
@@ -426,7 +426,7 @@ insert:
 #else /* !VBOX */
 	  t = dtom(q);
 #endif /* !VBOX */
-	  q = u32_to_ptr(q->ipf_next, struct ipasfrag *);
+	  q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
 #ifdef VBOX
 	  m_cat(pData, m, t);
 #else /* !VBOX */
@@ -440,7 +440,7 @@ insert:
 	 * dequeue and discard fragment reassembly header.
 	 * Make header visible.
 	 */
-	ip = u32_to_ptr(fp->ipq_next, struct ipasfrag *);
+	ip = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *);
 
 	/*
 	 * If the fragments concatenated to an mbuf that's
@@ -499,10 +499,10 @@ ip_freef(fp)
 {
 	register struct ipasfrag *q, *p;
 
-	for (q = u32_to_ptr(fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
+	for (q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *); q != (struct ipasfrag *)fp;
 	    q = p) {
-		p = u32_to_ptr(q->ipf_next, struct ipasfrag *);
-		ip_deq(q);
+		p = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
+		ip_deq(pData, q);
 #ifdef VBOX
 		m_freem(pData, dtom(pData, q));
 #else /* !VBOX */
@@ -522,27 +522,25 @@ ip_freef(fp)
  * Like insque, but pointers in middle of structure.
  */
 void
-ip_enq(p, prev)
-	register struct ipasfrag *p, *prev;
+ip_enq(PNATState pData, register struct ipasfrag *p, register struct ipasfrag *prev)
 {
 	DEBUG_CALL("ip_enq");
 	DEBUG_ARG("prev = %lx", (long)prev);
-	p->ipf_prev = ptr_to_u32(prev);
+	p->ipf_prev = ptr_to_u32(pData, prev);
 	p->ipf_next = prev->ipf_next;
-	u32_to_ptr(prev->ipf_next, struct ipasfrag *)->ipf_prev = ptr_to_u32(p);
-	prev->ipf_next = ptr_to_u32(p);
+	u32_to_ptr(pData, prev->ipf_next, struct ipasfrag *)->ipf_prev = ptr_to_u32(pData, p);
+	prev->ipf_next = ptr_to_u32(pData, p);
 }
 
 /*
  * To ip_enq as remque is to insque.
  */
 void
-ip_deq(p)
-	register struct ipasfrag *p;
+ip_deq(PNATState pData, register struct ipasfrag *p)
 {
-	struct ipasfrag *prev = u32_to_ptr(p->ipf_prev, struct ipasfrag *);
-	struct ipasfrag *next = u32_to_ptr(p->ipf_next, struct ipasfrag *);
-	u32ptr_done(prev->ipf_next, p);
+	struct ipasfrag *prev = u32_to_ptr(pData, p->ipf_prev, struct ipasfrag *);
+	struct ipasfrag *next = u32_to_ptr(pData, p->ipf_next, struct ipasfrag *);
+	u32ptr_done(pData, prev->ipf_next, p);
 	prev->ipf_next = p->ipf_next;
 	next->ipf_prev = p->ipf_prev;
 }
@@ -563,16 +561,16 @@ ip_slowtimo()
 
 	DEBUG_CALL("ip_slowtimo");
 
-	fp = u32_to_ptr(ipq.next, struct ipq_t *);
+	fp = u32_to_ptr(pData, ipq.next, struct ipq_t *);
 	if (fp == 0)
 	   return;
 
 	while (fp != &ipq) {
 		--fp->ipq_ttl;
-		fp = u32_to_ptr(fp->next, struct ipq_t *);
-		if (u32_to_ptr(fp->prev, struct ipq_t *)->ipq_ttl == 0) {
+		fp = u32_to_ptr(pData, fp->next, struct ipq_t *);
+		if (u32_to_ptr(pData, fp->prev, struct ipq_t *)->ipq_ttl == 0) {
 			ipstat.ips_fragtimeout++;
-			ip_freef(pData, u32_to_ptr(fp->prev, struct ipq_t *));
+			ip_freef(pData, u32_to_ptr(pData, fp->prev, struct ipq_t *));
 		}
 	}
 }
