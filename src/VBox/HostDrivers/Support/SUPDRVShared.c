@@ -4074,15 +4074,20 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
         if (uEAX >= 1 && uEBX == 0x68747541 && uECX == 0x444d4163 && uEDX == 0x69746e65)
         {
             /* Check for family 15 and the RDTSCP feature - hope that's is sufficient. */
+            /* r=frank: The test for TscInvariant should be sufficient */
             ASMCpuId(0x80000001, &uEAX, &uEBX, &uECX, &uEDX);
             if (   ((uEAX >> 8) & 0xf) == 0xf && ((uEAX >> 20) & 0x7f) == 0 /* family=15 */
                 && (uEDX & BIT(27) /*RDTSCP*/))
             {
-                /* Check the power specs for <check the docs what this actually is>. */
+                /* Check the power specs for Advanced Power Management Information */
                 ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
                 if (uEAX < 0x80000007)
                     return SUPGIPMODE_ASYNC_TSC;
                 ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
+                /* TscInvariant 1=The TSC rate is ensured to be invariant across all P-States,
+                 * C-States, and stop-grant transitions (such as STPCLK Throttling); therefore
+                 * the TSC is suitable for use as a source of time. 0=No such guarantee is made
+                 * and software should avoid attempting to use the TSC as a source of time. */
                 if (!(uEDX & BIT(8)))
                     return SUPGIPMODE_ASYNC_TSC;
             }
