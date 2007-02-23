@@ -341,11 +341,11 @@ extern int do_echo;
 # define remque_32 remque
 #else
 # ifdef _MSC_VER
- extern void insque_32 _P((void *, void *));
- extern void remque_32 _P((void *));
+ extern void insque_32 _P((PNATState, void *, void *));
+ extern void remque_32 _P((PNATState, void *));
 # else
- inline void insque_32 _P((void *, void *));
- inline void remque_32 _P((void *));
+ inline void insque_32 _P((PNATState, void *, void *));
+ inline void remque_32 _P((PNATState, void *));
 # endif
 #endif
 
