@@ -467,7 +467,7 @@ $(IDLFILE): idl/xpidl.xsl $(XIDLFILE)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-$(IDLTYPELIB): $(IDLFILE)
+$(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(PATH_BIN))
 	$(call MSG_L1,xpidl $<,=> $@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
