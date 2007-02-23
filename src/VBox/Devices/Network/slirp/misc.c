@@ -155,8 +155,7 @@ void
 #else
 inline void
 #endif
-insque(a, b)
-	void *a, *b;
+insque(PNATState pData, void *a, void *b)
 {
 	register struct quehead *element = (struct quehead *) a;
 	register struct quehead *head = (struct quehead *) b;
@@ -172,8 +171,7 @@ void
 #else
 inline void
 #endif
-remque(a)
-     void *a;
+remque(PNATState pData, void *a)
 {
   register struct quehead *element = (struct quehead *) a;
   ((struct quehead *)(element->qh_link))->qh_rlink = element->qh_rlink;

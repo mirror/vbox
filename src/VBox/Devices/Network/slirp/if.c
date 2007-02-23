@@ -196,7 +196,7 @@ if_output(so, ifm)
 	 * XXX Shouldn't need this, gotta change dtom() etc.
 	 */
 	if (ifm->m_flags & M_USEDLIST) {
-		remque(ifm);
+		remque(pData, ifm);
 		ifm->m_flags &= ~M_USEDLIST;
 	}
 
@@ -235,7 +235,7 @@ if_output(so, ifm)
 	/* Create a new doubly linked list for this session */
 	ifm->ifq_so = so;
 	ifs_init(ifm);
-	insque(ifm, ifq);
+	insque(pData, ifm, ifq);
 
 diddit:
 	++if_queued;
@@ -255,10 +255,10 @@ diddit:
 				 (so->so_nqueued - so->so_queued) >= 3)) {
 
 			/* Remove from current queue... */
-			remque(ifm->ifs_next);
+			remque(pData, ifm->ifs_next);
 
 			/* ...And insert in the new.  That'll teach ya! */
-			insque(ifm->ifs_next, &if_batchq);
+			insque(pData, ifm->ifs_next, &if_batchq);
 		}
 	}
 
@@ -330,12 +330,12 @@ if_start(void)
 	}
 	/* Remove it from the queue */
 	ifqt = ifm->ifq_prev;
-	remque(ifm);
+	remque(pData, ifm);
 	--if_queued;
 
 	/* If there are more packets for this session, re-queue them */
 	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm) {
-		insque(ifm->ifs_next, ifqt);
+		insque(pData, ifm->ifs_next, ifqt);
 		ifs_remque(ifm);
 	}
 

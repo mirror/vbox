@@ -331,7 +331,7 @@ ip_reass(ip, fp)
 	  if ((t = m_get()) == NULL) goto dropfrag;
 #endif /* !VBOX */
 	  fp = mtod(t, struct ipq_t *);
-	  insque_32(fp, &ipq);
+	  insque_32(pData, fp, &ipq);
 	  fp->ipq_ttl = IPFRAGTTL;
 	  fp->ipq_p = ip->ip_p;
 	  fp->ipq_id = ip->ip_id;
@@ -462,7 +462,7 @@ insert:
 	ip->ipf_mff &= ~1;
 	((struct ip *)ip)->ip_src = fp->ipq_src;
 	((struct ip *)ip)->ip_dst = fp->ipq_dst;
-	remque_32(fp);
+	remque_32(pData, fp);
 #ifdef VBOX
 	(void) m_free(pData, dtom(pData, fp));
 	m = dtom(pData, ip);
@@ -509,7 +509,7 @@ ip_freef(fp)
 		m_freem(dtom(q));
 #endif /* !VBOX */
 	}
-	remque_32(fp);
+	remque_32(pData, fp);
 #ifdef VBOX
 	(void) m_free(pData, dtom(pData, fp));
 #else /* !VBOX */
