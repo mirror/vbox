@@ -25,7 +25,9 @@
 
 /* include this first so Windows.h get's in before our stuff. */
 #include <SDL.h>
-#include <SDL_syswm.h>
+#ifndef __DARWIN__
+# include <SDL_syswm.h>
+#endif
 #if defined(__WIN__) /// @todo someone please explain why this is necessary. This breaks darwin solid.
 // damn SDL redefines main!
 #undef main
