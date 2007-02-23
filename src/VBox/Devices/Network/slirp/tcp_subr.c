@@ -1564,7 +1564,7 @@ uint32_t VBoxU32PtrHashSlow(PNATState pData, void *pv)
 /**
  * Removes the pointer from the hash table.
  */
-void VBoxU32PtrDone(PNATSTate pData, void *pv, uint32_t iHint)
+void VBoxU32PtrDone(PNATState pData, void *pv, uint32_t iHint)
 {
     /* We don't count NULL pointers. */
     if (pv == NULL)
