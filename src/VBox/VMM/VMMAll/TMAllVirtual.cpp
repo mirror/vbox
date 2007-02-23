@@ -371,6 +371,8 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
     {
         int rc = TMVirtualPause(pVM);
         AssertRCReturn(rc, rc);
+        rc = TMCpuTickPause(pVM);
+        AssertRCReturn(rc, rc);
     }
 
     pVM->tm.s.u32VirtualWarpDrivePercentage = u32Percent;
@@ -381,6 +383,8 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
     if (fPaused)
     {
         int rc = TMVirtualResume(pVM);
+        AssertRCReturn(rc, rc);
+        rc = TMCpuTickResume(pVM);
         AssertRCReturn(rc, rc);
     }
 

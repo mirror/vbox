@@ -287,13 +287,22 @@ typedef struct TM
 
     /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
     bool                        fTSCTicking;
+    /** Set if we fully virtualize the TSC, i.e. intercept all rdtsc instructions. 
+     * Config variable: TSCVirtualized (bool) */
+    bool                        fTSCVirtualized;
+    /** Set if we use the real TSC as time source or if we use the virtual clock.
+     * If fTSCVirtualized is set we maintain a offset to the TSC and pausing/resuming the 
+     * ticking. fTSCVirtualized = false implies fTSCUseRealTSC = true. 
+     * Config variable: TSCUseRealTSC (bool) */
+    bool                        fTSCUseRealTSC;
     /** The offset between the host TSC and the Guest TSC.
-     * Only valid if fTicking is set. */
+     * Only valid if fTicking is set and and fTSCUseRealTSC is clear. */
     uint64_t                    u64TSCOffset;
     /** The guest TSC when fTicking is cleared. */
     uint64_t                    u64TSC;
-    /** The number of CPU clock ticks per second (TMCLOCK_TSC).
-     * If GIP is available, g_pSUPGlobalInfoPage->u64CpuHz will be used instead. */
+    /** The number of CPU clock ticks per second (TMCLOCK_TSC). 
+     * Config variable: TSCTicksPerSecond (64-bit unsigned int)
+     * The config variable implies fTSCVirtualized = true and fTSCUseRealTSC = false. */
     uint64_t                    cTSCTicksPerSecond;
 
     /** Virtual time ticking enabled indicator (bool). (TMCLOCK_VIRTUAL) */

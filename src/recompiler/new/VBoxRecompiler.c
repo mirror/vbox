@@ -734,9 +734,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
          * Now we set the execute single instruction flag and enter the cpu_exec loop.
          */
         pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
-        TMCpuTickResume(pVM);
         rc = cpu_exec(&pVM->rem.s.Env);
-        TMCpuTickPause(pVM);
         switch (rc)
         {
             /*
@@ -849,9 +847,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         uint32_t eip = pVM->rem.s.Env.eip;
         do
         {
-            TMCpuTickResume(pVM);
             rc = cpu_exec(&pVM->rem.s.Env);
-            TMCpuTickPause(pVM);
 
         } while (   eip == pVM->rem.s.Env.eip
                  && (rc == EXCP_DEBUG || rc == EXCP_EXECUTE_RAW)
@@ -980,9 +976,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
 //DBGFR3InfoLog(pVM, "timers", NULL);
 
 
-    TMCpuTickResume(pVM);
     int rc = cpu_exec(&pVM->rem.s.Env);
-    TMCpuTickPause(pVM);
     switch (rc)
     {
         /*

@@ -34,9 +34,6 @@ __BEGIN_DECLS
 /** Enable a timer hack which improves the timer response/resolution a bit. */
 #define VBOX_HIGH_RES_TIMERS_HACK
 
-/** Use the real CPU TSC. */
-#define TM_REAL_CPU_TICK
-
 
 /**
  * Clock type.
