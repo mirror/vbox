@@ -195,7 +195,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     /* source */
     rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "UseRealTSC", &pVM->tm.s.fTSCTicking);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-#if 1 /* doesn't seem to work reliably yet... xp takes several ~2 min to shutdown now. darn. */
+#if 0 /* doesn't seem to work reliably yet... xp takes several ~2 min to shutdown now. darn. */
         pVM->tm.s.fTSCUseRealTSC = false; /* virtualize it */
 #else
         pVM->tm.s.fTSCUseRealTSC = true; /* don't virtualize it */
