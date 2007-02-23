@@ -205,7 +205,7 @@ typedef struct mbuf *mbufp_32;
 #else
 typedef u_int32_t mbufp_32;
 /* VBox change which is too much bother to #ifdef */
-# define REASS_MBUF_SET(ti, p) (*(mbufp_32 *)&((ti)->ti_t)) = ptr_to_u32(p)
+# define REASS_MBUF_SET(ti, p) (*(mbufp_32 *)&((ti)->ti_t)) = ptr_to_u32(pData, p)
 # define REASS_MBUF_GET(ti)    u32_to_ptr(pData, (*(mbufp_32 *)&((ti)->ti_t)), struct mbuf *)
 #endif
 /*#define REASS_MBUF(ti) (*(mbufp_32 *)&((ti)->ti_t)) - replaced by REASS_MBUF_GET/SET */
