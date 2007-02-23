@@ -131,7 +131,7 @@ insque_32(PNATState pData, void *a, void *b)
 inline
 #endif
 void
-remque_32(PNATState *pData, void *a)
+remque_32(PNATState pData, void *a)
 {
 	register struct quehead_32 *element = (struct quehead_32 *) a;
 	struct quehead_32 *link = u32_to_ptr(pData, element->qh_link, struct quehead_32 *);
