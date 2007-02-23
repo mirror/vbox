@@ -94,7 +94,7 @@ sofree(so)
 #endif /* !VBOX */
 
   if(so->so_next && so->so_prev)
-    remque(so);  /* crashes if so is not in a queue */
+    remque(pData, so);  /* crashes if so is not in a queue */
 
   free(so);
 }
@@ -645,7 +645,7 @@ solisten(port, laddr, lport, flags)
 		free(so);
 		return NULL;
 	}
-	insque(so,&tcb);
+	insque(pData, so,&tcb);
 
 	/*
 	 * SS_FACCEPTONCE sockets must time out.

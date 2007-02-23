@@ -244,7 +244,7 @@ tcp_reass(tp, ti, m)
 		}
 		q = u32_to_ptr(pData, q->ti_next, struct tcpiphdr *);
 		m = REASS_MBUF_GET(u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
-		remque_32(u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
+		remque_32(pData, u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
 #ifdef VBOX
 		m_freem(pData, m);
 #else /* !VBOX */
@@ -255,7 +255,7 @@ tcp_reass(tp, ti, m)
 	/*
 	 * Stick new segment in its place.
 	 */
-	insque_32(ti, u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
+	insque_32(pData, ti, u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
 
 present:
 	/*
@@ -272,7 +272,7 @@ present:
 	do {
 		tp->rcv_nxt += ti->ti_len;
 		flags = ti->ti_flags & TH_FIN;
-		remque_32(ti);
+		remque_32(pData, ti);
 		m = REASS_MBUF_GET(ti); /* XXX */
 		ti = u32_to_ptr(pData, ti->ti_next, struct tcpiphdr *);
 /*		if (so->so_state & SS_FCANTRCVMORE) */

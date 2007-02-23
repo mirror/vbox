@@ -89,11 +89,11 @@ m_get()
 			mbuf_max = mbuf_alloced;
 	} else {
 		m = m_freelist.m_next;
-		remque(m);
+		remque(pData, m);
 	}
 
 	/* Insert it in the used list */
-	insque(m,&m_usedlist);
+	insque(pData, m,&m_usedlist);
 	m->m_flags = (flags | M_USEDLIST);
 
 	/* Initialise it */
@@ -122,7 +122,7 @@ m_free(m)
   if(m) {
 	/* Remove from m_usedlist */
 	if (m->m_flags & M_USEDLIST)
-	   remque(m);
+	   remque(pData, m);
 
 	/* If it's M_EXT, free() it */
 	if (m->m_flags & M_EXT)
@@ -136,7 +136,7 @@ m_free(m)
 		free(m);
 		mbuf_alloced--;
 	} else if ((m->m_flags & M_FREELIST) == 0) {
-		insque(m,&m_freelist);
+		insque(pData, m,&m_freelist);
 		m->m_flags = M_FREELIST; /* Clobber other flags */
 	}
   } /* if(m) */

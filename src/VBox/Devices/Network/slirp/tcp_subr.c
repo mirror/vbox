@@ -325,7 +325,7 @@ tcp_close(tp)
 	while (t != (struct tcpiphdr *)tp) {
 		t = u32_to_ptr(pData, t->ti_next, struct tcpiphdr *);
 		m = REASS_MBUF_GET(u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
-		remque_32(u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
+		remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
 #ifdef VBOX
 		m_freem(pData, m);
 #else /* !VBOX */
@@ -639,7 +639,7 @@ tcp_attach(so)
 	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
 	   return -1;
 
-	insque(so, &tcb);
+	insque(pData, so, &tcb);
 
 	return 0;
 }

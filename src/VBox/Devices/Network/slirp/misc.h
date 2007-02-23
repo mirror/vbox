@@ -78,8 +78,8 @@ void getouraddr _P((PNATState));
 #else /* !VBOX */
 void getouraddr _P((void));
 #endif /* !VBOX */
-inline  void slirp_insque  _P((void *, void *));
-inline  void slirp_remque  _P((void *));
+inline  void slirp_insque  _P((PNATState, void *, void *));
+inline  void slirp_remque  _P((PNATState, void *));
 int add_exec _P((struct ex_list **, int, char *, int, int));
 int slirp_openpty _P((int *, int *));
 #ifdef VBOX

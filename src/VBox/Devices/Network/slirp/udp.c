@@ -431,7 +431,7 @@ udp_attach(so)
       /* success, insert in queue */
       so->so_expire = curtime + SO_EXPIRE;
       so->so_expire = curtime + SO_EXPIRE;
-      insque(so,&udb);
+      insque(pData, so,&udb);
     }
   }
   return(so->s);
@@ -758,7 +758,7 @@ udp_listen(port, laddr, lport, flags)
 	}
 	so->s = socket(AF_INET,SOCK_DGRAM,0);
 	so->so_expire = curtime + SO_EXPIRE;
-	insque(so,&udb);
+	insque(pData, so,&udb);
 
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
