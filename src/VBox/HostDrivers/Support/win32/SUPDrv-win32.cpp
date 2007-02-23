@@ -1075,6 +1075,23 @@ void *VBOXCALL  supdrvOSExecAlloc(size_t cb)
 }
 
 
+/**
+ * Get the current CPU count.
+ * @returns Number of cpus.
+ */
+unsigned VBOXCALL supdrvOSGetCPUCount(void)
+{
+    KAFFINITY Mask = KeQueryActiveProcessors();
+    unsigned cCpus = 0;
+    unsigned iBit;
+    for (iBit = 0; iBit < sizeof(Mask) * 8; iBit++)
+        if (Mask & (1 << iBit))
+            cCpus++;
+    if (cCpus == 0) /* paranoia */
+        cCpus = 1; 
+    return cCpus;
+}
+
 
 /**
  * Converts a supdrv error code to an nt status code.
