@@ -53,9 +53,9 @@
 #  include <iprt/assert.h>
 
    /* VBox change that's to much bother to #ifdef. */
-#  define u32ptr_done(u32, ptr) VBoxU32PtrDone((pData), (ptr), (u32))
-#  define ptr_to_u32(ptr)       VBoxU32PtrHash((pData), (ptr))
-#  define u32_to_ptr(u32, type) ((type)VBoxU32PtrLookup((pData), (u32)))
+#  define u32ptr_done(pData, u32, ptr) VBoxU32PtrDone((pData), (ptr), (u32))
+#  define ptr_to_u32(pData, ptr)       VBoxU32PtrHash((pData), (ptr))
+#  define u32_to_ptr(pData, u32, type) ((type)VBoxU32PtrLookup((pData), (u32)))
 
 # else /* !VBOX */
    /* VBox change that's to much bother to #ifdef. */
