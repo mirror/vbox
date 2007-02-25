@@ -292,7 +292,7 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "                            [-bioslogofadeout on|off]\n"
                  "                            [-bioslogodisplaytime <msec>]\n"
                  "                            [-bioslogoimagepath <imagepath>]\n"
-                 "                            [-biosbootmenu <disabled|menuonly|messageandmenu>\n"
+                 "                            [-biosbootmenu <disabled|menuonly|messageandmenu>]\n"
                  "                            [-boot<1-4> none|floppy|dvd|disk|net>]\n"
                  "                            [-hd<a|b|d> none|<uuid>|<filename>]\n"
                  "                            [-dvd none|<uuid>|<filename>|host:<drive>]\n"
