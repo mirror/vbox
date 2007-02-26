@@ -885,7 +885,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "LogoTime\0"
                               "LogoFile\0"
                               "ShowBootMenu\0"
-                              "DelayBoot\0"))
+                              "DelayBoot\0"
+                              "LanBootRom\0))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
 
