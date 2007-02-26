@@ -69,7 +69,7 @@ public:
                        QAction *aRefreshAction = NULL);
 
     void languageChange();
-    
+
     void setDetailsText (const QString &aText)
     {
         mDetailsText->setText (aText);
@@ -82,7 +82,7 @@ public:
         mErrText->setText (aText);
         raiseWidget (1);
     }
-    
+
     void setEmpty()
     {
         mDetailsText->setText (QString::null);
@@ -94,7 +94,7 @@ public:
     {
         return connect (mDetailsText, aSignal, aReceiver, aMember);
     }
-    
+
 private:
 
     void createErrPage();
@@ -116,9 +116,9 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
     , mRefreshAction (aRefreshAction)
 {
     Assert (mRefreshAction);
-    
+
     /* create normal details page */
-    
+
     mDetailsText = new QTextBrowser (mErrBox);
     mDetailsText->setFocusPolicy (QWidget::StrongFocus);
     mDetailsText->setLinkUnderline (false);
@@ -132,7 +132,7 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
 void VBoxVMDetailsView::createErrPage()
 {
     /* create inaccessible details page */
-    
+
     if (mErrBox)
         return;
 
@@ -140,7 +140,7 @@ void VBoxVMDetailsView::createErrPage()
 
     QVBoxLayout *layout = new QVBoxLayout (mErrBox);
     layout->setSpacing (10);
-    
+
     mErrLabel = new QLabel (mErrBox);
     mErrLabel->setAlignment (WordBreak);
     mErrLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -155,22 +155,22 @@ void VBoxVMDetailsView::createErrPage()
     {
         mRefreshButton = new QToolButton (mErrBox);
         mRefreshButton->setFocusPolicy (QWidget::StrongFocus);
-    
+
         QHBoxLayout *hLayout = new QHBoxLayout (layout);
         hLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
                                                  QSizePolicy::Minimum));
         hLayout->add (mRefreshButton);
-        
+
         connect (mRefreshButton, SIGNAL (clicked()),
                  mRefreshAction, SIGNAL (activated()));
     }
 
     layout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum,
                                             QSizePolicy::Expanding));
-    
+
     addWidget (mErrBox, 1);
-    
-    languageChange();    
+
+    languageChange();
 }
 
 void VBoxVMDetailsView::languageChange()
@@ -258,7 +258,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmRefreshAction = new QAction (this, "vmRefreshAction");
     vmRefreshAction->setIconSet (VBoxGlobal::iconSet (
         "refresh_16px.png", "refresh_disabled_16px.png"));
-    
+
     helpContentsAction = new QAction (this, "helpContentsAction");
     helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
     helpWebAction = new QAction (this, "helpWebAction");
@@ -352,7 +352,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     helpResetMessagesAction->addTo (helpMenu);
 
     menuBar()->insertItem (QString::null, helpMenu, 3);
-    
+
     languageChange();
 
     /* restore the position of the window */
@@ -728,7 +728,7 @@ void VBoxSelectorWnd::vmRefresh()
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
-    
+
     refreshVMItem (item->id(), true /* aDetails */, true /* aSnapshots */);
 }
 
@@ -887,7 +887,7 @@ void VBoxSelectorWnd::languageChange()
         menuBar()->findItem(2)->setText (tr ("&VM"));
     if (menuBar()->findItem(3))
         menuBar()->findItem(3)->setText (tr ("&Help"));
-    
+
     vmDetailsView->languageChange();
 }
 
@@ -909,6 +909,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
     if (item && item->accessible())
     {
         CMachine m = item->machine();
+
         if (aRefreshDetails)
         {
             vmDetailsView->setDetailsText (
@@ -917,6 +918,12 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         }
         if (aRefreshSnapshots)
         {
+            /* update snapshots tab name */
+            QString shotName = tr ("&Snapshots");
+            ULONG shotCount = m.GetSnapshotCount();
+            if (shotCount)
+                shotName += QString (" (%1)").arg (shotCount);
+            vmTabWidget->changeTab (vmSnapshotsWgt, shotName);
             /* refresh snapshots widget */
             vmSnapshotsWgt->setMachine (m);
         }
@@ -954,7 +961,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         }
 
         vmDetailsView->setEnabled (true);
-        
+
         /* empty and disable refresh snapshots widget */
         vmSnapshotsWgt->setMachine (CMachine());
         vmSnapshotsWgt->setEnabled (false);
@@ -973,23 +980,23 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
     vmListBoxCurrentChanged (true /* aRefreshDetails */);
 
     do
-    {    
+    {
         /* ignore the signal if a modal widget is currently active (we won't be
          * able to properly show the modeless VDI manager window in this case) */
         if (QApplication::activeModalWidget())
             break;
-        
+
         /* ignore the signal if a VBoxDiskImageManagerDlg window is active */
         if (qApp->activeWindow() &&
             !strcmp (qApp->activeWindow()->className(), "VBoxDiskImageManagerDlg"))
             break;
-    
+
         /* look for at least one inaccessible media */
         VBoxMediaList::const_iterator it;
         for (it = list.begin(); it != list.end(); ++ it)
             if ((*it).status == VBoxMedia::Inaccessible)
                 break;
-    
+
         if (it != list.end() && vboxProblem().remindAboutInaccessibleMedia())
         {
             /* Show the VDM dialog but don't refresh once more after a
@@ -1045,7 +1052,7 @@ void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
     refreshVMItem (e.id, false /* aDetails */, false /* aSnapshots */);
 }
 
-void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &/* e */)
+void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 {
-    /// @todo (dmik) nothing to do, should remove I guess
+    refreshVMItem (aEvent.machineId, false, true);
 }

@@ -57,6 +57,8 @@ public:
 
     QFont nameFont() const { return mNameFont; }
 
+    QFont shotFont() const { return mShotFont; }
+
     QFont stateFont (CEnums::SessionState aS) const
     {
         return aS == CEnums::SessionClosed ? font() : mStateBusyFont;
@@ -80,6 +82,7 @@ private:
 
     CVirtualBox mVBox;
     QFont mNameFont;
+    QFont mShotFont;
     QFont mStateBusyFont;
     int mMargin;
 
@@ -120,7 +123,7 @@ public:
 
     int height (const QListBox *) const;
     int width (const QListBox *) const;
-    
+
     bool accessible() const { return mAccessible; }
     const CVirtualBoxErrorInfo &accessError() const { return mAccessError; }
 
@@ -136,11 +139,12 @@ private:
 
     QUuid mId;
     QString mSettingsFile;
-    
+
     bool mAccessible;
     CVirtualBoxErrorInfo mAccessError;
-    
+
     QString mName;
+    QString mSnapshotName;
     CEnums::MachineState mState;
     QDateTime mLastStateChange;
     CEnums::SessionState mSessionState;
