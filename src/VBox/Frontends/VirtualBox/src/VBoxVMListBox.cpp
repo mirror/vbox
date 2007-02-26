@@ -97,6 +97,7 @@ VBoxVMListBox (QWidget *aParent /* = 0 */, const char *aName /* = NULL */,
     mVBox = vboxGlobal().virtualBox();
 
     mNameFont = QFont ("Arial", font().pointSize() + 1, QFont::Bold);
+    mShotFont = QFont ("Arial", font().pointSize() + 1);
     mStateBusyFont = font();
     mStateBusyFont.setItalic (true);
 
@@ -250,9 +251,11 @@ void VBoxVMListBoxItem::recache()
     if (mAccessible)
     {
         QString name = mMachine.GetName();
+        CSnapshot snp = mMachine.GetCurrentSnapshot();
+        mSnapshotName = snp.isNull() ? QString::null : snp.GetName();
         needsResort = name != mName;
         mName = name;
-    
+
         mState = mMachine.GetState();
         mLastStateChange.setTime_t (mMachine.GetLastStateChange() / 1000);
         mSessionState = mMachine.GetSessionState();
@@ -261,7 +264,7 @@ void VBoxVMListBoxItem::recache()
     else
     {
         mAccessError = mMachine.GetAccessError();
-        
+
         /* this should be in sync with
          * VBoxProblemReporter::confirmMachineDeletion() */
         QFileInfo fi (mSettingsFile);
@@ -286,15 +289,18 @@ QString VBoxVMListBoxItem::toolTipText() const
                         mLastStateChange.toString (Qt::LocalDate);
 
     QString toolTip;
-    
+
     if (mAccessible)
     {
+        toolTip = QString ("<b>%1</b>").arg (mName);
+        if (!mSnapshotName.isNull())
+            toolTip += QString (" (%1)").arg (mSnapshotName);
         toolTip = QString (VBoxVMListBox::tr (
-            "<nobr><b>%1</b><br></nobr>"
+            "<nobr>%1<br></nobr>"
             "<nobr>%2 since %3</nobr><br>"
             "<nobr>Session %4</nobr>",
             "VM tooltip (name, last state change, session state)"))
-            .arg (mName)
+            .arg (toolTip)
             .arg (vboxGlobal().toString (mState))
             .arg (dateTime)
             .arg (vboxGlobal().toString (mSessionState));
@@ -319,13 +325,14 @@ int VBoxVMListBoxItem::width (const QListBox *) const
     const VBoxVMListBox *lb = vmListBox();
 
     QFontMetrics fmName = QFontMetrics (lb->nameFont());
+    QFontMetrics fmShot = QFontMetrics (lb->shotFont());
     QFontMetrics fmState = QFontMetrics (lb->stateFont (mSessionState));
     const int marg = lb->margin();
 
     QPixmap pmOSType;
     QPixmap pmState;
     QString strState;
-    
+
     if (mAccessible)
     {
         pmOSType = vboxGlobal().vmGuestOSTypeIcon (mOSType);
@@ -341,6 +348,8 @@ int VBoxVMListBoxItem::width (const QListBox *) const
     }
 
     int nameWidth = fmName.width (mName);
+    if (!mSnapshotName.isNull())
+        nameWidth += fmShot.width (QString (" (%1)").arg (mSnapshotName));
     int stateWidth = pmState.width() + fmState.width (' ') +
                      fmState.width (strState);
 
@@ -403,6 +412,7 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
     const VBoxVMListBox *lb = vmListBox();
 
     QFontMetrics fmName = QFontMetrics (lb->nameFont());
+    QFontMetrics fmShot = QFontMetrics (lb->shotFont());
     QFontMetrics fmState = QFontMetrics (lb->stateFont (mSessionState));
     const int marg = lb->margin();
 
@@ -444,6 +454,14 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
     /* draw the VM name */
     aP->setFont (lb->nameFont());
     aP->drawText (textX, marg + fmName.ascent(), mName);
+
+    if (!mSnapshotName.isNull())
+    {
+        int nameWidth = fmName.width (mName);
+        aP->setFont (lb->shotFont());
+        QString shotName = QString (" (%1)").arg (mSnapshotName);
+        aP->drawText (textX + nameWidth, marg + fmName.ascent(), shotName);
+    }
 
     int stateY = marg + fmName.lineSpacing();
     int stateH = QMAX (pmState.height(), fmState.height());
