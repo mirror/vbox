@@ -19,67 +19,9 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if 0
-  #ifndef bool /* Linux 2.6.19 C++ nightmare */
-  # define bool bool_type
-  # define true true_type
-  # define false false_type
-  # define _Bool int
-  # define bool_vboxmod_c
-  #endif
-  #include <linux/autoconf.h>
-  #include <linux/version.h>
-  #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 0)
-  # undef ALIGN
-  #endif
-  #ifndef KBUILD_STR
-  # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-  #  define KBUILD_STR(s) s
-  # else
-  #  define KBUILD_STR(s) #s
-  # endif
-  #endif
-  /* Make (at least) RHEL3U5 happy. */
-  #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
-  // # define EXPORT_SYMTAB
-  #endif
-  #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 7)
-  # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 29) \
-      || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
-  #  define msecs_to_jiffies(x) (((x) * 1000) / HZ)
-  # endif
-  #else
-  # include <linux/time.h>
-  # include <linux/jiffies.h>
-  #endif
-  #include <linux/module.h>
-  #include <linux/kernel.h>
-  #include <linux/fs.h>
-  #include <linux/mm.h>
-  #include <linux/pci.h>
-  #include <linux/wait.h>
-  #include <linux/delay.h>
-  #include <linux/interrupt.h>
-  #include <linux/completion.h>
-  #include <asm/uaccess.h>
-  #ifdef bool_vboxmod_c
-  # undef bool
-  # undef true
-  # undef false
-  # undef _Bool
-  # undef bool_vboxmod_c
-  #endif
-#endif
-
 #include "the-linux-kernel.h"
 
 /* #define IRQ_DEBUG */
-// What is this for?
-// bird: It used to fix a clash between ALIGN in iprt/cdefs.h and system headers.
-//       Since I changed that a while back it should be obsoleted by now. Could
-//       you please verify that this is actually the case (i.e. no ALIGN references
-//       the code or any (of our) headers involved with it) and remove the #undef?
-#undef ALIGN
 
 #include "vboxmod.h"
 #include "waitcompat.h"
@@ -91,12 +33,8 @@ MODULE_AUTHOR("InnoTek Systemberatung GmbH");
 MODULE_LICENSE("GPL");
 
 /* Runtime assert implementation for Linux ring 0 */
-RTDECL(void) AssertMsg1(
-    const char *pszExpr,
-    unsigned uLine,
-    const char *pszFile,
-    const char *pszFunction
-    )
+RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
+                        const char *pszFile, const char *pszFunction)
 {
     elog ("!!Assertion Failed!!\n"
           "Expression: %s\n"
@@ -179,12 +117,8 @@ static int vboxadd_release(struct inode *inode, struct file * filp)
  *
  */
 static void
-vboxadd_wait_for_event_helper (
-    VBoxDevice *dev,
-    long timeout,
-    uint32_t in_mask,
-    uint32_t * out_mask
-    )
+vboxadd_wait_for_event_helper (VBoxDevice *dev, long timeout,
+                               uint32_t in_mask, uint32_t * out_mask)
 {
     BUG ();
 }
