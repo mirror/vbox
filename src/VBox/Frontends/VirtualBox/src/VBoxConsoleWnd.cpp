@@ -243,8 +243,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     devicesSFDialogAction = new QAction (runningActions, "devicesSFDialogAction");
     devicesSFDialogAction->setToggleAction (true);
-    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                                            "select_file_dis_16px.png"));
+    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("shared_folder_16px.png",
+                                                            "shared_folder_disabled_16px.png"));
 
     devicesSwitchVrdpAction = new QAction (runningActions, "devicesSwitchVrdpAction");
     devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet ("vrdp_16px.png",
@@ -253,7 +253,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     devicesInstallGuestToolsAction = new QAction (runningActions, "devicesInstallGuestToolsAction");
     devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png",
-                                                            "guesttools_disabled_16px.png"));
+                                                                     "guesttools_disabled_16px.png"));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
@@ -395,8 +395,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
     /// @todo add proper read/write states for shared folders when it is implemented
     sf_state = new QIStateIndicator (0, indicatorBox, "sf_state", WNoAutoErase);
-    sf_state->setStateIcon (0, QPixmap::fromMimeSource ("select_file_16px.png"));
-    sf_state->setStateIcon (1, QPixmap::fromMimeSource ("select_file_dis_16px.png"));
+    sf_state->setStateIcon (0, QPixmap::fromMimeSource ("shared_folder_16px.png"));
+    sf_state->setStateIcon (1, QPixmap::fromMimeSource ("shared_folder_disabled_16px.png"));
 
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
 

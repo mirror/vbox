@@ -279,15 +279,15 @@ void VBoxSharedFoldersSettings::init()
     new QIListViewSelectionPreserver (this, listView);
     listView->setShowToolTips (false);
     listView->setRootIsDecorated (true);
-    tbAdd->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
-    tbEdit->setIconSet (VBoxGlobal::iconSet ("global_settings_16px.png",
-                                             "global_settings_diasbled_16px.png"));
-    tbRemove->setIconSet (VBoxGlobal::iconSet ("eraser_16px.png",
-                                               "eraser_disabled_16px.png"));
-    QToolTip::add (tbAdd, tr ("Add new shared folder"));
-    QToolTip::add (tbEdit, tr ("Edit selected shared folder"));
-    QToolTip::add (tbRemove, tr ("Remove selected shared folder"));
+    tbAdd->setIconSet (VBoxGlobal::iconSet ("add_shared_folder_16px.png",
+                                            "add_shared_folder_disabled_16px.png"));
+    tbEdit->setIconSet (VBoxGlobal::iconSet ("edit_shared_folder_16px.png",
+                                             "edit_shared_folder_disabled_16px.png"));
+    tbRemove->setIconSet (VBoxGlobal::iconSet ("revome_shared_folder_16px.png",
+                                               "revome_shared_folder_disabled_16px.png"));
+    QToolTip::add (tbAdd, tr ("Add a new shared folder"));
+    QToolTip::add (tbEdit, tr ("Edit the selected shared folder"));
+    QToolTip::add (tbRemove, tr ("Remove the selected shared folder"));
     connect (tbAdd, SIGNAL (clicked()), this, SLOT (tbAddPressed()));
     connect (tbEdit, SIGNAL (clicked()), this, SLOT (tbEditPressed()));
     connect (tbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));

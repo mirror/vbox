@@ -31,8 +31,8 @@
 
 void VBoxVMNetworkSettings::init()
 {
-    // setup validation
-    // ----------------------------------------------------------------------
+    /* set initial values
+     * -------------------------------------------------------------------- */
 
     leMACAddress->setValidator (new QRegExpValidator (QRegExp ("[0-9,A-F,a-f]{12,12}"), this));
 
@@ -40,8 +40,8 @@ void VBoxVMNetworkSettings::init()
     leTAPDescriptor->setValidator (new QIntValidator (-1, std::numeric_limits <LONG>::max(), this));
 #endif
 
-    // set initial values
-    // ----------------------------------------------------------------------
+    /* set initial values
+     * -------------------------------------------------------------------- */
 
     NoSuitableIfaces = tr ("<No suitable interfaces>");
 
@@ -53,20 +53,20 @@ void VBoxVMNetworkSettings::init()
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NATNetworkAttachment));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::HostInterfaceNetworkAttachment));
 
-    grbTAP->setEnabled (false); // initially disabled
+    grbTAP->setEnabled (false); /* initially disabled */
 
 #if defined Q_WS_WIN
-    // disable unused interface name UI
+    /* disable unused interface name UI */
     frmHostInterface_X11->setHidden (true);
-    // setup iconsets -- qdesigner is not capable...
-    pbHostAdd->setIconSet (VBoxGlobal::iconSet ("nw_16px.png",
-                                                "nw_disabled_16px.png"));
-    pbHostRemove->setIconSet (VBoxGlobal::iconSet ("delete_16px.png",
-                                                   "delete_dis_16px.png"));
+    /* setup iconsets -- qdesigner is not capable... */
+    pbHostAdd->setIconSet (VBoxGlobal::iconSet ("add_host_iface_16px.png",
+                                                "add_host_iface_disabled_16px.png"));
+    pbHostRemove->setIconSet (VBoxGlobal::iconSet ("remove_host_iface_16px.png",
+                                                   "remove_host_iface_disabled_16px.png"));
 #else
-    // disable unused interface name UI
+    /* disable unused interface name UI */
     frmHostInterface_WIN->setHidden (true);
-    // setup iconsets -- qdesigner is not capable...
+    /* setup iconsets -- qdesigner is not capable... */
     pbTAPSetup->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                                  "select_file_dis_16px.png"));
     pbTAPTerminate->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
@@ -74,12 +74,12 @@ void VBoxVMNetworkSettings::init()
 #endif
 
 #if !defined Q_WS_X11
-    // hide unavailable settings (TAP setup and terminate apps)
+    /* hide unavailable settings (TAP setup and terminate apps) */
     frmTAPSetupTerminate->setHidden (true);
 #endif
 
-    // the TAP file descriptor setting is always invisible -- currently not used
-    // (remove the relative code at all? -- just leave for some time...)
+    /* the TAP file descriptor setting is always invisible -- currently not used
+     * (remove the relative code at all? -- just leave for some time...) */
     frmTAPDescriptor->setHidden (true);
 }
 

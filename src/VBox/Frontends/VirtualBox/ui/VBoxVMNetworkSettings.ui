@@ -298,7 +298,7 @@
                                                         <string></string>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Add new host interface</string>
+                                                        <string>Add a new host interface</string>
                                                     </property>
                                                 </widget>
                                                 <widget class="QToolButton">
@@ -312,7 +312,8 @@
                                                         <string></string>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Remove host interface selected in host interface list</string>
+                                                        <string>Remove
+                                                        the selected host interface</string>
                                                     </property>
                                                 </widget>
                                             </hbox>

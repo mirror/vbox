@@ -187,6 +187,20 @@ IMAGES	= images/tpixel.png \
 	images/show_snapshot_details_22px.png \
 	images/show_snapshot_details_dis_16px.png \
 	images/show_snapshot_details_dis_22px.png \
+	images/add_shared_folder_16px.png \
+	images/add_shared_folder_disabled_16px.png \
+	images/edit_shared_folder_16px.png \
+	images/edit_shared_folder_disabled_16px.png \
+	images/revome_shared_folder_16px.png \
+	images/revome_shared_folder_disabled_16px.png \
+	images/shared_folder_16px.png \
+	images/shared_folder_disabled_16px.png \
+	images/shared_folder_read_16px.png \
+	images/shared_folder_write_16px.png \
+	images/add_host_iface_16px.png \
+	images/add_host_iface_disabled_16px.png \
+	images/remove_host_iface_16px.png \
+	images/remove_host_iface_disabled_16px.png \
 	images/eraser_16px.png \
 	images/eraser_disabled_16px.png \
 	images/refresh_16px.png \
