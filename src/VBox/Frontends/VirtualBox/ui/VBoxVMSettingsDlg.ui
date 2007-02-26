@@ -262,7 +262,7 @@
                 <string>#sfolders</string>
             </property>
             <property name="pixmap">
-                <pixmap>select_file_16px.png</pixmap>
+                <pixmap>shared_folder_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
