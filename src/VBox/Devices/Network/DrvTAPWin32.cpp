@@ -419,14 +419,16 @@ static DECLCALLBACK(void) drvTAPW32Destruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvTAPW32Destruct\n"));
 
 #ifdef ASYNC_NETIO
-    /* Ensure that it does not spin in the CanReceive loop */
-    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
-        RTSemEventSignal(pData->EventOutOfSpace);
-
-    /* @todo this isn't a safe method to notify the async thread; it might be using the instance data after we've been
-     *       destroyed; could wait for it to terminate, but that's not without risks either.
+    /** @todo this isn't a safe method to notify the async thread; it might be using the instance
+     *        data after we've been destroyed; could wait for it to terminate, but that's not
+     *        without risks either.
      */
     SetEvent(pData->hHaltAsyncEventSem);
+
+    /* Ensure that it does not spin in the CanReceive loop. Do it _after_ we set set the
+     * hHaltAsyncEventSem to ensure that we don't go into the loop again immediately. */
+    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
+        RTSemEventSignal(pData->EventOutOfSpace);
 
     /* Yield or else our async thread will never acquire the event semaphore */
     RTThreadSleep(16);
