@@ -1532,6 +1532,8 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
         s->nb_hw_voices_in = 0;
     }
 
+    LogRel(("Audio: Trying driver '%s'.\n", drvname));
+
     if (drvname) {
         int found = 0;
 
@@ -1551,6 +1553,9 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
     if (!done) {
         for (i = 0; !done && i < sizeof (drvtab) / sizeof (drvtab[0]); i++) {
             if (drvtab[i]->can_be_default) {
+                LogRel(("Audio: Initialization of driver '%s' failed, trying '%s'.\n",
+                       drvname, drvtab[i]->name));
+                drvname = drvtab[i]->name;
                 done = !audio_driver_init (s, drvtab[i]);
             }
         }
@@ -1562,6 +1567,7 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
             dolog ("Could not initialize audio subsystem\n");
         }
         else {
+            LogRel(("Audio: Initialization of driver '%s' failed, using NULL driver.\n", drvname));
             dolog ("warning: Using timer based audio emulation\n");
         }
     }
@@ -1770,7 +1776,7 @@ void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol)
 
 void AUD_set_record_source (audrecsource_t *ars, audrecsource_t *als)
 {
-    LogRel(("AUDIO: set_record_source ars=%d als=%d (not implemented)\n", *ars, *als));
+    LogRel(("Audio: set_record_source ars=%d als=%d (not implemented)\n", *ars, *als));
 }
 
 /**
@@ -1861,8 +1867,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     rc = CFGMR3QueryStringAlloc (pCfgHandle, "AudioDriver", &drvname);
     if (VBOX_FAILURE (rc))
         return rc;
-
-    LogRel(("Using Audio driver '%s'\n", drvname));
 
     rc = AUD_init (pDrvIns, drvname);
     if (VBOX_FAILURE (rc))

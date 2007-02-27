@@ -226,14 +226,14 @@ static int oss_open (int in, struct oss_params *req,
 #ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to open `%s'\n", dspname);
 #else
-        LogRel(("Audio/OSS: Failed to open %s for %s (%s)\n",
+        LogRel(("OSS: Failed to open %s for %s (%s)\n",
                  dspname, typ, strerror(errno)));
 #endif
         return -1;
     }
 
 #ifdef VBOX
-    LogRel(("Audio/OSS: Successfully opened %s for %s\n", dspname, typ));
+    LogRel(("OSS: Successfully opened %s for %s\n", dspname, typ));
 #endif
 
     freq = req->freq;
@@ -244,7 +244,7 @@ static int oss_open (int in, struct oss_params *req,
 #ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set sample size %d\n", req->fmt);
 #else
-        LogRel(("Audio/OSS: Failed to set sample size %d (%s)\n",
+        LogRel(("OSS: Failed to set sample size %d (%s)\n",
                  req->fmt, strerror(errno)));
 #endif
         goto err;
@@ -255,7 +255,7 @@ static int oss_open (int in, struct oss_params *req,
         oss_logerr2 (errno, typ, "Failed to set number of channels %d\n",
                      req->nchannels);
 #else
-        LogRel(("Audio/OSS: Failed to set nchannels=%d (%s)\n",
+        LogRel(("OSS: Failed to set nchannels=%d (%s)\n",
                  req->nchannels, strerror(errno)));
 #endif
         goto err;
@@ -265,7 +265,7 @@ static int oss_open (int in, struct oss_params *req,
 #ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set frequency %d\n", req->freq);
 #else
-        LogRel(("Audio/OSS: Failed to set freq=%dHZ\n", req->freq, strerror(errno)));
+        LogRel(("OSS: Failed to set freq=%dHZ\n", req->freq, strerror(errno)));
 #endif
         goto err;
     }
@@ -274,7 +274,7 @@ static int oss_open (int in, struct oss_params *req,
 #ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set non-blocking mode\n");
 #else
-        LogRel(("Audio/OSS: Failed to set non-blocking mode (%s)\n", strerror(errno)));
+        LogRel(("OSS: Failed to set non-blocking mode (%s)\n", strerror(errno)));
 #endif
         goto err;
     }
@@ -285,7 +285,7 @@ static int oss_open (int in, struct oss_params *req,
         oss_logerr2 (errno, typ, "Failed to set buffer length (%d, %d)\n",
                      req->nfrags, req->fragsize);
 #else
-        LogRel(("Audio/OSS: Failed to set buffer_length=%d,%d (%s)\n",
+        LogRel(("OSS: Failed to set buffer_length=%d,%d (%s)\n",
                 req->nfrags, req->fragsize, strerror(errno)));
 #endif
         goto err;
@@ -295,7 +295,7 @@ static int oss_open (int in, struct oss_params *req,
 #ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to get buffer length\n");
 #else
-        LogRel(("Audio/OSS: Failed to get buffer length (%s)\n", strerror(errno)));
+        LogRel(("OSS: Failed to get buffer length (%s)\n", strerror(errno)));
 #endif
         goto err;
     }
@@ -326,7 +326,7 @@ static int oss_open (int in, struct oss_params *req,
  err:
     oss_anal_close (&fd);
 #ifdef VBOX
-    LogRel(("Audio/OSS: Closed %s for %s\n",
+    LogRel(("OSS: Closed %s for %s\n",
             in ? conf.devpath_in : conf.devpath_out, in ? "ADC" : "DAC"));
 #endif
     return -1;
@@ -481,7 +481,7 @@ static void oss_fini_out (HWVoiceOut *hw)
     ldebug ("oss_fini\n");
     oss_anal_close (&oss->fd);
 #ifdef VBOX
-    LogRel(("Audio/OSS: Closed %s for DAC\n", conf.devpath_out));
+    LogRel(("OSS: Closed %s for DAC\n", conf.devpath_out));
 #endif
 
     if (oss->pcm_buf) {
@@ -529,7 +529,7 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
     if (err) {
         oss_anal_close (&fd);
 #ifdef VBOX
-    LogRel(("Audio/OSS: Closed %s for DAC\n", conf.devpath_out));
+    LogRel(("OSS: Closed %s for DAC\n", conf.devpath_out));
 #endif
         return -1;
     }
@@ -610,7 +610,7 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
                 );
             oss_anal_close (&fd);
 #ifdef VBOX
-    LogRel(("Audio/OSS: Closed %s for DAC\n", conf.devpath_out));
+    LogRel(("OSS: Closed %s for DAC\n", conf.devpath_out));
 #endif
             return -1;
         }
@@ -686,7 +686,7 @@ static int oss_init_in (HWVoiceIn *hw, audsettings_t *as)
     if (err) {
         oss_anal_close (&fd);
 #ifdef VBOX
-    LogRel(("Audio/OSS: Closed %s for ADC\n", conf.devpath_in));
+    LogRel(("OSS: Closed %s for ADC\n", conf.devpath_in));
 #endif
         return -1;
     }
@@ -712,7 +712,7 @@ static int oss_init_in (HWVoiceIn *hw, audsettings_t *as)
                hw->samples, 1 << hw->info.shift);
         oss_anal_close (&fd);
 #ifdef VBOX
-    LogRel(("Audio/OSS: Closed %s for ADC\n", conf.devpath_in));
+    LogRel(("OSS: Closed %s for ADC\n", conf.devpath_in));
 #endif
         return -1;
     }
@@ -727,7 +727,7 @@ static void oss_fini_in (HWVoiceIn *hw)
 
     oss_anal_close (&oss->fd);
 #ifdef VBOX
-    LogRel(("Audio/OSS: Closed %s for ADC\n", conf.devpath_in));
+    LogRel(("OSS: Closed %s for ADC\n", conf.devpath_in));
 #endif
 
     if (oss->pcm_buf) {

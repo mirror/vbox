@@ -3826,7 +3826,12 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             ; // Null has been set above
 #ifdef __WIN__
         else if (driver == L"winmm")
+#ifdef VBOX_WITH_WINMM
             audioDriver = AudioDriverType_WINMMAudioDriver;
+#else
+            // fall back to dsound
+            audioDriver = AudioDriverType_DSOUNDAudioDriver;
+#endif
         else if (driver == L"dsound")
             audioDriver = AudioDriverType_DSOUNDAudioDriver;
 #endif // __WIN__
@@ -5581,25 +5586,24 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
             }
 #ifdef __WIN__
             case AudioDriverType_WINMMAudioDriver:
+#ifdef VBOX_WITH_WINMM
             {
                 CFGLDRSetString (adapterNode, "driver", "winmm");
                 break;
             }
+#endif
             case AudioDriverType_DSOUNDAudioDriver:
             {
                 CFGLDRSetString (adapterNode, "driver", "dsound");
                 break;
             }
 #endif /* __WIN__ */
-#ifdef VBOX_WITH_ALSA
             case AudioDriverType_ALSAAudioDriver:
+#ifdef VBOX_WITH_ALSA
             {
                 CFGLDRSetString (adapterNode, "driver", "alsa");
                 break;
             }
-#else
-            /* fall back to OSS */
-            case AudioDriverType_ALSAAudioDriver:
 #endif
 #ifdef __LINUX__
             case AudioDriverType_OSSAudioDriver:

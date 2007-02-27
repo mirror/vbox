@@ -198,6 +198,11 @@ static int dsound_init_out (HWVoiceOut *hw, audsettings_t *as)
         return -1;
     }
 
+#ifdef DSBTYPE_IN
+    if (!s->dsound_capture)
+        return -1;
+#endif
+
     memset (&bd, 0, sizeof (bd));
     bd.dwSize = sizeof (bd);
     bd.lpwfxFormat = &wfx;

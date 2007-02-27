@@ -231,6 +231,9 @@ static void dsound_log_hresult (HRESULT hr)
     }
 
     AUD_log (AUDIO_CAP, "Reason: %s\n", str);
+#ifdef VBOX
+    LogRel(("DSound: Reason: %s\n", str));
+#endif
 }
 
 static void GCC_FMT_ATTR (2, 3) dsound_logerr (
@@ -537,8 +540,13 @@ static int dsound_open (dsound *s)
         );
 
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not set cooperative level for window %p\n",
                        hwnd);
+#else
+        LogRel(("DSound: Could not set cooperative level for window %p\n", hwnd));
+        dsound_log_hresult(hr);
+#endif
         return -1;
     }
 
@@ -564,13 +572,23 @@ static int dsound_open (dsound *s)
         NULL
         );
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not create primary playback buffer\n");
+#else
+        LogRel(("DSound: Could not create primary playback buffer\n"));
+        dsound_log_hresult(hr);
+#endif
         return -1;
     }
 
     hr = IDirectSoundBuffer_SetFormat (s->dsound_primary_buffer, &wfx);
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not set primary playback buffer format\n");
+#else
+        LogRel(("DSound: Could not set primary playback buffer format\n"));
+        dsound_log_hresult(hr);
+#endif
     }
 
     hr = IDirectSoundBuffer_GetFormat (
@@ -580,7 +598,12 @@ static int dsound_open (dsound *s)
         NULL
         );
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not get primary playback buffer format\n");
+#else
+        LogRel(("DSound: Could not get primary playback buffer format\n"));
+        dsound_log_hresult(hr);
+#endif
         goto fail0;
     }
 
@@ -982,7 +1005,12 @@ static void *dsound_audio_init (void)
 
     hr = CoInitializeEx (NULL, COINIT_MULTITHREADED);
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not initialize COM\n");
+#else
+        LogRel(("DSound: Could not initialize COM\n"));
+        dsound_log_hresult(hr);
+#endif
         return NULL;
     }
 
@@ -994,13 +1022,23 @@ static void *dsound_audio_init (void)
         (void **) &s->dsound
         );
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not create DirectSound instance\n");
+#else
+        LogRel(("DSound: Could not create DirectSound instance\n"));
+        dsound_log_hresult(hr);
+#endif
         return NULL;
     }
 
     hr = IDirectSound_Initialize (s->dsound, NULL);
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not initialize DirectSound\n");
+#else
+        LogRel(("DSound: Could not initialize DirectSound\n"));
+        dsound_log_hresult(hr);
+#endif
 
         hr = IDirectSound_Release (s->dsound);
         if (FAILED (hr)) {
@@ -1018,12 +1056,22 @@ static void *dsound_audio_init (void)
         (void **) &s->dsound_capture
         );
     if (FAILED (hr)) {
+#ifndef VBOX
         dsound_logerr (hr, "Could not create DirectSoundCapture instance\n");
+#else
+        LogRel(("DSound: Could not create DirectSoundCapture instance\n"));
+        dsound_log_hresult(hr);
+#endif
     }
     else {
         hr = IDirectSoundCapture_Initialize (s->dsound_capture, NULL);
         if (FAILED (hr)) {
+#ifndef VBOX
             dsound_logerr (hr, "Could not initialize DirectSoundCapture\n");
+#else
+            LogRel(("DSound: Could not initialize DirectSoundCapture\n"));
+            dsound_log_hresult(hr);
+#endif
 
             hr = IDirectSoundCapture_Release (s->dsound_capture);
             if (FAILED (hr)) {
