@@ -1849,6 +1849,11 @@ void
 print_bios_banner()
 {
 #ifdef VBOX
+  // Skip the logo if a warm boot is requested.
+  Bit16u warm_boot = read_word(0x0040,0x0072);
+  write_word(0x0040,0x0072, 0);
+  if (warm_boot == 0x1234)
+    return;
 #ifndef DEBUG
   /* show graphical logo */
   show_logo();
@@ -8530,6 +8535,24 @@ int18_handler: ;; Boot Failure routing
 ;----------
 int19_relocated: ;; Boot function, relocated
 
+#ifdef VBOX
+  // If an already booted OS calls int 0x19 to reboot, it is not sufficient
+  // just to try booting from the configured drives. All BIOS variables and
+  // interrupt vectors need to be reset, otherwise strange things may happen.
+  // The approach used is faking a warm reboot (which just skips showing the
+  // logo), which is a bit more than what we need, but hey, it's fast.
+  mov bp, sp
+  mov ax, 2[bp]
+  cmp ax, #0xf000
+  jz bios_initiated_boot
+  xor ax, ax
+  mov ds, ax
+  mov ax, #0x1234
+  mov 0x472, ax
+  jmp post
+bios_initiated_boot:
+#endif /* VBOX */
+
   ;; int19 was beginning to be really complex, so now it
   ;; just calls an C function, that does the work
   ;; it returns in BL the boot drive, and in AX the boot segment
@@ -10283,6 +10306,7 @@ normal_post:
   mov  ds, ax
   mov  ss, ax
 
+#ifndef VBOX
   ;; zero out BIOS data area (40:00..40:ff)
   mov  es, ax
   mov  cx, #0x0080 ;; 128 words
@@ -10290,6 +10314,20 @@ normal_post:
   cld
   rep
     stosw
+#else /* VBOX */
+  ;; zero out BIOS data area (40:00..40:ff) except word at 40:72
+  mov es, ax
+  mov di, #0x0400
+  cld
+  mov cx, #0x0039 ;; 57 words
+  rep
+    stosw
+  inc di
+  inc di
+  mov cx, #0x0046 ;; 70 words
+  rep
+    stosw
+#endif
 
   call _log_bios_start
 
@@ -10320,9 +10358,11 @@ post_default_ints:
   ;; Manufacturing Test 40:12
   ;;   zerod out above
 
+#ifndef VBOX
   ;; Warm Boot Flag 0040:0072
   ;;   value of 1234h = skip memory checks
   ;;   zerod out above
+#endif /* !VBOX */
 
 
   ;; Printer Services vector
