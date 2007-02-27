@@ -1368,23 +1368,33 @@
                 the closed state and accessing the machine or its console through
                 it is invalid.
                 </p>
+
+                Currently supported session types (values of the @a type
+                parameter) are:
+                <ul>
+                    <li><tt>gui</tt>: VirtualBox Qt GUI session</li>
+                    <li><tt>vrdp</tt>: VirtualBox VRDP Server session</li>
+                </ul>
+
                 <note>
                     It is impossible to open a remote session with the machine
                     that already has an open direct session or waits until the
                     previous request to open the remote session is completed
                     (see <link to="IMachine::sessionState"/>).
                 </note>
+
+                <note>
+                    The opened @a session will be automatically closed when
+                    the corresponding direct session dies or gets closed.
+                </note>
+
                 <see>openExistingSession</see>
             </desc>
             <param name="session" type="ISession" dir="in">
                 <desc>
                     Session object that will represent the opened remote session
-                    after successful method invocation. This object must not
-                    represent an already open session.
-                    <note>
-                        This session will be automatically closed when the peer
-                        (direct) session dies or gets closed.
-                    </note>
+                    after successful method invocation (this object must not
+                    represent an already open session).
                 </desc>
             </param>
             <param name="machineId" type="uuid" dir="in">
@@ -1392,12 +1402,7 @@
             </param>
             <param name="type" type="wstring" dir="in">
                 <desc>
-                    Type of the remote session (case sensitive). Currently
-                    supported values are:
-                    <ul>
-                        <li><tt>gui</tt>: Qt-based VM session</li>
-                        <li><tt>rdp</tt>: VRDP server session</li>
-                    </ul>
+                    Type of the remote session (case sensitive).
                 </desc>
             </param>
             <param name="progress" type="IProgress" dir="return">
@@ -1759,7 +1764,7 @@
 
     <interface
         name="IMachine" extends="$unknown"
-        uuid="FD443EC1-0009-4F5B-9282-D72760A66916"
+        uuid="50fa9181-d2d4-45ca-bf0e-742677b9c707"
     >
         <attribute name="parent" type="IVirtualBox" readonly="yes">
             <desc>Associated parent obect.</desc>
@@ -1872,6 +1877,17 @@
                     The settings file name remains the same as it was specified
                     during machine creation and never changes.
                 </note>
+            </desc>
+        </attribute>
+
+        <attribute name="description" type="wstring">
+            <desc>
+                Description of the virtual machine.
+
+                The description attribute can contain any text and is
+                typically used to describe the hardware and software
+                configuration of the virtual machine in detail (i.e. network
+                settings, versions of the installed software and so on).
             </desc>
         </attribute>
 
@@ -2000,6 +2016,31 @@
 
         <attribute name="sessionState" type="SessionState" readonly="yes">
             <desc>Current session state for this machine.</desc>
+        </attribute>
+
+        <attribute name="sessionType" type="wstring" readonly="yes">
+            <desc>
+                Type of the session.  If <link to="#sessionState"/> is
+                SessionSpawning or SessionOpen, this attribute contains the
+                same value as passed to the
+                <link to="IVirtualBox::openRemoteSession()"/> method in the @a
+                type parameter. If the session was opened directly using
+                <link to="IVirtualBox::openSession()"/>, or if
+                <link to="#sessionState"/> is SessionClosed, the value of this
+                attribute is @c null.
+            </desc>
+        </attribute>
+
+        <attribute name="sessionPid" type="unsigned long" readonly="yes">
+            <desc>
+                Identifier of the session process. This attribute contains the
+                platform-dependent identifier of the process that has opened a
+                direct session for this machine using the
+                <link to="IVirtualBox::openSession()"/> call. The returned value
+                is only valid if <link to="#sessionState"/> is SessionOpen or
+                SessionClosing (i.e. a session is currently open or being
+                closed) by the time this property is read.
+            </desc>
         </attribute>
 
         <attribute name="state" type="MachineState" readonly="yes">

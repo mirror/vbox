@@ -141,10 +141,13 @@ public:
              */
             RTPROCESS mPid;
 
-            /** current session state */
+            /** Current session state */
             SessionState_T mState;
 
-            /** sesison machine object */
+            /** Session type string (for indirect sessions) */
+            Bstr mType;
+
+            /** Sesison machine object */
             ComObjPtr <SessionMachine> mMachine;
         };
 
@@ -209,15 +212,17 @@ public:
             return this == &that ||
                    (mName == that.mName &&
                     mNameSync == that.mNameSync &&
+                    mDescription == that.mDescription &&
                     mOSType.equalsTo (that.mOSType) &&
                     mSnapshotFolderFull == that.mSnapshotFolderFull);
         }
 
-        Bstr   mName;
-        BOOL   mNameSync;
+        Bstr    mName;
+        BOOL    mNameSync;
+        Bstr    mDescription;
         ComPtr <IGuestOSType> mOSType;
-        Bstr   mSnapshotFolder;
-        Bstr   mSnapshotFolderFull;
+        Bstr    mSnapshotFolder;
+        Bstr    mSnapshotFolderFull;
     };
 
     /**
@@ -304,6 +309,8 @@ public:
     STDMETHOD(COMGETTER(AccessError)) (IVirtualBoxErrorInfo **aAccessError);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMSETTER(Name))(INPTR BSTR aName);
+    STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
+    STDMETHOD(COMSETTER(Description))(INPTR BSTR aDescription);
     STDMETHOD(COMGETTER(Id))(GUIDPARAMOUT aId);
     STDMETHOD(COMGETTER(OSType)) (IGuestOSType **aOSType);
     STDMETHOD(COMSETTER(OSType)) (IGuestOSType *aOSType);
@@ -324,7 +331,9 @@ public:
     STDMETHOD(COMGETTER(USBController))(IUSBController * *a_ppUSBController);
     STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *filePath);
     STDMETHOD(COMGETTER(SettingsModified))(BOOL *modified);
-    STDMETHOD(COMGETTER(SessionState))(SessionState_T *sessionState);
+    STDMETHOD(COMGETTER(SessionState))(SessionState_T *aSessionState);
+    STDMETHOD(COMGETTER(SessionType))(BSTR *aSessionType);
+    STDMETHOD(COMGETTER(SessionPid))(ULONG *aSessionPid);
     STDMETHOD(COMGETTER(State))(MachineState_T *machineState);
     STDMETHOD(COMGETTER(LastStateChange))(LONG64 *aLastStateChange);
     STDMETHOD(COMGETTER(StateFilePath)) (BSTR *aStateFilePath);
