@@ -292,7 +292,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to open `%s':\n", pcm_name);
 #else
-        LogRel(("Audio/ALSA: Failed to open '%s' as %s\n", pcm_name, typ));
+        LogRel(("ALSA: Failed to open '%s' as %s\n", pcm_name, typ));
 #endif
         return -1;
     }
@@ -302,7 +302,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to initialize hardware parameters\n");
 #else
-        LogRel(("Audio/ALSA: Failed to initialize hardware parameters\n"));
+        LogRel(("ALSA: Failed to initialize hardware parameters\n"));
 #endif
         goto err;
     }
@@ -316,7 +316,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to set access type\n");
 #else
-        LogRel(("Audio/ALSA: Failed to set access type\n"));
+        LogRel(("ALSA: Failed to set access type\n"));
 #endif
         goto err;
     }
@@ -326,7 +326,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to set format %d\n", req->fmt);
 #else
-        LogRel(("Audio/ALSA: Failed to set format %d\n", req->fmt));
+        LogRel(("ALSA: Failed to set format %d\n", req->fmt));
 #endif
         goto err;
     }
@@ -336,7 +336,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to set frequency %d\n", req->freq);
 #else
-        LogRel(("Audio/ALSA: Failed to set frequency %dHz\n", req->freq));
+        LogRel(("ALSA: Failed to set frequency %dHz\n", req->freq));
 #endif
         goto err;
     }
@@ -351,7 +351,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
         alsa_logerr2 (err, typ, "Failed to set number of channels %d\n",
                       req->nchannels);
 #else
-        LogRel(("Audio/ALSA: Failed to set number of channels to %d\n", req->nchannels));
+        LogRel(("ALSA: Failed to set number of channels to %d\n", req->nchannels));
 #endif
         goto err;
     }
@@ -362,7 +362,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                       "Can not handle obtained number of channels %d\n",
                       nchannels);
 #else
-        LogRel(("Audio/ALSA: Cannot handle obtained number of channels (%d)\n", nchannels));
+        LogRel(("ALSA: Cannot handle obtained number of channels (%d)\n", nchannels));
 #endif
         goto err;
     }
@@ -389,7 +389,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                                   "Failed to set period time %d\n",
                                   req->period_size);
 #else
-                    LogRel(("Audio/ALSA: Failed to set period time %d\n", req->period_size));
+                    LogRel(("ALSA: Failed to set period time %d\n", req->period_size));
 #endif
                     goto err;
                 }
@@ -408,7 +408,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                               "Failed to set buffer time %d\n",
                               req->buffer_size);
 #else
-                LogRel(("Audio/ALSA: Failed to set buffer time %d\n", req->buffer_size));
+                LogRel(("ALSA: Failed to set buffer time %d\n", req->buffer_size));
 #endif
                 goto err;
             }
@@ -434,7 +434,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                         typ
                         );
 #else
-                    LogRel(("Audio/ALSA: Could not get minimal period size for %s\n", typ));
+                    LogRel(("ALSA: Could not get minimal period size for %s\n", typ));
 #endif
                 }
                 else {
@@ -473,7 +473,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                     alsa_logerr2 (err, typ, "Failed to set period size %d\n",
                                   period_size);
 #else
-                    LogRel(("Audio/ALSA: Failed to set period size %d (%s)\n",
+                    LogRel(("ALSA: Failed to set period size %d (%s)\n",
                             period_size, snd_strerror(err)));
 #endif
                     goto err;
@@ -496,7 +496,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 alsa_logerr (err, "Could not get minmal buffer size for %s\n",
                              typ);
 #else
-                LogRel(("Audio/ALSA: Could not get minimal buffer size for %s\n", typ));
+                LogRel(("ALSA: Could not get minimal buffer size for %s\n", typ));
 #endif
             }
             else {
@@ -526,7 +526,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 alsa_logerr2 (err, typ, "Failed to set buffer size %d\n",
                               buffer_size);
 #else
-                LogRel(("Audio/ALSA: Failed to set buffer size %d (%s)\n",
+                LogRel(("ALSA: Failed to set buffer size %d (%s)\n",
                         buffer_size, snd_strerror(err)));
 #endif
                 goto err;
@@ -542,7 +542,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to apply audio parameters\n");
 #else
-        LogRel(("Audio/ALSA: Failed to apply audio parameters\n"));
+        LogRel(("ALSA: Failed to apply audio parameters\n"));
 #endif
         goto err;
     }
@@ -552,13 +552,13 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
         alsa_logerr2 (err, typ, "Failed to get buffer size\n");
 #else
-        LogRel(("Audio/ALSA: Failed to get buffer size\n"));
+        LogRel(("ALSA: Failed to get buffer size\n"));
 #endif
         goto err;
     }
 
 #ifdef VBOX
-    LogRel(("Audio/ALSA: %s frequency %dHz, period size %d, buffer size %d\n",
+    LogRel(("ALSA: %s frequency %dHz, period size %d, buffer size %d\n",
              typ, req->freq, period_size, obt_buffer_size));
 #endif
 

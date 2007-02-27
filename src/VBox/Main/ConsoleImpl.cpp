@@ -5300,17 +5300,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 break;
             }
 #ifdef __WIN__
+#ifdef VBOX_WITH_WINMM
             case AudioDriverType_WINMMAudioDriver:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");                  RC_CHECK();
                 break;
             }
+#endif
             case AudioDriverType_DSOUNDAudioDriver:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "dsound");                 RC_CHECK();
                 break;
             }
-#endif /* !__LINUX__ */
+#endif /* __WIN__ */
 #ifdef __LINUX__
             case AudioDriverType_OSSAudioDriver:
             {

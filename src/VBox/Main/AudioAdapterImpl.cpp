@@ -224,12 +224,14 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T audioDriver)
             }
 
 #ifdef __WIN__
+#ifdef VBOX_WITH_WINMM
             case AudioDriverType_WINMMAudioDriver:
             {
                 mData.backup();
                 mData->mAudioDriver = audioDriver;
                 break;
             }
+#endif
             case AudioDriverType_DSOUNDAudioDriver:
             {
                 mData.backup();
