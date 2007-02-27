@@ -96,8 +96,8 @@ VBoxVMListBox (QWidget *aParent /* = 0 */, const char *aName /* = NULL */,
 {
     mVBox = vboxGlobal().virtualBox();
 
-    mNameFont = QFont ("Arial", font().pointSize() + 1, QFont::Bold);
-    mShotFont = QFont ("Arial", font().pointSize() + 1);
+    mNameFont = QFont (font().family(), font().pointSize() + 1, QFont::Bold);
+    mShotFont = QFont (font().family(), font().pointSize() + 1);
     mStateBusyFont = font();
     mStateBusyFont.setItalic (true);
 
