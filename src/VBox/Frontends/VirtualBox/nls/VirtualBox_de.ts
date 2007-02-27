@@ -17,6 +17,10 @@
         <source>ALSA Audio Driver</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Windows DirectSound</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>BootDevice</name>
