@@ -45,40 +45,16 @@
 #define WANT_SYS_IOCTL_H
 #include <slirp.h>
 
-#ifndef VBOX
-/* patchable/settable parameters for tcp */
-int 	tcp_mssdflt = TCP_MSS;
-int 	tcp_rttdflt = TCPTV_SRTTDFLT / PR_SLOWHZ;
-int	tcp_do_rfc1323 = 0;	/* Don't do rfc1323 performance enhancements */
-int	tcp_rcvspace;	/* You may want to change this */
-int	tcp_sndspace;	/* Keep small if you have an error prone link */
-#endif /* !VBOX */
 
 /*
  * Tcp initialization
  */
 void
-#ifdef VBOX
 tcp_init(PNATState pData)
-#else /* !VBOX */
-tcp_init()
-#endif /* !VBOX */
 {
 	tcp_iss = 1;		/* wrong */
 	tcb.so_next = tcb.so_prev = &tcb;
-#ifdef VBOX
         tcp_last_so = &tcb;
-#endif /* VBOX */
-
-#ifndef VBOX
-	/* tcp_rcvspace = our Window we advertise to the remote */
-	tcp_rcvspace = TCP_RCVSPACE;
-	tcp_sndspace = TCP_SNDSPACE;
-
-	/* Make sure tcp_sndspace is at least 2*MSS */
-	if (tcp_sndspace < 2*(min(if_mtu, if_mru) - sizeof(struct tcpiphdr)))
-		tcp_sndspace = 2*(min(if_mtu, if_mru) - sizeof(struct tcpiphdr));
-#endif /* !VBOX */
 }
 
 /*
@@ -128,16 +104,7 @@ tcp_template(tp)
  * segment are as specified by the parameters.
  */
 void
-#ifdef VBOX
 tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf *m, tcp_seq ack, tcp_seq seq, int flags)
-#else /* !VBOX */
-tcp_respond(tp, ti, m, ack, seq, flags)
-	struct tcpcb *tp;
-	register struct tcpiphdr *ti;
-	register struct mbuf *m;
-	tcp_seq ack, seq;
-	int flags;
-#endif /* !VBOX */
 {
 	register int tlen;
 	int win = 0;
@@ -153,11 +120,7 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 	if (tp)
 		win = sbspace(&tp->t_socket->so_rcv);
 	if (m == 0) {
-#ifdef VBOX
 		if ((m = m_get(pData)) == NULL)
-#else /* !VBOX */
-		if ((m = m_get()) == NULL)
-#endif /* !VBOX */
 			return;
 #ifdef TCP_COMPAT_42
 		tlen = 1;
@@ -207,11 +170,7 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 	else
 	  ((struct ip *)ti)->ip_ttl = ip_defttl;
 
-#ifdef VBOX
 	(void) ip_output(pData, (struct socket *)0, m);
-#else /* !VBOX */
-	(void) ip_output((struct socket *)0, m);
-#endif /* !VBOX */
 }
 
 /*
@@ -262,11 +221,7 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
  * the specified error.  If connection is synchronized,
  * then send a RST to peer.
  */
-#ifdef VBOX
 struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
-#else /* !VBOX */
-struct tcpcb *tcp_drop(struct tcpcb *tp, int err)
-#endif /* !VBOX */
 {
 /* tcp_drop(tp, errno)
 	register struct tcpcb *tp;
@@ -280,11 +235,7 @@ struct tcpcb *tcp_drop(struct tcpcb *tp, int err)
 
 	if (TCPS_HAVERCVDSYN(tp->t_state)) {
 		tp->t_state = TCPS_CLOSED;
-#ifdef VBOX
 		(void) tcp_output(pData, tp);
-#else /* !VBOX */
-		(void) tcp_output(tp);
-#endif /* !VBOX */
 		tcpstat.tcps_drops++;
 	} else
 		tcpstat.tcps_conndrops++;
@@ -292,11 +243,7 @@ struct tcpcb *tcp_drop(struct tcpcb *tp, int err)
  *		errno = tp->t_softerror;
  */
 /*	so->so_error = errno; */
-#ifdef VBOX
 	return (tcp_close(pData, tp));
-#else /* !VBOX */
-	return (tcp_close(tp));
-#endif /* !VBOX */
 }
 
 /*
@@ -306,12 +253,7 @@ struct tcpcb *tcp_drop(struct tcpcb *tp, int err)
  *	wake up any sleepers
  */
 struct tcpcb *
-#ifdef VBOX
 tcp_close(PNATState pData, register struct tcpcb *tp)
-#else /* !VBOX */
-tcp_close(tp)
-	register struct tcpcb *tp;
-#endif /* !VBOX */
 {
 	register struct tcpiphdr *t;
 	struct socket *so = tp->t_socket;
@@ -326,11 +268,7 @@ tcp_close(tp)
 		t = u32_to_ptr(pData, t->ti_next, struct tcpiphdr *);
 		m = REASS_MBUF_GET(u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
 		remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
-#ifdef VBOX
 		m_freem(pData, m);
-#else /* !VBOX */
-		m_freem(m);
-#endif /* !VBOX */
 	}
 	/* It's static */
 /*	if (tp->t_template)
@@ -347,11 +285,7 @@ tcp_close(tp)
 	closesocket(so->s);
 	sbfree(&so->so_rcv);
 	sbfree(&so->so_snd);
-#ifdef VBOX
 	sofree(pData, so);
-#else /* !VBOX */
-	sofree(so);
-#endif /* !VBOX */
 	tcpstat.tcps_closed++;
 	return ((struct tcpcb *)0);
 }
@@ -397,12 +331,7 @@ tcp_quench(i, errno)
  * We can let the user exit from the close as soon as the FIN is acked.
  */
 void
-#ifdef VBOX
 tcp_sockclosed(PNATState pData, struct tcpcb *tp)
-#else /* !VBOX */
-tcp_sockclosed(tp)
-	struct tcpcb *tp;
-#endif /* !VBOX */
 {
 
 	DEBUG_CALL("tcp_sockclosed");
@@ -414,11 +343,7 @@ tcp_sockclosed(tp)
 	case TCPS_LISTEN:
 	case TCPS_SYN_SENT:
 		tp->t_state = TCPS_CLOSED;
-#ifdef VBOX
 		tp = tcp_close(pData, tp);
-#else /* !VBOX */
-		tp = tcp_close(tp);
-#endif /* !VBOX */
 		break;
 
 	case TCPS_SYN_RECEIVED:
@@ -434,11 +359,7 @@ tcp_sockclosed(tp)
 	if (tp && tp->t_state >= TCPS_FIN_WAIT_2)
 		soisfdisconnected(tp->t_socket);
 	if (tp)
-#ifdef VBOX
 		tcp_output(pData, tp);
-#else /* !VBOX */
-		tcp_output(tp);
-#endif /* !VBOX */
 }
 
 /*
@@ -451,12 +372,7 @@ tcp_sockclosed(tp)
  * nonblocking.  Connect returns after the SYN is sent, and does
  * not wait for ACK+SYN.
  */
-#ifdef VBOX
 int tcp_fconnect(PNATState pData, struct socket *so)
-#else /* !VBOX */
-int tcp_fconnect(so)
-     struct socket *so;
-#endif /* !VBOX */
 {
   int ret=0;
 
@@ -518,20 +434,11 @@ int tcp_fconnect(so)
  * here and SYN the local-host.
  */
 void
-#ifdef VBOX
 tcp_connect(PNATState pData, struct socket *inso)
-#else /* !VBOX */
-tcp_connect(inso)
-	struct socket *inso;
-#endif /* !VBOX */
 {
 	struct socket *so;
 	struct sockaddr_in addr;
-#ifndef VBOX
-	int addrlen = sizeof(struct sockaddr_in);
-#else /* VBOX */
 	socklen_t addrlen = sizeof(struct sockaddr_in);
-#endif /* VBOX */
 	struct tcpcb *tp;
 	int s, opt;
 
@@ -551,11 +458,7 @@ tcp_connect(inso)
 			closesocket(accept(inso->s,(struct sockaddr *)&addr,&addrlen));
 			return;
 		}
-#ifdef VBOX
 		if (tcp_attach(pData, so) < 0) {
-#else /* !VBOX */
-		if (tcp_attach(so) < 0) {
-#endif /* !VBOX */
 			free(so); /* NOT sofree */
 			return;
 		}
@@ -563,18 +466,10 @@ tcp_connect(inso)
 		so->so_lport = inso->so_lport;
 	}
 
-#ifdef VBOX
 	(void) tcp_mss(pData, sototcpcb(so), 0);
-#else /* !VBOX */
-	(void) tcp_mss(sototcpcb(so), 0);
-#endif /* !VBOX */
 
 	if ((s = accept(inso->s,(struct sockaddr *)&addr,&addrlen)) < 0) {
-#ifdef VBOX
 		tcp_close(pData, sototcpcb(so)); /* This will sofree() as well */
-#else /* !VBOX */
-		tcp_close(sototcpcb(so)); /* This will sofree() as well */
-#endif /* !VBOX */
 		return;
 	}
 	fd_nonblock(s);
@@ -618,23 +513,14 @@ tcp_connect(inso)
 	tp->iss = tcp_iss;
 	tcp_iss += TCP_ISSINCR/2;
 	tcp_sendseqinit(tp);
-#ifdef VBOX
 	tcp_output(pData, tp);
-#else /* !VBOX */
-	tcp_output(tp);
-#endif /* !VBOX */
 }
 
 /*
  * Attach a TCPCB to a socket.
  */
 int
-#ifdef VBOX
 tcp_attach(PNATState pData, struct socket *so)
-#else /* !VBOX */
-tcp_attach(so)
-	struct socket *so;
-#endif /* !VBOX */
 {
 	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
 	   return -1;
@@ -647,11 +533,7 @@ tcp_attach(so)
 /*
  * Set the socket's type of service field
  */
-#ifdef VBOX
 static const struct tos_t tcptos[] = {
-#else /* !VBOX */
-struct tos_t tcptos[] = {
-#endif /* !VBOX */
 	  {0, 20, IPTOS_THROUGHPUT, 0},	/* ftp data */
 	  {21, 21, IPTOS_LOWDELAY,  EMU_FTP},	/* ftp control */
 	  {0, 23, IPTOS_LOWDELAY, 0},	/* telnet */
@@ -667,10 +549,6 @@ struct tos_t tcptos[] = {
 	  {0, 0, 0, 0}
 };
 
-#ifndef VBOX
-struct emu_t *tcpemu = 0;
-#endif /* !VBOX */
-
 /*
  * Return TOS according to the above table
  */
@@ -679,9 +557,6 @@ tcp_tos(so)
 	struct socket *so;
 {
 	int i = 0;
-#ifndef VBOX
-	struct emu_t *emup;
-#endif /* !VBOX */
 
 	while(tcptos[i].tos) {
 		if ((tcptos[i].fport && (ntohs(so->so_fport) == tcptos[i].fport)) ||
@@ -692,25 +567,8 @@ tcp_tos(so)
 		i++;
 	}
 
-#ifdef VBOX
-        /* No user-added emulators supported. */
-#else /* !VBOX */
-	/* Nope, lets see if there's a user-added one */
-	for (emup = tcpemu; emup; emup = emup->next) {
-		if ((emup->fport && (ntohs(so->so_fport) == emup->fport)) ||
-		    (emup->lport && (ntohs(so->so_lport) == emup->lport))) {
-			so->so_emu = emup->emu;
-			return emup->tos;
-		}
-	}
-#endif /* !VBOX */
-
 	return 0;
 }
-
-#ifndef VBOX
-int do_echo = -1;
-#endif /* !VBOX */
 
 /*
  * Emulate programs that try and connect to us
@@ -737,13 +595,7 @@ int do_echo = -1;
  * NOTE: if you return 0 you MUST m_free() the mbuf!
  */
 int
-#ifdef VBOX
 tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
-#else /* !VBOX */
-tcp_emu(so, m)
-	struct socket *so;
-	struct mbuf *m;
-#endif /* !VBOX */
 {
 	u_int n1, n2, n3, n4, n5, n6;
 	char buff[256];
@@ -766,11 +618,7 @@ tcp_emu(so, m)
 		{
 			struct socket *tmpso;
 			struct sockaddr_in addr;
-#ifndef VBOX
-			int addrlen = sizeof(struct sockaddr_in);
-#else /* VBOX */
 			socklen_t addrlen = sizeof(struct sockaddr_in);
-#endif /* VBOX */
 			struct sbuf *so_rcv = &so->so_rcv;
 
 			memcpy(so_rcv->sb_wptr, m->m_data, m->m_len);
@@ -778,11 +626,7 @@ tcp_emu(so, m)
 			so_rcv->sb_rptr += m->m_len;
 			m->m_data[m->m_len] = 0; /* NULL terminate */
 			if (strchr(m->m_data, '\r') || strchr(m->m_data, '\n')) {
-#ifdef VBOX
 				if (sscanf(so_rcv->sb_data, "%u%*[ ,]%u", &n1, &n2) == 2) {
-#else
-				if (sscanf(so_rcv->sb_data, "%d%*[ ,]%d", &n1, &n2) == 2) {
-#endif
 					HTONS(n1);
 					HTONS(n2);
 					/* n2 is the one on our host */
@@ -802,11 +646,7 @@ tcp_emu(so, m)
 				so_rcv->sb_rptr = so_rcv->sb_data;
 				so_rcv->sb_wptr = so_rcv->sb_data + so_rcv->sb_cc;
 			}
-#ifdef VBOX
 			m_free(pData, m);
-#else /* !VBOX */
-			m_free(m);
-#endif /* !VBOX */
 			return 0;
 		}
 
@@ -1112,24 +952,15 @@ do_prompt:
 			/*
 			 * Need to emulate the PORT command
 			 */
-#ifdef VBOX
 			x = sscanf(bptr, "ORT %u,%u,%u,%u,%u,%u\r\n%256[^\177]",
 				   &n1, &n2, &n3, &n4, &n5, &n6, buff);
-#else
-			x = sscanf(bptr, "ORT %d,%d,%d,%d,%d,%d\r\n%256[^\177]",
-				   &n1, &n2, &n3, &n4, &n5, &n6, buff);
-#endif
 			if (x < 6)
 			   return 1;
 
 			laddr = htonl((n1 << 24) | (n2 << 16) | (n3 << 8) | (n4));
 			lport = htons((n5 << 8) | (n6));
 
-#ifdef VBOX
 			if ((so = solisten(pData, 0, laddr, lport, SS_FACCEPTONCE)) == NULL)
-#else /* !VBOX */
-			if ((so = solisten(0, laddr, lport, SS_FACCEPTONCE)) == NULL)
-#endif /* !VBOX */
 			   return 1;
 
 			n6 = ntohs(so->so_fport);
@@ -1152,24 +983,15 @@ do_prompt:
 			/*
 			 * Need to emulate the PASV response
 			 */
-#ifdef VBOX
 			x = sscanf(bptr, "27 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n%256[^\177]",
 				   &n1, &n2, &n3, &n4, &n5, &n6, buff);
-#else
-			x = sscanf(bptr, "27 Entering Passive Mode (%d,%d,%d,%d,%d,%d)\r\n%256[^\177]",
-				   &n1, &n2, &n3, &n4, &n5, &n6, buff);
-#endif
 			if (x < 6)
 			   return 1;
 
 			laddr = htonl((n1 << 24) | (n2 << 16) | (n3 << 8) | (n4));
 			lport = htons((n5 << 8) | (n6));
 
-#ifdef VBOX
 			if ((so = solisten(pData, 0, laddr, lport, SS_FACCEPTONCE)) == NULL)
-#else /* !VBOX */
-			if ((so = solisten(0, laddr, lport, SS_FACCEPTONCE)) == NULL)
-#endif /* !VBOX */
 			   return 1;
 
 			n6 = ntohs(so->so_fport);
@@ -1208,11 +1030,7 @@ do_prompt:
 			lport += m->m_data[i] - '0';
 		}
 		if (m->m_data[m->m_len-1] == '\0' && lport != 0 &&
-#ifdef VBOX
 		    (so = solisten(pData, 0, so->so_laddr.s_addr, htons(lport), SS_FACCEPTONCE)) != NULL)
-#else /* !VBOX */
-		    (so = solisten(0, so->so_laddr.s_addr, htons(lport), SS_FACCEPTONCE)) != NULL)
-#endif /* !VBOX */
 			m->m_len = sprintf(m->m_data, "%d", ntohs(so->so_fport))+1;
 		return 1;
 
@@ -1226,11 +1044,7 @@ do_prompt:
 
 		/* The %256s is for the broken mIRC */
 		if (sscanf(bptr, "DCC CHAT %256s %u %u", buff, &laddr, &lport) == 3) {
-#ifdef VBOX
 			if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-#else /* !VBOX */
-			if ((so = solisten(0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-#endif /* !VBOX */
 				return 1;
 
 			m->m_len = bptr - m->m_data; /* Adjust length */
@@ -1238,11 +1052,7 @@ do_prompt:
 			     (unsigned long)ntohl(so->so_faddr.s_addr),
 			     ntohs(so->so_fport), 1);
 		} else if (sscanf(bptr, "DCC SEND %256s %u %u %u", buff, &laddr, &lport, &n1) == 4) {
-#ifdef VBOX
 			if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-#else /* !VBOX */
-			if ((so = solisten(0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-#endif /* !VBOX */
 				return 1;
 
 			m->m_len = bptr - m->m_data; /* Adjust length */
@@ -1250,11 +1060,7 @@ do_prompt:
 			      buff, (unsigned long)ntohl(so->so_faddr.s_addr),
 			      ntohs(so->so_fport), n1, 1);
 		} else if (sscanf(bptr, "DCC MOVE %256s %u %u %u", buff, &laddr, &lport, &n1) == 4) {
-#ifdef VBOX
 			if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-#else /* !VBOX */
-			if ((so = solisten(0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-#endif /* !VBOX */
 				return 1;
 
 			m->m_len = bptr - m->m_data; /* Adjust length */
@@ -1408,12 +1214,7 @@ do_prompt:
  * return 2 if this is a command-line connection
  */
 int
-#ifdef VBOX
 tcp_ctl(PNATState pData, struct socket *so)
-#else /* !VBOX */
-tcp_ctl(so)
-	struct socket *so;
-#endif /* !VBOX */
 {
 	struct sbuf *sb = &so->so_snd;
 	int command;
@@ -1464,11 +1265,7 @@ tcp_ctl(so)
 
 	do_exec:
 		DEBUG_MISC((dfd, " executing %s \n",ex_ptr->ex_exec));
-#ifdef VBOX
 		return(fork_exec(pData, so, ex_ptr->ex_exec, do_pty));
-#else /* !VBOX */
-		return(fork_exec(so, ex_ptr->ex_exec, do_pty));
-#endif /* !VBOX */
 
 #if 0
 	case CTL_CMD:
@@ -1493,7 +1290,7 @@ tcp_ctl(so)
 	}
 }
 
-#if defined(VBOX) && SIZEOF_CHAR_P != 4
+#if SIZEOF_CHAR_P != 4
 /**
  * Slow pointer hashing that deals with automatic inserting and collisions.
  */

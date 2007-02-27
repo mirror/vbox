@@ -8,13 +8,8 @@
 #define PRN_STDERR	1
 #define PRN_SPRINTF	2
 
-#ifdef VBOX
 /* Unused anyway, using VBox Log facility. */
 #define dfd NULL
-#else /* !VBOX */
-extern FILE *dfd;
-extern FILE *lfd;
-#endif /* !VBOX */
 extern int dostats;
 extern int slirp_debug;
 
@@ -22,26 +17,6 @@ extern int slirp_debug;
 #define DBG_MISC 0x2
 #define DBG_ERROR 0x4
 #define DEBUG_DEFAULT DBG_CALL|DBG_MISC|DBG_ERROR
-
-#ifndef VBOX
-#ifdef DEBUG
-#define DEBUG_CALL(x) if (slirp_debug & DBG_CALL) { fprintf(dfd, "%s...\n", x); fflush(dfd); }
-#define DEBUG_ARG(x, y) if (slirp_debug & DBG_CALL) { fputc(' ', dfd); fprintf(dfd, x, y); fputc('\n', dfd); fflush(dfd); }
-#define DEBUG_ARGS(x) if (slirp_debug & DBG_CALL) { fprintf x ; fflush(dfd); }
-#define DEBUG_MISC(x) if (slirp_debug & DBG_MISC) { fprintf x ; fflush(dfd); }
-#define DEBUG_ERROR(x) if (slirp_debug & DBG_ERROR) {fprintf x ; fflush(dfd); }
-
-
-#else
-
-#define DEBUG_CALL(x)
-#define DEBUG_ARG(x, y)
-#define DEBUG_ARGS(x)
-#define DEBUG_MISC(x)
-#define DEBUG_ERROR(x)
-
-#endif
-#else /* VBOX */
 
 #include <VBox/log.h>
 
@@ -86,28 +61,13 @@ DECLINLINE(void) __debug_log(FILE *pIgnore, const char *pszFormat, ...)
 
 #endif  /* !LOG_ENABLED */
 
-#endif  /* VBOX */
-
 void debug_init _P((char *, int));
 /*void ttystats _P((struct ttys *)); */
 void allttystats _P((void));
-#ifdef VBOX
 void ipstats _P((PNATState));
 void tcpstats _P((PNATState));
 void udpstats _P((PNATState));
 void icmpstats _P((PNATState));
 void mbufstats _P((PNATState));
 void sockstats _P((PNATState));
-#else /* !VBOX */
-void ipstats _P((void));
-void vjstats _P((void));
-void tcpstats _P((void));
-void udpstats _P((void));
-void icmpstats _P((void));
-void mbufstats _P((void));
-void sockstats _P((void));
-#endif /* VBOX */
-#ifndef VBOX
-void slirp_exit _P((int));
-#endif /* VBOX */
 

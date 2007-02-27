@@ -71,9 +71,7 @@
 #define DHCPOFFER		2
 #define DHCPREQUEST		3
 #define DHCPACK			5
-#ifdef VBOX
 #define DHCPRELEASE		7
-#endif /* VBOX */
 
 #define RFC1533_VENDOR_MAJOR	0
 #define RFC1533_VENDOR_MINOR	0
@@ -113,8 +111,4 @@ struct bootp_t {
     uint8_t bp_vend[DHCP_OPT_LEN];
 };
 
-#ifdef VBOX
 void bootp_input(PNATState, struct mbuf *m);
-#else /* !VBOX */
-void bootp_input(struct mbuf *m);
-#endif /* !VBOX */

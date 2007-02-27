@@ -54,12 +54,12 @@
 /* Ignore this */
 #undef DUMMY_PPP
 
-#if defined(VBOX) && defined(_MSC_VER)
+#ifdef _MSC_VER
 #undef HAVE_UNISTD_H
 #else
 /* Define if you have unistd.h */
 #define HAVE_UNISTD_H
-#endif /* VBOX */
+#endif
 
 /* Define if you have stdlib.h */
 #define HAVE_STDLIB_H
@@ -132,15 +132,11 @@
 #undef HAVE_SYS_STROPTS_H
 
 /* Define to whatever your compiler thinks inline should be */
-#ifndef VBOX
-#define inline inline
-#else /* VBOX */
 #if defined(_MSC_VER) && !defined(__cplusplus)
 # define inline _inline
 #else
 # define inline inline
 #endif
-#endif /* VBOX */
 
 /* Define to whatever your compiler thinks const should be */
 #define const const
@@ -164,9 +160,7 @@
 #define SIZEOF_INT 4
 
 /* Define to sizeof(char *) */
-#ifdef VBOX
 #define HOST_LONG_BITS ARCH_BITS
-#endif /* VBOX */
 #define SIZEOF_CHAR_P (HOST_LONG_BITS / 8)
 
 /* Define if you have random() */

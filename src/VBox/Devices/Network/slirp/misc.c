@@ -8,10 +8,6 @@
 #define WANT_SYS_IOCTL_H
 #include <slirp.h>
 
-#ifndef VBOX
-u_int curtime, time_fasttimo, last_slowtimo, detach_time;
-u_int detach_wait = 600000;	/* 10 minutes */
-#endif /* !VBOX */
 
 #if 0
 int x_port = -1;
@@ -87,11 +83,7 @@ inet_aton(cp, ia)
  * Get our IP address and put it in our_addr
  */
 void
-#ifdef VBOX
 getouraddr(PNATState pData)
-#else /* !VBOX */
-getouraddr()
-#endif /* !VBOX */
 {
 	char buff[256];
 	struct hostent *he = NULL;
@@ -150,7 +142,7 @@ struct quehead {
 	struct quehead *qh_rlink;
 };
 
-#if defined(VBOX) && defined(_MSC_VER)
+#ifdef _MSC_VER
 void
 #else
 inline void
@@ -166,7 +158,7 @@ insque(PNATState pData, void *a, void *b)
 	= (struct quehead *)element;
 }
 
-#if defined(VBOX) && defined(_MSC_VER)
+#ifdef _MSC_VER
 void
 #else
 inline void
@@ -234,87 +226,13 @@ strerror(error)
 #ifdef _WIN32
 
 int
-#ifdef VBOX
 fork_exec(PNATState pData, struct socket *so, char *ex, int do_pty)
-#else /* !VBOX */
-fork_exec(so, ex, do_pty)
-	struct socket *so;
-	char *ex;
-	int do_pty;
-#endif /* !VBOX */
 {
     /* not implemented */
     return 0;
 }
 
 #else
-
-#ifndef VBOX
-int
-slirp_openpty(amaster, aslave)
-     int *amaster, *aslave;
-{
-	register int master, slave;
-
-#ifdef HAVE_GRANTPT
-	char *ptr;
-
-	if ((master = open("/dev/ptmx", O_RDWR)) < 0 ||
-	    grantpt(master) < 0 ||
-	    unlockpt(master) < 0 ||
-	    (ptr = ptsname(master)) == NULL)  {
-		close(master);
-		return -1;
-	}
-
-	if ((slave = open(ptr, O_RDWR)) < 0 ||
-	    ioctl(slave, I_PUSH, "ptem") < 0 ||
-	    ioctl(slave, I_PUSH, "ldterm") < 0 ||
-	    ioctl(slave, I_PUSH, "ttcompat") < 0) {
-		close(master);
-		close(slave);
-		return -1;
-	}
-
-	*amaster = master;
-	*aslave = slave;
-	return 0;
-
-#else
-
-	static char line[] = "/dev/ptyXX";
-	register const char *cp1, *cp2;
-
-	for (cp1 = "pqrsPQRS"; *cp1; cp1++) {
-		line[8] = *cp1;
-		for (cp2 = "0123456789abcdefghijklmnopqrstuv"; *cp2; cp2++) {
-			line[9] = *cp2;
-			if ((master = open(line, O_RDWR, 0)) == -1) {
-				if (errno == ENOENT)
-				   return (-1);    /* out of ptys */
-			} else {
-				line[5] = 't';
-				/* These will fail */
-				(void) chown(line, getuid(), 0);
-				(void) chmod(line, S_IRUSR|S_IWUSR|S_IWGRP);
-#ifdef HAVE_REVOKE
-				(void) revoke(line);
-#endif
-				if ((slave = open(line, O_RDWR, 0)) != -1) {
-					*amaster = master;
-					*aslave = slave;
-					return 0;
-				}
-				(void) close(master);
-				line[5] = 'p';
-			}
-		}
-	}
-	errno = ENOENT; /* out of ptys */
-	return (-1);
-#endif
-}
-#endif /* !VBOX */
 
 /*
  * XXX This is ugly
@@ -328,22 +246,11 @@ slirp_openpty(amaster, aslave)
  * do_ptr = 2   Fork/exec using pty
  */
 int
-#ifdef VBOX
 fork_exec(PNATState pData, struct socket *so, char *ex, int do_pty)
-#else /* !VBOX */
-fork_exec(so, ex, do_pty)
-	struct socket *so;
-	char *ex;
-	int do_pty;
-#endif /* !VBOX */
 {
 	int s;
 	struct sockaddr_in addr;
-#ifndef VBOX
-	int addrlen = sizeof(addr);
-#else /* VBOX */
 	socklen_t addrlen = sizeof(addr);
-#endif /* VBOX */
 	int opt;
         int master;
 	char *argv[256];
@@ -361,17 +268,10 @@ fork_exec(so, ex, do_pty)
 	DEBUG_ARG("do_pty = %lx", (long)do_pty);
 
 	if (do_pty == 2) {
-#ifdef VBOX
                 AssertRelease(do_pty != 2);
                 /* shut up gcc */
                 s = 0;
                 master = 0;
-#else /* !VBOX */
-		if (slirp_openpty(&master, &s) == -1) {
-			lprint("Error: openpty failed: %s\n", strerror(errno));
-			return 0;
-		}
-#endif /* !VBOX */
 	} else {
 		addr.sin_family = AF_INET;
 		addr.sin_port = 0;
@@ -491,11 +391,7 @@ fork_exec(so, ex, do_pty)
 
 		/* Append the telnet options now */
 		if (so->so_m != 0 && do_pty == 1)  {
-#ifdef VBOX
 			sbappend(pData, so, so->so_m);
-#else /* !VBOX */
-			sbappend(so, so->so_m);
-#endif /* !VBOX */
 			so->so_m = 0;
 		}
 
@@ -647,160 +543,6 @@ relay(s)
 	exit(1);
 }
 #endif
-
-#ifndef VBOX
-int (*lprint_print) _P((void *, const char *, va_list));
-char *lprint_ptr, *lprint_ptr2, **lprint_arg;
-
-void
-#ifdef __STDC__
-lprint(const char *format, ...)
-#else
-lprint(va_alist) va_dcl
-#endif
-{
-	va_list args;
-
-#ifdef __STDC__
-        va_start(args, format);
-#else
-        char *format;
-        va_start(args);
-        format = va_arg(args, char *);
-#endif
-#if 0
-	/* If we're printing to an sbuf, make sure there's enough room */
-	/* XXX +100? */
-	if (lprint_sb) {
-		if ((lprint_ptr - lprint_sb->sb_wptr) >=
-		    (lprint_sb->sb_datalen - (strlen(format) + 100))) {
-			int deltaw = lprint_sb->sb_wptr - lprint_sb->sb_data;
-			int deltar = lprint_sb->sb_rptr - lprint_sb->sb_data;
-			int deltap = lprint_ptr -         lprint_sb->sb_data;
-
-			lprint_sb->sb_data = (char *)realloc(lprint_sb->sb_data,
-							     lprint_sb->sb_datalen + TCP_SNDSPACE);
-
-			/* Adjust all values */
-			lprint_sb->sb_wptr = lprint_sb->sb_data + deltaw;
-			lprint_sb->sb_rptr = lprint_sb->sb_data + deltar;
-			lprint_ptr =         lprint_sb->sb_data + deltap;
-
-			lprint_sb->sb_datalen += TCP_SNDSPACE;
-		}
-	}
-#endif
-	if (lprint_print)
-	   lprint_ptr += (*lprint_print)(*lprint_arg, format, args);
-
-	/* Check if they want output to be logged to file as well */
-	if (lfd) {
-		/*
-		 * Remove \r's
-		 * otherwise you'll get ^M all over the file
-		 */
-		int len = strlen(format);
-		char *bptr1, *bptr2;
-
-		bptr1 = bptr2 = strdup(format);
-
-		while (len--) {
-			if (*bptr1 == '\r')
-			   memcpy(bptr1, bptr1+1, len+1);
-			else
-			   bptr1++;
-		}
-		vfprintf(lfd, bptr2, args);
-		free(bptr2);
-	}
-	va_end(args);
-}
-
-void
-add_emu(buff)
-	char *buff;
-{
-	u_int lport, fport;
-	u_int8_t tos = 0, emu = 0;
-	char buff1[256], buff2[256], buff4[128];
-	char *buff3 = buff4;
-	struct emu_t *emup;
-	struct socket *so;
-
-	if (sscanf(buff, "%256s %256s", buff2, buff1) != 2) {
-		lprint("Error: Bad arguments\r\n");
-		return;
-	}
-
-	if (sscanf(buff1, "%d:%d", &lport, &fport) != 2) {
-		lport = 0;
-		if (sscanf(buff1, "%d", &fport) != 1) {
-			lprint("Error: Bad first argument\r\n");
-			return;
-		}
-	}
-
-	if (sscanf(buff2, "%128[^:]:%128s", buff1, buff3) != 2) {
-		buff3 = 0;
-		if (sscanf(buff2, "%256s", buff1) != 1) {
-			lprint("Error: Bad second argument\r\n");
-			return;
-		}
-	}
-
-	if (buff3) {
-		if (strcmp(buff3, "lowdelay") == 0)
-		   tos = IPTOS_LOWDELAY;
-		else if (strcmp(buff3, "throughput") == 0)
-		   tos = IPTOS_THROUGHPUT;
-		else {
-			lprint("Error: Expecting \"lowdelay\"/\"throughput\"\r\n");
-			return;
-		}
-	}
-
-	if (strcmp(buff1, "ftp") == 0)
-	   emu = EMU_FTP;
-	else if (strcmp(buff1, "irc") == 0)
-	   emu = EMU_IRC;
-	else if (strcmp(buff1, "none") == 0)
-	   emu = EMU_NONE; /* ie: no emulation */
-	else {
-		lprint("Error: Unknown service\r\n");
-		return;
-	}
-
-	/* First, check that it isn't already emulated */
-	for (emup = tcpemu; emup; emup = emup->next) {
-		if (emup->lport == lport && emup->fport == fport) {
-			lprint("Error: port already emulated\r\n");
-			return;
-		}
-	}
-
-	/* link it */
-	emup = (struct emu_t *)malloc(sizeof (struct emu_t));
-	emup->lport = (u_int16_t)lport;
-	emup->fport = (u_int16_t)fport;
-	emup->tos = tos;
-	emup->emu = emu;
-	emup->next = tcpemu;
-	tcpemu = emup;
-
-	/* And finally, mark all current sessions, if any, as being emulated */
-	for (so = tcb.so_next; so != &tcb; so = so->so_next) {
-		if ((lport && lport == ntohs(so->so_lport)) ||
-		    (fport && fport == ntohs(so->so_fport))) {
-			if (emu)
-			   so->so_emu = emu;
-			if (tos)
-			   so->so_iptos = tos;
-		}
-	}
-
-	lprint("Adding emulation for %s to port %d/%d\r\n", buff1, emup->lport, emup->fport);
-}
-#endif /* !VBOX */
 
 #ifdef BAD_SPRINTF
 

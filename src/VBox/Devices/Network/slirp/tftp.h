@@ -30,8 +30,4 @@ struct tftp_t {
   } x;
 };
 
-#ifdef VBOX
 void tftp_input(PNATState pData, struct mbuf *m);
-#else /* !VBOX */
-void tftp_input(struct mbuf *m);
-#endif /* !VBOX */

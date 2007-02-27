@@ -77,11 +77,9 @@ typedef u_int32_t n_long;                 /* long as received from the net */
  * Structure of an internet header, naked of options.
  */
 struct ip {
-#ifdef VBOX
 /*
  * bitfield types must be u_int8_t for MSVC, otherwise it will use a full dword (for u_int)
  */
-#endif
 #ifdef WORDS_BIGENDIAN
 	u_int ip_v:4,			/* version */
 		ip_hl:4;		/* header length */
@@ -152,11 +150,9 @@ struct	ip_timestamp {
 	u_int8_t	ipt_code;		/* IPOPT_TS */
 	u_int8_t	ipt_len;		/* size of structure (variable) */
 	u_int8_t	ipt_ptr;		/* index of current entry */
-#ifdef VBOX
 /*
  * bitfield types must be u_int8_t for MSVC, otherwise it will use a full dword (for u_int)
  */
-#endif
 #ifdef WORDS_BIGENDIAN
 	u_int	ipt_oflw:4,		/* overflow counter */
 		ipt_flg:4;		/* flags, see below */
@@ -299,11 +295,7 @@ struct ipoption {
  * passed to ip_output when IP multicast options are in use.
  */
 
-#ifdef VBOX
 struct	ipstat_t {
-#else /* !VBOX */
-struct	ipstat {
-#endif /* !VBOX */
 	u_long	ips_total;		/* total packets received */
 	u_long	ips_badsum;		/* checksum bad */
 	u_long	ips_tooshort;		/* packet too short */
@@ -331,11 +323,5 @@ struct	ipstat {
 	u_long	ips_unaligned;		/* times the ip packet was not aligned */
 };
 
-#ifndef VBOX
-extern struct	ipstat	ipstat;
-extern struct	ipq	ipq;			/* ip reass. queue */
-extern u_int16_t	ip_id;				/* ip packet ctr, for ids */
-extern int	ip_defttl;			/* default IP ttl */
-#endif /* !VBOX */
 
 #endif
