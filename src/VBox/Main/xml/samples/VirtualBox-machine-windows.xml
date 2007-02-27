@@ -19,6 +19,9 @@
     lastStateChange="2005-01-01T10:22:22Z"
     aborted="true"
   >
+    <Description>
+        Something is here.
+    </Description>
     <Hardware>
       <Memory RAMSize="128"/>
       <Boot>

@@ -794,6 +794,36 @@ STDMETHODIMP Machine::COMSETTER(Name) (INPTR BSTR aName)
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(Description) (BSTR *aDescription)
+{
+    if (!aDescription)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mUserData->mDescription.cloneTo (aDescription);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(Description) (INPTR BSTR aDescription)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    CHECK_SETTER();
+
+    mUserData.backup();
+    mUserData->mDescription = aDescription;
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(Id) (GUIDPARAMOUT aId)
 {
     if (!aId)
@@ -1176,9 +1206,9 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *modified)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *sessionState)
+STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *aSessionState)
 {
-    if (!sessionState)
+    if (!aSessionState)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -1186,7 +1216,37 @@ STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *sessionState)
 
     AutoReaderLock alock (this);
 
-    *sessionState = mData->mSession.mState;
+    *aSessionState = mData->mSession.mState;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
+{
+    if (!aSessionType)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mData->mSession.mType.cloneTo (aSessionType);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(SessionPid) (ULONG *aSessionPid)
+{
+    if (!aSessionPid)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aSessionPid = mData->mSession.mPid;
 
     return S_OK;
 }
@@ -2366,16 +2426,17 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     /* may not be Running */
     AssertReturn (mData->mMachineState < MachineState_Running, E_FAIL);
 
+    /* get the sesion PID */
+    RTPROCESS pid = NIL_RTPROCESS;
+    AssertCompile (sizeof (ULONG) == sizeof (RTPROCESS));
+    aControl->GetPID ((ULONG *) &pid);
+    Assert (pid != NIL_RTPROCESS);
+
     if (mData->mSession.mState == SessionState_SessionSpawning)
     {
-        /*
-         *  this machine awaits for a spawning session to be opened,
-         *  so reject any other open attempts from processes other than
-         *  one started by #openRemoteSession().
-         */
-
-        RTPROCESS pid = NIL_RTPROCESS; AssertCompile (sizeof (ULONG) == sizeof (RTPROCESS));
-        aControl->GetPID ((ULONG *)&pid);
+        /* This machine is awaiting for a spawning session to be opened, so
+         * reject any other open attempts from processes other than one
+         * started by #openRemoteSession(). */
 
         LogFlowThisFunc (("mSession.mPid=%d(0x%x)\n",
                           mData->mSession.mPid, mData->mSession.mPid));
@@ -2475,8 +2536,9 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     {
         /* Note that the progress object is finalized later */
 
-        /* We don't reset mSession.mPid here because it is necessary for
-         * SessionMachine::uninit() to reap the child process later. */
+        /* We don't reset mSession.mPid and mType here because both are
+         * necessary for SessionMachine::uninit() to reap the child process
+         * later. */
 
         if (FAILED (rc))
         {
@@ -2485,6 +2547,12 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
             mData->mSession.mRemoteControls.clear();
             mData->mSession.mState = SessionState_SessionClosed;
         }
+    }
+    else
+    {
+        /* memorize PID of the directly opened session */
+        if (SUCCEEDED (rc))
+            mData->mSession.mPid = pid;
     }
 
     if (SUCCEEDED (rc))
@@ -2635,6 +2703,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     mData->mSession.mProgress = aProgress;
     mData->mSession.mPid = pid;
     mData->mSession.mState = SessionState_SessionSpawning;
+    mData->mSession.mType = type;
 
     LogFlowThisFuncLeave();
     return S_OK;
@@ -3056,6 +3125,20 @@ HRESULT Machine::loadSettings (bool aRegistered)
             mUserData->mNameSync = nameSync;
         }
 
+        /* Description (optional, default is null) */
+        {
+            CFGNODE descNode = 0;
+            CFGLDRGetChildNode (machineNode, "Description", 0, &descNode);
+            if (descNode)
+            {
+                CFGLDRQueryBSTR (descNode, NULL,
+                                 mUserData->mDescription.asOutParam());
+                CFGLDRReleaseNode (descNode);
+            }
+            else
+                mUserData->mDescription.setNull();
+        }
+
         /* OSType (required) */
         {
             Bstr osTypeId;
@@ -3289,8 +3372,11 @@ HRESULT Machine::loadSnapshot (CFGNODE aNode, const Guid &aCurSnapshotId,
         {
             CFGNODE descNode = 0;
             CFGLDRGetChildNode (aNode, "Description", 0, &descNode);
-            CFGLDRQueryBSTR (descNode, NULL, description.asOutParam());
-            CFGLDRReleaseNode (descNode);
+            if (descNode)
+            {
+                CFGLDRQueryBSTR (descNode, NULL, description.asOutParam());
+                CFGLDRReleaseNode (descNode);
+            }
         }
 
         // initialize the snapshot
@@ -4681,6 +4767,23 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
         else
             CFGLDRDeleteAttribute (machineNode, "nameSync");
 
+        /* Description node (optional) */
+        if (!mUserData->mDescription.isNull())
+        {
+            CFGNODE descNode = 0;
+            CFGLDRCreateChildNode (machineNode, "Description", &descNode);
+            Assert (descNode);
+            CFGLDRSetBSTR (descNode, NULL, mUserData->mDescription);
+            CFGLDRReleaseNode (descNode);
+        }
+        else
+        {
+            CFGNODE descNode = 0;
+            CFGLDRGetChildNode (machineNode, "Description", 0, &descNode);
+            if (descNode)
+                CFGLDRDeleteNode (descNode);
+        }
+
         /* OSType (required) */
         {
             Bstr osTypeID;
@@ -5098,11 +5201,20 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
     CFGLDRSetDateTime (aNode, "timeStamp", aSnapshot->data().mTimeStamp);
 
     /* Description node (optional) */
+    if (!aSnapshot->data().mDescription.isNull())
     {
         CFGNODE descNode = 0;
         CFGLDRCreateChildNode (aNode, "Description", &descNode);
+        Assert (descNode);
         CFGLDRSetBSTR (descNode, NULL, aSnapshot->data().mDescription);
         CFGLDRReleaseNode (descNode);
+    }
+    else
+    {
+        CFGNODE descNode = 0;
+        CFGLDRGetChildNode (aNode, "Description", 0, &descNode);
+        if (descNode)
+            CFGLDRDeleteNode (descNode);
     }
 
     if (aAttrsOnly)
@@ -7085,24 +7197,23 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     /* release all captured USB devices */
     mParent->host()->releaseAllUSBDevices (this);
 
-    if (mData->mSession.mPid != NIL_RTPROCESS)
+    if (!mData->mSession.mType.isNull())
     {
-        /*
-         *  pid is not NIL, meaning this machine's process has been started
-         *  using VirtualBox::OpenRemoteSession(), thus it is our child.
-         *  we need to queue this pid to be reaped (to avoid zombies on Linux)
-         */
+        /* mType is not null when this machine's process has been started by
+         * VirtualBox::OpenRemoteSession(), therefore it is our child.  We
+         * need to queue the PID to reap the process (and avoid zombies on
+         * Linux). */
+        Assert (mData->mSession.mPid != NIL_RTPROCESS);
         mParent->addProcessToReap (mData->mSession.mPid);
-        mData->mSession.mPid = NIL_RTPROCESS;
     }
+
+    mData->mSession.mPid = NIL_RTPROCESS;
 
     if (aReason == Uninit::Unexpected)
     {
-        /*
-         *  uninitialization didn't come from #checkForDeath(), so tell the
-         *  client watcher thread to update the set of machines that have
-         *  open sessions.
-         */
+        /* Uninitialization didn't come from #checkForDeath(), so tell the
+         * client watcher thread to update the set of machines that have open
+         * sessions. */
         mParent->updateClientWatcher();
     }
 
@@ -7161,6 +7272,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     /* reset the rest of session data */
     mData->mSession.mMachine.setNull();
     mData->mSession.mState = SessionState_SessionClosed;
+    mData->mSession.mType.setNull();
 
     /* close the interprocess semaphore before leaving the shared lock */
 #if defined(__WIN__)

@@ -552,6 +552,7 @@
 
 <xsd:complexType name="TMachine">
   <xsd:all>
+    <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Hardware" type="THardware"/>
     <xsd:element name="HardDiskAttachments" type="THardDiskAttachments"/>
     <xsd:element name="ExtraData" type="TExtraData" minOccurs="0"/>
