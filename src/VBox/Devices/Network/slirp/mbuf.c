@@ -17,39 +17,18 @@
 
 #include <slirp.h>
 
-#ifndef VBOX
-struct	mbuf *mbutl;
-char	*mclrefcnt;
-int mbuf_alloced = 0;
-struct mbuf m_freelist, m_usedlist;
-int mbuf_thresh = 30;
-int mbuf_max = 0;
-int msize;
-#endif /* !VBOX */
 
 void
-#ifdef VBOX
 m_init(PNATState pData)
-#else /* !VBOX */
-m_init()
-#endif /* !VBOX */
 {
 	m_freelist.m_next = m_freelist.m_prev = &m_freelist;
 	m_usedlist.m_next = m_usedlist.m_prev = &m_usedlist;
-#ifdef VBOX
         mbuf_alloced = 0;
 	msize_init(pData);
-#else /* !VBOX */
-	msize_init();
-#endif /* !VBOX */
 }
 
 void
-#ifdef VBOX
 msize_init(PNATState pData)
-#else /* !VBOX */
-msize_init()
-#endif /* !VBOX */
 {
 	/*
 	 * Find a nice value for msize
@@ -68,11 +47,7 @@ msize_init()
  * which tells m_free to actually free() it
  */
 struct mbuf *
-#ifdef VBOX
 m_get(PNATState pData)
-#else /* !VBOX */
-m_get()
-#endif /* !VBOX */
 {
 	register struct mbuf *m;
 	int flags = 0;
@@ -108,12 +83,7 @@ end_error:
 }
 
 void
-#ifdef VBOX
 m_free(PNATState pData, struct mbuf *m)
-#else /* !VBOX */
-m_free(m)
-	struct mbuf *m;
-#endif /* !VBOX */
 {
 
   DEBUG_CALL("m_free");
@@ -148,12 +118,7 @@ m_free(m)
  * an M_EXT data segment
  */
 void
-#ifdef VBOX
 m_cat(PNATState pData, register struct mbuf *m, register struct mbuf *n)
-#else /* !VBOX */
-m_cat(m, n)
-	register struct mbuf *m, *n;
-#endif /* !VBOX */
 {
 	/*
 	 * If there's no room, realloc
@@ -164,11 +129,7 @@ m_cat(m, n)
 	memcpy(m->m_data+m->m_len, n->m_data, n->m_len);
 	m->m_len += n->m_len;
 
-#ifdef VBOX
 	m_free(pData, n);
-#else /* !VBOX */
-	m_free(n);
-#endif /* !VBOX */
 }
 
 
@@ -252,12 +213,7 @@ m_copy(n, m, off, len)
  * Fortunately, it's not used often
  */
 struct mbuf *
-#ifdef VBOX
 dtom(PNATState pData, void *dat)
-#else /* !VBOX */
-dtom(dat)
-	void *dat;
-#endif /* !VBOX */
 {
 	struct mbuf *m;
 

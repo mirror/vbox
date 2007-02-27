@@ -7,28 +7,10 @@
 
 #include <slirp.h>
 
-#ifndef VBOX
-int if_mtu, if_mru;
-int if_comp;
-int if_maxlinkhdr;
-int     if_queued = 0;                  /* Number of packets queued so far */
-int     if_thresh = 10;                 /* Number of packets queued before we start sending
-					 * (to prevent allocing too many mbufs) */
-
-struct  mbuf if_fastq;                  /* fast queue (for interactive data) */
-struct  mbuf if_batchq;                 /* queue for non-interactive data */
-struct	mbuf *next_m;			/* Pointer to next mbuf to output */
-#endif /* !VBOX */
 
 #define ifs_init(ifm) ((ifm)->ifs_next = (ifm)->ifs_prev = (ifm))
 
-#ifndef VBOX
-void
-ifs_insque(ifm, ifmhead)
-	struct mbuf *ifm, *ifmhead;
-#else /* VBOX */
 static void ifs_insque(struct mbuf *ifm, struct mbuf *ifmhead)
-#endif /* VBOX */
 {
 	ifm->ifs_next = ifmhead->ifs_next;
 	ifmhead->ifs_next = ifm;
@@ -36,24 +18,14 @@ static void ifs_insque(struct mbuf *ifm, struct mbuf *ifmhead)
 	ifm->ifs_next->ifs_prev = ifm;
 }
 
-#ifndef VBOX
-void
-ifs_remque(ifm)
-	struct mbuf *ifm;
-#else /* VBOX */
 static void ifs_remque(struct mbuf *ifm)
-#endif /* VBOX */
 {
 	ifm->ifs_prev->ifs_next = ifm->ifs_next;
 	ifm->ifs_next->ifs_prev = ifm->ifs_prev;
 }
 
 void
-#ifdef VBOX
 if_init(PNATState pData)
-#else /* !VBOX */
-if_init()
-#endif /* !VBOX */
 {
 #if 0
 	/*
@@ -69,10 +41,8 @@ if_init()
         /* 2 for alignment, 14 for ethernet, 40 for TCP/IP */
         if_maxlinkhdr = 2 + 14 + 40;
 #endif
-#ifdef VBOX
         if_queued = 0;
         if_thresh = 10;
-#endif /* VBOX */
 	if_mtu = 1500;
 	if_mru = 1500;
 	if_comp = IF_AUTOCOMP;
@@ -175,13 +145,7 @@ if_input(ttyp)
  * it'll temporarily get downgraded to the batchq)
  */
 void
-#ifdef VBOX
 if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
-#else /* !VBOX */
-if_output(so, ifm)
-	struct socket *so;
-	struct mbuf *ifm;
-#endif /* !VBOX */
 {
 	struct mbuf *ifq;
 	int on_fastq = 1;
@@ -268,11 +232,7 @@ diddit:
 	 */
 	if (link_up) {
 		/* if_start will check towrite */
-#ifdef VBOX
 		if_start(pData);
-#else /* !VBOX */
-		if_start();
-#endif /* !VBOX */
 	}
 #endif
 }
@@ -290,11 +250,7 @@ diddit:
  * to the first, etc. etc.
  */
 void
-#ifdef VBOX
 if_start(PNATState pData)
-#else /* !VBOX */
-if_start(void)
-#endif /* !VBOX */
 {
 	struct mbuf *ifm, *ifqt;
 
@@ -305,11 +261,7 @@ if_start(void)
 
  again:
         /* check if we can really output */
-#ifdef VBOX
         if (!slirp_can_output(pData->pvUser))
-#else /* !VBOX */
-        if (!slirp_can_output())
-#endif /* !VBOX */
             return;
 
 	/*
@@ -347,17 +299,9 @@ if_start(void)
 	}
 
 	/* Encapsulate the packet for sending */
-#ifndef VBOX
-        if_encap(ifm->m_data, ifm->m_len);
-#else /* VBOX */
         if_encap(pData, (const uint8_t *)ifm->m_data, ifm->m_len);
-#endif /* VBOX */
 
-#ifdef VBOX
         m_free(pData, ifm);
-#else /* !VBOX */
-        m_free(ifm);
-#endif /* !VBOX */
 
 	if (if_queued)
 	   goto again;

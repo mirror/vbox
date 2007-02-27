@@ -134,26 +134,14 @@ extern int mbuf_alloced;
 extern struct mbuf m_freelist, m_usedlist;
 extern int mbuf_max;
 
-#ifdef VBOX
 void m_init _P((PNATState));
 void msize_init _P((PNATState));
 struct mbuf * m_get _P((PNATState));
 void m_free _P((PNATState, struct mbuf *));
 void m_cat _P((PNATState, register struct mbuf *, register struct mbuf *));
-#else /* !VBOX */
-void m_init _P((void));
-void msize_init _P((void));
-struct mbuf * m_get _P((void));
-void m_free _P((struct mbuf *));
-void m_cat _P((register struct mbuf *, register struct mbuf *));
-#endif /* !VBOX */
 void m_inc _P((struct mbuf *, int));
 void m_adj _P((struct mbuf *, int));
 int m_copy _P((struct mbuf *, struct mbuf *, int, int));
-#ifdef VBOX
 struct mbuf * dtom _P((PNATState, void *));
-#else /* !VBOX */
-struct mbuf * dtom _P((void *));
-#endif /* !VBOX */
 
 #endif

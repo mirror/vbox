@@ -84,27 +84,14 @@ struct iovec {
 void so_init _P((void));
 struct socket * solookup _P((struct socket *, struct in_addr, u_int, struct in_addr, u_int));
 struct socket * socreate _P((void));
-#ifdef VBOX
 void sofree _P((PNATState, struct socket *));
 int soread _P((PNATState, struct socket *));
 void sorecvoob _P((PNATState, struct socket *));
-#else /* !VBOX */
-void sofree _P((struct socket *));
-int soread _P((struct socket *));
-void sorecvoob _P((struct socket *));
-#endif /* !VBOX */
 int sosendoob _P((struct socket *));
-#ifdef VBOX
 int sowrite _P((PNATState, struct socket *));
 void sorecvfrom _P((PNATState, struct socket *));
 int sosendto _P((PNATState, struct socket *, struct mbuf *));
 struct socket * solisten _P((PNATState, u_int, u_int32_t, u_int, int));
-#else /* !VBOX */
-int sowrite _P((struct socket *));
-void sorecvfrom _P((struct socket *));
-int sosendto _P((struct socket *, struct mbuf *));
-struct socket * solisten _P((u_int, u_int32_t, u_int, int));
-#endif /* !VBOX */
 void sorwakeup _P((struct socket *));
 void sowwakeup _P((struct socket *));
 void soisfconnecting _P((register struct socket *));

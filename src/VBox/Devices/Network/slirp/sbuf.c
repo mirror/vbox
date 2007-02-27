@@ -72,13 +72,7 @@ sbreserve(sb, size)
  * (the socket is non-blocking, so we won't hang)
  */
 void
-#ifdef VBOX
 sbappend(PNATState pData, struct socket *so, struct mbuf *m)
-#else /* !VBOX */
-sbappend(so, m)
-	struct socket *so;
-	struct mbuf *m;
-#endif /* !VBOX */
 {
 	int ret = 0;
 
@@ -89,11 +83,7 @@ sbappend(so, m)
 
 	/* Shouldn't happen, but...  e.g. foreign host closes connection */
 	if (m->m_len <= 0) {
-#ifdef VBOX
 		m_free(pData, m);
-#else /* !VBOX */
-		m_free(m);
-#endif /* !VBOX */
 		return;
 	}
 
@@ -104,11 +94,7 @@ sbappend(so, m)
 	 */
 	if (so->so_urgc) {
 		sbappendsb(&so->so_rcv, m);
-#ifdef VBOX
 		m_free(pData, m);
-#else /* !VBOX */
-		m_free(m);
-#endif /* !VBOX */
 		sosendoob(so);
 		return;
 	}
@@ -138,11 +124,7 @@ sbappend(so, m)
 		sbappendsb(&so->so_rcv, m);
 	} /* else */
 	/* Whatever happened, we free the mbuf */
-#ifdef VBOX
 	m_free(pData, m);
-#else /* !VBOX */
-	m_free(m);
-#endif /* !VBOX */
 }
 
 /*

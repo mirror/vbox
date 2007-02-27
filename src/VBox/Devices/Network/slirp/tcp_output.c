@@ -48,22 +48,14 @@
  * Since this is only used in "stats socket", we give meaning
  * names instead of the REAL names
  */
-#ifdef VBOX
 const char * const tcpstates[] = {
-#else /* !VBOX */
-char *tcpstates[] = {
-#endif /* !VBOX */
 /*	"CLOSED",       "LISTEN",       "SYN_SENT",     "SYN_RCVD", */
 	"REDIRECT",	"LISTEN",	"SYN_SENT",     "SYN_RCVD",
 	"ESTABLISHED",  "CLOSE_WAIT",   "FIN_WAIT_1",   "CLOSING",
 	"LAST_ACK",     "FIN_WAIT_2",   "TIME_WAIT",
 };
 
-#ifdef VBOX
 static const u_char  tcp_outflags[TCP_NSTATES] = {
-#else /* !VBOX */
-u_char  tcp_outflags[TCP_NSTATES] = {
-#endif /* !VBOX */
 	TH_RST|TH_ACK, 0,      TH_SYN,        TH_SYN|TH_ACK,
 	TH_ACK,        TH_ACK, TH_FIN|TH_ACK, TH_FIN|TH_ACK,
 	TH_FIN|TH_ACK, TH_ACK, TH_ACK,
@@ -76,12 +68,7 @@ u_char  tcp_outflags[TCP_NSTATES] = {
  * Tcp output routine: figure out what should be sent and send it.
  */
 int
-#ifdef VBOX
 tcp_output(PNATState pData, register struct tcpcb *tp)
-#else /* !VBOX */
-tcp_output(tp)
-	register struct tcpcb *tp;
-#endif /* !VBOX */
 {
 	register struct socket *so = tp->t_socket;
 	register long len, win;
@@ -297,11 +284,7 @@ send:
 
 			opt[0] = TCPOPT_MAXSEG;
 			opt[1] = 4;
-#ifdef VBOX
 			mss = htons((u_int16_t) tcp_mss(pData, tp, 0));
-#else /* !VBOX */
-			mss = htons((u_int16_t) tcp_mss(tp, 0));
-#endif /* !VBOX */
 			memcpy((caddr_t)(opt + 2), (caddr_t)&mss, sizeof(mss));
 			optlen = 4;
 
@@ -364,11 +347,7 @@ send:
 			tcpstat.tcps_sndbyte += len;
 		}
 
-#ifdef VBOX
 		m = m_get(pData);
-#else /* !VBOX */
-		m = m_get();
-#endif /* !VBOX */
 		if (m == NULL) {
 /*			error = ENOBUFS; */
 			error = 1;
@@ -410,11 +389,7 @@ send:
 		else
 			tcpstat.tcps_sndwinup++;
 
-#ifdef VBOX
 		m = m_get(pData);
-#else /* !VBOX */
-		m = m_get();
-#endif /* !VBOX */
 		if (m == NULL) {
 /*			error = ENOBUFS; */
 			error = 1;
@@ -568,11 +543,7 @@ send:
 /*	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
  *	    so->so_options & SO_DONTROUTE, 0);
  */
-#ifdef VBOX
 	error = ip_output(pData, so, m);
-#else /* !VBOX */
-	error = ip_output(so, m);
-#endif /* !VBOX */
 
 /* #else
  *	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route,

@@ -45,54 +45,26 @@
 #include <slirp.h>
 #include "ip_icmp.h"
 
-#ifndef VBOX
-struct udpstat udpstat;
-
-struct socket udb;
-#endif /* !VBOX */
 
 /*
  * UDP protocol implementation.
  * Per RFC 768, August, 1980.
  */
-#ifdef VBOX
 #define udpcksum 1
-#else /* !VBOX */
-#ifndef	COMPAT_42
-int	udpcksum = 1;
-#else
-int	udpcksum = 0;		/* XXX */
-#endif
-#endif /* !VBOX */
-
-#ifndef VBOX
-struct	socket *udp_last_so = &udb;
-#endif /* !VBOX */
 
 void
-#ifdef VBOX
 udp_init(PNATState pData)
-#else /* !VBOX */
-udp_init()
-#endif /* !VBOX */
 {
-#ifdef VBOX
         udp_last_so = &udb;
-#endif /* VBOX */
 	udb.so_next = udb.so_prev = &udb;
 }
+
 /* m->m_data  points at ip packet header
  * m->m_len   length ip packet
  * ip->ip_len length data (IPDU)
  */
 void
-#ifdef VBOX
 udp_input(PNATState pData, register struct mbuf *m, int iphlen)
-#else /* !VBOX */
-udp_input(m, iphlen)
-	register struct mbuf *m;
-	int iphlen;
-#endif /* !VBOX */
 {
 	register struct ip *ip;
 	register struct udphdr *uh;
@@ -168,11 +140,7 @@ udp_input(m, iphlen)
          *  handle DHCP/BOOTP
          */
         if (ntohs(uh->uh_dport) == BOOTP_SERVER) {
-#ifdef VBOX
             bootp_input(pData, m);
-#else /* !VBOX */
-            bootp_input(m);
-#endif /* !VBOX */
             goto bad;
         }
 
@@ -180,11 +148,7 @@ udp_input(m, iphlen)
          *  handle TFTP
          */
         if (ntohs(uh->uh_dport) == TFTP_SERVER) {
-#ifdef VBOX
             tftp_input(pData, m);
-#else /* !VBOX */
-            tftp_input(m);
-#endif /* !VBOX */
             goto bad;
         }
 
@@ -199,10 +163,6 @@ udp_input(m, iphlen)
 		for (tmp = udb.so_next; tmp != &udb; tmp = tmp->so_next) {
 			if (tmp->so_lport == uh->uh_sport &&
 			    tmp->so_laddr.s_addr == ip->ip_src.s_addr) {
-#ifndef VBOX /* Move this further down, as it must be done also for the cache hit case. */
-				tmp->so_faddr.s_addr = ip->ip_dst.s_addr;
-				tmp->so_fport = uh->uh_dport;
-#endif /* !VBOX */
 				so = tmp;
 				break;
 			}
@@ -221,18 +181,10 @@ udp_input(m, iphlen)
 	   * create one
 	   */
 	  if ((so = socreate()) == NULL) goto bad;
-#ifdef VBOX
 	  if(udp_attach(pData, so) == -1) {
-#else /* !VBOX */
-	  if(udp_attach(so) == -1) {
-#endif /* !VBOX */
 	    DEBUG_MISC((dfd," udp_attach errno = %d-%s\n",
 			errno,strerror(errno)));
-#ifdef VBOX
             sofree(pData, so);
-#else /* !VBOX */
-	    sofree(so);
-#endif /* !VBOX */
 	    goto bad;
 	  }
 
@@ -263,33 +215,17 @@ udp_input(m, iphlen)
 	 * Now we sendto() the packet.
 	 */
 	if (so->so_emu)
-#ifdef VBOX
 	   udp_emu(pData, so, m);
-#else /* !VBOX */
-	   udp_emu(so, m);
-#endif /* !VBOX */
 
-#ifdef VBOX
 	if(sosendto(pData, so,m) == -1) {
-#else /* !VBOX */
-	if(sosendto(so,m) == -1) {
-#endif /* !VBOX */
 	  m->m_len += iphlen;
 	  m->m_data -= iphlen;
 	  *ip=save_ip;
 	  DEBUG_MISC((dfd,"udp tx errno = %d-%s\n",errno,strerror(errno)));
-#ifdef VBOX
 	  icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-#else /* !VBOX */
-	  icmp_error(m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-#endif /* !VBOX */
 	}
 
-#ifdef VBOX
 	m_free(pData, so->so_m);   /* used for ICMP if error on sorecvfrom */
-#else /* !VBOX */
-	m_free(so->so_m);   /* used for ICMP if error on sorecvfrom */
-#endif /* !VBOX */
 
 	/* restore the orig mbuf packet */
 	m->m_len += iphlen;
@@ -299,24 +235,14 @@ udp_input(m, iphlen)
 
 	return;
 bad:
-#ifdef VBOX
 	m_freem(pData, m);
-#else /* !VBOX */
-	m_freem(m);
-#endif /* !VBOX */
 	/* if (opts) m_freem(opts); */
 	return;
 }
 
-#ifdef VBOX
 int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
                 struct sockaddr_in *saddr, struct sockaddr_in *daddr,
                 int iptos)
-#else /* !VBOX */
-int udp_output2(struct socket *so, struct mbuf *m,
-                struct sockaddr_in *saddr, struct sockaddr_in *daddr,
-                int iptos)
-#endif /* !VBOX */
 {
 	register struct udpiphdr *ui;
 	int error = 0;
@@ -364,22 +290,13 @@ int udp_output2(struct socket *so, struct mbuf *m,
 
 	udpstat.udps_opackets++;
 
-#ifdef VBOX
 	error = ip_output(pData, so, m);
-#else /* !VBOX */
-	error = ip_output(so, m);
-#endif /* !VBOX */
 
 	return (error);
 }
 
-#ifdef VBOX
 int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                struct sockaddr_in *addr)
-#else /* !VBOX */
-int udp_output(struct socket *so, struct mbuf *m,
-               struct sockaddr_in *addr)
-#endif /* !VBOX */
 {
     struct sockaddr_in saddr, daddr;
 
@@ -392,20 +309,11 @@ int udp_output(struct socket *so, struct mbuf *m,
     daddr.sin_addr = so->so_laddr;
     daddr.sin_port = so->so_lport;
 
-#ifdef VBOX
     return udp_output2(pData, so, m, &saddr, &daddr, so->so_iptos);
-#else /* !VBOX */
-    return udp_output2(so, m, &saddr, &daddr, so->so_iptos);
-#endif /* !VBOX */
 }
 
 int
-#ifdef VBOX
 udp_attach(PNATState pData, struct socket *so)
-#else /* !VBOX */
-udp_attach(so)
-     struct socket *so;
-#endif /* !VBPX */
 {
   struct sockaddr_in addr;
 
@@ -438,32 +346,17 @@ udp_attach(so)
 }
 
 void
-#ifdef VBOX
 udp_detach(PNATState pData, struct socket *so)
-#else /* !VBOX */
-udp_detach(so)
-	struct socket *so;
-#endif /* !VBOX */
 {
-#ifdef VBOX
 	/* Correctly update list if detaching last socket in list. */
 	if (so == udp_last_so) udp_last_so = &udb;
-#endif /* VBOX */
 	closesocket(so->s);
 	/* if (so->so_m) m_free(so->so_m);    done by sofree */
 
-#ifdef VBOX
 	sofree(pData, so);
-#else /* !VBOX */
-	sofree(so);
-#endif /* !VBOX */
 }
 
-#ifdef VBOX
 static const struct tos_t udptos[] = {
-#else /* !VBOX */
-struct tos_t udptos[] = {
-#endif /* !VBOX */
 	{0, 53, IPTOS_LOWDELAY, 0},			/* DNS */
 	{517, 517, IPTOS_LOWDELAY, EMU_TALK},	/* talk */
 	{518, 518, IPTOS_LOWDELAY, EMU_NTALK},	/* ntalk */
@@ -497,20 +390,10 @@ udp_tos(so)
  * Here, talk/ytalk/ntalk requests must be emulated
  */
 void
-#ifdef VBOX
 udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
-#else /* !VBOX */
-udp_emu(so, m)
-	struct socket *so;
-	struct mbuf *m;
-#endif /* !VBOX */
 {
 	struct sockaddr_in addr;
-#ifndef VBOX
-        int addrlen = sizeof(addr);
-#else /* VBOX */
         socklen_t addrlen = sizeof(addr);
-#endif /* VBOX */
 #ifdef EMULATE_TALK
 	CTL_MSG_OLD *omsg;
 	CTL_MSG *nmsg;
@@ -733,24 +616,12 @@ struct cu_header {
 }
 
 struct socket *
-#ifdef VBOX
 udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
-#else /* !VBOX */
-udp_listen(port, laddr, lport, flags)
-	u_int port;
-	u_int32_t laddr;
-	u_int lport;
-	int flags;
-#endif /* !VBOX */
 {
 	struct sockaddr_in addr;
 	struct socket *so;
-#ifndef VBOX
-	int addrlen = sizeof(struct sockaddr_in), opt = 1;
-#else /* VBOX */
 	socklen_t addrlen = sizeof(struct sockaddr_in);
         int opt = 1;
-#endif /* VBOX */
 
 	if ((so = socreate()) == NULL) {
 		free(so);
@@ -765,11 +636,7 @@ udp_listen(port, laddr, lport, flags)
 	addr.sin_port = port;
 
 	if (bind(so->s,(struct sockaddr *)&addr, addrlen) < 0) {
-#ifdef VBOX
 		udp_detach(pData, so);
-#else /* !VBOX */
-		udp_detach(so);
-#endif /* !VBOX */
 		return NULL;
 	}
 	setsockopt(so->s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int));

@@ -8,19 +8,6 @@
 
 #include <slirp.h>
 
-#ifndef VBOX
-FILE *dfd = NULL;
-#ifdef DEBUG
-int dostats = 1;
-#else
-int dostats = 0;
-#endif
-int slirp_debug = 0;
-#endif /* !VBOX */
-
-#ifndef VBOX
-extern char *strerror _P((int));
-#endif
 
 /* Carry over one item from main.c so that the tty's restored.
  * Only done when the tty being used is /dev/tty --RedWolf */
@@ -28,32 +15,6 @@ extern struct termios slirp_tty_settings;
 extern int slirp_tty_restore;
 
 
-#ifndef VBOX
-void
-debug_init(file, dbg)
-	char *file;
-	int dbg;
-{
-	/* Close the old debugging file */
-	if (dfd)
-	   fclose(dfd);
-
-	dfd = fopen(file,"w");
-	if (dfd != NULL) {
-#if 0
-		fprintf(dfd,"Slirp %s - Debugging Started.\n", SLIRP_VERSION);
-#endif
-		fprintf(dfd,"Debugging Started level %i.\r\n",dbg);
-		fflush(dfd);
-		slirp_debug = dbg;
-	} else {
-		lprint("Error: Debugging file \"%s\" could not be opened: %s\r\n",
-			file, strerror(errno));
-	}
-}
-#endif /* !VBOX */
-
-#ifndef VBOX
 /*
  * Dump a packet in the same format as tcpdump -x
  */
@@ -63,25 +24,9 @@ dump_packet(dat, n)
 	void *dat;
 	int n;
 {
-#ifndef VBOX
-	u_char *pptr = (u_char *)dat;
-	int j,k;
-
-	n /= 16;
-	n++;
-	DEBUG_MISC((dfd, "PACKET DUMPED: \n"));
-	for(j = 0; j < n; j++) {
-		for(k = 0; k < 6; k++)
-			DEBUG_MISC((dfd, "%02x ", *pptr++));
-		DEBUG_MISC((dfd, "\n"));
-		fflush(dfd);
-	}
-#else /* VBOX */
         Log(("nat: PACKET DUMPED:\n%.*Vhxd\n", n, dat));
-#endif /* VBOX */
 }
 #endif
-#endif /* !VBOX */
 
 #if 0
 /*
@@ -142,11 +87,7 @@ allttystats()
 #endif
 
 void
-#ifdef VBOX
 ipstats(PNATState pData)
-#else /* !VBOX */
-ipstats()
-#endif /* !VBOX */
 {
 	lprint(" \r\n");
 
@@ -189,11 +130,7 @@ vjstats()
 #endif
 
 void
-#ifdef VBOX
 tcpstats(PNATState pData)
-#else /* !VBOX */
-tcpstats()
-#endif /* !VBOX */
 {
 	lprint(" \r\n");
 
@@ -261,11 +198,7 @@ tcpstats()
 }
 
 void
-#ifdef VBOX
 udpstats(PNATState pData)
-#else /* !VBOX */
-udpstats()
-#endif /* !VBOX */
 {
         lprint(" \r\n");
 
@@ -279,11 +212,7 @@ udpstats()
 }
 
 void
-#ifdef VBOX
 icmpstats(PNATState pData)
-#else /* !VBOX */
-icmpstats()
-#endif /* !VBOX */
 {
 	lprint(" \r\n");
 	lprint("ICMP stats:\r\n");
@@ -296,11 +225,7 @@ icmpstats()
 }
 
 void
-#ifdef VBOX
 mbufstats(PNATState pData)
-#else /* !VBOX */
-mbufstats()
-#endif /* !VBOX */
 {
 	struct mbuf *m;
 	int i;
@@ -324,11 +249,7 @@ mbufstats()
 }
 
 void
-#ifdef VBOX
 sockstats(PNATState pData)
-#else /* !VBOX */
-sockstats()
-#endif /* !VBOX */
 {
 	char buff[256];
 	int n;

@@ -58,11 +58,9 @@ struct tcphdr {
 	u_int16_t	th_dport;		/* destination port */
 	tcp_seq	th_seq;			/* sequence number */
 	tcp_seq	th_ack;			/* acknowledgement number */
-#ifdef VBOX
 /*
  * bitfield types must be u_int8_t for MSVC, otherwise it will use a full dword (for u_int)
  */
-#endif
 #ifdef WORDS_BIGENDIAN
 	u_int	th_off:4,		/* data offset */
 		th_x2:4;		/* (unused) */
@@ -179,14 +177,7 @@ struct tcphdr {
 
 #define TCP_ISSINCR     (125*1024)      /* increment for tcp_iss each second */
 
-#ifndef VBOX
-extern tcp_seq tcp_iss;                /* tcp initial send seq # */
-#endif /* !VBOX */
 
-#ifdef VBOX
 extern const char * const tcpstates[];
-#else /* !VBOX */
-extern char *tcpstates[];
-#endif /* !VBOX */
 
 #endif

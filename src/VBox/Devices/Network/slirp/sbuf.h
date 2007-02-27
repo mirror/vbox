@@ -24,11 +24,7 @@ struct sbuf {
 void sbfree _P((struct sbuf *));
 void sbdrop _P((struct sbuf *, int));
 void sbreserve _P((struct sbuf *, int));
-#ifdef VBOX
 void sbappend _P((PNATState, struct socket *, struct mbuf *));
-#else /* !VBOX */
-void sbappend _P((struct socket *, struct mbuf *));
-#endif /* !VBOX */
 void sbappendsb _P((struct sbuf *, struct mbuf *));
 void sbcopy _P((struct sbuf *, int, int, char *));
 

@@ -1,11 +1,11 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#if defined(VBOX) && defined(__WIN__)
+#ifdef __WIN__
 # include <winsock2.h>
 typedef int socklen_t;
 #endif
-#if defined(VBOX) && defined(__OS2__) /* temporary workaround, see ticket #127 */
+#ifdef __OS2__ /* temporary workaround, see ticket #127 */
 # define mbstat mbstat_os2
 # include <sys/socket.h>
 # undef mbstat
@@ -14,44 +14,36 @@ typedef int socklen_t;
 
 #define CONFIG_QEMU
 
-#ifndef VBOX
-#define DEBUG 1
-#else /* VBOX */
-# ifdef DEBUG
-#  undef  DEBUG
-#  define DEBUG 1
-# endif
-#endif /* VBOX */
+#ifdef DEBUG
+# undef  DEBUG
+# define DEBUG 1
+#endif
 
 #ifndef CONFIG_QEMU
 #include "version.h"
 #endif
-#ifndef VBOX
-#include "config.h"
-#else /* VBOX */
-# define LOG_GROUP LOG_GROUP_DRV_NAT
-# include <VBox/log.h>
-# include <iprt/mem.h>
-# ifdef __WIN__
-#  include <windows.h>
-#  include <io.h>
-# endif
-# include <iprt/assert.h>
-# include <iprt/string.h>
-# include <VBox/types.h>
+#define LOG_GROUP LOG_GROUP_DRV_NAT
+#include <VBox/log.h>
+#include <iprt/mem.h>
+#ifdef __WIN__
+# include <windows.h>
+# include <io.h>
+#endif
+#include <iprt/assert.h>
+#include <iprt/string.h>
+#include <VBox/types.h>
 
 # define malloc(a)       RTMemAllocZ(a)
 # define free(a)         RTMemFree(a)
 # define realloc(a,b)    RTMemRealloc(a, b)
 
-#endif /* VBOX */
 #include "slirp_config.h"
 
 #ifdef _WIN32
 
 #ifndef _MSC_VER
 # include <inttypes.h>
-#endif /* !VBOX */
+#endif
 
 typedef uint8_t u_int8_t;
 typedef uint16_t u_int16_t;
@@ -59,10 +51,6 @@ typedef uint32_t u_int32_t;
 typedef uint64_t u_int64_t;
 typedef char *caddr_t;
 
-#ifndef VBOX
-# include <windows.h>
-# include <winsock2.h>
-#endif /* !VBOX */
 # include <sys/timeb.h>
 # include <iphlpapi.h>
 
@@ -237,9 +225,7 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 #include <sys/stropts.h>
 #endif
 
-#ifdef VBOX
 #include "libslirp.h"
-#endif /* !VBOX */
 
 #include "debug.h"
 
@@ -264,31 +250,14 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 
 #include "bootp.h"
 #include "tftp.h"
-#ifndef VBOX
-#include "libslirp.h"
-#endif /* !VBOX */
 
-#ifdef VBOX
 #include "slirp_state.h"
-#endif /* VBOX */
-
-#ifndef VBOX
-extern struct ttys *ttys_unit[MAX_INTERFACES];
-#endif /* !VBOX */
 
 #ifndef NULL
 #define NULL (void *)0
 #endif
 
-#ifdef VBOX
 void if_start _P((PNATState));
-#else /* !VBOX */
-#ifndef FULL_BOLT
-void if_start _P((void));
-#else
-void if_start _P((struct ttys *));
-#endif
-#endif /* !VBOX */
 
 #ifdef BAD_SPRINTF
 # define vsprintf vsprintf_len
@@ -316,9 +285,6 @@ void if_start _P((struct ttys *));
  long gethostid _P((void));
 #endif
 
-#ifndef VBOX
-void lprint _P((const char *, ...));
-#else
 DECLINLINE(void) lprint (const char *pszFormat, ...)
 {
 #ifdef LOG_ENABLED
@@ -332,7 +298,6 @@ DECLINLINE(void) lprint (const char *pszFormat, ...)
     va_end(args);
 #endif
 }
-#endif
 
 extern int do_echo;
 
@@ -359,16 +324,10 @@ extern int do_echo;
 int cksum(struct mbuf *m, int len);
 
 /* if.c */
-#ifdef VBOX
 void if_init _P((PNATState));
 void if_output _P((PNATState, struct socket *, struct mbuf *));
-#else /* VBOX */
-void if_init _P((void));
-void if_output _P((struct socket *, struct mbuf *));
-#endif /* VBOX */
 
 /* ip_input.c */
-#ifdef VBOX
 void ip_init _P((PNATState));
 void ip_input _P((PNATState, struct mbuf *));
 struct ip * ip_reass _P((PNATState, register struct ipasfrag *, register struct ipq_t *));
@@ -376,85 +335,37 @@ void ip_freef _P((PNATState, struct ipq_t *));
 void ip_enq _P((PNATState, register struct ipasfrag *, register struct ipasfrag *));
 void ip_deq _P((PNATState, register struct ipasfrag *));
 void ip_slowtimo _P((PNATState));
-#else /* !VBOX */
-void ip_init _P((void));
-void ip_input _P((struct mbuf *));
-struct ip * ip_reass _P((register struct ipasfrag *, register struct ipq *));
-void ip_freef _P((struct ipq *));
-void ip_enq _P((register struct ipasfrag *, register struct ipasfrag *));
-void ip_deq _P((register struct ipasfrag *));
-void ip_slowtimo _P((void));
-#endif /* !VBOX */
 void ip_stripoptions _P((register struct mbuf *, struct mbuf *));
 
 /* ip_output.c */
-#ifdef VBOX
 int ip_output _P((PNATState, struct socket *, struct mbuf *));
-#else /* !VBOX */
-int ip_output _P((struct socket *, struct mbuf *));
-#endif /* !VBOX */
 
 /* tcp_input.c */
-#ifdef VBOX
 int tcp_reass _P((PNATState, register struct tcpcb *, register struct tcpiphdr *, struct mbuf *));
 void tcp_input _P((PNATState, register struct mbuf *, int, struct socket *));
 void tcp_dooptions _P((PNATState, struct tcpcb *, u_char *, int, struct tcpiphdr *));
 void tcp_xmit_timer _P((PNATState, register struct tcpcb *, int));
 int tcp_mss _P((PNATState, register struct tcpcb *, u_int));
-#else /* !VBOX */
-int tcp_reass _P((register struct tcpcb *, register struct tcpiphdr *, struct mbuf *));
-void tcp_input _P((register struct mbuf *, int, struct socket *));
-void tcp_dooptions _P((struct tcpcb *, u_char *, int, struct tcpiphdr *));
-void tcp_xmit_timer _P((register struct tcpcb *, int));
-int tcp_mss _P((register struct tcpcb *, u_int));
-#endif /* !VBOX */
 
 /* tcp_output.c */
-#ifdef VBOX
 int tcp_output _P((PNATState, register struct tcpcb *));
-#else /* !VBOX */
-int tcp_output _P((register struct tcpcb *));
-#endif /* !VBOX */
 void tcp_setpersist _P((register struct tcpcb *));
 
 /* tcp_subr.c */
-#ifdef VBOX
 void tcp_init _P((PNATState));
-#else /* !VBOX */
-void tcp_init _P((void));
-#endif /* !VBOX */
 void tcp_template _P((struct tcpcb *));
-#ifdef VBOX
 void tcp_respond _P((PNATState, struct tcpcb *, register struct tcpiphdr *, register struct mbuf *, tcp_seq, tcp_seq, int));
 struct tcpcb * tcp_newtcpcb _P((PNATState, struct socket *));
 struct tcpcb * tcp_close _P((PNATState, register struct tcpcb *));
-#else /* !VBOX */
-void tcp_respond _P((struct tcpcb *, register struct tcpiphdr *, register struct mbuf *, tcp_seq, tcp_seq, int));
-struct tcpcb * tcp_newtcpcb _P((struct socket *));
-struct tcpcb * tcp_close _P((register struct tcpcb *));
-#endif /* !VBOX */
 void tcp_drain _P((void));
-#ifdef VBOX
 void tcp_sockclosed _P((PNATState, struct tcpcb *));
 int tcp_fconnect _P((PNATState, struct socket *));
 void tcp_connect _P((PNATState, struct socket *));
 int tcp_attach _P((PNATState, struct socket *));
-#else /* !VBOX */
-void tcp_sockclosed _P((struct tcpcb *));
-int tcp_fconnect _P((struct socket *));
-void tcp_connect _P((struct socket *));
-int tcp_attach _P((struct socket *));
-#endif /* !VBOX */
 u_int8_t tcp_tos _P((struct socket *));
-#ifdef VBOX
 int tcp_emu _P((PNATState, struct socket *, struct mbuf *));
 int tcp_ctl _P((PNATState, struct socket *));
 struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
-#else /* !VBOX */
-int tcp_emu _P((struct socket *, struct mbuf *));
-int tcp_ctl _P((struct socket *));
-struct tcpcb *tcp_drop(struct tcpcb *tp, int err);
-#endif /* !VBOX */
 
 #ifdef USE_PPP
 #define MIN_MRU MINMRU
