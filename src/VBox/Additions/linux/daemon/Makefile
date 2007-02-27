@@ -31,7 +31,6 @@ vboxadd-timesync_SOURCES  = \
     supc++.c
 vboxadd-timesync_LIBS     = \
     $(PATH_LIB)/RuntimeLnx32GuestR3.a
-#    $(PATH_LIB)/VBoxGuestLibLinux.a - what was this doing here? it's ring-0 library from what I can tell...
 vboxadd-timesync_DEFS     = _GNU_SOURCE
 
 include	$(PATH_KBUILD)/footer.kmk

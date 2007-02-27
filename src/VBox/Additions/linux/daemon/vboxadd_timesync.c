@@ -35,8 +35,7 @@
 static void usage(void)
 {
     printf("vboxadd-timesync [--interval <seconds>]\n"
-           "                 [--daemonize]"
-           "\n");
+           "                 [--daemonize]\n");
 }
 
 static void safe_sleep(time_t seconds)
@@ -84,8 +83,7 @@ int main(int argc, char *argv[])
     };
     int secInterval = 10;
     int fDaemonize = 0;
-    int c;
-    int fd;
+    int c, fd;
     VMMDevReqHostTime req;
 
     /* command line parsing */
@@ -152,9 +150,11 @@ int main(int argc, char *argv[])
         {
             if (VBOX_SUCCESS(req.header.rc))
             {
-                /* set the system time */
+                /** Set the system time.
+                 *  @@todo r=frank: This is too choppy. Adapt time smoother and try
+                 *                  to prevent negative time differences. */
                 struct timeval tv;
-                tv.tv_sec  = req.time / (uint64_t)1000;
+                tv.tv_sec  =  req.time / (uint64_t)1000;
                 tv.tv_usec = (req.time % (uint64_t)1000) * 1000;
                 settimeofday(&tv, NULL);
             }
