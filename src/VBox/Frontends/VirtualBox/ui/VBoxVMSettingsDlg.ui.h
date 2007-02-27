@@ -590,7 +590,10 @@ void VBoxVMSettingsDlg::init()
 
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::NullAudioDriver));
 #if defined Q_WS_WIN32
+    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::DSOUNDAudioDriver));
+#ifdef VBOX_WITH_WINMM
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::WINMMAudioDriver));
+#endif
 #elif defined Q_WS_X11
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::OSSAudioDriver));
 #ifdef VBOX_WITH_ALSA
