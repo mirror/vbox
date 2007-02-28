@@ -54,7 +54,6 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
-////#define VBOX_RAW_V86
 
 /* Don't wanna include everything. */
 extern void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
@@ -1754,22 +1753,15 @@ REMR3DECL(int) REMR3State(PVM pVM)
         if (pVM->rem.s.Env.segs[R_SS].selector != (uint16_t)pCtx->ss)
         {
             Log2(("REMR3State: SS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_SS].selector, pCtx->ss));
-            if (pCtx->eflags.Bits.u1VM == 1)
-            {
-                cpu_x86_set_cpl(&pVM->rem.s.Env, 3);
-                pVM->rem.s.Env.segs[R_SS].selector = (uint16_t)pCtx->ss;
-            }
-            else
-            {
-                cpu_x86_set_cpl(&pVM->rem.s.Env, pCtx->ss & 3);
-                sync_seg(&pVM->rem.s.Env, R_SS, pCtx->ss);
+
+            cpu_x86_set_cpl(&pVM->rem.s.Env, (pCtx->eflags.Bits.u1VM) ? 3 : (pCtx->ss & 3));
+            sync_seg(&pVM->rem.s.Env, R_SS, pCtx->ss);
 #ifdef VBOX_WITH_STATISTICS
-                if (pVM->rem.s.Env.segs[R_SS].newselector)
-                {
-                    STAM_COUNTER_INC(&gStatSelOutOfSync[R_SS]);
-                }
-#endif
+            if (pVM->rem.s.Env.segs[R_SS].newselector)
+            {
+                STAM_COUNTER_INC(&gStatSelOutOfSync[R_SS]);
             }
+#endif
         }
         else
             pVM->rem.s.Env.segs[R_SS].newselector = 0;
@@ -1777,20 +1769,13 @@ REMR3DECL(int) REMR3State(PVM pVM)
         if (pVM->rem.s.Env.segs[R_ES].selector != pCtx->es)
         {
             Log2(("REMR3State: ES changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_ES].selector, pCtx->es));
-            if (pCtx->eflags.Bits.u1VM == 1)
-            {
-                pVM->rem.s.Env.segs[R_ES].selector = (uint16_t)pCtx->es;
-            }
-            else
-            {
-                sync_seg(&pVM->rem.s.Env, R_ES, pCtx->es);
+            sync_seg(&pVM->rem.s.Env, R_ES, pCtx->es);
 #ifdef VBOX_WITH_STATISTICS
-                if (pVM->rem.s.Env.segs[R_ES].newselector)
-                {
-                    STAM_COUNTER_INC(&gStatSelOutOfSync[R_ES]);
-                }
-#endif
+            if (pVM->rem.s.Env.segs[R_ES].newselector)
+            {
+                STAM_COUNTER_INC(&gStatSelOutOfSync[R_ES]);
             }
+#endif
         }
         else
             pVM->rem.s.Env.segs[R_ES].newselector = 0;
@@ -1798,20 +1783,13 @@ REMR3DECL(int) REMR3State(PVM pVM)
         if (pVM->rem.s.Env.segs[R_CS].selector != pCtx->cs)
         {
             Log2(("REMR3State: CS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_CS].selector, pCtx->cs));
-            if (pCtx->eflags.Bits.u1VM == 1)
-            {
-                pVM->rem.s.Env.segs[R_CS].selector = (uint16_t)pCtx->cs;
-            }
-            else
-            {
-                sync_seg(&pVM->rem.s.Env, R_CS, pCtx->cs);
+            sync_seg(&pVM->rem.s.Env, R_CS, pCtx->cs);
 #ifdef VBOX_WITH_STATISTICS
-                if (pVM->rem.s.Env.segs[R_CS].newselector)
-                {
-                    STAM_COUNTER_INC(&gStatSelOutOfSync[R_CS]);
-                }
-#endif
+            if (pVM->rem.s.Env.segs[R_CS].newselector)
+            {
+                STAM_COUNTER_INC(&gStatSelOutOfSync[R_CS]);
             }
+#endif
         }
         else
             pVM->rem.s.Env.segs[R_CS].newselector = 0;
@@ -1819,20 +1797,13 @@ REMR3DECL(int) REMR3State(PVM pVM)
         if (pVM->rem.s.Env.segs[R_DS].selector != pCtx->ds)
         {
             Log2(("REMR3State: DS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_DS].selector, pCtx->ds));
-            if (pCtx->eflags.Bits.u1VM == 1)
-            {
-                pVM->rem.s.Env.segs[R_DS].selector = (uint16_t)pCtx->ds;
-            }
-            else
-            {
-                sync_seg(&pVM->rem.s.Env, R_DS, pCtx->ds);
+            sync_seg(&pVM->rem.s.Env, R_DS, pCtx->ds);
 #ifdef VBOX_WITH_STATISTICS
-                if (pVM->rem.s.Env.segs[R_DS].newselector)
-                {
-                    STAM_COUNTER_INC(&gStatSelOutOfSync[R_DS]);
-                }
-#endif
+            if (pVM->rem.s.Env.segs[R_DS].newselector)
+            {
+                STAM_COUNTER_INC(&gStatSelOutOfSync[R_DS]);
             }
+#endif
         }
         else
             pVM->rem.s.Env.segs[R_DS].newselector = 0;
@@ -1842,20 +1813,13 @@ REMR3DECL(int) REMR3State(PVM pVM)
         if (pVM->rem.s.Env.segs[R_FS].selector != pCtx->fs)
         {
             Log2(("REMR3State: FS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_FS].selector, pCtx->fs));
-            if (pCtx->eflags.Bits.u1VM == 1)
-            {
-                pVM->rem.s.Env.segs[R_FS].selector = (uint16_t)pCtx->fs;
-            }
-            else
-            {
-                sync_seg(&pVM->rem.s.Env, R_FS, pCtx->fs);
+            sync_seg(&pVM->rem.s.Env, R_FS, pCtx->fs);
 #ifdef VBOX_WITH_STATISTICS
-                if (pVM->rem.s.Env.segs[R_FS].newselector)
-                {
-                    STAM_COUNTER_INC(&gStatSelOutOfSync[R_FS]);
-                }
-#endif
+            if (pVM->rem.s.Env.segs[R_FS].newselector)
+            {
+                STAM_COUNTER_INC(&gStatSelOutOfSync[R_FS]);
             }
+#endif
         }
         else
             pVM->rem.s.Env.segs[R_FS].newselector = 0;
@@ -1863,20 +1827,13 @@ REMR3DECL(int) REMR3State(PVM pVM)
         if (pVM->rem.s.Env.segs[R_GS].selector != pCtx->gs)
         {
             Log2(("REMR3State: GS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_GS].selector, pCtx->gs));
-            if (pCtx->eflags.Bits.u1VM == 1)
-            {
-                pVM->rem.s.Env.segs[R_GS].selector = (uint16_t)pCtx->gs;
-            }
-            else
-            {
-                sync_seg(&pVM->rem.s.Env, R_GS, pCtx->gs);
+            sync_seg(&pVM->rem.s.Env, R_GS, pCtx->gs);
 #ifdef VBOX_WITH_STATISTICS
-                if (pVM->rem.s.Env.segs[R_GS].newselector)
-                {
-                    STAM_COUNTER_INC(&gStatSelOutOfSync[R_GS]);
-                }
-#endif
+            if (pVM->rem.s.Env.segs[R_GS].newselector)
+            {
+                STAM_COUNTER_INC(&gStatSelOutOfSync[R_GS]);
             }
+#endif
         }
         else
             pVM->rem.s.Env.segs[R_GS].newselector = 0;

@@ -3729,39 +3729,48 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
 {
     CPUX86State *savedenv = env;
     env = env1;
-#ifdef VBOX
-    if (setjmp(env1->jmp_env) == 0)
-    {
-#endif 
-    if (seg_reg == R_CS)
-    {
-        uint32_t e1, e2;
-        load_segment(&e1, &e2, selector);
-        cpu_x86_load_seg_cache(env, R_CS, selector, 
-                       get_seg_base(e1, e2),
-                       get_seg_limit(e1, e2),
-                       e2);
-    }
-    else
-        load_seg(seg_reg, selector);
-    env = savedenv;
 
-#ifdef VBOX
+    if (env->eflags & X86_EFL_VM)
+    {
+        load_seg_vm(seg_reg, selector);
+
+        env = savedenv;
+
         /* Successful sync. */
         env1->segs[seg_reg].newselector = 0;
     }
-    else 
+    else
     {
-        env = savedenv;
+        if (setjmp(env1->jmp_env) == 0)
+        {
+            if (seg_reg == R_CS)
+            {
+                uint32_t e1, e2;
+                load_segment(&e1, &e2, selector);
+                cpu_x86_load_seg_cache(env, R_CS, selector, 
+                               get_seg_base(e1, e2),
+                               get_seg_limit(e1, e2),
+                               e2);
+            }
+            else
+                load_seg(seg_reg, selector);
+            env = savedenv;
 
-        /* Postpone sync until the guest uses the selector. */
-        env1->segs[seg_reg].selector    = selector;     /* hidden values are now incorrect, but will be resynced when this register is accessed. */
-        env1->segs[seg_reg].newselector = selector;
+            /* Successful sync. */
+            env1->segs[seg_reg].newselector = 0;
+        }
+        else 
+        {
+            env = savedenv;
+
+            /* Postpone sync until the guest uses the selector. */
+            env1->segs[seg_reg].selector    = selector;     /* hidden values are now incorrect, but will be resynced when this register is accessed. */
+            env1->segs[seg_reg].newselector = selector;
 #ifdef VBOX_STRICT
-        printf("sync_seg: out of sync seg_reg=%d selector=%#x\n", seg_reg, selector);
+            printf("sync_seg: out of sync seg_reg=%d selector=%#x\n", seg_reg, selector);
 #endif
+        }
     }
-#endif 
 
 }
 
@@ -3776,16 +3785,13 @@ void sync_ldtr(CPUX86State *env1, int selector)
 {
     CPUX86State *saved_env = env;
     target_ulong saved_T0 = T0;
-#ifdef VBOX
     if (setjmp(env1->jmp_env) == 0)
     {
-#endif 
         env = env1;
         T0 = selector;
         helper_lldt_T0();
         T0 = saved_T0;
         env = saved_env;
-#ifdef VBOX
     }
     else 
     {
@@ -3795,7 +3801,6 @@ void sync_ldtr(CPUX86State *env1, int selector)
         cpu_abort(env1, "sync_ldtr: selector=%#x\n", selector);
 #endif 
     }
-#endif 
 }
 
 /**
@@ -4168,5 +4173,5 @@ void save_raw_fp_state(CPUX86State *env, uint8_t *ptr)
 //*****************************************************************************
 //*****************************************************************************
 
-#endif
+#endif /* VBOX */
 
