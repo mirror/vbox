@@ -1093,6 +1093,18 @@ GLOBALNAME PATMPushCSRecord
 ;;     int 3
 ;;****************************************************
 ;;
+; Stack:
+;
+; esp + 32 - GS         (V86 only)
+; esp + 28 - FS         (V86 only)
+; esp + 24 - DS         (V86 only)
+; esp + 20 - ES         (V86 only)
+; esp + 16 - SS         (if transfer to outer ring)
+; esp + 12 - ESP        (if transfer to outer ring)
+; esp + 8  - EFLAGS
+; esp + 4  - CS
+; esp      - EIP
+;;
 BEGINPROC   PATMIretReplacement
 PATMIretStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
