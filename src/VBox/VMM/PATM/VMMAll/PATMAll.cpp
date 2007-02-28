@@ -620,18 +620,21 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
             {
 #ifdef IN_GC
                 char    *pIretFrame = (char *)pRegFrame->edx;
-                uint32_t eip, selCS, uEFlags, selSS, esp;
+                uint32_t eip, selCS, uEFlags;
 
                 rc  = MMGCRamRead(pVM, &eip,     pIretFrame, 4);
                 rc |= MMGCRamRead(pVM, &selCS,   pIretFrame + 4, 4);
                 rc |= MMGCRamRead(pVM, &uEFlags, pIretFrame + 8, 4);
-                rc |= MMGCRamRead(pVM, &esp,     pIretFrame + 12, 4);
-                rc |= MMGCRamRead(pVM, &selSS,   pIretFrame + 16, 4);
                 if (rc == VINF_SUCCESS)
                 {
                     if (    (uEFlags & X86_EFL_VM)
                         ||  (selCS & X86_SEL_RPL) == 3))
                     {
+                        uint32_t selSS, esp;
+
+                        rc |= MMGCRamRead(pVM, &esp,     pIretFrame + 12, 4);
+                        rc |= MMGCRamRead(pVM, &selSS,   pIretFrame + 16, 4);
+
                         Log(("PATMGC: IRET stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
                         if (uEFlags & X86_EFL_VM)
                         {
