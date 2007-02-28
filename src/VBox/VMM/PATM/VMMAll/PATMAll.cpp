@@ -628,7 +628,7 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 if (rc == VINF_SUCCESS)
                 {
                     if (    (uEFlags & X86_EFL_VM)
-                        ||  (selCS & X86_SEL_RPL) == 3))
+                        ||  (selCS & X86_SEL_RPL) == 3)
                     {
                         uint32_t selSS, esp;
 
