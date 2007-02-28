@@ -1892,6 +1892,10 @@ static void vga_draw_graphic(VGAState *s, int full_update)
 #else /* VBOX */
     /* The width of VRAM scanline. */
     bwidth = s->line_offset;
+    /* In some cases the variable is not yet set, probably due to incomplete
+     * programming of the virtual hardware ports. Just return.
+     */
+    if (bwidth == 0) return;
 #endif /* VBOX */ 
     y_start = -1;
     page_min = 0x7fffffff;
