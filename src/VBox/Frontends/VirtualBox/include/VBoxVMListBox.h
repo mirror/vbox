@@ -115,8 +115,6 @@ public:
     CMachine machine() const { return mMachine; }
     void setMachine (const CMachine &aM);
 
-    QUuid id() const { return mId; }
-
     void recache();
 
     QString toolTipText() const;
@@ -124,8 +122,16 @@ public:
     int height (const QListBox *) const;
     int width (const QListBox *) const;
 
+    QUuid id() const { return mId; }
     bool accessible() const { return mAccessible; }
     const CVirtualBoxErrorInfo &accessError() const { return mAccessError; }
+    QString name() const { return mName; }
+    CEnums::MachineState state() const { return mState; }
+    CEnums::SessionState sessionState() const { return mSessionState; }
+    ULONG snapshotCount() const { return mSnapshotCount; }
+
+    bool canSwitchTo() const { return mWinId != (WId) ~0; }
+    bool switchTo();
 
 protected:
 
@@ -149,6 +155,10 @@ private:
     QDateTime mLastStateChange;
     CEnums::SessionState mSessionState;
     QString mOSType;
+    ULONG mSnapshotCount;
+
+    ULONG mPid;
+    WId mWinId;
 };
 
 #endif // __VBoxVMListItem_h__

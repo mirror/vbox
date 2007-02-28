@@ -35,6 +35,95 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Helpers
+////////////////////////////////////////////////////////////////////////////////
+
+#if defined (Q_WS_WIN32)
+
+struct EnumWindowsProcData
+{
+    ULONG pid;
+    WId wid;
+};
+
+BOOL CALLBACK EnumWindowsProc (HWND hwnd, LPARAM lParam)
+{
+    EnumWindowsProcData *d = (EnumWindowsProcData *) lParam;
+
+    DWORD pid = 0;
+    GetWindowThreadProcessId (hwnd, &pid);
+
+    if (d->pid == pid)
+    {
+        WINDOWINFO info;
+        if (!GetWindowInfo (hwnd, &info))
+            return TRUE;
+
+#if 0
+        LogFlowFunc (("pid=%d, wid=%08X\n", pid, hwnd));
+        LogFlowFunc (("  parent=%08X\n", GetParent (hwnd)));
+        LogFlowFunc (("  owner=%08X\n", GetWindow (hwnd, GW_OWNER)));
+        TCHAR buf [256];
+        LogFlowFunc (("  rcWindow=%d,%d;%d,%d\n",
+                      info.rcWindow.left, info.rcWindow.top,
+                      info.rcWindow.right, info.rcWindow.bottom));
+        LogFlowFunc (("  dwStyle=%08X\n", info.dwStyle));
+        LogFlowFunc (("  dwExStyle=%08X\n", info.dwExStyle));
+        GetClassName (hwnd, buf, 256);
+        LogFlowFunc (("  class=%ls\n", buf));
+        GetWindowText (hwnd, buf, 256);
+        LogFlowFunc (("  text=%ls\n", buf));
+#endif
+
+        /* we are interested in unowned top-level windows only */
+        if (!(info.dwStyle & (WS_CHILD | WS_POPUP)) &&
+            info.rcWindow.left < info.rcWindow.right &&
+            info.rcWindow.top < info.rcWindow.bottom &&
+            GetParent (hwnd) == NULL &&
+            GetWindow (hwnd, GW_OWNER) == NULL)
+        {
+            d->wid = hwnd;
+            /* if visible, stop the search immediately */
+            if (info.dwStyle & WS_VISIBLE)
+                return FALSE;
+            /* otherwise, give other top-level windows a chance
+             * (the last one wins) */
+        }
+    }
+
+    return TRUE;
+}
+
+#endif
+
+/** 
+ * Searches for a main window of the given process.
+ * 
+ * @param aPid process ID to search for
+ * 
+ * @return window ID on success or <tt>(WId) ~0</tt> otherwise.
+ */
+static WId FindWindowIdFromPid (ULONG aPid)
+{
+#if defined (Q_WS_WIN32)
+
+    EnumWindowsProcData d = { aPid, (WId) ~0 };
+    EnumWindows (EnumWindowsProc, (LPARAM) &d);
+    LogFlowFunc (("SELECTED wid=%08X\n", d.wid));
+    return d.wid;
+
+#elif defined (Q_WS_X11)
+
+    return (WId) ~0;
+
+#else
+
+    return (WId) ~0;
+
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // VBoxVMListBoxItem class
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -260,6 +349,18 @@ void VBoxVMListBoxItem::recache()
         mLastStateChange.setTime_t (mMachine.GetLastStateChange() / 1000);
         mSessionState = mMachine.GetSessionState();
         mOSType = mMachine.GetOSType().GetId();
+        mSnapshotCount = mMachine.GetSnapshotCount();
+
+        if (mState >= CEnums::Running)
+        {
+            mPid = mMachine.GetSessionPid();
+            mWinId = FindWindowIdFromPid (mPid);
+        }
+        else
+        {
+            mPid = (ULONG) ~0;
+            mWinId = (WId) ~0;
+        }
     }
     else
     {
@@ -276,6 +377,10 @@ void VBoxVMListBoxItem::recache()
         mSessionState = CEnums::InvalidSessionState;
         mLastStateChange = QDateTime::currentDateTime();
         mOSType = QString::null;
+        mSnapshotCount = 0;
+
+        mPid = (ULONG) ~0;
+        mWinId = (WId) ~0;
     }
 
     if (needsResort)
@@ -386,6 +491,63 @@ int VBoxVMListBoxItem::height (const QListBox *) const
                     QMAX (pmState.height(), fmState.height());
 
     return marg + QMAX (pmOSType.height(), strHeight) + marg;
+}
+
+/** 
+ * Tries to switch to the main window of the VM process.
+ * 
+ * @return true if successfully switched and false otherwise.
+ */
+bool VBoxVMListBoxItem::switchTo()
+{
+    if (!canSwitchTo())
+        return false;
+
+#if defined (Q_WS_WIN32)
+
+    HWND hwnd = mWinId;
+
+    /* if there are ownees (modal and modeless dialogs, etc), find the
+     * topmost one */
+    HWND hwndAbove = NULL;
+    do
+    {
+        hwndAbove = GetNextWindow (hwnd, GW_HWNDPREV);
+        HWND hwndOwner;
+        if (hwndAbove != NULL &&
+            ((hwndOwner = GetWindow (hwndAbove, GW_OWNER)) == hwnd ||
+             hwndOwner  == hwndAbove))
+            hwnd = hwndAbove;
+        else
+            break;
+    }
+    while (1);
+
+    /* first, check that the primary window is visible */
+    if (IsIconic (mWinId))
+        ShowWindow (mWinId, SW_RESTORE);
+    else if (!IsWindowVisible (mWinId))
+        ShowWindow (mWinId, SW_SHOW);
+
+#if 0
+    LogFlowFunc (("mWinId=%08X hwnd=%08X\n", mWinId, hwnd));
+#endif
+
+    /* then, activate the topmost in the group */
+    AllowSetForegroundWindow (mPid);
+    SetForegroundWindow (hwnd);
+
+    return true;
+
+#elif defined (Q_WS_X11)
+
+    return false;
+
+#else
+
+    return false;
+
+#endif
 }
 
 // protected members
