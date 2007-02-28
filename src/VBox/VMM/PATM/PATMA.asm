@@ -40,6 +40,7 @@
 %ifdef DEBUG
 ; Noisy, but useful for debugging certain problems
 ;;;%define PATM_LOG_PATCHINSTR
+%define PATM_LOG_PATCHIRET
 %endif
 
 BEGINCODE
@@ -377,6 +378,10 @@ GLOBALNAME PATMStiRecord
 ;
 ; Trampoline code for trap entry (without error code on the stack)
 ;
+; esp + 32 - GS         (V86 only)
+; esp + 28 - FS         (V86 only)
+; esp + 24 - DS         (V86 only)
+; esp + 20 - ES         (V86 only)
 ; esp + 16 - SS         (if transfer to inner ring)
 ; esp + 12 - ESP        (if transfer to inner ring)
 ; esp + 8  - EFLAGS
@@ -387,6 +392,9 @@ BEGINPROC   PATMTrapEntry
 PATMTrapEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
+
+    test    dword [esp+12], X86_EFL_VM
+    jnz     PATMTrapNoRing1
 
     ; make sure the saved CS selector for ring 1 is made 0
     test    dword [esp+8], 2
@@ -432,6 +440,10 @@ GLOBALNAME PATMTrapEntryRecord
 ;
 ; Trampoline code for trap entry (with error code on the stack)
 ;
+; esp + 36 - GS         (V86 only)
+; esp + 32 - FS         (V86 only)
+; esp + 28 - DS         (V86 only)
+; esp + 24 - ES         (V86 only)
 ; esp + 20 - SS         (if transfer to inner ring)
 ; esp + 16 - ESP        (if transfer to inner ring)
 ; esp + 12 - EFLAGS
@@ -443,6 +455,9 @@ BEGINPROC   PATMTrapEntryErrorCode
 PATMTrapErrorCodeEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
+
+    test    dword [esp+16], X86_EFL_VM
+    jnz     PATMTrapErrorCodeNoRing1
 
     ; make sure the saved CS selector for ring 1 is made 0
     test    dword [esp+12], 2
@@ -489,6 +504,10 @@ GLOBALNAME PATMTrapEntryRecordErrorCode
 ;
 ; Trampoline code for interrupt gate entry (without error code on the stack)
 ;
+; esp + 32 - GS         (V86 only)
+; esp + 28 - FS         (V86 only)
+; esp + 24 - DS         (V86 only)
+; esp + 20 - ES         (V86 only)
 ; esp + 16 - SS         (if transfer to inner ring)
 ; esp + 12 - ESP        (if transfer to inner ring)
 ; esp + 8  - EFLAGS
@@ -499,6 +518,9 @@ BEGINPROC   PATMIntEntry
 PATMIntEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
+
+    test    dword [esp+12], X86_EFL_VM
+    jnz     PATMIntNoRing1
 
     ; make sure the saved CS selector for ring 1 is made 0
     test    dword [esp+8], 2
@@ -541,6 +563,10 @@ GLOBALNAME PATMIntEntryRecord
 ;
 ; Trampoline code for interrupt gate entry (*with* error code on the stack)
 ;
+; esp + 36 - GS         (V86 only)
+; esp + 32 - FS         (V86 only)
+; esp + 28 - DS         (V86 only)
+; esp + 24 - ES         (V86 only)
 ; esp + 20 - SS         (if transfer to inner ring)
 ; esp + 16 - ESP        (if transfer to inner ring)
 ; esp + 12 - EFLAGS
@@ -552,6 +578,9 @@ BEGINPROC   PATMIntEntryErrorCode
 PATMIntEntryErrorCodeStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
+
+    test    dword [esp+16], X86_EFL_VM
+    jnz     PATMIntNoRing1_ErrorCode
 
     ; make sure the saved CS selector for ring 1 is made 0
     test    dword [esp+12], 2
@@ -1069,7 +1098,7 @@ PATMIretStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushfd
 
-%ifdef PATM_LOG_PATCHINSTR
+%ifdef PATM_LOG_PATCHIRET
     push    eax
     push    ecx
     push    edx
@@ -1084,10 +1113,10 @@ PATMIretStart:
 %endif
 
     test    dword [esp], X86_EFL_NT
-    jnz near iret_fault1
+    jnz     iret_fault1
 
     test    dword [esp+12], X86_EFL_VM
-    jnz near iret_fault
+    jnz     iret_notring0
 
     ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ;;@todo: not correct for iret back to ring 2!!!!!
@@ -1097,7 +1126,7 @@ PATMIretStart:
     jnz     iret_notring0
 
     test    dword [esp+12], X86_EFL_IF
-    jz near iret_clearIF
+    jz      iret_clearIF
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @@todo fix this properly, so we can dispatch pending interrupts in GC
@@ -1216,14 +1245,14 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      0
     DD      PATMIretEnd- PATMIretStart
-%ifdef PATM_LOG_PATCHINSTR
+%ifdef PATM_LOG_PATCHIRET
     DD      22
 %else
     DD      21
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
-%ifdef PATM_LOG_PATCHINSTR
+%ifdef PATM_LOG_PATCHIRET
     DD      PATM_PENDINGACTION
     DD      0
 %endif

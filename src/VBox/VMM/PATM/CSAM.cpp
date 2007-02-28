@@ -2031,10 +2031,42 @@ CSAMDECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fSca
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pCtx        CPU context
+ * @param   Sel         selector
+ * @param   pHiddenSel  The hidden selector register.
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, PCPUMCTX pCtx, RTGCPTR pInstrGC)
+CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR pInstrGC)
+{
+    PCSAMPAGE pPage = NULL;
+
+    if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
+    {
+        // No use
+        return VINF_SUCCESS;
+    }
+
+    if (CSAMIsEnabled(pVM))
+    {
+        bool fCode32 = SELMIsSelector32Bit(pVM, Sel, pHiddenSel);
+
+        //assuming 32 bits code for now
+        Assert(fCode32);
+
+        pInstrGC = SELMToFlat(pVM, Sel, pHiddenSel, pInstrGC);
+
+        return CSAMR3CheckCode(pVM, pInstrGC);
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Scan and analyse code
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pInstrGC    Instruction pointer (0:32 virtual address)
+ */
+CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC)
 {
     int rc;
     PCSAMPAGE pPage = NULL;
@@ -2049,15 +2081,9 @@ CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, PCPUMCTX pCtx, RTGCPTR pInstrGC)
     {
         // Cache record for PATMGCVirtToHCVirt
         CSAMP2GLOOKUPREC cacheRec = {0};
-        bool fCode32 = SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid);
-
-        //assuming 32 bits code for now
-        Assert(fCode32);
-
-        pInstrGC = SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pInstrGC);
 
         STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
-        rc = csamAnalyseCallCodeStream(pVM, pInstrGC, pInstrGC, fCode32, CSAMR3AnalyseCallback, pPage, &cacheRec);
+        rc = csamAnalyseCallCodeStream(pVM, pInstrGC, pInstrGC, true /* 32 bits code */, CSAMR3AnalyseCallback, pPage, &cacheRec);
         STAM_PROFILE_STOP(&pVM->csam.s.StatTime, a);
         if (rc != VINF_SUCCESS)
         {
