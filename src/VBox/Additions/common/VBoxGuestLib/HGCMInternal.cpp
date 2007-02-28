@@ -46,6 +46,7 @@
 #endif
 #include <VBox/VBoxGuestLib.h>
 #include "VBGLInternal.h"
+#include <iprt/assert.h>
 
 /* These functions can be only used by VBoxGuest. */
 
@@ -173,6 +174,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     {
         /* Initialize request memory */
         pHGCMCall->header.fu32Flags = 0;
+        pHGCMCall->header.result    = VINF_SUCCESS;
 
         pHGCMCall->u32ClientID = pCallInfo->u32ClientID;
         pHGCMCall->u32Function = pCallInfo->u32Function;
@@ -189,6 +191,15 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         rc = VbglGRPerform (&pHGCMCall->header.header);
 
         dprintf (("VbglGRPerform rc = %Vrc\n", rc));
+
+        /** If the call failed, but as a result of the request itself, then pretend success  
+         *  Upper layers will interpret the result code in the packet.
+         */
+        if (VBOX_FAILURE(rc) && rc == pHGCMCall->header.result)
+        {
+            Assert(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE);
+            rc = VINF_SUCCESS;
+        }
 
         if (VBOX_SUCCESS(rc))
         {
