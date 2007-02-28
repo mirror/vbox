@@ -3766,9 +3766,7 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
             /* Postpone sync until the guest uses the selector. */
             env1->segs[seg_reg].selector    = selector;     /* hidden values are now incorrect, but will be resynced when this register is accessed. */
             env1->segs[seg_reg].newselector = selector;
-#ifdef VBOX_STRICT
-            printf("sync_seg: out of sync seg_reg=%d selector=%#x\n", seg_reg, selector);
-#endif
+            Log(("sync_seg: out of sync seg_reg=%d selector=%#x\n", seg_reg, selector));
         }
     }
 
