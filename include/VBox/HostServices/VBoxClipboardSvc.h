@@ -27,60 +27,94 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/hgcmsvc.h>
 
-#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE   1
-
+/*
+ * The mode of operations.
+ */
 #define VBOX_SHARED_CLIPBOARD_MODE_OFF           0
 #define VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST 1
 #define VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST 2
 #define VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL 3
 
-#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT 0
-#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP      1
+/*
+ * Supported data formats. Bit mask.
+ */
+#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT 0x01
+#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP      0x02
 
-#define VBOX_SHARED_CLIPBOARD_FN_QUERY_MODE        1
-#define VBOX_SHARED_CLIPBOARD_FN_HOST_EVENT_CANCEL 2
-#define VBOX_SHARED_CLIPBOARD_FN_HOST_EVENT_QUERY  3
-#define VBOX_SHARED_CLIPBOARD_FN_HOST_EVENT_READ   4
-#define VBOX_SHARED_CLIPBOARD_FN_SEND_DATA         5
+/*
+ * The service functions which are callable by host.
+ */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE   1
 
+/* 
+ * The service functions which are called by guest.
+ */
+/* Call host and wait blocking for an host event VBOX_SHARED_CLIPBOARD_HOST_MSG_* */
+#define VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG      1
+/* Send list of available formats to host. */
+#define VBOX_SHARED_CLIPBOARD_FN_FORMATS           2
+/* Obtain data in specified format from host. */
+#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA         3
+/* Send data in requested format to host. */
+#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA        4
+
+/*
+ * The host messages for the guest.
+ */
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT        1
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA   2
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS     3
+
+/*
+ * HGCM parameter structures.
+ */
 #pragma pack (1)
-typedef struct _VBoxClipboardQueryMode
+typedef struct _VBoxClipboardGetHostMsg
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter mode; /* OUT uint32_t */
+    /* VBOX_SHARED_CLIPBOARD_HOST_MSG_* */
+    HGCMFunctionParameter msg;     /* OUT uint32_t */
 
-} VBoxClipboardQueryMode;
+    /* VBOX_SHARED_CLIPBOARD_FMT_*, depends on the 'msg'. */
+    HGCMFunctionParameter formats; /* OUT uint32_t */
+} VBoxClipboardGetHostMsg;
 
-typedef struct _VBoxClipboardHostEventCancel
+typedef struct _VBoxClipboardFormats
 {
     VBoxGuestHGCMCallInfo hdr;
-} VBoxClipboardHostEventCancel;
 
-typedef struct _VBoxClipboardHostEventQuery
-{
-    VBoxGuestHGCMCallInfo hdr;
-    
-    HGCMFunctionParameter format; /* OUT uint32_t */
-    
-    HGCMFunctionParameter size;   /* OUT uint32_t */
-} VBoxClipboardHostEventQuery;
+    /* VBOX_SHARED_CLIPBOARD_FMT_* */
+    HGCMFunctionParameter formats; /* OUT uint32_t */
+} VBoxClipboardFormats;
 
-typedef struct _VBoxClipboardHostEventRead
+typedef struct _VBoxClipboardReadData
 {
     VBoxGuestHGCMCallInfo hdr;
     
-    HGCMFunctionParameter ptr;    /* OUT linear pointer. */
-} VBoxClipboardHostEventRead;
-
-typedef struct _VBoxClipboardSendData
-{
-    VBoxGuestHGCMCallInfo hdr;
-    
+    /* Requested format. */
     HGCMFunctionParameter format; /* IN uint32_t */
     
+    /* The data buffer. */
     HGCMFunctionParameter ptr;    /* IN linear pointer. */
-} VBoxClipboardSendData;
+    
+    /* Size of returned data, if > ptr->cb, then no data was
+     * actually transferred and the guest must repeat the call.
+     */
+    HGCMFunctionParameter size;   /* OUT uint32_t */
+    
+} VBoxClipboardReadData;
+
+typedef struct _VBoxClipboardWriteData
+{
+    VBoxGuestHGCMCallInfo hdr;
+    
+    /* Returned format as requested in the VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA message. */
+    HGCMFunctionParameter format; /* IN uint32_t */
+    
+    /* Data.  */
+    HGCMFunctionParameter ptr;    /* IN linear pointer. */
+} VBoxClipboardWriteData;
 #pragma pack ()
 
 #endif /* __VBOXCLIPBOARDSVC__H */
