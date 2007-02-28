@@ -19,12 +19,12 @@
  * distribution, then only the terms of your commercial VirtualBox
  * license agreement apply instead of the previous paragraph.
  */
+#define LOG_GROUP LOG_GROUP_HGCM
+#include <VBox/log.h>
 
 #include <VBox/VBoxGuestLib.h>
 #include "SysHlp.h"
 
-#define LOG_GROUP LOG_GROUP_HGCM
-#include <VBox/log.h>
 #include <iprt/assert.h>
 
 #ifndef VBGL_VBOXGUEST
