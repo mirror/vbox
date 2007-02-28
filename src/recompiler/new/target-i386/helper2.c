@@ -585,12 +585,7 @@ void cpu_x86_flush_tlb(CPUX86State *env, target_ulong addr)
     uint8_t *pde_ptr;
 
     /* page directory entry */
-# ifdef PGM_DYNAMIC_RAM_ALLOC
     pde_ptr = remR3GCPhys2HCVirt(env, (((env->cr[3] & ~0xfff) + ((addr >> 20) & ~3)) & env->a20_mask));
-# else
-    pde_ptr = phys_ram_base + 
-        (((env->cr[3] & ~0xfff) + ((addr >> 20) & ~3)) & env->a20_mask);
-# endif 
     pde = ldl_raw(pde_ptr);
     /* if PSE bit is set, then we use a 4MB page */
     if ((pde & PG_PSE_MASK) && (env->cr[4] & CR4_PSE_MASK)) {
