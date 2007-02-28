@@ -496,13 +496,13 @@ gt_V86Return:
     mov     [esp + 18h + ESPOFF], eax           ; ss
 
     mov     eax, dword [esp + CPUMCTXCORE.es]
-    mov     [esp + 0ch + ESPOFF], eax           ; es
+    mov     [esp + 1ch + ESPOFF], eax           ; es
     mov     eax, dword [esp + CPUMCTXCORE.ds]
-    mov     [esp + 10h + ESPOFF], eax           ; ds
+    mov     [esp + 20h + ESPOFF], eax           ; ds
     mov     eax, dword [esp + CPUMCTXCORE.fs]
-    mov     [esp + 14h + ESPOFF], eax           ; fs
+    mov     [esp + 24h + ESPOFF], eax           ; fs
     mov     eax, dword [esp + CPUMCTXCORE.gs]
-    mov     [esp + 18h + ESPOFF], eax           ; gs
+    mov     [esp + 28h + ESPOFF], eax           ; gs
 
     mov     eax, [esp + CPUMCTXCORE.eip]
     mov     [esp + 08h + ESPOFF], eax           ; eip
@@ -913,6 +913,10 @@ gi_HyperVisor:
     mov     esi, [esp + CPUMCTXCORE.esi]
     mov     edi, [esp + CPUMCTXCORE.edi]
 
+    ; In V86 mode DS, ES, FS & GS are restored by the iret
+    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
+    jnz     short ti_SkipSelRegs
+
     mov     eax, [esp + CPUMCTXCORE.gs]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS | TRPM_TRAP_IN_HYPER
     mov     gs, eax
@@ -926,6 +930,7 @@ gi_HyperVisor:
     mov     eax, [esp + CPUMCTXCORE.ds]
     mov     ds, eax
 
+ti_SkipSelRegs:
     ; finally restore our scratch register eax
     mov     eax, [esp + CPUMCTXCORE.eax]
 

@@ -222,7 +222,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
 
     AssertMsg(     rc != VINF_SUCCESS
               ||   (   pRegFrame->eflags.Bits.u1IF
-                    && pRegFrame->eflags.Bits.u2IOPL < (unsigned)(pRegFrame->ss & X86_SEL_RPL))
+                    && ( pRegFrame->eflags.Bits.u2IOPL < (unsigned)(pRegFrame->ss & X86_SEL_RPL) || pRegFrame->eflags.Bits.u1VM))
               , ("rc = %VGv\neflags=%RX32 ss=%RTsel IOPL=%d\n", rc, pRegFrame->eflags.u32, pRegFrame->ss, pRegFrame->eflags.Bits.u2IOPL));
     return rc;
 }
@@ -337,7 +337,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     PVM pVM = TRPM2VM(pTrpm);
 
-    LogFlow(("TRPMGCTrap06Handler %VGv\n", pRegFrame->eip));
+    LogFlow(("TRPMGCTrap06Handler %VGv eflags=%x\n", pRegFrame->eip, pRegFrame->eflags.u32));
 
     if (    (pRegFrame->ss & X86_SEL_RPL) == 1
         &&  PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip))
@@ -695,6 +695,16 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 #endif
 
     STAM_PROFILE_ADV_START(&pVM->trpm.s.StatTrap0dDisasm, a);
+
+    /* We always set IOPL to zero which makes e.g. pushf fault in V86 mode. The guest might use IOPL=3 and therefor not expect a #GP.
+     * Simply fall back to the recompiler to emulate this instruction.
+     */
+    if (pRegFrame->eflags.Bits.u1VM)
+    {
+        STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
+        return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
+    }
+
     /*
      * Decode the instruction.
      */
@@ -705,7 +715,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         Log(("trpmGCTrap0dHandler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n",
              pRegFrame->cs, pRegFrame->eip, pRegFrame->ss & X86_SEL_RPL, rc));
         STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
-        return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
+        return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
     }
 
     DISCPUSTATE Cpu;
