@@ -1749,6 +1749,14 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 #endif
 }
 
+REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, RTHCUINTPTR pvRam, unsigned fFlags)
+{
+#ifndef USE_REM_STUBS
+    Assert(VALID_PTR(pfnREMR3NotifyPhysRamChunkRegister));
+    pfnREMR3NotifyPhysRamChunkRegister(pVM, GCPhys, cb, pvRam, fFlags);
+#endif
+}
+
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy)
 {
 #ifndef USE_REM_STUBS
