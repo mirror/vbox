@@ -620,14 +620,26 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
             {
 #ifdef IN_GC
                 char    *pIretFrame = (char *)pRegFrame->edx;
-                uint32_t eip, selCS, uEFlags;
+                uint32_t eip, selCS, uEFlags, selSS, esp;
 
                 rc  = MMGCRamRead(pVM, &eip,     pIretFrame, 4);
                 rc |= MMGCRamRead(pVM, &selCS,   pIretFrame + 4, 4);
                 rc |= MMGCRamRead(pVM, &uEFlags, pIretFrame + 8, 4);
+                rc |= MMGCRamRead(pVM, &esp,     pIretFrame + 12, 4);
+                rc |= MMGCRamRead(pVM, &selSS,   pIretFrame + 16, 4);
                 if (rc == VINF_SUCCESS)
                 {
-                    Log(("PATMGC: IRET stack frame: return address %04X:%VGv eflags=%08x\n", selCS, eip, uEFlags));
+                    Log(("PATMGC: IRET stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                    if (uEFlags & X86_EFL_VM)
+                    {
+                        uint32_t selDS, selES, selFS, selGS;
+                        rc  = MMGCRamRead(pVM, &selES,   pIretFrame + 20, 4);
+                        rc |= MMGCRamRead(pVM, &selDS,   pIretFrame + 24, 4);
+                        rc |= MMGCRamRead(pVM, &selFS,   pIretFrame + 28, 4);
+                        rc |= MMGCRamRead(pVM, &selGS,   pIretFrame + 32, 4);
+                        if (rc == VINF_SUCCESS)
+                            Log(("PATMGC: IRET stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
+                    }
                 }
 #endif
                 Log(("PATMGC: IRET from %VGv (IF->1) current eflags=%x\n", pRegFrame->eip, pVM->patm.s.CTXSUFF(pGCState)->uVMFlags));
