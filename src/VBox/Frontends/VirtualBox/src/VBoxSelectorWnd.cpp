@@ -639,14 +639,20 @@ void VBoxSelectorWnd::vmStart()
 
     AssertMsg (item, ("Item must be always selected here"));
 
-    CMachine machine = item->machine();
-    AssertMsg (machine.GetState() < CEnums::Running,
-               ("Machine must be PoweredOff/Saved/Aborted"));
-
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
 
     AssertMsg (!vboxGlobal().isVMConsoleProcess(),
                ("Must NOT be a VM console process"));
+
+    /* just switch to the VM window if it already exists */
+    if (item->canSwitchTo())
+    {
+        item->switchTo();
+        return;
+    }
+
+    AssertMsg (item->state() < CEnums::Running,
+               ("Machine must be PoweredOff/Saved/Aborted"));
 
     QUuid id = item->id();
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -667,21 +673,21 @@ void VBoxSelectorWnd::vmStart()
     CProgress progress = vbox.OpenRemoteSession (session, id, "gui");
     if (!vbox.isOk())
     {
-        vboxProblem().cannotOpenSession (vbox, machine);
+        vboxProblem().cannotOpenSession (vbox, item->machine());
         return;
     }
 
     /* show the "VM spawning" progress dialog */
-    vboxProblem().showModalProgressDialog (progress, machine.GetName(), this);
+    vboxProblem().showModalProgressDialog (progress, item->name(), this);
 
     if (progress.GetResultCode() != 0)
-        vboxProblem().cannotOpenSession (vbox, machine, progress);
+        vboxProblem().cannotOpenSession (vbox, item->machine(), progress);
 
     session.Close();
 
 #else // !VBOX_GUI_SEPARATE_VM_PROCESS
 
-    if (!vboxGlobal().startMachine (machine.GetId()))
+    if (!vboxGlobal().startMachine (id))
         return;
 
     hide();
@@ -846,10 +852,7 @@ void VBoxSelectorWnd::languageChange()
     vmDeleteAction->setAccel( QString::null );
     vmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
 
-    vmStartAction->setMenuText (tr ("S&tart"));
-    vmStartAction->setText (tr ("Start"));
-    vmStartAction->setAccel (QString::null);
-    vmStartAction->setStatusTip (tr ("Start the selected virtual machine"));
+    /* Note: vmStartAction text is set up in vmListBoxCurrentChanged() */
 
     vmDiscardAction->setMenuText (tr ("D&iscard"));
     vmDiscardAction->setText (tr ("Discard"));
@@ -918,9 +921,9 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         }
         if (aRefreshSnapshots)
         {
-            /* update snapshots tab name */
+            /* update the snapshots tab name */
             QString shotName = tr ("&Snapshots");
-            ULONG shotCount = m.GetSnapshotCount();
+            ULONG shotCount = item->snapshotCount();
             if (shotCount)
                 shotName += QString (" (%1)").arg (shotCount);
             vmTabWidget->changeTab (vmSnapshotsWgt, shotName);
@@ -928,8 +931,8 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
             vmSnapshotsWgt->setMachine (m);
         }
 
-        CEnums::MachineState state = m.GetState();
-        bool running = m.GetSessionState() != CEnums::SessionClosed;
+        CEnums::MachineState state = item->state();
+        bool running = item->sessionState() != CEnums::SessionClosed;
         bool modifyEnabled = !running && state != CEnums::Saved;
 
         /* enable/disable info panes */
@@ -939,9 +942,31 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         /* enable/disable modify actions */
         vmConfigAction->setEnabled (modifyEnabled);
         vmDeleteAction->setEnabled (modifyEnabled);
-        vmStartAction->setEnabled (!running);
         vmDiscardAction->setEnabled (state == CEnums::Saved && !running);
 
+        /* change the Start button text accordingly */
+        if (state >= CEnums::Running)
+        {
+            vmStartAction->setMenuText (tr ("S&how"));
+            vmStartAction->setText (tr ("Show"));
+            vmStartAction->setAccel (QString::null);
+            vmStartAction->setStatusTip (
+                tr ("Switch to the window of the selected virtual machine"));
+
+            vmStartAction->setEnabled (item->canSwitchTo());
+        }
+        else
+        {
+            vmStartAction->setMenuText (tr ("S&tart"));
+            vmStartAction->setText (tr ("Start"));
+            vmStartAction->setAccel (QString::null);
+            vmStartAction->setStatusTip (
+                tr ("Start the selected virtual machine"));
+
+            vmStartAction->setEnabled (!running);
+        }
+
+        /* disable Refresh for accessible machines */
         vmRefreshAction->setEnabled (false);
     }
     else
