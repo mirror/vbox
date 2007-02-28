@@ -54,8 +54,6 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
-////#define VBOX_RAW_V86
-
 /* Don't wanna include everything. */
 extern void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 extern void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
