@@ -2715,7 +2715,6 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
 }
 
 
-#ifdef PGM_DYNAMIC_RAM_ALLOC
 /**
  *  Convert GC physical address to HC virt
  *
@@ -2725,6 +2724,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
  */
 void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
 {
+#ifdef PGM_DYNAMIC_RAM_ALLOC
     PVM      pVM = ((CPUState *)env)->pVM;
     uint32_t i;
 
@@ -2741,6 +2741,9 @@ void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
     AssertMsg(addr < phys_ram_size, ("remR3GCPhys2HCVirt: unknown physical address %x\n", addr));
     Log(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK)));
     return (void *)(pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+#else
+    return (target_ulong)addr - (target_ulong)phys_ram_base;
+#endif
 }
 
 
@@ -2753,6 +2756,7 @@ void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
  */
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
 {
+#ifdef PGM_DYNAMIC_RAM_ALLOC
     PVM         pVM    = ((CPUState *)env)->pVM;
     RTHCUINTPTR HCVirt = (RTHCUINTPTR)addr;
     uint32_t    idx    = (HCVirt >> PGM_DYNAMIC_CHUNK_SHIFT);
@@ -2788,6 +2792,9 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
     }
     AssertReleaseMsgFailed(("No translation for physical address %VHv???\n", addr));
     return 0;
+#else
+    return (target_ulong)addr - (target_ulong)phys_ram_base;
+#endif
 }
 
 
@@ -2812,7 +2819,6 @@ void remR3GrowDynRange(unsigned long physaddr)
     AssertFatalFailed();
 }
 
-#endif /* PGM_DYNAMIC_RAM_ALLOC */
 
 
 /**
