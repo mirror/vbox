@@ -1206,7 +1206,7 @@ CPUMDECL(int) CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
     }
     else
     {
-        AssertMsg((pCtxCore->ss & X86_SEL_RPL) >= 2 && !pCtxCore->eflags.Bits.u1VM,
+        AssertMsg((pCtxCore->ss & X86_SEL_RPL) >= 2 || pCtxCore->eflags.Bits.u1VM,
                   ("ring-1 code not supported\n"));
         /*
          * PATM takes care of IOPL and IF flags for Ring-3 and Ring-2 code as well.
@@ -1254,7 +1254,7 @@ CPUMDECL(int) CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc)
     if (!pCtxCore)
         pCtxCore = CPUMCTX2CORE(pCtx);
     Assert(pCtxCore->eflags.Bits.u1VM || (pCtxCore->ss & X86_SEL_RPL));
-    AssertMsg(pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL),
+    AssertMsg(pCtxCore->eflags.Bits.u1VM || pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL),
               ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
 
     /*
