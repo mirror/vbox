@@ -451,6 +451,8 @@
 #define VERR_SSM_IDE_ASYNC_TIMEOUT              (-1827)
 /** One of the structure magics was wrong. */
 #define VERR_SSM_STRUCTURE_MAGIC                (-1828)
+/** The data in the saved state doesn't confirm to expectations. */
+#define VERR_SSM_UNEXPECTED_DATA                (-1829)
 /** @} */
 
 
@@ -907,6 +909,8 @@
 #define VINF_HGCM_ASYNC_EXECUTE                     2903
 /** HGCM could not perform requested operation because of an internal error. */
 #define VERR_HGCM_INTERNAL                          (-2904)
+/** Invalid HGCM client id. */
+#define VERR_HGCM_INVALID_CLIENT_ID                 (-2905)
 /** @} */
 
 
