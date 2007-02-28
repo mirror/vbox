@@ -172,7 +172,7 @@ void hgcmObjDeleteHandle (uint32_t handle)
     return;
 }
 
-HGCMObject *hgcmObjReference (uint32_t handle)
+HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType)
 {
     LogFlow(("MAIN::hgcmObjReference: handle %d\n", handle));
 
@@ -184,7 +184,10 @@ HGCMObject *hgcmObjReference (uint32_t handle)
     {
         ObjectAVLCore *pCore = (ObjectAVLCore *)RTAvlULGet (&g_pTree, handle);
 
-        if (pCore)
+        Assert(!pCore || (pCore->pSelf && pCore->pSelf->Type() == enmObjType));
+        if (    pCore 
+            &&  pCore->pSelf
+            &&  pCore->pSelf->Type() == enmObjType)
         {
             pObject = pCore->pSelf;
 
@@ -214,4 +217,23 @@ void hgcmObjDereference (HGCMObject *pObject)
     pObject->Dereference ();
 
     LogFlow(("MAIN::hgcmObjDereference: return\n"));
+}
+
+uint32_t hgcmObjQueryHandleCount ()
+{
+    return g_u32HandleCount;
+}
+
+void hgcmObjSetHandleCount (uint32_t u32HandleCount)
+{
+    Assert(g_u32HandleCount <= u32HandleCount);
+
+    int rc = hgcmObjEnter ();
+
+    if (VBOX_SUCCESS(rc))
+    {
+        if (g_u32HandleCount <= u32HandleCount)
+            g_u32HandleCount = u32HandleCount;
+        hgcmObjLeave ();
+   }
 }

@@ -35,12 +35,21 @@ typedef struct _ObjectAVLCore
     HGCMObject *pSelf;
 } ObjectAVLCore;
 
+typedef enum
+{
+    HGCMOBJ_CLIENT,
+    HGCMOBJ_THREAD,
+    HGCMOBJ_MSG,
+    HGCMOBJ_SizeHack   = 0x7fffffff
+} HGCMOBJ_TYPE;
+
 class HGCMObject
 {
     private:
     friend uint32_t hgcmObjGenerateHandle (HGCMObject *pObject);
 
         int32_t volatile cRef;
+        HGCMOBJ_TYPE     enmObjType;
 
         ObjectAVLCore Core;
 
@@ -50,7 +59,10 @@ class HGCMObject
         virtual ~HGCMObject (void) {};
 
     public:
-        HGCMObject () : cRef (0) {};
+        HGCMObject (HGCMOBJ_TYPE enmObjType) : cRef (0)
+        {
+            this->enmObjType  = enmObjType;
+        };
 
         void Reference (void)
         {
@@ -78,6 +90,11 @@ class HGCMObject
         {
             return Core.AvlCore.Key;
         };
+
+        HGCMOBJ_TYPE Type (void)
+        {
+            return enmObjType;
+        };
 };
 
 int hgcmObjInit (void);
@@ -88,8 +105,11 @@ uint32_t hgcmObjGenerateHandle (HGCMObject *pObject);
 
 void hgcmObjDeleteHandle (uint32_t handle);
 
-HGCMObject *hgcmObjReference (uint32_t handle);
+HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType);
 
 void hgcmObjDereference (HGCMObject *pObject);
+
+uint32_t hgcmObjQueryHandleCount ();
+void     hgcmObjSetHandleCount (uint32_t u32HandleCount);
 
 #endif /* __HGCMOBJECTS__H */

@@ -94,7 +94,7 @@ class HGCMMsgCore: public HGCMObject
         virtual ~HGCMMsgCore () {};
 
     public:
-        HGCMMsgCore () {};
+        HGCMMsgCore () : HGCMObject(HGCMOBJ_MSG) {};
 
         uint32_t MsgId (void) { return m_u32Msg; };
 

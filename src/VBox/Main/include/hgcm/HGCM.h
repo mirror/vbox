@@ -42,8 +42,8 @@ int hgcmDisconnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint3
 int hgcmGuestCallInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[], bool fBlock);
 int hgcmHostCallInternal (const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
 
-int hgcmSaveStateInternal (PPDMIHGCMPORT pHGCMPort, uint32_t clientID, PSSMHANDLE pSSM);
-int hgcmLoadStateInternal (PPDMIHGCMPORT pHGCMPort, uint32_t clientID, PSSMHANDLE pSSM);
+int hgcmSaveStateInternal (uint32_t clientID, PSSMHANDLE pSSM);
+int hgcmLoadStateInternal (uint32_t clientID, PSSMHANDLE pSSM);
 
 __END_DECLS
 
