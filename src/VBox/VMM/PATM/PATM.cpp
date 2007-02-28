@@ -3335,6 +3335,7 @@ PATMR3DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx)
     RTGCPTR     pPatchTargetGC = 0;
 
     pBranchTarget = pCtx->edx;
+    pBranchTarget = SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pBranchTarget);
 
     /* First we check if the duplicate function target lies in some existing function patch already. Will save some space. */
     pPage = pBranchTarget & PAGE_BASE_GC_MASK;
@@ -3900,7 +3901,7 @@ PATMR3DECL(int) PATMR3AddHint(PVM pVM, RTGCPTR pInstrGC, uint32_t flags)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pInstr      Guest context point to privileged instruction
+ * @param   pInstr      Guest context point to privileged instruction (0:32 flat address)
  * @param   flags       Patch flags
  *
  * @note    returns failure if patching is not allowed or possible
@@ -3908,7 +3909,6 @@ PATMR3DECL(int) PATMR3AddHint(PVM pVM, RTGCPTR pInstrGC, uint32_t flags)
 PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
 {
     DISCPUSTATE cpu;
-    PCPUMCTX    pCtx;
     HCPTRTYPE(uint8_t *) pInstrHC;
     uint32_t opsize;
     PPATMPATCHREC pPatchRec;
@@ -3923,8 +3923,6 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
 
     if (PATMIsEnabled(pVM) == false)
         return VERR_PATCHING_REFUSED;
-
-    CPUMQueryGuestCtxPtr(pVM, &pCtx);
 
     /* Test for patch conflict only with patches that actually change guest code. */
     if (!(flags & (PATMFL_GUEST_SPECIFIC|PATMFL_IDTHANDLER|PATMFL_INTHANDLER|PATMFL_TRAMPOLINE)))
@@ -3946,11 +3944,24 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
     if (pVM->patm.s.fOutOfMemory == true)
         return VERR_PATCHING_REFUSED;
 
+#ifdef VBOX_STRICT
+    PCPUMCTX pCtx = 0;
+
+    CPUMQueryGuestCtxPtr(pVM, &pCtx);
+
+    if (    !pCtx->eflags.Bits.u1VM
+        &&  (pCtx->ss & X86_SEL_RPL) == 0)
+    {
+        RTGCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pInstrGC);
+        Assert(pInstrGCFlat == pInstrGC);
+    }
+#endif
+
     /** @note the OpenBSD specific check will break if we allow additional patches to be installed (int 3)) */
     if (!(flags & PATMFL_GUEST_SPECIFIC))
     {
         /* New code. Make sure CSAM has a go at it first. */
-        CSAMR3CheckCode(pVM, pCtx, pInstrGC);
+        CSAMR3CheckCode(pVM, pInstrGC);
     }
 
     /** @note obsolete */
