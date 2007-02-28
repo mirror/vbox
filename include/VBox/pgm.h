@@ -34,7 +34,9 @@ __BEGIN_DECLS
  */
 
 /** Enable dynamic allocation of guest physical RAM. */
+#ifndef __AMD64__ /* broken in the 64 bits build */
 #define PGM_DYNAMIC_RAM_ALLOC
+#endif
 
 /** Chunk size for dynamically allocated physical memory. */
 #define PGM_DYNAMIC_CHUNK_SIZE          (1*1024*1024)
