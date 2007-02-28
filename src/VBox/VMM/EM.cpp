@@ -714,8 +714,12 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
 {
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pVM->em.s.pCtx;
-    if ((pCtx->ss & X86_SEL_RPL) == 0)
+    if (pCtx->eflags.Bits.u1VM)
+        Log(("EMV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
+    else if ((pCtx->ss & X86_SEL_RPL) == 0)
         Log(("EMR0: %08X ESP=%08X IF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (pCtx->ss & X86_SEL_RPL)));
+    else if ((pCtx->ss & X86_SEL_RPL) == 3)
+        Log(("EMR3: %08X ESP=%08X IF=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF));
 #endif
     STAM_PROFILE_ADV_START(&pVM->em.s.StatREMTotal, a);
 
@@ -953,7 +957,9 @@ static int emR3RawStep(PVM pVM)
 #ifdef DEBUG_sandervl
 void emR3SingleStepExec(PVM pVM, uint32_t cIterations)
 {
-    EMSTATE enmOldState = pVM->em.s.enmState;
+    EMSTATE  enmOldState = pVM->em.s.enmState;
+    PCPUMCTX pCtx        = pVM->em.s.pCtx;
+
     pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
 
     Log(("Single step BEGIN:\n"));
@@ -1008,7 +1014,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
 #endif /* LOG_ENABLED */
 
 
-    Assert((pCtx->ss & X86_SEL_RPL) != 1);
+    Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
 
     /*
      * PATM is making life more interesting.
@@ -1519,7 +1525,7 @@ static int emR3RawGuestTrap(PVM pVM)
         &&  pCtx->eflags.Bits.u1VM == 0)
     {
         Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
-        CSAMR3CheckCode(pVM, pCtx, pCtx->eip);
+        CSAMR3CheckCodeEx(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip);
     }
 
     if (u8TrapNo == 6) /* (#UD) Invalid opcode. */
@@ -1615,7 +1621,8 @@ int emR3RawRingSwitch(PVM pVM)
         {
             if (pCtx->SysEnter.cs != 0)
             {
-                rc = PATMR3InstallPatch(pVM, pCtx->eip, SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
+                rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+                                        SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
                 if (VBOX_SUCCESS(rc))
                 {
                     DBGFR3DisasInstrCurrentLog(pVM, "Patched sysenter instruction");
@@ -1802,6 +1809,8 @@ int emR3RawPrivileged(PVM pVM)
     STAM_PROFILE_START(&pVM->em.s.StatPrivEmu, a);
     PCPUMCTX    pCtx = pVM->em.s.pCtx;
 
+    Assert(!pCtx->eflags.Bits.u1VM);
+
     if (PATMIsEnabled(pVM))
     {
         /*
@@ -1816,9 +1825,11 @@ int emR3RawPrivileged(PVM pVM)
             return VERR_EM_RAW_PATCH_CONFLICT;
         }
         if (   (pCtx->ss & X86_SEL_RPL) == 0
+            && !pCtx->eflags.Bits.u1VM
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
-            int rc = PATMR3InstallPatch(pVM, pCtx->eip, SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
+            int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+                                        SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
             if (VBOX_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
@@ -1831,8 +1842,11 @@ int emR3RawPrivileged(PVM pVM)
     }
 
 #ifdef LOG_ENABLED
-    DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
-    DBGFR3DisasInstrCurrentLog(pVM, "Privileged instr: ");
+    if (!PATMIsPatchGCAddr(pVM, pCtx->eip))
+    {
+        DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
+        DBGFR3DisasInstrCurrentLog(pVM, "Privileged instr: ");
+    }
 #endif
 
     /*
@@ -1968,6 +1982,14 @@ int emR3RawPrivileged(PVM pVM)
 
                 case OP_MOV_CR:
                 case OP_MOV_DR:
+#ifdef LOG_ENABLED
+                    if (PATMIsPatchGCAddr(pVM, pCtx->eip))
+                    {
+                        DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
+                        DBGFR3DisasInstrCurrentLog(pVM, "Privileged instr: ");
+                    }
+#endif
+
                     rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
                     if (VBOX_SUCCESS(rc))
                     {
@@ -2135,7 +2157,8 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Memory mapped I/O access - attempt to patch the instruction
          */
         case VINF_PATM_HC_MMIO_PATCH_READ:
-            rc = PATMR3InstallPatch(pVM, pCtx->eip, PATMFL_MMIO_ACCESS | (SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0));
+            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+                                    PATMFL_MMIO_ACCESS | (SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0));
             if (VBOX_FAILURE(rc))
                 rc = emR3RawExecuteInstruction(pVM, "MMIO");
             break;
@@ -2443,7 +2466,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
 #ifdef VBOX_STRICT
         Assert(REMR3QueryPendingInterrupt(pVM) == REM_NO_PENDING_IRQ);
         Assert(!(pCtx->cr4 & X86_CR4_PAE));
-        Assert((pCtx->ss & X86_SEL_RPL) == 3 || (pCtx->ss & X86_SEL_RPL) == 0);
+        Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) == 3 || (pCtx->ss & X86_SEL_RPL) == 0);
         AssertMsg(   (pCtx->eflags.u32 & X86_EFL_IF)
                   || PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip),
                   ("Tried to execute code with IF at EIP=%08x!\n", pCtx->eip));
@@ -2485,7 +2508,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
             STAM_PROFILE_ADV_SUSPEND(&pVM->em.s.StatRAWEntry, b);
-            CSAMR3CheckCode(pVM, pCtx, pCtx->eip);
+            CSAMR3CheckCodeEx(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip);
             STAM_PROFILE_ADV_RESUME(&pVM->em.s.StatRAWEntry, b);
         }
 
@@ -2493,16 +2516,15 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         /*
          * Log important stuff before entering GC.
          */
-        bool fSingleStep = false;
         PPATMGCSTATE pGCState = PATMR3QueryGCStateHC(pVM);
-        if ((pCtx->ss & X86_SEL_RPL) == 1 && !fSingleStep)
+        if (pCtx->eflags.Bits.u1VM)
+            Log(("RV86: %08X IF=%d VMFlags=%x\n", pCtx->eip, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags));
+        else if ((pCtx->ss & X86_SEL_RPL) == 1)
         {
             bool fCSAMScanned = CSAMIsPageScanned(pVM, (RTGCPTR)pCtx->eip);
             Log(("RR0: %08X ESP=%08X IF=%d VMFlags=%x PIF=%d CPL=%d (Scanned=%d)\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags, pGCState->fPIF, (pCtx->ss & X86_SEL_RPL), fCSAMScanned));
         }
-        else if ((pCtx->ss & X86_SEL_RPL) == 3 && !fSingleStep && pCtx->eflags.Bits.u1VM)
-            Log(("RV86: %08X IF=%d VMFlags=%x\n", pCtx->eip, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags));
-        else if ((pCtx->ss & X86_SEL_RPL) == 3 && !fSingleStep)
+        else if ((pCtx->ss & X86_SEL_RPL) == 3)
             Log(("RR3: %08X ESP=%08X IF=%d VMFlags=%x\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags));
 #endif /* LOG_ENABLED */
 
@@ -2610,7 +2632,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         STAM_PROFILE_ADV_STOP(&pVM->em.s.StatRAWTail, d);
         if (VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            Assert((pCtx->ss & X86_SEL_RPL) != 1);
+            Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
 
             STAM_PROFILE_ADV_SUSPEND(&pVM->em.s.StatRAWTotal, a);
             rc = emR3ForcedActions(pVM, rc);
@@ -2714,12 +2736,11 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         /*
          * Log important stuff before entering GC.
          */
-        bool fSingleStep = false;
-        if ((pCtx->ss & X86_SEL_RPL) == 0 && !fSingleStep)
-            Log(("HWR0: %08X ESP=%08X IF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (pCtx->ss & X86_SEL_RPL)));
-        else if ((pCtx->ss & X86_SEL_RPL) == 3 && !fSingleStep && pCtx->eflags.Bits.u1VM)
+        if (pCtx->eflags.Bits.u1VM)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
-        else if ((pCtx->ss & X86_SEL_RPL) == 3 && !fSingleStep)
+        else if ((pCtx->ss & X86_SEL_RPL) == 0)
+            Log(("HWR0: %08X ESP=%08X IF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (pCtx->ss & X86_SEL_RPL)));
+        else if ((pCtx->ss & X86_SEL_RPL) == 3)
             Log(("HWR3: %08X ESP=%08X IF=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF));
 #endif
 
@@ -3025,7 +3046,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
             /** @todo: check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VM_FF_CSAM_SCAN_PAGE\n"));
 
-            CSAMR3CheckCode(pVM, pCtx, pCtx->eip);
+            CSAMR3CheckCodeEx(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip);
             VM_FF_CLEAR(pVM, VM_FF_CSAM_SCAN_PAGE);
         }
 
