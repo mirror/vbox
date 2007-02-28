@@ -629,17 +629,23 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 rc |= MMGCRamRead(pVM, &selSS,   pIretFrame + 16, 4);
                 if (rc == VINF_SUCCESS)
                 {
-                    Log(("PATMGC: IRET stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
-                    if (uEFlags & X86_EFL_VM)
+                    if (    (uEFlags & X86_EFL_VM)
+                        ||  (selCS & X86_SEL_RPL) == 3))
                     {
-                        uint32_t selDS, selES, selFS, selGS;
-                        rc  = MMGCRamRead(pVM, &selES,   pIretFrame + 20, 4);
-                        rc |= MMGCRamRead(pVM, &selDS,   pIretFrame + 24, 4);
-                        rc |= MMGCRamRead(pVM, &selFS,   pIretFrame + 28, 4);
-                        rc |= MMGCRamRead(pVM, &selGS,   pIretFrame + 32, 4);
-                        if (rc == VINF_SUCCESS)
-                            Log(("PATMGC: IRET stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
+                        Log(("PATMGC: IRET stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                        if (uEFlags & X86_EFL_VM)
+                        {
+                            uint32_t selDS, selES, selFS, selGS;
+                            rc  = MMGCRamRead(pVM, &selES,   pIretFrame + 20, 4);
+                            rc |= MMGCRamRead(pVM, &selDS,   pIretFrame + 24, 4);
+                            rc |= MMGCRamRead(pVM, &selFS,   pIretFrame + 28, 4);
+                            rc |= MMGCRamRead(pVM, &selGS,   pIretFrame + 32, 4);
+                            if (rc == VINF_SUCCESS)
+                                Log(("PATMGC: IRET stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
+                        }
                     }
+                    else
+                        Log(("PATMGC: IRET stack frame: return address %04X:%VGv eflags=%08x\n", selCS, eip, uEFlags));
                 }
 #endif
                 Log(("PATMGC: IRET from %VGv (IF->1) current eflags=%x\n", pRegFrame->eip, pVM->patm.s.CTXSUFF(pGCState)->uVMFlags));
