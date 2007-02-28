@@ -2483,16 +2483,8 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
         break;
 
     case OP_PARM_p:
-        if(pCpu->addrmode == CPUMODE_32BIT)
-        {
-            disasmAddString(pParam->szParam, "far ptr ");
-        }
-        else
-        {
-            disasmAddString(pParam->szParam, "near ptr ");
-        }
+        disasmAddString(pParam->szParam, "far ptr ");
         break;
-
 
     case OP_PARM_s:
         break; //??
