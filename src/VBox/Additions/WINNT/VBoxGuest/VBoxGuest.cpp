@@ -380,7 +380,7 @@ __declspec (naked) __fastcall
 TestAndClearEvent (PVBOXGUESTDEVEXT pDevExt, int iBitOffset)
 {
     _asm {
-        btr PVBOXGUESTDEVEXT[ecx].u32Events, edx;
+        lock btr PVBOXGUESTDEVEXT[ecx].u32Events, edx;
         setc al;
         movzx eax, al;
         ret;
@@ -888,7 +888,7 @@ BOOLEAN VBoxGuestIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext)
             dprintf(("VBoxGuest::VBoxGuestIsrHandler: acknowledge events succeeded %#x\n",
                      req->events));
 
-            pDevExt->u32Events |= req->events;
+            ASMAtomicOrU32((uint32_t *)&pDevExt->u32Events, req->events);
             IoRequestDpc(pDevExt->deviceObject, pDevExt->currentIrp, NULL);
         }
         else
