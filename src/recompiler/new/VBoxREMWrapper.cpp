@@ -556,6 +556,12 @@ static const REMPARMDESC g_aArgsMMR3HeapAlloc[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(MMTAG) },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t) }
 };
+static const REMPARMDESC g_aArgsMMR3HeapAllocZ[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(MMTAG) },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t) }
+};
 static const REMPARMDESC g_aArgsPATMIsPatchGCAddr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
@@ -950,6 +956,7 @@ static REMFNDESC g_aVMMImports[] =
     { "IOMMMIORead",                            (void *)(uintptr_t)&IOMMMIORead,                    &g_aArgsIOMMMIORead[0],                     ELEMENTS(g_aArgsIOMMMIORead),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "IOMMMIOWrite",                           (void *)(uintptr_t)&IOMMMIOWrite,                   &g_aArgsIOMMMIOWrite[0],                    ELEMENTS(g_aArgsIOMMMIOWrite),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "MMR3HeapAlloc",                          (void *)(uintptr_t)&MMR3HeapAlloc,                  &g_aArgsMMR3HeapAlloc[0],                   ELEMENTS(g_aArgsMMR3HeapAlloc),                     REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+    { "MMR3HeapAllocZ",                         (void *)(uintptr_t)&MMR3HeapAllocZ,                 &g_aArgsMMR3HeapAllocZ[0],                  ELEMENTS(g_aArgsMMR3HeapAllocZ),                    REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "MMR3PhysGetRamSize",                     (void *)(uintptr_t)&MMR3PhysGetRamSize,             &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint64_t),   NULL },
     { "PATMIsPatchGCAddr",                      (void *)(uintptr_t)&PATMIsPatchGCAddr,              &g_aArgsPATMIsPatchGCAddr[0],               ELEMENTS(g_aArgsPATMIsPatchGCAddr),                 REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PATMR3QueryOpcode",                      (void *)(uintptr_t)&PATMR3QueryOpcode,              &g_aArgsPATMR3QueryOpcode[0],               ELEMENTS(g_aArgsPATMR3QueryOpcode),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
