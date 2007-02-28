@@ -933,6 +933,40 @@ _pxenv_in_call_far:
     popl %eax
     popfl
 #endif /* VBOX_DEBUG_PXE_EP */
+#ifdef VBOX
+        /* Detect V86 mode. Etherboot doesn't work in V86 mode, because it
+         * switches to protected mode on entry. The follow-up project gPXE
+         * can run completely in real mode (and thus can implement the full
+         * PXE calling conventions), but its PXE support isn't anywhere near
+         * what Etherboot currently provides. */
+        pushw %ax
+        smsw %ax
+        andw $0x0001,%ax
+        jz 4f
+        push %cs
+        pop %ds
+        call 0f
+0:      popw %si
+        addl $msg_v86_unsupported-0b,%si    /* start of zero-terminated string */
+1:
+        cld
+        lodsb
+        or %al,%al
+        jnz 3f
+
+2:      hlt
+        jmp 2b
+
+msg_v86_unsupported: .asciz "\r\nVirtualBox PXE cannot be used from V86 mode. Guest halted.\r\n"
+
+3:
+        mov $0x0e,%ah   /* teletype output character at cursor position */
+        mov $0x0070,%bx /* page 0, attribute 0x70 */
+        int $0x10
+        jmp 1b
+4:
+        popw %ax
+#endif /* VBOX */
 	/* Perform real-mode in_call */
 	call	pxe_rm_in_call
 	/* Return */
