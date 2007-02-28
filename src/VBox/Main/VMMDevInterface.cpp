@@ -35,6 +35,7 @@
 
 #ifdef VBOX_HGCM
 #include "hgcm/HGCM.h"
+#include "hgcm/HGCMObjects.h"
 #endif
 
 //
@@ -327,7 +328,11 @@ static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
     PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
     
-    return hgcmSaveStateInternal (pDrv->pHGCMPort, pDrv->pVMMDev->mSharedFolderClientId, pSSM);
+    /* Save the current handle count and restore afterwards to avoid client id conflicts. */
+    int rc = SSMR3PutU32(pSSM, hgcmObjQueryHandleCount());
+    AssertRCReturn(rc, rc);
+
+    return hgcmSaveStateInternal (pDrv->pVMMDev->mSharedFolderClientId, pSSM);
 }
 
 
@@ -342,11 +347,43 @@ static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
     PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
+    uint32_t       u32HandleCount;
 
     if (u32Version != HGCM_SSM_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    return hgcmLoadStateInternal (pDrv->pHGCMPort, pDrv->pVMMDev->mSharedFolderClientId, pSSM);
+    /* Save the current handle count and restore afterwards to avoid client id conflicts. */
+    int rc = SSMR3GetU32(pSSM, &u32HandleCount);
+    AssertRCReturn(rc, rc);
+    hgcmObjSetHandleCount(u32HandleCount);
+
+    /* Unload all HGCM services to refresh client ids. */
+    /** @todo shared clipboard too! */
+    /** @todo need other solution! */
+    if (pDrv->pVMMDev->mSharedFolderClientId)
+    {
+        uint64_t     dummy = 0;
+        PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
+
+        pDrv->pVMMDev->hgcmDisconnect(cmd, pDrv->pVMMDev->getShFlClientId());
+
+        /* Reload Shared Folder HGCM service */
+        HGCMSERVICELOCATION loc;
+
+        cmd = (PVBOXHGCMCMD)&dummy;
+
+        Log(("Connect to Shared Folders service\n"));
+        pDrv->pVMMDev->mSharedFolderClientId = 0;
+        loc.type = VMMDevHGCMLoc_LocalHost;
+        strcpy(loc.u.host.achName, "VBoxSharedFolders");
+        int rc = pDrv->pVMMDev->hgcmConnect(cmd, &loc, &pDrv->pVMMDev->mSharedFolderClientId);
+        if (rc != VINF_SUCCESS)
+        {
+            AssertMsgFailed(("hgcmConnect returned %Vrc\n", rc));
+        }
+    }
+
+    return hgcmLoadStateInternal (pDrv->pVMMDev->mSharedFolderClientId, pSSM);
 }
 
 int VMMDev::hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary)
@@ -574,9 +611,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         rc = VINF_SUCCESS;
         pData->pVMMDev->mSharedFolderClientId = 0;
     }
-#if 0 /* enable later */
     pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
-#endif 
 #endif
 
     return VINF_SUCCESS;

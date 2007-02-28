@@ -208,8 +208,9 @@ static DECLCALLBACK(int) hgcmWorkerThreadFunc (RTTHREAD ThreadSelf, void *pvUser
     return rc;
 }
 
-HGCMThread::HGCMThread ()
+HGCMThread::HGCMThread () 
     :
+    HGCMObject(HGCMOBJ_THREAD),
     m_pfnThread (NULL),
     m_pvUser (NULL),
     m_thread (NIL_RTTHREAD),
@@ -732,7 +733,7 @@ int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32
 
     int rc = VINF_SUCCESS;
 
-    HGCMThread *pThread = (HGCMThread *)hgcmObjReference (hThread);
+    HGCMThread *pThread = (HGCMThread *)hgcmObjReference (hThread, HGCMOBJ_THREAD);
 
     if (!pThread)
     {
@@ -756,7 +757,7 @@ static int hgcmMsgPostInternal (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback
 
     int rc = VINF_SUCCESS;
 
-    HGCMMsgCore *pMsg = (HGCMMsgCore *)hgcmObjReference (hMsg);
+    HGCMMsgCore *pMsg = (HGCMMsgCore *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
 
     if (!pMsg)
     {
@@ -807,7 +808,7 @@ int hgcmMsgGet (HGCMTHREADHANDLE hThread, HGCMMsgCore **ppMsg)
 
     int rc = VINF_SUCCESS;
 
-    HGCMThread *pThread = (HGCMThread *)hgcmObjReference (hThread);
+    HGCMThread *pThread = (HGCMThread *)hgcmObjReference (hThread, HGCMOBJ_THREAD);
 
     if (!pThread)
     {
