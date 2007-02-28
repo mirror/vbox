@@ -213,10 +213,20 @@ CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pCtx        CPU context
+ * @param   Sel         selector
+ * @param   pHiddenSel  The hidden selector register.
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, PCPUMCTX pCtx, RTGCPTR pInstrGC);
+CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR pInstrGC);
+
+/**
+ * Scan and analyse code
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pInstrGC    Instruction pointer (0:32 virtual address)
+ */
+CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC);
 
 /**
  * Flush dirty code pages
