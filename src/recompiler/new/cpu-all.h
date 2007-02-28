@@ -196,11 +196,9 @@ void     remR3PhysWriteU8(uint8_t *pbDstPhys, uint8_t val);
 void     remR3PhysWriteU16(uint8_t *pbDstPhys, uint16_t val);
 void     remR3PhysWriteU32(uint8_t *pbDstPhys, uint32_t val);
 void     remR3PhysWriteU64(uint8_t *pbDstPhys, uint64_t val);
-# ifdef PGM_DYNAMIC_RAM_ALLOC
 void    *remR3GCPhys2HCVirt(void *env, target_ulong addr);
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
 void     remR3GrowDynRange(unsigned long physaddr);
-# endif
 #endif
 
 static inline int ldub_p(void *ptr)
