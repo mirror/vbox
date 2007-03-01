@@ -639,6 +639,54 @@ STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 
 #ifdef __WIN__
 
+/**
+ * Returns TRUE if the Windows version is 6.0 or greater (i.e. it's Vista and
+ * later OSes) and it has the UAC (User Account Control) feature enabled.
+ */
+static BOOL IsUACEnabled()
+{
+    LONG rc = 0;
+
+    OSVERSIONINFOEX info;
+    ZeroMemory (&info, sizeof (OSVERSIONINFOEX));
+    info.dwOSVersionInfoSize = sizeof (OSVERSIONINFOEX);
+    rc = GetVersionEx ((OSVERSIONINFO *) &info);
+    AssertReturn (rc != 0, FALSE);
+
+    LogFlowFunc (("dwMajorVersion=%d, dwMinorVersion=%d\n",
+                  info.dwMajorVersion, info.dwMinorVersion));
+
+    /* we are interested only in Vista (and newer versions...). In all
+     * earlier versions UAC is not present. */
+    if (info.dwMajorVersion < 6)
+        return FALSE;
+
+    /* the default EnableLUA value is 1 (Enabled) */
+    DWORD dwEnableLUA = 1;
+
+    HKEY hKey;
+    rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE,
+                        "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+                        0, KEY_QUERY_VALUE, &hKey);
+
+    Assert (rc == ERROR_SUCCESS || rc == ERROR_PATH_NOT_FOUND);
+    if (rc == ERROR_SUCCESS)
+    {
+
+        DWORD cbEnableLUA = sizeof (dwEnableLUA);
+        rc = RegQueryValueExA (hKey, "EnableLUA", NULL, NULL,
+                               (LPBYTE) dwEnableLUA, &cbEnableLUA);
+
+        RegCloseKey (hKey);
+
+        Assert (rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
+    }
+
+    LogFlowFunc (("rc=%d, dwEnableLUA=%d\n", rc, dwEnableLUA));
+
+    return dwEnableLUA == 1;
+}
+
 struct NetworkInterfaceHelperClientData
 {
     SVCHlpMsg::Code msgCode;
@@ -701,7 +749,7 @@ Host::CreateHostNetworkInterface (INPTR BSTR aName,
     d->iface = iface;
 
     rc = mParent->startSVCHelperClient (
-        true /* aPrivileged */,
+        IsUACEnabled() == TRUE /* aPrivileged */,
         networkInterfaceHelperClient,
         static_cast <void *> (d.get()),
         progress);
@@ -763,7 +811,7 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
     d->guid = aId;
 
     rc = mParent->startSVCHelperClient (
-        true /* aPrivileged */,
+        IsUACEnabled() == TRUE /* aPrivileged */,
         networkInterfaceHelperClient,
         static_cast <void *> (d.get()),
         progress);
