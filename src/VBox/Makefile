@@ -25,7 +25,7 @@ SUBDIRS = \
 	VMM \
 	Devices \
 	Disassembler \
-	Debugger
+	Debugger 
 
 ifneq ($(wildcard HostServices),)
 SUBDIRS += HostServices

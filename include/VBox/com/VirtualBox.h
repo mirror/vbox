@@ -1,7 +1,19 @@
 /** @file
  *
  * MS COM / XPCOM Abstraction Layer:
- * VirtualBox COM Library definitions
+ * VirtualBox COM Library definitions.
+ *
+ * Note: This is the main header file that COM/XPCOM clients
+ * include; however, it is only a wrapper around another
+ * platform-dependent include file that contains the real
+ * COM/XPCOM interface declarations. That other include file
+ * is generated automatically at build time from
+ * /src/VBox/Main/idl/VirtualBox.xidl, which contains all
+ * the VirtualBox interfaces; the include file is called
+ * VirtualBox.h on Windows hosts and VirtualBox_XPCOM.h
+ * on Linux hosts. The build process places it in
+ * out/<platform>/bin/sdk/include, from where it gets
+ * included by the rest of the VirtualBox code.
  */
 
 /*
