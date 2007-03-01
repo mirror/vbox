@@ -188,6 +188,51 @@ BEGINPROC_EXPORTED CPUMGCCallGuestTrapHandler
 
 ENDPROC CPUMGCCallGuestTrapHandler
 
+;/**
+; * Performs an iret to V86 code
+; * Assumes a trap stack frame has already been setup on the guest's stack!
+; *
+; * @param   pRegFrame   Original trap/interrupt context
+; *
+; * This function does not return!
+; */
+;CPUMGCDECL(void) CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
+align 16
+BEGINPROC CPUMGCCallV86Code
+    mov     ebp, [esp + 4]                  ; pRegFrame
+
+    ; construct iret stack frame
+    push    dword [ebp + CPUMCTXCORE.gs] 
+    push    dword [ebp + CPUMCTXCORE.fs] 
+    push    dword [ebp + CPUMCTXCORE.ds] 
+    push    dword [ebp + CPUMCTXCORE.es] 
+    push    dword [ebp + CPUMCTXCORE.ss] 
+    push    dword [ebp + CPUMCTXCORE.esp] 
+    push    dword [ebp + CPUMCTXCORE.eflags] 
+    push    dword [ebp + CPUMCTXCORE.cs] 
+    push    dword [ebp + CPUMCTXCORE.eip] 
+
+    ;
+    ; enable WP
+    ;
+%ifdef ENABLE_WRITE_PROTECTION
+    mov     eax, cr0
+    or      eax, X86_CR0_WRITE_PROTECT
+    mov     cr0, eax
+%endif
+
+    ; restore CPU context (all except cs, eip, ss, esp, eflags, ds, es, fs & gs; which are restored or overwritten by iret)
+    mov     eax, [ebp + CPUMCTXCORE.eax]
+    mov     ebx, [ebp + CPUMCTXCORE.ebx]
+    mov     ecx, [ebp + CPUMCTXCORE.ecx]
+    mov     edx, [ebp + CPUMCTXCORE.edx]
+    mov     esi, [ebp + CPUMCTXCORE.esi]
+    mov     edi, [ebp + CPUMCTXCORE.edi]
+    mov     ebp, [ebp + CPUMCTXCORE.ebp]
+
+    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
+    iret
+ENDPROC CPUMGCCallV86Code
 
 ;;
 ; This is a main entry point for resuming (or starting) guest

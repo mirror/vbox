@@ -362,7 +362,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         /** @note monitor causes an #UD exception instead of #GP when not executed in ring 0. */
         if (Cpu.pCurInstr->opcode == OP_ILLUD2)
         {
-            int rc = PATMHandleIllegalInstrTrap(pVM, pRegFrame);
+            int rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
             if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_DUPLICATE_FUNCTION || rc == VINF_PATM_PENDING_IRQ_AFTER_IRET)
                 return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
