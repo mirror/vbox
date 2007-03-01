@@ -1,8 +1,20 @@
 <?xml version="1.0" ?>
 
 <!--
- *  VBox COM/XPCOM Type Library.
-
+ * Master declaration for VirtualBox's public COM/XPCOM API.
+ * From this document, the build system generates several files
+ * that are then used during the build process:
+ *
+ *   -  out/<platform>/bin/sdk/idl/VirtualBox[_XPCOM].idl, a
+ *      pseudo-IDL file that represents the interfaces in IDL;
+ *
+ *   -  out/<platform>/bin/sdk/include/VirtualBox[_XPCOM].h, which
+ *      gets included from the include/VBox/com/VirtualBox.h
+ *      wrapper, to allow clients to access the API;
+ *
+ *   -  also, another intermediate file that is then used to
+ *      produce the official Doxygen documentation of the API.
+ *
  * Copyright (C) 2006 InnoTek Systemberatung GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -606,10 +618,18 @@
         name="IVirtualBox" extends="$dispatched"
         uuid="00f4e8eb-d737-4c88-9ccb-b434edf8b912"
     >
-        <desc>
-            The main interface exposed by the product that provides
-            virtual machine management.
-        </desc>
+      <desc> The main interface exposed by the product that provides virtual
+      machine management.
+
+      An instance of IVirtualBox is required for the product to do anything
+      useful. Even though the interface does not expose this, internally, IVirtualBox
+      is implemented as a singleton and actually lives in the process of the
+      VirtualBox server (VBoxSVC.exe). This makes sure that IVirtualBox can
+      track the state of all virtual machines on a particular host, regardless
+      of which frontend started them.
+
+      To enumerate all the virtual machines on the host, use the <link to="IVirtualBox::machines" />
+      attribute.</desc>
 
         <attribute name="version" type="wstring" readonly="yes">
             <desc>
@@ -851,7 +871,7 @@
                 <note>This method implicitly calls <link
                 to="IMachine::saveSettings"/> to save all current machine
                 settings before unregistering it.</note>
-                
+
                 <note>If the given machine is inaccessible (see
                 <link to="IMachine::accessible"/>), it will be unregistered
                 and fully uninitialized right afterwards. As a result, the
@@ -1773,7 +1793,7 @@
         <attribute name="accessible" type="boolean" readonly="yes">
             <desc>
                 Whether this virtual machine is currently accessible or not.
-                
+
                 The machine is considered to be inaccessible when:
                 <ul>
                     <li>It is a registered virtual machine, and
@@ -1781,18 +1801,18 @@
                     <li>Its settings file is inaccessible (for example, it is
                     located on a network share that is not accessible during
                     VirtualBox startup, or becomes inaccessible later, or if
-                    the settings file can be read but is invalid). 
+                    the settings file can be read but is invalid).
                     </li>
                 </ul>
-                
+
                 Otherwise, the value of this property is always <tt>true</tt>.
-                
+
                 Every time this property is read, the accessibility state of
                 this machine is re-evaluated. If the returned value is |false|,
                 the <link to="#accessError"/> property may be used to get the
                 detailed error information describing the reason of
                 inaccessibility.
-                
+
                 When the machine is inaccessible, only the following properties
                 can be used on it:
                 <ul>
@@ -1802,16 +1822,16 @@
                     <li><link to="#accessible"/></li>
                     <li><link to="#accessError"/></li>
                 </ul>
-                
+
                 An attempt to access any other property or method will return
                 an error.
-                
+
                 The only possible action you can perform on an inaccessible
                 machine is to unregister it using the
                 <link to="IVirtualBox::unregisterMachine"/> call (or, to check
                 for the accessibility state once more by querying this
                 property).
-                
+
                 <note>
                     In the current implementation, once this property returns
                     <tt>true</tt>, the machine will never become inaccessible
@@ -1822,19 +1842,19 @@
                 </note>
             </desc>
         </attribute>
-        
+
         <attribute name="accessError" type="IVirtualBoxErrorInfo" readonly="yes">
             <desc>
                 Error information describing the reason of machine
                 inaccessibility.
-                
+
                 Reading this property is only valid after the last call to
                 <link to="#accessible"/> returned <tt>false</tt> (i.e. the
                 machine is currently unaccessible). Otherwise, a null
                 IVirtualBoxErrorInfo object will be returned.
             </desc>
         </attribute>
-        
+
         <attribute name="name" type="wstring">
             <desc>
                 Name of the virtual machine.
@@ -2134,7 +2154,7 @@
         <attribute name="clipboardMode" type="ClipboardMode">
             <desc>
                 Synchronization mode between the host OS clipboard
-                and the guest OS clipboard. 
+                and the guest OS clipboard.
             </desc>
         </attribute>
 
@@ -2553,14 +2573,14 @@
             <desc>
                 Notification when an error happens during the virtual
                 machine execution.
-                
+
                 There are three kinds of runtime errors:
                 <ul>
                     <li><i>fatal</i></li>
                     <li><i>non-fatal with retry</i></li>
                     <li><i>non-fatal warnings</i></li>
                 </ul>
-                
+
                 <b>Fatal</b> errors are indicated by the @a fatal parameter set
                 to <tt>true</tt>. In case of fatal errors, the virtual machine
                 execution is always paused before calling this notification, and
@@ -2568,7 +2588,7 @@
                 the virtual machine state using <link to="IConsole::saveState()"/>
                 or power it off using <link to="IConsole::powerDown()"/>.
                 Resuming the execution can lead to unpredictable results.
-                
+
                 <b>Non-fatal</b> errors and warnings are indicated by the
                 @a fatal parameter set to <tt>false</tt>. If the virtual machine
                 is in the Paused state by the time the error notification is
@@ -2591,7 +2611,7 @@
                 where this notification is called. Everything it is allowed to
                 do is to post a message to another thread that will then talk
                 to the user and take the corresponding action.
-                
+
                 Currently, the following error identificators are known:
                 <ul>
                 <li><tt>"HostMemoryLow"</tt></li>
@@ -3191,20 +3211,20 @@
         </method>
 
         <method name="registerCallback">
-            <param name="callback" type="IConsoleCallback" dir="in"/>
             <desc>
                 Registers a new console callback on this instance. The methods of the
                 callback interface will be called by this instance when the appropriate
                 event occurs.
             </desc>
+            <param name="callback" type="IConsoleCallback" dir="in"/>
         </method>
 
         <method name="unregisterCallback">
-            <param name="callback" type="IConsoleCallback" dir="in"/>
             <desc>
                 Unregisters the console callback previously registered using
                 <link to="#registerCallback"/>.
             </desc>
+            <param name="callback" type="IConsoleCallback" dir="in"/>
         </method>
 
     </interface>
@@ -4531,7 +4551,7 @@
             previous set of hard disks.
 
             <h3>Hard Disk Accessibility</h3>
-            
+
             The <link to="#accessible"/> attribute of the hard disk object
             defines the accessibility state of the respective hard disk storage
             (for example, the VDI file for IVirtualDiskImage objects). If the
@@ -4661,7 +4681,7 @@
                 may be slow and can block the calling thread for a long time (for
                 example, if the network resourse where the hard disk storage is
                 located is down).
-                
+
                 The following attributes of the hard disk object are considered
                 to be invalid when this attribute is <tt>false</tt>:
                 <ul>
@@ -5052,7 +5072,7 @@
         <desc>
 
             The IVMDKImage interface represents <link
-            to="IHardDisk">virtual hard disks</link> that use 
+            to="IHardDisk">virtual hard disks</link> that use
             WMware Virtual Machine Disk image files to store hard disk data.
 
             Hard disks using VMDK images can be either opened using
@@ -5234,7 +5254,7 @@
             of the DVD or CD disk.
 
             <h3>Image Accessibility</h3>
-            
+
             The <link to="#accessible"/> attribute of the image object
             defines the accessibility state of the image file. If the
             value of this attribute is <tt>false</tt> then some image
@@ -5390,7 +5410,7 @@
             of a floppy disk.
 
             <h3>Image Accessibility</h3>
-            
+
             The <link to="#accessible"/> attribute of the image object
             defines the accessibility state of the image file. If the
             value of this attribute is <tt>false</tt> then some image
@@ -5780,7 +5800,7 @@
                 wants to use the guest video memory, its <link to="#address"/>
                 implementation must return the same address as it gets in
                 the @a vram parameter of this method.
-                
+
                 For non linear modes (such as text and standard VGA), the
                 @vram parameter is NULL and must not be used. When it's not
                 NULL, it is recommended to use it to access the guest video
@@ -6223,7 +6243,7 @@
 
         <attribute name="VirtualTimeRate" type="unsigned long">
             <desc>
-                The rate at which the virtual time runs expressed as a percentage. 
+                The rate at which the virtual time runs expressed as a percentage.
                 The accepted range is 2% to 20000%.
             </desc>
         </attribute>

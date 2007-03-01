@@ -76,8 +76,8 @@
 /*
  *  DO NOT EDIT.
  *
- *  This IDL is automatically generated from the generic interface definition
- *  using XPCOM IDL (XPIDL) syntax.
+ *  This IDL file was automatically generated from VirtualBox.xidl,
+ *  VirtualBox's generic pseudo-IDL file with an XML syntax.
  */
 
 #include "nsISupports.idl"
@@ -99,7 +99,7 @@
 [ptr] native wcharPtr   (wchar);
 [ptr] native wstringPtr (wstring);
 
-</xsl:text>    
+</xsl:text>
     <xsl:apply-templates/>
 </xsl:template>
 
