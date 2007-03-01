@@ -429,14 +429,14 @@ gt_continue_guest:
     STAM_PROFILE_ADV_STOP edx
 %endif
 
-    ; restore guest state and start executing again.
-    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
-    jnz     gt_V86Return
-
     ; enable WP
     mov     eax, cr0
     or      eax, X86_CR0_WRITE_PROTECT
     mov     cr0, eax
+
+    ; restore guest state and start executing again.
+    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
+    jnz     gt_V86Return
 
     mov     ecx, [esp + CPUMCTXCORE.ecx]
     mov     edx, [esp + CPUMCTXCORE.edx]
@@ -510,11 +510,6 @@ gt_V86Return:
     mov     [esp + 0ch + ESPOFF], eax           ; cs
     mov     eax, [esp + CPUMCTXCORE.eflags]
     mov     [esp + 10h + ESPOFF], eax           ; eflags
-
-    ; enable WP
-    mov     eax, cr0
-    or      eax, X86_CR0_WRITE_PROTECT
-    mov     cr0, eax
 
     ; finally restore our scratch register eax
     mov     eax, [esp + CPUMCTXCORE.eax]
