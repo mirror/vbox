@@ -210,6 +210,15 @@ EMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame);
  */
 EMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC);
 
+/**
+ * Interpret IRET (currently only to V86 code)
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /**
  * Interpret DRx write
