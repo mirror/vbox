@@ -675,7 +675,7 @@ static BOOL IsUACEnabled()
 
         DWORD cbEnableLUA = sizeof (dwEnableLUA);
         rc = RegQueryValueExA (hKey, "EnableLUA", NULL, NULL,
-                               (LPBYTE) dwEnableLUA, &cbEnableLUA);
+                               (LPBYTE) &dwEnableLUA, &cbEnableLUA);
 
         RegCloseKey (hKey);
 
