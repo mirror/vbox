@@ -1326,7 +1326,8 @@ EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
  */
 static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    return EMInterpretIret(pVM, pRegFrame);
+    /* only allow direct calls to EMInterpretIret for now */
+    return VERR_EM_INTERPRETER;
 }
 
 /**
