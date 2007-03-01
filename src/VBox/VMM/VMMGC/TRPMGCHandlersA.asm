@@ -431,7 +431,7 @@ gt_continue_guest:
 
     ; restore guest state and start executing again.
     test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
-    jnz short gt_V86Return
+    jnz     gt_V86Return
 
     ; enable WP
     mov     eax, cr0
