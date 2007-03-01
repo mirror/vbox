@@ -102,7 +102,7 @@ RTGCPHYS phys_ram_size;
    causes some pages to fall outside the dirty map here. */
 uint32_t phys_ram_dirty_size;
 #endif /* VBOX */
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
 uint8_t *phys_ram_base;
 #endif
 uint8_t *phys_ram_dirty;
