@@ -224,7 +224,7 @@ PATMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTGCPTR pCachedData
  * @param   pBranchTarget       Original branch target
  * @param   pRelBranchPatch     Relative duplicated function address
  */
-int PATMAddBranchToLookupCache(PVM pVM, RTGCPTR pJumpTableGC, RTGCPTR pBranchTarget, RTGCUINTPTR pRelBranchPatch);
+PATMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTGCPTR pJumpTableGC, RTGCPTR pBranchTarget, RTGCUINTPTR pRelBranchPatch);
 
 
 /**
@@ -236,16 +236,6 @@ int PATMAddBranchToLookupCache(PVM pVM, RTGCPTR pJumpTableGC, RTGCPTR pBranchTar
  * @param   pCtxCore    The relevant core context.
  */
 PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
-
-/**
- * Checks if the illegal instruction was caused by a patched instruction
- *
- * @returns VBox status
- *
- * @param   pVM         The VM handle.
- * @param   pCtxCore    The relevant core context.
- */
-PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /**
  * Checks if the int 3 was caused by a patched instruction
@@ -312,6 +302,16 @@ PATMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
  *
  */
 PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR GCPtr, uint32_t cbWrite);
+
+/**
+ * Checks if the illegal instruction was caused by a patched instruction
+ *
+ * @returns VBox status
+ *
+ * @param   pVM         The VM handle.
+ * @param   pCtxCore    The relevant core context.
+ */
+PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /** @} */
 
