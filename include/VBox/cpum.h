@@ -779,6 +779,16 @@ CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
  */
 CPUMGCDECL(void) CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTGCPTR pHandler, uint32_t eflags, uint32_t selSS, RTGCPTR pEsp);
 
+/**
+ * Performs an iret to V86 code
+ * Assumes a trap stack frame has already been setup on the guest's stack!
+ *
+ * @param   pRegFrame   Original trap/interrupt context
+ *
+ * This function does not return!
+ */
+CPUMGCDECL(void) CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
+
 /** @} */
 #endif
 
