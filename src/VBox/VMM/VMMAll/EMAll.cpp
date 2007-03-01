@@ -1285,7 +1285,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
-    RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs;
+    RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs, uMask;
     int         rc;
 
     rc  = emRamRead(pVM, &eip,      (RTGCPTR)pIretStack    , 4);
@@ -1302,9 +1302,14 @@ EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
     rc |= emRamRead(pVM, &gs,       (RTGCPTR)(pIretStack + 32), 4);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 
-    pRegFrame->eip = eip;
+    pRegFrame->eip = eip & 0xffff;
     pRegFrame->cs  = cs;
     
+    uMask = X86_EFL_TF|X86_EFL_AC|X86_EFL_ID|X86_EFL_VM|X86_EFL_IF|X86_EFL_IOPL|X86_EFL_NT|X86_EFL_VIF|X86_EFL_VIP;
+
+    eflags =    (pRegFrame->eflags.u32 & ~uMask)
+            |   (eflags & uMask);
+
 #ifndef IN_RING0
     CPUMRawSetEFlags(pVM, pRegFrame, eflags);
 #endif
