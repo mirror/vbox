@@ -36,7 +36,7 @@
 #endif
 
 
-#define PATM_SSM_VERSION                    51
+#define PATM_SSM_VERSION                    52
 
 /* Enable for call patching. */
 #define PATM_ENABLE_CALL
@@ -474,6 +474,8 @@ typedef struct PATM
 
     STAMCOUNTER             StatSysEnter;
     STAMCOUNTER             StatSysExit;
+    STAMCOUNTER             StatEmulIret;
+    STAMCOUNTER             StatEmulIretFailed;
 
     STAMCOUNTER             StatInstrDirty;
     STAMCOUNTER             StatInstrDirtyGood;

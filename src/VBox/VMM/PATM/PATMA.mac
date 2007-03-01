@@ -82,15 +82,16 @@
 %define PATM_ACTION_LOOKUP_ADDRESS              1
 %define PATM_ACTION_DISPATCH_PENDING_IRQ        2
 %define PATM_ACTION_PENDING_IRQ_AFTER_IRET      3
-%define PATM_ACTION_LOG_IF1                     4
-%define PATM_ACTION_LOG_CLI                     5
-%define PATM_ACTION_LOG_STI                     6
-%define PATM_ACTION_LOG_POPF_IF1                7
-%define PATM_ACTION_LOG_POPF_IF0                8
-%define PATM_ACTION_LOG_PUSHF                   9
-%define PATM_ACTION_LOG_IRET                    10
-%define PATM_ACTION_LOG_RET                     11
-%define PATM_ACTION_LOG_CALL                    12
+%define PATM_ACTION_DO_V86_IRET                 4
+%define PATM_ACTION_LOG_IF1                     5
+%define PATM_ACTION_LOG_CLI                     6
+%define PATM_ACTION_LOG_STI                     7
+%define PATM_ACTION_LOG_POPF_IF1                8
+%define PATM_ACTION_LOG_POPF_IF0                9
+%define PATM_ACTION_LOG_PUSHF                   10
+%define PATM_ACTION_LOG_IRET                    11
+%define PATM_ACTION_LOG_RET                     12
+%define PATM_ACTION_LOG_CALL                    13
 
 ;/* Magic dword found in ecx for patm pending actions. */
 %define PATM_ACTION_MAGIC          0xABCD4321

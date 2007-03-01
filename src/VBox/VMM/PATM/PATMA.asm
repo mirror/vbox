@@ -1127,9 +1127,10 @@ PATMIretStart:
     test    dword [esp], X86_EFL_NT
     jnz     iret_fault1
 
-    ; we can't do an iret to v86 code, as we run with CPL=1. The iret will attempt a protected mode iret and will (most likely) fault.
+    ; we can't do an iret to v86 code, as we run with CPL=1. The iret would attempt a protected mode iret and (most likely) fault.
     test    dword [esp+12], X86_EFL_VM
     jnz     iret_fault1
+;;    jnz     iret_return_to_v86
 
     ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ;;@todo: not correct for iret back to ring 2!!!!!
@@ -1179,10 +1180,11 @@ iret_notring0:
 
     ; Set IF again; below we make sure this won't cause problems.
     or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
-    popfd
 
     ; make sure iret is executed fully (including the iret below; cli ... iret can otherwise be interrupted)
     mov     dword [ss:PATM_INHIBITIRQADDR], PATM_CURINSTRADDR
+
+    popfd
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
     iretd
     PATM_INT3
@@ -1236,6 +1238,21 @@ iret_clearIF:
                                                 ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
     iretd
 
+iret_return_to_v86:   
+    ; Go to our hypervisor trap handler to perform the iret to v86 code
+    mov     dword [ss:PATM_TEMP_EAX], eax
+    mov     dword [ss:PATM_TEMP_ECX], ecx
+    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX
+    mov     eax, PATM_ACTION_DO_V86_IRET
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+
+    popfd
+
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    ; does not return
+
+
 iret_fault3:
     pop     eax
     popfd
@@ -1260,9 +1277,9 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      PATMIretEnd- PATMIretStart
 %ifdef PATM_LOG_PATCHIRET
-    DD      22
+    DD      26
 %else
-    DD      21
+    DD      25
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
@@ -1309,6 +1326,14 @@ GLOBALNAME PATMIretRecord
     DD      PATM_VMFLAGS
     DD      0
     DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_TEMP_EAX
+    DD      0
+    DD      PATM_TEMP_ECX
+    DD      0
+    DD      PATM_TEMP_RESTORE_FLAGS
+    DD      0
+    DD      PATM_PENDINGACTION
     DD      0
     DD      0ffffffffh
 
