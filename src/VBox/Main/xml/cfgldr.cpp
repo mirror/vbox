@@ -1664,7 +1664,7 @@ int CfgNode::setValueString (const char *pszName, PRTUTF16 pwszValue)
                 if (poldtext)
                 {
                     pdomnode->replaceChild (val, poldtext);
-                    delete poldtext;
+                    poldtext->release();
                 }
                 else
                 {
@@ -1675,6 +1675,7 @@ int CfgNode::setValueString (const char *pszName, PRTUTF16 pwszValue)
             catch (...)
             {
                 rc = VERR_CFG_NO_VALUE;
+                val->release();
             }
         }
     }

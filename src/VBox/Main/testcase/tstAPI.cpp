@@ -83,7 +83,8 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
     printf("Changing memory size to %d...\n", memorySizeBig);
     CHECK_RC (machine->COMSETTER(MemorySize) (memorySizeBig));
 
-    if (SUCCEEDED (rc)) {
+    if (SUCCEEDED (rc))
+    {
         printf ("Are any settings modified now?...\n");
         CHECK_RC_RET (machine->COMGETTER(SettingsModified) (&modified));
         printf ("%s\n", modified ? "yes" : "no");
@@ -95,7 +96,8 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
         printf ("Memory size: %d\n", memorySizeGot);
         ASSERT_RET (memorySizeGot == memorySizeBig, 0);
 
-        if (readonlyMachine) {
+        if (readonlyMachine)
+        {
             printf ("Getting memory size of the counterpart readonly machine...\n");
             ULONG memorySizeRO;
             readonlyMachine->COMGETTER(MemorySize) (&memorySizeRO);
@@ -120,9 +122,19 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
         CHECK_RC_RET (machine->COMSETTER(MemorySize) (memorySize));
     }
 
+    Bstr desc;
+    printf ("Getting description...\n");
+    CHECK_ERROR_RET (machine, COMGETTER(Description) (desc.asOutParam()), rc);
+    printf ("Description is: \"%ls\"\n", desc.raw());
+
+    desc = L"This is an exemplary description (changed).";
+    printf ("Setting description to \"%ls\"...\n", desc.raw());
+    CHECK_ERROR_RET (machine, COMSETTER(Description) (desc), rc);
+
     printf ("Saving machine settings...\n");
     CHECK_RC (machine->SaveSettings());
-    if (SUCCEEDED (rc)) {
+    if (SUCCEEDED (rc))
+    {
         printf ("Are any settings modified after saving?...\n");
         CHECK_RC_RET (machine->COMGETTER(SettingsModified) (&modified));
         printf ("%s\n", modified ? "yes" : "no");
@@ -471,7 +483,6 @@ int main(int argc, char *argv[])
 #if 1
     // create a new machine (w/o registering it)
     ///////////////////////////////////////////////////////////////////////////
-    ComPtr <IMachine> m;
     do
     {
         ComPtr <IMachine> machine;
@@ -505,6 +516,10 @@ int main(int argc, char *argv[])
         printf ("Setting memory size to 111...\n");
         CHECK_ERROR_BREAK (machine, COMSETTER(MemorySize) (111));
 
+        Bstr desc = L"This is an exemplary description.";
+        printf ("Setting description to \"%ls\"...\n", desc.raw());
+        CHECK_ERROR_BREAK (machine, COMSETTER(Description) (desc));
+
         ComPtr <IGuestOSType> guestOSType;
         Bstr type = L"os2warp45";
         CHECK_ERROR_BREAK (virtualBox, FindGuestOSType (type, guestOSType.asOutParam()));
@@ -514,7 +529,6 @@ int main(int argc, char *argv[])
 
         printf ("Accessing the newly created machine:\n");
         readAndChangeMachineSettings (machine);
-m = machine;
     }
     while (FALSE);
     printf ("\n");
