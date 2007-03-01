@@ -585,6 +585,26 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
                 return VINF_PATM_PENDING_IRQ_AFTER_IRET;
 
+            case PATM_ACTION_DO_V86_IRET:
+            {
+                Log(("PATMGC: Do iret to V86 code; eip=%VGv\n", pRegFrame->eip));
+                Assert(pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags == (PATM_RESTORE_EAX|PATM_RESTORE_ECX));
+                Assert(pVM->patm.s.CTXSUFF(pGCState)->fPIF == 0);
+
+                pRegFrame->eax = pVM->patm.s.CTXSUFF(pGCState)->Restore.uEAX;
+                pRegFrame->ecx = pVM->patm.s.CTXSUFF(pGCState)->Restore.uECX;
+                pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags = 0;
+
+                /* We are no longer executing PATM code; set PIF again. */
+                pVM->patm.s.CTXSUFF(pGCState)->fPIF = 1;
+                rc = EMInterpretIret(pVM, pRegFrame);
+                if (VBOX_SUCCESS(rc))
+                    STAM_COUNTER_INC(&pVM->patm.s.StatEmulIret); 
+                else 
+                    STAM_COUNTER_INC(&pVM->patm.s.StatEmulIretFailed); 
+                return rc;
+            }
+
 #ifdef DEBUG
             case PATM_ACTION_LOG_CLI:
                 Log(("PATMGC: CLI at %VGv (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
