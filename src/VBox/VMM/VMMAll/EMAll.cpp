@@ -1271,6 +1271,65 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
 
 /**
+ * IRET Emulation.
+ */
+
+/**
+ * Interpret IRET (currently only to V86 code)
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
+    RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs;
+    int         rc;
+
+    rc  = emRamRead(pVM, &eip,      (RTGCPTR)pIretStack    , 4);
+    rc |= emRamRead(pVM, &cs,       (RTGCPTR)(pIretStack + 4), 4);
+    rc |= emRamRead(pVM, &eflags,   (RTGCPTR)(pIretStack + 8), 4);
+    AssertRCReturn(rc, VERR_EM_INTERPRETER);
+    AssertReturn(eflags & X86_EFL_VM, VERR_EM_INTERPRETER);
+
+    rc |= emRamRead(pVM, &esp,      (RTGCPTR)(pIretStack + 12), 4);
+    rc |= emRamRead(pVM, &ss,       (RTGCPTR)(pIretStack + 16), 4);
+    rc |= emRamRead(pVM, &es,       (RTGCPTR)(pIretStack + 20), 4);
+    rc |= emRamRead(pVM, &ds,       (RTGCPTR)(pIretStack + 24), 4);
+    rc |= emRamRead(pVM, &fs,       (RTGCPTR)(pIretStack + 28), 4);
+    rc |= emRamRead(pVM, &gs,       (RTGCPTR)(pIretStack + 32), 4);
+    AssertRCReturn(rc, VERR_EM_INTERPRETER);
+
+    pRegFrame->eip = eip;
+    pRegFrame->cs  = cs;
+    
+#ifndef IN_RING0
+    CPUMRawSetEFlags(pVM, pRegFrame, eflags);
+#endif
+    Assert((pRegFrame->eflags.u32 & (X86_EFL_IF|X86_EFL_IOPL)) == X86_EFL_IF);
+
+    pRegFrame->esp = ss;
+    pRegFrame->ss  = ss;
+    pRegFrame->ds  = ds;
+    pRegFrame->es  = es;
+    pRegFrame->fs  = fs;
+    pRegFrame->gs  = gs;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * IRET Emulation.
+ */
+static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretIret(pVM, pRegFrame);
+}
+
+/**
  * INVLPG Emulation.
  */
 
@@ -1706,14 +1765,6 @@ static int emInterpretHlt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     return VINF_EM_HALT;
 }
 
-
-/**
- * IRET Emulation.
- */
-static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    return VERR_EM_INTERPRETER;
-}
 
 #ifdef IN_GC
 /**
