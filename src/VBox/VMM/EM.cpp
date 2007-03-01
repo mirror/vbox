@@ -715,7 +715,7 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pVM->em.s.pCtx;
     if (pCtx->eflags.Bits.u1VM)
-        Log(("EMV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
+        Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF));
     else if ((pCtx->ss & X86_SEL_RPL) == 0)
         Log(("EMR0: %08X ESP=%08X IF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (pCtx->ss & X86_SEL_RPL)));
     else if ((pCtx->ss & X86_SEL_RPL) == 3)
