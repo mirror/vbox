@@ -1908,8 +1908,6 @@ REMR3DECL(int) REMR3State(PVM pVM)
         AssertRC(rc);
         Log2(("REMR3State: trap=%02x errcd=%VGv cr2=%VGv nexteip=%VGv%s\n", pVM->rem.s.Env.exception_index, pVM->rem.s.Env.error_code,
               pVM->rem.s.Env.cr[2], pVM->rem.s.Env.exception_next_eip, pVM->rem.s.Env.exception_is_int ? " software" : ""));
-//if (pVM->rem.s.Env.eip == 0x40005a2f)
-//    pVM->rem.s.Env.state |= CPU_EMULATE_SINGLE_STEP | CPU_RAW_MODE_DISABLED | CPU_RAWR0_MODE_DISABLED;
     }
 
     /*
