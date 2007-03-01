@@ -595,11 +595,14 @@ PATMDECL(int) PATMHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 pRegFrame->ecx = pVM->patm.s.CTXSUFF(pGCState)->Restore.uECX;
                 pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags = 0;
 
-                /* We are no longer executing PATM code; set PIF again. */
-                pVM->patm.s.CTXSUFF(pGCState)->fPIF = 1;
                 rc = EMInterpretIret(pVM, pRegFrame);
                 if (VBOX_SUCCESS(rc))
+                {
                     STAM_COUNTER_INC(&pVM->patm.s.StatEmulIret); 
+
+                    /* We are no longer executing PATM code; set PIF again. */
+                    pVM->patm.s.CTXSUFF(pGCState)->fPIF = 1;
+                }
                 else 
                     STAM_COUNTER_INC(&pVM->patm.s.StatEmulIretFailed); 
                 return rc;
