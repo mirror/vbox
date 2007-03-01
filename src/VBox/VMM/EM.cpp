@@ -2518,7 +2518,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          */
         PPATMGCSTATE pGCState = PATMR3QueryGCStateHC(pVM);
         if (pCtx->eflags.Bits.u1VM)
-            Log(("RV86: %08X IF=%d VMFlags=%x\n", pCtx->eip, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags));
+            Log(("RV86: %04X:%08X IF=%d VMFlags=%x\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags));
         else if ((pCtx->ss & X86_SEL_RPL) == 1)
         {
             bool fCSAMScanned = CSAMIsPageScanned(pVM, (RTGCPTR)pCtx->eip);
