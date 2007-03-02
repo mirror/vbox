@@ -410,7 +410,7 @@ int cpu_exec(CPUState *env1)
                     {
                         if(env->eflags & VM_MASK)
                         {
-                            Log(("EMV86: %08X IF=%d TF=%d CPL=%d flags=%08X CR0=%08X\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, flags, env->cr[0]));
+                            Log(("EMV86: %04X:%04X IF=%d TF=%d CPL=%d flags=%08X CR0=%08X\n", env->segs[R_CS].selector, env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, flags, env->cr[0]));
                         }
                         else
                         {
