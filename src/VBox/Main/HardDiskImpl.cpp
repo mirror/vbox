@@ -645,9 +645,9 @@ void HardDisk::setBusy()
 void HardDisk::clearBusy()
 {
     AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    AssertReturnVoid (isReady());
 
-    AssertReturn (mBusy == true, (void) 0);
+    AssertMsgReturnVoid (mBusy == true, ("%ls", toString().raw()));
 
     mBusy = false;
 }
@@ -660,9 +660,9 @@ void HardDisk::clearBusy()
 void HardDisk::addReader()
 {
     AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    AssertReturnVoid (isReady());
 
-    AssertReturn (mBusy == false, (void) 0);
+    AssertMsgReturnVoid (mBusy == false, ("%ls", toString().raw()));
 
     ++ mReaders;
 }
@@ -673,10 +673,10 @@ void HardDisk::addReader()
 void HardDisk::releaseReader()
 {
     AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    AssertReturnVoid (isReady());
 
-    AssertReturn (mBusy == false, (void) 0);
-    AssertReturn (mReaders > 0, (void) 0);
+    AssertMsgReturnVoid (mBusy == false, ("%ls", toString().raw()));
+    AssertMsgReturnVoid (mReaders > 0, ("%ls", toString().raw()));
 
     -- mReaders;
 }
@@ -687,7 +687,7 @@ void HardDisk::releaseReader()
 void HardDisk::addReaderOnAncestors()
 {
     AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    AssertReturnVoid (isReady());
 
     if (mParent)
     {
@@ -703,7 +703,7 @@ void HardDisk::addReaderOnAncestors()
 void HardDisk::releaseReaderOnAncestors()
 {
     AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    AssertReturnVoid (isReady());
 
     if (mParent)
     {
