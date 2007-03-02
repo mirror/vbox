@@ -1512,7 +1512,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
              *  until rollback()/commit() is done
              */
             hd->addReader();
-            // LogTraceMsg (("A: %ls proteced\n", hd->toString().raw()));
+            Log3 (("A: %ls proteced\n", hd->toString().raw()));
             dirty = true;
             break;
         }
@@ -1528,8 +1528,8 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
             {
                 /* attach directly */
                 hd->setMachineId (mData->mUuid);
-                // LogTraceMsg (("A: %ls associated with %Vuuid\n",
-                //               hd->toString().raw(), mData->mUuid.raw()));
+                Log3 (("A: %ls associated with %Vuuid\n",
+                       hd->toString().raw(), mData->mUuid.raw()));
                 dirty = true;
             }
             else
@@ -1564,7 +1564,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
                          *  dirty = false to indicate we didn't set machineId
                          *  and prevent it from being reset in DetachHardDisk()
                          */
-                        // LogTraceMsg (("A: %ls found in old\n", hd->toString().raw()));
+                        Log3 (("A: %ls found in old\n", hd->toString().raw()));
                     }
                     else
                     {
@@ -1590,7 +1590,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
                      *  until rollback()/commit() is done
                      */
                     hd->addReader();
-                    // LogTraceMsg (("A: %ls proteced\n", hd->toString().raw()));
+                    Log3 (("A: %ls proteced\n", hd->toString().raw()));
                     dirty = true;
                 }
             }
@@ -1605,7 +1605,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 
     mHDData.backup();
     mHDData->mHDAttachments.push_back (attachment);
-    // LogTraceMsg (("A: %ls attached\n", hd->toString().raw()));
+    Log3 (("A: %ls attached\n", hd->toString().raw()));
 
     /* note: diff images are actually created only in commit() */
 
@@ -1681,14 +1681,14 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
                     {
                         /* decrease readers increased in AttachHardDisk() */
                         hd->releaseReader();
-                        // LogTraceMsg (("D: %ls released\n", hd->toString().raw()));
+                        Log3 (("D: %ls released\n", hd->toString().raw()));
                         break;
                     }
                     case HardDiskType_WritethroughHardDisk:
                     {
                         /* deassociate from this machine */
                         hd->setMachineId (Guid());
-                        // LogTraceMsg (("D: %ls deassociated\n", hd->toString().raw()));
+                        Log3 (("D: %ls deassociated\n", hd->toString().raw()));
                         break;
                     }
                     case HardDiskType_NormalHardDisk:
@@ -1697,13 +1697,13 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
                         {
                             /* deassociate from this machine */
                             hd->setMachineId (Guid());
-                            // LogTraceMsg (("D: %ls deassociated\n", hd->toString().raw()));
+                            Log3 (("D: %ls deassociated\n", hd->toString().raw()));
                         }
                         else
                         {
                             /* decrease readers increased in AttachHardDisk() */
                             hd->releaseReader();
-                            // LogTraceMsg (("%ls released\n", hd->toString().raw()));
+                            Log3 (("%ls released\n", hd->toString().raw()));
                         }
 
                         break;
@@ -1718,7 +1718,7 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
              *  still refers to the original and is not valid for a copy
              */
             mHDData->mHDAttachments.remove (hda);
-            // LogTraceMsg (("D: %ls detached\n", hd->toString().raw()));
+            Log3 (("D: %ls detached\n", hd->toString().raw()));
 
             /*
              *  note: Non-dirty hard disks are actually deassociated
@@ -6026,7 +6026,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                 {
                     /* remove from there */
                     backedUp.erase (oldIt);
-                    // LogTraceMsg (("FC: %ls found in old\n", hd->toString().raw()));
+                    Log3 (("FC: %ls found in old\n", hd->toString().raw()));
                 }
             }
             else
@@ -6042,7 +6042,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                     {
                         /* decrease readers increased in AttachHardDisk() */
                         hd->releaseReader();
-                        // LogTraceMsg (("FC: %ls released\n", hd->toString().raw()));
+                        Log3 (("FC: %ls released\n", hd->toString().raw()));
                         /* indicate we need a diff (indirect attachment) */
                         needDiff = true;
                         break;
@@ -6051,7 +6051,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                     {
                         /* reset the dirty flag */
                         hda->updateHardDisk (hd, false /* aDirty */);
-                        // LogTraceMsg (("FC: %ls updated\n", hd->toString().raw()));
+                        Log3 (("FC: %ls updated\n", hd->toString().raw()));
                         break;
                     }
                     case HardDiskType_NormalHardDisk:
@@ -6060,13 +6060,13 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                         {
                             /* reset the dirty flag */
                             hda->updateHardDisk (hd, false /* aDirty */);
-                            // LogTraceMsg (("FC: %ls updated\n", hd->toString().raw()));
+                            Log3 (("FC: %ls updated\n", hd->toString().raw()));
                         }
                         else
                         {
                             /* decrease readers increased in AttachHardDisk() */
                             hd->releaseReader();
-                            // LogTraceMsg (("FC: %ls released\n", hd->toString().raw()));
+                            Log3 (("FC: %ls released\n", hd->toString().raw()));
                             /* indicate we need a diff (indirect attachment) */
                             needDiff = true;
                             /* search for the most recent base among snapshots */
@@ -6148,8 +6148,8 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                     /* found either one or another, reuse the diff */
                     hda->updateHardDisk ((*foundIt)->hardDisk(),
                                          false /* aDirty */);
-                    // LogTraceMsg (("FC: %ls reused as %ls\n", hd->toString().raw(),
-                    //               (*foundIt)->hardDisk()->toString().raw()));
+                    Log3 (("FC: %ls reused as %ls\n", hd->toString().raw(),
+                           (*foundIt)->hardDisk()->toString().raw()));
                     /* remove from there */
                     backedUp.erase (foundIt);
                 }
@@ -6209,8 +6209,8 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                         {
                             /* the most recent diff has been found, use as a base */
                             baseHd = (*foundIt)->hardDisk();
-                            // LogTraceMsg (("FC: %ls: recent found %ls\n",
-                            //               hd->toString().raw(), baseHd->toString().raw()));
+                            Log3 (("FC: %ls: recent found %ls\n",
+                                   hd->toString().raw(), baseHd->toString().raw()));
                             break;
                         }
 
@@ -6234,8 +6234,8 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                 /* update the attachment and reset the dirty flag */
                 hda->updateHardDisk (ComObjPtr <HardDisk> (vdi),
                                      false /* aDirty */);
-                // LogTraceMsg (("FC: %ls: diff created %ls\n",
-                //               baseHd->toString().raw(), vdi->toString().raw()));
+                Log3 (("FC: %ls: diff created %ls\n",
+                       baseHd->toString().raw(), vdi->toString().raw()));
             }
         }
 
@@ -6256,7 +6256,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
             /* the best is to rollback the changes... */
             mHDData.rollback();
             mHDData->mHDAttachmentsChanged = false;
-            // LogTraceMsg (("FC: ROLLED BACK\n"));
+            Log3 (("FC: ROLLED BACK\n"));
             return rc;
         }
 
@@ -6277,7 +6277,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                  *  unregisterDiffHardDisk() is supposed to delete and uninit
                  *  the differencing hard disk
                  */
-                // LogTraceMsg (("FC: %ls diff deleted\n", hd->toString().raw()));
+                Log3 (("FC: %ls diff deleted\n", hd->toString().raw()));
                 rc = mParent->unregisterDiffHardDisk (hd);
                 /*
                  *  too bad if we fail here, but nothing to do, just continue
@@ -6287,7 +6287,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
             else
             {
                 /* deassociate from this machine */
-                // LogTraceMsg (("FC: %ls deassociated\n", hd->toString().raw()));
+                Log3 (("FC: %ls deassociated\n", hd->toString().raw()));
                 hd->setMachineId (Guid());
             }
         }
@@ -6295,7 +6295,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
         /* commit all the changes */
         mHDData->mHDAttachmentsChanged = mHDData.hasActualChanges();
         mHDData.commit();
-        // LogTraceMsg (("FC: COMMITTED\n"));
+        Log3 (("FC: COMMITTED\n"));
 
         return rc;
     }
@@ -6322,14 +6322,14 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                 {
                     /* decrease readers increased in AttachHardDisk() */
                     hd->releaseReader();
-                    // LogTraceMsg (("FR: %ls released\n", hd->toString().raw()));
+                    Log3 (("FR: %ls released\n", hd->toString().raw()));
                     break;
                 }
                 case HardDiskType_WritethroughHardDisk:
                 {
                     /* deassociate from this machine */
                     hd->setMachineId (Guid());
-                    // LogTraceMsg (("FR: %ls deassociated\n", hd->toString().raw()));
+                    Log3 (("FR: %ls deassociated\n", hd->toString().raw()));
                     break;
                 }
                 case HardDiskType_NormalHardDisk:
@@ -6338,13 +6338,13 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                     {
                         /* deassociate from this machine */
                         hd->setMachineId (Guid());
-                        // LogTraceMsg (("FR: %ls deassociated\n", hd->toString().raw()));
+                        Log3 (("FR: %ls deassociated\n", hd->toString().raw()));
                     }
                     else
                     {
                         /* decrease readers increased in AttachHardDisk() */
                         hd->releaseReader();
-                        // LogTraceMsg (("FR: %ls released\n", hd->toString().raw()));
+                        Log3 (("FR: %ls released\n", hd->toString().raw()));
                     }
 
                     break;
@@ -6355,7 +6355,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
 
     /* rollback all the changes */
     mHDData.rollback();
-    // LogTraceMsg (("FR: ROLLED BACK\n"));
+    Log3 (("FR: ROLLED BACK\n"));
 
     return S_OK;
 }
@@ -8777,6 +8777,9 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                         hd->clearBusyWithChildren();
 
                     CheckComRCBreakRC (rc);
+
+                    /* reset the snapshot Id  */
+                    hd->setSnapshotId (Guid());
 
                     /* replace the child image in the appropriate place */
                     childHda->updateHardDisk (hd, FALSE /* aDirty */);
