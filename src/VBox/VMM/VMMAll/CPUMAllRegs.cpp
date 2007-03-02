@@ -1291,15 +1291,18 @@ CPUMDECL(int) CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc)
          * PATM is taking care of the IOPL and IF flags for us.
          */
         PATMRawLeave(pVM, pCtxCore, rc);
-        /** @todo See what happens if we remove this. */
-        if ((pCtxCore->ds & X86_SEL_RPL) == 1)
-            pCtxCore->ds &= ~X86_SEL_RPL;
-        if ((pCtxCore->es & X86_SEL_RPL) == 1)
-            pCtxCore->es &= ~X86_SEL_RPL;
-        if ((pCtxCore->fs & X86_SEL_RPL) == 1)
-            pCtxCore->fs &= ~X86_SEL_RPL;
-        if ((pCtxCore->gs & X86_SEL_RPL) == 1)
-            pCtxCore->gs &= ~X86_SEL_RPL;
+        if (!pCtxCore->eflags.Bits.u1VM)
+        {
+            /** @todo See what happens if we remove this. */
+            if ((pCtxCore->ds & X86_SEL_RPL) == 1)
+                pCtxCore->ds &= ~X86_SEL_RPL;
+            if ((pCtxCore->es & X86_SEL_RPL) == 1)
+                pCtxCore->es &= ~X86_SEL_RPL;
+            if ((pCtxCore->fs & X86_SEL_RPL) == 1)
+                pCtxCore->fs &= ~X86_SEL_RPL;
+            if ((pCtxCore->gs & X86_SEL_RPL) == 1)
+                pCtxCore->gs &= ~X86_SEL_RPL;
+        }
     }
 
     return rc;
