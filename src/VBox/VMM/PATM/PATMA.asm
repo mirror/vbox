@@ -1406,7 +1406,7 @@ PATMCpuidStart:
     pushf
 
     cmp     eax, PATM_CPUID_STD_MAX
-    jb      short cpuid_std
+    jb      cpuid_std
     cmp     eax, 0x80000000
     jb      short cpuid_def
     cmp     eax, PATM_CPUID_EXT_MAX
