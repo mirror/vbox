@@ -563,8 +563,9 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
         }
 
         /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
+        uint32_t cpl = (pRegFrame->eflags.Bits.u1VM) ? 3 : (pRegFrame->ss & X86_SEL_RPL);
         rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrDst, cTransfers * cbSize,
-                             X86_PTE_RW | (((pRegFrame->ss & X86_SEL_RPL) == 3) ? X86_PTE_US : 0));
+                             X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
         if (rc != VINF_SUCCESS)
         {
             Log(("INS will generate a trap -> fallback, rc=%d\n", rc));
@@ -667,8 +668,9 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
         }
 
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
+        uint32_t cpl = (pRegFrame->eflags.Bits.u1VM) ? 3 : (pRegFrame->ss & X86_SEL_RPL);
         rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbSize,
-                             ((pRegFrame->ss & X86_SEL_RPL) == 3) ? X86_PTE_US : 0);
+                             (cpl == 3) ? X86_PTE_US : 0);
         if (rc != VINF_SUCCESS)
         {
             Log(("OUTS will generate a trap -> fallback, rc=%d\n", rc));
