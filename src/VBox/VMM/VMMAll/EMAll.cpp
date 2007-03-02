@@ -1801,9 +1801,9 @@ static int emInterpretMonitor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         return VERR_EM_INTERPRETER; /* illegal value. */
 
 #ifdef IN_GC
-    if ((pRegFrame->ss & X86_SEL_RPL) != 1)
+    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 1)
 #else
-    if ((pRegFrame->ss & X86_SEL_RPL) != 0)
+    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0)
 #endif
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -1820,9 +1820,9 @@ static int emInterpretMWait(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
         return VERR_EM_INTERPRETER; /* illegal value. */
 
 #ifdef IN_GC
-    if ((pRegFrame->ss & X86_SEL_RPL) != 1)
+    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 1)
 #else
-    if ((pRegFrame->ss & X86_SEL_RPL) != 0)
+    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0)
 #endif
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -1845,9 +1845,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
      * And no complicated prefixes.
      */
 #ifdef IN_GC
-    if ((pRegFrame->ss & X86_SEL_RPL) != 1)
+    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 1)
 #else
-    if ((pRegFrame->ss & X86_SEL_RPL) != 0)
+    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0)
 #endif
     {
         Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
