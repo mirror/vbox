@@ -310,7 +310,8 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     /*
      * Both PATM are using INT3s, let them have a go first.
      */
-    if ((pRegFrame->ss & X86_SEL_RPL) == 1)
+    if (    (pRegFrame->ss & X86_SEL_RPL) == 1 
+        &&  !pRegFrame->eflags.Bits.u1VM)
     {
         rc = PATMHandleInt3PatchTrap(pVM, pRegFrame);
         if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_PATCH_INT3 || rc == VINF_PATM_DUPLICATE_FUNCTION)
@@ -340,6 +341,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     LogFlow(("TRPMGCTrap06Handler %VGv eflags=%x\n", pRegFrame->eip, pRegFrame->eflags.u32));
 
     if (    (pRegFrame->ss & X86_SEL_RPL) == 1
+        &&  !pRegFrame->eflags.Bits.u1VM
         &&  PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip))
     {
         /*
