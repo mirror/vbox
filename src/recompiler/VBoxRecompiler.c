@@ -2585,12 +2585,12 @@ void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
         uint32_t off = addr - pVM->rem.s.aPhysReg[i].GCPhys;
         if (off < pVM->rem.s.aPhysReg[i].cb)
         {
-            Log(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pVM->rem.s.aPhysReg[i].HCVirt + off));
+            Log2(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pVM->rem.s.aPhysReg[i].HCVirt + off));
             return (void *)(pVM->rem.s.aPhysReg[i].HCVirt + off);
         }
     }
     AssertMsg(addr < phys_ram_size, ("remR3GCPhys2HCVirt: unknown physical address %x\n", addr));
-    Log(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK)));
+    Log2(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK)));
     return (void *)(pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #else
     return phys_ram_base + addr;
@@ -2618,7 +2618,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
     if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk1 
         &&  off < PGM_DYNAMIC_CHUNK_SIZE)
     {
-        Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off));
+        Log2(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off));
         return pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off;
     }
     
@@ -2626,7 +2626,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
     if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk2 
         &&  off < PGM_DYNAMIC_CHUNK_SIZE)
     {
-        Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys2 + off));
+        Log2(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys2 + off));
         return pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys2 + off;
     }
 
@@ -2636,7 +2636,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
         uint32_t off = HCVirt - pVM->rem.s.aPhysReg[i].HCVirt;
         if (off < pVM->rem.s.aPhysReg[i].cb)
         {
-            Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.aPhysReg[i].GCPhys + off));
+            Log2(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.aPhysReg[i].GCPhys + off));
             return pVM->rem.s.aPhysReg[i].GCPhys + off;
         }
     }
