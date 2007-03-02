@@ -51,14 +51,14 @@
 static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction);
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 static void disasmAddString(char *psz, const char *pszString);
-static void disasmAddStringF(char *psz, const char *pszFormat, ...);
+static void disasmAddStringF(char *psz, uint32_t cbString, const char *pszFormat, ...);
 static void disasmAddChar(char *psz, char ch);
 #else
 # define disasmAddString(psz, pszString)        do {} while (0)
 # ifdef _MSC_VER
 #  define disasmAddStringF __noop
 # else
-#  define disasmAddStringF(psz, pszFormat...)   do {} while (0)  /* Arg wanna get rid of that warning */
+#  define disasmAddStringF(psz, cbString, pszFormat...)   do {} while (0)  /* Arg wanna get rid of that warning */
 # endif
 # define disasmAddChar(psz, ch)                 do {} while (0)
 #endif
@@ -989,14 +989,14 @@ int UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUS
          }
 
          if(base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
-             disasmAddStringF(szTemp, "%s%s", szSIBIndexReg[index], szSIBScale[scale]);
+             disasmAddStringF(szTemp, sizeof(szTemp), "%s%s", szSIBIndexReg[index], szSIBScale[scale]);
          else
-             disasmAddStringF(szTemp, "%s+%s%s", szSIBBaseReg[base], szSIBIndexReg[index], szSIBScale[scale]);
+             disasmAddStringF(szTemp, sizeof(szTemp), "%s+%s%s", szSIBBaseReg[base], szSIBIndexReg[index], szSIBScale[scale]);
     }
     else
     {
          if(base != 5 || MODRM_MOD(pCpu->ModRM) != 0)
-             disasmAddStringF(szTemp, "%s", szSIBBaseReg[base]);
+             disasmAddStringF(szTemp, sizeof(szTemp), "%s", szSIBBaseReg[base]);
     }
 
     if(base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
@@ -1074,19 +1074,19 @@ int UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
             switch(vtype)
             {
             case OP_PARM_C: //control register
-                disasmAddStringF(pParam->szParam, "CR%d", reg);
+                disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "CR%d", reg);
                 pParam->flags |= USE_REG_CR;
                 pParam->base.reg_ctrl = reg;
                 return 0;
 
             case OP_PARM_D: //debug register
-                disasmAddStringF(pParam->szParam, "DR%d", reg);
+                disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "DR%d", reg);
                 pParam->flags |= USE_REG_DBG;
                 pParam->base.reg_dbg = reg;
                 return 0;
 
             case OP_PARM_P: //MMX register
-                disasmAddStringF(pParam->szParam, "MM%d", reg);
+                disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "MM%d", reg);
                 pParam->flags |= USE_REG_MMX;
                 pParam->base.reg_mmx = reg;
                 return 0;
@@ -1097,13 +1097,13 @@ int UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
                 return 0;
 
             case OP_PARM_T: //test register
-                disasmAddStringF(pParam->szParam, "TR%d", reg);
+                disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "TR%d", reg);
                 pParam->flags |= USE_REG_TEST;
                 pParam->base.reg_test = reg;
                 return 0;
 
             case OP_PARM_V: //XMM register
-                disasmAddStringF(pParam->szParam, "XMM%d", reg);
+                disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "XMM%d", reg);
                 pParam->flags |= USE_REG_XMM;
                 pParam->base.reg_xmm = reg;
                 return 0;
@@ -1111,7 +1111,7 @@ int UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
             case OP_PARM_W: //XMM register or memory operand
                 if (mod == 3)
                 {
-                    disasmAddStringF(pParam->szParam, "XMM%d", rm);
+                    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "XMM%d", rm);
                     pParam->flags |= USE_REG_XMM;
                     pParam->base.reg_xmm = rm;
                     return 0;
@@ -1460,7 +1460,7 @@ int ParseImmByte(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
     pParam->parval = DISReadByte(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE8;
 
-    disasmAddStringF(pParam->szParam, "0%02Xh", (uint32_t)pParam->parval);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%02Xh", (uint32_t)pParam->parval);
     return sizeof(uint8_t);
 }
 //*****************************************************************************
@@ -1477,13 +1477,13 @@ int ParseImmByteSX(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     {
         pParam->parval = (uint32_t)(int8_t)DISReadByte(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32_SX8;
-        disasmAddStringF(pParam->szParam, "0%08Xh", (uint32_t)pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
     }
     else
     {
         pParam->parval = (uint16_t)(int8_t)DISReadByte(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16_SX8;
-        disasmAddStringF(pParam->szParam, "0%04Xh", (uint16_t)pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint16_t)pParam->parval);
     }
     return sizeof(uint8_t);
 }
@@ -1500,7 +1500,7 @@ int ParseImmUshort(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE16;
 
-    disasmAddStringF(pParam->szParam, "0%04Xh", (uint16_t)pParam->parval);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint16_t)pParam->parval);
     return sizeof(uint16_t);
 }
 //*****************************************************************************
@@ -1516,7 +1516,7 @@ int ParseImmUlong(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
     pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE32;
 
-    disasmAddStringF(pParam->szParam, "0%08Xh", (uint32_t)pParam->parval);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
     return sizeof(uint32_t);
 }
 //*****************************************************************************
@@ -1532,8 +1532,8 @@ int ParseImmQword(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
     pParam->parval = DISReadQWord(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE64;
 
-    disasmAddStringF(pParam->szParam, "0%08X", (uint32_t)pParam->parval);
-    disasmAddStringF(&pParam->szParam[9], "%08Xh", (uint32_t)(pParam->parval >> 32));
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08X", (uint32_t)pParam->parval);
+    disasmAddStringF(&pParam->szParam[9], sizeof(pParam->szParam)-9, "%08Xh", (uint32_t)(pParam->parval >> 32));
     return sizeof(uint64_t);
 }
 //*****************************************************************************
@@ -1551,7 +1551,7 @@ int ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISC
         pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32;
 
-        disasmAddStringF(pParam->szParam, "0%08Xh", (uint32_t)pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
         return sizeof(uint32_t);
     }
     else
@@ -1559,7 +1559,7 @@ int ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISC
         pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16;
 
-        disasmAddStringF(pParam->szParam, "0%04Xh", (uint32_t)pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04Xh", (uint32_t)pParam->parval);
         return sizeof(uint16_t);
     }
 }
@@ -1584,7 +1584,7 @@ int ParseImmBRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
     pParam->parval = DISReadByte(pCpu, lpszCodeBlock);
     pParam->flags |= USE_IMMEDIATE8_REL;
 
-    disasmAddStringF(pParam->szParam, " (0%02Xh)", (uint32_t)pParam->parval);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%02Xh)", (uint32_t)pParam->parval);
     return sizeof(char);
 }
 //*****************************************************************************
@@ -1604,7 +1604,7 @@ int ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
         pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32_REL;
 
-        disasmAddStringF(pParam->szParam, " (0%08Xh)", (uint32_t)pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%08Xh)", (uint32_t)pParam->parval);
         return sizeof(int32_t);
     }
     else
@@ -1612,7 +1612,7 @@ int ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
         pParam->parval = DISReadWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE16_REL;
 
-        disasmAddStringF(pParam->szParam, " (0%04Xh)", (uint32_t)pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%04Xh)", (uint32_t)pParam->parval);
         return sizeof(uint16_t);
     }
 }
@@ -1643,7 +1643,7 @@ int ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
             *((uint32_t*)&pParam->parval+1) = DISReadWord(pCpu, lpszCodeBlock+sizeof(uint32_t));
             pParam->flags  |= USE_IMMEDIATE_ADDR_16_32;
 
-            disasmAddStringF(pParam->szParam, "0%04X:0%08Xh", (uint32_t)(pParam->parval>>32), (uint32_t)pParam->parval);
+            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04X:0%08Xh", (uint32_t)(pParam->parval>>32), (uint32_t)pParam->parval);
             return sizeof(uint32_t) + sizeof(uint16_t);
         }
         else
@@ -1655,7 +1655,7 @@ int ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
             pParam->disp32 = DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_DISPLACEMENT32;
 
-            disasmAddStringF(pParam->szParam, "[0%08Xh]", pParam->disp32);
+            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "[0%08Xh]", pParam->disp32);
             return sizeof(uint32_t);
         }
     }
@@ -1666,7 +1666,7 @@ int ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
             pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_IMMEDIATE_ADDR_16_16;
 
-            disasmAddStringF(pParam->szParam, "0%04X:0%04Xh", (uint32_t)(pParam->parval>>16), (uint16_t)pParam->parval );
+            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%04X:0%04Xh", (uint32_t)(pParam->parval>>16), (uint16_t)pParam->parval );
             return sizeof(uint32_t);
         }
         else
@@ -1678,7 +1678,7 @@ int ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PD
             pParam->disp16 = DISReadWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_DISPLACEMENT16;
 
-            disasmAddStringF(pParam->szParam, "[0%04Xh]", (uint32_t)pParam->disp16);
+            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "[0%04Xh]", (uint32_t)pParam->disp16);
             return sizeof(uint16_t);
         }
     }
@@ -1785,7 +1785,7 @@ int ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
 int ParseXv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
     disasmGetPtrString(pCpu, pOp, pParam);
-    disasmAddStringF(pParam->szParam, (pCpu->addrmode == CPUMODE_32BIT) ? "DS:ESI" : "DS:SI");
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "DS:ESI" : "DS:SI");
 
     pParam->flags |= USE_POINTER_DS_BASED;
     if(pCpu->addrmode == CPUMODE_32BIT)
@@ -1804,7 +1804,7 @@ int ParseXv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUS
 //*****************************************************************************
 int ParseXb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    disasmAddStringF(pParam->szParam, (pCpu->addrmode == CPUMODE_32BIT) ? "DS:ESI" : "DS:SI");
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "DS:ESI" : "DS:SI");
 
     pParam->flags |= USE_POINTER_DS_BASED;
     if(pCpu->addrmode == CPUMODE_32BIT)
@@ -1824,7 +1824,7 @@ int ParseXb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUS
 int ParseYv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
     disasmGetPtrString(pCpu, pOp, pParam);
-    disasmAddStringF(pParam->szParam, (pCpu->addrmode == CPUMODE_32BIT) ? "ES:EDI" : "ES:DI");
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "ES:EDI" : "ES:DI");
 
     pParam->flags |= USE_POINTER_ES_BASED;
     if(pCpu->addrmode == CPUMODE_32BIT)
@@ -1843,7 +1843,7 @@ int ParseYv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUS
 //*****************************************************************************
 int ParseYb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    disasmAddStringF(pParam->szParam, (pCpu->addrmode == CPUMODE_32BIT) ? "ES:EDI" : "ES:DI");
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "ES:EDI" : "ES:DI");
 
     pParam->flags |= USE_POINTER_ES_BASED;
     if(pCpu->addrmode == CPUMODE_32BIT)
@@ -2428,25 +2428,25 @@ void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPa
 //*****************************************************************************
 void disasmPrintAbs32(POP_PARAMETER pParam)
 {
-    disasmAddStringF(pParam->szParam, "%08Xh", pParam->disp32);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%08Xh", pParam->disp32);
 }
 //*****************************************************************************
 //*****************************************************************************
 void disasmPrintDisp32(POP_PARAMETER pParam)
 {
-    disasmAddStringF(pParam->szParam, "%08Xh", pParam->disp32);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%08Xh", pParam->disp32);
 }
 //*****************************************************************************
 //*****************************************************************************
 void disasmPrintDisp8(POP_PARAMETER pParam)
 {
-    disasmAddStringF(pParam->szParam, "%d", pParam->disp8);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%d", pParam->disp8);
 }
 //*****************************************************************************
 //*****************************************************************************
 void disasmPrintDisp16(POP_PARAMETER pParam)
 {
-    disasmAddStringF(pParam->szParam, "%04Xh", pParam->disp16);
+    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%04Xh", pParam->disp16);
 }
 //*****************************************************************************
 //*****************************************************************************
@@ -2494,7 +2494,7 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
         break; //no pointer type specified/necessary
     }
     if (pCpu->prefix & PREFIX_SEG)
-        disasmAddStringF(pParam->szParam, "%s:", szModRMSegReg[pCpu->prefix_seg]);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%s:", szModRMSegReg[pCpu->prefix_seg]);
 }
 #ifndef IN_GC
 //*****************************************************************************
@@ -2606,11 +2606,11 @@ void disasmAddString(char *psz, const char *pszAdd)
 }
 //*****************************************************************************
 //*****************************************************************************
-void disasmAddStringF(char *psz, const char *pszFormat, ...)
+void disasmAddStringF(char *psz, uint32_t size, const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
-    vsprintf(psz + strlen(psz), pszFormat, args);
+    RTStrPrintfV(psz + strlen(psz), size, pszFormat, args);
     va_end(args);
 }
 
