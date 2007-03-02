@@ -1384,10 +1384,12 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                     else
                         cbUnit = Cpu.opmode == CPUMODE_32BIT ? 4 : 2;
 
-                    RTGCPTR GCPtrDst = pCtx->edi;
+                    RTGCPTR  GCPtrDst = pCtx->edi;
+                    uint32_t cpl = (pRegFrame->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
+
                     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
                     rc = PGMVerifyAccess(pVM, GCPtrDst, cTransfers * cbUnit,
-                                         X86_PTE_RW | (((pCtx->ss & X86_SEL_RPL) == 3) ? X86_PTE_US : 0));
+                                         X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
                     if (rc != VINF_SUCCESS)
                     {
                         Log(("EMU: rep ins%d will generate a trap -> fallback, rc=%d\n", cbUnit * 8, rc));
@@ -1451,9 +1453,11 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                     else
                         cbUnit = Cpu.opmode == CPUMODE_32BIT ? 4 : 2;
 
-                    RTGCPTR GCPtrSrc = pCtx->esi;
+                    RTGCPTR  GCPtrSrc = pCtx->esi;
+                    uint32_t cpl = (pRegFrame->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
+
                     /* Access verification first; we currently can't recover properly from traps inside this instruction */
-                    rc = PGMVerifyAccess(pVM, GCPtrSrc, cTransfers * cbUnit, (((pCtx->ss & X86_SEL_RPL) == 3) ? X86_PTE_US : 0));
+                    rc = PGMVerifyAccess(pVM, GCPtrSrc, cTransfers * cbUnit, ((cpl == 3) ? X86_PTE_US : 0));
                     if (rc != VINF_SUCCESS)
                     {
                         Log(("EMU: rep outs%d will generate a trap -> fallback, rc=%d\n", cbUnit * 8, rc));
@@ -1541,7 +1545,7 @@ static int emR3RawGuestTrap(PVM pVM)
 
     /** Scan kernel code that traps; we might not get another chance. */
     if (    (pCtx->ss & X86_SEL_RPL) <= 1
-        &&  pCtx->eflags.Bits.u1VM == 0)
+        &&  !pCtx->eflags.Bits.u1VM)
     {
         Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
         CSAMR3CheckCodeEx(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip);
@@ -1954,6 +1958,7 @@ int emR3RawPrivileged(PVM pVM)
         }
 #endif
         if (    (pCtx->ss & X86_SEL_RPL) == 0
+            &&  !pCtx->eflags.Bits.u1VM
             &&  SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid))
         {
             uint32_t size;
@@ -2523,7 +2528,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          * Scan code before executing it. Don't bother with user mode or V86 code
          */
         if (    (pCtx->ss & X86_SEL_RPL) <= 1
-            &&  pCtx->eflags.Bits.u1VM == 0
+            &&  !pCtx->eflags.Bits.u1VM
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
             STAM_PROFILE_ADV_SUSPEND(&pVM->em.s.StatRAWEntry, b);
@@ -2887,7 +2892,8 @@ inline EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
     }
 
     unsigned uSS = pCtx->ss;
-    if ((uSS & X86_SEL_RPL) == 3)
+    if (    pCtx->eflags.Bits.u1VM 
+        ||  (uSS & X86_SEL_RPL) == 3)
     {
         if (!EMIsRawRing3Enabled(pVM))
             return EMSTATE_REM;
