@@ -1408,13 +1408,13 @@ PATMCpuidStart:
     cmp     eax, PATM_CPUID_STD_MAX
     jb      cpuid_std
     cmp     eax, 0x80000000
-    jb      short cpuid_def
+    jb      cpuid_def
     cmp     eax, PATM_CPUID_EXT_MAX
-    jb      short cpuid_ext
+    jb      cpuid_ext
 
 cpuid_def:
     mov     eax, PATM_CPUID_DEF_PTR
-    jmp     near cpuid_fetch
+    jmp     cpuid_fetch
 
 cpuid_std:
     mov     edx, PATM_CPUID_STD_PTR
