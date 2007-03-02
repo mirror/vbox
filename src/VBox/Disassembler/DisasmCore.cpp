@@ -1242,8 +1242,7 @@ int UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
 
             if(pParam->disp16 != 0)
             {
-                if(pParam->disp16 > 0)
-                    disasmAddChar(pParam->szParam, '+');
+                disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp16(pParam);
             }
             disasmAddChar(pParam->szParam, ']');
