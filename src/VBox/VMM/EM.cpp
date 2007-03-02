@@ -1385,7 +1385,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                         cbUnit = Cpu.opmode == CPUMODE_32BIT ? 4 : 2;
 
                     RTGCPTR  GCPtrDst = pCtx->edi;
-                    uint32_t cpl = (pRegFrame->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
+                    uint32_t cpl = (pCtx->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
 
                     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
                     rc = PGMVerifyAccess(pVM, GCPtrDst, cTransfers * cbUnit,
@@ -1454,7 +1454,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                         cbUnit = Cpu.opmode == CPUMODE_32BIT ? 4 : 2;
 
                     RTGCPTR  GCPtrSrc = pCtx->esi;
-                    uint32_t cpl = (pRegFrame->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
+                    uint32_t cpl = (pCtx->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
 
                     /* Access verification first; we currently can't recover properly from traps inside this instruction */
                     rc = PGMVerifyAccess(pVM, GCPtrSrc, cTransfers * cbUnit, ((cpl == 3) ? X86_PTE_US : 0));
