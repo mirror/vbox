@@ -396,6 +396,7 @@ PATMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     if (pCpu->pCurInstr->opcode == OP_SYSENTER)
     {
         if (    pCtx->SysEnter.cs == 0
+            ||  pRegFrame->eflags.Bits.u1VM
             ||  (pRegFrame->cs & X86_SEL_RPL) != 3
             ||  pVM->patm.s.pfnSysEnterPatchGC == 0
             ||  pVM->patm.s.pfnSysEnterGC != (RTGCPTR)pCtx->SysEnter.eip
@@ -424,6 +425,7 @@ PATMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     {
         if (    pCtx->SysEnter.cs == 0
             ||  (pRegFrame->cs & X86_SEL_RPL) != 1
+            ||  pRegFrame->eflags.Bits.u1VM
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
             goto end;
 
