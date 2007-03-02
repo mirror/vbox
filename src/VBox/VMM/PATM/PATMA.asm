@@ -1321,7 +1321,7 @@ GLOBALNAME PATMIretRecord
 ;          otherwise return address in eax
 ;
 ; @note NEVER change this without bumping the SSM version
-align 16
+align 32
 BEGINPROC   PATMIretFunction
 PATMIretFunction_Start:
     push    ecx
@@ -1399,18 +1399,18 @@ GLOBALNAME PATMIretFunctionRecord
     DD      0ffffffffh
 
 
-align 16 ; yasm / nasm diff - remove me!
+align 32 ; yasm / nasm diff - remove me!
 BEGINPROC   PATMCpuidReplacement
 PATMCpuidStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
 
     cmp     eax, PATM_CPUID_STD_MAX
-    jb      cpuid_std
+    jb      short cpuid_std
     cmp     eax, 0x80000000
-    jb      cpuid_def
+    jb      short cpuid_def
     cmp     eax, PATM_CPUID_EXT_MAX
-    jb      cpuid_ext
+    jb      short cpuid_ext
 
 cpuid_def:
     mov     eax, PATM_CPUID_DEF_PTR
@@ -1501,7 +1501,7 @@ GLOBALNAME PATMJEcxRecord
     DD      0
     DD      0ffffffffh
 
-align 16; yasm / nasm diffing. remove me!
+align 32; yasm / nasm diffing. remove me!
 BEGINPROC   PATMLoopReplacement
 PATMLoopStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1620,7 +1620,7 @@ GLOBALNAME PATMLoopNZRecord
     DD      0
     DD      0ffffffffh
 
-align 16
+align 32
 ; Global patch function for indirect calls
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and doing:
 ;  + 20 push    [pTargetGC]
@@ -1774,7 +1774,7 @@ GLOBALNAME PATMLookupAndCallRecord
     DD      0ffffffffh
 
 
-align 16
+align 32
 ; Global patch function for indirect jumps
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and doing:
 ;  +  8 push    [pTargetGC]
@@ -1877,7 +1877,7 @@ GLOBALNAME PATMLookupAndJumpRecord
 
 
 
-align 16
+align 32
 ; Patch function for static calls
 ; @note static calls have only one lookup slot!
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
@@ -1934,7 +1934,7 @@ GLOBALNAME PATMCallRecord
     DD      0ffffffffh
 
 
-align 16
+align 32
 ; Patch function for indirect calls
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
@@ -1990,7 +1990,7 @@ GLOBALNAME PATMCallIndirectRecord
     DD      0ffffffffh
 
 
-align 16
+align 32
 ; Patch function for indirect jumps
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
@@ -2053,7 +2053,7 @@ GLOBALNAME PATMJumpIndirectRecord
 ;
 ; return from duplicated function
 ;
-align 16
+align 32
 BEGINPROC   PATMRet
 PATMRet_Start:
     ; probe stack here as we can't recover from page faults later on
@@ -2129,7 +2129,7 @@ GLOBALNAME PATMRetRecord
 ;          otherwise return address in eax
 ;
 ; @note NEVER change this without bumping the SSM version
-align 16
+align 32
 BEGINPROC   PATMRetFunction
 PATMRetFunction_Start:
     push    ecx
