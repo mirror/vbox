@@ -599,16 +599,20 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 #endif
                 if (rc == VINF_SUCCESS)
                 {
-                    Log(("TRAP%02X: Handler %04X:%08X Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
-
                     /** if eflags.Bits.u1VM then push gs, fs, ds, es */
                     if (eflags.Bits.u1VM)
                     {
+                        Log(("TRAP%02X: (VM) Handler %04X:%08X Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->gs;
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->fs;
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->ds;
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->es;
+
+                        /* clear ds, es, fs & gs in current context */
+                        pRegFrame->ds = pRegFrame->es = pRegFrame->fs = pRegFrame->gs = 0;
                     }
+                    else
+                        Log(("TRAP%02X: Handler %04X:%08X Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
 
                     if (fConforming == false && dpl < cpl)
                     {
@@ -620,8 +624,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->esp;
                     }
 
-                    /* @note we use the original eflags, not the copy that includes the virtualized bits! */
-                    CTXSUFF(pTrapStack)[--idx] = pRegFrame->eflags.u32;
+                    /* @note we use the eflags copy, that includes the virtualized bits! */
+                    CTXSUFF(pTrapStack)[--idx] = eflags.u32;
 
                     if ((pRegFrame->cs & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->cs & ~1;    /* Mask away traces of raw ring execution (ring 1). */
