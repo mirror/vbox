@@ -2261,10 +2261,11 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
 
         RTPROCESS pid = NIL_RTPROCESS;
 
-        /// @todo avoid annoying runas dialog on Win < Vista
         if (d->privileged)
         {
             /* Attempt to start a privileged process using the Run As dialog */
+
+            AllowSetForegroundWindow (ASFW_ANY);
 
             Bstr file = exePath;
             Bstr parameters = argsStr;
