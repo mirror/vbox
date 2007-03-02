@@ -2265,8 +2265,6 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         {
             /* Attempt to start a privileged process using the Run As dialog */
 
-            AllowSetForegroundWindow (ASFW_ANY);
-
             Bstr file = exePath;
             Bstr parameters = argsStr;
 
