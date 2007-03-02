@@ -33,6 +33,7 @@
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <VBox/x86.h>
+#include <VBox/em.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -414,7 +415,9 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
      */
     if (    pVM->trpm.s.aGuestTrapHandler[iGate]
         && (eflags.Bits.u1IF)
+#ifndef VBOX_RAW_V86
         && !(eflags.Bits.u1VM) /* @todo implement when needed (illegal for same privilege level transfers). */
+#endif
         && !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
        )
     {
@@ -428,6 +431,9 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
         Assert(PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame));
 
         /* Must get the CPL from the SS selector (CS might be conforming) */
+        if (eflags.Bits.u1VM)
+            cpl = 3;
+        else
         if ((pRegFrame->ss & X86_SEL_RPL) == 1)
             cpl = 0;
         else
@@ -564,7 +570,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     if (    eflags.Bits.u1VM    /* illegal */
                         ||  SELMToFlatEx(pVM, ss_r0, (RTGCPTR)esp_r0, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
                     {
-                        AssertMsgFailed(("Invalid stack %04X:%VGv???\n", ss_r0, esp_r0));
+                        AssertMsgFailed(("Invalid stack %04X:%VGv??? (VM=%d)\n", ss_r0, esp_r0, eflags.Bits.u1VM));
                         goto failure;
                     }
                 }
@@ -576,13 +582,14 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                 /*
                  * Build trap stack frame on guest handler's stack
                  */
-                /** @todo if eflags.Bits.u1VM check for 4 more dwords */
 #ifdef IN_GC
-                Assert((pRegFrame->ss & X86_SEL_RPL) != 0);
-                rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pTrapStackGC - 6*sizeof(uint32_t), 6 * sizeof(uint32_t), X86_PTE_RW);
+                Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
+                /* Check maximum amount we need (10 when executing in V86 mode) */
+                rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
 #else
-                Assert((pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
-                if (    PAGE_ADDRESS(pTrapStackGC) != PAGE_ADDRESS(pTrapStackGC - 6*sizeof(uint32_t)) /* fail if we cross a page boundary */
+                Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
+                /* Check maximum amount we need (10 when executing in V86 mode) */
+                if (    PAGE_ADDRESS(pTrapStackGC) != PAGE_ADDRESS(pTrapStackGC - 10*sizeof(uint32_t)) /* fail if we cross a page boundary */
                     ||  VBOX_FAILURE((rc = PGMPhysGCPtr2HCPtr(pVM, pTrapStackGC, (PRTHCPTR)&pTrapStackHC)))
                    )
                 {
@@ -594,10 +601,18 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                 {
                     Log(("TRAP%02X: Handler %04X:%08X Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
 
-                    /** @todo if eflags.Bits.u1VM push gs, fs, ds, es */
+                    /** if eflags.Bits.u1VM then push gs, fs, ds, es */
+                    if (eflags.Bits.u1VM)
+                    {
+                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->gs;
+                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->fs;
+                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->ds;
+                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->es;
+                    }
+
                     if (fConforming == false && dpl < cpl)
                     {
-                        if ((pRegFrame->ss & X86_SEL_RPL) == 1)
+                        if ((pRegFrame->ss & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
                             CTXSUFF(pTrapStack)[--idx] = pRegFrame->ss & ~1;    /* Mask away traces of raw ring execution (ring 1). */
                         else
                             CTXSUFF(pTrapStack)[--idx] = pRegFrame->ss;
@@ -608,7 +623,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     /* @note we use the original eflags, not the copy that includes the virtualized bits! */
                     CTXSUFF(pTrapStack)[--idx] = pRegFrame->eflags.u32;
 
-                    if ((pRegFrame->cs & X86_SEL_RPL) == 1)
+                    if ((pRegFrame->cs & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->cs & ~1;    /* Mask away traces of raw ring execution (ring 1). */
                     else
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->cs;
@@ -650,8 +665,6 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 #endif
 
                     Log(("PATM Handler %VGv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
-
-////                            AssertMsg(ASMGetCR2() == pTrpm->uActiveCR2, ("current cr2=%08x trpm cr2=%08x\n", ASMGetCR2(), pTrpm->uActiveCR2));
 
                     /* Make sure the internal guest context structure is up-to-date. */
                     CPUMSetGuestCR2(pVM, pVM->trpm.s.uActiveCR2);
