@@ -525,11 +525,17 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	\
 	string/memchr.asm \
 	string/memchr_alias.c \
+	string/memcmp.asm \
+	string/memcmp_alias.c \
 	string/memcpy.asm \
 	string/memcpy_alias.c \
 	string/mempcpy.asm \
 	string/memset.asm \
-	string/memset_alias.c
+	string/memset_alias.c \
+	string/strchr.asm \
+	string/strchr_alias.c \
+	string/strcmp.asm \
+	string/strcmp_alias.c
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
 	math/x86/fenv-x86.c \
