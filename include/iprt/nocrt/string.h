@@ -34,6 +34,7 @@ void *  RT_NOCRT(memset)(void *pvDst, int ch, size_t cb);
 
 char *  RT_NOCRT(strcat)(char *pszDst, const char *pszSrc);
 char *  RT_NOCRT(strncat)(char *pszDst, const char *pszSrc, size_t cch);
+char *  RT_NOCRT(strchr)(const char *psz, int ch);
 int     RT_NOCRT(strcmp)(char *psz1, const char *psz2);
 int     RT_NOCRT(strncmp)(char *psz1, const char *psz2, size_t cch);
 int     RT_NOCRT(stricmp)(char *psz1, const char *psz2);
@@ -54,6 +55,7 @@ char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
 # define memset   RT_NOCRT(memset)
 # define strcat   RT_NOCRT(strcat)
 # define strncat  RT_NOCRT(strncat)
+# define strchr   RT_NOCRT(strchr)
 # define strcmp   RT_NOCRT(strcmp)
 # define strncmp  RT_NOCRT(strncmp)
 # define stricmp  RT_NOCRT(stricmp)
