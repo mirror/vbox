@@ -21,6 +21,8 @@
 
 %include "iprt/asmdefs.mac"
 
+BEGINCODE
+
 ;;
 ; @param    pvDst   gcc: rdi  msc: ecx  x86:[esp+4]
 ; @param    ch      gcc: esi  msc: edx  x86:[esp+8]
@@ -32,6 +34,7 @@ BEGINPROC RT_NOCRT(memset)
         int3
   %error "Port me"
  %else
+        mov     r10, rdi                ; the return value.
         movzx   eax, sil
         cmp     rdx, 32
         jb      .dobytes
@@ -52,6 +55,8 @@ BEGINPROC RT_NOCRT(memset)
 .dobytes:
         mov     rcx, rdx
         rep stosb
+
+        mov     rax, rdi
  %endif
 
 %else
@@ -79,6 +84,7 @@ BEGINPROC RT_NOCRT(memset)
         rep stosb
 
         pop     edi
+        mov     eax, [esp + 4]
 %endif
         ret
 ENDPROC RT_NOCRT(memset)
