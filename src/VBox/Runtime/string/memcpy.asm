@@ -21,6 +21,8 @@
 
 %include "iprt/asmdefs.mac"
 
+BEGINCODE
+
 ;;
 ; @param    pvDst   gcc: rdi  msc: rcx  x86:[esp+4]
 ; @param    pvSrc   gcc: rsi  msc: rdx  x86:[esp+8]
@@ -52,7 +54,7 @@ BEGINPROC RT_NOCRT(memcpy)
         mov     esi, [esp + 08h + 8]
         mov     edx, ecx
         mov     eax, edi                ; save the return value
-        shl     ecx, 2
+        shr     ecx, 2
         rep movsd
 %endif
 
