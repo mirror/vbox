@@ -21,6 +21,8 @@
 
 %include "iprt/asmdefs.mac"
 
+BEGINCODE
+
 ;;
 ; @param    pv      gcc: rdi  msc: ecx  x86:[esp+4]
 ; @param    ch      gcc: esi  msc: edx  x86:[esp+8]
