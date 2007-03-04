@@ -114,23 +114,69 @@ EXPORTEDNAME %1
 %endmacro
 
 ;;
-; Ends a C callabke procedure.
+; Ends a C callable procedure.
 %macro ENDPROC 1
 GLOBALNAME %1_EndProc
     db  0xCC, 0xCC, 0xCC, 0xCC
 %endmacro
 
 
+;
+; Do OMF segment definitions
+;
+%ifdef ASM_FORMAT_OMF
+
+ ; 16-bit segments first (OMF / OS/2 specific).
+ %ifdef RT_INCL_16BIT_SEGMENTS
+  segment DATA16 public CLASS=FAR_DATA align=16 use16
+  segment DATA16_INIT public CLASS=FAR_DATA align=16 use16
+  group DGROUP16 DATA16 DATA16_INIT
+
+  ;;
+  ; Begins 16-bit data
+   %macro BEGINDATA16 0
+    segment DATA16
+   %endmacro
+
+  ;;
+  ; Begins 16-bit init data
+   %macro BEGINDATA16INIT 0
+    segment DATA16_INIT
+   %endmacro
+
+  segment CODE16 public CLASS=FAR_CODE align=16 use16
+  segment CODE16_INIT public CLASS=FAR_CODE align=16 use16
+  group CGROUP16 CODE16 CODE16_INIT
+
+  ;;
+  ; Begins 16-bit code
+   %macro BEGINCODE16 0
+    segment CODE16
+   %endmacro
+
+  ;;
+  ; Begins 16-bit init code
+   %macro BEGINCODE16INIT 0
+    segment CODE16_INIT
+   %endmacro
+
+ %endif
+
+ ; 32-bit segments.
+ segment TEXT32 public CLASS=CODE align=16 use32 flat
+ segment DATA32 public CLASS=DATA align=16 use32 flat
+ segment BSS32  public CLASS=BSS  align=16 use32 flat
+
+ ; Make the TEXT32 segment default.
+ segment TEXT32
+%endif
+
+
 ;;
 ; Begins code
 %ifdef ASM_FORMAT_OMF
  %macro BEGINCODE 0
-  %ifndef _DONE_BEGINCODE
-   %define _DONE_BEGINCODE 1
-   segment TEXT32 public CLASS=CODE align=16 use32 flat
-  %else
-   segment TEXT32
-  %endif
+  segment TEXT32
  %endmacro
 %else
 %macro BEGINCODE 0
@@ -143,12 +189,7 @@ GLOBALNAME %1_EndProc
 ; Begins initialized data
 %ifdef ASM_FORMAT_OMF
  %macro BEGINDATA 0
-  %ifndef _DONE_BEGINDATA
-   %define _DONE_BEGINDATA 1
-   segment DATA32 public CLASS=DATA align=16 use32 flat
-  %else
-   segment DATA32
-  %endif
+  segment DATA32
  %endmacro
 %else
 %macro BEGINDATA 0
@@ -160,12 +201,7 @@ GLOBALNAME %1_EndProc
 ; Begins uninitialized data
 %ifdef ASM_FORMAT_OMF
  %macro BEGINBSS 0
-  %ifndef _DONE_BEGINBSS
-   %define _DONE_BEGINBSS
-   segment BSS32 public CLASS=BSS align=16 use32 flat
-  %else
-   segment BSS32
-  %endif
+  segment BSS32
  %endmacro
 %else
 %macro BEGINBSS 0
@@ -406,7 +442,7 @@ GLOBALNAME %1_EndProc
 %define RTHCPHYS_DEF    dq
 
 ;; @def RTHCPTR_RES
-; The pesudo-instruction used to declare (=reserve space for) an uninitialized 
+; The pesudo-instruction used to declare (=reserve space for) an uninitialized
 ; host physical address variable
 %define RTHCPHYS_RES    resq
 
@@ -425,7 +461,7 @@ GLOBALNAME %1_EndProc
 %define RTGCPHYS_DEF    dd
 
 ;; @def RTGCPTR_RES
-; The pesudo-instruction used to declare (=reserve space for) an uninitialized 
+; The pesudo-instruction used to declare (=reserve space for) an uninitialized
 ; guest physical address variable
 %define RTGCPHYS_RES    resd
 
@@ -515,22 +551,22 @@ GLOBALNAME %1_EndProc
 ; The base pointer register (RBP or ESP).
 
 ;; @def xAX
-; RAX or EAX depending on context. 
+; RAX or EAX depending on context.
 
 ;; @def xBX
-; RBX or EBX depending on context. 
+; RBX or EBX depending on context.
 
 ;; @def xCX
-; RCX or ECX depending on context. 
+; RCX or ECX depending on context.
 
 ;; @def xDX
-; RDX or EDX depending on context. 
+; RDX or EDX depending on context.
 
 ;; @def xDI
-; RDI or EDI depending on context. 
+; RDI or EDI depending on context.
 
 ;; @def xSI
-; RSI or ESI depending on context. 
+; RSI or ESI depending on context.
 
 %ifdef __AMD64__
  %define xS  8

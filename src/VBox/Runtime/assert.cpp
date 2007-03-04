@@ -72,53 +72,7 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 
 #elif defined(IN_RING0)
 
-
-#if 0 /* this code is totally unused */
-
-#include <VBox/sup.h>
-
-
-/**
- * The 1st part of an assert message.
- *
- * @param   pszExpr     Expression. Can be NULL.
- * @param   uLine       Location line number.
- * @param   pszFile     Location file name.
- * @param   pszFunction Location function name.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
-{
-    SUPR0Printf("\n!!Assertion Failed!!\n"
-                "Expression: %s\n"
-                "Location  : %s(%d) %s\n",
-                pszExpr, pszFile, uLine, pszFunction);
-#if !defined(IN_RING3) && !defined(LOG_NO_COM)
-    RTLogComPrintf("\n!!Assertion Failed!!\n"
-                   "Expression: %s\n"
-                   "Location  : %s(%d) %s\n",
-                   pszExpr, pszFile, uLine, pszFunction);
-#endif
-}
-
-
-/**
- * The 2nd (optional) part of an assert message.
- *
- * @param   pszFormat   Printf like format string.
- * @param   ...         Arguments to that string.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-#ifdef __GNUC__
-/* asm (".globl AssertMsg2; AssertMsg2: jmp *SUPR0Printf"); - DEADLY! */
-#else
-__declspec(naked) void AssertMsg2(const char *pszFormat, ...)
-{   /* forwarder. */
-    __asm jmp dword ptr [SUPR0Printf];
-}
-#endif
-
-#endif /* dead code */
+/* OS specific.  */
 
 #else /* !IN_RING0 */
 

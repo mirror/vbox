@@ -32,6 +32,7 @@
 #include <process.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <InnoTekLIBC/FastInfoBlocks.h>
 
 #include <iprt/thread.h>
 #include <iprt/log.h>
@@ -108,7 +109,11 @@ static void rtThreadNativeMain(void *pvArgs)
     PRTTHREADINT  pThread = (PRTTHREADINT)pvArgs;
     *g_ppCurThread = pThread;
 
+#ifdef fibGetTidPid
+    rtThreadMain(pThread, fibGetTidPid());
+#else
     rtThreadMain(pThread, _gettid());
+#endif
 
     *g_ppCurThread = NULL;
     _endthread();
@@ -149,10 +154,11 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 {
-    PRTTHREADINT pThread = *g_ppCurThread;
-    if (pThread)
-        return (RTNATIVETHREAD)pThread->Core.Key;
+#ifdef fibGetTidPid
+    return fibGetTidPid();
+#else
     return _gettid();
+#endif
 }
 
 

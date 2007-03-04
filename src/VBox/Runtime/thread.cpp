@@ -239,10 +239,11 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszN
     PRTTHREADINT pThread = rtThreadAlloc(enmType, fFlags, RTTHREADINT_FLAGS_ALIEN, pszName);
     if (pThread)
     {
+        RTNATIVETHREAD NativeThread = RTThreadNativeSelf();
         rc = rtThreadNativeAdopt(pThread);
         if (RT_SUCCESS(rc))
         {
-            rtThreadInsert(pThread, RTThreadNativeSelf());
+            rtThreadInsert(pThread, NativeThread);
             pThread->enmState = RTTHREADSTATE_RUNNING;
         }
     }
@@ -716,7 +717,7 @@ RTDECL(RTTHREAD) RTThreadFromNative(RTNATIVETHREAD NativeThread)
  * @returns Pointer to readonly name string.
  * @returns NULL on failure.
  */
-RTR3DECL(const char *) RTThreadSelfName(void)
+RTDECL(const char *) RTThreadSelfName(void)
 {
     RTTHREAD Thread = RTThreadSelf();
     if (Thread != NIL_RTTHREAD)
@@ -736,7 +737,7 @@ RTR3DECL(const char *) RTThreadSelfName(void)
  * @returns NULL on failure.
  * @param   Thread      Thread handle of the thread to query the name of.
  */
-RTR3DECL(const char *) RTThreadGetName(RTTHREAD Thread)
+RTDECL(const char *) RTThreadGetName(RTTHREAD Thread)
 {
     if (Thread == NIL_RTTHREAD)
         return NULL;
@@ -752,7 +753,7 @@ RTR3DECL(const char *) RTThreadGetName(RTTHREAD Thread)
  * @param   Thread      Thread handle of the thread to query the name of.
  * @param   pszName     The thread name.
  */
-RTR3DECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName)
+RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName)
 {
     /*
      * Validate input.
@@ -781,7 +782,7 @@ RTR3DECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName)
  *
  * @returns     iprt status code.
  */
-RTR3DECL(int) RTThreadUserSignal(RTTHREAD Thread)
+RTDECL(int) RTThreadUserSignal(RTTHREAD Thread)
 {
     int             rc;
     PRTTHREADINT    pThread = rtThreadGet(Thread);
@@ -804,7 +805,7 @@ RTR3DECL(int) RTThreadUserSignal(RTTHREAD Thread)
  * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
  *                              an indefinite wait.
  */
-RTR3DECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies)
+RTDECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies)
 {
     int             rc;
     PRTTHREADINT    pThread = rtThreadGet(Thread);
@@ -827,7 +828,7 @@ RTR3DECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies)
  * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
  *                              an indefinite wait.
  */
-RTR3DECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies)
+RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies)
 {
     int             rc;
     PRTTHREADINT    pThread = rtThreadGet(Thread);
@@ -848,7 +849,7 @@ RTR3DECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies)
  * @returns     iprt status code.
  * @param       Thread          The thread to reset.
  */
-RTR3DECL(int) RTThreadUserReset(RTTHREAD Thread)
+RTDECL(int) RTThreadUserReset(RTTHREAD Thread)
 {
     int     rc;
     PRTTHREADINT  pThread = rtThreadGet(Thread);
@@ -940,7 +941,7 @@ RTDECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc)
  *                              an indefinite wait.
  * @param       prc             Where to store the return code of the thread. Optional.
  */
-RTR3DECL(int) RTThreadWaitNoResume(RTTHREAD Thread, unsigned cMillies, int *prc)
+RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, unsigned cMillies, int *prc)
 {
     return rtThreadWait(Thread, cMillies, prc, false);
 }
@@ -953,7 +954,7 @@ RTR3DECL(int) RTThreadWaitNoResume(RTTHREAD Thread, unsigned cMillies, int *prc)
  * @param   Thread      The thread which type should be changed.
  * @param   enmType     The new thread type.
  */
-RTR3DECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
+RTDECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
 {
     /*
      * Validate input.
@@ -1002,7 +1003,7 @@ RTR3DECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
  * @returns RTTHREADTYPE_INVALID if the thread handle is invalid.
  * @param   Thread      The thread in question.
  */
-RTR3DECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
+RTDECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
 {
     RTTHREADTYPE enmType = RTTHREADTYPE_INVALID;
     PRTTHREADINT pThread = rtThreadGet(Thread);

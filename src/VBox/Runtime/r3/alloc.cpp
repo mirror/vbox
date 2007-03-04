@@ -127,8 +127,13 @@ RTDECL(void *)  RTMemAllocZ(size_t cb)
 
     void *pv = calloc(1, cb);
     AssertMsg(pv, ("calloc(1,%d) failed!!!\n", cb));
+#ifdef __OS2__ /* temporary workaround until libc062. */
+    AssertMsg(   cb < 32
+              || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1)), ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
+#else
     AssertMsg(   cb < RTMEM_ALIGNMENT
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1)), ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
+#endif
 #endif /* !RTALLOC_USE_EFENCE */
     return pv;
 }
@@ -151,8 +156,13 @@ RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew)
 
     void *pv = realloc(pvOld, cbNew);
     AssertMsg(pv && cbNew, ("realloc(%p, %d) failed!!!\n", pvOld, cbNew));
+#ifdef __OS2__ /* temporary workaround until libc062. */
+    AssertMsg(   cbNew < 32
+              || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1)), ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
+#else
     AssertMsg(   cbNew < RTMEM_ALIGNMENT
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1)), ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
+#endif
 #endif  /* !RTALLOC_USE_EFENCE */
     return pv;
 }
