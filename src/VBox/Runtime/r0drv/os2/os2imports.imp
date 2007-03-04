@@ -1,0 +1,61 @@
+;
+; DOSCALLS
+;
+DOS16OPEN DOSCALLS 70 ?
+DOS16CLOSE DOSCALLS 59 ?
+DOS16READ DOSCALLS 137 ?
+DOS16WRITE DOSCALL1 138 ?
+DOS16IREAD DOSCALL1 79 ?
+DOS16IWRITE DOSCALL1 87 ?
+
+;
+; KEE
+;
+KernAllocSpinLock       KEE       10 ?
+KernFreeSpinLock        KEE       11 ?
+KernAcquireSpinLock     KEE       12 ?
+KernReleaseSpinLock     KEE       13 ?
+KernAllocMutexLock      KEE       20 ?
+KernFreeMutexLock       KEE       21 ?
+KernRequestSharedMutex  KEE       22 ?
+KernReleaseSharedMutex  KEE       23 ?
+KernTryRequestSharedMutex KEE       24 ?
+KernRequestExclusiveMutex KEE       25 ?
+KernReleaseExclusiveMutex KEE       26 ?
+KernTryRequestExclusiveMutex KEE       27 ?
+KernBlock               KEE       30 ?
+KernWakeup              KEE       31 ?
+KernThunkStackTo16      KEE       40 ?
+KernThunkStackTo32      KEE       41 ?
+KernSerialize16BitDD    KEE       42 ?
+KernUnserialize16BitDD  KEE       43 ?
+KernArmHook             KEE       44 ?
+KernAllocateContextHook KEE       45 ?
+KernCopyIn              KEE       50 ?
+KernCopyOut             KEE       51 ?
+KernVMAlloc             KEE       60 ?
+KernVMFree              KEE       61 ?
+KernVMLock              KEE       62 ?
+KernVMUnlock            KEE       63 ?
+KernLinToPageList       KEE       64 ?
+KernVMSetMem            KEE       65 ?
+KernSelToFlat           KEE       66 ?
+KernDynamicAPI          KEE       70 ?
+KernRASSysTrace         KEE       80 ?
+KernPerfSysTrace        KEE       81 ?
+_KernSISData            KEE       90 ?
+_KernLISData            KEE       91 ?
+_KernInterruptLevel     KEE       92 ?
+_KernTKSSBase           KEE       93 ?
+_KernKEEVersion         KEE       94 ?
+KernLockFile            KEE      100 ?
+KernUnLockFile          KEE      101 ?
+KernGetFileSize         KEE      102 ?
+KernTestFileCache       KEE      103 ?
+KernReadFileAt          KEE      104 ?
+KernReadFileAtCache     KEE      105 ?
+KernReturnFileCache     KEE      106 ?
+KernCreateUconvObject   KEE      120 ?
+KernStrFromUcs          KEE      121 ?
+KernStrToUcs            KEE      122 ?
+
