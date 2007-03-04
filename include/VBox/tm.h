@@ -47,14 +47,12 @@ typedef enum TMCLOCK
      * This clock only ticks when the guest is running. It's implemented
      * as an offset to real time. */
     TMCLOCK_VIRTUAL,
-#if 1
     /** Virtual guest synchronized timer time.
      * This is a special clock and timer queue for synchronizing virtual timers and
      * virtual time sources. This clock is trying to keep up with TMCLOCK_VIRTUAL,
      * but will wait for timers to be executed. If it lags too far behind TMCLOCK_VIRTUAL,
      * it will try speed up to close the distance. */
     TMCLOCK_VIRTUAL_SYNC,
-#endif
     /** Virtual CPU timestamp. (Running only when we're executing guest code.) */
     TMCLOCK_TSC,
     /** Number of clocks. */
@@ -200,7 +198,7 @@ TMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
 
 /**
  * Gets the current warp drive percent.
- * 
+ *
  * @returns The warp drive percent.
  * @param   pVM         The VM handle.
  */
@@ -208,7 +206,7 @@ TMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM);
 
 /**
  * Sets the warp drive percent of the virtual time.
- * 
+ *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @param   u32Percent  The new percentage. 100 means normal operation.
