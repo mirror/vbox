@@ -476,10 +476,10 @@ typedef FNSTRFORMAT *PFNSTRFORMAT;
  * @param   pvArgOutput Argument to the output worker.
  * @param   pfnFormat   Custom format worker.
  * @param   pvArgFormat Argument to the format worker.
- * @param   ppszFormat  Format string pointer.
+ * @param   pszFormat   Format string pointer.
  * @param   args        Argument list.
  */
-RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *ppszFormat, va_list args);
+RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *pszFormat, va_list args);
 
 /**
  * Partial implementation of a printf like formatter.
