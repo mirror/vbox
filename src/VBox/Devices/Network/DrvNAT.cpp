@@ -65,6 +65,7 @@ typedef struct DRVNAT
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
 #define PDMINETWORKCONNECTOR_2_DRVNAT(pInterface)   ( (PDRVNAT)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAT, INetworkConnector)) )
 
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -219,8 +220,6 @@ int slirp_can_output(void *pvUser)
         return 0;
 
     return pData->pPort->pfnCanReceive(pData->pPort);
-
-    return 0;
 }
 
 
@@ -398,6 +397,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Init the static parts.
      */
     pData->pDrvIns                      = pDrvIns;
+    pData->pNATState                    = NULL;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
     /* INetwork */
@@ -405,8 +405,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->INetworkConnector.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
     pData->INetworkConnector.pfnNotifyCanReceive   = drvNATNotifyCanReceive;
-
-    pData->pNATState                    = NULL;
 
     /*
      * Query the network port interface.
