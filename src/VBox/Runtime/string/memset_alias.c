@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * InnoTek Portable Runtime - No-CRT memset() alias for gcc.
  */
