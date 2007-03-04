@@ -35,7 +35,7 @@ __BEGIN_DECLS
  */
 
 /** Enable to allow V86 code to run in raw mode. */
-//#define VBOX_RAW_V86
+/*#define VBOX_RAW_V86*/
 
 /**
  * The Execution Manager State.
@@ -85,7 +85,6 @@ EMDECL(EMSTATE) EMGetState(PVM pVM);
  */
 #define EMIsRawRing3Enabled(pVM) ((pVM)->fRawR3Enabled)
 
-
 /**
  * Checks if raw ring-0 execute mode is enabled.
  *
@@ -94,7 +93,6 @@ EMDECL(EMSTATE) EMGetState(PVM pVM);
  * @param   pVM         The VM to operate on.
  */
 #define EMIsRawRing0Enabled(pVM) ((pVM)->fRawR0Enabled)
-
 
 /**
  * Sets the PC for which interrupts should be inhibited.
@@ -118,7 +116,6 @@ EMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, RTGCUINTPTR PC);
  *
  */
 EMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVM pVM);
-
 
 /**
  * Disassembles one instruction.
@@ -198,7 +195,6 @@ EMDECL(int) EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE p
  */
 EMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame);
 
-
 /**
  * Interpret INVLPG
  *
@@ -232,7 +228,6 @@ EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame);
  */
 EMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen);
 
-
 /**
  * Interpret DRx read
  *
@@ -244,7 +239,6 @@ EMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
  *
  */
 EMDECL(int) EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx);
-
 
 /**
  * Interpret CRx write
@@ -258,7 +252,6 @@ EMDECL(int) EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestReg
  */
 EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen);
 
-
 /**
  * Interpret CRx read
  *
@@ -271,7 +264,6 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
  */
 EMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx);
 
-
 /**
  * Interpret LMSW
  *
@@ -281,7 +273,6 @@ EMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestReg
  */
 EMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data);
 
-
 /**
  * Interpret CLTS
  *
@@ -290,7 +281,6 @@ EMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data);
  *
  */
 EMDECL(int) EMInterpretCLTS(PVM pVM);
-
 
 /**
  * Interpret a port I/O instruction.
@@ -303,7 +293,6 @@ EMDECL(int) EMInterpretCLTS(PVM pVM);
  * @remark  This may raise exceptions.
  */
 EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp);
-
 
 EMDECL(uint32_t) EMEmulateCmp(uint32_t u32Param1, uint32_t u32Param2, size_t cb);
 EMDECL(uint32_t) EMEmulateAnd(uint32_t *pu32Param1, uint32_t u32Param2, size_t cb);
