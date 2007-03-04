@@ -195,6 +195,87 @@ void VBoxVMDetailsView::languageChange()
     }
 }
 
+// VBoxVMDescriptionPage class
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Comments page widget to represent VM comments.
+ */
+class VBoxVMDescriptionPage : public QWidget
+{
+    Q_OBJECT
+
+public:
+
+    VBoxVMDescriptionPage (VBoxSelectorWnd *, const char *);
+    ~VBoxVMDescriptionPage() {}
+
+    void setMachine (const CMachine &);
+
+    void languageChange();
+
+private slots:
+
+    void goToSettings();
+
+private:
+
+    VBoxSelectorWnd *mParent;
+    QToolButton *mBtnEdit;
+    QTextBrowser *mBrowser;
+};
+
+VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
+                                              const char *aName)
+    : QWidget (aParent, aName), mParent (aParent)
+    , mBtnEdit (0), mBrowser (0)
+{
+    /* main layout creation */
+    QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+    /* mBrowser creation */
+    mBrowser = new QTextBrowser (this, "mBrowser");
+    mBrowser->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+    mBrowser->setFocusPolicy (QWidget::StrongFocus);
+    mBrowser->setLinkUnderline (false);
+    mBrowser->setFrameShape (QFrame::NoFrame);
+    mBrowser->setPaper (backgroundBrush());
+    mainLayout->addWidget (mBrowser);
+    /* button layout creation */
+    QHBoxLayout *btnLayout = new QHBoxLayout (mainLayout, 10, "btnLayout");
+    QSpacerItem *spacer = new QSpacerItem (0, 0,
+                                           QSizePolicy::Expanding,
+                                           QSizePolicy::Minimum);
+    btnLayout->addItem (spacer);
+    /* button creation */
+    mBtnEdit = new QToolButton (this, "mBtnEdit");
+    mBtnEdit->setFocusPolicy (QWidget::StrongFocus);
+    mBtnEdit->setIconSet (VBoxGlobal::iconSet ("edit_shared_folder_16px.png",
+                          "edit_shared_folder_disabled_16px.png"));
+    mBtnEdit->setTextPosition (QToolButton::BesideIcon);
+    mBtnEdit->setUsesTextLabel (true);
+    connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
+    btnLayout->addWidget (mBtnEdit);
+
+    /* apply language settings */
+    languageChange();
+}
+
+void VBoxVMDescriptionPage::setMachine (const CMachine &aMachine)
+{
+    mBrowser->setText (aMachine.GetDescription());
+}
+
+void VBoxVMDescriptionPage::languageChange()
+{
+    mBtnEdit->setTextLabel (tr ("Edit"));
+    mBtnEdit->setAccel (QString ("Ctrl+E"));
+}
+
+void VBoxVMDescriptionPage::goToSettings()
+{
+    mParent->vmSettings ("#general", 2);
+}
+
 // VBoxSelectorWnd class
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -305,6 +386,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmSnapshotsWgt = new VBoxSnapshotsWgt (NULL, "vmSnapshotsWgt");
     vmTabWidget->addTab (vmSnapshotsWgt,
                          VBoxGlobal::iconSet ("take_snapshot_16px.png"),
+                         QString::null);
+
+    /* VM comments page */
+    vmDescriptionPage = new VBoxVMDescriptionPage (this, "vmDescriptionPage");
+    vmTabWidget->addTab (vmDescriptionPage,
+                         VBoxGlobal::iconSet ("edit_shared_folder_16px.png"),
                          QString::null);
 
     /* add actions to the toolbar */
@@ -525,7 +612,7 @@ void VBoxSelectorWnd::vmNew()
  *      Category to select in the settings dialog. See
  *      VBoxVMSettingsDlg::setup().
  */
-void VBoxSelectorWnd::vmSettings (const QString &category /* = QString::null */)
+void VBoxSelectorWnd::vmSettings (const QString &category, int aSubPage)
 {
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
 
@@ -542,7 +629,7 @@ void VBoxSelectorWnd::vmSettings (const QString &category /* = QString::null */)
 
     VBoxVMSettingsDlg dlg (this, "VBoxVMSettingsDlg");
     dlg.getFromMachine (m);
-    dlg.setup (category);
+    dlg.setup (category, aSubPage);
 
     if (dlg.exec() == QDialog::Accepted)
     {
@@ -735,7 +822,7 @@ void VBoxSelectorWnd::vmRefresh()
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
-    refreshVMItem (item->id(), true /* aDetails */, true /* aSnapshots */);
+    refreshVMItem (item->id(), true, true, true);
 }
 
 void VBoxSelectorWnd::refreshVMList()
@@ -745,12 +832,13 @@ void VBoxSelectorWnd::refreshVMList()
 }
 
 void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
-                                                       bool aSnapshots)
+                                                       bool aSnapshots,
+                                                       bool aDescription)
 {
     vmListBox->refresh (aID);
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
     if (item && item->id() == aID)
-        vmListBoxCurrentChanged (aDetails, aSnapshots);
+        vmListBoxCurrentChanged (aDetails, aSnapshots, aDescription);
 }
 
 void VBoxSelectorWnd::showHelpContents()
@@ -821,6 +909,7 @@ void VBoxSelectorWnd::languageChange()
 
     vmTabWidget->changeTab (vmDetailsView, tr ("&Details"));
     vmTabWidget->changeTab (vmSnapshotsWgt, tr ("&Snapshots"));
+    vmTabWidget->changeTab (vmDescriptionPage, tr ("Des&cription"));
 
     /* ensure the details and screenshot view are updated */
     vmListBoxCurrentChanged();
@@ -892,6 +981,7 @@ void VBoxSelectorWnd::languageChange()
         menuBar()->findItem(3)->setText (tr ("&Help"));
 
     vmDetailsView->languageChange();
+    vmDescriptionPage->languageChange();
 }
 
 //
@@ -899,7 +989,8 @@ void VBoxSelectorWnd::languageChange()
 /////////////////////////////////////////////////////////////////////////////
 
 void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
-                                               bool aRefreshSnapshots)
+                                               bool aRefreshSnapshots,
+                                               bool aRefreshDescription)
 {
     if ( !vmListBox->selectedItem() && vmListBox->currentItem() >= 0 )
     {
@@ -930,6 +1021,10 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
             /* refresh snapshots widget */
             vmSnapshotsWgt->setMachine (m);
         }
+        if (aRefreshDescription)
+        {
+            vmDescriptionPage->setMachine (m);
+        }
 
         CEnums::MachineState state = item->state();
         bool running = item->sessionState() != CEnums::SessionClosed;
@@ -938,6 +1033,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         /* enable/disable info panes */
         vmDetailsView->setEnabled (modifyEnabled);
         vmSnapshotsWgt->setEnabled (!running);
+        vmDescriptionPage->setEnabled (!running);
 
         /* enable/disable modify actions */
         vmConfigAction->setEnabled (modifyEnabled);
@@ -1040,12 +1136,12 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
 
 void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
 {
-    refreshVMItem (e.id, false /* aDetails */, false /* aSnapshots */);
+    refreshVMItem (e.id, false, false, false);
 }
 
 void VBoxSelectorWnd::machineDataChanged (const VBoxMachineDataChangeEvent &e)
 {
-    refreshVMItem (e.id, true /* aDetails */, false /* aSnapshots */);
+    refreshVMItem (e.id, true, false, true);
 }
 
 void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
@@ -1074,10 +1170,12 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
 
 void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
 {
-    refreshVMItem (e.id, false /* aDetails */, false /* aSnapshots */);
+    refreshVMItem (e.id, false, false, false);
 }
 
 void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 {
-    refreshVMItem (aEvent.machineId, false, true);
+    refreshVMItem (aEvent.machineId, false, true, false);
 }
+
+#include "VBoxSelectorWnd.moc"

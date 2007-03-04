@@ -821,13 +821,21 @@ void VBoxVMSettingsDlg::setWarning (const QString &warning)
  *      (see VBoxVMSettingsDlg.ui in qdesigner) prepended with the '#'
  *      sign.
  */
-void VBoxVMSettingsDlg::setup (const QString &category)
+void VBoxVMSettingsDlg::setup (const QString &aCategory, int aSubPage)
 {
-    if (category)
+    if (!aCategory.isNull())
     {
-        QListViewItem *item = listView->findItem (category, listView_Link);
+        QListViewItem *item = listView->findItem (aCategory, listView_Link);
         if (item)
+        {
             listView->setSelected (item, true);
+            QObjectList *list = widgetStack->visibleWidget()->queryList ("QTabWidget");
+            for (QObject *obj = list->first(); obj != NULL; obj = list->next())
+            {
+                QTabWidget *tabStack = static_cast<QTabWidget*> (obj);
+                tabStack->setCurrentPage (aSubPage);
+            }
+        }
     }
 }
 
@@ -1065,6 +1073,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
 
     /* Saved state folder */
     leSnapshotFolder->setText (machine.GetSnapshotFolder());
+
+    /* Description */
+    teDescription->setText (machine.GetDescription());
 
     /* hard disk images */
     {
@@ -1378,6 +1389,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     /* Saved state folder */
     if (leSnapshotFolder->isModified())
         cmachine.SetSnapshotFolder (leSnapshotFolder->text());
+
+    /* Description */
+    cmachine.SetDescription (teDescription->text());
 
     /* hard disk images */
     {

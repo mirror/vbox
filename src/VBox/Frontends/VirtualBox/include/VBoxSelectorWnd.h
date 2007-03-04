@@ -37,6 +37,7 @@
 class VBoxVMListBox;
 class VBoxSnapshotsWgt;
 class VBoxVMDetailsView;
+class VBoxVMDescriptionPage;
 
 class QLabel;
 class QTextBrowser;
@@ -63,7 +64,7 @@ public slots:
     void fileExit();
 
     void vmNew();
-    void vmSettings (const QString &category = QString::null);
+    void vmSettings (const QString &category = QString::null, int = 0);
     void vmDelete();
     void vmStart();
     void vmDiscard();
@@ -71,7 +72,8 @@ public slots:
 
     void refreshVMList();
     void refreshVMItem (const QUuid &aID, bool aDetails,
-                                          bool aSnapshots);
+                                          bool aSnapshots,
+                                          bool aDescription);
 
     void showHelpContents();
 
@@ -89,7 +91,8 @@ private:
 private slots:
 
     void vmListBoxCurrentChanged (bool aRefreshDetails = true,
-                                  bool aRefreshSnapshots = true);
+                                  bool aRefreshSnapshots = true,
+                                  bool aRefreshDescription = true);
     void mediaEnumFinished (const VBoxMediaList &);
 
     /* VirtualBox callback events we're interested in */
@@ -122,6 +125,7 @@ private:
     QTabWidget *vmTabWidget;
     VBoxVMDetailsView *vmDetailsView;
     VBoxSnapshotsWgt *vmSnapshotsWgt;
+    VBoxVMDescriptionPage *vmDescriptionPage;
 
     QValueList <CSession> sessions;
 
