@@ -60,11 +60,10 @@
 #include <iprt/thread.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+#include <iprt/env.h>
 
 #include "SUPLibInternal.h"
 #include "SUPDRVIOC.h"
-
-#include <stdlib.h>
 
 
 
@@ -125,6 +124,7 @@ static uint32_t     g_u32FakeMode = ~0;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static int supInitFake(PSUPDRVSESSION *ppSession);
 static int supLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase);
 #ifndef VBOX_WITHOUT_IDT_PATCHING
 static int supInstallIDTE(void);
@@ -156,61 +156,21 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
 
     /*
      * Check for fake mode.
+     *
      * Fake mode is used when we're doing smoke testing and debugging.
      * It's also useful on platforms where we haven't root access or which
      * we haven't ported the support driver to.
      */
     if (g_u32FakeMode == ~0U)
     {
-        const char *psz = getenv("VBOX_SUPLIB_FAKE");
+        const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
         if (psz && !strcmp(psz, "fake"))
             ASMAtomicCmpXchgU32(&g_u32FakeMode, 1, ~0U);
         else
             ASMAtomicCmpXchgU32(&g_u32FakeMode, 0, ~0U);
     }
-    if (g_u32FakeMode)
-    {
-        Log(("SUP: Fake mode!\n"));
-
-        /* fake r0 functions. */
-        g_pFunctions = (PSUPQUERYFUNCS_OUT)RTMemAllocZ(RT_OFFSETOF(SUPQUERYFUNCS_OUT, aFunctions[8]));
-        if (g_pFunctions)
-        {
-            g_pFunctions->aFunctions[0].pfn = (void *)0xefefefef;
-            strcpy(g_pFunctions->aFunctions[0].szName, "SUPR0ContAlloc");
-            g_pFunctions->aFunctions[1].pfn = (void *)0xefefefdf;
-            strcpy(g_pFunctions->aFunctions[1].szName, "SUPR0ContFree");
-            g_pFunctions->aFunctions[2].pfn = (void *)0xefefefcf;
-            strcpy(g_pFunctions->aFunctions[2].szName, "SUPR0LockMem");
-            g_pFunctions->aFunctions[3].pfn = (void *)0xefefefbf;
-            strcpy(g_pFunctions->aFunctions[3].szName, "SUPR0UnlockMem");
-            g_pFunctions->aFunctions[4].pfn = (void *)0xefefefaf;
-            strcpy(g_pFunctions->aFunctions[4].szName, "SUPR0LockedAlloc");
-            g_pFunctions->aFunctions[5].pfn = (void *)0xefefef9f;
-            strcpy(g_pFunctions->aFunctions[5].szName, "SUPR0LockedFree");
-            g_pFunctions->aFunctions[6].pfn = (void *)0xefefef8f;
-            strcpy(g_pFunctions->aFunctions[6].szName, "SUPR0Printf");
-            g_pFunctions->cFunctions = 7;
-            g_pSession = (PSUPDRVSESSION)(void *)g_pFunctions;
-            if (ppSession)
-                *ppSession = g_pSession;
-#ifndef VBOX_WITHOUT_IDT_PATCHING
-            Assert(g_u8Interrupt == 3);
-#endif
-            /* fake the GIP. */
-            g_pSUPGlobalInfoPage = (PCSUPGLOBALINFOPAGE)RTMemPageAlloc(PAGE_SIZE);
-            if (g_pSUPGlobalInfoPage)
-            {
-                g_pSUPGlobalInfoPageR0 = g_pSUPGlobalInfoPage;
-                g_HCPhysSUPGlobalInfoPage = NIL_RTHCPHYS & ~(RTHCPHYS)PAGE_OFFSET_MASK;
-                /* the page is supposed to be invalid, so don't set a correct magic. */
-                return VINF_SUCCESS;
-            }
-            RTMemFree(g_pFunctions);
-            g_pFunctions = NULL;
-        }
-        return VERR_NO_MEMORY;
-    }
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return supInitFake(ppSession);
 
     /**
      * Open the support driver.
@@ -287,6 +247,86 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
     g_cInits--;
 
     return rc;
+}
+
+/**
+ * Fake mode init.
+ */
+static int supInitFake(PSUPDRVSESSION *ppSession)
+{
+    Log(("SUP: Fake mode!\n"));
+    static const SUPFUNC s_aFakeFunctions[] =
+    {
+        /* name                                     function */
+        { "SUPR0ObjRegister",                       (void *)0xefef0000 },
+        { "SUPR0ObjAddRef",                         (void *)0xefef0001 },
+        { "SUPR0ObjRelease",                        (void *)0xefef0002 },
+        { "SUPR0ObjVerifyAccess",                   (void *)0xefef0003 },
+        { "SUPR0LockMem",                           (void *)0xefef0004 },
+        { "SUPR0UnlockMem",                         (void *)0xefef0005 },
+        { "SUPR0ContAlloc",                         (void *)0xefef0006 },
+        { "SUPR0ContFree",                          (void *)0xefef0007 },
+        { "SUPR0MemAlloc",                          (void *)0xefef0008 },
+        { "SUPR0MemGetPhys",                        (void *)0xefef0009 },
+        { "SUPR0MemFree",                           (void *)0xefef000a },
+        { "SUPR0Printf",                            (void *)0xefef000b },
+        { "RTMemAlloc",                             (void *)0xefef000c },
+        { "RTMemAllocZ",                            (void *)0xefef000d },
+        { "RTMemFree",                              (void *)0xefef000e },
+        { "RTSemFastMutexCreate",                   (void *)0xefef000f },
+        { "RTSemFastMutexDestroy",                  (void *)0xefef0010 },
+        { "RTSemFastMutexRequest",                  (void *)0xefef0011 },
+        { "RTSemFastMutexRelease",                  (void *)0xefef0012 },
+        { "RTSemEventCreate",                       (void *)0xefef0013 },
+        { "RTSemEventSignal",                       (void *)0xefef0014 },
+        { "RTSemEventWait",                         (void *)0xefef0015 },
+        { "RTSemEventDestroy",                      (void *)0xefef0016 },
+        { "RTSpinlockCreate",                       (void *)0xefef0017 },
+        { "RTSpinlockDestroy",                      (void *)0xefef0018 },
+        { "RTSpinlockAcquire",                      (void *)0xefef0019 },
+        { "RTSpinlockRelease",                      (void *)0xefef001a },
+        { "RTSpinlockAcquireNoInts",                (void *)0xefef001b },
+        { "RTSpinlockReleaseNoInts",                (void *)0xefef001c },
+        { "RTThreadNativeSelf",                     (void *)0xefef001d },
+        { "RTThreadSleep",                          (void *)0xefef001e },
+        { "RTThreadYield",                          (void *)0xefef001f },
+        { "RTLogDefaultInstance",                   (void *)0xefef0020 },
+        { "RTLogRelDefaultInstance",                (void *)0xefef0021 },
+        { "RTLogSetDefaultInstanceThread",          (void *)0xefef0022 },
+        { "RTLogLogger",                            (void *)0xefef0023 },
+        { "RTLogLoggerEx",                          (void *)0xefef0024 },
+        { "RTLogLoggerExV",                         (void *)0xefef0025 },
+        { "AssertMsg1",                             (void *)0xefef0026 },
+        { "AssertMsg2",                             (void *)0xefef0027 },
+    };
+
+    /* fake r0 functions. */
+    g_pFunctions = (PSUPQUERYFUNCS_OUT)RTMemAllocZ(RT_OFFSETOF(SUPQUERYFUNCS_OUT, aFunctions[RT_ELEMENTS(s_aFakeFunctions)]));
+    if (g_pFunctions)
+    {
+        g_pFunctions->cFunctions = RT_ELEMENTS(s_aFakeFunctions);
+        memcpy(&g_pFunctions->aFunctions[0], &s_aFakeFunctions[0], sizeof(s_aFakeFunctions));
+        g_pSession = (PSUPDRVSESSION)(void *)g_pFunctions;
+        if (ppSession)
+            *ppSession = g_pSession;
+#ifndef VBOX_WITHOUT_IDT_PATCHING
+        Assert(g_u8Interrupt == 3);
+#endif
+
+        /* fake the GIP. */
+        g_pSUPGlobalInfoPage = (PCSUPGLOBALINFOPAGE)RTMemPageAlloc(PAGE_SIZE);
+        if (g_pSUPGlobalInfoPage)
+        {
+            g_pSUPGlobalInfoPageR0 = g_pSUPGlobalInfoPage;
+            g_HCPhysSUPGlobalInfoPage = NIL_RTHCPHYS & ~(RTHCPHYS)PAGE_OFFSET_MASK;
+            /* the page is supposed to be invalid, so don't set the magic. */
+            return VINF_SUCCESS;
+        }
+
+        RTMemFree(g_pFunctions);
+        g_pFunctions = NULL;
+    }
+    return VERR_NO_MEMORY;
 }
 
 
@@ -408,8 +448,12 @@ SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0)
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
     In.pVMR0            = pVMR0;
-    Assert(!g_u32FakeMode);
-    return suplibOsIOCtl(SUP_IOCTL_SET_VM_FOR_FAST, &In, sizeof(In), NULL, 0);
+    int rc;
+    if (RT_LIKELY(!g_u32FakeMode))
+        rc = suplibOsIOCtl(SUP_IOCTL_SET_VM_FOR_FAST, &In, sizeof(In), NULL, 0);
+    else
+        rc = VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -1294,7 +1338,14 @@ SUPR3DECL(int) SUPGetSymbolR0(void *pvImageBase, const char *pszSymbol, void **p
     pIn->u32SessionCookie = g_u32SessionCookie;
     pIn->pvImageBase      = pvImageBase;
     memcpy(pIn->szSymbol, pszSymbol, cchSymbol + 1);
-    int rc = suplibOsIOCtl(SUP_IOCTL_LDR_GET_SYMBOL, pIn, cbIn, &Out, sizeof(Out));
+    int rc;
+    if (RT_LIKELY(!g_u32FakeMode))
+        rc = suplibOsIOCtl(SUP_IOCTL_LDR_GET_SYMBOL, pIn, cbIn, &Out, sizeof(Out));
+    else
+    {
+        rc = VINF_SUCCESS;
+        Out.pvSymbol = (void *)0xdeadf00d;
+    }
     if (VBOX_SUCCESS(rc))
         *ppvValue = Out.pvSymbol;
     return rc;
