@@ -58,6 +58,7 @@ static const char  *g_apszExclude[] =
     "testcase/tstLdr",
     "testcase/tstLdrLoad",
     "testcase/tstLdrObj",
+    "testcase/tstLdrObjR0",
     "testcase/tstMove",
     "testcase/tstRunTestcases",
     "testcase/tstSDL",
