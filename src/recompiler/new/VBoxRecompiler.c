@@ -1360,7 +1360,7 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int p
 {
 #ifndef PGM_DYNAMIC_RAM_ALLOC
     target_ulong phys_addr;
-#endif 
+#endif
     target_ulong virt_addr, addend;
     if (env->pVM->rem.s.fIgnoreSetPage || env->pVM->rem.s.fIgnoreAll)
         return;
@@ -1412,7 +1412,7 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int p
 #else /* PGM_DYNAMIC_RAM_ALLOC */
     Log2(("tlb_set_page_raw read (%x-%x) write (%x-%x) prot %x is_user %d phys\n",
           pRead->addr_read, pRead->addend, pWrite->addr_write, pWrite->addend, prot, is_user));
-#endif/* PGM_DYNAMIC_RAM_ALLOC */ 
+#endif/* PGM_DYNAMIC_RAM_ALLOC */
 
     if (prot & PAGE_WRITE)
     {
@@ -1464,7 +1464,7 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int p
         AssertMsgFailed(("RAWEx_SetPageEntry %x %x %d failed!!\n", virt_addr, prot, is_user));
 #else
         AssertMsgFailed(("RAWEx_SetPageEntry %x %x %x %d failed!!\n", virt_addr, phys_addr, prot, is_user));
-#endif 
+#endif
         VM_FF_SET(env->pVM, VM_FF_PGM_SYNC_CR3);
     }
 }
@@ -2630,7 +2630,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     AssertRelease(phys_ram_base);
     cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvRam - (uintptr_t)phys_ram_base)
                                              | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
-#endif 
+#endif
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
 }
@@ -2711,10 +2711,11 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
 
 #else
     AssertReleaseFailed();
-#endif 
+#endif
 }
 
 
+#ifdef PGM_DYNAMIC_RAM_ALLOC
 /**
  *  Convert GC physical address to HC virt
  *
@@ -2724,7 +2725,6 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
  */
 void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
 {
-#ifdef PGM_DYNAMIC_RAM_ALLOC
     PVM      pVM = ((CPUState *)env)->pVM;
     uint32_t i;
 
@@ -2741,9 +2741,6 @@ void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
     AssertMsg(addr < phys_ram_size, ("remR3GCPhys2HCVirt: unknown physical address %x\n", addr));
     Log(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK)));
     return (void *)(pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
-#else
-    return (target_ulong)addr - (target_ulong)phys_ram_base;
-#endif
 }
 
 
@@ -2756,7 +2753,6 @@ void *remR3GCPhys2HCVirt(void *env, target_ulong addr)
  */
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
 {
-#ifdef PGM_DYNAMIC_RAM_ALLOC
     PVM         pVM    = ((CPUState *)env)->pVM;
     RTHCUINTPTR HCVirt = (RTHCUINTPTR)addr;
     uint32_t    idx    = (HCVirt >> PGM_DYNAMIC_CHUNK_SHIFT);
@@ -2765,15 +2761,15 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
 
     off = HCVirt - pVM->rem.s.paHCVirtToGCPhys[idx].pChunk1;
 
-    if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk1 
+    if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk1
         &&  off < PGM_DYNAMIC_CHUNK_SIZE)
     {
         Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off));
         return pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off;
     }
-    
+
     off = HCVirt - pVM->rem.s.paHCVirtToGCPhys[idx].pChunk2;
-    if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk2 
+    if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk2
         &&  off < PGM_DYNAMIC_CHUNK_SIZE)
     {
         Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys2 + off));
@@ -2792,9 +2788,6 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
     }
     AssertReleaseMsgFailed(("No translation for physical address %VHv???\n", addr));
     return 0;
-#else
-    return (target_ulong)addr - (target_ulong)phys_ram_base;
-#endif
 }
 
 
@@ -2819,6 +2812,7 @@ void remR3GrowDynRange(unsigned long physaddr)
     AssertFatalFailed();
 }
 
+#endif /* PGM_DYNAMIC_RAM_ALLOC */
 
 
 /**
@@ -2874,7 +2868,7 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 #else
     AssertRelease(phys_ram_base);
     cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvCopy - (uintptr_t)phys_ram_base) | IO_MEM_ROM);
-#endif 
+#endif
 
     Log2(("%.64Vhxd\n", (char *)pvCopy + cb - 64));
 
@@ -3142,7 +3136,7 @@ void remR3PhysRead(uint8_t *pbSrcPhys, void *pvDst, unsigned cb)
     uintptr_t off = remR3HCVirt2GCPhys(cpu_single_env, pbSrcPhys);
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
-#endif 
+#endif
     if (off < (uintptr_t)phys_ram_size)
         PGMPhysRead(cpu_single_env->pVM, (RTGCPHYS)off, pvDst, cb);
     else

@@ -25,7 +25,9 @@
 #ifndef VBOX
 #include <signal.h>
 #include <assert.h>
-#endif 
+#else
+# include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
+#endif
 
 #include "cpu.h"
 #include "exec-all.h"
@@ -538,7 +540,7 @@ void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0)
         ((new_cr0 << (HF_MP_SHIFT - 1)) & (HF_MP_MASK | HF_EM_MASK | HF_TS_MASK));
 #ifdef VBOX
     remR3ChangeCpuMode(env);
-#endif 
+#endif
 }
 
 /* XXX: in legacy PAE mode, generate a GPF if reserved bits are set in
@@ -574,7 +576,7 @@ void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4)
     env->cr[4] = new_cr4;
 #ifdef VBOX
     remR3ChangeCpuMode(env);
-#endif 
+#endif
 }
 
 /* XXX: also flush 4MB pages */
@@ -585,7 +587,12 @@ void cpu_x86_flush_tlb(CPUX86State *env, target_ulong addr)
     uint8_t *pde_ptr;
 
     /* page directory entry */
+# ifdef PGM_DYNAMIC_RAM_ALLOC
     pde_ptr = remR3GCPhys2HCVirt(env, (((env->cr[3] & ~0xfff) + ((addr >> 20) & ~3)) & env->a20_mask));
+# else
+    pde_ptr = phys_ram_base + 
+        (((env->cr[3] & ~0xfff) + ((addr >> 20) & ~3)) & env->a20_mask);
+# endif
     pde = ldl_raw(pde_ptr);
     /* if PSE bit is set, then we use a 4MB page */
     if ((pde & PG_PSE_MASK) && (env->cr[4] & CR4_PSE_MASK)) {

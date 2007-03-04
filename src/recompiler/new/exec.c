@@ -39,6 +39,7 @@
 # include <iprt/alloc.h>
 # include <iprt/string.h>
 # include <iprt/param.h>
+# include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
 #endif /* VBOX */
 
 #include "cpu.h"
@@ -171,7 +172,7 @@ static void page_init(void)
     /* NOTE: we can always suppose that qemu_host_page_size >=
        TARGET_PAGE_SIZE */
 #ifdef VBOX
-    RTMemProtect(code_gen_buffer, sizeof(code_gen_buffer), 
+    RTMemProtect(code_gen_buffer, sizeof(code_gen_buffer),
                  RTMEM_PROT_EXEC | RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     qemu_real_host_page_size = PAGE_SIZE;
 #else /* !VBOX */
@@ -275,7 +276,7 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
         for (i = 0; i < L2_SIZE; i++)
           pd[i].phys_offset = IO_MEM_UNASSIGNED;
     }
-#ifdef VBOX
+#if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
     pd = ((PhysPageDesc *)pd) + (index & (L2_SIZE - 1));
     if (RT_UNLIKELY((pd->phys_offset & ~TARGET_PAGE_MASK) == IO_MEM_RAM_MISSING))
         remR3GrowDynRange(pd->phys_offset & TARGET_PAGE_MASK);
@@ -1430,7 +1431,7 @@ static void tlb_protect_code(ram_addr_t ram_addr)
     cpu_physical_memory_reset_dirty(ram_addr, 
                                     ram_addr + TARGET_PAGE_SIZE,
                                     CODE_DIRTY_FLAG);
-#ifdef VBOX && defined(REM_MONITOR_CODE_PAGES)
+#if defined(VBOX) && defined(REM_MONITOR_CODE_PAGES)
     /** @todo Retest this? This function has changed... */
     remR3ProtectCode(cpu_single_env, ram_addr);
 #endif
@@ -1496,7 +1497,7 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
 
     /* we modify the TLB cache so that the dirty bit will be set again
        when accessing the range */
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     start1 = start + (unsigned long)phys_ram_base;
 #else
     start1 = (unsigned long)remR3GCPhys2HCVirt(env, start);
@@ -1510,8 +1511,8 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
 
 #if !defined(CONFIG_SOFTMMU)
 #ifdef VBOX /**@todo remove this check */
-# error "We shouldn't get here..." 
-#endif 
+# error "We shouldn't get here..."
+#endif
     /* XXX: this is expensive */
     {
         VirtPageDesc *p;
@@ -1546,7 +1547,7 @@ static inline void tlb_update_dirty(CPUTLBEntry *tlb_entry)
 
     if ((tlb_entry->addr_write & ~TARGET_PAGE_MASK) == IO_MEM_RAM) {
         /* RAM case */
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
         ram_addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) + 
             tlb_entry->addend - (unsigned long)phys_ram_base;
 #else
@@ -1632,7 +1633,7 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
         } else {
             /* standard memory */
             address = vaddr;
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
             addend = (unsigned long)phys_ram_base + (pd & TARGET_PAGE_MASK);
 #else
             addend = (unsigned long)remR3GCPhys2HCVirt(env, pd & TARGET_PAGE_MASK);
@@ -1753,7 +1754,7 @@ int page_unprotect(target_ulong addr, unsigned long pc, void *puc)
     /* set the dirty bit */
 #ifdef VBOX
     if (RT_LIKELY((vp->phys_addr >> TARGET_PAGE_BITS) < phys_ram_dirty_size))
-#endif 
+#endif
     phys_ram_dirty[vp->phys_addr >> TARGET_PAGE_BITS] = 0xff;
     /* flush the code inside */
     tb_invalidate_phys_page(vp->phys_addr, pc, puc);
@@ -1949,7 +1950,7 @@ void cpu_register_physical_memory(target_phys_addr_t start_addr,
     for(addr = start_addr; addr != end_addr; addr += TARGET_PAGE_SIZE) {
         p = phys_page_find_alloc(addr >> TARGET_PAGE_BITS, 1);
         p->phys_offset = phys_offset;
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
         if ((phys_offset & ~TARGET_PAGE_MASK) <= IO_MEM_ROM ||
             (phys_offset & IO_MEM_ROMD))
 #else
@@ -2011,7 +2012,7 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     ram_addr = addr - (unsigned long)phys_ram_base;
 #else
     ram_addr = remR3HCVirt2GCPhys(cpu_single_env, (void *)addr);
@@ -2054,7 +2055,7 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     ram_addr = addr - (unsigned long)phys_ram_base;
 #else
     ram_addr = remR3HCVirt2GCPhys(cpu_single_env, (void *)addr);
@@ -2085,7 +2086,7 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t 
     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
 #ifdef VBOX
     if (RT_LIKELY((ram_addr >> TARGET_PAGE_BITS) < phys_ram_dirty_size))
-#endif 
+#endif
     phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
     /* we remove the notdirty callback only if the code has been
        flushed */
@@ -2097,13 +2098,13 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     ram_addr = addr - (unsigned long)phys_ram_base;
 #else
     ram_addr = remR3HCVirt2GCPhys(cpu_single_env, (void *)addr);
 #endif
 #ifdef VBOX
-    if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size)) 
+    if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
         dirty_flags = 0xff;
     else
 #endif /* VBOX */
@@ -2112,7 +2113,7 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
 #if !defined(CONFIG_USER_ONLY)
         tb_invalidate_phys_page_fast(ram_addr, 4);
 # ifdef VBOX
-        if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size)) 
+        if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
             dirty_flags = 0xff;
         else
 # endif /* VBOX */
@@ -2128,7 +2129,7 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
 #ifdef VBOX
     if (RT_LIKELY((ram_addr >> TARGET_PAGE_BITS) < phys_ram_dirty_size))
-#endif 
+#endif
     phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
     /* we remove the notdirty callback only if the code has been
        flushed */
@@ -2153,7 +2154,7 @@ static void io_mem_init(void)
     cpu_register_io_memory(IO_MEM_ROM >> IO_MEM_SHIFT, error_mem_read, unassigned_mem_write, NULL);
     cpu_register_io_memory(IO_MEM_UNASSIGNED >> IO_MEM_SHIFT, unassigned_mem_read, unassigned_mem_write, NULL);
     cpu_register_io_memory(IO_MEM_NOTDIRTY >> IO_MEM_SHIFT, error_mem_read, notdirty_mem_write, NULL);
-#ifdef VBOX
+#if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
     cpu_register_io_memory(IO_MEM_RAM_MISSING >> IO_MEM_SHIFT, unassigned_mem_read, unassigned_mem_write, NULL);
     io_mem_nb = 6;
 #else
@@ -2292,7 +2293,11 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                 addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
                 /* RAM case */
 #ifdef VBOX
+# ifdef PGM_DYNAMIC_RAM_ALLOC
                 ptr = remR3GCPhys2HCVirt(cpu_single_env, addr1);
+# else
+                ptr = phys_ram_base + addr1;
+# endif
                 remR3PhysWrite(ptr, buf, l);
 #else
                 ptr = phys_ram_base + addr1;
@@ -2304,8 +2309,8 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                     /* set dirty bit */
 #ifdef VBOX
                     if (RT_LIKELY((addr1 >> TARGET_PAGE_BITS) < phys_ram_dirty_size))
-#endif 
-                    phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |= 
+#endif
+                    phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |=
                         (0xff & ~CODE_DIRTY_FLAG);
                 }
             }
@@ -2333,7 +2338,12 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
             } else {
                 /* RAM case */
 #ifdef VBOX
+# ifdef PGM_DYNAMIC_RAM_ALLOC
                 ptr = remR3GCPhys2HCVirt(cpu_single_env, (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK));
+# else
+                ptr = phys_ram_base + (pd & TARGET_PAGE_MASK) + 
+                    (addr & ~TARGET_PAGE_MASK);
+# endif
                 remR3PhysRead(ptr, buf, l);
 #else
                 ptr = phys_ram_base + (pd & TARGET_PAGE_MASK) + 
@@ -2379,7 +2389,7 @@ void cpu_physical_memory_write_rom(target_phys_addr_t addr,
             addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
             /* ROM/RAM case */
         /* RAM case */
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
             ptr = phys_ram_base + addr1;
 #else
             ptr = remR3GCPhys2HCVirt(cpu_single_env, addr1);
@@ -2416,7 +2426,7 @@ uint32_t ldl_phys(target_phys_addr_t addr)
         val = io_mem_read[io_index][2](io_mem_opaque[io_index], addr);
     } else {
         /* RAM case */
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
         ptr = phys_ram_base + (pd & TARGET_PAGE_MASK) + 
             (addr & ~TARGET_PAGE_MASK);
 #else
@@ -2456,7 +2466,7 @@ uint64_t ldq_phys(target_phys_addr_t addr)
 #endif
     } else {
         /* RAM case */
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
         ptr = phys_ram_base + (pd & TARGET_PAGE_MASK) + 
             (addr & ~TARGET_PAGE_MASK);
 #else
@@ -2504,7 +2514,7 @@ void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
         io_index = (pd >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
         io_mem_write[io_index][2](io_mem_opaque[io_index], addr, val);
     } else {
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
         ptr = phys_ram_base + (pd & TARGET_PAGE_MASK) + 
             (addr & ~TARGET_PAGE_MASK);
 #else
@@ -2536,7 +2546,7 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
         unsigned long addr1;
         addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
         /* RAM case */
-#ifndef VBOX
+#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
         ptr = phys_ram_base + addr1;
 #else
         ptr = remR3GCPhys2HCVirt(cpu_single_env, addr1);
@@ -2549,7 +2559,7 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
             /* set dirty bit */
 #ifdef VBOX
             if (RT_LIKELY((addr1 >> TARGET_PAGE_BITS) < phys_ram_dirty_size))
-#endif 
+#endif
             phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |=
                 (0xff & ~CODE_DIRTY_FLAG);
         }
