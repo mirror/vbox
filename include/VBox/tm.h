@@ -647,7 +647,6 @@ TMR3DECL(PTMTIMERHC) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIM
  */
 TMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 
-
 /**
  * Destroy all timers owned by a driver.
  *
