@@ -1181,6 +1181,43 @@ on the entry and select a desired boot device from the drop-down list.</string>
                                 </widget>
                             </grid>
                         </widget>
+                        <widget class="QWidget">
+                            <property name="name">
+                                <cstring>description</cstring>
+                            </property>
+                            <attribute name="title">
+                                <string>&amp;Description</string>
+                            </attribute>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>10</number>
+                                </property>
+                                <property name="spacing">
+                                    <number>10</number>
+                                </property>
+                                <widget class="QGroupBox">
+                                    <property name="name">
+                                        <cstring>gbDescription</cstring>
+                                    </property>
+                                    <property name="title">
+                                        <string>Virtual Machine &amp;Description</string>
+                                    </property>
+                                    <vbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QTextEdit">
+                                            <property name="name">
+                                                <cstring>teDescription</cstring>
+                                            </property>
+                                        </widget>
+                                    </vbox>
+                                </widget>
+                            </vbox>
+                        </widget>
                     </widget>
                 </vbox>
             </widget>
@@ -1803,7 +1840,7 @@ a CD/DVD image to mount.</string>
                                     </sizepolicy>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; 
+                                    <string>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.</string>
                                 </property>
                             </widget>
@@ -2721,7 +2758,7 @@ with all fields set to the values of the selected USB device attached to the hos
 </slots>
 <functions>
     <function access="private">init()</function>
-    <function>setup( const QString &amp; category )</function>
+    <function>setup( const QString &amp;, int )</function>
     <function>getFromMachine( const CMachine &amp; machine )</function>
     <function returnType="COMResult">putBackToMachine()</function>
     <function access="protected">setWarning( const QString &amp; )</function>
