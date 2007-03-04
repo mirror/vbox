@@ -289,16 +289,37 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
         switch (rc)
         {
             case VERR_VM_DRIVER_LOAD_ERROR:
-                pszError = N_("VirtualBox kernel driver not loaded");
+#ifdef __LINUX
+                pszError = N_("VirtualBox kernel driver not loaded. The vboxdrv kernel module "
+		              "was either not loaded or /dev/vboxdrv is not set up properly. "
+			      "Re-setup the kernel module by executing "
+			      "'/etc/init.d/vboxdrv setup' as root");
+#else
+                pszError = N_("VirtualBox kernel driver not loaded.");
+#endif
                 break;
             case VERR_VM_DRIVER_OPEN_ERROR:
                 pszError = N_("VirtualBox kernel driver cannot be opened");
                 break;
             case VERR_VM_DRIVER_NOT_ACCESSIBLE:
+#ifdef __LINUX__
+                pszError = N_("VirtualBox kernel driver not accessible, permission problem. "
+		              "Make sure that the current user has write permissions to "
+			      "/dev/vboxdrv by adding him to the vboxusers groups. Don't "
+			      "forget to logout to take the change effect");
+#else
                 pszError = N_("VirtualBox kernel driver not accessible, permission problem");
+#endif
                 break;
             case VERR_VM_DRIVER_NOT_INSTALLED:
+#ifdef __LINUX__
+                pszError = N_("VirtualBox kernel driver not installed. The vboxdrv kernel module "
+		              "was either not loaded or /dev/vboxdrv was not created for some "
+			      "reason. Re-setup the kernel module by executing "
+			      "'/etc/init.d/vboxdrv setup' as root");
+#else
                 pszError = N_("VirtualBox kernel driver not installed");
+#endif
                 break;
             case VERR_NO_MEMORY:
                 pszError = N_("VirtualBox support library out of memory");
