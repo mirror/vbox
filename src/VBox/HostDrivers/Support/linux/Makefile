@@ -65,7 +65,7 @@ endif
 ifneq ($(MAKECMDGOALS),clean)
 
 # kernel base directory
-ifndef $(KERN_DIR)
+ifndef KERN_DIR
  KERN_DIR := /lib/modules/$(shell uname -r)/build
  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
   KERN_DIR := /usr/src/linux
@@ -81,7 +81,7 @@ else
 endif
 
 # includes
-ifndef $(KERN_INCL)
+ifndef KERN_INCL
  KERN_INCL = $(KERN_DIR)/include
 endif
 ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
