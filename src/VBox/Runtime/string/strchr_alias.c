@@ -34,7 +34,7 @@
 /* No alias support here (yet in the ming case). */
 extern char *(strchr)(const char *psz, int ch)
 {
-    return RT_NOCRT(strchr)(pv, ch);
+    return RT_NOCRT(strchr)(psz, ch);
 }
 
 #elif __GNUC__ >= 4
