@@ -65,8 +65,10 @@
 # endif
 
 #elif defined(__OS2__)
-# define SUP_CTL_CATEGORY               ((unsigned short)'V')
-# define SUP_CTL_CODE(Function)         ((unsigned short)(Function))
+# define SUP_CTL_CATEGORY               0xc0
+# define SUP_CTL_CODE(Function)         ((unsigned char)(Function))
+# define SUP_CTL_CATEGORY_FAST          0xc1
+# define SUP_CTL_CODE_FAST(Function)    ((unsigned char)(Function))
 
 #elif defined(__LINUX__) || defined(__L4__)
 # ifdef __X86__ /** @todo With the next major version change, drop this branch. */
@@ -159,9 +161,12 @@ typedef struct SUPDRVIOCTLDATA
     unsigned long   cbIn;
     void           *pvOut;
     unsigned long   cbOut;
-
+#ifdef __OS2__
+    int             rc;
+#endif
 } SUPDRVIOCTLDATA, *PSUPDRVIOCTLDATA;
 #endif
+
 
 /** SUP_IOCTL_COOKIE Input. */
 typedef struct SUPCOOKIE_IN

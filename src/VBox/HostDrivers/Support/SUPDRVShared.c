@@ -313,12 +313,12 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSessio
             Assert(pSession->Spinlock != NIL_RTSPINLOCK);
             pSession->pDevExt           = pDevExt;
             pSession->u32Cookie         = BIRD_INV;
-            //pSession->pLdrUsage         = NULL;
-            //pSession->pPatchUsage       = NULL;
-            //pSession->pUsage            = NULL;
-            //pSession->pGip              = NULL;
-            //pSession->fGipReferenced    = false;
-            //pSession->Bundle.cUsed      = 0
+            /*pSession->pLdrUsage         = NULL;
+            pSession->pPatchUsage       = NULL;
+            pSession->pUsage            = NULL;
+            pSession->pGip              = NULL;
+            pSession->fGipReferenced    = false;
+            pSession->Bundle.cUsed      = 0 */
 
             dprintf(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
             return 0;
@@ -578,10 +578,10 @@ int  VBOXCALL   supdrvIOCtlFast(unsigned uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVS
      * that interrupts are disabled. (We check the two prereqs after doing
      * this only to allow the compiler to optimize things better.)
      */
-    RTCCUINTREG     uFlags = ASMGetFlags();
+    int         rc;
+    RTCCUINTREG uFlags = ASMGetFlags();
     ASMIntDisable();
 
-    int rc;
     if (RT_LIKELY(pSession->pVM && pDevExt->pfnVMMR0Entry))
     {
         switch (uIOCtl)
@@ -1765,6 +1765,9 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, void *pvR3, unsigned cb, PS
     rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTR0ProcHandleSelf());
     if (RT_SUCCESS(rc))
     {
+        AssertMsg(RTR0MemObjAddress(Mem.MemObj) == pvR3, ("%p == %p\n", RTR0MemObjAddress(Mem.MemObj), pvR3));
+        AssertMsg(RTR0MemObjSize(Mem.MemObj) == cb, ("%x == %x\n", RTR0MemObjSize(Mem.MemObj), cb));
+
         unsigned iPage = cb >> PAGE_SHIFT;
         while (iPage-- > 0)
         {
@@ -2433,10 +2436,9 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
      * Need to allocate a new bundle.
      * Insert into the last entry in the bundle.
      */
-    pBundle = (PSUPDRVBUNDLE)RTMemAlloc(sizeof(*pBundle));
+    pBundle = (PSUPDRVBUNDLE)RTMemAllocZ(sizeof(*pBundle));
     if (!pBundle)
         return SUPDRV_ERR_NO_MEMORY;
-    memset(pBundle, 0, sizeof(*pBundle));
 
     /* take last entry. */
     pBundle->cUsed++;
@@ -4029,7 +4031,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
         pGip->aCPUs[i].u32TransactionId  = 2;
         pGip->aCPUs[i].u64NanoTS         = u64NanoTS;
         pGip->aCPUs[i].u64TSC            = ASMReadTSC();
-    
+
         /*
          * We don't know the following values until we've executed updates.
          * So, we'll just insert very high values.
@@ -4059,7 +4061,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
 
 /**
  * Determin the GIP TSC mode.
- * 
+ *
  * @returns The most suitable TSC mode.
  */
 static SUPGIPMODE supdrvGipDeterminTscMode(void)
@@ -4119,7 +4121,7 @@ void VBOXCALL supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
 /**
  * Worker routine for supdrvGipUpdate and supdrvGipUpdatePerCpu that
  * updates all the per cpu data except the transaction id.
- * 
+ *
  * @param   pGip            The GIP.
  * @param   pGipCpu         Pointer to the per cpu data.
  * @param   u64NanoTS       The current time stamp.

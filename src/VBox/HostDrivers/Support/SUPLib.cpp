@@ -431,11 +431,31 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cbMemory, PSUPPAGE paPages)
     In.u32SessionCookie = g_u32SessionCookie;
     In.pv               = pvStart;
     In.cb               = (uint32_t)cbMemory; AssertRelease(In.cb == cbMemory);
-    PSUPPINPAGES_OUT pOut = (PSUPPINPAGES_OUT)(void*)paPages;
-    Assert(RT_OFFSETOF(SUPPINPAGES_OUT, aPages) == 0 && sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
     int rc;
     if (!g_u32FakeMode)
+    {
+        PSUPPINPAGES_OUT pOut;
+        AssertCompile(sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
+
+#if 0
+        const size_t cPages = cbMemory >> PAGE_SHIFT;
+        size_t cbOut = RT_OFFSETOF(SUPPINPAGES_OUT, aPages[cPages]);
+        pOut = (PSUPPINPAGES_OUT)RTMemTmpAllocZ(cbOut);
+        if (!pOut)
+            return VERR_NO_TMP_MEMORY;
+
+        rc = suplibOsIOCtl(SUP_IOCTL_PINPAGES, &In, sizeof(In), pOut, cbOut);
+        if (RT_SUCCESS(rc))
+            memcpy(paPages, &pOut->aPages[0], sizeof(paPages[0]) * cPages);
+        RTMemTmpFree(pOut);
+
+#else
+        /* a hack to save some time. */
+        pOut = (PSUPPINPAGES_OUT)(void*)paPages;
+        Assert(RT_OFFSETOF(SUPPINPAGES_OUT, aPages) == 0 && sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
         rc = suplibOsIOCtl(SUP_IOCTL_PINPAGES, &In, sizeof(In), pOut, RT_OFFSETOF(SUPPINPAGES_OUT, aPages[cbMemory >> PAGE_SHIFT]));
+#endif
+    }
     else
     {
         /* fake a successfull result. */
@@ -569,7 +589,7 @@ SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PSUPPAGE paPages)
         In.u32SessionCookie = g_u32SessionCookie;
         In.cPages           = cPages;
         size_t              cbOut = RT_OFFSETOF(SUPLOWALLOC_OUT, aPages[cPages]);
-        PSUPLOWALLOC_OUT    pOut = (PSUPLOWALLOC_OUT)RTMemAllocZ(cbOut);
+        PSUPLOWALLOC_OUT    pOut = (PSUPLOWALLOC_OUT)RTMemTmpAllocZ(cbOut);
         if (pOut)
         {
             rc = suplibOsIOCtl(SUP_IOCTL_LOW_ALLOC, &In, sizeof(In), pOut, cbOut);
@@ -578,7 +598,7 @@ SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PSUPPAGE paPages)
                 *ppvPages = pOut->pvVirt;
                 AssertCompile(sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
                 memcpy(paPages, &pOut->aPages[0], sizeof(paPages[0]) * cPages);
-#if HC_ARCH_BITS == 64 /* -> strict only */
+#ifdef VBOX_STRICT
                 for (unsigned i = 0; i < cPages; i++)
                     AssertReleaseMsg(   paPages[i].Phys <= 0xfffff000
                                      && !(paPages[i].Phys & PAGE_OFFSET_MASK)
@@ -586,10 +606,10 @@ SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PSUPPAGE paPages)
                                      ("[%d]=%VHp\n", paPages[i].Phys));
 #endif
             }
-            RTMemFree(pOut);
+            RTMemTmpFree(pOut);
         }
         else
-            rc = VERR_NO_MEMORY;
+            rc = VERR_NO_TMP_MEMORY;
     }
     else
     {

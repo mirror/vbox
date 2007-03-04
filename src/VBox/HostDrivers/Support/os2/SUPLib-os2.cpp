@@ -24,6 +24,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define INCL_BASE
+#define INCL_ERRORS
+#include <os2.h>
+#undef RT_MAX
+
 #include <VBox/types.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
@@ -34,19 +39,16 @@
 #include "SUPLibInternal.h"
 #include "SUPDRVIOC.h"
 
-#include <sys/fcntl.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** OS/2 Device name. */
-#define DEVICE_NAME     "/dev/$vboxdrv"
+#define DEVICE_NAME     "/dev/vboxdrv$"
 
 
 
@@ -54,9 +56,7 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Handle to the open device. */
-static int      g_hDevice = -1;
-/** Flags whether or not we've loaded the kernel module. */
-static bool     g_fLoadedModule = false;
+static HFILE    g_hDevice = (HFILE)-1;
 
 
 /*******************************************************************************
@@ -79,39 +79,28 @@ int     suplibOsInit(size_t cbReserve)
     /*
      * Check if already initialized.
      */
-    if (g_hDevice >= 0)
+    if (g_hDevice != (HFILE)-1)
         return 0;
 
-#if 0
     /*
      * Try open the device.
      */
-    g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
-    if (g_hDevice < 0)
-    {
-        /*
-         * Try load the device.
-         */
-        //todo suplibOsLoadKernelModule();
-        g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
-        if (g_hDevice < 0)
-            return RTErrConvertFromErrno(errno);
-    }
+    ULONG ulAction = 0;
+    HFILE hDevice = (HFILE)-1;
+    APIRET rc = DosOpen((PCSZ)DEVICE_NAME,
+                        &hDevice,
+                        &ulAction,
+                        0,
+                        FILE_NORMAL,
+                        OPEN_ACTION_FAIL_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS,
+                        OPEN_FLAGS_NOINHERIT | OPEN_SHARE_DENYNONE | OPEN_ACCESS_READWRITE,
+                        NULL);
+    if (rc)
+        return RTErrConvertFromOS2(rc);
+    g_hDevice = hDevice;
 
-    /*
-     * Check driver version.
-     */
-    /** @todo implement driver version checking. */
-
-    /*
-     * We're done.
-     */
     NOREF(cbReserve);
-    return 0;
-#else
-    NOREF(cbReserve);
-    return VERR_NOT_IMPLEMENTED;
-#endif
+    return VINF_SUCCESS;
 }
 
 
@@ -120,134 +109,92 @@ int     suplibOsTerm(void)
     /*
      * Check if we're initited at all.
      */
-    if (g_hDevice >= 0)
+    if (g_hDevice != (HFILE)-1)
     {
-        if (close(g_hDevice))
-            AssertFailed();
-        g_hDevice = -1;
-    }
-
-    /*
-     * If we started the service we might consider stopping it too.
-     *
-     * Since this won't work unless the the process starting it is the
-     * last user we might wanna skip this...
-     */
-    if (g_fLoadedModule)
-    {
-        //todo kernel module unloading.
-        //suplibOsStopService();
-        //g_fStartedService = false;
+        APIRET rc = DosClose(g_hDevice);
+        AssertMsg(rc == NO_ERROR, ("%d\n", rc)); NOREF(rc);
+        g_hDevice = (HFILE)-1;
     }
 
     return 0;
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
 int suplibOsInstall(void)
 {
-//    int rc = mknod(DEVICE_NAME, S_IFCHR, );
-
-    return VERR_NOT_IMPLEMENTED;
+    /** @remark OS/2: Not supported */
+    return VERR_NOT_SUPPORTED;
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
 int suplibOsUninstall(void)
 {
-//    int rc = unlink(DEVICE_NAME);
-
-    return VERR_NOT_IMPLEMENTED;
+    /** @remark OS/2: Not supported */
+    return VERR_NOT_SUPPORTED;
 }
 
 
-/**
- * Send a I/O Control request to the device.
- *
- * @returns 0 on success.
- * @returns VBOX error code on failure.
- * @param   uFunction   IO Control function.
- * @param   pvIn        Input data buffer.
- * @param   cbIn        Size of input data.
- * @param   pvOut       Output data buffer.
- * @param   cbOut       Size of output data.
- */
-int     suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, size_t cbOut)
+int suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, size_t cbOut)
 {
-#if 0
-    AssertMsg(g_hDevice != -1, ("SUPLIB not initiated successfully!\n"));
-    /*
-     * Issue device iocontrol.
-     */
+    AssertMsg(g_hDevice != (HFILE)-1, ("SUPLIB not initiated successfully!\n"));
+
     SUPDRVIOCTLDATA Args;
     Args.pvIn = pvIn;
     Args.cbIn = cbIn;
     Args.pvOut = pvOut;
     Args.cbOut = cbOut;
+    Args.rc = VERR_INTERNAL_ERROR;
 
-    if (ioctl(g_hDevice, uFunction, &Args) >= 0)
-	return 0;
-    /* This is the reverse operation of the one found in SUPDrv-linux.c */
-    switch (errno)
-    {
-        case EACCES: return VERR_GENERAL_FAILURE;
-        case EINVAL: return VERR_INVALID_PARAMETER;
-        case ENOSYS: return VERR_INVALID_MAGIC;
-        case ENXIO:  return VERR_INVALID_HANDLE;
-        case EFAULT: return VERR_INVALID_POINTER;
-        case ENOLCK: return VERR_LOCK_FAILED;
-        case EEXIST: return VERR_ALREADY_LOADED;
-    }
+    ULONG cbReturned = sizeof(Args);
+    int rc = DosDevIOCtl(g_hDevice, SUP_CTL_CATEGORY, uFunction,
+                         &Args, sizeof(Args), &cbReturned,
+                         NULL, 0, NULL);
+    if (RT_LIKELY(rc == NO_ERROR))
+        rc = Args.rc;
+    else
+        rc = RTErrConvertFromOS2(rc);
+    return rc;
+}
 
-    return RTErrConvertFromErrno(errno);
-#else
-    return VERR_NOT_IMPLEMENTED;
+
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+int suplibOSIOCtlFast(unsigned uFunction)
+{
+    int32_t rcRet = VERR_INTERNAL_ERROR;
+    ULONG cbRet = sizeof(rcRet);
+    int rc = DosDevIOCtl(g_hDevice, SUP_CTL_CATEGORY_FAST, uFunction,
+                         NULL, 0, NULL,
+                         &rcRet, sizeof(rcRet), &cbRet);
+    if (RT_LIKELY(rc == NO_ERROR))
+        rc = rcRet;
+    else
+        rc = RTErrConvertFromOS2(rc);
+    return rc;
+}
 #endif
+
+
+int suplibOsPageAlloc(size_t cPages, void **ppvPages)
+{
+    *ppvPages = NULL;
+    int rc = DosAllocMem(ppvPages, cPages << PAGE_SHIFT, PAG_READ | PAG_WRITE | PAG_EXECUTE | PAG_COMMIT | OBJ_ANY);
+    if (rc == ERROR_INVALID_PARAMETER)
+        rc = DosAllocMem(ppvPages, cPages << PAGE_SHIFT, PAG_READ | PAG_WRITE | PAG_EXECUTE | PAG_COMMIT | OBJ_ANY);
+    if (!rc)
+        rc = VINF_SUCCESS;
+    else
+        rc = RTErrConvertFromOS2(rc);
+    return rc;
 }
 
 
-/**
- * Allocate a number of zero-filled pages in user space.
- *
- * @returns VBox status code.
- * @param   cPages      Number of pages to allocate.
- * @param   ppvPages    Where to return the base pointer.
- */
-int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
+int suplibOsPageFree(void *pvPages)
 {
-    if (!posix_memalign(ppvPages, PAGE_SIZE, cPages << PAGE_SHIFT))
+    if (pvPages)
     {
-        memset(*ppvPages, 0, cPages << PAGE_SHIFT);
-        return VINF_SUCCESS;
+        int rc = DosFreeMem(pvPages);
+        Assert(!rc);
     }
-    return RTErrConvertFromErrno(errno);
-}
-
-
-/**
- * Frees pages allocated by suplibOsPageAlloc().
- *
- * @returns VBox status code.
- * @param   pvPages     Pointer to pages.
- */
-int     suplibOsPageFree(void *pvPages)
-{
-    free(pvPages);
     return VINF_SUCCESS;
 }
-
-
-
-
 

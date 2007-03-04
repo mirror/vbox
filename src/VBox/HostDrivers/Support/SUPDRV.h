@@ -36,6 +36,8 @@
 # include <iprt/memobj.h>
 # include <iprt/time.h>
 # include <iprt/timer.h>
+# include <iprt/string.h>
+# include <iprt/err.h>
 #endif
 
 
@@ -86,6 +88,8 @@
 #elif defined(__DARWIN__)
 #   include <libkern/libkern.h>
 #   include <iprt/string.h>
+
+#elif defined(__OS2__)
 
 #else
 #   error "unsupported OS."
@@ -151,6 +155,16 @@ __END_DECLS
 /* debug printf */
 # define OSDBGPRINT(a) printf a
 
+
+/*
+ * OS/2
+ */
+#elif defined(__OS2__)
+
+/* No log API in OS/2 only COM port. */
+# define OSDBGPRINT(a) SUPR0Printf a
+
+
 #else
 /** @todo other os'es */
 # error "OS interface defines is not done for this OS!"
@@ -170,7 +184,7 @@ __END_DECLS
 #endif
 
 /* dprintf2 - extended logging. */
-#if defined(__DARWIN__)
+#if defined(__DARWIN__) || defined(__OS2__)
 # define dprintf2 dprintf
 #else
 # define dprintf2(a) do { } while (0)
@@ -544,6 +558,11 @@ typedef struct SUPDRVSESSION
     RTPROCESS                   Process;
     /** Which process this session is associated with. */
     RTR0PROCESS                 R0Process;
+#if defined(__OS2__)
+    /** The system file number of this session. */
+    uint16_t                    sfn;
+    uint16_t                    Alignment; /**< Alignment */
+#endif
 #if defined(__DARWIN__) || defined(__OS2__)
     /** Pointer to the next session with the same has. */
     PSUPDRVSESSION              pNextHash;
