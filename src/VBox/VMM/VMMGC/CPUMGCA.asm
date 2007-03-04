@@ -188,14 +188,14 @@ BEGINPROC_EXPORTED CPUMGCCallGuestTrapHandler
 
 ENDPROC CPUMGCCallGuestTrapHandler
 
-;/**
-; * Performs an iret to V86 code
-; * Assumes a trap stack frame has already been setup on the guest's stack!
-; *
-; * @param   pRegFrame   Original trap/interrupt context
-; *
-; * This function does not return!
-; */
+;;
+; Performs an iret to V86 code
+; Assumes a trap stack frame has already been setup on the guest's stack!
+;
+; @param   pRegFrame   Original trap/interrupt context
+; 
+; This function does not return!
+; 
 ;CPUMGCDECL(void) CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 align 16
 BEGINPROC CPUMGCCallV86Code
