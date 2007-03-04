@@ -19,9 +19,7 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__OS2__)
-# define PDMLDR_FAKE_MODE
-#endif
+//#define PDMLDR_FAKE_MODE
 
 /*******************************************************************************
 *   Header Files                                                               *
