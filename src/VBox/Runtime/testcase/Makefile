@@ -67,6 +67,11 @@ PROGRAMS.l4 = \
 SYSMODS = \
 	tstLdrObj \
 	tstLdrObjR0
+ifeq ($(filter-out lx pe,$(VBOX_LDR_FMT)), )
+LIBRARIES += \
+	tstLdr-4Imp
+endif
+	
 # tstSems
 endif # VBOX_WITH_TESTCASES
 
@@ -158,6 +163,13 @@ tstLdr-3_DEFS    = IN_DIS_R3
 tstLdr-3_LIBS    = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
+tstLdr-4Imp_TEMPLATE = VBOXR0
+ifeq ($(VBOX_LDR_FMT),lx)
+ tstLdr-4Imp_SOURCES = tstLdr-4Imp-os2.def
+else ifeq ($(VBOX_LDR_FMT),pe)
+ tstLdr-4Imp_SOURCES.win = tstLdr-4Imp-win.def
+endif
+
 tstLdrObjR0_TEMPLATE = VBOXR0
 tstLdrObjR0_INST     = $(INST_TESTCASE)
 tstLdrObjR0_SYSSUFF  = .r0
@@ -172,14 +184,16 @@ tstLdrObjR0_LIBS     = \
 ifeq ($(VBOX_LDR_FMT),pe)
  tstLdrObjR0_LDFLAGS = -Entry:Entrypoint
  tstLdrObjR0_LIBS   += \
-	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB) \
+	$(TARGET_tstLdr-4Imp)
 endif
 ifeq ($(VBOX_LDR_FMT),elf)
  tstLdrObjR0_LDFLAGS = -entry=Entrypoint
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
  tstLdrObjR0_LIBS   += \
-	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB) \
+	$(TARGET_tstLdr-4Imp)
 endif
 
 tstLdr-4_SOURCES = tstLdr-4.cpp tstLdrDisasmTest.cpp

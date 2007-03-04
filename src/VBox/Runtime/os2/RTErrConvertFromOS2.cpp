@@ -159,6 +159,8 @@ RTDECL(int)  RTErrConvertFromOS2(unsigned uNativeCode)
         case ERROR_TOO_MANY_POSTS:          return VERR_TOO_MANY_POSTS;
 
         case ERROR_INTERRUPT:               return VERR_INTERRUPTED;
+
+        case ERROR_BUSY:                    return VERR_MEMORY_BUSY;
         //case ERROR_NO_UNICODE_TRANSLATION:  return VERR_NO_TRANSLATION;
     }
 

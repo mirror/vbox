@@ -656,7 +656,6 @@ RuntimeR0Drv_SOURCES    = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
 	assert.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
 	log.cpp \
 	logcom.cpp \
 	logformat.cpp \
@@ -677,6 +676,7 @@ RuntimeR0Drv_SOURCES    = \
 	crc64.cpp
 
 RuntimeR0Drv_SOURCES.linux = \
+	generic/RTAssertDoBreakpoint-generic.cpp \
 	alloc/heapsimple.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
@@ -687,6 +687,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/thread-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
+	generic/RTAssertDoBreakpoint-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
@@ -701,6 +702,7 @@ RuntimeR0Drv_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
 
 RuntimeR0Drv_SOURCES.darwin = \
+	generic/RTAssertDoBreakpoint-generic.cpp \
 	RTErrConvertFromErrno.cpp \
 	string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
@@ -717,9 +719,44 @@ RuntimeR0Drv_SOURCES.darwin = \
 	thread.cpp \
 	generic/timer-generic.cpp \
 
+RuntimeR0Drv_DEFS.os2 += RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0Drv_SOURCES.os2 = \
+	string/memchr.asm \
+	string/memcmp.asm \
+	string/memcpy.asm \
+	string/mempcpy.asm \
+	string/memset.asm \
+	string/strchr.asm \
+	string/strcmp.asm \
+	\
+	string/strcpy.cpp \
+	string/strlen.cpp \
+	string/strncmp.cpp \
+	\
 	os2/RTErrConvertFromOS2.cpp \
-	os2/sys0.asm
+	os2/sys0.asm \
+	thread.cpp \
+	r0drv/memobj-r0drv.cpp \
+	r0drv/os2/alloc-r0drv-os2.cpp \
+	r0drv/os2/assert-r0drv-os2.cpp \
+	r0drv/os2/assertA-r0drv-os2.asm \
+	r0drv/os2/initterm-r0drv-os2.cpp \
+	r0drv/os2/memobj-r0drv-os2.cpp \
+	r0drv/os2/os2imports.imp \
+	r0drv/os2/process-r0drv-os2.cpp \
+	r0drv/os2/semevent-r0drv-os2.cpp \
+	r0drv/os2/semeventmulti-r0drv-os2.cpp \
+	r0drv/os2/semfastmutex-r0drv-os2.cpp \
+	r0drv/os2/spinlock-r0drv-os2.cpp \
+	r0drv/os2/thread-r0drv-os2.cpp \
+	r0drv/os2/thread2-r0drv-os2.cpp \
+	r0drv/os2/time-r0drv-os2.cpp \
+	r0drv/os2/timer-r0drv-os2.cpp \
+	r0drv/os2/timerA-r0drv-os2.asm \
+	r0drv/os2/RTAssertDoBreakpoint-r0drv-os2.asm \
+	r0drv/os2/RTR0Os2DHQueryDOSVar.asm \
+	r0drv/os2/RTR0Os2DHVMGlobalToProcess.asm \
+	generic/RTLogWriteDebugger-generic.cpp
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 

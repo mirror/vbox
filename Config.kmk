@@ -162,7 +162,7 @@ VBOX_WITH_VRDP = 1
 VBOX_WITH_VRDP_AUTHMOD = 1
 # build enhanced version of rdesktop
 VBOX_WITH_VRDP_RDESKTOP = 1
-ifeq ($(BUILD_TARGET),darwin)
+ifeq ($(filter-out darwin os2,$(BUILD_TARGET)),)
 # build the support driver & library without IDT patching.
 ## @todo invert this!
 VBOX_WITHOUT_IDT_PATCHING = 1
@@ -1115,8 +1115,8 @@ endif
 
 ifeq ($(VBOX_LDR_FMT),lx)
 TEMPLATE_VBOXR0_TOOL                = GCC3OMF
-TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXR0_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXR0_LDFLAGS             = -Zdll -nostdlib
 TEMPLATE_VBOXR0_LIBS                = \
 	$(VBOX_GCC_LIBGCC) \
@@ -1179,8 +1179,11 @@ endif
 
 ifeq ($(BUILD_TARGET),os2)
 TEMPLATE_VBOXR0DRV_TOOL                = GCC3OMF
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXR0DRV_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fno-rtti -fno-exceptions
 TEMPLATE_VBOXR0DRV_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXR0DRV_LIBS                = $(VBOX_GCC_LIBGCC)
+# wlink thinks physdevice doesn't need fixups and should have a stack - stupid!
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -Zlinker Option -Zlinker internalrelocs, -Zlinker togglerelocs
 endif
 
 ifeq ($(BUILD_TARGET),darwin)

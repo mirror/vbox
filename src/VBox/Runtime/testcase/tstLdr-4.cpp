@@ -157,7 +157,7 @@ static int testLdrOne(const char *pszFilename)
                 rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits, "_DisasmTest1", &Value);
             if (RT_FAILURE(rc))
             {
-                RTPrintf("tstLdr-4: Failed to get symbol \"Test1\" from load #%d: %Rrc\n", i, rc);
+                RTPrintf("tstLdr-4: Failed to get symbol \"DisasmTest1\" from load #%d: %Rrc\n", i, rc);
                 cErrors++;
                 break;
             }
