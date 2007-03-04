@@ -1271,10 +1271,6 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
 
 /**
- * IRET Emulation.
- */
-
-/**
  * Interpret IRET (currently only to V86 code)
  *
  * @returns VBox status code.
