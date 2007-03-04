@@ -228,7 +228,7 @@ extern int testmath(void);
 
 /* Put them here to avoid unused variable warning. */
 AssertCompile(RT_SIZEOFMEMB(VM, rem.padding) >= RT_SIZEOFMEMB(VM, rem.s));
-#ifndef IPRT_NO_CRT
+#if !defined(IPRT_NO_CRT) && (defined(__LINUX__) || defined(__DARWIN__) || defined(__WIN__))
 AssertCompileMemberSize(REM, Env, REM_ENV_SIZE);
 #else
 AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
