@@ -72,9 +72,9 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxProblemReporter.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
+VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
 ifneq ($(BUILD_TARGET),win)
-VirtualBox_QT_MOCSRCS = src/COMDefs.cpp \
-						src/VBoxSelectorWnd.cpp
+VirtualBox_QT_MOCSRCS += src/COMDefs.cpp
 endif
 
 # UI headers (ui.h) containing local definitions of classes that use the Q_OBJECT macro
