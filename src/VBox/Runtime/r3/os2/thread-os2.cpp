@@ -134,7 +134,11 @@ int rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
     int iThreadId = _beginthread(rtThreadNativeMain, NULL, pThread->cbStack, pThread);
     if (iThreadId > 0)
     {
+#ifdef fibGetTidPid
+        *pNativeThread = iThreadId | (fibGetPid() << 16);
+#else
         *pNativeThread = iThreadId;
+#endif
         return VINF_SUCCESS;
     }
     return RTErrConvertFromErrno(errno);
