@@ -24,8 +24,9 @@
 # ifndef LOG_GROUP
 #  include <VBox/log.h>
 #  define LOG_GROUP LOG_GROUP_REM
-# endif 
-#endif 
+# endif
+# include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
+#endif
 
 #if defined(__arm__) || defined(__sparc__)
 #define WORDS_ALIGNED
@@ -196,9 +197,11 @@ void     remR3PhysWriteU8(uint8_t *pbDstPhys, uint8_t val);
 void     remR3PhysWriteU16(uint8_t *pbDstPhys, uint16_t val);
 void     remR3PhysWriteU32(uint8_t *pbDstPhys, uint32_t val);
 void     remR3PhysWriteU64(uint8_t *pbDstPhys, uint64_t val);
+# ifdef PGM_DYNAMIC_RAM_ALLOC
 void    *remR3GCPhys2HCVirt(void *env, target_ulong addr);
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
 void     remR3GrowDynRange(unsigned long physaddr);
+# endif
 #endif
 
 static inline int ldub_p(void *ptr)
@@ -983,7 +986,7 @@ extern uint8_t *phys_ram_dirty;
 #define IO_MEM_ROM         (1 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_UNASSIGNED  (2 << IO_MEM_SHIFT)
 #define IO_MEM_NOTDIRTY    (4 << IO_MEM_SHIFT) /* used internally, never use directly */
-#ifdef VBOX
+#if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
 #define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
 #endif
 /* acts like a ROM when read and like a device when written. As an
@@ -1072,7 +1075,7 @@ static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
         /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
         return;
     }
-#endif 
+#endif
     phys_ram_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
 }
 

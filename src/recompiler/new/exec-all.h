@@ -25,9 +25,10 @@
 
 #ifdef VBOX
 # include <VBox/tm.h>
+# include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
 # ifndef LOG_GROUP
 #  define LOG_GROUP LOG_GROUP_REM
-# endif 
+# endif
 # include <VBox/log.h>
 # include "REMInternal.h"
 # include <VBox/vm.h>
@@ -602,8 +603,10 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
 #else
 # ifdef VBOX
 target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, CPUTLBEntry *pTLBEntry);
+#  ifdef PGM_DYNAMIC_RAM_ALLOC
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
-# endif 
+#  endif
+# endif
 /* NOTE: this function can trigger an exception */
 /* NOTE2: the returned address is not exactly the physical address: it
    is the offset relative to phys_ram_base */
@@ -635,16 +638,16 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
     if (pd > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {
 # ifdef VBOX
         /* deal with non-MMIO access handlers. */
-        return remR3PhysGetPhysicalAddressCode(env, addr, &env->tlb_table[is_user][index]); 
+        return remR3PhysGetPhysicalAddressCode(env, addr, &env->tlb_table[is_user][index]);
 # else
         cpu_abort(env, "Trying to execute code outside RAM or ROM at 0x%08lx\n", addr);
 # endif
     }
-# ifdef VBOX
+# if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
     return remR3HCVirt2GCPhys(env, (void *)(addr + env->tlb_table[is_user][index].addend));
 # else
     return addr + env->tlb_table[is_user][index].addend - (unsigned long)phys_ram_base;
-# endif 
+# endif
 }
 #endif
 
