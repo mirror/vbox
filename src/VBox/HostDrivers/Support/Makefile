@@ -33,6 +33,7 @@ ifdef VBOX_WITH_VBOXDRV
 SYSMODS.darwin += VBoxDrv
 SYSMODS.linux  += vboxdrv
 SYSMODS.win    += VBoxDrv
+SYSMODS.os2    += VBoxDrv
 endif
 
 
@@ -208,6 +209,35 @@ Scripts_INST     = $(INST_DIST)
 Scripts_SOURCES  = \
 	$(VBOX_PATH_SUPPORT)/darwin/load.sh
 
+endif
+
+
+#
+# VBoxDrv.sys - The OS/2 driver.
+#
+ifeq ($(BUILD_TARGET),os2)
+VBoxDrv_TEMPLATE      = VBOXR0DRV
+VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+VBoxDrv_INCS          = $(VBOX_PATH_SUPPORT)
+#VBoxDrv_LDFLAGS       = -s -t -v
+VBoxDrv_SOURCES       = \
+	$(VBOX_PATH_SUPPORT)/os2/SUPDrvA-os2.asm \
+	$(VBOX_PATH_SUPPORT)/os2/SUPDrv-os2.def
+VBoxDrv_LIBS          = \
+	$(TARGET_VBoxDrvLib) \
+	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
+	$(VBOX_GCC_LIBGCC) \
+	end
+
+# temp hack to ensure that SUPDrvA-os2.asm is first in the link.
+LIBRARIES += VBoxDrvLib
+VBoxDrvLib_TEMPLATE   = VBOXR0DRV
+VBoxDrvLib_NOINST     = 1
+VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+VBoxDrvLib_INCS       = $(VBOX_PATH_SUPPORT) $(PATH_TARGET) $(PATH_ROOT)/src/VBox/Runtime/include
+VBoxDrvLib_SOURCES    = \
+	$(VBOX_PATH_SUPPORT)/os2/SUPDrv-os2.cpp \
+	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c
 endif
 
 

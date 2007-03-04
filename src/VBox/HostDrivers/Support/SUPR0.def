@@ -18,7 +18,7 @@
 ; license agreement apply instead of the previous paragraph.
 ;
 
-LIBRARY SUPR0
+LIBRARY SUPR0.dll
 
 EXPORTS
     SUPR0ObjRegister
