@@ -27,12 +27,20 @@
 #include <iprt/stream.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/initterm.h>
 
 
 int main(int argc, char **argv)
 {
     int rc;
     int cErrors = 0;
+
+    rc = RTR3Init();
+    if (rc)
+    {
+        RTPrintf("RTR3Init failed: %Vrc\n", rc);
+        return 1;
+    }
 
 #define CHECK_RC()      \
     do { if (RT_FAILURE(rc)) { RTPrintf("tstUuid(%d): rc=%Vrc!\n", __LINE__, rc); cErrors++; } } while (0)
@@ -57,8 +65,10 @@ int main(int argc, char **argv)
     rc = RTUuidFromStr(&Uuid2, sz); CHECK_RC();
     CHECK_EXPR(RTUuidCompare(&Uuid, &Uuid2) == 0);
 
-    /* 
-     * Check the binary representation. 
+    RTPrintf("tstUuid: Created {%s}\n", sz);
+
+    /*
+     * Check the binary representation.
      */
     RTUUID Uuid3;
     Uuid3.au8[0]  = 0x01;
