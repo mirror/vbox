@@ -335,7 +335,6 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
 
 /**
  * Close device.
- *
  */
 static int VBoxSupDrvClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
