@@ -872,7 +872,10 @@ void VBoxSelectorWnd::vmRefresh()
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
-    refreshVMItem (item->id(), true, true, true);
+    refreshVMItem (item->id(),
+                   true /* update details */,
+                   true /* update snapshot */,
+                   true /* update description */);
 }
 
 void VBoxSelectorWnd::refreshVMList()
@@ -1067,16 +1070,21 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         if (aRefreshSnapshots)
         {
             /* update the snapshots tab name */
-            QString shotName = tr ("&Snapshots");
-            ULONG shotCount = item->snapshotCount();
-            if (shotCount)
-                shotName += QString (" (%1)").arg (shotCount);
-            vmTabWidget->changeTab (vmSnapshotsWgt, shotName);
+            QString name = tr ("&Snapshots");
+            ULONG count = item->snapshotCount();
+            if (count)
+                name += QString (" (%1)").arg (count);
+            vmTabWidget->changeTab (vmSnapshotsWgt, name);
             /* refresh snapshots widget */
             vmSnapshotsWgt->setMachine (m);
         }
         if (aRefreshDescription)
         {
+            /* update the description tab name */
+            QString name = m.GetDescription().isEmpty() ?
+                tr ("Des&cription") : tr ("Des&cription (*)");
+            vmTabWidget->changeTab (vmDescriptionPage, name);
+            /* refresh description widget */
             vmDescriptionPage->setMachine (m);
         }
 
@@ -1181,12 +1189,18 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
 
 void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
 {
-    refreshVMItem (e.id, false, false, false);
+    refreshVMItem (e.id,
+                   false /* update details */,
+                   false /* update snapshot */,
+                   false /* update description */);
 }
 
 void VBoxSelectorWnd::machineDataChanged (const VBoxMachineDataChangeEvent &e)
 {
-    refreshVMItem (e.id, true, false, true);
+    refreshVMItem (e.id,
+                   true  /* update details */,
+                   false /* update snapshot */,
+                   true  /* update description */);
 }
 
 void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
@@ -1215,12 +1229,18 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
 
 void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
 {
-    refreshVMItem (e.id, true, false, false);
+    refreshVMItem (e.id,
+                   true  /* update details */,
+                   false /* update snapshot */,
+                   false /* update description */);
 }
 
 void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 {
-    refreshVMItem (aEvent.machineId, false, true, false);
+    refreshVMItem (aEvent.machineId,
+                   false /* update details */,
+                   true  /* update snapshot */,
+                   false /* update description */);
 }
 
 #include "VBoxSelectorWnd.moc"
