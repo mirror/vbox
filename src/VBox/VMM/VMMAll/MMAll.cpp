@@ -27,6 +27,7 @@
 #include <VBox/mm.h>
 #include "MMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/log.h>
 #include <iprt/assert.h>
 
 
@@ -107,7 +108,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
 
     /** @todo fix this properly; the ring 0 pVM address differs from the R3 one. */
     if (R0Ptr >= pVM->pVMR0 && (RTR0UINTREG)R0Ptr < (RTR0UINTREG)pVM->pVMR0 + sizeof(*pVM))
-        R3Ptr = (RTR3PTR)((RTR0UINTREG)R0Ptr - (RTR0UINTREG)pVM + (RTR0UINTREG)pVM->pVMR3);
+        R3Ptr = (RTR3PTR)((RTR0UINTREG)R0Ptr - (RTR0UINTREG)pVM->pVMR0 + (RTR0UINTREG)pVM->pVMR3);
     else
         R3Ptr = (RTR3PTR)R0Ptr;
 
