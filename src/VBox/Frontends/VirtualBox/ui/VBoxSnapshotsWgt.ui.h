@@ -116,6 +116,8 @@ public:
     CSnapshot snapshot() const { return mSnapshot; }
     QUuid snapshotId() const { return mId; }
 
+    CEnums::MachineState machineState() const { return mMachineState; }
+
     void recache()
     {
         if (!mSnapshot.isNull())
@@ -335,7 +337,18 @@ void VBoxSnapshotsWgt::destroy()
 void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
 {
     mMachine = aMachine;
-    mMachineId = aMachine.isNull() ? QUuid() : aMachine.GetId();
+
+    if (aMachine.isNull())
+    {
+        mMachineId = QUuid();
+        mSessionState = CEnums::InvalidSessionState;
+    }
+    else
+    {
+        mMachineId = aMachine.GetId();
+        mSessionState = aMachine.GetSessionState();
+    }
+
     refreshAll();
 }
 
@@ -457,18 +470,23 @@ void VBoxSnapshotsWgt::listView_currentChanged (QListViewItem *item)
     if (item)
         listView->ensureItemVisible (item);
 
+    /* whether another direct session is open or not */
+    bool busy = mSessionState != CEnums::SessionClosed;
+
     /* enable/disable snapshot actions */
-    snapshotActionGroup->setEnabled (
+    snapshotActionGroup->setEnabled (!busy &&
         item && mCurSnapshotItem && item != mCurSnapshotItem->firstChild());
 
-    showSnapshotDetailsAction->setEnabled (snapshotActionGroup->isEnabled());
+    /* enable/disable the details action regardles of the session state */
+    showSnapshotDetailsAction->setEnabled (
+        item && mCurSnapshotItem && item != mCurSnapshotItem->firstChild());
 
     /* enable/disable current state actions */
-    curStateActionGroup->setEnabled (
+    curStateActionGroup->setEnabled (!busy &&
         item && mCurSnapshotItem && item == mCurSnapshotItem->firstChild());
 
     /* the Take Snapshot action is always enabled for the current state */
-    takeSnapshotAction->setEnabled (curStateActionGroup->isEnabled() ||
+    takeSnapshotAction->setEnabled (!busy && curStateActionGroup->isEnabled() ||
                                     (item && !mCurSnapshotItem));
 
     mContextMenuDirty = true;
@@ -488,7 +506,7 @@ listView_contextMenuRequested (QListViewItem *item, const QPoint &pnt,
         if (!mCurSnapshotItem)
         {
             /* we have only one item -- current state */
-            takeSnapshotAction->addTo (mContextMenu);
+            curStateActionGroup->addTo (mContextMenu);
         }
         else
         {
@@ -669,6 +687,15 @@ void VBoxSnapshotsWgt::machineStateChanged (const VBoxMachineStateChangeEvent &a
 
     curStateItem()->recache();
     curStateItem()->updateCurrentState (aE.state);
+}
+
+void VBoxSnapshotsWgt::sessionStateChanged (const VBoxSessionStateChangeEvent &aE)
+{
+    if (aE.id != mMachineId)
+        return; /* not interested in other machines */
+
+    mSessionState = aE.state;
+    listView_currentChanged (listView->currentItem());
 }
 
 void VBoxSnapshotsWgt::snapshotChanged (const VBoxSnapshotEvent &aE)

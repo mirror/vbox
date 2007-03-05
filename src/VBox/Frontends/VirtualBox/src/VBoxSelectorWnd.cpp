@@ -217,8 +217,11 @@ public:
 private slots:
 
     void goToSettings();
+    void sessionStateChanged (const VBoxSessionStateChangeEvent &aE);
 
 private:
+
+    QUuid mMachineId;
 
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
@@ -263,13 +266,26 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
                                           QSizePolicy::Expanding,
                                           QSizePolicy::Minimum));
 
+    /* connect VirtualBox callback events */
+    connect (&vboxGlobal(), SIGNAL (sessionStateChanged (const VBoxSessionStateChangeEvent &)),
+             this, SLOT (sessionStateChanged (const VBoxSessionStateChangeEvent &)));
+
     /* apply language settings */
     languageChange();
 }
 
 void VBoxVMDescriptionPage::setMachine (const CMachine &aMachine)
 {
+    Assert (!aMachine.isNull());
+
+    QUuid id = aMachine.GetId();
+    if (id == mMachineId)
+        return;
+
+    mMachineId = id;
+
     QString text = aMachine.GetDescription();
+
     if (text.isEmpty())
         text = QString::null;
 
@@ -297,6 +313,17 @@ void VBoxVMDescriptionPage::languageChange()
 void VBoxVMDescriptionPage::goToSettings()
 {
     mParent->vmSettings ("#general", 2);
+}
+
+void VBoxVMDescriptionPage::sessionStateChanged (const VBoxSessionStateChangeEvent &aE)
+{
+    if (aE.id != mMachineId)
+        return; /* not interested in other machines */
+
+    /* whether another direct session is open or not */
+    bool busy = aE.state != CEnums::SessionClosed;
+
+    mBtnEdit->setEnabled (!busy);
 }
 
 // VBoxSelectorWnd class
@@ -1027,11 +1054,15 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
     {
         CMachine m = item->machine();
 
+        CEnums::MachineState state = item->state();
+        bool running = item->sessionState() != CEnums::SessionClosed;
+        bool modifyEnabled = !running && state != CEnums::Saved;
+
         if (aRefreshDetails)
         {
             vmDetailsView->setDetailsText (
                 vboxGlobal().detailsReport (m, false /* isNewVM */,
-                                               true /* withLinks */));
+                                               !running /* withLinks */));
         }
         if (aRefreshSnapshots)
         {
@@ -1048,15 +1079,6 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         {
             vmDescriptionPage->setMachine (m);
         }
-
-        CEnums::MachineState state = item->state();
-        bool running = item->sessionState() != CEnums::SessionClosed;
-        bool modifyEnabled = !running && state != CEnums::Saved;
-
-        /* enable/disable info panes */
-        vmDetailsView->setEnabled (modifyEnabled);
-        vmSnapshotsWgt->setEnabled (!running);
-        vmDescriptionPage->setEnabled (!running);
 
         /* enable/disable modify actions */
         vmConfigAction->setEnabled (modifyEnabled);
@@ -1193,7 +1215,7 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
 
 void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
 {
-    refreshVMItem (e.id, false, false, false);
+    refreshVMItem (e.id, true, false, false);
 }
 
 void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
