@@ -623,13 +623,6 @@ BEGINPROC SVMVMRun
     ;/* Save all general purpose host registers. */
     MYPUSHAD
 
-    ; /* Clear fs and gs as a safety precaution. Maybe not necessary. */
-    push    fs
-    push    gs
-    xor     eax, eax
-    mov     fs, eax
-    mov     gs, eax
-
     ;/* Save the Guest CPU context pointer. */
     mov     xSI, [xBP + xS*2 + RTHCPHYS_CB*2]   ; pCtx
     push    xSI                     ; push for saving the state at the end 
@@ -685,10 +678,6 @@ BEGINPROC SVMVMRun
     mov     [ss:xAX + CPUMCTX.esi], esi
     mov     [ss:xAX + CPUMCTX.edi], edi
     mov     [ss:xAX + CPUMCTX.ebp], ebp
-
-    ; Restore fs & gs
-    pop     gs
-    pop     fs
 
     ; Restore general purpose registers
     MYPOPAD
