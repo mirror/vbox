@@ -359,6 +359,8 @@ typedef enum VMMGCOPERATION
     VMMGC_DO_TESTCASE_NOP,
     /** Testcase for checking interrupt masking.. */
     VMMGC_DO_TESTCASE_INTERRUPT_MASKING,
+    /** Switching testing and profiling stub. */
+    VMMGC_DO_TESTCASE_HWACCM_NOP,
 
     /** The usual 32-bit hack. */
     VMMGC_DO_32_BIT_HACK = 0x7fffffff

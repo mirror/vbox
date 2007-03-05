@@ -97,6 +97,13 @@ VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg)
             return 0;
 
         /*
+         * Testcase executes a privileged instruction to force a world switch. (in both SVM & VMX)
+         */
+        case VMMGC_DO_TESTCASE_HWACCM_NOP:
+            ASMRdMsr_Low(MSR_IA32_SYSENTER_CS);
+            return 0;
+
+        /*
          * Delay for ~100us.
          */
         case VMMGC_DO_TESTCASE_INTERRUPT_MASKING:
