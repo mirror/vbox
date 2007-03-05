@@ -487,7 +487,7 @@ private:
                                            size_t cbChars);
 };
 
-}; // namespace com
+} // namespace com
 
 #endif // __VBox_com_string_h__
 
