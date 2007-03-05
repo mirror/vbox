@@ -739,4 +739,16 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
          pszExpr, pszFile, uLine, pszFunction));
 }
 
+DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
+{
+    PRTLOGGER pLog = RTLogRelDefaultInstance();
+    if (pLog)
+    {
+        va_start(args, pszFormat);
+        RTLogRelPrintfV(pszFormat, args);
+        va_end(args);
+        RTLogFlush(pLog);
+    }
+}
+
 #endif
