@@ -803,7 +803,7 @@ ResumeExecution:
     else
         VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
 
-    Log2(("exitCode = %x\n", exitCode));
+    Log(("exitCode = %x\n", exitCode));
 
     /* Check if an injected event was interrupted prematurely. */
     pVM->hwaccm.s.Event.intInfo = pVMCB->ctrl.ExitIntInfo.au64[0];
@@ -1247,7 +1247,7 @@ ResumeExecution:
         {
             if (IoExitInfo.n.u1Type == 0)
             {
-                Log2(("IOMIOPortWrite %VGv %x %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
+                Log(("IOMIOPortWrite %VGv %x %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
             }
@@ -1261,7 +1261,7 @@ ResumeExecution:
                 {
                     /* Write back to the EAX register. */
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
-                    Log2(("IOMIOPortRead %VGv %x %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, u32Val & uAndVal, uIOSize));
+                    Log(("IOMIOPortRead %VGv %x %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, u32Val & uAndVal, uIOSize));
                 }
             }
             if (rc == VINF_SUCCESS)
@@ -1276,6 +1276,8 @@ ResumeExecution:
         }
         else
             rc = VINF_IOM_HC_IOPORT_READWRITE;
+
+        Log(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
 
         break;
     }

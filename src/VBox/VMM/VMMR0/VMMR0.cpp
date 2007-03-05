@@ -60,7 +60,7 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
-//#define DEBUG_NO_RING0_ASSERTIONS
+#define DEBUG_NO_RING0_ASSERTIONS
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
 #endif
@@ -707,6 +707,11 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
 }
 
+void R0LogFlush()
+{
+    vmmR0LoggerFlush(RTLogDefaultInstance());
+}
+
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 /**
  * Check if we really want to hit a breakpoint.
@@ -734,7 +739,7 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
 /** Runtime assert implementation for Native Win32 Ring-0. */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
-    Log(("\n!!Assertion Failed!!\n"
+    Log(("\n!!R0-Assertion Failed!!\n"
          "Expression: %s\n"
          "Location  : %s(%d) %s\n",
          pszExpr, pszFile, uLine, pszFunction));
@@ -745,6 +750,8 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
     PRTLOGGER pLog = RTLogRelDefaultInstance();
     if (pLog)
     {
+        va_list args;
+
         va_start(args, pszFormat);
         RTLogRelPrintfV(pszFormat, args);
         va_end(args);
