@@ -776,7 +776,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 
 DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
 {
-    PRTLOGGER pLog = RTLogRelDefaultInstance();
+    PRTLOGGER pLog = RTLogDefaultInstance();
     if (pLog)
     {
         va_list args;
