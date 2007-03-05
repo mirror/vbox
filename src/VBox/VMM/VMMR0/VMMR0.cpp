@@ -535,19 +535,34 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
          * Initialize the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_INIT:
-            return VMMR0Init(pVM, (unsigned)(uintptr_t)pvArg);
+        {
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = VMMR0Init(pVM, (unsigned)(uintptr_t)pvArg);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
 
         /*
          * Terminate the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_TERM:
-            return VMMR0Term(pVM);
+        {
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = VMMR0Term(pVM);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
 
         /*
          * Setup the hardware accelerated raw-mode session.
          */
         case VMMR0_DO_HWACC_SETUP_VM:
-            return HWACCMR0SetupVMX(pVM);
+        {
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = HWACCMR0SetupVMX(pVM);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
 
         /*
          * Switch to GC to execute Hypervisor function.
@@ -559,7 +574,9 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
             if (pVM->vmm.s.fSwitcherDisabled)
                 return VERR_NOT_SUPPORTED;
 
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            ASMSetFlags(fFlags);
             return rc;
         }
 
