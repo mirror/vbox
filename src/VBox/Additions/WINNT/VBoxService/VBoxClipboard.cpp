@@ -287,7 +287,7 @@ static int vboxClipboardWriteData (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Forma
 //        return VINF_SUCCESS;
 //    }
 
-    if (!VirtualLock (pv, cb))
+    if (cb > 0 && !VirtualLock (pv, cb))
     {
         dprintf (("vboxClipboardWriteData: VirtualLock failed\n"));
         return VERR_NOT_SUPPORTED;
@@ -307,7 +307,10 @@ static int vboxClipboardWriteData (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Forma
         rc = parms.hdr.result;
     }
 
-    VirtualUnlock (pv, cb);
+    if (cb > 0)
+    {
+        VirtualUnlock (pv, cb);
+    }
 
     return rc;
 }
