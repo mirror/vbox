@@ -223,6 +223,7 @@ private:
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
     QTextBrowser *mBrowser;
+    QBrush mBrowserPaper;
 };
 
 VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
@@ -231,23 +232,25 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     , mBtnEdit (0), mBrowser (0)
 {
     /* main layout creation */
-    QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+    QVBoxLayout *mainLayout = new QVBoxLayout (this, 0, 10, "mainLayout");
+
     /* mBrowser creation */
     mBrowser = new QTextBrowser (this, "mBrowser");
+    mBrowserPaper = mBrowser->paper();
     mBrowser->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     mBrowser->setFocusPolicy (QWidget::StrongFocus);
     mBrowser->setLinkUnderline (false);
-    mBrowser->setFrameShape (QFrame::NoFrame);
-    mBrowser->setPaper (backgroundBrush());
     mainLayout->addWidget (mBrowser);
+
     /* button layout creation */
     QHBoxLayout *btnLayout = new QHBoxLayout (mainLayout, 10, "btnLayout");
-    QSpacerItem *spacer = new QSpacerItem (0, 0,
-                                           QSizePolicy::Expanding,
-                                           QSizePolicy::Minimum);
-    btnLayout->addItem (spacer);
+    btnLayout->addItem (new QSpacerItem (0, 0,
+                                         QSizePolicy::Expanding,
+                                         QSizePolicy::Minimum));
+
     /* button creation */
     mBtnEdit = new QToolButton (this, "mBtnEdit");
+    mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
     mBtnEdit->setFocusPolicy (QWidget::StrongFocus);
     mBtnEdit->setIconSet (VBoxGlobal::iconSet ("edit_shared_folder_16px.png",
                           "edit_shared_folder_disabled_16px.png"));
@@ -256,19 +259,39 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
     btnLayout->addWidget (mBtnEdit);
 
+    mainLayout->addItem (new QSpacerItem (0, 0,
+                                          QSizePolicy::Expanding,
+                                          QSizePolicy::Minimum));
+
     /* apply language settings */
     languageChange();
 }
 
 void VBoxVMDescriptionPage::setMachine (const CMachine &aMachine)
 {
-    mBrowser->setText (aMachine.GetDescription());
+    QString text = aMachine.GetDescription();
+    if (text.isEmpty())
+        text = QString::null;
+
+    if (!text.isNull())
+    {
+        mBrowser->setText (text);
+        mBrowser->setPaper (mBrowserPaper);
+        mBrowser->setEnabled (true);
+    }
+    else
+    {
+        mBrowser->setText (tr ("No description. Press the Edit button below to add it."));
+        mBrowser->setEnabled (false);
+        mBrowser->setPaper (backgroundBrush());
+    }
 }
 
 void VBoxVMDescriptionPage::languageChange()
 {
     mBtnEdit->setTextLabel (tr ("Edit"));
     mBtnEdit->setAccel (QString ("Ctrl+E"));
+    QToolTip::add (mBtnEdit, tr ("Edit (Ctrl+E)"));
 }
 
 void VBoxVMDescriptionPage::goToSettings()
@@ -909,7 +932,7 @@ void VBoxSelectorWnd::languageChange()
 
     vmTabWidget->changeTab (vmDetailsView, tr ("&Details"));
     vmTabWidget->changeTab (vmSnapshotsWgt, tr ("&Snapshots"));
-    vmTabWidget->changeTab (vmDescriptionPage, tr ("Des&cription"));
+    vmTabWidget->changeTab (vmDescriptionPage, tr ("D&escription"));
 
     /* ensure the details and screenshot view are updated */
     vmListBoxCurrentChanged();

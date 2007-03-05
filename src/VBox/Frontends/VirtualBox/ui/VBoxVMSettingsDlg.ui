@@ -1198,23 +1198,17 @@ on the entry and select a desired boot device from the drop-down list.</string>
                                 <property name="spacing">
                                     <number>10</number>
                                 </property>
-                                <widget class="QGroupBox">
+                                <widget class="QTextEdit">
                                     <property name="name">
-                                        <cstring>gbDescription</cstring>
+                                        <cstring>teDescription</cstring>
                                     </property>
-                                    <property name="title">
-                                        <string>Virtual Machine &amp;Description</string>
+                                    <property name="whatsThis" stdset="0">
+                                        <string>Displays the description of
+                                        the virtual machine. The description
+                                        field is useful for commenting
+                                        configuration details of the installed
+                                        guest OS.</string>
                                     </property>
-                                    <vbox>
-                                        <property name="name">
-                                            <cstring>unnamed</cstring>
-                                        </property>
-                                        <widget class="QTextEdit">
-                                            <property name="name">
-                                                <cstring>teDescription</cstring>
-                                            </property>
-                                        </widget>
-                                    </vbox>
                                 </widget>
                             </vbox>
                         </widget>
