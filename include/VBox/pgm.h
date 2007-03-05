@@ -1239,12 +1239,13 @@ PGMR3DECL(int) PGMR3Term(PVM pVM);
 PDMR3DECL(int) PGMR3LockCall(PVM pVM);
 
 /**
- * Inform PGM we don't wish any mapping to be put into the shadow page table. (necessary for e.g. VMX)
+ * Inform PGM if we want all mappings to be put into the shadow page table. (necessary for e.g. VMX)
  *
  * @returns VBox status code.
  * @param   pVM         VM handle.
+ * @param   fEnable     Enable or disable shadow mappings
  */
-PGMR3DECL(int) PGMR3RemoveMappingsFromShwPD(PVM pVM);
+PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 
 /**
  * Allocate missing physical pages for an existing guest RAM range.
