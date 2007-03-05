@@ -2920,7 +2920,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
 
     if (!HWACCMR3IsAllowed(pVM))
     {
-        RTPrintf("VMM: Hardware accelerated test now available!\n");
+        RTPrintf("VMM: Hardware accelerated test not available!\n");
         return VERR_ACCESS_DENIED;
     }
 
