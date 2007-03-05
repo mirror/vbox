@@ -60,7 +60,7 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
-/* #define DEBUG_NO_RING0_ASSERTIONS */
+#define DEBUG_NO_RING0_ASSERTIONS
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
 #endif
@@ -745,6 +745,18 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
          pszExpr, pszFile, uLine, pszFunction));
 }
 
+/**
+ * Callback for RTLogFormatV which writes to the com port.
+ * See PFNLOGOUTPUT() for details.
+ */
+static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars)
+{
+    for (size_t i=0;i<cbChars;i++)
+        Log(("%c", pachChars[i]));
+
+    return cbChars;
+}
+
 DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
 {
     PRTLOGGER pLog = RTLogRelDefaultInstance();
@@ -753,9 +765,9 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
         va_list args;
 
         va_start(args, pszFormat);
-        RTLogRelPrintfV(pszFormat, args);
+        RTLogFormatV(rtLogOutput, pLog, pszFormat, args);
         va_end(args);
-        RTLogFlush(pLog);
+        R0LogFlush();
     }
 }
 
