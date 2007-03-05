@@ -1212,6 +1212,42 @@ DECLINLINE(void) ASMIntDisable(void)
 
 
 /**
+ * Disables interrupts and returns previous xFLAGS.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(RTCCUINTREG) ASMIntDisableFlags(void);
+#else
+DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
+{
+    RTCCUINTREG xFlags;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef __AMD64__
+    __asm__ __volatile__("pushfq\n\t"
+                         "cli\n\t"
+                         "popq  %0\n\t"
+                         : "=m" (xFlags));
+#  else
+    __asm__ __volatile__("pushfl\n\t"
+                         "cli\n\t"
+                         "popl  %0\n\t"
+                         : "=m" (xFlags));
+#  endif
+# elif RT_INLINE_ASM_USES_INTRIN && !defined(__X86__)
+    xFlags = ASMGetFlags();
+    _disable();
+# else
+    __asm {
+        pushfd
+        cli
+        pop  [xFlags]
+    }
+# endif
+    return xFlags;
+}
+#endif
+
+
+/**
  * Reads a machine specific register.
  *
  * @returns Register content.
