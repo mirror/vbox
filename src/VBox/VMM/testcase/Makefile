@@ -30,7 +30,7 @@ PROGRAMS         = tstVMStructSize tstVMStructGC
 ifneq ($(BUILD_TARGET),darwin)
 PROGRAMS        += tstAsmStructs tstAsmStructsGC
 endif
-PROGRAMS        += tstVMM
+PROGRAMS        += tstVMM tstVMM-HwAccm
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS        += tstCFGM tstSSM tstMMHyperHeap tstVMM-2 tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
 ifneq ($(BUILD_TARGET),l4)
@@ -119,6 +119,10 @@ tstCFGM_LIBS            = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstVMM_SOURCES          = tstVMM.cpp
 tstVMM_TEMPLATE         = VBOXR3EXE
 tstVMM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+
+tstVMM-HwAccm_SOURCES   = tstVMM-HwAccm.cpp
+tstVMM-HwAccm_TEMPLATE  = VBOXR3EXE
+tstVMM-HwAccm_LIBS      = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstVMM-2_SOURCES        = tstVMM-2.cpp
 tstVMM-2_TEMPLATE       = VBOXR3EXE

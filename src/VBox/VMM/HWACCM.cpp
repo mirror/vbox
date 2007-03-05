@@ -250,7 +250,10 @@ static void hwaccmr3DisableRawMode(PVM pVM)
     VMMR3DisableSwitcher(pVM);
 
     /* Disable mapping of the hypervisor into the shadow page table. */
-    PGMR3RemoveMappingsFromShwPD(pVM);
+    PGMR3ChangeShwPDMappings(pVM, false);
+
+    /* Disable the switcher */
+    VMMR3DisableSwitcher(pVM);
 }
 
 /**

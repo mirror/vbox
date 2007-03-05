@@ -148,6 +148,7 @@
 #include <VBox/param.h>
 #include <VBox/version.h>
 #include <VBox/x86.h>
+#include <VBox/hwaccm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
@@ -2912,3 +2913,90 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
     return rc;
 }
 
+/* execute the switch. */
+VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
+{
+    uint32_t i;
+
+    if (!HWACCMR3IsAllowed(pVM))
+    {
+        RTPrintf("VMM: Hardware accelerated test now available!\n");
+        return VERR_ACCESS_DENIED;
+    }
+
+    /*
+     * These forced actions are not necessary for the test and trigger breakpoints too.
+     */
+    VM_FF_CLEAR(pVM, VM_FF_TRPM_SYNC_IDT);
+    VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
+
+    /* Enable mapping of the hypervisor into the shadow page table. */
+    PGMR3ChangeShwPDMappings(pVM, true);
+
+    /*
+     * Setup stack for calling VMMGCEntry().
+     */
+    RTGCPTR GCPtrEP;
+    int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
+        /*
+         * Profile switching.
+         */
+        RTPrintf("VMM: profiling switcher...\n");
+        Log(("VMM: profiling switcher...\n"));
+        uint64_t TickMin = ~0;
+        uint64_t tsBegin = RTTimeNanoTS();
+        uint64_t TickStart = ASMReadTSC();
+        for (i = 0; i < 1000000; i++)
+        {
+            CPUMHyperSetCtxCore(pVM, NULL);
+            CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
+            CPUMPushHyper(pVM, 0);
+            CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HWACCM_NOP);
+            CPUMPushHyper(pVM, pVM->pVMGC);
+            CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR));    /* stack frame size */
+            CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
+            CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
+
+            PCPUMCTX pHyperCtx, pGuestCtx;
+            
+            CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
+            CPUMQueryGuestCtxPtr(pVM, &pGuestCtx);
+
+            /* Copy the hypervisor context to make sure we have a valid guest context. */
+            *pGuestCtx = *pHyperCtx;
+
+            uint64_t TickThisStart = ASMReadTSC();
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL);
+            uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
+            if (VBOX_FAILURE(rc))
+            {
+                Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
+                VMMR3FatalDump(pVM, rc);
+                return rc;
+            }
+            if (TickThisElapsed < TickMin)
+                TickMin = TickThisElapsed;
+        }
+        uint64_t TickEnd = ASMReadTSC();
+        uint64_t tsEnd = RTTimeNanoTS();
+
+        uint64_t Elapsed = tsEnd - tsBegin;
+        uint64_t PerIteration = Elapsed / (uint64_t)i;
+        uint64_t cTicksElapsed = TickEnd - TickStart;
+        uint64_t cTicksPerIteration = cTicksElapsed / (uint64_t)i;
+
+        RTPrintf("VMM: %8d cycles     in %11llu ns (%11lld ticks),  %10llu ns/iteration (%11lld ticks)  Min %11lld ticks\n",
+                 i, Elapsed, cTicksElapsed, PerIteration, cTicksPerIteration, TickMin);
+        Log(("VMM: %8d cycles     in %11llu ns (%11lld ticks),  %10llu ns/iteration (%11lld ticks)  Min %11lld ticks\n",
+             i, Elapsed, cTicksElapsed, PerIteration, cTicksPerIteration, TickMin));
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Vrc\n", rc));
+
+    return rc;
+}
