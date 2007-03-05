@@ -313,7 +313,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/semsrw-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/sched-generic.cpp \
-	r3/posix/time-posix.cpp \
+	r3/os2/time-os2.cpp \
 	r3/posix/timer-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
