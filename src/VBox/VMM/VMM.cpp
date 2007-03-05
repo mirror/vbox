@@ -2933,6 +2933,10 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     /* Enable mapping of the hypervisor into the shadow page table. */
     PGMR3ChangeShwPDMappings(pVM, true);
 
+    VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+    VM_FF_CLEAR(pVM, VM_FF_TO_TIMER);
+    VM_FF_CLEAR(pVM, VM_FF_TO_REQUEST);
+
     /*
      * Setup stack for calling VMMGCEntry().
      */
