@@ -101,8 +101,17 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
  */
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *poff)
 {
+    RTR3PTR R3Ptr;
+
     AssertCompile(sizeof(RTR0PTR) == sizeof(RTR3PTR));
-    return mmHyperLookupR3(pVM, (RTR3PTR)R0Ptr, poff);
+
+    /** @todo fix this properly; the ring 0 pVM address differs from the R3 one. */
+    if (pVM->pVMR0 >= R0Ptr && R0Ptr < pVM->pVMR0 + sizeof(*pVM))
+        R3Ptr = (RTR3PTR)((RTR0UINTREG)R0Ptr - (RTR0UINTREG)pVM + (RTR0UINTREG)pVM->pVMR3);
+    else
+        R3Ptr = (RTR3PTR)R0Ptr;
+
+    return mmHyperLookupR3(pVM, R3Ptr, poff);
 }
 
 
