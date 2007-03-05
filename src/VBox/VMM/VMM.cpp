@@ -2934,8 +2934,8 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     PGMR3ChangeShwPDMappings(pVM, true);
 
     VM_FF_CLEAR(pVM, VM_FF_TO_R3);
-    VM_FF_CLEAR(pVM, VM_FF_TO_TIMER);
-    VM_FF_CLEAR(pVM, VM_FF_TO_REQUEST);
+    VM_FF_CLEAR(pVM, VM_FF_TIMER);
+    VM_FF_CLEAR(pVM, VM_FF_REQUEST);
 
     /*
      * Setup stack for calling VMMGCEntry().
