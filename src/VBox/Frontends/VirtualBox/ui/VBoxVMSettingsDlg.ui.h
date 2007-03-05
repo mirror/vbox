@@ -316,6 +316,8 @@ void VBoxVMSettingsDlg::init()
     tbResetSavedStateFolder->setIconSet (VBoxGlobal::iconSet ("eraser_16px.png",
                                                               "eraser_disabled_16px.png"));
 
+    teDescription->setTextFormat (Qt::PlainText);
+
     /* HDD Images page */
 
     QWhatsThis::add (static_cast <QWidget *> (grbHDA->child ("qt_groupbox_checkbox")),
