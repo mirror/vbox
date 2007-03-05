@@ -44,12 +44,14 @@ public:
             return this == &that ||
                    (mEnabled == that.mEnabled &&
                     mVRDPPort == that.mVRDPPort &&
+                    mVRDPAddress == that.mVRDPAddress &&
                     mAuthType == that.mAuthType &&
                     mAuthTimeout == that.mAuthTimeout);
         }
 
         BOOL mEnabled;
         ULONG mVRDPPort;
+        Bstr mVRDPAddress;
         VRDPAuthType_T mAuthType;
         ULONG mAuthTimeout;
     };
@@ -79,6 +81,8 @@ public:
     STDMETHOD(COMSETTER(Enabled))(BOOL enable);
     STDMETHOD(COMGETTER(Port))(ULONG *port);
     STDMETHOD(COMSETTER(Port))(ULONG port);
+    STDMETHOD(COMGETTER(NetAddress))(BSTR *address);
+    STDMETHOD(COMSETTER(NetAddress))(INPTR BSTR address);
     STDMETHOD(COMGETTER(AuthType))(VRDPAuthType_T *type);
     STDMETHOD(COMSETTER(AuthType))(VRDPAuthType_T type);
     STDMETHOD(COMGETTER(AuthTimeout))(ULONG *timeout);

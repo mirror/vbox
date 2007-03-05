@@ -6945,7 +6945,7 @@
 
     <interface
         name="IVRDPServer" extends="$unknown"
-        uuid="758e413b-8693-4b4f-bcd8-48ce2c3a7f4d"
+        uuid="2e88bf9e-2085-421f-9aa2-32088b0378b3"
     >
         <attribute name="enabled" type="boolean">
             <desc>VRDP server status.</desc>
@@ -6953,6 +6953,10 @@
 
         <attribute name="port" type="unsigned long">
             <desc>VRDP server port.</desc>
+        </attribute>
+
+        <attribute name="netAddress" type="wstring">
+            <desc>VRDP server address.</desc>
         </attribute>
 
         <attribute name="authType" type="VRDPAuthType">
