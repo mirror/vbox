@@ -65,7 +65,13 @@ typedef int RTASSERTTYPE[1];
  * It has no other function and shouldn't be used.
  * GCC uses this.
  */
+#ifdef __GNUC__
+__BEGIN_DECLS
+#endif
 extern int RTASSERTVAR[1];
+#ifdef __GNUC__
+__END_DECLS
+#endif
 
 /** @def AssertCompile
  * Asserts that a compile-time expression is true. If it's not break the build.
