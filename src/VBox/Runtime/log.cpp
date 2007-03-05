@@ -116,7 +116,16 @@ static struct RTLOGGERPERTHREAD
     uintptr_t volatile      uKey;
     /** The logger instance.*/
     PRTLOGGER volatile      pLogger;
-}                                   g_aPerThreadLoggers[8];
+} g_aPerThreadLoggers[8] = 
+{   { NIL_RTNATIVETHREAD, 0, 0},
+    { NIL_RTNATIVETHREAD, 0, 0},
+    { NIL_RTNATIVETHREAD, 0, 0},
+    { NIL_RTNATIVETHREAD, 0, 0},
+    { NIL_RTNATIVETHREAD, 0, 0},
+    { NIL_RTNATIVETHREAD, 0, 0},
+    { NIL_RTNATIVETHREAD, 0, 0},
+    { NIL_RTNATIVETHREAD, 0, 0}
+};
 #endif /* IN_RING0 */
 
 
@@ -1316,7 +1325,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
             while (i-- > 0)
             {
                 AssertCompile(sizeof(RTNATIVETHREAD) == sizeof(void*));
-                if (    g_aPerThreadLoggers[i].NativeThread == NIL_RTTHREAD
+                if (    g_aPerThreadLoggers[i].NativeThread == NIL_RTNATIVETHREAD
                     &&  ASMAtomicCmpXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].NativeThread, (void *)Self, (void *)NIL_RTNATIVETHREAD))
                 {
                     ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
