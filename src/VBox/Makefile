@@ -31,12 +31,12 @@ ifneq ($(wildcard HostServices),)
 SUBDIRS += HostServices
 endif
 
-ifdef VBOX_WITH_VRDP
-SUBDIRS += RDP
-endif
-
 ifdef VBOX_WITH_MAIN
 SUBDIRS += Main
+endif
+
+ifdef VBOX_WITH_VRDP
+SUBDIRS += RDP
 endif
 
 ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
