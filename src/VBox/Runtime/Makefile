@@ -279,7 +279,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/system-posix.cpp \
 	r3/linux/sched-linux.cpp \
 	r3/posix/thread-posix.cpp \
-	r3/linux/time-posix.cpp \
+	r3/linux/time-linux.cpp \
 	r3/posix/timer-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
@@ -296,12 +296,6 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/pathhost-generic.cpp \
-	generic/rand-stubs-generic.cpp \
-	generic/semsrw-generic.cpp \
-	generic/semnoint-generic.cpp \
-	generic/sched-generic.cpp \
-	generic/uuid-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/os2/sems-os2.cpp \
 	r3/os2/system-os2.cpp \
@@ -313,12 +307,18 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	generic/pathhost-generic.cpp \
 	r3/posix/process-posix.cpp \
+	generic/rand-stubs-generic.cpp \
+	generic/semsrw-generic.cpp \
+	generic/semnoint-generic.cpp \
+	generic/sched-generic.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
+	generic/uuid-generic.cpp \
 	timesup.cpp \
 
 RuntimeR3_SOURCES.darwin = \
