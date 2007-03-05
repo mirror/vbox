@@ -70,9 +70,10 @@ BEGINPROC vmmR0CallHostSetJmp
 
     mov     ecx, [esp + 0ch]            ; pvArg
     mov     eax, [esp + 08h]            ; pfn
-    push    ecx
+    sub     esp, 12                     ; align the stack on a 16-byte boundrary.
+    mov     [esp], ecx
     call    eax
-    add     esp, 4
+    add     esp, 12
     mov     edx, [esp + 4h]             ; pJmpBuf
     and     dword [edx + VMMR0JMPBUF.eip], byte 0 ; used for valid check.
     ret
