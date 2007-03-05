@@ -62,9 +62,7 @@ HWACCMR0DECL(int) SVMR0Setup(PVM pVM)
     Assert(pVM->hwaccm.s.svm.fSupported);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
-    Assert(pVMCB);
-    if (pVMCB == 0)
-        return VERR_EM_INTERNAL_ERROR;
+    AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
     /* Program the control fields. Most of them never have to be changed again. */
     /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
@@ -316,9 +314,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     Assert(pVM->hwaccm.s.svm.fSupported);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
-    Assert(pVMCB);
-    if (pVMCB == 0)
-        return VERR_EM_INTERNAL_ERROR;
+    AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
@@ -523,9 +519,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
-    Assert(pVMCB);
-    if (pVMCB == 0)
-        return VERR_EM_INTERNAL_ERROR;
+    AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
