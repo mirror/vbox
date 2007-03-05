@@ -265,9 +265,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/pathhost-generic.cpp \
-	generic/uuid-generic.cpp \
-	r3/linux/sched-linux.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -275,14 +273,17 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	generic/pathhost-generic.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/system-posix.cpp \
+	r3/linux/sched-linux.cpp \
 	r3/posix/thread-posix.cpp \
-	r3/posix/time-posix.cpp \
+	r3/linux/time-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
+	generic/uuid-generic.cpp \
 	timesup.cpp
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  RuntimeR3_SOURCES.linux += r3/linux/sems-linux.cpp
@@ -315,6 +316,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/process-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timer-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
 	timesup.cpp \
@@ -368,6 +370,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timer-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
 	timesup.cpp \
@@ -410,6 +413,7 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/path-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/time-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
 	timesup.cpp
 
 #
