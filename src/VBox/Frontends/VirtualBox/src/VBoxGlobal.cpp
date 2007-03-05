@@ -720,7 +720,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         "<table border=0 cellspacing=0 cellpadding=0 width=100%>%1</table>";
     static const char *sSectionHrefTpl =
         "<tr><td rowspan=%1 align=left><img src='%2'></td>"
-            "<td width=100% colspan=2><a href='%3'><nobr>%4</nobr></a></td></tr>"
+            "<td width=100% colspan=2><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
             "%5"
         "<tr><td width=100% colspan=2><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionBoldTpl =

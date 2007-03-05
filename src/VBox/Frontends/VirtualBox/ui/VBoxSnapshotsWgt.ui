@@ -238,6 +238,12 @@
     </connection>
     <connection>
         <sender>&amp;vboxGlobal()</sender>
+        <signal>sessionStateChanged (const VBoxSessionStateChangeEvent &amp;)</signal>
+        <receiver>VBoxSnapshotsWgt</receiver>
+        <slot>sessionStateChanged (const VBoxSessionStateChangeEvent &amp;)</slot>
+    </connection>
+    <connection>
+        <sender>&amp;vboxGlobal()</sender>
         <signal>snapshotChanged (const VBoxSnapshotEvent &amp;)</signal>
         <receiver>VBoxSnapshotsWgt</receiver>
         <slot>snapshotChanged (const VBoxSnapshotEvent &amp;)</slot>
@@ -263,6 +269,7 @@
 <variables>
     <variable access="private">CMachine mMachine;</variable>
     <variable access="private">QUuid mMachineId;</variable>
+    <variable access="private">CEnums::SessionState mSessionState;</variable>
     <variable access="private">class ListViewItem; ListViewItem *mCurSnapshotItem;</variable>
     <variable access="private">class ToolTip; ToolTip *mToolTip;</variable>
     <variable access="private">QPopupMenu *mContextMenu;</variable>
@@ -278,6 +285,7 @@
     <slot>showSnapshotDetails()</slot>
     <slot>machineDataChanged (const VBoxMachineDataChangeEvent &amp; aE)</slot>
     <slot>machineStateChanged (const VBoxMachineStateChangeEvent &amp; aE)</slot>
+    <slot>sessionStateChanged (const VBoxSessionStateChangeEvent &amp; aE)</slot>
     <slot>snapshotChanged (const VBoxSnapshotEvent &amp; aE)</slot>
 </slots>
 <functions>
