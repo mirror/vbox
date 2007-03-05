@@ -42,6 +42,7 @@
 #include <VBox/version.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/stdarg.h>
 
 #if defined(_MSC_VER) && defined(__AMD64__) /** @todo check this with with VC7! */
 #  pragma intrinsic(_AddressOfReturnAddress)
