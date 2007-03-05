@@ -292,12 +292,13 @@ QSize QIRichLabel::sizeForWidth (int w) const
    else if ( mov )
       br = mov->framePixmap().rect();
    else if (doc) {
+      int focusIndent = hasFocus() ? 3 : 0;
       int oldW = doc->width();
       if ( align & WordBreak ) {
          if (w < 0)
             doc->adjustSize();
          else
-            doc->setWidth (w-hextra);
+            doc->setWidth (w-hextra - 2*focusIndent);
       }
       br = QRect (0, 0, doc->widthUsed(), doc->height());
       doc->setWidth (oldW);
@@ -561,8 +562,8 @@ void QIRichLabel::drawContents (QPainter *p)
          QString filteredText = compressText();
          doc = new QSimpleRichText (filteredText, font());
          /* focus indent */
-         int xo = 3;
-         doc->setWidth (p, cr.width() - 2*xo);
+         int focusIndent = hasFocus() ? 3 : 0;
+         doc->setWidth (p, cr.width() - 2*focusIndent);
          int rh = doc->height();
          int yo = 0;
          if (align & AlignVCenter)
@@ -596,7 +597,7 @@ void QIRichLabel::drawContents (QPainter *p)
                cg.setColor (QColorGroup::Text, paletteForegroundColor());
          }
 
-         doc->draw (p, cr.x()+xo, cr.y()+yo, cr, cg, &paper);
+         doc->draw (p, cr.x()+focusIndent, cr.y()+yo, cr, cg, &paper);
          if (hasFocus())
             style().drawPrimitive (QStyle::PE_FocusRect, p, cr, cg,
             QStyle::Style_FocusAtBorder,
