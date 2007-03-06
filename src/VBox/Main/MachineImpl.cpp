@@ -481,13 +481,14 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
             /* create the machine UUID */
             unconst (mData->mUuid).create();
 
-            /* initialize the default snapshots folder */
-            rc = COMSETTER(SnapshotFolder) (NULL);
-            AssertComRC (rc);
-
             /* memorize the provided new machine's name */
             mUserData->mName = aName;
             mUserData->mNameSync = aNameSync;
+
+            /* initialize the default snapshots folder
+             * (note: depends on the name value set above!) */
+            rc = COMSETTER(SnapshotFolder) (NULL);
+            AssertComRC (rc);
         }
 
         /* commit all changes made during the initialization */
