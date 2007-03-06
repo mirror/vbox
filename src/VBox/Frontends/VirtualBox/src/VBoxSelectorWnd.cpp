@@ -218,6 +218,7 @@ private slots:
 
     void goToSettings();
     void sessionStateChanged (const VBoxSessionStateChangeEvent &aE);
+    void machineStateChanged (const VBoxMachineStateChangeEvent &aE);
 
 private:
 
@@ -267,6 +268,8 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
                                           QSizePolicy::Minimum));
 
     /* connect VirtualBox callback events */
+    connect (&vboxGlobal(), SIGNAL (machineStateChanged (const VBoxMachineStateChangeEvent &)),
+             this, SLOT (machineStateChanged (const VBoxSessionStateChangeEvent &)));
     connect (&vboxGlobal(), SIGNAL (sessionStateChanged (const VBoxSessionStateChangeEvent &)),
              this, SLOT (sessionStateChanged (const VBoxSessionStateChangeEvent &)));
 
@@ -297,6 +300,11 @@ void VBoxVMDescriptionPage::setMachine (const CMachine &aMachine)
         mBrowser->setEnabled (false);
         mBrowser->setPaper (backgroundBrush());
     }
+
+    /* check initial machine and session states */
+    bool saved = aMachine.GetState() == CEnums::Saved;
+    bool busy = aMachine.GetState() != CEnums::SessionClosed;
+    mBtnEdit->setEnabled (!saved && !busy);
 }
 
 void VBoxVMDescriptionPage::languageChange()
@@ -311,6 +319,20 @@ void VBoxVMDescriptionPage::goToSettings()
     mParent->vmSettings ("#general", 2);
 }
 
+void VBoxVMDescriptionPage::machineStateChanged (const VBoxMachineStateChangeEvent &aE)
+{
+    /// @todo this slot will not be necessary when we implement the selective
+    /// VM Settings dialog, where only fields that can be changed in the
+    /// saved state, can be changed.
+
+    if (aE.id != mMachineId)
+        return; /* not interested in other machines */
+
+    /* disable the edit button for a saved machine */
+    bool saved = aE.state == CEnums::Saved;
+    mBtnEdit->setEnabled (!saved);
+}
+
 void VBoxVMDescriptionPage::sessionStateChanged (const VBoxSessionStateChangeEvent &aE)
 {
     if (aE.id != mMachineId)
@@ -318,7 +340,6 @@ void VBoxVMDescriptionPage::sessionStateChanged (const VBoxSessionStateChangeEve
 
     /* whether another direct session is open or not */
     bool busy = aE.state != CEnums::SessionClosed;
-
     mBtnEdit->setEnabled (!busy);
 }
 
@@ -1061,7 +1082,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         {
             vmDetailsView->setDetailsText (
                 vboxGlobal().detailsReport (m, false /* isNewVM */,
-                                               !running /* withLinks */));
+                                               modifyEnabled /* withLinks */));
         }
         if (aRefreshSnapshots)
         {
