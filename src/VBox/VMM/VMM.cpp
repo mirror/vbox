@@ -2937,6 +2937,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     uint32_t i;
     int      rc;
     PCPUMCTX pHyperCtx, pGuestCtx;
+    RTGCPHYS CR3Phys = 0x0; /* fake address */
 
     if (!HWACCMR3IsAllowed(pVM))
     {
@@ -2953,14 +2954,16 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     /* Enable mapping of the hypervisor into the shadow page table. */
     PGMR3ChangeShwPDMappings(pVM, true);
 
-    VM_FF_CLEAR(pVM, VM_FF_TO_R3);
-    VM_FF_CLEAR(pVM, VM_FF_TIMER);
-    VM_FF_CLEAR(pVM, VM_FF_REQUEST);
-
     CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
 
     pHyperCtx->cr0 = X86_CR0_PE | X86_CR0_WP | X86_CR0_PG | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
     pHyperCtx->cr4 = X86_CR4_PGE | X86_CR4_OSFSXR | X86_CR4_OSXMMEEXCPT;
+    PGMChangeMode(pVM, pHyperCtx->cr0, pHyperCtx->cr4, 0);
+    PGMSyncCR3(pVM, pHyperCtx->cr0, CR3Phys, pHyperCtx->cr4, true);
+
+    VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+    VM_FF_CLEAR(pVM, VM_FF_TIMER);
+    VM_FF_CLEAR(pVM, VM_FF_REQUEST);
 
     /*
      * Setup stack for calling VMMGCEntry().
@@ -3007,9 +3010,10 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
 
             /* Copy the hypervisor context to make sure we have a valid guest context. */
             *pGuestCtx = *pHyperCtx;
+            pGuestCtx->cr3 = CR3Phys;
 
-            pGuestCtx->csHid.u32Base  = 0;
-            pGuestCtx->csHid.u32Limit = 0xffffffff;
+            VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+            VM_FF_CLEAR(pVM, VM_FF_TIMER);
 
             uint64_t TickThisStart = ASMReadTSC();
             rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL);
