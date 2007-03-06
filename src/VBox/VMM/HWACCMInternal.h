@@ -48,8 +48,8 @@ __BEGIN_DECLS
 #define HWACCM2VM(pHWACCM)  ( (PVM)((char*)pHWACCM - pHWACCM->offVM) )
 
 /** Maximum number of exit reason statistics counters. */
-#define MAX_EXITREASON_STAT        0x40
-#define MASK_EXITREASON_STAT       0x3f
+#define MAX_EXITREASON_STAT        0x100
+#define MASK_EXITREASON_STAT       0xff
 
 /** @name Changed flags
  * These flags are used to keep track of which important registers that
