@@ -49,7 +49,7 @@ DECLCALLBACK(int) CFGMConstructor(PVM pVM, void *pvUser)
      * This is the only node in the tree.
      */
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    int rc = CFGMR3InsertInteger(pRoot, "RamSize", 32);
+    int rc = CFGMR3InsertInteger(pRoot, "RamSize", 32*_1MB);
 
     PCFGMNODE pHWVirtExt;
     rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);
