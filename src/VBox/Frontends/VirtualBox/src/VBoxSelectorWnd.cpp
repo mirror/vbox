@@ -1154,9 +1154,9 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
                 (tr ("<h3><img src=ico64x01.png align=right/>"
                      "Welcome to VirtualBox!</h3>"
                      "<p>The left part of this window is intended to display "
-                     "a list of all virtual machines existing on this computer. "
-                     "This list is now empty because you didn't create any virtual "
-                     "machine."
+                     "a list of all virtual machines on your computer. "
+                     "The list is empty now because you haven't created any virtual "
+                     "machines yet."
                      "<p>In order to create a new virtual machine, press the "
                      "<b>New</b> button in the main tool bar located "
                      "at the top of the window."));
