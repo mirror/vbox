@@ -1603,7 +1603,8 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         mMachineState != MachineState_Paused)
     {
         return setError (E_FAIL,
-            tr ("Cannot save the machine state as the machine is not running or paused.  (Machine state: %d)"), mMachineState);
+            tr ("Cannot save the execution state as the machine "
+                "is not running (machine state: %d)"), mMachineState);
     }
 
     /* memorize the current machine state */
