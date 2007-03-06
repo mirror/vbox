@@ -3024,11 +3024,14 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
                 TickMin = TickThisElapsed;
 /* temporary */
 #ifdef LOG_ENABLED
-            PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
-            if (    pLogger
-                &&  pLogger->offScratch > 0)
-                RTLogFlushGC(NULL, pLogger);
-#endif
+            /*
+             * Flush the log
+             */
+            PVMMR0LOGGER pR0Logger = pVM->vmm.s.pR0Logger;
+            if (    pR0Logger
+                &&  pR0Logger->Logger.offScratch > 0)
+                RTLogFlushToLogger(&pR0Logger->Logger, NULL);
+#endif /* !LOG_ENABLED */
 
         }
         uint64_t TickEnd = ASMReadTSC();
