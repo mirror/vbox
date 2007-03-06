@@ -358,7 +358,10 @@ static VBOXPtr
 VBOXGetRec(ScrnInfoPtr pScrn)
 {
     if (!pScrn->driverPrivate)
-	pScrn->driverPrivate = xcalloc(sizeof(VBOXRec), 1);
+    {
+        pScrn->driverPrivate = xcalloc(sizeof(VBOXRec), 1);
+        ((VBOXPtr)pScrn->driverPrivate)->vbox_fd = -1;
+    }
 
     return ((VBOXPtr)pScrn->driverPrivate);
 }
@@ -687,7 +690,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (serverGeneration == 1)
         xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
 
-    pVBox->vbox_fd = -1;
     if (vbox_open (pScrn, pScreen, pVBox)) {
         if (vbox_cursor_init(pScreen) != TRUE)
             xf86DrvMsg(scrnIndex, X_ERROR,
