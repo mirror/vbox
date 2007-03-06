@@ -207,6 +207,10 @@ IMAGES	= images/tpixel.png \
 	images/refresh_disabled_16px.png \
 	images/refresh_22px.png \
 	images/refresh_disabled_22px.png \
+	images/description_16px.png \
+	images/description_disabled_16px.png \
+	images/edit_description_16px.png \
+	images/edit_description_disabled_16px.png \
 	images/global_settings_16px.png \
 	images/global_settings_diasbled_16px.png \
 	images/vrdp_16px.png \
