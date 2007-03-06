@@ -824,6 +824,7 @@ ResumeExecution:
     if (cResume > 32 /* low limit, but anything higher risks a hanging host due to interrupts left pending for too long */)
     {
         exitCode = SVM_EXIT_INTR;
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitForced);
     }
 
     STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReason[exitCode & MASK_EXITREASON_STAT]);
