@@ -105,6 +105,7 @@
 
 #ifdef VBOX
 #include "VBoxUtils.h"
+#include "version-generated.h"
 /* Xorg 7.1 does not include xf86_ansic.h anymore. Don't reinclude this
  * file as it renamed ANSI C functions to xf86*. */
 extern int  abs(int);
@@ -1004,6 +1005,12 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     MouseProtocolPtr pProto;
     Bool detected;
     int i;
+
+#ifdef VBOX
+    xf86Msg(X_INFO,
+            "VirtualBox guest additions mouse driver version "
+            VBOX_VERSION_STRING "\n");
+#endif
 
     if (!InitProtocols())
 	return NULL;

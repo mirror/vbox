@@ -64,6 +64,7 @@
 # endif
 #endif
 #include "vboxvideo.h"
+#include "version-generated.h"
 
 /* All drivers initialising the SW cursor need this */
 #include "mipointer.h"
@@ -240,8 +241,14 @@ static XF86ModuleVersionInfo vboxVersionRec =
 #else /* !XORG_7X */
     XF86_VERSION_CURRENT,
 #endif /* XORG_7X */
-    VBOX_MAJOR_VERSION, VBOX_MINOR_VERSION, VBOX_PATCHLEVEL,
-    ABI_CLASS_VIDEODRV,			/* This is a video driver */
+    1,                          /* Module major version. Xorg-specific */
+    0,                          /* Module minor version. Xorg-specific */
+#ifdef XORG_7X
+    1,                          /* Module patchlevel. Xorg-specific */
+#else
+    0,                          /* Module patchlevel. Xorg-specific */
+#endif
+    ABI_CLASS_VIDEODRV,	        /* This is a video driver */
     ABI_VIDEODRV_VERSION,
     MOD_CLASS_VIDEODRV,
     {0, 0, 0, 0}
@@ -413,6 +420,10 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Are we really starting the server, or is this just a dummy run? */
     if (flags & PROBE_DETECT)
         return (FALSE);
+
+    xf86Msg(X_INFO,
+            "VirtualBox guest additions video driver version "
+            VBOX_VERSION_STRING "\n");
 
     /* Get our private data from the ScrnInfoRec structure. */
     pVBox = VBOXGetRec(pScrn);
