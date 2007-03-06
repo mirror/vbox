@@ -71,8 +71,8 @@
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
 
-#define GEN_CHECK_SIZE(s)   printf("    CHECK_SIZE(%s, %d);\n", #s, sizeof(s))
-#define GEN_CHECK_OFF(s, m) printf("    CHECK_OFF(%s, %d, %s);\n", #s, RT_OFFSETOF(s, m), #m)
+#define GEN_CHECK_SIZE(s)   printf("    CHECK_SIZE(%s, %u);\n", #s, (unsigned)sizeof(s))
+#define GEN_CHECK_OFF(s, m) printf("    CHECK_OFF(%s, %u, %s);\n", #s, (unsigned)RT_OFFSETOF(s, m), #m)
 
 int main()
 {
