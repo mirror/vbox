@@ -587,6 +587,14 @@ PGMDECL(int) PGMChangeMode(PVM pVM, uint32_t cr0, uint32_t cr4, uint64_t efer);
 PGMDECL(PGMMODE) PGMGetGuestMode(PVM pVM);
 
 /**
+ * Gets the current shadow paging mode.
+ *
+ * @returns The current paging mode.
+ * @param   pVM             The VM handle.
+ */
+PGMDECL(PGMMODE) PGMGetShadowMode(PVM pVM);
+
+/**
  * Get mode name.
  *
  * @returns read-only name string.
