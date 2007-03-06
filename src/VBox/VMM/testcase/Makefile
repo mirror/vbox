@@ -20,24 +20,17 @@
 
 DEPTH = ../../../..
 include	$(PATH_KBUILD)/header.kmk
-include	$(PATH_KBUILD)/tools/MINGW32.kmk
 
 #
 # Target lists.
 #
-#LIBRARIES        = tstHelp
-PROGRAMS         = tstVMStructSize tstVMStructGC
-ifneq ($(BUILD_TARGET),darwin)
-PROGRAMS        += tstAsmStructs tstAsmStructsGC
-endif
-PROGRAMS        += tstVMM tstVMM-HwAccm
+PROGRAMS        = tstVMStructSize tstVMStructGC tstAsmStructs tstAsmStructsGC tstVMM tstVMM-HwAccm
 ifdef VBOX_WITH_TESTCASES
-PROGRAMS        += tstCFGM tstSSM tstMMHyperHeap tstVMM-2 tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
-ifneq ($(BUILD_TARGET),l4)
-PROGRAMS        += tstAnimate
-endif
-#PROGRAMS        += tstProg1 tstProg2 tstProg3
-SYSMODS          = tstMicroGC
+ PROGRAMS       += tstCFGM tstSSM tstMMHyperHeap tstVMM-2 tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
+ ifneq ($(BUILD_TARGET),l4)
+  PROGRAMS      += tstAnimate
+ endif
+ SYSMODS         = tstMicroGC
 endif # VBOX_WITH_TESTCASES
 
 #
@@ -66,23 +59,6 @@ TEMPLATE = VBOXR3TSTEXE
 #
 # Targets
 #
-tstHelp_TEMPLATE        = VBOXLNX32GUESTR3
-tstHelp_SOURCES         = tstHelpA.asm tstHelp.c
-
-tstProg1_TEMPLATE       = VBOXLNX32GUESTR3
-tstProg1_SOURCES        = tstProg-1.c tstProg-1A.asm
-tstProg1_LIBS           = $(PATH_LIB)/tstHelp$(VBOX_SUFF_LIB)
-tstProg1_LDFLAGS.linux  = -static
-
-tstProg2_TEMPLATE       = VBOXLNX32GUESTR3
-tstProg2_SOURCES        = tstProg-2.c tstProg-2A.asm
-tstProg2_LDFLAGS.linux  = -static
-
-tstProg3_TEMPLATE       = VBOXLNX32GUESTR3
-tstProg3_SOURCES        = tstProg-3.c
-tstProg3_LDFLAGS.linux  = -static
-
-
 tstVMStructGC_TEMPLATE  = VBOXGCEXE
 tstVMStructGC_DEFS      = IN_VMM_GC IN_PDM_GC IN_CFGM_GC IN_IOM_GC IN_VM_GC IN_CPUM_GC IN_SELM_GC IN_PGM_GC IN_TRPM_GC IN_MM_GC IN_PDM_GC IN_DBGF_GC IN_PATM_GC IN_DIS_GC IN_STAM_GC IN_VGADEVICE_GC IN_CSAM_GC IN_SSM_GC IN_REM_GC IN_RRM_GC
 tstVMStructGC_SOURCES   = tstVMStructGC.cpp
@@ -184,7 +160,8 @@ $(PATH_TARGET)/tstAsmStructsAsm.o: tstAsmStructsAsm.asm \
 		../CPUMInternal.mac \
 		../TRPMInternal.mac \
 		../VMMInternal.mac \
-		Makefile
+		Makefile \
+		| $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_L1,Compiling $<)
 ifndef DONT_USE_YASM
 	$(QUIET)$(TOOL_YASM_AS) \
@@ -196,7 +173,8 @@ ifndef DONT_USE_YASM
 			$(DEFS.$(BUILD_TARGET_ARCH)) \
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
-		-f elf -g stabs $(foreach inc,$(INCS),-I$(inc)/) -o $@ $<
+		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) -g stabs \
+		$(foreach inc,$(INCS),-I$(inc)/) -o $@ $<
 else
 	$(QUIET)$(TOOL_NASM_AS) \
 		$(addprefix -D, \
@@ -207,23 +185,26 @@ else
 			$(DEFS.$(BUILD_TARGET_ARCH)) \
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
-		-f elf $(foreach inc,$(INCS),-I$(inc)/) -o $@ $<
+		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
+		$(foreach inc,$(INCS),-I$(inc)/) -o $@ $<
 endif
 
-# 2. use objdump and sed to transform this into the header we want.
+# 2. use nm and sed to transform this into the header we want.
+ifeq ($(BUILD_PLATFORM),win)
+ include $(PATH_KBUILD)/tools/MINGW32.kmk
+ VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
+else
+ VBOX_NM ?= nm -p
+endif
 $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
 	$(call MSG_L1,Generating $@)
 	$(QUIET)$(RM) -f $@ $@.dump $@.tmp
-ifeq ($(BUILD_PLATFORM),win)
-	$(QUIET)$(PATH_TOOL_MINGW32)/bin/objdump.exe -x $< > $@.dump
-else
-	$(QUIET)objdump -x $< > $@.dump
-endif
+	$(VBOX_NM) $< > $@.dump
 	$(QUIET)$(SED) -e '/STAMPROFILEADV/d' \
-	       -e '/ l[[:space:]]*\*ABS\*[[:space:]]*00000000[[:space:]]*[^_.]*\./!d'     -e 's/^[0]*\(.*\) l.*00000000 \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
+	       -e '/00[0-9a-fA-F]* a [^_.]*\./!d'     -e 's/\(00[0-9a-fA-F]*\) a \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
 	       $@.dump >  $@.tmp
 	$(QUIET)$(SED) -e '/VM_size$$/d' \
-	       -e '/ l[[:space:]]*\*ABS\*[[:space:]]*00000000[[:space:]]*[^_.]*\_size/!d' -e 's/^[0]*\(.*\) l.*00000000 \([^.]*\)\_size/    CHECK_SIZE(\2, 0x0\1);/' \
+	       -e '/00[0-9a-fA-F]* a [^_.]*_size$$/!d'  -e 's/\(00[0-9a-fA-F]*\) a \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \
 	       $@.dump >> $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
 	$(QUIET)$(RM) -f $@.dump
@@ -262,4 +243,6 @@ $(PATH_TARGET)/tstVMStructSize.run: $(INSTARGET_tstVMStructSize)
 
 # alias for the two struct tests.
 run-struct-tests: $(PATH_TARGET)/tstAsmStructs.run $(PATH_TARGET)/tstVMStructSize.run
+run-asm-tests: $(PATH_TARGET)/tstAsmStructs.run
+	$(ECHO) $<
 
