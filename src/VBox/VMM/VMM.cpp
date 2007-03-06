@@ -2975,6 +2975,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
         SYNC_SEL(pHyperCtx, fs);
         SYNC_SEL(pHyperCtx, gs);
         SYNC_SEL(pHyperCtx, ss);
+        SYNC_SEL(pHyperCtx, tr);
 
         /*
          * Profile switching.
