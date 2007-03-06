@@ -64,6 +64,7 @@
 
 #ifdef VBOX
 #include "VBoxUtils.h"
+#include "version-generated.h"
 #endif
 
 static const OptionInfoRec *MouseAvailableOptions(void *unused);
@@ -607,6 +608,12 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     const char *protocol;
     MouseProtocolID protocolID;
     MouseProtocolPtr pProto;
+
+#ifdef VBOX
+    xf86Msg(X_INFO,
+            "VirtualBox guest additions mouse driver version "
+            VBOX_VERSION_STRING "\n");
+#endif
 
     if (!InitProtocols())
 	return NULL;

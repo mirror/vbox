@@ -103,6 +103,7 @@
 
 #ifdef VBOX
 #include "VBoxUtils.h"
+#include "version-generated.h"
 #endif
 
 enum {
@@ -998,6 +999,12 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     MouseProtocolPtr pProto;
     Bool detected;
     int i;
+
+#ifdef VBOX
+    xf86Msg(X_INFO,
+            "VirtualBox guest additions mouse driver version "
+            VBOX_VERSION_STRING "\n");
+#endif
 
     if (!InitProtocols())
 	return NULL;

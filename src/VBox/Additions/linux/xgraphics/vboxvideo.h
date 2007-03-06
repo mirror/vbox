@@ -130,13 +130,6 @@
 #include "xf86Cursor.h"
 #define VBOX_NAME		"VBoxVideo"
 #define VBOX_DRIVER_NAME	"vboxvideo"
-#define VBOX_MAJOR_VERSION	1
-#define VBOX_MINOR_VERSION	0
-#ifdef XORG_7X
-#define VBOX_PATCHLEVEL		1
-#else
-#define VBOX_PATCHLEVEL		0
-#endif
 
 /*XXX*/
 
