@@ -2913,6 +2913,24 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
     return rc;
 }
 
+#define SYNC_SEL(pHyperCtx, reg)                                                        \
+        if (pHyperCtx->reg)                                                             \
+        {                                                                               \
+            SELMSELINFO selInfo;                                                        \
+            int rc = SELMR3GetShadowSelectorInfo(pVM, pHyperCtx->reg, &selInfo);        \
+            AssertRC(rc);                                                               \
+                                                                                        \
+            pHyperCtx->reg##Hid.u32Base              = selInfo.GCPtrBase;               \
+            pHyperCtx->reg##Hid.u32Limit             = selInfo.cbLimit;                 \
+            pHyperCtx->reg##Hid.Attr.n.u1Present     = selInfo.Raw.Gen.u1Present;       \
+            pHyperCtx->reg##Hid.Attr.n.u1DefBig      = selInfo.Raw.Gen.u1DefBig;        \
+            pHyperCtx->reg##Hid.Attr.n.u1Granularity = selInfo.Raw.Gen.u1Granularity;   \
+            pHyperCtx->reg##Hid.Attr.n.u4Type        = selInfo.Raw.Gen.u4Type;          \
+            pHyperCtx->reg##Hid.Attr.n.u2Dpl         = selInfo.Raw.Gen.u2Dpl;           \
+            pHyperCtx->reg##Hid.Attr.n.u1DescType    = selInfo.Raw.Gen.u1DescType;      \
+            pHyperCtx->reg##Hid.Attr.n.u1Reserved    = selInfo.Raw.Gen.u1Reserved;      \
+        }
+
 /* execute the switch. */
 VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
 {
@@ -2944,7 +2962,20 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
+        PCPUMCTX    pHyperCtx, pGuestCtx;
+
         RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
+
+        CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
+
+        /* Fill in hidden selector registers for the hypervisor state. */
+        SYNC_SEL(pHyperCtx, cs);
+        SYNC_SEL(pHyperCtx, ds);
+        SYNC_SEL(pHyperCtx, es);
+        SYNC_SEL(pHyperCtx, fs);
+        SYNC_SEL(pHyperCtx, gs);
+        SYNC_SEL(pHyperCtx, ss);
+
         /*
          * Profile switching.
          */
@@ -2955,7 +2986,8 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
         uint64_t TickStart = ASMReadTSC();
         for (i = 0; i < 1000000; i++)
         {
-            CPUMHyperSetCtxCore(pVM, NULL);
+            CPUMHyperSetCtxCore(pVM, NULL); 
+
             CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
             CPUMPushHyper(pVM, 0);
             CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HWACCM_NOP);
@@ -2964,13 +2996,14 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
 
-            PCPUMCTX pHyperCtx, pGuestCtx;
-            
             CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
             CPUMQueryGuestCtxPtr(pVM, &pGuestCtx);
 
             /* Copy the hypervisor context to make sure we have a valid guest context. */
             *pGuestCtx = *pHyperCtx;
+
+            pGuestCtx->csHid.u32Base  = 0;
+            pGuestCtx->csHid.u32Limit = 0xffffffff;
 
             uint64_t TickThisStart = ASMReadTSC();
             rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL);
