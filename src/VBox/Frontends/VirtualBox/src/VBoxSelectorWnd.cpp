@@ -890,9 +890,9 @@ void VBoxSelectorWnd::vmRefresh()
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
     refreshVMItem (item->id(),
-                   true /* update details */,
-                   true /* update snapshot */,
-                   true /* update description */);
+                   true /* aDetails */,
+                   true /* aSnapshot */,
+                   true /* aDescription */);
 }
 
 void VBoxSelectorWnd::refreshVMList()
@@ -1207,17 +1207,17 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
 void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
 {
     refreshVMItem (e.id,
-                   false /* update details */,
-                   false /* update snapshot */,
-                   false /* update description */);
+                   false /* aDetails */,
+                   false /* aSnapshot */,
+                   false /* aDescription */);
 }
 
 void VBoxSelectorWnd::machineDataChanged (const VBoxMachineDataChangeEvent &e)
 {
     refreshVMItem (e.id,
-                   true  /* update details */,
-                   false /* update snapshot */,
-                   true  /* update description */);
+                   true  /* aDetails */,
+                   false /* aSnapshot */,
+                   true  /* aDescription */);
 }
 
 void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
@@ -1247,17 +1247,17 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
 void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
 {
     refreshVMItem (e.id,
-                   true  /* update details */,
-                   false /* update snapshot */,
-                   false /* update description */);
+                   true  /* aDetails */,
+                   false /* aSnapshot */,
+                   false /* aDescription */);
 }
 
 void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 {
     refreshVMItem (aEvent.machineId,
-                   false /* update details */,
-                   true  /* update snapshot */,
-                   false /* update description */);
+                   false /* aDetails */,
+                   true  /* aSnapshot */,
+                   false /* aDescription */);
 }
 
 #include "VBoxSelectorWnd.moc"
