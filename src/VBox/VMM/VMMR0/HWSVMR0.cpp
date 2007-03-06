@@ -826,6 +826,8 @@ ResumeExecution:
         exitCode = SVM_EXIT_INTR;
     }
 
+    STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReason[exitCode & MASK_EXITREASON_STAT]);
+
     /* Deal with the reason of the VM-exit. */
     switch (exitCode)
     {
