@@ -253,6 +253,7 @@ static void printUsage(USAGECATEGORY enmCmd)
     if (enmCmd & USAGE_SHOWVMINFO)
     {
         RTPrintf("VBoxManage showvminfo       <uuid>|<name>\n"
+                 "                            [-details]\n"
                  "\n");
     }
 
@@ -651,7 +652,8 @@ static void makeTimeStr (char *s, int cb, int64_t millies)
 }
 
 static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
-                           ComPtr <IConsole> console = ComPtr <IConsole> ())
+                           ComPtr <IConsole> console = ComPtr <IConsole> (),
+                           bool fDetails = false)
 {
     HRESULT rc;
 
@@ -1398,6 +1400,16 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         RTPrintf("\n");
     }
 
+    if (fDetails)
+    {
+        Bstr description;
+        machine->COMGETTER(Description)(description.asOutParam());
+        if (!description.isEmpty())
+        {
+            RTPrintf("Description:\n%lS\n", description.raw());
+        }
+    }
+
     /*
      * snapshots
      */
@@ -1418,8 +1430,8 @@ static int handleShowVMInfo(int argc, char *argv[],
 {
     HRESULT rc;
 
-    /* exactly one option: the UUID or name of the VM */
-    if (argc != 1)
+    /* at least one option: the UUID or name of the VM */
+    if (argc < 1)
     {
         return errorSyntax(USAGE_SHOWVMINFO, "Incorrect number of parameters");
     }
@@ -1440,6 +1452,11 @@ static int handleShowVMInfo(int argc, char *argv[],
     if (FAILED (rc))
         return 1;
 
+    /* 2nd option can be -details */
+    bool fDetails = false;
+    if ((argc == 2) && !strcmp(argv[1], "-details"))
+        fDetails = true;
+
     ComPtr <IConsole> console;
 
     /* open an existing session for the VM */
@@ -1451,7 +1468,7 @@ static int handleShowVMInfo(int argc, char *argv[],
         /* get the session console */
         rc = session->COMGETTER(Console)(console.asOutParam());
 
-    rc = showVMInfo (virtualBox, machine, console);
+    rc = showVMInfo (virtualBox, machine, console, fDetails);
 
     if (console)
         session->Close();
