@@ -1145,38 +1145,6 @@ this feature after having installed a Windows guest operating system!</string>
                                         <property name="name">
                                             <cstring>unnamed</cstring>
                                         </property>
-                                        <widget class="QTable">
-                                            <property name="name">
-                                                <cstring>tblBootOrder</cstring>
-                                            </property>
-                                            <property name="sizePolicy">
-                                                <sizepolicy>
-                                                    <hsizetype>7</hsizetype>
-                                                    <vsizetype>7</vsizetype>
-                                                    <horstretch>1</horstretch>
-                                                    <verstretch>0</verstretch>
-                                                </sizepolicy>
-                                            </property>
-                                            <property name="numRows">
-                                                <number>0</number>
-                                            </property>
-                                            <property name="numCols">
-                                                <number>0</number>
-                                            </property>
-                                            <property name="showGrid">
-                                                <bool>false</bool>
-                                            </property>
-                                            <property name="selectionMode">
-                                                <enum>NoSelection</enum>
-                                            </property>
-                                            <property name="focusStyle">
-                                                <enum>FollowStyle</enum>
-                                            </property>
-                                            <property name="whatsThis" stdset="0">
-                                                <string>Defines the boot device order. Click
-on the entry and select a desired boot device from the drop-down list.</string>
-                                            </property>
-                                        </widget>
                                     </vbox>
                                 </widget>
                             </grid>
@@ -2597,12 +2565,6 @@ with all fields set to the values of the selected USB device attached to the hos
         <receiver>VBoxVMSettingsDlg</receiver>
         <slot>tbUSBFilterDown_clicked()</slot>
     </connection>
-    <connection>
-        <sender>tblBootOrder</sender>
-        <signal>clicked(int,int,int,const QPoint&amp;)</signal>
-        <receiver>VBoxVMSettingsDlg</receiver>
-        <slot>bootItemActivate(int,int,int,const QPoint&amp;)</slot>
-    </connection>
 </connections>
 <tabstops>
     <tabstop>listView</tabstop>
@@ -2613,7 +2575,6 @@ with all fields set to the values of the selected USB device attached to the hos
     <tabstop>leRAM</tabstop>
     <tabstop>slVRAM</tabstop>
     <tabstop>leVRAM</tabstop>
-    <tabstop>tblBootOrder</tabstop>
     <tabstop>chbEnableACPI</tabstop>
     <tabstop>chbEnableIOAPIC</tabstop>
     <tabstop>leSnapshotFolder</tabstop>
@@ -2663,6 +2624,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <include location="global" impldecl="in implementation">qfocusdata.h</include>
     <include location="global" impldecl="in implementation">qtimer.h</include>
     <include location="global" impldecl="in implementation">qpopupmenu.h</include>
+    <include location="global" impldecl="in implementation">qtable.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
@@ -2680,6 +2642,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <forward>class VBoxUSBMenu</forward>
     <forward>class VBoxSharedFoldersSettings</forward>
     <forward>class QIRichLabel</forward>
+    <forward>class BootItemsTable</forward>
 </forwards>
 <variables>
     <variable access="private">bool polished;</variable>
@@ -2713,6 +2676,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">QIRichLabel *whatsThisLabel;</variable>
+    <variable access="private">BootItemsTable *tblBootOrder;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
@@ -2742,7 +2706,6 @@ with all fields set to the values of the selected USB device attached to the hos
     <slot>tbRemoveUSBFilter_clicked()</slot>
     <slot>tbUSBFilterUp_clicked()</slot>
     <slot>tbUSBFilterDown_clicked()</slot>
-    <slot>bootItemActivate(int row, int col, int button, const QPoint &amp; mousePos)</slot>
     <slot>hdaMediaChanged()</slot>
     <slot>hdbMediaChanged()</slot>
     <slot>hddMediaChanged()</slot>

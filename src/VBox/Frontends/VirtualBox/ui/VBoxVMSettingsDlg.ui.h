@@ -50,7 +50,100 @@ static int calcPageStep (int aMax)
     return (int) p2;
 }
 
+
 /**
+ *  Class: BootItemsTable.
+ *  QTable class reimplementation to use as boot items table.
+ *  It handles "focus-in" situation creating combo-box for focused item.
+ *  It also presents wrappers for some hidden functionality.
+ */
+class BootItemsTable : public QTable
+{
+    Q_OBJECT
+
+public:
+
+    BootItemsTable (QWidget *aParent, const char *aName)
+        : QTable (aParent, aName) {}
+    ~BootItemsTable() {}
+
+    void endEdit (int aRow, int aCol)
+    {
+        QTable::endEdit (aRow, aCol, true, false);
+    }
+
+protected:
+
+    void focusInEvent (QFocusEvent *)
+    {
+        int row = currentRow() >= 0 ? currentRow() : 0;
+        setCurrentCell (row, 0);
+        editCell (row, 0);
+    }
+};
+
+
+/**
+ *  Class: BootComboBox.
+ *  QComboBox class reimplementation to use as boot item's editor.
+ *  This class handles tab/backtab keypress events for boot item re-focusing.
+ *  It also handles "focus-lost" situation for combo-box control destroying
+ *  it after focus leaving from the combo-box.
+ */
+class BootComboBox : public QComboBox
+{
+public:
+
+    BootComboBox (QWidget *aParent, QTable *aTable)
+        : QComboBox (aParent), mParent (0)
+    {
+        Assert (aTable->inherits ("BootItemsTable"));
+        mParent = static_cast<BootItemsTable*> (aTable);
+    }
+    ~BootComboBox() {}
+
+protected:
+
+    void focusOutEvent (QFocusEvent *)
+    {
+        if (!listBox()->hasFocus())
+        {
+            mParent->endEdit (mParent->currentRow(), mParent->currentColumn());
+            mParent->clearFocus();
+        }
+    }
+
+    bool event (QEvent *aEvent)
+    {
+        if (aEvent->type() == QEvent::KeyPress)
+        {
+            QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
+            switch (event->key())
+            {
+                case Qt::Key_Backtab:
+                    focusData()->home();
+                    focusData()->prev()->setFocus();
+                    return false;
+                    break;
+                case Qt::Key_Tab:
+                    focusData()->home();
+                    focusData()->next()->setFocus();
+                    return false;
+                    break;
+                default:
+                    return QComboBox::event (aEvent);
+            }
+        }
+        else
+            return QComboBox::event (aEvent);
+    }
+
+    BootItemsTable *mParent;
+};
+
+
+/**
+ *  Class: ComboTableItem.
  *  Simple QTableItem subclass to use QComboBox as the cell editor.
  *  This subclass (as opposed to QComboTableItem) allows to specify the
  *  EditType::WhenCurrent edit type of the cell (to let it look like a normal
@@ -66,6 +159,8 @@ class ComboTableItem : public QObject, public QTableItem
 
 public:
 
+    enum { BootItemType = 1001 };
+
     ComboTableItem (QTable *aTable, EditType aEditType,
                     const QStringList &aList, const QStringList &aUnique,
                     QStringList *aUniqueInUse)
@@ -75,10 +170,9 @@ public:
         setReplaceable (FALSE);
     }
 
-    // reimplemented QTableItem members
     QWidget *createEditor() const
     {
-        mComboBoxSelector = new QComboBox (table()->viewport());
+        mComboBoxSelector = (QComboBox*) new BootComboBox (table()->viewport(), table());
         QStringList list = mList;
         if (mUniqueInUse)
         {
@@ -92,10 +186,8 @@ public:
         }
         mComboBoxSelector->insertStringList (list);
         mComboBoxSelector->setCurrentText (text());
-        QObject::connect (mComboBoxSelector,   SIGNAL (highlighted (const QString &)),
-                          this,                SLOT   (doValueChanged (const QString &)));
-        QObject::connect (mComboBoxSelector,   SIGNAL (activated (const QString &)),
-                          this,                SLOT   (focusClearing ()));
+        QObject::connect (table(), SIGNAL (clicked (int, int, int, const QPoint&)),
+                          this, SLOT (processClicked (int, int, int, const QPoint&)));
 
         return mComboBoxSelector;
     }
@@ -110,6 +202,7 @@ public:
         else
             QTableItem::setContentFromEditor (aWidget);
     }
+
     void setText (const QString &aText)
     {
         if (aText != text())
@@ -129,31 +222,29 @@ public:
 
     /*
      *  Function: rtti()
-     *  Target:   required for runtime information about ComboTableItem class
-     *            used for static_cast from QTableItem
+     *  Required for runtime information about ComboTableItem class
+     *  used for static_cast from QTableItem
      */
-    int rtti() const { return 1001; }
+    int rtti() const { return BootItemType; }
 
     /*
      *  Function: getEditor()
-     *  Target:   returns pointer to stored combo-box
+     *  Returns pointer to stored combo-box
      */
     QComboBox* getEditor() { return mComboBoxSelector; }
 
 private slots:
 
     /*
-     *  QTable doesn't call endEdit() when item's EditType is WhenCurrent and
-     *  the table widget loses focus or gets destroyed (assuming the user will
-     *  hit Enter if he wants to keep the value), so we need to do it ourselves
+     *  Slot: processClicked(...)
+     *  Ensures item's combo-box popup in case of it was force-closed
+     *  with using of endEdit() last time
      */
-    void doValueChanged (const QString &text) { setText (text); }
-
-    /*
-     *  Function: focusClearing()
-     *  Target:   required for removing focus from combo-box
-     */
-    void focusClearing() { mComboBoxSelector->clearFocus(); }
+    void processClicked (int aRow, int aCol, int, const QPoint &)
+    {
+        if (aRow == row() && aCol == col())
+            mComboBoxSelector->popup();
+    }
 
 private:
 
@@ -551,6 +642,23 @@ void VBoxVMSettingsDlg::init()
     /* ensure leVRAM value and validation is updated */
     slVRAM_valueChanged (slVRAM->value());
 
+
+    tblBootOrder = new BootItemsTable ( groupBox12, "tblBootOrder" );
+    QWhatsThis::add (tblBootOrder,
+                     tr ("Defines the boot device order. Click on the entry and "
+                         "select a desired boot device from the drop-down list."));
+    setTabOrder (leVRAM, tblBootOrder);
+    setTabOrder (tblBootOrder, chbEnableACPI);
+    tblBootOrder->setSizePolicy (QSizePolicy ((QSizePolicy::SizeType)7,
+        (QSizePolicy::SizeType)7, 1, 0,
+        tblBootOrder->sizePolicy().hasHeightForWidth()));
+    tblBootOrder->setNumRows (0);
+    tblBootOrder->setNumCols (0);
+    tblBootOrder->setShowGrid (FALSE);
+    tblBootOrder->setSelectionMode (QTable::NoSelection);
+    tblBootOrder->setFocusStyle (QTable::FollowStyle);
+    groupBox12Layout->addWidget (tblBootOrder);
+
     tblBootOrder->horizontalHeader()->hide();
     tblBootOrder->setTopMargin (0);
     tblBootOrder->verticalHeader()->hide();
@@ -568,13 +676,11 @@ void VBoxVMSettingsDlg::init()
         for (int i = 0; i < tblBootOrder->numRows(); i++)
         {
             ComboTableItem *item = new ComboTableItem (
-                tblBootOrder, QTableItem::OnTyping,
+                tblBootOrder, QTableItem::WhenCurrent,
                 list, unique, &bootDevicesInUse);
             tblBootOrder->setItem (i, 0, item);
         }
     }
-    connect (tblBootOrder, SIGNAL (clicked(int, int, int, const QPoint&)),
-             this,  SLOT (bootItemActivate(int, int, int, const QPoint&)));
 
     tblBootOrder->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
     tblBootOrder->setMinimumHeight (tblBootOrder->rowHeight(0) * 4 +
@@ -685,14 +791,6 @@ void VBoxVMSettingsDlg::processAdjustSize()
         resize (minimumSize());
 }
 
-void VBoxVMSettingsDlg::bootItemActivate (int row, int col, int /* button */,
-                                          const QPoint &/* mousePos */)
-{
-    tblBootOrder->editCell(row, col);
-    QTableItem* tableItem = tblBootOrder->item(row, col);
-    if (tableItem->rtti() == 1001)
-        (static_cast<ComboTableItem*>(tableItem))->getEditor()->popup();
-}
 
 void VBoxVMSettingsDlg::updateShortcuts()
 {
