@@ -565,7 +565,7 @@ QStringList VBoxGlobal::deviceTypeStrings() const
 {
     static QStringList list;
     if (list.empty())
-        for (uint i = 0; i < deviceTypes.count(); i++)
+        for (uint i = 0; i < deviceTypes.count() - 1 /* usb=n/a */; i++)
             list += deviceTypes [i];
     return list;
 }
