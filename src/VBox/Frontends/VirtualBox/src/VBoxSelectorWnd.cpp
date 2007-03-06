@@ -255,8 +255,8 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mBtnEdit = new QToolButton (this, "mBtnEdit");
     mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
     mBtnEdit->setFocusPolicy (QWidget::StrongFocus);
-    mBtnEdit->setIconSet (VBoxGlobal::iconSet ("edit_shared_folder_16px.png",
-                          "edit_shared_folder_disabled_16px.png"));
+    mBtnEdit->setIconSet (VBoxGlobal::iconSet ("edit_description_16px.png",
+                                               "edit_description_disabled_16px.png"));
     mBtnEdit->setTextPosition (QToolButton::BesideIcon);
     mBtnEdit->setUsesTextLabel (true);
     connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
@@ -278,11 +278,7 @@ void VBoxVMDescriptionPage::setMachine (const CMachine &aMachine)
 {
     Assert (!aMachine.isNull());
 
-    QUuid id = aMachine.GetId();
-    if (id == mMachineId)
-        return;
-
-    mMachineId = id;
+    mMachineId = aMachine.GetId();
 
     QString text = aMachine.GetDescription();
 
@@ -441,7 +437,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     /* VM comments page */
     vmDescriptionPage = new VBoxVMDescriptionPage (this, "vmDescriptionPage");
     vmTabWidget->addTab (vmDescriptionPage,
-                         VBoxGlobal::iconSet ("edit_shared_folder_16px.png"),
+                         VBoxGlobal::iconSet ("description_16px.png"),
                          QString::null);
 
     /* add actions to the toolbar */
@@ -961,8 +957,8 @@ void VBoxSelectorWnd::languageChange()
 #endif
 
     vmTabWidget->changeTab (vmDetailsView, tr ("&Details"));
-    vmTabWidget->changeTab (vmSnapshotsWgt, tr ("&Snapshots"));
-    vmTabWidget->changeTab (vmDescriptionPage, tr ("D&escription"));
+    /* note: Snapshots and Details tabs are changed dynamically by
+     * vmListBoxCurrentChanged() */
 
     /* ensure the details and screenshot view are updated */
     vmListBoxCurrentChanged();
@@ -1082,7 +1078,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         {
             /* update the description tab name */
             QString name = m.GetDescription().isEmpty() ?
-                tr ("Des&cription") : tr ("Des&cription (*)");
+                tr ("D&escription") : tr ("D&escription *");
             vmTabWidget->changeTab (vmDescriptionPage, name);
             /* refresh description widget */
             vmDescriptionPage->setMachine (m);
