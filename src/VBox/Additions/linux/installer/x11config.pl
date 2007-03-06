@@ -55,6 +55,12 @@ foreach $cfg (@cfg_files)
                     $have_mouse = 1
                 }
 
+                # Other drivers sending events interfere badly with pointer integration
+                if ($line =~ /^\s*driver\s+\"(?:alwayscore|sendcoreevents)\"/i)
+                {
+                    $line = "\n";
+                }
+
                 if ($line =~ /^\s*driver\s+\"(?:fbdev|vga|vesa|vboxvideo|ChangeMe)\"/i)
                 {
                     $line = "    Driver      \"vboxvideo\"\n";
