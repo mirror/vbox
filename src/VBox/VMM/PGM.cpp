@@ -3391,7 +3391,7 @@ PDMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
  */
 PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable)
 {
-    pVM->pgm.s.fDisableMappings = !!fEnable;
+    pVM->pgm.s.fDisableMappings = !fEnable;
 
     size_t cb;
     int rc = PGMR3MappingsSize(pVM, &cb);
