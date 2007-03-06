@@ -71,8 +71,8 @@ __END_DECLS
     { \
         if ( RT_OFFSETOF(strct, member) & ((align) - 1) ) \
         { \
-            printf("%s::%s offset=%d expected alignment %d, meaning %d off\n", #strct, #member, RT_OFFSETOF(strct, member), \
-                   align, RT_OFFSETOF(strct, member) & (align - 1)); \
+            printf("%s::%s offset=%u expected alignment %x, meaning %u off\n", #strct, #member, (unsigned)RT_OFFSETOF(strct, member), \
+                   (unsigned)(align), (unsigned)(RT_OFFSETOF(strct, member) & ((align) - 1))); \
             rc++; \
         } \
     } while (0)
@@ -84,7 +84,8 @@ __END_DECLS
     do { \
         if (RT_ALIGN_Z(sizeof(type), (align)) != sizeof(type)) \
         { \
-            printf("%s size=%#x, align=%#x %#x bytes off\n", #type, (int)sizeof(type), (align), (int)RT_ALIGN_Z(sizeof(type), align) - (int)sizeof(type)); \
+            printf("%s size=%#x, align=%#x %#x bytes off\n", #type, (int)sizeof(type), \
+                  (align), (int)RT_ALIGN_Z(sizeof(type), align) - (int)sizeof(type)); \
             rc++; \
         } \
     } while (0)
