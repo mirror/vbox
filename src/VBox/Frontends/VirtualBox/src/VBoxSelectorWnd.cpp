@@ -210,19 +210,18 @@ public:
     VBoxVMDescriptionPage (VBoxSelectorWnd *, const char *);
     ~VBoxVMDescriptionPage() {}
 
-    void setMachine (const CMachine &);
+    void setMachineItem (VBoxVMListBoxItem *aItem);
 
     void languageChange();
+    void updateState();
 
 private slots:
 
     void goToSettings();
-    void sessionStateChanged (const VBoxSessionStateChangeEvent &aE);
-    void machineStateChanged (const VBoxMachineStateChangeEvent &aE);
 
 private:
 
-    QUuid mMachineId;
+    VBoxVMListBoxItem *mItem;
 
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
@@ -232,7 +231,8 @@ private:
 
 VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
                                               const char *aName)
-    : QWidget (aParent, aName), mParent (aParent)
+    : QWidget (aParent, aName)
+    , mItem (NULL), mParent (aParent)
     , mBtnEdit (0), mBrowser (0)
 {
     /* main layout creation */
@@ -267,28 +267,23 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
                                           QSizePolicy::Expanding,
                                           QSizePolicy::Minimum));
 
-    /* connect VirtualBox callback events */
-    connect (&vboxGlobal(), SIGNAL (machineStateChanged (const VBoxMachineStateChangeEvent &)),
-             this, SLOT (machineStateChanged (const VBoxSessionStateChangeEvent &)));
-    connect (&vboxGlobal(), SIGNAL (sessionStateChanged (const VBoxSessionStateChangeEvent &)),
-             this, SLOT (sessionStateChanged (const VBoxSessionStateChangeEvent &)));
-
     /* apply language settings */
     languageChange();
+
+    updateState();
 }
 
-void VBoxVMDescriptionPage::setMachine (const CMachine &aMachine)
+/** 
+ * The machine list @a aItem is used to access cached machine data w/o making
+ * unnecessary RPC calls.
+ */
+void VBoxVMDescriptionPage::setMachineItem (VBoxVMListBoxItem *aItem)
 {
-    Assert (!aMachine.isNull());
+    mItem = aItem;
 
-    mMachineId = aMachine.GetId();
+    QString text = aItem ? aItem->machine().GetDescription() : QString::null;
 
-    QString text = aMachine.GetDescription();
-
-    if (text.isEmpty())
-        text = QString::null;
-
-    if (!text.isNull())
+    if (!text.isEmpty())
     {
         mBrowser->setText (text);
         mBrowser->setPaper (mBrowserPaper);
@@ -302,9 +297,7 @@ void VBoxVMDescriptionPage::setMachine (const CMachine &aMachine)
     }
 
     /* check initial machine and session states */
-    bool saved = aMachine.GetState() == CEnums::Saved;
-    bool busy = aMachine.GetState() != CEnums::SessionClosed;
-    mBtnEdit->setEnabled (!saved && !busy);
+    updateState();
 }
 
 void VBoxVMDescriptionPage::languageChange()
@@ -314,33 +307,31 @@ void VBoxVMDescriptionPage::languageChange()
     QToolTip::add (mBtnEdit, tr ("Edit (Ctrl+E)"));
 }
 
+/** 
+ * Called by the parent from machineStateChanged() and sessionStateChanged()
+ * signal handlers. We cannot connect to these signals ourselves because we
+ * use the VBoxVMListBoxItem which needs to be properly updated by the parent
+ * first.
+ */
+void VBoxVMDescriptionPage::updateState()
+{
+    /// @todo disabling the edit button for a saved VM will not be necessary
+    /// when we implement the selective VM Settings dialog, where only fields
+    /// that can be changed in the saved state, can be changed.
+
+    if (mItem)
+    {
+        bool saved = mItem->state() == CEnums::Saved;
+        bool busy = mItem->sessionState() != CEnums::SessionClosed;
+        mBtnEdit->setEnabled (!saved && !busy);
+    }
+    else
+        mBtnEdit->setEnabled (false);
+}
+
 void VBoxVMDescriptionPage::goToSettings()
 {
     mParent->vmSettings ("#general", 2);
-}
-
-void VBoxVMDescriptionPage::machineStateChanged (const VBoxMachineStateChangeEvent &aE)
-{
-    /// @todo this slot will not be necessary when we implement the selective
-    /// VM Settings dialog, where only fields that can be changed in the
-    /// saved state, can be changed.
-
-    if (aE.id != mMachineId)
-        return; /* not interested in other machines */
-
-    /* disable the edit button for a saved machine */
-    bool saved = aE.state == CEnums::Saved;
-    mBtnEdit->setEnabled (!saved);
-}
-
-void VBoxVMDescriptionPage::sessionStateChanged (const VBoxSessionStateChangeEvent &aE)
-{
-    if (aE.id != mMachineId)
-        return; /* not interested in other machines */
-
-    /* whether another direct session is open or not */
-    bool busy = aE.state != CEnums::SessionClosed;
-    mBtnEdit->setEnabled (!busy);
 }
 
 // VBoxSelectorWnd class
@@ -452,13 +443,15 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     /* VM snapshots list */
     vmSnapshotsWgt = new VBoxSnapshotsWgt (NULL, "vmSnapshotsWgt");
     vmTabWidget->addTab (vmSnapshotsWgt,
-                         VBoxGlobal::iconSet ("take_snapshot_16px.png"),
+                         VBoxGlobal::iconSet ("take_snapshot_16px.png",
+                                              "take_snapshot_dis_16px.png"),
                          QString::null);
 
     /* VM comments page */
     vmDescriptionPage = new VBoxVMDescriptionPage (this, "vmDescriptionPage");
     vmTabWidget->addTab (vmDescriptionPage,
-                         VBoxGlobal::iconSet ("description_16px.png"),
+                         VBoxGlobal::iconSet ("description_16px.png",
+                                              "description_disabled_16px.png"),
                          QString::null);
 
     /* add actions to the toolbar */
@@ -1062,11 +1055,12 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
                                                bool aRefreshSnapshots,
                                                bool aRefreshDescription)
 {
-    if ( !vmListBox->selectedItem() && vmListBox->currentItem() >= 0 )
+    if (!vmListBox->selectedItem() && vmListBox->currentItem() >= 0)
     {
         /* selected always follows current */
-        vmListBox->setSelected( vmListBox->currentItem(), true );
+        vmListBox->setSelected (vmListBox->currentItem(), true);
     }
+
     vmListBox->ensureCurrentVisible();
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
 
@@ -1092,8 +1086,10 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
             if (count)
                 name += QString (" (%1)").arg (count);
             vmTabWidget->changeTab (vmSnapshotsWgt, name);
-            /* refresh snapshots widget */
+            /* refresh the snapshots widget */
             vmSnapshotsWgt->setMachine (m);
+            /* ensure the tab is enabled */
+            vmTabWidget->setTabEnabled (vmSnapshotsWgt, true);
         }
         if (aRefreshDescription)
         {
@@ -1101,8 +1097,10 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
             QString name = m.GetDescription().isEmpty() ?
                 tr ("D&escription") : tr ("D&escription *");
             vmTabWidget->changeTab (vmDescriptionPage, name);
-            /* refresh description widget */
-            vmDescriptionPage->setMachine (m);
+            /* refresh the description widget */
+            vmDescriptionPage->setMachineItem (item);
+            /* ensure the tab is enabled */
+            vmTabWidget->setTabEnabled (vmDescriptionPage, true);
         }
 
         /* enable/disable modify actions */
@@ -1137,31 +1135,56 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
     }
     else
     {
+        /* Note that the machine becomes inaccessible (or if the last VM gets
+         * deleted), we have to update all fields, ignoring input
+         * arguments. */
+
         if (item)
         {
             /* the VM is inaccessible */
             vmDetailsView->setErrorText (
                 VBoxProblemReporter::formatErrorInfo (item->accessError()));
-
             vmRefreshAction->setEnabled (true);
         }
         else
         {
-            vmDetailsView->setEmpty();
+            /* default HTML support in Qt is terrible so just try to get
+             * something really simple */
+            vmDetailsView->setDetailsText
+                (tr ("<h3><img src=ico64x01.png align=right/>"
+                     "Welcome to VirtualBox!</h3>"
+                     "<p>The left part of this window is intended to display "
+                     "a list of all virtual machines existing on this computer. "
+                     "This list is now empty because you didn't create any virtual "
+                     "machine."
+                     "<p>In order to create a new virtual machine, press the "
+                     "<b>New</b> button in the main tool bar located "
+                     "at the top of the window."));
             vmRefreshAction->setEnabled (false);
         }
 
-        vmDetailsView->setEnabled (true);
+        /* empty and disable other tabs */
 
-        /* empty and disable refresh snapshots widget */
         vmSnapshotsWgt->setMachine (CMachine());
-        vmSnapshotsWgt->setEnabled (false);
+        vmTabWidget->changeTab (vmSnapshotsWgt, tr ("&Snapshots"));
+        vmTabWidget->setTabEnabled (vmSnapshotsWgt, false);
+
+        vmDescriptionPage->setMachineItem (NULL);
+        vmTabWidget->changeTab (vmDescriptionPage, tr ("D&escription"));
+        vmTabWidget->setTabEnabled (vmDescriptionPage, false);
 
         /* disable modify actions */
         vmConfigAction->setEnabled (false);
         vmDeleteAction->setEnabled (item != NULL);
-        vmStartAction->setEnabled (false);
         vmDiscardAction->setEnabled (false);
+
+        /* change the Start button text accordingly */
+        vmStartAction->setMenuText (tr ("S&tart"));
+        vmStartAction->setText (tr ("Start"));
+        vmStartAction->setAccel (QString::null);
+        vmStartAction->setStatusTip (
+            tr ("Start the selected virtual machine"));
+        vmStartAction->setEnabled (false);
     }
 }
 
@@ -1208,15 +1231,18 @@ void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
 {
     refreshVMItem (e.id,
                    false /* aDetails */,
-                   false /* aSnapshot */,
+                   false /* aSnapshots */,
                    false /* aDescription */);
+
+    /* simulate a state change signal */
+    vmDescriptionPage->updateState();
 }
 
 void VBoxSelectorWnd::machineDataChanged (const VBoxMachineDataChangeEvent &e)
 {
     refreshVMItem (e.id,
                    true  /* aDetails */,
-                   false /* aSnapshot */,
+                   false /* aSnapshots */,
                    true  /* aDescription */);
 }
 
@@ -1248,8 +1274,11 @@ void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
 {
     refreshVMItem (e.id,
                    true  /* aDetails */,
-                   false /* aSnapshot */,
+                   false /* aSnapshots */,
                    false /* aDescription */);
+
+    /* simulate a state change signal */
+    vmDescriptionPage->updateState();
 }
 
 void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
