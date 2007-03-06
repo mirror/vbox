@@ -2935,6 +2935,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
 {
     uint32_t i;
+    int      rc;
+    PCPUMCTX pHyperCtx, pGuestCtx;
 
     if (!HWACCMR3IsAllowed(pVM))
     {
@@ -2955,15 +2957,18 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     VM_FF_CLEAR(pVM, VM_FF_TIMER);
     VM_FF_CLEAR(pVM, VM_FF_REQUEST);
 
+    CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
+
+    pHyperCtx->cr0 = X86_CR0_PE | X86_CR0_WP | X86_CR0_PG | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
+    pHyperCtx->cr4 = X86_CR4_PGE | X86_CR4_OSFSXR | X86_CR4_OSXMMEEXCPT;
+
     /*
      * Setup stack for calling VMMGCEntry().
      */
     RTGCPTR GCPtrEP;
-    int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
-        PCPUMCTX    pHyperCtx, pGuestCtx;
-
         RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
 
         CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
@@ -2976,9 +2981,6 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
         SYNC_SEL(pHyperCtx, gs);
         SYNC_SEL(pHyperCtx, ss);
         SYNC_SEL(pHyperCtx, tr);
-
-        pHyperCtx->cr0 = X86_CR0_PE | X86_CR0_WP | X86_CR0_PG | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
-        pHyperCtx->cr4 = X86_CR4_PGE | X86_CR4_OSFSXR | X86_CR4_OSXMMEEXCPT;
 
         /*
          * Profile switching.
@@ -3020,6 +3022,14 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             }
             if (TickThisElapsed < TickMin)
                 TickMin = TickThisElapsed;
+/* temporary */
+#ifdef LOG_ENABLED
+            PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
+            if (    pLogger
+                &&  pLogger->offScratch > 0)
+                RTLogFlushGC(NULL, pLogger);
+#endif
+
         }
         uint64_t TickEnd = ASMReadTSC();
         uint64_t tsEnd = RTTimeNanoTS();
