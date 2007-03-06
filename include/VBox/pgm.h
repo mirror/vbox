@@ -34,7 +34,7 @@ __BEGIN_DECLS
  */
 
 /** Enable dynamic allocation of guest physical RAM. */
-#ifndef __AMD64__ /* broken in the 64 bits build */
+#if !defined( __AMD64__) /* broken in the 64 bits build */ && !defined(__DARWIN__) /* doesn't work here either, will fix after the 15th. */
 #define PGM_DYNAMIC_RAM_ALLOC
 #endif
 
