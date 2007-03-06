@@ -396,16 +396,16 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     
     pVBox->useVbva = FALSE;
 
-    if (pVBox->vbox_fd != -1 || pVBox->reqp)
+    if (pVBox->vbox_fd != -1 && pVBox->reqp)
     {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Error fd=%d reqp=%p\n", pVBox->vbox_fd,
-                   (void *) pVBox->reqp);
-        return FALSE;
+        /* still open, just re-enable VBVA after CloseScreen was called */
+        pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
+        return TRUE;
     }
 
     fd = open (VBOXGUEST_DEVICE_NAME, O_RDWR, 0);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Error opening kernel module: %s\n",
                    strerror (errno));
@@ -415,7 +415,8 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     size = vmmdevGetRequestSize (VMMDevReq_SetPointerShape);
 
     p = xcalloc (1, size);
-    if (!p) {
+    if (!p)
+    {
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Could not allocate %lu bytes for VMM request\n",
                    (unsigned long) size);
