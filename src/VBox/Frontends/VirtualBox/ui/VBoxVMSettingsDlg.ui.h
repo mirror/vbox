@@ -121,11 +121,19 @@ protected:
             switch (event->key())
             {
                 case Qt::Key_Backtab:
+                    /* Going to parent QTable */
+                    focusData()->home();
+                    focusData()->next()->setFocus();
+                    /* Jumps other the parent QTable */
                     focusData()->home();
                     focusData()->prev()->setFocus();
                     return false;
                     break;
                 case Qt::Key_Tab:
+                    /* Going to parent QTable */
+                    focusData()->home();
+                    focusData()->next()->setFocus();
+                    /* Jumps other the parent QTable */
                     focusData()->home();
                     focusData()->next()->setFocus();
                     return false;
@@ -647,7 +655,7 @@ void VBoxVMSettingsDlg::init()
     QWhatsThis::add (tblBootOrder,
                      tr ("Defines the boot device order. Click on the entry and "
                          "select a desired boot device from the drop-down list."));
-    setTabOrder (leVRAM, tblBootOrder);
+    setTabOrder (tbwGeneral, tblBootOrder);
     setTabOrder (tblBootOrder, chbEnableACPI);
     tblBootOrder->setSizePolicy (QSizePolicy ((QSizePolicy::SizeType)7,
         (QSizePolicy::SizeType)7, 1, 0,
