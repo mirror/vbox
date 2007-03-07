@@ -492,7 +492,7 @@ PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName
     RTMemFree(pModule);
     RTMemTmpFree(pszFile);
 
-    /* don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY as these are very unlikely */
+    /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
     if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, N_("Cannot load GC module %s"), pszFilename);
     return rc;
@@ -579,10 +579,9 @@ static int pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName)
     RTMemTmpFree(pszFile);
     LogRel(("pdmR3LoadR0: pszName=\"%s\" rc=%Vrc\n", pszName, rc));
 
-    /* don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY as these are very unlikely */
+    /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
     if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s"), pszFilename);
-
     return rc;
 }
 
