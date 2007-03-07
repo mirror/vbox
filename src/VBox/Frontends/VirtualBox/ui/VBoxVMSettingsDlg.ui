@@ -2715,7 +2715,7 @@ with all fields set to the values of the selected USB device attached to the hos
 </slots>
 <functions>
     <function access="private">init()</function>
-    <function>setup( const QString &amp;, int )</function>
+    <function>setup( const QString &amp;, const QString &amp; )</function>
     <function>getFromMachine( const CMachine &amp; machine )</function>
     <function returnType="COMResult">putBackToMachine()</function>
     <function access="protected">setWarning( const QString &amp; )</function>
