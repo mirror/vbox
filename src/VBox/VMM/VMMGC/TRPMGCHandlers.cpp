@@ -369,8 +369,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
                 return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
     }
-    else
-    if (pRegFrame->eflags.Bits.u1VM)
+    else if (pRegFrame->eflags.Bits.u1VM)
     {
         int rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
@@ -709,12 +708,11 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      */
     if (pRegFrame->eflags.Bits.u1VM)
     {
-        X86EFLAGS eflags;
-
         STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
 
         /* Retrieve the eflags including the virtualized bits. */
         /** @note hackish as the cpumctxcore structure doesn't contain the right value */
+        X86EFLAGS eflags;
         eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame);
         if (eflags.Bits.u2IOPL == 0)
         {
