@@ -1349,9 +1349,9 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
             /* calc flags. */
             int flags = 0;
             UInt32 EventKind = ::GetEventKind (inEvent);
-            if (EventKind == kEventRawKeyDown)
+            if (EventKind != kEventRawKeyUp)
                 flags |= KeyPressed;
-            if (scanCode & 0x8000) /* modifiers */
+            if (scanCode & 0x8000) /* modifiers (just in case) */
             {
                 flags |= KeyPressed;
                 scanCode &= ~0x8000;
