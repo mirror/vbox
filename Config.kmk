@@ -917,7 +917,10 @@ ifeq ($(BUILD_TARGET),win)
  endif
 
 else ifeq ($(BUILD_TARGET),darwin)
- VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.8
+ ifndef VBOX_PATH_QT
+  VBOX_PATH_QT := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v3.*)))
+  VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.8-r1
+ endif
  LIB_QT ?= $(VBOX_PATH_QT)/lib/libqt-mt.3.dylib
  LIB_QTMAIN ?= $(NO_SUCH_VARIABLE)
  ifndef QTDIR
