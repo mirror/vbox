@@ -213,7 +213,7 @@ VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/darwin/PkgInfo \
 	$(PATH_TARGET)/Info.plist \
-	images/VirtualBox.icns=>Resources/VirtualBox.icns
+	images/VirtualBox.icns=>Resources/virtualbox.icns
 
 $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_L1,Generating $@)
