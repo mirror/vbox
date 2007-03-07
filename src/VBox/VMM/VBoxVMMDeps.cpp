@@ -30,6 +30,8 @@
 #include <VBox/iom.h>
 #include <VBox/dbgf.h>
 
+VMMR3DECL(int) VMMDoTest(PVM pVM);
+
 /** Just a dummy global structure containing a bunch of
  * function pointers to code which is wanted in the link.
  */
@@ -45,5 +47,6 @@ PFNRT g_apfnDeps[] =
     (PFNRT)PDMCritSectEnter,
     (PFNRT)PGMInvalidatePage,
     (PFNRT)VMR3Create,
+    (PFNRT)VMMDoTest,
     NULL
 };
