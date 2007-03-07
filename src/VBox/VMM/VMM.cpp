@@ -191,9 +191,9 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     NULL,   //&vmmR3SwitcherPAEToAMD64_Def,
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     &vmmR3SwitcherAMD64ToPAE_Def,
-# else             
+# else
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
-# endif             
+# endif
     NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
 #else
     NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
@@ -1268,7 +1268,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
 #if defined(__DARWIN__) && defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
                 *uSrc.pu16 = 0x80; /* KERNEL64_CS from i386/seg.h */
 #else
-                AssertFatalMsg(("FIX_HC_64BIT_CS not implemented for this host\n"));
+                AssertFatalMsgFailed(("FIX_HC_64BIT_CS not implemented for this host\n"));
 #endif
                 break;
             }
@@ -3025,7 +3025,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
         uint64_t TickStart = ASMReadTSC();
         for (i = 0; i < 1000000; i++)
         {
-            CPUMHyperSetCtxCore(pVM, NULL); 
+            CPUMHyperSetCtxCore(pVM, NULL);
 
             CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
             CPUMPushHyper(pVM, 0);
