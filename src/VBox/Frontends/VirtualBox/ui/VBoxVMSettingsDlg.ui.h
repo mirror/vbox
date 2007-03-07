@@ -921,19 +921,26 @@ void VBoxVMSettingsDlg::setWarning (const QString &warning)
  *      (see VBoxVMSettingsDlg.ui in qdesigner) prepended with the '#'
  *      sign.
  */
-void VBoxVMSettingsDlg::setup (const QString &aCategory, int aSubPage)
+void VBoxVMSettingsDlg::setup (const QString &aCategory, const QString &aSubPage)
 {
     if (!aCategory.isNull())
     {
+        /* search for first-level item */
         QListViewItem *item = listView->findItem (aCategory, listView_Link);
         if (item)
         {
             listView->setSelected (item, true);
-            QObjectList *list = widgetStack->visibleWidget()->queryList ("QTabWidget");
-            for (QObject *obj = list->first(); obj != NULL; obj = list->next())
+            /* search for second-level item */
+            if (!aSubPage.isNull())
             {
-                QTabWidget *tabStack = static_cast<QTabWidget*> (obj);
-                tabStack->setCurrentPage (aSubPage);
+                QObjectList *list = widgetStack->visibleWidget()->queryList ("QTabWidget");
+                for (QObject *obj = list->first(); obj != NULL; obj = list->next())
+                {
+                    QTabWidget *tabWidget = static_cast<QTabWidget*> (obj);
+                    for (int index = 0; index < tabWidget->count(); ++index)
+                        if (tabWidget->page (index)->name() == aSubPage)
+                            tabWidget->setCurrentPage (index);
+                }
             }
         }
     }

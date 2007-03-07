@@ -273,7 +273,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     updateState();
 }
 
-/** 
+/**
  * The machine list @a aItem is used to access cached machine data w/o making
  * unnecessary RPC calls.
  */
@@ -307,7 +307,7 @@ void VBoxVMDescriptionPage::languageChange()
     QToolTip::add (mBtnEdit, tr ("Edit (Ctrl+E)"));
 }
 
-/** 
+/**
  * Called by the parent from machineStateChanged() and sessionStateChanged()
  * signal handlers. We cannot connect to these signals ourselves because we
  * use the VBoxVMListBoxItem which needs to be properly updated by the parent
@@ -331,7 +331,7 @@ void VBoxVMDescriptionPage::updateState()
 
 void VBoxVMDescriptionPage::goToSettings()
 {
-    mParent->vmSettings ("#general", 2);
+    mParent->vmSettings ("#general", "description");
 }
 
 // VBoxSelectorWnd class
@@ -672,7 +672,7 @@ void VBoxSelectorWnd::vmNew()
  *      Category to select in the settings dialog. See
  *      VBoxVMSettingsDlg::setup().
  */
-void VBoxSelectorWnd::vmSettings (const QString &category, int aSubPage)
+void VBoxSelectorWnd::vmSettings (const QString &category, const QString &aSubPage)
 {
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
 
