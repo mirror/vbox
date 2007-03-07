@@ -105,7 +105,7 @@ __BEGIN_DECLS
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #else
 #define HWACCM_VMX_TRAP_MASK                BIT(7) | BIT(14)
-#define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK | BIT(13) /* #GP is required for the #GP in V86 workaround */
+#define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #endif
 /** @} */
 
