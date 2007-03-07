@@ -102,15 +102,16 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
  */
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *poff)
 {
-    RTR3PTR R3Ptr;
-
     AssertCompile(sizeof(RTR0PTR) == sizeof(RTR3PTR));
 
-    /** @todo fix this properly; the ring 0 pVM address differs from the R3 one. */
-    if (R0Ptr >= pVM->pVMR0 && (RTR0UINTREG)R0Ptr < (RTR0UINTREG)pVM->pVMR0 + sizeof(*pVM))
-        R3Ptr = (RTR3PTR)((RTR0UINTREG)R0Ptr - (RTR0UINTREG)pVM->pVMR0 + (RTR0UINTREG)pVM->pVMR3);
-    else
-        R3Ptr = (RTR3PTR)R0Ptr;
+    /* 
+     * Translate Ring-0 VM addresses into Ring-3 VM addresses before feeding it to mmHyperLookupR3. 
+     */
+    /** @todo fix this properly; the ring 0 pVM address differs from the R3 one. (#1865) */
+    RTR0UINTPTR offVM = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pVM->pVMR0;
+    RTR3PTR R3Ptr = offVM < sizeof(*pVM)
+                  ? (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + offVM)
+                  : (RTR3PTR)R0Ptr;
 
     return mmHyperLookupR3(pVM, R3Ptr, poff);
 }
