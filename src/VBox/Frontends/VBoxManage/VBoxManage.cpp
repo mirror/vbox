@@ -3694,7 +3694,7 @@ static int handleModifyVM(int argc, char *argv[],
         if (FAILED(rc))
             break;
 #ifdef VBOX_VRDP
-        if (vrdp || (vrdpport != UINT16_MAX) || vrdpauthtype)
+        if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype)
         {
             ComPtr<IVRDPServer> vrdpServer;
             machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
