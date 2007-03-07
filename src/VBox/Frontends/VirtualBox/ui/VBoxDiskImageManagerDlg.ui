@@ -537,6 +537,9 @@
     <variable access="private">QString targetVMId;</variable>
     <variable access="private">QPixmap pxInaccessible;</variable>
     <variable access="private">QPixmap pxErroneous;</variable>
+    <variable access="private">QPixmap pxHD;</variable>
+    <variable access="private">QPixmap pxCD;</variable>
+    <variable access="private">QPixmap pxFD;</variable>
     <variable access="private">CMachine cmachine;</variable>
     <variable access="private">QPopupMenu *itemMenu;</variable>
     <variable access="private">VBoxToolBar *toolBar;</variable>
@@ -630,6 +633,7 @@
     <function specifier="static" returnType="QString">composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
     <function access="protected">clearInfoPanes()</function>
     <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
+    <function access="protected">makeWarningMark( DiskImageItem*, VBoxMedia::Status, VBoxDefs::DiskType )</function>
 </functions>
 <layoutdefaults spacing="10" margin="10"/>
 </UI>
