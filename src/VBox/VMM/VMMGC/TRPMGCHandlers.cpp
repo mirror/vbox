@@ -1022,7 +1022,6 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
          * We'll deal with the actual stale or troublesome selector value in 
          * the outermost trap frame.
          */
-        PCPUMCTXCORE pCoreCtx = (PCPUMCTXCORE)pRegFrame->esp;
         switch (uUser & TRPM_TRAP_IN_OP_MASK)
         {
             case TRPM_TRAP_IN_MOV_GS:
