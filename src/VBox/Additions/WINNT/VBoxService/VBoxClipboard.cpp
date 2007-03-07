@@ -259,13 +259,6 @@ static int vboxClipboardReadData (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format
                 {
                     *pcbActual = u32Size;
                 }
-                else
-                {
-                    if (u32Size != cb)
-                    {
-                        rc = VERR_INVALID_PARAMETER;
-                    }
-                }
             }
         }
     }
@@ -425,61 +418,106 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
             }
             else
             {
-                /* Query the size of available data. */
+                const uint32_t cbPrealloc = 4096;
                 uint32_t cb = 0;
+                
+                /* Preallocate a buffer, most of small text transfers will fit into it. */
+                HANDLE hMem = GlobalAlloc (GMEM_DDESHARE | GMEM_MOVEABLE, cbPrealloc);
+                dprintf(("hMem %p\n", hMem));
 
-                int vboxrc = vboxClipboardReadData (pCtx, u32Format, NULL, 0, &cb);
-
-                dprintf(("vboxClipboardReadData vboxrc = %d, cb = %d\n", vboxrc, cb));
-
-                if (VBOX_SUCCESS (vboxrc) && cb > 0)
+                if (hMem)
                 {
-                    HANDLE hMem = GlobalAlloc (GMEM_DDESHARE | GMEM_MOVEABLE, cb);
+                    void *pMem = GlobalLock (hMem);
+                    dprintf(("pMem %p, GlobalSize %d\n", pMem, GlobalSize (hMem)));
 
-                    dprintf(("hMem %p\n", hMem));
-
-                    if (hMem)
+                    if (pMem)
                     {
-                        void *pMem = GlobalLock (hMem);
+                        /* Read the host data to the preallocated buffer. */
+                        int vboxrc = vboxClipboardReadData (pCtx, u32Format, pMem, cbPrealloc, &cb);
+                        dprintf(("vboxClipboardReadData vboxrc %d\n",  vboxrc));
 
-                        dprintf(("pMem %p, GlobalSize %d\n", pMem, GlobalSize (hMem)));
-
-                        if (pMem)
+                        if (VBOX_SUCCESS (rc))
                         {
-                            /* Read the host data. */
-                            vboxrc = vboxClipboardReadData (pCtx, u32Format, pMem, cb, NULL);
-                            
-                            dprintf(("vboxClipboardReadData vboxrc %d\n",  vboxrc));
-
-                            if (VBOX_SUCCESS (vboxrc))
+                            if (cb > cbPrealloc)
                             {
-//                                /* Remember the which data was transferred. */
-//                                vboxClipboardIsSameAsLastSent (pCtx, u32Format, pMem, cb);
-
-                                /* The memory must be unlocked before inserting to the Clipboard. */
                                 GlobalUnlock (hMem);
-
-                                /* 'hMem' contains the host clipboard data.
-                                 * size is 'cb' and format is 'format'.
-                                 */
-                                HANDLE hClip = SetClipboardData (format, hMem);
-
-                                dprintf(("WM_RENDERFORMAT hClip %p\n", hClip));
-
-                                if (hClip)
+                                
+                                /* The preallocated buffer is too small, adjust the size. */
+                                hMem = GlobalReAlloc (hMem, cb, 0);
+                                dprintf(("hMem %p\n", hMem));
+                                
+                                if (hMem)
                                 {
-                                    /* The hMem ownership has gone to the system. Finish the processsing. */
-                                    break;
+                                    pMem = GlobalLock (hMem);
+                                    dprintf(("pMem %p, GlobalSize %d\n", pMem, GlobalSize (hMem)));
+
+                                    if (pMem)
+                                    {
+                                        /* Read the host data to the preallocated buffer. */
+                                        uint32_t cbNew = 0;
+                                        vboxrc = vboxClipboardReadData (pCtx, u32Format, pMem, cb, &cbNew);
+                                        dprintf(("vboxClipboardReadData vboxrc %d, cb = %d, cbNew = %d\n", vboxrc, cb, cbNew));
+
+                                        if (VBOX_SUCCESS (vboxrc) && cbNew <= cb)
+                                        {
+                                            cb = cbNew;
+                                        }
+                                        else
+                                        {
+                                            GlobalUnlock (pMem);
+                                            GlobalFree (hMem);
+                                            hMem = NULL;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        GlobalFree (hMem);
+                                        hMem = NULL;
+                                    }
+                                }
+                            }
+                            
+                            if (hMem)
+                            {
+                                /* pMem is the address of the data. cb is the size of returned data. */
+                                /* Verify the size of returned text. */
+                                if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+                                {
+                                    cb = (lstrlenW((LPWSTR)pMem) + 1) * 2;
                                 }
                                 
-                                /* Cleanup follows. */
-                            }
-                            else
-                            {
                                 GlobalUnlock (hMem);
+                                
+                                hMem = GlobalReAlloc (hMem, cb, 0);
+                                dprintf(("hMem %p\n", hMem));
+                                
+                                if (hMem)
+                                {
+                                    /* 'hMem' contains the host clipboard data.
+                                     * size is 'cb' and format is 'format'.
+                                     */
+                                    HANDLE hClip = SetClipboardData (format, hMem);
+                                    dprintf(("WM_RENDERFORMAT hClip %p\n", hClip));
+
+                                    if (hClip)
+                                    {
+                                        /* The hMem ownership has gone to the system. Finish the processing. */
+                                        break;
+                                    }
+                                
+                                    /* Cleanup follows. */
+                                }
                             }
                         }
-
+                        
+                        if (hMem)
+                        {
+                            GlobalUnlock (hMem);
+                        }
+                    }
+                    
+                    if (hMem)
+                    {
                         GlobalFree (hMem);
                     }
                 }
