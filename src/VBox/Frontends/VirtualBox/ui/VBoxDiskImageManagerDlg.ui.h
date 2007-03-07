@@ -202,6 +202,9 @@ void VBoxDiskImageManagerDlg::init()
     pxErroneous.convertFromImage (img);
     Assert (!pxErroneous.isNull());
 
+    pxHD = QPixmap::fromMimeSource ("diskim_16px.png");
+    pxCD = QPixmap::fromMimeSource ("cd_16px.png");
+    pxFD = QPixmap::fromMimeSource ("fd_16px.png");
 
     /* setup tab widget icons */
     twImages->setTabIconSet (twImages->page (0),
@@ -1095,10 +1098,7 @@ void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
     aItem->setToolTip (composeHdToolTip (hd, status));
     aItem->setStatus (status);
 
-    if (aMedia.status == VBoxMedia::Inaccessible)
-        aItem->setPixmap (0, pxInaccessible);
-    else if (aMedia.status == VBoxMedia::Error)
-        aItem->setPixmap (0, pxErroneous);
+    makeWarningMark (aItem, aMedia.status, VBoxDefs::HD);
 }
 
 void VBoxDiskImageManagerDlg::updateCdItem (DiskImageItem   *aItem,
@@ -1123,10 +1123,7 @@ void VBoxDiskImageManagerDlg::updateCdItem (DiskImageItem   *aItem,
     aItem->setToolTip (composeCdToolTip (cd, status));
     aItem->setStatus (status);
 
-    if (aMedia.status == VBoxMedia::Inaccessible)
-        aItem->setPixmap (0, pxInaccessible);
-    else if (aMedia.status == VBoxMedia::Error)
-        aItem->setPixmap (0, pxErroneous);
+    makeWarningMark (aItem, aMedia.status, VBoxDefs::CD);
 }
 
 void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem   *aItem,
@@ -1151,10 +1148,7 @@ void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem   *aItem,
     aItem->setToolTip (composeFdToolTip (fd, status));
     aItem->setStatus (status);
 
-    if (aMedia.status == VBoxMedia::Inaccessible)
-        aItem->setPixmap (0, pxInaccessible);
-    else if (aMedia.status == VBoxMedia::Error)
-        aItem->setPixmap (0, pxErroneous);
+    makeWarningMark (aItem, aMedia.status, VBoxDefs::FD);
 }
 
 
@@ -1199,6 +1193,26 @@ void VBoxDiskImageManagerDlg::createHdChildren (DiskImageItem   *aRoot,
             subHd.isOk() ? VBoxMedia::Inaccessible :
             VBoxMedia::Error;
         createHdItem (0, aRoot, VBoxMedia (CUnknown (subHd), VBoxDefs::HD, status));
+    }
+}
+
+
+void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
+                                               VBoxMedia::Status aStatus,
+                                               VBoxDefs::DiskType aType)
+{
+    const QPixmap &pm = aStatus == VBoxMedia::Inaccessible ? pxInaccessible :
+                        aStatus == VBoxMedia::Error ? pxErroneous : QPixmap();
+
+    if (!pm.isNull())
+    {
+        aItem->setPixmap (0, pm);
+        QIconSet iconSet (pm);
+        QWidget *wt = aType == VBoxDefs::HD ? twImages->page (0) :
+                      aType == VBoxDefs::CD ? twImages->page (1) :
+                      aType == VBoxDefs::FD ? twImages->page (2) : 0;
+        Assert (wt); /* aType should be correct */
+        twImages->changeTab (wt, iconSet, twImages->tabLabel (wt));
     }
 }
 
@@ -1292,6 +1306,17 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
 
 void VBoxDiskImageManagerDlg::mediaEnumStarted()
 {
+    /* load default tab icons */
+    twImages->changeTab (twImages->page (0),
+                         QIconSet (pxHD),
+                         twImages->tabLabel (twImages->page (0)));
+    twImages->changeTab (twImages->page (1),
+                         QIconSet (pxCD),
+                         twImages->tabLabel (twImages->page (1)));
+    twImages->changeTab (twImages->page (2),
+                         QIconSet (pxFD),
+                         twImages->tabLabel (twImages->page (2)));
+
     /* load current media list */
     const VBoxMediaList &list = vboxGlobal().currentMediaList();
     prepareToRefresh (list.size());
