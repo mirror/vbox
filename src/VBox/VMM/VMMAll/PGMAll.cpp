@@ -1317,6 +1317,7 @@ PGMDECL(PGMMODE) PGMGetGuestMode(PVM pVM)
     return pVM->pgm.s.enmGuestMode;
 }
 
+
 /**
  * Gets the current shadow paging mode.
  *
@@ -1327,6 +1328,7 @@ PGMDECL(PGMMODE) PGMGetShadowMode(PVM pVM)
 {
     return pVM->pgm.s.enmShadowMode;
 }
+
 
 /**
  * Get mode name.
