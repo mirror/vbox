@@ -71,7 +71,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle)
         return VINF_SUCCESS;
     }
     Log(("rtldrNativeLoad: dlopen('%s', RTLD_NOW | RTLD_LOCAL) failed: %s\n", pszFilename, dlerror()));
-    return VERR_GENERAL_FAILURE;
+    return VERR_FILE_NOT_FOUND;
 }
 
 
