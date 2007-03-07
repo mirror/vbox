@@ -45,7 +45,12 @@ VMGlobalSettingsData::VMGlobalSettingsData()
 #elif defined (Q_WS_X11)
     hostkey = 0xffe4; // XK_Control_R
 //    hostkey = 65514; // XK_Alt_R
+#elif defined (Q_WS_MAC)
+    hostkey = 0x36; // QZ_RMETA
+//    hostkey = 0x3e; // QZ_RCTRL
+//    hostkey = 0x3d; // QZ_RALT
 #else
+# warning "port me!"
     hostkey = 0;
 #endif
     autoCapture = true;
