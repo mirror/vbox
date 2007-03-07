@@ -75,11 +75,16 @@
 #define CPUM_USE_DEBUG_REGS             BIT(5)
 /** @} */
 
+/* Sanity check. */
+#if defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) && (HC_ARCH_BITS != 32 || R0_ARCH_BITS != 32)
+# error "VBOX_WITH_HYBIRD_32BIT_KERNEL is only for 32 bit builds."
+#endif
+
 
 /**
  * The save host CPU state.
- * 
- * @remark  The special VBOX_WITH_HYBIRD_32BIT_KERNEL checks here are for the 10.4.x series 
+ *
+ * @remark  The special VBOX_WITH_HYBIRD_32BIT_KERNEL checks here are for the 10.4.x series
  *          of Mac OS X where the OS is essentially 32-bit but the cpu mode can be 64-bit.
  */
 typedef struct CPUMHOSTCTX
@@ -111,7 +116,7 @@ typedef struct CPUMHOSTCTX
     uint64_t        r15;
     //uint64_t        rip; - scratch
     uint64_t        rflags;
-#endif 
+#endif
 
 #if HC_ARCH_BITS == 32
     //uint32_t        eax; - scratch
@@ -230,12 +235,12 @@ typedef struct CPUMHOSTCTX
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     uint8_t         auPadding[16];
 # else
-    uint8_t         auPadding[24];
+    uint8_t         auPadding[8];
 # endif
 
 #else
 # error HC_ARCH_BITS not defined
-#endif 
+#endif
 } CPUMHOSTCTX, *PCPUMHOSTCTX;
 
 
