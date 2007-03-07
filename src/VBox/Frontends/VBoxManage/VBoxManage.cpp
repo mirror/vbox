@@ -331,6 +331,7 @@ static void printUsage(USAGECATEGORY enmCmd)
         {
             RTPrintf("                            [-vrdp on|off]\n"
                      "                            [-vrdpport default|<port>]\n"
+                     "                            [-vrdpaddress <host>]\n"
                      "                            [-vrdpauthtype null|external|guest]\n");
         }
         RTPrintf("                            [-usb on|off]\n"
@@ -2577,6 +2578,7 @@ static int handleModifyVM(int argc, char *argv[],
 #ifdef VBOX_VRDP
     char *vrdp = NULL;
     uint16_t vrdpport = UINT16_MAX;
+    char *vrdpaddress = NULL;
     char *vrdpauthtype = NULL;
 #endif
     int   fUsbEnabled = -1;
@@ -2968,6 +2970,15 @@ static int handleModifyVM(int argc, char *argv[],
                 vrdpport = 0;
             else
                 vrdpport = atoi(argv[i]);
+        }
+        else if (strcmp(argv[i], "-vrdpaddress") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            vrdpaddress = argv[i];
         }
         else if (strcmp(argv[i], "-vrdpauthtype") == 0)
         {
@@ -3710,6 +3721,10 @@ static int handleModifyVM(int argc, char *argv[],
                 if (vrdpport != UINT16_MAX)
                 {
                     CHECK_ERROR(vrdpServer, COMSETTER(Port)(vrdpport));
+                }
+                if (vrdpaddress)
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(NetAddress)(Bstr(vrdpaddress)));
                 }
                 if (vrdpauthtype)
                 {
