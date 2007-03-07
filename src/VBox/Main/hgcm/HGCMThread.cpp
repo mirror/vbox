@@ -351,6 +351,7 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cb
 
     bool fFromFreeList = false;
 
+#if 0 /* @todo to be replaced with RTReq */
     if (cbMsg == m_cbMsg)
     {
         rc = Enter ();
@@ -377,6 +378,7 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cb
             Leave ();
         }
     }
+#endif
 
     if (!pmsg && VBOX_SUCCESS(rc))
     {
