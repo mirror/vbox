@@ -282,10 +282,12 @@ static int rtPathCompare(const char *pszPath1, const char *pszPath2, bool fLimit
     }
 
     int iDiff = 0;
+    PRTUNICP puszTmpPath1 = puszPath1;
+    PRTUNICP puszTmpPath2 = puszPath2;
     for (;;)
     {
-        register RTUNICP uc1 = *puszPath1;
-        register RTUNICP uc2 = *puszPath2;
+        register RTUNICP uc1 = *puszTmpPath1;
+        register RTUNICP uc2 = *puszTmpPath2;
         if (uc1 != uc2)
         {
             if (uc1 == '\\')
@@ -306,8 +308,8 @@ static int rtPathCompare(const char *pszPath1, const char *pszPath2, bool fLimit
         }
         if (!uc1)
             break;
-        puszPath1++;
-        puszPath2++;
+        puszTmpPath1++;
+        puszTmpPath2++;
 
     }
 
