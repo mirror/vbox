@@ -53,7 +53,7 @@ PrepareAndDispatch(uint32 methodIndex, nsXPTCStubBase* self, PRUint32* args)
     nsXPTCMiniVariant paramBuffer[PARAM_BUFFER_COUNT];
     nsXPTCMiniVariant* dispatchParams = NULL;
     nsIInterfaceInfo* iface_info = NULL;
-    const nsXPTMethodInfo* info;
+    const nsXPTMethodInfo* info = NULL;
     PRUint8 paramCount;
     PRUint8 i;
     nsresult result = NS_ERROR_FAILURE;
@@ -65,6 +65,11 @@ PrepareAndDispatch(uint32 methodIndex, nsXPTCStubBase* self, PRUint32* args)
 
     iface_info->GetMethodInfo(PRUint16(methodIndex), &info);
     NS_ASSERTION(info,"no interface info");
+
+#ifdef VBOX
+    if (!info)
+        return result;
+#endif
 
     paramCount = info->GetParamCount();
 
