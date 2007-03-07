@@ -209,10 +209,11 @@ OTHER_CLEAN           = \
 # On Mac OS X (darwin) we need to install icon resources and compusory bundle contents.
 #
 VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
+VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/darwin/PkgInfo \
 	$(PATH_TARGET)/Info.plist \
-	images/ico64x01.icns=>Resources/VirtualBox.icns
+	images/VirtualBox.icns=>Resources/VirtualBox.icns
 
 $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_L1,Generating $@)
