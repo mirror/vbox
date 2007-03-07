@@ -1383,6 +1383,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
         UInt32 newMask = 0;
         ::GetEventParameter (inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
                              sizeof (newMask), NULL, &newMask);
+        newMask = ::DarwinAdjustModifierMask (newMask);
         UInt32 changed = newMask ^ m_darwinKeyModifiers;
         if (changed)
         {
@@ -1393,6 +1394,8 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
                 unsigned scanCode = ::DarwinModifierMaskToSet1Scancode (1 << bit);
                 if (!scanCode)
                     continue;
+                unsigned keyCode = ::DarwinModifierMaskToDarwinKeycode (1 << bit);
+                Assert (keyCode);
 
                 unsigned flags = (newMask & (1 << bit)) ? KeyPressed : 0;
                 if (scanCode & 0x80)
@@ -1400,7 +1403,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
                     flags |= KeyExtended;
                     scanCode &= ~0x80;
                 }
-                keyEvent (0, scanCode, flags);
+                keyEvent (keyCode, scanCode, flags);
             }
         }
 
@@ -1441,11 +1444,17 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         ::InstallApplicationEventHandler (eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
                                           this, &m_darwinEventHandlerRef);
         ::DisposeEventHandlerUPP (eventHandler);
+
+        ::DarwinGrabKeyboard (false);
     }
-    else if (m_darwinEventHandlerRef)
+    else
     {
-        ::RemoveEventHandler (m_darwinEventHandlerRef);
-        m_darwinEventHandlerRef = NULL;
+        ::DarwinReleaseKeyboard ();
+        if (m_darwinEventHandlerRef)
+        {
+            ::RemoveEventHandler (m_darwinEventHandlerRef);
+            m_darwinEventHandlerRef = NULL;
+        }
     }
 }
 
@@ -1542,6 +1551,27 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
         codes[(*count)++] = 0x45 | 0x80;
     }
     if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
+    {
+        muCapsLockAdaptionCnt--;
+        codes[(*count)++] = 0x3a;
+        codes[(*count)++] = 0x3a | 0x80;
+    }
+
+#elif defined(Q_WS_MAC)
+
+    if (muNumLockAdaptionCnt)
+    {
+        /* Numlock isn't in the modifier mask. */
+        KeyMap keys = {{0},{0},{0},{0}};
+        GetKeys(keys);
+        if (mfNumLock ^ ASMBitTest(keys, 0x47 /* QZ_NUMLOCK */))
+        {
+            muNumLockAdaptionCnt--;
+            codes[(*count)++] = 0x45;
+            codes[(*count)++] = 0x45 | 0x80;
+        }
+    }
+    if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
     {
         muCapsLockAdaptionCnt--;
         codes[(*count)++] = 0x3a;
@@ -2148,12 +2178,14 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
 #elif defined (Q_WS_MAC)
     if (capture)
     {
-        grabKeyboard();
+        ::DarwinReleaseKeyboard ();
         ::DarwinGrabKeyboard (true);
+        grabKeyboard();
     }
     else
     {
-        ::DarwinReleaseKeyboard();
+        ::DarwinReleaseKeyboard ();
+        ::DarwinGrabKeyboard (false);
         releaseKeyboard();
     }
 #else
