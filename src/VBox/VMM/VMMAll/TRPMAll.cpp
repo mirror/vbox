@@ -364,7 +364,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 
     STAM_PROFILE_ADV_START(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
 
-    Log(("TRPMForwardTrap: eip=%VGv iGate=%d\n", pRegFrame->eip, iGate));
+    Log(("TRPMForwardTrap: eip=%04X:%VGv iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
 
 #ifdef DEBUG
     switch (iGate) {
