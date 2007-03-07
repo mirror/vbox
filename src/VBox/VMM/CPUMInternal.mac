@@ -40,6 +40,14 @@
 
 %define FPUSTATE_SIZE           512
 
+;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) in 
+; nasm please tell / fix this hack.
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %define fVBOX_WITH_HYBIRD_32BIT_KERNEL 1
+%else
+ %define fVBOX_WITH_HYBIRD_32BIT_KERNEL 0
+%endif
+
 struc CPUM
     .offVM          resd    1
     .pCPUMGC        RTGCPTR_RES  1          ; Guest Context pointer
@@ -52,6 +60,26 @@ struc CPUM
     alignb 32
     .Host.fpu            resb    512
 
+%if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBIRD_32BIT_KERNEL
+    ;.Host.rax            resq    1 - scratch
+    .Host.rbx            resq    1
+    ;.Host.rcx            resq    1 - scratch
+    ;.Host.rdx            resq    1 - scratch
+    .Host.rdi            resq    1
+    .Host.rsi            resq    1
+    .Host.rbp            resq    1
+    .Host.rsp            resq    1
+    ;.Host.r8             resq    1 - scratch
+    ;.Host.r9             resq    1 - scratch
+    .Host.r10            resq    1
+    .Host.r11            resq    1
+    .Host.r12            resq    1
+    .Host.r13            resq    1
+    .Host.r14            resq    1
+    .Host.r15            resq    1
+    ;.Host.rip            resd    1 - scratch
+    .Host.rflags         resq    1
+%endif
 %if HC_ARCH_BITS == 32
     ;.Host.eax            resd    1 - scratch
     .Host.ebx            resd    1
@@ -60,7 +88,11 @@ struc CPUM
     .Host.edi            resd    1
     .Host.esi            resd    1
     .Host.ebp            resd    1
+    .Host.eflags         resd    1
+    ;.Host.eip            resd    1 - scratch
+    ; lss pair!
     .Host.esp            resd    1
+%endif
     .Host.ss             resw    1
     .Host.ssPadding      resw    1
     .Host.gs             resw    1
@@ -73,9 +105,8 @@ struc CPUM
     .Host.dsPadding      resw    1
     .Host.cs             resw    1
     .Host.csPadding      resw    1
-    .Host.eflags         resd    1
-    ;.Host.eip            resd    1 - scratch
 
+%if HC_ARCH_BITS == 32 && fVBOX_WITH_HYBIRD_32BIT_KERNEL == 0
     .Host.cr0            resd    1
     ;.Host.cr2            resd    1 - scratch
     .Host.cr3            resd    1
@@ -104,38 +135,6 @@ struc CPUM
 
 %else ; 64-bit
 
-    ;.Host.rax            resq    1 - scratch
-    .Host.rbx            resq    1
-    ;.Host.rcx            resq    1 - scratch
-    ;.Host.rdx            resq    1 - scratch
-    .Host.rdi            resq    1
-    .Host.rsi            resq    1
-    .Host.rbp            resq    1
-    .Host.rsp            resq    1
-    ;.Host.r8             resq    1 - scratch
-    ;.Host.r9             resq    1 - scratch
-    .Host.r10            resq    1
-    .Host.r11            resq    1
-    .Host.r12            resq    1
-    .Host.r13            resq    1
-    .Host.r14            resq    1
-    .Host.r15            resq    1
-    ;.Host.rip            resd    1 - scratch
-    .Host.rflags         resq    1
-
-    .Host.ss             resw    1
-    .Host.ssPadding      resw    1
-    .Host.gs             resw    1
-    .Host.gsPadding      resw    1
-    .Host.fs             resw    1
-    .Host.fsPadding      resw    1
-    .Host.es             resw    1
-    .Host.esPadding      resw    1
-    .Host.ds             resw    1
-    .Host.dsPadding      resw    1
-    .Host.cs             resw    1
-    .Host.csPadding      resw    1
-
     .Host.cr0            resq    1
     ;.Host.cr2            resq    1 - scratch
     .Host.cr3            resq    1
@@ -158,9 +157,9 @@ struc CPUM
     .Host.tr             resw    1
     .Host.trPadding      resw    1
 
-    .Host.SysEnter.cs    resb    8
-    .Host.SysEnter.eip   resb    8
-    .Host.SysEnter.esp   resb    8
+    .Host.SysEnter.cs    resq    1
+    .Host.SysEnter.eip   resq    1
+    .Host.SysEnter.esp   resq    1
     .Host.FSbase         resq    1
     .Host.GSbase         resq    1
     .Host.efer           resq    1

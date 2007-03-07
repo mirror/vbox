@@ -192,6 +192,13 @@ TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
  */
 DECLASM(void) trpmR0DispatchHostInterrupt(RTR0UINTPTR uIP, RTSEL SelCS, RTR0UINTPTR RSP);
 
+/**
+ * Issues a software interrupt to the specified interrupt vector.
+ * 
+ * @param   uActiveVector   The vector number.
+ */
+DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
+
 # ifndef VBOX_WITHOUT_IDT_PATCHING
 /**
  * Code used for the dispatching of interrupts in HC.

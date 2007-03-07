@@ -537,6 +537,7 @@ DEFS.profile = VBOX_WITH_STATISTICS
 DEFS.x86     = __X86__
 DEFS.amd64   = __AMD64__
 DEFS.darwin  = __DARWIN__
+DEFS.darwin.x86 = VBOX_WITH_HYBIRD_32BIT_KERNEL
 DEFS.freebsd = __FREEBSD__
 DEFS.l4      = __L4__ __L4ENV__ L4API_l4v2 __NO_CTYPE _FILE_OFFSET_BITS=64
 ifeq ($(L4_API),l4v2onv4)

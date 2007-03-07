@@ -78,6 +78,9 @@
 
 /**
  * The save host CPU state.
+ * 
+ * @remark  The special VBOX_WITH_HYBIRD_32BIT_KERNEL checks here are for the 10.4.x series 
+ *          of Mac OS X where the OS is essentially 32-bit but the cpu mode can be 64-bit.
  */
 typedef struct CPUMHOSTCTX
 {
@@ -85,74 +88,9 @@ typedef struct CPUMHOSTCTX
      * @remark On x86, the format isn't necessarily X86FXSTATE (not important). */
     X86FXSTATE      fpu;
 
-#if HC_ARCH_BITS == 32
     /** General purpose register, selectors, flags and more
      * @{ */
-    //uint32_t        eax; - scratch
-    uint32_t        ebx;
-    //uint32_t        ecx; - scratch
-    //uint32_t        edx; - scratch
-    uint32_t        edi;
-    uint32_t        esi;
-    uint32_t        ebp;
-    /* lss pair */
-    uint32_t        esp;
-    RTSEL           ss;
-    RTSEL           ssPadding;
-    RTSEL           gs;
-    RTSEL           gsPadding;
-    RTSEL           fs;
-    RTSEL           fsPadding;
-    RTSEL           es;
-    RTSEL           esPadding;
-    RTSEL           ds;
-    RTSEL           dsPadding;
-    RTSEL           cs;
-    RTSEL           csPadding;
-    X86EFLAGS       eflags;
-    //uint32_t        eip; - scratch
-    /** @} */
-
-    /** Control registers.
-     * @{ */
-    uint32_t        cr0;
-    //uint32_t        cr2; - scratch
-    uint32_t        cr3;
-    uint32_t        cr4;
-    /** @} */
-
-    /** Debug registers.
-     * @{ */
-    uint32_t        dr0;
-    uint32_t        dr1;
-    uint32_t        dr2;
-    uint32_t        dr3;
-    uint32_t        dr6;
-    uint32_t        dr7;
-    /** @} */
-
-    /** Global Descriptor Table register. */
-    VBOXGDTR        gdtr;
-    uint16_t        gdtrPadding;
-    /** Interrupt Descriptor Table register. */
-    VBOXIDTR        idtr;
-    uint16_t        idtrPadding;
-    /** The task register. */
-    RTSEL           ldtr;
-    RTSEL           ldtrPadding;
-    /** The task register. */
-    RTSEL           tr;
-    RTSEL           trPadding;
-    uint32_t        SysEnterPadding;
-
-    /** The sysenter msr registers.
-     * This member is not used by the hypervisor context. */
-    CPUMSYSENTER    SysEnter;
-
-    /* padding to get 32byte aligned size */
-    uint8_t         auPadding[24];
-
-#elif HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
     /** General purpose register ++
      * { */
     //uint64_t        rax; - scratch
@@ -173,6 +111,21 @@ typedef struct CPUMHOSTCTX
     uint64_t        r15;
     //uint64_t        rip; - scratch
     uint64_t        rflags;
+#endif 
+
+#if HC_ARCH_BITS == 32
+    //uint32_t        eax; - scratch
+    uint32_t        ebx;
+    //uint32_t        ecx; - scratch
+    //uint32_t        edx; - scratch
+    uint32_t        edi;
+    uint32_t        esi;
+    uint32_t        ebp;
+    X86EFLAGS       eflags;
+    //uint32_t        eip; - scratch
+    /* lss pair! */
+    uint32_t        esp;
+#endif
     /** @} */
 
     /** Selector registers
@@ -190,6 +143,48 @@ typedef struct CPUMHOSTCTX
     RTSEL           cs;
     RTSEL           csPadding;
     /** @} */
+
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+    /** Control registers.
+     * @{ */
+    uint32_t        cr0;
+    //uint32_t        cr2; - scratch
+    uint32_t        cr3;
+    uint32_t        cr4;
+    /** @} */
+
+    /** Debug registers.
+     * @{ */
+    uint32_t        dr0;
+    uint32_t        dr1;
+    uint32_t        dr2;
+    uint32_t        dr3;
+    uint32_t        dr6;
+    uint32_t        dr7;
+    /** @} */
+
+    /** Global Descriptor Table register. */
+    X86XDTR32       gdtr;
+    uint16_t        gdtrPadding;
+    /** Interrupt Descriptor Table register. */
+    X86XDTR32       idtr;
+    uint16_t        idtrPadding;
+    /** The task register. */
+    RTSEL           ldtr;
+    RTSEL           ldtrPadding;
+    /** The task register. */
+    RTSEL           tr;
+    RTSEL           trPadding;
+    uint32_t        SysEnterPadding;
+
+    /** The sysenter msr registers.
+     * This member is not used by the hypervisor context. */
+    CPUMSYSENTER    SysEnter;
+
+    /* padding to get 32byte aligned size */
+    uint8_t         auPadding[24];
+
+#elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
 
     /** Control registers.
      * @{ */
@@ -211,10 +206,10 @@ typedef struct CPUMHOSTCTX
     /** @} */
 
     /** Global Descriptor Table register. */
-    uint8_t         gdtr[10]; //X86GDTR64
+    X86XDTR64       gdtr;
     uint16_t        gdtrPadding;
     /** Interrupt Descriptor Table register. */
-    uint8_t         idtr[10]; //X86IDTR64
+    X86XDTR64       idtr;
     uint16_t        idtrPadding;
     /** The task register. */
     RTSEL           ldtr;
@@ -232,7 +227,12 @@ typedef struct CPUMHOSTCTX
     /** @} */
 
     /* padding to get 32byte aligned size */
-    uint8_t         auPadding[8];
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    uint8_t         auPadding[16];
+# else
+    uint8_t         auPadding[24];
+# endif
+
 #else
 # error HC_ARCH_BITS not defined
 #endif 

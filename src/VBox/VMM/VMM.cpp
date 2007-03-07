@@ -189,7 +189,11 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     &vmmR3SwitcherPAETo32Bit_Def,
     &vmmR3SwitcherPAEToPAE_Def,
     NULL,   //&vmmR3SwitcherPAEToAMD64_Def,
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    &vmmR3SwitcherAMD64ToPAE_Def,
+# else             
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
+# endif             
     NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
 #else
     NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
@@ -1230,7 +1234,19 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 break;
             }
 
-#ifdef __AMD64__
+            /*
+             * 32-bit HC pointer fixup to (HC) target within the code (32-bit offset).
+             */
+            case FIX_HC_32BIT:
+            {
+                uint32_t offTrg = *u.pu32++;
+                Assert(offSrc < pSwitcher->cbCode);
+                Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
+                *uSrc.pu32 = (uintptr_t)pu8CodeR0 + offTrg;
+                break;
+            }
+
+#if defined(__AMD64__) || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
             /*
              * 64-bit HC pointer fixup to (HC) target within the code (32-bit offset).
              */
@@ -1240,6 +1256,20 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 Assert(offSrc < pSwitcher->cbCode);
                 Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
                 *uSrc.pu64 = (uintptr_t)pu8CodeR0 + offTrg;
+                break;
+            }
+
+            /*
+             * 64-bit HC Code Selector (no argument).
+             */
+            case FIX_HC_64BIT_CS:
+            {
+                Assert(offSrc < pSwitcher->cbCode);
+#if defined(__DARWIN__) && defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+                *uSrc.pu16 = 0x80; /* KERNEL64_CS from i386/seg.h */
+#else
+                AssertFatalMsg(("FIX_HC_64BIT_CS not implemented for this host\n"));
+#endif
                 break;
             }
 

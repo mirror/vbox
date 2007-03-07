@@ -55,12 +55,14 @@
 #define FIX_NO_FXSAVE_JMP       24
 #define FIX_NO_SYSENTER_JMP     25
 #define FIX_NO_SYSCALL_JMP      26
-#define FIX_HC_64BIT            27
-#define FIX_HC_64BIT_CPUM       28
-#define FIX_ID_32BIT            29
-#define FIX_ID_64BIT            30
-#define FIX_ID_FAR32_TO_64BIT_MODE 31
-#define FIX_GC_APIC_BASE_32BIT  32
+#define FIX_HC_32BIT            27
+#define FIX_HC_64BIT            28
+#define FIX_HC_64BIT_CPUM       29
+#define FIX_HC_64BIT_CS         30
+#define FIX_ID_32BIT            31
+#define FIX_ID_64BIT            32
+#define FIX_ID_FAR32_TO_64BIT_MODE 33
+#define FIX_GC_APIC_BASE_32BIT  34
 #define FIX_THE_END             255
 /** @} */
 

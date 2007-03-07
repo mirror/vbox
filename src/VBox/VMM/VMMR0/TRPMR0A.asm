@@ -161,3 +161,41 @@ ENDPROC   trpmR0InterruptDispatcher
 
 %endif ; !VBOX_WITHOUT_IDT_PATCHING
 
+
+;;
+; Issues a software interrupt to the specified interrupt vector.
+;
+; @param   uActiveVector   x86:[esp+4]   msc:rcx  gcc:rdi   The vector number. 
+;
+;DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
+BEGINPROC trpmR0DispatchHostInterruptSimple
+%ifdef __X86__
+    mov     eax, [esp + 4]
+    jmp     dword [.jmp_table + eax * 4]
+%else
+    lea     r9, [.jmp_table wrt rip]
+ %ifdef ASM_CALL64_MSC
+    jmp     qword [r9 + rcx * 8]
+ %else
+    jmp     qword [r9 + rdi * 8]
+ %endif
+%endif
+    
+.jmp_table:
+%assign i 0
+%rep 256
+RTCCPTR_DEF .int_ %+ i
+%assign i i+1
+%endrep
+
+%assign i 0
+%rep 256
+    ALIGNCODE(4)
+.int_ %+ i:
+    int i
+    ret
+%assign i i+1
+%endrep
+
+ENDPROC trpmR0DispatchHostInterruptSimple
+

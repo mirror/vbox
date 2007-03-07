@@ -181,6 +181,15 @@ int main()
     CHECK_CPUMCTXCORE(gs);
     CHECK_CPUMCTXCORE(ss);
 
+#if HC_ARCH_BITS == 32
+    /* CPUMHOSTCTX - lss pair */
+    if (RT_OFFSETOF(CPUMHOSTCTX, esp) + 4 != RT_OFFSETOF(CPUMHOSTCTX, ss))
+    {
+        printf("error: CPUMHOSTCTX lss has been split up!\n");
+        rc++;
+    }
+#endif 
+
     /* pdm */
     CHECK_MEMBER_ALIGNMENT(PDMDEVINS, achInstanceData, 16);
     CHECK_PADDING(PDMDEVINS, Internal);

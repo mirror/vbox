@@ -58,6 +58,8 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
     pVM->hwaccm.s.vmx.fSupported = false;;
     pVM->hwaccm.s.svm.fSupported = false;;
 
+#ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
+
     /*
      * Check for VMX capabilities
      */
@@ -159,6 +161,8 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
             }
         }
     }
+#endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
+
     return VINF_SUCCESS;
 }
 
