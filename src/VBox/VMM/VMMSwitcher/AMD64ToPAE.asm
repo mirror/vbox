@@ -55,6 +55,7 @@ GLOBALNAME Fixups
 BEGINCODE
 GLOBALNAME Start
 
+%ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL
 BITS 64
 
 ;;
@@ -67,8 +68,11 @@ BEGINPROC vmmR0HostToGuest
     COM64_S_NEWLINE
     COM64_S_CHAR '^'
 %endif
+    ;
+    ; The ordinary version of the code.
+    ;
 
-%ifdef STRICT_IF
+ %ifdef STRICT_IF
     pushf
     pop     rax
     test    eax, X86_EFL_IF
@@ -76,25 +80,25 @@ BEGINPROC vmmR0HostToGuest
     mov     eax, 0c0ffee00h
     ret
 .if_clear_in:
-%endif
+ %endif
 
     ;
     ; make r9 = pVM and rdx = pCpum.
     ; rax, rcx and r8 are scratch here after.
-%ifdef __WIN64__
+ %ifdef __WIN64__
     mov     r9, rcx
-%else
+ %else
     mov     r9, rdi
-%endif
+ %endif
     lea     rdx, [r9 + VM.cpum]
 
-%ifdef VBOX_WITH_STATISTICS
+ %ifdef VBOX_WITH_STATISTICS
     ;
     ; Switcher stats.
     ;
     lea     r8, [r9 + VM.StatSwitcherToGC]
     STAM64_PROFILE_ADV_START r8
-%endif
+ %endif
 
     ;
     ; Call worker (far return).
@@ -103,16 +107,84 @@ BEGINPROC vmmR0HostToGuest
     push    rax
     call    NAME(vmmR0HostToGuestAsm)
 
-%ifdef VBOX_WITH_STATISTICS
+ %ifdef VBOX_WITH_STATISTICS
     ;
     ; Switcher stats.
     ;
     lea     r8, [r9 + VM.StatSwitcherToGC]
     STAM64_PROFILE_ADV_STOP r8
-%endif
+ %endif
 
     ret
 ENDPROC vmmR0HostToGuest
+
+
+%else ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+
+
+BITS 32
+
+;;
+; The C interface.
+;
+BEGINPROC vmmR0HostToGuest
+%ifdef DEBUG_STUFF
+    COM32_S_NEWLINE
+    COM32_S_CHAR '^'
+%endif
+
+ %ifdef VBOX_WITH_STATISTICS
+    ;
+    ; Switcher stats.
+    ;
+    FIXUP FIX_HC_VM_OFF, 1, VM.StatSwitcherToGC
+    mov     edx, 0ffffffffh
+    STAM_PROFILE_ADV_START edx
+ %endif
+
+    ; Thunk to/from 64 bit when invoking the worker routine.
+    ;
+    FIXUP FIX_HC_VM_OFF, 1, VM.cpum
+    mov     edx, 0ffffffffh
+
+    push    0
+    push    cs
+    push    0
+    FIXUP FIX_HC_32BIT, 1, .vmmR0HostToGuestReturn - NAME(Start)
+    push    0ffffffffh
+
+    FIXUP FIX_HC_64BIT_CS, 1
+    push    0ffffh
+    FIXUP FIX_HC_32BIT, 1, NAME(vmmR0HostToGuestAsm) - NAME(Start)
+    push    NAME(vmmR0HostToGuestAsm)
+    retf
+.vmmR0HostToGuestReturn:
+
+    ;
+    ; This selector reloading is probably not necessary, but we do it anyway to be quite sure 
+    ; the CPU has the right idea about the selectors.
+    ;
+    mov     edx, ds
+    mov     ds, edx
+    mov     ecx, es
+    mov     es, ecx
+    mov     edx, ss
+    mov     ss, edx
+
+ %ifdef VBOX_WITH_STATISTICS
+    ;
+    ; Switcher stats.
+    ;
+    FIXUP FIX_HC_VM_OFF, 1, VM.StatSwitcherToHC
+    mov     edx, 0ffffffffh
+    STAM_PROFILE_ADV_STOP edx
+ %endif
+
+    ret
+ENDPROC vmmR0HostToGuest
+
+BITS 64
+%endif ;!VBOX_WITH_HYBIRD_32BIT_KERNEL
 
 
 

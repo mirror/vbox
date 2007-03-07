@@ -129,6 +129,16 @@ VMMR3_SOURCES.amd64 = \
 	VMMSwitcher/AMD64ToPAE.asm
 #	VMMSwitcher/AMD64ToAMD64.asm
 
+ifeq ($(BUILD_TARGET),darwin)
+# this is just a temporary hack until we switch to yasm on Mac OS X too.
+LIBRARIES += VMMR364
+VMMR364_TOOL    = $(VBOX_GCC_TOOL)
+VMMR364_ASTOOL  = YASM
+VMMR364_ASFLAGS = -f macho -w+orphan-labels
+VMMR364_ASDEFS  = ASM_FORMAT_MACHO $(ARCH_BITS_DEFS) __YASM__
+VMMR364_SOURCES.darwin.x86 += \
+	VMMSwitcher/AMD64ToPAE.asm
+endif
 
 #
 # VMMGCBuiltin.lib
@@ -344,6 +354,9 @@ VBoxVMM_LIBS     = \
 	$(LIB_REM) \
 	$(LIB_RUNTIME)
 
+ifeq ($(BUILD_TARGET),darwin)
+ VBoxVMM_LIBS   += $(TARGET_VMMR364) # temp hack
+endif
 VBoxVMM_LIBS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 VBoxVMM_LDFLAGS.win = /DELAYLOAD:dbghelp.dll
 VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined

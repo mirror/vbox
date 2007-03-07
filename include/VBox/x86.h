@@ -1986,7 +1986,31 @@ typedef const X86XCPT *PCX86XCPT;
 #define X86_TRAP_PF_ID              BIT(4)
 /** @} */
 
+#pragma pack(1)
+/** 
+ * 32-bit IDTR/GDTR.
+ */
+typedef struct X86XDTR32
+{
+    /** Size of the descriptor table. */
+    uint16_t    cb;
+    /** Address of the descriptor table. */
+    uint32_t    uAddr;
+} X86XDTR32, *PX86XDTR32;
+#pragma pack()
 
+#pragma pack(1)
+/** 
+ * 64-bit IDTR/GDTR.
+ */
+typedef struct X86XDTR64
+{
+    /** Size of the descriptor table. */
+    uint16_t    cb;
+    /** Address of the descriptor table. */
+    uint64_t    uAddr;
+} X86XDTR64, *PX86XDTR64;
+#pragma pack()
 
 /** @} */
 

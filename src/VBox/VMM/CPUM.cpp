@@ -844,54 +844,65 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
      * Format the registers.
      */
 #if HC_ARCH_BITS == 32
-    pHlp->pfnPrintf(pHlp,
-        "eax=xxxxxxxx ebx=%08x ecx=xxxxxxxx edx=xxxxxxxx esi=%08x edi=%08x\n"
-        "eip=xxxxxxxx esp=%08x ebp=%08x iopl=%d %31s\n"
-        "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n"
-        "cr0=%08x cr2=xxxxxxxx cr3=%08x cr4=%08x gdtr=%08x:%04x ldtr=%04x\n"
-        "dr0=%08x dr1=%08x dr2=%08x dr3=%08x dr6=%08x dr7=%08x\n"
-        "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
-        ,
-        /*pCtx->eax,*/ pCtx->ebx, /*pCtx->ecx, pCtx->edx,*/ pCtx->esi, pCtx->edi,
-        /*pCtx->eip,*/ pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(efl), szEFlags,
-        (RTSEL)pCtx->cs, (RTSEL)pCtx->ds, (RTSEL)pCtx->es, (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, efl,
-        pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3, pCtx->cr4,
-        pCtx->dr0, pCtx->dr1, pCtx->dr2, pCtx->dr3, pCtx->dr6, pCtx->dr7,
-        pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, (RTSEL)pCtx->ldtr,
-        pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
-#else /* 64-bit */
-    pHlp->pfnPrintf(pHlp,
-        "rax=xxxxxxxxxxxxxxxx rbx=%016RX64 rcx=xxxxxxxxxxxxxxxx\n"
-        "rdx=xxxxxxxxxxxxxxxx rsi=%016RX64 rdi=%016RX64\n"
-        "rip=xxxxxxxxxxxxxxxx rsp=%016RX64 rbp=%016RX64\n"
-        " r8=xxxxxxxxxxxxxxxx  r9=xxxxxxxxxxxxxxxx r10=%016RX64\n"
-        "r11=%016RX64 r12=%016RX64 r13=%016RX64\n"
-        "r14=%016RX64 r15=%016RX64\n"
-        "iopl=%d  %31s\n"
-        "cs=%04x  ds=%04x  es=%04x  fs=%04x  gs=%04x                   eflags=%08RX64\n"
-        "cr0=%016RX64 cr2=xxxxxxxxxxxxxxxx cr3=%016RX64\n"
-        "cr4=%016RX64 cr8=%016RX64 ldtr=%04x tr=%04x\n"
-        "dr0=%016RX64 dr1=%016RX64 dr2=%016RX64\n"
-        "dr3=%016RX64 dr6=%016RX64 dr7=%016RX64\n"
-        "gdtr=%016RX64:%04x  idtr=%016RX64:%04x\n"
-        "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
-        "FSbase=%016RX64 GSbase=%016RX64 efer=%08RX64\n"
-        ,
-        /*pCtx->rax,*/ pCtx->rbx, /*pCtx->rcx,
-        pCtx->rdx,*/ pCtx->rsi, pCtx->rdi,
-        /*pCtx->rip,*/ pCtx->rsp, pCtx->rbp,
-        /*pCtx->r8,  pCtx->r9,*/  pCtx->r10,
-        pCtx->r11, pCtx->r12, pCtx->r13,
-        pCtx->r14, pCtx->r15,
-        X86_EFL_GET_IOPL(efl), szEFlags,
-        (RTSEL)pCtx->cs, (RTSEL)pCtx->ds, (RTSEL)pCtx->es, (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, efl,
-        pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3,
-        pCtx->cr4, pCtx->cr8, pCtx->ldtr, pCtx->tr,
-        pCtx->dr0, pCtx->dr1, pCtx->dr2,
-        pCtx->dr3, pCtx->dr6, pCtx->dr7,
-        *(uint64_t *)&pCtx->gdtr[2], *(uint16_t *)&pCtx->gdtr[0], *(uint64_t *)&pCtx->idtr[2], *(uint16_t *)&pCtx->idtr[0],
-        pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
-        pCtx->FSbase, pCtx->GSbase, pCtx->efer);
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    if (!(pCtx->efer & MSR_K6_EFER_LMA))
+# endif 
+    {
+        pHlp->pfnPrintf(pHlp,
+            "eax=xxxxxxxx ebx=%08x ecx=xxxxxxxx edx=xxxxxxxx esi=%08x edi=%08x\n"
+            "eip=xxxxxxxx esp=%08x ebp=%08x iopl=%d %31s\n"
+            "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n"
+            "cr0=%08x cr2=xxxxxxxx cr3=%08x cr4=%08x gdtr=%08x:%04x ldtr=%04x\n"
+            "dr0=%08x dr1=%08x dr2=%08x dr3=%08x dr6=%08x dr7=%08x\n"
+            "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
+            ,
+            /*pCtx->eax,*/ pCtx->ebx, /*pCtx->ecx, pCtx->edx,*/ pCtx->esi, pCtx->edi,
+            /*pCtx->eip,*/ pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(efl), szEFlags,
+            (RTSEL)pCtx->cs, (RTSEL)pCtx->ds, (RTSEL)pCtx->es, (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, efl,
+            pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3, pCtx->cr4,
+            pCtx->dr0, pCtx->dr1, pCtx->dr2, pCtx->dr3, pCtx->dr6, pCtx->dr7,
+            (uint32_t)pCtx->gdtr.uAddr, pCtx->gdtr.cb, (RTSEL)pCtx->ldtr,
+            pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
+    }
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    else
+# endif 
+#endif
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+    {
+        pHlp->pfnPrintf(pHlp,
+            "rax=xxxxxxxxxxxxxxxx rbx=%016RX64 rcx=xxxxxxxxxxxxxxxx\n"
+            "rdx=xxxxxxxxxxxxxxxx rsi=%016RX64 rdi=%016RX64\n"
+            "rip=xxxxxxxxxxxxxxxx rsp=%016RX64 rbp=%016RX64\n"
+            " r8=xxxxxxxxxxxxxxxx  r9=xxxxxxxxxxxxxxxx r10=%016RX64\n"
+            "r11=%016RX64 r12=%016RX64 r13=%016RX64\n"
+            "r14=%016RX64 r15=%016RX64\n"
+            "iopl=%d  %31s\n"
+            "cs=%04x  ds=%04x  es=%04x  fs=%04x  gs=%04x                   eflags=%08RX64\n"
+            "cr0=%016RX64 cr2=xxxxxxxxxxxxxxxx cr3=%016RX64\n"
+            "cr4=%016RX64 cr8=%016RX64 ldtr=%04x tr=%04x\n"
+            "dr0=%016RX64 dr1=%016RX64 dr2=%016RX64\n"
+            "dr3=%016RX64 dr6=%016RX64 dr7=%016RX64\n"
+            "gdtr=%016RX64:%04x  idtr=%016RX64:%04x\n"
+            "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
+            "FSbase=%016RX64 GSbase=%016RX64 efer=%08RX64\n"
+            ,
+            /*pCtx->rax,*/ pCtx->rbx, /*pCtx->rcx,
+            pCtx->rdx,*/ pCtx->rsi, pCtx->rdi,
+            /*pCtx->rip,*/ pCtx->rsp, pCtx->rbp,
+            /*pCtx->r8,  pCtx->r9,*/  pCtx->r10,
+            pCtx->r11, pCtx->r12, pCtx->r13,
+            pCtx->r14, pCtx->r15,
+            X86_EFL_GET_IOPL(efl), szEFlags,
+            (RTSEL)pCtx->cs, (RTSEL)pCtx->ds, (RTSEL)pCtx->es, (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, efl,
+            pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3,
+            pCtx->cr4, pCtx->cr8, pCtx->ldtr, pCtx->tr,
+            pCtx->dr0, pCtx->dr1, pCtx->dr2,
+            pCtx->dr3, pCtx->dr6, pCtx->dr7,
+            pCtx->gdtr.uAddr, pCtx->gdtr.cb, pCtx->idtr.uAddr, pCtx->idtr.cb,
+            pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
+            pCtx->FSbase, pCtx->GSbase, pCtx->efer);
+    }
 #endif
 }
 

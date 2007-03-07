@@ -761,12 +761,14 @@ static int pgmR3InitPaging(PVM pVM)
         case SUPPAGINGMODE_AMD64_GLOBAL:
         case SUPPAGINGMODE_AMD64_NX:
         case SUPPAGINGMODE_AMD64_GLOBAL_NX:
+#ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL
             if (ARCH_BITS != 64)
             {
                 AssertMsgFailed(("Host mode %d (64-bit) is not supported by non-64bit builds\n", pVM->pgm.s.enmHostMode));
                 LogRel(("Host mode %d (64-bit) is not supported by non-64bit builds\n", pVM->pgm.s.enmHostMode));
                 return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
             }
+#endif
             break;
         default:
             AssertMsgFailed(("Host mode %d is not supported\n", pVM->pgm.s.enmHostMode));

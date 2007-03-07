@@ -45,6 +45,18 @@ TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
     pVM->trpm.s.uActiveVector = ~0;
     AssertMsgReturnVoid(uActiveVector < 256, ("uActiveVector=%#x is invalid! (More assertions to come, please enjoy!)\n", uActiveVector));
 
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    /*
+     * Check if we're in long mode or not.
+     */
+    if (    (ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+        &&  (ASMRdMsr(MSR_K6_EFER) & MSR_K6_EFER_LMA))
+    {
+        trpmR0DispatchHostInterruptSimple(uActiveVector);
+        return;
+    }
+#endif
+
     /*
      * Get the handler pointer (16:32 ptr) / (16:48 ptr).
      */
@@ -76,7 +88,8 @@ TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
     RTR0UINTREG uRSP = ~(RTR0UINTREG)0;
     if (pIdte->au32[1] & 0x7 /*IST*/)
     {
-        /** @todo implement IST */
+        trpmR0DispatchHostInterruptSimple(uActiveVector);
+        return;
     }
 
 #endif
@@ -87,7 +100,11 @@ TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
     trpmR0DispatchHostInterrupt(pfnHandler.off, pfnHandler.sel, uRSP);
 }
 
+
 #ifndef VBOX_WITHOUT_IDT_PATCHING
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#  error "VBOX_WITH_HYBIRD_32BIT_KERNEL without VBOX_WITHOUT_IDT_PATCHING isn't supported"
+# endif
 
 /**
  * Changes the VMMR0Entry() call frame and stack used by the IDT patch code
