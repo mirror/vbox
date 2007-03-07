@@ -24,6 +24,10 @@
 #define __QIHotKeyEdit_h__
 
 #include <qlabel.h>
+#ifdef Q_WS_MAC
+#include <Carbon/Carbon.h>
+#endif
+
 
 class QIHotKeyEdit : public QLabel
 {
@@ -32,6 +36,7 @@ class QIHotKeyEdit : public QLabel
 public:
 
     QIHotKeyEdit( QWidget * parent, const char * name = 0 );
+    virtual ~QIHotKeyEdit();
 
     void setKey( int keyval );
     int key() const { return keyval; }
@@ -54,6 +59,10 @@ protected:
     bool winEvent( MSG *msg );
 #elif defined(Q_WS_X11)
     bool x11Event( XEvent *event );
+#elif defined(Q_WS_MAC)
+    static pascal OSStatus darwinEventHandlerProc( EventHandlerCallRef inHandlerCallRef,
+                                                   EventRef inEvent, void *inUserData );
+    bool darwinKeyboardEvent( EventRef inEvent );
 #endif
 
     void focusInEvent( QFocusEvent * );
@@ -69,6 +78,14 @@ private:
     QString symbname;
 
     QColorGroup true_acg;
+
+#if defined(Q_WS_MAC)
+    /** Event handler reference. NULL if the handler isn't installed. */
+    EventHandlerRef m_darwinEventHandlerRef;
+    /** The current modifier key mask. Used to figure out which modifier
+     *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
+    UInt32 m_darwinKeyModifiers;
+#endif
 
     static const char *NoneSymbName;
 };

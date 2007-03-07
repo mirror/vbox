@@ -35,6 +35,10 @@
 
 #include <qkeysequence.h>
 
+#if defined (Q_WS_MAC)
+# include <Carbon/Carbon.h>
+#endif
+
 class VBoxConsoleWnd;
 class MousePointerChangeEvent;
 class VBoxFrameBuffer;
@@ -102,6 +106,9 @@ protected:
     bool winEvent (MSG *msg);
 #elif defined(Q_WS_X11)
     bool x11Event (XEvent *event );
+#elif defined(Q_WS_MAC)
+    bool darwinKeyboardEvent (EventRef inEvent);
+    void darwinGrabKeyboardEvents (bool fGrab);
 #endif
 
 private:
@@ -115,7 +122,7 @@ private:
     };
 
     void focusEvent (bool focus);
-    bool keyEvent (int key, uint8_t scan, int flags);
+    bool keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniKey = NULL);
     bool mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
                      ButtonState aButton,
                      ButtonState aState, ButtonState aStateAfter,
@@ -209,6 +216,14 @@ private:
     HCURSOR mAlphaCursor;
 #endif
 
+#if defined(Q_WS_MAC)
+    /** Event handler reference. NULL if the handler isn't installed. */
+    EventHandlerRef m_darwinEventHandlerRef;
+    /** The current modifier key mask. Used to figure out which modifier
+     *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
+    UInt32 m_darwinKeyModifiers;
+#endif
+
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
     QPixmap pm;
     int tid;        /**< Timer id */
@@ -222,6 +237,9 @@ private:
 #if defined (Q_WS_WIN32)
     static LRESULT CALLBACK lowLevelKeyboardProc (int nCode,
                                                   WPARAM wParam, LPARAM lParam);
+#elif defined (Q_WS_MAC)
+    static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
+                                                   EventRef inEvent, void *inUserData);
 #endif
 
     QPixmap mPausedShot;

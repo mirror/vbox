@@ -998,7 +998,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     {
                         /*
                          *  set success to true even if we fail to discard the
-                         *  current state later -- the conosle window will be
+                         *  current state later -- the console window will be
                          *  closed anyway
                          */
                         success = true;

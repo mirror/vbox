@@ -128,6 +128,9 @@ VirtualBox_SOURCES.linux = \
 	src/linux/keyboard.c
 endif
 
+VirtualBox_SOURCES.darwin = \
+	src/darwin/DarwinKeyboard.cpp
+
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.win       = UNICODE QT_DLL
@@ -174,6 +177,7 @@ else
   VirtualBox_LDFLAGS.win += /SUBSYSTEM:console
  endif
 endif
+VirtualBox_LDFLAGS.darwin = -framework IOKit
 VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \

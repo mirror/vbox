@@ -61,6 +61,10 @@ const int XKeyRelease = KeyRelease;
 #include "XKeyboard.h"
 #endif
 
+#ifdef Q_WS_MAC
+#include "DarwinKeyboard.h"
+#endif
+
 
 #ifdef Q_WS_WIN32
 /**
@@ -128,6 +132,39 @@ QIHotKeyEdit::QIHotKeyEdit( QWidget * parent, const char * name ) :
     true_acg = p.active();
     p.setActive( p.inactive() );
     setPalette( p );
+
+#ifdef Q_WS_MAC
+    m_darwinKeyModifiers = GetCurrentEventKeyModifiers();
+
+    EventTypeSpec eventTypes[4];
+    eventTypes[0].eventClass = kEventClassKeyboard;
+    eventTypes[0].eventKind  = kEventRawKeyDown;
+    eventTypes[1].eventClass = kEventClassKeyboard;
+    eventTypes[1].eventKind  = kEventRawKeyUp;
+    eventTypes[2].eventClass = kEventClassKeyboard;
+    eventTypes[2].eventKind  = kEventRawKeyRepeat;
+    eventTypes[3].eventClass = kEventClassKeyboard;
+    eventTypes[3].eventKind  = kEventRawKeyModifiersChanged;
+
+    EventHandlerUPP eventHandler = ::NewEventHandlerUPP( QIHotKeyEdit::darwinEventHandlerProc );
+
+    m_darwinEventHandlerRef = NULL;
+    ::InstallApplicationEventHandler( eventHandler, RT_ELEMENTS( eventTypes ), &eventTypes[0],
+                                      this, &m_darwinEventHandlerRef );
+    ::DisposeEventHandlerUPP( eventHandler );
+    ::DarwinGrabKeyboard( false /* just modifiers */ );
+
+#endif
+
+}
+
+QIHotKeyEdit::~QIHotKeyEdit()
+{
+#ifdef Q_WS_MAC
+    ::DarwinReleaseKeyboard();
+    ::RemoveEventHandler( m_darwinEventHandlerRef );
+    m_darwinEventHandlerRef = NULL;
+#endif
 }
 
 // Public members
@@ -225,6 +262,42 @@ QString QIHotKeyEdit::keyName (int key)
             name = sn;
         else
             name = QString( "<key_%1>" ).arg( key );
+#elif defined(Q_WS_MAC)
+        UInt32 modMask = DarwinKeyCodeToDarwinModifierMask( key );
+        switch ( modMask ) {
+            case shiftKey:
+            case optionKey:
+            case controlKey:
+            case cmdKey:
+                name = tr("Left ");
+                break;
+            case rightShiftKey:
+            case rightOptionKey:
+            case rightControlKey:
+            case kEventKeyModifierRightCmdKeyMask:
+                name = tr("Right ");
+                break;
+            default:
+                AssertMsgFailedReturn(( "modMask=%#x\n", modMask ), QString());
+        }
+        switch ( modMask ) {
+            case shiftKey:
+            case rightShiftKey:
+                name += QChar( kShiftUnicode );
+                break;
+            case optionKey:
+            case rightOptionKey:
+                name += QChar( kOptionUnicode );
+                break;
+            case controlKey:
+            case rightControlKey:
+                name += QChar( kControlUnicode );
+                break;
+            case cmdKey:
+            case kEventKeyModifierRightCmdKeyMask:
+                name += QChar( kCommandUnicode );
+                break;
+        }
 #else
         name = QString( "<key_%1>" ).arg( key );
 #endif
@@ -258,6 +331,21 @@ bool QIHotKeyEdit::isValidKey( int k )
             IsFunctionKey( ks ) ||
             IsMiscFunctionKey( ks )
         );
+#elif defined(Q_WS_MAC)
+    UInt32 modMask = ::DarwinKeyCodeToDarwinModifierMask( k );
+    switch ( modMask ) {
+        case shiftKey:
+        case optionKey:
+        case controlKey:
+        case rightShiftKey:
+        case rightOptionKey:
+        case rightControlKey:
+        case cmdKey:
+        case kEventKeyModifierRightCmdKeyMask:
+            return true;
+        default:
+            return false;
+    }
 #else
     Q_UNUSED( k );
     return true;
@@ -366,6 +454,69 @@ bool QIHotKeyEdit::x11Event( XEvent *event )
     return false;
 }
 
+#elif defined(Q_WS_MAC)
+
+/* static */
+pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc( EventHandlerCallRef inHandlerCallRef,
+                                                      EventRef inEvent, void *inUserData )
+{
+    QIHotKeyEdit *edit = (QIHotKeyEdit *)inUserData;
+    UInt32 EventClass = ::GetEventClass( inEvent );
+    if (EventClass == kEventClassKeyboard)
+    {
+        if (edit->darwinKeyboardEvent( inEvent ))
+            return 0;
+    }
+    return CallNextEventHandler (inHandlerCallRef, inEvent);
+}
+
+#ifdef DEBUG_bird
+# include <iprt/stream.h>
+#endif
+
+bool QIHotKeyEdit::darwinKeyboardEvent( EventRef inEvent )
+{
+    UInt32 eventKind = ::GetEventKind( inEvent );
+    switch ( eventKind ) {
+        /*case kEventRawKeyDown:
+        case kEventRawKeyUp:
+        case kEventRawKeyRepeat:*/
+        case kEventRawKeyModifiersChanged: {
+            UInt32 modifierMask = 0;
+            ::GetEventParameter( inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
+                                 sizeof( modifierMask ), NULL, &modifierMask );
+
+            modifierMask = ::DarwinAdjustModifierMask(modifierMask);
+            UInt32 changed = m_darwinKeyModifiers ^ modifierMask;
+#ifdef DEBUG_bird
+RTPrintf("old=%04x new=%04x changed=%04x %04x %04x\n",
+         m_darwinKeyModifiers, modifierMask, changed, GetCurrentEventKeyModifiers(), GetCurrentKeyModifiers());
+#endif
+            m_darwinKeyModifiers = modifierMask;
+
+            // skip key releases
+            if ( changed && ( changed & modifierMask ) )
+                break;
+
+            // convert to keycode and skip keycodes we don't care about.
+            unsigned keyCode = ::DarwinModifierMaskToDarwinKeycode( changed );
+RTPrintf("keyCode=%#x valid=%d\n", keyCode, isValidKey( keyCode ));
+            if ( !keyCode || keyCode == ~0U || !isValidKey( keyCode ) )
+                break;
+
+            // update key current key.
+            keyval = keyCode;
+            symbname = QIHotKeyEdit::keyName( keyCode );
+            updateText();
+            break; //return true;
+        }
+        break;
+    }
+    return false;
+}
+
+#else
+# warning "Port me!"
 #endif
 
 void QIHotKeyEdit::focusInEvent( QFocusEvent * ) {

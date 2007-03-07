@@ -77,6 +77,10 @@ const int XKeyRelease = KeyRelease;
 #include <X11/Xcursor/Xcursor.h>
 #endif
 
+#if defined (Q_WS_MAC)
+# include "DarwinKeyboard.h"
+#endif /* defined (Q_WS_MAC) */
+
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
 enum { UPDATE_FREQ = 1000 / 60 }; // a-la 60Hz
 #endif
@@ -98,6 +102,28 @@ LRESULT CALLBACK VBoxConsoleView::lowLevelKeyboardProc (int nCode,
 }
 
 #endif
+
+#if defined (Q_WS_MAC)
+
+/**
+ *  Event handler callback for Mac OS X.
+ */
+/* static */
+pascal OSStatus VBoxConsoleView::darwinEventHandlerProc(EventHandlerCallRef inHandlerCallRef,
+                                                        EventRef inEvent, void *inUserData)
+{
+    VBoxConsoleView *view = (VBoxConsoleView *)inUserData;
+    UInt32 EventClass = ::GetEventClass (inEvent);
+    if (EventClass == kEventClassKeyboard)
+    {
+        if (    view->darwinKeyboardEvent (inEvent)
+            &&  ::GetEventKind (inEvent) != kEventRawKeyModifiersChanged)
+            return 0;
+    }
+    return CallNextEventHandler (inHandlerCallRef, inEvent);
+}
+
+#endif /* Q_WS_MAC */
 
 /** Guest mouse pointer shape change event. */
 class MousePointerChangeEvent : public QEvent
@@ -356,6 +382,10 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mode (rm)
 #if defined(Q_WS_WIN)
     , mAlphaCursor (NULL)
+#endif
+#if defined(Q_WS_MAC)
+    , m_darwinEventHandlerRef (NULL)
+    , m_darwinKeyModifiers (0)
 #endif
 {
     Assert (!cconsole.isNull() &&
@@ -751,13 +781,16 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 return true;
             }
-/// @todo (dmik) not currently used, but may become necessary later
-//            case VBoxDefs::RepaintEventType: {
-//                VBoxRepaintEvent *re = (VBoxRepaintEvent *) e;
-//                viewport()->repaint (re->x(), re->y(), re->width(), re->height(), false);
-//                cconsole.GetDisplay().UpdateCompleted();
-//                return true;
-//            }
+
+#ifdef Q_WS_MAC /* see VBoxQImageFrameBuffer::NotifyUpdate. */
+            case VBoxDefs::RepaintEventType:
+            {
+                VBoxRepaintEvent *re = (VBoxRepaintEvent *) e;
+                viewport()->repaint (re->x(), re->y(), re->width(), re->height(), false);
+                /*cconsole.GetDisplay().UpdateCompleted(); - the event was acked already */
+                return true;
+            }
+#endif /* Q_WS_MAC */
 
             case VBoxDefs::MousePointerChangeEventType:
             {
@@ -982,7 +1015,18 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 }
                 break;
             }
-#endif
+#endif /* defined (Q_WS_WIN32) */
+#if defined (Q_WS_MAC)
+            /*
+             *  Install/remove the keyboard event handler.
+             */
+            case QEvent::WindowActivate:
+                darwinGrabKeyboardEvents (true);
+                break;
+            case QEvent::WindowDeactivate:
+                darwinGrabKeyboardEvents (false);
+                break;
+#endif /* defined (Q_WS_MAC) */
             case QEvent::Resize:
             {
                 if (!ignore_mainwnd_resize)
@@ -1281,6 +1325,130 @@ bool VBoxConsoleView::x11Event (XEvent *event)
     return keyEvent (ks, scan, flags);
 }
 
+#elif defined (Q_WS_MAC)
+
+/**
+ *  Invoked by VBoxConsoleView::darwinEventHandlerProc when it gets a raw keyboard event.
+ *
+ *  @param inEvent      The keyboard event.
+ *
+ *  @return true if the key was processed, false if it wasn't processed and should be passed on.
+ */
+bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
+{
+    bool ret = false;
+    UInt32 EventKind = ::GetEventKind (inEvent);
+    if (EventKind != kEventRawKeyModifiersChanged)
+    {
+        /* convert keycode to set 1 scan code. */
+        UInt32 keyCode = ~0U;
+        ::GetEventParameter (inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof(keyCode), NULL, &keyCode);
+        unsigned scanCode = ::DarwinKeycodeToSet1Scancode (keyCode);
+        if (scanCode)
+        {
+            /* calc flags. */
+            int flags = 0;
+            UInt32 EventKind = ::GetEventKind (inEvent);
+            if (EventKind == kEventRawKeyDown)
+                flags |= KeyPressed;
+            if (scanCode & 0x8000) /* modifiers */
+            {
+                flags |= KeyPressed;
+                scanCode &= ~0x8000;
+            }
+            if (scanCode & 0x80)
+            {
+                flags |= KeyExtended;
+                scanCode &= ~0x80;
+            }
+            /** @todo KeyPause, KeyPrint. */
+
+            /* get the keycode and unicode string (if present). */
+            UInt32 keyCode = ~0;
+            ::GetEventParameter (inEvent, kEventParamKeyCode, typeUInt32, NULL,
+                                 sizeof (keyCode), NULL, &keyCode);
+            AssertCompileSize(wchar_t, 2);
+            AssertCompileSize(UniChar, 2);
+            wchar_t ucs[32];
+            if (::GetEventParameter (inEvent, kEventParamKeyUnicodes, typeUnicodeText, NULL,
+                                     sizeof (ucs), NULL, &ucs[0]) != 0)
+                ucs[0] = 0;
+
+            ret = keyEvent (keyCode, scanCode, flags, ucs[0] ? ucs : NULL);
+        }
+    }
+    else
+    {
+        /* May contain multiple modifier changes, kind of annoying. */
+        UInt32 newMask = 0;
+        ::GetEventParameter (inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
+                             sizeof (newMask), NULL, &newMask);
+        UInt32 changed = newMask ^ m_darwinKeyModifiers;
+        if (changed)
+        {
+            for (Uint32 bit = 0; bit < 32; bit++)
+            {
+                if (!(changed & (1 << bit)))
+                    continue;
+                unsigned scanCode = ::DarwinModifierMaskToSet1Scancode (1 << bit);
+                if (!scanCode)
+                    continue;
+
+                unsigned flags = (newMask & (1 << bit)) ? KeyPressed : 0;
+                if (scanCode & 0x80)
+                {
+                    flags |= KeyExtended;
+                    scanCode &= ~0x80;
+                }
+                keyEvent (0, scanCode, flags);
+            }
+        }
+
+        m_darwinKeyModifiers = newMask;
+
+        /* ret is intentionally false. */
+    }
+
+    return ret;
+}
+
+
+/**
+ * Installs or removes the keyboard event handler.
+ *
+ * @param   fGrab    True if we're to grab the events, false if we're not to.
+ */
+void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
+{
+    if (fGrab)
+    {
+        ::SetMouseCoalescingEnabled (false, NULL);      //??
+        ::CGSetLocalEventsSuppressionInterval (0.0);    //??
+
+        EventTypeSpec eventTypes[4];
+        eventTypes[0].eventClass = kEventClassKeyboard;
+        eventTypes[0].eventKind  = kEventRawKeyDown;
+        eventTypes[1].eventClass = kEventClassKeyboard;
+        eventTypes[1].eventKind  = kEventRawKeyUp;
+        eventTypes[2].eventClass = kEventClassKeyboard;
+        eventTypes[2].eventKind  = kEventRawKeyRepeat;
+        eventTypes[3].eventClass = kEventClassKeyboard;
+        eventTypes[3].eventKind  = kEventRawKeyModifiersChanged;
+
+        EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxConsoleView::darwinEventHandlerProc);
+
+        m_darwinEventHandlerRef = NULL;
+        ::InstallApplicationEventHandler (eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
+                                          this, &m_darwinEventHandlerRef);
+        ::DisposeEventHandlerUPP (eventHandler);
+    }
+    else if (m_darwinEventHandlerRef)
+    {
+        ::RemoveEventHandler (m_darwinEventHandlerRef);
+        m_darwinEventHandlerRef = NULL;
+    }
+}
+
 #endif
 
 //
@@ -1395,10 +1563,11 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
  *  @key        virtual scan code (virtual key on Win32 and KeySym on X11)
  *  @scan       hardware scan code
  *  @flags      flags, a combination of Key* constants
+ *  @aUniKey    Unicode translation of the key. Optional.
  *
  *  @return     true to consume the event and false to pass it to Qt
  */
-bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags)
+bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniKey/* = NULL*/)
 {
 //    char bbbuf[256];
 //    sprintf (bbbuf,
@@ -1588,6 +1757,11 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags)
                                            mainwnd->menuBar());
             }
         }
+#elif defined (Q_WS_MAC)
+        if (aUniKey && aUniKey[0] && !aUniKey[1])
+            processed = processHotKey (QKeySequence (UNICODE_ACCEL +
+                                            QChar (aUniKey [0]).upper().unicode()),
+                                       mainwnd->menuBar());
 #endif
         // grab the key from Qt if processed, or pass it to Qt otherwise
         // in order to process non-alphanumeric keys in event(), after they are
@@ -1958,7 +2132,9 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
      * used instead. On X11, we use XGrabKey instead of XGrabKeyboard (called
      * by QWidget::grabKeyboard()) because the latter causes problems under
      * metacity 2.16 (in particular, due to a bug, a window cannot be moved
-     * using the mouse if it is currently grabing the keyboard). */
+     * using the mouse if it is currently grabing the keyboard). On Mac OS X,
+     * we use the Qt methods + disabling global hot keys + watching modifiers
+     * (for right/left separation). */
 #if defined (Q_WS_WIN32)
     /**/
 #elif defined (Q_WS_X11)
@@ -1969,6 +2145,17 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
 	else
 		XUngrabKey (x11Display(),  AnyKey, AnyModifier,
                     topLevelWidget()->winId());
+#elif defined (Q_WS_MAC)
+    if (capture)
+    {
+        grabKeyboard();
+        ::DarwinGrabKeyboard (true);
+    }
+    else
+    {
+        ::DarwinReleaseKeyboard();
+        releaseKeyboard();
+    }
 #else
     if (capture)
         grabKeyboard();

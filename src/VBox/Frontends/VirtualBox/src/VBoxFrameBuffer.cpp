@@ -252,10 +252,18 @@ STDMETHODIMP VBoxQImageFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
                                                   ULONG aW, ULONG aH,
                                                   BOOL *aFinished)
 {
+#ifdef Q_WS_MAC
+    /* we're not on the GUI thread and update() isn't thread safe on Qt 3.3.x
+       on the Mac (4.2.x is), so post the event instead.  */
+    QApplication::postEvent (mView,
+                             new VBoxRepaintEvent (aX, aY, aW, aH));
+
+#else /* !Q_WS_MAC */
     /* we're not on the GUI thread, so update() instead of repaint()! */
     mView->viewport()->update (aX - mView->contentsX(),
                                aY - mView->contentsY(),
                                aW, aH);
+#endif /* !Q_WS_MAC */
     /* the update has been finished, return TRUE */
     *aFinished = TRUE;
     return S_OK;
