@@ -243,6 +243,4 @@ $(PATH_TARGET)/tstVMStructSize.run: $(INSTARGET_tstVMStructSize)
 
 # alias for the two struct tests.
 run-struct-tests: $(PATH_TARGET)/tstAsmStructs.run $(PATH_TARGET)/tstVMStructSize.run
-run-asm-tests: $(PATH_TARGET)/tstAsmStructs.run
-	$(ECHO) $<
 

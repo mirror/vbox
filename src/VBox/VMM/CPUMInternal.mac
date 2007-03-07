@@ -40,7 +40,7 @@
 
 %define FPUSTATE_SIZE           512
 
-;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) in 
+;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) in
 ; nasm please tell / fix this hack.
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
  %define fVBOX_WITH_HYBIRD_32BIT_KERNEL 1
@@ -165,15 +165,12 @@ struc CPUM
     .Host.efer           resq    1
 %endif ; 64-bit
 
-    ; padding
-    ;.Host.padding            resd    0
-
 
     ;
     ; Hypervisor Context.
     ; (Identical to .Host.*)
     ;
-    alignb 32
+    alignb 32                           ; the padding
     .Hyper.fpu            resb    512
 
     .Hyper.edi            resd    1
