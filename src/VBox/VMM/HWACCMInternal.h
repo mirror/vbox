@@ -278,7 +278,6 @@ typedef struct HWACCM
     STAMCOUNTER             StatExitIrqWindow;
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
-    STAMCOUNTER             StatExitForced;
 
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;

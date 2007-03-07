@@ -514,7 +514,6 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     uint64_t    exitCode;
     SVM_VMCB   *pVMCB;
     bool        fForceTLBFlush = false;
-    int         cResume = 0;
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -524,7 +523,6 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
 ResumeExecution:
-    cResume++;
 
     /* Check for irq inhibition due to instruction fusing (sti, mov ss). */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
@@ -820,13 +818,6 @@ ResumeExecution:
         else
             pVM->hwaccm.s.Event.errCode  = 0;
     }
-    /** @note Safety precaution; frequent loops have been observed even though external interrupts were pending. */
-    if (cResume > 32 /* low limit, but anything higher risks a hanging host due to interrupts left pending for too long */)
-    {
-        exitCode = SVM_EXIT_INTR;
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitForced);
-    }
-
     STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReason[exitCode & MASK_EXITREASON_STAT]);
 
     /* Deal with the reason of the VM-exit. */
