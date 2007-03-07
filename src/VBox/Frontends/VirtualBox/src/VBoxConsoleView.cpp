@@ -116,11 +116,10 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc(EventHandlerCallRef inHa
     UInt32 EventClass = ::GetEventClass (inEvent);
     if (EventClass == kEventClassKeyboard)
     {
-        if (    view->darwinKeyboardEvent (inEvent)
-            &&  ::GetEventKind (inEvent) != kEventRawKeyModifiersChanged)
+        if (view->darwinKeyboardEvent (inEvent))
             return 0;
     }
-    return CallNextEventHandler (inHandlerCallRef, inEvent);
+    return ::CallNextEventHandler (inHandlerCallRef, inEvent);
 }
 
 #endif /* Q_WS_MAC */
@@ -656,6 +655,10 @@ bool VBoxConsoleView::pause (bool on)
         else
             vboxProblem().cannotResumeMachine (cconsole);
     }
+#ifdef Q_WS_MAC /* A quick hack to prevent getting the typing-while-paused on Host-Q. */
+    else if (on)
+        darwinGrabKeyboardEvents (false);
+#endif 
 
     return ok;
 }
@@ -1409,7 +1412,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
 
         m_darwinKeyModifiers = newMask;
 
-        /* ret is intentionally false. */
+        ret = kbd_captured; //??
     }
 
     return ret;
