@@ -26,7 +26,7 @@
 #ifdef Q_WS_MAC
 # include "QIApplication.h"
 #else
-# define QIApplication
+# define QIApplication QApplication
 #endif
 
 #include <qmessagebox.h>
