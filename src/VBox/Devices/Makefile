@@ -50,6 +50,9 @@ endif
 ifdef VBOX_WITH_VRDP
 DEFS += VBOX_VRDP
 endif
+ifdef VBOX_WITH_INTERNAL_NETWORKING
+DEFS += VBOX_WITH_INTERNAL_NETWORKING
+endif
 
 # enable the pdm lock.
 #DEFS += VBOX_WITH_PDM_LOCK

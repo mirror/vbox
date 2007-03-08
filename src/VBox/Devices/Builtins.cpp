@@ -30,6 +30,7 @@
 #include <VBox/usb.h>
 
 #include <VBox/log.h>
+#include <VBox/config.h>
 #include <iprt/assert.h>
 
 #include "Builtins.h"
@@ -101,11 +102,6 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceAudioSniffer);
     if (VBOX_FAILURE(rc))
         return rc;
-#if 0 /** @todo remove this, see #1407. */
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceUSBBackend);
-    if (VBOX_FAILURE(rc))
-        return rc;
-#endif
 #if defined(VBOX_WITH_USB) && (defined(__WIN__) || defined(__LINUX__) || defined(__L4ENV__))
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceOHCI);
     if (VBOX_FAILURE(rc))
@@ -184,7 +180,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
-#if !defined(__DARWIN__) && !defined(__OS2__)
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostInterface);
     if (VBOX_FAILURE(rc))
         return rc;
