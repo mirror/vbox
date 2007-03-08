@@ -701,15 +701,11 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     }
 #endif
 
-    STAM_PROFILE_ADV_START(&pVM->trpm.s.StatTrap0dDisasm, a);
-
     /* We always set IOPL to zero which makes e.g. pushf fault in V86 mode. The guest might use IOPL=3 and therefor not expect a #GP.
      * Simply fall back to the recompiler to emulate this instruction.
      */
     if (pRegFrame->eflags.Bits.u1VM)
     {
-        STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
-
         /* Retrieve the eflags including the virtualized bits. */
         /** @note hackish as the cpumctxcore structure doesn't contain the right value */
         X86EFLAGS eflags;
@@ -724,6 +720,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
     }
 
+    STAM_PROFILE_ADV_START(&pVM->trpm.s.StatTrap0dDisasm, a);
     /*
      * Decode the instruction.
      */
