@@ -44,7 +44,7 @@
 /**
  * Synchronizes one GDT entry (guest -> shadow).
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   pRegFrame   Trap register frame.
  * @param   iGDTEntry   The GDT entry to sync.
@@ -152,7 +152,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
 /**
  * \#PF Virtual Handler callback for Guest write access to the Guest's own GDT.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -225,7 +225,7 @@ SELMGCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 /**
  * \#PF Virtual Handler callback for Guest write access to the Guest's own LDT.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -248,7 +248,7 @@ SELMGCDECL(int) selmgcGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 /**
  * \#PF Virtual Handler callback for Guest write access to the Guest's own current TSS.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -301,7 +301,7 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow GDT.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -319,7 +319,7 @@ SELMGCDECL(int) selmgcShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow LDT.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -338,7 +338,7 @@ SELMGCDECL(int) selmgcShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow TSS.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
