@@ -1212,9 +1212,9 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         /** @todo investigate how intel handle various operations on half present cross page entries. */
         off = GCPtrLdt & (sizeof(VBOXDESC) - 1);
         AssertMsg(!off, ("LDT is not aligned on entry size! GCPtrLdt=%08x\n", GCPtrLdt));
-        GCPtrLdt += sizeof(VBOXDESC);
-        pShadowLDT++;
-        unsigned    cbLeft = cbLdt + 1 - sizeof(VBOXDESC);
+
+        /** @note Do not skip the first selector; unlike the GDT, a zero LDT selector is perfectly valid. */
+        unsigned    cbLeft = cbLdt + 1;
         PVBOXDESC   pLDTE = pShadowLDT;
         while (cbLeft)
         {
