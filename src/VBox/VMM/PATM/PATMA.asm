@@ -1129,8 +1129,7 @@ PATMIretStart:
 
     ; we can't do an iret to v86 code, as we run with CPL=1. The iret would attempt a protected mode iret and (most likely) fault.
     test    dword [esp+12], X86_EFL_VM
-    jnz     iret_fault1
-;;    jnz     iret_return_to_v86
+    jnz     iret_return_to_v86
 
     ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ;;@todo: not correct for iret back to ring 2!!!!!
