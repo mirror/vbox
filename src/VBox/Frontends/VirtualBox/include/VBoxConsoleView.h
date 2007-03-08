@@ -238,8 +238,12 @@ private:
     static LRESULT CALLBACK lowLevelKeyboardProc (int nCode,
                                                   WPARAM wParam, LPARAM lParam);
 #elif defined (Q_WS_MAC)
+# ifndef VBOX_WITH_HACKED_QT
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                    EventRef inEvent, void *inUserData);
+# else  /* VBOX_WITH_HACKED_QT */
+    static bool macEventFilter (EventRef inEvent, void *inUserData);
+# endif /* VBOX_WITH_HACKED_QT */
 #endif
 
     QPixmap mPausedShot;

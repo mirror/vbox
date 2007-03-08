@@ -23,6 +23,11 @@
 #include "VBoxGlobal.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
+#ifdef Q_WS_MAC
+# include "QIApplication.h"
+#else
+# define QIApplication
+#endif
 
 #include <qmessagebox.h>
 #include <iprt/runtime.h>
@@ -135,7 +140,9 @@ static void DarwinInit (void)
 
     /** @todo automatically start VBoxSVC. */
 }
+
 #endif
+
 
 int main( int argc, char ** argv )
 {
@@ -161,7 +168,7 @@ int main( int argc, char ** argv )
 
     qInstallMsgHandler (QtMessageOutput);
 
-    QApplication a (argc, argv);
+    QIApplication a (argc, argv);
 
 #ifdef Q_WS_X11
     /* version check (major.minor are sensitive, fix number is ignored) */
