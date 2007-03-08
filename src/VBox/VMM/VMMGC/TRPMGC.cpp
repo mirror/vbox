@@ -32,6 +32,7 @@
 
 #include <VBox/err.h>
 #include <VBox/x86.h>
+#include <VBox/em.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <VBox/log.h>
@@ -108,17 +109,32 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     RTGCPTR     GCPtrIDT    = (RTGCPTR)CPUMGetGuestIDTR(pVM, &cbIDT);
 #ifdef VBOX_STRICT
     RTGCPTR     GCPtrIDTEnd = (RTGCPTR)((RTGCUINTPTR)GCPtrIDT + cbIDT + 1);
-    uint32_t    iTrap       = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT)/sizeof(VBOXIDTE);
 #endif
+    uint32_t    iTrap       = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT)/sizeof(VBOXIDTE);
 
     Assert(pvFault >= GCPtrIDT && pvFault < GCPtrIDTEnd);
     Log(("trpmgcGuestIDTWriteHandler: write to gate %x\n", iTrap));
 
-    ////LogCom(("trpmgcGuestIDTWriteHandler: eip=%08X pvFault=%08X pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
-    VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
-    /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
+#if 0
+    /* Check if we can handle the write here. */    
+    if (     iTrap != 3                                         /* Gate 3 is handled differently; could do it here as well, but let ring 3 handle this case for now. */
+        &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap)) /* Passthru gates need special attention too. */
+    {
+        uint32_t cb;
+        int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
+        if (VBOX_SUCCESS(rc) && cb)
+        {
+            trpmClearGuestTrapHandler(pVM, iTrap);
+            STAM_COUNTER_INC(&pVM->trpm.s.StatGCWriteGuestIDTHandled);
+            return VINF_SUCCESS;
+        }
+    }
+#endif
 
-    STAM_COUNTER_INC(&pVM->trpm.s.StatGCWriteGuestIDT);
+    /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
+    VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+
+    STAM_COUNTER_INC(&pVM->trpm.s.StatGCWriteGuestIDTFault);
     return VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT;
 }
 
