@@ -79,6 +79,9 @@ const int XKeyRelease = KeyRelease;
 
 #if defined (Q_WS_MAC)
 # include "DarwinKeyboard.h"
+# ifdef VBOX_WITH_HACKED_QT
+#  include "QIApplication.h"
+# endif
 #endif /* defined (Q_WS_MAC) */
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
@@ -105,12 +108,13 @@ LRESULT CALLBACK VBoxConsoleView::lowLevelKeyboardProc (int nCode,
 
 #if defined (Q_WS_MAC)
 
+# ifndef VBOX_WITH_HACKED_QT
 /**
  *  Event handler callback for Mac OS X.
  */
 /* static */
-pascal OSStatus VBoxConsoleView::darwinEventHandlerProc(EventHandlerCallRef inHandlerCallRef,
-                                                        EventRef inEvent, void *inUserData)
+pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
+                                                         EventRef inEvent, void *inUserData)
 {
     VBoxConsoleView *view = (VBoxConsoleView *)inUserData;
     UInt32 EventClass = ::GetEventClass (inEvent);
@@ -133,6 +137,25 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc(EventHandlerCallRef inHa
     }
     return ::CallNextEventHandler (inHandlerCallRef, inEvent);
 }
+
+# else /* VBOX_WITH_HACKED_QT */
+
+/**
+ *  Event handler callback for Mac OS X.
+ */
+/* static */
+bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
+{
+    VBoxConsoleView *view = (VBoxConsoleView *)inUserData;
+    UInt32 EventClass = ::GetEventClass (inEvent);
+    if (EventClass == kEventClassKeyboard)
+    {
+        if (view->darwinKeyboardEvent (inEvent))
+            return true;
+    }
+    return false;
+}
+# endif /* VBOX_WITH_HACKED_QT */
 
 #endif /* Q_WS_MAC */
 
@@ -1343,7 +1366,8 @@ bool VBoxConsoleView::x11Event (XEvent *event)
 #elif defined (Q_WS_MAC)
 
 /**
- *  Invoked by VBoxConsoleView::darwinEventHandlerProc when it gets a raw keyboard event.
+ *  Invoked by VBoxConsoleView::darwinEventHandlerProc / VBoxConsoleView::macEventFilter when
+ *  it receives a raw keyboard event.
  *
  *  @param inEvent      The keyboard event.
  *
@@ -1400,6 +1424,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
                              sizeof (newMask), NULL, &newMask);
         newMask = ::DarwinAdjustModifierMask (newMask);
         UInt32 changed = newMask ^ m_darwinKeyModifiers;
+        ret = kbd_captured;
         if (changed)
         {
             for (Uint32 bit = 0; bit < 32; bit++)
@@ -1418,13 +1443,11 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
                     flags |= KeyExtended;
                     scanCode &= ~0x80;
                 }
-                keyEvent (keyCode, scanCode, flags);
+                ret |= keyEvent (keyCode, scanCode, flags);
             }
         }
 
         m_darwinKeyModifiers = newMask;
-
-        ret = kbd_captured; //??
     }
 
     return ret;
@@ -1443,6 +1466,8 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         ::SetMouseCoalescingEnabled (false, NULL);      //??
         ::CGSetLocalEventsSuppressionInterval (0.0);    //??
 
+#ifndef VBOX_WITH_HACKED_QT
+
         EventTypeSpec eventTypes[6];
         eventTypes[0].eventClass = kEventClassKeyboard;
         eventTypes[0].eventKind  = kEventRawKeyDown;
@@ -1453,7 +1478,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         eventTypes[3].eventClass = kEventClassKeyboard;
         eventTypes[3].eventKind  = kEventRawKeyModifiersChanged;
         /* For ignorning Command-H and Command-Q which aren't affected by the
-         * global hotkey stuff: */
+         * global hotkey stuff (doesn't work well): */
         eventTypes[4].eventClass = kEventClassCommand;
         eventTypes[4].eventKind  = kEventCommandProcess;
         eventTypes[5].eventClass = kEventClassCommand;
@@ -1466,6 +1491,10 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
                                           this, &m_darwinEventHandlerRef);
         ::DisposeEventHandlerUPP (eventHandler);
 
+#else /* VBOX_WITH_HACKED_QT */
+        ((QIApplication *)qApp)->setEventFilter (VBoxConsoleView::macEventFilter, this);
+#endif /* VBOX_WITH_HACKED_QT */
+
         ::DarwinGrabKeyboard (false);
     }
     else
@@ -1476,6 +1505,9 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
             ::RemoveEventHandler (m_darwinEventHandlerRef);
             m_darwinEventHandlerRef = NULL;
         }
+#ifdef VBOX_WITH_HACKED_QT
+        ((QIApplication *)qApp)->setEventFilter (NULL, NULL);
+#endif
     }
 }
 
