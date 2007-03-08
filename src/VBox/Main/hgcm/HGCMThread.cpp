@@ -68,6 +68,7 @@
 /* Thread has been terminated. */
 #define HGCMMSG_TF_TERMINATED          (0x00000004)
 
+/** @todo consider use of RTReq */
 
 static DECLCALLBACK(int) hgcmWorkerThreadFunc (RTTHREAD ThreadSelf, void *pvUser);
 
@@ -98,13 +99,6 @@ class HGCMThread: public HGCMObject
 
         /* thread state/operation flags */
         uint32_t m_fu32ThreadFlags;
-
-        /* Typical message size for this thread, messages with
-         * this size will be put in the Free list and reused,
-         * instead of reallocating. Should speed up processing
-         * in cases when the message size is fixed.
-         */
-        uint32_t m_cbMsg;
 
         /* Message queue variables. Messages are inserted at tail of message
          * queue. They are consumed by worker thread sequently. If a message was
@@ -145,8 +139,6 @@ class HGCMThread: public HGCMObject
         int MsgGet (HGCMMsgCore **ppMsg);
         int MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool bWait);
         void MsgComplete (HGCMMsgCore *pMsg, int32_t result);
-
-        bool MsgReuse (HGCMMsgCore *pMsg);
 };
 
 
@@ -160,7 +152,6 @@ class HGCMThread: public HGCMObject
 
 void HGCMMsgCore::InitializeCore (uint32_t cbMsg, uint32_t u32MsgId, HGCMThread *pThread)
 {
-    m_cbMsg       = cbMsg;
     m_u32Version  = HGCMMSG_VERSION;
     m_u32Msg      = u32MsgId;
     m_pfnCallback = NULL;
@@ -170,11 +161,6 @@ void HGCMMsgCore::InitializeCore (uint32_t cbMsg, uint32_t u32MsgId, HGCMThread 
     m_rcSend      = VINF_SUCCESS;
 
     m_pThread     = pThread;
-}
-
-bool HGCMMsgCore::Reuse (void)
-{
-    return m_pThread->MsgReuse (this);
 }
 
 
@@ -217,7 +203,6 @@ HGCMThread::HGCMThread ()
     m_eventThread (0),
     m_eventSend (0),
     m_fu32ThreadFlags (0),
-    m_cbMsg (0),
     m_pMsgInputQueueHead (NULL),
     m_pMsgInputQueueTail (NULL),
     m_pMsgInProcessHead (NULL),
@@ -280,7 +265,6 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
             {
                 m_pfnThread = pfnThread;
                 m_pvUser    = pvUser;
-                m_cbMsg     = cbMsg;
 
                 m_fu32ThreadFlags = HGCMMSG_TF_INITIALIZING;
 
@@ -351,35 +335,6 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cb
 
     bool fFromFreeList = false;
 
-#if 0 /* @todo to be replaced with RTReq */
-    if (cbMsg == m_cbMsg)
-    {
-        rc = Enter ();
-
-        if (VBOX_SUCCESS(rc))
-        {
-            /* May be we can reuse a previously allocated message memory block. */
-
-            if (m_pFreeHead)
-            {
-                /* Take existing message object from the head of the free list. */
-                pmsg = m_pFreeHead;
-
-                m_pFreeHead = m_pFreeHead->m_pNext;
-
-                if (m_pFreeHead == NULL)
-                {
-                    m_pFreeTail = NULL;
-                }
-
-                fFromFreeList = true;
-            }
-
-            Leave ();
-        }
-    }
-#endif
-
     if (!pmsg && VBOX_SUCCESS(rc))
     {
         /* We have to allocate a new memory block. */
@@ -396,7 +351,7 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cb
         /* Reference the thread because pMsg contains the pointer to it. */
         Reference ();
 
-        /* Initialize just allocated or reused message core */
+        /* Initialize just allocated message core */
         pmsg->InitializeCore (cbMsg, u32MsgId, this);
 
         /* and the message specific data. */
@@ -630,50 +585,6 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
 
     return;
 }
-
-
-bool HGCMThread::MsgReuse (HGCMMsgCore *pMsg)
-{
-    if (pMsg->m_cbMsg != m_cbMsg)
-    {
-        /* Message no longer belong to the thread. */
-        Dereference ();
-
-        return false;
-    }
-
-    int rc = Enter ();
-
-    if (VBOX_SUCCESS (rc))
-    {
-        /* Put the message to the tail of free list. */
-
-        /* Reference message because it will still be in free list. */
-        pMsg->Reference ();
-
-        pMsg->Uninitialize ();
-
-        if (m_pFreeTail)
-        {
-            m_pFreeTail->m_pNext = pMsg;
-        }
-        else
-        {
-            m_pFreeHead = pMsg;
-        }
-
-        m_pFreeTail = pMsg;
-
-        Leave ();
-
-        /* Dereference the thread. */
-        Dereference ();
-    }
-
-    return true;
-}
-
-
 
 /*
  * Thread API. Public interface.

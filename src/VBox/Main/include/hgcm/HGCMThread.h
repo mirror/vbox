@@ -60,9 +60,6 @@ class HGCMMsgCore: public HGCMObject
     private:
         friend class HGCMThread;
 
-        /** Size of entire message block. */
-        uint32_t m_cbMsg;
-
         /** Version of message header. */
         uint32_t m_u32Version;
 
@@ -88,8 +85,6 @@ class HGCMMsgCore: public HGCMObject
 
         void InitializeCore (uint32_t cbMsg, uint32_t u32MsgId, HGCMThread *pThread);
 
-        virtual bool Reuse (void);
-
     protected:
         virtual ~HGCMMsgCore () {};
 
@@ -100,12 +95,10 @@ class HGCMMsgCore: public HGCMObject
 
         HGCMThread *Thread (void) { return m_pThread; };
 
-        /** Initialize message after it was allocated or reused. */
+        /** Initialize message after it was allocated. */
         virtual void Initialize (void) {};
 
-        /** Uninitialize message, message will then be freed or put to
-         * a list, from where it can be reused.
-         */
+        /** Uninitialize message. */
         virtual void Uninitialize (void) {};
 
 };
