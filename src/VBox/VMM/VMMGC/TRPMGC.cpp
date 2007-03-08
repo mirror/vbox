@@ -115,7 +115,6 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     Assert(pvFault >= GCPtrIDT && pvFault < GCPtrIDTEnd);
     Log(("trpmgcGuestIDTWriteHandler: write to gate %x\n", iTrap));
 
-#if 0
     /* Check if we can handle the write here. */    
     if (     iTrap != 3                                         /* Gate 3 is handled differently; could do it here as well, but let ring 3 handle this case for now. */
         &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap)) /* Passthru gates need special attention too. */
@@ -129,7 +128,6 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
             return VINF_SUCCESS;
         }
     }
-#endif
 
     /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
     VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
