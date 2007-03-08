@@ -1127,6 +1127,9 @@ PATMIretStart:
     test    dword [esp], X86_EFL_NT
     jnz     iret_fault1
 
+    test    dword [esp+12], X86_EFL_IF
+    jz      iret_clearIF
+
     ; we can't do an iret to v86 code, as we run with CPL=1. The iret would attempt a protected mode iret and (most likely) fault.
     test    dword [esp+12], X86_EFL_VM
     jnz     iret_return_to_v86
@@ -1137,9 +1140,6 @@ PATMIretStart:
 
     test    dword [esp+8], 2
     jnz     iret_notring0
-
-    test    dword [esp+12], X86_EFL_IF
-    jz      iret_clearIF
 
     ; force ring 1 CS RPL
     or      dword [esp+8], 1
