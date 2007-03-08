@@ -35,7 +35,7 @@ __BEGIN_DECLS
  */
 
 /** Enable to allow V86 code to run in raw mode. */
-/* #define VBOX_RAW_V86 */
+#define VBOX_RAW_V86
 
 /**
  * The Execution Manager State.
