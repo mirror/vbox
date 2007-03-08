@@ -119,6 +119,18 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc(EventHandlerCallRef inHa
         if (view->darwinKeyboardEvent (inEvent))
             return 0;
     }
+    /*
+     * Command-H and Command-Q aren't properly disabled yet, and it's still
+     * possible to use the left command key to invoke them when the keyboard
+     * is captured. We discard the events these if the keyboard is captured
+     * as a half measure to prevent unexpected behaviour. However, we don't
+     * get any key down/up events, so these combinations are dead to the guest...
+     */
+    else if (EventClass == kEventClassCommand)
+    {
+        if (view->kbd_captured)
+            return 0;
+    }
     return ::CallNextEventHandler (inHandlerCallRef, inEvent);
 }
 
@@ -658,7 +670,7 @@ bool VBoxConsoleView::pause (bool on)
 #ifdef Q_WS_MAC /* A quick hack to prevent getting the typing-while-paused on Host-Q. */
     else if (on)
         darwinGrabKeyboardEvents (false);
-#endif 
+#endif
 
     return ok;
 }
@@ -1431,7 +1443,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         ::SetMouseCoalescingEnabled (false, NULL);      //??
         ::CGSetLocalEventsSuppressionInterval (0.0);    //??
 
-        EventTypeSpec eventTypes[4];
+        EventTypeSpec eventTypes[6];
         eventTypes[0].eventClass = kEventClassKeyboard;
         eventTypes[0].eventKind  = kEventRawKeyDown;
         eventTypes[1].eventClass = kEventClassKeyboard;
@@ -1440,6 +1452,12 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         eventTypes[2].eventKind  = kEventRawKeyRepeat;
         eventTypes[3].eventClass = kEventClassKeyboard;
         eventTypes[3].eventKind  = kEventRawKeyModifiersChanged;
+        /* For ignorning Command-H and Command-Q which aren't affected by the
+         * global hotkey stuff: */
+        eventTypes[4].eventClass = kEventClassCommand;
+        eventTypes[4].eventKind  = kEventCommandProcess;
+        eventTypes[5].eventClass = kEventClassCommand;
+        eventTypes[5].eventKind  = kEventCommandUpdateStatus;
 
         EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxConsoleView::darwinEventHandlerProc);
 
