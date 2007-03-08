@@ -1169,14 +1169,9 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, uint32_t *p
 
         if (!(env->eflags & IF_MASK))
         {
-#ifdef VBOX_RAW_V86
-            if(!(fFlags & VM_MASK))
-                return false;
-#else
             STAM_COUNTER_INC(&gStatRefuseIF0);
             Log2(("raw mode refused: IF (RawR3)\n"));
             return false;
-#endif
         }
 
         if (!(u32CR0 & CR0_WP_MASK) && EMIsRawRing0Enabled(env->pVM))
