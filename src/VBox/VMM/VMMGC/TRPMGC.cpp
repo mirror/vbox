@@ -93,7 +93,7 @@ TRPMGCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
 /**
  * \#PF Virtual Handler callback for Guest write access to the Guest's own current IDT.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -104,6 +104,16 @@ TRPMGCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
  */
 TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange)
 {
+    uint16_t    cbIDT;
+    RTGCPTR     GCPtrIDT    = (RTGCPTR)CPUMGetGuestIDTR(pVM, &cbIDT);
+#ifdef VBOX_STRICT
+    RTGCPTR     GCPtrIDTEnd = (RTGCPTR)((RTGCUINTPTR)GCPtrIDT + cbIDT + 1);
+    uint32_t    iTrap       = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT)/sizeof(VBOXIDTE);
+#endif
+
+    Assert(pvFault >= GCPtrIDT && pvFault < GCPtrIDTEnd);
+    Log(("trpmgcGuestIDTWriteHandler: write to gate %x\n", iTrap));
+
     ////LogCom(("trpmgcGuestIDTWriteHandler: eip=%08X pvFault=%08X pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
     VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
     /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
@@ -116,7 +126,7 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow IDT.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
