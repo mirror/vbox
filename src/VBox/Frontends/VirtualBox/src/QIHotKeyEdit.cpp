@@ -476,6 +476,10 @@ pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc( EventHandlerCallRef inHand
 
 bool QIHotKeyEdit::darwinKeyboardEvent( EventRef inEvent )
 {
+    /* ignore key changes unless we're the focus widget */
+    if (!hasFocus())
+        return false;
+
     UInt32 eventKind = ::GetEventKind( inEvent );
     switch ( eventKind ) {
         /*case kEventRawKeyDown:
