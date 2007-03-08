@@ -124,12 +124,7 @@ VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxSVC_INCS = \
 	include \
 	$(PATH_VBoxSVC) \
-	$(PATH_VBoxCOM) \
-	$(VBOX_PATH_SDK)/include
-ifneq ($(BUILD_TARGET),win)
-VBoxSVC_INCS += \
-	$(VBOX_XPCOM_INCS)
-endif
+	$(PATH_VBoxCOM)
 ifdef VBOX_WITH_XPCOM
 VBoxSVC_LIBS += \
 	$(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL) \
@@ -230,12 +225,7 @@ VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxC_INCS          = \
 	include \
 	$(PATH_VBoxC) \
-	$(PATH_VBoxCOM) \
-	$(VBOX_PATH_SDK)/include
-ifneq ($(BUILD_TARGET),win)
-VBoxC_INCS          += \
-	$(VBOX_XPCOM_INCS)
-endif
+	$(PATH_VBoxCOM)
 VBoxC_LDFLAGS.darwin = -install_name @executable_path/VBoxC.dylib
 ifdef VBOX_USE_VCC80
 VBoxC_LDFLAGS.win = /MANIFEST
@@ -363,8 +353,6 @@ VBoxCOM_DEFS.amd64 = _WIN32_WINNT=0x0510
 VBoxCOM_SOURCES = \
 	$(VBoxCOM_COMMON_SOURCES) \
 	$(PATH_VBoxCOM)/VirtualBox_i.c
-VBoxCOM_INCS = \
-	$(VBOX_PATH_SDK)/include
 
 
 #
@@ -375,9 +363,7 @@ VBoxXPCOM_SOURCES = \
 	$(VBoxCOM_COMMON_SOURCES) \
 	linux/helpers.cpp
 VBoxXPCOM_INCS = \
-	$(VBOX_PATH_SDK)/include \
-	include \
-	$(VBOX_XPCOM_INCS)
+	include
 
 
 #
