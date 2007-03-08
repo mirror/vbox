@@ -54,7 +54,8 @@ struc TRPM
 
     .aGuestTrapHandler  resd 256
 
-    .StatGCWriteGuestIDT  resb STAMCOUNTER_size
+    .StatGCWriteGuestIDTFault  resb STAMCOUNTER_size
+    .StatGCWriteGuestIDTHandled  resb STAMCOUNTER_size
     .StatSyncIDT        resb STAMPROFILE_size
     .aStatGCTraps       resb STAMPROFILEADV_size * 0x14
 

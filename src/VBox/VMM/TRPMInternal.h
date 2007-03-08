@@ -35,6 +35,9 @@
 /* Enable to allow trap forwarding in GC. */
 #define TRPM_FORWARD_TRAPS_IN_GC
 
+/** First interrupt handler. Used for validating input. */
+#define TRPM_HANDLER_INT_BASE  0x20
+
 __BEGIN_DECLS
 
 
@@ -145,7 +148,9 @@ typedef struct TRPM
     RTGCPTR         aGuestTrapHandler[256];
 
     /** GC: The number of times writes to the Guest IDT were detected. */
-    STAMCOUNTER     StatGCWriteGuestIDT;
+    STAMCOUNTER     StatGCWriteGuestIDTFault;
+    STAMCOUNTER     StatGCWriteGuestIDTHandled;
+
     /** HC: Profiling of the TRPMR3SyncIDT() method. */
     STAMPROFILE     StatSyncIDT;
     /** GC: Statistics for the trap handlers. */
@@ -175,8 +180,26 @@ typedef TRPM *PTRPM;
 TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange);
 TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange);
 
+/**
+ * Clear guest trap/interrupt gate handler
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   iTrap       Interrupt/trap number.
+ */
+TRPMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap);
+
 
 #ifdef IN_RING3
+
+/**
+ * Clear passthrough interrupt gate handler (reset to default handler)
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   iTrap       Trap/interrupt gate number.
+ */
+TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap);
 
 #endif
 

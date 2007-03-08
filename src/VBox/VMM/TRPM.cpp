@@ -96,9 +96,6 @@ typedef enum TRPMHANDLER
     TRPM_HANDLER_MAX
 } TRPMHANDLER, *PTRPMHANDLER;
 
-/** First interrupt handler. Used for validating input. */
-#define TRPM_HANDLER_INT_BASE  0x20
-
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -422,7 +419,6 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
-static int               trpmR3ClearGuestTrapHandler(PVM pVM, unsigned iTrap);
 
 
 /**
@@ -470,7 +466,8 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
     /*
      * Statistics.
      */
-    STAM_REG(pVM, &pVM->trpm.s.StatGCWriteGuestIDT,     STAMTYPE_COUNTER, "/TRPM/GC/Write/Guest/IDT",   STAMUNIT_OCCURENCES,     "The number of writes to the Guest IDT.");
+    STAM_REG(pVM, &pVM->trpm.s.StatGCWriteGuestIDTFault,   STAMTYPE_COUNTER, "/TRPM/GC/Write/IDT/Fault",   STAMUNIT_OCCURENCES,     "The number of writes to the Guest IDT.");
+    STAM_REG(pVM, &pVM->trpm.s.StatGCWriteGuestIDTHandled, STAMTYPE_COUNTER, "/TRPM/GC/Write/IDT/Handled", STAMUNIT_OCCURENCES,     "The number of writes to the Guest IDT.");
 
     STAM_REG(pVM, &pVM->trpm.s.StatSyncIDT,             STAMTYPE_PROFILE, "/PROF/TRPM/SyncIDT",         STAMUNIT_TICKS_PER_CALL, "Profiling of TRPMR3SyncIDT().");
 
@@ -871,7 +868,7 @@ TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
         Log(("TRPMR3SyncIDT: Clear all trap handlers.\n"));
         /** @todo inefficient, but simple */
         for (unsigned iGate=0;iGate<256;iGate++)
-            trpmR3ClearGuestTrapHandler(pVM, iGate);
+            trpmClearGuestTrapHandler(pVM, iGate);
 
         /* Scan them all (only the first time) */
         CSAMR3CheckGates(pVM, 0, 256);
@@ -1104,31 +1101,6 @@ TRPMR3DECL(RTGCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
 
 
 /**
- * Clear guest trap/interrupt gate handler
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   iTrap       Interrupt/trap number.
- */
-static int trpmR3ClearGuestTrapHandler(PVM pVM, unsigned iTrap)
-{
-    /*
-     * Validate.
-     */
-    if (iTrap >= ELEMENTS(pVM->trpm.s.aIdt))
-    {
-        AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %d!\n", iTrap));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap))
-        trpmR3ClearPassThroughHandler(pVM, iTrap);
-
-    pVM->trpm.s.aGuestTrapHandler[iTrap] = TRPM_INVALID_HANDLER;
-    return VINF_SUCCESS;
-}
-
-/**
  * Set guest trap/interrupt gate handler
  * Used for setting up trap gates used for kernel calls.
  *
@@ -1159,7 +1131,7 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
     {
         /* clear trap handler */
         Log(("TRPMR3SetGuestTrapHandler: clear handler %x\n", iTrap));
-        return trpmR3ClearGuestTrapHandler(pVM, iTrap);
+        return trpmClearGuestTrapHandler(pVM, iTrap);
     }
 
     /*
