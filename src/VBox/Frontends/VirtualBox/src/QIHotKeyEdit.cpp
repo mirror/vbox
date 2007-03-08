@@ -470,10 +470,6 @@ pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc( EventHandlerCallRef inHand
     return CallNextEventHandler (inHandlerCallRef, inEvent);
 }
 
-#ifdef DEBUG_bird
-# include <iprt/stream.h>
-#endif
-
 bool QIHotKeyEdit::darwinKeyboardEvent( EventRef inEvent )
 {
     /* ignore key changes unless we're the focus widget */
@@ -492,10 +488,6 @@ bool QIHotKeyEdit::darwinKeyboardEvent( EventRef inEvent )
 
             modifierMask = ::DarwinAdjustModifierMask(modifierMask);
             UInt32 changed = m_darwinKeyModifiers ^ modifierMask;
-#ifdef DEBUG_bird
-RTPrintf("old=%04x new=%04x changed=%04x %04x %04x\n",
-         m_darwinKeyModifiers, modifierMask, changed, GetCurrentEventKeyModifiers(), GetCurrentKeyModifiers());
-#endif
             m_darwinKeyModifiers = modifierMask;
 
             // skip key releases
@@ -504,7 +496,6 @@ RTPrintf("old=%04x new=%04x changed=%04x %04x %04x\n",
 
             // convert to keycode and skip keycodes we don't care about.
             unsigned keyCode = ::DarwinModifierMaskToDarwinKeycode( changed );
-RTPrintf("keyCode=%#x valid=%d\n", keyCode, isValidKey( keyCode ));
             if ( !keyCode || keyCode == ~0U || !isValidKey( keyCode ) )
                 break;
 
