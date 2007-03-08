@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
-#ifdef __AMD64__ /** @todo fix logging on __AMD64__ (swapgs) */
+#ifdef __AMD64__ /** @todo fix logging on __AMD64__ (swapgs) - this has been fixed now. please remove. */
 # define LOG_DISABLED
 #endif
 #include <VBox/vmm.h>
@@ -68,10 +68,10 @@ static PVM g_pVMAssert = 0;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifndef __AMD64__ /* doesn't link here */
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
 /** Pointer to the internal networking service instance. */
-PINTNET    g_pIntNet = 0;
-#endif
+PINTNET g_pIntNet = 0;
+#endif 
 
 
 /**
@@ -83,7 +83,7 @@ PINTNET    g_pIntNet = 0;
  */
 VMMR0DECL(int) ModuleInit(void)
 {
-#ifndef __AMD64__ /* doesn't link here */
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
     LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
     g_pIntNet = NULL;
     LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
@@ -108,7 +108,7 @@ VMMR0DECL(int) ModuleInit(void)
  */
 VMMR0DECL(void) ModuleTerm(void)
 {
-#ifndef __AMD64__ /* doesn't link here */
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
     LogFlow(("ModuleTerm:\n"));
     if (g_pIntNet)
     {
