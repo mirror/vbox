@@ -10315,18 +10315,33 @@ normal_post:
   rep
     stosw
 #else /* VBOX */
-  ;; zero out BIOS data area (40:00..40:ff) except word at 40:72
+  ;; zero out segment 0 (includes BIOS data area) except word at 40:72
   mov es, ax
-  mov di, #0x0400
+  xor di, di
   cld
-  mov cx, #0x0039 ;; 57 words
+  mov cx, #0x0239 ;; 569 words
   rep
     stosw
   inc di
   inc di
-  mov cx, #0x0046 ;; 70 words
+  mov cx, #0x7dc6 ;; 32198 words
   rep
     stosw
+  ;; zero out remaining base memory
+  xor eax, eax
+  xor bx, bx
+memory_zero_loop:
+  add bx, #0x1000
+  cmp bx, #0xa000
+  jae memory_cleared
+  mov es, bx
+  xor di, di
+  mov cx, #0x4000
+  rep
+    stosd
+  jmp memory_zero_loop
+memory_cleared:
+  xor bx, bx
 #endif
 
   call _log_bios_start
