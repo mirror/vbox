@@ -1301,10 +1301,9 @@ EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
     pRegFrame->eip = eip & 0xffff;
     pRegFrame->cs  = cs;
     
-    uMask = X86_EFL_TF|X86_EFL_AC|X86_EFL_ID|X86_EFL_VM|X86_EFL_IF|X86_EFL_IOPL|X86_EFL_NT|X86_EFL_VIF|X86_EFL_VIP;
-
-    eflags =    (pRegFrame->eflags.u32 & ~uMask)
-            |   (eflags & uMask);
+    /* Mask away all reserved bits */
+    uMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM | X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_ID;
+    eflags &= uMask;
 
 #ifndef IN_RING0
     CPUMRawSetEFlags(pVM, pRegFrame, eflags);
