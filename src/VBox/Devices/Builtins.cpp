@@ -30,7 +30,6 @@
 #include <VBox/usb.h>
 
 #include <VBox/log.h>
-#include <VBox/config.h>
 #include <iprt/assert.h>
 
 #include "Builtins.h"
