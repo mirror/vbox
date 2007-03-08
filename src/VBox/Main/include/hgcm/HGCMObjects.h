@@ -22,6 +22,9 @@
 #ifndef __HGCMOBJECTS__H
 #define __HGCMOBJECTS__H
 
+#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
+#include "Logging.h"
+
 #include <iprt/assert.h>
 #include <iprt/avl.h>
 #include <iprt/critsect.h>
@@ -53,8 +56,6 @@ class HGCMObject
 
         ObjectAVLCore Core;
 
-        virtual bool Reuse (void) { return false; };
-
     protected:
         virtual ~HGCMObject (void) {};
 
@@ -66,13 +67,17 @@ class HGCMObject
 
         void Reference (void)
         {
-            ASMAtomicIncS32 (&cRef);
+            int32_t refCnt = ASMAtomicIncS32 (&cRef);
+            
+            Log(("Reference: refCnt = %d\n", refCnt));
         }
 
         void Dereference (void)
         {
             int32_t refCnt = ASMAtomicDecS32 (&cRef);
 
+            Log(("Dereference: refCnt = %d\n", refCnt));
+            
             AssertRelease(refCnt >= 0);
 
             if (refCnt)
@@ -80,10 +85,7 @@ class HGCMObject
                 return;
             }
 
-            if (!Reuse ())
-            {
-                delete this;
-            }
+            delete this;
         }
 
         uint32_t Handle (void)
