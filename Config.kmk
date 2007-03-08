@@ -210,7 +210,8 @@ VBOX_WITH_TESTCASES = 1
 #VBOX_WITHOUT_COM = 1
 # Set this to skip installing the redistributable compiler runtime.
 #VBOX_WITHOUT_COMPILER_REDIST = 1
-
+# Enabled internal networking.
+VBOX_WITH_INTERNAL_NETWORKING = 1
 
 #
 # Skip stuff.
@@ -238,17 +239,35 @@ ifeq ($(BUILD_TARGET),l4)
  VBOX_WITH_MAIN=
  VBOX_WITH_DOCS=
  VBOX_WITH_ISCSI=
+ VBOX_WITH_INTERNAL_NETWORKING=
 endif
 
-# Most stuff doesn't build yet on the two new targets.
-ifeq ($(filter-out darwin os2 freebsd,$(BUILD_TARGET)),)
- #VBOX_WITH_VBOXBFE=
- ifneq ($(filter-out darwin,$(BUILD_TARGET)),)
-  VBOX_WITH_MAIN=
-  VBOX_WITH_VBOXSDL=
+# Darwin have to skip a few things at present.
+ifeq ($(BUILD_TARGET),darwin)
+ # Internal networking requires testing and possibly proper ring-3/ring0 separation.
+ VBOX_WITH_INTERNAL_NETWORKING=
+ # Don't bother with SDL ttf for now.
+ VBOX_WITH_SECURELABEL=
+ # Later.
+ VBOX_WITH_USB=
+ VBOX_WITH_TESTSUITE=
+ VBOX_WITH_INSTALLER=
+ VBOX_WITH_DOCS=
+ VBOX_WITH_VRDP=
+ VBOX_WITH_VRDP_AUTHMOD=
+ VBOX_WITH_VRDP_RDESKTOP=
+ ifdef VBOX_OSE
   VBOX_WITH_QTGUI=
-  VBOX_WITH_DEBUGGER_GUI=
  endif
+endif
+
+# Most stuff doesn't build yet on the new targets.
+ifeq ($(filter-out os2 freebsd solaris,$(BUILD_TARGET)),)
+ #VBOX_WITH_VBOXBFE=
+ VBOX_WITH_MAIN=
+ VBOX_WITH_VBOXSDL=
+ VBOX_WITH_QTGUI=
+ VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_INSTALLER=
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP=

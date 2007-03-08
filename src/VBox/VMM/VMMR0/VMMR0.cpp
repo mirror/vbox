@@ -580,7 +580,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
             return rc;
         }
 
-#if !defined(__L4__) && !defined(__AMD64__) /** @todo Port this to L4. */ /** @todo fix logging and other services problems on AMD64. */
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
         /*
          * Services.
          */
@@ -650,7 +650,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                     return VERR_NOT_SUPPORTED;
             }
         }
-#endif /* !__L4__ */
+#endif /* VBOX_WITH_INTERNAL_NETWORKING */
 
         /*
          * For profiling.
