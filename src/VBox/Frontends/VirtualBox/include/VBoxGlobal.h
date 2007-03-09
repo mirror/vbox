@@ -358,6 +358,8 @@ public:
 
     /* various helpers */
 
+    bool openURL (const QString &aURL);
+
     void languageChange();
 
     /* made public for internal purposes */

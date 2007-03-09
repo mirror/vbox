@@ -122,19 +122,22 @@ struct VBoxDefs
 
     /** Additional Qt event types. */
     enum {
-        ResizeEventType = QEvent::User + 0,
-        RepaintEventType = QEvent::User + 1,
-        MouseCapabilityEventType = QEvent::User + 2,
-        MousePointerChangeEventType = QEvent::User + 3,
-        MachineStateChangeEventType = QEvent::User + 4,
-        MachineDataChangeEventType = QEvent::User + 5,
-        MachineRegisteredEventType = QEvent::User + 6,
-        SessionStateChangeEventType = QEvent::User + 7,
-        SnapshotEventType = QEvent::User + 8,
-        RuntimeErrorEventType = QEvent::User + 9,
-        ModifierKeyChangeEventType = QEvent::User + 10,
+        ResizeEventType = QEvent::User,
+        RepaintEventType,
+        MouseCapabilityEventType,
+        MousePointerChangeEventType,
+        MachineStateChangeEventType,
+        MachineDataChangeEventType,
+        MachineRegisteredEventType,
+        SessionStateChangeEventType,
+        SnapshotEventType,
+        RuntimeErrorEventType,
+        ModifierKeyChangeEventType,
         EnumerateMediaEventType = QEvent::User + 100,
-        ActivateMenuEventType = QEvent::User + 101,
+#if defined (Q_WS_WIN)
+        ShellExecuteEventType,
+#endif
+        ActivateMenuEventType,
     };
 };
 
