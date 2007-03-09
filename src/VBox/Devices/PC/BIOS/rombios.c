@@ -124,6 +124,7 @@
 
 #ifdef VBOX
 #include "DevPcBios.h"
+#include <VBox/version.h>
 #endif
 
 #define BX_ROMBIOS32       0
@@ -211,10 +212,18 @@
 #endif
 #endif /* VBOX_SMP */
 
+#ifndef VBOX
 #define PANIC_PORT  0x400
 #define PANIC_PORT2 0x401
 #define INFO_PORT   0x402
 #define DEBUG_PORT  0x403
+#else /* VBOX */
+/* Redirect INFO output to backdoor logging port. */
+#define PANIC_PORT  0x400
+#define PANIC_PORT2 0x401
+#define INFO_PORT   0x504
+#define DEBUG_PORT  0x403
+#endif /* VBOX */
 
 // define this if you want to make PCIBIOS working on a specific bridge only
 // undef enables PCIBIOS when at least one PCI device is found
@@ -953,13 +962,14 @@ Bit16u cdrom_boot();
 
 #endif // BX_ELTORITO_BOOT
 
+#ifdef VBOX
+static char bios_cvs_version_string[] = "VirtualBox " VBOX_VERSION_STRING " built " __DATE__ " " __TIME__;
+#define BIOS_COPYRIGHT_STRING "InnoTek VirtualBox BIOS"
+#else /* !VBOX */
 static char bios_cvs_version_string[] = "$Revision: 1.176 $ $Date: 2006/12/30 17:13:17 $";
 
-#ifdef VBOX
-#define BIOS_COPYRIGHT_STRING "InnoTek VirtualBox BIOS"
-#else
 #define BIOS_COPYRIGHT_STRING "(c) 2002 MandrakeSoft S.A. Written by Kevin Lawton & the Bochs team."
-#endif
+#endif /* !VBOX */
 
 #define BIOS_PRINTF_HALT     1
 #define BIOS_PRINTF_SCREEN   2
@@ -978,7 +988,11 @@ static char bios_cvs_version_string[] = "$Revision: 1.176 $ $Date: 2006/12/30 17
 #else
 #  define BX_DEBUG(format, p...)
 #endif
+#ifdef VBOX
+#define BX_INFO(format, p...)   bios_printf(BIOS_PRINTF_INFO, "BIOS: " format, ##p)
+#else /* !VBOX */
 #define BX_INFO(format, p...)   bios_printf(BIOS_PRINTF_INFO, format, ##p)
+#endif /* !VBOX */
 #define BX_PANIC(format, p...)  bios_printf(BIOS_PRINTF_DEBHALT, format, ##p)
 
 #if DEBUG_ATA
@@ -1948,37 +1962,41 @@ print_boot_failure(cdboot, drive, reason, lastdrive)
   // reason: 0 signature check failed, 1 read error
   // lastdrive: 1 boot drive is the last one in boot sequence
 
-#ifdef VBOX
-  if (lastdrive == 1)
-  {
-    if (reason == 0)
-    {
-      BX_PANIC("No bootable medium found! System halted.\n");
-    }
-    else
-    {
-      BX_PANIC("Could not read from the boot medium! System halted.\n");
-    }
-  }
-#else /* !VBOX */
   if (cdboot)
+#ifndef VBOX
     bios_printf(BIOS_PRINTF_INFO | BIOS_PRINTF_SCREEN, "Boot from %s failed\n",drivetypes[2]);
-#ifdef VBOX
+#else /* VBOX */
+    BX_INFO("Boot from %s failed\n",drivetypes[2]);
   else if (lanboot)
-    bios_printf(BIOS_PRINTF_INFO | BIOS_PRINTF_SCREEN, "Boot from %s failed\n",drivetypes[3]);
+    BX_INFO("Boot from %s failed\n",drivetypes[3]);
 #endif /* VBOX */
   else if (drive & 0x80)
+#ifndef VBOX
     bios_printf(BIOS_PRINTF_INFO | BIOS_PRINTF_SCREEN, "Boot from %s %d failed\n", drivetypes[1],drivenum);
+#else /* VBOX */
+    BX_INFO("Boot from %s %d failed\n", drivetypes[1],drivenum);
+#endif /* VBOX */
   else
+#ifndef VBOX
     bios_printf(BIOS_PRINTF_INFO | BIOS_PRINTF_SCREEN, "Boot from %s %d failed\n", drivetypes[0],drivenum);
+#else /* VBOX */
+    BX_INFO("Boot from %s %d failed\n", drivetypes[0],drivenum);
+#endif /* VBOX */
 
   if (lastdrive==1) {
     if (reason==0)
+#ifndef VBOX
       BX_PANIC("Not a bootable disk\n");
+#else /* VBOX */
+      BX_PANIC("No bootable medium found! System halted.\n");
+#endif /* VBOX */
     else
+#ifndef VBOX
       BX_PANIC("Could not read the boot disk\n");
+#else /* VBOX */
+      BX_PANIC("Could not read from the boot medium! System halted.\n");
+#endif /* VBOX */
   }
-#endif /* !VBOX */
 }
 
 //--------------------------------------------------------------------------
@@ -1991,7 +2009,9 @@ print_cdromboot_failure( code )
 {
 #ifndef VBOX
   bios_printf(BIOS_PRINTF_SCREEN | BIOS_PRINTF_INFO, "CDROM boot failure code : %04x\n",code);
-#endif /* !VBOX */
+#else /* VBOX */
+  BX_INFO("CDROM boot failure code : %04x\n",code);
+#endif /* VBOX */
 
   return;
 }
@@ -2391,16 +2411,32 @@ void ata_detect( )
 
       switch (translation) {
         case ATA_TRANSLATION_NONE:
+#ifndef VBOX
           BX_INFO("none");
+#else /* VBOX */
+          bios_printf(BIOS_PRINTF_INFO, "none");
+#endif /* VBOX */
           break;
         case ATA_TRANSLATION_LBA:
+#ifndef VBOX
           BX_INFO("lba");
+#else /* VBOX */
+          bios_printf(BIOS_PRINTF_INFO, "lba");
+#endif /* VBOX */
           break;
         case ATA_TRANSLATION_LARGE:
+#ifndef VBOX
           BX_INFO("large");
+#else /* VBOX */
+          bios_printf(BIOS_PRINTF_INFO, "large");
+#endif /* VBOX */
           break;
         case ATA_TRANSLATION_RECHS:
+#ifndef VBOX
           BX_INFO("r-echs");
+#else /* VBOX */
+          bios_printf(BIOS_PRINTF_INFO, "r-echs");
+#endif /* VBOX */
           break;
         }
       switch (translation) {
@@ -2437,7 +2473,11 @@ void ata_detect( )
         }
       // clip to 1024 cylinders in lchs
       if (cylinders > 1024) cylinders=1024;
+#ifndef VBOX
       BX_INFO(" LCHS=%d/%d/%d\n", cylinders, heads, spt);
+#else /* VBOX */
+      bios_printf(BIOS_PRINTF_INFO, " LCHS=%d/%d/%d\n", cylinders, heads, spt);
+#endif /* VBOX */
 
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.heads, heads);
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.cylinders, cylinders);
