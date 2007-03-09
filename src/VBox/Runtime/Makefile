@@ -270,6 +270,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/filelocks-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
@@ -304,6 +305,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/filelocks-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
@@ -335,6 +337,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/filelocks-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
@@ -360,6 +363,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/filelocks-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
@@ -409,6 +413,7 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/env-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/filelocks-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/rand-posix.cpp \
