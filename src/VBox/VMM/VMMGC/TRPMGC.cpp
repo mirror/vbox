@@ -110,27 +110,27 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 #ifdef VBOX_STRICT
     RTGCPTR     GCPtrIDTEnd = (RTGCPTR)((RTGCUINTPTR)GCPtrIDT + cbIDT + 1);
 #endif
-    uint32_t    iTrap       = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT)/sizeof(VBOXIDTE);
+    uint32_t    iGate       = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT)/sizeof(VBOXIDTE);
 
     Assert(pvFault >= GCPtrIDT && pvFault < GCPtrIDTEnd);
     Assert(pvRange == GCPtrIDT);
 
 #if 0
     /* Check if we can handle the write here. */    
-    if (     iTrap != 3                                         /* Gate 3 is handled differently; could do it here as well, but let ring 3 handle this case for now. */
-        &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap)) /* Passthru gates need special attention too. */
+    if (     iGate != 3                                         /* Gate 3 is handled differently; could do it here as well, but let ring 3 handle this case for now. */
+        &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iGate)) /* Passthru gates need special attention too. */
     {
         uint32_t cb;
         int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
         if (VBOX_SUCCESS(rc) && cb)
         {
-            uint32_t iTrap1 = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT + cb - 1)/sizeof(VBOXIDTE);
+            uint32_t iGate1 = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT + cb - 1)/sizeof(VBOXIDTE);
 
-            Log(("trpmgcGuestIDTWriteHandler: write to gate %x (%x) offset %x cb=%d\n", iTrap, iTrap1, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT, cb));
+            Log(("trpmgcGuestIDTWriteHandler: write to gate %x (%x) offset %x cb=%d\n", iGate, iGate1, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT, cb));
 
-            trpmClearGuestTrapHandler(pVM, iTrap);
-            if (iTrap != iTrap1)
-                trpmClearGuestTrapHandler(pVM, iTrap1);
+            trpmClearGuestTrapHandler(pVM, iGate);
+            if (iGate != iGate1)
+                trpmClearGuestTrapHandler(pVM, iGate1);
 
             STAM_COUNTER_INC(&pVM->trpm.s.StatGCWriteGuestIDTHandled);
             return VINF_SUCCESS;
@@ -138,7 +138,7 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     }
 #endif
 
-    Log(("trpmgcGuestIDTWriteHandler: write to gate %x offset %x\n", iTrap, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT));
+    Log(("trpmgcGuestIDTWriteHandler: write to gate %x offset %x\n", iGate, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT));
 
     /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
     VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
