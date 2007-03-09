@@ -83,11 +83,22 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  *
  * @returns Flat address.
  * @param   pVM     VM Handle.
+ * @param   eflags  Current eflags
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr)
+SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr)
 {
+    /*
+     * Deal with real mode first.
+     */
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  eflags.Bits.u1VM)
+    {
+        RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + (Sel << 4);
+        return (RTGCPTR)uFlat;
+    }
+
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmToFlat(pVM, Sel, Addr);
 
@@ -102,6 +113,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGC
  *
  * @returns VBox status
  * @param   pVM     VM Handle.
+ * @param   eflags  Current eflags
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  * @param   fFlags  SELMTOFLAT_FLAGS_*
@@ -110,13 +122,13 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGC
  * @param   pcb     Where to store the bytes from *ppvGC which can be accessed according to
  *                  the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
+SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
     /*
      * Deal with real mode first.
      */
-    if (CPUMIsGuestInRealMode(pVM)
-        /** @todo  || (fFlags & SELMTOFLAT_FLAGS_V86)*/)
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  eflags.Bits.u1VM)
     {
         if (pcb)
             *pcb = 0x10000 - ((RTGCUINTPTR)Addr & 0xffff);
@@ -352,6 +364,7 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
  *
  * @returns Flat address.
  * @param   pVM          VM Handle.
+ * @param   eflags       Current eflags
  * @param   SelCPL       Current privilege level. Get this from SS - CS might be conforming!
  *                       A full selector can be passed, we'll only use the RPL part.
  * @param   SelCS        Selector part.
@@ -359,8 +372,19 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
  * @param   Addr         Address part.
  * @param   ppvFlat      Where to store the flat address.
  */
-SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
+SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
+    /* Special handling for V86 mode */
+    if (eflags.Bits.u1VM)
+    {
+        if (ppvFlat)
+        {
+            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + (SelCS << 4);
+            *ppvFlat = (RTGCPTR)uFlat;
+        }
+        return VINF_SUCCESS;
+    }
+
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmValidateAndConvertCSAddr(pVM, SelCPL, SelCS, Addr, ppvFlat);
 
@@ -440,11 +464,15 @@ static bool selmIsSelector32Bit(PVM pVM, RTSEL Sel)
  * @returns True if it is 32-bit.
  * @returns False if it is 16-bit.
  * @param   pVM        VM Handle.
+ * @param   eflags     Current eflags register
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
+SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
 {
+    if (eflags.Bits.u1VM)
+        return false;
+
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmIsSelector32Bit(pVM, Sel);
 

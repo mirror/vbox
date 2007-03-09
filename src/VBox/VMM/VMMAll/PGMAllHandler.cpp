@@ -1057,11 +1057,11 @@ inline int pgmDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32
 PGMDECL(int) pgmGuestROMWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     DISCPUSTATE Cpu;
-    Cpu.mode = SELMIsSelector32Bit(pVM, pRegFrame->cs, &pRegFrame->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    Cpu.mode = SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT;
     if (Cpu.mode == CPUMODE_32BIT)
     {
         RTGCPTR GCPtrCode;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &GCPtrCode);
+        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &GCPtrCode);
         if (VBOX_SUCCESS(rc))
         {
             uint32_t cbOp;

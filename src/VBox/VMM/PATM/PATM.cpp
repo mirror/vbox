@@ -3337,7 +3337,7 @@ PATMR3DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx)
     RTGCPTR     pPatchTargetGC = 0;
 
     pBranchTarget = pCtx->edx;
-    pBranchTarget = SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pBranchTarget);
+    pBranchTarget = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pBranchTarget);
 
     /* First we check if the duplicate function target lies in some existing function patch already. Will save some space. */
     pPage = pBranchTarget & PAGE_BASE_GC_MASK;
@@ -3954,7 +3954,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
     if (    !pCtx->eflags.Bits.u1VM
         &&  (pCtx->ss & X86_SEL_RPL) == 0)
     {
-        RTGCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pInstrGC);
+        RTGCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pInstrGC);
         Assert(pInstrGCFlat == pInstrGC);
     }
 #endif
@@ -5906,7 +5906,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTGCPTR pEip, RTGCPTR *
 #endif
 
     /* Return original address, correct by subtracting the CS base address. */
-    *ppNewEip = pNewEip - SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, 0);
+    *ppNewEip = pNewEip - SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, 0);
 
     /* Reset the PATM stack. */
     CTXSUFF(pVM->patm.s.pGCState)->Psp = PATM_STACK_SIZE;

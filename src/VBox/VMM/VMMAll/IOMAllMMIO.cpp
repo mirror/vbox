@@ -215,102 +215,6 @@ inline int iomGCMMIODoRead(PVM pVM, CTXALLSUFF(PIOMMMIORANGE) pRange, RTGCPHYS G
 }
 
 
-#if 0
-/**
- * Calculates effective address (offset from current segment register) for
- * instruction parameter, i.e. [eax + esi*4 + 1234h] -> virtual address.
- *
- * @returns true on success.
- * @param   pCpu                Pointer to current disassembler context.
- * @param   pParam              Pointer to parameter of instruction to calc EA.
- * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
- * @param   ppAddr              Where to store result address.
- */
-static bool iomGCCalcParamEA(PDISCPUSTATE pCpu, POP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, void **ppAddr)
-{
-    uint8_t *pAddr = 0;
-
-    if (pCpu->addrmode == CPUMODE_32BIT)
-    {
-        /* 32-bit addressing. */
-        if (pParam->flags & USE_BASE)
-            pAddr += ACCESS_REG32(pRegFrame, pParam->base.reg_gen32);
-        if (pParam->flags & USE_INDEX)
-        {
-            unsigned i = ACCESS_REG32(pRegFrame, pParam->index.reg_gen);
-            if (pParam->flags & USE_SCALE)
-                i *= pParam->scale;
-            pAddr += i;
-        }
-        if (pParam->flags & USE_DISPLACEMENT8)
-            pAddr += pParam->disp8;
-        else
-            if (pParam->flags & USE_DISPLACEMENT16)
-            pAddr += pParam->disp16;
-        else
-            if (pParam->flags & USE_DISPLACEMENT32)
-            pAddr += pParam->disp32;
-
-        if (pParam->flags & (USE_BASE | USE_INDEX | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32))
-        {
-            /* EA present in parameter. */
-            *ppAddr = pAddr;
-            return true;
-        }
-    }
-    else
-    {
-        /* 16-bit addressing. */
-        if (pParam->flags & USE_BASE)
-            pAddr += ACCESS_REG16(pRegFrame, pParam->base.reg_gen16);
-        if (pParam->flags & USE_INDEX)
-            pAddr += ACCESS_REG16(pRegFrame, pParam->index.reg_gen);
-        if (pParam->flags & USE_DISPLACEMENT8)
-            pAddr += pParam->disp8;
-        else
-            if (pParam->flags & USE_DISPLACEMENT16)
-            pAddr += pParam->disp16;
-
-        if (pParam->flags & (USE_BASE | USE_INDEX | USE_DISPLACEMENT8 | USE_DISPLACEMENT16))
-        {
-            /* EA present in parameter. */
-            *ppAddr = pAddr;
-            return true;
-        }
-    }
-
-    /* Error exit. */
-    return false;
-}
-
-/**
- * Calculates the size of register parameter.
- *
- * @returns 1, 2, 4 on success.
- * @returns 0 if non-register parameter.
- * @param   pCpu                Pointer to current disassembler context.
- * @param   pParam              Pointer to parameter of instruction to proccess.
- */
-static unsigned iomGCGetRegSize(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam)
-{
-    if (pParam->flags & (USE_BASE | USE_INDEX | USE_SCALE | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_IMMEDIATE8 | USE_IMMEDIATE16 | USE_IMMEDIATE32 | USE_IMMEDIATE16_SX8 | USE_IMMEDIATE32_SX8))
-        return 0;
-
-    if (pParam->flags & USE_REG_GEN32)
-        return 4;
-
-    if (pParam->flags & USE_REG_GEN16)
-        return 2;
-
-    if (pParam->flags & USE_REG_GEN8)
-        return 1;
-
-    if (pParam->flags & USE_REG_SEG)
-        return 2;
-    return 0;
-}
-#endif
-
 /**
  * Returns the contents of register or immediate data of instruction's parameter.
  *
@@ -607,6 +511,12 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
             return VINF_SUCCESS;
     }
 
+    uint32_t cpl;
+    if (pRegFrame->eflags.Bits.u1VM)
+        cpl = 3;
+    else
+        cpl = (pRegFrame->ss & X86_SEL_RPL);
+
     /*
      * Get data size.
      */
@@ -638,14 +548,14 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
 
         /* Convert source address ds:esi. */
         uint8_t *pu8Virt;
-        rc = SELMToFlatEx(pVM, pRegFrame->ds, (RTGCPTR)pRegFrame->esi,
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi,
                                 SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                                 (PRTGCPTR)&pu8Virt, NULL);
         if (VBOX_SUCCESS(rc))
         {
 
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
-            rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pu8Virt, cTransfers * cbSize, ((pRegFrame->ss & X86_SEL_RPL) == 3) ? X86_PTE_US : 0);
+            rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pu8Virt, cTransfers * cbSize, (cpl == 3) ? X86_PTE_US : 0);
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
@@ -694,7 +604,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
 
         /* Convert destination address. */
         uint8_t *pu8Virt;
-        rc = SELMToFlatEx(pVM, pRegFrame->es, (RTGCPTR)pRegFrame->edi,
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi,
                                 SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                                 (PRTGCPTR)&pu8Virt, NULL);
         if (VBOX_FAILURE(rc))
@@ -750,7 +660,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
             STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
 
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
-            rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pu8Virt, cTransfers * cbSize, X86_PTE_RW | (((pRegFrame->ss & X86_SEL_RPL) == 3) ? X86_PTE_US : 0));
+            rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pu8Virt, cTransfers * cbSize, X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
@@ -1316,10 +1226,6 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     Log3(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%p eip=%RGv\n",
           GCPhysFault, uErrorCode, pvFault, pRegFrame->eip));
 
-    /** @todo V86 mode; SELM functions don't handle this */
-    if (pRegFrame->eflags.Bits.u1VM)
-        return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
-
     /*
      * Find the corresponding MMIO range.
      */
@@ -1355,10 +1261,10 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
      * Convert CS:EIP to linear address and initialize the disassembler.
      */
     DISCPUSTATE cpu;
-    cpu.mode = SELMIsSelector32Bit(pVM, pRegFrame->cs, &pRegFrame->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    cpu.mode = SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT;
 
     RTGCPTR pvCode;
-    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)(cpu.mode == CPUMODE_32BIT ? pRegFrame->eip : pRegFrame->eip & 0xffff), &pvCode);
+    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)(cpu.mode == CPUMODE_32BIT ? pRegFrame->eip : pRegFrame->eip & 0xffff), &pvCode);
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Internal error! cs:eip=%04x:%08x\n", pRegFrame->cs, pRegFrame->eip));

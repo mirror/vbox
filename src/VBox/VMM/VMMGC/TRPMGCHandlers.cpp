@@ -348,7 +348,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
          * Decode the instruction.
          */
         RTGCPTR PC;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
+        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
         if (VBOX_FAILURE(rc))
         {
             Log(("TRPMGCTrap06Handler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n", pRegFrame->cs, pRegFrame->eip, pRegFrame->ss & X86_SEL_RPL, rc));
@@ -422,7 +422,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      * accessing user code. need to handle it somehow in future!
      */
     uint8_t *pu8Code;
-    if (SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, (PRTGCPTR)&pu8Code) == VINF_SUCCESS)
+    if (SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, (PRTGCPTR)&pu8Code) == VINF_SUCCESS)
     {
         /*
          * First skip possible instruction prefixes, such as:
@@ -710,14 +710,15 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         /** @note hackish as the cpumctxcore structure doesn't contain the right value */
         X86EFLAGS eflags;
         eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame);
-        if (eflags.Bits.u2IOPL == 0)
+        if (eflags.Bits.u2IOPL != 3)
         {
+            Assert(eflags.Bits.u2IOPL == 0);
+
             int rc = TRPMForwardTrap(pVM, pRegFrame, 0xD, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP);
             Assert(rc == VINF_EM_RAW_GUEST_TRAP);
             return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
-
-        return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
+        /* iopl=3 means we can safely interpret e.g. io instructions. */
     }
 
     STAM_PROFILE_ADV_START(&pVM->trpm.s.StatTrap0dDisasm, a);
@@ -725,7 +726,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      * Decode the instruction.
      */
     RTGCPTR PC;
-    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
+    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
     if (VBOX_FAILURE(rc))
     {
         Log(("trpmGCTrap0dHandler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n",
@@ -762,12 +763,11 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         return trpmGCTrap0dHandlerRing0(pVM, pRegFrame, &Cpu, PC);
 
     /*
-     * Deal with Ring-3 GPs.
+     * Deal with Ring-3 GPs. (we currently ignore V86 code)
      */
     if (!pRegFrame->eflags.Bits.u1VM)
         return trpmGCTrap0dHandlerRing3(pVM, pRegFrame, &Cpu);
 
-    /** @todo what about V86 mode? */
     return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
 }
 
