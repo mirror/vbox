@@ -898,7 +898,7 @@ static char * pdmR3FileConstruct(const char *pszDir, const char *pszFile, const 
     unsigned cchPath = cchDir + 1 + cchFile + cchDefaultExt + 1;
     if (cchPath > RTPATH_MAX)
     {
-        AssertMsgFailed("Path too long!\n");
+        AssertMsgFailed(("Path too long!\n"));
         return NULL;
     }
 
