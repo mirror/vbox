@@ -75,7 +75,7 @@ CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 
     Assert(pPATMGCState->fPIF || fPatchCode);
     /** When patch code is executing instructions that must complete, then we must *never* interrupt it. */
-    if (!pPATMGCState->fPIF && fPatchCode)
+    if (!pPATMGCState->fPIF && fPatchCode)        
     {
         Log(("CSAMGCCodePageWriteHandler: fPIF=0 -> stack fault in patch generated code at %VGv!\n", pRegFrame->eip));
         /** @note there are cases when pages previously used for code are now used for stack; patch generated code will fault (pushf))
@@ -90,16 +90,29 @@ CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
         return VINF_SUCCESS;
     }
 
-    Log(("CSAMGCCodePageWriteHandler: code page write at %VGv original address %VGv\n", pvFault, (RTGCUINTPTR)pvRange + offRange));
-    rc = PATMGCHandleWriteToPatchPage(pVM, pRegFrame, (RTGCPTR)((RTGCUINTPTR)pvRange + offRange), 4 /** @todo */);
-    if (rc == VINF_SUCCESS)
-        return rc;
-    if (rc == VINF_EM_RAW_EMULATE_INSTR)
+    uint32_t cpl;
+    
+    if (pRegFrame->eflags.Bits.u1VM)
+        cpl = 3;
+    else
+        cpl = (pRegFrame->ss & X86_SEL_RPL);
+
+    Log(("CSAMGCCodePageWriteHandler: code page write at %VGv original address %VGv (cpl=%d)\n", pvFault, (RTGCUINTPTR)pvRange + offRange, cpl));
+
+    /* If user code is modifying one of our monitored pages, then we can safely make it r/w as it's no longer being used for supervisor code. */
+    if (cpl != 3)
     {
-        STAM_COUNTER_INC(&pVM->csam.s.StatDangerousWrite);
-        return VINF_EM_RAW_EMULATE_INSTR;
+        rc = PATMGCHandleWriteToPatchPage(pVM, pRegFrame, (RTGCPTR)((RTGCUINTPTR)pvRange + offRange), 4 /** @todo */);
+        if (rc == VINF_SUCCESS)
+            return rc;
+        if (rc == VINF_EM_RAW_EMULATE_INSTR)
+        {
+            STAM_COUNTER_INC(&pVM->csam.s.StatDangerousWrite);
+            return VINF_EM_RAW_EMULATE_INSTR;
+        }
+        Assert(rc == VERR_PATCH_NOT_FOUND);
     }
-    Assert(rc == VERR_PATCH_NOT_FOUND);
+
     VM_FF_SET(pVM, VM_FF_CSAM_FLUSH_DIRTY_PAGE);
 
     /* Note that pvFault might be a different address in case of aliases. So use pvRange + offset instead!. */
