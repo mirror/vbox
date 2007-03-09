@@ -1644,8 +1644,8 @@ int emR3RawRingSwitch(PVM pVM)
         {
             if (pCtx->SysEnter.cs != 0)
             {
-                rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip), 
-                                        SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
+                rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+                                        SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
                 if (VBOX_SUCCESS(rc))
                 {
                     DBGFR3DisasInstrCurrentLog(pVM, "Patched sysenter instruction");
@@ -1851,8 +1851,8 @@ int emR3RawPrivileged(PVM pVM)
             && !pCtx->eflags.Bits.u1VM
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
-            int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip), 
-                                        SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
+            int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+                                        SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
             if (VBOX_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
@@ -1959,7 +1959,7 @@ int emR3RawPrivileged(PVM pVM)
 #endif
         if (    (pCtx->ss & X86_SEL_RPL) == 0
             &&  !pCtx->eflags.Bits.u1VM
-            &&  SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid))
+            &&  SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid))
         {
             uint32_t size;
 
@@ -2181,8 +2181,8 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Memory mapped I/O access - attempt to patch the instruction
          */
         case VINF_PATM_HC_MMIO_PATCH_READ:
-            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip), 
-                                    PATMFL_MMIO_ACCESS | (SELMIsSelector32Bit(pVM, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0));
+            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+                                    PATMFL_MMIO_ACCESS | (SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0));
             if (VBOX_FAILURE(rc))
                 rc = emR3RawExecuteInstruction(pVM, "MMIO");
             break;
@@ -2432,9 +2432,9 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
 
         /* Prefetch pages for EIP and ESP */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
-        rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip));
+        rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip));
         if (rc == VINF_SUCCESS)
-            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->ss, &pCtx->ssHid, pCtx->esp));
+            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->ss, &pCtx->ssHid, pCtx->esp));
         if (rc != VINF_SUCCESS)
         {
             if (rc != VINF_PGM_SYNC_CR3)
@@ -2734,9 +2734,9 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
             Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT));
 
             /* Prefetch pages for EIP and ESP */
-            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->cs, &pCtx->csHid, pCtx->eip));
+            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip));
             if (rc == VINF_SUCCESS)
-                rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->ss, &pCtx->ssHid, pCtx->esp));
+                rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->ss, &pCtx->ssHid, pCtx->esp));
             if (rc != VINF_SUCCESS)
             {
                 if (rc != VINF_PGM_SYNC_CR3)

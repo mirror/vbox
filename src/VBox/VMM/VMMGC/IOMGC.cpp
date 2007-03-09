@@ -553,7 +553,7 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 
         /* Convert destination address es:edi. */
         RTGCPTR GCPtrDst;
-        rc = SELMToFlatEx(pVM, pRegFrame->es, (RTGCPTR)pRegFrame->edi,
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           &GCPtrDst, NULL);
         if (VBOX_FAILURE(rc))
@@ -658,7 +658,7 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
 
         /* Convert source address ds:esi. */
         RTGCPTR GCPtrSrc;
-        rc = SELMToFlatEx(pVM, pRegFrame->ds, (RTGCPTR)pRegFrame->esi,
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           &GCPtrSrc, NULL);
         if (VBOX_FAILURE(rc))

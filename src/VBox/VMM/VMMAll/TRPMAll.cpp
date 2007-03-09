@@ -491,7 +491,12 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 
             /* Note: SELMValidateAndConvertCSAddr checks for code type, memory type, selector validity. */
             /** @todo dpl <= cpl else GPF */
-            rc = SELMValidateAndConvertCSAddr(pVM, 0, GuestIdte.Gen.u16SegSel, NULL, pHandler, &dummy);
+
+            /** @note don't use current eflags as we might be in V86 mode and the IDT always contains protected mode selectors */
+            X86EFLAGS fakeflags;
+            fakeflags.u32 = 0;    
+
+            rc = SELMValidateAndConvertCSAddr(pVM, fakeflags, 0, GuestIdte.Gen.u16SegSel, NULL, pHandler, &dummy);
             if (rc == VINF_SUCCESS)
             {
                 VBOXGDTR gdtr = {0};
@@ -557,7 +562,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     if (   !esp_r0
                         || !ss_r0
                         || (ss_r0 & X86_SEL_RPL) != ((dpl == 0) ? 1 : dpl)
-                        || SELMToFlatEx(pVM, ss_r0, (RTGCPTR)esp_r0, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
+                        || SELMToFlatEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
                        )
                     {
                         Log(("Invalid ring 0 stack %04X:%VGv\n", ss_r0, esp_r0));
@@ -571,7 +576,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     esp_r0 = pRegFrame->esp;
 
                     if (    eflags.Bits.u1VM    /* illegal */
-                        ||  SELMToFlatEx(pVM, ss_r0, (RTGCPTR)esp_r0, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
+                        ||  SELMToFlatEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
                     {
                         AssertMsgFailed(("Invalid stack %04X:%VGv??? (VM=%d)\n", ss_r0, esp_r0, eflags.Bits.u1VM));
                         goto failure;

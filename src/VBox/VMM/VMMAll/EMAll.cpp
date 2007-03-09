@@ -130,7 +130,7 @@ inline int emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_
 EMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
 {
     RTGCPTR GCPtrInstr;
-    int rc = SELMValidateAndConvertCSAddr(pVM, pCtxCore->ss, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid, (RTGCPTR)pCtxCore->eip, &GCPtrInstr);
+    int rc = SELMValidateAndConvertCSAddr(pVM, pCtxCore->eflags, pCtxCore->ss, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid, (RTGCPTR)pCtxCore->eip, &GCPtrInstr);
     if (VBOX_FAILURE(rc))
     {
         Log(("EMInterpretDisasOne: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n",
@@ -154,7 +154,7 @@ EMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pC
  */
 EMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
 {
-    int rc = DISCoreOneEx(GCPtrInstr, SELMIsSelector32Bit(pVM, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT,
+    int rc = DISCoreOneEx(GCPtrInstr, SELMIsSelector32Bit(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT,
 #ifdef IN_GC
                           NULL, NULL,
 #else
@@ -191,10 +191,10 @@ EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFa
     /*
      * Only allow 32-bit code.
      */
-    if (SELMIsSelector32Bit(pVM, pRegFrame->cs, &pRegFrame->csHid))
+    if (SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid))
     {
         RTGCPTR pbCode;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pbCode);
+        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pbCode);
         if (VBOX_SUCCESS(rc))
         {
             uint32_t    cbOp;
@@ -541,11 +541,11 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             RTGCPTR pStackVal;
 
             /* Read stack value first */
-            if (SELMIsSelector32Bit(pVM, pRegFrame->ss, &pRegFrame->ssHid) == false)
+            if (SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == false)
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */
-            pStackVal = SELMToFlat(pVM, pRegFrame->ss, &pRegFrame->ssHid, (RTGCPTR)pRegFrame->esp);
+            pStackVal = SELMToFlat(pVM, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid, (RTGCPTR)pRegFrame->esp);
             if (pStackVal == 0)
                 return VERR_EM_INTERPRETER;
 
@@ -1748,7 +1748,7 @@ static int emInterpretSti(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     pGCState->uVMFlags |= X86_EFL_IF;
 
     Assert(pRegFrame->eflags.u32 & X86_EFL_IF);
-    Assert(pvFault == SELMToFlat(pVM, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip));
+    Assert(pvFault == SELMToFlat(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip));
 
     pVM->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pCpu->opsize;
     VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);
@@ -1852,7 +1852,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 
     /* In HWACCM mode we can execute 16 bits code. Our emulation above can't cope with that yet. */
     /** @note if not in HWACCM mode, then we will never execute 16 bits code, so don't bother checking. */
-    if (HWACCMIsEnabled(pVM) && !SELMIsSelector32Bit(pVM, pRegFrame->cs, &pRegFrame->csHid))
+    if (HWACCMIsEnabled(pVM) && !SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid))
         return VERR_EM_INTERPRETER;
 
     /** @note we could ignore PREFIX_LOCK here. Need to take special precautions when/if we support SMP in the guest.
