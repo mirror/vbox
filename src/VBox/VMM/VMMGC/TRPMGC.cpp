@@ -114,7 +114,6 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 
     Assert(pvFault >= GCPtrIDT && pvFault < GCPtrIDTEnd);
     Assert(pvRange == GCPtrIDT);
-    Log(("trpmgcGuestIDTWriteHandler: write to gate %x offset %x\n", iTrap, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT));
 
 #if 0
     /* Check if we can handle the write here. */    
@@ -125,12 +124,21 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
         int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
         if (VBOX_SUCCESS(rc) && cb)
         {
+            uint32_t iTrap1 = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT + cb - 1)/sizeof(VBOXIDTE);
+
+            Log(("trpmgcGuestIDTWriteHandler: write to gate %x (%x) offset %x cb=%d\n", iTrap, iTrap1, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT, cb));
+
             trpmClearGuestTrapHandler(pVM, iTrap);
+            if (iTrap != iTrap1)
+                trpmClearGuestTrapHandler(pVM, iTrap1);
+
             STAM_COUNTER_INC(&pVM->trpm.s.StatGCWriteGuestIDTHandled);
             return VINF_SUCCESS;
         }
     }
 #endif
+
+    Log(("trpmgcGuestIDTWriteHandler: write to gate %x offset %x\n", iTrap, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT));
 
     /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
     VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
