@@ -141,10 +141,11 @@ SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTs
  *
  * @returns Flat address.
  * @param   pVM     VM Handle.
+ * @param   eflags  Current eflags
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr);
+SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr);
 
 /** Flags for SELMToFlatEx().
  * @{ */
@@ -173,6 +174,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGC
  *
  * @returns VBox status
  * @param   pVM     VM Handle.
+ * @param   eflags  Current eflags
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  * @param   fFlags  SELMTOFLAT_FLAGS_*
@@ -181,13 +183,14 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGC
  * @param   pcb     Where to store the bytes from *ppvGC which can be accessed according to
  *                  the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
+SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
 
 /**
  * Validates and converts a GC selector based code address to a flat address.
  *
  * @returns Flat address.
  * @param   pVM          VM Handle.
+ * @param   eflags       Current eflags
  * @param   SelCPL       Current privilege level. Get this from SS - CS might be conforming!
  *                       A full selector can be passed, we'll only use the RPL part.
  * @param   SelCS        Selector part.
@@ -195,7 +198,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PR
  * @param   Addr         Address part.
  * @param   ppvFlat      Where to store the flat address.
  */
-SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat);
+SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat);
 
 /**
  * Checks if a selector is 32-bit or 16-bit.
@@ -203,10 +206,11 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, C
  * @returns True if it is 32-bit.
  * @returns False if it is 16-bit.
  * @param   pVM        VM Handle.
+ * @param   eflags     Current eflags register
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel);
+SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel);
 
 /**
  * Returns flat address and limit of LDT by LDT selector.
