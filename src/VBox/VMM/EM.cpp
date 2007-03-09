@@ -1731,6 +1731,7 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
     {
 #ifdef LOG_ENABLED
         DBGFR3InfoLog(pVM, "cpumguest", "Trap in patch code");
+        DBGFR3DisasInstrCurrentLog(pVM, "Patch code"); 
 
         DISCPUSTATE Cpu;
         int         rc;
