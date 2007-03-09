@@ -522,14 +522,24 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86SetGamma(pScrn, gzeros);
 
-    /* If no modes where specified for this display, add a default mode */
-    if (!pScrn->display->modes || !*pScrn->display->modes)
+    /* To get around the problem of SUSE specifying a single, invalid mode in their Xorg.conf
+       by default, we add an additional mode to the end of the user specified list.  This means
+       that if all user modes are invalid, X will try our mode before falling back to its standard
+       mode list. */
+    if (pScrn->display->modes == NULL)
     {
-        if ((pScrn->display->modes = xnfalloc(2 * sizeof(char*))))
-        {
-            pScrn->display->modes[0] = "1024x768";
-            pScrn->display->modes[1] = NULL;
-        }
+        /* The user specified no modes at all - specify 1024x768 as a default. */
+        pScrn->display->modes = xnfalloc(2 * sizeof(char*));
+        pScrn->display->modes[0] = "1024x768";
+        pScrn->display->modes[1] = NULL;
+    }
+    else
+    {
+        /* Add 1024x768 to the end of the mode list in case the others are all invalid. */
+        for (i = 0; pScrn->display->modes[i] != NULL; i++);
+        pScrn->display->modes = xnfrealloc(pScrn->display->modes, (i + 2) * sizeof(char *));
+        pScrn->display->modes[i] = "1024x768";
+        pScrn->display->modes[i + 1] = NULL;
     }
 
     /* Filter out video modes not supported by the virtual hardware
