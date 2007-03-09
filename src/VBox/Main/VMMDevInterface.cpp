@@ -478,11 +478,11 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
     LogFlow(("VMMDev::drvReset: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_HGCM
     /* Unload Shared Folder HGCM service */
+    uint64_t     dummy = 0;
+    PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
+
     if (pData->pVMMDev->mSharedFolderClientId)
     {
-        uint64_t     dummy = 0;
-        PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
-
         pData->pVMMDev->hgcmDisconnect(cmd, pData->pVMMDev->getShFlClientId());
     }
     
