@@ -963,6 +963,7 @@ Bit16u cdrom_boot();
 #endif // BX_ELTORITO_BOOT
 
 #ifdef VBOX
+static char bios_prefix_string[] = "BIOS: ";
 static char bios_cvs_version_string[] = "VirtualBox " VBOX_VERSION_STRING " built " __DATE__ " " __TIME__;
 #define BIOS_COPYRIGHT_STRING "InnoTek VirtualBox BIOS"
 #else /* !VBOX */
@@ -989,7 +990,7 @@ static char bios_cvs_version_string[] = "$Revision: 1.176 $ $Date: 2006/12/30 17
 #  define BX_DEBUG(format, p...)
 #endif
 #ifdef VBOX
-#define BX_INFO(format, p...)   bios_printf(BIOS_PRINTF_INFO, "BIOS: " format, ##p)
+#define BX_INFO(format, p...)   do { put_str(BIOS_PRINTF_INFO, bios_prefix_string); bios_printf(BIOS_PRINTF_INFO, format, ##p); } while (0)
 #else /* !VBOX */
 #define BX_INFO(format, p...)   bios_printf(BIOS_PRINTF_INFO, format, ##p)
 #endif /* !VBOX */
@@ -1576,6 +1577,19 @@ put_luint(action, val, width, neg)
   send(action, val - (nval * 10) + '0');
 }
 
+#ifdef VBOX
+void put_str(action, s)
+  Bit16u action;
+  char *s;
+{
+  if (!s)
+    s = "<NULL>";
+  else
+    while (*s != 0)
+      send(action, *s++);
+}
+#endif /* VBOX */
+
 //--------------------------------------------------------------------------
 // bios_printf()
 //   A compact variable argument printf function which prints its output via
@@ -1645,7 +1659,11 @@ bios_printf(action, s)
             put_int(action, arg, format_width, 0);
           }
         else if (c == 's') {
+#ifndef VBOX
           bios_printf(action & (~BIOS_PRINTF_HALT), arg);
+#else /* VBOX */
+          put_str(action, arg);
+#endif /* VBOX */
           }
         else if (c == 'c') {
           send(action, arg);
