@@ -3953,7 +3953,8 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
         pcnetTimerRestore(pDevIns, pData->pTimerRestore);
     }
 
-    /** @todo figure out what else which have to reset. I'm sure there is some stuff... */
+    /** @todo How to flush the queues? */
+    pcnetHardReset(pData);
 }
 
 
