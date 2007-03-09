@@ -767,6 +767,8 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      */
     if (!pRegFrame->eflags.Bits.u1VM)
         return trpmGCTrap0dHandlerRing3(pVM, pRegFrame, &Cpu);
+    else
+        return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
 
     return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
 }
