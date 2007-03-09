@@ -1198,8 +1198,9 @@ IOMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
      * If this isn't ring-0, we have to check for I/O privileges.
      */
     uint32_t efl = CPUMRawGetEFlags(pVM, pCtxCore);
+    uint32_t cpl = (pCtxCore->ss & X86_SEL_RPL);
 
-    if (    (    (pCtxCore->ss & X86_SEL_RPL) > 1
+    if (    (    cpl > 1
              &&  X86_EFL_GET_IOPL(efl) < cpl)
         ||  pCtxCore->eflags.Bits.u1VM      /* IOPL is ignored in V86 mode; always check TSS bitmap */
        )

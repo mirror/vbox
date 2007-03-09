@@ -90,7 +90,7 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr)
 {
     /*
-     * Deal with real mode first.
+     * Deal with real & v86 mode first.
      */
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
@@ -125,7 +125,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
 SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
     /*
-     * Deal with real mode first.
+     * Deal with real & v86 mode first.
      */
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
@@ -374,8 +374,11 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
  */
 SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
-    /* Special handling for V86 mode */
-    if (eflags.Bits.u1VM)
+    /*
+     * Deal with real & v86 mode first.
+     */
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  eflags.Bits.u1VM)
     {
         if (ppvFlat)
         {
@@ -470,7 +473,11 @@ static bool selmIsSelector32Bit(PVM pVM, RTSEL Sel)
  */
 SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
 {
-    if (eflags.Bits.u1VM)
+    /*
+     * Deal with real & v86 mode first.
+     */
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  eflags.Bits.u1VM)
         return false;
 
     if (!CPUMAreHiddenSelRegsValid(pVM))
