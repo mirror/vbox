@@ -65,7 +65,7 @@ public slots:
 
     void vmNew();
     void vmSettings (const QString &aCategory = QString::null,
-                     const QString &aSubPage  = QString::null);
+                     const QString &aControl = QString::null);
     void vmDelete();
     void vmStart();
     void vmDiscard();
