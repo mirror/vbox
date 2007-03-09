@@ -133,6 +133,10 @@ class HGCMService
 
         VBOXHGCMSVCFNTABLE m_fntable;
 
+        int m_cClients;
+        int m_cClientsAllocated;
+
+        uint32_t *m_paClientIds;
 
         int loadServiceDLL (void);
         void unloadServiceDLL (void);
@@ -149,12 +153,16 @@ class HGCMService
         
     public:
 
+        static void Reset (void);
+    
         static int FindService (HGCMService **ppsvc, HGCMServiceLocation *loc);
         static HGCMService *FindServiceByName (const char *pszServiceName);
         static int LoadService (const char *pszServiceLibrary, const char *pszServiceName, PPDMIHGCMPORT pHGCMPort);
         void ReleaseService (void);
 
         uint32_t SizeOfClient (void) { return m_fntable.cbClient; };
+
+        void DisconnectAll (void);
 
         int Connect (uint32_t u32ClientID);
         int Disconnect (uint32_t u32ClientID);
@@ -278,6 +286,7 @@ class HGCMMsgCall: public HGCMMsgHeader
 #define HGCMMSGID_HOSTCALL   (13)
 #define HGCMMSGID_LOADSTATE  (14)
 #define HGCMMSGID_SAVESTATE  (15)
+#define HGCMMSGID_RESET      (16)
 
 class HGCMMsgConnect: public HGCMMsgHeader
 {
@@ -349,6 +358,10 @@ class HGCMMsgHostCall: public HGCMMsgHeader
         VBOXHGCMSVCPARM *paParms;
 };
 
+class HGCMMsgReset: public HGCMMsgHeader
+{
+};
+
 /* static */ DECLCALLBACK(void) HGCMService::svcHlpCallComplete (VBOXHGCMCALLHANDLE callHandle, int32_t rc)
 {
    HGCMMsgCore *pMsgCore = (HGCMMsgCore *)callHandle;
@@ -380,7 +393,10 @@ HGCMService::HGCMService ()
     m_pszSvcName (NULL),
     m_pszSvcLibrary (NULL),
     m_hLdrMod    (NIL_RTLDRMOD),
-    m_pfnLoad    (NULL)
+    m_pfnLoad    (NULL),
+    m_cClients   (0),
+    m_cClientsAllocated (0),
+    m_paClientIds (NULL)
 {
     memset (&m_fntable, 0, sizeof (m_fntable));
 }
@@ -402,13 +418,16 @@ HGCMMsgCore *hgcmMessageAlloc (uint32_t u32MsgId)
         case HGCMMSGID_HOSTCALL:        return new HGCMMsgHostCall ();
         case HGCMMSGID_LOADSTATE:      
         case HGCMMSGID_SAVESTATE:       return new HGCMMsgLoadSaveState ();
+        case HGCMMSGID_RESET:           return new HGCMMsgReset ();
         default:
             Log(("hgcmMessageAlloc::Unsupported message number %08X\n", u32MsgId));
+            AssertReleaseMsgFailed(("Msg id = %08X\n", u32MsgId));
     }
 
     return NULL;
 }
 
+static g_fResetting = false;
 
 static DECLCALLBACK(void) hgcmMsgCompletionCallback (int32_t result, HGCMMsgCore *pMsgCore)
 {
@@ -417,7 +436,7 @@ static DECLCALLBACK(void) hgcmMsgCompletionCallback (int32_t result, HGCMMsgCore
 
     LogFlow(("MAIN::hgcmMsgCompletionCallback: message %p\n", pMsgCore));
 
-    if (pMsgHdr->pHGCMPort)
+    if (pMsgHdr->pHGCMPort && !g_fResetting)
     {
         pMsgHdr->pHGCMPort->pfnCompleted (pMsgHdr->pHGCMPort, result, pMsgHdr->pCmd);
     }
@@ -598,8 +617,7 @@ int HGCMService::InstanceCreate (const char *pszServiceLibrary, const char *pszS
 
     RTStrPrintf (achThreadName, sizeof (achThreadName), "HGCM%08X", this);
 
-    /* @todo do a proper fix 0x12345678 -> sizeof */
-    rc = hgcmThreadCreate (&m_thread, achThreadName, hgcmServiceThread, this, 0x12345678 /* sizeof (HGCMMsgCall) */);
+    rc = hgcmThreadCreate (&m_thread, achThreadName, hgcmServiceThread, this);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -626,7 +644,7 @@ int HGCMService::InstanceCreate (const char *pszServiceLibrary, const char *pszS
             /* Execute the load request on the service thread. */
             HGCMMSGHANDLE hMsg;
 
-            rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_LOAD, sizeof (HGCMMsgSvcLoad), hgcmMessageAlloc);
+            rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_LOAD, hgcmMessageAlloc);
 
             if (VBOX_SUCCESS(rc))
             {
@@ -655,7 +673,7 @@ void HGCMService::InstanceDestroy (void)
 
     LogFlow(("HGCMService::InstanceDestroy\n"));
 
-    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_UNLOAD, sizeof (HGCMMsgSvcUnload), hgcmMessageAlloc);
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_UNLOAD, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -802,6 +820,27 @@ bool HGCMService::EqualToLoc (HGCMServiceLocation *loc)
     return rc;
 }
 
+/* static */ void HGCMService::Reset (void)
+{
+    /* This is called when the VM is being reset,
+     * that is no more requests from guest is expected.
+     * Scan al services and disconnect all clients.
+     */
+    
+    g_fResetting = true;
+
+    HGCMService *psvc = sm_pSvcListHead;
+
+    while (psvc)
+    {
+        psvc->DisconnectAll ();
+
+        psvc = psvc->m_pSvcNext;
+    }
+    
+    g_fResetting = false;
+}
+
 void HGCMService::ReleaseService (void)
 {
     uint32_t u32RefCnt = ASMAtomicDecU32 (&m_u32RefCnt);
@@ -925,7 +964,7 @@ int HGCMService::Connect (uint32_t u32ClientID)
 
     LogFlow(("MAIN::HGCMService::Connect: client id = %d\n", u32ClientID));
 
-    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_CONNECT, sizeof (HGCMMsgSvcConnect), hgcmMessageAlloc);
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_CONNECT, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -938,6 +977,19 @@ int HGCMService::Connect (uint32_t u32ClientID)
         hgcmObjDereference (pMsg);
 
         rc = hgcmMsgSend (hMsg);
+        
+        if (VBOX_SUCCESS (rc))
+        {
+            /* Add the client Id to the array. */
+            if (m_cClients == m_cClientsAllocated)
+            {
+                m_paClientIds = (uint32_t *)RTMemRealloc (m_paClientIds, (m_cClientsAllocated + 64) * sizeof (m_paClientIds[0]));
+                Assert(m_paClientIds);
+            }
+            
+            m_paClientIds[m_cClients] = u32ClientID;
+            m_cClients++;
+        }
     }
     else
     {
@@ -955,7 +1007,7 @@ int HGCMService::Disconnect (uint32_t u32ClientID)
 
     HGCMMSGHANDLE hMsg;
 
-    rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_DISCONNECT, sizeof (HGCMMsgSvcDisconnect), hgcmMessageAlloc);
+    rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SVC_DISCONNECT, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -968,6 +1020,23 @@ int HGCMService::Disconnect (uint32_t u32ClientID)
         hgcmObjDereference (pMsg);
 
         rc = hgcmMsgSend (hMsg);
+        
+        /* Remove the client id from the array. */
+        int i;
+        for (i = 0; i < m_cClients; i++)
+        {
+            if (m_paClientIds[i] == u32ClientID)
+            {
+                m_cClients--;
+                
+                if (m_cClients > i)
+                {
+                    memmove (&m_paClientIds[i], &m_paClientIds[i + 1], m_cClients - i);
+                }
+                
+                break;
+            }
+        }
     }
     else
     {
@@ -975,6 +1044,15 @@ int HGCMService::Disconnect (uint32_t u32ClientID)
     }
 
     return rc;
+}
+
+void HGCMService::DisconnectAll (void)
+{
+    while (m_cClients && m_paClientIds)
+    {
+        Log(("MAIN::HGCMService::DisconnectAll: id %d\n", m_paClientIds[0]));
+        Disconnect (m_paClientIds[0]);
+    }
 }
 
 /* Forward the call request to the dedicated service thread.
@@ -985,7 +1063,7 @@ int HGCMService::GuestCall (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t
 
     LogFlow(("MAIN::HGCMService::Call\n"));
 
-    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_GUESTCALL, sizeof (HGCMMsgCall), hgcmMessageAlloc);
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_GUESTCALL, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1029,7 +1107,7 @@ int HGCMService::HostCall (PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32
 
     LogFlow(("MAIN::HGCMService::HostCall %s\n", m_pszSvcName));
 
-    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_HOSTCALL, sizeof (HGCMMsgHostCall), hgcmMessageAlloc);
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_HOSTCALL, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1062,7 +1140,7 @@ int HGCMService::SaveState(uint32_t u32ClientID, PSSMHANDLE pSSM)
 
     LogFlow(("MAIN::HGCMService::SaveState %s\n", m_pszSvcName));
 
-    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SAVESTATE, sizeof (HGCMMsgLoadSaveState), hgcmMessageAlloc);
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_SAVESTATE, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1091,7 +1169,7 @@ int HGCMService::LoadState (uint32_t u32ClientID, PSSMHANDLE pSSM)
 
     LogFlow(("MAIN::HGCMService::LoadState %s\n", m_pszSvcName));
 
-    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_LOADSTATE, sizeof (HGCMMsgLoadSaveState), hgcmMessageAlloc);
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, HGCMMSGID_LOADSTATE, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1241,7 +1319,6 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 rc = HGCMService::LoadService (pMsg->pszServiceName, pMsg->pszServiceLibrary, pMsg->pHGCMPort);
             } break;
 
-
             case HGCMMSGID_HOSTCALL:
             {
                 LogFlow(("HGCMMSGID_HOSTCALL at hgcmThread\n"));
@@ -1255,6 +1332,15 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                     LogFlow(("HGCMMSGID_HOSTCALL found service, forwarding the call.\n"));
                     pService->HostCall (NULL, 0, pMsg->u32Function, pMsg->cParms, pMsg->paParms);
                 }
+            } break;
+
+            case HGCMMSGID_RESET:
+            {
+                LogFlow(("HGCMMSGID_RESET\n"));
+
+                HGCMMsgReset *pMsg = (HGCMMsgReset *)pMsgCore;
+
+                HGCMService::Reset ();
             } break;
 
             default:
@@ -1290,7 +1376,7 @@ int hgcmConnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, PHGCMSERVIC
 
     HGCMMSGHANDLE hMsg = 0;
 
-    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_CONNECT, sizeof (HGCMMsgConnect), hgcmMessageAlloc);
+    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_CONNECT, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1345,7 +1431,7 @@ int hgcmDisconnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t
 
     HGCMMSGHANDLE hMsg = 0;
 
-    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_DISCONNECT, sizeof (HGCMMsgDisconnect), hgcmMessageAlloc);
+    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_DISCONNECT, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1438,7 +1524,7 @@ int hgcmLoadInternal (const char *pszServiceName, const char *pszServiceLibrary)
 
     HGCMMSGHANDLE hMsg = 0;
 
-    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_LOAD, sizeof (HGCMMsgLoad), hgcmMessageAlloc);
+    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_LOAD, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1519,7 +1605,7 @@ int hgcmHostCallInternal (const char *pszServiceName, uint32_t u32Function, uint
 
     HGCMMSGHANDLE hMsg = 0;
 
-    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_HOSTCALL, sizeof (HGCMMsgHostCall), hgcmMessageAlloc);
+    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_HOSTCALL, hgcmMessageAlloc);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -1565,8 +1651,7 @@ int hgcmInit (void)
     {
         /* Start main HGCM thread that will process Connect/Disconnect requests. */
 
-        /* @todo do a proper fix 0x12345678 -> sizeof */
-        rc = hgcmThreadCreate (&g_hgcmThread, "MainHGCMthread", hgcmThread, NULL, 0x12345678 /*sizeof (HGCMMsgConnect)*/);
+        rc = hgcmThreadCreate (&g_hgcmThread, "MainHGCMthread", hgcmThread, NULL);
 
         if (VBOX_FAILURE (rc))
         {
@@ -1576,5 +1661,38 @@ int hgcmInit (void)
 
     LogFlow(("MAIN::hgcmInit: rc = %Vrc\n", rc));
 
+    return rc;
+}
+
+int hgcmReset (void)
+{
+    int rc = VINF_SUCCESS;
+    Log(("MAIN::hgcmReset\n"));
+    
+    /* Disconnect all clients. */
+    HGCMMSGHANDLE hMsg = 0;
+
+    rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCMMSGID_RESET, hgcmMessageAlloc);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        HGCMMsgReset *pMsg = (HGCMMsgReset *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
+
+        AssertRelease(pMsg);
+
+        pMsg->pHGCMPort = NULL; /* Not used by the call. */
+        
+        rc = hgcmMsgSend (hMsg);
+
+        hgcmObjDereference (pMsg);
+
+        LogFlow(("MAIN::hgcmReset: hgcmMsgSend returned %Vrc\n", rc));
+    }
+    else
+    {
+        Log(("MAIN::hgcmReset:Message allocation failed: %Vrc\n", rc));
+    }
+    
+    LogFlow(("MAIN::hgcmReset: rc = %Vrc\n", rc));
     return rc;
 }

@@ -35,6 +35,8 @@
 __BEGIN_DECLS
 int hgcmInit (void);
 
+int hgcmReset (void);
+
 int hgcmLoadInternal (const char *pszServiceName, const char *pszServiceLibrary);
 
 int hgcmConnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, PHGCMSERVICELOCATION pLoc, uint32_t *pClientID, bool fBlock);
