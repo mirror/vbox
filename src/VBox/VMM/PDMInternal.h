@@ -723,7 +723,7 @@ PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
 
 int         pdmR3LdrInit(PVM pVM);
 void        pdmR3LdrTerm(PVM pVM);
-char *      pdmR3FileR3(const char *pszFile);
+char *      pdmR3FileR3(const char *pszFile, bool fShared=false);
 int         pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName);
 
 void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);

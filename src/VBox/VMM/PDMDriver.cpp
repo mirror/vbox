@@ -203,7 +203,7 @@ int pdmR3DrvInit(PVM pVM)
     if (fLoadBuiltin)
     {
         /* make filename */
-        char *pszFilename = pdmR3FileR3("VBoxDD");
+        char *pszFilename = pdmR3FileR3("VBoxDD", /*fShared=*/true);
         if (!pszFilename)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3DrvLoad(pVM, &RegCB, pszFilename, "VBoxDD");

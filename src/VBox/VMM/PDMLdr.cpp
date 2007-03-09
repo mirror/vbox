@@ -66,7 +66,7 @@ static DECLCALLBACK(int) pdmr3GetImportGC(RTLDRMOD hLdrMod, const char *pszModul
 static int      pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName);
 static char *   pdmR3FileGC(const char *pszFile);
 static char *   pdmR3FileR0(const char *pszFile);
-static char *   pdmR3File(const char *pszFile, const char *pszDefaultExt);
+static char *   pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fShared);
 static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser);
 
 
@@ -833,9 +833,9 @@ PDMR3DECL(int) PDMR3GetSymbolGCLazy(PVM pVM, const char *pszModule, const char *
  * @param   pszFile     File name (no path).
  * @todo    We'll have this elsewhere than in the root later!
  */
-char *pdmR3FileR3(const char *pszFile)
+char *pdmR3FileR3(const char *pszFile, bool fShared)
 {
-    return pdmR3File(pszFile, NULL);
+    return pdmR3File(pszFile, NULL, fShared);
 }
 
 
@@ -850,7 +850,7 @@ char *pdmR3FileR3(const char *pszFile)
  */
 char * pdmR3FileR0(const char *pszFile)
 {
-    return pdmR3File(pszFile, NULL);
+    return pdmR3File(pszFile, NULL, /*fShared=*/false);
 }
 
 
@@ -865,48 +865,44 @@ char * pdmR3FileR0(const char *pszFile)
  */
 char * pdmR3FileGC(const char *pszFile)
 {
-    return pdmR3File(pszFile, NULL);
+    return pdmR3File(pszFile, NULL, /*fShared=*/false);
 }
 
-
 /**
- * Worker for pdmR3FileGC() and pdmR3FileHC().
+ * Worker for pdmR3File().
  *
  * @returns Pointer to temporary memory containing the filename.
  *          Caller must free this using RTMemTmpFree().
  * @returns NULL on failure.
- * @param   pszFile         File name (no path).
- * @param   pszDefaultExt   The default extention, NULL if none.
- * @todo    We'll have this elsewhere than in the root later!
+ * @param   pszDir        Directory part
+ * @param   pszFile       File name part
+ * @param   pszDefaultExt Extension part
  */
-static char * pdmR3File(const char *pszFile, const char *pszDefaultExt)
+static char * pdmR3FileConstruct(const char *pszDir, const char *pszFile, const char *pszDefaultExt)
 {
+    /*
+     * Allocate temp memory for return buffer.
+     */
+    unsigned cchDir  = strlen(pszDir);
+    unsigned cchFile = strlen(pszFile);
+    unsigned cchDefaultExt;
+
     /*
      * Default extention?
      */
-    unsigned cchDefaultExt;
     if (!pszDefaultExt || strchr(pszFile, '.'))
         cchDefaultExt = 0;
     else
         cchDefaultExt = strlen(pszDefaultExt);
 
-    /*
-     * Query program path.
-     */
-    unsigned    cchFile = strlen(pszFile);
-    char        szPath[RTPATH_MAX];
-    int rc = RTPathProgram(szPath, sizeof(szPath) - cchFile - cchDefaultExt - 1);
-    if (!VBOX_SUCCESS(rc))
+    unsigned cchPath = cchDir + 1 + cchFile + cchDefaultExt + 1;
+    if (cchPath > RTPATH_MAX)
     {
-        AssertMsgFailed(("RTPathProgram(,%d) failed rc=%d!\n", sizeof(szPath), rc));
+        AssertMsgFailed("Path too long!\n");
         return NULL;
     }
 
-    /*
-     * Allocate temp memory for return buffer.
-     */
-    unsigned cch = strlen(szPath);
-    char *pszRet = (char *)RTMemTmpAlloc(cch + 1 + cchFile + cchDefaultExt + 1);
+    char *pszRet = (char *)RTMemTmpAlloc(cchDir + 1 + cchFile + cchDefaultExt + 1);
     if (!pszRet)
     {
         AssertMsgFailed(("Out of temporary memory!\n"));
@@ -916,11 +912,65 @@ static char * pdmR3File(const char *pszFile, const char *pszDefaultExt)
     /*
      * Construct the filename.
      */
-    memcpy(pszRet, szPath, cch);
-    pszRet[cch++] = '/';            /* this works everywhere */
-    memcpy(pszRet + cch, pszFile, cchFile + 1);
+    memcpy(pszRet, pszDir, cchDir);
+    pszRet[cchDir++] = '/';            /* this works everywhere */
+    memcpy(pszRet + cchDir, pszFile, cchFile + 1);
     if (cchDefaultExt)
-        memcpy(pszRet + cch + cchFile, pszDefaultExt, cchDefaultExt + 1);
+        memcpy(pszRet + cchDir + cchFile, pszDefaultExt, cchDefaultExt + 1);
+
+    return pszRet;
+}
+
+/**
+ * Worker for pdmR3FileGC() and pdmR3FileHC().
+ *
+ * @returns Pointer to temporary memory containing the filename.
+ *          Caller must free this using RTMemTmpFree().
+ * @returns NULL on failure.
+ * @param   pszFile         File name (no path).
+ * @param   pszDefaultExt   The default extention, NULL if none.
+ * @param   fShared         If true, search in the shared directory (/usr/lib on Unix), else
+ *                          search in the private directory (/usr/lib/virtualbox on Unix).
+ *                          Ignored if VBOX_PATH_SHARED_LIBS is not defined.
+ * @todo    We'll have this elsewhere than in the root later!
+ * @todo    Remove the fShared hack again once we don't need to link against VBoxDD anymore!
+ */
+static char * pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fShared)
+{
+    char    *pszRet;
+
+#ifdef VBOX_PATH_PRIVATE_LIBS
+
+    /*
+     * Unix: Search in /usr/lib/virtualbox
+     */
+    pszRet = pdmR3FileConstruct(
+# ifdef VBOX_PATH_SHARED_LIBS
+                                fShared ? VBOX_PATH_SHARED_LIBS : VBOX_PATH_PRIVATE_LIBS,
+# else
+                                VBOX_PATH_PRIVATE_LIBS,
+# endif
+                                pszFile, pszDefaultExt);
+
+#else
+
+    NOREF(fShared);
+
+    /*
+     * Default: Search in the program path.
+     */
+    char     szPath[RTPATH_MAX];
+    int rc = RTPathProgram(szPath, sizeof(szPath));
+    if (!VBOX_SUCCESS(rc))
+    {
+        AssertMsgFailed(("RTPathProgram(,%d) failed rc=%d!\n", sizeof(szPath), rc));
+        return NULL;
+    }
+
+    pszRet = pdmR3FileConstruct(szPath, pszFile, pszDefaultExt);
+
+#endif
+
     return pszRet;
 }
 
