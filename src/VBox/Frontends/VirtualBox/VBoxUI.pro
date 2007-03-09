@@ -231,4 +231,5 @@ IMAGES	= images/tpixel.png \
 	images/vdm_remove_disabled_16px.png \
 	images/vdm_remove_22px.png \
 	images/vdm_remove_disabled_22px.png \
+	images/welcome.png \
 	images/about_600px.png

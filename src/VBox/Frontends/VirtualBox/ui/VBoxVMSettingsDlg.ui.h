@@ -921,33 +921,55 @@ void VBoxVMSettingsDlg::setWarning (const QString &warning)
 /**
  *  Sets up this dialog.
  *
+ *  If @a aCategory is non-null, it should be one of values from the hidden
+ *  '[cat]' column of #listView (see VBoxVMSettingsDlg.ui in qdesigner)
+ *  prepended with the '#' sign. In this case, the specified category page
+ *  will be activated when the dialog is open.
+ *
+ *  If @a aWidget is non-null, it should be a name of one of widgets
+ *  from the given category page. In this case, the specified widget
+ *  will get focus when the dialog is open.
+ *  
  *  @note Calling this method after the dialog is open has no sense.
  *
- *  @param  category
- *      Category to select when the dialog is open. Must be one of
- *      values from the hidden '[cat]' column of #listView
- *      (see VBoxVMSettingsDlg.ui in qdesigner) prepended with the '#'
- *      sign.
+ *  @param  aCategory   Category to select when the dialog is open or null.
+ *  @param  aWidget     Category to select when the dialog is open or null.
  */
-void VBoxVMSettingsDlg::setup (const QString &aCategory, const QString &aSubPage)
+void VBoxVMSettingsDlg::setup (const QString &aCategory, const QString &aControl)
 {
     if (!aCategory.isNull())
     {
-        /* search for first-level item */
+        /* search for a list view item corresponding to the category */
         QListViewItem *item = listView->findItem (aCategory, listView_Link);
         if (item)
         {
             listView->setSelected (item, true);
-            /* search for second-level item */
-            if (!aSubPage.isNull())
+
+            /* search for a widget with the given name */
+            if (!aControl.isNull())
             {
-                QObjectList *list = widgetStack->visibleWidget()->queryList ("QTabWidget");
-                for (QObject *obj = list->first(); obj != NULL; obj = list->next())
+                QObject *obj = widgetStack->visibleWidget()->child (aControl);
+                if (obj && obj->isWidgetType())
                 {
-                    QTabWidget *tabWidget = static_cast<QTabWidget*> (obj);
-                    for (int index = 0; index < tabWidget->count(); ++index)
-                        if (tabWidget->page (index)->name() == aSubPage)
-                            tabWidget->setCurrentPage (index);
+                    QWidget *w = static_cast <QWidget *> (obj);
+                    QWidgetList parents;
+                    QWidget *p = w;
+                    while ((p = p->parentWidget()) != NULL)
+                    {
+                        if (!strcmp (p->className(), "QTabWidget"))
+                        {
+                            /* the tab contents widget is two steps down
+                             * (QTabWidget -> QWidgetStack -> QWidget) */
+                            QWidget *c = parents.last();
+                            if (c)
+                                c = parents.prev();
+                            if (c)
+                                static_cast <QTabWidget *> (p)->showPage (c);
+                        }
+                        parents.append (p);
+                    }
+
+                    w->setFocus();
                 }
             }
         }

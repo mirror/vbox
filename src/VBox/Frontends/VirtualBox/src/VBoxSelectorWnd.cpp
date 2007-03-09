@@ -63,6 +63,8 @@ static const char *GUI_LastWindowPosition_Max = "max";
  */
 class VBoxVMDetailsView : public QWidgetStack
 {
+    Q_OBJECT
+
 public:
 
     VBoxVMDetailsView (QWidget *aParent, const char *aName,
@@ -89,10 +91,20 @@ public:
         raiseWidget (0);
     }
 
-    bool connectDetailsText (const char *aSignal, const QObject *aReceiver,
-                             const char *aMember)
+signals:
+
+    void linkClicked (const QString &aURL);
+
+private slots:
+
+    void gotLinkClicked (const QString &aURL)
     {
-        return connect (mDetailsText, aSignal, aReceiver, aMember);
+        QString text = mDetailsText->text();
+        emit linkClicked (aURL);
+        /* QTextBrowser will try to get the URL from the mime source factory
+         * and show an empty "page" after a failure. Reset the text to avoid
+         * this. */
+        mDetailsText->setText (text);
     }
 
 private:
@@ -125,6 +137,9 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
     /* make "transparent" */
     mDetailsText->setFrameShape (QFrame::NoFrame);
     mDetailsText->setPaper (backgroundBrush());
+
+    connect (mDetailsText, SIGNAL (linkClicked (const QString &)),
+            this, SLOT (gotLinkClicked (const QString &)));
 
     addWidget (mDetailsText, 0);
 }
@@ -331,7 +346,7 @@ void VBoxVMDescriptionPage::updateState()
 
 void VBoxVMDescriptionPage::goToSettings()
 {
-    mParent->vmSettings ("#general", "description");
+    mParent->vmSettings ("#general", "teDescription");
 }
 
 // VBoxSelectorWnd class
@@ -561,9 +576,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (vmListBox, SIGNAL (selected (QListBoxItem *)),
              this, SLOT (vmStart()));
 
-    vmDetailsView->connectDetailsText (
-        SIGNAL (linkClicked (const QString &)),
-        this, SLOT (vmSettings (const QString &)));
+    connect (vmDetailsView, SIGNAL (linkClicked (const QString &)),
+            this, SLOT (vmSettings (const QString &)));
 
     /* listen to "media enumeration finished" signals */
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
@@ -668,15 +682,23 @@ void VBoxSelectorWnd::vmNew()
 /**
  *  Opens the VM settings dialog.
  *
- *  @param  category
- *      Category to select in the settings dialog. See
- *      VBoxVMSettingsDlg::setup().
+ *  @param  aCategory   Category to select in the settings dialog. See
+ *                      VBoxVMSettingsDlg::setup().
+ *  @param  aControl    Widget name to select in the settings dialog. See
+ *                      VBoxVMSettingsDlg::setup().
  */
-void VBoxSelectorWnd::vmSettings (const QString &category, const QString &aSubPage)
+void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl)
 {
+    if (!aCategory.isEmpty() && aCategory [0] != '#')
+    {
+        /* Assume it's a href from the Details HTML */
+        vboxGlobal().openURL (aCategory);
+        return;
+    }
+
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
 
-    AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
+    AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
     // open a direct session to modify VM settings
     QUuid id = item->id();
@@ -689,7 +711,7 @@ void VBoxSelectorWnd::vmSettings (const QString &category, const QString &aSubPa
 
     VBoxVMSettingsDlg dlg (this, "VBoxVMSettingsDlg");
     dlg.getFromMachine (m);
-    dlg.setup (category, aSubPage);
+    dlg.setup (aCategory, aControl);
 
     if (dlg.exec() == QDialog::Accepted)
     {
@@ -1151,15 +1173,20 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
             /* default HTML support in Qt is terrible so just try to get
              * something really simple */
             vmDetailsView->setDetailsText
-                (tr ("<h3><img src=ico64x01.png align=right/>"
+                (tr ("<h3>"
                      "Welcome to VirtualBox!</h3>"
                      "<p>The left part of this window is intended to display "
                      "a list of all virtual machines on your computer. "
                      "The list is empty now because you haven't created any virtual "
                      "machines yet."
+                     "<img src=welcome.png align=right/></p>"
                      "<p>In order to create a new virtual machine, press the "
                      "<b>New</b> button in the main tool bar located "
-                     "at the top of the window."));
+                     "at the top of the window.</p>"
+                     "<p>You can press the <b>F1</b> key to get instant help, "
+                     "or visit "
+                     "<a href=http://www.virtualbox.org>www.virtualbox.org</a> "
+                     "for the latest information and news.</p>"));
             vmRefreshAction->setEnabled (false);
         }
 
