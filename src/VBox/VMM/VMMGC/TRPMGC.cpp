@@ -116,6 +116,8 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     Assert(pvRange == GCPtrIDT);
 
 #if 0
+    /** @note this causes problems in Windows XP as instructions following the update can be dangerous (str eax has been seen) */
+    /** @note not going back to ring 3 could make the code scanner miss them. */
     /* Check if we can handle the write here. */    
     if (     iGate != 3                                         /* Gate 3 is handled differently; could do it here as well, but let ring 3 handle this case for now. */
         &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iGate)) /* Passthru gates need special attention too. */
@@ -138,7 +140,7 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     }
 #endif
 
-    Log(("trpmgcGuestIDTWriteHandler: write to gate %x offset %x\n", iGate, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT));
+    Log(("trpmgcGuestIDTWriteHandler: eip=%VGv write to gate %x offset %x\n", pRegFrame->eip, iGate, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT));
 
     /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
     VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
