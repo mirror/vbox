@@ -4320,19 +4320,26 @@ static DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
 //    LogFlow(("dbgcOpAddrFlat\n"));
     int     rc;
     *pResult = *pArg;
+
     switch (pArg->enmType)
     {
         case DBGCVAR_TYPE_GC_FLAT:
             return 0;
 
         case DBGCVAR_TYPE_GC_FAR:
+        {
+            PCPUMCTX        pCtx;
+            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
+
             Assert(pDbgc->pVM);
+
             pResult->enmType    = DBGCVAR_TYPE_GC_FLAT;
-            rc = SELMToFlatEx(pDbgc->pVM, pResult->u.GCFar.sel, pResult->u.GCFar.off,
+            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off,
                               SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
             if (VBOX_SUCCESS(rc))
                 return 0;
             return VERR_PARSE_CONVERSION_FAILED;
+        }
 
         case DBGCVAR_TYPE_GC_PHYS:
             //rc = MMR3PhysGCPhys2GCVirtEx(pDbgc->pVM, pResult->u.GCPhys, ..., &pResult->u.GCFlat); - yea, sure.
@@ -4395,8 +4402,11 @@ static DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_GC_FAR:
+        {
+            PCPUMCTX        pCtx;
+            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
             Assert(pDbgc->pVM);
-            rc = SELMToFlatEx(pDbgc->pVM, pResult->u.GCFar.sel, pResult->u.GCFar.off,
+            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off,
                               SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
             if (VBOX_SUCCESS(rc))
             {
@@ -4407,6 +4417,7 @@ static DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
                 /** @todo more memory types! */
             }
             return VERR_PARSE_CONVERSION_FAILED;
+        }
 
         case DBGCVAR_TYPE_GC_PHYS:
             return 0;
@@ -4470,8 +4481,12 @@ static DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVA
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_GC_FAR:
+        {
+            PCPUMCTX        pCtx;
+            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
+
             Assert(pDbgc->pVM);
-            rc = SELMToFlatEx(pDbgc->pVM, pResult->u.GCFar.sel, pResult->u.GCFar.off,
+            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off,
                               SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
             if (VBOX_SUCCESS(rc))
             {
@@ -4482,6 +4497,7 @@ static DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVA
                 /** @todo more memory types. */
             }
             return VERR_PARSE_CONVERSION_FAILED;
+        }
 
         case DBGCVAR_TYPE_GC_PHYS:
             Assert(pDbgc->pVM);
@@ -4550,8 +4566,12 @@ static DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_GC_FAR:
+        {
+            PCPUMCTX        pCtx;
+            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
+
             Assert(pDbgc->pVM);
-            rc = SELMToFlatEx(pDbgc->pVM, pResult->u.GCFar.sel, pResult->u.GCFar.off,
+            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off,
                               SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
             if (VBOX_SUCCESS(rc))
             {
@@ -4562,6 +4582,7 @@ static DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
                 /** @todo more memory types. */
             }
             return VERR_PARSE_CONVERSION_FAILED;
+        }
 
         case DBGCVAR_TYPE_GC_PHYS:
             Assert(pDbgc->pVM);
@@ -5754,8 +5775,11 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
         case DBGCVAR_TYPE_GC_FAR:
         {
             uint32_t    cb;
+            PCPUMCTX    pCtx;
+            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
+
             Var.enmType = DBGCVAR_TYPE_GC_FLAT;
-            int rc = SELMToFlatEx(pDbgc->pVM, Var.u.GCFar.sel, Var.u.GCFar.off,
+            int rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, Var.u.GCFar.sel, Var.u.GCFar.off,
                                   SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &Var.u.GCFlat, &cb);
             if (VBOX_FAILURE(rc))
                 return rc;
