@@ -83,7 +83,7 @@ __END_DECLS
 /**
  * Driver entry point.
  *
- * @returns appropritate status code.
+ * @returns appropriate status code.
  * @param   pDrvObj     Pointer to driver object.
  * @param   pRegPath    Registry base path.
  */

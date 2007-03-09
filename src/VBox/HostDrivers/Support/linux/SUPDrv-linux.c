@@ -281,7 +281,7 @@ static struct miscdevice gMiscDevice =
 /**
  * Initialize module.
  *
- * @returns appropritate status code.
+ * @returns appropriate status code.
  */
 static int __init VBoxSupDrvInit(void)
 {

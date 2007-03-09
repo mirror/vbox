@@ -1029,7 +1029,7 @@ static int      pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t va
 /**
  * #PF Virtual Handler callback for Guest write access to the ring descriptor page(pData)
  *
- * @return  VBox status code (appropritate for trap handling and GC return).
+ * @return  VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
