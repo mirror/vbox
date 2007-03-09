@@ -33,6 +33,10 @@
 
 #include <qfileinfo.h>
 
+#if defined (Q_WS_MAC)
+# include <Carbon/Carbon.h>
+#endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -116,7 +120,14 @@ static WId FindWindowIdFromPid (ULONG aPid)
 
     return (WId) ~0;
 
-#else
+#elif defined (Q_WS_MAC)
+
+    /** @todo Figure out how to get access to another windows of another process... 
+     * Or at least check that it's not a VBoxVRDP process. */
+    NOREF (aPid);
+    return (WId) 0;
+
+#else   
 
     return (WId) ~0;
 
@@ -541,6 +552,22 @@ bool VBoxVMListBoxItem::switchTo()
 
 #elif defined (Q_WS_X11)
 
+    return false;
+
+#elif defined (Q_WS_MAC)
+
+    ProcessSerialNumber psn;
+    OSStatus rc = ::GetProcessForPID (mPid, &psn);
+    if (!rc)
+    {
+        rc = ::SetFrontProcess (&psn);
+
+        if (!rc)
+        {
+            ShowHideProcess (&psn, true);
+            return true;
+        }
+    }
     return false;
 
 #else
