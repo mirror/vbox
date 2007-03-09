@@ -1050,8 +1050,8 @@ void vrdpBitBlt (
                 VRDPBCHASH hashDeleted;
                 int cacheResult;
 
-                if (/* @test (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
-                    || */ psoSrc->iUniq == 0)
+                if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
+                    || psoSrc->iUniq == 0)
                 {
                     DISPDBG((1, "MEMBLT: non cachable bitmap.\n"));
                     cacheResult = VRDPBMP_RC_NOT_CACHED;
