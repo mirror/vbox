@@ -1213,6 +1213,7 @@ void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
                       aType == VBoxDefs::FD ? twImages->page (2) : 0;
         Assert (wt); /* aType should be correct */
         twImages->changeTab (wt, iconSet, twImages->tabLabel (wt));
+        aItem->listView()->ensureItemVisible (aItem);
     }
 }
 
