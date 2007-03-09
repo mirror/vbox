@@ -337,6 +337,8 @@ public:
 
     bool startMachine (const QUuid &id);
 
+    void addMediaToList (const CUnknown&, VBoxDefs::DiskType);
+
     void startEnumeratingMedia();
 
     /**

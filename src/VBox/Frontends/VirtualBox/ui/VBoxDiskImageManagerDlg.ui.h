@@ -34,6 +34,8 @@ class DiskImageItem : public QListViewItem
 {
 public:
 
+    enum { TypeId = 1001 };
+
     DiskImageItem (DiskImageItem *parent) :
         QListViewItem (parent), mStatus (VBoxMedia::Unknown) {}
 
@@ -89,7 +91,7 @@ public:
         return info;
     }
 
-    int rtti() const { return 1001; }
+    int rtti() const { return TypeId; }
 
     int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
     {
@@ -109,7 +111,7 @@ public:
     DiskImageItem* nextSibling() const
     {
         return (QListViewItem::nextSibling() &&
-                QListViewItem::nextSibling()->rtti() == 1001) ?
+                QListViewItem::nextSibling()->rtti() == DiskImageItem::TypeId) ?
                 static_cast<DiskImageItem*> (QListViewItem::nextSibling()) : 0;
     }
 
@@ -139,6 +141,27 @@ protected:
     QString mToolTip;
 
     VBoxMedia::Status mStatus;
+};
+
+
+class DiskImageItemIterator : public QListViewItemIterator
+{
+public:
+
+    DiskImageItemIterator (QListView* aList)
+        : QListViewItemIterator (aList) {}
+
+    DiskImageItem* operator*()
+    {
+        QListViewItem *item = QListViewItemIterator::operator*();
+        return item && item->rtti() == DiskImageItem::TypeId ?
+            static_cast<DiskImageItem*> (item) : 0;
+    }
+
+    DiskImageItemIterator& operator++()
+    {
+        return (DiskImageItemIterator&) QListViewItemIterator::operator++();
+    }
 };
 
 
@@ -463,7 +486,7 @@ void VBoxDiskImageManagerDlg::mouseOnItem (QListViewItem *aItem)
     QString tip;
     switch (aItem->rtti())
     {
-        case 1001:
+        case DiskImageItem::TypeId:
             tip = static_cast<DiskImageItem*> (aItem)->getToolTip();
             break;
         default:
@@ -767,10 +790,10 @@ DiskImageItem* VBoxDiskImageManagerDlg::createImageNode (QListView *aList,
 {
     DiskImageItem *item = 0;
 
-    if (aList)
-        item = new DiskImageItem (aList);
-    else if (aRoot)
+    if (aRoot)
         item = new DiskImageItem (aRoot);
+    else if (aList)
+        item = new DiskImageItem (aList);
     else
         Assert (0);
 
@@ -1057,6 +1080,7 @@ QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd,
 void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
                                             const VBoxMedia &aMedia)
 {
+    if (!aItem) return;
     CHardDisk hd = aMedia.disk;
     VBoxMedia::Status status = aMedia.status;
 
@@ -1104,6 +1128,7 @@ void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
 void VBoxDiskImageManagerDlg::updateCdItem (DiskImageItem   *aItem,
                                             const VBoxMedia &aMedia)
 {
+    if (!aItem) return;
     CDVDImage cd = aMedia.disk;
     VBoxMedia::Status status = aMedia.status;
 
@@ -1129,6 +1154,7 @@ void VBoxDiskImageManagerDlg::updateCdItem (DiskImageItem   *aItem,
 void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem   *aItem,
                                             const VBoxMedia &aMedia)
 {
+    if (!aItem) return;
     CFloppyImage fd = aMedia.disk;
     VBoxMedia::Status status = aMedia.status;
 
@@ -1152,48 +1178,31 @@ void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem   *aItem,
 }
 
 
-DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView       *aList,
-                                                      DiskImageItem   *aRoot,
+DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
                                                       const VBoxMedia &aMedia)
 {
-    DiskImageItem *item = createImageNode (aList, aRoot);
+    CHardDisk hd = aMedia.disk;
+    QUuid rootId = hd.GetParent().isNull() ? QUuid() : hd.GetParent().GetId();
+    DiskImageItem *root = searchItem (aList, rootId);
+    DiskImageItem *item = createImageNode (aList, root);
     updateHdItem (item, aMedia);
-    createHdChildren (item, aMedia);
     return item;
 }
 
-DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView       *aList,
-                                                      DiskImageItem   *aRoot,
+DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
                                                       const VBoxMedia &aMedia)
 {
-    DiskImageItem *item = createImageNode (aList, aRoot);
+    DiskImageItem *item = createImageNode (aList, 0);
     updateCdItem (item, aMedia);
     return item;
 }
 
-DiskImageItem* VBoxDiskImageManagerDlg::createFdItem (QListView       *aList,
-                                                      DiskImageItem   *aRoot,
+DiskImageItem* VBoxDiskImageManagerDlg::createFdItem (QListView *aList,
                                                       const VBoxMedia &aMedia)
 {
-    DiskImageItem *item = createImageNode (aList, aRoot);
+    DiskImageItem *item = createImageNode (aList, 0);
     updateFdItem (item, aMedia);
     return item;
-}
-
-void VBoxDiskImageManagerDlg::createHdChildren (DiskImageItem   *aRoot,
-                                                const VBoxMedia &aMedia)
-{
-    CHardDisk hd = aMedia.disk;
-    CHardDiskEnumerator enumerator = hd.GetChildren().Enumerate();
-    while (enumerator.HasMore())
-    {
-        CHardDisk subHd = enumerator.GetNext();
-        VBoxMedia::Status status =
-            subHd.GetAccessible() == TRUE ? VBoxMedia::Ok :
-            subHd.isOk() ? VBoxMedia::Inaccessible :
-            VBoxMedia::Error;
-        createHdItem (0, aRoot, VBoxMedia (CUnknown (subHd), VBoxDefs::HD, status));
-    }
 }
 
 
@@ -1221,16 +1230,15 @@ void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
 DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
                                                     const QUuid &aId)
 {
-    DiskImageItem *item = 0, *iterator = 0;
-    if (aList->firstChild() && aList->firstChild()->rtti() == 1001)
-        iterator = static_cast<DiskImageItem*>(aList->firstChild());
-    while (iterator)
+    if (aId.isNull()) return 0;
+    DiskImageItemIterator iterator (aList);
+    while (*iterator)
     {
-        if (iterator->getUuid() == aId)
-            item = iterator;
-        iterator = iterator->nextSibling();
+        if ((*iterator)->getUuid() == aId)
+            return *iterator;
+        ++iterator;
     }
-    return item;
+    return 0;
 }
 
 
@@ -1382,7 +1390,7 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
     switch (aMedia.type)
     {
         case VBoxDefs::HD:
-            item = createHdItem (hdsView, 0, aMedia);
+            item = createHdItem (hdsView, aMedia);
             if (item->getUuid() == hdSelectedId)
             {
                 setCurrentItem (hdsView, item);
@@ -1390,7 +1398,7 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
             }
             break;
         case VBoxDefs::CD:
-            item = createCdItem (cdsView, 0, aMedia);
+            item = createCdItem (cdsView, aMedia);
             if (item->getUuid() == cdSelectedId)
             {
                 setCurrentItem (cdsView, item);
@@ -1398,7 +1406,7 @@ void VBoxDiskImageManagerDlg::mediaAdded (const VBoxMedia &aMedia)
             }
             break;
         case VBoxDefs::FD:
-            item = createFdItem (fdsView, 0, aMedia);
+            item = createFdItem (fdsView, aMedia);
             if (item->getUuid() == fdSelectedId)
             {
                 setCurrentItem (fdsView, item);
@@ -1431,24 +1439,21 @@ void VBoxDiskImageManagerDlg::mediaUpdated (const VBoxMedia &aMedia)
         {
             CHardDisk hd = aMedia.disk;
             item = searchItem (hdsView, hd.GetId());
-            if (item)
-                updateHdItem (item, aMedia);
+            updateHdItem (item, aMedia);
             break;
         }
         case VBoxDefs::CD:
         {
             CDVDImage cd = aMedia.disk;
             item = searchItem (cdsView, cd.GetId());
-            if (item)
-                updateCdItem (item, aMedia);
+            updateCdItem (item, aMedia);
             break;
         }
         case VBoxDefs::FD:
         {
             CFloppyImage fd = aMedia.disk;
             item = searchItem (fdsView, fd.GetId());
-            if (item)
-                updateFdItem (item, aMedia);
+            updateFdItem (item, aMedia);
             break;
         }
         default:
@@ -1530,15 +1535,18 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
     DiskImageItem *di;
 
     item = hdsView->currentItem();
-    di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
+    di = (item && item->rtti() == DiskImageItem::TypeId) ?
+        static_cast <DiskImageItem *> (item) : 0;
     hdSelectedId = di ? di->getUuid() : QString::null;
 
     item = cdsView->currentItem();
-    di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
+    di = (item && item->rtti() == DiskImageItem::TypeId) ?
+        static_cast <DiskImageItem *> (item) : 0;
     cdSelectedId = di ? di->getUuid() : QString::null;
 
     item = fdsView->currentItem();
-    di = (item && item->rtti() == 1001) ? static_cast <DiskImageItem *> (item) : 0;
+    di = (item && item->rtti() == DiskImageItem::TypeId) ?
+        static_cast <DiskImageItem *> (item) : 0;
     fdSelectedId = di ? di->getUuid() : QString::null;
 
     /* finally, clear all lists */
@@ -1655,7 +1663,7 @@ void VBoxDiskImageManagerDlg::processCurrentChanged()
 
 void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
 {
-    DiskImageItem *item = aItem && aItem->rtti() == 1001 ?
+    DiskImageItem *item = aItem && aItem->rtti() == DiskImageItem::TypeId ?
         static_cast<DiskImageItem*> (aItem) : 0;
 
     bool notInEnum      = !vboxGlobal().isMediaEnumerationStarted();
@@ -1748,7 +1756,8 @@ void VBoxDiskImageManagerDlg::addImage()
 {
     QListView *currentList = getCurrentListView();
     DiskImageItem *item =
-        currentList->currentItem() && currentList->currentItem()->rtti() == 1001 ?
+        currentList->currentItem() &&
+        currentList->currentItem()->rtti() == DiskImageItem::TypeId ?
         static_cast <DiskImageItem*> (currentList->currentItem()) : 0;
 
     QString dir;
@@ -1805,7 +1814,8 @@ void VBoxDiskImageManagerDlg::removeImage()
 {
     QListView *currentList = getCurrentListView();
     DiskImageItem *item =
-        currentList->currentItem() && currentList->currentItem()->rtti() == 1001 ?
+        currentList->currentItem() &&
+        currentList->currentItem()->rtti() == DiskImageItem::TypeId ?
         static_cast<DiskImageItem*> (currentList->currentItem()) : 0;
     AssertMsg (item, ("Current item must not be null"));
 
@@ -1862,7 +1872,8 @@ void VBoxDiskImageManagerDlg::releaseImage()
 {
     QListView *currentList = getCurrentListView();
     DiskImageItem *item =
-        currentList->currentItem() && currentList->currentItem()->rtti() == 1001 ?
+        currentList->currentItem() &&
+        currentList->currentItem()->rtti() == DiskImageItem::TypeId ?
         static_cast<DiskImageItem*> (currentList->currentItem()) : 0;
     AssertMsg (item, ("Current item must not be null"));
 
@@ -1995,8 +2006,8 @@ QUuid VBoxDiskImageManagerDlg::getSelectedUuid()
     QListView *currentList = getCurrentListView();
     QUuid uuid;
 
-    if ( currentList->selectedItem() &&
-         currentList->selectedItem()->rtti() == 1001 )
+    if (currentList->selectedItem() &&
+        currentList->selectedItem()->rtti() == DiskImageItem::TypeId)
         uuid = QUuid (static_cast<DiskImageItem *>(currentList->selectedItem())
                       ->getUuid());
 
@@ -2009,7 +2020,8 @@ QString VBoxDiskImageManagerDlg::getSelectedPath()
     QListView *currentList = getCurrentListView();
     QString path;
 
-    if ( currentList->selectedItem() && currentList->selectedItem()->rtti() == 1001 )
+    if (currentList->selectedItem() &&
+        currentList->selectedItem()->rtti() == DiskImageItem::TypeId )
         path = static_cast<DiskImageItem*> (currentList->selectedItem())
                ->getPath().stripWhiteSpace();
 

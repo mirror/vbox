@@ -1146,6 +1146,27 @@ bool VBoxGlobal::startMachine (const QUuid &id)
 }
 
 /**
+ *  Appends media_list with passed disk & it's children
+ */
+void VBoxGlobal::addMediaToList (const CUnknown &aDisk,
+                                 VBoxDefs::DiskType aType)
+{
+    VBoxMedia media (aDisk, aType, VBoxMedia::Unknown);
+    media_list += media;
+    /* appending all vdi children */
+    if (aType == VBoxDefs::HD)
+    {
+        CHardDisk hd = aDisk;
+        CHardDiskEnumerator enumerator = hd.GetChildren().Enumerate();
+        while (enumerator.HasMore())
+        {
+            CHardDisk subHd = enumerator.GetNext();
+            addMediaToList (CUnknown (subHd), VBoxDefs::HD);
+        }
+    }
+}
+
+/**
  *  Starts a thread that asynchronously enumerates all currently registered
  *  media, checks for its accessibility and posts VBoxEnumerateMediaEvent
  *  events to the VBoxGlobal object until all media is enumerated.
@@ -1167,27 +1188,20 @@ void VBoxGlobal::startEnumeratingMedia()
     if (vboxGlobal_cleanup)
         return;
 
-    /* composes a list of all currently known media */
+    /* composes a list of all currently known media & their children */
     media_list.clear();
     {
         CHardDiskEnumerator enHD = vbox.GetHardDisks().Enumerate();
         while (enHD.HasMore())
-        {
-            CHardDisk hd = enHD.GetNext();
-            media_list += VBoxMedia (CUnknown (hd), VBoxDefs::HD, VBoxMedia::Unknown);
-        }
+            addMediaToList (CUnknown (enHD.GetNext()), VBoxDefs::HD);
+
         CDVDImageEnumerator enCD = vbox.GetDVDImages().Enumerate();
         while (enCD.HasMore())
-        {
-            CDVDImage cd = enCD.GetNext();
-            media_list += VBoxMedia (CUnknown (cd), VBoxDefs::CD, VBoxMedia::Unknown);
-        }
+            addMediaToList (CUnknown (enCD.GetNext()), VBoxDefs::CD);
+
         CFloppyImageEnumerator enFD = vbox.GetFloppyImages().Enumerate();
         while (enFD.HasMore())
-        {
-            CFloppyImage fd = enFD.GetNext();
-            media_list += VBoxMedia (CUnknown (fd), VBoxDefs::FD, VBoxMedia::Unknown);
-        }
+            addMediaToList (CUnknown (enFD.GetNext()), VBoxDefs::FD);
     }
 
     /* enumeration thread class */
@@ -1219,7 +1233,7 @@ void VBoxGlobal::startEnumeratingMedia()
                     {
                         CHardDisk hd = media.disk;
                         media.status =
-                            hd.GetAllAccessible() == TRUE ? VBoxMedia::Ok :
+                            hd.GetAccessible() == TRUE ? VBoxMedia::Ok :
                             hd.isOk() ? VBoxMedia::Inaccessible :
                             VBoxMedia::Error;
                         /* assign back to store error info if any */

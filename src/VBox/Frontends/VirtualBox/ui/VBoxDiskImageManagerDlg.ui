@@ -616,10 +616,9 @@
     <function access="private">updateHdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
     <function access="private">updateCdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
     <function access="private">updateFdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
-    <function access="private" returnType="DiskImageItem*">createHdItem( QListView*, DiskImageItem*, const VBoxMedia &amp; )</function>
-    <function access="private" returnType="DiskImageItem*">createCdItem( QListView*, DiskImageItem*, const VBoxMedia &amp; )</function>
-    <function access="private" returnType="DiskImageItem*">createFdItem( QListView*, DiskImageItem*, const VBoxMedia &amp; )</function>
-    <function access="private">createHdChildren( DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createHdItem( QListView*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createCdItem( QListView*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createFdItem( QListView*, const VBoxMedia &amp; )</function>
     <function access="protected">showEvent( QShowEvent * )</function>
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function access="protected">keyPressEvent( QKeyEvent* )</function>

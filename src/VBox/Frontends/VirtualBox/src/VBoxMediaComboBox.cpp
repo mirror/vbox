@@ -136,8 +136,13 @@ void VBoxMediaComboBox::processMedia (const VBoxMedia &aMedia)
     switch (aMedia.type)
     {
         case VBoxDefs::HD:
-            processHdMedia (aMedia);
+        {
+            /* ignoring non-root disks */
+            CHardDisk hd = aMedia.disk;
+            if (hd.GetParent().isNull())
+                processHdMedia (aMedia);
             break;
+        }
         case VBoxDefs::CD:
             processCdMedia (aMedia);
             break;
