@@ -95,6 +95,8 @@ public:
 
     // problem handlers
 
+    void cannotOpenURL (const QString &aURL);
+
     void cannotInitCOM (HRESULT rc);
     void cannotCreateVirtualBox (const CVirtualBox &vbox);
 

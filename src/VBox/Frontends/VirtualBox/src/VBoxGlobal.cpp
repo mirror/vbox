@@ -38,6 +38,11 @@
 #include <qmutex.h>
 #include <qregexp.h>
 #include <qlocale.h>
+#include <qprocess.h>
+
+#ifdef Q_WS_MAC
+#include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
+#endif
 
 #if defined (VBOX_GUI_DEBUG)
 uint64_t VMCPUTimer::ticks_per_msec = (uint64_t) -1LL; // declared in VBoxDefs.h
@@ -68,6 +73,24 @@ public:
     /** last enumerated media index (-1 when #last is true) */
     const int mIndex;
 };
+
+#if defined (Q_WS_WIN)
+class VBoxShellExecuteEvent : public QEvent
+{
+public:
+
+    /** Constructs a regular enum event */
+    VBoxShellExecuteEvent (QThread *aThread, const QString &aURL,
+                             bool aOk)
+        : QEvent ((QEvent::Type) VBoxDefs::ShellExecuteEventType)
+        , mThread (aThread), mURL (aURL), mOk (aOk)
+        {}
+
+    QThread *mThread;
+    QString mURL;
+    bool mOk;
+};
+#endif
 
 // VirtualBox callback class
 /////////////////////////////////////////////////////////////////////////////
@@ -1331,6 +1354,101 @@ bool VBoxGlobal::findMedia (const CUnknown &aObj, VBoxMedia &aMedia) const
     return false;
 }
 
+/** 
+ * Opens the specified URL using OS/Desktop capabilities.
+ * 
+ * @param aURL URL to open
+ * 
+ * @return true on success and false otherwise
+ */
+bool VBoxGlobal::openURL (const QString &aURL)
+{
+#if defined (Q_WS_WIN)
+    /* We cannot use ShellExecute() on the main UI thread because we've
+     * initialized COM with CoInitializeEx(COINIT_MULTITHREADED). See
+     * http://support.microsoft.com/default.aspx?scid=kb;en-us;287087
+     * for more details. */
+    class Thread : public QThread
+    {
+    public:
+
+        Thread (const QString &aURL, QObject *aObject)
+            : mObject (aObject), mURL (aURL) {}
+
+        void run()
+        {
+            int rc = (int) ShellExecute (NULL, NULL, mURL.ucs2(), NULL, NULL, SW_SHOW);
+            bool ok = rc > 32;
+            QApplication::postEvent
+                (mObject,
+                 new VBoxShellExecuteEvent (this, mURL, ok));
+        }
+
+        QString mURL;
+        QObject *mObject;
+    };
+
+    Thread *thread = new Thread (aURL, this);
+    thread->start();
+    /* thread will be deleted in the VBoxShellExecuteEvent handler */
+
+    return true;
+
+#elif defined (Q_WS_X11)
+
+    static const char * const commands[] =
+        { "gnome-open", "kfmclient:exec", "x-www-browser", "firefox", "konqueror" };
+
+    for (size_t i = 0; i < ELEMENTS (commands); ++ i)
+    {
+        QStringList args = QStringList::split (':', commands [i]);
+        args += aURL;
+        QProcess cmd (args);
+        if (cmd.start())
+            return true;
+    }
+
+#elif defined (Q_WS_MAC)
+
+    /* The code below is taken from Psi 0.10 sources
+     * (http://www.psi-im.org) */
+
+    /* Use Internet Config to hand the URL to the appropriate application, as
+     * set by the user in the Internet Preferences pane.
+     * NOTE: ICStart could be called once at Psi startup, saving the
+     *       ICInstance in a global variable, as a minor optimization.
+     *       ICStop should then be called at Psi shutdown if ICStart
+     *       succeeded. */
+    ICInstance icInstance;
+    OSType psiSignature = 'psi ';
+    OSStatus error = ::ICStart (&icInstance, psiSignature);
+    if (error == noErr)
+    {
+        ConstStr255Param hint (0x0);
+        QCString cs = aURL.local8Bit();
+        const char* data = cs.data();
+        long length = cs.length();
+        long start (0);
+        long end (length);
+        /* Don't bother testing return value (error); launched application
+         * will report problems. */
+        ::ICLaunchURL (icInstance, hint, data, length, &start, &end);
+        ICStop (icInstance);
+    }
+
+#else
+    vboxProblem().message
+        (NULL, VBoxProblemReporter::Error,
+         tr ("Opening URLs is not implemented yet."));
+    return false;
+#endif
+
+    /* if we go here it means we couldn't open the URL */
+    vboxProblem().cannotOpenURL (aURL);
+
+    return false;
+}
+
 /**
  *  Changes the language of all global string constants according to the
  *  currently installed translations tables.
@@ -1865,6 +1983,19 @@ bool VBoxGlobal::event (QEvent *e)
 {
     switch (e->type())
     {
+#if defined (Q_WS_WIN)
+        case VBoxDefs::ShellExecuteEventType:
+        {
+            VBoxShellExecuteEvent *ev = (VBoxShellExecuteEvent *) e;
+            if (!ev->mOk)
+                vboxProblem().cannotOpenURL (ev->mURL);
+            /* wait for the thread and free resources */
+            ev->mThread->wait();
+            delete ev->mThread;
+            return true;
+        }
+#endif
+
         case VBoxDefs::EnumerateMediaEventType:
         {
             VBoxEnumerateMediaEvent *ev = (VBoxEnumerateMediaEvent *) e;

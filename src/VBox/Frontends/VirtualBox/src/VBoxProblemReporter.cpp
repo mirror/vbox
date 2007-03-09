@@ -436,6 +436,15 @@ QWidget *VBoxProblemReporter::mainWindowShown()
 // Problem handlers
 /////////////////////////////////////////////////////////////////////////////
 
+void VBoxProblemReporter::cannotOpenURL (const QString &aURL)
+{
+    message
+        (mainWindowShown(), VBoxProblemReporter::Error,
+         tr ("Failed to open <tt>%1</tt>. Make sure your desktop environment "
+             "can properly handle URLs of this type.")
+         .arg (aURL));
+}
+
 void VBoxProblemReporter::cannotInitCOM (HRESULT rc)
 {
     message (
@@ -1550,6 +1559,7 @@ QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &info,
 
 void VBoxProblemReporter::showHelpWebDialog()
 {
+    vboxGlobal().openURL ("http://www.virtualbox.org");
 }
 
 void VBoxProblemReporter::showHelpAboutDialog()
