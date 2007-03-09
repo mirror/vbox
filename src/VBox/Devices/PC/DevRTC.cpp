@@ -116,7 +116,7 @@ struct RTCState {
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && IN_GC
 # if !defined(__WIN__)
     uint32_t Alignment1[3];
-# endif 
+# endif
 #endif
     int32_t irq;
     /* periodic timer */
@@ -208,7 +208,6 @@ static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
         case RTC_SECONDS_ALARM:
         case RTC_MINUTES_ALARM:
         case RTC_HOURS_ALARM:
-            /* XXX: not supported */
             s->cmos_data[s->cmos_index] = data;
             break;
         case RTC_SECONDS:
@@ -401,11 +400,11 @@ static void rtc_update_second2(void *opaque)
     /* check alarm */
     if (s->cmos_data[RTC_REG_B] & REG_B_AIE) {
         if (((s->cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 ||
-             s->cmos_data[RTC_SECONDS_ALARM] == s->current_tm.tm_sec) &&
+             from_bcd(s, s->cmos_data[RTC_SECONDS_ALARM]) == s->current_tm.tm_sec) &&
             ((s->cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 ||
-             s->cmos_data[RTC_MINUTES_ALARM] == s->current_tm.tm_mon) &&
+             from_bcd(s, s->cmos_data[RTC_MINUTES_ALARM]) == s->current_tm.tm_min) &&
             ((s->cmos_data[RTC_HOURS_ALARM] & 0xc0) == 0xc0 ||
-             s->cmos_data[RTC_HOURS_ALARM] == s->current_tm.tm_hour)) {
+             from_bcd(s, s->cmos_data[RTC_HOURS_ALARM]) == s->current_tm.tm_hour)) {
 
             s->cmos_data[RTC_REG_C] |= 0xa0;
             PDMDevHlpISASetIrq(s->CTXSUFF(pDevIns), s->irq, 1);
