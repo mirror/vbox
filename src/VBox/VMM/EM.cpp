@@ -1731,7 +1731,50 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
     {
 #ifdef LOG_ENABLED
         DBGFR3InfoLog(pVM, "cpumguest", "Trap in patch code");
-        DBGFR3DisasInstrCurrentLog(pVM, "Patch code");
+
+        DISCPUSTATE Cpu;
+        int         rc;
+
+        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "Patch code: ");
+        if (    VBOX_SUCCESS(rc) 
+            &&  Cpu.pCurInstr->opcode == OP_IRET)
+        {
+            uint32_t eip, selCS, uEFlags;
+
+            /* Iret crashes are bad as we have already changed the flags on the stack */
+            rc  = PGMPhysReadGCPtr(pVM, &eip,     pCtx->esp, 4);
+            rc |= PGMPhysReadGCPtr(pVM, &selCS,   pCtx->esp+4, 4);
+            rc |= PGMPhysReadGCPtr(pVM, &uEFlags, pCtx->esp+8, 4);
+            if (rc == VINF_SUCCESS)
+            {
+                if (    (uEFlags & X86_EFL_VM)
+                    ||  (selCS & X86_SEL_RPL) == 3)
+                {
+                    uint32_t selSS, esp;
+
+                    rc |= PGMPhysReadGCPtr(pVM, &esp,     pCtx->esp + 12, 4);
+                    rc |= PGMPhysReadGCPtr(pVM, &selSS,   pCtx->esp + 16, 4);
+
+                    if (uEFlags & X86_EFL_VM)
+                    {
+                        uint32_t selDS, selES, selFS, selGS;
+                        rc  = PGMPhysReadGCPtr(pVM, &selES,   pCtx->esp + 20, 4);
+                        rc |= PGMPhysReadGCPtr(pVM, &selDS,   pCtx->esp + 24, 4);
+                        rc |= PGMPhysReadGCPtr(pVM, &selFS,   pCtx->esp + 28, 4);
+                        rc |= PGMPhysReadGCPtr(pVM, &selGS,   pCtx->esp + 32, 4);
+                        if (rc == VINF_SUCCESS)
+                        {
+                            Log(("Patch code: IRET->VM stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                            Log(("Patch code: IRET->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
+                        }
+                    }
+                    else
+                        Log(("Patch code: IRET stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                }
+                else
+                    Log(("Patch code: IRET stack frame: return address %04X:%VGv eflags=%08x\n", selCS, eip, uEFlags));
+            }
+        }
 #endif
         Log(("emR3PatchTrap: in patch: eip=%08x: trap=%02x err=%08x cr2=%08x cr0=%08x\n",
              pCtx->eip, u8TrapNo, uErrorCode, uCR2, pCtx->cr0));
