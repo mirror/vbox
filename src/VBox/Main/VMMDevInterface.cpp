@@ -458,7 +458,7 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
         pData->pVMMDev->hgcmDisconnect(cmd, pData->pVMMDev->getShFlClientId());
     }
 
-    /// @todo hgcmShutdown
+    hgcmReset ();
 #endif
     if (pData->pVMMDev)
     {
@@ -484,7 +484,12 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
         PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
 
         pData->pVMMDev->hgcmDisconnect(cmd, pData->pVMMDev->getShFlClientId());
+    }
+    
+    hgcmReset ();
 
+    if (pData->pVMMDev->mSharedFolderClientId)
+    {
         /* Reload Shared Folder HGCM service */
         HGCMSERVICELOCATION loc;
 

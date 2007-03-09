@@ -133,9 +133,9 @@ class HGCMThread: public HGCMObject
 
         HGCMThread ();
 
-        int Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, uint32_t cbMsg);
+        int Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser);
 
-        int MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cbMsg, PFNHGCMNEWMSGALLOC pfnNewMessage);
+        int MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
         int MsgGet (HGCMMsgCore **ppMsg);
         int MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool bWait);
         void MsgComplete (HGCMMsgCore *pMsg, int32_t result);
@@ -150,7 +150,7 @@ class HGCMThread: public HGCMObject
 #define HGCM_MSG_F_WAIT       (0x00000002)
 #define HGCM_MSG_F_IN_PROCESS (0x00000004)
 
-void HGCMMsgCore::InitializeCore (uint32_t cbMsg, uint32_t u32MsgId, HGCMThread *pThread)
+void HGCMMsgCore::InitializeCore (uint32_t u32MsgId, HGCMThread *pThread)
 {
     m_u32Version  = HGCMMSG_VERSION;
     m_u32Msg      = u32MsgId;
@@ -247,7 +247,7 @@ HGCMThread::~HGCMThread ()
     return;
 }
 
-int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, uint32_t cbMsg)
+int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser)
 {
     int rc = VINF_SUCCESS;
 
@@ -327,7 +327,7 @@ inline void HGCMThread::Leave (void)
 }
 
 
-int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cbMsg, PFNHGCMNEWMSGALLOC pfnNewMessage)
+int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
 {
     int rc = VINF_SUCCESS;
 
@@ -352,7 +352,7 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cb
         Reference ();
 
         /* Initialize just allocated message core */
-        pmsg->InitializeCore (cbMsg, u32MsgId, this);
+        pmsg->InitializeCore (u32MsgId, this);
 
         /* and the message specific data. */
         pmsg->Initialize ();
@@ -590,7 +590,7 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
  * Thread API. Public interface.
  */
 
-int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, uint32_t cbMsg)
+int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser)
 {
     int rc = VINF_SUCCESS;
 
@@ -607,7 +607,7 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
         handle = hgcmObjGenerateHandle (pThread);
 
         /* Initialize the object. */
-        rc = pThread->Initialize (handle, pszThreadName, pfnThread, pvUser, cbMsg);
+        rc = pThread->Initialize (handle, pszThreadName, pfnThread, pvUser);
     }
     else
     {
@@ -635,11 +635,11 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
     return rc;
 }
 
-int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cbMsg, PFNHGCMNEWMSGALLOC pfnNewMessage)
+int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
 {
-    LogFlow(("hgcmMsgAlloc: thread handle = %d, pHandle = %p, cbMsg = %d, sizeof (HGCMMsgCore) = %d\n", hThread, pHandle, cbMsg, sizeof (HGCMMsgCore)));
+    LogFlow(("hgcmMsgAlloc: thread handle = %d, pHandle = %p, sizeof (HGCMMsgCore) = %d\n", hThread, pHandle, sizeof (HGCMMsgCore)));
 
-    if (!pHandle || cbMsg < sizeof (HGCMMsgCore))
+    if (!pHandle)
     {
         return VERR_INVALID_PARAMETER;
     }
@@ -654,7 +654,7 @@ int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32
     }
     else
     {
-        rc = pThread->MsgAlloc (pHandle, u32MsgId, cbMsg, pfnNewMessage);
+        rc = pThread->MsgAlloc (pHandle, u32MsgId, pfnNewMessage);
 
         hgcmObjDereference (pThread);
     }

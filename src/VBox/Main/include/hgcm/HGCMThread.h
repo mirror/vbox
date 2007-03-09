@@ -83,7 +83,7 @@ class HGCMMsgCore: public HGCMObject
         /** Result code for a Send */
         int32_t m_rcSend;
 
-        void InitializeCore (uint32_t cbMsg, uint32_t u32MsgId, HGCMThread *pThread);
+        void InitializeCore (uint32_t u32MsgId, HGCMThread *pThread);
 
     protected:
         virtual ~HGCMMsgCore () {};
@@ -131,23 +131,21 @@ int hgcmThreadInit (void);
  * @param pszThreadName Name of the thread, needed by runtime.
  * @param pfnThread     The worker thread function.
  * @param pvUser        A pointer passed to worker thread.
- * @param cbMsg         Size of a typical message.
  *
  * @return VBox error code
  */
-int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, uint32_t cbMsg);
+int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser);
 
 /** Allocate a message to be posted to HGCM worker thread.
  *
  * @param hThread       Worker thread handle.
  * @param pHandle       Where to store the returned message handle.
  * @param u32MsgId      Message identifier.
- * @param cbMsg         Size of message.
  * @param pfnNewMessage New message allocation callback.
  *
  * @return VBox error code
  */
-int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, uint32_t cbMsg, PFNHGCMNEWMSGALLOC pfnNewMessage);
+int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
 
 /** Post a message to HGCM worker thread.
  *
