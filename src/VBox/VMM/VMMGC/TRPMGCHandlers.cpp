@@ -701,26 +701,6 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     }
 #endif
 
-    /* We always set IOPL to zero which makes e.g. pushf fault in V86 mode. The guest might use IOPL=3 and therefor not expect a #GP.
-     * Simply fall back to the recompiler to emulate this instruction.
-     */
-    if (pRegFrame->eflags.Bits.u1VM)
-    {
-        /* Retrieve the eflags including the virtualized bits. */
-        /** @note hackish as the cpumctxcore structure doesn't contain the right value */
-        X86EFLAGS eflags;
-        eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame);
-        if (eflags.Bits.u2IOPL != 3)
-        {
-            Assert(eflags.Bits.u2IOPL == 0);
-
-            int rc = TRPMForwardTrap(pVM, pRegFrame, 0xD, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP);
-            Assert(rc == VINF_EM_RAW_GUEST_TRAP);
-            return trpmGCExitTrap(pVM, rc, pRegFrame);
-        }
-        /* iopl=3 means we can safely interpret e.g. io instructions. */
-    }
-
     STAM_PROFILE_ADV_START(&pVM->trpm.s.StatTrap0dDisasm, a);
     /*
      * Decode the instruction.
@@ -755,6 +735,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         return trpmGCExitTrap(pVM, rc, pRegFrame);
     }
 
+
     /*
      * Deal with Ring-0 (privileged instructions)
      */
@@ -763,14 +744,31 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         return trpmGCTrap0dHandlerRing0(pVM, pRegFrame, &Cpu, PC);
 
     /*
-     * Deal with Ring-3 GPs. (we currently ignore V86 code)
+     * Deal with Ring-3 GPs.
      */
     if (!pRegFrame->eflags.Bits.u1VM)
         return trpmGCTrap0dHandlerRing3(pVM, pRegFrame, &Cpu);
-    else
-        return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
+    
+    /* 
+     * Deal with v86 code.
+     */
 
-    return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
+    /* We always set IOPL to zero which makes e.g. pushf fault in V86 mode. The guest might use IOPL=3 and therefor not expect a #GP.
+     * Simply fall back to the recompiler to emulate this instruction.
+     */
+    /* Retrieve the eflags including the virtualized bits. */
+    /** @note hackish as the cpumctxcore structure doesn't contain the right value */
+    X86EFLAGS eflags;
+    eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame);
+    if (eflags.Bits.u2IOPL != 3)
+    {
+        Assert(eflags.Bits.u2IOPL == 0);
+
+        int rc = TRPMForwardTrap(pVM, pRegFrame, 0xD, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP);
+        Assert(rc == VINF_EM_RAW_GUEST_TRAP);
+        return trpmGCExitTrap(pVM, rc, pRegFrame);
+    }
+    return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
 }
 
 
