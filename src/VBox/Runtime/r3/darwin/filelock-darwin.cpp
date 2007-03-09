@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/fcntl.hs>
+#include <sys/fcntl.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -79,8 +79,30 @@ RTR3DECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t
     Assert(RTFILE_LOCK_WAIT);
     if (fcntl(File, (fLock & RTFILE_LOCK_WAIT) ? F_SETLKW : F_SETLK, &fl) >= 0)
         return VINF_SUCCESS;
-
     int iErr = errno;
+    if (iErr == ENOTSUP)
+    {
+        /*
+         * This is really bad hack for getting VDIs to work somewhat
+         * safely on SMB mounts.
+         */
+        /** @todo we need to keep track of these locks really. Anyone requiring to lock more
+         * than one part of a file will have to fix this. */
+        unsigned f = 0;
+        Assert(RTFILE_LOCK_WAIT);
+        if (fLock & RTFILE_LOCK_WAIT)
+            f |= LOCK_NB;
+        if (fLock & RTFILE_LOCK_WRITE)
+            f |= LOCK_EX;
+        else
+            f |= LOCK_SH;
+        if (!flock(File, f))
+            return VINF_SUCCESS;
+        iErr = errno;
+        if (iErr == EWOULDBLOCK)
+            return VERR_FILE_LOCK_VIOLATION;
+    }
+
     if (    iErr == EAGAIN
         ||  iErr == EACCES)
         return VERR_FILE_LOCK_VIOLATION;
@@ -123,13 +145,19 @@ RTR3DECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
     if (fcntl(File, F_SETLK, &fl) >= 0)
         return VINF_SUCCESS;
 
-    /* @todo check error codes for non existing lock. */
     int iErr = errno;
+    if (iErr == ENOTSUP)
+    {
+        /* A SMB hack, see RTFileLock. */
+        if (!flock(File, LOCK_UN))
+            return VINF_SUCCESS;
+    }
+
+    /** @todo check error codes for non existing lock. */
     if (    iErr == EAGAIN
         ||  iErr == EACCES)
         return VERR_FILE_LOCK_VIOLATION;
 
     return RTErrConvertFromErrno(iErr);
 }
-
 
