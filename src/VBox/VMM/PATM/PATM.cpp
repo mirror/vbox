@@ -3955,7 +3955,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
         &&  (pCtx->ss & X86_SEL_RPL) == 0)
     {
         RTGCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pInstrGC);
-        AssertMsg(pInstrGCFlat == pInstrGC, ("%04x:%VGv != %VGx eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC));
+        AssertMsg(pInstrGCFlat == pInstrGC, ("%04x:%VGv != %VGx eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32));
     }
 #endif
 
