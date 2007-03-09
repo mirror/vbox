@@ -44,32 +44,142 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40
     {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41
 };
+/* Experimental begin */
+BOOL APIENTRY DrvResetPDEV(
+    DHPDEV dhpdevOld,
+    DHPDEV dhpdevNew
+    )
+{
+    DISPDBG((0, "Experimental %s: %p, %p\n", __FUNCTION__, dhpdevOld, dhpdevNew));
+    return TRUE;
+}
+
+BOOL DrvNineGrid (PVOID x1, PVOID x2, PVOID x3, PVOID x4, PVOID x5, PVOID x6, PVOID x7, PVOID x8, PVOID x9)
+{
+    DISPDBG((0, "Experimental %s: %p, %p, %p, %p, %p, %p, %p, %p, %p\n", __FUNCTION__, x1, x2, x3, x4, x5, x6, x7, x8, x9));
+    return FALSE;
+}
+
+VOID APIENTRY DrvDestroyFont(
+    FONTOBJ *pfo)
+{
+    DISPDBG((0, "Experimental %s: %p\n", __FUNCTION__, pfo));
+}
+
+ULONG APIENTRY DrvEscape(
+    SURFOBJ *pso,
+    ULONG    iEsc,
+    ULONG    cjIn,
+    PVOID    pvIn,
+    ULONG    cjOut,
+    PVOID    pvOut
+    )
+{
+    DISPDBG((0, "Experimental %s: %p, %p, %p, %p, %p, %p\n", __FUNCTION__, pso, iEsc, cjIn, pvIn, cjOut, pvOut));
+    return 0;
+}
+    
+BOOL DrvConnect (PVOID x1, PVOID x2, PVOID x3, PVOID x4)
+{
+    DISPDBG((0, "Experimental %s: %p, %p, %p, %p\n", __FUNCTION__, x1, x2, x3, x4));
+    return TRUE;
+}
+
+BOOL DrvDisconnect (PVOID x1, PVOID x2)
+{
+    DISPDBG((0, "Experimental %s: %p, %p\n", __FUNCTION__, x1, x2));
+    return FALSE;
+}
+
+BOOL DrvReconnect (PVOID x1, PVOID x2)
+{
+    DISPDBG((0, "Experimental %s: %p, %p\n", __FUNCTION__, x1, x2));
+    return FALSE;
+}
+
+BOOL DrvShadowConnect (PVOID x1, PVOID x2)
+{
+    DISPDBG((0, "Experimental %s: %p, %p\n", __FUNCTION__, x1, x2));
+    return FALSE;
+}
+
+BOOL DrvShadowDisconnect (PVOID x1, PVOID x2)
+{
+    DISPDBG((0, "Experimental %s: %p, %p\n", __FUNCTION__, x1, x2));
+    return FALSE;
+}
+
+BOOL DrvDDInit (PVOID x1)
+{
+    DISPDBG((0, "Experimental %s: %p\n", __FUNCTION__, x1));
+    return FALSE;
+}
+
+BOOL APIENTRY DrvGetDirectDrawInfo(
+    DHPDEV        dhpdev,
+    DD_HALINFO   *pHalInfo,
+    DWORD        *pdwNumHeaps,
+    VIDEOMEMORY  *pvmList,
+    DWORD        *pdwNumFourCCCodes,
+    DWORD        *pdwFourCC
+    )
+{
+    DISPDBG((0, "Experimental %s: %p, %p, %p, %p, %p. %p\n", __FUNCTION__, dhpdev, pHalInfo, pdwNumHeaps, pvmList, pdwNumFourCCCodes, pdwFourCC));
+    return FALSE;
+}
+
+BOOL APIENTRY DrvEnableDirectDraw(
+    DHPDEV                  dhpdev,
+    DD_CALLBACKS           *pCallBacks,
+    DD_SURFACECALLBACKS    *pSurfaceCallBacks,
+    DD_PALETTECALLBACKS    *pPaletteCallBacks
+    )
+{
+    DISPDBG((0, "Experimental %s: %p, %p, %p, %p\n", __FUNCTION__, dhpdev, pCallBacks, pSurfaceCallBacks, pPaletteCallBacks));
+    return FALSE;
+}
+
+/* Experimental end */
 
 // W2K,XP functions
 DRVFN gadrvfn_nt5[] = {
-    {   INDEX_DrvEnablePDEV,            (PFN) DrvEnablePDEV         },	//  0
-    {   INDEX_DrvCompletePDEV,          (PFN) DrvCompletePDEV       },	//  1
-    {   INDEX_DrvDisablePDEV,           (PFN) DrvDisablePDEV        },	//  2
-    {   INDEX_DrvEnableSurface,         (PFN) DrvEnableSurface      },	//  3
-    {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },	//  4
-    {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5
-    {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8
-    {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12
-    {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13
-    {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14
-    {   INDEX_DrvFillPath,              (PFN) DrvFillPath           },	// 15
-    {   INDEX_DrvPaint,                 (PFN) DrvPaint              },	// 17
-    {   INDEX_DrvBitBlt,                (PFN) DrvBitBlt             },	// 18
-    {   INDEX_DrvCopyBits,              (PFN) DrvCopyBits           },	// 19
-    {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },	// 20
-    {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },	// 22
-    {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },	// 23
-    {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },	// 29
-    {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },	// 30
-    {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },	// 31
-    {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38
-    {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40
-    {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41
+    {   INDEX_DrvEnablePDEV,            (PFN) DrvEnablePDEV         },	//  0 0x0
+    {   INDEX_DrvCompletePDEV,          (PFN) DrvCompletePDEV       },	//  1 0x1
+    {   INDEX_DrvDisablePDEV,           (PFN) DrvDisablePDEV        },	//  2 0x2
+    {   INDEX_DrvEnableSurface,         (PFN) DrvEnableSurface      },	//  3 0x3
+    {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },	//  4 0x4
+    {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5 0x5
+    {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8 0x8
+    {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12 0xc
+    {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13 0xd
+    {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14 0xe
+    {   INDEX_DrvFillPath,              (PFN) DrvFillPath           },	// 15 0xf
+    {   INDEX_DrvPaint,                 (PFN) DrvPaint              },	// 17 0x11
+    {   INDEX_DrvBitBlt,                (PFN) DrvBitBlt             },	// 18 0x12
+    {   INDEX_DrvCopyBits,              (PFN) DrvCopyBits           },	// 19 0x13
+    {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },	// 20 0x14
+    {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },	// 22 0x16
+    {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },	// 23 0x17
+    {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },	// 29 0x1d
+    {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },	// 30 0x1e
+    {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },	// 31 0x1f
+    {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38 0x26
+    {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40 0x28
+    {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41 0x29
+//     /* Experimental. */
+//     {   0x7,                            (PFN) DrvResetPDEV          },	// 0x7
+//     {   0x5b,                           (PFN) DrvNineGrid           },	// 0x5b
+//     {   0x2b,                           (PFN) DrvDestroyFont        },	// 0x2b
+//     {   0x18,                           (PFN) DrvEscape             },	// 0x18
+//     {   0x4d,                           (PFN) DrvConnect            },	// 0x4d
+//     {   0x4e,                           (PFN) DrvDisconnect         },	// 0x4e
+//     {   0x4f,                           (PFN) DrvReconnect          },	// 0x4f
+//     {   0x50,                           (PFN) DrvShadowConnect      },	// 0x50
+//     {   0x51,                           (PFN) DrvShadowDisconnect   },	// 0x51
+//     {   0x3d,                           (PFN) DrvDDInit             },	// 0x3d
+//     {   0x3b,                           (PFN) DrvGetDirectDrawInfo  },	// 0x3b
+//     {   0x3c,                           (PFN) DrvEnableDirectDraw   },	// 0x3c
+    
 };
 
 // Required hook bits will be set up according to DDI version
