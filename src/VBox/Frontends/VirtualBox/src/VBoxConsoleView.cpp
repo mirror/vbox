@@ -1940,6 +1940,44 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
                              aGlobalPos.y() - last_pos.y(),
                              wheel, state);
 
+#if defined (Q_WS_MAC)
+        /*
+         * Keep the mouse from leaving the widget.
+         *
+         * This is a bit tricky to get right because if it escapes we won't necessarily
+         * get mouse events any longer and can warp it back. So, we keep safety zone
+         * of up to 300 pixels around the borders of the widget to prevent this from
+         * happening. Also, the mouse is warped back to the center of the widget.
+         *
+         * (Note, aPos seems to be unreliable, it caused endless recursion here at one points...)
+         * (Note, synergy and other remote clients might not like this cursor warping.)
+         */
+        QRect rect = viewport()->visibleRect();
+        QPoint pw = viewport()->mapToGlobal (viewport()->pos());
+        rect.moveBy (pw.x(), pw.y());
+
+        QRect dpRect = QApplication::desktop()->screenGeometry (viewport());
+        if (rect.intersects (dpRect))
+            rect = rect.intersect (dpRect);
+
+        int wsafe = rect.width() / 6;
+        rect.setWidth (rect.width() - wsafe * 2);
+        rect.setLeft (rect.left() + wsafe);
+
+        int hsafe = rect.height() / 6;
+        rect.setWidth (rect.height() - hsafe * 2);
+        rect.setTop (rect.top() + hsafe);
+
+        if (rect.contains (aGlobalPos, true))
+            last_pos = aGlobalPos;
+        else
+        {
+            last_pos = rect.center();
+            QCursor::setPos (last_pos);
+        }
+
+#else /* !Q_WS_MAC */
+
         /* "jerk" the mouse by bringing it to the opposite side
          * to simulate the endless moving */
 
@@ -1988,10 +2026,16 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
             last_pos = aGlobalPos;
         }
 #endif
+#endif /* !Q_WS_MAC */
         return true; /* stop further event handling */
     }
     else /* !mouse_captured */
     {
+#ifdef Q_WS_MAC
+        /* Update the mouse cursor; this is a bit excessive really... */
+        if (!DarwinCursorIsNull (&m_darwinCursor))
+            DarwinCursorSet (&m_darwinCursor);
+#endif
         if (mainwnd->isTrueFullscreen())
         {
             if (mode != VBoxDefs::SDLMode)
@@ -2280,14 +2324,21 @@ void VBoxConsoleView::captureMouse (bool capture, bool emit_signal)
     {
         /* memorize the host position where the cursor was captured */
         captured_pos = QCursor::pos();
-#ifndef Q_WS_WIN32
-        viewport()->grabMouse();
-#else
+#ifdef Q_WS_WIN32
         viewport()->setCursor (QCursor (BlankCursor));
         /* move the mouse to the center of the visible area */
         QCursor::setPos (mapToGlobal (visibleRect().center()));
-#endif
         last_pos = QCursor::pos();
+#elif defined (Q_WS_MAC)
+        /* move the mouse to the center of the visible area */
+        last_pos = mapToGlobal (visibleRect().center());
+        QCursor::setPos (last_pos);
+        /* grab all mouse events. */
+        viewport()->grabMouse();
+#else
+        viewport()->grabMouse();
+        last_pos = QCursor::pos();
+#endif
     }
     else
     {
