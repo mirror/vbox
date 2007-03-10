@@ -37,6 +37,7 @@
 
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
+# include "DarwinCursor.h"
 #endif
 
 class VBoxConsoleWnd;
@@ -217,11 +218,15 @@ private:
 #endif
 
 #if defined(Q_WS_MAC)
+# ifndef VBOX_WITH_HACKED_QT
     /** Event handler reference. NULL if the handler isn't installed. */
     EventHandlerRef m_darwinEventHandlerRef;
+# endif
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
     UInt32 m_darwinKeyModifiers;
+    /** The darwin cursor handle (see DarwinCursor.h/.cpp). */
+    DARWINCURSOR m_darwinCursor;
 #endif
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)

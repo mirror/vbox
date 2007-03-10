@@ -79,9 +79,11 @@ const int XKeyRelease = KeyRelease;
 
 #if defined (Q_WS_MAC)
 # include "DarwinKeyboard.h"
+# include "DarwinCursor.h"
 # ifdef VBOX_WITH_HACKED_QT
 #  include "QIApplication.h"
 # endif
+# include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
@@ -418,7 +420,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mAlphaCursor (NULL)
 #endif
 #if defined(Q_WS_MAC)
+# ifndef VBOX_WITH_HACKED_QT
     , m_darwinEventHandlerRef (NULL)
+# endif
     , m_darwinKeyModifiers (0)
 #endif
 {
@@ -534,6 +538,10 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
 #if defined (Q_WS_WIN)
     g_view = this;
+#endif
+
+#ifdef Q_WS_MAC
+    DarwinCursorClearHandle (&m_darwinCursor);
 #endif
 }
 
@@ -1500,12 +1508,13 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
     else
     {
         ::DarwinReleaseKeyboard ();
+#ifndef VBOX_WITH_HACKED_QT
         if (m_darwinEventHandlerRef)
         {
             ::RemoveEventHandler (m_darwinEventHandlerRef);
             m_darwinEventHandlerRef = NULL;
         }
-#ifdef VBOX_WITH_HACKED_QT
+#else
         ((QIApplication *)qApp)->setEventFilter (NULL, NULL);
 #endif
     }
@@ -2635,6 +2644,39 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
 
             XcursorImageDestroy (img);
         }
+
+#elif defined(Q_WS_MAC)
+
+        /*
+         * Qt3/Mac only supports black/white cursors and it offers no way
+         * to create your own cursors here unlike on X11 and Windows.
+         * Which means we're pretty much forced to do it our own way.
+         */
+        int rc;
+
+        /* dispose of the old cursor. */
+        if (!DarwinCursorIsNull (&m_darwinCursor))
+        {
+            rc = DarwinCursorDestroy (&m_darwinCursor);
+            AssertRC (rc);
+        }
+
+        /* create the new cursor */
+        rc = DarwinCursorCreate (me->width(), me->height(), me->xHot(), me->yHot(), me->hasAlpha(),
+                                 srcAndMaskPtr, srcShapePtr, &m_darwinCursor);
+        AssertRC (rc);
+        if (VBOX_SUCCESS (rc))
+        {
+            /** @todo check current mouse coordinates. */
+            rc = DarwinCursorSet (&m_darwinCursor);
+            AssertRC (rc);
+        }
+        ok = VBOX_SUCCESS (rc);
+        NOREF (srcShapePtrScan);
+
+#else
+
+# warning "port me"
 
 #endif
         if (!ok)

@@ -129,7 +129,8 @@ VirtualBox_SOURCES.linux = \
 endif
 
 VirtualBox_SOURCES.darwin = \
-	src/darwin/DarwinKeyboard.cpp
+	src/darwin/DarwinKeyboard.cpp \
+	src/darwin/DarwinCursor.cpp
 
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
