@@ -1125,11 +1125,11 @@ PATMIretStart:
 %endif
 
     test    dword [esp], X86_EFL_NT
-    jnz     iret_fault1
+    jnz near iret_fault1
 
     ; we can't do an iret to v86 code, as we run with CPL=1. The iret would attempt a protected mode iret and (most likely) fault.
     test    dword [esp+12], X86_EFL_VM
-    jnz     iret_return_to_v86
+    jnz near iret_return_to_v86
 
     ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ;;@todo: not correct for iret back to ring 2!!!!!
@@ -1217,7 +1217,7 @@ iret_clearIF:
                                                 ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
     iretd
 
-iret_return_to_v86:   
+iret_return_to_v86:
     test    dword [esp+12], X86_EFL_IF
     jz      iret_fault
 
@@ -1733,7 +1733,7 @@ PATMLookupAndCall_SearchEnd:
     push    dword [ss:PATM_CALL_RETURN_ADDR]   ; push original guest return address
 
     ; the called function will set PATM_INTERRUPTFLAG (!!)
-    jmp     dword [ss:PATM_CALL_PATCH_TARGET_ADDR] 
+    jmp     dword [ss:PATM_CALL_PATCH_TARGET_ADDR]
 
 PATMLookupAndCallEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
