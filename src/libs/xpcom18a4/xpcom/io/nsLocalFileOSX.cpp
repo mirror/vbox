@@ -1336,6 +1336,22 @@ NS_IMETHODIMP nsLocalFile::InitWithNativePath(const nsACString& filePath)
   // '/'s to a single one.
   fixedPath.ReplaceSubstring("//", "/");
 
+#if 1 // bird: hack to fix RegistryLocationForSpec issues with /path/to/./components
+  fixedPath.ReplaceSubstring("/./", "/");
+  size_t len = fixedPath.Length();
+  while (len > 2)
+  {
+    size_t choplen = 0;
+    if (!strcmp(fixedPath.get() + len - 2, "/."))
+      choplen = 2;
+    else if (!strcmp(fixedPath.get() + len - 1, "/"))
+      choplen = 1;
+    else
+      break;
+    fixedPath = StringHead(fixedPath, len - choplen);
+  }
+#endif
+
   // On 10.2, huge paths also crash CFURLGetFSRef()
   if (fixedPath.Length() > PATH_MAX)
     return NS_ERROR_FILE_NAME_TOO_LONG;
