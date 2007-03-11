@@ -126,8 +126,10 @@ VBOX_VERSION_MINOR = 3
 # new build. The define is available in every source file. Only even build numbers
 # will be published, odd numbers are set during development.
 VBOX_VERSION_BUILD = 99
-# For convenience
-VBOX_VERSION = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+# Full version string (may include more than just x.y.z, but no spaces or other problematic chars).
+VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+# Same as VBOX_VERSION_STRING, deprecated.
+VBOX_VERSION = $(VBOX_VERSION_STRING)
 
 
 #
@@ -2057,7 +2059,7 @@ TEMPLATE_VBOXLNX32GUESTR3LIB_INST              = $(INST_ADDITION_LIB)
 # only way to get a really consistent build is to run 'kmk' in the top-level
 # directory. If you don't run it there, you get a consistent sub-tree only.
 #
-VBOX_VERSION_STAMP = $(PATH_OUT)/version-stamp-$(VBOX_VERSION_MAJOR)-$(VBOX_VERSION_MINOR)-$(VBOX_VERSION_BUILD)
+VBOX_VERSION_STAMP = $(PATH_OUT)/version-stamp-$(VBOX_VERSION_STRING)
 VBOX_VERSION_HEADER = $(PATH_OUT)/version-generated.h
 VBOX_VERSION_MK     = $(PATH_OUT)/version-generated.mk
 
@@ -2075,7 +2077,7 @@ $(VBOX_VERSION_HEADER): $(VBOX_VERSION_STAMP)
 	$(APPEND) $@.tmp "#define VBOX_VERSION_MAJOR $(VBOX_VERSION_MAJOR)"
 	$(APPEND) $@.tmp "#define VBOX_VERSION_MINOR $(VBOX_VERSION_MINOR)"
 	$(APPEND) $@.tmp "#define VBOX_VERSION_BUILD $(VBOX_VERSION_BUILD)"
-	$(APPEND) $@.tmp '#define VBOX_VERSION_STRING "$(VBOX_VERSION)"'
+	$(APPEND) $@.tmp '#define VBOX_VERSION_STRING "$(VBOX_VERSION_STRING)"'
 	$(APPEND) $@.tmp ""
 	$(APPEND) $@.tmp "#endif"
 	$(MV) -f $@.tmp $@

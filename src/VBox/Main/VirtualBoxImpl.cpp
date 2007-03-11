@@ -129,9 +129,7 @@ HRESULT VirtualBox::init()
     LogFlowThisFuncEnter();
 
     if (sVersion.isNull())
-        sVersion = Utf8StrFmt ("%d.%d.%d",
-                               VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR,
-                               VBOX_VERSION_BUILD);
+        sVersion = VBOX_VERSION_STRING;
     LogFlowThisFunc (("Version: %ls\n", sVersion.raw()));
 
     int vrc = VINF_SUCCESS;

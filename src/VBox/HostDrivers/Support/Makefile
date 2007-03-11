@@ -199,6 +199,7 @@ $(PATH_TARGET)/Info.plist: $(VBOX_PATH_SUPPORT)/darwin/Info.plist $(VBOX_VERSION
 	$(call MSG_L1,Generating $@)
 	$(xQUIET)$(RM) -f $@
 	$(xQUIET)$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
