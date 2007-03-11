@@ -68,7 +68,7 @@ class HGCMObject
         void Reference (void)
         {
             int32_t refCnt = ASMAtomicIncS32 (&cRef);
-            
+            NOREF(refCnt);
             Log(("Reference: refCnt = %d\n", refCnt));
         }
 
