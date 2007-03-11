@@ -305,8 +305,8 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     unconst (mAudioSniffer) = new AudioSniffer(this);
     AssertReturn (mAudioSniffer, E_FAIL);
 
-    memset (&mCallbackData, 0, sizeof (mCallbackData));    
-    
+    memset (&mCallbackData, 0, sizeof (mCallbackData));
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -3365,7 +3365,7 @@ void Console::onMouseCapabilityChange (BOOL supportsAbsolute, BOOL needsHostCurs
     mCallbackData.mcc.supportsAbsolute = supportsAbsolute;
     mCallbackData.mcc.needsHostCursor = needsHostCursor;
     mCallbackData.mcc.valid = true;
-    
+
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
     {
@@ -3742,9 +3742,9 @@ HRESULT Console::powerDown()
             if (mCallbackData.mpsc.shape != NULL)
                 RTMemFree (mCallbackData.mpsc.shape);
         }
-        memset (&mCallbackData, 0, sizeof (mCallbackData));    
+        memset (&mCallbackData, 0, sizeof (mCallbackData));
     }
-    
+
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -6333,10 +6333,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             char nowUct[64];
             RTTimeSpecToString(RTTimeNow(&timeSpec), nowUct, sizeof(nowUct));
             RTLogRelLogger(loggerRelease, 0, ~0U,
-                           "VirtualBox %d.%d.%d (%s %s) release log\n"
+                           "VirtualBox %s (%s %s) release log\n"
                            "Log opened %s\n",
-                           VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD,
-                           __DATE__, __TIME__,
+                           VBOX_VERSION_STRING, __DATE__, __TIME__,
                            nowUct);
 
             /* register this logger as the release logger */

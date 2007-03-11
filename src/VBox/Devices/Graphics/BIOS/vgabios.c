@@ -419,7 +419,7 @@ init_vga_card:
 
 msg_vga_init:
 .ascii "InnoTek VirtualBox Version "
-.ascii VBOX_VERSION
+.ascii VBOX_VERSION_STRING
 .ascii " VGA BIOS"
 .byte 0x0d,0x0a,0x00
 ASM_END

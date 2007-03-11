@@ -920,10 +920,9 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             char szNowUct[64];
             RTTimeSpecToString(RTTimeNow(&TimeSpec), szNowUct, sizeof(szNowUct));
             RTLogRelLogger(pLogger, 0, ~0U,
-                           "VBoxBFE %d.%d.%d (%s %s) release log\n"
+                           "VBoxBFE %s (%s %s) release log\n"
                            "Log opened %s\n",
-                           VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD,
-                           __DATE__, __TIME__,
+                           VBOX_VERSION_STRING, __DATE__, __TIME__,
                            szNowUct);
 
             /* register this logger as the release logger */

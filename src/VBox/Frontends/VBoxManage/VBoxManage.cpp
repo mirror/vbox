@@ -5889,11 +5889,11 @@ int main(int argc, char *argv[])
      */
     RTR3Init(false);
 
-    RTPrintf("VirtualBox Command Line Management Interface Version %d.%d.%d\n"
+    RTPrintf("VirtualBox Command Line Management Interface Version %s\n"
              "(C) 2005-2007 InnoTek Systemberatung GmbH\n"
              "All rights reserved.\n"
              "\n",
-             VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
+             VBOX_VERSION_STRING);
 
     /* shortcut for no parameters or help */
     if (    (argc < 2)

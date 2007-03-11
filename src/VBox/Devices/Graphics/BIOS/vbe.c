@@ -80,7 +80,7 @@ _vbebios_product_name:
 
 _vbebios_product_revision:
 .ascii       "InnoTek VirtualBox Version "
-.ascii       VBOX_VERSION
+.ascii       VBOX_VERSION_STRING
 .byte        0x00
 
 _vbebios_info_string:
@@ -98,7 +98,7 @@ _no_vbebios_info_string:
 
 msg_vbe_init:
 .ascii       "InnoTek VirtualBox Version "
-.ascii       VBOX_VERSION
+.ascii       VBOX_VERSION_STRING
 .ascii       " VBE Display Adapter"
 .byte	0x0a,0x0d, 0x00
 

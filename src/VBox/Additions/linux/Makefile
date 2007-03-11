@@ -77,7 +77,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0644 installer/Makefile.test  $(PATH_TARGET)/install/module/test/Makefile
 	$(QUIET)$(INSTALL) -m 0644 installer/test.c $(PATH_TARGET)/install/module/test/
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxadd-timesync $(PATH_TARGET)/install/vboxadd-timesync
-	$(QUIET)$(SED) "s;_VERSION_;$(VBOX_VERSION);g" installer/install.sh | $(SED) "s;_BUILD_;$(shell date);g" | $(SED) "s;_OSE_;$(VBOX_OSE);g" > $(PATH_TARGET)/install/install_.sh
+	$(QUIET)$(SED) "s;_VERSION_;$(VBOX_VERSION_STRING);g" installer/install.sh | $(SED) "s;_BUILD_;$(shell date);g" | $(SED) "s;_OSE_;$(VBOX_OSE);g" > $(PATH_TARGET)/install/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/install/install_.sh $(PATH_TARGET)/install/install.sh
 	$(QUIET)$(RM) $(PATH_TARGET)/install/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 installer/vboxadd-timesync.sh $(PATH_TARGET)/install
@@ -96,5 +96,5 @@ ifndef VBOX_OSE
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/mountvboxsf $(PATH_TARGET)/install/mount.vboxsf
 endif
 	$(QUIET)$(VBOX_MAKESELF) $(PATH_TARGET)/install $@ \
-	"VirtualBox $(VBOX_VERSION) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
+	"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
 

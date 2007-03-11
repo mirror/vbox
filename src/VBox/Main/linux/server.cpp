@@ -969,12 +969,12 @@ int main (int argc, char **argv)
         }
 
         {
-            char szBuf[64];
+            char szBuf[80];
             int  iSize;
 
             iSize = snprintf (szBuf, sizeof(szBuf),
-                              "InnoTek VirtualBox XPCOM Server Version %d.%d.%d",
-                              VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
+                              "InnoTek VirtualBox XPCOM Server Version %s",
+                              VBOX_VERSION_STRING);
             for (int i=iSize; i>0; i--)
                 putchar('*');
             printf ("\n%s\n", szBuf);
