@@ -427,7 +427,7 @@ HGCMMsgCore *hgcmMessageAlloc (uint32_t u32MsgId)
     return NULL;
 }
 
-static g_fResetting = false;
+static bool g_fResetting = false;
 
 static DECLCALLBACK(void) hgcmMsgCompletionCallback (int32_t result, HGCMMsgCore *pMsgCore)
 {
