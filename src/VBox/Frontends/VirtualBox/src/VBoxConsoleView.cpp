@@ -1435,7 +1435,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
         ret = kbd_captured;
         if (changed)
         {
-            for (Uint32 bit = 0; bit < 32; bit++)
+            for (UInt32 bit = 0; bit < 32; bit++)
             {
                 if (!(changed & (1 << bit)))
                     continue;
