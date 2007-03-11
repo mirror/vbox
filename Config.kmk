@@ -778,6 +778,12 @@ else
  VBOX_LIBPATH_X11 ?= /usr/X11R6/lib
 endif
 
+#
+# Mac OS X SDK paths.
+#
+VBOX_PATH_MACOSX_SDK ?= /Developer/SDKs/MacOSX10.4u.sdk
+VBOX_PATH_MACOSX_SDK_INCS ?= $(VBOX_PATH_MACOSX_SDK)/Developer/Headers
+
 
 #
 # GCC stuff properties.
@@ -1336,6 +1342,7 @@ TEMPLATE_VBOXR3EXE_LIBS                = socket iconv
 TEMPLATE_VBOXR3EXE_TOOL                = GCC4MACHO
 TEMPLATE_VBOXR3EXE_LIBS                =
 TEMPLATE_VBOXR3EXE_LDFLAGS             = -read_only_relocs suppress
+TEMPLATE_VBOXR3EXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXR3EXE_TOOL                = GCC3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
@@ -1550,6 +1557,7 @@ TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin      = -bind_at_load -framework Carbon
  else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else ifeq ($(BUILD_TARGET),solaris)
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_TOOL                = GCC3PLAIN
@@ -1684,7 +1692,8 @@ else # the gcc guys:
  	$(VBOX_PATH_QT)/lib
 
  ifeq ($(BUILD_TARGET),darwin)
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -framework Carbon -bind_at_load
+  TEMPLATE_VBOXQTGUIEXE_INCS += $(VBOX_PATH_MACOSX_SDK_INCS)
+  TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
   TEMPLATE_VBOXQTGUIEXE_LIBS +=
   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
  else ifeq ($(BUILD_TARGET),os2)
@@ -1709,7 +1718,7 @@ TEMPLATE_VBOXQTGUI = VBox Qt GUI Components
 TEMPLATE_VBOXQTGUI_EXTENDS = VBOXQTGUIEXE
 TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN) $(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
 ifeq ($(BUILD_TARGET),darwin)
- TEMPLATE_VBOXQTGUI_LDFLAGS = $(filter-out -framework Carbon -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS))
+ TEMPLATE_VBOXQTGUI_LDFLAGS = $(filter-out -framework Carbon -framework QuickTime -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS))
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  ifneq ($(BUILD_TARGET),win)
@@ -1788,6 +1797,7 @@ TEMPLATE_VBOXBLDPROG_LIBS                = socket iconv
  else ifeq ($(BUILD_PLATFORM),darwin)
 TEMPLATE_VBOXBLDPROG_TOOL                = GCC4MACHO
 TEMPLATE_VBOXBLDPROG_LIBS                =
+TEMPLATE_VBOXBLDPROG_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_PLATFORM)),)
 TEMPLATE_VBOXBLDPROG_TOOL                = GCC3
 TEMPLATE_VBOXBLDPROG_LIBS                =
