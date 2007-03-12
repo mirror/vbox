@@ -327,6 +327,8 @@ static void printUsage(USAGECATEGORY enmCmd)
             RTPrintf(                        "|winmm|dsound");
         }
         RTPrintf(                            "]\n");
+        RTPrintf("                            [-clipboard disabled|hosttoguest|guesttohost|");
+        RTPrintf("                                        bidirectional]\n");
         if (fVRDP)
         {
             RTPrintf("                            [-vrdp on|off]\n"
@@ -997,6 +999,22 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         else
             fEnabled = FALSE;
         RTPrintf("Audio:           %s (Driver: %s)\n", fEnabled ? "enabled" : "disabled", psz);
+    }
+
+    /* Shared clipboard */
+    {
+        const char *psz = "Unknown";
+            ClipboardMode_T enmMode;
+            rc = machine->COMGETTER(ClipboardMode)(&enmMode);
+            switch (enmMode)
+            {
+                case  ClipboardMode_ClipDisabled:      psz = "Disabled"; break;
+                case  ClipboardMode_ClipHostToGuest:   psz = "HostToGuest"; break;
+                case  ClipboardMode_ClipGuestToHost:   psz = "GuestToHost"; break;
+                case  ClipboardMode_ClipBidirectional: psz = "Bidirectional"; break;
+                default: ; break;
+            }
+        RTPrintf("Clipboard Mode:  %s\n", psz);
     }
 
     if (console)
@@ -2575,6 +2593,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *dvdpassthrough = NULL;
     char *floppy = NULL;
     char *audio = NULL;
+    char *clipboard = NULL;
 #ifdef VBOX_VRDP
     char *vrdp = NULL;
     uint16_t vrdpport = UINT16_MAX;
@@ -2825,6 +2844,15 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
             audio = argv[i];
+        }
+        else if (strcmp(argv[i], "-clipboard") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            clipboard = argv[i];
         }
         else if (strncmp(argv[i], "-cableconnected", 15) == 0)
         {
@@ -3508,6 +3536,36 @@ static int handleModifyVM(int argc, char *argv[],
             else
             {
                 errorArgument("Invalid -audio argument '%s'", audio);
+                rc = E_FAIL;
+                break;
+            }
+        }
+        /* Shared clipboard state */
+        if (clipboard)
+        {
+/*            ComPtr<IClipboardMode> clipboardMode;
+            machine->COMGETTER(ClipboardMode)(clipboardMode.asOutParam());
+            ASSERT(clipboardMode);
+*/
+            if (strcmp(clipboard, "disabled") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipDisabled));
+            }
+            else if (strcmp(clipboard, "hosttoguest") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipHostToGuest));
+            }
+            else if (strcmp(clipboard, "guesttohost") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipGuestToHost));
+            }
+            else if (strcmp(clipboard, "bidirectional") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipBidirectional));
+            }
+            else
+            {
+                errorArgument("Invalid -clipboard argument '%s'", clipboard);
                 rc = E_FAIL;
                 break;
             }
