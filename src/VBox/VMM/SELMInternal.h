@@ -45,14 +45,14 @@
 #define SELM_GDT_ELEMENTS                   8192
 
 /** aHyperSel index to retrieve hypervisor selectors */
-/** The Flat CS selector used by the VMM inside the GC. */
-#define SELM_HYPER_SEL_CS                   0
-/** The Flat DS selector used by the VMM inside the GC. */
-#define SELM_HYPER_SEL_DS                   1
-/** The 64-bit mode CS selector used by the VMM inside the GC. */
-#define SELM_HYPER_SEL_CS64                 2
 /** The TSS selector used by the VMM inside the GC. */
-#define SELM_HYPER_SEL_TSS                  3
+#define SELM_HYPER_SEL_TSS                  0
+/** The Flat CS selector used by the VMM inside the GC. */
+#define SELM_HYPER_SEL_CS                   1
+/** The Flat DS selector used by the VMM inside the GC. */
+#define SELM_HYPER_SEL_DS                   2
+/** The 64-bit mode CS selector used by the VMM inside the GC. */
+#define SELM_HYPER_SEL_CS64                 3
 /** The TSS selector for taking trap 08 (\#DF). */
 #define SELM_HYPER_SEL_TSS_TRAP08           4
 #define SELM_HYPER_SEL_MAX                  (SELM_HYPER_SEL_TSS_TRAP08+1)
