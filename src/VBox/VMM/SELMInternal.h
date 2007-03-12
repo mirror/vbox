@@ -38,9 +38,6 @@
  * @{
  */
 
-/** Number of GDTs we need for internal use */
-#define MAX_NEEDED_HYPERVISOR_GDTS          5
-
 /** The number of GDTS allocated for our GDT. (full size) */
 #define SELM_GDT_ELEMENTS                   8192
 
@@ -55,7 +52,18 @@
 #define SELM_HYPER_SEL_TSS                  3
 /** The TSS selector for taking trap 08 (\#DF). */
 #define SELM_HYPER_SEL_TSS_TRAP08           4
+/** Number of GDTs we need for internal use */
 #define SELM_HYPER_SEL_MAX                  (SELM_HYPER_SEL_TSS_TRAP08+1)
+
+
+/** Default GDT selectors we use for the hypervisor. */
+#define SELM_HYPER_DEFAULT_SEL_CS           ((SELM_GDT_ELEMENTS - 0x1) << 3)
+#define SELM_HYPER_DEFAULT_SEL_DS           ((SELM_GDT_ELEMENTS - 0x2) << 3)
+#define SELM_HYPER_DEFAULT_SEL_CS64         ((SELM_GDT_ELEMENTS - 0x3) << 3)
+#define SELM_HYPER_DEFAULT_SEL_TSS          ((SELM_GDT_ELEMENTS - 0x4) << 3)
+#define SELM_HYPER_DEFAULT_SEL_TSS_TRAP08   ((SELM_GDT_ELEMENTS - 0x5) << 3)
+/** @note SELM_HYPER_DEFAULT_BASE is the lowest value we use. */
+#define SELM_HYPER_DEFAULT_BASE             SELM_HYPER_DEFAULT_SEL_TSS_TRAP08
 
 /**
  * Converts a SELM pointer into a VM pointer.
@@ -155,6 +163,8 @@ typedef struct SELM
     STAMCOUNTER             StatGCWriteGuestTSSHandledChanged;
     /** GC: The number of unhandled write to the Guest's TSS. */
     STAMCOUNTER             StatGCWriteGuestTSSUnhandled;
+    /** The number of times we had to relocate our hypervisor selectors. */
+    STAMCOUNTER             StatHyperSelsChanged;
 } SELM, *PSELM;
 
 __BEGIN_DECLS
