@@ -75,16 +75,16 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
      * Check for conflicts.
      */
     RTSEL   Sel = iGDTEntry << X86_SEL_SHIFT;
-    Assert(   !(pVM->selm.s.SelCS & ~X86_SEL_MASK)
-           && !(pVM->selm.s.SelDS & ~X86_SEL_MASK)
-           && !(pVM->selm.s.SelCS64 & ~X86_SEL_MASK)
-           && !(pVM->selm.s.SelTSS & ~X86_SEL_MASK)
-           && !(pVM->selm.s.SelTSSTrap08 & ~X86_SEL_MASK));
-    if (    pVM->selm.s.SelCS        == Sel
-        ||  pVM->selm.s.SelDS        == Sel
-        ||  pVM->selm.s.SelCS64      == Sel
-        ||  pVM->selm.s.SelTSS       == Sel
-        ||  pVM->selm.s.SelTSSTrap08 == Sel)
+    Assert(   !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] & ~X86_SEL_MASK)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] & ~X86_SEL_MASK)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] & ~X86_SEL_MASK)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] & ~X86_SEL_MASK)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] & ~X86_SEL_MASK));
+    if (    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]        == Sel
+        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]        == Sel
+        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]      == Sel
+        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]       == Sel
+        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] == Sel)
     {
         if (Desc.Gen.u1Present)
         {

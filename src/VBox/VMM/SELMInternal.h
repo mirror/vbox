@@ -39,10 +39,23 @@
  */
 
 /** Number of GDTs we need for internal use */
-#define MAX_NEEDED_HYPERVISOR_GDTS      5
+#define MAX_NEEDED_HYPERVISOR_GDTS          5
 
 /** The number of GDTS allocated for our GDT. (full size) */
-#define SELM_GDT_ELEMENTS               8192
+#define SELM_GDT_ELEMENTS                   8192
+
+/** aHyperSel index to retrieve hypervisor selectors */
+/** The Flat CS selector used by the VMM inside the GC. */
+#define SELM_HYPER_SEL_CS                   0
+/** The Flat DS selector used by the VMM inside the GC. */
+#define SELM_HYPER_SEL_DS                   1
+/** The 64-bit mode CS selector used by the VMM inside the GC. */
+#define SELM_HYPER_SEL_CS64                 2
+/** The TSS selector used by the VMM inside the GC. */
+#define SELM_HYPER_SEL_TSS                  3
+/** The TSS selector for taking trap 08 (\#DF). */
+#define SELM_HYPER_SEL_TSS_TRAP08           4
+#define SELM_HYPER_SEL_MAX                  (SELM_HYPER_SEL_TSS_TRAP08+1)
 
 /**
  * Converts a SELM pointer into a VM pointer.
@@ -62,16 +75,8 @@ typedef struct SELM
      * See SELM2VM(). */
     RTINT                   offVM;
 
-    /** The Flat CS selector used by the VMM inside the GC. */
-    RTSEL                   SelCS;
-    /** The Flat DS selector used by the VMM inside the GC. */
-    RTSEL                   SelDS;
-    /** The 64-bit mode CS selector used by the VMM inside the GC. */
-    RTSEL                   SelCS64;
-    /** The TSS selector used by the VMM inside the GC. */
-    RTSEL                   SelTSS;
-    /** The TSS selector for taking trap 08 (\#DF). */
-    RTSEL                   SelTSSTrap08;
+    /* Flat CS, DS, 64 bit mode CS, TSS & trap 8 TSS */
+    RTSEL                   aHyperSel[SELM_HYPER_SEL_MAX];
 
     /** Pointer to the GCs - HC Ptr.
      * This size is governed by SELM_GDT_ELEMENTS. */
