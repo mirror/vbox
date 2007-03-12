@@ -1580,13 +1580,16 @@ put_luint(action, val, width, neg)
 #ifdef VBOX
 void put_str(action, s)
   Bit16u action;
-  char *s;
+  Bit8u *s;
 {
+  Bit8u c;
   if (!s)
     s = "<NULL>";
-  else
-    while (*s != 0)
-      send(action, *s++);
+
+  while (c = read_byte(get_CS(), s)) {
+    send(action, c);
+    s++;
+  }
 }
 #endif /* VBOX */
 
