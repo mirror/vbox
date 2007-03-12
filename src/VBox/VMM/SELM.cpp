@@ -163,6 +163,8 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->selm.s.StatTSSSync,                    STAMTYPE_PROFILE, "/PROF/SELM/TSSSync",           STAMUNIT_TICKS_PER_CALL, "Profiling of the SELMR3SyncTSS() body.");
     STAM_REG(pVM, &pVM->selm.s.StatUpdateFromCPUM,             STAMTYPE_PROFILE, "/PROF/SELM/UpdateFromCPUM",    STAMUNIT_TICKS_PER_CALL, "Profiling of the SELMR3UpdateFromCPUM() body.");
 
+    STAM_REG(pVM, &pVM->selm.s.StatHyperSelsChanged,           STAMTYPE_COUNTER, "/SELM/HyperSels/Changed",      STAMUNIT_OCCURENCES,     "The number of times we had to relocate our hypervisor selectors.");
+
     /*
      * Default action when entering raw mode for the first time
      */
@@ -226,28 +228,13 @@ SELMR3DECL(int) SELMR3InitFinalize(PVM pVM)
 
 
 /**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
+ * Save hypervisor GDT selectors in our shadow table
  *
- * @param   pVM     The VM.
+ * @param   pVM     The VM handle.
  */
-SELMR3DECL(void) SELMR3Relocate(PVM pVM)
+static void selmR3SaveHyperGDTSelectors(PVM pVM)
 {
-    LogFlow(("SELMR3Relocate\n"));
     PVBOXDESC paGdt = pVM->selm.s.paGdtHC;
-
-    /*
-     * Update GDTR and selector.
-     */
-    CPUMSetHyperGDTR(pVM, MMHyperHC2GC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
-
-    /** @todo selector relocations should be a seperate operation? */
-    CPUMSetHyperCS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]);
-    CPUMSetHyperDS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
-    CPUMSetHyperES(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
-    CPUMSetHyperSS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
-    CPUMSetHyperTR(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]);
 
     /*
      * Set up global code and data descriptors for use in the guest context.
@@ -337,6 +324,33 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
     pDesc->Gen.u1Reserved       = 0;
     pDesc->Gen.u1DefBig         = 0;
     pDesc->Gen.u1Granularity    = 0; /* byte limit */
+}
+
+/**
+ * Applies relocations to data and code managed by this
+ * component. This function will be called at init and
+ * whenever the VMM need to relocate it self inside the GC.
+ *
+ * @param   pVM     The VM.
+ */
+SELMR3DECL(void) SELMR3Relocate(PVM pVM)
+{
+    PVBOXDESC paGdt = pVM->selm.s.paGdtHC;
+    LogFlow(("SELMR3Relocate\n"));
+
+    /*
+     * Update GDTR and selector.
+     */
+    CPUMSetHyperGDTR(pVM, MMHyperHC2GC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
+
+    /** @todo selector relocations should be a seperate operation? */
+    CPUMSetHyperCS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]);
+    CPUMSetHyperDS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+    CPUMSetHyperES(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+    CPUMSetHyperSS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+    CPUMSetHyperTR(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]);
+
+    selmR3SaveHyperGDTSelectors(pVM);
 
 /** @todo SELM must be called when any of the CR3s changes during a cpu mode change. */
 /** @todo PGM knows the proper CR3 values these days, not CPUM. */
@@ -666,26 +680,14 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     SSMR3GetSel(pSSM, &SelTSS);
     RTSEL SelTSSTrap08;
     SSMR3GetSel(pSSM, &SelTSSTrap08);
-    if (u32Version == 1)
-    {
-        RTSEL SelTSSTrap0a;
-        int rc = SSMR3GetSel(pSSM, &SelTSSTrap0a);
-        if (VBOX_FAILURE(rc))
-            return rc;
-    }
 
-    /* Check that no selectors have be relocated. */
+    /* Copy the selectors; they will be checked during relocation. */
     PSELM pSelm = &pVM->selm.s;
-    if (    SelCS        != pSelm->aHyperSel[SELM_HYPER_SEL_CS]
-        ||  SelDS        != pSelm->aHyperSel[SELM_HYPER_SEL_DS]
-        ||  SelCS64      != pSelm->aHyperSel[SELM_HYPER_SEL_CS64]
-        ||  SelDS64      != pSelm->aHyperSel[SELM_HYPER_SEL_CS64]
-        ||  SelTSS       != pSelm->aHyperSel[SELM_HYPER_SEL_TSS]
-        ||  SelTSSTrap08 != pSelm->aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
-    {
-        AssertMsgFailed(("Some selector have been relocated - this cannot happen!\n"));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
+    pSelm->aHyperSel[SELM_HYPER_SEL_CS]         = SelCS;
+    pSelm->aHyperSel[SELM_HYPER_SEL_DS]         = SelDS;
+    pSelm->aHyperSel[SELM_HYPER_SEL_CS64]       = SelCS64;
+    pSelm->aHyperSel[SELM_HYPER_SEL_TSS]        = SelTSS;
+    pSelm->aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = SelTSSTrap08;
 
     return VINF_SUCCESS;
 }
@@ -734,6 +736,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 }
 
 
+#if 0 /* obsolete */
 /**
  * Sets up the virtualization of a guest GDT.
  *
@@ -744,8 +747,6 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  */
 SELMR3DECL(int) SELMR3GdtSetup(PVM pVM, PCVBOXDESC paGDTEs, unsigned cGDTEs)
 {
-    AssertMsg(cGDTEs <= (unsigned)(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3), ("Oops! the loaded GDT is as large as our.. we assume no clashes!!!\n"));
-
     /*
      * Enumerate the array.
      */
@@ -771,7 +772,7 @@ SELMR3DECL(int) SELMR3GdtSetup(PVM pVM, PCVBOXDESC paGDTEs, unsigned cGDTEs)
 
     return VINF_SUCCESS;
 }
-
+#endif
 
 /**
  * Updates the Guest GDT & LDT virtualization based on current CPU state.
@@ -894,17 +895,16 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         /*
          * Check if the Guest GDT intrudes on our GDT entries.
          */
-    //    RTSEL aHyperGDT[MAX_NEEDED_HYPERVISOR_GDTS];
-        if (cbEffLimit >= pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
+        /** @todo we should try to minimize relocations by making sure our current selectors can be reused. */
+        RTSEL aHyperGDT[SELM_HYPER_SEL_MAX];
+        if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
         {
-#if 0
             PVBOXDESC pGDTEStart = pVM->selm.s.paGdtHC;
             PVBOXDESC pGDTE = (PVBOXDESC)((char *)pGDTEStart + GDTR.cbGdt + 1 - sizeof(VBOXDESC));
             int       iGDT = 0;
 
-            /* Disabling this for now; previously saw triple faults with OS/2, before fixing the above if statement  */
             Log(("Internal SELM GDT conflict: use non-present entries\n"));
-            while (pGDTE > pGDTEStart && iGDT < MAX_NEEDED_HYPERVISOR_GDTS)
+            while (pGDTE > pGDTEStart && iGDT < SELM_HYPER_SEL_MAX)
             {
                 /* We can reuse non-present entries */
                 if (!pGDTE->Gen.u1Present)
@@ -917,13 +917,20 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
 
                 pGDTE--;
             }
-            if (iGDT != MAX_NEEDED_HYPERVISOR_GDTS)
-#endif
+            if (iGDT != SELM_HYPER_SEL_MAX)
             {
                 AssertReleaseMsgFailed(("Internal SELM GDT conflict.\n"));
                 STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
                 return VERR_NOT_IMPLEMENTED;
             }
+        }
+        else
+        {
+            aHyperGDT[SELM_HYPER_SEL_CS]         = SELM_HYPER_DEFAULT_SEL_CS;
+            aHyperGDT[SELM_HYPER_SEL_DS]         = SELM_HYPER_DEFAULT_SEL_DS;
+            aHyperGDT[SELM_HYPER_SEL_CS64]       = SELM_HYPER_DEFAULT_SEL_CS64;
+            aHyperGDT[SELM_HYPER_SEL_TSS]        = SELM_HYPER_DEFAULT_SEL_TSS;
+            aHyperGDT[SELM_HYPER_SEL_TSS_TRAP08] = SELM_HYPER_DEFAULT_SEL_TSS_TRAP08;
         }
 
         /*
@@ -972,21 +979,30 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             pGDTE++;
         }
 
-#if 0 /** @todo r=bird: The relocation code won't be working right. Start with the IF below. */
         /*
-         * Check if the Guest GDT intrudes on our GDT entries.
+         * Check if our hypervisor selectors were changed.
          */
-        if (cbEffLimit >= pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
+        if (    aHyperGDT[SELM_HYPER_SEL_CS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]
+            ||  aHyperGDT[SELM_HYPER_SEL_DS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]
+            ||  aHyperGDT[SELM_HYPER_SEL_CS64]       != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]
+            ||  aHyperGDT[SELM_HYPER_SEL_TSS]        != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]
+            ||  aHyperGDT[SELM_HYPER_SEL_TSS_TRAP08] != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
         {
             /* Reinitialize our hypervisor GDTs */
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]        = aHyperGDT[0];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]        = aHyperGDT[1];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]      = aHyperGDT[2];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]       = aHyperGDT[3];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperGDT[4];
-            SELMR3Relocate(pVM); /** @todo r=bird: Must call VMR3Relocate! */
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         = aHyperGDT[SELM_HYPER_SEL_CS];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         = aHyperGDT[SELM_HYPER_SEL_DS];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       = aHyperGDT[SELM_HYPER_SEL_CS64];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        = aHyperGDT[SELM_HYPER_SEL_TSS];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperGDT[SELM_HYPER_SEL_TSS_TRAP08];
+
+            STAM_COUNTER_INC(&pVM->selm.s.StatHyperSelsChanged);
+            /** Relocate (switcher and selector data needs to update their selectors) */
+            VMR3Relocate(pVM, 0);
         }
-#endif
+        else
+        if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
+            /* We overwrote all entries above, so we have to save them again. */
+            selmR3SaveHyperGDTSelectors(pVM);
 
         /*
          * Adjust the cached GDT limit.
@@ -1544,13 +1560,8 @@ SELMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     if (GDTR.cbGdt == 0)
         return VINF_SUCCESS;
 
-#if 0
     if (GDTR.cbGdt >= (unsigned)(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> X86_SEL_SHIFT))
-    {
-        AssertReleaseMsgFailed(("Internal SELM GDT conflict.\n"));
-        return VERR_NOT_IMPLEMENTED;
-    }
-#endif
+        Log(("SELMR3DebugCheck: guest GDT size forced us to look for unused selectors.\n"));
 
     if (GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
         Log(("SELMR3DebugCheck: limits have changed! new=%d old=%d\n", GDTR.cbGdt, pVM->selm.s.GuestGdtr.cbGdt));
