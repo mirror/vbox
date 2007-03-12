@@ -9851,6 +9851,7 @@ pci_init_io_loop1:
   in   ax, dx
   cmp  ax, #0xffff
   jz   next_pci_dev
+#ifndef VBOX /* This currently breaks restoring a previously saved state. */
   mov  dl, #0x04 ;; disable i/o and memory space access
   call pcibios_init_sel_reg
   mov  dx, #0x0cfc
@@ -9901,6 +9902,7 @@ next_pci_base:
   je   enable_iomem_space
   mov  byte ptr[bp-8], al
   jmp  pci_init_io_loop2
+#endif /* !VBOX */
 enable_iomem_space:
   mov  dl, #0x04 ;; enable i/o and memory space access if available
   call pcibios_init_sel_reg
@@ -9908,6 +9910,26 @@ enable_iomem_space:
   in   al, dx
   or   al, #0x07
   out  dx, al
+#ifdef VBOX
+  mov  dl, #0x00 ;; check if PCI device is AMD PCNet
+  call pcibios_init_sel_reg
+  mov  dx, #0x0cfc
+  in   eax, dx
+  cmp  eax, #0x20001022
+  jne  next_pci_dev
+  mov  dl, #0x10 ;; get I/O address
+  call pcibios_init_sel_reg
+  mov  dx, #0x0cfc
+  in   ax, dx
+  and  ax, #0xfffc
+  mov  cx, ax
+  mov  dx, cx
+  add  dx, #0x14 ;; reset register if PCNet is in word I/O mode
+  in   ax, dx    ;; reset is performed by reading the reset register
+  mov  dx, cx
+  add  dx, #0x18 ;; reset register if PCNet is in word I/O mode
+  in   eax, dx   ;; reset is performed by reading the reset register
+#endif /* VBOX */
 next_pci_dev:
   mov  byte ptr[bp-8], #0x10
   inc  bx
@@ -10593,9 +10615,7 @@ post_default_ints:
 #if BX_ROMBIOS32
   call rombios32_init
 #else
-#if 0 /* This currently breaks restoring a previously saved state. */
   call pcibios_init_iomem_bases
-#endif
   call pcibios_init_irqs
 #endif
   call rom_scan
