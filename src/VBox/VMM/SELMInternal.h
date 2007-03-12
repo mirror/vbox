@@ -165,6 +165,8 @@ typedef struct SELM
     STAMCOUNTER             StatGCWriteGuestTSSUnhandled;
     /** The number of times we had to relocate our hypervisor selectors. */
     STAMCOUNTER             StatHyperSelsChanged;
+    /** The number of times we had find free hypervisor selectors. */
+    STAMCOUNTER             StatScanForHyperSels;
 } SELM, *PSELM;
 
 __BEGIN_DECLS
