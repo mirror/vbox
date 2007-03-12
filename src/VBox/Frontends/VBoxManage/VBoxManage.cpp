@@ -429,6 +429,12 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
+    if (enmCmd & USAGE_CONVERTDD)
+    {
+        RTPrintf("VBoxManage convertdd        <filename> <outputfile>\n"
+                 "\n");
+    }
+
     if (enmCmd & USAGE_ADDISCSIDISK)
     {
         RTPrintf("VBoxManage addiscsidisk     -server <name>|<ip>\n"
@@ -2308,6 +2314,81 @@ static int handleCloneVDI(int argc, char *argv[],
         }
     }
     return SUCCEEDED(rc) ? 0 : 1;
+}
+
+static int handleConvertDDImage(int argc, char *argv[],
+                                ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+{
+    if (argc != 2)
+    {
+        return errorSyntax(USAGE_CONVERTDD, "Incorrect number of parameters");
+    }
+
+
+    RTPrintf("Converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
+             argv[0], argv[1]);
+
+    /* open raw image file. */
+    RTFILE File;
+    int rc = RTFileOpen(&File, argv[0], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("File=\"%s\" open error: %Rrf\n", argv[0], rc);
+        return rc;
+    }
+
+    /* get image size. */
+    uint64_t cbFile;
+    rc = RTFileGetSize(File, &cbFile);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTPrintf("Creating fixed image with size %u Bytes...\n", (unsigned)cbFile);
+        rc = VDICreateBaseImage(argv[1],
+                                VDI_IMAGE_TYPE_FIXED,
+                                cbFile,
+                                "Converted from DD test image", NULL, NULL);
+        if (VBOX_SUCCESS(rc))
+        {
+            PVDIDISK pVdi = VDIDiskCreate();
+            rc = VDIDiskOpenImage(pVdi, argv[1], VDI_OPEN_FLAGS_NORMAL);
+            if (VBOX_SUCCESS(rc))
+            {
+                /* alloc work buffer. */
+                void *pvBuf = RTMemAlloc(VDIDiskGetBufferSize(pVdi));
+                if (pvBuf)
+                {
+                    uint64_t off = 0;
+                    while (off < cbFile)
+                    {
+                        unsigned cbRead = 0;
+                        rc = RTFileRead(File, pvBuf, VDIDiskGetBufferSize(pVdi), &cbRead);
+                        if (VBOX_FAILURE(rc) || !cbRead)
+                            break;
+                        rc = VDIDiskWrite(pVdi, off, pvBuf, cbRead);
+                        if (VBOX_FAILURE(rc))
+                            break;
+                        off += cbRead;
+                    }
+
+                    RTMemFree(pvBuf);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+
+                VDIDiskCloseImage(pVdi);
+            }
+
+            if (VBOX_FAILURE(rc))
+            {
+                /* delete image on error */
+                RTPrintf("Failed (%Vrc)!\n", rc);
+                VDIDeleteImage(argv[1]);
+            }
+        }
+    }
+    RTFileClose(File);
+
+    return rc;
 }
 
 static int handleAddiSCSIDisk(int argc, char *argv[],
@@ -6047,6 +6128,7 @@ int main(int argc, char *argv[])
         { "createvm",         handleCreateVM },
         { "modifyvm",         handleModifyVM },
         { "clonevdi",         handleCloneVDI },
+        { "convertdd",        handleConvertDDImage },
         { "startvm",          handleStartVM },
         { "controlvm",        handleControlVM },
         { "discardstate",     handleDiscardState },
