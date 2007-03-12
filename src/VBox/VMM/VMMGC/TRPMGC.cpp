@@ -112,7 +112,7 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 #endif
     uint32_t    iGate       = ((RTGCUINTPTR)pvFault - (RTGCUINTPTR)GCPtrIDT)/sizeof(VBOXIDTE);
 
-    AssertMsg(pvFault >= GCPtrIDT && pvFault < GCPtrIDTEnd, ("pvFault=%VGv GCPtrIDT=%VGv-%VGv\n", pvFault, GCPtrIDT, GCPtrIDTEnd));
+    AssertMsg(pvFault >= GCPtrIDT && pvFault < GCPtrIDTEnd, ("pvFault=%VGv GCPtrIDT=%VGv-%VGv pvRange=%VGv\n", pvFault, GCPtrIDT, GCPtrIDTEnd, pvRange));
     Assert(pvRange == GCPtrIDT);
 
 #if 0
