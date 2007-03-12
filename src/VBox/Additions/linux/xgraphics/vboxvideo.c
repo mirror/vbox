@@ -563,8 +563,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86PrintModes(pScrn);
 
-    /* Set display resolution */
-    xf86SetDpi(pScrn, 0, 0);
+    /* Set display resolution.  This was arbitrarily chosen to be about the same as my monitor. */
+    xf86SetDpi(pScrn, 100, 100);
 
     if (pScrn->modes == NULL) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No graphics modes available\n");
