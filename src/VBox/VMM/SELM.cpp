@@ -99,18 +99,18 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
      * Assert alignment and sizes.
      */
     AssertRelease(!(RT_OFFSETOF(VM, selm.s) & 31));
-    AssertRelease(!(RT_OFFSETOF(VM, selm.s.Tss) & 15));
+    AssertRelease(!(RT_OFFSETOF(VM, selm.s.aHyperSel[SELM_HYPER_SEL_TSS]) & 15));
     AssertRelease(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));
 
     /*
      * Init the structure.
      */
-    pVM->selm.s.offVM           = RT_OFFSETOF(VM, selm);
-    pVM->selm.s.SelCS           = (SELM_GDT_ELEMENTS - 0x1) << 3;
-    pVM->selm.s.SelDS           = (SELM_GDT_ELEMENTS - 0x2) << 3;
-    pVM->selm.s.SelCS64         = (SELM_GDT_ELEMENTS - 0x3) << 3;
-    pVM->selm.s.SelTSS          = (SELM_GDT_ELEMENTS - 0x4) << 3;
-    pVM->selm.s.SelTSSTrap08    = (SELM_GDT_ELEMENTS - 0x5) << 3;
+    pVM->selm.s.offVM                                = RT_OFFSETOF(VM, selm);
+    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         = (SELM_GDT_ELEMENTS - 0x1) << 3;
+    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         = (SELM_GDT_ELEMENTS - 0x2) << 3;
+    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       = (SELM_GDT_ELEMENTS - 0x3) << 3;
+    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        = (SELM_GDT_ELEMENTS - 0x4) << 3;
+    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = (SELM_GDT_ELEMENTS - 0x5) << 3;
 
     /*
      * Allocate GDT table.
@@ -207,16 +207,16 @@ SELMR3DECL(int) SELMR3InitFinalize(PVM pVM)
 #endif
     {
         PVBOXDESC paGdt = pVM->selm.s.paGdtHC;
-        rc = PGMMapSetPage(pVM, MMHyperHC2GC(pVM, &paGdt[pVM->selm.s.SelTSSTrap08 >> 3]), sizeof(paGdt[0]),
+        rc = PGMMapSetPage(pVM, MMHyperHC2GC(pVM, &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3]), sizeof(paGdt[0]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
-        rc = PGMMapSetPage(pVM, MMHyperHC2GC(pVM, &paGdt[pVM->selm.s.SelTSS >> 3]), sizeof(paGdt[0]),
+        rc = PGMMapSetPage(pVM, MMHyperHC2GC(pVM, &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] >> 3]), sizeof(paGdt[0]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
-        rc = PGMMapSetPage(pVM, VM_GUEST_ADDR(pVM, &pVM->selm.s.Tss), sizeof(pVM->selm.s.Tss),
+        rc = PGMMapSetPage(pVM, VM_GUEST_ADDR(pVM, &pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]), sizeof(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
-        rc = PGMMapSetPage(pVM, VM_GUEST_ADDR(pVM, &pVM->selm.s.TssTrap08), sizeof(pVM->selm.s.TssTrap08),
+        rc = PGMMapSetPage(pVM, VM_GUEST_ADDR(pVM, &pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08]), sizeof(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
     }
@@ -242,17 +242,17 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
     CPUMSetHyperGDTR(pVM, MMHyperHC2GC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
 
     /** @todo selector relocations should be a seperate operation? */
-    CPUMSetHyperCS(pVM, pVM->selm.s.SelCS);
-    CPUMSetHyperDS(pVM, pVM->selm.s.SelDS);
-    CPUMSetHyperES(pVM, pVM->selm.s.SelDS);
-    CPUMSetHyperSS(pVM, pVM->selm.s.SelDS);
-    CPUMSetHyperTR(pVM, pVM->selm.s.SelTSS);
+    CPUMSetHyperCS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]);
+    CPUMSetHyperDS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+    CPUMSetHyperES(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+    CPUMSetHyperSS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+    CPUMSetHyperTR(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]);
 
     /*
      * Set up global code and data descriptors for use in the guest context.
      * Both are wide open (base 0, limit 4GB)
      */
-    PVBOXDESC   pDesc = &paGdt[pVM->selm.s.SelCS >> 3];
+    PVBOXDESC   pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] >> 3];
     pDesc->Gen.u16LimitLow      = 0xffff;
     pDesc->Gen.u4LimitHigh      = 0xf;
     pDesc->Gen.u16BaseLow       = 0;
@@ -268,7 +268,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
     pDesc->Gen.u1Granularity    = 1; /* 4KB limit */
 
     /* data */
-    pDesc = &paGdt[pVM->selm.s.SelDS >> 3];
+    pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] >> 3];
     pDesc->Gen.u16LimitLow      = 0xffff;
     pDesc->Gen.u4LimitHigh      = 0xf;
     pDesc->Gen.u16BaseLow       = 0;
@@ -284,7 +284,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
     pDesc->Gen.u1Granularity    = 1; /* 4KB limit */
 
     /* 64-bit mode code (& data?) */
-    pDesc = &paGdt[pVM->selm.s.SelCS64 >> 3];
+    pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] >> 3];
     pDesc->Gen.u16LimitLow      = 0xffff;
     pDesc->Gen.u4LimitHigh      = 0xf;
     pDesc->Gen.u16BaseLow       = 0;
@@ -302,7 +302,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
     /*
      * TSS descriptor
      */
-    pDesc = &paGdt[pVM->selm.s.SelTSS >> 3];
+    pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] >> 3];
     RTGCPTR pGCTSS = VM_GUEST_ADDR(pVM, &pVM->selm.s.Tss);
     pDesc->Gen.u16BaseLow       = RT_LOWORD(pGCTSS);
     pDesc->Gen.u8BaseHigh1      = RT_BYTE3(pGCTSS);
@@ -321,7 +321,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
     /*
      * TSS descriptor for trap 08
      */
-    pDesc = &paGdt[pVM->selm.s.SelTSSTrap08 >> 3];
+    pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3];
     pDesc->Gen.u16LimitLow      = sizeof(VBOXTSS) - 1;
     pDesc->Gen.u4LimitHigh      = 0;
     pGCTSS = VM_GUEST_ADDR(pVM, &pVM->selm.s.TssTrap08);
@@ -344,23 +344,23 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
      */
     /* Current TSS */
     pVM->selm.s.Tss.cr3     = PGMGetHyperCR3(pVM);
-    pVM->selm.s.Tss.ss0     = pVM->selm.s.SelDS;
+    pVM->selm.s.Tss.ss0     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.Tss.esp0    = VMMGetStackGC(pVM);
-    pVM->selm.s.Tss.cs      = pVM->selm.s.SelCS;
-    pVM->selm.s.Tss.ds      = pVM->selm.s.SelDS;
-    pVM->selm.s.Tss.es      = pVM->selm.s.SelDS;
+    pVM->selm.s.Tss.cs      = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS];
+    pVM->selm.s.Tss.ds      = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
+    pVM->selm.s.Tss.es      = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.Tss.offIoBitmap = sizeof(VBOXTSS);
 
     /* trap 08 */
     pVM->selm.s.TssTrap08.cr3    = PGMGetInterGCCR3(pVM);                   /* this should give use better survival chances. */
-    pVM->selm.s.TssTrap08.ss0    = pVM->selm.s.SelDS;
-    pVM->selm.s.TssTrap08.ss     = pVM->selm.s.SelDS;
+    pVM->selm.s.TssTrap08.ss0    = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
+    pVM->selm.s.TssTrap08.ss     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.TssTrap08.esp0   = VMMGetStackGC(pVM) - PAGE_SIZE / 2;  /* upper half can be analysed this way. */
     pVM->selm.s.TssTrap08.esp    = pVM->selm.s.TssTrap08.esp0;
     pVM->selm.s.TssTrap08.ebp    = pVM->selm.s.TssTrap08.esp0;
-    pVM->selm.s.TssTrap08.cs     = pVM->selm.s.SelCS;
-    pVM->selm.s.TssTrap08.ds     = pVM->selm.s.SelDS;
-    pVM->selm.s.TssTrap08.es     = pVM->selm.s.SelDS;
+    pVM->selm.s.TssTrap08.cs     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS];
+    pVM->selm.s.TssTrap08.ds     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
+    pVM->selm.s.TssTrap08.es     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.TssTrap08.fs     = 0;
     pVM->selm.s.TssTrap08.gs     = 0;
     pVM->selm.s.TssTrap08.selLdt = 0;
@@ -609,12 +609,12 @@ static DECLCALLBACK(int) selmR3Save(PVM pVM, PSSMHANDLE pSSM)
 
     SSMR3PutBool(pSSM, pSelm->fDisableMonitoring);
     SSMR3PutBool(pSSM, pSelm->fSyncTSSRing0Stack);
-    SSMR3PutSel(pSSM, pSelm->SelCS);
-    SSMR3PutSel(pSSM, pSelm->SelDS);
-    SSMR3PutSel(pSSM, pSelm->SelCS64);
-    SSMR3PutSel(pSSM, pSelm->SelCS64); //reserved for DS64.
-    SSMR3PutSel(pSSM, pSelm->SelTSS);
-    return SSMR3PutSel(pSSM, pSelm->SelTSSTrap08);
+    SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_CS]);
+    SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_DS]);
+    SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_CS64]);
+    SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_CS64]); //reserved for DS64.
+    SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_TSS]);
+    return SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_TSS_TRAP08]);
 }
 
 
@@ -675,12 +675,12 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
     /* Check that no selectors have be relocated. */
     PSELM pSelm = &pVM->selm.s;
-    if (    SelCS        != pSelm->SelCS
-        ||  SelDS        != pSelm->SelDS
-        ||  SelCS64      != pSelm->SelCS64
-        ||  SelDS64      != pSelm->SelCS64
-        ||  SelTSS       != pSelm->SelTSS
-        ||  SelTSSTrap08 != pSelm->SelTSSTrap08)
+    if (    SelCS        != pSelm->aHyperSel[SELM_HYPER_SEL_CS]
+        ||  SelDS        != pSelm->aHyperSel[SELM_HYPER_SEL_DS]
+        ||  SelCS64      != pSelm->aHyperSel[SELM_HYPER_SEL_CS64]
+        ||  SelDS64      != pSelm->aHyperSel[SELM_HYPER_SEL_CS64]
+        ||  SelTSS       != pSelm->aHyperSel[SELM_HYPER_SEL_TSS]
+        ||  SelTSSTrap08 != pSelm->aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
     {
         AssertMsgFailed(("Some selector have been relocated - this cannot happen!\n"));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -743,7 +743,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  */
 SELMR3DECL(int) SELMR3GdtSetup(PVM pVM, PCVBOXDESC paGDTEs, unsigned cGDTEs)
 {
-    AssertMsg(cGDTEs <= (unsigned)(pVM->selm.s.SelTSSTrap08 >> 3), ("Oops! the loaded GDT is as large as our.. we assume no clashes!!!\n"));
+    AssertMsg(cGDTEs <= (unsigned)(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3), ("Oops! the loaded GDT is as large as our.. we assume no clashes!!!\n"));
 
     /*
      * Enumerate the array.
@@ -894,7 +894,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
          * Check if the Guest GDT intrudes on our GDT entries.
          */
     //    RTSEL aHyperGDT[MAX_NEEDED_HYPERVISOR_GDTS];
-        if (cbEffLimit >= pVM->selm.s.SelTSSTrap08)
+        if (cbEffLimit >= pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
         {
 #if 0
             PVBOXDESC pGDTEStart = pVM->selm.s.paGdtHC;
@@ -975,14 +975,14 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         /*
          * Check if the Guest GDT intrudes on our GDT entries.
          */
-        if (cbEffLimit >= pVM->selm.s.SelTSSTrap08)
+        if (cbEffLimit >= pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
         {
             /* Reinitialize our hypervisor GDTs */
-            pVM->selm.s.SelCS        = aHyperGDT[0];
-            pVM->selm.s.SelDS        = aHyperGDT[1];
-            pVM->selm.s.SelCS64      = aHyperGDT[2];
-            pVM->selm.s.SelTSS       = aHyperGDT[3];
-            pVM->selm.s.SelTSSTrap08 = aHyperGDT[4];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]        = aHyperGDT[0];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]        = aHyperGDT[1];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]      = aHyperGDT[2];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]       = aHyperGDT[3];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperGDT[4];
             SELMR3Relocate(pVM); /** @todo r=bird: Must call VMR3Relocate! */
         }
 #endif
@@ -1544,7 +1544,7 @@ SELMR3DECL(int) SELMR3DebugCheck(PVM pVM)
         return VINF_SUCCESS;
 
 #if 0
-    if (GDTR.cbGdt >= (unsigned)(pVM->selm.s.SelTSSTrap08 >> X86_SEL_SHIFT))
+    if (GDTR.cbGdt >= (unsigned)(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> X86_SEL_SHIFT))
     {
         AssertReleaseMsgFailed(("Internal SELM GDT conflict.\n"));
         return VERR_NOT_IMPLEMENTED;
@@ -1830,11 +1830,11 @@ SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
      */
     VBOXDESC    Desc;
     if (    !(Sel & X86_SEL_LDT)
-        && (    pVM->selm.s.SelCS == (Sel & X86_SEL_MASK)
-            ||  pVM->selm.s.SelDS == (Sel & X86_SEL_MASK)
-            ||  pVM->selm.s.SelCS64 == (Sel & X86_SEL_MASK)
-            ||  pVM->selm.s.SelTSS == (Sel & X86_SEL_MASK)
-            ||  pVM->selm.s.SelTSSTrap08 == (Sel & X86_SEL_MASK))
+        && (    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] == (Sel & X86_SEL_MASK)
+            ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] == (Sel & X86_SEL_MASK)
+            ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] == (Sel & X86_SEL_MASK)
+            ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] == (Sel & X86_SEL_MASK)
+            ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] == (Sel & X86_SEL_MASK))
        )
     {
         /*
@@ -1961,11 +1961,11 @@ SELMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSe
          * Global descriptor.
          */
         Desc = pVM->selm.s.paGdtHC[Sel >> X86_SEL_SHIFT];
-        pSelInfo->fHyper = pVM->selm.s.SelCS == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.SelDS == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.SelCS64 == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.SelTSS == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.SelTSSTrap08 == (Sel & X86_SEL_MASK);
+        pSelInfo->fHyper = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] == (Sel & X86_SEL_MASK)
+                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] == (Sel & X86_SEL_MASK)
+                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] == (Sel & X86_SEL_MASK)
+                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] == (Sel & X86_SEL_MASK)
+                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] == (Sel & X86_SEL_MASK);
         /** @todo check that the GDT offset is valid. */
     }
     else
@@ -2119,15 +2119,15 @@ static DECLCALLBACK(void) selmR3InfoGdt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
             char szOutput[128];
             selmR3FormatDescriptor(pVM->selm.s.paGdtHC[iGDT], iGDT << X86_SEL_SHIFT, &szOutput[0], sizeof(szOutput));
             const char *psz = "";
-            if (iGDT == ((unsigned)pVM->selm.s.SelCS >> X86_SEL_SHIFT))
+            if (iGDT == ((unsigned)pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] >> X86_SEL_SHIFT))
                 psz = " HyperCS";
-            else if (iGDT == ((unsigned)pVM->selm.s.SelDS >> X86_SEL_SHIFT))
+            else if (iGDT == ((unsigned)pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] >> X86_SEL_SHIFT))
                 psz = " HyperDS";
-            else if (iGDT == ((unsigned)pVM->selm.s.SelCS64 >> X86_SEL_SHIFT))
+            else if (iGDT == ((unsigned)pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] >> X86_SEL_SHIFT))
                 psz = " HyperCS64";
-            else if (iGDT == ((unsigned)pVM->selm.s.SelTSS >> X86_SEL_SHIFT))
+            else if (iGDT == ((unsigned)pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] >> X86_SEL_SHIFT))
                 psz = " HyperTSS";
-            else if (iGDT == ((unsigned)pVM->selm.s.SelTSSTrap08 >> X86_SEL_SHIFT))
+            else if (iGDT == ((unsigned)pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> X86_SEL_SHIFT))
                 psz = " HyperTSSTrap08";
             pHlp->pfnPrintf(pHlp, "%s%s\n", szOutput, psz);
         }

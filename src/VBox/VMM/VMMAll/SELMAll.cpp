@@ -495,7 +495,7 @@ SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSEL
  */
 SELMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
 {
-    return pVM->selm.s.SelTSSTrap08;
+    return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
 }
 
 
@@ -656,7 +656,7 @@ SELMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL)
  */
 SELMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
 {
-    return pVM->selm.s.SelCS;
+    return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS];
 }
 
 
@@ -667,7 +667,7 @@ SELMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
  */
 SELMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
 {
-    return pVM->selm.s.SelCS64;
+    return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64];
 }
 
 
@@ -678,7 +678,7 @@ SELMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
  */
 SELMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
 {
-    return pVM->selm.s.SelDS;
+    return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
 }
 
 
@@ -689,7 +689,7 @@ SELMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
  */
 SELMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
 {
-    return pVM->selm.s.SelTSS;
+    return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS];
 }
 
 
@@ -700,7 +700,7 @@ SELMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
  */
 SELMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
 {
-    return pVM->selm.s.SelTSSTrap08;
+    return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
 }
 
 
