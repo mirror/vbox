@@ -327,8 +327,8 @@ static void printUsage(USAGECATEGORY enmCmd)
             RTPrintf(                        "|winmm|dsound");
         }
         RTPrintf(                            "]\n");
-        RTPrintf("                            [-clipboard disabled|hosttoguest|guesttohost|");
-        RTPrintf("                                        bidirectional]\n");
+        RTPrintf("                            [-clipboard disabled|hosttoguest|guesttohost|\n"
+                 "                                        bidirectional]\n");
         if (fVRDP)
         {
             RTPrintf("                            [-vrdp on|off]\n"
