@@ -164,6 +164,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->selm.s.StatUpdateFromCPUM,             STAMTYPE_PROFILE, "/PROF/SELM/UpdateFromCPUM",    STAMUNIT_TICKS_PER_CALL, "Profiling of the SELMR3UpdateFromCPUM() body.");
 
     STAM_REG(pVM, &pVM->selm.s.StatHyperSelsChanged,           STAMTYPE_COUNTER, "/SELM/HyperSels/Changed",      STAMUNIT_OCCURENCES,     "The number of times we had to relocate our hypervisor selectors.");
+    STAM_REG(pVM, &pVM->selm.s.StatScanForHyperSels,           STAMTYPE_COUNTER, "/SELM/HyperSels/Scan",         STAMUNIT_OCCURENCES,     "The number of times we had find free hypervisor selectors.");
 
     /*
      * Default action when entering raw mode for the first time
@@ -904,6 +905,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             int       iGDT = 0;
 
             Log(("Internal SELM GDT conflict: use non-present entries\n"));
+            STAM_COUNTER_INC(&pVM->selm.s.StatScanForHyperSels);
             while (pGDTE > pGDTEStart && iGDT < SELM_HYPER_SEL_MAX)
             {
                 /* We can reuse non-present entries */
