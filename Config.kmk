@@ -127,7 +127,7 @@ VBOX_VERSION_MINOR = 3
 # will be published, odd numbers are set during development.
 VBOX_VERSION_BUILD = 99
 # Full version string (may include more than just x.y.z, but no spaces or other problematic chars).
-VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)-private
 # Same as VBOX_VERSION_STRING, deprecated.
 VBOX_VERSION = $(VBOX_VERSION_STRING)
 
@@ -344,7 +344,6 @@ ifeq ($(filter-out linux l4 freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
 endif
 ifeq ($(BUILD_TARGET),darwin)
  VBOX_LDR_FMT = macho
- DONT_USE_YASM = 1 # yasm doesn't implement macho yet.
 endif
 ifeq ($(BUILD_TARGET),os2)
  VBOX_LDR_FMT = lx
@@ -415,7 +414,7 @@ ifeq ($(VBOX_LDR_FMT64),elf)
  VBOX_ASFLAGS_DBFINFO64 = -g dwarf2
 endif
 ifeq ($(VBOX_LDR_FMT64),macho)
- VBOX_ASFLAGS_FMT64 = -f macho -DASM_FORMAT_MACHO
+ VBOX_ASFLAGS_FMT64 = -f macho64 -DASM_FORMAT_MACHO
  VBOX_ASFLAGS_DBFINFO64 = -g dwarf2
 endif
 ifeq ($(VBOX_LDR_FMT64),pe)
@@ -429,11 +428,11 @@ ifndef DONT_USE_YASM
  VBOX_ASTOOL    = YASM
  VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
  VBOX_LDR_FMT_2_YASM_DBGINFO.lx    = -g stabs
- VBOX_LDR_FMT_2_YASM_DBGINFO.macho = -g dwarf2
+ VBOX_LDR_FMT_2_YASM_DBGINFO.macho =
  VBOX_LDR_FMT_2_YASM_DBGINFO.pe    =
- VBOX_ASFLAGS   = $(VBOX_ASFLAGS_FMT)   -D__YASM__ -w+orphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT))
- VBOX_ASFLAGS32 = $(VBOX_ASFLAGS_FMT32) -D__YASM__ -w+orphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT32))
- VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__YASM__ -w+orphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT64))
+ VBOX_ASFLAGS   = $(VBOX_ASFLAGS_FMT)   -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT))
+ VBOX_ASFLAGS32 = $(VBOX_ASFLAGS_FMT32) -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT32))
+ VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT64))
 else
  VBOX_ASTOOL    = NASM
  VBOX_ASFLAGS   = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT))   -D__NASM__ -w+orphan-labels -g
