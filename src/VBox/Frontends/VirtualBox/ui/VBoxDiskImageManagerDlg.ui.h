@@ -42,6 +42,9 @@ public:
     DiskImageItem (QListView *parent) :
         QListViewItem (parent), mStatus (VBoxMedia::Unknown) {}
 
+    void setMedia (const VBoxMedia &aMedia) { mMedia = aMedia; }
+    VBoxMedia &getMedia() { return mMedia; }
+
     QString getName() { return mName; }
 
     void setPath (QString aPath) { mPath = aPath; }
@@ -125,6 +128,8 @@ public:
     }
 
 protected:
+
+    VBoxMedia mMedia;
 
     QString mName;
     QString mPath;
@@ -786,7 +791,8 @@ void VBoxDiskImageManagerDlg::addImageToList (const QString &aSource,
 
 
 DiskImageItem* VBoxDiskImageManagerDlg::createImageNode (QListView *aList,
-                                                         DiskImageItem *aRoot)
+                                                         DiskImageItem *aRoot,
+                                                         const VBoxMedia &aMedia)
 {
     DiskImageItem *item = 0;
 
@@ -796,6 +802,8 @@ DiskImageItem* VBoxDiskImageManagerDlg::createImageNode (QListView *aList,
         item = new DiskImageItem (aList);
     else
         Assert (0);
+
+    item->setMedia (aMedia);
 
     return item;
 }
@@ -1184,7 +1192,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
     CHardDisk hd = aMedia.disk;
     QUuid rootId = hd.GetParent().isNull() ? QUuid() : hd.GetParent().GetId();
     DiskImageItem *root = searchItem (aList, rootId);
-    DiskImageItem *item = createImageNode (aList, root);
+    DiskImageItem *item = createImageNode (aList, root, aMedia);
     updateHdItem (item, aMedia);
     return item;
 }
@@ -1192,7 +1200,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
 DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
                                                       const VBoxMedia &aMedia)
 {
-    DiskImageItem *item = createImageNode (aList, 0);
+    DiskImageItem *item = createImageNode (aList, 0, aMedia);
     updateCdItem (item, aMedia);
     return item;
 }
@@ -1200,7 +1208,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
 DiskImageItem* VBoxDiskImageManagerDlg::createFdItem (QListView *aList,
                                                       const VBoxMedia &aMedia)
 {
-    DiskImageItem *item = createImageNode (aList, 0);
+    DiskImageItem *item = createImageNode (aList, 0, aMedia);
     updateFdItem (item, aMedia);
     return item;
 }
@@ -1571,7 +1579,8 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
     QListView* parentList = aItem->listView();
     if (parentList == hdsView)
     {
-        QUuid machineId = vbox.GetHardDisk (itemId).GetMachineId();
+        CHardDisk hd = aItem->getMedia().disk;
+        QUuid machineId = hd.GetMachineId();
         if (machineId.isNull() ||
             vbox.GetMachine (machineId).GetState() != CEnums::PoweredOff &&
             vbox.GetMachine (machineId).GetState() != CEnums::Aborted)
@@ -1794,7 +1803,8 @@ void VBoxDiskImageManagerDlg::addImage()
         filter = tr( "Floppy images (*.img)" );
         title = tr( "Select a floppy disk image file" );
         type = VBoxDefs::FD;
-    } else
+    }
+    else
     {
         AssertMsgFailed (("Root list should be equal to hdsView, cdsView or fdsView"));
     }
@@ -1819,8 +1829,10 @@ void VBoxDiskImageManagerDlg::removeImage()
         static_cast<DiskImageItem*> (currentList->currentItem()) : 0;
     AssertMsg (item, ("Current item must not be null"));
 
-    QString src = item->getPath().stripWhiteSpace();
     QUuid uuid = QUuid (item->getUuid());
+    AssertMsg (!uuid.isNull(), ("Current item must have uuid"));
+
+    QString src = item->getPath().stripWhiteSpace();
     VBoxDefs::DiskType type = VBoxDefs::InvalidType;
 
     if (currentList == hdsView)
@@ -1830,7 +1842,8 @@ void VBoxDiskImageManagerDlg::removeImage()
         /// @todo When creation of VMDK is implemented, we should
         /// enable image deletion for  them as well (use
         /// GetStorageType() to define the correct cast).
-        if (vbox.GetHardDisk (uuid).GetStorageType() == CEnums::VirtualDiskImage &&
+        CHardDisk disk = item->getMedia().disk;
+        if (disk.GetStorageType() == CEnums::VirtualDiskImage &&
             item->getStatus() == VBoxMedia::Ok)
             deleteImage = vboxProblem().confirmHardDiskImageDeletion (this, src);
         else
@@ -1880,18 +1893,16 @@ void VBoxDiskImageManagerDlg::releaseImage()
     QUuid itemId = QUuid (item->getUuid());
     AssertMsg (!itemId.isNull(), ("Current item must have uuid"));
 
-    VBoxMedia media;
-    QUuid machineId;
     /* if it is a hard disk sub-item: */
     if (currentList == hdsView)
     {
-        machineId = vbox.GetHardDisk (itemId).GetMachineId();
+        CHardDisk hd = item->getMedia().disk;
+        QUuid machineId = hd.GetMachineId();
         if (vboxProblem().confirmReleaseImage (this,
-                           vbox.GetMachine(machineId).GetName()))
+            vbox.GetMachine (machineId).GetName()))
         {
             releaseDisk (machineId, itemId, VBoxDefs::HD);
-            CHardDisk hd = vboxGlobal().virtualBox().GetHardDisk (itemId);
-            media = VBoxMedia (CUnknown (hd), VBoxDefs::HD, item->getStatus());
+            vboxGlobal().updateMedia (item->getMedia());
         }
     }
     /* if it is a cd/dvd sub-item: */
@@ -1908,8 +1919,8 @@ void VBoxDiskImageManagerDlg::releaseImage()
                  it != permMachines.end(); ++it)
                 releaseDisk (QUuid (*it), itemId, VBoxDefs::CD);
 
-            CDVDImage cd = vboxGlobal().virtualBox().GetDVDImage (itemId);
-            media = VBoxMedia (CUnknown (cd), VBoxDefs::CD, item->getStatus());
+            CDVDImage cd = vbox.GetDVDImage (itemId);
+            vboxGlobal().updateMedia (item->getMedia());
         }
     }
     /* if it is a floppy sub-item: */
@@ -1926,12 +1937,10 @@ void VBoxDiskImageManagerDlg::releaseImage()
                  it != permMachines.end(); ++it)
                 releaseDisk (QUuid (*it), itemId, VBoxDefs::FD);
 
-            CFloppyImage fd = vboxGlobal().virtualBox().GetFloppyImage (itemId);
-            media = VBoxMedia (CUnknown (fd), VBoxDefs::FD, item->getStatus());
+            CFloppyImage fd = vbox.GetFloppyImage (itemId);
+            vboxGlobal().updateMedia (item->getMedia());
         }
     }
-    if (media.type != VBoxDefs::InvalidType)
-        vboxGlobal().updateMedia (media);
 }
 
 
@@ -1989,7 +1998,7 @@ void VBoxDiskImageManagerDlg::releaseDisk (QUuid aMachineId,
             break;
         }
         default:
-            AssertFailed();
+            AssertMsgFailed (("Incorrect disk type."));
     }
     /* save all setting changes: */
     machine.SaveSettings();
