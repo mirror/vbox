@@ -896,7 +896,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
          * Check if the Guest GDT intrudes on our GDT entries.
          */
         /** @todo we should try to minimize relocations by making sure our current selectors can be reused. */
-        RTSEL aHyperGDT[SELM_HYPER_SEL_MAX];
+        RTSEL aHyperSel[SELM_HYPER_SEL_MAX];
         if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
         {
             PVBOXDESC pGDTEStart = pVM->selm.s.paGdtHC;
@@ -909,9 +909,9 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                 /* We can reuse non-present entries */
                 if (!pGDTE->Gen.u1Present)
                 {
-                    aHyperGDT[iGDT] = ((uintptr_t)pGDTE - (uintptr_t)pVM->selm.s.paGdtHC) / sizeof(VBOXDESC);
-                    aHyperGDT[iGDT] = aHyperGDT[iGDT] << X86_SEL_SHIFT;
-                    Log(("SELM: Found unused GDT %04X\n", aHyperGDT[iGDT]));
+                    aHyperSel[iGDT] = ((uintptr_t)pGDTE - (uintptr_t)pVM->selm.s.paGdtHC) / sizeof(VBOXDESC);
+                    aHyperSel[iGDT] = aHyperSel[iGDT] << X86_SEL_SHIFT;
+                    Log(("SELM: Found unused GDT %04X\n", aHyperSel[iGDT]));
                     iGDT++;
                 }
 
@@ -926,11 +926,11 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         }
         else
         {
-            aHyperGDT[SELM_HYPER_SEL_CS]         = SELM_HYPER_DEFAULT_SEL_CS;
-            aHyperGDT[SELM_HYPER_SEL_DS]         = SELM_HYPER_DEFAULT_SEL_DS;
-            aHyperGDT[SELM_HYPER_SEL_CS64]       = SELM_HYPER_DEFAULT_SEL_CS64;
-            aHyperGDT[SELM_HYPER_SEL_TSS]        = SELM_HYPER_DEFAULT_SEL_TSS;
-            aHyperGDT[SELM_HYPER_SEL_TSS_TRAP08] = SELM_HYPER_DEFAULT_SEL_TSS_TRAP08;
+            aHyperSel[SELM_HYPER_SEL_CS]         = SELM_HYPER_DEFAULT_SEL_CS;
+            aHyperSel[SELM_HYPER_SEL_DS]         = SELM_HYPER_DEFAULT_SEL_DS;
+            aHyperSel[SELM_HYPER_SEL_CS64]       = SELM_HYPER_DEFAULT_SEL_CS64;
+            aHyperSel[SELM_HYPER_SEL_TSS]        = SELM_HYPER_DEFAULT_SEL_TSS;
+            aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = SELM_HYPER_DEFAULT_SEL_TSS_TRAP08;
         }
 
         /*
@@ -982,18 +982,18 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         /*
          * Check if our hypervisor selectors were changed.
          */
-        if (    aHyperGDT[SELM_HYPER_SEL_CS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]
-            ||  aHyperGDT[SELM_HYPER_SEL_DS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]
-            ||  aHyperGDT[SELM_HYPER_SEL_CS64]       != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]
-            ||  aHyperGDT[SELM_HYPER_SEL_TSS]        != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]
-            ||  aHyperGDT[SELM_HYPER_SEL_TSS_TRAP08] != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
+        if (    aHyperSel[SELM_HYPER_SEL_CS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]
+            ||  aHyperSel[SELM_HYPER_SEL_DS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]
+            ||  aHyperSel[SELM_HYPER_SEL_CS64]       != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]
+            ||  aHyperSel[SELM_HYPER_SEL_TSS]        != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]
+            ||  aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
         {
             /* Reinitialize our hypervisor GDTs */
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         = aHyperGDT[SELM_HYPER_SEL_CS];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         = aHyperGDT[SELM_HYPER_SEL_DS];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       = aHyperGDT[SELM_HYPER_SEL_CS64];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        = aHyperGDT[SELM_HYPER_SEL_TSS];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperGDT[SELM_HYPER_SEL_TSS_TRAP08];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         = aHyperSel[SELM_HYPER_SEL_CS];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         = aHyperSel[SELM_HYPER_SEL_DS];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       = aHyperSel[SELM_HYPER_SEL_CS64];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        = aHyperSel[SELM_HYPER_SEL_TSS];
+            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
 
             STAM_COUNTER_INC(&pVM->selm.s.StatHyperSelsChanged);
             /** Relocate (switcher and selector data needs to update their selectors) */
