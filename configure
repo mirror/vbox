@@ -104,7 +104,7 @@ function log_failure()
 
 function cnf_append()
 {
-  printf "%-26s := %s\n" "$1" "$2" >> $CNF
+  printf "%-30s := %s\n" "$1" "$2" >> $CNF
 }
 
 # Wrapper for ancient /usr/bin/which on darwin that always returns 0
