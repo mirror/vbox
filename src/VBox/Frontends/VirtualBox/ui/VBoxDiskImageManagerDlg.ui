@@ -612,7 +612,7 @@
     <function returnType="bool">eventFilter( QObject *, QEvent * )</function>
     <function access="private">addDroppedImages( QStringList* )</function>
     <function access="private">addImageToList( const QString &amp; aSource, VBoxDefs::DiskType aDiskType )</function>
-    <function access="private" returnType="DiskImageItem*">createImageNode( QListView *aList, DiskImageItem *aRoot )</function>
+    <function access="private" returnType="DiskImageItem*">createImageNode( QListView *aList, DiskImageItem *aRoot, const VBoxMedia &amp; )</function>
     <function access="private">updateHdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
     <function access="private">updateCdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
     <function access="private">updateFdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
