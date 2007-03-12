@@ -99,7 +99,8 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
      * Assert alignment and sizes.
      */
     AssertRelease(!(RT_OFFSETOF(VM, selm.s) & 31));
-    AssertRelease(!(RT_OFFSETOF(VM, selm.s.aHyperSel[SELM_HYPER_SEL_TSS]) & 15));
+    /** @note What was the reason for this assertion?
+    AssertRelease(!(RT_OFFSETOF(VM, selm.s.aHyperSel[SELM_HYPER_SEL_TSS]) & 15)); */
     AssertRelease(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));
 
     /*
