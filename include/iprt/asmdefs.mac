@@ -122,7 +122,10 @@ GLOBALNAME %1_EndProc
 
 
 ;
-; Do OMF segment definitions
+; Do OMF and Mach-O/Yasm segment definitions
+;
+; Both format requires this to get the segment order right, in the Mach-O/Yasm case
+; it's only to make sure the .bss section ends up last (it's not declared here).
 ;
 %ifdef ASM_FORMAT_OMF
 
@@ -169,6 +172,13 @@ GLOBALNAME %1_EndProc
 
  ; Make the TEXT32 segment default.
  segment TEXT32
+%endif
+
+%ifdef ASM_FORMAT_MACHO
+ %ifdef __YASM__
+ [section .text]
+ [section .data]
+ %endif
 %endif
 
 
