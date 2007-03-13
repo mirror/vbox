@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * SELM - The Selector manager, Guest Context.
+ * SELM - The Selector Manager, Guest Context.
  */
 
 /*
@@ -36,10 +36,6 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
 
 /**
  * Synchronizes one GDT entry (guest -> shadow).
@@ -80,10 +76,10 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
            && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] & ~X86_SEL_MASK)
            && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] & ~X86_SEL_MASK)
            && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] & ~X86_SEL_MASK));
-    if (    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]        == Sel
-        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]        == Sel
-        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]      == Sel
-        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]       == Sel
+    if (    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         == Sel
+        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         == Sel
+        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       == Sel
+        ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        == Sel
         ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] == Sel)
     {
         if (Desc.Gen.u1Present)
@@ -93,8 +89,8 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
         }
         Log(("selmGCSyncGDTEntry: Sel=%d Desc=%.8Vhxs: potential conflict (still not present)!\n", Sel, &Desc));
 
-        /** @note we can't continue below or else we'll change the shadow descriptor!! */
-        /** When the guest makes the selector present, then we'll do a GDT sync. */
+        /* Note: we can't continue below or else we'll change the shadow descriptor!! */
+        /* When the guest makes the selector present, then we'll do a GDT sync. */
         return VINF_SUCCESS;
     }
 
