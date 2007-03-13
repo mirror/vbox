@@ -697,11 +697,6 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
         AssertReleaseFailed();
     }
 #endif
-
-    /* Force a BIOS cold boot after a reset. */
-    uint16_t *pu16WarmBoot = (uint16_t *)MMPhysGCPhys2HCVirt(pVM, 0x00000472, 2);
-    AssertRelease(pu16WarmBoot);
-    *pu16WarmBoot = 0;
 }
 
 
