@@ -95,7 +95,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
     {
-        RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + (Sel << 4);
+        RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)Sel << 4);
         return (RTGCPTR)uFlat;
     }
 
@@ -134,7 +134,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, u
             *pcb = 0x10000 - ((RTGCUINTPTR)Addr & 0xffff);
         if (ppvGC)
         {
-            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + (Sel << 4);
+            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)Sel << 4);
             *ppvGC = (RTGCPTR)uFlat;
         }
         return VINF_SUCCESS;
@@ -382,7 +382,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
     {
         if (ppvFlat)
         {
-            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + (SelCS << 4);
+            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)SelCS << 4);
             *ppvFlat = (RTGCPTR)uFlat;
         }
         return VINF_SUCCESS;
