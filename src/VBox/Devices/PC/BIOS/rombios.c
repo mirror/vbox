@@ -1934,9 +1934,6 @@ print_boot_device(cdboot, drive)
   Bit8u cdboot; Bit16u drive;
 #endif /* !VBOX */
 {
-#ifdef VBOX
-
-#else /* !VBOX */
   Bit8u i;
 
 #ifdef VBOX
@@ -1955,6 +1952,9 @@ print_boot_device(cdboot, drive)
   else if((drive&0x0080)==0x80)i=1; // Hard drive
   else return;
 
+#ifdef VBOX
+  BX_INFO("Booting from %s...\n",drivetypes[i]);
+#else /* !VBOX */
   printf("Booting from %s...\n",drivetypes[i]);
 #endif /* !VBOX */
 }
