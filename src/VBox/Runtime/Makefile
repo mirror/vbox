@@ -59,11 +59,9 @@ endif # only linux guest additions
 # global (for now at least)
 INCS += include
 
-ifeq ($(USERNAME),bird)
- ifneq ($(wildcard ./kLdr/kLdrModMachO.c),)
+ifneq ($(wildcard ./kLdr/kLdrModMachO.c),)
    IPRT_WITH_KLDR=1
    IPRT_PATH_KLDR=./kLdr
- endif
 endif
 
 #
