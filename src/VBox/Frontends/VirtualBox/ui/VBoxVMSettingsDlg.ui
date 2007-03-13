@@ -1134,7 +1134,7 @@ this feature after having installed a Windows guest operating system!</string>
                                         <sizepolicy>
                                             <hsizetype>7</hsizetype>
                                             <vsizetype>5</vsizetype>
-                                            <horstretch>1</horstretch>
+                                            <horstretch>0</horstretch>
                                             <verstretch>0</verstretch>
                                         </sizepolicy>
                                     </property>
@@ -2624,7 +2624,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <include location="global" impldecl="in implementation">qfocusdata.h</include>
     <include location="global" impldecl="in implementation">qtimer.h</include>
     <include location="global" impldecl="in implementation">qpopupmenu.h</include>
-    <include location="global" impldecl="in implementation">qtable.h</include>
+    <include location="global" impldecl="in implementation">qlistview.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
@@ -2642,7 +2642,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <forward>class VBoxUSBMenu</forward>
     <forward>class VBoxSharedFoldersSettings</forward>
     <forward>class QIRichLabel</forward>
-    <forward>class BootItemsTable</forward>
+    <forward>class BootItemsList</forward>
 </forwards>
 <variables>
     <variable access="private">bool polished;</variable>
@@ -2676,7 +2676,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">QIRichLabel *whatsThisLabel;</variable>
-    <variable access="private">BootItemsTable *tblBootOrder;</variable>
+    <variable access="private">BootItemsList *tblBootOrder;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
