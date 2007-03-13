@@ -867,7 +867,7 @@ TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
         /* Clear all handlers */
         Log(("TRPMR3SyncIDT: Clear all trap handlers.\n"));
         /** @todo inefficient, but simple */
-        for (unsigned iGate=0;iGate<256;iGate++)
+        for (unsigned iGate = 0; iGate < 256; iGate++)
             trpmClearGuestTrapHandler(pVM, iGate);
 
         /* Scan them all (only the first time) */
