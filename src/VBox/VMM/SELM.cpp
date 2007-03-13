@@ -98,10 +98,9 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertRelease(!(RT_OFFSETOF(VM, selm.s) & 31));
-    /** @note What was the reason for this assertion?
-    AssertRelease(!(RT_OFFSETOF(VM, selm.s.aHyperSel[SELM_HYPER_SEL_TSS]) & 15)); */
-    AssertRelease(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));
+    AssertCompileMemberAlignment(VM, selm.s, 32);                       AssertRelease(!(RT_OFFSETOF(VM, selm.s) & 31));
+    AssertCompileMemberAlignment(VM, selm.s.Tss, 16);                   AssertRelease(!(RT_OFFSETOF(VM, selm.s.Tss) & 15));
+    AssertCompile(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));    AssertRelease(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));
 
     /*
      * Init the structure.
@@ -229,11 +228,11 @@ SELMR3DECL(int) SELMR3InitFinalize(PVM pVM)
 
 
 /**
- * Save hypervisor GDT selectors in our shadow table
+ * Setup the hypervisor GDT selectors in our shadow table
  *
  * @param   pVM     The VM handle.
  */
-static void selmR3SaveHyperGDTSelectors(PVM pVM)
+static void selmR3SetupHyperGDTSelectors(PVM pVM)
 {
     PVBOXDESC paGdt = pVM->selm.s.paGdtHC;
 
@@ -351,7 +350,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
     CPUMSetHyperSS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
     CPUMSetHyperTR(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]);
 
-    selmR3SaveHyperGDTSelectors(pVM);
+    selmR3SetupHyperGDTSelectors(pVM);
 
 /** @todo SELM must be called when any of the CR3s changes during a cpu mode change. */
 /** @todo PGM knows the proper CR3 values these days, not CPUM. */
@@ -737,44 +736,6 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 }
 
 
-#if 0 /* obsolete */
-/**
- * Sets up the virtualization of a guest GDT.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   paGDTEs     Pointer to GDT array.
- * @param   cGDTEs      Number of entries in the GDT array.
- */
-SELMR3DECL(int) SELMR3GdtSetup(PVM pVM, PCVBOXDESC paGDTEs, unsigned cGDTEs)
-{
-    /*
-     * Enumerate the array.
-     */
-    PCVBOXDESC  pGDTESrc = paGDTEs;
-    PVBOXDESC   pGDTEDst = pVM->selm.s.paGdtHC;
-    for (unsigned iGDT = 0; iGDT < cGDTEs; iGDT++, pGDTEDst++, pGDTESrc++)
-    {
-        /* ASSUME no clashes for now - lazy bird!!! */
-        if (pGDTESrc->Gen.u1Present)
-        {
-            pGDTEDst->Gen = pGDTESrc->Gen;
-            /* mark non ring-3 selectors as not present. */
-            if (pGDTEDst->Gen.u2Dpl != 3)
-                pGDTEDst->Gen.u1Present = 0;
-        }
-        else
-        {
-            /* zero it. */
-            pGDTEDst->au32[0] = 0;
-            pGDTEDst->au32[1] = 0;
-        }
-    }
-
-    return VINF_SUCCESS;
-}
-#endif
-
 /**
  * Updates the Guest GDT & LDT virtualization based on current CPU state.
  *
@@ -906,7 +867,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
 
             Log(("Internal SELM GDT conflict: use non-present entries\n"));
             STAM_COUNTER_INC(&pVM->selm.s.StatScanForHyperSels);
-            while (pGDTE > pGDTEStart && iGDT < SELM_HYPER_SEL_MAX)
+            while (pGDTE > pGDTEStart)
             {
                 /* We can reuse non-present entries */
                 if (!pGDTE->Gen.u1Present)
@@ -915,6 +876,8 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                     aHyperSel[iGDT] = aHyperSel[iGDT] << X86_SEL_SHIFT;
                     Log(("SELM: Found unused GDT %04X\n", aHyperSel[iGDT]));
                     iGDT++;
+                    if (iGDT >= SELM_HYPER_SEL_MAX)
+                        break;
                 }
 
                 pGDTE--;
@@ -998,13 +961,16 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
 
             STAM_COUNTER_INC(&pVM->selm.s.StatHyperSelsChanged);
-            /** Relocate (switcher and selector data needs to update their selectors) */
+
+            /* 
+             * Do the relocation callbacks to let everyone update their hyper selector dependencies.
+             * (SELMR3Relocate will call selmR3SetupHyperGDTSelectors() for us.)
+             */
             VMR3Relocate(pVM, 0);
         }
-        else
-        if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
+        else if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
             /* We overwrote all entries above, so we have to save them again. */
-            selmR3SaveHyperGDTSelectors(pVM);
+            selmR3SetupHyperGDTSelectors(pVM);
 
         /*
          * Adjust the cached GDT limit.
@@ -1232,7 +1198,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         off = GCPtrLdt & (sizeof(VBOXDESC) - 1);
         AssertMsg(!off, ("LDT is not aligned on entry size! GCPtrLdt=%08x\n", GCPtrLdt));
 
-        /** @note Do not skip the first selector; unlike the GDT, a zero LDT selector is perfectly valid. */
+        /* Note: Do not skip the first selector; unlike the GDT, a zero LDT selector is perfectly valid. */
         unsigned    cbLeft = cbLdt + 1;
         PVBOXDESC   pLDTE = pShadowLDT;
         while (cbLeft)
@@ -1514,27 +1480,27 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
             if (VBOX_SUCCESS(rc))
             {
             #ifdef DEBUG
- 	            uint32_t ssr0, espr0;
+                uint32_t ssr0, espr0;
 
- 	            SELMGetRing1Stack(pVM, &ssr0, &espr0);
- 	            ssr0 &= ~1;
+                SELMGetRing1Stack(pVM, &ssr0, &espr0);
+                ssr0 &= ~1;
 
- 	            if (ssr0 != tss.ss0 || espr0 != tss.esp0)
- 	                Log(("SELMR3SyncTSS: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
+                if (ssr0 != tss.ss0 || espr0 != tss.esp0)
+                    Log(("SELMR3SyncTSS: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
                 Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
             #endif
                 /* Update our TSS structure for the guest's ring 1 stack */
- 	            SELMSetRing1Stack(pVM, tss.ss0 | 1, tss.esp0);
+                SELMSetRing1Stack(pVM, tss.ss0 | 1, tss.esp0);
             }
             else
- 	        {
-                /** @note the ring 0 stack selector and base address are updated on demand in this case. */
+            {
+                /* Note: the ring 0 stack selector and base address are updated on demand in this case. */
 
-                /** @todo handle these dependencies better! */
+                /* Note: handle these dependencies better! */
                 TRPMR3SetGuestTrapHandler(pVM, 0x2E, TRPM_INVALID_HANDLER);
                 TRPMR3SetGuestTrapHandler(pVM, 0x80, TRPM_INVALID_HANDLER);
                 pVM->selm.s.fSyncTSSRing0Stack = true;
- 	        }
+            }
             VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
         }
     }
