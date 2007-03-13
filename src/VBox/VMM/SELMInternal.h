@@ -53,7 +53,7 @@
 /** The TSS selector for taking trap 08 (\#DF). */
 #define SELM_HYPER_SEL_TSS_TRAP08           4
 /** Number of GDTs we need for internal use */
-#define SELM_HYPER_SEL_MAX                  (SELM_HYPER_SEL_TSS_TRAP08+1)
+#define SELM_HYPER_SEL_MAX                  (SELM_HYPER_SEL_TSS_TRAP08 + 1)
 
 
 /** Default GDT selectors we use for the hypervisor. */
@@ -62,7 +62,7 @@
 #define SELM_HYPER_DEFAULT_SEL_CS64         ((SELM_GDT_ELEMENTS - 0x3) << 3)
 #define SELM_HYPER_DEFAULT_SEL_TSS          ((SELM_GDT_ELEMENTS - 0x4) << 3)
 #define SELM_HYPER_DEFAULT_SEL_TSS_TRAP08   ((SELM_GDT_ELEMENTS - 0x5) << 3)
-/** @note SELM_HYPER_DEFAULT_BASE is the lowest value we use. */
+/** The lowest value default we use. */
 #define SELM_HYPER_DEFAULT_BASE             SELM_HYPER_DEFAULT_SEL_TSS_TRAP08
 
 /**
@@ -83,7 +83,7 @@ typedef struct SELM
      * See SELM2VM(). */
     RTINT                   offVM;
 
-    /* Flat CS, DS, 64 bit mode CS, TSS & trap 8 TSS */
+    /* Flat CS, DS, 64 bit mode CS, TSS & trap 8 TSS. */
     RTSEL                   aHyperSel[SELM_HYPER_SEL_MAX];
 
     /** Pointer to the GCs - HC Ptr.
