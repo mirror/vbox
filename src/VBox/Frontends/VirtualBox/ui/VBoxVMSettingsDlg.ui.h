@@ -52,214 +52,251 @@ static int calcPageStep (int aMax)
 
 
 /**
- *  Class: BootItemsTable.
- *  QTable class reimplementation to use as boot items table.
- *  It handles "focus-in" situation creating combo-box for focused item.
- *  It also presents wrappers for some hidden functionality.
+ *  QListView class reimplementation to use as boot items table.
+ *  It has one unsorted column without header with automated width
+ *  resize management.
+ *  Keymapping handlers for ctrl-up & ctrl-down are translated into
+ *  boot-items up/down moving.
  */
-class BootItemsTable : public QTable
+class BootItemsTable : public QListView
 {
     Q_OBJECT
 
 public:
 
     BootItemsTable (QWidget *aParent, const char *aName)
-        : QTable (aParent, aName) {}
+        : QListView (aParent, aName)
+    {
+        addColumn (QString::null);
+        header()->hide();
+        setSorting (-1);
+        setColumnWidthMode (0, Maximum);
+        setResizeMode (AllColumns);
+        QWhatsThis::add (this, tr ("Defines the boot device order. "
+                                   "Click on the checkbox to select which "
+                                   "devices will be used. Move desired boot "
+                                   "devices up/down to define boot sequence."));
+        setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
+        connect (this, SIGNAL (pressed (QListViewItem*)),
+                 this, SLOT (processPressed (QListViewItem*)));
+    }
+
     ~BootItemsTable() {}
 
-    void endEdit (int aRow, int aCol)
+signals:
+
+    void moveItemUp();
+    void moveItemDown();
+
+private slots:
+
+    void processPressed (QListViewItem *aItem)
     {
-        QTable::endEdit (aRow, aCol, true, false);
+        if (!aItem)
+            setSelected (currentItem(), true);
     }
 
-protected:
-
-    void focusInEvent (QFocusEvent *)
+    void keyPressEvent (QKeyEvent *aEvent)
     {
-        int row = currentRow() >= 0 ? currentRow() : 0;
-        setCurrentCell (row, 0);
-        editCell (row, 0);
-    }
-};
-
-
-/**
- *  Class: BootComboBox.
- *  QComboBox class reimplementation to use as boot item's editor.
- *  This class handles tab/backtab keypress events for boot item re-focusing.
- *  It also handles "focus-lost" situation for combo-box control destroying
- *  it after focus leaving from the combo-box.
- */
-class BootComboBox : public QComboBox
-{
-public:
-
-    BootComboBox (QWidget *aParent, QTable *aTable)
-        : QComboBox (aParent), mParent (0)
-    {
-        Assert (aTable->inherits ("BootItemsTable"));
-        mParent = static_cast<BootItemsTable*> (aTable);
-    }
-    ~BootComboBox() {}
-
-protected:
-
-    void focusOutEvent (QFocusEvent *)
-    {
-        if (!listBox()->hasFocus())
+        if (aEvent->state() == Qt::ControlButton)
         {
-            mParent->endEdit (mParent->currentRow(), mParent->currentColumn());
-            mParent->clearFocus();
-        }
-    }
-
-    bool event (QEvent *aEvent)
-    {
-        if (aEvent->type() == QEvent::KeyPress)
-        {
-            QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
-            switch (event->key())
+            switch (aEvent->key())
             {
-                case Qt::Key_Backtab:
-                    /* Going to parent QTable */
-                    focusData()->home();
-                    focusData()->next()->setFocus();
-                    /* Jumps other the parent QTable */
-                    focusData()->home();
-                    focusData()->prev()->setFocus();
-                    return false;
-                    break;
-                case Qt::Key_Tab:
-                    /* Going to parent QTable */
-                    focusData()->home();
-                    focusData()->next()->setFocus();
-                    /* Jumps other the parent QTable */
-                    focusData()->home();
-                    focusData()->next()->setFocus();
-                    return false;
-                    break;
+                case Qt::Key_Up:
+                    emit moveItemUp();
+                    return;
+                case Qt::Key_Down:
+                    emit moveItemDown();
+                    return;
                 default:
-                    return QComboBox::event (aEvent);
+                    break;
             }
         }
-        else
-            return QComboBox::event (aEvent);
+        QListView::keyPressEvent (aEvent);
     }
-
-    BootItemsTable *mParent;
 };
 
 
 /**
- *  Class: ComboTableItem.
- *  Simple QTableItem subclass to use QComboBox as the cell editor.
- *  This subclass (as opposed to QComboTableItem) allows to specify the
- *  EditType::WhenCurrent edit type of the cell (to let it look like a normal
- *  text cell when not in focus).
- *
- *  Additionally, this subclass supports unicity of a group of values
- *  among a group of ComboTableItem items that refer to the same list of
- *  unique values currently being used.
+ *  QWidget class reimplementation to use as boot items widget.
+ *  It contains BootItemsTable and two tool-buttons for moving
+ *  boot-items up/down.
+ *  This widget handles saving/loading CMachine information related
+ *  to boot sequience.
  */
-class ComboTableItem : public QObject, public QTableItem
+class BootItemsList : public QWidget
 {
     Q_OBJECT
 
 public:
 
-    enum { BootItemType = 1001 };
-
-    ComboTableItem (QTable *aTable, EditType aEditType,
-                    const QStringList &aList, const QStringList &aUnique,
-                    QStringList *aUniqueInUse)
-        : QTableItem (aTable, aEditType)
-        , mList (aList), mUnique (aUnique), mUniqueInUse (aUniqueInUse), mComboBoxSelector(0)
+    BootItemsList (QWidget *aParent, const char *aName)
+        : QWidget (aParent, aName), mBootTable (0)
     {
-        setReplaceable (FALSE);
+        /* Setup main widget layout */
+        QHBoxLayout *mainLayout = new QHBoxLayout (this, 0, 10, "mainLayout");
+
+        /* Setup settings layout */
+        mBootTable = new BootItemsTable (this, "mBootTable");
+        connect (mBootTable, SIGNAL (currentChanged (QListViewItem*)),
+                 this, SLOT (processCurrentChanged (QListViewItem*)));
+        mainLayout->addWidget (mBootTable);
+
+        /* Setup button's layout */
+        QVBoxLayout *buttonLayout = new QVBoxLayout (mainLayout, 0, "buttonLayout");
+        mBtnUp = new QToolButton (this, "mBtnUp");
+        mBtnDown = new QToolButton (this, "mBtnDown");
+        QWhatsThis::add (mBtnUp, tr ("Move the selected boot device up."));
+        QWhatsThis::add (mBtnDown, tr ("Move the selected boot device down."));
+        mBtnUp->setAutoRaise (true);
+        mBtnDown->setAutoRaise (true);
+        mBtnUp->setFocusPolicy (QWidget::StrongFocus);
+        mBtnDown->setFocusPolicy (QWidget::StrongFocus);
+        mBtnUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
+                                                 "usb_moveup_disabled_16px.png"));
+        mBtnDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
+                                                   "usb_movedown_disabled_16px.png"));
+        QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Minimum,
+                                                     QSizePolicy::Expanding);
+        connect (mBtnUp, SIGNAL (clicked()), this, SLOT (moveItemUp()));
+        connect (mBtnDown, SIGNAL (clicked()), this, SLOT (moveItemDown()));
+        connect (mBootTable, SIGNAL (moveItemUp()), this, SLOT (moveItemUp()));
+        connect (mBootTable, SIGNAL (moveItemDown()), this, SLOT (moveItemDown()));
+        buttonLayout->addWidget (mBtnUp);
+        buttonLayout->addWidget (mBtnDown);
+        buttonLayout->addItem (spacer);
+
+        /* Setup focus proxy for BootItemsList */
+        setFocusProxy (mBootTable);
     }
 
-    QWidget *createEditor() const
+    ~BootItemsList() {}
+
+    void fixTabStops()
     {
-        mComboBoxSelector = (QComboBox*) new BootComboBox (table()->viewport(), table());
-        QStringList list = mList;
-        if (mUniqueInUse)
+        /* Fixing focus order for BootItemsList */
+        setTabOrder (mBootTable, mBtnUp);
+        setTabOrder (mBtnUp, mBtnDown);
+    }
+
+    void getFromMachine (const CMachine &aMachine)
+    {
+        /* Load boot-items of current VM */
+        QStringList uniqueList;
+        int minimumWidth = 0;
+        for (int i = 1; i <= 4; ++ i)
         {
-            /* remove unique values currently in use */
-            for (QStringList::Iterator it = mUniqueInUse->begin();
-                 it != mUniqueInUse->end(); ++ it)
+            CEnums::DeviceType type = aMachine.GetBootOrder (i);
+            if (type != CEnums::NoDevice)
             {
-                if (*it != text())
-                    list.remove (*it);
+                QString name = vboxGlobal().toString (type);
+                QCheckListItem *item = new QCheckListItem (mBootTable,
+                    mBootTable->lastItem(), name, QCheckListItem::CheckBox);
+                item->setOn (true);
+                uniqueList << name;
+                int width = item->width (mBootTable->fontMetrics(), mBootTable, 0);
+                if (width > minimumWidth) minimumWidth = width;
             }
         }
-        mComboBoxSelector->insertStringList (list);
-        mComboBoxSelector->setCurrentText (text());
-        QObject::connect (table(), SIGNAL (clicked (int, int, int, const QPoint&)),
-                          this, SLOT (processClicked (int, int, int, const QPoint&)));
-
-        return mComboBoxSelector;
-    }
-
-    void setContentFromEditor (QWidget *aWidget)
-    {
-        if (aWidget->inherits ("QComboBox"))
+        /* Load other unique boot-items */
+        for (int i = CEnums::FloppyDevice; i < CEnums::USBDevice; ++ i)
         {
-            QString text = ((QComboBox *) aWidget)->currentText();
-            setText (text);
-        }
-        else
-            QTableItem::setContentFromEditor (aWidget);
-    }
-
-    void setText (const QString &aText)
-    {
-        if (aText != text())
-        {
-            /* update the list of unique values currently in use */
-            if (mUniqueInUse)
+            QString name = vboxGlobal().toString ((CEnums::DeviceType) i);
+            if (!uniqueList.contains (name))
             {
-                QStringList::Iterator it = mUniqueInUse->find (text());
-                if (it != mUniqueInUse->end())
-                    mUniqueInUse->remove (it);
-                if (mUnique.contains (aText))
-                    (*mUniqueInUse) += aText;
+                QCheckListItem *item = new QCheckListItem (mBootTable,
+                    mBootTable->lastItem(), name, QCheckListItem::CheckBox);
+                uniqueList << name;
+                int width = item->width (mBootTable->fontMetrics(), mBootTable, 0);
+                if (width > minimumWidth) minimumWidth = width;
             }
-            QTableItem::setText (aText);
+        }
+        processCurrentChanged (mBootTable->firstChild());
+        mBootTable->setFixedWidth (minimumWidth +
+                                   4 /* viewport margin */);
+        mBootTable->setFixedHeight (mBootTable->childCount() *
+                                    mBootTable->firstChild()->totalHeight() +
+                                    4 /* viewport margin */);
+    }
+
+    void putBackToMachine (CMachine &aMachine)
+    {
+        QCheckListItem *item = 0;
+        /* Search for checked items */
+        int index = 1;
+        item = static_cast<QCheckListItem*> (mBootTable->firstChild());
+        while (item)
+        {
+            if (item->isOn())
+            {
+                CEnums::DeviceType type =
+                    vboxGlobal().toDeviceType (item->text (0));
+                aMachine.SetBootOrder (index++, type);
+            }
+            item = static_cast<QCheckListItem*> (item->nextSibling());
+        }
+        /* Search for non-checked items */
+        item = static_cast<QCheckListItem*> (mBootTable->firstChild());
+        while (item)
+        {
+            if (!item->isOn())
+                aMachine.SetBootOrder (index++, CEnums::NoDevice);
+            item = static_cast<QCheckListItem*> (item->nextSibling());
         }
     }
 
-    /*
-     *  Function: rtti()
-     *  Required for runtime information about ComboTableItem class
-     *  used for static_cast from QTableItem
-     */
-    int rtti() const { return BootItemType; }
-
-    /*
-     *  Function: getEditor()
-     *  Returns pointer to stored combo-box
-     */
-    QComboBox* getEditor() { return mComboBoxSelector; }
+    void processFocusIn (QWidget *aWidget)
+    {
+        if (aWidget == mBootTable)
+        {
+            mBootTable->setSelected (mBootTable->currentItem(), true);
+            processCurrentChanged (mBootTable->currentItem());
+        }
+        else if (aWidget != mBtnUp && aWidget != mBtnDown)
+        {
+            mBootTable->setSelected (mBootTable->currentItem(), false);
+            processCurrentChanged (mBootTable->currentItem());
+        }
+    }
 
 private slots:
 
-    /*
-     *  Slot: processClicked(...)
-     *  Ensures item's combo-box popup in case of it was force-closed
-     *  with using of endEdit() last time
-     */
-    void processClicked (int aRow, int aCol, int, const QPoint &)
+    void moveItemUp()
     {
-        if (aRow == row() && aCol == col())
-            mComboBoxSelector->popup();
+        QListViewItem *item = mBootTable->currentItem();
+        Assert (item);
+        QListViewItem *itemAbove = item->itemAbove();
+        if (!itemAbove) return;
+        itemAbove->moveItem (item);
+        processCurrentChanged (item);
+    }
+
+    void moveItemDown()
+    {
+        QListViewItem *item = mBootTable->currentItem();
+        Assert (item);
+        QListViewItem *itemBelow = item->itemBelow();
+        if (!itemBelow) return;
+        item->moveItem (itemBelow);
+        processCurrentChanged (item);
+    }
+
+    void processCurrentChanged (QListViewItem *aItem)
+    {
+        bool upEnabled   = aItem && aItem->isSelected() && aItem->itemAbove();
+        bool downEnabled = aItem && aItem->isSelected() && aItem->itemBelow();
+        if (mBtnUp->hasFocus() && !upEnabled ||
+            mBtnDown->hasFocus() && !downEnabled)
+            mBootTable->setFocus();
+        mBtnUp->setEnabled (upEnabled);
+        mBtnDown->setEnabled (downEnabled);
     }
 
 private:
 
-    const QStringList  mList;
-    const QStringList  mUnique;
-    QStringList*       mUniqueInUse;
-    mutable QComboBox* mComboBoxSelector;
+    BootItemsTable *mBootTable;
+    QToolButton *mBtnUp;
+    QToolButton *mBtnDown;
 };
 
 
@@ -650,53 +687,13 @@ void VBoxVMSettingsDlg::init()
     /* ensure leVRAM value and validation is updated */
     slVRAM_valueChanged (slVRAM->value());
 
-
-    tblBootOrder = new BootItemsTable ( groupBox12, "tblBootOrder" );
-    QWhatsThis::add (tblBootOrder,
-                     tr ("Defines the boot device order. Click on the entry and "
-                         "select a desired boot device from the drop-down list."));
+    /* Boot-order table */
+    tblBootOrder = new BootItemsList (groupBox12, "tblBootOrder");
+    /* Fixing focus order for BootItemsList */
     setTabOrder (tbwGeneral, tblBootOrder);
-    setTabOrder (tblBootOrder, chbEnableACPI);
-    tblBootOrder->setSizePolicy (QSizePolicy ((QSizePolicy::SizeType)7,
-        (QSizePolicy::SizeType)7, 1, 0,
-        tblBootOrder->sizePolicy().hasHeightForWidth()));
-    tblBootOrder->setNumRows (0);
-    tblBootOrder->setNumCols (0);
-    tblBootOrder->setShowGrid (FALSE);
-    tblBootOrder->setSelectionMode (QTable::NoSelection);
-    tblBootOrder->setFocusStyle (QTable::FollowStyle);
+    setTabOrder (tblBootOrder->focusProxy(), chbEnableACPI);
     groupBox12Layout->addWidget (tblBootOrder);
-
-    tblBootOrder->horizontalHeader()->hide();
-    tblBootOrder->setTopMargin (0);
-    tblBootOrder->verticalHeader()->hide();
-    tblBootOrder->setLeftMargin (0);
-    tblBootOrder->setNumCols (1);
-    tblBootOrder->setNumRows (sysProps.GetMaxBootPosition());
-    {
-        QStringList list = vboxGlobal().deviceTypeStrings();
-        QStringList unique;
-        unique
-            << vboxGlobal().toString (CEnums::FloppyDevice)
-            << vboxGlobal().toString (CEnums::DVDDevice)
-            << vboxGlobal().toString (CEnums::HardDiskDevice)
-            << vboxGlobal().toString (CEnums::NetworkDevice);
-        for (int i = 0; i < tblBootOrder->numRows(); i++)
-        {
-            ComboTableItem *item = new ComboTableItem (
-                tblBootOrder, QTableItem::WhenCurrent,
-                list, unique, &bootDevicesInUse);
-            tblBootOrder->setItem (i, 0, item);
-        }
-    }
-
-    tblBootOrder->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
-    tblBootOrder->setMinimumHeight (tblBootOrder->rowHeight(0) * 4 +
-                                    tblBootOrder->frameWidth() * 2);
-    tblBootOrder->setColumnStretchable (0, true);
-    tblBootOrder->verticalHeader()->setResizeEnabled (false);
-    tblBootOrder->verticalHeader()->setClickEnabled (false);
-//    tblBootOrder->setFocusStyle (QTable::FollowStyle);
+    tblBootOrder->fixTabStops();
 
     /* HDD Images page */
 
@@ -761,6 +758,7 @@ bool VBoxVMSettingsDlg::eventFilter (QObject *object, QEvent *event)
         case QEvent::FocusIn:
         {
             updateWhatsThis (true /* gotFocus */);
+            tblBootOrder->processFocusIn (widget);
             break;
         }
         default:
@@ -929,7 +927,7 @@ void VBoxVMSettingsDlg::setWarning (const QString &warning)
  *  If @a aWidget is non-null, it should be a name of one of widgets
  *  from the given category page. In this case, the specified widget
  *  will get focus when the dialog is open.
- *  
+ *
  *  @note Calling this method after the dialog is open has no sense.
  *
  *  @param  aCategory   Category to select when the dialog is open or null.
@@ -1194,13 +1192,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* VRAM size */
     slVRAM->setValue (machine.GetVRAMSize());
 
-    /* boot order */
-    bootDevicesInUse.clear();
-    for (int i = 0; i < tblBootOrder->numRows(); i ++)
-    {
-        QTableItem *item = tblBootOrder->item (i, 0);
-        item->setText (vboxGlobal().toString (machine.GetBootOrder (i + 1)));
-    }
+    /* Boot-order */
+    tblBootOrder->getFromMachine (machine);
 
     /* ACPI */
     chbEnableACPI->setChecked (biosSettings.GetACPIEnabled());
@@ -1511,11 +1504,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     cmachine.SetVRAMSize (slVRAM->value());
 
     /* boot order */
-    for (int i = 0; i < tblBootOrder->numRows(); i ++)
-    {
-        QTableItem *item = tblBootOrder->item (i, 0);
-        cmachine.SetBootOrder (i + 1, vboxGlobal().toDeviceType (item->text()));
-    }
+    tblBootOrder->putBackToMachine (cmachine);
 
     /* ACPI */
     biosSettings.SetACPIEnabled (chbEnableACPI->isChecked());
