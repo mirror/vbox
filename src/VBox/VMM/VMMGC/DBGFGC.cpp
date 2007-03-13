@@ -127,16 +127,15 @@ DBGFGCDECL(int) DBGFGCTrap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
                 LogFlow(("DBGFGCTrap03Handler: hit breakpoint %d at %RGv (%04x:%08x) cHits=0x%RX64\n",
                          pVM->dbgf.s.aBreakpoints[iBp].iBp, pPc, pRegFrame->cs, pRegFrame->eip,
                          pVM->dbgf.s.aBreakpoints[iBp].cHits));
-                return (!(pRegFrame->ss & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM)
+                return !(pRegFrame->ss & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM
                     ? VINF_EM_DBG_HYPER_BREAKPOINT
                     : VINF_EM_DBG_BREAKPOINT;
             }
         }
     }
 
-    return (!(pRegFrame->ss & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM)
+    return !(pRegFrame->ss & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM
         ? VINF_EM_DBG_HYPER_ASSERTION
         : VINF_EM_RAW_GUEST_TRAP;
 }
-
 
