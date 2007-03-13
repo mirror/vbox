@@ -393,6 +393,20 @@ PATMTrapEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
 
+%ifdef PATM_LOG_PATCHIRET
+    push    eax
+    push    ecx
+    push    edx
+    lea     edx, dword [ss:esp+12+4]        ;3 dwords + pushed flags -> iret eip
+    mov     eax, PATM_ACTION_LOG_GATE_ENTRY
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
+
     test    dword [esp+12], X86_EFL_VM
     jnz     PATMTrapNoRing1
 
@@ -428,9 +442,17 @@ GLOBALNAME PATMTrapEntryRecord
     DD      0
     DD      0
     DD      PATMTrapEntryEnd - PATMTrapEntryStart
+%ifdef PATM_LOG_PATCHIRET
+    DD      4
+%else
     DD      3
+%endif
     DD      PATM_INTERRUPTFLAG
     DD      0
+%ifdef PATM_LOG_PATCHIRET
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      PATM_VMFLAGS
     DD      0
     DD      PATM_INTERRUPTFLAG
@@ -455,6 +477,20 @@ BEGINPROC   PATMTrapEntryErrorCode
 PATMTrapErrorCodeEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
+
+%ifdef PATM_LOG_PATCHIRET
+    push    eax
+    push    ecx
+    push    edx
+    lea     edx, dword [ss:esp+12+4+4]        ;3 dwords + pushed flags + error code -> iret eip
+    mov     eax, PATM_ACTION_LOG_GATE_ENTRY
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
 
     test    dword [esp+16], X86_EFL_VM
     jnz     PATMTrapErrorCodeNoRing1
@@ -491,9 +527,17 @@ GLOBALNAME PATMTrapEntryRecordErrorCode
     DD      0
     DD      0
     DD      PATMTrapErrorCodeEntryEnd - PATMTrapErrorCodeEntryStart
+%ifdef PATM_LOG_PATCHIRET
+    DD      4
+%else
     DD      3
+%endif
     DD      PATM_INTERRUPTFLAG
     DD      0
+%ifdef PATM_LOG_PATCHIRET
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      PATM_VMFLAGS
     DD      0
     DD      PATM_INTERRUPTFLAG
@@ -518,6 +562,20 @@ BEGINPROC   PATMIntEntry
 PATMIntEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
+
+%ifdef PATM_LOG_PATCHIRET
+    push    eax
+    push    ecx
+    push    edx
+    lea     edx, dword [ss:esp+12+4]        ;3 dwords + pushed flags -> iret eip
+    mov     eax, PATM_ACTION_LOG_GATE_ENTRY
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
 
     test    dword [esp+12], X86_EFL_VM
     jnz     PATMIntNoRing1
@@ -551,9 +609,17 @@ GLOBALNAME PATMIntEntryRecord
     DD      0
     DD      0
     DD      PATMIntEntryEnd - PATMIntEntryStart
+%ifdef PATM_LOG_PATCHIRET
+    DD      4
+%else
     DD      3
+%endif
     DD      PATM_INTERRUPTFLAG
     DD      0
+%ifdef PATM_LOG_PATCHIRET
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      PATM_VMFLAGS
     DD      0
     DD      PATM_INTERRUPTFLAG
@@ -578,6 +644,20 @@ BEGINPROC   PATMIntEntryErrorCode
 PATMIntEntryErrorCodeStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
+
+%ifdef PATM_LOG_PATCHIRET
+    push    eax
+    push    ecx
+    push    edx
+    lea     edx, dword [ss:esp+12+4+4]        ;3 dwords + pushed flags + error code -> iret eip
+    mov     eax, PATM_ACTION_LOG_GATE_ENTRY
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
 
     test    dword [esp+16], X86_EFL_VM
     jnz     PATMIntNoRing1_ErrorCode
@@ -611,9 +691,17 @@ GLOBALNAME PATMIntEntryRecordErrorCode
     DD      0
     DD      0
     DD      PATMIntEntryErrorCodeEnd - PATMIntEntryErrorCodeStart
+%ifdef PATM_LOG_PATCHIRET
+    DD      4
+%else
     DD      3
+%endif
     DD      PATM_INTERRUPTFLAG
     DD      0
+%ifdef PATM_LOG_PATCHIRET
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
     DD      PATM_VMFLAGS
     DD      0
     DD      PATM_INTERRUPTFLAG
