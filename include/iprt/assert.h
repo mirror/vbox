@@ -106,8 +106,13 @@ __END_DECLS
  * @param   align   The member offset alignment to assert.
  */
 #if defined(__GNUC__) && defined(__cplusplus)
-# define AssertCompileMemberAlignment(type, member, align) \
+# if __GNUC__ >= 4
+#  define AssertCompileMemberAlignment(type, member, align) \
     AssertCompile(!(__builtin_offsetof(type, member) & ((align) - 1)))
+# else
+#  define AssertCompileMemberAlignment(type, member, align) \
+    AssertCompile(!(RT_OFFSETOF(type, member) & ((align) - 1)))
+# endif 
 #else
 # define AssertCompileMemberAlignment(type, member, align) \
     AssertCompile(!(RT_OFFSETOF(type, member) & ((align) - 1)))
