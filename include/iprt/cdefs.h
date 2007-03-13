@@ -775,7 +775,11 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#define RT_OFFSETOF(type, member)      ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
+#if defined(__GNUC__) && defined(__cplusplus)
+# define RT_OFFSETOF(type, member)      ( (int)__builtin_offsetof(type, member) )
+#else
+# define RT_OFFSETOF(type, member)      ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
+#endif 
 
 /** @def RT_SIZEOFMEMB
  * Get the size of a structure member.
