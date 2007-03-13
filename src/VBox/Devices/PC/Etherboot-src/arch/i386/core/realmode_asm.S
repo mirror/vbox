@@ -947,7 +947,7 @@ _pxenv_in_call_far:
         pop %ds
         call 0f
 0:      popw %si
-        addl $msg_v86_unsupported-0b,%si    /* start of zero-terminated string */
+        addw $msg_v86_unsupported-0b,%si    /* start of zero-terminated string */
 1:
         cld
         lodsb
