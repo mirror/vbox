@@ -561,6 +561,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     console = new VBoxConsoleView (this, cconsole, mode,
                                    centralWidget(), "console");
 
+    loadGuiCustomizations();
+
     ((QBoxLayout*) centralWidget()->layout())->addWidget (
         console, 0, AlignVCenter | AlignHCenter);
 
@@ -699,6 +701,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     LogFlowFuncLeave();
     return true;
+}
+
+void VBoxConsoleWnd::loadGuiCustomizations()
+{
+    VMGlobalSettings settings = vboxGlobal().settings();
+    /* Searching for known keys */
+    const char *noMenuBar = "noMenuBar";
+    const char *noStatusBar = "noStatusBar";
+    menuBar()->setHidden (settings.isFeatureActivated (noMenuBar));
+    statusBar()->setHidden (settings.isFeatureActivated (noStatusBar));
 }
 
 void VBoxConsoleWnd::finalizeOpenView()

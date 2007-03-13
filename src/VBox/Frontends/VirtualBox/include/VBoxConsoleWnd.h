@@ -108,6 +108,8 @@ private slots:
 
     void finalizeOpenView();
 
+    void loadGuiCustomizations();
+
     void vmFullscreen (bool on);
     void vmAutoresizeGuest (bool on);
     void vmAdjustWindow();

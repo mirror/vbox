@@ -21,6 +21,7 @@
  */
 
 #include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
 #ifdef Q_WS_MAC
@@ -214,11 +215,20 @@ int main( int argc, char ** argv )
 
     if (vboxGlobal().isValid())
     {
+        VMGlobalSettings settings = vboxGlobal().settings();
+        /* Searching for known keys */
+        const char *noSelector = "noSelector";
+        bool forcedConsole = settings.isFeatureActivated (noSelector);
+
         if (vboxGlobal().isVMConsoleProcess())
         {
             a.setMainWidget( &vboxGlobal().consoleWnd());
             if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
                 rc = a.exec();
+        }
+        else if (forcedConsole)
+        {
+            vboxProblem().cannotRunInSelectorMode();
         }
         else
         {
