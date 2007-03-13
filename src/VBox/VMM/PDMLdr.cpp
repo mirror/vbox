@@ -868,6 +868,7 @@ char * pdmR3FileGC(const char *pszFile)
     return pdmR3File(pszFile, NULL, /*fShared=*/false);
 }
 
+
 /**
  * Worker for pdmR3File().
  *
@@ -921,8 +922,9 @@ static char * pdmR3FileConstruct(const char *pszDir, const char *pszFile, const 
     return pszRet;
 }
 
+
 /**
- * Worker for pdmR3FileGC() and pdmR3FileHC().
+ * Worker for pdmR3FileGC(), pdmR3FileR0() and pdmR3FileR3().
  *
  * @returns Pointer to temporary memory containing the filename.
  *          Caller must free this using RTMemTmpFree().
