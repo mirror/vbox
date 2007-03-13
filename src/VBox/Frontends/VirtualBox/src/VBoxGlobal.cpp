@@ -2211,26 +2211,15 @@ void VBoxGlobal::init()
 
     int argc = qApp->argc();
     int i = 1;
-    QUuid uuid;
     while ( i < argc ) {
         const char *arg = qApp->argv()[i];
         if (        !::strcmp( arg, "-startvm" ) ) {
             if ( ++i < argc ) {
                 QString param = QString (qApp->argv()[i]);
-                uuid = QUuid (param);
+                QUuid uuid = QUuid (param);
                 if (!uuid.isNull()) {
                     vmUuid = uuid;
                 } else {
-                    if ( i + 1 < argc ) {
-                        QString param = QString (qApp->argv()[i + 1]);
-                        uuid = QUuid (param);
-                        if (!uuid.isNull()) {
-                            vmUuid = uuid;
-                            ++i;
-                        }
-                    }
-                }
-                if (uuid.isNull()) {
                     CMachine m = vbox.FindMachine (param);
                     if (m.isNull()) {
                         vboxProblem().cannotFindMachineByName (vbox, param);
@@ -2239,6 +2228,8 @@ void VBoxGlobal::init()
                     vmUuid = m.GetId();
                 }
             }
+        } else if ( !::strcmp( arg, "-comment" ) ) {
+            ++i;
         } else if ( !::strcmp( arg, "-rmode" ) ) {
             if ( ++i < argc )
                 vm_render_mode_str = qApp->argv()[i];

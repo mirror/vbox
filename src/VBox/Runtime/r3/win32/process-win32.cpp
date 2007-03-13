@@ -70,6 +70,8 @@ NtQueryInformationProcess (
     OUT PULONG ReturnLength OPTIONAL
     );
 
+/** @todo r=michael This function currently does not work correctly if the arguments
+                    contain spaces. */
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, const char * const *papszEnv, unsigned fFlags, PRTPROCESS pProcess)
 {
     /*
