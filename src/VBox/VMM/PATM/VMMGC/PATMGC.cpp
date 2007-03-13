@@ -376,6 +376,47 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_SUCCESS;
             }
 
+            case PATM_ACTION_LOG_GATE_ENTRY:
+            {
+                char    *pIretFrame = (char *)pRegFrame->edx;
+                uint32_t eip, selCS, uEFlags;
+
+                rc  = MMGCRamRead(pVM, &eip,     pIretFrame, 4);
+                rc |= MMGCRamRead(pVM, &selCS,   pIretFrame + 4, 4);
+                rc |= MMGCRamRead(pVM, &uEFlags, pIretFrame + 8, 4);
+                if (rc == VINF_SUCCESS)
+                {
+                    if (    (uEFlags & X86_EFL_VM)
+                        ||  (selCS & X86_SEL_RPL) == 3)
+                    {
+                        uint32_t selSS, esp;
+
+                        rc |= MMGCRamRead(pVM, &esp,     pIretFrame + 12, 4);
+                        rc |= MMGCRamRead(pVM, &selSS,   pIretFrame + 16, 4);
+
+                        if (uEFlags & X86_EFL_VM)
+                        {
+                            uint32_t selDS, selES, selFS, selGS;
+                            rc  = MMGCRamRead(pVM, &selES,   pIretFrame + 20, 4);
+                            rc |= MMGCRamRead(pVM, &selDS,   pIretFrame + 24, 4);
+                            rc |= MMGCRamRead(pVM, &selFS,   pIretFrame + 28, 4);
+                            rc |= MMGCRamRead(pVM, &selGS,   pIretFrame + 32, 4);
+                            if (rc == VINF_SUCCESS)
+                            {
+                                Log(("PATMGC: GATE->VM stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                                Log(("PATMGC: GATE->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
+                            }
+                        }
+                        else
+                            Log(("PATMGC: GATE stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                    }
+                    else
+                        Log(("PATMGC: GATE stack frame: return address %04X:%VGv eflags=%08x\n", selCS, eip, uEFlags));
+                }
+                pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
+                return VINF_SUCCESS;
+            }
+
             case PATM_ACTION_LOG_RET:
                 Log(("PATMGC: RET to %VGv ESP=%VGv iopl=%d\n", pRegFrame->edx, pRegFrame->ebx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
