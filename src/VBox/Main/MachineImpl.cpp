@@ -2638,9 +2638,8 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 #ifdef __WIN__
         const char * args[] = {path, "-startvm", idStr, 0 };
 #else
-        char *name;
-        mUserData->mName.cloneTo(&name);
-        const char * args[] = {path, "-startvm", name, idStr, 0 };
+        Utf8Str name = mUserData->mName;
+        const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
         vrc = RTProcCreate (path, args, NULL, 0, &pid);
     }
@@ -2656,9 +2655,8 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 #ifdef __WIN__
         const char * args[] = {path, "-startvm", idStr, 0 };
 #else
-        char *name;
-        mUserData->mName.cloneTo(&name);
-        const char * args[] = {path, "-startvm", name, idStr, 0 };
+        Utf8Str name = mUserData->mName;
+        const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
         vrc = RTProcCreate (path, args, NULL, 0, &pid);
     }
@@ -2674,9 +2672,8 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 #ifdef __WIN__
         const char * args[] = {path, "-startvm", idStr, "-capture", 0 };
 #else
-        char *name;
-        mUserData->mName.cloneTo(&name);
-        const char * args[] = {path, "-startvm", name, idStr, "-capture", 0 };
+        Utf8Str name = mUserData->mName;
+        const char * args[] = {path, "-comment", name, "-startvm", idStr, "-capture", 0 };
 #endif
         vrc = RTProcCreate (path, args, NULL, 0, &pid);
     }
