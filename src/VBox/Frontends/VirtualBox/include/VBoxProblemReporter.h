@@ -206,6 +206,8 @@ public:
     void remindAboutGoingFullscreen (const QString &hotKey,
                                      const QString &hostKey);
 
+    void cannotRunInSelectorMode();
+
     void showRuntimeError (const CConsole &console, bool fatal,
                            const QString &errorID,
                            const QString &errorMsg);

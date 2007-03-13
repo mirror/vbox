@@ -42,6 +42,7 @@ private:
 
     int hostkey;
     bool autoCapture;
+    QString guiFeatures;
 
     friend class VMGlobalSettings;
 };
@@ -53,6 +54,7 @@ class VMGlobalSettings : public QObject, public CIShared <VMGlobalSettingsData>
     Q_OBJECT
     Q_PROPERTY (int hostKey READ hostKey WRITE setHostKey)
     Q_PROPERTY (bool autoCapture READ autoCapture WRITE setAutoCapture)
+    Q_PROPERTY (QString guiFeatures READ guiFeatures WRITE setGuiFeatures)
 
 public:
 
@@ -75,6 +77,13 @@ public:
         mData()->autoCapture = autoCapture;
         resetError();
     }
+
+    QString guiFeatures() const { return data()->guiFeatures; }
+    void setGuiFeatures (const QString &aFeatures)
+    {
+        mData()->guiFeatures = aFeatures;
+    }
+    bool isFeatureActivated (const char*) const;
 
     //
 

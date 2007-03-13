@@ -1360,6 +1360,15 @@ void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
     NOREF(rc);
 }
 
+void VBoxProblemReporter::cannotRunInSelectorMode()
+{
+    message (mainWindowShown(), Critical,
+             tr ("<p>VirtualBox is running in forced <b>noSelector</b> "
+                 "mode.</p><p>Please run VirtualBox with -startvm parameter "
+                 "specifying required VM to start.</p>"
+                 "<p>The application will now terminate.</p>"));
+}
+
 void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal,
                                             const QString &errorID,
                                             const QString &errorMsg)
