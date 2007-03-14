@@ -72,7 +72,7 @@ $(PATH_TARGET)/PcDefBiosLogo.c: innotek_logo.bmp $(VBOX_BIN2C)
 #
 
 # 1. precompile rombios.c
-$(PATH_TARGET)/_rombios_.c: rombios.c logo.c apmbios.S
+$(PATH_TARGET)/_rombios_.c: rombios.c logo.c apmbios.S | $(call DIRDEP,$(TARGET_PATH))
 	$(call MSG_L1,Precompiling $<,=> $@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -I$(PATH_TARGET) -I$(PATH_CURRENT)/.. -I$(PATH_ROOT)/include -I$(PATH_OUT) -DBX_SMP_PROCESSORS=1 -DVBOX $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) -P $< > $@
 
