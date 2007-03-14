@@ -322,16 +322,6 @@ SELMR3DECL(int) SELMR3Term(PVM pVM);
 SELMR3DECL(void) SELMR3Reset(PVM pVM);
 
 /**
- * Sets up the virtualization of a guest GDT.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   paGDTEs     Pointer to GDT array.
- * @param   cGDTEs      Number of entries in the GDT array.
- */
-SELMR3DECL(int) SELMR3GdtSetup(PVM pVM, PCVBOXDESC paGDTEs, unsigned cGDTEs);
-
-/**
  * Updates the Guest GDT & LDT virtualization based on current CPU state.
  *
  * @returns VBox status code.
