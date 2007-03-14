@@ -54,7 +54,7 @@ bool fInternalMode;
 /**
  * Print the usage info.
  */
-void printUsageInternal(USAGECATEGORY enmCmd)
+void printUsageInternal(USAGECATEGORY u64Cmd)
 {
     RTPrintf("Usage: VBoxManage internalcommands <command> [command arguments]\n"
              "\n"
@@ -64,19 +64,19 @@ void printUsageInternal(USAGECATEGORY enmCmd)
              "WARNING: This is a development tool and shall only be used to analyse\n"
              "         problems. It is completely unsupported and will change in\n"
              "         incompatible ways without warning.\n",
-            (enmCmd & USAGE_LOADSYMS) ?
+            (u64Cmd & USAGE_LOADSYMS) ?
                 "  loadsyms <vmname>|<uuid> <symfile> [delta] [module] [module address]\n"
                 "      This will instruct DBGF to load the given symbolfile\n"
                 "      during initialization.\n"
                 "\n"
                 : "",
-            (enmCmd & USAGE_UNLOADSYMS) ?
+            (u64Cmd & USAGE_UNLOADSYMS) ?
                 "  unloadsyms <vmname>|<uuid> <symfile>\n"
                 "      Removes <symfile> from the list of symbol files that\n"
                 "      should be loaded during DBF initialization.\n"
                 "\n"
                 : "",
-            (enmCmd & USAGE_SETVDIUUID) ?
+            (u64Cmd & USAGE_SETVDIUUID) ?
                 "  setvdiuuid <filepath>\n"
                 "       Assigns a new UUID to the given VDI file. This way, multiple copies\n"
                 "       of VDI containers can be registered.\n"

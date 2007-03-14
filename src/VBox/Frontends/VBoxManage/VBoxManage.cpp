@@ -210,7 +210,7 @@ struct USBFilterCmd
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
-static void printUsage(USAGECATEGORY enmCmd)
+static void printUsage(USAGECATEGORY u64Cmd)
 {
 #ifdef __LINUX__
     bool fLinux = true;
@@ -228,18 +228,18 @@ static void printUsage(USAGECATEGORY enmCmd)
     bool fVRDP = false;
 #endif
 
-    if (enmCmd == USAGE_DUMPOPTS)
+    if (u64Cmd == USAGE_DUMPOPTS)
     {
         fLinux = true;
         fWin = true;
         fVRDP = true;
-        enmCmd = USAGE_ALL;
+        u64Cmd = USAGE_ALL;
     }
 
     RTPrintf("Usage:\n"
              "\n");
 
-    if (enmCmd & USAGE_LIST)
+    if (u64Cmd & USAGE_LIST)
     {
         RTPrintf("VBoxManage list             vms|ostypes|hostdvds|hostfloppies|");
         if (fWin)
@@ -250,27 +250,27 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_SHOWVMINFO)
+    if (u64Cmd & USAGE_SHOWVMINFO)
     {
         RTPrintf("VBoxManage showvminfo       <uuid>|<name>\n"
                  "                            [-details]\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_REGISTERVM)
+    if (u64Cmd & USAGE_REGISTERVM)
     {
         RTPrintf("VBoxManage registervm       <filename>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_UNREGISTERVM)
+    if (u64Cmd & USAGE_UNREGISTERVM)
     {
         RTPrintf("VBoxManage unregistervm     <uuid>|<name>\n"
                  "                            [-delete]\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_CREATEVM)
+    if (u64Cmd & USAGE_CREATEVM)
     {
         RTPrintf("VBoxManage createvm         -name <name>\n"
                  "                            [-register]\n"
@@ -279,7 +279,7 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_MODIFYVM)
+    if (u64Cmd & USAGE_MODIFYVM)
     {
         RTPrintf("VBoxManage modifyvm         <uuid|name>\n"
                  "                            [-name <name>]\n"
@@ -341,14 +341,14 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_STARTVM)
+    if (u64Cmd & USAGE_STARTVM)
     {
         RTPrintf("VBoxManage startvm          <uuid>|<name>\n"
                  "                            [-type gui|vrdp]\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_CONTROLVM)
+    if (u64Cmd & USAGE_CONTROLVM)
     {
         RTPrintf("VBoxManage controlvm        <uuid>|<name>\n"
                  "                            pause|resume|reset|poweroff|savestate|\n"
@@ -364,13 +364,13 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_DISCARDSTATE)
+    if (u64Cmd & USAGE_DISCARDSTATE)
     {
         RTPrintf("VBoxManage discardstate     <uuid>|<name>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_SNAPSHOT)
+    if (u64Cmd & USAGE_SNAPSHOT)
     {
         RTPrintf("VBoxManage snapshot         <uuid>|<name>\n"
                  "                            take <name> [-desc <desc>] |\n"
@@ -383,26 +383,26 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_REGISTERIMAGE)
+    if (u64Cmd & USAGE_REGISTERIMAGE)
     {
         RTPrintf("VBoxManage registerimage    disk|dvd|floppy <filename>\n"
                  "                            [-type normal|immutable|writethrough] (disk only)\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_UNREGISTERIMAGE)
+    if (u64Cmd & USAGE_UNREGISTERIMAGE)
     {
         RTPrintf("VBoxManage unregisterimage  disk|dvd|floppy <uuid>|<filename>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_SHOWVDIINFO)
+    if (u64Cmd & USAGE_SHOWVDIINFO)
     {
         RTPrintf("VBoxManage showvdiinfo      <uuid>|<filename>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_CREATEVDI)
+    if (u64Cmd & USAGE_CREATEVDI)
     {
         RTPrintf("VBoxManage createvdi        -filename <filename>\n"
                  "                            -size <megabytes>\n"
@@ -413,7 +413,7 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_MODIFYVDI)
+    if (u64Cmd & USAGE_MODIFYVDI)
     {
         RTPrintf("VBoxManage modifyvdi        <uuid>|<filename>\n"
 #if 0 /* doesn't currently work */
@@ -423,19 +423,19 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_CLONEVDI)
+    if (u64Cmd & USAGE_CLONEVDI)
     {
         RTPrintf("VBoxManage clonevdi         <uuid>|<filename> <outputfile>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_CONVERTDD)
+    if (u64Cmd & USAGE_CONVERTDD)
     {
         RTPrintf("VBoxManage convertdd        <filename> <outputfile>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_ADDISCSIDISK)
+    if (u64Cmd & USAGE_ADDISCSIDISK)
     {
         RTPrintf("VBoxManage addiscsidisk     -server <name>|<ip>\n"
                  "                            -target <target>\n"
@@ -448,26 +448,26 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_CREATEHOSTIF && fWin)
+    if (u64Cmd & USAGE_CREATEHOSTIF && fWin)
     {
         RTPrintf("VBoxManage createhostif     <name>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_REMOVEHOSTIF && fWin)
+    if (u64Cmd & USAGE_REMOVEHOSTIF && fWin)
     {
         RTPrintf("VBoxManage removehostif     <uuid>|<name>\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_GETEXTRADATA)
+    if (u64Cmd & USAGE_GETEXTRADATA)
     {
         RTPrintf("VBoxManage getextradata     global|<uuid>|<name>\n"
                  "                            <key>|enumerate\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_SETEXTRADATA)
+    if (u64Cmd & USAGE_SETEXTRADATA)
     {
         RTPrintf("VBoxManage setextradata     global|<uuid>|<name>\n"
                  "                            <key>\n"
@@ -475,7 +475,7 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_SETPROPERTY)
+    if (u64Cmd & USAGE_SETPROPERTY)
     {
         RTPrintf("VBoxManage setproperty      vdifolder default|<folder> |\n"
                  "                            machinefolder default|<folder> |\n"
@@ -484,7 +484,7 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_USBFILTER_ADD)
+    if (u64Cmd & USAGE_USBFILTER_ADD)
     {
         RTPrintf("VBoxManage usbfilter        add <index,0-N>\n"
                  "                            -target <uuid>|<name>|global\n"
@@ -501,7 +501,7 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_USBFILTER_MODIFY)
+    if (u64Cmd & USAGE_USBFILTER_MODIFY)
     {
         RTPrintf("VBoxManage usbfilter        modify <index,0-N>\n"
                  "                            -target <uuid>|<name>|global\n"
@@ -518,14 +518,14 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_USBFILTER_REMOVE)
+    if (u64Cmd & USAGE_USBFILTER_REMOVE)
     {
         RTPrintf("VBoxManage usbfilter        remove <index,0-N>\n"
                  "                            -target <uuid>|<name>|global\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_SHAREDFOLDER_ADD)
+    if (u64Cmd & USAGE_SHAREDFOLDER_ADD)
     {
         RTPrintf("VBoxManage sharedfolder     add <vmname>|<uuid>\n"
                  "                            -name <name> -hostpath <hostpath>\n"
@@ -533,14 +533,14 @@ static void printUsage(USAGECATEGORY enmCmd)
                  "\n");
     }
 
-    if (enmCmd & USAGE_SHAREDFOLDER_REMOVE)
+    if (u64Cmd & USAGE_SHAREDFOLDER_REMOVE)
     {
         RTPrintf("VBoxManage sharedfolder     remove <vmname>|<uuid>\n"
                  "                            -name <name> [-transient]\n"
                  "\n");
     }
 
-    if (enmCmd & USAGE_UPDATESETTINGS)
+    if (u64Cmd & USAGE_UPDATESETTINGS)
     {
         RTPrintf("VBoxManage updatesettings   [<dir>|<file>] [-apply]\n"
                  "                            [-nobackup] [-skipinvalid]\n"
@@ -551,13 +551,13 @@ static void printUsage(USAGECATEGORY enmCmd)
 /**
  * Print a usage synopsis and the syntax error message.
  */
-int errorSyntax(USAGECATEGORY enmCmd, const char *pszFormat, ...)
+int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
 {
     va_list args;
     if (fInternalMode)
-        printUsageInternal(enmCmd);
+        printUsageInternal(u64Cmd);
     else
-        printUsage(enmCmd);
+        printUsage(u64Cmd);
     va_start(args, pszFormat);
     RTPrintf("\n"
              "Syntax error: %N\n", pszFormat, &args);
