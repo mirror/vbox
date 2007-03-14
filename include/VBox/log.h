@@ -122,6 +122,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_ACPI,
     /** Block driver group. */
     LOG_GROUP_DRV_BLOCK,
+    /** Char driver group. */
+    LOG_GROUP_DRV_CHAR,
     /** Floppy media driver group. */
     LOG_GROUP_DRV_FLOPPY,
     /** Host Base block driver group. */
@@ -142,6 +144,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_KBD_QUEUE,
     /** Mouse Queue driver group. */
     LOG_GROUP_DRV_MOUSE_QUEUE,
+    /** Named Pipe stream driver group. */
+    LOG_GROUP_DRV_NAMEDPIPE,
     /** NAT network transport driver group */
     LOG_GROUP_DRV_NAT,
     /** Raw image driver group */
@@ -299,6 +303,7 @@ typedef enum LOGGROUP
     "DRV",          \
     "DRV_ACPI",     \
     "DRV_BLOCK",    \
+    "DRV_CHAR",     \
     "DRV_FLOPPY",   \
     "DRV_HOST_BASE", \
     "DRV_HOST_DVD", \
@@ -309,6 +314,7 @@ typedef enum LOGGROUP
     "DRV_ISO",      \
     "DRV_KBD_QUEUE", \
     "DRV_MOUSE_QUEUE", \
+    "DRV_NAMEDPIPE", \
     "DRV_NAT",      \
     "DRV_RAW_IMAGE", \
     "DRV_TUN",      \

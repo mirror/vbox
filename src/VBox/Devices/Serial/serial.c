@@ -60,11 +60,12 @@
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
+#include <iprt/semaphore.h>
 
 #include "Builtins.h"
 #include "../vl_vbox.h"
 
-#define VBOX_SERIAL_PCI
+#undef VBOX_SERIAL_PCI /* The PCI variant has lots of problems: wrong IRQ line and wrong IO base assigned. */
 
 #ifdef VBOX_SERIAL_PCI
 #include <VBox/pci.h>
@@ -147,11 +148,13 @@ struct SerialState {
 #ifdef VBOX_SERIAL_PCI
     PCIDEVICE dev;
 #endif /* VBOX_SERIAL_PCI */
-    /* Be careful with pointers in the structure; load just gets the whole structure from the saved state */
     PPDMDEVINS pDevIns;
-#if 0
-    PDMICHAR pDevChar;
-#endif
+    PDMIBASE IBase;
+    PDMICHARPORT ICharPort;
+    PPDMIBASE pDrvBase;
+    PPDMICHAR pDrvChar;
+
+    RTSEMEVENT ReceiveSem;
 #else /* !VBOX */
     CharDriverState *chr;
 #endif /* !VBOX */
@@ -166,6 +169,8 @@ struct SerialState {
 #ifdef VBOX_SERIAL_PCI
 #define PCIDEV_2_SERIALSTATE(pPciDev) ( (SerialState *)((uintptr_t)(pPciDev) - RT_OFFSETOF(SerialState, dev)) )
 #endif /* VBOX_SERIAL_PCI */
+#define PDMIBASE_2_SERIALSTATE(pInstance) ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, IBase)) )
+#define PDMICHARPORT_2_SERIALSTATE(pInstance) ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, ICharPort)) )
 #endif /* VBOX */
 
 static void serial_update_irq(SerialState *s)
@@ -179,13 +184,21 @@ static void serial_update_irq(SerialState *s)
     }
     if (s->iir != UART_IIR_NO_INT) {
 #ifdef VBOX
-        s->pDevIns->pDevHlp->pfnISASetIrq (s->pDevIns, s->irq, 1);
+#ifdef VBOX_SERIAL_PCI
+        PDMDevHlpPCISetIrqNoWait(s->pDevIns, 0, 1);
+#else /* !VBOX_SERIAL_PCI */
+        PDMDevHlpISASetIrqNoWait(s->pDevIns, s->irq, 1);
+#endif /* !VBOX_SERIAL_PCI */
 #else /* !VBOX */
         s->set_irq(s->irq_opaque, s->irq, 1);
 #endif /* !VBOX */
     } else {
 #ifdef VBOX
-        s->pDevIns->pDevHlp->pfnISASetIrq (s->pDevIns, s->irq, 0);
+#ifdef VBOX_SERIAL_PCI
+        PDMDevHlpPCISetIrqNoWait(s->pDevIns, 0, 0);
+#else /* !VBOX_SERIAL_PCI */
+        PDMDevHlpISASetIrqNoWait(s->pDevIns, s->irq, 0);
+#endif /* !VBOX_SERIAL_PCI */
 #else /* !VBOX */
         s->set_irq(s->irq_opaque, s->irq, 0);
 #endif /* !VBOX */
@@ -247,13 +260,14 @@ static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             serial_update_irq(s);
             ch = val;
 #ifdef VBOX
-#if 0
+            /** @todo implement backpressure for writing (don't set interrupt
+             * bits/line until the character is actually written). This way
+             * EMT wouldn't block for writes taking longer than normal. */
             if (s->pDrvChar)
             {
                 int rc = s->pDrvChar->pfnWrite(s->pDrvChar, &ch, 1);
                 AssertRC(rc);
             }
-#endif
 #else /* !VBOX */
             qemu_chr_write(s->chr, &ch, 1);
 #endif /* !VBOX */
@@ -320,6 +334,12 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr)
             ret = s->rbr;
             s->lsr &= ~(UART_LSR_DR | UART_LSR_BI);
             serial_update_irq(s);
+#ifdef VBOX
+            {
+                int rc = RTSemEventSignal(s->ReceiveSem);
+                AssertRC(rc);
+            }
+#endif /* VBOX */
         }
         break;
     case 1:
@@ -367,8 +387,22 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr)
 }
 
 #ifdef VBOX
-/* Provide non-blocking functions to receive data from the host system. */
+static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *pvBuf, size_t *pcbRead)
+{
+    SerialState *s = PDMICHARPORT_2_SERIALSTATE(pInterface);
+    int rc;
 
+    Assert(*pcbRead != 0);
+    rc = RTSemEventWait(s->ReceiveSem, 250);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    Assert(!(s->lsr & UART_LSR_DR));
+    s->rbr = *(const char *)pvBuf;
+    s->lsr |= UART_LSR_DR;
+    serial_update_irq(s);
+    *pcbRead = 1;
+    return VINF_SUCCESS;
+}
 #else /* !VBOX */
 static int serial_can_receive(SerialState *s)
 {
@@ -650,6 +684,12 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     }
     /* Be careful with pointers in the structure; they are not preserved
      * in the saved state. */
+
+    if (s->lsr & UART_LSR_DR)
+    {
+        int rc = RTSemEventSignal(s->ReceiveSem);
+        AssertRC(rc);
+    }
     s->pDevIns = pDevIns;
     return VINF_SUCCESS;
 }
@@ -667,17 +707,35 @@ static DECLCALLBACK(int) serialIOPortRegionMap(PPCIDEVICE pPciDev, /* unsigned *
     AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
 
     pData->base = (RTIOPORT)GCPhysAddress;
+    LogRel(("Serial#%d: mapping I/O at %#06x\n", pData->pDevIns->iInstance, pData->base));
 
     /*
      * Register our port IO handlers.
      */
-    rc = pPciDev->pDevIns->pDevHlp->pfnIOPortRegister(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress, 8, (void *)pData,
-                                                      serial_io_write, serial_io_read, NULL, NULL, "SERIAL");
+    rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress, 8, (void *)pData,
+                                 serial_io_write, serial_io_read, NULL, NULL, "SERIAL");
     AssertRC(rc);
     return rc;
 }
 
 #endif /* VBOX_SERIAL_PCI */
+
+
+/** @copyfrom PIBASE::pfnqueryInterface */
+static DECLCALLBACK(void *) serialQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+{
+    SerialState *pData = PDMIBASE_2_SERIALSTATE(pInterface);
+    switch (enmInterface)
+    {
+        case PDMINTERFACE_BASE:
+            return &pData->IBase;
+        case PDMINTERFACE_CHAR_PORT:
+            return &pData->ICharPort;
+        default:
+            return NULL;
+    }
+}
+
 
 /**
  * Construct a device instance for a VM.
@@ -701,7 +759,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     uint16_t       io_base;
     uint8_t        irq_lvl;
 
-    Assert(iInstance < 2);
+    Assert(iInstance < 4);
 
     s->pDevIns = pDevIns;
     /*
@@ -711,6 +769,14 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     }
 
+    /* IBase */
+    s->IBase.pfnQueryInterface = serialQueryInterface;
+
+    /* ICharPort */
+    s->ICharPort.pfnNotifyRead = serialNotifyRead;
+
+    rc = RTSemEventCreate(&s->ReceiveSem);
+    AssertRC(rc);
 
 /** @todo r=bird: Check for VERR_CFGM_VALUE_NOT_FOUND and provide sensible defaults.
  * Also do AssertMsgFailed(("Configuration error:....)) in the failure cases of CFGMR3Query*()
@@ -744,33 +810,52 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     s->dev.config[0x0e] = 0x00; /* Header type: standard */
     s->dev.config[0x3c] = irq_lvl; /* preconfigure IRQ number (0 = autoconfig)*/
     s->dev.config[0x3d] = 1;    /* interrupt pin 0 */
-    rc = pDevIns->pDevHlp->pfnPCIRegister(pDevIns, &s->dev);
+    rc = PDMDevHlpPCIRegister(pDevIns, &s->dev);
     if (VBOX_FAILURE(rc))
         return rc;
     /*
      * Register the PCI I/O ports.
      */
-    rc = pDevIns->pDevHlp->pfnPCIIORegionRegister(pDevIns, 0, 8, PCI_ADDRESS_SPACE_IO, serialIOPortRegionMap);
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 8, PCI_ADDRESS_SPACE_IO, serialIOPortRegionMap);
     if (VBOX_FAILURE(rc))
         return rc;
 #else /* !VBOX_SERIAL_PCI */
     s->base = io_base;
-    rc = pDevIns->pDevHlp->pfnIOPortRegister (
-        pDevIns,
-        io_base,
-        8,
-        s,
-        serial_io_write,
-        serial_io_read,
-        NULL, NULL,
-        "SERIAL"
-        );
+    rc = PDMDevHlpIOPortRegister(pDevIns, io_base, 8, s,
+                                 serial_io_write, serial_io_read,
+                                 NULL, NULL, "SERIAL");
     if (VBOX_FAILURE (rc)) {
         return rc;
     }
 #endif /* !VBOX_SERIAL_PCI */
 
-    rc = pDevIns->pDevHlp->pfnSSMRegister (
+    /* Attach the char driver and get the interfaces. For now no run-time
+     * changes are supported. */
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "Serial Char");
+    if (VBOX_SUCCESS(rc))
+    {
+        s->pDrvChar = (PDMICHAR *)s->pDrvBase->pfnQueryInterface(s->pDrvBase, PDMINTERFACE_CHAR);
+        if (!s->pDrvChar)
+        {
+            AssertMsgFailed(("Configuration error: instance %d has no char interface!\n", iInstance));
+            return VERR_PDM_MISSING_INTERFACE;
+        }
+        /** @todo provide read notification interface!!!! */
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        s->pDrvBase = NULL;
+        s->pDrvChar = NULL;
+        LogRel(("Serial%d: no unit\n", iInstance));
+    }
+    else
+    {
+        AssertMsgFailed(("Serial%d: Failed to attach to char driver. rc=%Vrc\n", iInstance, rc));
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Serial device %d cannot attach to char driver\n"), iInstance);
+    }
+
+    rc = PDMDevHlpSSMRegister (
         pDevIns,                /* pDevIns */
         pDevIns->pDevReg->szDeviceName, /* pszName */
         iInstance,              /* u32Instance */
@@ -807,7 +892,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* fFlags */
     PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
     /* fClass */
-    PDM_DEVREG_CLASS_SERIAL_PORT,
+    PDM_DEVREG_CLASS_SERIAL,
     /* cMaxInstances */
     1,
     /* cbInstance */
