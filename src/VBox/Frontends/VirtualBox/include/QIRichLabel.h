@@ -94,6 +94,8 @@ protected slots:
 protected:
    void         drawContents ( QPainter * );
    void         fontChange ( const QFont & );
+   void         mouseMoveEvent (QMouseEvent *);
+   void         mousePressEvent (QMouseEvent *);
    void         resizeEvent ( QResizeEvent* );
    void         focusInEvent ( QFocusEvent* );
    void         keyPressEvent ( QKeyEvent* );
@@ -101,6 +103,7 @@ protected:
 
 signals:
    void         textChanged();
+   void         clickedOnLink (const QString&);
 
 private slots:
    void         acceleratorSlot();
