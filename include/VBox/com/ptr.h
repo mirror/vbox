@@ -250,7 +250,8 @@ public:
      *  Createas an in-process object of the given class ID and starts to
      *  manage a reference to the created object in case of success.
      */
-    HRESULT createInprocObject (const CLSID &clsid) {
+    HRESULT createInprocObject (const CLSID &clsid)
+    {
         HRESULT rc;
         I *obj = NULL;
 #if defined (__WIN__)
@@ -273,18 +274,41 @@ public:
      *  Createas a local (out-of-process) object of the given class ID and starts
      *  to manage a reference to the created object in case of success.
      *
-     *  @param serverName
-     *      name of the server to create the object within (Linux only)
+     *  Note: In XPCOM, the out-of-process functionality is currently emulated
+     *  through in-process wrapper objects (that start a dedicated process and
+     *  redirect all object requests to that process). For this reason, this
+     *  method is fully equivalent to #createInprocObject() for now.
      */
-    HRESULT createLocalObject (const CLSID &clsid, const char *serverName) {
+    HRESULT createLocalObject (const CLSID &clsid)
+    {
+#if defined (__WIN__)
         HRESULT rc;
         I *obj = NULL;
-#if defined (__WIN__)
         rc = CoCreateInstance (clsid, NULL, CLSCTX_LOCAL_SERVER, _ATL_IIDOF (I),
                                (void **) &obj);
+        *this = obj;
+        if (SUCCEEDED (rc))
+            obj->Release();
+        return rc;
 #else
+        return createInprocObject (clsid);
+#endif
+    }
+
+#ifdef VBOX_WITH_XPCOM
+    /**
+     *  Createas an object of the given class ID on the specified server and
+     *  starts to manage a reference to the created object in case of success.
+     *
+     *  @param serverName   Name of the server to create an object within.
+     */
+    HRESULT createObjectOnServer (const CLSID &clsid, const char *serverName)
+    {
+        HRESULT rc;
+        I *obj = NULL;
         nsCOMPtr <ipcIService> ipcServ = do_GetService (IPC_SERVICE_CONTRACTID, &rc);
-        if (SUCCEEDED (rc)) {
+        if (SUCCEEDED (rc))
+        {
             PRUint32 serverID = 0;
             rc = ipcServ->ResolveClientName (serverName, &serverID);
             if (SUCCEEDED (rc)) {
@@ -295,12 +319,12 @@ public:
                                                    (void **) &obj);
             }
         }
-#endif
         *this = obj;
         if (SUCCEEDED (rc))
             obj->Release();
         return rc;
     }
+#endif
 };
 
 /**
