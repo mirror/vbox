@@ -6085,8 +6085,7 @@ int main(int argc, char *argv[])
     ComPtr <IVirtualBox> virtualBox;
     ComPtr <ISession> session;
 
-    rc = virtualBox.createLocalObject (CLSID_VirtualBox,
-                                       "VirtualBoxServer");
+    rc = virtualBox.createLocalObject (CLSID_VirtualBox);
     if (FAILED(rc))
     {
         RTPrintf ("[!] Failed to create the VirtualBox object!\n");
