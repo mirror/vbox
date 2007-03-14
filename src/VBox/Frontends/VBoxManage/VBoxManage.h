@@ -47,11 +47,11 @@
 #define USAGE_GETEXTRADATA          BIT64(19)
 #define USAGE_SETEXTRADATA          BIT64(20)
 #define USAGE_SETPROPERTY           BIT64(21)
-#define USAGE_USBFILTER             BIT64(22) | BIT64(23) | BIT64(24)
+#define USAGE_USBFILTER             (BIT64(22) | BIT64(23) | BIT64(24))
 #define USAGE_USBFILTER_ADD         BIT64(22)
 #define USAGE_USBFILTER_MODIFY      BIT64(23)
 #define USAGE_USBFILTER_REMOVE      BIT64(24)
-#define USAGE_SHAREDFOLDER          BIT64(25) | BIT64(26)
+#define USAGE_SHAREDFOLDER          (BIT64(25) | BIT64(26))
 #define USAGE_SHAREDFOLDER_ADD      BIT64(25)
 #define USAGE_SHAREDFOLDER_REMOVE   BIT64(26)
 #define USAGE_UPDATESETTINGS        BIT64(27)
@@ -59,7 +59,7 @@
 #define USAGE_UNLOADSYMS            BIT64(30)
 #define USAGE_SETVDIUUID            BIT64(31)
 #define USAGE_CONVERTDD             BIT64(32)
-#define USAGE_ALL                   (uint64_t)~0
+#define USAGE_ALL                   (~(uint64_t)0)
 
 typedef uint64_t USAGECATEGORY;
 
