@@ -976,7 +976,7 @@ static DECLCALLBACK(void) INTNETIfDestruct(void *pvObj, void *pvUser1, void *pvU
      */
     if (pIf->pIntBufDefault)
     {
-        SUPR0MemFree(pIf->pSession, pIf->pIntBufDefault);
+        SUPR0MemFree(pIf->pSession, (RTHCUINTPTR)pIf->pIntBufDefault);
         pIf->pIntBufDefault = NULL;
         pIf->pIntBufDefaultR3 = NULL;
         pIf->pIntBufR3 = NULL;
@@ -1091,7 +1091,7 @@ static int INTNETNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
                 RTSemFastMutexDestroy(pNetwork->FastMutex);
                 pNetwork->FastMutex = NIL_RTSEMFASTMUTEX;
             }
-            SUPR0MemFree(pIf->pSession, pIf->pIntBufDefault);
+            SUPR0MemFree(pIf->pSession, (RTHCUINTPTR)pIf->pIntBufDefault);
             pIf->pIntBufDefault = NULL;
             pIf->pIntBuf = NULL;
         }
