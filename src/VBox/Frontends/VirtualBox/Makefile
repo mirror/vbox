@@ -45,7 +45,6 @@ INSTALLS.darwin = VirtualBox.app
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
-VirtualBox_SDKS.darwin = LIBSDL
 
 
 # bird:
@@ -134,26 +133,17 @@ VirtualBox_SOURCES.darwin = \
 
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox_DEFS.win       = UNICODE QT_DLL
-VirtualBox_DEFS.darwin    = VBOX_WITH_HACKED_QT
-ifeq ($(BUILD_TYPE),release)
- VirtualBox_DEFS.win     += VBOX_GUI_USE_QIMAGE
- VirtualBox_DEFS.linux   += VBOX_GUI_USE_SDL
- VirtualBox_DEFS.darwin  += VBOX_GUI_USE_QIMAGE
-else
- VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
- VirtualBox_DEFS.win     += \
-	VBOX_GUI_USE_REFRESH_TIMER \
-	VBOX_GUI_USE_QIMAGE \
-	VBOX_GUI_USE_DDRAW
- VirtualBox_DEFS.linux   += \
-	VBOX_GUI_USE_REFRESH_TIMER \
-	VBOX_GUI_USE_QIMAGE \
-	VBOX_GUI_USE_SDL
- VirtualBox_DEFS.darwin  += \
-	VBOX_GUI_USE_REFRESH_TIMER \
-	VBOX_GUI_USE_QIMAGE \
-	VBOX_GUI_USE_SDL
+VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE
+VirtualBox_DEFS.linux     = VBOX_GUI_USE_SDL
+VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
+#ifndef VBOX_OSE
+ VirtualBox_DEFS.darwin  += VBOX_WITH_HACKED_QT
+#endif
+ifneq ($(BUILD_TYPE),release)
+ # non-release builds has some extra features.
+ VirtualBox_DEFS         += VBOX_GUI_USE_REFRESH_TIMER VBOX_WITH_DEBUGGER_GUI_MENU
+ VirtualBox_DEFS.win     += VBOX_GUI_USE_DDRAW
+ VirtualBox_DEFS.linux   += VBOX_GUI_USE_QIMAGE
 endif
 ifdef VBOX_WITH_ALSA
  VirtualBox_DEFS         += VBOX_WITH_ALSA
