@@ -270,8 +270,11 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
         }
         else
         {
-            AssertMsgFailed(("Failed to allocate %d bytes of contiguous memory\n", RT_ALIGN(sizeof(*pVM), PAGE_SIZE)));
             rc = VERR_NO_MEMORY;
+            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, 
+                              N_("Failed to allocate %d bytes of contiguous memory for the VM structure!\n"), 
+                              RT_ALIGN(sizeof(*pVM), PAGE_SIZE));
+            AssertMsgFailed(("Failed to allocate %d bytes of contiguous memory for the VM structure!\n", RT_ALIGN(sizeof(*pVM), PAGE_SIZE)));
         }
 
         /* terminate SUPLib */
