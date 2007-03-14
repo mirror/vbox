@@ -203,6 +203,13 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 #endif
 
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvChar);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNamedPipe);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
     return VINF_SUCCESS;
 }
 

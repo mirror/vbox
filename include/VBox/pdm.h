@@ -76,7 +76,7 @@ typedef struct PDMQUEUEITEMCORE
     GCPTRTYPE(PPDMQUEUEITEMCORE)    pNextGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t                        Alignment0;
-#endif 
+#endif
 } PDMQUEUEITEMCORE;
 
 
@@ -437,6 +437,13 @@ typedef enum PDMINTERFACE
     PDMINTERFACE_DISPLAY_PORT,
     /** PDMIDISPLAYCONNECTOR    - The display connector interface.      (Up)    Coupled with PDMINTERFACE_DISPLAY_PORT. */
     PDMINTERFACE_DISPLAY_CONNECTOR,
+    /** PDMICHARPORT            - The char notify interface.            (Down)  Coupled with PDMINTERFACE_CHAR. */
+    PDMINTERFACE_CHAR_PORT,
+    /** PDMICHAR                - The char driver interface.            (Up)    Coupled with PDMINTERFACE_CHAR_PORT. */
+    PDMINTERFACE_CHAR,
+    /** PDMISTREAM              - The stream driver interface           (Up)    No coupling.
+     * Used by a char driver to implement PDMINTERFACE_CHAR. */
+    PDMINTERFACE_STREAM,
     /** PDMIBLOCKPORT           - The block notify interface            (Down)  Coupled with PDMINTERFACE_BLOCK. */
     PDMINTERFACE_BLOCK_PORT,
     /** PDMIBLOCK               - The block driver interface            (Up)    Coupled with PDMINTERFACE_BLOCK_PORT. */
@@ -892,12 +899,11 @@ typedef PDMIDUMMY PDMIBLOCKPORT;
 /** Pointer to a block notify interface (dummy). */
 typedef PDMIBLOCKPORT *PPDMIBLOCKPORT;
 
-
 /** Pointer to a block interface. */
 typedef struct PDMIBLOCK *PPDMIBLOCK;
 /**
  * Block interface.
- * Pair with PDMIBLOCK.
+ * Pair with PDMIBLOCKPORT.
  */
 typedef struct PDMIBLOCK
 {
@@ -1422,6 +1428,79 @@ typedef struct PDMIISCSITRANSPORT
 } PDMIISCSITRANSPORT;
 
 
+/** Pointer to a char port interface. */
+typedef struct PDMICHARPORT *PPDMICHARPORT;
+/**
+ * Char port interface.
+ * Pair with PDMICHAR.
+ */
+typedef struct PDMICHARPORT
+{
+    /**
+     * Deliver data read to the device/driver.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where the read bits are stored.
+     * @param   pcbRead         Number of bytes available for reading/having been read.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNotifyRead,(PPDMICHARPORT pInterface, const void *pvBuf, size_t *pcbRead));
+} PDMICHARPORT;
+
+/** Pointer to a char interface. */
+typedef struct PDMICHAR *PPDMICHAR;
+/**
+ * Char interface.
+ * Pair with PDMICHARPORT.
+ */
+typedef struct PDMICHAR
+{
+    /**
+     * Write bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where to store the write bits.
+     * @param   cbWrite         Number of bytes to write.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMICHAR pInterface, const void *pvBuf, size_t cbWrite));
+} PDMICHAR;
+
+
+/** Pointer to a stream interface. */
+typedef struct PDMISTREAM *PPDMISTREAM;
+/**
+ * Stream interface.
+ * Makes up the fundation for PDMICHAR.
+ */
+typedef struct PDMISTREAM
+{
+    /**
+     * Read bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   cbRead          Number of bytes to read/bytes actually read.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMISTREAM pInterface, void *pvBuf, size_t *cbRead));
+
+    /**
+     * Write bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where to store the write bits.
+     * @param   cbWrite         Number of bytes to write/bytes actually written.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMISTREAM pInterface, const void *pvBuf, size_t *cbWrite));
+} PDMISTREAM;
+
+
 /** ACPI power source identifier */
 typedef enum PDMACPIPOWERSOURCE
 {
@@ -1496,7 +1575,7 @@ typedef struct PDMIACPICONNECTOR
      * @param   pu32PresentRate         Pointer to the present rate (0..1000 of the total capacity).
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryBatteryStatus,(PPDMIACPICONNECTOR, bool *pfPresent, PPDMACPIBATCAPACITY penmRemainingCapacity,
-                                                     PPDMACPIBATSTATE penmBatteryState, uint32_t *pu32PresentRate));
+                PPDMACPIBATSTATE penmBatteryState, uint32_t *pu32PresentRate));
 } PDMIACPICONNECTOR;
 
 /** Pointer to a VMMDevice port interface. */
@@ -1566,8 +1645,8 @@ typedef struct PDMIVMMDEVPORT
      * @param   fFlags                 Bitflags
      */
     DECLR3CALLBACKMEMBER(int, pfnSetCredentials,(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
-                                                 const char *pszPassword, const char *pszDomain,
-                                                 uint32_t fFlags));
+                const char *pszPassword, const char *pszDomain,
+                uint32_t fFlags));
 
     /**
      * Notify the driver about a VBVA status change.
@@ -2133,10 +2212,12 @@ typedef struct PDMIHGCMCONNECTOR
  *
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle it's expected
- *                      to be used primarily in this function.
+ *                      If the registration structure is needed,
+ *                      pDrvIns->pDrvReg points to it.
+ * @param   pCfgHandle  Configuration node handle for the driver. Use this to
+ *                      obtain the configuration of the driver instance. It's
+ *                      also found in pDrvIns->pCfgHandle as it's expected to
+ *                      be used frequently in this function.
  */
 typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
 /** Pointer to a FNPDMDRVCONSTRUCT() function. */
@@ -2145,8 +2226,8 @@ typedef FNPDMDRVCONSTRUCT *PFNPDMDRVCONSTRUCT;
 /**
  * Destruct a driver instance.
  *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
+ * Most VM resources are freed by the VM. This callback is provided so that
+ * any non-VM resources can be freed correctly.
  *
  * @param   pDrvIns     The driver instance data.
  */
@@ -2337,6 +2418,10 @@ typedef PDMDRVREG const *PCPDMDRVREG;
 #define PDM_DRVREG_CLASS_USB            BIT(11)
 /** ISCSI Transport related driver. */
 #define PDM_DRVREG_CLASS_ISCSITRANSPORT BIT(12)
+/** Char driver. */
+#define PDM_DRVREG_CLASS_CHAR           BIT(13)
+/** Stream driver. */
+#define PDM_DRVREG_CLASS_STREAM         BIT(14)
 /** @} */
 
 
@@ -3121,8 +3206,8 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 #define PDM_DEVREG_CLASS_BUS_USB        BIT(14) /* ??? */
 /** ACPI. */
 #define PDM_DEVREG_CLASS_ACPI           BIT(15)
-/** Serial Porst */
-#define PDM_DEVREG_CLASS_SERIAL_PORT    BIT(16)
+/** Serial controller device. */
+#define PDM_DEVREG_CLASS_SERIAL         BIT(16)
 /** @} */
 
 
@@ -6690,7 +6775,7 @@ PDMR3DECL(void) PDMR3DmaRun(PVM pVM);
 PDMR3DECL(void) PDMR3Poll(PVM pVM);
 
 /**
- * Serivce a VMMCALLHOST_PDM_LOCK call.
+ * Service a VMMCALLHOST_PDM_LOCK call.
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.

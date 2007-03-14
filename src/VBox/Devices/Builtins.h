@@ -74,6 +74,8 @@ extern const PDMDRVREG g_DrvNetSniffer;
 extern const PDMDRVREG g_DrvAUDIO;
 extern const PDMDRVREG g_DrvACPI;
 extern const PDMDRVREG g_DrvVUSBRootHub;
+extern const PDMDRVREG g_DrvChar;
+extern const PDMDRVREG g_DrvNamedPipe;
 
 __END_DECLS
 
