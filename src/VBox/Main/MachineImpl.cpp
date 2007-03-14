@@ -2635,7 +2635,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         strcpy (cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-#ifdef __WIN__
+#ifdef __WIN__ /** @todo drop this once the RTProcCreate bug has been fixed */
         const char * args[] = {path, "-startvm", idStr, 0 };
 #else
         Utf8Str name = mUserData->mName;
@@ -6675,7 +6675,9 @@ HRESULT Machine::unlockConfig()
 
     if (isConfigLocked())
     {
+        RTFileFlush(mData->mHandleCfgFile);
         RTFileClose(mData->mHandleCfgFile);
+        /** @todo flush the directory. */
         mData->mHandleCfgFile = NIL_RTFILE;
     }
 
