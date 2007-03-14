@@ -1276,7 +1276,7 @@ void VBoxConsoleWnd::languageChange()
     QToolTip::add (sf_state,
 /// @todo add later, when activity is actually reported
 //        tr ("Indicates the activity of shared folders."));
-        tr ("Provides quick access to shared folders (by a right mouse button click). "
+        tr ("Provides quick access to shared folders (by a right mouse button click).<br>"
             "Note that the shared folders feature requires Guest Additions to be installed in the guest OS."));
 
     updateAppearanceOf (AllStuff);
