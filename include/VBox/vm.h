@@ -318,9 +318,9 @@ typedef struct VM
 
 
     /* padding to make gnuc put the StatQemuToGC where msc does. */
-/*#if HC_ARCH_BITS == 32
-    uint32_t            padding0;
-#endif*/
+#if HC_ARCH_BITS == 32
+    uint32_t            padding0[2];
+#endif
 
     /** Profiling the total time from Qemu to GC. */
     STAMPROFILEADV      StatTotalQemuToGC;
