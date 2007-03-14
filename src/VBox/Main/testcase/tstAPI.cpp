@@ -214,8 +214,7 @@ int main(int argc, char *argv[])
     ComPtr <ISession> session;
 
     printf ("Creating VirtualBox object...\n");
-    CHECK_RC (virtualBox.createLocalObject (CLSID_VirtualBox,
-                                            "VirtualBoxServer"));
+    CHECK_RC (virtualBox.createLocalObject (CLSID_VirtualBox));
     if (FAILED (rc))
     {
         CHECK_ERROR_NOCALL();
@@ -237,8 +236,7 @@ int main(int argc, char *argv[])
         ComPtr <IVirtualBox> virtualBox2;
 
         printf ("Creating one more VirtualBox object...\n");
-        CHECK_RC (virtualBox2.createLocalObject (CLSID_VirtualBox,
-                                                "VirtualBoxServer"));
+        CHECK_RC (virtualBox2.createLocalObject (CLSID_VirtualBox));
         if (FAILED (rc))
         {
             CHECK_ERROR_NOCALL();
@@ -480,7 +478,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 1
+#if 0
     // create a new machine (w/o registering it)
     ///////////////////////////////////////////////////////////////////////////
     do

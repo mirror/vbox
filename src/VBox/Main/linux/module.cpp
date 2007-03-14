@@ -20,23 +20,27 @@
  */
 
 #include <nsIGenericFactory.h>
-#include <VirtualBox_XPCOM.h>
 
-#include <GuestImpl.h>
-#include <KeyboardImpl.h>
-#include <MouseImpl.h>
-#include <DisplayImpl.h>
-#include <MachineDebuggerImpl.h>
-#include <USBDeviceImpl.h>
-#include <RemoteUSBDeviceImpl.h>
-#include <SharedFolderImpl.h>
-#include <FramebufferImpl.h>
-#include <ProgressImpl.h>
-#include <NetworkAdapterImpl.h>
+// generated file
+#include "VirtualBox_XPCOM.h"
 
-#include <SessionImpl.h>
-#include <ConsoleImpl.h>
-#include <ConsoleVRDPServer.h>
+#include "GuestImpl.h"
+#include "KeyboardImpl.h"
+#include "MouseImpl.h"
+#include "DisplayImpl.h"
+#include "MachineDebuggerImpl.h"
+#include "USBDeviceImpl.h"
+#include "RemoteUSBDeviceImpl.h"
+#include "SharedFolderImpl.h"
+#include "FramebufferImpl.h"
+#include "ProgressImpl.h"
+#include "NetworkAdapterImpl.h"
+
+#include "SessionImpl.h"
+#include "ConsoleImpl.h"
+#include "ConsoleVRDPServer.h"
+
+#include "Logging.h"
 
 // XPCOM glue code unfolding
 
@@ -75,7 +79,7 @@ COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(ComObjPtr <RemoteUSBDevice>, IHostUSBDe
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(SharedFolder)
 
 /**
- *  Singleton class factory that holds the reference to the created instance
+ *  Singleton class factory that holds a reference to the created instance
  *  (preventing it from being destroyed) until the module is explicitly
  *  unloaded by the XPCOM shutdown code.
  *
@@ -128,21 +132,27 @@ private:
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC (Session)
 
+
+/** 
+ *  Component definition table.
+ *  Lists all components defined in this module.
+ */
 static const nsModuleComponentInfo components[] =
 {
     {
-        "Session component", NS_SESSION_CID, NS_SESSION_CONTRACTID,
-        SessionConstructor,
+        "Session component", // description
+        NS_SESSION_CID, NS_SESSION_CONTRACTID, // CID/ContractID
+        SessionConstructor, // constructor function
         NULL, // registration function
         NULL, // deregistration function
 /** @note this is for singleton; disabled for now */
 //        SessionClassFactory::releaseInstance,
         NULL, // destructor function
-        NS_CI_INTERFACE_GETTER_NAME(Session),
+        NS_CI_INTERFACE_GETTER_NAME(Session), // interfaces function
         NULL, // language helper
-        &NS_CLASSINFO_NAME(Session)
+        &NS_CLASSINFO_NAME(Session) // global class info & flags
     }
 };
 
-NS_IMPL_NSGETMODULE(SessionModule, components)
+NS_IMPL_NSGETMODULE (VirtualBox_Client_Module, components)
 
