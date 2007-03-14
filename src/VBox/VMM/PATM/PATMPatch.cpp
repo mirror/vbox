@@ -690,9 +690,6 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
          * a page fault. The assembly code restores the stack afterwards.
          */
         offset = 0;
-        /* include prefix byte to make sure we don't use the incorrect selector register. */
-        if (pCpu->prefix & PREFIX_SEG)
-            pPB[offset++] = pCpu->prefix_seg;
         pPB[offset++] = 0xFF;              // push r/m32
         pPB[offset++] = MAKE_MODRM(MODRM_MOD(pCpu->ModRM), 6 /* group 5 */, MODRM_RM(pCpu->ModRM));
         i = 2;  /* standard offset of modrm bytes */
@@ -786,10 +783,6 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
      * a page fault. The assembly code restores the stack afterwards.
      */
     offset = 0;
-    /* include prefix byte to make sure we don't use the incorrect selector register. */
-    if (pCpu->prefix & PREFIX_SEG)
-        pPB[offset++] = pCpu->prefix_seg;
-
     pPB[offset++] = 0xFF;              // push r/m32
     pPB[offset++] = MAKE_MODRM(MODRM_MOD(pCpu->ModRM), 6 /* group 5 */, MODRM_RM(pCpu->ModRM));
     i = 2;  /* standard offset of modrm bytes */
