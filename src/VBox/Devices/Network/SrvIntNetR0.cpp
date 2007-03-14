@@ -1039,7 +1039,7 @@ static int INTNETNetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSessio
         cbRecv = RT_ALIGN(RT_MAX(cbRecv, sizeof(INTNETHDR) * 4), sizeof(INTNETHDR));
         cbSend = RT_ALIGN(RT_MAX(cbSend, sizeof(INTNETHDR) * 4), sizeof(INTNETHDR));
         const unsigned cbBuf = RT_ALIGN(sizeof(*pIf->pIntBuf), sizeof(INTNETHDR)) + cbRecv + cbSend;
-        rc = SUPR0MemAlloc(pIf->pSession, cbBuf, (void **)&pIf->pIntBufDefault, (void **)&pIf->pIntBufDefaultR3);
+        rc = SUPR0MemAlloc(pIf->pSession, cbBuf, (PRTR0PTR)&pIf->pIntBufDefault, (PRTR3PTR)&pIf->pIntBufDefaultR3);
         if (VBOX_SUCCESS(rc))
         {
             pIf->pIntBuf = pIf->pIntBufDefault;

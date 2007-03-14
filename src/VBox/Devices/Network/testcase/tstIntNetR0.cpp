@@ -159,7 +159,7 @@ INTNETR3DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, con
     return VINF_SUCCESS;
 }
 
-INTNETR3DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, void **ppvR3)
+INTNETR3DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3)
 {
     if (pSession != g_pSession)
     {
@@ -170,7 +170,7 @@ INTNETR3DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppv
     void *pv = RTMemAlloc(cb);
     if (!pv)
         return VERR_NO_MEMORY;
-    *ppvR0 = pv;
+    *ppvR0 = (RTR0PTR)pv;
     if (ppvR3)
         *ppvR3 = pv;
     return VINF_SUCCESS;
