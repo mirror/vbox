@@ -196,7 +196,7 @@ HRESULT VirtualBox::init()
             RTFILE handle = NIL_RTFILE;
             int vrc = RTFileOpen (&handle, vboxConfigFile,
                                   RTFILE_O_READWRITE | RTFILE_O_CREATE |
-                                  RTFILE_O_DENY_WRITE);
+                                  RTFILE_O_DENY_WRITE | RTFILE_O_WRITE_THROUGH);
             if (VBOX_SUCCESS (vrc))
                 vrc = RTFileWrite (handle,
                                    (void *) DefaultGlobalConfig,
@@ -4203,7 +4203,7 @@ HRESULT VirtualBox::lockConfig()
         int vrc = RTFileOpen (&mData.mCfgFile.mHandle,
                              Utf8Str (mData.mCfgFile.mName),
                              RTFILE_O_READWRITE | RTFILE_O_OPEN |
-                             RTFILE_O_DENY_WRITE);
+                             RTFILE_O_DENY_WRITE | RTFILE_O_WRITE_THROUGH);
         if (VBOX_FAILURE (vrc))
         {
             mData.mCfgFile.mHandle = NIL_RTFILE;
@@ -4241,7 +4241,9 @@ HRESULT VirtualBox::unlockConfig()
 
     if (isConfigLocked())
     {
+        RTFileFlush (mData.mCfgFile.mHandle);
         RTFileClose (mData.mCfgFile.mHandle);
+        /** @todo flush the directory too. */
         mData.mCfgFile.mHandle = NIL_RTFILE;
         LogFlowThisFunc (("\n"));
     }
