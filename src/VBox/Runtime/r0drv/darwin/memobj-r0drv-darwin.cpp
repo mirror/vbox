@@ -80,12 +80,10 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
      */
     switch (pMemDarwin->Core.enmType)
     {
+        case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PAGE:
             IOFreeAligned(pMemDarwin->Core.pv, pMemDarwin->Core.cb);
             break;
-
-        /*case RTR0MEMOBJTYPE_LOW: => RTR0MEMOBJTYPE_CONT
-            break;*/
 
         case RTR0MEMOBJTYPE_CONT:
             IOFreeContiguous(pMemDarwin->Core.pv, pMemDarwin->Core.cb);
@@ -167,10 +165,64 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
+#if 1
+    /* 
+     * Allocating 128KB for the low page pool can bit a bit exhausting on the kernel,
+     * it frequnetly causes the entire box to lock up on startup.
+     *
+     * So, try allocate the memory using IOMallocAligned first and if we get any high 
+     * physical memory we'll release it and fall back on IOMAllocContiguous.
+     */
+    int rc = VERR_NO_PAGE_MEMORY;
+    AssertCompile(sizeof(IOPhysicalAddress) == 4);
+    void *pv = IOMallocAligned(cb, PAGE_SIZE);
+    if (pv)
+    {
+        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
+        if (pMemDesc)
+        {
+            /*
+             * Check if it's all below 4GB.
+             */
+            for (IOByteCount off = 0; off < cb; off += PAGE_SIZE)
+            {
+                addr64_t Addr = pMemDesc->getPhysicalSegment64(off, NULL);
+                if (Addr > (uint32_t)(_4G - PAGE_SIZE))
+                {
+                    /* Ok, we failed, fall back on contiguous allocation. */
+                    pMemDesc->release();
+                    IOFreeAligned(pv, cb);
+                    return rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
+                }
+            }
+
+            /*
+             * Create the IPRT memory object.
+             */
+            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOW, pv, cb);
+            if (pMemDarwin)
+            {
+                pMemDarwin->pMemDesc = pMemDesc;
+                *ppMem = &pMemDarwin->Core;
+                return VINF_SUCCESS;
+            }
+
+            rc = VERR_NO_MEMORY;
+            pMemDesc->release();
+        }
+        else
+            rc = VERR_MEMOBJ_INIT_FAILED;
+        IOFreeAligned(pv, cb);
+    }
+    return rc;
+
+#else
+
     /*
      * IOMallocContiguous is the most suitable API.
      */
     return rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
+#endif 
 }
 
 
@@ -288,7 +340,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
     }
 
     /*
-     * Just in case IOMallocContigus doesn't work right, we can try fall back
+     * Just in case IOMallocContiguous doesn't work right, we can try fall back
      * on a contiguous allcation.
      */
     if (rc == VERR_INTERNAL_ERROR || rc == VERR_NO_PHYS_MEMORY)
