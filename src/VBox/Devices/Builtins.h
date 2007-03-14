@@ -49,7 +49,6 @@ extern const PDMDEVREG g_DevicePCNet;
 extern const PDMDEVREG g_DeviceNE2000;
 extern const PDMDEVREG g_DeviceICHAC97;
 extern const PDMDEVREG g_DeviceAudioSniffer;
-extern const PDMDEVREG g_DeviceUSBBackend;
 extern const PDMDEVREG g_DeviceOHCI;
 extern const PDMDEVREG g_DeviceACPI;
 extern const PDMDEVREG g_DeviceDMA;
