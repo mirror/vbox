@@ -1575,7 +1575,7 @@ typedef struct PDMIACPICONNECTOR
      * @param   pu32PresentRate         Pointer to the present rate (0..1000 of the total capacity).
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryBatteryStatus,(PPDMIACPICONNECTOR, bool *pfPresent, PPDMACPIBATCAPACITY penmRemainingCapacity,
-                PPDMACPIBATSTATE penmBatteryState, uint32_t *pu32PresentRate));
+                                                     PPDMACPIBATSTATE penmBatteryState, uint32_t *pu32PresentRate));
 } PDMIACPICONNECTOR;
 
 /** Pointer to a VMMDevice port interface. */
@@ -1645,8 +1645,8 @@ typedef struct PDMIVMMDEVPORT
      * @param   fFlags                 Bitflags
      */
     DECLR3CALLBACKMEMBER(int, pfnSetCredentials,(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
-                const char *pszPassword, const char *pszDomain,
-                uint32_t fFlags));
+                                                 const char *pszPassword, const char *pszDomain,
+                                                 uint32_t fFlags));
 
     /**
      * Notify the driver about a VBVA status change.
@@ -2212,12 +2212,10 @@ typedef struct PDMIHGCMCONNECTOR
  *
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed,
- *                      pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to
- *                      obtain the configuration of the driver instance. It's
- *                      also found in pDrvIns->pCfgHandle as it's expected to
- *                      be used frequently in this function.
+ *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
+ * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration 
+ *                      of the driver instance. It's also found in pDrvIns->pCfgHandle as it's expected 
+ *                      to be used frequently in this function.
  */
 typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
 /** Pointer to a FNPDMDRVCONSTRUCT() function. */
