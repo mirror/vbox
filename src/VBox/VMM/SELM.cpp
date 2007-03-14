@@ -97,10 +97,16 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
 
     /*
      * Assert alignment and sizes.
+     * (The TSS block requires contiguous back.)
      */
-    AssertCompileMemberAlignment(VM, selm.s, 32);                       AssertRelease(!(RT_OFFSETOF(VM, selm.s) & 31));
-    AssertCompileMemberAlignment(VM, selm.s.Tss, 16);                   AssertRelease(!(RT_OFFSETOF(VM, selm.s.Tss) & 15));
     AssertCompile(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));    AssertRelease(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));
+    AssertCompileMemberAlignment(VM, selm.s, 32);                       AssertRelease(!(RT_OFFSETOF(VM, selm.s) & 31));
+#ifndef __AMD64__ /* gcc 4.1.1 doesn't deal correctly with this :/ */
+    AssertCompile((RT_OFFSETOF(VM, selm.s.Tss)       & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.Tss));       
+    AssertCompile((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08)); 
+#endif
+    AssertRelease((RT_OFFSETOF(VM, selm.s.Tss)       & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.Tss));
+    AssertRelease((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08));
 
     /*
      * Init the structure.

@@ -251,7 +251,7 @@ DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
         }
     }
     else
-        rc = SUPLowAlloc(cPages, &pSub->pvPages, paPhysPages);
+        rc = SUPLowAlloc(cPages, &pSub->pvPages, NULL, paPhysPages);
     if (VBOX_SUCCESS(rc))
     {
         /*

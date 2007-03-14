@@ -164,6 +164,7 @@ int main()
     GEN_CHECK_OFF(MMLOOKUPHYPER, cb);
     GEN_CHECK_OFF(MMLOOKUPHYPER, enmType);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.Locked.pvHC);
+    GEN_CHECK_OFF(MMLOOKUPHYPER, u.Locked.pvR0);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.Locked.pLockedMem);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.HCPhys.pvHC);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.HCPhys.HCPhys);
@@ -564,7 +565,6 @@ int main()
     GEN_CHECK_OFF(SELM, offLdtHyper);
     GEN_CHECK_OFF(SELM, Tss);
     GEN_CHECK_OFF(SELM, TssTrap08);
-    GEN_CHECK_OFF(SELM, TssTrap0a);
     GEN_CHECK_OFF(SELM, GCPtrTss);
     GEN_CHECK_OFF(SELM, GCPtrGuestTss);
     GEN_CHECK_OFF(SELM, cbGuestTss);

@@ -290,19 +290,21 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
      * Release locked memory.
      * (Associated record are released by the heap.)
      */
-    PMMLOCKEDMEM    pLockedMem = pVM->mm.s.pLockedMem;
+    PMMLOCKEDMEM pLockedMem = pVM->mm.s.pLockedMem;
     while (pLockedMem)
     {
         int rc = SUPPageUnlock(pLockedMem->pv);
         AssertMsgRC(rc, ("SUPPageUnlock(%p) -> rc=%d\n", pLockedMem->pv, rc));
         switch (pLockedMem->eType)
         {
-            case MM_LOCKED_TYPE_PHYS:
-            case MM_LOCKED_TYPE_HYPER_NOFREE:
-                break;
             case MM_LOCKED_TYPE_HYPER:
                 rc = SUPPageFree(pLockedMem->pv);
                 AssertMsgRC(rc, ("SUPPageFree(%p) -> rc=%d\n", pLockedMem->pv, rc));
+                break;
+            case MM_LOCKED_TYPE_HYPER_NOFREE:
+            case MM_LOCKED_TYPE_HYPER_PAGES:
+            case MM_LOCKED_TYPE_PHYS:
+                /* nothing to do. */
                 break;
         }
         /* next */
@@ -542,19 +544,9 @@ MMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         return rc;
 
     /*
-     * The VM structure?
-     */
-    uint32_t off = (uint32_t)(HCPhys - pVM->HCPhysVM);
-    if (off < RT_ALIGN_32(sizeof(*pVM), PAGE_SIZE))
-    {
-        *ppv = (char *)pVM + off;
-        return VINF_SUCCESS;
-    }
-
-    /*
      * Iterate the locked memory - very slow.
      */
-    off = HCPhys & PAGE_OFFSET_MASK;
+    uint32_t off = HCPhys & PAGE_OFFSET_MASK;
     HCPhys &= X86_PTE_PAE_PG_MASK;
     for (PMMLOCKEDMEM pCur = pVM->mm.s.pLockedMem; pCur; pCur = pCur->pNext)
     {

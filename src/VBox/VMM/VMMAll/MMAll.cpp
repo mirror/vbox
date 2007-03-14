@@ -212,7 +212,18 @@ DECLINLINE(RTR3PTR) mmHyperLookupCalcR3(PMMLOOKUPHYPER pLookup, uint32_t off)
  */
 DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PMMLOOKUPHYPER pLookup, uint32_t off)
 {
-    return (RTR0PTR)mmHyperLookupCalcR3(pLookup, off);
+    switch (pLookup->enmType)
+    {
+        case MMLOOKUPHYPERTYPE_LOCKED:
+            if (pLookup->u.Locked.pvR0)
+                return (RTR0PTR)((RTR0UINTPTR)pLookup->u.Locked.pvR0 + off);
+            return (RTR0PTR)((RTR3UINTPTR)pLookup->u.Locked.pvHC + off);
+        case MMLOOKUPHYPERTYPE_HCPHYS:
+            return (RTR0PTR)((RTR3UINTPTR)pLookup->u.HCPhys.pvHC + off);
+        default:
+            AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
+            return NIL_RTR0PTR;
+    }
 }
 
 

@@ -356,7 +356,7 @@ typedef struct SUPDRVMEMREF
     void               *pvR0;
     /** Pointer to the R3 mapping of the memory.
      * Set to NULL if N/A. */
-    void               *pvR3;
+    RTR3PTR             pvR3;
     /** Size of the locked memory. */
     unsigned            cb;
     /** Type of memory. */
@@ -661,11 +661,11 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 #ifndef USE_NEW_OS_INTERFACE
 int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
 void VBOXCALL   supdrvOSUnlockMemOne(PSUPDRVMEMREF pMem);
-int  VBOXCALL   supdrvOSContAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3, PRTHCPHYS pHCPhys);
+int  VBOXCALL   supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
 void VBOXCALL   supdrvOSContFreeOne(PSUPDRVMEMREF pMem);
-int  VBOXCALL   supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, void **ppvR3, PSUPPAGE paPages);
+int  VBOXCALL   supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPages);
 void VBOXCALL   supdrvOSLowFreeOne(PSUPDRVMEMREF pMem);
-int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3);
+int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
 void VBOXCALL   supdrvOSMemGetPages(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
 void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem);
 int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip);

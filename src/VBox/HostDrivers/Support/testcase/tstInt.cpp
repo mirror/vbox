@@ -86,15 +86,24 @@ int main(int argc, char **argv)
             /*
              * Create a fake 'VM'.
              */
-            PVMR0 pVMR0;
-            RTHCPHYS HCPhysVM;
-            PVM pVM = (PVM)SUPContAlloc2(sizeof(*pVM), &pVMR0, &HCPhysVM);
-            if (pVM)
+            PVMR0 pVMR0 = NIL_RTR0PTR;
+            PVM pVM = NULL;
+            const unsigned cPages = RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT;
+            PSUPPAGE paPages = (PSUPPAGE)RTMemAllocZ(cPages * sizeof(SUPPAGE));
+            if (paPages)
+                rc = SUPLowAlloc(cPages, (void **)&pVM, &pVMR0, &paPages[0]);
+            else
+                rc = VERR_NO_MEMORY;
+            if (VBOX_SUCCESS(rc))
             {
                 pVM->pVMGC = 0;
                 pVM->pVMR3 = pVM;
                 pVM->pVMR0 = pVMR0;
+#ifdef VBOX_USE_LOW_MEM_FOR_VM
+                pVM->paVMPagesR3 = paPages;
+#else
                 pVM->HCPhysVM = HCPhysVM;
+#endif 
                 pVM->pSession = pSession;
 
 #ifdef VBOX_WITHOUT_IDT_PATCHING

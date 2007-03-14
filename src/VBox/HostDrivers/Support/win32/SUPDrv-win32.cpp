@@ -520,7 +520,7 @@ void VBOXCALL supdrvOSUnlockMemOne(PSUPDRVMEMREF pMem)
  * @param   ppvR3       Where to store the virtual address of the ring-3 mapping.
  * @param   pHCPhys     Where to store the physical address.
  */
-int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3, PRTHCPHYS pHCPhys)
+int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys)
 {
     Assert(ppvR3);
     Assert(pHCPhys);
@@ -546,7 +546,7 @@ int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3
         MmBuildMdlForNonPagedPool(pMem->u.cont.pMdl);
         __try
         {
-            pMem->pvR3 = MmMapLockedPages(pMem->u.cont.pMdl, UserMode);
+            pMem->pvR3 = (RTR3PTR)MmMapLockedPages(pMem->u.cont.pMdl, UserMode);
             if (pMem->pvR3)
             {
                 /*
@@ -592,7 +592,7 @@ void VBOXCALL supdrvOSContFreeOne(PSUPDRVMEMREF pMem)
                  pMem->pvR0, pMem->pvR3, pMem->cb, pMem->u.cont.pMdl));
         if (pMem->pvR3)
         {
-            MmUnmapLockedPages(pMem->pvR3, pMem->u.cont.pMdl);
+            MmUnmapLockedPages((void *)pMem->pvR3, pMem->u.cont.pMdl);
             dprintf2(("MmUnmapLockedPages ok!\n"));
             pMem->pvR3 = NULL;
         }
@@ -624,7 +624,7 @@ void VBOXCALL supdrvOSContFreeOne(PSUPDRVMEMREF pMem)
  * @param   ppvR0       Where to store the address of the Ring-0 mapping.
  * @param   ppvR3       Where to store the address of the Ring-3 mapping.
  */
-int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3)
+int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3)
 {
     Assert(ppvR0);
     Assert(ppvR3);
@@ -647,7 +647,7 @@ int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppv
         MmBuildMdlForNonPagedPool(pMem->u.mem.pMdl);
         __try
         {
-            pMem->pvR3 = MmMapLockedPages(pMem->u.mem.pMdl, UserMode);
+            pMem->pvR3 = (RTR3PTR)MmMapLockedPages(pMem->u.mem.pMdl, UserMode);
             if (pMem->pvR3)
             {
                 /*
@@ -710,7 +710,7 @@ void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem)
                  pMem->pvR0, pMem->pvR3, pMem->cb, pMem->u.mem.pMdl));
         if (pMem->pvR3)
         {
-            MmUnmapLockedPages(pMem->pvR3, pMem->u.mem.pMdl);
+            MmUnmapLockedPages((void *)pMem->pvR3, pMem->u.mem.pMdl);
             pMem->pvR3 = NULL;
             dprintf2(("MmUnmapLockedPages ok!\n"));
         }

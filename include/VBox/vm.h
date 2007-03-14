@@ -27,6 +27,7 @@
 #include <VBox/cpum.h>
 #include <VBox/stam.h>
 #include <VBox/vmapi.h>
+#include <VBox/sup.h>
 
 
 /** @defgroup grp_vm    The Virtual Machine
@@ -226,8 +227,8 @@ typedef struct VM
      * See the VM_FF_* \#defines. Updated atomically.
      */
     volatile uint32_t           fForcedActions;
-    /** Physical address (real) of this structure. */
-    RTHCPHYS                    HCPhysVM;
+    /** Pointer to the array of page descriptors for the VM structure allocation. */
+    R3PTRTYPE(PSUPPAGE)         paVMPagesR3;
     /** Session handle. For use when calling SUPR0 APIs. */
     HCPTRTYPE(PSUPDRVSESSION)   pSession;
     /** Pointer to the next VM.
@@ -317,9 +318,9 @@ typedef struct VM
 
 
     /* padding to make gnuc put the StatQemuToGC where msc does. */
-#if HC_ARCH_BITS == 32
+/*#if HC_ARCH_BITS == 32
     uint32_t            padding0;
-#endif
+#endif*/
 
     /** Profiling the total time from Qemu to GC. */
     STAMPROFILEADV      StatTotalQemuToGC;

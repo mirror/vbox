@@ -473,7 +473,7 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cbMemory, PSUPPAGE paPages)
     SUPPINPAGES_IN      In;
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
-    In.pv               = pvStart;
+    In.pvR3             = pvStart;
     In.cb               = (uint32_t)cbMemory; AssertRelease(In.cb == cbMemory);
     int rc;
     if (!g_u32FakeMode)
@@ -528,7 +528,7 @@ SUPR3DECL(int) SUPPageUnlock(void *pvStart)
     SUPUNPINPAGES_IN  In;
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
-    In.pv               = pvStart;
+    In.pvR3             = pvStart;
     int rc;
     if (!g_u32FakeMode)
         rc = suplibOsIOCtl(SUP_IOCTL_UNPINPAGES, &In, sizeof(In), NULL, 0);
@@ -601,7 +601,7 @@ SUPR3DECL(int) SUPContFree(void *pv)
     SUPCONTFREE_IN     In;
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
-    In.pv               = pv;
+    In.pvR3             = pv;
     int rc;
     if (!g_u32FakeMode)
         rc = suplibOsIOCtl(SUP_IOCTL_CONT_FREE, &In, sizeof(In), NULL, 0);
@@ -612,7 +612,7 @@ SUPR3DECL(int) SUPContFree(void *pv)
 }
 
 
-SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PSUPPAGE paPages)
+SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages)
 {
     /*
      * Validate.
@@ -639,7 +639,9 @@ SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PSUPPAGE paPages)
             rc = suplibOsIOCtl(SUP_IOCTL_LOW_ALLOC, &In, sizeof(In), pOut, cbOut);
             if (VBOX_SUCCESS(rc))
             {
-                *ppvPages = pOut->pvVirt;
+                *ppvPages = pOut->pvR3;
+                if (ppvPagesR0)
+                    *ppvPagesR0 = pOut->pvR0;
                 AssertCompile(sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
                 memcpy(paPages, &pOut->aPages[0], sizeof(paPages[0]) * cPages);
 #ifdef VBOX_STRICT
@@ -687,7 +689,7 @@ SUPR3DECL(int) SUPLowFree(void *pv)
     SUPLOWFREE_IN     In;
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
-    In.pv               = pv;
+    In.pvR3             = pv;
     int rc;
     if (!g_u32FakeMode)
         rc = suplibOsIOCtl(SUP_IOCTL_LOW_FREE, &In, sizeof(In), NULL, 0);

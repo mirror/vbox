@@ -89,7 +89,7 @@ int main()
 #define PRINT_OFFSET(strct, member) \
     do \
     { \
-        printf("%s::%s offset %d sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
+        printf("%s::%s offset %#x (%d) sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
     } while (0)
 
 
@@ -147,6 +147,19 @@ int main()
     CHECK_PADDING_VM(patm);
     CHECK_PADDING_VM(csam);
     CHECK_MEMBER_ALIGNMENT(VM, selm.s.Tss, 16);
+    PRINT_OFFSET(VM, selm.s.Tss);
+    PVM pVM;
+    if ((RT_OFFSETOF(VM, selm.s.Tss) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.Tss))
+    {
+        printf("SELM:Tss is crossing a page!\n");
+        rc++;
+    }
+    PRINT_OFFSET(VM, selm.s.TssTrap08);
+    if ((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08))
+    {
+        printf("SELM:TssTrap08 is crossing a page!\n");
+        rc++;
+    }
     CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Host, 32);
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Guest, 32);

@@ -32,7 +32,8 @@ __BEGIN_DECLS
  * @{
  */
 
-/** Physical page.
+/** 
+ * Physical page descriptor.
  */
 #pragma pack(4) /* space is more important. */
 typedef struct SUPPAGE
@@ -41,8 +42,12 @@ typedef struct SUPPAGE
     RTHCPHYS        Phys;
     /** Reserved entry for internal use by the caller. */
     RTHCUINTPTR     uReserved;
-} SUPPAGE, *PSUPPAGE;
+} SUPPAGE;
 #pragma pack()
+/** Pointer to a page descriptor. */
+typedef SUPPAGE *PSUPPAGE;
+/** Pointer to a const page descriptor. */
+typedef const SUPPAGE *PCSUPPAGE;
 
 /**
  * The paging mode.
@@ -427,9 +432,10 @@ SUPR3DECL(int) SUPContFree(void *pv);
  * @param   ppvPages    Where to store the pointer to the allocated memory.
  *                      The pointer stored here on success must be passed to SUPLowFree when
  *                      the memory should be released.
+ * @param   ppvPagesR0  Where to store the ring-0 pointer to the allocated memory. optional.
  * @param   paPages     Where to store the physical addresses of the individual pages.
  */
-SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PSUPPAGE paPages);
+SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages);
 
 /**
  * Frees memory allocated with SUPLowAlloc().
@@ -536,16 +542,16 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName);
 
-SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, void *pvR3, unsigned cb, PSUPPAGE paPages);
-SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, void *pvR3);
-SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
-SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, void *pv);
-SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **ppvR3, PSUPPAGE paPages);
-SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, void *pv);
-SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, void **ppvR3);
-SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, void *pv, PSUPPAGE paPages);
-SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, void *pv);
-SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, RTHCPHYS *pHCPhysGid);
+SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cb, PSUPPAGE paPages);
+SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3);
+SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
+SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
+SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPages);
+SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
+SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
+SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages);
+SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
+SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, PRTHCPHYS pHCPhysGid);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 

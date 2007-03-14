@@ -24,6 +24,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/x86.h>
+#include <VBox/sup.h>
 
 
 __BEGIN_DECLS
@@ -764,6 +765,21 @@ MMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char
  * @thread  The Emulation Thread.
  */
 MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr);
+
+/**
+ * Maps locked R3 virtual memory into the hypervisor region in the GC.
+ *
+ * @return VBox status code.
+ *
+ * @param   pVM         VM handle.
+ * @param   pvR3        The ring-3 address of the memory, must be page aligned.
+ * @param   pvR0        The ring-0 address of the memory, must be page aligned. (optional)
+ * @param   cPages      The number of pages.
+ * @param   paPages     The page descriptors.
+ * @param   pszDesc     Mapping description.
+ * @param   pGCPtr      Where to store the GC address corresponding to pvHC.
+ */
+MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr);
 
 /**
  * Reserves a hypervisor memory area.

@@ -113,14 +113,12 @@ typedef struct SELM
     /** TSS alignment padding. */
     RTUINT                  auPadding[2];
 #endif
-    /** TSS. (This is 16 byte aligned!) */
+    /** TSS. (This is 16 byte aligned!)
+      * @todo I/O bitmap & interrupt redirection table? */
     VBOXTSS                 Tss;
-    /** @todo I/O bitmap & interrupt redirection table. */
 
     /** TSS for trap 08 (\#DF). */
     VBOXTSS                 TssTrap08;
-    /** TSS for trap 0a (\#TS). */
-    VBOXTSS                 TssTrap0a;
 
     /** GC Pointer to the TSS shadow area (Tss) placed in Hypervisor memory arena. */
     RTGCPTR                 GCPtrTss;
