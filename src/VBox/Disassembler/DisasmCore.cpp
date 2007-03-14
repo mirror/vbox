@@ -398,6 +398,31 @@ DISDECL(int) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
         return USE_REG_DS;
     }
 }
+//*****************************************************************************
+//*****************************************************************************
+DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
+{
+    Assert(pCpu->prefix & PREFIX_SEG);
+    switch(pCpu->prefix_seg)
+    {
+    case USE_REG_ES:
+        return 0x26;
+    case USE_REG_CS:
+        return 0x2E;
+    case USE_REG_SS:
+        return 0x36;
+    case USE_REG_DS:
+        return 0x3E;
+    case USE_REG_FS:
+        return 0x64;
+    case USE_REG_GS:
+        return 0x65;
+    default:
+        AssertFailed();
+        return 0;
+    }
+}
+
 /**
  * Returns the value of the specified 8 bits general purpose register
  *
