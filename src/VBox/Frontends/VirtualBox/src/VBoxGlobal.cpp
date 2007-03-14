@@ -1146,14 +1146,16 @@ bool VBoxGlobal::startMachine (const QUuid &id)
 }
 
 /**
- *  Appends media_list with passed disk & it's children
+ *  Appends the disk object and all its children to the media list.
  */
-void VBoxGlobal::addMediaToList (const CUnknown &aDisk,
-                                 VBoxDefs::DiskType aType)
+static
+void addMediaToList (VBoxMediaList &aList,
+                     const CUnknown &aDisk,
+                     VBoxDefs::DiskType aType)
 {
     VBoxMedia media (aDisk, aType, VBoxMedia::Unknown);
-    media_list += media;
-    /* appending all vdi children */
+    aList += media;
+    /* append all vdi children */
     if (aType == VBoxDefs::HD)
     {
         CHardDisk hd = aDisk;
@@ -1161,7 +1163,7 @@ void VBoxGlobal::addMediaToList (const CUnknown &aDisk,
         while (enumerator.HasMore())
         {
             CHardDisk subHd = enumerator.GetNext();
-            addMediaToList (CUnknown (subHd), VBoxDefs::HD);
+            addMediaToList (aList, CUnknown (subHd), VBoxDefs::HD);
         }
     }
 }
@@ -1193,15 +1195,15 @@ void VBoxGlobal::startEnumeratingMedia()
     {
         CHardDiskEnumerator enHD = vbox.GetHardDisks().Enumerate();
         while (enHD.HasMore())
-            addMediaToList (CUnknown (enHD.GetNext()), VBoxDefs::HD);
+            addMediaToList (media_list, CUnknown (enHD.GetNext()), VBoxDefs::HD);
 
         CDVDImageEnumerator enCD = vbox.GetDVDImages().Enumerate();
         while (enCD.HasMore())
-            addMediaToList (CUnknown (enCD.GetNext()), VBoxDefs::CD);
+            addMediaToList (media_list, CUnknown (enCD.GetNext()), VBoxDefs::CD);
 
         CFloppyImageEnumerator enFD = vbox.GetFloppyImages().Enumerate();
         while (enFD.HasMore())
-            addMediaToList (CUnknown (enFD.GetNext()), VBoxDefs::FD);
+            addMediaToList (media_list, CUnknown (enFD.GetNext()), VBoxDefs::FD);
     }
 
     /* enumeration thread class */
