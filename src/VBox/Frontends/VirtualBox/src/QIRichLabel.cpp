@@ -41,6 +41,7 @@
 #include <qpopupmenu.h>
 #include <qaction.h>
 #include <qclipboard.h>
+#include <qcursor.h>
 
 class QLabelPrivate
 {
@@ -114,6 +115,8 @@ void QIRichLabel::init()
 
    popupMenu = new QPopupMenu (this, "contextMenu");
    copyAction->addTo (popupMenu);
+
+   setMouseTracking (true);
 }
 
 
@@ -368,6 +371,28 @@ QSize QIRichLabel::minimumSizeHint() const
       sz.rheight() = -1;
    d->msh = sz;
    return sz;
+}
+
+
+void QIRichLabel::mouseMoveEvent (QMouseEvent *aEvent)
+{
+    if (!doc) return;
+
+    QString link = doc->anchorAt (aEvent->pos());
+    if (!link.isEmpty()) /* Mouse cursor above link */
+        setCursor (QCursor (Qt::PointingHandCursor));
+    else /* Mouse cursor above non-link */
+        setCursor (QCursor (Qt::ArrowCursor));
+}
+
+
+void QIRichLabel::mousePressEvent (QMouseEvent *aEvent)
+{
+    if (!doc) return;
+
+    QString link = doc->anchorAt (aEvent->pos());
+    if (!link.isEmpty()) /* Mouse clicked on the link */
+        emit clickedOnLink (link);
 }
 
 
