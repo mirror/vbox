@@ -37,7 +37,7 @@ else
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
- DLLS            = VBoxSVCM
+ DLLS           += VBoxSVCM
  LIBRARIES       = VBoxXPCOM
  DEFS           += VBOX_WITH_XPCOM
  DEFS           += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
