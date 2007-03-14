@@ -176,7 +176,7 @@ INTNETR3DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR p
     return VINF_SUCCESS;
 }
 
-INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, void *pv)
+INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
     if (pSession != g_pSession)
     {
@@ -184,7 +184,7 @@ INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, void *pv)
         g_cErrors++;
         return VERR_INVALID_PARAMETER;
     }
-    RTMemFree(pv);
+    RTMemFree((void *)uPtr);
     return VINF_SUCCESS;
 }
 
