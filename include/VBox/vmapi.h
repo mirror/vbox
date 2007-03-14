@@ -35,25 +35,54 @@ __BEGIN_DECLS
  * @ingroup grp_vm
  * @{ */
 
-/** @def VM_PHYS_ADDR
- * Converts address of data within the VM structure to the equivalent
- * physical address.
- *
- * @returns physical address.
- * @param   pVM     Pointer to the VM.
- * @param   pvInVM  Pointer within the VM.
- */
-#define VM_PHYS_ADDR(pVM, pvInVM)   ( pVM->PhysVM + (uint32_t)((uintptr_t)pvInVM - (uintptr_t)pVM) )
-
 /** @def VM_GUEST_ADDR
- * Converts host address of data within the VM structure to the equivalent
+ * Converts a current context address of data within the VM structure to the equivalent
  * guest address.
  *
  * @returns guest virtual address.
  * @param   pVM     Pointer to the VM.
- * @param   pvInVM  HC Pointer within the VM.
+ * @param   pvInVM  CC Pointer within the VM.
  */
-#define VM_GUEST_ADDR(pVM, pvInVM)     ( (RTGCPTR)((RTGCUINTPTR)pVM->pVMGC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMHC)) )
+#ifdef IN_RING3
+# define VM_GUEST_ADDR(pVM, pvInVM)     ( (RTGCPTR)((RTGCUINTPTR)pVM->pVMGC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
+#elif defined(IN_RING0)
+# define VM_GUEST_ADDR(pVM, pvInVM)     ( (RTGCPTR)((RTGCUINTPTR)pVM->pVMGC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
+#else
+# define VM_GUEST_ADDR(pVM, pvInVM)     ( (RTGCPTR)(pvInVM) )
+#endif 
+
+/** @def VM_R3_ADDR
+ * Converts a current context address of data within the VM structure to the equivalent
+ * ring-3 host address.
+ *
+ * @returns host virtual address.
+ * @param   pVM     Pointer to the VM.
+ * @param   pvInVM  CC pointer within the VM.
+ */
+#ifdef IN_GC
+# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMGC)) )
+#elif defined(IN_RING0)
+# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
+#else
+# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)(pvInVM) )
+#endif 
+
+
+/** @def VM_R0_ADDR
+ * Converts a current context address of data within the VM structure to the equivalent
+ * ring-0 host address.
+ *
+ * @returns host virtual address.
+ * @param   pVM     Pointer to the VM.
+ * @param   pvInVM  CC pointer within the VM.
+ */
+#ifdef IN_GC
+# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMGC)) )
+#elif defined(IN_RING3)
+# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
+#else
+# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)(pvInVM) )
+#endif 
 
 /** @def VM_HOST_ADDR
  * Converts guest address of data within the VM structure to the equivalent
@@ -62,8 +91,10 @@ __BEGIN_DECLS
  * @returns host virtual address.
  * @param   pVM     Pointer to the VM.
  * @param   pvInVM  GC Pointer within the VM.
+ * @deprecated
  */
 #define VM_HOST_ADDR(pVM, pvInVM)     ( (RTHCPTR)((RTHCUINTPTR)pVM->pVMHC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMGC)) )
+
 
 
 /**

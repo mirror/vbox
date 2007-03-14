@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         SUPPAGE aPages0[128];
         void *pvPages0 = (void *)0x77777777;
         memset(&aPages0[0], 0x8f, sizeof(aPages0));
-        rc = SUPLowAlloc(ELEMENTS(aPages0), &pvPages0, aPages0);
+        rc = SUPLowAlloc(ELEMENTS(aPages0), &pvPages0, NULL, aPages0);
         if (VBOX_SUCCESS(rc))
         {
             /* check that the pages are below 4GB and valid. */
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
             SUPPAGE aPages1[128];
             void *pvPages1 = (void *)0x77777777;
             memset(&aPages1[0], 0x8f, sizeof(aPages1));
-            rc = SUPLowAlloc(cPages, &pvPages1, aPages1);
+            rc = SUPLowAlloc(cPages, &pvPages1, NULL, aPages1);
             if (VBOX_SUCCESS(rc))
             {
                 /* check that the pages are below 4GB and valid. */

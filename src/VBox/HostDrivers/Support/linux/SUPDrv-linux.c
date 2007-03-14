@@ -245,11 +245,13 @@ static int      VBoxSupDrvCreate(struct inode *pInode, struct file *pFilp);
 static int      VBoxSupDrvClose(struct inode *pInode, struct file *pFilp);
 static int      VBoxSupDrvDeviceControl(struct inode *pInode, struct file *pFilp,
                                         unsigned int IOCmd, unsigned long IOArg);
-static void    *VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags);
+static RTR3PTR  VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags);
 static int      VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt);
 static void     VBoxSupGipTimer(unsigned long ulUser);
+#ifdef CONFIG_SMP
 static void     VBoxSupDrvGipPerCpu(void *pvUser);
+#endif
 static int      VBoxSupDrvOrder(unsigned long size);
 static int      VBoxSupDrvErr2LinuxErr(int);
 
@@ -826,7 +828,7 @@ void VBOXCALL supdrvOSUnlockMemOne(PSUPDRVMEMREF pMem)
  * @param   ppvR3       Where to store the virtual address of the ring-3 mapping.
  * @param   pHCPhys     Where to store the physical address.
  */
-int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3, PRTHCPHYS pHCPhys)
+int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys)
 {
     struct page *paPages;
     unsigned    iPage;
@@ -915,10 +917,10 @@ int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3
     if (!rc)
     {
         *pHCPhys = HCPhys;
-        *ppvR3 = (void *)ulAddr;
+        *ppvR3 = ulAddr;
         if (ppvR0)
             *ppvR0 = (void *)ulAddr;
-        pMem->pvR3              = (void *)ulAddr;
+        pMem->pvR3              = ulAddr;
         pMem->pvR0              = NULL;
         pMem->u.cont.paPages    = paPages;
         pMem->u.cont.cPages     = cPages;
@@ -999,7 +1001,7 @@ void VBOXCALL supdrvOSContFreeOne(PSUPDRVMEMREF pMem)
  * @param   ppvR0       Where to store the address of the Ring-0 mapping.
  * @param   ppvR3       Where to store the address of the Ring-3 mapping.
  */
-int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, void **ppvR0, void **ppvR3)
+int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3)
 {
     const unsigned  cbAligned = RT_ALIGN(pMem->cb, PAGE_SIZE);
     const unsigned  cPages = cbAligned >> PAGE_SHIFT;
@@ -1131,7 +1133,7 @@ void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem)
         MY_DO_MUNMAP(current->mm, (unsigned long)pMem->pvR3, RT_ALIGN(pMem->cb, PAGE_SIZE));
         up_write(&current->mm->mmap_sem);   /* check when we can leave this. */
     }
-    pMem->pvR3 = NULL;
+    pMem->pvR3 = NIL_RTR3PTR;
 
     /*
      * Unmap the kernel mapping (if any).
@@ -1189,7 +1191,7 @@ void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem)
  * @param   fProt       The mapping protection.
  * @param   pgFlags     The page level protection.
  */
-static void *VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags)
+static RTR3PTR VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags)
 {
     int             rc = SUPDRV_ERR_NO_MEMORY;
     unsigned long   ulAddr;
@@ -1233,7 +1235,7 @@ static void *VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned
         if (iPage >= cPages)
         {
             up_write(&current->mm->mmap_sem);
-            return (void *)ulAddr;
+            return ulAddr;
         }
 
         /* no, cleanup! */
@@ -1251,7 +1253,7 @@ static void *VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned
     }
     up_write(&current->mm->mmap_sem);
 
-    return NULL;
+    return NIL_RTR3PTR;
 }
 
 

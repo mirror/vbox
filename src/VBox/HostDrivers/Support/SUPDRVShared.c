@@ -145,7 +145,7 @@ static SUPFUNC g_aFunctions[] =
 *******************************************************************************/
 __BEGIN_DECLS
 static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
-static int      supdrvMemRelease(PSUPDRVSESSION pSession, void *pv, SUPDRVMEMREFTYPE eType);
+static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
 #ifndef VBOX_WITHOUT_IDT_PATCHING
 static int      supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL_IN pIn, PSUPIDTINSTALL_OUT pOut);
 static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
@@ -643,8 +643,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_COOKIE: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_COOKIE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (strncmp(pIn->szMagic, SUPCOOKIE_MAGIC, sizeof(pIn->szMagic)))
@@ -684,8 +684,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut < sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_QUERY_FUNCS: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_QUERY_FUNCS: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -722,8 +722,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_INSTALL: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_INSTALL: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -755,8 +755,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_REMOVE: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_REMOVE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -787,8 +787,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut < sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_PINPAGES: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_PINPAGES: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -798,9 +798,9 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
                          pIn->u32Cookie,  pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
                 return SUPDRV_ERR_INVALID_MAGIC;
             }
-            if (pIn->cb <= 0 || !pIn->pv)
+            if (pIn->cb <= 0 || !pIn->pvR3)
             {
-                dprintf(("SUP_IOCTL_PINPAGES: Illegal request %p %d\n", pIn->pv, pIn->cb));
+                dprintf(("SUP_IOCTL_PINPAGES: Illegal request %p %d\n", (void *)pIn->pvR3, pIn->cb));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if ((unsigned)RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cb >> PAGE_SHIFT]) > cbOut)
@@ -814,7 +814,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
              * Execute.
              */
             *pcbReturned = RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cb >> PAGE_SHIFT]);
-            rc = SUPR0LockMem(pSession, pIn->pv, pIn->cb, &pOut->aPages[0]);
+            rc = SUPR0LockMem(pSession, pIn->pvR3, pIn->cb, &pOut->aPages[0]);
             if (rc)
                 *pcbReturned = 0;
             return rc;
@@ -831,8 +831,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_UNPINPAGES: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_UNPINPAGES: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -846,7 +846,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /*
              * Execute.
              */
-            return SUPR0UnlockMem(pSession, pIn->pv);
+            return SUPR0UnlockMem(pSession, pIn->pvR3);
         }
 
         case SUP_IOCTL_CONT_ALLOC:
@@ -861,8 +861,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut < sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_CONT_ALLOC: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_CONT_ALLOC: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -893,8 +893,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_CONT_FREE: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_CONT_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -908,7 +908,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /*
              * Execute.
              */
-            return SUPR0ContFree(pSession, pIn->pv);
+            return SUPR0ContFree(pSession, (RTHCUINTPTR)pIn->pvR3);
         }
 
 
@@ -923,8 +923,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_LDR_OPEN: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_LDR_OPEN: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -971,8 +971,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn <= sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_LDR_LOAD: Invalid input/output sizes. cbIn=%d expected greater than %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_LDR_LOAD: Invalid input/output sizes. cbIn=%ld expected greater than %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1054,8 +1054,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_LDR_FREE: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_LDR_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1101,8 +1101,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             }
             if (pszEnd - &pIn->szSymbol[0] >= 1024)
             {
-                dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: The symbol name too long (%d chars, max is %d)!\n",
-                         pszEnd - &pIn->szSymbol[0], 1024));
+                dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: The symbol name too long (%ld chars, max is %d)!\n",
+                         (long)(pszEnd - &pIn->szSymbol[0]), 1024));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
 
@@ -1124,8 +1124,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_CALL_VMMR0: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_CALL_VMMR0: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1163,8 +1163,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_GET_PAGING_MODE: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_GET_PAGING_MODE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1198,8 +1198,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut < sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_LOW_ALLOC: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, sizeof(*pOut)));
+                dprintf(("SUP_IOCTL_LOW_ALLOC: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1220,7 +1220,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
              * Execute.
              */
             *pcbReturned = RT_OFFSETOF(SUPLOWALLOC_OUT, aPages[pIn->cPages]);
-            rc = SUPR0LowAlloc(pSession, pIn->cPages, &pOut->pvVirt, &pOut->aPages[0]);
+            rc = SUPR0LowAlloc(pSession, pIn->cPages, &pOut->pvR0, &pOut->pvR3, &pOut->aPages[0]);
             if (rc)
                 *pcbReturned = 0;
             return rc;
@@ -1237,8 +1237,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_LOW_FREE: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_LOW_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1252,7 +1252,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /*
              * Execute.
              */
-            return SUPR0LowFree(pSession, pIn->pv);
+            return SUPR0LowFree(pSession, (RTHCUINTPTR)pIn->pvR3);
         }
 
 
@@ -1268,8 +1268,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_GIP_MAP: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_GIP_MAP: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1303,8 +1303,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_GIP_UNMAP: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_GIP_UNMAP: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1332,8 +1332,8 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != 0)
             {
-                dprintf(("SUP_IOCTL_SET_VM_FOR_FAST: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.\n",
-                         cbIn, sizeof(*pIn), cbOut, 0));
+                dprintf(("SUP_IOCTL_SET_VM_FOR_FAST: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (    pIn->u32Cookie != pDevExt->u32Cookie
@@ -1731,22 +1731,22 @@ SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const 
  * @param   cb          Size of the memory range to lock.
  *                      This must be page aligned.
  */
-SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, void *pvR3, unsigned cb, PSUPPAGE paPages)
+SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cb, PSUPPAGE paPages)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
     dprintf(("SUPR0LockMem: pSession=%p pvR3=%p cb=%d paPages=%p\n",
-             pSession, pvR3, cb, paPages));
+             pSession, (void *)pvR3, cb, paPages));
 
     /*
      * Verify input.
      */
-    if (RT_ALIGN_R3PT(pvR3, PAGE_SIZE, void *) != pvR3 || !pvR3)
+    if (RT_ALIGN_R3PT(pvR3, PAGE_SIZE, RTR3PTR) != pvR3 || !pvR3)
     {
-        dprintf(("pvR3 (%p) must be page aligned and not NULL!\n", pvR3));
+        dprintf(("pvR3 (%p) must be page aligned and not NULL!\n", (void *)pvR3));
         return SUPDRV_ERR_INVALID_PARAM;
     }
-    if (RT_ALIGN(cb, PAGE_SIZE) != cb)
+    if (RT_ALIGN_Z(cb, PAGE_SIZE) != cb)
     {
         dprintf(("cb (%u) must be page aligned!\n", cb));
         return SUPDRV_ERR_INVALID_PARAM;
@@ -1821,10 +1821,10 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, void *pvR3, unsigned cb, PS
  * @param   pSession    Session to which the memory was locked.
  * @param   pvR3        Memory to unlock.
  */
-SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, void *pvR3)
+SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 {
-    dprintf(("SUPR0UnlockMem: pSession=%p pvR3=%p\n", pSession, pvR3));
-    return supdrvMemRelease(pSession, pvR3, MEMREF_TYPE_LOCKED);
+    dprintf(("SUPR0UnlockMem: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
+    return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED);
 }
 
 
@@ -1836,11 +1836,11 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, void *pvR3)
  * @returns SUPDRV_ERR_* on failure.
  * @param   pSession    Session data.
  * @param   cb          Number of bytes to allocate.
- * @param   ppvR0       Where to put the address of Ring-0 mapping the allocated memory. optional
+ * @param   ppvR0       Where to put the address of Ring-0 mapping the allocated memory.
  * @param   ppvR3       Where to put the address of Ring-3 mapping the allocated memory.
  * @param   pHCPhys     Where to put the physical address of allocated memory.
  */
-SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys)
+SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
@@ -1849,10 +1849,10 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0
     /*
      * Validate input.
      */
-    if (!pSession || !ppvR3 || !pHCPhys)
+    if (!pSession || !ppvR3 || !ppvR0 || !pHCPhys)
     {
-        dprintf(("Null pointer. All of these should be set: pSession=%p ppvR3=%p pHCPhys=%p\n",
-                 pSession, ppvR3, pHCPhys));
+        dprintf(("Null pointer. All of these should be set: pSession=%p ppvR0=%p ppvR3=%p pHCPhys=%p\n",
+                 pSession, ppvR0, ppvR3, pHCPhys));
         return SUPDRV_ERR_INVALID_PARAM;
 
     }
@@ -1878,9 +1878,8 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0
             rc = supdrvMemAdd(&Mem, pSession);
             if (!rc)
             {
-                if (ppvR0)
-                    *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
-                *ppvR3 = RTR0MemObjAddress(Mem.MapObjR3);
+                *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
+                *ppvR3 = (RTR3PTR)RTR0MemObjAddress(Mem.MapObjR3);
                 *pHCPhys = RTR0MemObjGetPagePhysAddr(Mem.MemObj, 0);
                 return 0;
             }
@@ -1898,7 +1897,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0
      * Let the OS specific code have a go.
      */
     Mem.pvR0    = NULL;
-    Mem.pvR3    = NULL;
+    Mem.pvR3    = NIL_RTR3PTR;
     Mem.eType   = MEMREF_TYPE_CONT;
     Mem.cb      = cb;
     rc = supdrvOSContAllocOne(&Mem, ppvR0, ppvR3, pHCPhys);
@@ -1925,12 +1924,12 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0
  * @returns 0 on success.
  * @returns SUPDRV_ERR_* on failure.
  * @param   pSession    The session to which the memory was allocated.
- * @param   pv          Pointer to the memory.
+ * @param   uPtr        Pointer to the memory (ring-3 or ring-0).
  */
-SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, void *pv)
+SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
-    dprintf(("SUPR0ContFree: pSession=%p pv=%p\n", pSession, pv));
-    return supdrvMemRelease(pSession, pv, MEMREF_TYPE_CONT);
+    dprintf(("SUPR0ContFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+    return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_CONT);
 }
 
 
@@ -1941,23 +1940,24 @@ SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, void *pv)
  * @returns SUPDRV_ERR_* on failure.
  * @param   pSession    Session data.
  * @param   cPages      Number of pages to allocate.
+ * @param   ppvR0       Where to put the address of Ring-0 mapping of the allocated memory.
  * @param   ppvR3       Where to put the address of Ring-3 mapping of the allocated memory.
  * @param   paPages     Where to put the physical addresses of allocated memory.
  */
-SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **ppvR3, PSUPPAGE paPages)
+SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPages)
 {
     unsigned        iPage;
     int             rc;
     SUPDRVMEMREF    Mem = {0};
-    dprintf(("SUPR0LowAlloc: pSession=%p cPages=%d ppvR3=%p paPages=%p\n", pSession, cPages, ppvR3, paPages));
+    dprintf(("SUPR0LowAlloc: pSession=%p cPages=%d ppvR3=%p ppvR0=%p paPages=%p\n", pSession, cPages, ppvR3, ppvR0, paPages));
 
     /*
      * Validate input.
      */
-    if (!pSession || !ppvR3 || !paPages)
+    if (!pSession || !ppvR3 || !ppvR0 || !paPages)
     {
-        dprintf(("Null pointer. All of these should be set: pSession=%p ppvR3=%p paPages=%p\n",
-                 pSession, ppvR3, paPages));
+        dprintf(("Null pointer. All of these should be set: pSession=%p ppvR3=%p ppvR0=%p paPages=%p\n",
+                 pSession, ppvR3, ppvR0, paPages));
         return SUPDRV_ERR_INVALID_PARAM;
 
     }
@@ -1989,8 +1989,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **pp
                     paPages[iPage].uReserved = 0;
                     AssertMsg(!(paPages[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPages[iPage].Phys));
                 }
-                /*if (ppvR0)
-                    *ppvR0 = RTR0MemObjAddress(Mem.MemObj); */
+                *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
                 *ppvR3 = RTR0MemObjAddress(Mem.MapObjR3);
                 return 0;
             }
@@ -2009,13 +2008,14 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **pp
      * Let the OS specific code have a go.
      */
     Mem.pvR0    = NULL;
-    Mem.pvR3    = NULL;
+    Mem.pvR3    = NIL_RTR3PTR;
     Mem.eType   = MEMREF_TYPE_LOW;
     Mem.cb      = cPages << PAGE_SHIFT;
-    rc = supdrvOSLowAllocOne(&Mem, ppvR3, paPages);
+    rc = supdrvOSLowAllocOne(&Mem, ppvR0, ppvR3, paPages);
     if (rc)
         return rc;
     AssertMsg(!((uintptr_t)*ppvR3 & (PAGE_SIZE - 1)), ("Memory is not page aligned! virt=%p\n", *ppvR3));
+    AssertMsg(!((uintptr_t)*ppvR0 & (PAGE_SIZE - 1)), ("Memory is not page aligned! virt=%p\n", *ppvR0));
     for (iPage = 0; iPage < cPages; iPage++)
         AssertMsg(!(paPages[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPages[iPage].Phys));
 
@@ -2036,12 +2036,12 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, unsigned cPages, void **pp
  * @returns 0 on success.
  * @returns SUPDRV_ERR_* on failure.
  * @param   pSession    The session to which the memory was allocated.
- * @param   pv          Pointer to the memory.
+ * @param   uPtr        Pointer to the memory (ring-3 or ring-0).
  */
-SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, void *pv)
+SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
-    dprintf(("SUPR0LowFree: pSession=%p pv=%p\n", pSession, pv));
-    return supdrvMemRelease(pSession, pv, MEMREF_TYPE_LOW);
+    dprintf(("SUPR0LowFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+    return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_LOW);
 }
 
 
@@ -2056,7 +2056,7 @@ SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, void *pv)
  * @param   ppvR0       Where to store the address of the Ring-0 mapping.
  * @param   ppvR3       Where to store the address of the Ring-3 mapping.
  */
-SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0, void **ppvR3)
+SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
@@ -2095,7 +2095,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0,
             if (!rc)
             {
                 *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
-                *ppvR3 = RTR0MemObjAddress(Mem.MapObjR3);
+                *ppvR3 = (RTR3PTR)RTR0MemObjAddress(Mem.MapObjR3);
                 return 0;
             }
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
@@ -2112,7 +2112,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0,
      * Let the OS specific code have a go.
      */
     Mem.pvR0    = NULL;
-    Mem.pvR3    = NULL;
+    Mem.pvR3    = NIL_RTR3PTR;
     Mem.eType   = MEMREF_TYPE_MEM;
     Mem.cb      = cb;
     rc = supdrvOSMemAllocOne(&Mem, ppvR0, ppvR3);
@@ -2138,13 +2138,14 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, unsigned cb, void **ppvR0,
  * @returns 0 on success.
  * @returns SUPDRV_ERR_* on failure.
  * @param   pSession        The session to which the memory was allocated.
- * @param   pv              The Ring-0 or Ring-3 address returned by SUPR0MemAlloc().
+ * @param   uPtr            The Ring-0 or Ring-3 address returned by SUPR0MemAlloc().
+ * @param   paPages         Where to store the physical addresses.
  */
-SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, void *pv, PSUPPAGE paPages)
+SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages)
 {
     PSUPDRVBUNDLE pBundle;
     RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    dprintf(("SUPR0MemGetPhys: pSession=%p pv=%p paPages=%p\n", pSession, pv, paPages));
+    dprintf(("SUPR0MemGetPhys: pSession=%p uPtr=%p paPages=%p\n", pSession, (void *)uPtr, paPages));
 
     /*
      * Validate input.
@@ -2154,9 +2155,9 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, void *pv, PSUPPAGE paPag
         dprintf(("pSession must not be NULL!"));
         return SUPDRV_ERR_INVALID_PARAM;
     }
-    if (!pv || !paPages)
+    if (!uPtr || !paPages)
     {
-        dprintf(("Illegal address pv=%p or/and paPages=%p\n", pv, paPages));
+        dprintf(("Illegal address uPtr=%p or/and paPages=%p\n", (void *)uPtr, paPages));
         return SUPDRV_ERR_INVALID_PARAM;
     }
 
@@ -2174,9 +2175,9 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, void *pv, PSUPPAGE paPag
 #ifdef USE_NEW_OS_INTERFACE
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
-                    &&  (   RTR0MemObjAddress(pBundle->aMem[i].MemObj) == pv
+                    &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
                          || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                             && RTR0MemObjAddress(pBundle->aMem[i].MapObjR3) == pv)
+                             && (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MapObjR3) == uPtr)
                         )
                    )
                 {
@@ -2192,8 +2193,8 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, void *pv, PSUPPAGE paPag
                 }
 #else /* !USE_NEW_OS_INTERFACE */
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
-                    &&  (   pBundle->aMem[i].pvR0 == pv
-                         || pBundle->aMem[i].pvR3 == pv))
+                    &&  (   (RTHCUINTPTR)pBundle->aMem[i].pvR0 == uPtr
+                         || (RTHCUINTPTR)pBundle->aMem[i].pvR3 == uPtr))
                 {
                     supdrvOSMemGetPages(&pBundle->aMem[i], paPages);
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
@@ -2204,7 +2205,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, void *pv, PSUPPAGE paPag
         }
     }
     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-    dprintf(("Failed to find %p!!!\n", pv));
+    dprintf(("Failed to find %p!!!\n", (void *)uPtr));
     return SUPDRV_ERR_INVALID_PARAM;
 }
 
@@ -2215,12 +2216,12 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, void *pv, PSUPPAGE paPag
  * @returns 0 on success.
  * @returns SUPDRV_ERR_* on failure.
  * @param   pSession        The session owning the allocation.
- * @param   pv              The Ring-0 or Ring-3 address returned by SUPR0MemAlloc().
+ * @param   uPtr            The Ring-0 or Ring-3 address returned by SUPR0MemAlloc().
  */
-SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, void *pv)
+SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
-    dprintf(("SUPR0MemFree: pSession=%p pv=%p\n", pSession, pv));
-    return supdrvMemRelease(pSession, pv, MEMREF_TYPE_MEM);
+    dprintf(("SUPR0MemFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+    return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_MEM);
 }
 
 
@@ -2237,7 +2238,7 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, void *pv)
  *          count globally as one reference. One call to SUPR0GipUnmap() is will unmap GIP
  *          and remove the session as a GIP user.
  */
-SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, RTHCPHYS *pHCPhysGid)
+SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, PRTHCPHYS pHCPhysGid)
 {
     int                     rc = 0;
     PSUPDRVDEVEXT           pDevExt = pSession->pDevExt;
@@ -2460,10 +2461,10 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
  * @returns 0 on success.
  * @returns SUPDRV_ERR_INVALID_PARAM on failure.
  * @param   pSession    Session data.
- * @param   pv          Pointer to memory. This is matched against both the R0 and R3 addresses.
+ * @param   uPtr        Pointer to memory. This is matched against both the R0 and R3 addresses.
  * @param   eType       Memory type.
  */
-static int supdrvMemRelease(PSUPDRVSESSION pSession, void *pv, SUPDRVMEMREFTYPE eType)
+static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType)
 {
     PSUPDRVBUNDLE pBundle;
     RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
@@ -2476,9 +2477,9 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, void *pv, SUPDRVMEMREFTYPE 
         dprintf(("pSession must not be NULL!"));
         return SUPDRV_ERR_INVALID_PARAM;
     }
-    if (!pv)
+    if (!uPtr)
     {
-        dprintf(("Illegal address %p\n", pv));
+        dprintf(("Illegal address %p\n", (void *)uPtr));
         return SUPDRV_ERR_INVALID_PARAM;
     }
 
@@ -2496,9 +2497,9 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, void *pv, SUPDRVMEMREFTYPE 
 #ifdef USE_NEW_OS_INTERFACE
                 if (    pBundle->aMem[i].eType == eType
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
-                    &&  (   RTR0MemObjAddress(pBundle->aMem[i].MemObj) == pv
+                    &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
                          || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                             && RTR0MemObjAddress(pBundle->aMem[i].MapObjR3) == pv))
+                             && (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MapObjR3) == uPtr))
                    )
                 {
                     /* Make a copy of it and release it outside the spinlock. */
@@ -2522,14 +2523,14 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, void *pv, SUPDRVMEMREFTYPE 
                 }
 #else /* !USE_NEW_OS_INTERFACE */
                 if (    pBundle->aMem[i].eType == eType
-                    &&  (   pBundle->aMem[i].pvR0 == pv
-                         || pBundle->aMem[i].pvR3 == pv))
+                    &&  (   (RTHCUINTPTR)pBundle->aMem[i].pvR0 == uPtr
+                         || (RTHCUINTPTR)pBundle->aMem[i].pvR3 == uPtr))
                 {
                     /* Make a copy of it and release it outside the spinlock. */
                     SUPDRVMEMREF Mem = pBundle->aMem[i];
                     pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
                     pBundle->aMem[i].pvR0  = NULL;
-                    pBundle->aMem[i].pvR3  = NULL;
+                    pBundle->aMem[i].pvR3  = NIL_RTR3PTR;
                     pBundle->aMem[i].cb    = 0;
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
 
@@ -2559,7 +2560,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, void *pv, SUPDRVMEMREFTYPE 
         }
     }
     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-    dprintf(("Failed to find %p!!! (eType=%d)\n", pv, eType));
+    dprintf(("Failed to find %p!!! (eType=%d)\n", (void *)uPtr, eType));
     return SUPDRV_ERR_INVALID_PARAM;
 }
 
@@ -3832,13 +3833,14 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
  * @returns SUPDRV_ERR_* on failure.
  * @param   pMem        Memory reference record of the memory to be allocated.
  *                      (This is not linked in anywhere.)
+ * @param   ppvR3       Where to store the Ring-0 mapping of the allocated memory.
  * @param   ppvR3       Where to store the Ring-3 mapping of the allocated memory.
  * @param   paPagesOut  Where to store the physical addresss.
  */
-int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, void **ppvR3, PSUPPAGE paPagesOut)
+int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPagesOut)
 {
     RTHCPHYS HCPhys;
-    int rc = supdrvOSContAllocOne(pMem, NULL, ppvR3, &HCPhys);
+    int rc = supdrvOSContAllocOne(pMem, ppvR0, ppvR3, &HCPhys);
     if (!rc)
     {
         unsigned iPage = pMem->cb >> PAGE_SHIFT;

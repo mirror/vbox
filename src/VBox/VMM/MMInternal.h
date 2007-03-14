@@ -439,11 +439,13 @@ typedef MMPPLOOKUPHCPHYS *PMMPPLOOKUPHCPHYS;
  */
 typedef enum MMLOCKEDTYPE
 {
-    /** Hypervisor memory (VMM GC). */
+    /** Hypervisor: Ring-3 memory locked by MM. */
     MM_LOCKED_TYPE_HYPER,
-    /** Hypervisor memory to be mapped from HC. */
+    /** Hypervisor: Ring-3 memory locked by MM that shouldn't be freed up. */
     MM_LOCKED_TYPE_HYPER_NOFREE,
-    /** Physical VM memory (RAM & MMIO2). */
+    /** Hypervisor: Pre-locked ring-3 pages. */
+    MM_LOCKED_TYPE_HYPER_PAGES,
+    /** Guest: Physical VM memory (RAM & MMIO2). */
     MM_LOCKED_TYPE_PHYS
 } MMLOCKEDTYPE;
 /** Pointer to memory type. */
@@ -474,7 +476,7 @@ typedef struct MMLOCKEDMEM
     /** Type specific data. */
     union
     {
-        /** Data for MM_LOCKED_TYPE_HYPER. */
+        /** Data for MM_LOCKED_TYPE_HYPER, MM_LOCKED_TYPE_HYPER_NOFREE and MM_LOCKED_TYPE_HYPER_PAGES. */
         struct
         {
             unsigned    uNothing;
@@ -543,6 +545,8 @@ typedef struct MMLOOKUPHYPER
         {
             /** Host context pointer. */
             HCPTRTYPE(void *)       pvHC;
+            /** Host context ring-0 pointer. */
+            RTR0PTR                 pvR0;
             /** Pointer to the locked mem record. */
             HCPTRTYPE(PMMLOCKEDMEM) pLockedMem;
         } Locked;

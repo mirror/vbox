@@ -99,7 +99,7 @@ int mmr3HyperInit(PVM pVM)
         /*
          * Map the VM structure into the hypervisor space.
          */
-        rc = MMR3HyperMapHCPhys(pVM, pVM, pVM->HCPhysVM, sizeof(VM), "VM", &pVM->pVMGC);
+        rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(sizeof(VM), PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &pVM->pVMGC);
         if (VBOX_SUCCESS(rc))
         {
             /* Reserve a page for fencing. */
@@ -445,10 +445,87 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
                 pLookup->u.Locked.pvHC       = pvHC;
+                pLookup->u.Locked.pvR0       = NIL_RTR0PTR;
                 pLookup->u.Locked.pLockedMem = pLockedMem;
 
                 /* done. */
                 GCPtr    |= (uintptr_t)pvHC & PAGE_OFFSET_MASK;
+                *pGCPtr   = GCPtr;
+                return rc;
+            }
+            /* Don't care about failure clean, we're screwed if this fails anyway. */
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Maps locked R3 virtual memory into the hypervisor region in the GC.
+ *
+ * @return VBox status code.
+ *
+ * @param   pVM         VM handle.
+ * @param   pvR3        The ring-3 address of the memory, must be page aligned.
+ * @param   pvR0        The ring-0 address of the memory, must be page aligned. (optional)
+ * @param   cPages      The number of pages.
+ * @param   paPages     The page descriptors.
+ * @param   pszDesc     Mapping description.
+ * @param   pGCPtr      Where to store the GC address corresponding to pvHC.
+ */
+MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr)
+{
+    LogFlow(("MMR3HyperMapPages: pvR3=%p pvR0=%p cPages=%zu paPages=%p pszDesc=%p:{%s} pGCPtr=%p\n", 
+             pvR3, pvR0, cPages, paPages, pszDesc, pszDesc, pGCPtr));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
+    AssertPtrReturn(paPages, VERR_INVALID_POINTER);
+    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages < 1024, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
+    AssertReturn(*pszDesc, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pGCPtr, VERR_INVALID_PARAMETER);
+
+    /*
+     * Add the memory to the hypervisor area.
+     */
+    RTGCPTR         GCPtr;
+    PMMLOOKUPHYPER  pLookup;
+    int rc = mmR3HyperMap(pVM, cPages << PAGE_SHIFT, pszDesc, &GCPtr, &pLookup);
+    if (VBOX_SUCCESS(rc))
+    {
+        /*
+         * Create a locked memory record and tell PGM about this.
+         */
+        PMMLOCKEDMEM pLockedMem = (PMMLOCKEDMEM)MMR3HeapAlloc(pVM, MM_TAG_MM, RT_OFFSETOF(MMLOCKEDMEM, aPhysPages[cPages]));
+        if (pLockedMem)
+        {
+            pLockedMem->pv      = pvR3;
+            pLockedMem->cb      = cPages << PAGE_SHIFT;
+            pLockedMem->eType   = MM_LOCKED_TYPE_HYPER_PAGES;
+            memset(&pLockedMem->u, 0, sizeof(pLockedMem->u));
+            for (size_t i = 0; i < cPages; i++)
+            {
+                AssertReleaseReturn(paPages[i].Phys != 0 && paPages[i].Phys != NIL_RTHCPHYS && !(paPages[i].Phys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR);
+                pLockedMem->aPhysPages[i].Phys = paPages[i].Phys;
+                pLockedMem->aPhysPages[i].uReserved = (RTHCUINTPTR)pLockedMem;
+            }
+
+            /* map the stuff into guest address space. */
+            if (pVM->mm.s.fPGMInitialized)
+                rc = mmr3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
+            if (VBOX_SUCCESS(rc))
+            {
+                pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
+                pLookup->u.Locked.pvHC       = pvR3;
+                pLookup->u.Locked.pvR0       = pvR0;
+                pLookup->u.Locked.pLockedMem = pLockedMem;
+
+                /* done. */
                 *pGCPtr   = GCPtr;
                 return rc;
             }
@@ -863,8 +940,11 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 pLookup->u.Locked.pvHC,
                                 sizeof(RTHCPTR) * 2,
-                                pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_NOFREE
-                                    ? "nofree" : "autofree",
+                                pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_NOFREE  ? "nofree"
+                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER       ? "autofree" 
+                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_PAGES ? "pages"
+                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_PHYS        ? "gstphys"
+                                : "??",
                                 pLookup->pszDesc);
                 break;
 

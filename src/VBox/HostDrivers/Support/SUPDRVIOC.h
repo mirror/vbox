@@ -180,7 +180,7 @@ typedef struct SUPCOOKIE_IN
 /** SUPCOOKIE_IN magic word. */
 #define SUPCOOKIE_MAGIC             "The Magic Word!"
 /** Current interface version. */
-#define SUPDRVIOC_VERSION           0x00040000
+#define SUPDRVIOC_VERSION           0x00040001
 
 /** SUP_IOCTL_COOKIE Output. */
 typedef struct SUPCOOKIE_OUT
@@ -262,7 +262,7 @@ typedef struct SUPPINPAGES_IN
     /** Session cookie. */
     uint32_t    u32SessionCookie;
     /** Start of page range. Must be PAGE aligned. */
-    void       *pv;
+    RTR3PTR     pvR3;
     /** Size of the range. Must be PAGE aligned. */
     uint32_t    cb;
 } SUPPINPAGES_IN, *PSUPPINPAGES_IN;
@@ -284,7 +284,7 @@ typedef struct SUPUNPINPAGES_IN
     /** Session cookie. */
     uint32_t    u32SessionCookie;
     /** Start of page range of a range previuosly pinned. */
-    void        *pv;
+    RTR3PTR     pvR3;
 } SUPUNPINPAGES_IN, *PSUPUNPINPAGES_IN;
 
 
@@ -319,8 +319,8 @@ typedef struct SUPCONTFREE_IN
     uint32_t    u32Cookie;
     /** Session cookie. */
     uint32_t    u32SessionCookie;
-    /** The address (virtual, not physical address) of the memory to free. */
-    void       *pv;
+    /** The ring-3 address of the memory to free. */
+    RTR3PTR     pvR3;
 } SUPCONTFREE_IN, *PSUPCONTFREE_IN;
 
 
@@ -510,8 +510,10 @@ typedef struct SUPLOWALLOC_IN
 /** SUP_IOCTL_LOW_ALLOC Output. */
 typedef struct SUPLOWALLOC_OUT
 {
-    /** The address (virtual & linear) of the allocated memory. */
-    void       *pvVirt;
+    /** The ring-3 address of the allocated memory. */
+    RTR3PTR     pvR3;
+    /** The ring-0 address of the allocated memory. */
+    RTR0PTR     pvR0;
     /** Array of pages. */
     SUPPAGE     aPages[1];
 } SUPLOWALLOC_OUT, *PSUPLOWALLOC_OUT;
@@ -524,8 +526,8 @@ typedef struct SUPLOWFREE_IN
     uint32_t    u32Cookie;
     /** Session cookie. */
     uint32_t    u32SessionCookie;
-    /** The address (virtual, not physical address) of the memory to free. */
-    void       *pv;
+    /** The ring-3 address of the memory to free. */
+    RTR3PTR     pvR3;
 } SUPLOWFREE_IN, *PSUPLOWFREE_IN;
 
 

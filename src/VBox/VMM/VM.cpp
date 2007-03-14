@@ -186,12 +186,15 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
         /*
          * Allocate memory for the VM structure.
          */
-        RTHCPHYS HCPhysVM;
-        PVMR0 pVMR0;
-        PVM pVM = (PVM)SUPContAlloc2(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE), &pVMR0, &HCPhysVM);
-        if (pVM)
+        PVMR0 pVMR0 = NIL_RTR0PTR;
+        PVM pVM = NULL;
+        const unsigned cPages = RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT;
+        PSUPPAGE paPages = (PSUPPAGE)RTMemAllocZ(cPages * sizeof(SUPPAGE));
+        AssertReturn(paPages, VERR_NO_MEMORY);
+        rc = SUPLowAlloc(cPages, (void **)&pVM, &pVMR0, &paPages[0]);
+        if (VBOX_SUCCESS(rc))
         {
-            Log(("VMR3Create: Allocated pVM=%p HCPhysVM=%VHp\n", pVM, HCPhysVM));
+            Log(("VMR3Create: Allocated pVM=%p pVMR0=%p\n", pVM, pVMR0));
 
             /*
              * Do basic init of the VM structure.
@@ -200,7 +203,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
             pVM->pVMHC = pVM;
             pVM->pVMR0 = pVMR0;
             pVM->pVMR3 = pVM;
-            pVM->HCPhysVM = HCPhysVM;
+            pVM->paVMPagesR3 = paPages;
             pVM->pSession = pSession;
             pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
             pVM->vm.s.ppAtResetNext = &pVM->vm.s.pAtReset;
@@ -208,11 +211,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
             pVM->vm.s.ppAtErrorNext = &pVM->vm.s.pAtError;
             pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
             rc = RTSemEventCreate(&pVM->vm.s.EventSemWait);
-            if (VBOX_FAILURE(rc))
-            {
-                AssertMsgFailed(("RTSemEventCreate -> rc=%Vrc\n", rc));
-                return rc;
-            }
+            AssertRCReturn(rc, rc);
 
             /*
              * Initialize STAM.
@@ -264,8 +263,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
             int rc2 = MMR3Term(pVM);
             AssertRC(rc2);
 
-            /* free VM memory */
-            rc2 = SUPContFree(pVM);
+            /* free the VM memory */
+            rc2 = SUPLowFree(pVM);
             AssertRC(rc2);
         }
         else
@@ -276,6 +275,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                               RT_ALIGN(sizeof(*pVM), PAGE_SIZE));
             AssertMsgFailed(("Failed to allocate %d bytes of contiguous memory for the VM structure!\n", RT_ALIGN(sizeof(*pVM), PAGE_SIZE)));
         }
+        RTMemFree(paPages);
 
         /* terminate SUPLib */
         int rc2 = SUPTerm(false);
@@ -1518,7 +1518,7 @@ void vmR3DestroyFinalBit(PVM pVM)
     /*
      * Free the VM structure.
      */
-    rc = SUPContFree(pVM);
+    rc = SUPLowFree(pVM);
     AssertRC(rc);
     rc = SUPTerm();
     AssertRC(rc);

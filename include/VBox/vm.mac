@@ -39,7 +39,7 @@
 struc VM
     .enmVMState         resd 1
     .fForcedActions     resd 1
-    .HCPhysVM           resq 1
+    .paVMPagesR3        RTR3PTR_RES 1
     .pSession           RTR3PTR_RES 1
     .pNext              RTHCPTR_RES 1
     .pVMHC              RTHCPTR_RES 1
