@@ -486,7 +486,7 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, unsigned CpuMode, PFN_DIS_R
 
 DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
 DISDECL(int) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
-
+DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 
 /**
  * Returns the value of the parameter in pParam
