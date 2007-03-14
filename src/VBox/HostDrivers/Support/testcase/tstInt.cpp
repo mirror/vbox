@@ -27,6 +27,7 @@
 #include <VBox/sup.h>
 #include <VBox/vm.h>
 #include <VBox/vmm.h>
+#include <VBox/err.h>
 #include <VBox/param.h>
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
@@ -99,11 +100,7 @@ int main(int argc, char **argv)
                 pVM->pVMGC = 0;
                 pVM->pVMR3 = pVM;
                 pVM->pVMR0 = pVMR0;
-#ifdef VBOX_USE_LOW_MEM_FOR_VM
                 pVM->paVMPagesR3 = paPages;
-#else
-                pVM->HCPhysVM = HCPhysVM;
-#endif 
                 pVM->pSession = pSession;
 
 #ifdef VBOX_WITHOUT_IDT_PATCHING
