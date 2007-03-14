@@ -37,6 +37,7 @@ else
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
+ DLLS            = VBoxSVCM
  LIBRARIES       = VBoxXPCOM
  DEFS           += VBOX_WITH_XPCOM
  DEFS           += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
@@ -93,7 +94,7 @@ $(call DIRDEP, $(PATH_OUT)/docs/Main):
 
 
 #
-# VBoxSVC
+# VBoxSVC executable
 #
 VBoxSVC_TEMPLATE = VBOXMAINEXE
 VBoxSVC_DEFS = CFGLDR_HAVE_COM IN_CFGLDR_R3
@@ -197,7 +198,23 @@ VBoxSVC_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
 endif
 
 #
-# VBoxC
+# VBoxSVC wrapper module
+#
+ifdef VBOX_WITH_XPCOM
+
+VBoxSVCM_TEMPLATE		= VBOXMAIN
+VBoxSVCM_DEFS			= IN_RING3 IN_CFGLDR_R3
+VBoxSVCM_INCS			= \
+	include \
+	$(PATH_VBoxC) \
+	$(PATH_VBoxCOM)
+VBoxSVCM_SOURCES		= \
+	linux/server_module.cpp
+
+endif # VBOX_WITH_XPCOM
+
+#
+# VBoxC module
 #
 VBoxC_TEMPLATE = VBOXMAIN
 VBoxC_DEFS = IN_RING3 IN_CFGLDR_R3
@@ -436,6 +453,7 @@ OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
 xpcom-components_INST = $(INST_BIN)components/
 xpcom-components_SYMLINKS = \
 	VBoxC$(SUFF_DLL)=>../VBoxC$(SUFF_DLL) \
+	VBoxSVCM$(SUFF_DLL)=>../VBoxSVCM$(SUFF_DLL) \
 	VBoxXPCOMIPCC$(SUFF_DLL)=>../VBoxXPCOMIPCC$(SUFF_DLL) \
 	VirtualBox_XPCOM.xpt=>../VirtualBox_XPCOM.xpt \
 	VBoxXPCOMBase.xpt=>../VBoxXPCOMBase.xpt

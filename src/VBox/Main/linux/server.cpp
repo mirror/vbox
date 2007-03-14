@@ -1,6 +1,6 @@
 /** @file
  *
- * XPCOM server module implementation
+ * XPCOM server process start point
  */
 
 /*
@@ -38,6 +38,8 @@
 #include <iprt/runtime.h>
 #include <iprt/path.h>
 #include <iprt/critsect.h>
+#include <iprt/timer.h>
+
 #include <VBox/param.h>
 #include <VBox/version.h>
 
@@ -186,6 +188,15 @@ COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(IfaceUSBDevice, IUSBDevice)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+enum
+{
+    /* Delay before shutting down the VirtualBox server after the last
+     * VirtualBox instance is released, in ms */
+    VBoxSVC_ShutdownDelay = 5000,
+};
+
+static bool gAutoShutdown = false;
+
 static nsIEventQueue* gEventQ = nsnull;
 static PRBool volatile gKeepRunning = PR_TRUE;
 
@@ -202,26 +213,32 @@ public:
 
     virtual ~VirtualBoxClassFactory()
     {
-        Log (("VirtualBoxClassFactory: deleting VirtualBox...\n"));
+        LogFlowFunc (("Deleting VirtualBox...\n"));
 
         FinalRelease();
         sInstance = 0;
 
-        Log (("VirtualBoxClassFactory: VirtualBox object deleted.\n"));
+        LogFlowFunc (("VirtualBox object deleted.\n"));
         printf ("Informational: VirtualBox object deleted.\n");
+
+        /* Instruct the main event loop to terminate. Note that it's enough
+         * to set gKeepRunning to false because we are on the main thread
+         * already (i.e. no need to post events there). */
+        if (gAutoShutdown)
+            gKeepRunning = PR_FALSE;
     }
 
     NS_IMETHOD_(nsrefcnt) Release()
     {
-        // we overload Release() to guarantee the VirtualBox destructor is
-        // always called on the main thread
+        /* we overload Release() to guarantee the VirtualBox destructor is
+         * always called on the main thread */
 
         nsrefcnt count = VirtualBox::Release();
 
         if (count == 1)
         {
-            // the last reference held by clients is being released
-            // (see GetInstance())
+            /* the last reference held by clients is being released
+             * (see GetInstance()) */
 
             PRBool onMainThread = PR_TRUE;
             if (gEventQ)
@@ -229,38 +246,36 @@ public:
 
             if (!onMainThread)
             {
-                // post a destruction event to the main thread to release the
-                // extra reference added in GetInstance()
+                LogFlowFunc (("Last VirtualBox instance was released, "
+                              "scheduling server shutdown in %d ms...\n",
+                              VBoxSVC_ShutdownDelay));
 
-                LogFlow (("VirtualBoxClassFactory: the last VirtualBox reference "
-                          "is being released, scheduling the destruction...\n"));
-
-                PLEvent *ev = new PLEvent;
-                gEventQ->InitEvent (ev, NULL, DestructEventHandler,
-                                              DestructEventDestructor);
-                nsresult rv = gEventQ->PostEvent (ev);
-                if (NS_FAILED (rv))
+                /* Start a shutdown timer to provide some delay */
+                int vrc = RTTimerStart (sTimer, 0);
+/// @todo uncomment when implemented
+//                AssertRC (vrc);
+                if (VBOX_FAILURE (vrc))
                 {
-                    // this means we've been already stopped (for example
-                    // by Ctrl-C). FactoryDestructor() (NS_ShutdownXPCOM())
-                    // will do the job.
-                    PL_DestroyEvent (ev);
+                    /* failed to start the timer, post the shutdown event
+                     * manually */
+                    ShutdownTimer (NULL, NULL);
                 }
             }
             else
             {
-                // Here we come if:
-                //
-                // a) gEventQ is 0 which means either FactoryDestructor() is called
-                //    or the IPC/DCONNECT shutdown sequence is initiated by the
-                //    XPCOM shutdown routine (NS_ShutdownXPCOM()), which always
-                //    happens on the main thread.
-                //
-                // b) gEventQ has reported we're on the main thread. This means
-                //    that DestructEventHandler() has been called, but another
-                //    client was faster and requested VirtualBox again.
-                //
-                // We have nothing to do in these cases.
+                /* Here we come if:
+                 *
+                 * a) gEventQ is 0 which means either FactoryDestructor() is called
+                 *    or the IPC/DCONNECT shutdown sequence is initiated by the
+                 *    XPCOM shutdown routine (NS_ShutdownXPCOM()), which always
+                 *    happens on the main thread.
+                 *
+                 * b) gEventQ has reported we're on the main thread. This means
+                 *    that DestructEventHandler() has been called, but another
+                 *    client was faster and requested VirtualBox again.
+                 *
+                 * We have nothing to do in these cases.
+                 */
             }
         }
 
@@ -271,17 +286,17 @@ public:
     {
         Assert (RTCritSectIsInitialized (&sLock));
 
-        // stop accepting GetInstance() requests during possible destruction
+        /* stop accepting GetInstance() requests during possible destruction */
         RTCritSectEnter (&sLock);
 
         Assert (sInstance);
 
-        // release the reference we added in GetInstance()
-        // (will call the destructor if nobody referenced us again)
+        /* release the reference we added in GetInstance()
+         * (will call the destructor if nobody referenced us again) */
         nsrefcnt count = sInstance->Release();
         if (count != 0)
         {
-            LogFlow (("VirtualBoxClassFactory: destruciton is canceled\n"));
+            LogFlowFunc (("Destruction is canceled.\n"));
         }
 
         RTCritSectLeave (&sLock);
@@ -294,30 +309,75 @@ public:
         delete self;
     }
 
+    static void ShutdownTimer (PRTTIMER pTimer, void *pvUser)
+    {
+        NOREF (pvUser);
+
+        if (pTimer)
+        {
+            /* it's a single shot timer */
+            int vrc = RTTimerStop (pTimer);
+/// @todo uncomment when implemented
+//                AssertRC (vrc);
+            NOREF (vrc);
+        }
+
+        /* post a destruction event to the main thread to safely release the
+         * extra reference added in VirtualBoxClassFactory::GetInstance() */
+
+        LogFlowFunc (("Posting VirtualBox destruction & shtutdown event...\n"));
+
+        PLEvent *ev = new PLEvent;
+        gEventQ->InitEvent (ev, NULL, DestructEventHandler,
+                            DestructEventDestructor);
+        nsresult rv = gEventQ->PostEvent (ev);
+        if (NS_FAILED (rv))
+        {
+            /* this means we've been already stopped (for example
+             * by Ctrl-C). FactoryDestructor() (NS_ShutdownXPCOM())
+             * will do the job. */
+            PL_DestroyEvent (ev);
+        }
+    }
+
     static NS_IMETHODIMP FactoryConstructor()
     {
-        LogFlow (("VirtualBoxClassFactory::FactoryConstructor()\n"));
+        LogFlowFunc (("\n"));
 
-        // create a critsect to protect object construction
+        /* create a critsect to protect object construction */
         if (VBOX_FAILURE (RTCritSectInit (&sLock)))
             return NS_ERROR_OUT_OF_MEMORY;
+
+        int vrc = RTTimerCreateEx (&sTimer,
+                                   uint64_t (VBoxSVC_ShutdownDelay) * 1000000,
+                                   0, ShutdownTimer, NULL);
+        NOREF (vrc);
+/// @todo uncomment when implemented
+//         if (VBOX_FAILURE (vrc))
+//         {
+//             LogFlowFunc (("Failed to create a timer! (vrc=%Vrc)\n", vrc));
+//             return NS_ERROR_FAILURE;
+//         }
 
         return NS_OK;
     }
 
     static NS_IMETHODIMP FactoryDestructor()
     {
-        LogFlow (("VirtualBoxClassFactory::FactoryDestructor()\n"));
+        LogFlowFunc (("\n"));
+
+        RTTimerDestroy (sTimer);
+        sTimer = NULL;
 
         RTCritSectDelete (&sLock);
 
         if (sInstance)
         {
-            // Either posting a destruction event falied for some reason (most
-            // likely, the quit event has been received before the last release),
-            // or the client has terminated abnormally w/o releasing its
-            // VirtualBox instance (so NS_ShutdownXPCOM() is doing a cleanup).
-            // Release the extra reference we added in GetInstance().
+            /* Either posting a destruction event falied for some reason (most
+             * likely, the quit event has been received before the last release),
+             * or the client has terminated abnormally w/o releasing its
+             * VirtualBox instance (so NS_ShutdownXPCOM() is doing a cleanup).
+             * Release the extra reference we added in GetInstance(). */
             sInstance->Release();
         }
 
@@ -326,7 +386,7 @@ public:
 
     static nsresult GetInstance (VirtualBox **inst)
     {
-        Log (("VirtualBoxClassFactory: getting VirtualBox object...\n"));
+        LogFlowFunc (("Getting VirtualBox object...\n"));
 
         RTCritSectEnter (&sLock);
 
@@ -334,25 +394,26 @@ public:
 
         if (sInstance == 0)
         {
-            Log (("VirtualBoxClassFactory: creating new VirtualBox object...\n"));
+            LogFlowFunc (("Creating new VirtualBox object...\n"));
             sInstance = new VirtualBoxClassFactory();
             if (sInstance)
             {
-                // make an extra AddRef to take the full control
-                // on the VirtualBox destruction (see FinalRelease())
+                /* make an extra AddRef to take the full control
+                 * on the VirtualBox destruction (see FinalRelease()) */
                 sInstance->AddRef();
 
-                sInstance->AddRef(); // protect FinalConstruct()
+                sInstance->AddRef(); /* protect FinalConstruct() */
                 rv = sInstance->FinalConstruct();
                 printf ("Informational: VirtualBox object created (rc=%08X).\n", rv);
                 if (NS_FAILED (rv))
                 {
-                    // on failure diring VirtualBox initialization, delete it
-                    // immediately on the current thread, ignoring the reference
-                    // count (VirtualBox should be aware of that meaning that it
-                    // has already completely unintialized itself in this case)
-                    Log (("VirtualBoxClassFactory: VirtualBox creation failed "
-                          "(rc=%08X), deleting immediately...\n", rv));
+                    /* on failure diring VirtualBox initialization, delete it
+                     * immediately on the current thread, ignoring the reference
+                     * count (VirtualBox should be aware of that meaning that it
+                     * has already completely unintialized itself in this
+                     * case) */
+                    LogFlowFunc (("VirtualBox creation failed "
+                                  "(rc=%08X), deleting immediately...\n", rv));
                     delete sInstance;
                     sInstance = 0;
                 }
@@ -364,18 +425,18 @@ public:
         }
         else
         {
-            Log (("VirtualBoxClassFactory: using existing VirtualBox object...\n"));
+            LogFlowFunc (("Using existing VirtualBox object...\n"));
             nsrefcnt count = sInstance->AddRef();
             Assert (count > 1);
 
             if (count == 2)
             {
-                LogFlow (("VirtualBoxClassFactory: another client has requested "
-                          "a reference of VirtualBox scheduled for destruction, "
-                          "canceling detruction...\n"));
+                LogFlowFunc (("Another client has requested "
+                              "a reference of VirtualBox scheduled for destruction, "
+                              "canceling detruction...\n"));
 
-                // add a reference to compensate one that DestructEventHandler()
-                // will release
+                /* add a reference to compensate one that DestructEventHandler()
+                 * will release */
                 sInstance->AddRef();
             }
         }
@@ -391,14 +452,17 @@ private:
 
     static VirtualBox *sInstance;
     static RTCRITSECT sLock;
+
+    static PRTTIMER sTimer;
 };
 
 VirtualBox *VirtualBoxClassFactory::sInstance = 0;
 RTCRITSECT VirtualBoxClassFactory::sLock = {0};
 
-NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR_WITH_RC (
-    VirtualBox, VirtualBoxClassFactory::GetInstance
-)
+PRTTIMER VirtualBoxClassFactory::sTimer = NULL;
+
+NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR_WITH_RC
+    (VirtualBox, VirtualBoxClassFactory::GetInstance)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -476,7 +540,10 @@ static const nsMyModuleComponentInfo components[] =
  *  because we get a segmentation fault for some unknown reason when VBoxSVC
  *  starts up (somewhere during the initialization of the libipcdc.so module)
  *  when we just reference XPCOM's NS_NewGenericFactory() from here (i.e. even
- *  before actually calling it) and run VBoxSVC using the debug XPCOM libraries.
+ *  before actually calling it) and run VBoxSVC using the debug XPCOM
+ *  libraries.
+ *
+ *  Actually, I know why, but I find it too stupid even to discuss.
  */
 class nsMyFactory : public nsIGenericFactory, public nsIClassInfo {
 public:
@@ -676,28 +743,31 @@ NS_NewMyFactory(nsIGenericFactory* *result,
 
 /////////////////////////////////////////////////////////////////////////////
 
-// a helper function to register self components upon start-up
-// of the out-of-proc server
-static nsresult RegisterSelfComponents (
-    nsIComponentRegistrar *registrar,
-    const nsMyModuleComponentInfo *components, PRUint32 count)
+/**
+ * Hhelper function to register self components upon start-up
+ * of the out-of-proc server.
+ */
+static nsresult
+RegisterSelfComponents (nsIComponentRegistrar *registrar,
+                        const nsMyModuleComponentInfo *components,
+                        PRUint32 count)
 {
     nsresult rc = NS_OK;
     const nsMyModuleComponentInfo *info = components;
-    for (PRUint32 i = 0; i < count && NS_SUCCEEDED( rc ); i++, info++) {
-        // skip components w/o a constructor
+    for (PRUint32 i = 0; i < count && NS_SUCCEEDED (rc); i++, info++)
+    {
+        /* skip components w/o a constructor */
         if (!info->mConstructor) continue;
-        // create a new generic factory for a component and register it
+        /* create a new generic factory for a component and register it */
         nsIGenericFactory *factory;
-//        rc = NS_NewGenericFactory (&factory, info);
+        rc = NS_NewGenericFactory (&factory, info);
         rc = NS_NewMyFactory (&factory, info);
-        if (NS_SUCCEEDED( rc )) {
-            rc = registrar->RegisterFactory (
-                info->mCID,
-                info->mDescription,
-                info->mContractID,
-                factory
-            );
+        if (NS_SUCCEEDED (rc))
+        {
+            rc = registrar->RegisterFactory (info->mCID,
+                                             info->mDescription,
+                                             info->mContractID,
+                                             factory);
             factory->Release();
         }
     }
@@ -706,19 +776,17 @@ static nsresult RegisterSelfComponents (
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define VIRTUALBOXSERVER_IPCNAME "VirtualBoxServer"
-
 static ipcIService *gIpcServ = nsnull;
 static char *pszPidFile = NULL;
 
 void* PR_CALLBACK quitEventHandler (PLEvent* self) { gKeepRunning = PR_FALSE; return 0; }
 void PR_CALLBACK quitEventDestructor (PLEvent* self) { delete self; }
 
-void signal_handler (int sig)
+static void signal_handler (int sig)
 {
     if (gEventQ && gKeepRunning)
     {
-        // post a quit event to the queue
+        /* post a quit event to the queue */
         PLEvent *ev = new PLEvent;
         gEventQ->InitEvent (ev, NULL, quitEventHandler, quitEventDestructor);
         gEventQ->PostEvent (ev);
@@ -734,7 +802,7 @@ void signal_handler (int sig)
  * the signal handler that prints out a backtrace of the call stack.
  * the code is taken from http://www.linuxjournal.com/article/6391.
  */
-void bt_sighandler (int sig, siginfo_t *info, void *secret)
+static void bt_sighandler (int sig, siginfo_t *info, void *secret)
 {
 
     void *trace[16];
@@ -767,6 +835,7 @@ int main (int argc, char **argv)
 {
     const struct option options[] =
     {
+        { "automate",  no_argument,       NULL, 'a' },
         { "daemonize", no_argument,       NULL, 'd' },
         { "pidfile",   required_argument, NULL, 'p' },
         { NULL,        0,                 NULL,  0  }
@@ -782,6 +851,16 @@ int main (int argc, char **argv)
             break;
         switch (c)
         {
+            case 'a':
+            {
+                /* --automate mode means we are started by XPCOM on
+                 * demand. Daemonize ourselves and activate
+                 * auto-shutdown. */
+                gAutoShutdown = true;
+                fDaemonize = true;
+                break;
+            }
+
             case 'd':
             {
                 fDaemonize = true;
@@ -795,7 +874,10 @@ int main (int argc, char **argv)
             }
 
             default:
-                break;
+            {
+                /* exit on invalid options */
+                return 1;
+            }
         }
     }
 
@@ -807,14 +889,14 @@ int main (int argc, char **argv)
         /* create a pipe for communication between child and parent */
         if (pipe(daemon_pipe_fds) < 0)
         {
-            printf("Error creating pipe! errno = %d\n", errno);
+            printf("ERROR: pipe() failed (errno = %d)\n", errno);
             return 1;
         }
 
         pid_t childpid = fork();
         if (childpid == -1)
         {
-            printf("Error failed to fork!\n");
+            printf("ERROR: fork() failed (errno = %d)\n", errno);
             return 1;
         }
 
@@ -831,24 +913,32 @@ int main (int argc, char **argv)
             if (read(daemon_pipe_fds[0], msg, sizeof(msg)) > 0)
             {
                 if (strcmp(msg, "READY") == 0)
-                {
-                    Log (("child process signalled ready\n"));
                     fSuccess = true;
-                }
                 else
-                {
-                    Log (("unknown message from child\n"));
-                }
+                    printf ("ERROR: Unknown message from child "
+                            "process (%s)\n", msg);
             }
             else
-            {
-                Log (("0 bytes read from child process\n"));
-            }
+                printf ("ERROR: 0 bytes read from child process\n");
+
             /* close the reading end of the pipe as well and exit */
             close(daemon_pipe_fds[0]);
             return fSuccess ? 0 : 1;
         }
         /* we're the child process */
+
+        /* Create a new SID for the child process */
+        pid_t sid = setsid();
+        if (sid < 0)
+        {
+            printf("ERROR: setsid() failed (errno = %d)\n", errno);
+            return 1;
+        }
+
+        /* Redirect standard i/o streams to /dev/null */
+        freopen ("/dev/null", "r", stdin);
+        freopen ("/dev/null", "w", stdout);
+        freopen ("/dev/null", "w", stderr);
 
         /* close the reading end of the pipe */
         close(daemon_pipe_fds[0]);
@@ -856,7 +946,7 @@ int main (int argc, char **argv)
 
 #if defined(USE_BACKTRACE)
     {
-        // install our signal handler to backtrace the call stack
+        /* install our signal handler to backtrace the call stack */
         struct sigaction sa;
         sa.sa_sigaction = bt_sighandler;
         sigemptyset (&sa.sa_mask);
@@ -879,44 +969,55 @@ int main (int argc, char **argv)
     {
         XPCOMGlueStartup (nsnull);
 
-        // get the path to the executable
-        char buf [RTPATH_MAX];
-        char *appPath = NULL;
-#if defined(DEBUG)
-        appPath = getenv ("VIRTUALBOX_APP_HOME");
-        if (appPath)
-            RTPathReal (appPath, buf, RTPATH_MAX);
-        else
-#endif
-        RTPathProgram (buf, RTPATH_MAX);
-        appPath = buf;
+        char path [RTPATH_MAX];
+        path [0] = '\0';
 
         nsCOMPtr<nsIFile> nsAppPath;
         {
+            /* get the path to the executable */
+            char *appPath = NULL;
+#if defined (DEBUG)
+            appPath = getenv ("VIRTUALBOX_APP_HOME");
+            if (appPath)
+                RTPathReal (appPath, path, RTPATH_MAX);
+            else
+#endif
+                RTPathProgram (path, RTPATH_MAX);
+            appPath = path;
+
             nsCOMPtr<nsILocalFile> file;
             rc = NS_NewNativeLocalFile (nsEmbedCString (appPath),
                                         PR_FALSE, getter_AddRefs (file));
             if (NS_SUCCEEDED (rc))
                 nsAppPath = do_QueryInterface (file, &rc);
         }
-        if (NS_FAILED( rc ))
+        if (NS_FAILED (rc))
         {
-            printf ("ERROR: failed to create file object! (rc=%08X)\n", rc);
+            printf ("ERROR: Failed to create file object! (rc=%08X)\n", rc);
             break;
         }
+
+        /* get the executable name (will be used below) */
+        if (!RTProcGetExecutableName (path, sizeof (path)))
+        {
+            printf ("ERROR: Failed to get executable name!\n");
+            break;
+        }
+
+        LogFlowFunc (("Will use \"%s\" as server name.\n", path));
 
         nsCOMPtr<nsIServiceManager> servMan;
         NS_InitXPCOM2 (getter_AddRefs (servMan), nsAppPath, nsnull);
         if (!servMan)
         {
-            printf ("ERROR: failed to get service manager!\n");
+            printf ("ERROR: Failed to get service manager!\n");
             break;
         }
 
         nsCOMPtr<nsIComponentRegistrar> registrar = do_QueryInterface (servMan);
         if (!registrar)
         {
-            printf ("ERROR: failed to get component registrar!\n");
+            printf ("ERROR: Failed to get component registrar!\n");
             break;
         }
 
@@ -925,39 +1026,40 @@ int main (int argc, char **argv)
                                      NS_ARRAY_LENGTH (components));
         if (NS_FAILED (rc))
         {
-            printf ("ERROR: failed to register server components! (rc=%08X)\n", rc);
+            printf ("ERROR: Failed to register server components! (rc=%08X)\n", rc);
             break;
         }
 
-        // get the main thread's event queue (afaik, the dconnect service always
-        // gets created upon XPCOM startup, so it will use the main (this)
-        // thread's event queue to receive IPC events)
+        /* get the main thread's event queue (afaik, the dconnect service always
+         * gets created upon XPCOM startup, so it will use the main (this)
+         * thread's event queue to receive IPC events) */
         rc = NS_GetMainEventQ (&gEventQ);
         if (NS_FAILED (rc))
         {
-            printf ("ERROR: failed to get the main event queue! (rc=%08X)\n", rc);
+            printf ("ERROR: Failed to get the main event queue! (rc=%08X)\n", rc);
             break;
         }
 
         nsCOMPtr<ipcIService> ipcServ (do_GetService(IPC_SERVICE_CONTRACTID, &rc));
         if (NS_FAILED (rc))
         {
-            printf ("ERROR: failed to get IPC service! (rc=%08X)\n", rc);
+            printf ("ERROR: Failed to get IPC service! (rc=%08X)\n", rc);
             break;
         }
 
         NS_ADDREF (gIpcServ = ipcServ);
 
-        rc = gIpcServ->AddName (VIRTUALBOXSERVER_IPCNAME);
+        /* use the executable name as the server name */
+        rc = gIpcServ->AddName (path);
         if (NS_FAILED (rc))
         {
-            printf ("ERROR: failed to register VirtualBoxServer! (rc=%08X)\n", rc);
+            printf ("ERROR: Failed to register VirtualBoxServer! (rc=%08X)\n", rc);
             NS_RELEASE (gIpcServ);
             break;
         }
 
         {
-            // setup signal handling to convert some signals to a quit event
+            /* setup signal handling to convert some signals to a quit event */
             struct sigaction sa;
             sa.sa_handler = signal_handler;
             sigemptyset (&sa.sa_mask);
@@ -1020,7 +1122,7 @@ int main (int argc, char **argv)
             gEventQ->HandleEvent (ev);
         }
 
-        gIpcServ->RemoveName (VIRTUALBOXSERVER_IPCNAME);
+        gIpcServ->RemoveName (path);
 
         // stop accepting new events
         gEventQ->StopAcceptingEvents();
@@ -1036,12 +1138,12 @@ int main (int argc, char **argv)
     NS_IF_RELEASE (gEventQ);
 
     // no nsCOMPtrs are allowed to be alive when you call NS_ShutdownXPCOM
-    LogFlow (("VBoxSVC::main(): calling NS_ShutdownXPCOM()...\n"));
+    LogFlowFunc (("Calling NS_ShutdownXPCOM()...\n"));
     rc = NS_ShutdownXPCOM (nsnull);
-    LogFlow (("VBoxSVC::main(): finished NS_ShutdownXPCOM() (rc=%08X).\n", rc));
+    LogFlowFunc (("Finished NS_ShutdownXPCOM() (rc=%08X)\n", rc));
 
-    if (NS_FAILED( rc ))
-        printf ("ERROR: failed to shutdown XPCOM! (rc=%08X)\n", rc);
+    if (NS_FAILED (rc))
+        printf ("ERROR: Failed to shutdown XPCOM! (rc=%08X)\n", rc);
 
     XPCOMGlueShutdown();
 

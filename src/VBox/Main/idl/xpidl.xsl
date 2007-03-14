@@ -290,8 +290,12 @@
     <xsl:call-template name="uppercase">
         <xsl:with-param name="str" select="@name"/>
     </xsl:call-template>
-    <xsl:text>_CONTRACTID "@xpcom/</xsl:text><xsl:value-of select="@name"/>
-    <xsl:text>;1"&#x0A;</xsl:text>
+    <!-- Contract ID -->
+    <xsl:text>_CONTRACTID &quot;@</xsl:text>
+    <xsl:value-of select="@namespace"/>
+    <xsl:text>/</xsl:text>
+    <xsl:value-of select="@name"/>
+    <xsl:text>;1&quot;&#x0A;</xsl:text>
     <!-- CLSID_xxx declarations for XPCOM, for compatibility with Win32 -->
     <xsl:text>// for compatibility with Win32&#x0A;</xsl:text>
     <xsl:text>#define CLSID_</xsl:text>
