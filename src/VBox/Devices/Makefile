@@ -154,9 +154,7 @@ DevicesR3_SOURCES       = \
 	Audio/DevIchAc97.cpp \
 	PC/dma.c \
 	Storage/fdc.c \
-	Serial/serial.c \
-	Serial/DrvChar.cpp \
-	Serial/DrvNamedPipe.cpp
+	Serial/serial.c
 
 ifeq (0,1)
 DevicesR3_SOURCES += \
@@ -345,7 +343,9 @@ Drivers_SOURCES    = \
 	Audio/audio.c \
 	Audio/mixeng.c \
 	Audio/noaudio.c \
-	Audio/audiosniffer.c
+	Audio/audiosniffer.c \
+	Serial/DrvChar.cpp \
+	Serial/DrvNamedPipe.cpp
 
 # -- OS specific --
 
