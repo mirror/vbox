@@ -194,23 +194,26 @@ HRESULT COMBase::initializeCOM()
                 gSocketListener = new XPCOMEventQSocketListener (gEventQ);
 # endif
 
-                /* get the IPC service */
-                nsCOMPtr <ipcIService> ipcServ =
-                    do_GetService (IPC_SERVICE_CONTRACTID, serviceManager, &rc);
-                if (SUCCEEDED (rc))
-                {
-                    /* get the VirtualBox out-of-proc server ID */
-                    rc = ipcServ->ResolveClientName ("VirtualBoxServer",
-                                                     &gVBoxServerID);
-                    if (SUCCEEDED (rc))
-                    {
-                        /* get the DConnect service */
-                        rc = serviceManager->
-                            GetServiceByContractID (IPC_DCONNECTSERVICE_CONTRACTID,
-                                                    NS_GET_IID (ipcIDConnectService),
-                                                    (void **) &gDConnectService);
-                    }
-                }
+/// @todo remove the below code and corresponding variables etc. when
+/// the server autostart feature is finished and well tested.
+///
+//                /* get the IPC service */
+//                 nsCOMPtr <ipcIService> ipcServ =
+//                     do_GetService (IPC_SERVICE_CONTRACTID, serviceManager, &rc);
+//                 if (SUCCEEDED (rc))
+//                 {
+//                     /* get the VirtualBox out-of-proc server ID */
+//                     rc = ipcServ->ResolveClientName ("VirtualBoxServer",
+//                                                      &gVBoxServerID);
+//                     if (SUCCEEDED (rc))
+//                     {
+//                         /* get the DConnect service */
+//                         rc = serviceManager->
+//                             GetServiceByContractID (IPC_DCONNECTSERVICE_CONTRACTID,
+//                                                     NS_GET_IID (ipcIDConnectService),
+//                                                     (void **) &gDConnectService);
+//                     }
+//                 }
             }
         }
     }
@@ -218,6 +221,7 @@ HRESULT COMBase::initializeCOM()
     if (FAILED (rc))
         cleanupCOM();
 
+    LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
     return rc;
 

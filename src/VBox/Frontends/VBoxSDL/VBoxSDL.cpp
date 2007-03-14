@@ -832,8 +832,7 @@ int main(int argc, char *argv[])
     ComPtr <ISession> session;
     bool sessionOpened = false;
 
-    rc = virtualBox.createLocalObject (CLSID_VirtualBox,
-                                       "VirtualBoxServer");
+    rc = virtualBox.createLocalObject (CLSID_VirtualBox);
     if (FAILED(rc))
     {
         com::ErrorInfo info;
