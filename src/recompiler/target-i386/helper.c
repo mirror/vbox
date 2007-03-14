@@ -803,6 +803,100 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK);
 }
 
+#ifdef VBOX
+
+/* check if VME interrupt redirection is enabled in TSS */
+static inline bool is_vme_irq_redirected(int intno)
+{
+    int io_offset, intredir_offset;
+    unsigned char val, mask;
+    
+    /* TSS must be a valid 32 bit one */
+    if (!(env->tr.flags & DESC_P_MASK) ||
+        ((env->tr.flags >> DESC_TYPE_SHIFT) & 0xf) != 9 ||
+        env->tr.limit < 103)
+        goto fail;
+    io_offset = lduw_kernel(env->tr.base + 0x66);
+    /* the virtual interrupt redirection bitmap is located below the io bitmap */
+    intredir_offset = io_offset - 0x20;
+    
+    intredir_offset += (intno >> 3);
+    if ((intredir_offset) > env->tr.limit)
+        goto fail;
+
+    val = ldub_kernel(env->tr.base + intredir_offset);
+    mask = 1 << (unsigned char)(intno & 7);
+
+    /* bit set means no redirection. */
+    if ((val & mask) != 0) {
+        return false;
+    }
+    return true;
+
+fail:
+    raise_exception_err(EXCP0D_GPF, 0);
+    return true;
+}
+
+/* V86 mode software interrupt with CR4.VME=1 */
+static void do_soft_interrupt_vme(int intno, int error_code, unsigned int next_eip)
+{
+    target_ulong ptr, ssp;
+    int selector;
+    uint32_t offset, esp;
+    uint32_t old_cs, old_eflags;
+    uint32_t iopl;
+
+    iopl = ((env->eflags >> IOPL_SHIFT) & 3);
+
+    if (!is_vme_irq_redirected(intno))
+    {
+        if (iopl == 3)
+            /* normal protected mode handler call */
+            return do_interrupt_protected(intno, 1, error_code, next_eip, 0);
+        else
+            raise_exception_err(EXCP0D_GPF, 0);
+    }
+
+    /* virtual mode idt is at linear address 0 */
+    ptr = 0 + intno * 4;
+    offset = lduw_kernel(ptr);
+    selector = lduw_kernel(ptr + 2);
+    esp = ESP;
+    ssp = env->segs[R_SS].base;
+    old_cs = env->segs[R_CS].selector;
+
+    old_eflags = compute_eflags();
+    if (iopl < 3)
+    {
+        /* copy VIF into IF and set IOPL to 3 */
+        if (env->eflags & VIF_MASK)
+            old_eflags |= IF_MASK;
+        else
+            old_eflags &= ~IF_MASK;
+
+        old_eflags |= (3 << IOPL_SHIFT);
+    }
+
+    /* XXX: use SS segment size ? */
+    PUSHW(ssp, esp, 0xffff, old_eflags);
+    PUSHW(ssp, esp, 0xffff, old_cs);
+    PUSHW(ssp, esp, 0xffff, next_eip);
+    
+    /* update processor state */
+    ESP = (ESP & ~0xffff) | (esp & 0xffff);
+    env->eip = offset;
+    env->segs[R_CS].selector = selector;
+    env->segs[R_CS].base = (selector << 4);
+    env->eflags &= ~(TF_MASK | RF_MASK);
+
+    if (iopl < 3)
+        env->eflags &= ~IF_MASK;
+    else
+        env->eflags &= ~VIF_MASK;
+}
+#endif
+
 #ifdef TARGET_X86_64
 
 #define PUSHQ(sp, val)\
@@ -1223,7 +1317,18 @@ void do_interrupt(int intno, int is_int, int error_code,
         } else
 #endif
         {
-            do_interrupt_protected(intno, is_int, error_code, next_eip, is_hw);
+#ifdef VBOX
+            /* int xx *, v86 code and VME enabled? */
+            if (    !is_hw
+                &&  is_int
+                &&  env->eip + 1 != next_eip /* single byte int 3 goes straight to the protected mode handler */
+                &&  (env->eflags & VM_MASK) 
+                &&  (env->cr[4] & CR4_VME_MASK)
+               )
+                do_soft_interrupt_vme(intno, error_code, next_eip);
+            else
+#endif
+                do_interrupt_protected(intno, is_int, error_code, next_eip, is_hw);
         }
     } else {
         do_interrupt_real(intno, is_int, error_code, next_eip);
@@ -2008,6 +2113,8 @@ void helper_iret_real(int shift)
     int eflags_mask;
 
 #ifdef VBOX
+    bool fVME = false;
+
     remR3TrapClear(env->pVM);
 #endif
 
@@ -2026,16 +2133,48 @@ void helper_iret_real(int shift)
         POPW(ssp, sp, sp_mask, new_cs);
         POPW(ssp, sp, sp_mask, new_eflags);
     }
+#ifdef VBOX
+    if (    (env->eflags & VM_MASK)
+        &&  ((env->eflags >> IOPL_SHIFT) & 3) != 3
+        &&  (env->cr[4] & CR4_VME_MASK)) /* implied or else we would fault earlier */
+    {
+        fVME = true;
+        /* if virtual interrupt pending and (virtual) interrupts will be enabled -> #GP */
+        /* if TF will be set -> #GP */
+        if (    ((new_eflags & IF_MASK) && (env->eflags & VIP_MASK)) 
+            ||  (new_eflags & TF_MASK)) 
+        {
+            raise_exception(EXCP0D_GPF);
+        }
+    }
+#endif
+
     ESP = (ESP & ~sp_mask) | (sp & sp_mask);
     load_seg_vm(R_CS, new_cs);
     env->eip = new_eip;
+#ifdef VBOX
+    if (fVME)
+        eflags_mask = TF_MASK | AC_MASK | ID_MASK | RF_MASK | NT_MASK;
+    else
+#endif
     if (env->eflags & VM_MASK)
         eflags_mask = TF_MASK | AC_MASK | ID_MASK | IF_MASK | RF_MASK | NT_MASK;
     else
         eflags_mask = TF_MASK | AC_MASK | ID_MASK | IF_MASK | IOPL_MASK | RF_MASK | NT_MASK;
     if (shift == 0)
         eflags_mask &= 0xffff;
+
     load_eflags(new_eflags, eflags_mask);
+
+#ifdef VBOX
+    if (fVME)
+    {
+        if (new_eflags & IF_MASK)
+            env->eflags |= VIF_MASK;
+        else
+            env->eflags &= ~VIF_MASK;
+    }
+#endif
 }
 
 static inline void validate_seg(int seg_reg, int cpl)

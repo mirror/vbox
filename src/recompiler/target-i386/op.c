@@ -720,20 +720,20 @@ void OPPROTO op_reset_inhibit_irq(void)
     env->hflags &= ~HF_INHIBIT_IRQ_MASK;
 }
 
-#if 0
+#ifdef VBOX
 /* vm86plus instructions */
-void OPPROTO op_cli_vm(void)
+void OPPROTO op_cli_vme(void)
 {
     env->eflags &= ~VIF_MASK;
 }
 
-void OPPROTO op_sti_vm(void)
+void OPPROTO op_sti_vme(void)
 {
-    env->eflags |= VIF_MASK;
+    /* First check, then change eflags according to the AMD manual */
     if (env->eflags & VIP_MASK) {
-        EIP = PARAM1;
         raise_exception(EXCP0D_GPF);
     }
+    env->eflags |= VIF_MASK;
     FORCE_RET();
 }
 #endif
@@ -1462,6 +1462,9 @@ void OPPROTO op_mov_T0_cc(void)
 }
 
 /* XXX: clear VIF/VIP in all ops ? */
+#ifdef VBOX
+/* XXX: AMD docs say they remain unchanged. */
+#endif
 
 void OPPROTO op_movl_eflags_T0(void)
 {
@@ -1493,27 +1496,35 @@ void OPPROTO op_movw_eflags_T0_cpl0(void)
     load_eflags(T0, (TF_MASK | AC_MASK | ID_MASK | NT_MASK | IF_MASK | IOPL_MASK) & 0xffff);
 }
 
-#if 0
 /* vm86plus version */
-void OPPROTO op_movw_eflags_T0_vm(void)
+#ifdef VBOX
+/* IOPL != 3, CR4.VME=1 */
+void OPPROTO op_movw_eflags_T0_vme(void)
 {
-    int eflags;
-    eflags = T0;
-    CC_SRC = eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
-    DF = 1 - (2 * ((eflags >> 10) & 1));
-    /* we also update some system flags as in user mode */
-    env->eflags = (env->eflags & ~(FL_UPDATE_MASK16 | VIF_MASK)) |
-        (eflags & FL_UPDATE_MASK16);
-    if (eflags & IF_MASK) {
-        env->eflags |= VIF_MASK;
-        if (env->eflags & VIP_MASK) {
-            EIP = PARAM1;
-            raise_exception(EXCP0D_GPF);
-        }
+    unsigned int new_eflags = T0;
+
+    /* if virtual interrupt pending and (virtual) interrupts will be enabled -> #GP */
+    /* if TF will be set -> #GP */
+    if (    ((new_eflags & IF_MASK) && (env->eflags & VIP_MASK)) 
+        ||  (new_eflags & TF_MASK)) 
+    {
+        raise_exception(EXCP0D_GPF);
     }
+    else
+    {
+        load_eflags(new_eflags, (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff);
+
+        if (new_eflags & IF_MASK)
+            env->eflags |= VIF_MASK;
+        else
+            env->eflags &= ~VIF_MASK;
+    }
+
     FORCE_RET();
 }
+#endif
 
+#if 0
 void OPPROTO op_movl_eflags_T0_vm(void)
 {
     int eflags;
@@ -1552,8 +1563,8 @@ void OPPROTO op_movl_T0_eflags(void)
 }
 
 /* vm86plus version */
-#if 0
-void OPPROTO op_movl_T0_eflags_vm(void)
+#ifdef VBOX
+void OPPROTO op_movl_T0_eflags_vme(void)
 {
     int eflags;
     eflags = cc_table[CC_OP].compute_all();
