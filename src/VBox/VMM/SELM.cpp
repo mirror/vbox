@@ -107,6 +107,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
 #endif
     AssertRelease((RT_OFFSETOF(VM, selm.s.Tss)       & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.Tss));
     AssertRelease((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08));
+    AssertRelease(sizeof(pVM->selm.s.Tss.redirBitmap) == 0x20);
 
     /*
      * Init the structure.
@@ -169,6 +170,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->selm.s.StatGCWriteGuestGDTUnhandled,   STAMTYPE_COUNTER, "/SELM/GC/Write/Guest/GDTEmu",  STAMUNIT_OCCURENCES,     "The number of unhandled writes to the Guest GDT.");
     STAM_REG(pVM, &pVM->selm.s.StatGCWriteGuestLDT,            STAMTYPE_COUNTER, "/SELM/GC/Write/Guest/LDT",     STAMUNIT_OCCURENCES,     "The number of writes to the Guest LDT was detected.");
     STAM_REG(pVM, &pVM->selm.s.StatGCWriteGuestTSSHandled,     STAMTYPE_COUNTER, "/SELM/GC/Write/Guest/TSSInt",  STAMUNIT_OCCURENCES,     "The number of handled writes to the Guest TSS.");
+    STAM_REG(pVM, &pVM->selm.s.StatGCWriteGuestTSSRedir,       STAMTYPE_COUNTER, "/SELM/GC/Write/Guest/TSSRedir",STAMUNIT_OCCURENCES,     "The number of handled redir bitmap writes to the Guest TSS.");
     STAM_REG(pVM, &pVM->selm.s.StatGCWriteGuestTSSHandledChanged,STAMTYPE_COUNTER, "/SELM/GC/Write/Guest/TSSIntChg", STAMUNIT_OCCURENCES, "The number of handled writes to the Guest TSS where the R0 stack changed.");
     STAM_REG(pVM, &pVM->selm.s.StatGCWriteGuestTSSUnhandled,   STAMTYPE_COUNTER, "/SELM/GC/Write/Guest/TSSEmu",  STAMUNIT_OCCURENCES,     "The number of unhandled writes to the Guest TSS.");
     STAM_REG(pVM, &pVM->selm.s.StatTSSSync,                    STAMTYPE_PROFILE, "/PROF/SELM/TSSSync",           STAMUNIT_TICKS_PER_CALL, "Profiling of the SELMR3SyncTSS() body.");
@@ -1488,7 +1490,7 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
             /* Update the ring 0 stack selector and base address */
             /* feeling very lazy; reading too much */
             VBOXTSS tss;
-            rc = PGMPhysReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
+            rc = PGMPhysReadGCPtr(pVM, &tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, offIoBitmap) + sizeof(tss.offIoBitmap));
             if (VBOX_SUCCESS(rc))
             {
             #ifdef DEBUG
@@ -1503,12 +1505,25 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
             #endif
                 /* Update our TSS structure for the guest's ring 1 stack */
                 SELMSetRing1Stack(pVM, tss.ss0 | 1, tss.esp0);
+
+                /* Should we sync the virtual interrupt redirection bitmap as well? */
+                if (CPUMGetGuestCR4(pVM) & X86_CR4_VME)
+                {
+                    uint32_t offRedirBitmap = tss.offIoBitmap - sizeof(tss.redirBitmap);
+                    
+                    /** @todo not sure how the partial case is handled; probably not allowed */
+                    if (offRedirBitmap + sizeof(tss.redirBitmap) <= cbTss)
+                    {
+                        rc = PGMPhysReadGCPtr(pVM, &pVM->selm.s.Tss.redirBitmap, GCPtrTss + offRedirBitmap, sizeof(tss.redirBitmap));
+                        AssertRC(rc);
+                    }
+                }
             }
             else
             {
                 /* Note: the ring 0 stack selector and base address are updated on demand in this case. */
 
-                /* Note: handle these dependencies better! */
+                /** @todo handle these dependencies better! */
                 TRPMR3SetGuestTrapHandler(pVM, 0x2E, TRPM_INVALID_HANDLER);
                 TRPMR3SetGuestTrapHandler(pVM, 0x80, TRPM_INVALID_HANDLER);
                 pVM->selm.s.fSyncTSSRing0Stack = true;
