@@ -832,13 +832,29 @@ static void gen_check_external_event()
 {
     gen_op_check_external_event();
 }
+
+static inline void gen_update_eip(target_ulong pc)
+{
+#ifdef TARGET_X86_64
+    if (pc == (uint32_t)pc) {
+        gen_op_movl_eip_im(pc);
+    } else if (pc == (int32_t)pc) {
+        gen_op_movq_eip_im(pc);
+    } else {
+        gen_op_movq_eip_im64(pc >> 32, pc);
+    }
+#else
+    gen_op_movl_eip_im(pc);
+#endif
+}
+
 #endif /* VBOX */
 
 static inline void gen_jmp_im(target_ulong pc)
 {
 #ifdef VBOX
     gen_check_external_event();
-#endif /* VBOX */
+#endif
 #ifdef TARGET_X86_64
     if (pc == (uint32_t)pc) {
         gen_op_movl_eip_im(pc);
@@ -3133,6 +3149,12 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     x86_64_hregs = 0; 
 #endif
     s->rip_offset = 0; /* for relative ip address */
+
+#ifdef VBOX
+    /* Always update EIP. Otherwise one must be very careful with generated code that can raise exceptions. */
+    gen_update_eip(pc_start - s->cs_base);
+#endif
+
  next_byte:
     b = ldub_code(s->pc);
     s->pc++;
