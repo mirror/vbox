@@ -111,40 +111,6 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
-#ifdef __DARWIN__
-#include <iprt/path.h>
-#include <iprt/process.h>
-#include <iprt/env.h>
-
-/**
- * App bundle tweaks.
- */
-static void DarwinInit (void)
-{
-    /* This probably belongs else where. */
-    static struct
-    {
-        char var[sizeof ("VBOX_XPCOM_HOME=") - 1];
-        char path[RTPATH_MAX];
-    } s;
-
-    strcpy (s.var, "VBOX_XPCOM_HOME=");
-    int rc = RTPathProgram (&s.path[0], sizeof (s.path));
-    if (RT_FAILURE (rc))
-    {
-        RTPrintf ("RTPathProgram failed!\n");
-        exit (1);
-    }
-
-    if (!RTEnvGet ("VBOX_XPCOM_HOME"))
-        RTEnvPut (s.var);
-
-    /** @todo automatically start VBoxSVC. */
-}
-
-#endif
-
-
 int main( int argc, char ** argv )
 {
     /* initialize VBox Runtime */
@@ -161,10 +127,6 @@ int main( int argc, char ** argv )
     sigaction (SIGSEGV, &sa, NULL);
     sigaction (SIGBUS, &sa, NULL);
     sigaction (SIGUSR1, &sa, NULL);
-#endif
-
-#ifdef __DARWIN__
-    DarwinInit();
 #endif
 
     qInstallMsgHandler (QtMessageOutput);
