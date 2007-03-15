@@ -514,7 +514,7 @@ ifdef VBOX_WITH_VRDP
  IDL_DEFS += /D VBOX_VRDP
 endif
 
-$(IDLFILE): idl/midl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
+$(IDLFILE): idl/midl.xsl $(XIDLFILE)
 	$(call MSG_L1,xsltproc $<,=> $@)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
