@@ -1222,9 +1222,14 @@ check_gcc
 echo
 echo "Successfully generated '$CNF' and '$ENV'."
 echo "Source '$ENV' once before you start to build VBox:"
-echo
+echo ""
 echo "  source $ENV"
 echo "  kmk"
-echo
+echo ""
+echo "To compile the kernel module, do:"
+echo ""
+echo "  cd ./out/$OS.$MACHINE/$BUILD_TYPE/bin/src"
+echo "  make"
+echo ""
 echo "Enjoy!"
 cleanup
