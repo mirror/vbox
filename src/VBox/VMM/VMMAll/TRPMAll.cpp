@@ -282,9 +282,9 @@ TRPMDECL(bool)  TRPMHasTrap(PVM pVM)
  * @returns VBox status code.
  * @param   pVM                     The virtual machine.
  * @param   pu8TrapNo               Where to store the trap number.
- * @param   pfSoftwareInterrupt   Where to store the software interrupt indicator.
+ * @param   pfSoftwareInterrupt     Where to store the software interrupt indicator.
  * @param   puErrorCode             Where to store the error code associated with some traps.
- *                                  ~0U is stored if the trap have no error code.
+ *                                  ~0U is stored if the trap has no error code.
  * @param   puCR2                   Where to store the CR2 associated with a trap 0E.
  */
 TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInterrupt, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2)
