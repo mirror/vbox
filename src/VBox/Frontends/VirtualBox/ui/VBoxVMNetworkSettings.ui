@@ -145,7 +145,7 @@
                                         <enum>Sunken</enum>
                                     </property>
                                     <property name="whatsThis" stdset="0">
-                                        <string>MAC address of the current adapter</string>
+                                        <string>MAC address of the current adapter. It contains exactly 12 characters choosen from {0-9,A-F}.</string>
                                     </property>
                                 </widget>
                             </vbox>

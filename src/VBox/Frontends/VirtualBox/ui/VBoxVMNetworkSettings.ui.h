@@ -34,7 +34,7 @@ void VBoxVMNetworkSettings::init()
     /* set initial values
      * -------------------------------------------------------------------- */
 
-    leMACAddress->setValidator (new QRegExpValidator (QRegExp ("[0-9,A-F,a-f]{12,12}"), this));
+    leMACAddress->setValidator (new QRegExpValidator (QRegExp ("[0-9,A-F]{12,12}"), this));
 
 #if defined Q_WS_X11
     leTAPDescriptor->setValidator (new QIntValidator (-1, std::numeric_limits <LONG>::max(), this));
