@@ -13,7 +13,7 @@
 #
 ### BEGIN INIT INFO
 # Provides:       vboxadd
-# Required-Start: $syslog
+# Required-Start:
 # Required-Stop:
 # Default-Start:  3 5
 # Default-Stop:
