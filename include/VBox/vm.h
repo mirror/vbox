@@ -318,9 +318,9 @@ typedef struct VM
 
 
     /* padding to make gnuc put the StatQemuToGC where msc does. */
-#if HC_ARCH_BITS == 32
-    uint32_t            padding0[2];
-#endif
+/*#if HC_ARCH_BITS == 32
+    uint32_t            padding0;
+#endif */
 
     /** Profiling the total time from Qemu to GC. */
     STAMPROFILEADV      StatTotalQemuToGC;
@@ -347,7 +347,7 @@ typedef struct VM
     STAMPROFILEADV      StatSwitcherTSS;
 
     /* padding - the unions must be aligned on 32 bytes boundraries. */
-    uint32_t            padding[HC_ARCH_BITS == 32 ? 4 : 6];
+    uint32_t            padding[HC_ARCH_BITS == 32 ? 6 : 6];
 
     /** CPUM part. */
     union
