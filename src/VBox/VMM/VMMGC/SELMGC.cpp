@@ -288,13 +288,16 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
             uint32_t offRedirBitmap = pGuestTSS->offIoBitmap - sizeof(pVM->selm.s.Tss.redirBitmap);
 
             /** @todo not sure how the partial case is handled; probably not allowed */
-            if (offRedirBitmap + sizeof(pVM->selm.s.Tss.redirBitmap) <= pVM->selm.s.cbGuestTss)
+            if (   offRedirBitmap <= offRange 
+                && offRedirBitmap + sizeof(pVM->selm.s.Tss.redirBitmap) >= offRange + cb
+                && offRedirBitmap + sizeof(pVM->selm.s.Tss.redirBitmap) <= pVM->selm.s.cbGuestTss)
             {
-                /** @todo check if fault was in this range and, if so, only update the changed part. */
+                Log(("offIoBitmap=%x offRedirBitmap=%x cbTSS=%x\n", pGuestTSS->offIoBitmap, offRedirBitmap, pVM->selm.s.cbGuestTss));
+                /** @todo only update the changed part. */
                 for (uint32_t i=0;i<sizeof(pVM->selm.s.Tss.redirBitmap)/8;i++)
                 {
                     rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.redirBitmap[i*8], (uint8_t *)pGuestTSS + offRedirBitmap + i*8, 8);
-                    AssertRC(rc);
+                    AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offRedirBitmap + i*8, rc));
                 }
                 STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSRedir);
             }
