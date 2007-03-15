@@ -632,7 +632,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->esp;
                     }
 
-                    /* @note we use the eflags copy, that includes the virtualized bits! */
+                    /** @note we use the eflags copy, that includes the virtualized bits! */
+                    /** @note not really necessary as we grab include those bits in the trap/irq handler trampoline */
                     CTXSUFF(pTrapStack)[--idx] = eflags.u32;
 
                     if ((pRegFrame->cs & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
