@@ -147,6 +147,12 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
     pVM->selm.s.fDisableMonitoring = false;
     pVM->selm.s.fSyncTSSRing0Stack = false;
 
+    /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
+     * for I/O operations. */
+    pVM->selm.s.Tss.offIoBitmap = sizeof(VBOXTSS);
+    /* bit set to 1 means no redirection */
+    memset(pVM->selm.s.Tss.redirBitmap, 0xff, sizeof(pVM->selm.s.Tss.redirBitmap));
+
     /*
      * Register the saved state data unit.
      */
@@ -298,13 +304,6 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
      */
     pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] >> 3];
     RTGCPTR pGCTSS = VM_GUEST_ADDR(pVM, &pVM->selm.s.Tss);
-
-    /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
-     * for I/O operations. */
-    pVM->selm.s.Tss.offIoBitmap = RT_OFFSETOF(VBOXTSS, redirBitmap) + sizeof(pVM->selm.s.Tss.redirBitmap);
-    /* bit set to 1 means no redirection */
-    memset(pVM->selm.s.Tss.redirBitmap, 0xff, sizeof(pVM->selm.s.Tss.redirBitmap));
-
     pDesc->Gen.u16BaseLow       = RT_LOWORD(pGCTSS);
     pDesc->Gen.u8BaseHigh1      = RT_BYTE3(pGCTSS);
     pDesc->Gen.u8BaseHigh2      = RT_BYTE4(pGCTSS);
