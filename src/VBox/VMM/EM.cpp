@@ -2173,21 +2173,37 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                 rc = VERR_EM_RAW_PATCH_CONFLICT;
                 break;
             }
-            uint8_t u8Interrupt;
 
             Assert(TRPMHasTrap(pVM));
             Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
 
             if (TRPMHasTrap(pVM))
             {
-                u8Interrupt = TRPMGetTrapNo(pVM);
+                uint8_t         u8Interrupt;
+                uint32_t        uErrorCode;
+                TRPMERRORCODE   enmError = TRPM_TRAP_NO_ERRORCODE;
+
+                rc = TRPMQueryTrapAll(pVM, &u8Interrupt, NULL, &uErrorCode, NULL);
+                AssertRC(rc);
+
+                if (uErrorCode != ~0)
+                    enmError = TRPM_TRAP_HAS_ERRORCODE;
 
                 /* If the guest gate is marked unpatched, then we will check again if we can patch it. */
                 if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER)
                 {
                     CSAMR3CheckGates(pVM, u8Interrupt, 1);
                     Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
-                    /** @note If it was successful, then we could go back to raw mode, but let's keep things simple for now. */
+                    /** If it was successful, then we could go back to raw mode. */
+                    if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER)
+                    {
+                        rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, uErrorCode, enmError, TRPM_TRAP);
+                        if (rc == VINF_SUCCESS /* Don't use VBOX_SUCCESS */)
+                        {
+                            TRPMResetTrap(pVM);
+                            return VINF_EM_RESCHEDULE_RAW;
+                        }
+                    }
                 }
             }
             rc = emR3RawGuestTrap(pVM);
