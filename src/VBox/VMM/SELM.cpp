@@ -1429,6 +1429,11 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
         pVM->selm.s.fGuestTss32Bit = pDesc->Gen.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
                                   || pDesc->Gen.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
+#if 1
+        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */ 
+        if (cbTss > sizeof(VBOXTSS)) 
+            cbTss = sizeof(VBOXTSS); 
+#endif
         /* The guest's TSS can span multiple pages now. We will monitor the whole thing. */
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%VGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
@@ -1698,6 +1703,11 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
         if (pDesc->Gen.u1Granularity)
             cbTss = (cbTss << PAGE_SHIFT) | PAGE_OFFSET_MASK;
         cbTss++;
+#if 1
+        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */ 
+        if (cbTss > sizeof(VBOXTSS)) 
+            cbTss = sizeof(VBOXTSS); 
+#endif
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%VGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
 
