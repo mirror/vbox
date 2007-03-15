@@ -32,6 +32,9 @@ BITS 64
 %include "VBox/cpum.mac"
 %include "VBox/vm.mac"
 %include "../VMMSwitcher/VMMSwitcher.mac"
+%ifdef DO_GLOBALS
+ %include "tstAsmStructsAsm.mac"
+%endif
 
 .text
 .data

@@ -49,6 +49,9 @@ OTHER_CLEAN     += \
 	$(PATH_TARGET)/tstVMStructSize.run \
 	$(PATH_TARGET)/tstAsmStructs.h \
 	$(PATH_TARGET)/tstAsmStructsAsm.o \
+	$(PATH_TARGET)/tstAsmStructsAsm.mac \
+	$(PATH_TARGET)/tstAsmStructsAsm.mac.o \
+	$(PATH_TARGET)/tstAsmStructsAsm.mac.lst \
 	$(PATH_TARGET)/tstAsmStructs.h.dump
 
 #
@@ -152,8 +155,8 @@ include	$(PATH_KBUILD)/footer.kmk
 # Some handcrafted support for tstAsmStructs.
 #
 
-# 1. make an aout object containing the offsets.
-$(PATH_TARGET)/tstAsmStructsAsm.o: tstAsmStructsAsm.asm \
+# 1a. make a header file which makes all the structures+members globals.
+$(PATH_TARGET)/tstAsmStructsAsm.mac: tstAsmStructsAsm.asm tstAsmStructsAsm-lst.sed \
 		$(DEPTH)/include/iprt/asmdefs.mac \
 		$(DEPTH)/include/VBox/cpum.mac \
 		$(DEPTH)/include/VBox/vm.mac \
@@ -173,8 +176,8 @@ ifndef DONT_USE_YASM
 			$(DEFS.$(BUILD_TARGET_ARCH)) \
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
-		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf -g stabs) \
-		$(foreach inc,$(INCS),-I$(inc)/) -o $@ $<
+		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
+		$(foreach inc,$(INCS),-I$(inc)/) -o $@.o -l $@.lst $<
 else
 	$(QUIET)$(TOOL_NASM_AS) \
 		$(addprefix -D, \
@@ -186,7 +189,43 @@ else
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
 		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS),-I$(inc)/) -o $@ $<
+		$(foreach inc,$(INCS),-I$(inc)/) -o $@.o -l $@.lst $<
+endif
+	$(SED) -f tstAsmStructsAsm-lst.sed $@.lst > $@ 
+
+
+
+# 1b. make an elf/macho object containing the offsets.
+$(PATH_TARGET)/tstAsmStructsAsm.o: tstAsmStructsAsm.asm $(PATH_TARGET)/tstAsmStructsAsm.mac \
+		Makefile \
+		| $(call DIRDEP,$(PATH_TARGET))
+	$(call MSG_L1,Compiling $<)
+ifndef DONT_USE_YASM
+	$(QUIET)$(TOOL_YASM_AS) \
+		$(addprefix -D, \
+			DO_GLOBALS \
+			$(DEFS) \
+			$(DEFS.$(BUILD_TYPE)) \
+			$(DEFS.$(BUILD_TARGET)) \
+			IN_RING3 \
+			$(DEFS.$(BUILD_TARGET_ARCH)) \
+			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
+		) \
+		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf -g stabs) \
+		$(foreach inc,$(INCS) $(PATH_TARGET),-I$(inc)/) -o $@ $<
+else
+	$(QUIET)$(TOOL_NASM_AS) \
+		$(addprefix -D, \
+			DO_GLOBALS \
+			$(DEFS) \
+			$(DEFS.$(BUILD_TYPE)) \
+			$(DEFS.$(BUILD_TARGET)) \
+			IN_RING3 \
+			$(DEFS.$(BUILD_TARGET_ARCH)) \
+			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
+		) \
+		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
+		$(foreach inc,$(INCS) $(PATH_TARGET),-I$(inc)/) -o $@ $<
 endif
 
 # 2. use nm and sed to transform this into the header we want.
@@ -201,10 +240,10 @@ $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
 	$(QUIET)$(RM) -f $@ $@.dump $@.tmp
 	$(VBOX_NM) $< > $@.dump
 	$(QUIET)$(SED) -e '/STAMPROFILEADV/d' \
-	       -e '/00[0-9a-fA-F]* a [^_.]*\./!d'     -e 's/\(00[0-9a-fA-F]*\) a \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
+	       -e '/00[0-9a-fA-F]* [aA] [^_.]*\./!d'     -e 's/\(00[0-9a-fA-F]*\) [aA] \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
 	       $@.dump >  $@.tmp
 	$(QUIET)$(SED) -e '/VM_size$$/d' \
-	       -e '/00[0-9a-fA-F]* a [^_.]*_size$$/!d'  -e 's/\(00[0-9a-fA-F]*\) a \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \
+	       -e '/00[0-9a-fA-F]* [aA] [^_.]*_size$$/!d'  -e 's/\(00[0-9a-fA-F]*\) [aA] \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \
 	       $@.dump >> $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
 	$(QUIET)$(RM) -f $@.dump
