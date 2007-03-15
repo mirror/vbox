@@ -173,7 +173,7 @@ ifndef DONT_USE_YASM
 			$(DEFS.$(BUILD_TARGET_ARCH)) \
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
-		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
+		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf -g stabs) \
 		$(foreach inc,$(INCS),-I$(inc)/) -o $@ $<
 else
 	$(QUIET)$(TOOL_NASM_AS) \
