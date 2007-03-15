@@ -240,7 +240,7 @@ $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
 	$(QUIET)$(RM) -f $@ $@.dump $@.tmp
 	$(VBOX_NM) $< > $@.dump
 	$(QUIET)$(SED) -e '/STAMPROFILEADV/d' \
-	       -e '/00[0-9a-fA-F]* [aA] [^_.]*\./!d'     -e 's/\(00[0-9a-fA-F]*\) [aA] \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
+	       -e '/00[0-9a-fA-F]* [aA] [^_.]*\./!d'       -e 's/\(00[0-9a-fA-F]*\) [aA] \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
 	       $@.dump >  $@.tmp
 	$(QUIET)$(SED) -e '/VM_size$$/d' \
 	       -e '/00[0-9a-fA-F]* [aA] [^_.]*_size$$/!d'  -e 's/\(00[0-9a-fA-F]*\) [aA] \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \
