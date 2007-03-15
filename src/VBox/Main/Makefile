@@ -60,7 +60,11 @@ ifeq ($(BUILD_TARGET),win)
 else
  INSTALLS        = xpcom-components
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox_XPCOM.idl
- IDLTYPELIB      = $(PATH_BIN)/VirtualBox_XPCOM.xpt
+ ifeq ($(BUILD_TARGET),linux)
+  IDLTYPELIB     = $(PATH_BIN)/VirtualBox_XPCOM.xpt
+ else
+  IDLTYPELIB     = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
+ endif
  IDLHEADER       = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
  OTHERS          = $(IDLTYPELIB)
  OTHER_CLEAN     = \
@@ -203,6 +207,9 @@ endif
 ifdef VBOX_WITH_XPCOM
 
 VBoxSVCM_TEMPLATE		= VBOXMAIN
+ifneq ($(BUILD_TARGET),linux)
+VBoxSVCM_INST                   = $(INST_BIN)components/
+endif
 VBoxSVCM_DEFS			= IN_RING3 IN_CFGLDR_R3
 VBoxSVCM_INCS			= \
 	include \
@@ -210,6 +217,9 @@ VBoxSVCM_INCS			= \
 	$(PATH_VBoxCOM)
 VBoxSVCM_SOURCES		= \
 	linux/server_module.cpp
+VBoxSVCM_LIBS                   = \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+VBoxSVCM_LDFLAGS.darwin         = -install_name @executable_path/components/VBoxSVCM.dylib
 
 endif # VBOX_WITH_XPCOM
 
@@ -217,6 +227,9 @@ endif # VBOX_WITH_XPCOM
 # VBoxC module
 #
 VBoxC_TEMPLATE = VBOXMAIN
+ifneq ($(BUILD_TARGET),linux)
+VBoxC_INST = $(INST_BIN)components/
+endif
 VBoxC_DEFS = IN_RING3 IN_CFGLDR_R3
 VBoxC_DEFS += VBOX_COM_INPROC
 ifdef VBOX_WITH_VRDP
@@ -243,7 +256,7 @@ VBoxC_INCS          = \
 	include \
 	$(PATH_VBoxC) \
 	$(PATH_VBoxCOM)
-VBoxC_LDFLAGS.darwin = -install_name @executable_path/VBoxC.dylib
+VBoxC_LDFLAGS.darwin = -install_name @executable_path/components/VBoxC.dylib
 ifdef VBOX_USE_VCC80
 VBoxC_LDFLAGS.win = /MANIFEST
 endif
@@ -450,13 +463,16 @@ OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
 #
 # Creates the symlinks necessary for making XPCOM work.
 #
+## @todo Figure out why Linux really needs this, darwin doesn't...
 xpcom-components_INST = $(INST_BIN)components/
+ifeq ($(BUILD_TARGET),linux) 
 xpcom-components_SYMLINKS = \
+	VirtualBox_XPCOM.xpt=>../VirtualBox_XPCOM.xpt \
+	VBoxXPCOMBase.xpt=>../VBoxXPCOMBase.xpt \
 	VBoxC$(SUFF_DLL)=>../VBoxC$(SUFF_DLL) \
 	VBoxSVCM$(SUFF_DLL)=>../VBoxSVCM$(SUFF_DLL) \
-	VBoxXPCOMIPCC$(SUFF_DLL)=>../VBoxXPCOMIPCC$(SUFF_DLL) \
-	VirtualBox_XPCOM.xpt=>../VirtualBox_XPCOM.xpt \
-	VBoxXPCOMBase.xpt=>../VBoxXPCOMBase.xpt
+	VBoxXPCOMIPCC$(SUFF_DLL)=>../VBoxXPCOMIPCC$(SUFF_DLL)
+endif
 
 
 # generate
