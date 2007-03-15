@@ -64,6 +64,10 @@
 
 #undef ASSERT
 #include <VBox/com/assert.h>
+#include <iprt/env.h>
+#include <iprt/path.h>
+#include <iprt/param.h>
+#include <iprt/err.h>
 
 nsIComponentManager *COMBase::gComponentManager = nsnull;
 nsIEventQueue* COMBase::gEventQ = nsnull;
@@ -136,6 +140,19 @@ HRESULT COMBase::initializeCOM()
     {
         LogFlowFuncLeave();
         return S_OK;
+    }
+
+    /*
+     * Set VBOX_XPCOM_HOME if not present like we do in the common glue code.
+     * (XPCOMGlueStartup will query this.)
+     */
+    if (!RTEnvExist ("VBOX_XPCOM_HOME"))
+    {
+        /* get the executable path */
+        char szPathProgram [RTPATH_MAX];
+        int rcVBox = RTPathProgram (szPathProgram, sizeof (szPathProgram));
+        if (RT_SUCCESS (rcVBox))
+            RTEnvSet ("VBOX_XPCOM_HOME", szPathProgram);
     }
 
     HRESULT rc;
