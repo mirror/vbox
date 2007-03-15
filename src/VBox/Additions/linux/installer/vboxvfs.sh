@@ -13,7 +13,7 @@
 #
 ### BEGIN INIT INFO
 # Provides:       vboxvfs
-# Required-Start: $syslog vboxadd
+# Required-Start: vboxadd
 # Required-Stop:
 # Default-Start:  3 5
 # Default-Stop:
