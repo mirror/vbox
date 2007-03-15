@@ -2410,7 +2410,12 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
         /* NOTE: 'cpl' is the _old_ CPL */
         eflags_mask = TF_MASK | AC_MASK | ID_MASK | RF_MASK | NT_MASK;
         if (cpl == 0)
+#ifdef VBOX
+            eflags_mask |= IOPL_MASK | VIF_MASK | VIP_MASK;
+#else
             eflags_mask |= IOPL_MASK;
+#endif
+
         iopl = (env->eflags >> IOPL_SHIFT) & 3;
         if (cpl <= iopl)
             eflags_mask |= IF_MASK;
