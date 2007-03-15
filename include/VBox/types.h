@@ -536,21 +536,13 @@ typedef struct VBOXTSS
     /** LDTR before task switch. */
     RTSEL       selLdt;
     uint16_t    padding_ldt;
-#if 0
-    /** Debug trap flag */
-    unsigned    u1T : 1;
-    /** Reserved, must be zero. */
-    unsigned    u15zero : 15;
-    /** Offset relative to the TSS of the start of the I/O Bitmap
-     * and the end of the interrupt redirection bitmap. */
-    unsigned    offIoBitmap : 16;
-#else
     /** Debug trap flag */
     uint16_t    fDebugTrap;
     /** Offset relative to the TSS of the start of the I/O Bitmap
      * and the end of the interrupt redirection bitmap. */
     uint16_t    offIoBitmap;
-#endif
+    /* 32 bytes for the virtual interrupt redirection bitmap. (VME) */
+    uint8_t     redirBitmap[32];
 } VBOXTSS;
 #pragma pack()
 /** Pointer to task segment. */
