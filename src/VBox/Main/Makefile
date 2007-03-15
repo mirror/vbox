@@ -227,7 +227,7 @@ endif # VBOX_WITH_XPCOM
 # VBoxC module
 #
 VBoxC_TEMPLATE = VBOXMAIN
-ifneq ($(BUILD_TARGET),linux)
+ifneq ($(filter-out linux win,$(BUILD_TARGET)),)
 VBoxC_INST = $(INST_BIN)components/
 endif
 VBoxC_DEFS = IN_RING3 IN_CFGLDR_R3
@@ -489,22 +489,18 @@ ifneq ($(BUILD_TARGET),win)
 
 linux/helpers.cpp: $(IDLTYPELIB)
 
-$(IDLFILE): idl/xpidl.xsl $(XIDLFILE)
+$(IDLFILE): idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
 	$(call MSG_L1,xsltproc $<,=> $@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-$(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(PATH_BIN))
+$(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLTYPELIB)))
 	$(call MSG_L1,xpidl $<,=> $@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
-$(IDLHEADER): $(IDLFILE)
+$(IDLHEADER): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLHEADER)))
 	$(call MSG_L1,xpidl $<,=> $@)
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
-
-$(PATH_BIN)/components/.keep:
-	$(MKDIR) -p $(@D)
-	$(QUIET)echo "keep" > $@
 
 else
 
@@ -518,7 +514,7 @@ ifdef VBOX_WITH_VRDP
  IDL_DEFS += /D VBOX_VRDP
 endif
 
-$(IDLFILE): idl/midl.xsl $(XIDLFILE)
+$(IDLFILE): idl/midl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
 	$(call MSG_L1,xsltproc $<,=> $@)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
