@@ -785,7 +785,7 @@ void OPPROTO op_check_external_event(void)
     if (    (env->interrupt_request & (  CPU_INTERRUPT_EXTERNAL_EXIT
                                        | CPU_INTERRUPT_EXTERNAL_TIMER
                                        | CPU_INTERRUPT_EXTERNAL_DMA))
-        ||  (   (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD)
+        ||  (   (env->interrupt_request & (CPU_INTERRUPT_EXTERNAL_HARD|CPU_INTERRUPT_EXTERNAL_TIMER))
              && (env->eflags & IF_MASK)
              && !(env->hflags & HF_INHIBIT_IRQ_MASK) ) )
     {

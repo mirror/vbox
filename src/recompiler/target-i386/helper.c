@@ -1319,11 +1319,11 @@ void do_interrupt(int intno, int is_int, int error_code,
         {
 #ifdef VBOX
             /* int xx *, v86 code and VME enabled? */
-            if (    !is_hw
-                &&  is_int
-                &&  env->eip + 1 != next_eip /* single byte int 3 goes straight to the protected mode handler */
-                &&  (env->eflags & VM_MASK) 
+            if (    (env->eflags & VM_MASK) 
                 &&  (env->cr[4] & CR4_VME_MASK)
+                &&  is_int
+                &&  !is_hw
+                &&  env->eip + 1 != next_eip /* single byte int 3 goes straight to the protected mode handler */
                )
                 do_soft_interrupt_vme(intno, error_code, next_eip);
             else
