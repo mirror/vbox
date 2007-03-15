@@ -52,6 +52,7 @@ void VBoxVMNetworkSettings::init()
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NoNetworkAttachment));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NATNetworkAttachment));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::HostInterfaceNetworkAttachment));
+    cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::InternalNetworkAttachment));
 
     grbTAP->setEnabled (false); /* initially disabled */
 
@@ -160,6 +161,9 @@ void VBoxVMNetworkSettings::putBackToAdapter()
             break;
         case CEnums::HostInterfaceNetworkAttachment:
             cadapter.AttachToHostInterface();
+            break;
+        case CEnums::InternalNetworkAttachment:
+            cadapter.AttachToInternalNetwork();
             break;
         default:
             AssertMsgFailed (("Invalid network attachment type: %d", type));
