@@ -29,6 +29,7 @@
 #include <VBox/trpm.h>
 #include "SELMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/pgm.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -297,11 +298,21 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
                 for (uint32_t i=0;i<sizeof(pVM->selm.s.Tss.redirBitmap)/8;i++)
                 {
                     rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.redirBitmap[i*8], (uint8_t *)pGuestTSS + offRedirBitmap + i*8, 8);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        /* Shadow page table might be out of sync */
+                        rc = PGMPrefetchPage(pVM, (uint8_t *)pGuestTSS + offRedirBitmap + i*8);
+                        if (VBOX_FAILURE(rc))
+                        {
+                            AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offRedirBitmap + i*8, rc));
+                            break;
+                        }
+                        rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.redirBitmap[i*8], (uint8_t *)pGuestTSS + offRedirBitmap + i*8, 8);
+                    }
                     AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offRedirBitmap + i*8, rc));
                 }
                 STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSRedir);
             }
-
         }
         STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSHandled);
     }
