@@ -3,6 +3,7 @@
 #
 / %line /d
 /\[section /d
+/\[bits /d
 /\[absolute /d
 / times /d
 s/ *[0-9]* //
