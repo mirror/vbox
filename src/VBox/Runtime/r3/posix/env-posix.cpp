@@ -25,40 +25,57 @@
 *******************************************************************************/
 #include <iprt/env.h>
 #include <iprt/string.h>
+#include <iprt/alloca.h>
 
 #include <stdlib.h>
 #include <errno.h>
 
 
-/**
- * Gets an environment variable (getenv).
- * 
- * The caller is responsible for ensuring that nobody changes the environment 
- * while it's using the returned string pointer!
- * 
- * @returns Pointer to read only string on success, NULL if the variable wasn't found.
- * 
- * @param   pszVar      The environment variable name.
- */
+RTDECL(bool) RTEnvExist(const char *pszVar)
+{
+    return getenv(pszVar) != NULL;
+}
+
+
 RTDECL(const char *) RTEnvGet(const char *pszVar)
 {
     return getenv(pszVar);
 }
 
 
-/**
- * Puts an variable=value string into the environment (putenv).
- * 
- * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
- * @param   pszVarEqualValue    The variable '=' value string. If the value and '=' is 
- *                              omitted, the variable is removed from the environment.
- */
 RTDECL(int) RTEnvPut(const char *pszVarEqualValue)
 {
-    /** @todo putenv is a memory leak. deal with this on a per system basis. */
+    /** @todo putenv is a source memory leaks. deal with this on a per system basis. */
     if (!putenv((char *)pszVarEqualValue))
         return 0;
     return RTErrConvertFromErrno(errno);
+}
+
+RTDECL(int) RTEnvSet(const char *pszVar, const char *pszValue)
+{
+#if defined(_MSC_VER)
+    /* make a local copy and feed it to putenv. */
+    const size_t cchVar = strlen(pszVar);
+    const size_t cchValue = strlen(pszValue);
+    char *pszTmp = (char *)alloca(cchVar + cchValue + 2 + !*pszValue);
+    memcpy(pszTmp, pszVar, cchVar);
+    pszTmp[cchVar] = '=';
+    if (*pszValue)
+        memcpy(pszTmp + cchVar + 1, pszValue, cchValue + 1);
+    else
+    {
+        pszTmp[cchVar + 1] = ' '; /* wrong, but putenv will remove it otherwise. */
+        pszTmp[cchVar + 2] = '\0';
+    }
+
+    if (!putenv(pszTmp))
+        return 0;
+    return RTErrConvertFromErrno(errno);
+    
+#else
+    if (!setenv(pszVar, pszValue, 1))
+        return VINF_SUCCESS;
+    return RTErrConvertFromErrno(errno);
+#endif 
 }
 

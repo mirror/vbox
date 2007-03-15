@@ -33,6 +33,16 @@ __BEGIN_DECLS
 
 #ifdef IN_RING3
 
+
+/**
+ * Checks if an environment variable exists.
+ * 
+ * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
+ * 
+ * @param   pszVar      The environment variable name.
+ */
+RTDECL(bool) RTEnvExist(const char *pszVar);
+
 /**
  * Gets an environment variable (getenv).
  * 
@@ -54,6 +64,16 @@ RTDECL(const char *) RTEnvGet(const char *pszVar);
  *                              omitted, the variable is removed from the environment.
  */
 RTDECL(int) RTEnvPut(const char *pszVarEqualValue);
+
+/**
+ * Sets an environment variable (setenv(,,1)).
+ * 
+ * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
+ * 
+ * @param   pszVar      The environment variable name.
+ * @param   pszValue    The environment variable value.
+ */
+RTDECL(int) RTEnvSet(const char *pszVar, const char *pszValue);
 
 /** @todo Add the missing environment APIs: safe, printf like, and various modifications. */
 
