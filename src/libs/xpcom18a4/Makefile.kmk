@@ -224,13 +224,16 @@ PROGRAMS = \
 endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
 
-OTHERS = \
-	$(PATH_BIN)/VBoxXPCOMBase.xpt
-
+ifeq ($(BUILD_TARGET),linux)
+ XPCOM_TYPELIB = $(PATH_BIN)/VBoxXPCOMBase.xpt
+else
+ XPCOM_TYPELIB = $(PATH_BIN)/components/VBoxXPCOMBase.xpt
+endif
+OTHERS = $(XPCOM_TYPELIB)
 OTHER_CLEAN = \
 	$(PATH_TARGET)/VBox-xpcom-nspr/_pr_bld.h \
 	$(PATH_TARGET)/VBox-xpcom-nspr/_pl_bld.h \
-	$(PATH_BIN)/VBoxXPCOMBase.xpt
+	$(XPCOM_TYPELIB)
 
 
 
@@ -1015,6 +1018,9 @@ VBox-xcpom-ipctmgrcom_SOURCES = \
 
 # DCONNECT client shared object
 VBoxXPCOMIPCC_TEMPLATE = XPCOMIPC
+ifneq ($(BUILD_TARGET),linux)
+VBoxXPCOMIPCC_INST = $(INST_BIN)components/
+endif
 VBoxXPCOMIPCC_DEFS = HAVE_DEPENDENT_LIBS
 VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcdclient.cpp \
@@ -1022,7 +1028,7 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp \
 	ipc/ipcd/extensions/dconnect/src/ipcDConnectService.cpp
-VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name @executable_path/VBoxXPCOMIPCC.dylib
+VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name @executable_path/components/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \
 	$(TARGET_VBox-xpcom-ipcutils) \
 	$(TARGET_VBox-xpcom-ipcshared) \
@@ -1293,7 +1299,7 @@ OTHER_CLEAN += \
 	$(XPTFILES)
 
 # combined typelib library
-$(PATH_BIN)/VBoxXPCOMBase.xpt: $(XPTFILES) | $(TARGET_xp_link)
+$(XPCOM_TYPELIB): $(XPTFILES) | $(TARGET_xp_link)
 	$(call MSG_L1,Linking $@)
 	$(QUIET)$(TARGET_xpt_link) $@ $^
 
