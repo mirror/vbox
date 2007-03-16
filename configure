@@ -1181,6 +1181,11 @@ if (($OSE)); then
   echo >> $CNF
 fi
 
+# emit disable directives corresponding to any --disable-xxx options.
+(($WITH_XPCOM==0)) && cnf_append "VBOX_WITH_MAIN" ""
+(($WITH_QT==0)) && cnf_append "VBOX_WITH_QTGUI" ""
+(($WITH_SDL_TTF==0)) && cnf_append "VBOX_WITH_SECURELABEL" ""
+
 # append the tools directory to the default search path
 echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
 
