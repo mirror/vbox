@@ -4226,8 +4226,35 @@ BX_DEBUG_INT15("case 3:\n");
           //      1 =  50 dpi, 2 counts per millimeter
           //      2 = 100 dpi, 4 counts per millimeter
           //      3 = 200 dpi, 8 counts per millimeter
+#ifdef VBOX
+          comm_byte = inhibit_mouse_int_and_events(); // disable IRQ12 and packets
+          if (regs.u.r8.bh < 4) {
+            ret = send_to_mouse_ctrl(0xE8); // set resolution command
+            if (ret == 0) {
+              ret = get_mouse_data(&mouse_data1);
+              if (mouse_data1 != 0xfa)
+                BX_PANIC("Mouse status returned %02x (should be ack)\n", (unsigned)mouse_data1);
+              ret = send_to_mouse_ctrl(regs.u.r8.bh);
+              ret = get_mouse_data(&mouse_data1);
+              if (mouse_data1 != 0xfa)
+                BX_PANIC("Mouse status returned %02x (should be ack)\n", (unsigned)mouse_data1);
+              CLEAR_CF();
+              regs.u.r8.ah = 0;
+            } else {
+              // error
+              SET_CF();
+              regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+            }
+          } else {
+            // error
+            SET_CF();
+            regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+          }
+          set_kbd_command_byte(comm_byte); // restore IRQ12 and serial enable
+#else
           CLEAR_CF();
           regs.u.r8.ah = 0;
+#endif /* VBOX */
           break;
 
         case 4: // Get Device ID
