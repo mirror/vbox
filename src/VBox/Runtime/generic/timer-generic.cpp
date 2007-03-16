@@ -1,5 +1,6 @@
+/** $Id$ */
 /** @file
- * InnoTek Portable Runtime - Timers, Ring-0 Driver, Generic.
+ * InnoTek Portable Runtime - Timers, Generic.
  */
 
 /*
@@ -264,16 +265,25 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD Thread, void *pvUser)
                 /* calc the next time we should fire. */
                 pTimer->u64NextTS = pTimer->u64StartTS + pTimer->iTick * pTimer->u64NanoInterval;
                 if (pTimer->u64NextTS < u64NanoTS)
+#ifdef IN_RING3 /* In ring-3 we'll catch up lost ticks immediately. */
+                    pTimer->u64NextTS = u64NanoTS + 1;
+#else
                     pTimer->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
+#endif 
             }
 
             /* block. */
             uint64_t cNanoSeconds = pTimer->u64NextTS - u64NanoTS;
-            int rc = RTSemEventWait(pTimer->Event, cNanoSeconds < 1000000 ? 1 : cNanoSeconds / 1000000);
-            if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
+#ifdef IN_RING3 /* In ring-3 we'll catch up lost ticks immediately. */
+            if (cNanoSeconds > 10)
+#endif
             {
-                AssertRC(rc);
-                RTThreadSleep(1000); /* Don't cause trouble! */
+                int rc = RTSemEventWait(pTimer->Event, cNanoSeconds < 1000000 ? 1 : cNanoSeconds / 1000000);
+                if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
+                {
+                    AssertRC(rc);
+                    RTThreadSleep(1000); /* Don't cause trouble! */
+                }
             }
         }
     }
@@ -309,5 +319,4 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 {
     return VERR_NOT_SUPPORTED;
 }
-
 
