@@ -113,7 +113,7 @@
 #define PCNET_IOPORT_SIZE               0x20
 #define PCNET_PNPMMIO_SIZE              0x20
 
-#define PCNET_SAVEDSTATE_VERSION        5
+#define PCNET_SAVEDSTATE_VERSION        6
 
 #define BCR_MAX_RAP                     50
 #define MII_MAX_REG                     32
@@ -161,7 +161,7 @@ struct PCNetState_st
     uint16_t                            aCSR[CSR_MAX_REG];
     uint16_t                            aBCR[BCR_MAX_RAP];
     uint16_t                            aMII[MII_MAX_REG];
-    uint16_t                            u16CSR0LastSeenByGuest; /** @todo SSM!! */
+    uint16_t                            u16CSR0LastSeenByGuest;
     uint16_t                            Alignment0[HC_ARCH_BITS == 32 ? 2 : 4];
     /** Last time we polled the queues */
     uint64_t                            u64LastPoll;
@@ -3677,6 +3677,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutMem(pSSMHandle, pData->aCSR, sizeof(pData->aCSR));
     SSMR3PutMem(pSSMHandle, pData->aBCR, sizeof(pData->aBCR));
     SSMR3PutMem(pSSMHandle, pData->aMII, sizeof(pData->aMII));
+    SSMR3PutU16(pSSMHandle, pData->u16CSR0LastSeenByGuest);
     SSMR3PutU64(pSSMHandle, pData->u64LastPoll);
     SSMR3PutMem(pSSMHandle, &pData->MacConfigured, sizeof(pData->MacConfigured));
     SSMR3PutBool(pSSMHandle, pData->fAm79C973);
@@ -3714,6 +3715,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3GetMem(pSSMHandle, &pData->aCSR, sizeof(pData->aCSR));
     SSMR3GetMem(pSSMHandle, &pData->aBCR, sizeof(pData->aBCR));
     SSMR3GetMem(pSSMHandle, &pData->aMII, sizeof(pData->aMII));
+    SSMR3GetU16(pSSMHandle, &pData->u16CSR0LastSeenByGuest);
     SSMR3GetU64(pSSMHandle, &pData->u64LastPoll);
     SSMR3GetMem(pSSMHandle, &Mac, sizeof(Mac));
     Assert(!memcmp(&Mac, &pData->MacConfigured, sizeof(Mac)));
