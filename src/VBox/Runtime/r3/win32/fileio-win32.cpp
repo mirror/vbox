@@ -75,6 +75,48 @@ inline bool MySetFilePointer(RTFILE File, uint64_t offSeek, uint64_t *poffNew, u
 }
 
 
+/**
+ * This is a helper to check if an attempt is made to grow a file beyond the
+ * limit of the filesystem.
+ *
+ * @returns true for file size limit exceeded.
+ * @param   File        Filehandle.
+ * @param   offSeek     Offset to seek.
+ */
+inline bool IsBeyondLimit(RTFILE File, uint64_t offSeek, unsigned uMethod)
+{
+    bool fIsBeyondLimit = false;
+    /*
+     * Get current file pointer.
+     */
+    uint64_t    offCurrent;
+    if (MySetFilePointer(File, 0, &offCurrent, FILE_CURRENT))
+    {
+        /*
+         * Set new file pointer.
+         */
+        if (!MySetFilePointer(File, offSeek, NULL, uMethod))
+        {
+            /*
+             * Failed to set new file pointer.
+             */
+            fIsBeyondLimit = (GetLastError() == ERROR_SEEK);
+        }
+        else
+        {
+            /*
+             * Restore file pointer.
+             */
+            MySetFilePointer(File, offCurrent, NULL, FILE_BEGIN);
+        }
+    }
+
+    return fIsBeyondLimit;
+}
+
+
+
+
 RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen)
 {
     /*
@@ -306,7 +348,14 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, unsigned cbToWrite, u
             {
                 ULONG cbWrittenPart = 0;
                 if (!WriteFile((HANDLE)File, (char*)pvBuf + cbWritten, cbToWrite - cbWritten, &cbWrittenPart, NULL))
-                    return RTErrConvertFromWin32(GetLastError());
+                {
+                    int rc = RTErrConvertFromWin32(GetLastError());
+                    if (   rc == VERR_DISK_FULL
+                        && IsBeyondLimit(File, cbToWrite - cbWritten, FILE_CURRENT)
+                       )
+                        rc = VERR_FILE_TOO_BIG;
+                    return rc;
+                }
                 if (cbWrittenPart == 0)
                     return VERR_WRITE_ERROR;
                 cbWritten += cbWrittenPart;
@@ -314,7 +363,12 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, unsigned cbToWrite, u
         }
         return VINF_SUCCESS;
     }
-    return RTErrConvertFromWin32(GetLastError());
+    int rc = RTErrConvertFromWin32(GetLastError());
+    if (   rc == VERR_DISK_FULL
+        && IsBeyondLimit(File, cbToWrite - cbWritten, FILE_CURRENT)
+       )
+        rc = VERR_FILE_TOO_BIG;
+    return rc;
 }
 
 

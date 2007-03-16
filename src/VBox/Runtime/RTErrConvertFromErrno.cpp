@@ -129,7 +129,7 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
         case ETXTBSY:           return VERR_SHARING_VIOLATION;
 #endif
 #ifdef EFBIG
-        //case EFBIG:
+        case EFBIG:             return VERR_FILE_TOO_BIG;
 #endif
 #ifdef ENOSPC
         case ENOSPC:            return VERR_DISK_FULL;

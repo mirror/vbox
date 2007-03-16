@@ -1374,6 +1374,17 @@ static void ataWarningDiskFull(PPDMDEVINS pDevIns)
 }
 
 
+static void ataWarningFileTooBig(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("PIIX3 ATA: File too big\n"));
+    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
+                           false, "DevATA_FILETOOBIG",
+                           N_("Host system reported that the file size limit has been exceeded. VM execution is suspended. You need to move the file to a filesystem which allows bigger files"));
+    AssertRC(rc);
+}
+
+
 static void ataWarningISCSI(PPDMDEVINS pDevIns)
 {
     int rc;
@@ -1408,6 +1419,11 @@ static bool ataReadSectorsSS(ATADevState *s)
         if (rc == VERR_DISK_FULL)
         {
             ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+            return true;
+        }
+        if (rc == VERR_FILE_TOO_BIG)
+        {
+            ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
             return true;
         }
         if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
@@ -1450,6 +1466,11 @@ static bool ataWriteSectorsSS(ATADevState *s)
         if (rc == VERR_DISK_FULL)
         {
             ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+            return true;
+        }
+        if (rc == VERR_FILE_TOO_BIG)
+        {
+            ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
             return true;
         }
         if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)

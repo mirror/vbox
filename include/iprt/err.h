@@ -262,6 +262,8 @@ __BEGIN_DECLS
 #define VERR_NOT_A_DIRECTORY                (-126)
 /** A non-directory operation was attempted on a directory object. */
 #define VERR_IS_A_DIRECTORY                 (-127)
+/** Tried to grow a file beyond the limit imposed by the process or the filesystem. */
+#define VERR_FILE_TOO_BIG                   (-128)
 /** @} */
 
 
