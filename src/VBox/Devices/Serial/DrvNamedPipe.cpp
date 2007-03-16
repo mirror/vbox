@@ -263,17 +263,25 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
             if (hrc != ERROR_PIPE_CONNECTED)
             {
                 rc = RTErrConvertFromWin32(hrc);
-                LogRel(("NamedPipe%d: ConnectNamedPipe failed rc=%Vrc\n", pData->pDrvIns->iInstance));
+                LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pData->pDrvIns->iInstancei, rc));
                 break;
             }
         }
         pData->NamedPipe = (RTFILE)hPipe;
 #else /* !__WIN__ */
         if (listen(pData->LocalSocketServer, 0) == -1)
-            LogRel(("NamedPipe%d: listen failed\n", pData->pDrvIns->iInstance));
+        {
+            rc = RTErrConvertFromErrno(errno);
+            LogRel(("NamedPipe%d: listen failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
+            break;
+        }
         int s = accept(pData->LocalSocketServer, NULL, NULL);
         if (s == -1)
-            LogRel(("NamedPipe%d: accept failed\n", pData->pDrvIns->iInstance));
+        {
+            rc = RTErrConvertFromErrno(errno);
+            LogRel(("NamedPipe%d: accept failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
+            break;
+        }
         else
         {
             if (pData->LocalSocket != NIL_RTSOCKET)
