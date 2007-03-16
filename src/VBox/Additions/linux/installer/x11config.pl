@@ -70,7 +70,8 @@ foreach $cfg (@cfg_files)
         }
 
         rename $cfg, $cfg.".bak";
-        rename $temp, $cfg;
+        system("cp $temp $cfg");
+        unlink $temp;
 
         if ($have_mouse == 0) {
             system("echo >> $cfg");
