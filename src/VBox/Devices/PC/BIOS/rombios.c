@@ -4143,7 +4143,8 @@ BX_DEBUG_INT15("case 1 or 5:\n");
            * concurrently accessing the EBDA values. It also makes no
            * sense to reset the mouse and leave the mouse flags as is. */
           mouse_flags_2 = read_byte(ebda_seg, 0x0027);
-          mouse_flags_2 = (mouse_flags_2 & 0x00) | regs.u.r8.bh;
+          if (regs.u.r8.al == 5)
+            mouse_flags_2 = (mouse_flags_2 & 0x00) | regs.u.r8.bh;
           mouse_flags_1 = 0x00;
           write_byte(ebda_seg, 0x0026, mouse_flags_1);
           write_byte(ebda_seg, 0x0027, mouse_flags_2);
