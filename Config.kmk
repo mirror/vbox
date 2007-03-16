@@ -325,15 +325,16 @@ ifdef VBOX_OSE
  PASSES := $(filter-out PACKING,$(PASSES))
 endif
 
-##
-## HACK ALERT!
-## OVerride anyone attempting to build Linux/GNU additions when targeting AMD64.
-##
-#ifdef VBOX_WITH_LINUX_ADDITIONS
-# ifeq ($(BUILD_TARGET_ARCH),amd64)
-#  VBOX_WITH_LINUX_ADDITIONS :=
-# endif
-#endif
+#
+# Undefined VBOX_WITH_MAIN implies exclusion of a few more items.
+#
+ifndef VBOX_WITH_MAIN
+ VBOX_WITH_VRDP=
+ VBOX_WITH_VBOXSDL=
+ VBOX_WITH_QTGUI=
+ VBOX_WITH_DEBUGGER_GUI=
+endif
+
 
 #
 # Image and object format config.
