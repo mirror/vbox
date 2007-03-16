@@ -263,7 +263,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
             if (hrc != ERROR_PIPE_CONNECTED)
             {
                 rc = RTErrConvertFromWin32(hrc);
-                LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pData->pDrvIns->iInstancei, rc));
+                LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
                 break;
             }
         }
