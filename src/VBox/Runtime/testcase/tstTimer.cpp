@@ -35,10 +35,24 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 static volatile unsigned gcTicks;
+static volatile uint64_t gu64Min;
+static volatile uint64_t gu64Max;
+static volatile uint64_t gu64Prev;
 
 static DECLCALLBACK(void) TimerCallback(PRTTIMER pTimer, void *pvUser)
 {
     gcTicks++;
+
+    const uint64_t u64Now = RTTimeNanoTS();
+    if (gu64Prev)
+    {
+        const uint64_t u64Delta = u64Now - gu64Prev;
+        if (u64Delta < gu64Min)
+            gu64Min = u64Delta;
+        if (u64Delta > gu64Max)
+            gu64Max = u64Delta;
+    }
+    gu64Prev = u64Now;
 }
 
 
@@ -124,6 +138,9 @@ int main()
          */
         gcTicks = 0;
         PRTTIMER pTimer;
+        gu64Max = 0;
+        gu64Min = UINT64_MAX;
+        gu64Prev = 0;
         rc = RTTimerCreate(&pTimer, aTests[i].uMilliesInterval, TimerCallback, NULL);
         if (RT_FAILURE(rc))
         {
@@ -133,16 +150,11 @@ int main()
         }
 
         /*
-         * Sleep for a while and then kill it.
+         * Active waiting for 2 seconds and then destroy it.
          */
         uint64_t uTSBegin = RTTimeNanoTS();
-#if 1
         while (RTTimeNanoTS() - uTSBegin < (uint64_t)aTests[i].uMilliesWait * 1000000)
             /* nothing */;
-
-#else
-        rc = RTThreadSleep(aTests[i].uMilliesWait);
-#endif
         uint64_t uTSEnd = RTTimeNanoTS();
         uint64_t uTSDiff = uTSEnd - uTSBegin;
         RTPrintf("uTS=%RI64 (%RU64 - %RU64)\n", uTSDiff, uTSBegin, uTSEnd);
@@ -169,16 +181,17 @@ int main()
          */
         if (gcTicks < aTests[i].cLower)
         {
-            RTPrintf("tstTimer: FAILURE - Too few ticks gcTicks=%d (expected %d-%d)\n", gcTicks, aTests[i].cUpper, aTests[i].cLower);
+            RTPrintf("tstTimer: FAILURE - Too few ticks gcTicks=%d (expected %d-%d)", gcTicks, aTests[i].cUpper, aTests[i].cLower);
             cErrors++;
         }
         else if (gcTicks > aTests[i].cUpper)
         {
-            RTPrintf("tstTimer: FAILURE - Too many ticks gcTicks=%d (expected %d-%d)\n", gcTicks, aTests[i].cUpper, aTests[i].cLower);
+            RTPrintf("tstTimer: FAILURE - Too many ticks gcTicks=%d (expected %d-%d)", gcTicks, aTests[i].cUpper, aTests[i].cLower);
             cErrors++;
         }
         else
-            RTPrintf("tstTimer: OK      - gcTicks=%d\n",  gcTicks);
+            RTPrintf("tstTimer: OK      - gcTicks=%d",  gcTicks);
+        RTPrintf(" min=%RU64 max=%RU64\n", gu64Min, gu64Max);
     }
 
     /*
