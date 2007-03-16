@@ -1226,10 +1226,12 @@ echo ""
 echo "  source $ENV"
 echo "  kmk"
 echo ""
-echo "To compile the kernel module, do:"
-echo ""
-echo "  cd ./out/$OS.$MACHINE/$BUILD_TYPE/bin/src"
-echo "  make"
-echo ""
+if [ "$OS" = "linux" ]; then
+    echo "To compile the kernel module, do:"
+    echo ""
+    echo "  cd ./out/$OS.$MACHINE/$BUILD_TYPE/bin/src"
+    echo "  make"
+    echo ""
+fi
 echo "Enjoy!"
 cleanup
