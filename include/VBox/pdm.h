@@ -29,7 +29,6 @@
 #include <VBox/dbgf.h>
 #include <VBox/err.h>
 #include <VBox/pci.h>
-#include <VBox/VBoxGuest.h>
 
 #include <iprt/critsect.h>
 #include <iprt/stdarg.h>
@@ -1658,8 +1657,10 @@ typedef struct PDMIVMMDEVPORT
 
 } PDMIVMMDEVPORT;
 
-/** Forward declaration of video accelerator command memory. */
+/** Forward declaration of the video accelerator command memory. */
 struct _VBVAMEMORY;
+/** Forward declaration of the guest information structure. */
+struct VBoxGuestInfo;
 /** Pointer to video accelerator command memory. */
 typedef struct _VBVAMEMORY *PVBVAMEMORY;
 
@@ -1679,7 +1680,7 @@ typedef struct PDMIVMMDEVCONNECTOR
      * @param   pGuestInfo          Pointer to guest information structure
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestVersion,(PPDMIVMMDEVCONNECTOR pInterface, VBoxGuestInfo *pGuestInfo));
+    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestVersion,(PPDMIVMMDEVCONNECTOR pInterface, struct VBoxGuestInfo *pGuestInfo));
 
     /**
      * Update the mouse capabilities.

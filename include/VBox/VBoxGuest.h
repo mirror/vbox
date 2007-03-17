@@ -294,7 +294,7 @@ typedef struct
 } VMMDevCtlGuestFilterMask;
 
 /** guest information structure */
-typedef struct
+typedef struct VBoxGuestInfo
 {
     /** The VMMDev interface version expected by additions. */
     uint32_t additionsVersion;
