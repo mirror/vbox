@@ -34,7 +34,7 @@
 #include <VBox/err.h>
 #include <VBox/pci.h>
 
-#include <string.h>
+#include <iprt/string.h>
 
 #include "Builtins.h"
 
