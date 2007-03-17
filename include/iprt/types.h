@@ -92,6 +92,9 @@
  */
 #ifndef __cplusplus
 # if defined(__GNUC__)
+#  if defined(__DARWIN__) && defined(_STDBOOL_H)
+#   undef bool
+#  endif
 typedef _Bool bool;
 # else
 typedef unsigned char bool;
