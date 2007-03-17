@@ -27,6 +27,7 @@
 #include <VBox/pdm.h>
 
 #include "Framebuffer.h"
+struct _VBVACMDHDR;
 
 class VMDisplay
 {
@@ -40,7 +41,7 @@ public:
     void handleDisplayResize (int w, int h);
     void handleDisplayUpdate (int x, int y, int cx, int cy);
 
-    int VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory);
+    int VideoAccelEnable (bool fEnable, struct _VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlush (void);
     bool VideoAccelAllowed (void);
 
@@ -83,18 +84,18 @@ private:
     RTSEMEVENTMULTI mResizeSem;
     RTSEMEVENTMULTI mUpdateSem;
 
-    VBVAMEMORY *mpVbvaMemory;
+    struct _VBVAMEMORY *mpVbvaMemory;
     bool        mfVideoAccelEnabled;
 
-    VBVAMEMORY *mpPendingVbvaMemory;
+    struct _VBVAMEMORY *mpPendingVbvaMemory;
     bool        mfPendingVideoAccelEnable;
     bool        mfMachineRunning;
 
     uint8_t    *mpu8VbvaPartial;
     uint32_t   mcbVbvaPartial;
 
-    bool vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
-    void vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd);
+    bool vbvaFetchCmd (struct _VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
+    void vbvaReleaseCmd (struct _VBVACMDHDR *pHdr, int32_t cbCmd);
 };
 
 extern VMDisplay *gDisplay;
