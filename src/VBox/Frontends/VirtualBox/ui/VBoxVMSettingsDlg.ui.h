@@ -707,11 +707,13 @@ void VBoxVMSettingsDlg::init()
 #ifdef VBOX_WITH_WINMM
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::WINMMAudioDriver));
 #endif
-#elif defined Q_WS_X11
+#elif defined Q_OS_LINUX
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::OSSAudioDriver));
 #ifdef VBOX_WITH_ALSA
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::ALSAAudioDriver));
 #endif
+#elif defined Q_OS_MACX
+    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::CoreAudioDriver));
 #endif
 
     /* Network Page */

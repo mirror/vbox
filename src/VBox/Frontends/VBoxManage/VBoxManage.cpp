@@ -222,6 +222,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
 #else
     bool fWin = false;
 #endif
+#ifdef __DARWIN__
+    bool fDarwin = true;
+#else
+    bool fDarwin = false;
+#endif
 #ifdef VBOX_VRDP
     bool fVRDP = true;
 #else
@@ -314,6 +319,10 @@ static void printUsage(USAGECATEGORY u64Cmd)
                      "                            [-tapterminate<1-N> none|<application>]\n");
         }
         RTPrintf("                            [-audio none|null");
+        if (fWin)
+        {
+            RTPrintf(                        "|winmm|dsound");
+        }
         if (fLinux)
         {
             RTPrintf(                        "|oss"
@@ -322,9 +331,9 @@ static void printUsage(USAGECATEGORY u64Cmd)
 #endif
                                              );
         }
-        if (fWin)
+        if (fDarwin)
         {
-            RTPrintf(                        "|winmm|dsound");
+            RTPrintf(                        "|coreaudio");
         }
         RTPrintf(                            "]\n");
         RTPrintf("                            [-clipboard disabled|hosttoguest|guesttohost|\n"
@@ -999,6 +1008,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 case  AudioDriverType_DSOUNDAudioDriver: psz = "DSOUND"; break;
                 case  AudioDriverType_OSSAudioDriver:    psz = "OSS"; break;
                 case  AudioDriverType_ALSAAudioDriver:   psz = "ALSA"; break;
+                case  AudioDriverType_CoreAudioDriver:   psz = "CoreAudio"; break;
                 default: ; break;
             }
         }
@@ -3589,20 +3599,7 @@ static int handleModifyVM(int argc, char *argv[],
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_NullAudioDriver));
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
-#ifdef __LINUX__
-            else if (strcmp(audio, "oss") == 0)
-            {
-                CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSSAudioDriver));
-                CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-            }
-#ifdef VBOX_WITH_ALSA
-            else if (strcmp(audio, "alsa") == 0)
-            {
-                CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSAAudioDriver));
-                CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-            }
-#endif
-#else /* !__LINUX__ */
+#ifdef __WIN__
             else if (strcmp(audio, "winmm") == 0)
             {
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WINMMAudioDriver));
@@ -3613,7 +3610,28 @@ static int handleModifyVM(int argc, char *argv[],
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DSOUNDAudioDriver));
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
+#endif /* __WIN__ */
+#ifdef __LINUX__
+            else if (strcmp(audio, "oss") == 0)
+            {
+                CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSSAudioDriver));
+                CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+            }
+# ifdef VBOX_WITH_ALSA
+            else if (strcmp(audio, "alsa") == 0)
+            {
+                CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSAAudioDriver));
+                CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+            }
+# endif
 #endif /* !__LINUX__ */
+#ifdef __DARWIN__
+            else if (strcmp(audio, "coreaudio") == 0)
+            {
+                CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudioDriver));
+                CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+            }
+#endif /* !__DARWIN__ */
             else
             {
                 errorArgument("Invalid -audio argument '%s'", audio);

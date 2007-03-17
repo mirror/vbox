@@ -217,45 +217,27 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T audioDriver)
         switch (audioDriver)
         {
             case AudioDriverType_NullAudioDriver:
-            {
-                mData.backup();
-                mData->mAudioDriver = audioDriver;
-                break;
-            }
-
 #ifdef __WIN__
 #ifdef VBOX_WITH_WINMM
             case AudioDriverType_WINMMAudioDriver:
-            {
-                mData.backup();
-                mData->mAudioDriver = audioDriver;
-                break;
-            }
 #endif
             case AudioDriverType_DSOUNDAudioDriver:
-            {
-                mData.backup();
-                mData->mAudioDriver = audioDriver;
-                break;
-            }
 #endif /* __WIN__ */
-
 #ifdef __LINUX__
             case AudioDriverType_OSSAudioDriver:
-            {
-                mData.backup();
-                mData->mAudioDriver = audioDriver;
-                break;
-            }
 #ifdef VBOX_WITH_ALSA
             case AudioDriverType_ALSAAudioDriver:
+#endif
+#endif /* __LINUX__ */
+#ifdef __DARWIN__
+            case AudioDriverType_CoreAudioDriver:
+#endif 
             {
                 mData.backup();
                 mData->mAudioDriver = audioDriver;
                 break;
             }
-#endif
-#endif /* __LINUX__ */
+
             default:
             {
                 Log(("wrong audio driver type specified!\n"));

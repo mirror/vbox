@@ -1682,15 +1682,20 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
      * @todo We should probably display a message box. And perhaps we should
      *       select the noaudio driver instead.
      */
+#ifndef __DARWIN__ /* coreaudio doesn't supply these. */
     if (!pData->ac97.voice_pi)
         LogRel(("AC97: WARNING: Unable to open PCM IN!\n"));
-    if (!pData->ac97.voice_po)
-        LogRel(("AC97: WARNING: Unable to open PCM OUT!\n"));
     if (!pData->ac97.voice_mc)
         LogRel(("AC97: WARNING: Unable to open PCM MC!\n"));
+#endif 
+    if (!pData->ac97.voice_po)
+        LogRel(("AC97: WARNING: Unable to open PCM OUT!\n"));
 
-    /** @todo r=bird: add a devhlp for this of course! */
+#ifdef __DARWIN__ /* coreaudio doesn't supply all, only bitch if we don't get anything. */
+    if (!pData->ac97.voice_pi && !pData->ac97.voice_po && !pData->ac97.voice_mc)
+#else
     if (!pData->ac97.voice_pi || !pData->ac97.voice_po || !pData->ac97.voice_mc)
+#endif 
         VMSetRuntimeError(PDMDevHlpGetVM(pDevIns), false,
                           "HostAudioNotResponding",
                           N_("Some audio devices could not be opened. Guest applications "
