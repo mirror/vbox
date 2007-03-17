@@ -1539,6 +1539,8 @@ void VBoxGlobal::languageChange()
         tr ("ALSA Audio Driver", "AudioDriverType");
     audioDriverTypes [CEnums::DSOUNDAudioDriver] =
         tr ("Windows DirectSound", "AudioDriverType");
+    audioDriverTypes [CEnums::CoreAudioDriver] =
+        tr ("CoreAudio", "AudioDriverType");
 
     networkAttachmentTypes [CEnums::NoNetworkAttachment] =
         tr ("Not attached", "NetworkAttachmentType");

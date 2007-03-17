@@ -97,7 +97,7 @@ VBoxDD_LIBS.darwin      = \
 	$(LIB_REM)
 VBoxDD_LIBS.os2         = \
 	$(PATH_BIN)/VBoxDD2.dll
-VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib
+VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib -framework CoreAudio
 VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
@@ -352,7 +352,8 @@ Drivers_SOURCES    = \
 ifeq ($(BUILD_TARGET),darwin)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
-	, $(Drivers_SOURCES))
+	, $(Drivers_SOURCES)) \
+	Audio/coreaudio.c
 Drivers_SOURCES.darwin =
 endif # darwin
 
@@ -407,45 +408,45 @@ Drivers_SOURCES.win   = \
 # -- features --
 
 ifdef VBOX_WITH_ISCSI
-Drivers_SOURCES       += \
+ Drivers_SOURCES      += \
 	Storage/DrvISCSI.cpp \
 	Storage/DrvISCSITransportTCP.cpp
-Drivers_DEFS          += VBOX_WITH_ISCSI
+ Drivers_DEFS         += VBOX_WITH_ISCSI
 endif # VBOX_WITH_ISCSI
 
 ifdef VBOX_WITH_ALSA
-Drivers_DEFS          += VBOX_WITH_ALSA
-Drivers_SOURCES.linux += \
+ Drivers_DEFS.linux   += VBOX_WITH_ALSA
+ Drivers_SOURCES.linux+= \
 	Audio/alsaaudio.c
-VBoxDD_LIBS.linux     += asound
+ VBoxDD_LIBS.linux    += asound
 endif
 
 ifdef VBOX_WITH_USB
-Drivers_DEFS          += VBOX_WITH_USB IN_USB_R3
-Drivers_SOURCES       += \
+ Drivers_DEFS         += VBOX_WITH_USB IN_USB_R3
+ Drivers_SOURCES      += \
 	USB/DrvVUSBRootHub.cpp \
 	USB/VUSBDevice.cpp \
 	USB/VUSBUrb.cpp
-ifdef VBOX_WITH_VRDP
-Drivers_SOURCES       += \
+ ifdef VBOX_WITH_VRDP
+  Drivers_SOURCES     += \
 	USB/vrdp/USBProxyDevice-vrdp.cpp
-endif
+ endif
 
-Drivers_DEFS.linux    += VUSB_HAVE_USBPROXY_DEVICE
-ifdef VBOX_WITHOUT_LINUX_COMPILER_H
-Drivers_DEFS          += VBOX_WITHOUT_LINUX_COMPILER_H
-endif
-Drivers_SOURCES.linux += \
+ Drivers_DEFS.linux   += VUSB_HAVE_USBPROXY_DEVICE
+ ifdef VBOX_WITHOUT_LINUX_COMPILER_H
+  Drivers_DEFS.linux  += VBOX_WITHOUT_LINUX_COMPILER_H
+ endif
+ Drivers_SOURCES.linux+= \
 	USB/USBProxyDevice.cpp \
 	USB/linux/USBProxyDevice-linux.cpp
 
-Drivers_DEFS.l4       += VUSB_HAVE_USBPROXY_DEVICE
-Drivers_SOURCES.l4    += \
+ Drivers_DEFS.l4      += VUSB_HAVE_USBPROXY_DEVICE
+ Drivers_SOURCES.l4   += \
 	USB/USBProxyDevice.cpp \
 	USB/linux/USBProxyDevice-linux.cpp
 
-Drivers_DEFS.win      += VUSB_HAVE_USBPROXY_DEVICE
-Drivers_SOURCES.win   += \
+ Drivers_DEFS.win     += VUSB_HAVE_USBPROXY_DEVICE
+ Drivers_SOURCES.win  += \
 	USB/USBProxyDevice.cpp \
 	USB/win32/USBProxyDevice-win32.cpp \
 	USB/win32/USBLib-win32.cpp

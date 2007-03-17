@@ -3948,6 +3948,10 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             audioDriver = AudioDriverType_OSSAudioDriver;
 #endif
 #endif // __LINUX__
+#ifdef __DARWIN__
+        else if (driver == L"coreaudio")
+            audioDriver = AudioDriverType_CoreAudioDriver;
+#endif 
         else
             AssertMsgFailed (("Invalid driver: %ls\n", driver.raw()));
         mAudioAdapter->COMSETTER(AudioDriver) (audioDriver);
@@ -5726,6 +5730,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                 break;
             }
 #endif /* __WIN__ */
+#ifdef __LINUX__
             case AudioDriverType_ALSAAudioDriver:
 #ifdef VBOX_WITH_ALSA
             {
@@ -5733,13 +5738,19 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                 break;
             }
 #endif
-#ifdef __LINUX__
             case AudioDriverType_OSSAudioDriver:
             {
                 CFGLDRSetString (adapterNode, "driver", "oss");
                 break;
             }
 #endif /* __LINUX__ */
+#ifdef __DARWIN__
+            case AudioDriverType_CoreAudioDriver:
+            {
+                CFGLDRSetString (adapterNode, "driver", "coreaudio");
+                break;
+            }
+#endif 
             default:
                 ComAssertMsgFailedBreak (("Wrong audio driver type! driver = %d\n",
                                           mAudioAdapter->data()->mAudioDriver),

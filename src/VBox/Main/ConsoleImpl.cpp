@@ -5320,14 +5320,21 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                    RC_CHECK();
                 break;
             }
-#ifdef VBOX_WITH_ALSA
+# ifdef VBOX_WITH_ALSA
             case AudioDriverType_ALSAAudioDriver:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "alsa");                   RC_CHECK();
                 break;
             }
-#endif
+# endif
 #endif /* __LINUX__ */
+#ifdef __DARWIN__
+            case AudioDriverType_CoreAudioDriver:
+            {
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");              RC_CHECK();
+                break;
+            }
+#endif 
         }
     }
 

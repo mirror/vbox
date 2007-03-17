@@ -68,6 +68,9 @@ static struct audio_driver *drvtab[] = {
     &alsa_audio_driver,
 #endif
 #endif
+#ifdef __DARWIN__
+    &coreaudio_audio_driver,
+#endif
 #ifdef __WIN__
     &dsound_audio_driver,
 #endif
