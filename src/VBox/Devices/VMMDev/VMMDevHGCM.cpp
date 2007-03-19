@@ -163,6 +163,7 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
         if (cbWrite >= u32Size)
         {
             memcpy (pu8Dst, pu8Src, u32Size);
+            u32Size = 0;
             break;
         }
         
@@ -176,6 +177,7 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
     }
     
     AssertRelease (iPage == pLinPtr->cPages);
+    Assert(u32Size == 0);
     
     return rc;
 }
