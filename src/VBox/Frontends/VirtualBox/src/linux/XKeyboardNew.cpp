@@ -36,7 +36,7 @@
     not been tested yet.  See
     http://www.win.tue.nl/~aeb/linux/kbd/scancodes.html
     and the Xorg keyboard configuration files in /etc/X11/xkb for interesting information. */
-static int ExtKeySymToScanCode[37] =
+static int ExtKeySymToScanCode[38] =
 {
     0x147 /* 97 non-KP-home */, 0x148 /* 98 non-KP-up */, 0x149 /* 99 non-KP-PgUp */,
     0x14b /* 100 non-KP-left */, 0 /* 101 empty */, 0x14d /* 102 non-KP-right */,
@@ -86,7 +86,7 @@ void handleXKeyEvent(Display * /* dpy */, XEvent *event, WINEKEYBOARDINFO *wineK
         return;
     }
     /* Extended scancodes need to be looked up in a table. */
-    if ((uKeyCode >= 97) && (uKeyCode <= 133))
+    if ((uKeyCode >= 97) && (uKeyCode <= 134))
     {
         wineKbdInfo->wScan = ExtKeySymToScanCode[uKeyCode - 97] & 255;
         wineKbdInfo->dwFlags = ExtKeySymToScanCode[uKeyCode - 97] >> 8;
