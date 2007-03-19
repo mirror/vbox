@@ -108,7 +108,7 @@ void VMGlobalSettings::setHostKey (int key)
     resetError();
 }
 
-bool VMGlobalSettings::isFeatureActivated (const char *aFeature) const
+bool VMGlobalSettings::isFeatureActive (const char *aFeature) const
 {
     QStringList featureList = QStringList::split (',', data()->guiFeatures);
     return featureList.contains (aFeature);

@@ -83,7 +83,7 @@ public:
     {
         mData()->guiFeatures = aFeatures;
     }
-    bool isFeatureActivated (const char*) const;
+    bool isFeatureActive (const char*) const;
 
     //
 

@@ -706,11 +706,9 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 void VBoxConsoleWnd::loadGuiCustomizations()
 {
     VMGlobalSettings settings = vboxGlobal().settings();
-    /* Searching for known keys */
-    const char *noMenuBar = "noMenuBar";
-    const char *noStatusBar = "noStatusBar";
-    menuBar()->setHidden (settings.isFeatureActivated (noMenuBar));
-    statusBar()->setHidden (settings.isFeatureActivated (noStatusBar));
+    /* Process known keys */
+    menuBar()->setHidden (settings.isFeatureActive ("noMenuBar"));
+    statusBar()->setHidden (settings.isFeatureActive ("noStatusBar"));
 }
 
 void VBoxConsoleWnd::finalizeOpenView()

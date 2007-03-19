@@ -178,9 +178,8 @@ int main( int argc, char ** argv )
     if (vboxGlobal().isValid())
     {
         VMGlobalSettings settings = vboxGlobal().settings();
-        /* Searching for known keys */
-        const char *noSelector = "noSelector";
-        bool forcedConsole = settings.isFeatureActivated (noSelector);
+        /* Process known keys */
+        bool noSelector = settings.isFeatureActive ("noSelector");
 
         if (vboxGlobal().isVMConsoleProcess())
         {
@@ -188,7 +187,7 @@ int main( int argc, char ** argv )
             if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
                 rc = a.exec();
         }
-        else if (forcedConsole)
+        else if (noSelector)
         {
             vboxProblem().cannotRunInSelectorMode();
         }

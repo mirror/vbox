@@ -1363,9 +1363,8 @@ void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
 void VBoxProblemReporter::cannotRunInSelectorMode()
 {
     message (mainWindowShown(), Critical,
-             tr ("<p>VirtualBox is running in forced <b>noSelector</b> "
-                 "mode.</p><p>Please run VirtualBox with -startvm parameter "
-                 "specifying required VM to start.</p>"
+             tr ("<p>Cannot run VirtualBox in <i>VM Selector</i> "
+                 "mode due to local restrictions.</p>"
                  "<p>The application will now terminate.</p>"));
 }
 
