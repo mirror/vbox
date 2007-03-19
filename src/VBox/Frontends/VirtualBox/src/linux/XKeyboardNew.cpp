@@ -48,7 +48,7 @@ static int ExtKeySymToScanCode[37] =
     0 /* 120 */, 0xf1 /* 121 Korean Hangul to Latin */, 0xf2 /* 122 Korean Hangul to Hanja */,
     0 /* 123 */, 0 /* 124 */, 0 /* 125 */, 0 /* 126 */, 0 /* 127 */, 0 /* 128 */,
     0x79 /* 129 Japanese Henkan */, 0 /* 130 */, 0x7b /* 131 Japanese Muhenkan */, 0 /* 132 */,
-    0x7d /* 133 Japanese Yen */
+    0x7d /* 133 Japanese Yen */, 0x7e /* 134 Brazilian keypad . */
 };
 
 static int keysyms_per_keycode;  /** Number of keyboard language layouts the host has */
