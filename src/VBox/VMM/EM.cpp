@@ -2194,6 +2194,8 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                 {
                     CSAMR3CheckGates(pVM, u8Interrupt, 1);
                     Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
+                    /** @todo regressions; mainly during save/restore in smoke tests. */
+#if 0
                     /** If it was successful, then we could go back to raw mode. */
                     if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER)
                     {
@@ -2204,6 +2206,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                             return VINF_EM_RESCHEDULE_RAW;
                         }
                     }
+#endif
                 }
             }
             rc = emR3RawGuestTrap(pVM);
