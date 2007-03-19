@@ -190,7 +190,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         /* Issue request */
         rc = VbglGRPerform (&pHGCMCall->header.header);
 
-        dprintf (("VbglGRPerform rc = %Vrc\n", rc));
+        dprintf (("VbglGRPerform rc = %Vrc (header rc=%d)\n", rc, pHGCMCall->header.result));
 
         /** If the call failed, but as a result of the request itself, then pretend success  
          *  Upper layers will interpret the result code in the packet.
