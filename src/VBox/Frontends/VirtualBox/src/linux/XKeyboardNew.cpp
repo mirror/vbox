@@ -94,7 +94,8 @@ void handleXKeyEvent(Display * /* dpy */, XEvent *event, WINEKEYBOARDINFO *wineK
     }
     if (uKeyCode == 208) /* Japanese Hiragana to Katakana */
         wineKbdInfo->wScan = 0x70;
-    else if (uKeyCode == 211) /* Japanese backslash/underscore */
+    else if (uKeyCode == 211) /* Japanese backslash/underscore and Brazilian
+                                 backslash/question mark */
         wineKbdInfo->wScan = 0x73;
     /* If we couldn't find a translation, we just return 0. */
     return;
