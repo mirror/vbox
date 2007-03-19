@@ -73,9 +73,9 @@ public:
         setColumnWidthMode (0, Maximum);
         setResizeMode (AllColumns);
         QWhatsThis::add (this, tr ("Defines the boot device order. "
-                                   "Click on the checkbox to select which "
-                                   "devices will be used. Move desired boot "
-                                   "devices up/down to define boot sequence."));
+                                   "Use checkboxes to the left to enable or disable "
+                                   "individual boot devices. Move items up and down to "
+                                   "change the device order."));
         setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
         connect (this, SIGNAL (pressed (QListViewItem*)),
                  this, SLOT (processPressed (QListViewItem*)));
@@ -134,7 +134,7 @@ public:
         : QWidget (aParent, aName), mBootTable (0)
     {
         /* Setup main widget layout */
-        QHBoxLayout *mainLayout = new QHBoxLayout (this, 0, 10, "mainLayout");
+        QHBoxLayout *mainLayout = new QHBoxLayout (this, 0, 6, "mainLayout");
 
         /* Setup settings layout */
         mBootTable = new BootItemsTable (this, "mBootTable");
@@ -148,6 +148,8 @@ public:
         mBtnDown = new QToolButton (this, "mBtnDown");
         QWhatsThis::add (mBtnUp, tr ("Move the selected boot device up."));
         QWhatsThis::add (mBtnDown, tr ("Move the selected boot device down."));
+        QToolTip::add (mBtnUp, tr ("Move Up (Ctrl-Up)"));
+        QToolTip::add (mBtnDown, tr ("Move Down (Ctrl-Down)"));
         mBtnUp->setAutoRaise (true);
         mBtnDown->setAutoRaise (true);
         mBtnUp->setFocusPolicy (QWidget::StrongFocus);
