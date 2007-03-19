@@ -280,7 +280,9 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall)
                 if (pGuestParm->type != VMMDevHGCMParmType_LinAddr_In)
                 {
                     cLinPtrs++;
-                    cLinPtrPages += (pGuestParm->u.Pointer.size + PAGE_SIZE - 1) / PAGE_SIZE;
+                    /* Take the offset into the current page also into account! */
+                    cLinPtrPages += ((pGuestParm->u.Pointer.u.linearAddr & PAGE_OFFSET_MASK)
+                                      + pGuestParm->u.Pointer.size + PAGE_SIZE - 1) / PAGE_SIZE;
                 }
                 
                 Log(("vmmdevHGCMCall: linptr size = %d\n", pGuestParm->u.Pointer.size));
