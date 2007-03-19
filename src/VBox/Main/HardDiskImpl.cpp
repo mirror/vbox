@@ -631,10 +631,10 @@ bool HardDisk::sameAs (HardDisk *that)
 void HardDisk::setBusy()
 {
     AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    AssertReturnVoid (isReady());
 
-    AssertReturn (mBusy == false, (void) 0);
-    AssertReturn (mReaders == 0, (void) 0);
+    AssertMsgReturnVoid (mBusy == false, ("%ls", toString().raw()));
+    AssertMsgReturnVoid (mReaders == 0, ("%ls", toString().raw()));
 
     mBusy = true;
 }
