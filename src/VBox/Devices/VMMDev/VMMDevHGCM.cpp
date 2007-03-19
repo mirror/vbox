@@ -83,6 +83,9 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
     
     VBOXHGCMLINPTR *pLinPtr = &paLinPtrs[iLinPtr];
     
+    /* Take the offset into the current page also into account! */
+    u32Size += GCPtr & PAGE_OFFSET_MASK;
+
     uint32_t cPages = (u32Size + PAGE_SIZE - 1) / PAGE_SIZE;
     
     Log(("vmmdevHGCMSaveLinPtr: parm %d: %VGv %d = %d pages\n", iParm, GCPtr, u32Size, cPages));
@@ -418,7 +421,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall)
                              
                              if (pGuestParm->type != VMMDevHGCMParmType_LinAddr_In)
                              {
-                                 /* Remember the guest physical pages those belongs to the virtual address 
+                                 /* Remember the guest physical pages that belong to the virtual address 
                                   * region.
                                   */
                                  rc = vmmdevHGCMSaveLinPtr (pVMMDevState->pDevIns, i, linearAddr, size, iLinPtr++, pCmd->paLinPtrs, &pPages);
