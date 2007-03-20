@@ -107,7 +107,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
 #endif
     AssertRelease((RT_OFFSETOF(VM, selm.s.Tss)       & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.Tss));
     AssertRelease((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08));
-    AssertRelease(sizeof(pVM->selm.s.Tss.redirBitmap) == 0x20);
+    AssertRelease(sizeof(pVM->selm.s.Tss.IntRedirBitmap) == 0x20);
 
     /*
      * Init the structure.
@@ -152,7 +152,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
      * for I/O operations. */
     pVM->selm.s.Tss.offIoBitmap = sizeof(VBOXTSS);
     /* bit set to 1 means no redirection */
-    memset(pVM->selm.s.Tss.redirBitmap, 0xff, sizeof(pVM->selm.s.Tss.redirBitmap));
+    memset(pVM->selm.s.Tss.IntRedirBitmap, 0xff, sizeof(pVM->selm.s.Tss.IntRedirBitmap));
 
     /*
      * Register the saved state data unit.
@@ -1429,9 +1429,9 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
         pVM->selm.s.fGuestTss32Bit = pDesc->Gen.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
                                   || pDesc->Gen.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
-        /** @note we should monitor the whole TSS to catch accesses to the virtual interrupt redirection bitmap, but
-         *        that causes some problems and with Windows guests some overhead as the entire TSS is rather big (3 pages).
-         *        We'll assume for now that the bitmap is static.
+        /* Note: We should monitor the whole TSS to catch accesses to the virtual interrupt redirection bitmap, but
+         *       that causes some problems and with Windows guests some overhead as the entire TSS is rather big (3 pages).
+         *       We'll assume for now that the bitmap is static.
          */
 #if 1
         /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */ 
@@ -1516,15 +1516,15 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 /* Should we sync the virtual interrupt redirection bitmap as well? */
                 if (CPUMGetGuestCR4(pVM) & X86_CR4_VME)
                 {
-                    uint32_t offRedirBitmap = tss.offIoBitmap - sizeof(tss.redirBitmap);
+                    uint32_t offRedirBitmap = tss.offIoBitmap - sizeof(tss.IntRedirBitmap);
                     
                     /** @todo not sure how the partial case is handled; probably not allowed */
-                    if (offRedirBitmap + sizeof(tss.redirBitmap) <= cbTss)
+                    if (offRedirBitmap + sizeof(tss.IntRedirBitmap) <= cbTss)
                     {
-                        rc = PGMPhysReadGCPtr(pVM, &pVM->selm.s.Tss.redirBitmap, GCPtrTss + offRedirBitmap, sizeof(tss.redirBitmap));
+                        rc = PGMPhysReadGCPtr(pVM, &pVM->selm.s.Tss.IntRedirBitmap, GCPtrTss + offRedirBitmap, sizeof(tss.IntRedirBitmap));
                         AssertRC(rc);
                         Log2(("Redirection bitmap:\n"));
-                        Log2(("%.*Vhxd\n", sizeof(tss.redirBitmap), &pVM->selm.s.Tss.redirBitmap));
+                        Log2(("%.*Vhxd\n", sizeof(tss.IntRedirBitmap), &pVM->selm.s.Tss.IntRedirBitmap));
                     }
                 }
             }

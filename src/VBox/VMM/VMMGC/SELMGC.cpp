@@ -286,30 +286,30 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
         }
         if (CPUMGetGuestCR4(pVM) & X86_CR4_VME)
         {
-            uint32_t offRedirBitmap = pGuestTSS->offIoBitmap - sizeof(pVM->selm.s.Tss.redirBitmap);
+            uint32_t offIntRedirBitmap = pGuestTSS->offIoBitmap - sizeof(pVM->selm.s.Tss.IntRedirBitmap);
 
             /** @todo not sure how the partial case is handled; probably not allowed */
-            if (   offRedirBitmap <= offRange 
-                && offRedirBitmap + sizeof(pVM->selm.s.Tss.redirBitmap) >= offRange + cb
-                && offRedirBitmap + sizeof(pVM->selm.s.Tss.redirBitmap) <= pVM->selm.s.cbGuestTss)
+            if (   offIntRedirBitmap <= offRange 
+                && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) >= offRange + cb
+                && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
             {
-                Log(("offIoBitmap=%x offRedirBitmap=%x cbTSS=%x\n", pGuestTSS->offIoBitmap, offRedirBitmap, pVM->selm.s.cbGuestTss));
+                Log(("offIoBitmap=%x offIntRedirBitmap=%x cbTSS=%x\n", pGuestTSS->offIoBitmap, offIntRedirBitmap, pVM->selm.s.cbGuestTss));
                 /** @todo only update the changed part. */
-                for (uint32_t i=0;i<sizeof(pVM->selm.s.Tss.redirBitmap)/8;i++)
+                for (uint32_t i = 0; i < sizeof(pVM->selm.s.Tss.IntRedirBitmap) / 8;i++)
                 {
-                    rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.redirBitmap[i*8], (uint8_t *)pGuestTSS + offRedirBitmap + i*8, 8);
+                    rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8], (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, 8);
                     if (VBOX_FAILURE(rc))
                     {
                         /* Shadow page table might be out of sync */
-                        rc = PGMPrefetchPage(pVM, (uint8_t *)pGuestTSS + offRedirBitmap + i*8);
+                        rc = PGMPrefetchPage(pVM, (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8);
                         if (VBOX_FAILURE(rc))
                         {
-                            AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offRedirBitmap + i*8, rc));
+                            AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8, rc));
                             break;
                         }
-                        rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.redirBitmap[i*8], (uint8_t *)pGuestTSS + offRedirBitmap + i*8, 8);
+                        rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8], (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, 8);
                     }
-                    AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offRedirBitmap + i*8, rc));
+                    AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, rc));
                 }
                 STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSRedir);
             }
