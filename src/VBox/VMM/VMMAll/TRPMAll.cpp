@@ -402,7 +402,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 #endif /* DEBUG */
 
     /* Retrieve the eflags including the virtualized bits. */
-    /** @note hackish as the cpumctxcore structure doesn't contain the right value */
+    /* Note: hackish as the cpumctxcore structure doesn't contain the right value */
     eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame);
 
     /* VM_FF_INHIBIT_INTERRUPTS should be cleared upfront or don't call this function at all for dispatching hardware interrupts. */
@@ -492,7 +492,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
             /* Note: SELMValidateAndConvertCSAddr checks for code type, memory type, selector validity. */
             /** @todo dpl <= cpl else GPF */
 
-            /** @note don't use current eflags as we might be in V86 mode and the IDT always contains protected mode selectors */
+            /* Note: don't use current eflags as we might be in V86 mode and the IDT always contains protected mode selectors */
             X86EFLAGS fakeflags;
             fakeflags.u32 = 0;    
 
@@ -632,8 +632,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                         CTXSUFF(pTrapStack)[--idx] = pRegFrame->esp;
                     }
 
-                    /** @note we use the eflags copy, that includes the virtualized bits! */
-                    /** @note not really necessary as we grab include those bits in the trap/irq handler trampoline */
+                    /* Note: We use the eflags copy, that includes the virtualized bits! */
+                    /* Note: Not really necessary as we grab include those bits in the trap/irq handler trampoline */
                     CTXSUFF(pTrapStack)[--idx] = eflags.u32;
 
                     if ((pRegFrame->cs & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
@@ -683,7 +683,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     CPUMSetGuestCR2(pVM, pVM->trpm.s.uActiveCR2);
 
 #ifdef IN_GC
-                    /** @note shouldn't be necessary */
+                    /* Note: shouldn't be necessary */
                     ASMSetCR2(pVM->trpm.s.uActiveCR2);
 
                     /* Turn off interrupts for interrupt gates. */
