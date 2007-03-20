@@ -209,7 +209,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Only report features we can support.
      */
     pCPUM->aGuestCpuIdStd[1].edx      &= X86_CPUID_FEATURE_EDX_FPU
-                                       //| X86_CPUID_FEATURE_EDX_VME   - recompiler doesn't do this.
+                                       | X86_CPUID_FEATURE_EDX_VME
                                        | X86_CPUID_FEATURE_EDX_DE
                                        | X86_CPUID_FEATURE_EDX_PSE
                                        | X86_CPUID_FEATURE_EDX_TSC
@@ -251,7 +251,7 @@ static int cpumR3CpuIdInit(PVM pVM)
 #if 1 /* we didn't used to do this, but I guess we should */
     /* ASSUMES that this is ALWAYS the AMD define feature set if present. */
     pCPUM->aGuestCpuIdExt[1].edx      &= X86_CPUID_AMD_FEATURE_EDX_FPU
-                                       //| X86_CPUID_AMD_FEATURE_EDX_VME    - recompiler doesn't do this.
+                                       | X86_CPUID_AMD_FEATURE_EDX_VME
                                        | X86_CPUID_AMD_FEATURE_EDX_DE
                                        | X86_CPUID_AMD_FEATURE_EDX_PSE
                                        | X86_CPUID_AMD_FEATURE_EDX_TSC
