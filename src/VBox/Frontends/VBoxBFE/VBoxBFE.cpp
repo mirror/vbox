@@ -114,7 +114,7 @@ using namespace com;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser);
+static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser);
 static DECLCALLBACK(void) vmstateChangeCallback(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 static DECLCALLBACK(void) setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                                              const char *pszFormat, va_list args);
@@ -938,7 +938,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     /*
      * Create empty VM.
      */
-    rc = VMR3Create(setVMErrorCallback, NULL, cfgmR3CreateDefault, NULL, &pVM);
+    rc = VMR3Create(setVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &pVM);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("Error: VM creation failed with %Vrc.\n", rc);
@@ -1053,13 +1053,12 @@ DECLCALLBACK(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_t u32Vers
 
 
 /**
- * Creates the default configuration.
- * This assumes an empty tree.
+ * Constructs the VMM configuration tree.
  *
  * @returns VBox status code.
  * @param   pVM     VM handle.
  */
-static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
+static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 {
     int rcAll = VINF_SUCCESS;
     int rc;
@@ -1069,7 +1068,7 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
 #define CHECK_RC()  UPDATERC()
 
     /*
-     * Create VM default values.
+     * Root values.
      */
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
     rc = CFGMR3InsertString(pRoot,  "Name",                 "Default VM");
@@ -1583,8 +1582,12 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
         rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           CHECK_RC();
 #ifdef __WIN__
         rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");                      CHECK_RC();
-#else /* !__WIN__ */
+#elif defined(__DARWIN__)
+        rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");                  CHECK_RC();
+#elif defined(__LINUX__)
         rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                        CHECK_RC();
+#else /* portme */
+        rc = CFGMR3InsertString(pCfg, "AudioDriver", "none");                       CHECK_RC();
 #endif /* !__WIN__ */
     }
 
