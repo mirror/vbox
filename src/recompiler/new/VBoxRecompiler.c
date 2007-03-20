@@ -3107,7 +3107,7 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
  * @param   pvDst           The destination address.
  * @param   cb              Number of bytes
  */
-void remR3PhysRead(uint8_t *pbSrcPhys, void *pvDst, unsigned cb)
+void remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb)
 {
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
 
@@ -3138,7 +3138,7 @@ void remR3PhysRead(uint8_t *pbSrcPhys, void *pvDst, unsigned cb)
  *
  * @param   pbSrcPhys       The source address. Relative to guest RAM.
  */
-uint8_t remR3PhysReadU8(uint8_t *pbSrcPhys)
+uint8_t remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys)
 {
     uint8_t val;
 
@@ -3171,7 +3171,7 @@ uint8_t remR3PhysReadU8(uint8_t *pbSrcPhys)
  *
  * @param   pbSrcPhys       The source address. Relative to guest RAM.
  */
-int8_t remR3PhysReadS8(uint8_t *pbSrcPhys)
+int8_t remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys)
 {
     int8_t val;
 
@@ -3204,7 +3204,7 @@ int8_t remR3PhysReadS8(uint8_t *pbSrcPhys)
  *
  * @param   pbSrcPhys       The source address. Relative to guest RAM.
  */
-uint16_t remR3PhysReadU16(uint8_t *pbSrcPhys)
+uint16_t remR3PhysReadHCPtrU16(uint8_t *pbSrcPhys)
 {
     uint16_t val;
 
@@ -3237,7 +3237,7 @@ uint16_t remR3PhysReadU16(uint8_t *pbSrcPhys)
  *
  * @param   pbSrcPhys       The source address. Relative to guest RAM.
  */
-int16_t remR3PhysReadS16(uint8_t *pbSrcPhys)
+int16_t remR3PhysReadHCPtrS16(uint8_t *pbSrcPhys)
 {
     int16_t val;
 
@@ -3271,7 +3271,7 @@ int16_t remR3PhysReadS16(uint8_t *pbSrcPhys)
  *
  * @param   pbSrcPhys       The source address. Relative to guest RAM.
  */
-uint32_t remR3PhysReadU32(uint8_t *pbSrcPhys)
+uint32_t remR3PhysReadHCPtrU32(uint8_t *pbSrcPhys)
 {
     uint32_t val;
 
@@ -3304,7 +3304,7 @@ uint32_t remR3PhysReadU32(uint8_t *pbSrcPhys)
  *
  * @param   pbSrcPhys       The source address. Relative to guest RAM.
  */
-int32_t remR3PhysReadS32(uint8_t *pbSrcPhys)
+int32_t remR3PhysReadHCPtrS32(uint8_t *pbSrcPhys)
 {
     int32_t val;
 
@@ -3337,7 +3337,7 @@ int32_t remR3PhysReadS32(uint8_t *pbSrcPhys)
  *
  * @param   pbSrcPhys       The source address. Relative to guest RAM.
  */
-uint64_t remR3PhysReadU64(uint8_t *pbSrcPhys)
+uint64_t remR3PhysReadHCPtrU64(uint8_t *pbSrcPhys)
 {
     uint64_t val;
 
@@ -3373,7 +3373,7 @@ uint64_t remR3PhysReadU64(uint8_t *pbSrcPhys)
  * @param   pvSrc           The source address.
  * @param   cb              Number of bytes to write
  */
-void remR3PhysWrite(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb)
+void remR3PhysWriteHCPtr(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     /*
@@ -3398,7 +3398,7 @@ void remR3PhysWrite(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb)
  * @param   pbDstPhys       The destination address. Relative to guest RAM.
  * @param   val             Value
  */
-void remR3PhysWriteU8(uint8_t *pbDstPhys, uint8_t val)
+void remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     /*
@@ -3423,7 +3423,7 @@ void remR3PhysWriteU8(uint8_t *pbDstPhys, uint8_t val)
  * @param   pbDstPhys       The destination address. Relative to guest RAM.
  * @param   val             Value
  */
-void remR3PhysWriteU16(uint8_t *pbDstPhys, uint16_t val)
+void remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     /*
@@ -3448,7 +3448,7 @@ void remR3PhysWriteU16(uint8_t *pbDstPhys, uint16_t val)
  * @param   pbDstPhys       The destination address. Relative to guest RAM.
  * @param   val             Value
  */
-void remR3PhysWriteU32(uint8_t *pbDstPhys, uint32_t val)
+void remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     /*
@@ -3473,7 +3473,7 @@ void remR3PhysWriteU32(uint8_t *pbDstPhys, uint32_t val)
  * @param   pbDstPhys       The destination address. Relative to guest RAM.
  * @param   val             Value
  */
-void remR3PhysWriteU64(uint8_t *pbDstPhys, uint64_t val)
+void remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     /*
