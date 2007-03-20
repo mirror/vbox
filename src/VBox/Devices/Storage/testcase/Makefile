@@ -21,27 +21,24 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-PROGRAMS = vditool
-ifdef VBOX_WITH_TESTCASES
-PROGRAMS += tstVDI
-endif
-
-TEMPLATE        = VBOXR3EXE
-ifeq ($(filter-out win,$(BUILD_TARGET)),)
- LIBS           = $(PATH_LIB)/VBoxDD.lib
+PROGRAMS        += vditool
+vditool_TEMPLATE = VBOXR3EXE
+vditool_SOURCES  = vditool.cpp
+ifeq ($(BUILD_TARGET),win)
+ vditool_LIBS    = $(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB)
 else
- LIBS           = \
-	$(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL) \
-	$(PATH_BIN)/VBoxDD2$(VBOX_SUFF_DLL) \
-	$(LIB_VMM) \
-	$(LIB_REM)
+ vditool_LIBS    = $(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL)
 endif
-LIBS           += $(LIB_RUNTIME)
+vditool_LIBS    += $(LIB_RUNTIME)
 
-vditool_SOURCES = vditool.cpp
 
-tstVDI_SOURCES  = tstVDI.cpp
-tstVDI_INST = $(INST_TESTCASE)
+ifdef VBOX_WITH_TESTCASES
+ PROGRAMS       += tstVDI
+ tstVDI_TEMPLATE = VBOXR3TSTEXE
+ tstVDI_SOURCES  = tstVDI.cpp
+ tstVDI_LIBS     = $(vditool_LIBS)
+endif
+
 
 include	$(PATH_KBUILD)/footer.kmk
 

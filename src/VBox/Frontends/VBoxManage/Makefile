@@ -29,19 +29,19 @@ VBoxManage_SOURCES    = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp
 ifdef VBOX_WITH_VRDP
-VBoxManage_DEFS      += VBOX_VRDP
+ VBoxManage_DEFS     += VBOX_VRDP
 endif
 ifdef VBOX_WITH_ALSA
-VBoxManage_DEFS      += VBOX_WITH_ALSA
+ VBoxManage_DEFS     += VBOX_WITH_ALSA
 endif
 VBoxManage_LIBS.win = \
-	$(PATH_LIB)/VBoxDD$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB)
 VBoxManage_LIBS.linux = \
-	$(PATH_BIN)/VBoxDD.so \
-	$(PATH_BIN)/VBoxXML.so
+	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
+	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL)
 VBoxManage_LIBS.darwin = \
-	$(PATH_BIN)/VBoxDD$(VBOX_SUFF_DLL) \
+	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
 	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL) \
 	$(LIB_VMM) \
 	$(LIB_REM)
