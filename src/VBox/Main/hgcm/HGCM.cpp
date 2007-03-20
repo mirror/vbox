@@ -470,7 +470,10 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
             continue;
         }
 
-        switch (pMsgCore->MsgId ())
+        /* Cache required information to avoid unnecessary pMsgCore access. */
+        uint32_t u32MsgId = pMsgCore->MsgId ();
+
+        switch (u32MsgId)
         {
             case HGCMMSGID_SVC_LOAD:
             {
@@ -588,13 +591,13 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
             default:
             {
-                Log(("hgcmServiceThread::Unsupported message number %08X\n", pMsgCore->MsgId ()));
+                Log(("hgcmServiceThread::Unsupported message number %08X\n", u32MsgId));
                 rc = VERR_NOT_SUPPORTED;
             } break;
         }
 
-        if (   pMsgCore->MsgId () != HGCMMSGID_GUESTCALL
-            && pMsgCore->MsgId () != HGCMMSGID_HOSTCALL)
+        if (   u32MsgId != HGCMMSGID_GUESTCALL
+            && u32MsgId != HGCMMSGID_HOSTCALL)
         {
             /* For HGCMMSGID_GUESTCALL & HGCMMSGID_HOSTCALL the service
              * calls the completion helper. Other messages have to be
@@ -1214,7 +1217,9 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
             continue;
         }
 
-        switch (pMsgCore->MsgId ())
+        uint32_t u32MsgId = pMsgCore->MsgId ();
+
+        switch (u32MsgId)
         {
             case HGCMMSGID_CONNECT:
             {
@@ -1345,7 +1350,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
             default:
             {
-                Log(("hgcmThread: Unsupported message number %08X!!!\n", pMsgCore->MsgId ()));
+                Log(("hgcmThread: Unsupported message number %08X!!!\n", u32MsgId));
                 rc = VERR_NOT_SUPPORTED;
             } break;
         }
