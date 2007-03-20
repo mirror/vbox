@@ -100,6 +100,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, size_t cb, PFNPGMRELOCATE pfnR
         {
             AssertMsgFailed(("Address is already in use by %s. req %#x-%#x take %#x-%#x\n",
                              pCur->pszDesc, GCPtr, GCPtrLast, pCur->GCPtr, pCur->GCPtrLast));
+            LogRel(("VERR_PGM_MAPPING_CONFLICT: Address is already in use by %s. req %#x-%#x take %#x-%#x\n",pCur->pszDesc, GCPtr, GCPtrLast, pCur->GCPtr, pCur->GCPtrLast));
             return VERR_PGM_MAPPING_CONFLICT;
         }
         if (pCur->GCPtr > GCPtr)
@@ -120,6 +121,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, size_t cb, PFNPGMRELOCATE pfnR
         if (pVM->pgm.s.pInterPD->a[iPageDir + i].n.u1Present)
         {
             AssertMsgFailed(("Address %#x is already in use by an intermediate mapping.\n", GCPtr + (i << PAGE_SHIFT)));
+            LogRel(("VERR_PGM_MAPPING_CONFLICT: Address %#x is already in use by an intermediate mapping.\n", GCPtr + (i << PAGE_SHIFT)));
             return VERR_PGM_MAPPING_CONFLICT;
         }
     }
