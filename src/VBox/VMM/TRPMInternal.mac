@@ -112,6 +112,6 @@ struc VBOXTSS
     .padding_ldt        resw 1
     .fDebugTrap         resw 1
     .offIoBitmap        resw 1
-    .redirBitmap        resb 32
+    .IntRedirBitmap     resb 32
 endstruc
 

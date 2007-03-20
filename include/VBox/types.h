@@ -541,8 +541,8 @@ typedef struct VBOXTSS
     /** Offset relative to the TSS of the start of the I/O Bitmap
      * and the end of the interrupt redirection bitmap. */
     uint16_t    offIoBitmap;
-    /* 32 bytes for the virtual interrupt redirection bitmap. (VME) */
-    uint8_t     redirBitmap[32];
+    /** 32 bytes for the virtual interrupt redirection bitmap. (VME) */
+    uint8_t     IntRedirBitmap[32];
 } VBOXTSS;
 #pragma pack()
 /** Pointer to task segment. */
