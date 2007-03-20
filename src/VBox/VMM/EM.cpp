@@ -2186,7 +2186,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                 rc = TRPMQueryTrapAll(pVM, &u8Interrupt, NULL, &uErrorCode, NULL);
                 AssertRC(rc);
 
-                if (uErrorCode != ~0)
+                if (uErrorCode != (uint32_t)~0)
                     enmError = TRPM_TRAP_HAS_ERRORCODE;
 
                 /* If the guest gate is marked unpatched, then we will check again if we can patch it. */

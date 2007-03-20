@@ -2280,7 +2280,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                 rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
                 AssertRC(rc);   /* can't fail */
 
-                for (int i=0;i<ELEMENTS(aOpenBsdPushCSOffset);i++)
+                for (unsigned i=0;i<ELEMENTS(aOpenBsdPushCSOffset);i++)
                 {
                     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pHandler - aOpenBsdPushCSOffset[i], &cpu, NULL);
                     if (    rc == VINF_SUCCESS
