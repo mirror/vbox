@@ -108,7 +108,6 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, size_t cb, PFNPGMRELOCATE pfnR
         pPrev = pCur;
         pCur = pCur->pNextHC;
     }
-/** @todo this needs fixing, the function must relocate on conflict, not fail! */
 
     /*
      * Check for conflicts with intermediate mappings.
