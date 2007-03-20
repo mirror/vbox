@@ -198,21 +198,21 @@ __BEGIN_DECLS
  * @{
  */
 
-/*
+/**
  * Initialize the USB library
  *
  * @returns VBox status code.
  */
-USBR3DECL(int) usbLibInit();
+VBOXDDU_DECL(int) usbLibInit();
 
-/*
+/**
  * Terminate the USB library
  *
  * @returns VBox status code.
  */
-USBR3DECL(int) usbLibTerm();
+VBOXDDU_DECL(int) usbLibTerm();
 
-/*
+/**
  * Add USB device filter
  *
  * @returns VBox status code.
@@ -221,31 +221,31 @@ USBR3DECL(int) usbLibTerm();
  * @param   pszRevision     Revision filter string
  * @param   ppID            Pointer to filter id
  */
-USBR3DECL(int) usbLibInsertFilter(const char *pszVendor, const char *pszProduct, const char *pszRevision, void **ppID);
+VBOXDDU_DECL(int) usbLibInsertFilter(const char *pszVendor, const char *pszProduct, const char *pszRevision, void **ppID);
 
-/*
+/**
  * Remove USB device filter
  *
  * @returns VBox status code.
  * @param   aID             Filter id
  */
-USBR3DECL(int) usbLibRemoveFilter (void *aID);
+VBOXDDU_DECL(int) usbLibRemoveFilter (void *aID);
 
-/*
+/**
  * Return all attached USB devices.
  *
  * @returns VBox status code
  * @param ppDevices         Receives pointer to list of devices
  * @param pcbNumDevices     Number of USB devices in the list
  */
-USBR3DECL(int) usbLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevices);
+VBOXDDU_DECL(int) usbLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevices);
 
-/*
+/**
  * Check for USB device arrivals or removals
  *
  * @returns boolean
  */
-USBR3DECL(bool) usbLibHasPendingDeviceChanges();
+VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
 
 /** @} */
 #endif

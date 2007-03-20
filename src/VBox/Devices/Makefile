@@ -62,15 +62,19 @@ endif
 # VBoxDDU (shared object)
 #
 VBoxDDU_TEMPLATE         = VBOXR3
-VBoxDDU_SDKS.win         = WINPSDK
 VBoxDDU_DEFS             = IN_VBOXDDU
+ifdef VBOX_WITH_USB
+ VBoxDDU_DEFS.win        = VBOX_WITH_USB
+ VBoxDDU_SDKS.win        = WINPSDK W2K3DDK
+ VBoxDDU_SOURCES.win     = \
+	USB/win32/USBLib-win32.cpp
+else
+ VBoxDDU_SDKS.win         = WINPSDK
+endif
 VBoxDDU_SOURCES          = \
 	Storage/VDICore.cpp
 #	Storage/VmdkHDDCore.cpp
 VBoxDDU_LIBS             = \
-	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/PcDefBiosLogo$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME)
 ifeq ($(BUILD_TARGET),l4)
  VBoxDDU_LIBS           += \
@@ -472,8 +476,7 @@ ifdef VBOX_WITH_USB
  Drivers_DEFS.win     += VUSB_HAVE_USBPROXY_DEVICE
  Drivers_SOURCES.win  += \
 	USB/USBProxyDevice.cpp \
-	USB/win32/USBProxyDevice-win32.cpp \
-	USB/win32/USBLib-win32.cpp
+	USB/win32/USBProxyDevice-win32.cpp
 endif # VBOX_WITH_USB
 
 
