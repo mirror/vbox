@@ -29,6 +29,7 @@ public:
 
 
     MachineDebugger ();
+    virtual ~MachineDebugger () {};
 
     // IMachineDebugger properties
     STDMETHOD(COMGETTER(Singlestep))(BOOL *enabled);

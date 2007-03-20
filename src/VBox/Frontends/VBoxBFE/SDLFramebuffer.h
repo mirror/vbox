@@ -40,7 +40,7 @@ class SDLFramebuffer : public Framebuffer
 {
 public:
     SDLFramebuffer();
-    ~SDLFramebuffer();
+    virtual ~SDLFramebuffer();
 
     virtual HRESULT getWidth(ULONG *width);
     virtual HRESULT getHeight(ULONG *height);

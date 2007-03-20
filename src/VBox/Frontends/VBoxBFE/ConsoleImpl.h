@@ -107,6 +107,7 @@ public:
         enmHKeyState  = HKEYSTATE_NORMAL;
         mfInitialized = false;
     }
+    virtual ~Console() {}
 
     virtual void     updateTitlebar() = 0;
     virtual void     updateTitlebarSave(int iPercent) = 0;

@@ -34,6 +34,7 @@
 class Framebuffer
 {
 public:
+    virtual ~Framebuffer() {}
 
     virtual HRESULT getWidth(ULONG *width) = 0;
     virtual HRESULT getHeight(ULONG *height) = 0;
