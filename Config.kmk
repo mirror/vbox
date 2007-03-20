@@ -701,7 +701,6 @@ ifeq ($(BUILD_TYPE),kprofile)
 endif
 
 # Overridable libraries (unix).
-LIB_UUID         ?= uuid
 LIB_PTHREAD      ?= pthread
 LIB_XCURSOR      ?= Xcursor
 
@@ -1328,7 +1327,7 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	-Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
 	-Wl,--rpath-link,$(L4_LIBDIR)
  ifeq ($(BUILD_TARGET),linux)
-TEMPLATE_VBOXR3EXE_LIBS                = pthread m $(LIB_UUID) rt dl
+TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
  else ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXR3EXE_LIBS                = \
 	$(L4_LIBDIR)/libvboxserver.s.so \
@@ -1544,7 +1543,7 @@ TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = -fno-inline
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
 TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_XPCOM_INCS)
  ifeq ($(BUILD_TARGET),linux)
-TEMPLATE_VBOXMAINEXE_LIBS                = pthread m $(LIB_UUID) rt
+TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt
  else ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 # no libs as yet in l4 target - must be added later
@@ -1791,7 +1790,7 @@ TEMPLATE_VBOXBLDPROG_CXXFLAGS.release    = -O2 -fno-omit-frame-pointer -fno-stri
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
  ifeq ($(BUILD_PLATFORM),linux)
-TEMPLATE_VBOXBLDPROG_LIBS                = pthread m $(LIB_UUID) rt dl
+TEMPLATE_VBOXBLDPROG_LIBS                = pthread m rt dl
  else ifeq ($(BUILD_PLATFORM),os2)
 TEMPLATE_VBOXBLDPROG_TOOL                = GCC3OMF
 TEMPLATE_VBOXBLDPROG_LIBS                = socket iconv

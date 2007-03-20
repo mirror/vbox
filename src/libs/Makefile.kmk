@@ -22,7 +22,6 @@ DEPTH = ../..
 include $(PATH_KBUILD)/header.kmk
 
 
-subdirs.l4 = libuuid ## @todo Use uuid-generic.cpp !
 subdirs := liblzf-1.51 $(subdirs.$(BUILD_TARGET))
 ifndef VBOX_OSE
  ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)

@@ -100,7 +100,6 @@ VBoxBFE_LIBS.win = \
 endif
 VBoxBFE_LIBS.linux = \
 	$(LIB_RUNTIME) \
-	$(LIB_UUID) \
 	$(LIB_XCURSOR)
 VBoxBFE_LIBS.l4 = \
 	$(L4_LIBDIR)/libl4con-idl.a \
