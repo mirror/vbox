@@ -464,6 +464,9 @@ PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
  */
 PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages)
 {
+    size_t  cbHyper;
+    RTGCPTR pvHyperGC;
+
     LogFlow(("PGMR3MapIntermediate: Addr=%RTptr HCPhys=%VHp cbPages=%#x\n", Addr, HCPhys, cbPages));
 
     /*
@@ -496,6 +499,18 @@ PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
     {
         AssertMsgFailed(("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages));
         LogRel(("Addr=%RTptr HCPhys=%VHp cbPages=%d\n", Addr, HCPhys, cbPages));
+        return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo new error code */
+    }
+
+    /* The intermediate mapping must not conflict with our default hypervisor address. */
+    pvHyperGC = MMHyperGetArea(pVM, &cbHyper);
+    if (   uAddress < pvHyperGC
+           ? uAddress + cbPages > pvHyperGC
+           : pvHyperGC + cbHyper > uAddress
+       )
+    {
+        AssertMsgFailed(("Addr=%RTptr HyperGC=%VGv cbPages=%d\n", Addr, pvHyperGC, cbPages));
+        LogRel(("Addr=%RTptr HyperGC=%VGv cbPages=%d\n", Addr, pvHyperGC, cbPages));
         return VERR_PGM_MAPPINGS_FIX_CONFLICT; /** @todo new error code */
     }
 
