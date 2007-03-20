@@ -1500,7 +1500,7 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
 #if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     start1 = start + (unsigned long)phys_ram_base;
 #else
-    start1 = (unsigned long)remR3GCPhys2HCVirt(env, start);
+    start1 = (unsigned long)remR3GCPhys2HCVirt(first_cpu, start);
 #endif
     for(env = first_cpu; env != NULL; env = env->next_cpu) {
         for(i = 0; i < CPU_TLB_SIZE; i++)
@@ -1551,7 +1551,7 @@ static inline void tlb_update_dirty(CPUTLBEntry *tlb_entry)
         ram_addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) + 
             tlb_entry->addend - (unsigned long)phys_ram_base;
 #else
-        ram_addr = remR3HCVirt2GCPhys(cpu_single_env, (tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend); /** @todo check if this is right! */
+        ram_addr = remR3HCVirt2GCPhys(first_cpu, (tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend); /** @todo check if this is right! */
 #endif
         if (!cpu_physical_memory_is_dirty(ram_addr)) {
             tlb_entry->addr_write |= IO_MEM_NOTDIRTY;
@@ -2015,7 +2015,7 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t 
 #if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     ram_addr = addr - (unsigned long)phys_ram_base;
 #else
-    ram_addr = remR3HCVirt2GCPhys(cpu_single_env, (void *)addr);
+    ram_addr = remR3HCVirt2GCPhys(first_cpu, (void *)addr);
 #endif
 #ifdef VBOX
     if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
@@ -2058,7 +2058,7 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t 
 #if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     ram_addr = addr - (unsigned long)phys_ram_base;
 #else
-    ram_addr = remR3HCVirt2GCPhys(cpu_single_env, (void *)addr);
+    ram_addr = remR3HCVirt2GCPhys(first_cpu, (void *)addr);
 #endif
 #ifdef VBOX
     if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
@@ -2101,7 +2101,7 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
 #if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
     ram_addr = addr - (unsigned long)phys_ram_base;
 #else
-    ram_addr = remR3HCVirt2GCPhys(cpu_single_env, (void *)addr);
+    ram_addr = remR3HCVirt2GCPhys(first_cpu, (void *)addr);
 #endif
 #ifdef VBOX
     if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
