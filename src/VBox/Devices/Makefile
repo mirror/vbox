@@ -25,7 +25,7 @@ ifdef VBOX_WITH_TESTCASES
  PROGRAMS = tstIntNetR0
 endif
 LIBRARIES = DevicesR3 Drivers ServicesR0
-DLLS      = VBoxDD VBoxDD2
+DLLS      = VBoxDDU VBoxDD VBoxDD2
 SYSMODS   = VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
 OTHER_CLEAN = \
@@ -45,17 +45,39 @@ SUBDIRS_AFTER = \
 # Check for VBOX_* stuff which governs defines.
 #
 ifdef VBOX_USE_IOAPIC
-DEFS += USE_IOAPIC
+ DEFS += USE_IOAPIC
 endif
 ifdef VBOX_WITH_VRDP
-DEFS += VBOX_VRDP
+ DEFS += VBOX_VRDP
 endif
 ifdef VBOX_WITH_INTERNAL_NETWORKING
-DEFS += VBOX_WITH_INTERNAL_NETWORKING
+ DEFS += VBOX_WITH_INTERNAL_NETWORKING
 endif
 
 # enable the pdm lock.
 #DEFS += VBOX_WITH_PDM_LOCK
+
+
+#
+# VBoxDDU (shared object)
+#
+VBoxDDU_TEMPLATE         = VBOXR3
+VBoxDDU_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
+VBoxDDU_SOURCES          = \
+	Storage/VDICore.cpp
+#	Storage/VmdkHDDCore.cpp
+VBoxDDU_LIBS             = \
+	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/PcDefBiosLogo$(VBOX_SUFF_LIB) \
+	$(LIB_RUNTIME)
+ifeq ($(BUILD_TARGET),l4)
+ VBoxDDU_LIBS           += \
+	$(L4_LIBDIR)/libl4sys.p.a
+endif
+VBoxDDU_LDFLAGS.darwin   = -install_name @executable_path/VBoxDDU.dylib
+VBoxDDU_LDFLAGS.linux    = -Wl,--no-undefined
+VBoxDDU_LDFLAGS.l4       = -Wl,--no-undefined
 
 
 #
@@ -68,10 +90,10 @@ VBoxDD_SOURCES          = \
 	muldiv64.c
 VBoxDD_DEFS             = VBOX_ACPI
 ifdef VBOX_WITH_USB
-VBoxDD_DEFS            += VBOX_WITH_USB IN_USB_R3
+ VBoxDD_DEFS           += VBOX_WITH_USB IN_USB_R3
 endif
 ifdef VBOX_WITH_ISCSI
-VBoxDD_DEFS            += VBOX_WITH_ISCSI
+ VBoxDD_DEFS           += VBOX_WITH_ISCSI
 endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
@@ -79,31 +101,32 @@ VBoxDD_LIBS             = \
 	$(PATH_LIB)/PcDefBiosLogo$(VBOX_SUFF_LIB) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
-VBoxDD_LIBS.win         = \
+ifeq ($(BUILD_TARGET),win)
+ VBoxDD_LIBS           += \
+	$(PATH_LIB)/VBoxDDU.lib \
 	$(PATH_LIB)/VBoxDD2.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
-VBoxDD_LIBS.linux       = \
-	$(PATH_BIN)/VBoxDD2.so
-
-#
+else
+ VBoxDD_LIBS           += \
+	$(INSTARGET_VBoxDDU) \
+	$(INSTARGET_VBoxDD2)
+endif
 ifeq ($(BUILD_TARGET),l4)
-VBoxDD_LIBS            += \
+ VBoxDD_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
-VBoxDD_LIBS.l4          = \
-	$(PATH_BIN)/VBoxDD2.s.so
 VBoxDD_LIBS.darwin      = \
-	$(PATH_BIN)/VBoxDD2.dylib \
 	$(LIB_REM)
-VBoxDD_LIBS.os2         = \
-	$(PATH_BIN)/VBoxDD2.dll
 VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib -framework CoreAudio
 VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
 
 # damn, fix this.
+ifeq ($(BUILD_TARGET),win) 
 $(PATH_LIB)/VBoxDD2.lib: $(PATH_BIN)/VBoxDD2.dll
+$(PATH_LIB)/VBoxDDU.lib: $(PATH_BIN)/VBoxDDU.dll
+endif
 
 
 #
@@ -179,7 +202,7 @@ Bus/DevPCI.cpp_INCS     = Bus
 
 
 #
-# VBoxDDGC
+# VBoxDDGC (sysmod)
 #
 VBoxDDGC_TEMPLATE       = VBOXGC
 VBoxDDGC_DEFS           =
@@ -215,7 +238,7 @@ endif
 
 
 #
-# VBoxDDR0
+# VBoxDDR0 (sysmod)
 #
 VBoxDDR0_TEMPLATE       = VBOXR0
 VBoxDDR0_SYSSUFF        = .r0
@@ -253,7 +276,7 @@ endif
 
 
 #
-# VBoxDD2GC (LGPL code)
+# VBoxDD2GC (LGPL sysmod)
 #
 VBoxDD2GC_TEMPLATE       = VBOXGC
 VBoxDD2GC_DEFS           =
@@ -273,7 +296,7 @@ endif
 
 
 #
-# VBoxDD2R0 (LGPL code)
+# VBoxDD2R0 (LGPL sysmod)
 #
 VBoxDD2R0_TEMPLATE       = VBOXR0
 VBoxDD2R0_DEFS           = IN_RT_R0
