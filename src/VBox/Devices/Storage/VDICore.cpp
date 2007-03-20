@@ -945,7 +945,7 @@ static int vdiReadInBlock(PVDIIMAGEDESC pImage, unsigned uBlock, unsigned offRea
  * @param   pvBuf           Pointer to buffer for reading data.
  * @param   cbToRead        Number of bytes to read.
  */
-IDER3DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, unsigned cbToRead)
+VBOXDDU_DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, unsigned cbToRead)
 {
     /* sanity check */
     Assert(pDisk);
@@ -1205,7 +1205,7 @@ static int vdiCopyBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock)
  * @param   pvBuf           Pointer to buffer of writing data.
  * @param   cbToWrite       Number of bytes to write.
  */
-IDER3DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf, unsigned cbToWrite)
+VBOXDDU_DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf, unsigned cbToWrite)
 {
     /* sanity check */
     Assert(pDisk);
@@ -1604,9 +1604,9 @@ static int vdiCommitToImage(PVDIDISK pDisk, PVDIIMAGEDESC pDstImage,
  * @param   pszComment      Where to store the comment string of image. NULL is ok.
  * @param   cbComment       The size of pszComment buffer. 0 is ok.
  */
-IDER3DECL(int) VDICheckImage(const char *pszFilename, unsigned *puVersion, PVDIIMAGETYPE penmType,
-                             uint64_t *pcbSize, PRTUUID pUuid, PRTUUID pParentUuid,
-                             char *pszComment, unsigned cbComment)
+VBOXDDU_DECL(int) VDICheckImage(const char *pszFilename, unsigned *puVersion, PVDIIMAGETYPE penmType,
+                                uint64_t *pcbSize, PRTUUID pUuid, PRTUUID pParentUuid,
+                                char *pszComment, unsigned cbComment)
 {
     LogFlow(("VDICheckImage:\n"));
 
@@ -1666,7 +1666,7 @@ IDER3DECL(int) VDICheckImage(const char *pszFilename, unsigned *puVersion, PVDII
  * @param   pszFilename     Name of the image file to operate on.
  * @param   pszComment      New comment string (UTF-8). NULL is allowed to reset the comment.
  */
-IDER3DECL(int) VDISetImageComment(const char *pszFilename, const char *pszComment)
+VBOXDDU_DECL(int) VDISetImageComment(const char *pszFilename, const char *pszComment)
 {
     LogFlow(("VDISetImageComment:\n"));
 
@@ -1740,8 +1740,8 @@ IDER3DECL(int) VDISetImageComment(const char *pszFilename, const char *pszCommen
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
-IDER3DECL(int) VDICreateBaseImage(const char *pszFilename, VDIIMAGETYPE enmType, uint64_t cbSize,
-                                  const char *pszComment, PFNVMPROGRESS pfnProgress, void *pvUser)
+VBOXDDU_DECL(int) VDICreateBaseImage(const char *pszFilename, VDIIMAGETYPE enmType, uint64_t cbSize,
+                                     const char *pszComment, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VDICreateBaseImage:\n"));
 
@@ -1772,9 +1772,9 @@ IDER3DECL(int) VDICreateBaseImage(const char *pszFilename, VDIIMAGETYPE enmType,
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
-IDER3DECL(int) VDICreateDifferenceImage(const char *pszFilename, const char *pszParent,
-                                        const char *pszComment, PFNVMPROGRESS pfnProgress,
-                                        void *pvUser)
+VBOXDDU_DECL(int) VDICreateDifferenceImage(const char *pszFilename, const char *pszParent,
+                                           const char *pszComment, PFNVMPROGRESS pfnProgress,
+                                           void *pvUser)
 {
     LogFlow(("VDICreateDifferenceImage:\n"));
 
@@ -1808,7 +1808,7 @@ IDER3DECL(int) VDICreateDifferenceImage(const char *pszFilename, const char *psz
  * @returns VBox status code.
  * @param   pszFilename     Name of the image file to check.
  */
-IDER3DECL(int) VDIDeleteImage(const char *pszFilename)
+VBOXDDU_DECL(int) VDIDeleteImage(const char *pszFilename)
 {
     LogFlow(("VDIDeleteImage:\n"));
     /* Check arguments. */
@@ -1838,8 +1838,8 @@ IDER3DECL(int) VDIDeleteImage(const char *pszFilename)
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
-IDER3DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFilename,
-                            const char *pszComment, PFNVMPROGRESS pfnProgress, void *pvUser)
+VBOXDDU_DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFilename,
+                               const char *pszComment, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VDICopyImage:\n"));
 
@@ -1999,7 +1999,7 @@ IDER3DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFilena
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
-IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+VBOXDDU_DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VDIShrinkImage:\n"));
 
@@ -2217,7 +2217,7 @@ IDER3DECL(int) VDIShrinkImage(const char *pszFilename, PFNVMPROGRESS pfnProgress
  * @param   pvUser          User argument for the progress callback.
  * @remark  Only used by vditool
  */
-IDER3DECL(int) VDIConvertImage(const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+VBOXDDU_DECL(int) VDIConvertImage(const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VDIConvertImage:\n"));
 
@@ -2416,9 +2416,9 @@ l_conversion_failed:
  * @param   pParentUuuid            Where to store parent UUID (can be NULL).
  * @param   pParentModificationUuid Where to store parent modification UUID (can be NULL).
  */
-IDER3DECL(int) VDIGetImageUUIDs(const char *pszFilename,
-                                PRTUUID pUuid, PRTUUID pModificationUuid,
-                                PRTUUID pParentUuid, PRTUUID pParentModificationUuid)
+VBOXDDU_DECL(int) VDIGetImageUUIDs(const char *pszFilename,
+                                   PRTUUID pUuid, PRTUUID pModificationUuid,
+                                   PRTUUID pParentUuid, PRTUUID pParentModificationUuid)
 {
     LogFlow(("VDIGetImageUUIDs:\n"));
 
@@ -2495,9 +2495,9 @@ IDER3DECL(int) VDIGetImageUUIDs(const char *pszFilename,
  * @param   pParentUuuid            Optional parameter, new parent UUID of the image.
  * @param   pParentModificationUuid Optional parameter, new parent modification UUID of the image.
  */
-IDER3DECL(int) VDISetImageUUIDs(const char *pszFilename,
-                                PCRTUUID pUuid, PCRTUUID pModificationUuid,
-                                PCRTUUID pParentUuid, PCRTUUID pParentModificationUuid)
+VBOXDDU_DECL(int) VDISetImageUUIDs(const char *pszFilename,
+                                   PCRTUUID pUuid, PCRTUUID pModificationUuid,
+                                   PCRTUUID pParentUuid, PCRTUUID pParentModificationUuid)
 {
     LogFlow(("VDISetImageUUIDs:\n"));
 
@@ -2563,8 +2563,8 @@ IDER3DECL(int) VDISetImageUUIDs(const char *pszFilename,
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
-IDER3DECL(int) VDIMergeImage(const char *pszFilenameFrom, const char *pszFilenameTo,
-                             PFNVMPROGRESS pfnProgress, void *pvUser)
+VBOXDDU_DECL(int) VDIMergeImage(const char *pszFilenameFrom, const char *pszFilenameTo,
+                                PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VDIMergeImage:\n"));
 
@@ -2725,7 +2725,7 @@ static void vdiRemoveImageFromList(PVDIDISK pDisk, PVDIIMAGEDESC pImage)
  * @returns Pointer to newly created HDD container with no one opened image file.
  * @returns NULL on failure, typically out of memory.
  */
-IDER3DECL(PVDIDISK) VDIDiskCreate(void)
+VBOXDDU_DECL(PVDIDISK) VDIDiskCreate(void)
 {
     PVDIDISK pDisk = (PVDIDISK)RTMemAllocZ(sizeof(VDIDISK));
     if (pDisk)
@@ -2739,7 +2739,7 @@ IDER3DECL(PVDIDISK) VDIDiskCreate(void)
  *
  * @param   pDisk           Pointer to VDI HDD container.
  */
-IDER3DECL(void) VDIDiskDestroy(PVDIDISK pDisk)
+VBOXDDU_DECL(void) VDIDiskDestroy(PVDIDISK pDisk)
 {
     LogFlow(("VDIDiskDestroy: pDisk=%X\n", pDisk));
     /* sanity check */
@@ -2758,7 +2758,7 @@ IDER3DECL(void) VDIDiskDestroy(PVDIDISK pDisk)
  *
  * @returns Working buffer size in bytes.
  */
-IDER3DECL(unsigned) VDIDiskGetBufferSize(PVDIDISK pDisk)
+VBOXDDU_DECL(unsigned) VDIDiskGetBufferSize(PVDIDISK pDisk)
 {
     /* sanity check */
     Assert(pDisk);
@@ -2774,7 +2774,7 @@ IDER3DECL(unsigned) VDIDiskGetBufferSize(PVDIDISK pDisk)
  * @returns Disk ReadOnly status.
  * @returns true if no one VDI image is opened in HDD container.
  */
-IDER3DECL(bool) VDIDiskIsReadOnly(PVDIDISK pDisk)
+VBOXDDU_DECL(bool) VDIDiskIsReadOnly(PVDIDISK pDisk)
 {
     /* sanity check */
     Assert(pDisk);
@@ -2796,7 +2796,7 @@ IDER3DECL(bool) VDIDiskIsReadOnly(PVDIDISK pDisk)
  * @returns Virtual disk size in bytes.
  * @returns 0 if no one VDI image is opened in HDD container.
  */
-IDER3DECL(uint64_t) VDIDiskGetSize(PVDIDISK pDisk)
+VBOXDDU_DECL(uint64_t) VDIDiskGetSize(PVDIDISK pDisk)
 {
     /* sanity check */
     Assert(pDisk);
@@ -2818,7 +2818,7 @@ IDER3DECL(uint64_t) VDIDiskGetSize(PVDIDISK pDisk)
  * @returns VDI image block size in bytes.
  * @returns 0 if no one VDI image is opened in HDD container.
  */
-IDER3DECL(unsigned) VDIDiskGetBlockSize(PVDIDISK pDisk)
+VBOXDDU_DECL(unsigned) VDIDiskGetBlockSize(PVDIDISK pDisk)
 {
     /* sanity check */
     Assert(pDisk);
@@ -2845,7 +2845,7 @@ IDER3DECL(unsigned) VDIDiskGetBlockSize(PVDIDISK pDisk)
  * @param   pcHeads         Where to store the number of heads. NULL is ok.
  * @param   pcSectors       Where to store the number of sectors. NULL is ok.
  */
-IDER3DECL(int) VDIDiskGetGeometry(PVDIDISK pDisk, unsigned *pcCylinders, unsigned *pcHeads, unsigned *pcSectors)
+VBOXDDU_DECL(int) VDIDiskGetGeometry(PVDIDISK pDisk, unsigned *pcCylinders, unsigned *pcHeads, unsigned *pcSectors)
 {
     /* sanity check */
     Assert(pDisk);
@@ -2891,7 +2891,7 @@ IDER3DECL(int) VDIDiskGetGeometry(PVDIDISK pDisk, unsigned *pcCylinders, unsigne
  * @param   cHeads          Number of heads.
  * @param   cSectors        Number of sectors.
  */
-IDER3DECL(int) VDIDiskSetGeometry(PVDIDISK pDisk, unsigned cCylinders, unsigned cHeads, unsigned cSectors)
+VBOXDDU_DECL(int) VDIDiskSetGeometry(PVDIDISK pDisk, unsigned cCylinders, unsigned cHeads, unsigned cSectors)
 {
     LogFlow(("VDIDiskSetGeometry: C/H/S = %u/%u/%u\n", cCylinders, cHeads, cSectors));
     /* sanity check */
@@ -2924,7 +2924,7 @@ IDER3DECL(int) VDIDiskSetGeometry(PVDIDISK pDisk, unsigned cCylinders, unsigned 
  * @param   pDisk           Pointer to VDI HDD container.
  * @param   penmTranslation Where to store the translation mode (see pdm.h).
  */
-IDER3DECL(int) VDIDiskGetTranslation(PVDIDISK pDisk, PPDMBIOSTRANSLATION penmTranslation)
+VBOXDDU_DECL(int) VDIDiskGetTranslation(PVDIDISK pDisk, PPDMBIOSTRANSLATION penmTranslation)
 {
     /* sanity check */
     Assert(pDisk);
@@ -2952,7 +2952,7 @@ IDER3DECL(int) VDIDiskGetTranslation(PVDIDISK pDisk, PPDMBIOSTRANSLATION penmTra
  * @param   pDisk           Pointer to VDI HDD container.
  * @param   enmTranslation  Translation mode (see pdm.h).
  */
-IDER3DECL(int) VDIDiskSetTranslation(PVDIDISK pDisk, PDMBIOSTRANSLATION enmTranslation)
+VBOXDDU_DECL(int) VDIDiskSetTranslation(PVDIDISK pDisk, PDMBIOSTRANSLATION enmTranslation)
 {
     LogFlow(("VDIDiskSetTranslation: enmTranslation=%d\n", enmTranslation));
     /* sanity check */
@@ -2979,7 +2979,7 @@ IDER3DECL(int) VDIDiskSetTranslation(PVDIDISK pDisk, PDMBIOSTRANSLATION enmTrans
  * @returns Number of opened images for HDD container. 0 if no images is opened.
  * @param   pDisk           Pointer to VDI HDD container.
  */
-IDER3DECL(int) VDIDiskGetImagesCount(PVDIDISK pDisk)
+VBOXDDU_DECL(int) VDIDiskGetImagesCount(PVDIDISK pDisk)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3009,7 +3009,7 @@ static PVDIIMAGEDESC vdiGetImageByNumber(PVDIDISK pDisk, int nImage)
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puVersion       Where to store the image version.
  */
-IDER3DECL(int) VDIDiskGetImageVersion(PVDIDISK pDisk, int nImage, unsigned *puVersion)
+VBOXDDU_DECL(int) VDIDiskGetImageVersion(PVDIDISK pDisk, int nImage, unsigned *puVersion)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3041,7 +3041,7 @@ IDER3DECL(int) VDIDiskGetImageVersion(PVDIDISK pDisk, int nImage, unsigned *puVe
  * @param   pszFilename     Where to store the image file name.
  * @param   cbFilename      Size of buffer pszFilename points to.
  */
-IDER3DECL(int) VDIDiskGetImageFilename(PVDIDISK pDisk, int nImage, char *pszFilename, unsigned cbFilename)
+VBOXDDU_DECL(int) VDIDiskGetImageFilename(PVDIDISK pDisk, int nImage, char *pszFilename, unsigned cbFilename)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3084,7 +3084,7 @@ IDER3DECL(int) VDIDiskGetImageFilename(PVDIDISK pDisk, int nImage, char *pszFile
  * @param   pszComment      Where to store the comment string of image. NULL is ok.
  * @param   cbComment       The size of pszComment buffer. 0 is ok.
  */
-IDER3DECL(int) VDIDiskGetImageComment(PVDIDISK pDisk, int nImage, char *pszComment, unsigned cbComment)
+VBOXDDU_DECL(int) VDIDiskGetImageComment(PVDIDISK pDisk, int nImage, char *pszComment, unsigned cbComment)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3126,7 +3126,7 @@ IDER3DECL(int) VDIDiskGetImageComment(PVDIDISK pDisk, int nImage, char *pszComme
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   penmType        Where to store the image type.
  */
-IDER3DECL(int) VDIDiskGetImageType(PVDIDISK pDisk, int nImage, PVDIIMAGETYPE penmType)
+VBOXDDU_DECL(int) VDIDiskGetImageType(PVDIDISK pDisk, int nImage, PVDIIMAGETYPE penmType)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3157,7 +3157,7 @@ IDER3DECL(int) VDIDiskGetImageType(PVDIDISK pDisk, int nImage, PVDIIMAGETYPE pen
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pfFlags         Where to store the image flags.
  */
-IDER3DECL(int) VDIDiskGetImageFlags(PVDIDISK pDisk, int nImage, unsigned *pfFlags)
+VBOXDDU_DECL(int) VDIDiskGetImageFlags(PVDIDISK pDisk, int nImage, unsigned *pfFlags)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3188,7 +3188,7 @@ IDER3DECL(int) VDIDiskGetImageFlags(PVDIDISK pDisk, int nImage, unsigned *pfFlag
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image creation uuid.
  */
-IDER3DECL(int) VDIDiskGetImageUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
+VBOXDDU_DECL(int) VDIDiskGetImageUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3219,7 +3219,7 @@ IDER3DECL(int) VDIDiskGetImageUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image modification uuid.
  */
-IDER3DECL(int) VDIDiskGetImageModificationUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
+VBOXDDU_DECL(int) VDIDiskGetImageModificationUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3250,7 +3250,7 @@ IDER3DECL(int) VDIDiskGetImageModificationUuid(PVDIDISK pDisk, int nImage, PRTUU
  * @param   nImage          Image number, counts from 0. 0 is always base image of the container.
  * @param   pUuid           Where to store the image creation uuid.
  */
-IDER3DECL(int) VDIDiskGetParentImageUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
+VBOXDDU_DECL(int) VDIDiskGetParentImageUuid(PVDIDISK pDisk, int nImage, PRTUUID pUuid)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3370,7 +3370,7 @@ static int vdiUpdateReadOnlyHeader(PVDIIMAGEDESC pImage)
  * @param   pszFilename     Name of the image file to open.
  * @param   fOpen           Image file open mode, see VDI_OPEN_FLAGS_* constants.
  */
-IDER3DECL(int) VDIDiskOpenImage(PVDIDISK pDisk, const char *pszFilename, unsigned fOpen)
+VBOXDDU_DECL(int) VDIDiskOpenImage(PVDIDISK pDisk, const char *pszFilename, unsigned fOpen)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3429,7 +3429,7 @@ IDER3DECL(int) VDIDiskOpenImage(PVDIDISK pDisk, const char *pszFilename, unsigne
  *
  * @param   pDisk           Pointer to VDI HDD container.
  */
-IDER3DECL(void) VDIDiskCloseImage(PVDIDISK pDisk)
+VBOXDDU_DECL(void) VDIDiskCloseImage(PVDIDISK pDisk)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3467,7 +3467,7 @@ IDER3DECL(void) VDIDiskCloseImage(PVDIDISK pDisk)
  *
  * @param   pDisk           Pointer to VDI HDD container.
  */
-IDER3DECL(void) VDIDiskCloseAllImages(PVDIDISK pDisk)
+VBOXDDU_DECL(void) VDIDiskCloseAllImages(PVDIDISK pDisk)
 {
     LogFlow(("VDIDiskCloseAllImages:\n"));
     /* sanity check */
@@ -3502,7 +3502,7 @@ IDER3DECL(void) VDIDiskCloseAllImages(PVDIDISK pDisk)
  * @param   pvUser          User argument for the progress callback.
  * @remark  Only used by tstVDI.
  */
-IDER3DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgress, void *pvUser)
+VBOXDDU_DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VDIDiskCommitLastDiff:\n"));
     /* sanity check */
@@ -3570,9 +3570,9 @@ IDER3DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgress, 
  * @param   pvUser          User argument for the progress callback.
  * @remark  Only used by tstVDI.
  */
-IDER3DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *pszFilename,
-                                                const char *pszComment, PFNVMPROGRESS pfnProgress,
-                                                void *pvUser)
+VBOXDDU_DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *pszFilename,
+                                                   const char *pszComment, PFNVMPROGRESS pfnProgress,
+                                                   void *pvUser)
 {
     LogFlow(("VDIDiskCreateOpenDifferenceImage:\n"));
     /* sanity check */
@@ -3676,7 +3676,7 @@ static void vdiDumpImage(PVDIIMAGEDESC pImage)
  * @param   pDisk           Pointer to VDI HDD container.
  * @remark  Only used by tstVDI and vditool
  */
-IDER3DECL(void) VDIDiskDumpImages(PVDIDISK pDisk)
+VBOXDDU_DECL(void) VDIDiskDumpImages(PVDIDISK pDisk)
 {
     /* sanity check */
     Assert(pDisk);
@@ -3686,3 +3686,4 @@ IDER3DECL(void) VDIDiskDumpImages(PVDIDISK pDisk)
     for (PVDIIMAGEDESC pImage = pDisk->pBase; pImage; pImage = pImage->pNext)
         vdiDumpImage(pImage);
 }
+
