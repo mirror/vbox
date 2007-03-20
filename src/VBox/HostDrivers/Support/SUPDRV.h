@@ -84,6 +84,7 @@
 #   include <linux/spinlock.h>
 #   include <linux/slab.h>
 #   include <asm/semaphore.h>
+#   include <linux/timer.h>
 
 #elif defined(__DARWIN__)
 #   include <libkern/libkern.h>
@@ -647,6 +648,18 @@ typedef struct SUPDRVDEVEXT
     unsigned long           ulLastJiffies;
     /** The last mono time stamp. */
     uint64_t volatile       u64LastMonotime;
+# ifdef CONFIG_SMP
+    /** Array of per CPU data for SUPGIPMODE_ASYNC_TSC. */
+    struct LINUXCPU
+    {
+        /** The last jiffies. */
+        unsigned long       ulLastJiffies;
+        /** The last mono time stamp. */
+        uint64_t volatile   u64LastMonotime;
+        /** The per cpu timer. */
+        struct timer_list   Timer;
+    }                       aCPUs[256];
+# endif
 #endif
 } SUPDRVDEVEXT;
 

@@ -250,7 +250,8 @@ static int      VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt);
 static void     VBoxSupGipTimer(unsigned long ulUser);
 #ifdef CONFIG_SMP
-static void     VBoxSupDrvGipPerCpu(void *pvUser);
+static void     VBoxSupGipTimerPerCpu(unsigned long ulUser);
+static void     VBoxSupGipResumePerCpu(void *pvUser);
 #endif
 static int      VBoxSupDrvOrder(unsigned long size);
 static int      VBoxSupDrvErr2LinuxErr(int);
@@ -1268,6 +1269,9 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
     struct page *pPage;
     dma_addr_t  HCPhys;
     PSUPGLOBALINFOPAGE pGip;
+#ifdef CONFIG_SMP
+    unsigned i;
+#endif 
     dprintf(("VBoxSupDrvInitGip:\n"));
 
     /*
@@ -1311,6 +1315,15 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
     g_GipTimer.data = (unsigned long)pDevExt;
     g_GipTimer.function = VBoxSupGipTimer;
     g_GipTimer.expires = jiffies;
+#ifdef CONFIG_SMP
+    for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++) 
+    {
+        init_timer(&pDevExt->aCPUs[i].Timer);
+        pDevExt->aCPUs[i].Timer.data = (unsigned long)pDevExt;
+        pDevExt->aCPUs[i].Timer.function = VBoxSupGipTimerPerCpu;
+        pDevExt->aCPUs[i].Timer.expires = jiffies;
+    }
+#endif 
 
     return 0;
 }
@@ -1326,13 +1339,21 @@ static int VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt)
 {
     struct page *pPage;
     PSUPGLOBALINFOPAGE pGip;
+#ifdef CONFIG_SMP
+    unsigned i;
+#endif 
     dprintf(("VBoxSupDrvTermGip:\n"));
 
     /*
      * Delete the timer if it's pending.
      */
     if (timer_pending(&g_GipTimer))
-        del_timer(&g_GipTimer);
+        del_timer_sync(&g_GipTimer);
+#ifdef CONFIG_SMP
+    for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
+        if (timer_pending(&pDevExt->aCPUs[i].Timer))
+            del_timer_sync(&pDevExt->aCPUs[i].Timer);
+#endif 
 
     /*
      * Uninitialize the content.
@@ -1358,7 +1379,11 @@ static int VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt)
 
 /**
  * Timer callback function.
- * The ulUser parameter is the device extension pointer.
+ * 
+ * In ASYNC TSC mode this is called on the primary CPU, and we're 
+ * assuming that the CPU remains online.
+ * 
+ * @param   ulUser  The device extension pointer.
  */
 static void     VBoxSupGipTimer(unsigned long ulUser)
 {
@@ -1375,35 +1400,43 @@ static void     VBoxSupGipTimer(unsigned long ulUser)
 #endif
     ASMAtomicXchgU64(&pDevExt->u64LastMonotime, u64Monotime);
     if (RT_LIKELY(pGip))
-    {
-#ifdef CONFIG_SMP
-        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-#endif 
-            supdrvGipUpdate(pDevExt->pGip, u64Monotime);
-#ifdef CONFIG_SMP
-        else
-        {
-            smp_call_function(VBoxSupDrvGipPerCpu, pDevExt, 0 /* don't retry? */, 0 /* don't wait */);
-            supdrvGipUpdate(pDevExt->pGip, u64Monotime);
-        }
-#endif
-    }
+        supdrvGipUpdate(pDevExt->pGip, u64Monotime);
     mod_timer(&g_GipTimer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
 }
 
 
 #ifdef CONFIG_SMP
 /**
- * smp_call_function callback.
- * This is invoked on all the other CPUs.
+ * Timer callback function for the other CPUs.
  * 
- * @param   pvUser  Pointer to the device extension.
+ * @param   ulUser  The device extension pointer.
  */
-static void VBoxSupDrvGipPerCpu(void *pvUser)
+static void VBoxSupGipTimerPerCpu(unsigned long ulUser)
 {
-    PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)pvUser;
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-    supdrvGipUpdatePerCpu(pGip, pDevExt->u64LastMonotime, ASMGetApicId());
+    PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)ulUser;
+    PSUPGLOBALINFOPAGE  pGip    = pDevExt->pGip;
+    unsigned long       ulNow   = jiffies;
+    unsigned long       ulDiff  = ulNow - pDevExt->ulLastJiffies;
+    uint64_t            u64Monotime;
+    uint8_t             iCPU = ASMGetApicId();
+
+    if (RT_UNLIKELY(iCPU >= RT_ELEMENTS(pGip->aCPUs)))
+    {
+        printk("vboxdrv: error: apicid=%d max=%d cpuid=%d\n", 
+               iCPU, RT_ELEMENTS(pGip->aCPUs), smp_processor_id());
+        return;
+    }
+
+    pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
+#ifdef TICK_NSEC
+    u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
+#else
+    u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * (1000000 / HZ);
+#endif
+    ASMAtomicXchgU64(&pDevExt->aCPUs[iCPU].u64LastMonotime, u64Monotime);
+    if (RT_LIKELY(pGip))
+        supdrvGipUpdatePerCpu(pGip, pDevExt->aCPUs[iCPU].u64LastMonotime, iCPU);
+    mod_timer(&pDevExt->aCPUs[iCPU].Timer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
 }
 #endif  /* CONFIG_SMP */
 
@@ -1513,8 +1546,44 @@ int VBOXCALL supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE pGip)
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
 {
     dprintf2(("supdrvOSGipResume:\n"));
-    mod_timer(&g_GipTimer, jiffies);
+#ifdef CONFIG_SMP
+    if (pDevExt->pGip->u32Mode != SUPGIPMODE_ASYNC_TSC) 
+#endif
+        mod_timer(&g_GipTimer, jiffies);
+#ifdef CONFIG_SMP
+    else
+    {
+        mod_timer(&g_GipTimer, jiffies);
+        smp_call_function(VBoxSupGipResumePerCpu, pDevExt, 0 /* retry */, 1 /* wait */);
+    }
+#endif 
 }
+
+
+#ifdef CONFIG_SMP
+/**
+ * Callback for resuming GIP updating on the other CPUs.
+ * 
+ * This is only used when the GIP is in async tsc mode.
+ * 
+ * @param   pvUser  Pointer to the device instance.
+ */
+static void VBoxSupGipResumePerCpu(void *pvUser)
+{
+    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
+    uint8_t iCPU = ASMGetApicId();
+
+
+    if (RT_UNLIKELY(iCPU >= RT_ELEMENTS(pDevExt->pGip->aCPUs)))
+    {
+        printk("vboxdrv: error: apicid=%d max=%d cpuid=%d\n", 
+               iCPU, RT_ELEMENTS(pDevExt->pGip->aCPUs), smp_processor_id());
+        return;
+    }
+
+    mod_timer(&pDevExt->aCPUs[iCPU].Timer, jiffies);
+}
+#endif /* CONFIG_SMP */
 
 
 /**
@@ -1524,9 +1593,18 @@ void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
  */
 void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
 {
+#ifdef CONFIG_SMP
+    unsigned i;
+#endif 
     dprintf2(("supdrvOSGipSuspend:\n"));
+
     if (timer_pending(&g_GipTimer))
-        del_timer(&g_GipTimer);
+        del_timer_sync(&g_GipTimer);
+#ifdef CONFIG_SMP
+    for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
+        if (timer_pending(&pDevExt->aCPUs[i].Timer))
+            del_timer_sync(&pDevExt->aCPUs[i].Timer);
+#endif 
 }
 
 
@@ -1630,3 +1708,4 @@ module_exit(VBoxSupDrvUnload);
 MODULE_AUTHOR("InnoTek Systemberatung GmbH");
 MODULE_DESCRIPTION("VirtualBox Support Driver");
 MODULE_LICENSE("GPL");
+
