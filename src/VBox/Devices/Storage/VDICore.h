@@ -520,9 +520,9 @@ struct VDIDISK
 *******************************************************************************/
 __BEGIN_DECLS
 
-void vdiInitVDIDisk(PVDIDISK pDisk);
-void vdiFlushImage(PVDIIMAGEDESC pImage);
-int  vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly);
+VBOXDDU_DECL(void) vdiInitVDIDisk(PVDIDISK pDisk);
+VBOXDDU_DECL(void) vdiFlushImage(PVDIIMAGEDESC pImage);
+VBOXDDU_DECL(int)  vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly);
 
 __END_DECLS
 

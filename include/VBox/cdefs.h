@@ -1273,6 +1273,20 @@
 #endif
 
 
+/** @def IN_VBOXDDU
+ * Used to indicate whether we're inside the VBoxDDU shared object.
+ */
+/** @def VBOXDDU_DECL(type)
+ * VBoxDDU export or import (ring-3).
+ * @param   type    The return type of the function declaration.
+ */
+#ifdef IN_VBOXDDU
+# define VBOXDDU_DECL(type) DECLEXPORT(type) VBOXCALL
+#else
+# define VBOXDDU_DECL(type) DECLIMPORT(type) VBOXCALL
+#endif
+
+
 
 /** @def IN_REM_R0
  * Used to indicate whether we're inside the same link module as

@@ -62,7 +62,8 @@ endif
 # VBoxDDU (shared object)
 #
 VBoxDDU_TEMPLATE         = VBOXR3
-VBoxDDU_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
+VBoxDDU_SDKS.win         = WINPSDK
+VBoxDDU_DEFS             = IN_VBOXDDU
 VBoxDDU_SOURCES          = \
 	Storage/VDICore.cpp
 #	Storage/VmdkHDDCore.cpp
