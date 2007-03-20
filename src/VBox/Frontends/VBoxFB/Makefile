@@ -40,7 +40,6 @@ VBoxFB_LIBS       = \
 	plc4 \
 	$(LIB_PTHREAD) \
 	rt \
-	$(LIB_UUID) \
 	directfb
 VBoxFB_LIBPATH    = \
 	$(LIBPATH_XPCOM)

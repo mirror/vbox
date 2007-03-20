@@ -78,7 +78,6 @@ ifdef VBOX_WITH_XPCOM
 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
  VBoxSDL_LIBS.linux = \
-	$(LIB_UUID) \
 	$(LIB_XCURSOR)
  VBoxSDL_LDFLAGS.darwin = \
     -framework Foundation -framework AppKit

@@ -42,7 +42,6 @@ INCXALAN=""
 LIBXALAN="-lxalan-c"
 INCXERCES=""
 LIBXERCES="-lxerces-c"
-LIBUUID="-luuid"
 INCSDL="/usr/include/SDL"
 LIBSDL="-lSDL"
 LIBSDLMAIN="-lSDLmain"
@@ -506,35 +505,6 @@ check_libidl()
     else
       log_success "found version $libidl_ver"
       cnf_append "VBOX_LIBIDL_CONFIG" `which_wrapper libIDL-config`
-    fi
-  fi
-}
-
-#
-# Check for uuid, needed by Runtime, VBoxSVC, VBoxSDL, and VBoxBFE
-#
-function check_uuid()
-{
-  test_header uuid
-  echo '
-#include <cstdio>
-#include <uuid/uuid.h>
-extern "C" int main(void)
-{
-  uuid_t uu;
-  uuid_clear(uu);
-  if (uuid_is_null(uu)) {
-    printf("found, OK.\n");
-    return 0;
-  } else {
-    printf("uuid found but does not work\n");
-    return 1;
-  }
-}
-' > .tmp_src.cc
-  if test_compile $LIBUUID uuid uuid; then
-    if test_execute; then
-      cnf_append "LIB_UUID" `echo $LIBUUID|sed 's+-l++'`
     fi
   fi
 }
@@ -1206,7 +1176,6 @@ check_gcc
 (($WITH_XPCOM==1)) && check_xalan
 (($WITH_XPCOM==1)) && check_xerces
 (($WITH_LIBIDL==1)) && check_libidl
-[ "$OS" != "darwin" ] && check_uuid
 (($OSE==0)) && check_ssl
 [ "$OS" != "darwin" ] && check_pthread
 [ "$OS" != "darwin" ] && check_z

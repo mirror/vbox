@@ -122,7 +122,6 @@ ifdef IPRT_WITH_KLDR
 	$(IPRT_PATH_KLDR)
 endif
 RuntimeR3_INCS.l4       = \
-	$(PATH_ROOT)/src/libs/libuuid \
 	$(L4_INCDIR)
 # for iconv.h
 RuntimeR3_INCS.freebsd  = \
@@ -385,8 +384,7 @@ RuntimeR3_SOURCES.freebsd = \
 #
 RuntimeR3L4_TEMPLATE      = VBOXR3NP
 RuntimeR3L4_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF LDR_WITH_PE
-RuntimeR3L4_INCS          = $(L4_INCDIR) \
-	$(PATH_ROOT)/src/libs/libuuid
+RuntimeR3L4_INCS          = $(L4_INCDIR)
 
 RuntimeR3L4_SOURCES = \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -489,7 +487,6 @@ VBoxRT_LIBS                   += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
 VBoxRT_LIBS.l4                 = \
-	$(PATH_LIB)/VBox-uuid$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
 
 
