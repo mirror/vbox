@@ -59,7 +59,7 @@ BEGINPROC trpmR0DispatchHostInterrupt
     ; create the iret frame
     push    0                           ; SS
     push    r11                         ; RSP
-    pushfd                              ; RFLAGS
+    pushfq                              ; RFLAGS
     and     dword [rsp], ~X86_EFL_IF
     mov     ax, cs
     push    rax                         ; CS
