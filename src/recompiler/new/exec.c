@@ -2298,7 +2298,7 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
 # else
                 ptr = phys_ram_base + addr1;
 # endif
-                remR3PhysWrite(ptr, buf, l);
+                remR3PhysWriteHCPtr(ptr, buf, l);
 #else
                 ptr = phys_ram_base + addr1;
                 memcpy(ptr, buf, l);
@@ -2344,7 +2344,7 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                 ptr = phys_ram_base + (pd & TARGET_PAGE_MASK) + 
                     (addr & ~TARGET_PAGE_MASK);
 # endif
-                remR3PhysRead(ptr, buf, l);
+                remR3PhysReadHCPtr(ptr, buf, l);
 #else
                 ptr = phys_ram_base + (pd & TARGET_PAGE_MASK) + 
                     (addr & ~TARGET_PAGE_MASK);

@@ -183,20 +183,20 @@ typedef union {
 #if !defined(REMR3PHYSREADWRITE_DEFINED)
 #define REMR3PHYSREADWRITE_DEFINED
 /* Header sharing between vbox & qemu is rather ugly. */
-void     remR3PhysRead(uint8_t *pbSrcPhys, void *pvDst, unsigned cb);
-uint8_t  remR3PhysReadU8(uint8_t *pbSrcPhys);
-int8_t   remR3PhysReadS8(uint8_t *pbSrcPhys);
-uint16_t remR3PhysReadU16(uint8_t *pbSrcPhys);
-int16_t  remR3PhysReadS16(uint8_t *pbSrcPhys);
-uint32_t remR3PhysReadU32(uint8_t *pbSrcPhys);
-int32_t  remR3PhysReadS32(uint8_t *pbSrcPhys);
-uint64_t remR3PhysReadU64(uint8_t *pbSrcPhys);
-int64_t  remR3PhysReadS64(uint8_t *pbSrcPhys);
-void     remR3PhysWrite(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb);
-void     remR3PhysWriteU8(uint8_t *pbDstPhys, uint8_t val);
-void     remR3PhysWriteU16(uint8_t *pbDstPhys, uint16_t val);
-void     remR3PhysWriteU32(uint8_t *pbDstPhys, uint32_t val);
-void     remR3PhysWriteU64(uint8_t *pbDstPhys, uint64_t val);
+void     remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb);
+uint8_t  remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys);
+int8_t   remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys);
+uint16_t remR3PhysReadHCPtrU16(uint8_t *pbSrcPhys);
+int16_t  remR3PhysReadHCPtrS16(uint8_t *pbSrcPhys);
+uint32_t remR3PhysReadHCPtrU32(uint8_t *pbSrcPhys);
+int32_t  remR3PhysReadHCPtrS32(uint8_t *pbSrcPhys);
+uint64_t remR3PhysReadHCPtrU64(uint8_t *pbSrcPhys);
+int64_t  remR3PhysReadHCPtrS64(uint8_t *pbSrcPhys);
+void     remR3PhysWriteHCPtr(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb);
+void     remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val);
+void     remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val);
+void     remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val);
+void     remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val);
 # ifdef PGM_DYNAMIC_RAM_ALLOC
 void    *remR3GCPhys2HCVirt(void *env, target_ulong addr);
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
@@ -206,52 +206,52 @@ void     remR3GrowDynRange(unsigned long physaddr);
 
 static inline int ldub_p(void *ptr)
 {
-    return remR3PhysReadU8(ptr);
+    return remR3PhysReadHCPtrU8(ptr);
 }
 
 static inline int ldsb_p(void *ptr)
 {
-    return remR3PhysReadS8(ptr);
+    return remR3PhysReadHCPtrS8(ptr);
 }
 
 static inline void stb_p(void *ptr, int v)
 {
-    remR3PhysWriteU8(ptr, v);
+    remR3PhysWriteHCPtrU8(ptr, v);
 }
 
 static inline int lduw_le_p(void *ptr)
 {
-    return remR3PhysReadU16(ptr);
+    return remR3PhysReadHCPtrU16(ptr);
 }
 
 static inline int ldsw_le_p(void *ptr)
 {
-    return remR3PhysReadS16(ptr);
+    return remR3PhysReadHCPtrS16(ptr);
 }
 
 static inline void stw_le_p(void *ptr, int v)
 {
-    remR3PhysWriteU16(ptr, v);
+    remR3PhysWriteHCPtrU16(ptr, v);
 }
 
 static inline int ldl_le_p(void *ptr)
 {
-    return remR3PhysReadU32(ptr);
+    return remR3PhysReadHCPtrU32(ptr);
 }
 
 static inline void stl_le_p(void *ptr, int v)
 {
-    remR3PhysWriteU32(ptr, v);
+    remR3PhysWriteHCPtrU32(ptr, v);
 }
 
 static inline void stq_le_p(void *ptr, uint64_t v)
 {
-    remR3PhysWriteU64(ptr, v);
+    remR3PhysWriteHCPtrU64(ptr, v);
 }
 
 static inline uint64_t ldq_le_p(void *ptr)
 {
-    return remR3PhysReadU64(ptr);
+    return remR3PhysReadHCPtrU64(ptr);
 }
 
 /* float access */
