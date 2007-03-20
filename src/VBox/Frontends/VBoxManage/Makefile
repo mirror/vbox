@@ -34,17 +34,15 @@ endif
 ifdef VBOX_WITH_ALSA
  VBoxManage_DEFS     += VBOX_WITH_ALSA
 endif
-VBoxManage_LIBS.win = \
+ifeq ($(BUILD_TARGET),win)
+ VBoxManage_LIBS     += \
 	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB)
-VBoxManage_LIBS.linux = \
+else
+ VBoxManage_LIBS     += \
 	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
 	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL)
-VBoxManage_LIBS.darwin = \
-	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
-	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL) \
-	$(LIB_VMM) \
-	$(LIB_REM)
+endif
 
 
 include $(PATH_KBUILD)/footer.kmk
