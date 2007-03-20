@@ -76,45 +76,32 @@ inline bool MySetFilePointer(RTFILE File, uint64_t offSeek, uint64_t *poffNew, u
 
 
 /**
- * This is a helper to check if an attempt is made to grow a file beyond the
+ * This is a helper to check if an attempt was made to grow a file beyond the
  * limit of the filesystem.
  *
  * @returns true for file size limit exceeded.
  * @param   File        Filehandle.
  * @param   offSeek     Offset to seek.
  */
-inline bool IsBeyondLimit(RTFILE File, uint64_t offSeek, unsigned uMethod)
+DECLINLINE(bool) IsBeyondLimit(RTFILE File, uint64_t offSeek, unsigned uMethod)
 {
     bool fIsBeyondLimit = false;
+
     /*
-     * Get current file pointer.
+     * Get the current file position and try set the new one.
+     * If it fails with a seek error it's because we hit the file system limit.
      */
-    uint64_t    offCurrent;
+    uint64_t offCurrent;
     if (MySetFilePointer(File, 0, &offCurrent, FILE_CURRENT))
     {
-        /*
-         * Set new file pointer.
-         */
         if (!MySetFilePointer(File, offSeek, NULL, uMethod))
-        {
-            /*
-             * Failed to set new file pointer.
-             */
-            fIsBeyondLimit = (GetLastError() == ERROR_SEEK);
-        }
-        else
-        {
-            /*
-             * Restore file pointer.
-             */
+            fIsBeyondLimit = GetLastError() == ERROR_SEEK;
+        else /* Restore file pointer on success. */
             MySetFilePointer(File, offCurrent, NULL, FILE_BEGIN);
-        }
     }
 
     return fIsBeyondLimit;
 }
-
-
 
 
 RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen)
