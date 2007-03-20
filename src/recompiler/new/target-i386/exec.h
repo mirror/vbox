@@ -181,6 +181,12 @@ void __hidden cpu_loop_exit(void);
 
 void OPPROTO op_movl_eflags_T0(void);
 void OPPROTO op_movl_T0_eflags(void);
+#ifdef VBOX
+void OPPROTO op_movl_T0_eflags_vme(void);
+void OPPROTO op_movw_eflags_T0_vme(void);
+void OPPROTO op_cli_vme(void);
+void OPPROTO op_sti_vme(void);
+#endif
 void helper_divl_EAX_T0(void);
 void helper_idivl_EAX_T0(void);
 void helper_mulq_EAX_T0(void);

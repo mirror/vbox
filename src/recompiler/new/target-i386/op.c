@@ -491,9 +491,17 @@ void OPPROTO op_movl_A0_seg(void)
     /** @todo Pass segment register index as parameter in translate.c. */
     uint32_t idx = (PARAM1 - offsetof(CPUX86State,segs[0].base)) / sizeof(SegmentCache);
 
-    if (env->segs[idx].newselector && !(env->eflags & VM_MASK))
+    if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
+    }
+    /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
+    if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
+        &&  !(env->eflags & VM_MASK)
+        &&  env->segs[idx].selector == 0) {
+        raise_exception(EXCP0D_GPF);
+    }
     A0 = (uint32_t)env->segs[idx].base;
+    FORCE_RET();
 #else  /* !VBOX */
     A0 = (uint32_t)*(target_ulong *)((char *)env + PARAM1);
 #endif /* !VBOX */
@@ -504,9 +512,17 @@ void OPPROTO op_addl_A0_seg(void)
 #ifdef VBOX
     uint32_t idx = (PARAM1 - offsetof(CPUX86State,segs[0].base)) / sizeof(SegmentCache);
 
-    if (env->segs[idx].newselector && !(env->eflags & VM_MASK))
+    if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
+    }
+    /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
+    if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
+        &&  !(env->eflags & VM_MASK)
+        &&  env->segs[idx].selector == 0) {
+        raise_exception(EXCP0D_GPF);
+    }
     A0 = (uint32_t)(A0 + env->segs[idx].base);
+    FORCE_RET();
 #else  /* !VBOX */
     A0 = (uint32_t)(A0 + *(target_ulong *)((char *)env + PARAM1));
 #endif /* !VBOX */
@@ -717,6 +733,7 @@ void OPPROTO op_rsm(void)
     helper_rsm();
 }
 
+#ifndef VBOX 
 #if 0
 /* vm86plus instructions */
 void OPPROTO op_cli_vm(void)
@@ -734,6 +751,23 @@ void OPPROTO op_sti_vm(void)
     FORCE_RET();
 }
 #endif
+
+#else /* VBOX */
+void OPPROTO op_cli_vme(void)
+{
+    env->eflags &= ~VIF_MASK;
+}
+
+void OPPROTO op_sti_vme(void)
+{
+    /* First check, then change eflags according to the AMD manual */
+    if (env->eflags & VIP_MASK) {
+        raise_exception(EXCP0D_GPF);
+    }
+    env->eflags |= VIF_MASK;
+    FORCE_RET();
+}
+#endif /* VBOX */
 
 void OPPROTO op_boundw(void)
 {
@@ -1464,6 +1498,9 @@ void OPPROTO op_mov_T0_cc(void)
 }
 
 /* XXX: clear VIF/VIP in all ops ? */
+#ifdef VBOX
+/* XXX: AMD docs say they remain unchanged. */
+#endif
 
 void OPPROTO op_movl_eflags_T0(void)
 {
@@ -1495,6 +1532,7 @@ void OPPROTO op_movw_eflags_T0_cpl0(void)
     load_eflags(T0, (TF_MASK | AC_MASK | ID_MASK | NT_MASK | IF_MASK | IOPL_MASK) & 0xffff);
 }
 
+#ifndef VBOX
 #if 0
 /* vm86plus version */
 void OPPROTO op_movw_eflags_T0_vm(void)
@@ -1536,6 +1574,31 @@ void OPPROTO op_movl_eflags_T0_vm(void)
 }
 #endif
 
+#else /* VBOX */
+/* IOPL != 3, CR4.VME=1 */
+void OPPROTO op_movw_eflags_T0_vme(void)
+{
+    unsigned int new_eflags = T0;
+
+    /* if virtual interrupt pending and (virtual) interrupts will be enabled -> #GP */
+    /* if TF will be set -> #GP */
+    if (    ((new_eflags & IF_MASK) && (env->eflags & VIP_MASK)) 
+        ||  (new_eflags & TF_MASK)) {
+        raise_exception(EXCP0D_GPF);
+    } else {
+        load_eflags(new_eflags, (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff);
+
+        if (new_eflags & IF_MASK) {
+            env->eflags |= VIF_MASK;
+        } else {
+            env->eflags &= ~VIF_MASK;
+        }
+    }
+
+    FORCE_RET();
+}
+#endif /* VBOX */
+
 /* XXX: compute only O flag */
 void OPPROTO op_movb_eflags_T0(void)
 {
@@ -1554,8 +1617,8 @@ void OPPROTO op_movl_T0_eflags(void)
 }
 
 /* vm86plus version */
-#if 0
-void OPPROTO op_movl_T0_eflags_vm(void)
+#ifdef VBOX /* #if 0 */
+void OPPROTO op_movl_T0_eflags_vme(void)
 {
     int eflags;
     eflags = cc_table[CC_OP].compute_all();
@@ -1565,7 +1628,7 @@ void OPPROTO op_movl_T0_eflags_vm(void)
         eflags |= IF_MASK;
     T0 = eflags;
 }
-#endif
+#endif /* VBOX / 0 */
 
 void OPPROTO op_cld(void)
 {

@@ -172,15 +172,6 @@ CPUWriteMemoryFunc *g_apfnHandlerWrite[3] =
 };
 
 
-#if 0 /* exec.c:99 */
-/*
- * Instance stuff.
- */
-/** Pointer to the cpu state. */
-CPUState       *cpu_single_env;
-#endif
-
-
 #ifdef VBOX_WITH_DEBUGGER
 /*
  * Debugger commands.
@@ -1209,14 +1200,9 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, uint32_t *p
 
         if (!(env->eflags & IF_MASK))
         {
-#ifdef VBOX_RAW_V86
-            if(!(fFlags & VM_MASK))
-                return false;
-#else
             STAM_COUNTER_INC(&gStatRefuseIF0);
             Log2(("raw mode refused: IF (RawR3)\n"));
             return false;
-#endif
         }
 
         if (!(u32CR0 & CR0_WP_MASK) && EMIsRawRing0Enabled(env->pVM))
@@ -2027,8 +2013,6 @@ REMR3DECL(int) REMR3State(PVM pVM)
         AssertRC(rc);
         Log2(("REMR3State: trap=%02x errcd=%VGv cr2=%VGv nexteip=%VGv%s\n", pVM->rem.s.Env.exception_index, pVM->rem.s.Env.error_code,
               pVM->rem.s.Env.cr[2], pVM->rem.s.Env.exception_next_eip, pVM->rem.s.Env.exception_is_int ? " software" : ""));
-//if (pVM->rem.s.Env.eip == 0x40005a2f)
-//    pVM->rem.s.Env.state |= CPU_EMULATE_SINGLE_STEP | CPU_RAW_MODE_DISABLED | CPU_RAWR0_MODE_DISABLED;
     }
 
     /*
@@ -2764,7 +2748,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
     if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk1
         &&  off < PGM_DYNAMIC_CHUNK_SIZE)
     {
-        Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off));
+        Log2(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off));
         return pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys1 + off;
     }
 
@@ -2772,7 +2756,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
     if (    pVM->rem.s.paHCVirtToGCPhys[idx].pChunk2
         &&  off < PGM_DYNAMIC_CHUNK_SIZE)
     {
-        Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys2 + off));
+        Log2(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys2 + off));
         return pVM->rem.s.paHCVirtToGCPhys[idx].GCPhys2 + off;
     }
 
@@ -2782,7 +2766,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
         uint32_t off = HCVirt - pVM->rem.s.aPhysReg[i].HCVirt;
         if (off < pVM->rem.s.aPhysReg[i].cb)
         {
-            Log(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.aPhysReg[i].GCPhys + off));
+            Log2(("remR3HCVirt2GCPhys %x -> %x\n", addr, pVM->rem.s.aPhysReg[i].GCPhys + off));
             return pVM->rem.s.aPhysReg[i].GCPhys + off;
         }
     }

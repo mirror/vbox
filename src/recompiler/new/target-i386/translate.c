@@ -120,6 +120,9 @@ typedef struct DisasContext {
     int addseg; /* non zero if either DS/ES/SS have a non zero base */
     int f_st;   /* currently unused */
     int vm86;   /* vm86 mode */
+#ifdef VBOX
+    int vme;    /* CR4.VME */
+#endif
     int cpl;
     int iopl;
     int tf;     /* TF cpu flag */
@@ -831,6 +834,22 @@ static void gen_check_external_event()
 {
     gen_op_check_external_event();
 }
+
+static inline void gen_update_eip(target_ulong pc)
+{
+#ifdef TARGET_X86_64
+    if (pc == (uint32_t)pc) {
+        gen_op_movl_eip_im(pc);
+    } else if (pc == (int32_t)pc) {
+        gen_op_movq_eip_im(pc);
+    } else {
+        gen_op_movq_eip_im64(pc >> 32, pc);
+    }
+#else
+    gen_op_movl_eip_im(pc);
+#endif
+}
+
 #endif /* VBOX */
 
 static inline void gen_jmp_im(target_ulong pc)
@@ -3214,6 +3233,12 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     x86_64_hregs = 0; 
 #endif
     s->rip_offset = 0; /* for relative ip address */
+
+#ifdef VBOX
+    /* Always update EIP. Otherwise one must be very careful with generated code that can raise exceptions. */
+    gen_update_eip(pc_start - s->cs_base);
+#endif
+
  next_byte:
     b = ldub_code(s->pc);
     s->pc++;
@@ -5059,7 +5084,11 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             gen_op_iret_real(s->dflag);
             s->cc_op = CC_OP_EFLAGS;
         } else if (s->vm86) {
+#ifdef VBOX
+            if (s->iopl != 3 && (!s->vme || s->dflag)) {
+#else
             if (s->iopl != 3) {
+#endif
                 gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
             } else {
                 gen_op_iret_real(s->dflag);
@@ -5175,17 +5204,30 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         /************************/
         /* flags */
     case 0x9c: /* pushf */
+#ifdef VBOX
+        if (s->vm86 && s->iopl != 3 && (!s->vme || s->dflag)) {
+#else
         if (s->vm86 && s->iopl != 3) {
+#endif
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
             if (s->cc_op != CC_OP_DYNAMIC)
                 gen_op_set_cc_op(s->cc_op);
-            gen_op_movl_T0_eflags();
+#ifdef VBOX
+            if (s->vm86 && s->vme && s->iopl != 3)
+                gen_op_movl_T0_eflags_vme();
+            else
+#endif
+                gen_op_movl_T0_eflags();
             gen_push_T0(s);
         }
         break;
     case 0x9d: /* popf */
+#ifdef VBOX
+        if (s->vm86 && s->iopl != 3 && (!s->vme || s->dflag)) {
+#else
         if (s->vm86 && s->iopl != 3) {
+#endif
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
             gen_pop_T0(s);
@@ -5206,7 +5248,12 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                     if (s->dflag) {
                         gen_op_movl_eflags_T0();
                     } else {
-                        gen_op_movw_eflags_T0();
+#ifdef VBOX
+                        if (s->vm86 && s->vme)
+                            gen_op_movw_eflags_T0_vme();
+                        else
+#endif
+                            gen_op_movw_eflags_T0();
                     }
                 }
             }
@@ -5407,11 +5454,20 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         }
         break;
     case 0xcc: /* int3 */
-        gen_interrupt(s, EXCP03_INT3, pc_start - s->cs_base, s->pc - s->cs_base);
+#ifdef VBOX
+        if (s->vm86 && s->iopl != 3 && !s->vme) {
+            gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base); 
+        } else 
+#endif
+            gen_interrupt(s, EXCP03_INT3, pc_start - s->cs_base, s->pc - s->cs_base);
         break;
     case 0xcd: /* int N */
         val = ldub_code(s->pc++);
+#ifdef VBOX
+        if (s->vm86 && s->iopl != 3 && !s->vme) {
+#else
         if (s->vm86 && s->iopl != 3) {
+#endif
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base); 
         } else {
             gen_interrupt(s, val, pc_start - s->cs_base, s->pc - s->cs_base);
@@ -5444,6 +5500,10 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         } else {
             if (s->iopl == 3) {
                 gen_op_cli();
+#ifdef VBOX
+            } else if (s->iopl != 3 && s->vme) {
+                gen_op_cli_vme();
+#endif
             } else {
                 gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
             }
@@ -5468,6 +5528,13 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         } else {
             if (s->iopl == 3) {
                 goto gen_sti;
+#ifdef VBOX
+            } else if (s->iopl != 3 && s->vme) {
+                gen_op_sti_vme();
+                /* give a chance to handle pending irqs */
+                gen_jmp_im(s->pc - s->cs_base);
+                gen_eob(s);
+#endif
             } else {
                 gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
             }
@@ -6524,6 +6591,9 @@ static inline int gen_intermediate_code_internal(CPUState *env,
     dc->addseg = (flags >> HF_ADDSEG_SHIFT) & 1;
     dc->f_st = 0;
     dc->vm86 = (flags >> VM_SHIFT) & 1;
+#ifdef VBOX
+    dc->vme = !!(env->cr[4] & CR4_VME_MASK);
+#endif
     dc->cpl = (flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (flags >> IOPL_SHIFT) & 3;
     dc->tf = (flags >> TF_SHIFT) & 1;
