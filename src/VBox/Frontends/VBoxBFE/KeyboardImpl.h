@@ -44,7 +44,7 @@ class Keyboard
 public:
 
     Keyboard();
-    ~Keyboard();
+    virtual ~Keyboard();
 
     STDMETHOD(PutScancode)(LONG scancode);
     STDMETHOD(PutScancodes)(LONG *scancodes,
