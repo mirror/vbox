@@ -337,6 +337,7 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     PVM pVM = TRPM2VM(pTrpm);
+    int rc;
 
     LogFlow(("TRPMGCTrap06Handler %VGv eflags=%x\n", pRegFrame->eip, pRegFrame->eflags.u32));
 
@@ -364,14 +365,16 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         /** @note monitor causes an #UD exception instead of #GP when not executed in ring 0. */
         if (Cpu.pCurInstr->opcode == OP_ILLUD2)
         {
-            int rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
+            rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
             if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_DUPLICATE_FUNCTION || rc == VINF_PATM_PENDING_IRQ_AFTER_IRET || rc == VINF_EM_RESCHEDULE)
                 return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
+        /* Never generate a raw trap here; it might be a monitor instruction, that requires emulation. */
+        rc = VINF_EM_RAW_EMULATE_INSTR;
     }
     else if (pRegFrame->eflags.Bits.u1VM)
     {
-        int rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
+        rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
     else 
