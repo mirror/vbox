@@ -562,7 +562,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
 #ifdef IN_GC
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertReturn(pParam1 == (RTGCPTR)pvFault, VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == (RTGCPTR)pvFault, ("%VGv != %VGv\n", pParam1, pvFault), VERR_EM_INTERPRETER);
 #endif
                 rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
                 if (VBOX_FAILURE(rc))
