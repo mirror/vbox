@@ -219,7 +219,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
 # endif 
 void     remR3GrowDynRange(unsigned long physaddr);
 #endif
-#if defined(__AMD64__)
+#if 0 /*defined(__AMD64__) && defined(VBOX_STRICT)*/
 # define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
 #else
 # define VBOX_CHECK_ADDR(ptr) (void)
