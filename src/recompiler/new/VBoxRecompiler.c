@@ -87,7 +87,7 @@ static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static void     remR3StateUpdate(PVM pVM);
 
-#ifdef PGM_DYNAMIC_RAM_ALLOC
+#if defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
 DECLINLINE(target_ulong) remR3HCVirt2GCPhysInlined(PVM pVM, void *addr);
 DECLINLINE(void *) remR3GCPhys2HCVirtInlined(PVM pVM, target_ulong addr);
 #endif 
@@ -2608,7 +2608,9 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, RTHCUINTPTR pvRam, unsigned fFlags)
 {
 #ifdef PGM_DYNAMIC_RAM_ALLOC
+# ifndef REM_PHYS_ADDR_IN_TLB
     uint32_t idx;
+#endif 
 
     Log(("REMR3NotifyPhysRamChunkRegister: GCPhys=%VGp cb=%d pvRam=%p fFlags=%d\n", GCPhys, cb, pvRam, fFlags));
     VM_ASSERT_EMT(pVM);
@@ -2846,7 +2848,7 @@ void remR3GrowDynRange(unsigned long physaddr)
  */
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy)
 {
-#ifdef PGM_DYNAMIC_RAM_ALLOC
+#if defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
     uint32_t i;
 #endif
     LogFlow(("REMR3NotifyPhysRomRegister: GCPhys=%VGp cb=%d pvCopy=%p\n", GCPhys, cb, pvCopy));
