@@ -39,8 +39,6 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 
-#include <string.h>
-
 #include "Builtins.h"
 
 
@@ -703,7 +701,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferArgs, sizeof(GetRing3BufferArgs));
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                  N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
+                                   N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
     AssertRelease(VALID_PTR(GetRing3BufferArgs.pRing3Buf));
     pThis->pBuf = GetRing3BufferArgs.pRing3Buf;
 
