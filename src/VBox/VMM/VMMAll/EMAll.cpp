@@ -560,6 +560,14 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             {
                 pParam1 = (RTGCPTR)param1.val.val32;
 
+                /* pop [esp+xx] uses esp after the actual pop! */
+                AssertCompile(USE_REG_ESP == USE_REG_SP);
+                if (    (pCpu->param1.flags & USE_BASE)
+                    &&  (pCpu->param1.flags & (USE_REG_GEN16|USE_REG_GEN32))
+                    &&  pCpu->param1.base.reg_gen32 == USE_REG_ESP
+                   )
+                   pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
+                
 #ifdef IN_GC
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
                 AssertMsgReturn(pParam1 == (RTGCPTR)pvFault, ("%VGv != %VGv\n", pParam1, pvFault), VERR_EM_INTERPRETER);
