@@ -214,7 +214,7 @@ typedef struct INTNETOPENARGS
     uint32_t        cbSend;
     /** The size of the receive buffer. (input) */
     uint32_t        cbRecv;
-    /** check access? */
+    /** Whether new participants should be subjected to access check or not. */
     bool            fRestrictAccess;
     /** The handle to the network interface. (output) */
     INTNETIFHANDLE  hIf;
@@ -324,7 +324,13 @@ INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet);
  * Opens a network interface and attaches it to the specified network.
  *
  * @returns VBox status code.
- * @param   pIntNet     The
+ * @param   pIntNet         The internal network instance.
+ * @param   pSession        The session handle.
+ * @param   pszNetwork      The network name.
+ * @param   cbSend          The send buffer size.
+ * @param   cbRecv          The receive buffer size.
+ * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
+ * @param   phIf            Where to store the handle to the network interface.
  */
 INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, bool fRestrictAccess, PINTNETIFHANDLE phIf);
 
