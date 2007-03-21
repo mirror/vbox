@@ -102,6 +102,8 @@ typedef struct INTNETNETWORK
     struct INTNET          *pIntNet;
     /** The SUPR0 object id. */
     void                   *pvObj;
+    /**  Access restricted? */
+    bool                    fRestrictAccess;
     /** The length of the network name. */
     uint8_t                 cchName;
     /** The network name. */
@@ -1200,7 +1202,7 @@ static DECLCALLBACK(void) INTNETNetworkDestruct(void *pvObj, void *pvUser1, void
  */
 static int INTNETOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, PINTNETNETWORK *ppNetwork)
 {
-    LogFlow(("INTNETCreateNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} ppNetwork=%p\n",
+    LogFlow(("INTNETOpenNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} ppNetwork=%p\n",
              pIntNet, pSession, pszNetwork, pszNetwork, ppNetwork));
 
     Assert(VALID_PTR(pIntNet));
@@ -1233,7 +1235,8 @@ static int INTNETOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
 
             if (VBOX_SUCCESS(rc))
             {
-                rc = SUPR0ObjVerifyAccess(pCur->pvObj, pSession, pCur->szName);
+                if (pCur->fRestrictAccess)
+                    rc = SUPR0ObjVerifyAccess(pCur->pvObj, pSession, pCur->szName);
                 if (VBOX_SUCCESS(rc))
                     *ppNetwork = pCur;
                 else
@@ -1268,7 +1271,7 @@ static int INTNETOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
  * @param   pSession    The session handle.
  * @param   ppNetwork   Where to store the network.
  */
-static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, PINTNETNETWORK *ppNetwork)
+static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, bool fRestrictAccess, PINTNETNETWORK *ppNetwork)
 {
     LogFlow(("INTNETCreateNetwork: pIntNet=%p pSession=%p pszNetwork=%p:{%s} ppNetwork=%p\n",
              pIntNet, pSession, pszNetwork, pszNetwork, ppNetwork));
@@ -1307,6 +1310,7 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         //pNew->pIFs = NULL;
         pNew->pIntNet = pIntNet;
         pNew->cchName = cchName;
+        pNew->fRestrictAccess = fRestrictAccess;
         Assert(cchName && cchName < sizeof(pNew->szName));  /* caller's responsibility. */
         memcpy(pNew->szName, pszNetwork, cchName);          /* '\0' by alloc. */
 
@@ -1365,7 +1369,7 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
  * @param   cbRecv      The receive buffer size.
  * @param   phIf        Where to store the handle to the network interface.
  */
-INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, PINTNETIFHANDLE phIf)
+INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, bool fRestrictAccess, PINTNETIFHANDLE phIf)
 {
     LogFlow(("INTNETR0Open: pIntNet=%p pSession=%p pszNetwork=%p:{%s} cbSend=%u cbRecv=%u phIf=%p\n",
              pIntNet, pSession, pszNetwork, pszNetwork, cbSend, cbRecv, phIf));
@@ -1394,7 +1398,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     PINTNETNETWORK pNetwork;
     rc = INTNETOpenNetwork(pIntNet, pSession, pszNetwork, &pNetwork);
     if (rc == VERR_FILE_NOT_FOUND)
-        rc = INTNETCreateNetwork(pIntNet, pSession, pszNetwork, &pNetwork);
+        rc = INTNETCreateNetwork(pIntNet, pSession, pszNetwork, fRestrictAccess, &pNetwork);
     if (VBOX_SUCCESS(rc))
     {
         /*
