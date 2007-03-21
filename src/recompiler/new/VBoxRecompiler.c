@@ -116,7 +116,9 @@ static STAMPROFILEADV gStatTBLookup;
 static STAMPROFILEADV gStatIRQ;
 static STAMPROFILEADV gStatRawCheck;
 static STAMPROFILEADV gStatMemRead;
+static STAMPROFILEADV gStatMemReadHCPtr;
 static STAMPROFILEADV gStatMemWrite;
+static STAMPROFILEADV gStatMemWriteHCPtr;
 static STAMCOUNTER    gStatRefuseTFInhibit;
 static STAMCOUNTER    gStatRefuseVM86;
 static STAMCOUNTER    gStatRefusePaging;
@@ -349,7 +351,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatIRQ,                STAMTYPE_PROFILE, "/PROF/REM/IRQ",        STAMUNIT_TICKS_PER_CALL, "Profiling timer scheduling.");
     STAM_REG(pVM, &gStatRawCheck,           STAMTYPE_PROFILE, "/PROF/REM/RawCheck",   STAMUNIT_TICKS_PER_CALL, "Profiling timer scheduling.");
     STAM_REG(pVM, &gStatMemRead,            STAMTYPE_PROFILE, "/PROF/REM/MemRead",    STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
+    STAM_REG(pVM, &gStatMemReadHCPtr,       STAMTYPE_PROFILE, "/PROF/REM/MemReadHCPtr", STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
     STAM_REG(pVM, &gStatMemWrite,           STAMTYPE_PROFILE, "/PROF/REM/MemWrite",   STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
+    STAM_REG(pVM, &gStatMemWriteHCPtr,      STAMTYPE_PROFILE, "/PROF/REM/MemWriteHCPtr", STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
 
     STAM_REG(pVM, &gStatRefuseTFInhibit,    STAMTYPE_COUNTER, "/REM/Refuse/TFInibit", STAMUNIT_OCCURENCES,     "Raw mode refused because of TF or irq inhibit");
     STAM_REG(pVM, &gStatRefuseVM86,         STAMTYPE_COUNTER, "/REM/Refuse/VM86",     STAMUNIT_OCCURENCES,     "Raw mode refused because of VM86");
@@ -1342,95 +1346,36 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
  *
  * @param   env         Pointer to cpu environment.
  */
-void remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int prot, int is_user)
+void remR3SetPage(CPUState *env, CPUTLBEntry *pTLBEntry,  CPUTLBEntry *pTLBEntryIgnored, int prot, int is_user)
 {
-#ifndef PGM_DYNAMIC_RAM_ALLOC
-    target_ulong phys_addr;
-#endif
-    target_ulong virt_addr, addend;
+    target_ulong virt_addr;
     if (env->pVM->rem.s.fIgnoreSetPage || env->pVM->rem.s.fIgnoreAll)
         return;
     Assert(env->pVM->rem.s.fInREM || env->pVM->rem.s.fInStateSync);
 
 #ifndef PGM_DYNAMIC_RAM_ALLOC
     if(!is_user && !(env->state & CPU_RAW_RING0))
-    {
-        // We are currently not interested in kernel pages
-#ifdef DEBUG
-        if (prot & PAGE_WRITE)
-        {
-            addend = pWrite->addend;
-            virt_addr = pWrite->addr_write;
-        }
-        else if (prot & PAGE_READ)
-        {
-            addend = pRead->addend;
-            virt_addr = pRead->addr_read;
-        }
-        else
-        {
-            // Should never happen!
-            AssertMsgFailed(("tlb_set_page_raw unexpected protection flags %x\n", prot));
-            return;
-        }
+        return; /* We are currently not interested in kernel pages */
+#endif 
 
-        if (!(addend & IO_MEM_ROM))
-        {
-            phys_addr = virt_addr - (uintptr_t)phys_ram_base + addend;
-        }
-        else
-        {
-            Log(("memory mapped io memory at %08X\n", addend));
-            phys_addr = addend; //@todo: correct??
-        }
-
-        // Clear IO_* flags (TODO: are they actually useful for us??)
-        virt_addr &= ~0xFFF;
-#if !defined(DEBUG_bird) && !defined(DEBUG_dmik)
-////        dprintf(("tlb_set_page_raw Ignoring system page (%x-%x) prot %x is_user %d\n", virt_addr, phys_addr, prot, is_user));
-#endif
-#endif
-        return;
-    }
-
-    Log2(("tlb_set_page_raw read (%x-%x) write (%x-%x) prot %x is_user %d phys base %x\n",
-          pRead->addr_read, pRead->addend, pWrite->addr_write, pWrite->addend, prot, is_user, phys_ram_base));
+#if !defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
+    Log2(("tlb_set_page_raw (r=%x|w=%x)-%x prot %x is_user %d phys base %x\n",
+          pTLBEntry->addr_read, pTLBEntry->addr_write, pTLBEntry->addend, prot, is_user, phys_ram_base));
 #else /* PGM_DYNAMIC_RAM_ALLOC */
-    Log2(("tlb_set_page_raw read (%x-%x) write (%x-%x) prot %x is_user %d phys\n",
-          pRead->addr_read, pRead->addend, pWrite->addr_write, pWrite->addend, prot, is_user));
+    Log2(("tlb_set_page_raw (r=%x|w=%x)-%x prot %x is_user %d\n",
+          pTLBEntry->addr_read, pTLBEntry->addr_write, pTLBEntry->addend, prot, is_user));
 #endif/* PGM_DYNAMIC_RAM_ALLOC */
 
+    /*
+     * Extract the virtual address.
+     */
     if (prot & PAGE_WRITE)
-    {
-        addend = pWrite->addend;
-        virt_addr = pWrite->addr_write;
-    }
+        virt_addr = pTLBEntry->addr_write;
     else if (prot & PAGE_READ)
-    {
-        addend = pRead->addend;
-        virt_addr = pRead->addr_read;
-    }
+        virt_addr = pTLBEntry->addr_read;
     else
-    {
-        // Should never happen!
-        AssertMsgFailed(("tlb_set_page_raw unexpected protection flags %x\n", prot));
-        return;
-    }
-
-#ifndef PGM_DYNAMIC_RAM_ALLOC
-    if (!(addend & IO_MEM_ROM))
-    {
-        phys_addr = virt_addr - (uintptr_t)phys_ram_base + addend;
-    }
-    else
-    {
-        Log(("memory mapped io memory at %08X\n", addend));
-        phys_addr = addend; //@todo: correct??
-    }
-#endif /* !PGM_DYNAMIC_RAM_ALLOC */
-
-    // Clear IO_* flags (TODO: are they actually useful for us??)
-    virt_addr &= ~0xFFF;
+        AssertMsgFailedReturnVoid(("tlb_set_page_raw unexpected protection flags %x\n", prot));
+    virt_addr &= TARGET_PAGE_MASK;
 
     /*
      * Update the control registers before calling PGMFlushPage.
@@ -1446,11 +1391,22 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int p
     int rc = PGMInvalidatePage(env->pVM, (RTGCPTR)virt_addr);
     if (VBOX_FAILURE(rc))
     {
-#ifdef PGM_DYNAMIC_RAM_ALLOC
-        AssertMsgFailed(("RAWEx_SetPageEntry %x %x %d failed!!\n", virt_addr, prot, is_user));
-#else
+#ifdef VBOX_STRICT
+        target_ulong addend = pTLBEntry->addend;
+        target_ulong phys_addr;
+
+        if (!(addend & IO_MEM_ROM))
+# ifdef REM_PHYS_ADDR_IN_TLB
+            phys_addr = virt_addr + addend;
+# elif defined(REM_PHYS_ADDR_IN_TLB)
+            phys_addr = remR3HCVirt2GCPhys(env, (void *)(virt_addr + addend));
+# else
+            phys_addr = virt_addr - (uintptr_t)phys_ram_base + addend;
+# endif 
+        else
+            phys_addr = addend;
         AssertMsgFailed(("RAWEx_SetPageEntry %x %x %x %d failed!!\n", virt_addr, phys_addr, prot, is_user));
-#endif
+#endif /* VBOX_STRICT */
         VM_FF_SET(env->pVM, VM_FF_PGM_SYNC_CR3);
     }
 }
@@ -2557,7 +2513,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
      */
     if (!GCPhys)
     {
-#ifndef PGM_DYNAMIC_RAM_ALLOC
+#if !defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
         AssertRelease(!phys_ram_base);
         phys_ram_base = pvRam;
 #endif
@@ -2588,10 +2544,13 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
         cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_RAM_MISSING);
     else
     {
+# ifndef REM_PHYS_ADDR_IN_TLB
         uint32_t i;
+# endif 
 
         cpu_register_physical_memory(GCPhys, cb, GCPhys | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
 
+# ifndef REM_PHYS_ADDR_IN_TLB
         AssertRelease(pVM->rem.s.cPhysRegistrations < REM_MAX_PHYS_REGISTRATIONS);
         for (i = 0; i < pVM->rem.s.cPhysRegistrations; i++)
         {
@@ -2609,7 +2568,10 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
             pVM->rem.s.aPhysReg[i].cb     = cb;
             pVM->rem.s.cPhysRegistrations++;
         }
+# endif /* !REM_PHYS_ADDR_IN_TLB */
     }
+#elif defined(REM_PHYS_ADDR_IN_TLB)
+    cpu_register_physical_memory(GCPhys, cb, GCPhys | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
 #else
     AssertRelease(phys_ram_base);
     cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvRam - (uintptr_t)phys_ram_base)
@@ -2646,6 +2608,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
     Assert(cb == PGM_DYNAMIC_CHUNK_SIZE);
     Assert(fFlags == 0 /* normal RAM */);
 
+# ifdef REM_PHYS_ADDR_IN_TLB
     if (!pVM->rem.s.paHCVirtToGCPhys)
     {
         uint32_t size = (_4G >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(REMCHUNKINFO);
@@ -2684,6 +2647,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
             pVM->rem.s.paHCVirtToGCPhys[idx+1].GCPhys2 = GCPhys;
         }
     }
+# endif /* REM_PHYS_ADDR_IN_TLB */
 
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
@@ -2700,6 +2664,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
 
 
 #ifdef PGM_DYNAMIC_RAM_ALLOC
+# ifndef REM_PHYS_ADDR_IN_TLB
 /**
  *  Convert GC physical address to HC virt
  *
@@ -2773,7 +2738,7 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr)
     AssertReleaseMsgFailed(("No translation for physical address %VHv???\n", addr));
     return 0;
 }
-
+# endif /* !REM_PHYS_ADDR_IN_TLB */
 
 /**
  *  Grows dynamically allocated guest RAM.
@@ -2830,7 +2795,9 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
 
-#ifdef PGM_DYNAMIC_RAM_ALLOC
+#ifdef REM_PHYS_ADDR_IN_TLB
+    cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_ROM);
+#elif defined(PGM_DYNAMIC_RAM_ALLOC)
     cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_ROM);
     AssertRelease(pVM->rem.s.cPhysRegistrations < REM_MAX_PHYS_REGISTRATIONS);
     for (i = 0; i < pVM->rem.s.cPhysRegistrations; i++)
@@ -2965,7 +2932,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
             /* This is not perfect, but it'll do for PD monitoring... */
             Assert(cb == PAGE_SIZE);
             Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
-#ifdef PGM_DYNAMIC_RAM_ALLOC
+#ifdef REM_PHYS_ADDR_IN_TLB
+            cpu_register_physical_memory(GCPhys, cb, GCPhys);
+#elif defined(PGM_DYNAMIC_RAM_ALLOC)
             Assert(remR3HCVirt2GCPhys(cpu_single_env, pvHCPtr) < MMR3PhysGetRamSize(pVM));
             cpu_register_physical_memory(GCPhys, cb, GCPhys);
 #else
@@ -3016,7 +2985,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
             /* This is not perfect, but it'll do for PD monitoring... */
             Assert(cb == PAGE_SIZE);
             Assert(RT_ALIGN_T(GCPhysOld, PAGE_SIZE, RTGCPHYS) == GCPhysOld);
-#ifdef PGM_DYNAMIC_RAM_ALLOC
+#ifdef REM_PHYS_ADDR_IN_TLB
+            cpu_register_physical_memory(GCPhysOld, cb, GCPhysOld);
+#elif defined(PGM_DYNAMIC_RAM_ALLOC)
             Assert(remR3HCVirt2GCPhys(cpu_single_env, pvHCPtr) < MMR3PhysGetRamSize(pVM));
             cpu_register_physical_memory(GCPhysOld, cb, GCPhysOld);
 #else
@@ -3100,6 +3071,222 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
 }
 
 
+/** Validate the physical address passed to the read functions.
+ * Useful for finding non-guest-ram reads/writes.  */
+#if 1
+# define VBOX_CHECK_ADDR(GCPhys) AssertMsg(PGMPhysIsGCPhysValid(cpu_single_env->pVM, (GCPhys)), ("%VGp\n", (GCPhys)))
+#else
+# define VBOX_CHECK_ADDR(GCPhys) do { } while (0)
+#endif 
+
+/**
+ * Read guest RAM and ROM.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ * @param   pvDst           The destination address.
+ * @param   cb              Number of bytes
+ */
+void remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb)
+{
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    PGMPhysRead(cpu_single_env->pVM, SrcGCPhys, pvDst, cb);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+}
+
+
+/**
+ * Read guest RAM and ROM, unsigned 8-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+uint8_t remR3PhysReadU8(RTGCPHYS SrcGCPhys)
+{
+    uint8_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val = PGMR3PhysReadByte(cpu_single_env->pVM, SrcGCPhys);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+
+/**
+ * Read guest RAM and ROM, signed 8-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+int8_t remR3PhysReadS8(RTGCPHYS SrcGCPhys)
+{
+    int8_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val = PGMR3PhysReadByte(cpu_single_env->pVM, SrcGCPhys);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+
+/**
+ * Read guest RAM and ROM, unsigned 16-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys)
+{
+    uint16_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val = PGMR3PhysReadWord(cpu_single_env->pVM, SrcGCPhys);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+
+/**
+ * Read guest RAM and ROM, signed 16-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+int16_t remR3PhysReadS16(RTGCPHYS SrcGCPhys)
+{
+    uint16_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val = PGMR3PhysReadWord(cpu_single_env->pVM, SrcGCPhys);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+
+/**
+ * Read guest RAM and ROM, unsigned 32-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+uint32_t remR3PhysReadU32(RTGCPHYS SrcGCPhys)
+{
+    uint32_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val = PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+
+/**
+ * Read guest RAM and ROM, signed 32-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+int32_t remR3PhysReadS32(RTGCPHYS SrcGCPhys)
+{
+    int32_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val = PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+
+/**
+ * Read guest RAM and ROM, unsigned 64-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys)
+{
+    uint64_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val =            PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys)
+        | ((uint64_t)PGMR3PhysReadDword(cpu_single_env->pVM, SrcGCPhys + 4) << 32); /** @todo fix me! */
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+
+/**
+ * Write guest RAM.
+ *
+ * @param   DstGCPhys       The destination address (guest physical).
+ * @param   pvSrc           The source address.
+ * @param   cb              Number of bytes to write
+ */
+void remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb)
+{
+    STAM_PROFILE_ADV_START(&gStatMemWrite, a);
+    VBOX_CHECK_ADDR(DstGCPhys);
+    PGMPhysWrite(cpu_single_env->pVM, DstGCPhys, pvSrc, cb);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
+}
+
+
+/**
+ * Write guest RAM, unsigned 8-bit.
+ *
+ * @param   DstGCPhys       The destination address (guest physical).
+ * @param   val             Value
+ */
+void remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val)
+{
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
+    VBOX_CHECK_ADDR(DstGCPhys);
+    PGMR3PhysWriteByte(cpu_single_env->pVM, DstGCPhys, val);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
+}
+
+
+/**
+ * Write guest RAM, unsigned 8-bit.
+ *
+ * @param   DstGCPhys       The destination address (guest physical).
+ * @param   val             Value
+ */
+void remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val)
+{
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
+    VBOX_CHECK_ADDR(DstGCPhys);
+    PGMR3PhysWriteWord(cpu_single_env->pVM, DstGCPhys, val);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
+}
+
+
+/**
+ * Write guest RAM, unsigned 32-bit.
+ *
+ * @param   DstGCPhys       The destination address (guest physical).
+ * @param   val             Value
+ */
+void remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val)
+{
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
+    VBOX_CHECK_ADDR(DstGCPhys);
+    PGMR3PhysWriteDword(cpu_single_env->pVM, DstGCPhys, val);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
+}
+
+
+/**
+ * Write guest RAM, unsigned 64-bit.
+ *
+ * @param   DstGCPhys       The destination address (guest physical).
+ * @param   val             Value
+ */
+void remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val)
+{
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
+    VBOX_CHECK_ADDR(DstGCPhys);
+    PGMR3PhysWriteDword(cpu_single_env->pVM, DstGCPhys, (uint32_t)val); /** @todo add U64 interface. */
+    PGMR3PhysWriteDword(cpu_single_env->pVM, DstGCPhys + 4, val >> 32);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
+}
+
+
+#ifndef REM_PHYS_ADDR_IN_TLB
+
 /**
  * Read guest RAM and ROM.
  *
@@ -3109,7 +3296,7 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
  */
 void remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb)
 {
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3129,7 +3316,7 @@ void remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb)
         Log4(("remR3PhysRead ROM: %p\n", pbSrcPhys));
         memcpy(pvDst, pbSrcPhys, cb);
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
 }
 
 
@@ -3142,7 +3329,7 @@ uint8_t remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys)
 {
     uint8_t val;
 
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3161,7 +3348,7 @@ uint8_t remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys)
         Log4(("remR3PhysReadU8 ROM: %p\n", pbSrcPhys));
         val = *pbSrcPhys;
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
 
@@ -3175,7 +3362,7 @@ int8_t remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys)
 {
     int8_t val;
 
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3194,7 +3381,7 @@ int8_t remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys)
         Log4(("remR3PhysReadS8 ROM: %p\n", pbSrcPhys));
         val = *(int8_t *)pbSrcPhys;
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
 
@@ -3208,7 +3395,7 @@ uint16_t remR3PhysReadHCPtrU16(uint8_t *pbSrcPhys)
 {
     uint16_t val;
 
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3227,7 +3414,7 @@ uint16_t remR3PhysReadHCPtrU16(uint8_t *pbSrcPhys)
         Log4(("remR3PhysReadU16 ROM: %p\n", pbSrcPhys));
         val = *(uint16_t *)pbSrcPhys;
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
 
@@ -3241,7 +3428,7 @@ int16_t remR3PhysReadHCPtrS16(uint8_t *pbSrcPhys)
 {
     int16_t val;
 
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3261,7 +3448,7 @@ int16_t remR3PhysReadHCPtrS16(uint8_t *pbSrcPhys)
         Log4(("remR3PhysReadS16 ROM: %p\n", pbSrcPhys));
         val = *(int16_t *)pbSrcPhys;
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
 
@@ -3275,7 +3462,7 @@ uint32_t remR3PhysReadHCPtrU32(uint8_t *pbSrcPhys)
 {
     uint32_t val;
 
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3294,7 +3481,7 @@ uint32_t remR3PhysReadHCPtrU32(uint8_t *pbSrcPhys)
         Log4(("remR3PhysReadU32 ROM: %p\n", pbSrcPhys));
         val = *(uint32_t *)pbSrcPhys;
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
 
@@ -3308,7 +3495,7 @@ int32_t remR3PhysReadHCPtrS32(uint8_t *pbSrcPhys)
 {
     int32_t val;
 
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3327,7 +3514,7 @@ int32_t remR3PhysReadHCPtrS32(uint8_t *pbSrcPhys)
         Log4(("remR3PhysReadS32 ROM: %p\n", pbSrcPhys));
         val = *(int32_t *)pbSrcPhys;
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
 
@@ -3341,7 +3528,7 @@ uint64_t remR3PhysReadHCPtrU64(uint8_t *pbSrcPhys)
 {
     uint64_t val;
 
-    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    STAM_PROFILE_ADV_START(&gStatMemReadHCPtr, a);
 
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
@@ -3361,7 +3548,7 @@ uint64_t remR3PhysReadHCPtrU64(uint8_t *pbSrcPhys)
         Log4(("remR3PhysReadU64 ROM: %p\n", pbSrcPhys));
         val = *(uint32_t *)pbSrcPhys;
     }
-    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
 
@@ -3375,7 +3562,7 @@ uint64_t remR3PhysReadHCPtrU64(uint8_t *pbSrcPhys)
  */
 void remR3PhysWriteHCPtr(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb)
 {
-    STAM_PROFILE_ADV_START(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
      */
@@ -3388,7 +3575,7 @@ void remR3PhysWriteHCPtr(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb)
         PGMPhysWrite(cpu_single_env->pVM, (RTGCPHYS)off, pvSrc, cb);
     else
         AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, cb));
-    STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
 
@@ -3400,7 +3587,7 @@ void remR3PhysWriteHCPtr(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb)
  */
 void remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val)
 {
-    STAM_PROFILE_ADV_START(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
      */
@@ -3413,7 +3600,7 @@ void remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val)
         PGMR3PhysWriteByte(cpu_single_env->pVM, (RTGCPHYS)off, val);
     else
         AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 1));
-    STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
 
@@ -3425,7 +3612,7 @@ void remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val)
  */
 void remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val)
 {
-    STAM_PROFILE_ADV_START(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
      */
@@ -3438,7 +3625,7 @@ void remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val)
         PGMR3PhysWriteWord(cpu_single_env->pVM, (RTGCPHYS)off, val);
     else
         AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 2));
-    STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
 
@@ -3450,7 +3637,7 @@ void remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val)
  */
 void remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val)
 {
-    STAM_PROFILE_ADV_START(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
      */
@@ -3463,7 +3650,7 @@ void remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val)
         PGMR3PhysWriteDword(cpu_single_env->pVM, (RTGCPHYS)off, val);
     else
         AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 4));
-    STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
 
@@ -3475,7 +3662,7 @@ void remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val)
  */
 void remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val)
 {
-    STAM_PROFILE_ADV_START(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_START(&gStatMemWriteHCPtr, a);
     /*
      * Calc the physical address ('off') and check that it's within the RAM.
      */
@@ -3491,9 +3678,10 @@ void remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val)
     }
     else
         AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 4));
-    STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
+#endif /* !REM_PHYS_ADDR_IN_TLB */
 
 
 #undef LOG_GROUP

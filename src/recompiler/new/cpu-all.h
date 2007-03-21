@@ -180,9 +180,22 @@ typedef union {
  */
 #ifdef VBOX
 
-#if !defined(REMR3PHYSREADWRITE_DEFINED)
-#define REMR3PHYSREADWRITE_DEFINED
-/* Header sharing between vbox & qemu is rather ugly. */
+void     remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb);
+uint8_t  remR3PhysReadU8(RTGCPHYS SrcGCPhys);
+int8_t   remR3PhysReadS8(RTGCPHYS SrcGCPhys);
+uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys);
+int16_t  remR3PhysReadS16(RTGCPHYS SrcGCPhys);
+uint32_t remR3PhysReadU32(RTGCPHYS SrcGCPhys);
+int32_t  remR3PhysReadS32(RTGCPHYS SrcGCPhys);
+uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys);
+int64_t  remR3PhysReadS64(RTGCPHYS SrcGCPhys);
+void     remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb);
+void     remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val);
+void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
+void     remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
+void     remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
+
+#ifndef REM_PHYS_ADDR_IN_TLB
 void     remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb);
 uint8_t  remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys);
 int8_t   remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys);
@@ -197,62 +210,122 @@ void     remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val);
 void     remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val);
 void     remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val);
 void     remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val);
-# ifdef PGM_DYNAMIC_RAM_ALLOC
+#endif
+
+#ifdef PGM_DYNAMIC_RAM_ALLOC
+# ifndef REM_PHYS_ADDR_IN_TLB
 void    *remR3GCPhys2HCVirt(void *env, target_ulong addr);
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
+# endif 
 void     remR3GrowDynRange(unsigned long physaddr);
-# endif
 #endif
+#if defined(__AMD64__)
+# define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
+#else
+# define VBOX_CHECK_ADDR(ptr) (void)
+#endif 
 
 static inline int ldub_p(void *ptr)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU8((uintptr_t)ptr);
+#else
     return remR3PhysReadHCPtrU8(ptr);
+#endif 
 }
 
 static inline int ldsb_p(void *ptr)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadS8((uintptr_t)ptr);
+#else
     return remR3PhysReadHCPtrS8(ptr);
+#endif 
 }
 
 static inline void stb_p(void *ptr, int v)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU8((uintptr_t)ptr, v);
+#else
     remR3PhysWriteHCPtrU8(ptr, v);
+#endif 
 }
 
 static inline int lduw_le_p(void *ptr)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU16((uintptr_t)ptr);
+#else
     return remR3PhysReadHCPtrU16(ptr);
+#endif 
 }
 
 static inline int ldsw_le_p(void *ptr)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadS16((uintptr_t)ptr);
+#else
     return remR3PhysReadHCPtrS16(ptr);
+#endif 
 }
 
 static inline void stw_le_p(void *ptr, int v)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU16((uintptr_t)ptr, v);
+#else
     remR3PhysWriteHCPtrU16(ptr, v);
+#endif 
 }
 
 static inline int ldl_le_p(void *ptr)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU32((uintptr_t)ptr);
+#else
     return remR3PhysReadHCPtrU32(ptr);
+#endif 
 }
 
 static inline void stl_le_p(void *ptr, int v)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU32((uintptr_t)ptr, v);
+#else
     remR3PhysWriteHCPtrU32(ptr, v);
+#endif 
 }
 
 static inline void stq_le_p(void *ptr, uint64_t v)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU64((uintptr_t)ptr, v);
+#else
     remR3PhysWriteHCPtrU64(ptr, v);
+#endif 
 }
 
 static inline uint64_t ldq_le_p(void *ptr)
 {
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU64((uintptr_t)ptr);
+#else
     return remR3PhysReadHCPtrU64(ptr);
+#endif 
 }
+
+#undef VBOX_CHECK_ADDR
 
 /* float access */
 
@@ -972,7 +1045,7 @@ extern RTGCPHYS phys_ram_size;
 /** This is required for bounds checking the phys_ram_dirty accesses. */
 extern uint32_t phys_ram_dirty_size;
 #endif /* VBOX */
-#if !defined(VBOX) || !defined(PGM_DYNAMIC_RAM_ALLOC)
+#if !defined(VBOX) || !(defined(PGM_DYNAMIC_RAM_ALLOC) || defined(REM_PHYS_ADDR_IN_TLB))
 extern uint8_t *phys_ram_base;
 #endif
 extern uint8_t *phys_ram_dirty;
