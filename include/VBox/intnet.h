@@ -214,6 +214,8 @@ typedef struct INTNETOPENARGS
     uint32_t        cbSend;
     /** The size of the receive buffer. (input) */
     uint32_t        cbRecv;
+    /** check access? */
+    bool            fRestrictAccess;
     /** The handle to the network interface. (output) */
     INTNETIFHANDLE  hIf;
 } INTNETOPENARGS;
@@ -324,7 +326,7 @@ INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet);
  * @returns VBox status code.
  * @param   pIntNet     The
  */
-INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, PINTNETIFHANDLE phIf);
+INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, bool fRestrictAccess, PINTNETIFHANDLE phIf);
 
 /**
  * Close an interface.

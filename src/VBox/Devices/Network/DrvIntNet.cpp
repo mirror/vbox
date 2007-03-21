@@ -617,7 +617,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Network\0ReceiveBufferSize\0SendBufferSize\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Network\0ReceiveBufferSize\0SendBufferSize\0RestrictAccess\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     /*
@@ -647,29 +647,30 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     memset(&OpenArgs, 0, sizeof(OpenArgs));
     rc = CFGMR3QueryString(pCfgHandle, "Network", OpenArgs.szNetwork, sizeof(OpenArgs.szNetwork));
     if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: query for \"Network\" string return %Vra.\n", rc));
-        return rc;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"Network\" value"));
     strcpy(pThis->szNetwork, OpenArgs.szNetwork);
 
     rc = CFGMR3QueryU32(pCfgHandle, "ReceiveBufferSize", &OpenArgs.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenArgs.cbRecv = _256K;
     else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: query for \"ReceiveBufferSize\" uint32_t return %Vra.\n", rc));
-        return rc;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"ReceiveBufferSize\" value"));
 
     rc = CFGMR3QueryU32(pCfgHandle, "SendBufferSize", &OpenArgs.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenArgs.cbSend = _4K;
     else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: query for \"SendBufferSize\" uint32_t return %Vra.\n", rc));
-        return rc;
-    }
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"SendBufferSize\" value"));
+
+    rc = CFGMR3QueryBool(pCfgHandle, "RestrictAccess", &OpenArgs.fRestrictAccess);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        OpenArgs.fRestrictAccess = true;
+    else if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
 
     /*
      * Create the event semaphores
@@ -687,11 +688,8 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     OpenArgs.hIf = INTNET_HANDLE_INVALID;
     rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenArgs, sizeof(OpenArgs));
     if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to open/create the network '%s', cbRecv=%RU32, cbSend=%RU32. rc=%Vrc\n",
-                         pThis->szNetwork, OpenArgs.cbRecv, OpenArgs.cbSend, rc));
-        return rc;
-    }
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Failed to open/create the internal network '%s'"), pThis->szNetwork);
     AssertRelease(OpenArgs.hIf != INTNET_HANDLE_INVALID);
     pThis->hIf = OpenArgs.hIf;
     Log(("IntNet%d: hIf=%RX32 '%s'\n", pDrvIns->iInstance, pThis->hIf, pThis->szNetwork));
@@ -704,11 +702,8 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     GetRing3BufferArgs.pRing3Buf = NULL;
     rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferArgs, sizeof(GetRing3BufferArgs));
     if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to get ring-3 buffer for the newly created interface to '%s'. rc=%Vrc\n",
-                         pThis->szNetwork, rc));
-        return rc;
-    }
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                  N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
     AssertRelease(VALID_PTR(GetRing3BufferArgs.pRing3Buf));
     pThis->pBuf = GetRing3BufferArgs.pRing3Buf;
 
