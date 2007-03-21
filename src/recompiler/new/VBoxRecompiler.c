@@ -1398,7 +1398,7 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pTLBEntry,  CPUTLBEntry *pTLBEntry
         if (!(addend & IO_MEM_ROM))
 # ifdef REM_PHYS_ADDR_IN_TLB
             phys_addr = virt_addr + addend;
-# elif defined(REM_PHYS_ADDR_IN_TLB)
+# elif defined(PGM_DYNAMIC_RAM_ALLOC)
             phys_addr = remR3HCVirt2GCPhys(env, (void *)(virt_addr + addend));
 # else
             phys_addr = virt_addr - (uintptr_t)phys_ram_base + addend;
@@ -2608,7 +2608,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
     Assert(cb == PGM_DYNAMIC_CHUNK_SIZE);
     Assert(fFlags == 0 /* normal RAM */);
 
-# ifdef REM_PHYS_ADDR_IN_TLB
+# ifndef REM_PHYS_ADDR_IN_TLB
     if (!pVM->rem.s.paHCVirtToGCPhys)
     {
         uint32_t size = (_4G >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(REMCHUNKINFO);
@@ -2647,7 +2647,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
             pVM->rem.s.paHCVirtToGCPhys[idx+1].GCPhys2 = GCPhys;
         }
     }
-# endif /* REM_PHYS_ADDR_IN_TLB */
+# endif /* !REM_PHYS_ADDR_IN_TLB */
 
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
