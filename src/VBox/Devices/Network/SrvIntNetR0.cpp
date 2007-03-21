@@ -1265,11 +1265,12 @@ static int INTNETOpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const cha
  * attempted opening the network.
  *
  * @returns VBox status code.
- * @param   pIntNet     The instance data.
- * @param   pszNetwork  The name of the network. This must be at least one character long and no longer
- *                      than the INTNETNETWORK::szName.
- * @param   pSession    The session handle.
- * @param   ppNetwork   Where to store the network.
+ * @param   pIntNet         The instance data.
+ * @param   pszNetwork      The name of the network. This must be at least one character long and no longer
+ *                          than the INTNETNETWORK::szName.
+ * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
+ * @param   pSession        The session handle.
+ * @param   ppNetwork       Where to store the network.
  */
 static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, bool fRestrictAccess, PINTNETNETWORK *ppNetwork)
 {
@@ -1293,7 +1294,7 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             &&  !memcmp(pCur->szName, pszNetwork, cchName))
         {
             RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
-            LogFlow(("INTNETOpenNetwork: returns VERR_ALREADY_EXISTS\n"));
+            LogFlow(("INTNETCreateNetwork: returns VERR_ALREADY_EXISTS\n"));
             return VERR_ALREADY_EXISTS;
         }
     RTSpinlockRelease(pIntNet->Spinlock, &Tmp);
@@ -1338,13 +1339,13 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             if (VBOX_SUCCESS(rc))
             {
                 *ppNetwork = pNew;
-                LogFlow(("INTNETOpenNetwork: returns VINF_SUCCESS *ppNetwork=%p\n", pNew));
+                LogFlow(("INTNETCreateNetwork: returns VINF_SUCCESS *ppNetwork=%p\n", pNew));
                 return VINF_SUCCESS;
             }
 
             /* The release will destroy the object. */
             SUPR0ObjRelease(pNew->pvObj, pSession);
-            LogFlow(("INTNETOpenNetwork: returns %Vrc\n", rc));
+            LogFlow(("INTNETCreateNetwork: returns %Vrc\n", rc));
             return rc;
         }
         rc = VERR_NO_MEMORY;
@@ -1353,7 +1354,7 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         pNew->FastMutex = NIL_RTSEMFASTMUTEX;
     }
     RTMemFree(pNew);
-    LogFlow(("INTNETOpenNetwork: returns %Vrc\n", rc));
+    LogFlow(("INTNETCreateNetwork: returns %Vrc\n", rc));
     return rc;
 }
 
@@ -1362,12 +1363,13 @@ static int INTNETCreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
  * Opens a network interface and attaches it to the specified network.
  *
  * @returns VBox status code.
- * @param   pIntNet     The internal network instance.
- * @param   pSession    The session handle.
- * @param   pszNetwork  The network name.
- * @param   cbSend      The send buffer size.
- * @param   cbRecv      The receive buffer size.
- * @param   phIf        Where to store the handle to the network interface.
+ * @param   pIntNet         The internal network instance.
+ * @param   pSession        The session handle.
+ * @param   pszNetwork      The network name.
+ * @param   cbSend          The send buffer size.
+ * @param   cbRecv          The receive buffer size.
+ * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
+ * @param   phIf            Where to store the handle to the network interface.
  */
 INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, unsigned cbSend, unsigned cbRecv, bool fRestrictAccess, PINTNETIFHANDLE phIf)
 {
