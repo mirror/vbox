@@ -108,7 +108,7 @@ DATA_TYPE REGPARM(1) glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
 void REGPARM(2) glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr, DATA_TYPE v, int is_user);
 
 #if (DATA_SIZE <= 4) && (TARGET_LONG_BITS == 32) && defined(__i386__) && \
-    (ACCESS_TYPE <= 1) && defined(ASM_SOFTMMU)
+    (ACCESS_TYPE <= 1) && defined(ASM_SOFTMMU) && (!defined(VBOX) || !defined(REM_PHYS_ADDR_IN_TLB))
 
 #define CPU_TLB_ENTRY_BITS 4
 
