@@ -374,6 +374,7 @@ $(PATH_$(REM_MOD))/op.S: \
 		op-validate.sed \
 		op-darwin.sed \
 		op-undefined.lst \
+		Makefile.kmk \
 		$(comp-cmds COMPILE_OP_CMDS,COMPILE_OP_CMDS_PREV,FORCE) \
 		| $(call DIRDEP,$(PATH_$(REM_MOD)))
 	$(RM) -f $@ $@.tmp $@.tmp2 $@.dep
