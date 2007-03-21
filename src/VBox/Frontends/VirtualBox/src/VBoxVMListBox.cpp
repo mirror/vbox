@@ -118,6 +118,7 @@ static WId FindWindowIdFromPid (ULONG aPid)
 
 #elif defined (Q_WS_X11)
 
+    NOREF (aPid);
     return (WId) ~0;
 
 #elif defined (Q_WS_MAC)
