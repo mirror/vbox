@@ -222,7 +222,7 @@ void     remR3GrowDynRange(unsigned long physaddr);
 #if 0 /*defined(__AMD64__) && defined(VBOX_STRICT)*/
 # define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
 #else
-# define VBOX_CHECK_ADDR(ptr) (void)
+# define VBOX_CHECK_ADDR(ptr) do { } while (0)
 #endif 
 
 static inline int ldub_p(void *ptr)
