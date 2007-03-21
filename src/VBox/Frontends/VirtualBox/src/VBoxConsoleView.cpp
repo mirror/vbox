@@ -1814,6 +1814,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
     {
         bool processed = false;
 #if defined (Q_WS_WIN32)
+        NOREF(aUniKey);
         int n = GetKeyboardLayoutList (0, NULL);
         Assert (n);
         HKL *list = new HKL [n];
@@ -1831,6 +1832,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
         }
         delete[] list;
 #elif defined (Q_WS_X11)
+        NOREF(aUniKey);
         Display *display = x11Display();
         int keysyms_per_keycode = getKeysymsPerKeycode();
         KeyCode kc = XKeysymToKeycode (display, key);
