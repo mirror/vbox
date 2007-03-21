@@ -5677,7 +5677,6 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
             {
                 case VERR_ACCESS_DENIED:
                     /* will be handled by our caller */
-                    LogRel(("HERE\n"));
                     rc = rcVBox;
                     break;
                 default:
