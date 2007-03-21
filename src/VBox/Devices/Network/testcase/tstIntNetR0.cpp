@@ -386,13 +386,13 @@ int main()
      * Create two interfaces.
      */
     INTNETIFHANDLE hIf0 = INTNET_HANDLE_INVALID;
-    rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536, 0x8000, &hIf0);
+    rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536, 0x8000, 1, &hIf0);
     if (VBOX_SUCCESS(rc))
     {
         if (hIf0 != INTNET_HANDLE_INVALID)
         {
             INTNETIFHANDLE hIf1 = INTNET_HANDLE_INVALID;
-            rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536, 0x8000, &hIf1);
+            rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536, 0x8000, 1, &hIf1);
             if (VBOX_SUCCESS(rc))
             {
                 if (hIf1 != INTNET_HANDLE_INVALID)
