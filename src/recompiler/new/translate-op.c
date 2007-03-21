@@ -25,9 +25,23 @@
 
 #include "config.h"         
 
-#if defined(VBOX) && !defined(REMR3PHYSREADWRITE_DEFINED)
-#define REMR3PHYSREADWRITE_DEFINED
-/* Header sharing between vbox & qemu is rather ugly. */
+#if defined(VBOX)
+void     remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb);
+uint8_t  remR3PhysReadU8(RTGCPHYS SrcGCPhys);
+int8_t   remR3PhysReadS8(RTGCPHYS SrcGCPhys);
+uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys);
+int16_t  remR3PhysReadS16(RTGCPHYS SrcGCPhys);
+uint32_t remR3PhysReadU32(RTGCPHYS SrcGCPhys);
+int32_t  remR3PhysReadS32(RTGCPHYS SrcGCPhys);
+uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys);
+int64_t  remR3PhysReadS64(RTGCPHYS SrcGCPhys);
+void     remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb);
+void     remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val);
+void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
+void     remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
+void     remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
+
+# ifndef REM_PHYS_ADDR_IN_TLB
 void     remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb);
 uint8_t  remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys);
 int8_t   remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys);
@@ -42,6 +56,7 @@ void     remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val);
 void     remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val);
 void     remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val);
 void     remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val);
+# endif
 #endif /* VBOX */
 
 enum {

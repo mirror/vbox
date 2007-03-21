@@ -603,7 +603,7 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
 #else
 # ifdef VBOX
 target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, CPUTLBEntry *pTLBEntry);
-#  ifdef PGM_DYNAMIC_RAM_ALLOC
+#  if defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
 #  endif
 # endif
@@ -643,7 +643,9 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
         cpu_abort(env, "Trying to execute code outside RAM or ROM at 0x%08lx\n", addr);
 # endif
     }
-# if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
+# if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
+    return addr + env->tlb_table[is_user][index].addend;
+# elif defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
     return remR3HCVirt2GCPhys(env, (void *)(addr + env->tlb_table[is_user][index].addend));
 # else
     return addr + env->tlb_table[is_user][index].addend - (unsigned long)phys_ram_base;

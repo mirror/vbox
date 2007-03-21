@@ -641,6 +641,11 @@ static const REMPARMDESC g_aArgsPGM3PhysGrowRange[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS) }
 };
+static const REMPARMDESC g_aArgsPGMPhysIsGCPhysValid[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS) }
+};
 static const REMPARMDESC g_aArgsPGMPhysRead[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
@@ -974,6 +979,7 @@ static REMFNDESC g_aVMMImports[] =
     { "PGMPhysGCPhys2HCPtr",                    (void *)(uintptr_t)&PGMPhysGCPhys2HCPtr,            &g_aArgsPGMPhysGCPhys2HCPtr[0],             ELEMENTS(g_aArgsPGMPhysGCPhys2HCPtr),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMPhysGCPtr2HCPtrByGstCR3",             (void *)(uintptr_t)&PGMPhysGCPtr2HCPtrByGstCR3,     &g_aArgsPGMPhysGCPtr2HCPtrByGstCR3[0],      ELEMENTS(g_aArgsPGMPhysGCPtr2HCPtrByGstCR3),        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGM3PhysGrowRange",                      (void *)(uintptr_t)&PGM3PhysGrowRange,              &g_aArgsPGM3PhysGrowRange[0],               ELEMENTS(g_aArgsPGM3PhysGrowRange),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "PGMPhysIsGCPhysValid",                   (void *)(uintptr_t)&PGMPhysIsGCPhysValid,           &g_aArgsPGMPhysIsGCPhysValid[0],            ELEMENTS(g_aArgsPGMPhysIsGCPhysValid),              REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PGMPhysIsA20Enabled",                    (void *)(uintptr_t)&PGMPhysIsA20Enabled,            &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PGMPhysRead",                            (void *)(uintptr_t)&PGMPhysRead,                    &g_aArgsPGMPhysRead[0],                     ELEMENTS(g_aArgsPGMPhysRead),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMPhysReadGCPtr",                       (void *)(uintptr_t)&PGMPhysReadGCPtr,               &g_aArgsPGMPhysReadGCPtr[0],                ELEMENTS(g_aArgsPGMPhysReadGCPtr),                  REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
