@@ -374,7 +374,8 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         int rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
-    return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
+    /* Never generate a raw trap here; it might be a monitor instruction, that requires emulation. */
+    return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
 }
 
 
