@@ -1334,7 +1334,7 @@ PATMIretTable:
     DW      PATM_MAX_JUMPTABLE_ENTRIES          ; nrSlots
     DW      0                                   ; ulInsertPos
     DD      0                                   ; cAddresses
-    RESB    PATCHJUMPTABLE_SIZE                 ; lookup slots
+    TIMES PATCHJUMPTABLE_SIZE DB 0              ; lookup slots
 
 PATMIretEnd:
 ENDPROC     PATMIretReplacement
@@ -1997,7 +1997,7 @@ PATMCallTable:
     DW      1                                   ; nrSlots
     DW      0                                   ; ulInsertPos
     DD      0                                   ; cAddresses
-    RESB    PATCHDIRECTJUMPTABLE_SIZE           ; only one lookup slot
+    TIMES PATCHDIRECTJUMPTABLE_SIZE DB 0        ; only one lookup slot
 
 PATMCallEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
@@ -2053,7 +2053,7 @@ PATMCallIndirectTable:
     DW      PATM_MAX_JUMPTABLE_ENTRIES          ; nrSlots
     DW      0                                   ; ulInsertPos
     DD      0                                   ; cAddresses
-    RESB    PATCHJUMPTABLE_SIZE                 ; lookup slots
+    TIMES PATCHJUMPTABLE_SIZE DB 0              ; lookup slots
 
 PATMCallIndirectEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
@@ -2114,7 +2114,7 @@ PATMJumpIndirectTable:
     DW      PATM_MAX_JUMPTABLE_ENTRIES          ; nrSlots
     DW      0                                   ; ulInsertPos
     DD      0                                   ; cAddresses
-    RESB    PATCHJUMPTABLE_SIZE                 ; lookup slots
+    TIMES PATCHJUMPTABLE_SIZE DB 0              ; lookup slots
 
 PATMJumpIndirectEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
@@ -2174,7 +2174,7 @@ PATMRetTable:
     DW      PATM_MAX_JUMPTABLE_ENTRIES          ; nrSlots
     DW      0                                   ; ulInsertPos
     DD      0                                   ; cAddresses
-    RESB    PATCHJUMPTABLE_SIZE                 ; lookup slots
+    TIMES PATCHJUMPTABLE_SIZE DB 0              ; lookup slots
 
 PATMRet_Success:
     mov     dword [esp+8], eax                  ; overwrite the saved return address
