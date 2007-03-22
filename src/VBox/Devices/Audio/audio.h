@@ -106,7 +106,7 @@ typedef struct QEMUAudioTimeStamp {
 
 void AUD_vlog (const char *cap, const char *fmt, va_list ap);
 void AUD_log (const char *cap, const char *fmt, ...)
-#ifdef __GNUC__
+#if defined (__GNUC__) && !defined (VBOX) /* VBox: oh, please, shut up. */
     __attribute__ ((__format__ (__printf__, 2, 3)))
 #endif
     ;

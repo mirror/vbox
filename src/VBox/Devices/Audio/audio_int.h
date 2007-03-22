@@ -244,7 +244,7 @@ static inline int audio_ring_dist (int dst, int src, int len)
     return (dst >= src) ? (dst - src) : (len - src + dst);
 }
 
-#if defined __GNUC__
+#if defined __GNUC__ && !defined VBOX /* VBox: oh, please, just shut up. */
 #define GCC_ATTR __attribute__ ((__unused__, __format__ (__printf__, 1, 2)))
 #if __STDC_VERSION__ > 199901L
 #define INIT_FIELD(f) . f
@@ -258,7 +258,11 @@ static inline int audio_ring_dist (int dst, int src, int len)
 #define GCC_FMT_ATTR(n, m)
 #endif
 
+#ifndef VBOX
 static void GCC_ATTR dolog (const char *fmt, ...)
+#else 
+DECLINLINE(void) GCC_ATTR dolog (const char *fmt, ...) /* shuts up unused warnings. */
+#endif 
 {
     va_list ap;
 
@@ -282,7 +286,11 @@ static void GCC_ATTR ldebug (const char *fmt, ...)
 #elif defined NDEBUG && defined _MSC_VER
 #define ldebug __noop
 #else
+#ifndef VBOX
 static void GCC_ATTR ldebug (const char *fmt, ...)
+#else
+DECLINLINE(void) GCC_ATTR ldebug (const char *fmt, ...)  /* shuts up unused warnings. */
+#endif 
 {
     (void) fmt;
 }
