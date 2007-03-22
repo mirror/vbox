@@ -2270,7 +2270,7 @@ static int patmRecompileCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTR
             /* Add lookup record for patch to guest address translation */
             patmr3AddP2GLookupRecord(pVM, pPatch, PATCHCODE_PTR_HC(pPatch) + pPatch->uCurPatchOffset, pCurInstrGC, PATM_LOOKUP_BOTHDIR);
             patmPatchGenIllegalInstr(pVM, pPatch);
-            rc = VINF_SUCCESS;   /* @@note don't fail here; we might refuse an important patch!! */
+            rc = VINF_SUCCESS;   /* Note: don't fail here; we might refuse an important patch!! */
             goto end;
         }
 
