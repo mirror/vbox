@@ -30,6 +30,14 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
+/** @todo The following is a temporary fix for the problem of accessing
+    hypervisor pointers from within guest additions */
+
+/** Hypervisor linear pointer size type */
+typedef uint32_t vmmDevHypPtr;
+/** Hypervisor physical pointer size type */
+typedef uint32_t vmmDevHypPhys;
+
 #ifdef __WIN__
 /** The support service name. */
 #define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
@@ -249,7 +257,7 @@ typedef struct
     /** header */
     VMMDevRequestHeader header;
     /** guest virtual address of proposed hypervisor start */
-    RTGCPTR hypervisorStart;
+    vmmDevHypPtr hypervisorStart;
     /** hypervisor size in bytes */
     uint32_t hypervisorSize;
 } VMMDevReqHypervisorInfo;
@@ -448,8 +456,8 @@ typedef struct _HGCMFUNCTIONPARAMETER
 
             union
             {
-                RTGCPHYS physAddr;
-                RTGCPTR  linearAddr;
+                vmmDevHypPhys physAddr;
+                vmmDevHypPtr  linearAddr;
             } u;
         } Pointer;
     } u;
