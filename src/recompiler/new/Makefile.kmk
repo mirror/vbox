@@ -79,13 +79,14 @@ ifeq ($(BUILD_PLATFORM),win)
  # On 64-bit Windows we pretend to be 32-bit.
  dyngen_BLD_TRG_ARCH  = x86
  dyngen_BLD_TRG_CPU   = i386
- dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing
+ dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing 
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   dyngen_DEFS        += HOST_X86_64=1
  endif
 else
  dyngen_TEMPLATE      = VBOXBLDPROG
 endif
+dyngen_CFLAGS        += -Wno-missing-prototypes -Wno-missing-declarations
 dyngen_INCS           = \
 	InnoTek \
 	target-i386 \

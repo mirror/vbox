@@ -243,7 +243,7 @@ struct nlist_extended
 enum {
     OUT_GEN_OP,
     OUT_CODE,
-    OUT_INDEX_OP,
+    OUT_INDEX_OP
 };
 
 /* all dynamically generated functions begin with this code */
