@@ -191,6 +191,7 @@ INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 
 
 /* ugly but necessary for making R0 code compilable for R3. */
+#undef LOG_GROUP
 #include "../SrvIntNetR0.cpp"
 
 typedef struct ARGS
