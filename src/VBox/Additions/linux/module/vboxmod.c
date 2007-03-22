@@ -323,8 +323,10 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                             == VMMDevHGCMParmType_LinAddr_In))
                 {
                     /* We are sending data to the host or sending and reading. */
+                    void *pvR3LinAddr
+                        = (void *)VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.u.linearAddr;
                     if (copy_from_user(&pu8PointerData[offPointerData],
-                                       VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.u.linearAddr,
+                                       pvR3LinAddr,
                                        VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size))
                     {
                         elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n");
@@ -332,7 +334,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                         goto hgcm_exit;
                     }
                     VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr
-                        = &pu8PointerData[offPointerData];
+                        = (vmmDevHypPtr)&pu8PointerData[offPointerData];
                     VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size
                         = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
                     offPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
@@ -342,7 +344,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 {
                     /* We are reading data from the host */
                     VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr
-                        = &pu8PointerData[offPointerData];
+                        = (vmmDevHypPtr)&pu8PointerData[offPointerData];
                     VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size
                         = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
                     offPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
@@ -370,8 +372,11 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                             == VMMDevHGCMParmType_LinAddr_Out))
                 {
                     /* We are sending data to the host or sending and reading. */
-                    if (copy_to_user(VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.u.linearAddr,
-                                     VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr,
+                    void *pvR3LinAddr
+                        = (void *)VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.u.linearAddr;
+                    void *pvR0LinAddr
+                        = (void *)VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr;
+                    if (copy_to_user(pvR3LinAddr, pvR0LinAddr,
                                      VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size))
                     {
                         elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n");
@@ -554,7 +559,7 @@ static int vboxadd_reserve_hypervisor(void)
             if (hypervisorArea)
             {
                 /* communicate result to VMM, align at 4MB */
-                req->hypervisorStart    = (RTGCPTR)ALIGNP(hypervisorArea, 0x400000);
+                req->hypervisorStart    = (vmmDevHypPtr)ALIGNP(hypervisorArea, 0x400000);
                 req->header.requestType = VMMDevReq_SetHypervisorInfo;
                 req->header.rc          = VERR_GENERAL_FAILURE;
                 rcVBox = VbglGRPerform(&req->header);
