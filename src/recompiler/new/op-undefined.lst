@@ -122,6 +122,16 @@ remR3PhysWriteU16
 remR3PhysWriteU32
 remR3PhysWriteU64
 remR3PhysWriteU8
+remR3PhysReadHCPtrS16
+remR3PhysReadHCPtrS8
+remR3PhysReadHCPtrU16
+remR3PhysReadHCPtrU32
+remR3PhysReadHCPtrU64
+remR3PhysReadHCPtrU8
+remR3PhysWriteHCPtrU16
+remR3PhysWriteHCPtrU32
+remR3PhysWriteHCPtrU64
+remR3PhysWriteHCPtrU8
 sync_seg
 update_fp_status
 fabsl
