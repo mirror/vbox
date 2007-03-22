@@ -771,10 +771,9 @@ RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
 RuntimeW32GuestR0_SDKS          = W2K3DDKX86 WINPSDKINCS
 RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS  IN_SUP_R0
 RuntimeW32GuestR0_SOURCES       = \
-	$(RuntimeR0Drv_SOURCES) \
+	$(filter-out generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
 	$(RuntimeR0Drv_SOURCES.win) \
-	VBox/logbackdoor.cpp \
-	logR0.cpp
+	VBox/logbackdoor.cpp
 ifdef VBOX_USE_VCC80
 RuntimeW32GuestR0_SOURCES += \
 	string/memchr.cpp \
