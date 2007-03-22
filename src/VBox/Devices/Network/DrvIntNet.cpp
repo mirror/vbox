@@ -740,6 +740,8 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatTransmit,            STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
 #endif
 
+    LogRel(("IntNet#%u: cbRecv=%u cbSend=%u fRestrictAccess=%d\n", pDrvIns->iInstance, OpenArgs.cbRecv, OpenArgs.cbSend, OpenArgs.fRestrictAccess));
+
     return rc;
 }
 
