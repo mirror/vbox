@@ -46,17 +46,6 @@
 #endif
 
 
-#define VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data)                                           \
-    /* After a restore our client id is no longer valid; try to reconnect when that happens */  \
-    /** @todo settings lost! */ \
-    if (RT_UNLIKELY(rc == VERR_HGCM_INVALID_CLIENT_ID))                                         \
-    {                                                                                           \
-        Log(("VBOXSF: reconnect after restore\n"));                                             \
-        rc = vboxConnect(pClient);                                                              \
-        if (VBOX_SUCCESS(rc))                                                                   \
-            rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));                 \
-    }
-
 DECLVBGL(int) vboxInit (void)
 {
     int rc = VINF_SUCCESS;
@@ -145,7 +134,6 @@ DECLVBGL(int) vboxCallQueryMappings (PVBSFCLIENT pClient, SHFLMAPPING paMappings
          (char *)&data.flags.type - (char *)&data.callInfo.cParms));
 */
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*
     Log(("VBOXSF: VBoxSF::vboxCallQueryMappings: "
@@ -184,7 +172,6 @@ DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root,
     data.name.u.Pointer.u.linearAddr = (VBOXGCPTR)pString;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallQueryMapName: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
@@ -217,7 +204,6 @@ DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
     data.delimiter.u.value32          = RTPATH_DELIMITER;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallMapFolder: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
@@ -242,7 +228,6 @@ DECLVBGL(int) vboxCallUnmapFolder(PVBSFCLIENT pClient, PVBSFMAP pMap)
     data.root.u.value32                 = pMap->root;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallUnmapFolder: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
@@ -276,7 +261,6 @@ DECLVBGL(int) vboxCallCreate (PVBSFCLIENT pClient, PVBSFMAP pMap,
     data.parms.u.Pointer.u.linearAddr = (VBOXGCPTR)pCreateParms;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallCreate: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
@@ -335,7 +319,6 @@ DECLVBGL(int) vboxCallRemove (PVBSFCLIENT pClient, PVBSFMAP pMap,
     data.flags.u.value32                = flags;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallRemove: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
@@ -372,7 +355,6 @@ DECLVBGL(int) vboxCallRename (PVBSFCLIENT pClient, PVBSFMAP pMap,
     data.flags.u.value32                = flags;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallRename: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
@@ -521,7 +503,6 @@ DECLVBGL(int) vboxCallDirInfo (
     data.cFiles.u.value32               = 0; /* out parameters only */
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallDirInfo: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
@@ -558,7 +539,6 @@ DECLVBGL(int) vboxCallFSInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFil
     data.info.u.Pointer.u.linearAddr    = (VBOXGCPTR)pBuffer;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
-    VBOXSF_RECONNECT_AFTER_RESTORE(pClient, data);
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallFileInfo: "
          "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
