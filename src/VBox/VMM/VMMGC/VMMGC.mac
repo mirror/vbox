@@ -59,7 +59,7 @@
 
 %ifdef ASM_FORMAT_PE
  %macro VMMR0_SEG 1
- [section .VMMR0.%1 rdata align=1 ]
+ [section .rdata$VMMR0.%1 align=1 ]
  %endmacro
  %define VMMR0_SEG_DEFINED
 %endif
