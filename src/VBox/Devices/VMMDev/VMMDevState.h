@@ -131,7 +131,10 @@ typedef struct VMMDevState
 #endif
     /** Set if GetHostTime should fail. 
      * Loaded from the GetHostTimeDisabled configuration value. */
-    bool fGetHostTimeDisabled; 
+    bool fGetHostTimeDisabled;
+
+    /** Set if backdoor logging should be disabled (output will be ignored then) */
+    bool fBackdoorLogDisabled;
 
 } VMMDevState;
 

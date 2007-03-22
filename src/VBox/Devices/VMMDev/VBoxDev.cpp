@@ -268,9 +268,10 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
 
 static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    if (cb == 1 && Port == RTLOG_DEBUG_PORT)
+    VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState *);
+
+    if (!pData->fBackdoorLogDisabled && cb == 1 && Port == RTLOG_DEBUG_PORT)
     {
-        VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState *);
 
         /* The raw version. */
         switch (u32)
@@ -1585,16 +1586,22 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0BackdoorLogDisabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBool(pCfgHandle, "GetHostTimeDisabled", &pData->fGetHostTimeDisabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->fGetHostTimeDisabled = false;
     else if (VBOX_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean. (%Vrc)"),
-                                   rc);
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean"));
+
+    rc = CFGMR3QueryBool(pCfgHandle, "BackdoorLogDisabled", &pData->fBackdoorLogDisabled);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->fBackdoorLogDisabled = false;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"BackdoorLogDisabled\" as a boolean"));
 
     /*
      * Initialize data (most of it anyway).
