@@ -78,5 +78,6 @@ break; \
 
 extern int vboxadd_cmc_init (void);
 extern void vboxadd_cmc_fini (void);
+DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
 
 #endif /* !VBOXMOD_H */
