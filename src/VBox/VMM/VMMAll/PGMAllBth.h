@@ -550,9 +550,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys));
 #  endif /* LOG_ENABLED */
 
-#  ifdef IN_RING0
-                Assert((pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3 || pRegFrame->eflags.Bits.u1VM);
-#  else
+#  ifndef IN_RING0
                 Assert((pRegFrame->ss & X86_SEL_RPL) == 1 || (pRegFrame->ss & X86_SEL_RPL) == 3 || pRegFrame->eflags.Bits.u1VM);
                 if (CSAMIsEnabled(pVM) && (pRegFrame->ss & X86_SEL_RPL) == 1)
                 {
