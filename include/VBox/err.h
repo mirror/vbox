@@ -911,6 +911,9 @@
 #define VERR_HGCM_INTERNAL                          (-2904)
 /** Invalid HGCM client id. */
 #define VERR_HGCM_INVALID_CLIENT_ID                 (-2905)
+/** The HGCM is saving state. */
+#define VINF_HGCM_SAVE_STATE                        (2906)
+
 /** @} */
 
 
