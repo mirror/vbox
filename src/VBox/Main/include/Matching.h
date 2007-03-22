@@ -85,8 +85,8 @@ protected:
 
     union Widest
     {
-        signed long long ll;
-        unsigned long long ull;
+        int64_t ll;
+        uint64_t ull;
     };
 
     struct Limits
@@ -177,13 +177,13 @@ protected:
         {
             if (Lim::is_signed)
             {
-                min.ll = (signed long long) Lim::min();
-                max.ll = (signed long long) Lim::max();
+                min.ll = (int64_t) Lim::min();
+                max.ll = (int64_t) Lim::max();
             }
             else
             {
-                min.ull = (unsigned long long) Lim::min();
-                max.ull = (unsigned long long) Lim::max();
+                min.ull = (uint64_t) Lim::min();
+                max.ull = (uint64_t) Lim::max();
             }
         }
 
@@ -201,8 +201,8 @@ protected:
     {
         AssertReturn (Lim::is_integer, (void) 0);
         AssertReturn (
-            (Lim::is_signed && Lim::digits <= numeric_limits <signed long long>::digits) ||
-            (!Lim::is_signed && Lim::digits <= numeric_limits <unsigned long long>::digits),
+            (Lim::is_signed && Lim::digits <= numeric_limits <int64_t>::digits) ||
+            (!Lim::is_signed && Lim::digits <= numeric_limits <uint64_t>::digits),
             (void) 0);
 
         Limits limits;
