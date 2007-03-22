@@ -80,6 +80,9 @@ endif
 VirtualBox_QT_MOCUIHDRS = \
 	ui/VBoxVMSettingsDlg.ui.h \
 	ui/VBoxSharedFoldersSettings.ui.h
+ifeq ($(BUILD_TARGET),win)
+VirtualBox_QT_MOCUIHDRS += ui/VBoxVMNetworkSettings.ui.h
+endif
 
 VirtualBox_GENSRCS = \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCHDRS))), $(PATH_VirtualBox)/moc/moc_$(moc).cpp) \
