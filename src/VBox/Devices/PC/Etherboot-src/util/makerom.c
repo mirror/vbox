@@ -86,7 +86,7 @@ static unsigned int addident(void)
 	int		len = strlen(identstring) + 1;
 
 	/* Put the identifier in only if the space is blank */
-	if (strspn(&rom[romsize-len-2], "\377") >= len) {
+	if (strspn((char *)&rom[romsize-len-2], "\377") >= len) {
 		memcpy(&rom[romsize-len-2], identstring, len);
 		return (romsize-len-2);		/* return offset */
 	}
