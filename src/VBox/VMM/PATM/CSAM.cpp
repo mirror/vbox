@@ -2037,8 +2037,6 @@ CSAMDECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fSca
  */
 CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR pInstrGC)
 {
-    PCSAMPAGE pPage = NULL;
-
     if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
         // No use
@@ -2055,7 +2053,7 @@ CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel,
         bool fCode32 = SELMIsSelector32Bit(pVM, fakeflags, Sel, pHiddenSel);
 
         //assuming 32 bits code for now
-        Assert(fCode32);
+        Assert(fCode32); NOREF(fCode32);
 
         pInstrGC = SELMToFlat(pVM, fakeflags, Sel, pHiddenSel, pInstrGC);
 
