@@ -138,6 +138,8 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
             return VINF_SUCCESS;
         }
     }
+#else
+    NOREF(iGate);
 #endif
 
     Log(("trpmgcGuestIDTWriteHandler: eip=%VGv write to gate %x offset %x\n", pRegFrame->eip, iGate, offRange));
