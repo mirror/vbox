@@ -3990,8 +3990,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
 
-    int rc = PDMCritSectEnter(&pData->CritSect, VERR_ACCESS_DENIED);
-    AssertReleaseRC(rc);
+    PDMCritSectEnter(&pData->CritSect, VERR_ACCESS_DENIED);
 
     RTSemEventDestroy(pData->hSendEventSem);
     pData->hSendEventSem = 0;
