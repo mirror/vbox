@@ -140,6 +140,38 @@ ifneq ($(DLL_SDK_VBOX_XALAN_XALAN-MESSAGES),)
 endif
 
 
+#
+# Install staged binaries on platforms where we can't cross 
+# compile things.
+#
+ifneq ($(filter-out linux win l4, $(BUILD_TARGET)),)
+ VBOX_PATH_STAGED ?= .
+
+ # Additions.
+ ifndef VBOX_WITH_LINUX_ADDITIONS
+  ifndef VBOX_WITH_WIN32_ADDITIONS
+   ifneq ($(wildcard $(VBOX_PATH_STAGED)/VBoxGuestAdditions.iso),)
+    INSTALLS += staged-additions
+    staged-additions_INST = $(INST_ADDITIONS)
+    staged-additions_MODE = 0644
+    staged-additions_SOURCES = $(VBOX_PATH_STAGED)/VBoxGuestAdditions.iso
+   endif
+  endif
+ endif
+
+ # guesttool.exe
+ ifndef VBOX_WITH_WIN32_ADDITIONS
+  ifneq ($(wildcard $(VBOX_PATH_STAGED)/guesttool.exe),)
+   INSTALLS += staged-guesttool
+   staged-guesttool_INST = $(INST_BIN)
+   staged-guesttool_SOURCES = $(VBOX_PATH_STAGED)/guesttool.exe
+  endif
+ endif
+
+endif
+
+
+
 include $(PATH_KBUILD)/footer.kmk
 
 
