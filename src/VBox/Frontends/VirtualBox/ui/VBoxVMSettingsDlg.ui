@@ -2662,7 +2662,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <variable access="private">QValueVector &lt; CHostDVDDrive &gt; hostDVDs;</variable>
     <variable access="private">QValueVector &lt; CHostFloppyDrive &gt; hostFloppies;</variable>
     <variable access="private">CMachine cmachine;</variable>
-    <variable access="private">QStringList bootDevicesInUse;</variable>
+    <variable access="private">QStringList mInterfaceList;</variable>
     <variable access="private">QWidgetStack *wstUSBFilters;</variable>
     <variable access="private">ulong mLastUSBFilterNum;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
@@ -2689,7 +2689,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <slot>showImageManagerISODVD()</slot>
     <slot>showImageManagerISOFloppy()</slot>
     <slot>showVDImageManager( QUuid *id, VBoxMediaComboBox *le, QLabel *tx = NULL )</slot>
-    <slot>addNetworkAdapter( const CNetworkAdapter &amp; adapter, bool select )</slot>
+    <slot>addNetworkAdapter( const CNetworkAdapter &amp; adapter )</slot>
     <slot>slRAM_valueChanged( int val )</slot>
     <slot>leRAM_textChanged( const QString &amp; text )</slot>
     <slot>slVRAM_valueChanged( int val )</slot>
@@ -2712,17 +2712,19 @@ with all fields set to the values of the selected USB device attached to the hos
     <slot>cdMediaChanged()</slot>
     <slot>fdMediaChanged()</slot>
     <slot>processAdjustSize()</slot>
+    <slot>updateInterfaces( QWidget* )</slot>
+    <slot>networkPageUpdate( QWidget* )</slot>
 </slots>
 <functions>
     <function access="private">init()</function>
     <function>setup( const QString &amp;, const QString &amp; )</function>
     <function>getFromMachine( const CMachine &amp; machine )</function>
-    <function returnType="COMResult">putBackToMachine()</function>
-    <function access="protected">setWarning( const QString &amp; )</function>
-    <function access="protected">showEvent( QShowEvent * )</function>
     <function returnType="bool">eventFilter( QObject * watched, QEvent * e )</function>
-    <function access="protected">updateShortcuts()</function>
-    <function access="protected" returnType="QString">getHdInfo( QGroupBox*, QUuid )</function>
+    <function returnType="COMResult">putBackToMachine()</function>
+    <function access="private">setWarning( const QString &amp; )</function>
+    <function access="private">showEvent( QShowEvent * )</function>
+    <function access="private">updateShortcuts()</function>
+    <function access="private" returnType="QString">getHdInfo( QGroupBox*, QUuid )</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>

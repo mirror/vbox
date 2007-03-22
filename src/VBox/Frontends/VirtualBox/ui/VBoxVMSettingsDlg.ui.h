@@ -720,6 +720,8 @@ void VBoxVMSettingsDlg::init()
 
     /* Network Page */
 
+    updateInterfaces (0);
+
     /*
      *  update the Ok button state for pages with validation
      *  (validityChanged() connected to enableNext() will do the job)
@@ -821,6 +823,38 @@ void VBoxVMSettingsDlg::updateShortcuts()
         cbISODVD->refresh();
         cbISOFloppy->refresh();
     }
+}
+
+
+void VBoxVMSettingsDlg::updateInterfaces (QWidget *aWidget)
+{
+#if defined Q_WS_WIN
+    /* clear list */
+    mInterfaceList.clear();
+    /* write a QStringList of interface names */
+    CHostNetworkInterfaceEnumerator en =
+        vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces().Enumerate();
+    while (en.HasMore())
+        mInterfaceList += en.GetNext().GetName();
+    if (aWidget)
+    {
+        VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
+        set->revalidate();
+    }
+#else
+    NOREF (aWidget);
+#endif
+}
+
+void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
+{
+    if (!aWidget) return;
+#if defined Q_WS_WIN
+    updateInterfaces (0);
+    VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
+    set->loadList (mInterfaceList);
+    set->revalidate();
+#endif
 }
 
 
@@ -1130,29 +1164,17 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
     }
     else if (pg == pageNetwork)
     {
-        int slot = -1;
-        for (int index = 0; index < tbwNetwork->count(); index++)
+        int index = 0;
+        for (; index < tbwNetwork->count(); ++index)
         {
-            QWidget* pTab = tbwNetwork->page (index);
-            Assert(pTab);
-            VBoxVMNetworkSettings* pNetSet = static_cast <VBoxVMNetworkSettings*>(pTab);
-            if (!pNetSet->grbEnabled->isChecked())
-            {
-                pNetSet->cbNetworkAttachment->setCurrentItem (0);
-                pNetSet->cbNetworkAttachment_activated (pNetSet->cbNetworkAttachment->currentText());
-            }
-
-            CEnums::NetworkAttachmentType type =
-                vboxGlobal().toNetworkAttachmentType (pNetSet->cbNetworkAttachment->currentText());
-            valid = (slot == -1) &&
-                    !(type == CEnums::HostInterfaceNetworkAttachment &&
-                      !pNetSet->checkNetworkInterface (pNetSet->lbHostInterface->currentText()));
-            if (slot == -1 && !valid)
-                slot = index;
+            QWidget *tab = tbwNetwork->page (index);
+            VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (tab);
+            valid = set->isPageValid (mInterfaceList);
+            if (!valid) break;
         }
         if (!valid)
-            setWarning (tr ("Incorrect host network interface is selected for Adapter %1.")
-                        .arg (slot));
+            setWarning (tr ("Incorrect host network interface is selected "
+                            "for Adapter %1.").arg (index));
     }
     else if (pg == pageVRDP)
     {
@@ -1396,10 +1418,10 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* network */
     {
         ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
-        for (ulong slot = 0; slot < count; slot ++)
+        for (ulong slot = 0; slot < count; ++ slot)
         {
             CNetworkAdapter adapter = machine.GetNetworkAdapter (slot);
-            addNetworkAdapter (adapter, false);
+            addNetworkAdapter (adapter);
         }
     }
 
@@ -1743,12 +1765,12 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
     wvalFloppy->revalidate();
 }
 
-void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &adapter,
-                                           bool /* select */)
+void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
 {
-    VBoxVMNetworkSettings *page = new VBoxVMNetworkSettings ();
-    page->getFromAdapter (adapter);
-    tbwNetwork->addTab(page, QString("Adapter %1").arg(adapter.GetSlot()));
+    VBoxVMNetworkSettings *page = new VBoxVMNetworkSettings();
+    page->loadList (mInterfaceList);
+    page->getFromAdapter (aAdapter);
+    tbwNetwork->addTab (page, QString ("Adapter %1").arg (aAdapter.GetSlot()));
 
     /* fix the tab order so that main dialog's buttons are always the last */
     setTabOrder (page->leTAPTerminate, buttonHelp);
@@ -1757,24 +1779,26 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &adapter,
 
     /* setup validation */
     QIWidgetValidator *wval = new QIWidgetValidator (pageNetwork, this);
+    connect (page->grbEnabled, SIGNAL (toggled (bool)), wval, SLOT (revalidate()));
     connect (page->cbNetworkAttachment, SIGNAL (activated (const QString &)),
              wval, SLOT (revalidate()));
 
-    connect (page->lbHostInterface, SIGNAL ( selectionChanged () ),
+#if defined Q_WS_WIN
+    connect (page->lbHostInterface, SIGNAL (highlighted (QListBoxItem*)),
              wval, SLOT (revalidate()));
-    connect (page->lbHostInterface, SIGNAL ( currentChanged ( QListBoxItem * ) ),
-             wval, SLOT (revalidate()));
-    connect (page->lbHostInterface, SIGNAL ( highlighted ( QListBoxItem * ) ),
-             wval, SLOT (revalidate()));
-    connect (page->grbEnabled, SIGNAL (toggled (bool)),
-             wval, SLOT (revalidate()));
+    connect (tbwNetwork, SIGNAL (currentChanged (QWidget*)),
+             this, SLOT (networkPageUpdate (QWidget*)));
+    connect (page, SIGNAL (listChanged (QWidget*)),
+             this, SLOT (updateInterfaces (QWidget*)));
+#endif
 
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
     connect (wval, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate( QIWidgetValidator *)));
 
-    wval->revalidate();
+    page->setValidator (wval);
+    page->revalidate();
 }
 
 void VBoxVMSettingsDlg::slRAM_valueChanged( int val )
