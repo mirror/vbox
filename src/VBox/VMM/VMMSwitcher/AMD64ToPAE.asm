@@ -20,7 +20,7 @@
 ;
 
 ;%define DEBUG_STUFF 1
-%define STRICT_IF 1
+;%define STRICT_IF 1
 
 ;*******************************************************************************
 ;*  Defined Constants And Macros                                               *
