@@ -116,7 +116,9 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             {
                 RTFILE tmp = pData->NamedPipe;
                 pData->NamedPipe = NIL_RTFILE;
+#if 0
                 FlushFileBuffers((HANDLE)tmp);
+#endif
                 DisconnectNamedPipe((HANDLE)tmp);
                 RTFileClose(tmp);
             }
@@ -167,14 +169,20 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
     if (pData->NamedPipe != NIL_RTFILE)
     {
         unsigned cbWritten;
+#if 0
         rc = RTFileWrite(pData->NamedPipe, pvBuf, *cbWrite, &cbWritten);
+#else
+        cbWritten = *cbWrite;
+#endif
         if (VBOX_FAILURE(rc))
         {
             if (rc == VERR_EOF)
             {
                 RTFILE tmp = pData->NamedPipe;
                 pData->NamedPipe = NIL_RTFILE;
+#if 0
                 FlushFileBuffers((HANDLE)tmp);
+#endif
                 DisconnectNamedPipe((HANDLE)tmp);
                 RTFileClose(tmp);
             }
@@ -368,7 +376,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     else
     {
         /* Connect to the named pipe. */
-        rc = RTFileOpen(&pData->NamedPipe, pData->pszLocation, RTFILE_O_READWRITE);
+        rc = RTFileOpen(&pData->NamedPipe, pszLocation, RTFILE_O_READWRITE);
         if (VBOX_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to connect to named pipe %s"), pDrvIns->iInstance, pszLocation);
     }
@@ -386,7 +394,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     if (fIsServer)
     {
         /* Bind address to the local socket. */
-        RTFileDelete(pData->pszLocation);
+        RTFileDelete(pszLocation);
         if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) == -1)
             return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, N_("NamedPipe#%d failed to bind to local socket %s"), pDrvIns->iInstance, pszLocation);
         rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, 0, "NamedPipe");
@@ -434,8 +442,10 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
 #ifdef __WIN__
     if (pData->NamedPipe != NIL_RTFILE)
     {
+#if 0
         FlushFileBuffers((HANDLE)pData->NamedPipe);
         DisconnectNamedPipe((HANDLE)pData->NamedPipe);
+#endif
         RTFileClose(pData->NamedPipe);
     }
 #else /* !__WIN__ */
