@@ -213,6 +213,8 @@ struct PCNetState_st
     bool                                fLinkUp;
     /** If set the link is temporarily down because of a saved state load. */
     bool                                fLinkTempDown;
+    /** This flag is set on SavePrep to prevent altering of memory after pgmR3Save() was called */
+    bool                                fSaving;
 
     /** Number of times we've reported the link down. */
     RTUINT                              cLinkDownReported;
@@ -1989,12 +1991,11 @@ static void pcnetTransmit(PCNetState *pData)
 #ifdef IN_RING3
     pcnetXmitFlushFrames(pData);
 #else
-
-#if 1
+# if 1
     PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
     if (RT_UNLIKELY(pItem))
         PDMQueueInsert(CTXSUFF(pData->pXmitQueue), pItem);
-#else
+# else
     if (ASMAtomicIncU32(&pData->cPendingSends) < 16)
     {
         PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pXmitQueue));
@@ -2003,7 +2004,7 @@ static void pcnetTransmit(PCNetState *pData)
     }
     else
         PDMQueueFlush(CTXSUFF(pData->pXmitQueue));
-#endif
+# endif
 #endif
 }
 
@@ -2269,7 +2270,9 @@ static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
         rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
         AssertReleaseRC(rc);
 
-        rc = pcnetAsyncTransmit(pData);
+        if (!pData->fSaving)
+            rc = pcnetAsyncTransmit(pData);
+
         PDMCritSectLeave(&pData->CritSect);
     }
     return VINF_SUCCESS;
@@ -3657,6 +3660,29 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
 
 /**
+ * Prepares for state saving.
+ * We must stop the RX process to prevent altering of the main memory after saving.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSMHandle  The handle to save the state to.
+ */
+static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+{
+    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+
+    PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+
+    pData->fSaving = true;
+    /* From now on drop all received packets to prevent altering of main memory after
+     * pgmR3Save() was called but before the RX thread is terminated */
+
+    PDMCritSectLeave(&pData->CritSect);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Saves a state of the PC-Net II device.
  *
  * @returns VBox status code.
@@ -3826,10 +3852,14 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
     rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
     AssertReleaseRC(rc);
 
-    if (cb > 70) /* unqualified guess */
-        pData->Led.Asserted.s.fReading = pData->Led.Actual.s.fReading = 1;
-    pcnetReceiveNoSync(pData, (const uint8_t*)pvBuf, cb);
-    pData->Led.Actual.s.fReading = 0;
+    if (!pData->fSaving)
+    {
+        if (cb > 70) /* unqualified guess */
+            pData->Led.Asserted.s.fReading = pData->Led.Actual.s.fReading = 1;
+        pcnetReceiveNoSync(pData, (const uint8_t*)pvBuf, cb);
+        pData->Led.Actual.s.fReading = 0;
+    }
+    /* otherwise junk the data to Nirwana. */
 
     PDMCritSectLeave(&pData->CritSect);
     STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
@@ -4177,7 +4207,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 /** @todo r=bird: we're not locking down pcnet properly during saving and loading! */
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
                               PCNET_SAVEDSTATE_VERSION, sizeof(*pData),
-                              NULL, pcnetSaveExec, NULL,
+                              pcnetSavePrep, pcnetSaveExec, NULL,
                               NULL, pcnetLoadExec, NULL);
     if (VBOX_FAILURE(rc))
         return rc;
