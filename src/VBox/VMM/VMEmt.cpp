@@ -69,7 +69,10 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
     {
         /* Requested to exit the EMT thread out of sync? (currently only VMR3WaitForResume) */
         if (setjmp(pVM->vm.s.emtJumpEnv) != 0)
+        {
+            rc = VINF_SUCCESS;
             break;
+        }
 
         /*
          * Pending requests which needs servicing?
