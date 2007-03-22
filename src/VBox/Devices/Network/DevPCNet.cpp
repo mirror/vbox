@@ -218,9 +218,6 @@ struct PCNetState_st
 
     /** Number of times we've reported the link down. */
     RTUINT                              cLinkDownReported;
-#if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
-    RTUINT                              Alignment;
-#endif
     /** The configured MAC address. */
     PDMMAC                              MacConfigured;
 
