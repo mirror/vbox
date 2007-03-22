@@ -247,7 +247,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     if (!pData->pDrvStream)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
 
-    rc = RTThreadCreate(&pData->ReceiveThread, drvCharReceiveLoop, (void *)pData, 0, RTTHREADTYPE_IO, 0, "Char");
+    rc = RTThreadCreate(&pData->ReceiveThread, drvCharReceiveLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Char");
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create receive thread"), pDrvIns->iInstance);
 
@@ -272,12 +272,7 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
     /** @todo r=bird: use RTThreadWait() and the RTTHREADFLAGS_WAITABLE instead of active waiting like this. 
      * (the api is relatively new, which is why it's not used in all the places it should.) */
     pData->fShutdown = true;
-    for (int i = 0; i < 100; i++)
-    {
-        if (pData->ReceiveThread == NIL_RTTHREAD)
-            break;
-        RTThreadSleep(100);
-    }
+    RTThreadWait(pData->ReceiveThread, 1000, NULL);
     if (pData->ReceiveThread != NIL_RTTHREAD)
         LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
 }
