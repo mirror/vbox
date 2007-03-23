@@ -132,6 +132,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_HOST_DVD,
     /** Host floppy block driver group. */
     LOG_GROUP_DRV_HOST_FLOPPY,
+    /** Host hard disk (raw partition) block driver group. */
+    LOG_GROUP_DRV_HOST_HDD,
     /** The internal networking transport driver group. */
     LOG_GROUP_DRV_INTNET,
     /** iSCSI Initiator driver group. */
@@ -308,6 +310,7 @@ typedef enum LOGGROUP
     "DRV_HOST_BASE", \
     "DRV_HOST_DVD", \
     "DRV_HOST_FLOPPY", \
+    "DRV_HOST_HDD", \
     "DRV_INTNET",   \
     "DRV_ISCSI",    \
     "DRV_ISCSI_TRANSPORT_TCP", \
