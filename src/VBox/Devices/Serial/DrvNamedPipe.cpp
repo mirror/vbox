@@ -333,8 +333,10 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 
             if (hrc == ERROR_IO_PENDING)
             {
+                DWORD dummy;
+
                 hrc = 0;
-                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &overlapped, NULL, TRUE) == FALSE)
+                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &overlapped, &dummy, TRUE) == FALSE)
                     hrc = GetLastError();
 
             }
