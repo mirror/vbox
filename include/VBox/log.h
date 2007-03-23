@@ -132,7 +132,7 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_HOST_DVD,
     /** Host floppy block driver group. */
     LOG_GROUP_DRV_HOST_FLOPPY,
-    /** Host hard disk (raw partition) block driver group. */
+    /** Host hard disk (raw partition) media driver group. */
     LOG_GROUP_DRV_HOST_HDD,
     /** The internal networking transport driver group. */
     LOG_GROUP_DRV_INTNET,
