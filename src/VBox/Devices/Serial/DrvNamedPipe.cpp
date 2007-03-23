@@ -131,6 +131,8 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             {
                 if (uError == ERROR_IO_PENDING)
                 {
+                    uError = 0;
+
                     /* Wait for incoming bytes. */
                     if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, (DWORD *)&cbReallyRead, TRUE) == FALSE)
                         uError = GetLastError();
