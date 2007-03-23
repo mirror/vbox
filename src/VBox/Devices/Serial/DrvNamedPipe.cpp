@@ -313,7 +313,9 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 {
     PDRVNAMEDPIPE   pData = (PDRVNAMEDPIPE)pvUser;
     int             rc = VINF_SUCCESS;
+#ifdef __WIN__
     RTFILE          NamedPipe = pData->NamedPipe;
+#endif
 
     while (RT_LIKELY(!pData->fShutdown))
     {
