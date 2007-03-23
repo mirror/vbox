@@ -68,6 +68,7 @@ vboxmod-bin_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/semaphore-r0drv-linux.c=>r0drv/linux/semaphore-r0drv-linux.c \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
+	$(PATH_OUT)/version-generated.h=>version-generated.h \
 	vboxmod.c=>vboxmod.c \
 	cmc.c=>cmc.c \
 	vboxmod.h=>vboxmod.h \
