@@ -208,10 +208,17 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
         {
             DWORD uError = GetLastError();
 
+            if (uError == ERROR_PIPE_LISTENING)
+            {
+                /* No connection yet; just discard the write. */
+                cbWritten = *cbWrite;
+            }
+            else
             if (uError != ERROR_IO_PENDING)
+            {
                 rc = RTErrConvertFromWin32(uError);
-
-            Log(("drvNamedPipeWrite: WriteFile returned %d (%Vrc)\n", uError, rc));
+                Log(("drvNamedPipeWrite: WriteFile returned %d (%Vrc)\n", uError, rc));
+            }
         }
 
         if (VBOX_FAILURE(rc))
