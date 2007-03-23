@@ -79,7 +79,9 @@ typedef struct DRVNAMEDPIPE
     /* File handle of the named pipe. */
     RTFILE              NamedPipe;
     /* Dummy overlapped structure. */
-    OVERLAPPED          Overlapped;
+    OVERLAPPED          OverlappedWrite;
+    /* Overlapped structure for reads. */
+    OVERLAPPED          OverlappedRead;
 #else /* !__WIN__ */
     /** Socket handle of the local socket for server. */
     RTSOCKET            LocalSocketServer;
@@ -111,7 +113,26 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
     if (pData->NamedPipe != NIL_RTFILE)
     {
         unsigned cbReallyRead;
-        rc = RTFileRead(pData->NamedPipe, pvBuf, *cbRead, &cbReallyRead);
+        pData->OverlappedRead.Offset     = 0;
+        pData->OverlappedRead.OffsetHigh = 0;
+        if (!ReadFile((HANDLE)pData->NamedPipe, pvBuf, *cbRead, NULL, &pData->OverlappedRead))
+        {
+            DWORD uError = GetLastError();
+
+            if (uError == ERROR_IO_PENDING)
+            {
+                /* Wait for incoming bytes. */
+                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, (DWORD *)&cbReallyRead, TRUE) == FALSE)
+                {
+                    uError = GetLastError();
+                }
+            }
+
+            rc = RTErrConvertFromWin32(uError);
+
+            Log(("drvNamedPipeRead: WriteFile returned %d (%Vrc)\n", uError, rc));
+        }
+
         if (VBOX_FAILURE(rc))
         {
             Log(("drvNamedPipeRead: RTFileRead returned Vrc\n", rc));
@@ -173,9 +194,9 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
     if (pData->NamedPipe != NIL_RTFILE)
     {
         unsigned cbWritten;
-        pData->Overlapped.Offset     = 0;
-        pData->Overlapped.OffsetHigh = 0;
-        if (!WriteFile((HANDLE)pData->NamedPipe, pvBuf, *cbWrite, NULL, &pData->Overlapped))
+        pData->OverlappedWrite.Offset     = 0;
+        pData->OverlappedWrite.OffsetHigh = 0;
+        if (!WriteFile((HANDLE)pData->NamedPipe, pvBuf, *cbWrite, NULL, &pData->OverlappedWrite))
         {
             DWORD uError = GetLastError();
 
@@ -394,8 +415,10 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to connect to named pipe %s"), pDrvIns->iInstance, pszLocation);
     }
 
-    memset(&pData->Overlapped, 0, sizeof(pData->Overlapped));
-    pData->Overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    memset(&pData->OverlappedWrite, 0, sizeof(pData->OverlappedWrite));
+    memset(&pData->OverlappedRead, 0, sizeof(pData->OverlappedRead));
+    pData->OverlappedWrite.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pData->OverlappedRead.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 #else /* !__WIN__ */
     int s;
@@ -464,7 +487,8 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
             DisconnectNamedPipe((HANDLE)pData->NamedPipe);
 
         RTFileClose(pData->NamedPipe);
-        CloseHandle(pData->Overlapped.hEvent);
+        CloseHandle(pData->OverlappedRead.hEvent);
+        CloseHandle(pData->OverlappedWrite.hEvent);
     }
 #else /* !__WIN__ */
     if (pData->fIsServer)
