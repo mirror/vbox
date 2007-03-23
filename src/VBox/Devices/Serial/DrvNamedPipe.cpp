@@ -148,7 +148,8 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         if (VBOX_FAILURE(rc))
         {
             Log(("drvNamedPipeRead: RTFileRead returned Vrc\n", rc));
-            if (rc == VERR_EOF)
+            if (    rc == VERR_EOF
+                ||  rc == VERR_BROKEN_PIPE)
             {
                 RTFILE tmp = pData->NamedPipe;
                 FlushFileBuffers((HANDLE)tmp);
@@ -235,7 +236,8 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
 
         if (VBOX_FAILURE(rc))
         {
-            if (rc == VERR_EOF)
+            if (    rc == VERR_EOF
+                ||  rc == VERR_BROKEN_PIPE)
             {
                 RTFILE tmp = pData->NamedPipe;
                 FlushFileBuffers((HANDLE)tmp);
