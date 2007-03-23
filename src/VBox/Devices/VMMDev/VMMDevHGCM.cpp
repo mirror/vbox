@@ -91,7 +91,7 @@ static void vmmdevHGCMCmdListUnlock (VMMDevState *pVMMDevState)
 
 static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, RTGCPHYS GCPtr)
 {
-    PPDMDEVINS pDevIns = pVMMDevState->pDevIns;
+    /* PPDMDEVINS pDevIns = pVMMDevState->pDevIns; */
 
     int rc = vmmdevHGCMCmdListLock (pVMMDevState);
     
@@ -120,7 +120,7 @@ static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, R
 
 static int vmmdevHGCMRemoveCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd)
 {
-    PPDMDEVINS pDevIns = pVMMDevState->pDevIns;
+    /* PPDMDEVINS pDevIns = pVMMDevState->pDevIns; */
 
     int rc = vmmdevHGCMCmdListLock (pVMMDevState);
     
