@@ -159,6 +159,8 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                     pData->NamedPipe = NIL_RTFILE;
                     RTFileClose(tmp);
                 }
+                /* pretend success */
+                rc = VINF_SUCCESS;
             }
             cbReallyRead = 0;
         }
@@ -247,6 +249,8 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
                     pData->NamedPipe = NIL_RTFILE;
                     RTFileClose(tmp);
                 }
+                /* pretend success */
+                rc = VINF_SUCCESS;
             }
             cbWritten = 0;
         }
