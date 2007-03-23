@@ -142,6 +142,8 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                 Log(("drvNamedPipeRead: ReadFile returned %d (%Vrc)\n", uError, rc));
             }
         }
+        else
+            cbReallyRead = *cbRead;
 
         if (VBOX_FAILURE(rc))
         {
@@ -224,6 +226,8 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             else
                 cbWritten = *cbWrite; 
         }
+        else
+            cbWritten = *cbWrite; 
 
         if (VBOX_FAILURE(rc))
         {
