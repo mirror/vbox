@@ -119,9 +119,10 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         {
             DWORD uError = GetLastError();
 
-            if (uError == ERROR_PIPE_LISTENING)
+            if (   uError == ERROR_PIPE_LISTENING
+                || uError == ERROR_PIPE_NOT_CONNECTED)
             {
-                /* nobody connected yet */
+                /* No connection yet/anymore */
                 cbReallyRead = 0;
 
                 /* wait a bit or else we'll be called right back. */
@@ -215,9 +216,10 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
         {
             DWORD uError = GetLastError();
 
-            if (uError == ERROR_PIPE_LISTENING)
+            if (   uError == ERROR_PIPE_LISTENING
+                || uError == ERROR_PIPE_NOT_CONNECTED)
             {
-                /* No connection yet; just discard the write. */
+                /* No connection yet/anymore; just discard the write. */
                 cbWritten = *cbWrite;
             }
             else
