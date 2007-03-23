@@ -942,7 +942,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             }
             if (!memchr(pIn->szName, '\0', sizeof(pIn->szName)))
             {
-                dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: The image name isn't terminated!\n"));
+                dprintf(("SUP_IOCTL_LDR_OPEN: The image name isn't terminated!\n"));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (!pIn->szName[0])
