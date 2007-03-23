@@ -257,14 +257,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
     while (RT_LIKELY(!pData->fShutdown))
     {
 #ifdef __WIN__
-        HANDLE hPipe = CreateNamedPipe(pData->pszLocation, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 32, 32, 10000, NULL);
-        if (hPipe == INVALID_HANDLE_VALUE)
-        {
-            rc = RTErrConvertFromWin32(GetLastError());
-            LogRel(("NamedPipe%d: CreateNamedPipe failed rc=%Vrc\n", pData->pDrvIns->iInstance));
-            break;
-        }
-        BOOL fConnected = ConnectNamedPipe(hPipe, NULL);
+        BOOL fConnected = ConnectNamedPipe((HANDLE)pData->NamedPipe, NULL);
         if (!fConnected)
         {
             int hrc = GetLastError();
@@ -275,7 +268,6 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
                 break;
             }
         }
-        pData->NamedPipe = (RTFILE)hPipe;
 #else /* !__WIN__ */
         if (listen(pData->LocalSocketServer, 0) == -1)
         {
@@ -369,6 +361,15 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 #ifdef __WIN__
     if (fIsServer)
     {
+        HANDLE hPipe = CreateNamedPipe(pData->pszLocation, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 32, 32, 10000, NULL);
+        if (hPipe == INVALID_HANDLE_VALUE)
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            LogRel(("NamedPipe%d: CreateNamedPipe failed rc=%Vrc\n", pData->pDrvIns->iInstance));
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to create named pipe %s"), pDrvIns->iInstance, pszLocation);
+        }
+        pData->NamedPipe = (HFILE)hPipe;
+
         rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, 0, "NamedPipe");
         if VBOX_FAILURE(rc)
             return PDMDrvHlpVMSetError(pDrvIns, rc,  RT_SRC_POS, N_("NamedPipe#%d failed to create listening thread\n"), pDrvIns->iInstance);
