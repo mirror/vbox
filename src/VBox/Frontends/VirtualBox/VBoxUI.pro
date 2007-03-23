@@ -233,3 +233,8 @@ IMAGES	= images/tpixel.png \
 	images/vdm_remove_disabled_22px.png \
 	images/welcome.png \
 	images/about_600px.png
+
+TRANSLATIONS = \
+	nls/VirtualBox_de.ts \
+	nls/VirtualBox_ru.ts
+
