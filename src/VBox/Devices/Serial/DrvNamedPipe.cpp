@@ -123,6 +123,8 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             {
                 /* nobody connected yet */
                 cbReallyRead = 0;
+
+                /* wait a bit or else we'll be called right back. */
                 RTThreadSleep(100);
             }
             else
