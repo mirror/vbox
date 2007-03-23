@@ -315,15 +315,29 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
     int             rc = VINF_SUCCESS;
 #ifdef __WIN__
     RTFILE          NamedPipe = pData->NamedPipe;
+    HANDLE          hEvent = CreateEvent(NULL, FALSE, FALSE, 0);
 #endif
 
     while (RT_LIKELY(!pData->fShutdown))
     {
 #ifdef __WIN__
-        BOOL fConnected = ConnectNamedPipe((HANDLE)NamedPipe, NULL);
+        OVERLAPPED overlapped;
+
+        memset(&overlapped, 0, sizeof(overlapped));
+        overlapped.hEvent = hEvent;
+
+        BOOL fConnected = ConnectNamedPipe((HANDLE)NamedPipe, &overlapped);
         if (!fConnected)
         {
-            int hrc = GetLastError();
+            DWORD hrc = GetLastError();
+
+            if (hrc == ERROR_IO_PENDING)
+            {
+                hrc = 0;
+                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &overlapped, NULL, TRUE) == FALSE)
+                    hrc = GetLastError();
+
+            }
             if (hrc != ERROR_PIPE_CONNECTED)
             {
                 rc = RTErrConvertFromWin32(hrc);
@@ -358,6 +372,9 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 #endif /* !__WIN__ */
     }
 
+#ifdef __WIN__
+    CloseHandle(hEvent);
+#endif
     return VINF_SUCCESS;
 }
 
