@@ -78,6 +78,8 @@ typedef struct DRVNAMEDPIPE
 #ifdef __WIN__
     /* File handle of the named pipe. */
     RTFILE              NamedPipe;
+    /* Dummy overlapped structure. */
+    OVERLAPPED          Overlapped;
 #else /* !__WIN__ */
     /** Socket handle of the local socket for server. */
     RTSOCKET            LocalSocketServer;
@@ -112,15 +114,17 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         rc = RTFileRead(pData->NamedPipe, pvBuf, *cbRead, &cbReallyRead);
         if (VBOX_FAILURE(rc))
         {
+            Log(("drvNamedPipeRead: RTFileRead returned Vrc\n", rc));
             if (rc == VERR_EOF)
             {
                 RTFILE tmp = pData->NamedPipe;
-                pData->NamedPipe = NIL_RTFILE;
-#if 0
                 FlushFileBuffers((HANDLE)tmp);
-#endif
-                DisconnectNamedPipe((HANDLE)tmp);
-                RTFileClose(tmp);
+                if (!pData->fIsServer)
+                {
+                    pData->NamedPipe = NIL_RTFILE;
+                    DisconnectNamedPipe((HANDLE)tmp);
+                    RTFileClose(tmp);
+                }
             }
             cbReallyRead = 0;
         }
@@ -169,22 +173,30 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
     if (pData->NamedPipe != NIL_RTFILE)
     {
         unsigned cbWritten;
-#if 0
-        rc = RTFileWrite(pData->NamedPipe, pvBuf, *cbWrite, &cbWritten);
-#else
-        cbWritten = *cbWrite;
-#endif
+        pData->Overlapped.Offset     = 0;
+        pData->Overlapped.OffsetHigh = 0;
+        if (!WriteFile((HANDLE)pData->NamedPipe, pvBuf, *cbWrite, NULL, &pData->Overlapped))
+        {
+            DWORD uError = GetLastError();
+
+            if (uError != ERROR_IO_PENDING)
+                rc = RTErrConvertFromWin32(uError);
+
+            Log(("drvNamedPipeWrite: WriteFile returned %d (%Vrc)\n", uError, rc));
+        }
+
         if (VBOX_FAILURE(rc))
         {
             if (rc == VERR_EOF)
             {
                 RTFILE tmp = pData->NamedPipe;
-                pData->NamedPipe = NIL_RTFILE;
-#if 0
                 FlushFileBuffers((HANDLE)tmp);
-#endif
-                DisconnectNamedPipe((HANDLE)tmp);
-                RTFileClose(tmp);
+                if (!pData->fIsServer)
+                {
+                    pData->NamedPipe = NIL_RTFILE;
+                    DisconnectNamedPipe((HANDLE)tmp);
+                    RTFileClose(tmp);
+                }
             }
             cbWritten = 0;
         }
@@ -361,7 +373,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 #ifdef __WIN__
     if (fIsServer)
     {
-        HANDLE hPipe = CreateNamedPipe(pData->pszLocation, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 32, 32, 10000, NULL);
+        HANDLE hPipe = CreateNamedPipe(pData->pszLocation, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 32, 32, 10000, NULL);
         if (hPipe == INVALID_HANDLE_VALUE)
         {
             rc = RTErrConvertFromWin32(GetLastError());
@@ -381,6 +393,10 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         if (VBOX_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to connect to named pipe %s"), pDrvIns->iInstance, pszLocation);
     }
+
+    memset(&pData->Overlapped, 0, sizeof(pData->Overlapped));
+    pData->Overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
 #else /* !__WIN__ */
     int s;
     struct sockaddr_un addr;
@@ -443,11 +459,12 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
 #ifdef __WIN__
     if (pData->NamedPipe != NIL_RTFILE)
     {
-#if 0
         FlushFileBuffers((HANDLE)pData->NamedPipe);
-        DisconnectNamedPipe((HANDLE)pData->NamedPipe);
-#endif
+        if (!pData->fIsServer)
+            DisconnectNamedPipe((HANDLE)pData->NamedPipe);
+
         RTFileClose(pData->NamedPipe);
+        CloseHandle(pData->Overlapped.hEvent);
     }
 #else /* !__WIN__ */
     if (pData->fIsServer)
