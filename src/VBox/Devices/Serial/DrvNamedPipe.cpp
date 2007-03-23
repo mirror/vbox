@@ -309,13 +309,14 @@ static DECLCALLBACK(void *) drvNamedPipeQueryInterface(PPDMIBASE pInterface, PDM
  */
 static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PDRVNAMEDPIPE pData = (PDRVNAMEDPIPE)pvUser;
-    int rc = VINF_SUCCESS;
+    PDRVNAMEDPIPE   pData = (PDRVNAMEDPIPE)pvUser;
+    int             rc = VINF_SUCCESS;
+    RTFILE          NamedPipe = pData->NamedPipe;
 
     while (RT_LIKELY(!pData->fShutdown))
     {
 #ifdef __WIN__
-        BOOL fConnected = ConnectNamedPipe((HANDLE)pData->NamedPipe, NULL);
+        BOOL fConnected = ConnectNamedPipe((HANDLE)NamedPipe, NULL);
         if (!fConnected)
         {
             int hrc = GetLastError();
