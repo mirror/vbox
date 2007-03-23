@@ -20,6 +20,7 @@
  */
 
 #include "the-linux-kernel.h"
+#include "version-generated.h"
 
 /* #define IRQ_DEBUG */
 
@@ -31,6 +32,9 @@
 MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
 MODULE_AUTHOR("InnoTek Systemberatung GmbH");
 MODULE_LICENSE("GPL");
+#ifdef MODULE_VERSION
+MODULE_VERSION(VBOX_VERSION_STRING);
+#endif
 
 /* Runtime assert implementation for Linux ring 0 */
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
