@@ -1563,7 +1563,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
             {
                 LogFlow(("HGCMMSGID_RESET\n"));
 
-                HGCMMsgReset *pMsg = (HGCMMsgReset *)pMsgCore;
+                /* HGCMMsgReset *pMsg = (HGCMMsgReset *)pMsgCore; */
 
                 HGCMService::Reset ();
             } break;
