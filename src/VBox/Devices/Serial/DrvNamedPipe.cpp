@@ -220,8 +220,9 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             {
                 rc = RTErrConvertFromWin32(uError);
                 Log(("drvNamedPipeWrite: WriteFile returned %d (%Vrc)\n", uError, rc));
-                cbWritten = *cbWrite; 
             }
+            else
+                cbWritten = *cbWrite; 
         }
 
         if (VBOX_FAILURE(rc))
