@@ -220,6 +220,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             {
                 rc = RTErrConvertFromWin32(uError);
                 Log(("drvNamedPipeWrite: WriteFile returned %d (%Vrc)\n", uError, rc));
+                cbWritten = *cbWrite; 
             }
         }
 
