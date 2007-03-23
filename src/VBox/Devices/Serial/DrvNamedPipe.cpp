@@ -78,7 +78,7 @@ typedef struct DRVNAMEDPIPE
 #ifdef __WIN__
     /* File handle of the named pipe. */
     RTFILE              NamedPipe;
-    /* Dummy overlapped structure. */
+    /* Overlapped structure for writes. */
     OVERLAPPED          OverlappedWrite;
     /* Overlapped structure for reads. */
     OVERLAPPED          OverlappedRead;
@@ -133,9 +133,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                 {
                     /* Wait for incoming bytes. */
                     if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, (DWORD *)&cbReallyRead, TRUE) == FALSE)
-                    {
                         uError = GetLastError();
-                    }
                 }
 
                 rc = RTErrConvertFromWin32(uError);
@@ -224,7 +222,11 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
                 Log(("drvNamedPipeWrite: WriteFile returned %d (%Vrc)\n", uError, rc));
             }
             else
-                cbWritten = *cbWrite; 
+            {
+                /* Wait for the write to complete. */
+                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedWrite, (DWORD *)&cbWritten, TRUE) == FALSE)
+                    uError = GetLastError();
+            }
         }
         else
             cbWritten = *cbWrite; 
