@@ -497,7 +497,9 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
 {
+#if defined(VBOX_HGCM) && !defined(HGCMSS)
     PDRVMAINVMMDEV pData = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
+#endif
     LogFlow(("VMMDev::drvReset: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_HGCM
 #ifndef HGCMSS
