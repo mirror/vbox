@@ -31,12 +31,11 @@
 #endif
 
 #include <qmessagebox.h>
+#include <qlocale.h>
+#include <qtranslator.h>
+
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
-
-/// @todo (dmik) later
-///* German NLS is builtin */
-//#include <vboxgui_de.h>
 
 #if defined(DEBUG) && defined(Q_WS_X11)
 
@@ -160,18 +159,14 @@ int main( int argc, char ** argv )
     }
 #endif
 
-/// @todo (dmik) later
-//    QTranslator translator(0);
-//    // German is builtin
-//    if (strncmp(QTextCodec::locale(), "de", 2) == 0)
-//    {
-//        translator.load((const uchar*)vboxgui_de_qm_data, vboxgui_de_qm_len);
-//    } else
-//    {
-//        // try to load from the current directory
-//        translator.load(QString("vboxgui_") + QTextCodec::locale(), ".");
-//    }
-//    a.installTranslator(&translator);
+    /* load a translation based on the current locale */
+    QTranslator translator;
+    QString lang = QLocale::system().name();
+    QString nlsPath = a.applicationDirPath() + "/nls";
+    LogFlowFunc (("lang=%S, nlsPath=\"%S\"\n",
+                  lang.local8Bit().data(), nlsPath.local8Bit().data()));
+    translator.load (QString ("VirtualBox_%1").arg (lang), nlsPath);
+    a.installTranslator (&translator);
 
     int rc = 1;
 
