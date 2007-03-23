@@ -315,7 +315,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
     int             rc = VINF_SUCCESS;
 #ifdef __WIN__
     RTFILE          NamedPipe = pData->NamedPipe;
-    HANDLE          hEvent = CreateEvent(NULL, FALSE, FALSE, 0);
+    HANDLE          hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 #endif
 
     while (RT_LIKELY(!pData->fShutdown))
@@ -464,8 +464,8 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 
     memset(&pData->OverlappedWrite, 0, sizeof(pData->OverlappedWrite));
     memset(&pData->OverlappedRead, 0, sizeof(pData->OverlappedRead));
-    pData->OverlappedWrite.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    pData->OverlappedRead.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pData->OverlappedWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    pData->OverlappedRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 #else /* !__WIN__ */
     int s;
