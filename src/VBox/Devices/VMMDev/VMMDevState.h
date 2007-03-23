@@ -28,6 +28,8 @@
 
 #include <VBox/pdm.h>
 
+#define TIMESYNC_BACKDOOR
+
 /** device structure containing all state information */
 typedef struct VMMDevState
 {
@@ -135,6 +137,13 @@ typedef struct VMMDevState
 
     /** Set if backdoor logging should be disabled (output will be ignored then) */
     bool fBackdoorLogDisabled;
+
+#ifdef VBOX_HGCM
+    /** List of pending HGCM requests, used for saving the HGCM state. */
+    PVBOXHGCMCMD pHGCMCmdList;
+    /** Critical section to protect the list. */
+    RTCRITSECT critsectHGCMCmdList;
+#endif /* VBOX_HGCM */
 
 } VMMDevState;
 

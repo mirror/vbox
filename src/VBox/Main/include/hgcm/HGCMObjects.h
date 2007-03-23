@@ -49,7 +49,7 @@ typedef enum
 class HGCMObject
 {
     private:
-    friend uint32_t hgcmObjGenerateHandle (HGCMObject *pObject);
+    friend uint32_t hgcmObjMake (HGCMObject *pObject, uint32_t u32HandleIn);
 
         int32_t volatile cRef;
         HGCMOBJ_TYPE     enmObjType;
@@ -104,6 +104,7 @@ int hgcmObjInit (void);
 void hgcmObjUninit (void);
 
 uint32_t hgcmObjGenerateHandle (HGCMObject *pObject);
+uint32_t hgcmObjAssignHandle (HGCMObject *pObject, uint32_t u32Handle);
 
 void hgcmObjDeleteHandle (uint32_t handle);
 

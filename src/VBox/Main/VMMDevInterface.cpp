@@ -297,6 +297,8 @@ DECLCALLBACK(int) vmmdevSetCredentialsJudgementResult(PPDMIVMMDEVCONNECTOR pInte
 
 static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, PHGCMSERVICELOCATION pServiceLocation, uint32_t *pu32ClientID)
 {
+    LogFlowFunc(("Enter\n"));
+
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
 
     return hgcmConnectInternal (pDrv->pHGCMPort, pCmd, pServiceLocation, pu32ClientID, false);
@@ -304,6 +306,8 @@ static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOX
 
 static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
 {
+    LogFlowFunc(("Enter\n"));
+
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
 
     return hgcmDisconnectInternal (pDrv->pHGCMPort, pCmd, u32ClientID, false);
@@ -312,6 +316,8 @@ static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PV
 static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
                                          uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
+    LogFlowFunc(("Enter\n"));
+
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
 
     return hgcmGuestCallInternal (pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms, false);
@@ -326,6 +332,11 @@ static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGC
  */
 static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
+    LogFlowFunc(("Enter\n"));
+
+#ifdef HGCMSS
+    return hgcmSaveStateInternal (pSSM);
+#else
     PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
     
     /* Save the current handle count and restore afterwards to avoid client id conflicts. */
@@ -333,6 +344,7 @@ static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 
     return hgcmSaveStateInternal (pDrv->pVMMDev->mSharedFolderClientId, pSSM);
+#endif /* HGCMSS */
 }
 
 
@@ -346,6 +358,14 @@ static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    LogFlowFunc(("Enter\n"));
+
+#ifdef HGCMSS
+    if (u32Version != HGCM_SSM_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    return hgcmLoadStateInternal (pSSM);
+#else
     PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
     uint32_t       u32HandleCount;
 
@@ -384,6 +404,7 @@ static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uin
     }
 
     return hgcmLoadStateInternal (pDrv->pVMMDev->mSharedFolderClientId, pSSM);
+#endif /* HGCMSS */
 }
 
 int VMMDev::hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary)
@@ -449,6 +470,7 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
     PDRVMAINVMMDEV pData = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("VMMDev::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_HGCM
+#ifndef HGCMSS
     /* Unload Shared Folder HGCM service */
     if (pData->pVMMDev->mSharedFolderClientId)
     {
@@ -457,6 +479,7 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
 
         pData->pVMMDev->hgcmDisconnect(cmd, pData->pVMMDev->getShFlClientId());
     }
+#endif /* !HGCMSS */
 
     hgcmReset ();
 #endif
@@ -477,6 +500,7 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
     PDRVMAINVMMDEV pData = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("VMMDev::drvReset: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_HGCM
+#ifndef HGCMSS
     /* Unload Shared Folder HGCM service */
     uint64_t     dummy = 0;
     PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
@@ -485,9 +509,11 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
     {
         pData->pVMMDev->hgcmDisconnect(cmd, pData->pVMMDev->getShFlClientId());
     }
+#endif /* !HGCMSS */
     
     hgcmReset ();
 
+#ifndef HGCMSS
     if (pData->pVMMDev->mSharedFolderClientId)
     {
         /* Reload Shared Folder HGCM service */
@@ -505,6 +531,7 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
             AssertMsgFailed(("hgcmConnect returned %Vrc\n", rc));
         }
     }
+#endif /* !HGCMSS */
 #endif
 }
 
@@ -591,6 +618,18 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
 #ifdef VBOX_HGCM
 
+#ifdef HGCMSS
+    rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders", "VBoxSharedFolders");
+    pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
+    if (VBOX_SUCCESS(rc))
+    {
+        LogRel(("Shared Folders service loaded.\n"));
+    }
+    else
+    {
+        LogRel(("Failed to load Shared Folders service %Vrc\n", rc));
+    }
+#else
     /* Load Shared Folder HGCM service */
     HGCMSERVICELOCATION loc;
     uint64_t            dummy = 0;
@@ -616,6 +655,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         rc = VINF_SUCCESS;
         pData->pVMMDev->mSharedFolderClientId = 0;
     }
+#endif /* HGCMSS */
     pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
 #endif
 
