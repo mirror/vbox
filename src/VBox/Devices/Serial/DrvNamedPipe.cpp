@@ -119,18 +119,26 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         {
             DWORD uError = GetLastError();
 
-            if (uError == ERROR_IO_PENDING)
+            if (uError == ERROR_PIPE_LISTENING)
             {
-                /* Wait for incoming bytes. */
-                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, (DWORD *)&cbReallyRead, TRUE) == FALSE)
-                {
-                    uError = GetLastError();
-                }
+                /* nobody connected yet */
+                cbReallyRead = 0;
+                RTThreadSleep(100);
             }
+            else
+            {
+                if (uError == ERROR_IO_PENDING)
+                {
+                    /* Wait for incoming bytes. */
+                    if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, (DWORD *)&cbReallyRead, TRUE) == FALSE)
+                    {
+                        uError = GetLastError();
+                    }
+                }
 
-            rc = RTErrConvertFromWin32(uError);
-
-            Log(("drvNamedPipeRead: WriteFile returned %d (%Vrc)\n", uError, rc));
+                rc = RTErrConvertFromWin32(uError);
+                Log(("drvNamedPipeRead: ReadFile returned %d (%Vrc)\n", uError, rc));
+            }
         }
 
         if (VBOX_FAILURE(rc))
