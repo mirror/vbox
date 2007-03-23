@@ -342,8 +342,13 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
                     hrc = GetLastError();
 
             }
-            if (    hrc != ERROR_SUCCESS 
-                &&  hrc != ERROR_PIPE_CONNECTED)
+
+            if (hrc == ERROR_PIPE_CONNECTED)
+            {
+                RTThreadSleep(250);
+            }
+            else
+            if (hrc != ERROR_SUCCESS)
             {
                 rc = RTErrConvertFromWin32(hrc);
                 LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
