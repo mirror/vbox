@@ -22,6 +22,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "SUPDRV.h"
+#include "version-generated.h"
+
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
@@ -1708,4 +1710,8 @@ module_exit(VBoxSupDrvUnload);
 MODULE_AUTHOR("InnoTek Systemberatung GmbH");
 MODULE_DESCRIPTION("VirtualBox Support Driver");
 MODULE_LICENSE("GPL");
-
+#ifdef MODULE_VERSION
+#define xstr(s) str(s)
+#define str(s) #s
+MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRVIOC_VERSION) ")");
+#endif

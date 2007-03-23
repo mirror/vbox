@@ -86,6 +86,7 @@ EXPORT_FILE_PAIRS = \
 	r0drv/linux/string.h=$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/string.h \
 	r0drv/linux/thread-r0drv-linux.c=$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/thread-r0drv-linux.c \
 	r0drv/linux/the-linux-kernel.h=$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h \
+	version-generated.h=$(PATH_OUT)/version-generated.h \
 	SUPDRV.h=$(VBOX_PATH_SUPPORT)/SUPDRV.h \
 	SUPDRVIOC.h=$(VBOX_PATH_SUPPORT)/SUPDRVIOC.h \
 	SUPDRVShared.c=$(VBOX_PATH_SUPPORT)/SUPDRVShared.c
