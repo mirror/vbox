@@ -162,9 +162,6 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
             {
                 cbRemaining = sizeof(aBuffer);
                 rc = pData->pDrvStream->pfnRead(pData->pDrvStream, aBuffer, &cbRemaining);
-                if (rc == VERR_BROKEN_PIPE)
-                    return VINF_SUCCESS;        /* abort; typically happens when shutting down. */
-
                 AssertRC(rc);
             }
             else
