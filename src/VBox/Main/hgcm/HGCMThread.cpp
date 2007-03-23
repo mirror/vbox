@@ -120,6 +120,7 @@ class HGCMThread: public HGCMObject
         /* Tail of free message structures list. */
         HGCMMsgCore *m_pFreeTail;
 
+        HGCMTHREADHANDLE m_handle;
 
         inline int Enter (void);
         inline void Leave (void);
@@ -150,7 +151,7 @@ class HGCMThread: public HGCMObject
 #define HGCM_MSG_F_WAIT       (0x00000002)
 #define HGCM_MSG_F_IN_PROCESS (0x00000004)
 
-void HGCMMsgCore::InitializeCore (uint32_t u32MsgId, HGCMThread *pThread)
+void HGCMMsgCore::InitializeCore (uint32_t u32MsgId, HGCMTHREADHANDLE hThread)
 {
     m_u32Version  = HGCMMSG_VERSION;
     m_u32Msg      = u32MsgId;
@@ -160,9 +161,18 @@ void HGCMMsgCore::InitializeCore (uint32_t u32MsgId, HGCMThread *pThread)
     m_fu32Flags   = 0;
     m_rcSend      = VINF_SUCCESS;
 
-    m_pThread     = pThread;
+    m_pThread = (HGCMThread *)hgcmObjReference (hThread, HGCMOBJ_THREAD);
+    AssertRelease (m_pThread);
 }
 
+/* virtual */ HGCMMsgCore::~HGCMMsgCore ()
+{
+    if (m_pThread)
+    {
+        hgcmObjDereference (m_pThread);
+        m_pThread = NULL;
+    }
+}
 
 /*
  * HGCMThread implementation.
@@ -208,7 +218,8 @@ HGCMThread::HGCMThread ()
     m_pMsgInProcessHead (NULL),
     m_pMsgInProcessTail (NULL),
     m_pFreeHead (NULL),
-    m_pFreeTail (NULL)
+    m_pFreeTail (NULL),
+    m_handle (0)
 {
     memset (&m_critsect, 0, sizeof (m_critsect));
 }
@@ -265,6 +276,7 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
             {
                 m_pfnThread = pfnThread;
                 m_pvUser    = pvUser;
+                m_handle    = handle;
 
                 m_fu32ThreadFlags = HGCMMSG_TF_INITIALIZING;
 
@@ -348,11 +360,8 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWM
 
     if (VBOX_SUCCESS(rc))
     {
-        /* Reference the thread because pMsg contains the pointer to it. */
-        Reference ();
-
         /* Initialize just allocated message core */
-        pmsg->InitializeCore (u32MsgId, this);
+        pmsg->InitializeCore (u32MsgId, m_handle);
 
         /* and the message specific data. */
         pmsg->Initialize ();
@@ -523,7 +532,7 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
     int rc = VINF_SUCCESS;
 
     AssertRelease(pMsg->m_pThread == this);
-    AssertRelease((pMsg->m_fu32Flags & HGCM_MSG_F_IN_PROCESS) != 0);
+    AssertReleaseMsg((pMsg->m_fu32Flags & HGCM_MSG_F_IN_PROCESS) != 0, ("%p %x\n", pMsg, pMsg->m_fu32Flags));
 
     if (pMsg->m_pfnCallback)
     {

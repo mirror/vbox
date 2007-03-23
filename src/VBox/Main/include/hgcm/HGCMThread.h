@@ -63,7 +63,7 @@ class HGCMMsgCore: public HGCMObject
         /** Version of message header. */
         uint32_t m_u32Version;
 
-        /** Thread the message belongs to. */
+        /** Thread the message belongs to, referenced by the message. */
         HGCMThread *m_pThread;
 
         /** Message number/identifier. */
@@ -83,10 +83,10 @@ class HGCMMsgCore: public HGCMObject
         /** Result code for a Send */
         int32_t m_rcSend;
 
-        void InitializeCore (uint32_t u32MsgId, HGCMThread *pThread);
+        void InitializeCore (uint32_t u32MsgId, HGCMTHREADHANDLE hThread);
 
     protected:
-        virtual ~HGCMMsgCore () {};
+        virtual ~HGCMMsgCore ();
 
     public:
         HGCMMsgCore () : HGCMObject(HGCMOBJ_MSG) {};

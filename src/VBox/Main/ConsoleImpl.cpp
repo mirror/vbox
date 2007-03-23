@@ -2004,7 +2004,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
             tr ("The shared folder path '%ls' on the host is not accessible."), aHostPath);
 
     /// @todo (r=sander?) should move this into the shared folder class */
-    if (mpVM && mVMMDev->getShFlClientId())
+    if (mpVM && mVMMDev->isShFlActive())
     {
         /*
          *  if the VM is online and supports shared folders, share this folder
@@ -2079,7 +2079,7 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
 
-    if (mpVM && mVMMDev->getShFlClientId())
+    if (mpVM && mVMMDev->isShFlActive())
     {
         /*
          *  if the VM is online and supports shared folders, UNshare this folder.
@@ -6443,7 +6443,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                     machineDebugger->flushQueuedSettings();
                 }
 
-                if (console->getVMMDev()->getShFlClientId())
+                if (console->getVMMDev()->isShFlActive())
                 {
                     /// @todo (dmik)
                     //      does the code below call Console from the other thread?

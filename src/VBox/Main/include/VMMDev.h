@@ -36,11 +36,19 @@ public:
     /** Pointer to the associated VMMDev driver. */
     struct DRVMAINVMMDEV *mpDrv;
 
+#ifdef HGCMSS
+    bool fSharedFolderActive;
+    bool isShFlActive()
+    {
+        return fSharedFolderActive;
+    }
+#else
     uint32_t mSharedFolderClientId;
     uint32_t getShFlClientId()
     {
         return mSharedFolderClientId;
     }
+#endif /* HGCMSS */
 
     Console *getParent()
     {

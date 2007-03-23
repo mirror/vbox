@@ -22,8 +22,6 @@
 
 /* #define LOG_ENABLED */
 
-#define TIMESYNC_BACKDOOR
-
 #include <stdio.h>
 #include <string.h>
 
@@ -903,7 +901,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 Log(("VMMDevReq_HGCMConnect\n"));
 
-                requestHeader->rc = vmmdevHGCMConnect (pData, pHGCMConnect);
+                requestHeader->rc = vmmdevHGCMConnect (pData, pHGCMConnect, (RTGCPHYS)u32);
             }
             break;
         }
@@ -925,7 +923,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevHGCMDisconnect *pHGCMDisconnect = (VMMDevHGCMDisconnect *)requestHeader;
 
                 Log(("VMMDevReq_VMMDevHGCMDisconnect\n"));
-                requestHeader->rc = vmmdevHGCMDisconnect (pData, pHGCMDisconnect);
+                requestHeader->rc = vmmdevHGCMDisconnect (pData, pHGCMDisconnect, (RTGCPHYS)u32);
             }
             break;
         }
@@ -950,7 +948,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 Log(("%.*Vhxd\n", requestHeader->size, requestHeader));
 
-                requestHeader->rc = vmmdevHGCMCall (pData, pHGCMCall);
+                requestHeader->rc = vmmdevHGCMCall (pData, pHGCMCall, (RTGCPHYS)u32);
             }
             break;
         }
@@ -1472,7 +1470,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION 2
+#define VMMDEV_SSM_VERSION 3
 
 /**
  * Saves a state of the VMM device.
@@ -1491,6 +1489,7 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 
     SSMR3PutBool(pSSMHandle, pData->fNewGuestFilterMask);
     SSMR3PutU32(pSSMHandle, pData->u32NewGuestFilterMask);
+    SSMR3PutU32(pSSMHandle, pData->u32GuestFilterMask);
     SSMR3PutU32(pSSMHandle, pData->u32HostEventFlags);
     // here be dragons (probably)
 //    SSMR3PutBool(pSSMHandle, pData->pVMMDevRAMHC->V.V1_04.fHaveEvents);
@@ -1499,6 +1498,11 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3PutMem(pSSMHandle, &pData->guestInfo, sizeof (pData->guestInfo));
     SSMR3PutU32(pSSMHandle, pData->fu32AdditionsOk);
     SSMR3PutU32(pSSMHandle, pData->u32VideoAccelEnabled);
+
+#ifdef VBOX_HGCM
+    vmmdevHGCMSaveState (pData, pSSMHandle);
+#endif /* VBOX_HGCM */
+
     return VINF_SUCCESS;
 }
 
@@ -1522,6 +1526,7 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 
     SSMR3GetBool(pSSMHandle, &pData->fNewGuestFilterMask);
     SSMR3GetU32(pSSMHandle, &pData->u32NewGuestFilterMask);
+    SSMR3GetU32(pSSMHandle, &pData->u32GuestFilterMask);
     SSMR3GetU32(pSSMHandle, &pData->u32HostEventFlags);
 //    SSMR3GetBool(pSSMHandle, &pData->pVMMDevRAMHC->fHaveEvents);
     // here be dragons (probably)
@@ -1530,6 +1535,10 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3GetMem(pSSMHandle, &pData->guestInfo, sizeof (pData->guestInfo));
     SSMR3GetU32(pSSMHandle, &pData->fu32AdditionsOk);
     SSMR3GetU32(pSSMHandle, &pData->u32VideoAccelEnabled);
+
+#ifdef VBOX_HGCM
+    vmmdevHGCMLoadState (pData, pSSMHandle);
+#endif /* VBOX_HGCM */
 
     /*
      * On a resume, we send the capabilities changed message so
@@ -1557,6 +1566,10 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     VMMDevState *pData = PDMINS2DATA(pDevIns, VMMDevState*);
+
+#ifdef VBOX_HGCM
+    vmmdevHGCMLoadStateDone (pData, pSSMHandle);
+#endif /* VBOX_HGCM */
 
     VMMDevNotifyGuest (pData, VMMDEV_EVENT_RESTORED);
 
@@ -1717,6 +1730,11 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     {
         AssertMsgFailed(("VMMDev SUPPageAlloc(%#x,) -> %d\n", VMMDEV_RAM_SIZE, rc));
     }
+    
+#ifdef VBOX_HGCM
+    rc = RTCritSectInit(&pData->critsectHGCMCmdList);
+    AssertRC(rc);
+#endif /* VBOX_HGCM */
 
     /* initialize the VMMDev memory */
     memset (pData->pVMMDevRAMHC, 0, sizeof (VMMDevMemory));

@@ -32,7 +32,14 @@
 
 static RTCRITSECT g_critsect;
 
-static uint32_t volatile g_u32HandleCount;
+/* There are internal handles, which are not saved,
+ * and client handles, which are saved.
+ * They use different range of values:
+ *     1..7FFFFFFF for clients,
+ *     0x80000001..0xFFFFFFFF for other handles.
+ */
+static uint32_t volatile g_u32InternalHandleCount;
+static uint32_t volatile g_u32ClientHandleCount;
 
 static PAVLULNODECORE g_pTree;
 
@@ -53,7 +60,8 @@ int hgcmObjInit (void)
 
     LogFlow(("MAIN::hgcmObjInit\n"));
 
-    g_u32HandleCount = 0;
+    g_u32InternalHandleCount = 0x80000000;
+    g_u32ClientHandleCount = 0;
     g_pTree = NULL;
 
     rc = RTCritSectInit (&g_critsect);
@@ -71,7 +79,7 @@ void hgcmObjUninit (void)
     }
 }
 
-uint32_t hgcmObjGenerateHandle (HGCMObject *pObject)
+uint32_t hgcmObjMake (HGCMObject *pObject, uint32_t u32HandleIn)
 {
     int handle = 0;
 
@@ -84,23 +92,41 @@ uint32_t hgcmObjGenerateHandle (HGCMObject *pObject)
         ObjectAVLCore *pCore = &pObject->Core;
 
         /* Generate a new handle value. */
+        
+        uint32_t volatile *pu32HandleCountSource = pObject->Type () == HGCMOBJ_CLIENT?
+                                                       &g_u32ClientHandleCount:
+                                                       &g_u32InternalHandleCount;
 
-        uint32_t u32Start = g_u32HandleCount;
+        uint32_t u32Start = *pu32HandleCountSource;
 
         for (;;)
         {
-            uint32_t Key = ASMAtomicIncU32 (&g_u32HandleCount);
-
-            if (Key == u32Start)
+            uint32_t Key; 
+            
+            if (u32HandleIn == 0)
             {
-                /* Rollover. Something is wrong. */
-                break;
+                Key = ASMAtomicIncU32 (pu32HandleCountSource);
+
+                if (Key == u32Start)
+                {
+                    /* Rollover. Something is wrong. */
+                    AssertReleaseFailed ();
+                    break;
+                }
+
+                /* 0 and 0x80000000 are not valid handles. */
+                if ((Key & 0x7FFFFFFF) == 0)
+                {
+                    /* Over the invalid value, reinitialize the source. */
+                    *pu32HandleCountSource = pObject->Type () == HGCMOBJ_CLIENT?
+                                                 0:
+                                                 0x80000000;
+                    continue;
+                }
             }
-
-            /* 0 is not a valid handle. */
-            if (Key == 0)
+            else
             {
-                continue;
+                Key = u32HandleIn;
             }
 
             /* Insert object to AVL tree. */
@@ -111,7 +137,16 @@ uint32_t hgcmObjGenerateHandle (HGCMObject *pObject)
             /* Could not insert a handle. */
             if (!bRC)
             {
-                continue;
+                if (u32HandleIn == 0)
+                {
+                    /* Try another generated handle. */
+                    continue;
+                }
+                else
+                {
+                    /* Could not use the specified handle. */
+                    break;
+                }
             }
 
             /* Initialize backlink. */
@@ -122,6 +157,8 @@ uint32_t hgcmObjGenerateHandle (HGCMObject *pObject)
 
             /* Store returned handle. */
             handle = Key;
+            
+            Log(("Object key inserted 0x%08X\n", Key));
 
             break;
         }
@@ -133,16 +170,26 @@ uint32_t hgcmObjGenerateHandle (HGCMObject *pObject)
         AssertReleaseMsgFailed (("MAIN::hgcmObjGenerateHandle: Failed to acquire object pool semaphore"));
     }
 
-    LogFlow(("MAIN::hgcmObjGenerateHandle: handle = %d, rc = %Vrc, return void\n", handle, rc));
+    LogFlow(("MAIN::hgcmObjGenerateHandle: handle = 0x%08X, rc = %Vrc, return void\n", handle, rc));
 
     return handle;
+}
+
+uint32_t hgcmObjGenerateHandle (HGCMObject *pObject)
+{
+    return hgcmObjMake (pObject, 0);
+}
+
+uint32_t hgcmObjAssignHandle (HGCMObject *pObject, uint32_t u32Handle)
+{
+    return hgcmObjMake (pObject, u32Handle);
 }
 
 void hgcmObjDeleteHandle (uint32_t handle)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlow(("MAIN::hgcmObjDeleteHandle: handle %d\n", handle));
+    LogFlow(("MAIN::hgcmObjDeleteHandle: handle 0x%08X\n", handle));
 
     if (handle)
     {
@@ -174,7 +221,7 @@ void hgcmObjDeleteHandle (uint32_t handle)
 
 HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType)
 {
-    LogFlow(("MAIN::hgcmObjReference: handle %d\n", handle));
+    LogFlow(("MAIN::hgcmObjReference: handle 0x%08X\n", handle));
 
     HGCMObject *pObject = NULL;
 
@@ -221,19 +268,19 @@ void hgcmObjDereference (HGCMObject *pObject)
 
 uint32_t hgcmObjQueryHandleCount ()
 {
-    return g_u32HandleCount;
+    return g_u32ClientHandleCount;
 }
 
-void hgcmObjSetHandleCount (uint32_t u32HandleCount)
+void hgcmObjSetHandleCount (uint32_t u32ClientHandleCount)
 {
-    Assert(g_u32HandleCount <= u32HandleCount);
+    Assert(g_u32ClientHandleCount <= u32ClientHandleCount);
 
     int rc = hgcmObjEnter ();
 
     if (VBOX_SUCCESS(rc))
     {
-        if (g_u32HandleCount <= u32HandleCount)
-            g_u32HandleCount = u32HandleCount;
+        if (g_u32ClientHandleCount <= u32ClientHandleCount)
+            g_u32ClientHandleCount = u32ClientHandleCount;
         hgcmObjLeave ();
    }
 }
