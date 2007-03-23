@@ -924,9 +924,6 @@ bool HGCMService::EqualToLoc (HGCMServiceLocation *loc)
 
         for (i = 0; i < pSvc->m_cClients; i++)
         {
-            void *pvState = NULL;
-            uint32_t cbState = 0;
-
             uint32_t u32ClientID = pSvc->m_paClientIds[i];
 
             Log(("client id 0x%08X\n", u32ClientID));
