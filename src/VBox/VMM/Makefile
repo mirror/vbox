@@ -53,6 +53,7 @@ ifdef VBOX_OSE
  endif
 endif                
 VMMR3_INCS      = PATM
+VMMR3_DEFS.l4   = NO_SUPCALLR0VMM
 
 VMMR3_SOURCES   = \
 	CFGM.cpp \
