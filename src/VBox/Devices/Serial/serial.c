@@ -1,4 +1,3 @@
-#ifdef VBOX
 /** @file
  *
  * VBox serial device:
@@ -73,12 +72,6 @@
 
 #define SERIAL_SAVED_STATE_VERSION 2
 
-#endif /* VBOX */
-
-#ifndef VBOX
-#include "vl.h"
-#endif /* !VBOX */
-
 /* #define DEBUG_SERIAL */
 
 #define UART_LCR_DLAB	0x80	/* Divisor latch access bit */
@@ -139,12 +132,7 @@ struct SerialState {
     /* NOTE: this hidden state is necessary for tx irq generation as
        it can be reset while reading iir */
     int thr_ipending;
-#ifndef VBOX
-    SetIRQFunc *set_irq;
-    void *irq_opaque;
-#endif /* !VBOX */
     int irq;
-#ifdef VBOX
 #ifdef VBOX_SERIAL_PCI
     PCIDEVICE dev;
 #endif /* VBOX_SERIAL_PCI */
@@ -155,23 +143,15 @@ struct SerialState {
     PPDMICHAR pDrvChar;
 
     RTSEMEVENT ReceiveSem;
-#else /* !VBOX */
-    CharDriverState *chr;
-#endif /* !VBOX */
     int last_break_enable;
     target_ulong base;
-#ifndef VBOX
-    int it_shift;
-#endif /* !VBOX */
 };
 
-#ifdef VBOX
 #ifdef VBOX_SERIAL_PCI
 #define PCIDEV_2_SERIALSTATE(pPciDev) ( (SerialState *)((uintptr_t)(pPciDev) - RT_OFFSETOF(SerialState, dev)) )
 #endif /* VBOX_SERIAL_PCI */
 #define PDMIBASE_2_SERIALSTATE(pInstance) ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, IBase)) )
 #define PDMICHARPORT_2_SERIALSTATE(pInstance) ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, ICharPort)) )
-#endif /* VBOX */
 
 static void serial_update_irq(SerialState *s)
 {
@@ -183,25 +163,17 @@ static void serial_update_irq(SerialState *s)
         s->iir = UART_IIR_NO_INT;
     }
     if (s->iir != UART_IIR_NO_INT) {
-#ifdef VBOX
 #ifdef VBOX_SERIAL_PCI
         PDMDevHlpPCISetIrqNoWait(s->pDevIns, 0, 1);
 #else /* !VBOX_SERIAL_PCI */
         PDMDevHlpISASetIrqNoWait(s->pDevIns, s->irq, 1);
 #endif /* !VBOX_SERIAL_PCI */
-#else /* !VBOX */
-        s->set_irq(s->irq_opaque, s->irq, 1);
-#endif /* !VBOX */
     } else {
-#ifdef VBOX
 #ifdef VBOX_SERIAL_PCI
         PDMDevHlpPCISetIrqNoWait(s->pDevIns, 0, 0);
 #else /* !VBOX_SERIAL_PCI */
         PDMDevHlpISASetIrqNoWait(s->pDevIns, s->irq, 0);
 #endif /* !VBOX_SERIAL_PCI */
-#else /* !VBOX */
-        s->set_irq(s->irq_opaque, s->irq, 0);
-#endif /* !VBOX */
     }
 }
 
@@ -230,13 +202,7 @@ static void serial_update_parameters(SerialState *s)
     ssp.parity = parity;
     ssp.data_bits = data_bits;
     ssp.stop_bits = stop_bits;
-#ifndef VBOX
-    qemu_chr_ioctl(s->chr, CHR_IOCTL_SERIAL_SET_PARAMS, &ssp);
-#endif /* !VBOX */
-#if 0
-    printf("speed=%d parity=%c data=%d stop=%d\n",
-           speed, parity, data_bits, stop_bits);
-#endif
+    Log(("speed=%d parity=%c data=%d stop=%d\n", speed, parity, data_bits, stop_bits));
 }
 
 static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
@@ -259,7 +225,6 @@ static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             s->lsr &= ~UART_LSR_THRE;
             serial_update_irq(s);
             ch = val;
-#ifdef VBOX
             /** @todo implement backpressure for writing (don't set interrupt
              * bits/line until the character is actually written). This way
              * EMT wouldn't block for writes taking longer than normal. */
@@ -268,9 +233,6 @@ static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                 int rc = s->pDrvChar->pfnWrite(s->pDrvChar, &ch, 1);
                 AssertRC(rc);
             }
-#else /* !VBOX */
-            qemu_chr_write(s->chr, &ch, 1);
-#endif /* !VBOX */
             s->thr_ipending = 1;
             s->lsr |= UART_LSR_THRE;
             s->lsr |= UART_LSR_TEMT;
@@ -299,10 +261,6 @@ static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             break_enable = (val >> 6) & 1;
             if (break_enable != s->last_break_enable) {
                 s->last_break_enable = break_enable;
-#ifndef VBOX
-                qemu_chr_ioctl(s->chr, CHR_IOCTL_SERIAL_SET_BREAK,
-                               &break_enable);
-#endif /* !VBOX */
             }
         }
         break;
@@ -334,12 +292,10 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr)
             ret = s->rbr;
             s->lsr &= ~(UART_LSR_DR | UART_LSR_BI);
             serial_update_irq(s);
-#ifdef VBOX
             {
                 int rc = RTSemEventSignal(s->ReceiveSem);
                 AssertRC(rc);
             }
-#endif /* VBOX */
         }
         break;
     case 1:
@@ -386,7 +342,6 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr)
     return ret;
 }
 
-#ifdef VBOX
 static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *pvBuf, size_t *pcbRead)
 {
     SerialState *s = PDMICHARPORT_2_SERIALSTATE(pInterface);
@@ -403,199 +358,7 @@ static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *
     *pcbRead = 1;
     return VINF_SUCCESS;
 }
-#else /* !VBOX */
-static int serial_can_receive(SerialState *s)
-{
-    return !(s->lsr & UART_LSR_DR);
-}
 
-static void serial_receive_byte(SerialState *s, int ch)
-{
-    s->rbr = ch;
-    s->lsr |= UART_LSR_DR;
-    serial_update_irq(s);
-}
-
-static void serial_receive_break(SerialState *s)
-{
-    s->rbr = 0;
-    s->lsr |= UART_LSR_BI | UART_LSR_DR;
-    serial_update_irq(s);
-}
-
-static int serial_can_receive1(void *opaque)
-{
-    SerialState *s = opaque;
-    return serial_can_receive(s);
-}
-
-static void serial_receive1(void *opaque, const uint8_t *buf, int size)
-{
-    SerialState *s = opaque;
-    serial_receive_byte(s, buf[0]);
-}
-
-static void serial_event(void *opaque, int event)
-{
-    SerialState *s = opaque;
-    if (event == CHR_EVENT_BREAK)
-        serial_receive_break(s);
-}
-
-static void serial_save(QEMUFile *f, void *opaque)
-{
-    SerialState *s = opaque;
-
-    qemu_put_be16s(f,&s->divider);
-    qemu_put_8s(f,&s->rbr);
-    qemu_put_8s(f,&s->ier);
-    qemu_put_8s(f,&s->iir);
-    qemu_put_8s(f,&s->lcr);
-    qemu_put_8s(f,&s->mcr);
-    qemu_put_8s(f,&s->lsr);
-    qemu_put_8s(f,&s->msr);
-    qemu_put_8s(f,&s->scr);
-}
-
-static int serial_load(QEMUFile *f, void *opaque, int version_id)
-{
-    SerialState *s = opaque;
-
-    if(version_id > 2)
-        return -EINVAL;
-
-    if (version_id >= 2)
-        qemu_get_be16s(f, &s->divider);
-    else
-        s->divider = qemu_get_byte(f);
-    qemu_get_8s(f,&s->rbr);
-    qemu_get_8s(f,&s->ier);
-    qemu_get_8s(f,&s->iir);
-    qemu_get_8s(f,&s->lcr);
-    qemu_get_8s(f,&s->mcr);
-    qemu_get_8s(f,&s->lsr);
-    qemu_get_8s(f,&s->msr);
-    qemu_get_8s(f,&s->scr);
-
-    return 0;
-}
-
-/* If fd is zero, it means that the serial device uses the console */
-SerialState *serial_init(SetIRQFunc *set_irq, void *opaque,
-                         int base, int irq, CharDriverState *chr)
-{
-    SerialState *s;
-
-    s = qemu_mallocz(sizeof(SerialState));
-    if (!s)
-        return NULL;
-    s->set_irq = set_irq;
-    s->irq_opaque = opaque;
-    s->irq = irq;
-    s->lsr = UART_LSR_TEMT | UART_LSR_THRE;
-    s->iir = UART_IIR_NO_INT;
-    s->msr = UART_MSR_DCD | UART_MSR_DSR | UART_MSR_CTS;
-
-    register_savevm("serial", base, 2, serial_save, serial_load, s);
-
-    register_ioport_write(base, 8, 1, serial_ioport_write, s);
-    register_ioport_read(base, 8, 1, serial_ioport_read, s);
-    s->chr = chr;
-    qemu_chr_add_read_handler(chr, serial_can_receive1, serial_receive1, s);
-    qemu_chr_add_event_handler(chr, serial_event);
-    return s;
-}
-
-/* Memory mapped interface */
-static uint32_t serial_mm_readb (void *opaque, target_phys_addr_t addr)
-{
-    SerialState *s = opaque;
-
-    return serial_ioport_read(s, (addr - s->base) >> s->it_shift) & 0xFF;
-}
-
-static void serial_mm_writeb (void *opaque,
-                              target_phys_addr_t addr, uint32_t value)
-{
-    SerialState *s = opaque;
-
-    serial_ioport_write(s, (addr - s->base) >> s->it_shift, value & 0xFF);
-}
-
-static uint32_t serial_mm_readw (void *opaque, target_phys_addr_t addr)
-{
-    SerialState *s = opaque;
-
-    return serial_ioport_read(s, (addr - s->base) >> s->it_shift) & 0xFFFF;
-}
-
-static void serial_mm_writew (void *opaque,
-                              target_phys_addr_t addr, uint32_t value)
-{
-    SerialState *s = opaque;
-
-    serial_ioport_write(s, (addr - s->base) >> s->it_shift, value & 0xFFFF);
-}
-
-static uint32_t serial_mm_readl (void *opaque, target_phys_addr_t addr)
-{
-    SerialState *s = opaque;
-
-    return serial_ioport_read(s, (addr - s->base) >> s->it_shift);
-}
-
-static void serial_mm_writel (void *opaque,
-                              target_phys_addr_t addr, uint32_t value)
-{
-    SerialState *s = opaque;
-
-    serial_ioport_write(s, (addr - s->base) >> s->it_shift, value);
-}
-
-static CPUReadMemoryFunc *serial_mm_read[] = {
-    &serial_mm_readb,
-    &serial_mm_readw,
-    &serial_mm_readl,
-};
-
-static CPUWriteMemoryFunc *serial_mm_write[] = {
-    &serial_mm_writeb,
-    &serial_mm_writew,
-    &serial_mm_writel,
-};
-
-SerialState *serial_mm_init (SetIRQFunc *set_irq, void *opaque,
-                             target_ulong base, int it_shift,
-                             int irq, CharDriverState *chr)
-{
-    SerialState *s;
-    int s_io_memory;
-
-    s = qemu_mallocz(sizeof(SerialState));
-    if (!s)
-        return NULL;
-    s->set_irq = set_irq;
-    s->irq_opaque = opaque;
-    s->irq = irq;
-    s->lsr = UART_LSR_TEMT | UART_LSR_THRE;
-    s->iir = UART_IIR_NO_INT;
-    s->msr = UART_MSR_DCD | UART_MSR_DSR | UART_MSR_CTS;
-    s->base = base;
-    s->it_shift = it_shift;
-
-    register_savevm("serial", base, 2, serial_save, serial_load, s);
-
-    s_io_memory = cpu_register_io_memory(0, serial_mm_read,
-                                         serial_mm_write, s);
-    cpu_register_physical_memory(base, 8 << it_shift, s_io_memory);
-    s->chr = chr;
-    qemu_chr_add_read_handler(chr, serial_can_receive1, serial_receive1, s);
-    qemu_chr_add_event_handler(chr, serial_event);
-    return s;
-}
-#endif
-
-#ifdef VBOX
 static DECLCALLBACK(int) serial_io_write (PPDMDEVINS pDevIns,
                                        void *pvUser,
                                        RTIOPORT Port,
@@ -920,4 +683,3 @@ const PDMDEVREG g_DeviceSerialPort =
     /* pfnQueryInterface. */
     NULL
 };
-#endif /* VBOX */
