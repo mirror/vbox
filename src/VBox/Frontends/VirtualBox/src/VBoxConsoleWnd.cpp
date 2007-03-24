@@ -400,6 +400,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
 
+#if 0 // do not show these indicators, information overload
     /* vrdp state */
     vrdp_state = new QIStateIndicator (0, indicatorBox, "vrdp_state", WNoAutoErase);
     vrdp_state->setStateIcon (0, QPixmap::fromMimeSource ("vrdp_disabled_16px.png"));
@@ -410,6 +411,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     autoresize_state->setStateIcon (1, QPixmap::fromMimeSource ("auto_resize_off_16px.png"));
     autoresize_state->setStateIcon (2, QPixmap::fromMimeSource ("auto_resize_on_disabled_16px.png"));
     autoresize_state->setStateIcon (3, QPixmap::fromMimeSource ("auto_resize_on_16px.png"));
+#endif
+
     /* mouse */
     mouse_state = new QIStateIndicator (0, indicatorBox, "mouse_state", WNoAutoErase);
     mouse_state->setStateIcon (0, QPixmap::fromMimeSource ("mouse_disabled_16px.png"));
@@ -488,12 +491,15 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (usb_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
-    connect (vrdp_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
-             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (sf_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+
+#if 0
+    connect (vrdp_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (autoresize_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+#endif
     connect (mouse_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
 
@@ -655,7 +661,9 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         /* hide vrdp_menu_action & vrdp_separator & vrdp_status_icon */
         devicesSwitchVrdpAction->setVisible (false);
         devicesMenu->setItemVisible (devicesVRDPMenuSeparatorId, false);
+#if 0
         vrdp_state->setHidden (true);
+#endif
     }
 
     /* initialize shared folders stuff */
@@ -1251,10 +1259,12 @@ void VBoxConsoleWnd::languageChange()
 
     /* status bar widgets */
 
+#if 0
     QToolTip::add (autoresize_state,
         tr ("Indicates whether the guest display auto-resize function is On "
             "(<img src=auto_resize_on_16px.png/>) or Off (<img src=auto_resize_off_16px.png/>). "
             "Note that this function requires Guest Additions to be installed in the guest OS."));
+#endif
     QToolTip::add (mouse_state,
         tr ("Indicates whether the host mouse pointer is captured by the guest OS:<br>"
             "<nobr><img src=mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
@@ -1431,6 +1441,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         /* update menu&status icon state */
         bool isVRDPEnabled = vrdpsrv.GetEnabled();
         devicesSwitchVrdpAction->setOn (isVRDPEnabled);
+#if 0
         vrdp_state->setState (isVRDPEnabled ? 1 : 0);
 
         /* compose status icon tooltip */
@@ -1441,6 +1452,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         if (vrdpsrv.GetEnabled())
             tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
         QToolTip::add (vrdp_state, tip);
+#endif
     }
     if (element & PauseAction)
     {
@@ -1599,7 +1611,9 @@ void VBoxConsoleWnd::vmAutoresizeGuest (bool on)
     /* Currently, we use only "off" and "on" icons. Later,
      * we may want to use disabled versions of icons when no guest additions
      * are available (to indicate that this function is ineffective). */
+#if 0
     autoresize_state->setState (on ? 3 : 1);
+#endif
 
     console->setAutoresizeGuest (on);
 }
