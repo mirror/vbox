@@ -2434,23 +2434,11 @@ value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Enable Network Adapter (plug it into the corresponding slot)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Attached to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Type of network attachment.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;MAC Address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>MAC address of the current adapter. It contains exactly 12 characters choosen from {0-9,A-F}.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2462,19 +2450,11 @@ value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Generate a new random MAC address.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Ca&amp;ble Connected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Alt+B</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This controls whether the virtual network cable is plugged in.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2486,28 +2466,7 @@ value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter name for the new interface here</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a new host interface</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove
-                                                        the selected host interface</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The list of interfaces available</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TAP interface name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2519,15 +2478,7 @@ value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Setup application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select setup application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2535,11 +2486,86 @@ value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Terminate application</source>
+        <source>&amp;Enable Network Adapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select terminate application</source>
+        <source>When checked, plugs this virtual network adapter into
+                the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the way how this
+                                        virtual adapter is attached to the
+                                        real network of the Host OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of
+                                        this adapter. It contains exactly 12
+                                        characters chosen from
+                                        {0-9,A-F}.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged
+                        in on machine startup or not.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the
+                                                        name of the host
+                                                        interface selected for
+                                                        this adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all available
+                                                host interfaces.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new host interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes
+                                                        the selected host interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the
+                                                        TAP interface
+                                                        name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the
+                                                        command executed to
+                                                        setup the TAP
+                                                        interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the
+                                                        setup
+                                                        application.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the
+                                                        command executed to
+                                                        terminate the TAP
+                                                        interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the
+                                                        terminate application.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
