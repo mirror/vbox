@@ -167,6 +167,14 @@ IMAGES	= images/tpixel.png \
 	images/usb_unavailable_disabled_16px.png \
 	images/select_file_16px.png \
 	images/select_file_dis_16px.png \
+	images/list_moveup_16px.png \
+	images/list_moveup_22px.png \
+	images/list_moveup_disabled_16px.png \
+	images/list_moveup_disabled_22px.png \
+	images/list_movedown_16px.png \
+	images/list_movedown_22px.png \
+	images/list_movedown_disabled_16px.png \
+	images/list_movedown_disabled_22px.png \
 	images/discard_cur_state_16px.png \
 	images/discard_cur_state_22px.png \
 	images/discard_cur_state_dis_16px.png \

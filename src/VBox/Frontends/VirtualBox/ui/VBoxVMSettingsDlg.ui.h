@@ -154,10 +154,10 @@ public:
         mBtnDown->setAutoRaise (true);
         mBtnUp->setFocusPolicy (QWidget::StrongFocus);
         mBtnDown->setFocusPolicy (QWidget::StrongFocus);
-        mBtnUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
-                                                 "usb_moveup_disabled_16px.png"));
-        mBtnDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
-                                                   "usb_movedown_disabled_16px.png"));
+        mBtnUp->setIconSet (VBoxGlobal::iconSet ("list_moveup_16px.png",
+                                                 "list_moveup_disabled_16px.png"));
+        mBtnDown->setIconSet (VBoxGlobal::iconSet ("list_movedown_16px.png",
+                                                   "list_movedown_disabled_16px.png"));
         QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Minimum,
                                                      QSizePolicy::Expanding);
         connect (mBtnUp, SIGNAL (clicked()), this, SLOT (moveItemUp()));
