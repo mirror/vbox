@@ -956,3 +956,26 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz)
     return (char *)pszStart;
 }
 
+
+/**
+ * Performs a case insensitive string compare between two UTF-8 strings.
+ *
+ * This is a simplified compare, as only the simplified lower/upper case folding
+ * specified by the unicode specs are used. It does not consider character pairs
+ * as they are used in some languages, just simple upper & lower case compares.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string.
+ * @param   psz2        Second UTF-8 string.
+ */
+RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
+{
+    /** @todo implement proper UTF-8 case-insensitive string comparison. */
+#ifdef __WIN32__
+    return stricmp(psz1, psz2);
+#else /* !__WIN32__ */
+    return strcasecmp(psz1, psz2);
+#endif /* !__WIN32__ */
+}

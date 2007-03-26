@@ -90,7 +90,7 @@ typedef FNRTTHREAD *PFNRTTHREAD;
  * Besides identifying the purpose of the thread, the thread type is
  * used to select the scheduling properties.
  *
- * The types in are placed in a rought order of ascending priority.
+ * The types in are placed in a rough order of ascending priority.
  */
 typedef enum RTTHREADTYPE
 {
