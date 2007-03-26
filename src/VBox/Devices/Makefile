@@ -346,6 +346,7 @@ Drivers_SOURCES    = \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp \
 	Storage/DrvHostFloppy.cpp \
+	Storage/DrvHostRawDisk.cpp \
 	PC/DrvACPI.cpp \
 	Network/DrvIntNet.cpp \
 	Network/DrvNetSniffer.cpp \
