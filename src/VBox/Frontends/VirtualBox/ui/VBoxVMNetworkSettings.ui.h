@@ -50,9 +50,9 @@ public:
 
         /* Setup Input layout */
         QHBoxLayout *inputLayout = new QHBoxLayout (mainLayout, 10, "inputLayout");
-        QLabel *lbName = new QLabel ("Interface Name", this);
+        QLabel *lbName = new QLabel (tr ("Interface Name"), this);
         mLeName = new QLineEdit (aIfaceName, this);
-        QWhatsThis::add (mLeName, tr ("Enter name for the interface to be created"));
+        QWhatsThis::add (mLeName, tr ("Descriptive name of the new network interface"));
         inputLayout->addWidget (lbName);
         inputLayout->addWidget (mLeName);
         connect (mLeName, SIGNAL (textChanged (const QString &)),
@@ -60,9 +60,9 @@ public:
 
         /* Setup Button layout */
         QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
-        mBtOk = new QPushButton ("OK", this, "btOk");
+        mBtOk = new QPushButton (tr ("&OK"), this, "mBtOk");
         QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-        QPushButton *btCancel = new QPushButton ("Cancel", this, "btCancel");
+        QPushButton *btCancel = new QPushButton (tr ("Cancel"), this, "btCancel");
         connect (mBtOk, SIGNAL (clicked()), this, SLOT (accept()));
         connect (btCancel, SIGNAL (clicked()), this, SLOT (reject()));
         buttonLayout->addWidget (mBtOk);
@@ -128,6 +128,10 @@ void VBoxVMNetworkSettings::init()
                                                 "add_host_iface_disabled_16px.png"));
     pbHostRemove->setIconSet (VBoxGlobal::iconSet ("remove_host_iface_16px.png",
                                                    "remove_host_iface_disabled_16px.png"));
+    /* setup languages */
+    QToolTip::add (pbHostAdd, tr ("Add"));
+    QToolTip::add (pbHostRemove, tr ("Remove"));
+    /* setup connections */
     connect (grbEnabled, SIGNAL (toggled (bool)),
              this, SLOT (grbEnabledToggled (bool)));
 #else
@@ -381,7 +385,7 @@ void VBoxVMNetworkSettings::hostInterfaceAdd()
 
     /* creating add host interface dialog */
     VBoxAddNIDialog dlg (this, lbHostInterface->currentItem() != -1 ?
-                         tr ("Host Interface %1").arg (++mInterfaceNumber) :
+                         tr ("VirtualBox Host Interface %1").arg (++mInterfaceNumber) :
                          leHostInterfaceName->text());
     if (dlg.exec() != QDialog::Accepted)
         return;
@@ -428,11 +432,13 @@ void VBoxVMNetworkSettings::hostInterfaceRemove()
 
     /* asking user about deleting selected network interface */
     int delNetIface = vboxProblem().message (this, VBoxProblemReporter::Question,
-        tr ("<p>Do you want to remove selected network interface "
+        tr ("<p>Do you want to remove the selected host network interface "
             "<nobr><b>%1</b>?</nobr></p>"
-            "<p>If this interface is currently selected you should "
-            "apply VM settings changes to avoid VM using of non-existing "
-            "interface</p>").arg (iName),
+            "<p><b>Note:</b> This interface may be in use by one or more "
+            "network adapters of this or another VM. After it is removed, these "
+            "adapters will no longer work until you correct their settings by "
+            "either choosing a differnet interface name or a different adapter "
+            "attachment type.</p>").arg (iName),
         0, /* autoConfirmId */
         QIMessageBox::Ok | QIMessageBox::Default,
         QIMessageBox::Cancel | QIMessageBox::Escape);
