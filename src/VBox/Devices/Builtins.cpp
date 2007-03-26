@@ -166,9 +166,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImage);
     if (VBOX_FAILURE(rc))
         return rc;
+#ifndef __L4ENV__
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostHDD);
     if (VBOX_FAILURE(rc))
         return rc;
+#endif
 #ifdef VBOX_WITH_ISCSI
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvISCSI);
     if (VBOX_FAILURE(rc))
