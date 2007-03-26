@@ -329,9 +329,9 @@ static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
         }
         else if (VBOX_SUCCESS(rc))
         {
-            if (!strcasecmp(szProtocol, "TCP"))
+            if (!RTStrICmp(szProtocol, "TCP"))
                 fUDP = false;
-            else if (!strcasecmp(szProtocol, "UDP"))
+            else if (!RTStrICmp(szProtocol, "UDP"))
                 fUDP = true;
             else
                 return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string returned %Vrc"), rc);
