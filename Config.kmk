@@ -64,7 +64,7 @@ ifeq ($(BUILD_TARGET),darwin)
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
  INST_TESTCASE        = $(INST_BIN)testcase/
- INST_ADDITIONS       = $(INST_BIN)MacOS/additions/
+ INST_ADDITIONS       = $(INST_BIN)additions/
 
  # other paths
  INST_LIB             = lib/
