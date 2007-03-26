@@ -3743,6 +3743,16 @@ int15_function(regs, ES, DS, FLAGS)
 BX_DEBUG_INT15("int15 AX=%04x\n",regs.u.r16.ax);
 
   switch (regs.u.r8.ah) {
+#ifdef VBOX
+    case 0x00: /* assorted functions */
+      if (regs.u.r8.al != 0xc0)
+        goto undecoded;
+      /* GRUB calls int15 with ax=0x00c0 to get the ROM configuration table,
+       * which we don't support, but logging that event is annoying. */
+      SET_CF();
+      regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+      break;
+#endif
     case 0x24: /* A20 Control */
       switch (regs.u.r8.al) {
         case 0x00:
@@ -4027,6 +4037,9 @@ ASM_END
       regs.u.r8.ah = UNSUPPORTED_FUNCTION;
       break;
 
+#ifdef VBOX
+undecoded:
+#endif /* VBOX */
     default:
       BX_INFO("*** int 15h function AX=%04x, BX=%04x not yet supported!\n",
         (unsigned) regs.u.r16.ax, (unsigned) regs.u.r16.bx);
