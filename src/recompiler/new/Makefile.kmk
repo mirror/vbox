@@ -372,6 +372,7 @@ $(PATH_$(REM_MOD))/op.S: \
 		op-validate.sed \
 		op-darwin.sed \
 		op-undefined.lst \
+		Makefile.kmk \
 		$(comp-cmds COMPILE_OP_CMDS,COMPILE_OP_CMDS_PREV,FORCE) \
 		| $(call DIRDEP,$(PATH_$(REM_MOD)))
 	$(RM) -f $@ $@.tmp $@.tmp2 $@.dep
@@ -379,13 +380,14 @@ ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),yes)
 	$(call MSG_L1,Compiling $< => $@)
 	$(addsuffix $(SP)\$(NL)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp
 else ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),dunno) # (permit 3.x.x and 4.1.x+ for now)
-	major_ver=`$(VBOX_RECOMPILER_OP_GCC) --version | $(SED) -e '/GCC/!d' -e 's/^.* (GCC) \([2-9]\)\..*$$/\1/'`; \
-	minor_ver=`$(VBOX_RECOMPILER_OP_GCC) --version | $(SED) -e '/GCC/!d' -e 's/^.* (GCC) \([2-9]\)\.\([2-9]\)\..*$$/\2/'`; \
+	major_ver=`$(VBOX_RECOMPILER_OP_GCC) -dumpversion | $(SED) -e 's/^\([2-9]\)\..*$$/\1/'`; \
+	minor_ver=`$(VBOX_RECOMPILER_OP_GCC) -dumpversion | $(SED) -e 's/^[2-9]\.\([0-9]\)\..*$$/\1/'`; \
+	bugfix_ver=`$(VBOX_RECOMPILER_OP_GCC) -dumpversion | $(SED) -e 's/^[2-9]\.[0-9]\.\([0-9]\).*$$/\1/'`; \
 	if test "$$major_ver" = "3" -o "(" "$$major_ver" = "4" -a "$$minor_ver" != "0" ")"; then \
-		$(ECHO_EXT) "Compiling $< => $@" && \
+		$(ECHO_EXT) "Compiling $< => $@ [gcc v$${major_ver}.$${minor_ver}.$${bugfix_ver}]" && \
 		$(addsuffix $(SP)\$(NL)$(TAB)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp; \
 	else \
-		$(ECHO_EXT) "Using staged op.S (gcc ver $$major_ver.$$minor_ver)" && \
+		$(ECHO_EXT) "Using staged op.S [gcc v$${major_ver}.$${minor_ver}.$${bugfix_ver}]" && \
 		$(CP_EXT) -f staged/op-elf-$(BUILD_TARGET_ARCH).S $@.tmp; \
 	fi
 else
