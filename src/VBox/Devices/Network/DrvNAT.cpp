@@ -309,34 +309,45 @@ static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
      */
     for (PCFGMNODE pNode = CFGMR3GetFirstChild(pCfgHandle); pNode; pNode = CFGMR3GetNextChild(pNode))
     {
+        /*
+         * Validate the port forwarding config.
+         */
+        if (!CFGMR3AreValuesValid(pNode, "Protocol\0UDP\0HostPort\0GuestPort\0GuestIP\0"))
+            return PDMDRV_SET_ERROR(pData->pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, N_("Unknown configuration in port forwarding"));
+
         /* protocol type */
         bool fUDP;
-        int rc = CFGMR3QueryBool(pNode, "UDP", &fUDP);
+        char szProtocol[32];
+        int rc = CFGMR3QueryString(pNode, "Protocol", &szProtocol[0], sizeof(szProtocol));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            fUDP = true;
-        else if (VBOX_FAILURE(rc))
         {
-            AssertMsgFailed(("Configuration error: Boolean \"UDP\" -> %Vrc\n", rc));
-            return rc;
+            rc = CFGMR3QueryBool(pNode, "UDP", &fUDP);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                fUDP = false;
+            else if (VBOX_FAILURE(rc))
+                return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"UDP\" boolean returned %Vrc"), rc);
+        }
+        else if (VBOX_SUCCESS(rc))
+        {
+            if (!strcasecmp(szProtocol, "TCP"))
+                fUDP = false;
+            else if (!strcasecmp(szProtocol, "UDP"))
+                fUDP = true;
+            else
+                return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string returned %Vrc"), rc);
         }
 
         /* host port */
         int32_t iHostPort;
         rc = CFGMR3QueryS32(pNode, "HostPort", &iHostPort);
         if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("Configuration error: Boolean \"HostPort\" -> %Vrc\n", rc));
-            return rc;
-        }
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"HostPort\" integer returned %Vrc"), rc);
 
         /* guest port */
         int32_t iGuestPort;
         rc = CFGMR3QueryS32(pNode, "GuestPort", &iGuestPort);
         if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("Configuration error: Boolean \"GuestPort\" -> %Vrc\n", rc));
-            return rc;
-        }
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestPort\" integer returned %Vrc"), rc);
 
         /* guest address */
         char    szGuestIP[32];
@@ -344,27 +355,17 @@ static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             strcpy(szGuestIP, "10.0.2.15");
         else if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("Configuration error: Boolean \"HostPort\" -> %Vrc\n", rc));
-            return rc;
-        }
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string returned %Vrc"), rc);
         struct in_addr GuestIP;
         if (!inet_aton(szGuestIP, &GuestIP))
-        {
-            AssertMsgFailed(("Configuration error: Invalid \"GuestIP\"=\"%s\", inet_aton failed.\n", szGuestIP));
-            return VERR_NAT_REDIR_GUEST_IP;
-        }
+            return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_NAT_REDIR_GUEST_IP, RT_SRC_POS, N_("NAT#%d: configuration error: invalid \"GuestIP\"=\"%s\", inet_aton failed"), szGuestIP);
 
         /*
          * Call slirp about it.
          */
         Log(("drvNATConstruct: Redir %d -> %s:%d\n", iHostPort, szGuestIP, iGuestPort));
         if (slirp_redir(pData->pNATState, fUDP, iHostPort, GuestIP, iGuestPort) < 0)
-        {
-            AssertMsgFailed(("Configuration error: failed to setup redirection of %d to %s:%d. Probably a conflict with existing services or other rules.\n",
-                             iHostPort, szGuestIP, iGuestPort));
-            return VERR_NAT_REDIR_SETUP;
-        }
+            return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS, N_("NAT#%d: configuration error: failed to set up redirection of %d to %s:%d. Probably a conflict with existing services or other rules"), iHostPort, szGuestIP, iGuestPort);
     } /* for each redir rule */
 
     return VINF_SUCCESS;
