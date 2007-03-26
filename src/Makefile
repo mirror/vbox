@@ -31,11 +31,11 @@ else
 endif
 
 SUBDIRS += bldprogs libs VBox
-ifeq ($(filter linux.x86 l4.x86 win.x86 os2.x86,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
+#ifeq ($(filter linux.x86 l4.x86 win.x86 os2.x86,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  SUBDIRS += recompiler/new
-else
- SUBDIRS += recompiler
-endif
+#else
+# SUBDIRS += recompiler
+#endif
 ifneq ($(wildcard apps),)
  SUBDIRS += apps
 endif
