@@ -36,12 +36,15 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 
-#ifdef __LINUX__
+#ifdef __WIN32__
+#include <windows.h>
+#include <winioctl.h>
+#elif __LINUX__
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/hdreg.h>
 #include <linux/fs.h>
-#endif /* __LINUX__ */
+#endif /* !__WIN32__ && !__LINUX__ */
 
 #include "Builtins.h"
 
@@ -325,17 +328,38 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         pThis->cHeads = 0;
         pThis->cSectors = 0;
         pThis->enmTranslation = PDMBIOSTRANSLATION_AUTO;
-#if 0 /* def __WIN__ */
+#ifdef __WIN32__
         DISK_GEOMETRY DriveGeo;
-        uint32_t cbDriveGeo;
-        if (DeviceIOControl((HANDLE)pThis->HostDiskFile,
-                            IOCTL_DISK_GET_GET_DRIVE_GEOMETRY, NULL, 0,
+        DWORD cbDriveGeo;
+        if (DeviceIoControl((HANDLE)pThis->HostDiskFile,
+                            IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
                             &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
-#elif __LINUX__
-        struct hd_geometry DriveGeo;
-        if (ioctl(pThis->HostDiskFile, HDIO_GETGEO, &DriveGeo) < 0)
-            rc = RTErrConvertFromErrno(errno);
+        {
+            if (DriveGeo.MediaType == FixedMedia)
+            {
+                pThis->cCylinders = DriveGeo.Cylinders.QuadPart;
+                pThis->cHeads = DriveGeo.TracksPerCylinder;
+                pThis->cSectors = DriveGeo.SectorsPerTrack;
+                pThis->enmTranslation = PDMBIOSTRANSLATION_NONE;
+                if (!pThis->cbSize)
+                {
+                    /* Windows NT has no IOCTL_DISK_GET_LENGTH_INFORMATION
+                     * ioctl. This was added to Windows XP, so use the
+                     * available info from DriveGeo. */
+                    pThis->cbSize =     DriveGeo.Cylinders.QuadPart
+                                    *   DriveGeo.TracksPerCylinder
+                                    *   DriveGeo.SectorsPerTrack
+                                    *   DriveGeo.BytesPerSector;
+                }
+            }
+            else
+                rc = VERR_MEDIA_NOT_RECOGNIZED;
+        }
         else
+            rc = RTErrConvertFromWin32(GetLastError());
+#elif defined(__LINUX__)
+        struct hd_geometry DriveGeo;
+        if (!ioctl(pThis->HostDiskFile, HDIO_GETGEO, &DriveGeo))
         {
             pThis->cCylinders = DriveGeo.cylinders;
             pThis->cHeads = DriveGeo.heads;
@@ -346,10 +370,17 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
                 long cBlocks;
                 if (!ioctl(pThis->HostDiskFile, BLKGETSIZE, &cBlocks))
                     pThis->cbSize = (uint64_t)cBlocks * 512;
+                else
+                    rc = RTErrConvertFromErrno(errno);
             }
         }
-#endif
+        else
+            rc = RTErrConvertFromErrno(errno);
+#else
         /** @todo add further host OS geometry detection mechanisms. */
+        AssertMsgFail("Host disk support for this host is unimplemented.\n");
+        rc = VERR_NOT_IMPLEMENTED;
+#endif
     }
 
     LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
