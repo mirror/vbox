@@ -999,11 +999,16 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 if (adapter.GetEnabled())
                 {
                     CEnums::NetworkAttachmentType type = adapter.GetAttachmentType();
-                    QString attType = vboxGlobal().toString (type);
+                    QString attType;
+                    /* don't use the adapter type string for types that have
+                     * an additional symbolic network/interface name field, use
+                     * this name instead */
                     if (type == CEnums::HostInterfaceNetworkAttachment)
-                        attType += " \"" + adapter.GetHostInterface() + "\"";
-                    if (type == CEnums::InternalNetworkAttachment)
-                        attType += " \"" + adapter.GetInternalNetwork() + "\"";
+                        attType = adapter.GetHostInterface();
+                    else if (type == CEnums::InternalNetworkAttachment)
+                        attType = adapter.GetInternalNetwork();
+                    else
+                        attType = vboxGlobal().toString (type);
 
                     item += QString (sSectionItemTpl)
                         .arg (tr ("Adapter %1", "details report (network)")
