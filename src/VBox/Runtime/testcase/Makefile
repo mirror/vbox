@@ -31,6 +31,7 @@ PROGRAMS = \
 	tstLdr-4 \
 	tstLdrLoad \
 	tstAvl \
+	tstTSC \
 	tstTimer \
 	tstTime \
 	tstTime-2 \
@@ -80,6 +81,8 @@ TEMPLATE = VBOXR3TSTEXE
 
 
 tstTimer_SOURCES = tstTimer.cpp
+
+tstTSC_SOURCES = tstTSC.cpp
 
 tstTime_SOURCES = tstTime.cpp
 
