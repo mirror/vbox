@@ -1418,7 +1418,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
 #elif defined (Q_WS_X11)
 
     static const char * const commands[] =
-        { "gnome-open", "kfmclient:exec", "x-www-browser", "firefox", "konqueror" };
+        { "kfmclient:exec", "gnome-open", "x-www-browser", "firefox", "konqueror" };
 
     for (size_t i = 0; i < ELEMENTS (commands); ++ i)
     {
