@@ -64,6 +64,7 @@ extern const PDMDRVREG g_DrvHostDVD;
 extern const PDMDRVREG g_DrvHostFloppy;
 extern const PDMDRVREG g_DrvMediaISO;
 extern const PDMDRVREG g_DrvRawImage;
+extern const PDMDRVREG g_DrvHostHDD;
 extern const PDMDRVREG g_DrvISCSI;
 extern const PDMDRVREG g_DrvISCSITransportTcp;
 extern const PDMDRVREG g_DrvHostInterface;
