@@ -74,6 +74,7 @@ private:
     uint32_t mRAMSize;
     uint32_t mVRAMSize;
     uint32_t mHDDSize;
+    uint32_t mMonitorCount;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION (GuestOSType)

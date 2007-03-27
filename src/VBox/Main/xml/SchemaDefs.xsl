@@ -124,6 +124,12 @@ struct SchemaDefs
       "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
+      <xsl:with-param name="member" select="'        MaxGuestMonitors'"/>
+      <xsl:with-param name="select" select="
+        xsd:complexType[@name='TDisplay']/xsd:attribute[@name='MonitorCount']//xsd:maxInclusive/@value
+      "/>
+  </xsl:call-template>
+  <xsl:call-template name="defineEnumMember">
       <xsl:with-param name="member" select="'        NetworkAdapterCount'"/>
       <xsl:with-param name="select" select="
         xsd:complexType[@name='TAdapter']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value

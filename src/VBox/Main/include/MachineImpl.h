@@ -242,6 +242,7 @@ public:
 
         ULONG          mMemorySize;
         ULONG          mVRAMSize;
+        ULONG          mMonitorCount;
         TriStateBool_T mHWVirtExEnabled;
 
         DeviceType_T   mBootOrder [SchemaDefs::MaxBootPosition];
@@ -318,6 +319,8 @@ public:
     STDMETHOD(COMSETTER(MemorySize))(ULONG memorySize);
     STDMETHOD(COMGETTER(VRAMSize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(VRAMSize))(ULONG memorySize);
+    STDMETHOD(COMGETTER(MonitorCount))(ULONG *monitorCount);
+    STDMETHOD(COMSETTER(MonitorCount))(ULONG monitorCount);
     STDMETHOD(COMGETTER(BIOSSettings))(IBIOSSettings **biosSettings);
     STDMETHOD(COMGETTER(HWVirtExEnabled))(TriStateBool_T *enabled);
     STDMETHOD(COMSETTER(HWVirtExEnabled))(TriStateBool_T enabled);
