@@ -214,13 +214,15 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
              * successfully resolve the server name but before it
              * receives our CreateInstance() request. So, check for the
              * name again, and restart the cycle if it fails. */
-            if (!startedOnce && NS_FAILED (rc))
+            if (!startedOnce)
             {
                 nsresult rc2 =
                     ipcServ->ResolveClientName (VBoxSVCName, &serverID);
                 if (NS_SUCCEEDED (rc2))
                     break;
             }
+            else
+                break;
         }
         while (1);
     }
