@@ -70,88 +70,97 @@
 #include <VBox/pci.h>
 #endif /* VBOX_SERIAL_PCI */
 
-#define SERIAL_SAVED_STATE_VERSION 2
+#define SERIAL_SAVED_STATE_VERSION  2
 
-/* #define DEBUG_SERIAL */
+#define UART_LCR_DLAB	            0x80	/* Divisor latch access bit */
 
-#define UART_LCR_DLAB	0x80	/* Divisor latch access bit */
+#define UART_IER_MSI	            0x08	/* Enable Modem status interrupt */
+#define UART_IER_RLSI	            0x04	/* Enable receiver line status interrupt */
+#define UART_IER_THRI	            0x02	/* Enable Transmitter holding register int. */
+#define UART_IER_RDI	            0x01	/* Enable receiver data interrupt */
 
-#define UART_IER_MSI	0x08	/* Enable Modem status interrupt */
-#define UART_IER_RLSI	0x04	/* Enable receiver line status interrupt */
-#define UART_IER_THRI	0x02	/* Enable Transmitter holding register int. */
-#define UART_IER_RDI	0x01	/* Enable receiver data interrupt */
+#define UART_IIR_NO_INT	            0x01	/* No interrupts pending */
+#define UART_IIR_ID	                0x06	/* Mask for the interrupt ID */
 
-#define UART_IIR_NO_INT	0x01	/* No interrupts pending */
-#define UART_IIR_ID	0x06	/* Mask for the interrupt ID */
-
-#define UART_IIR_MSI	0x00	/* Modem status interrupt */
-#define UART_IIR_THRI	0x02	/* Transmitter holding register empty */
-#define UART_IIR_RDI	0x04	/* Receiver data interrupt */
-#define UART_IIR_RLSI	0x06	/* Receiver line status interrupt */
+#define UART_IIR_MSI	            0x00	/* Modem status interrupt */
+#define UART_IIR_THRI	            0x02	/* Transmitter holding register empty */
+#define UART_IIR_RDI	            0x04	/* Receiver data interrupt */
+#define UART_IIR_RLSI	            0x06	/* Receiver line status interrupt */
 
 /*
  * These are the definitions for the Modem Control Register
  */
-#define UART_MCR_LOOP	0x10	/* Enable loopback test mode */
-#define UART_MCR_OUT2	0x08	/* Out2 complement */
-#define UART_MCR_OUT1	0x04	/* Out1 complement */
-#define UART_MCR_RTS	0x02	/* RTS complement */
-#define UART_MCR_DTR	0x01	/* DTR complement */
+#define UART_MCR_LOOP	            0x10	/* Enable loopback test mode */
+#define UART_MCR_OUT2	            0x08	/* Out2 complement */
+#define UART_MCR_OUT1	            0x04	/* Out1 complement */
+#define UART_MCR_RTS	            0x02	/* RTS complement */
+#define UART_MCR_DTR	            0x01	/* DTR complement */
 
 /*
  * These are the definitions for the Modem Status Register
  */
-#define UART_MSR_DCD	0x80	/* Data Carrier Detect */
-#define UART_MSR_RI	0x40	/* Ring Indicator */
-#define UART_MSR_DSR	0x20	/* Data Set Ready */
-#define UART_MSR_CTS	0x10	/* Clear to Send */
-#define UART_MSR_DDCD	0x08	/* Delta DCD */
-#define UART_MSR_TERI	0x04	/* Trailing edge ring indicator */
-#define UART_MSR_DDSR	0x02	/* Delta DSR */
-#define UART_MSR_DCTS	0x01	/* Delta CTS */
-#define UART_MSR_ANY_DELTA 0x0F	/* Any of the delta bits! */
+#define UART_MSR_DCD	            0x80	/* Data Carrier Detect */
+#define UART_MSR_RI	                0x40	/* Ring Indicator */
+#define UART_MSR_DSR	            0x20	/* Data Set Ready */
+#define UART_MSR_CTS	            0x10	/* Clear to Send */
+#define UART_MSR_DDCD	            0x08	/* Delta DCD */
+#define UART_MSR_TERI	            0x04	/* Trailing edge ring indicator */
+#define UART_MSR_DDSR	            0x02	/* Delta DSR */
+#define UART_MSR_DCTS	            0x01	/* Delta CTS */
+#define UART_MSR_ANY_DELTA          0x0F	/* Any of the delta bits! */
 
-#define UART_LSR_TEMT	0x40	/* Transmitter empty */
-#define UART_LSR_THRE	0x20	/* Transmit-hold-register empty */
-#define UART_LSR_BI	0x10	/* Break interrupt indicator */
-#define UART_LSR_FE	0x08	/* Frame error indicator */
-#define UART_LSR_PE	0x04	/* Parity error indicator */
-#define UART_LSR_OE	0x02	/* Overrun error indicator */
-#define UART_LSR_DR	0x01	/* Receiver data ready */
+#define UART_LSR_TEMT	            0x40	/* Transmitter empty */
+#define UART_LSR_THRE	            0x20	/* Transmit-hold-register empty */
+#define UART_LSR_BI	                0x10	/* Break interrupt indicator */
+#define UART_LSR_FE	                0x08	/* Frame error indicator */
+#define UART_LSR_PE	                0x04	/* Parity error indicator */
+#define UART_LSR_OE	                0x02	/* Overrun error indicator */
+#define UART_LSR_DR	                0x01	/* Receiver data ready */
 
 struct SerialState {
-    uint16_t divider;
-    uint8_t rbr; /* receive register */
-    uint8_t ier;
-    uint8_t iir; /* read only */
-    uint8_t lcr;
-    uint8_t mcr;
-    uint8_t lsr; /* read only */
-    uint8_t msr; /* read only */
-    uint8_t scr;
+    uint16_t                        divider;
+    uint8_t                         rbr; /* receive register */
+    uint8_t                         ier;
+    uint8_t                         iir; /* read only */
+    uint8_t                         lcr;
+    uint8_t                         mcr;
+    uint8_t                         lsr; /* read only */
+    uint8_t                         msr; /* read only */
+    uint8_t                         scr;
     /* NOTE: this hidden state is necessary for tx irq generation as
        it can be reset while reading iir */
-    int thr_ipending;
-    int irq;
-#ifdef VBOX_SERIAL_PCI
-    PCIDEVICE dev;
-#endif /* VBOX_SERIAL_PCI */
-    PPDMDEVINS pDevIns;
-    PDMIBASE IBase;
-    PDMICHARPORT ICharPort;
-    PPDMIBASE pDrvBase;
-    PPDMICHAR pDrvChar;
+    int                             thr_ipending;
+    int                             irq;
 
-    RTSEMEVENT ReceiveSem;
-    int last_break_enable;
-    target_ulong base;
+    bool                            fGCEnabled;
+    bool                            fR0Enabled;
+
+#ifdef VBOX_SERIAL_PCI
+    PCIDEVICE                       dev;
+#endif /* VBOX_SERIAL_PCI */
+    /** Pointer to the device instance. */
+    GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
+    /** Pointer to the device instance. */
+    HCPTRTYPE(PPDMDEVINS)           pDevInsHC;
+    /** The base interface. */
+    PDMIBASE                        IBase;
+    /** The character port interface. */
+    PDMICHARPORT                    ICharPort;
+    /** Pointer to the attached base driver. */
+    HCPTRTYPE(PPDMIBASE)            pDrvBase;
+    /** Pointer to the attached character driver. */
+    PPDMICHAR                       pDrvChar;
+
+    RTSEMEVENT                      ReceiveSem;
+    int                             last_break_enable;
+    target_ulong                    base;
 };
 
 #ifdef VBOX_SERIAL_PCI
-#define PCIDEV_2_SERIALSTATE(pPciDev) ( (SerialState *)((uintptr_t)(pPciDev) - RT_OFFSETOF(SerialState, dev)) )
+#define PCIDEV_2_SERIALSTATE(pPciDev)           ( (SerialState *)((uintptr_t)(pPciDev) - RT_OFFSETOF(SerialState, dev)) )
 #endif /* VBOX_SERIAL_PCI */
-#define PDMIBASE_2_SERIALSTATE(pInstance) ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, IBase)) )
-#define PDMICHARPORT_2_SERIALSTATE(pInstance) ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, ICharPort)) )
+#define PDMIBASE_2_SERIALSTATE(pInstance)       ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, IBase)) )
+#define PDMICHARPORT_2_SERIALSTATE(pInstance)   ( (SerialState *)((uintptr_t)(pInterface) - RT_OFFSETOF(SerialState, ICharPort)) )
 
 static void serial_update_irq(SerialState *s)
 {
@@ -164,15 +173,15 @@ static void serial_update_irq(SerialState *s)
     }
     if (s->iir != UART_IIR_NO_INT) {
 #ifdef VBOX_SERIAL_PCI
-        PDMDevHlpPCISetIrqNoWait(s->pDevIns, 0, 1);
+        PDMDevHlpPCISetIrqNoWait(CTXSUFF(s->pDevIns), 0, 1);
 #else /* !VBOX_SERIAL_PCI */
-        PDMDevHlpISASetIrqNoWait(s->pDevIns, s->irq, 1);
+        PDMDevHlpISASetIrqNoWait(CTXSUFF(s->pDevIns), s->irq, 1);
 #endif /* !VBOX_SERIAL_PCI */
     } else {
 #ifdef VBOX_SERIAL_PCI
-        PDMDevHlpPCISetIrqNoWait(s->pDevIns, 0, 0);
+        PDMDevHlpPCISetIrqNoWait(CTXSUFF(s->pDevIns), 0, 0);
 #else /* !VBOX_SERIAL_PCI */
-        PDMDevHlpISASetIrqNoWait(s->pDevIns, s->irq, 0);
+        PDMDevHlpISASetIrqNoWait(CTXSUFF(s->pDevIns), s->irq, 0);
 #endif /* !VBOX_SERIAL_PCI */
     }
 }
@@ -211,9 +220,7 @@ static void serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     unsigned char ch;
 
     addr &= 7;
-#ifdef DEBUG_SERIAL
-    printf("serial: write addr=0x%02x val=0x%02x\n", addr, val);
-#endif
+    LogFlow(("serial: write addr=0x%02x val=0x%02x\n", addr, val));
     switch(addr) {
     default:
     case 0:
@@ -336,9 +343,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr)
         ret = s->scr;
         break;
     }
-#ifdef DEBUG_SERIAL
-    printf("serial: read addr=0x%02x val=0x%02x\n", addr, ret);
-#endif
+    LogFlow(("serial: read addr=0x%02x val=0x%02x\n", addr, ret));
     return ret;
 }
 
@@ -453,7 +458,8 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
         int rc = RTSemEventSignal(s->ReceiveSem);
         AssertRC(rc);
     }
-    s->pDevIns = pDevIns;
+    s->pDevInsHC = pDevIns;
+    s->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
     return VINF_SUCCESS;
 }
 
@@ -518,13 +524,15 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
                                          PCFGMNODE pCfgHandle)
 {
     int            rc;
-    SerialState   *s = PDMINS2DATA(pDevIns, SerialState*);
+    SerialState   *pData = PDMINS2DATA(pDevIns, SerialState*);
     uint16_t       io_base;
     uint8_t        irq_lvl;
 
     Assert(iInstance < 4);
 
-    s->pDevIns = pDevIns;
+    pData->pDevInsHC = pDevIns;
+    pData->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
+
     /*
      * Validate configuration.
      */
@@ -532,13 +540,27 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     }
 
+    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pData->fGCEnabled);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->fGCEnabled = true;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"GCEnabled\" value"));
+
+    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &pData->fR0Enabled);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->fR0Enabled = true;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"R0Enabled\" value"));
+
     /* IBase */
-    s->IBase.pfnQueryInterface = serialQueryInterface;
+    pData->IBase.pfnQueryInterface = serialQueryInterface;
 
     /* ICharPort */
-    s->ICharPort.pfnNotifyRead = serialNotifyRead;
+    pData->ICharPort.pfnNotifyRead = serialNotifyRead;
 
-    rc = RTSemEventCreate(&s->ReceiveSem);
+    rc = RTSemEventCreate(&pData->ReceiveSem);
     AssertRC(rc);
 
 /** @todo r=bird: Check for VERR_CFGM_VALUE_NOT_FOUND and provide sensible defaults.
@@ -556,24 +578,24 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
 
     Log(("serialConstruct instance %d iobase=%04x irq=%d\n", iInstance, io_base, irq_lvl));
 
-    s->irq = irq_lvl;
-    s->lsr = UART_LSR_TEMT | UART_LSR_THRE;
-    s->iir = UART_IIR_NO_INT;
-    s->msr = UART_MSR_DCD | UART_MSR_DSR | UART_MSR_CTS;
+    pData->irq = irq_lvl;
+    pData->lsr = UART_LSR_TEMT | UART_LSR_THRE;
+    pData->iir = UART_IIR_NO_INT;
+    pData->msr = UART_MSR_DCD | UART_MSR_DSR | UART_MSR_CTS;
 #ifdef VBOX_SERIAL_PCI
-    s->base = -1;
-    s->dev.config[0x00] = 0xee; /* Vendor: ??? */
-    s->dev.config[0x01] = 0x80;
-    s->dev.config[0x02] = 0x01; /* Device: ??? */
-    s->dev.config[0x03] = 0x01;
-    s->dev.config[0x04] = PCI_COMMAND_IOACCESS;
-    s->dev.config[0x09] = 0x01; /* Programming interface: 16450 */
-    s->dev.config[0x0a] = 0x00; /* Subclass: Serial controller */
-    s->dev.config[0x0b] = 0x07; /* Class: Communication controller */
-    s->dev.config[0x0e] = 0x00; /* Header type: standard */
-    s->dev.config[0x3c] = irq_lvl; /* preconfigure IRQ number (0 = autoconfig)*/
-    s->dev.config[0x3d] = 1;    /* interrupt pin 0 */
-    rc = PDMDevHlpPCIRegister(pDevIns, &s->dev);
+    pData->base = -1;
+    pData->dev.config[0x00] = 0xee; /* Vendor: ??? */
+    pData->dev.config[0x01] = 0x80;
+    pData->dev.config[0x02] = 0x01; /* Device: ??? */
+    pData->dev.config[0x03] = 0x01;
+    pData->dev.config[0x04] = PCI_COMMAND_IOACCESS;
+    pData->dev.config[0x09] = 0x01; /* Programming interface: 16450 */
+    pData->dev.config[0x0a] = 0x00; /* Subclass: Serial controller */
+    pData->dev.config[0x0b] = 0x07; /* Class: Communication controller */
+    pData->dev.config[0x0e] = 0x00; /* Header type: standard */
+    pData->dev.config[0x3c] = irq_lvl; /* preconfigure IRQ number (0 = autoconfig)*/
+    pData->dev.config[0x3d] = 1;    /* interrupt pin 0 */
+    rc = PDMDevHlpPCIRegister(pDevIns, &pData->dev);
     if (VBOX_FAILURE(rc))
         return rc;
     /*
@@ -583,8 +605,8 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     if (VBOX_FAILURE(rc))
         return rc;
 #else /* !VBOX_SERIAL_PCI */
-    s->base = io_base;
-    rc = PDMDevHlpIOPortRegister(pDevIns, io_base, 8, s,
+    pData->base = io_base;
+    rc = PDMDevHlpIOPortRegister(pDevIns, io_base, 8, pData,
                                  serial_io_write, serial_io_read,
                                  NULL, NULL, "SERIAL");
     if (VBOX_FAILURE (rc)) {
@@ -594,11 +616,11 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
 
     /* Attach the char driver and get the interfaces. For now no run-time
      * changes are supported. */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "Serial Char");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->IBase, &pData->pDrvBase, "Serial Char");
     if (VBOX_SUCCESS(rc))
     {
-        s->pDrvChar = (PDMICHAR *)s->pDrvBase->pfnQueryInterface(s->pDrvBase, PDMINTERFACE_CHAR);
-        if (!s->pDrvChar)
+        pData->pDrvChar = (PDMICHAR *)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_CHAR);
+        if (!pData->pDrvChar)
         {
             AssertMsgFailed(("Configuration error: instance %d has no char interface!\n", iInstance));
             return VERR_PDM_MISSING_INTERFACE;
@@ -607,8 +629,8 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        s->pDrvBase = NULL;
-        s->pDrvChar = NULL;
+        pData->pDrvBase = NULL;
+        pData->pDrvChar = NULL;
         LogRel(("Serial%d: no unit\n", iInstance));
     }
     else
@@ -623,7 +645,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         pDevIns->pDevReg->szDeviceName, /* pszName */
         iInstance,              /* u32Instance */
         SERIAL_SAVED_STATE_VERSION, /* u32Version */
-        sizeof (*s),            /* cbGuess */
+        sizeof (*pData),        /* cbGuess */
         NULL,                   /* pfnSavePrep */
         serialSaveExec,         /* pfnSaveExec */
         NULL,                   /* pfnSaveDone */
@@ -647,13 +669,13 @@ const PDMDEVREG g_DeviceSerialPort =
     /* szDeviceName */
     "serial",
     /* szGCMod */
-    "",
+    "VBoxDDGC.gc",
     /* szR0Mod */
-    "",
+    "VBoxDDR0.r0",
     /* pszDescription */
     "Serial Communication Port",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_SERIAL,
     /* cMaxInstances */
