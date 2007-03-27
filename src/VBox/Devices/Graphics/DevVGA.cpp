@@ -4471,6 +4471,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "VRamSize\0"
+                                          "MonitorCount\0"
                                           "GCEnabled\0"
                                           "R0Enabled\0"
                                           "CustomVideoModes\0"
