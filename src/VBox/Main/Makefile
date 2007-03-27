@@ -21,8 +21,6 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-DEFS       += HGCMSS
-
 ifdef VRDP_MC
 DEFS       += VRDP_MC
 endif

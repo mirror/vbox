@@ -913,6 +913,8 @@
 #define VERR_HGCM_INVALID_CLIENT_ID                 (-2905)
 /** The HGCM is saving state. */
 #define VINF_HGCM_SAVE_STATE                        (2906)
+/** Requested service already exists. */
+#define VERR_HGCM_SERVICE_EXISTS                    (-2907)
 
 /** @} */
 

@@ -86,7 +86,7 @@ VMMDev::VMMDev(Console *console) : mpDrv(NULL)
     int rc = RTSemEventCreate(&mCredentialsEvent);
     AssertRC(rc);
 #ifdef VBOX_HGCM
-    rc = hgcmInit ();
+    rc = HGCMHostInit ();
     AssertRC(rc);
 #endif /* VBOX_HGCM */
     mu32CredentialsFlags = 0;
@@ -94,6 +94,9 @@ VMMDev::VMMDev(Console *console) : mpDrv(NULL)
 
 VMMDev::~VMMDev()
 {
+#ifdef VBOX_HGCM
+    HGCMHostShutdown ();
+#endif /* VBOX_HGCM */
     RTSemEventDestroy (mCredentialsEvent);
     if (mpDrv)
         mpDrv->pVMMDev = NULL;
@@ -300,8 +303,15 @@ static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOX
     LogFlowFunc(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
+    
+    if (    !pServiceLocation
+        || (   pServiceLocation->type != VMMDevHGCMLoc_LocalHost
+            && pServiceLocation->type != VMMDevHGCMLoc_LocalHost_Existing))
+    {
+        return VERR_INVALID_PARAMETER;
+    }
 
-    return hgcmConnectInternal (pDrv->pHGCMPort, pCmd, pServiceLocation, pu32ClientID, false);
+    return HGCMGuestConnect (pDrv->pHGCMPort, pCmd, pServiceLocation->u.host.achName, pu32ClientID);
 }
 
 static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
@@ -310,7 +320,7 @@ static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PV
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
 
-    return hgcmDisconnectInternal (pDrv->pHGCMPort, pCmd, u32ClientID, false);
+    return HGCMGuestDisconnect (pDrv->pHGCMPort, pCmd, u32ClientID);
 }
 
 static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
@@ -320,7 +330,7 @@ static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGC
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
 
-    return hgcmGuestCallInternal (pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms, false);
+    return HGCMGuestCall (pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms);
 }
 
 /**
@@ -333,18 +343,7 @@ static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGC
 static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
     LogFlowFunc(("Enter\n"));
-
-#ifdef HGCMSS
-    return hgcmSaveStateInternal (pSSM);
-#else
-    PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
-    
-    /* Save the current handle count and restore afterwards to avoid client id conflicts. */
-    int rc = SSMR3PutU32(pSSM, hgcmObjQueryHandleCount());
-    AssertRCReturn(rc, rc);
-
-    return hgcmSaveStateInternal (pDrv->pVMMDev->mSharedFolderClientId, pSSM);
-#endif /* HGCMSS */
+    return HGCMHostSaveState (pSSM);
 }
 
 
@@ -360,75 +359,23 @@ static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uin
 {
     LogFlowFunc(("Enter\n"));
 
-#ifdef HGCMSS
     if (u32Version != HGCM_SSM_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    return hgcmLoadStateInternal (pSSM);
-#else
-    PDRVMAINVMMDEV pDrv = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
-    uint32_t       u32HandleCount;
-
-    if (u32Version != HGCM_SSM_VERSION)
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-
-    /* Save the current handle count and restore afterwards to avoid client id conflicts. */
-    int rc = SSMR3GetU32(pSSM, &u32HandleCount);
-    AssertRCReturn(rc, rc);
-    hgcmObjSetHandleCount(u32HandleCount);
-
-    /* Unload all HGCM services to refresh client ids. */
-    /** @todo shared clipboard too! */
-    /** @todo need other solution! */
-    if (pDrv->pVMMDev->mSharedFolderClientId)
-    {
-        uint64_t     dummy = 0;
-        PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
-
-        pDrv->pVMMDev->hgcmDisconnect(cmd, pDrv->pVMMDev->getShFlClientId());
-
-        /* Reload Shared Folder HGCM service */
-        HGCMSERVICELOCATION loc;
-
-        cmd = (PVBOXHGCMCMD)&dummy;
-
-        Log(("Connect to Shared Folders service\n"));
-        pDrv->pVMMDev->mSharedFolderClientId = 0;
-        loc.type = VMMDevHGCMLoc_LocalHost;
-        strcpy(loc.u.host.achName, "VBoxSharedFolders");
-        int rc = pDrv->pVMMDev->hgcmConnect(cmd, &loc, &pDrv->pVMMDev->mSharedFolderClientId);
-        if (rc != VINF_SUCCESS)
-        {
-            AssertMsgFailed(("hgcmConnect returned %Vrc\n", rc));
-        }
-    }
-
-    return hgcmLoadStateInternal (pDrv->pVMMDev->mSharedFolderClientId, pSSM);
-#endif /* HGCMSS */
+    return HGCMHostLoadState (pSSM);
 }
 
 int VMMDev::hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary)
 {
-    return hgcmLoadInternal (pszServiceName, pszServiceLibrary);
-}
-
-int VMMDev::hgcmConnect (PVBOXHGCMCMD pCmd, PHGCMSERVICELOCATION pServiceLocation, uint32_t *pu32ClientID)
-{
-    return hgcmConnectInternal (mpDrv->pHGCMPort, pCmd, pServiceLocation, pu32ClientID, true);
-}
-
-int VMMDev::hgcmDisconnect (PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
-{
-    return hgcmDisconnectInternal (mpDrv->pHGCMPort, pCmd, u32ClientID, true);
+    return HGCMHostLoad (pszServiceName, pszServiceLibrary);
 }
 
 int VMMDev::hgcmHostCall (const char *pszServiceName, uint32_t u32Function,
                           uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
-    return hgcmHostCallInternal (pszServiceName, u32Function, cParms, paParms);
+    return HGCMHostCall (pszServiceName, u32Function, cParms, paParms);
 }
-
-#endif
+#endif /* HGCM */
 
 
 /**
@@ -470,19 +417,8 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
     PDRVMAINVMMDEV pData = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("VMMDev::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_HGCM
-#ifndef HGCMSS
-    /* Unload Shared Folder HGCM service */
-    if (pData->pVMMDev->mSharedFolderClientId)
-    {
-        uint64_t     dummy = 0;
-        PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
-
-        pData->pVMMDev->hgcmDisconnect(cmd, pData->pVMMDev->getShFlClientId());
-    }
-#endif /* !HGCMSS */
-
-    hgcmReset ();
-#endif
+    /* HGCM is shut down on the VMMDev destructor. */
+#endif /* VBOX_HGCM */
     if (pData->pVMMDev)
     {
         pData->pVMMDev->mpDrv = NULL;
@@ -497,44 +433,10 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
 {
-#if defined(VBOX_HGCM) && !defined(HGCMSS)
-    PDRVMAINVMMDEV pData = PDMINS2DATA(pDrvIns, PDRVMAINVMMDEV);
-#endif
     LogFlow(("VMMDev::drvReset: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_HGCM
-#ifndef HGCMSS
-    /* Unload Shared Folder HGCM service */
-    uint64_t     dummy = 0;
-    PVBOXHGCMCMD cmd = (PVBOXHGCMCMD)&dummy;
-
-    if (pData->pVMMDev->mSharedFolderClientId)
-    {
-        pData->pVMMDev->hgcmDisconnect(cmd, pData->pVMMDev->getShFlClientId());
-    }
-#endif /* !HGCMSS */
-    
-    hgcmReset ();
-
-#ifndef HGCMSS
-    if (pData->pVMMDev->mSharedFolderClientId)
-    {
-        /* Reload Shared Folder HGCM service */
-        HGCMSERVICELOCATION loc;
-
-        cmd = (PVBOXHGCMCMD)&dummy;
-
-        Log(("Connect to Shared Folders service\n"));
-        pData->pVMMDev->mSharedFolderClientId = 0;
-        loc.type = VMMDevHGCMLoc_LocalHost;
-        strcpy(loc.u.host.achName, "VBoxSharedFolders");
-        int rc = pData->pVMMDev->hgcmConnect(cmd, &loc, &pData->pVMMDev->mSharedFolderClientId);
-        if (rc != VINF_SUCCESS)
-        {
-            AssertMsgFailed(("hgcmConnect returned %Vrc\n", rc));
-        }
-    }
-#endif /* !HGCMSS */
-#endif
+    HGCMHostReset ();
+#endif /* VBOX_HGCM */
 }
 
 /**
@@ -619,8 +521,6 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->pVMMDev->mpDrv = pData;
 
 #ifdef VBOX_HGCM
-
-#ifdef HGCMSS
     rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders", "VBoxSharedFolders");
     pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
     if (VBOX_SUCCESS(rc))
@@ -631,35 +531,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     {
         LogRel(("Failed to load Shared Folders service %Vrc\n", rc));
     }
-#else
-    /* Load Shared Folder HGCM service */
-    HGCMSERVICELOCATION loc;
-    uint64_t            dummy = 0;
-    PVBOXHGCMCMD        pCmd = (PVBOXHGCMCMD)&dummy;
-
-    Log(("Connect to Shared Folders service\n"));
-    pData->pVMMDev->mSharedFolderClientId = 0;
-    
-    rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders", "VBoxSharedFolders");
-    
-    if (rc == VINF_SUCCESS)
-    {
-        loc.type = VMMDevHGCMLoc_LocalHost;
-        strcpy(loc.u.host.achName, "VBoxSharedFolders");
-        rc = pData->pVMMDev->hgcmConnect(pCmd, &loc, &pData->pVMMDev->mSharedFolderClientId);
-    }
-    
-    if (rc != VINF_SUCCESS)
-    {
-        Log(("hgcmConnect returned %Vrc, shared folders are unavailable!!!\n", rc));
-        
-        /* This is not a fatal error; the shared folder dll can e.g. be missing */
-        rc = VINF_SUCCESS;
-        pData->pVMMDev->mSharedFolderClientId = 0;
-    }
-#endif /* HGCMSS */
     pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
-#endif
+#endif /* VBOX_HGCM */
 
     return VINF_SUCCESS;
 }
