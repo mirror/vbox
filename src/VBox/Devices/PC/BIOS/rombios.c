@@ -5293,7 +5293,12 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       nlspt = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.spt);
       count = read_byte(ebda_seg, &EbdaData->ata.hdcount);
 
+#ifndef VBOX
       nlc = nlc - 2; /* 0 based , last sector not used */
+#else /* VBOX */
+      /* Maximum cylinder number is just one less than the number of cylinders. */
+      nlc = nlc - 1; /* 0 based , last sector not used */
+#endif /* VBOX */
       SET_AL(0);
       SET_CH(nlc & 0xff);
       SET_CL(((nlc >> 2) & 0xc0) | (nlspt & 0x3f));
@@ -5327,7 +5332,13 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       npspt = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.spt);
 
       // Compute sector count seen by int13
+#ifndef VBOX
       lba = (Bit32u)(npc - 1) * (Bit32u)nph * (Bit32u)npspt;
+#else /* VBOX */
+      /* Is it so hard to multiply a couple of counts (without introducing
+       * arbitrary off by one errors)? */
+      lba = (Bit32u)npc * (Bit32u)nph * (Bit32u)npspt;
+#endif /* VBOX */
       CX = lba >> 16;
       DX = lba & 0xffff;
 
