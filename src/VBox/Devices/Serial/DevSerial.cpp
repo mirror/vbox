@@ -417,7 +417,7 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
     SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
     int          rc = VINF_SUCCESS;
 
-    if (cb == 1)
+    if (cb == 1) 
     {
         rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
@@ -427,7 +427,7 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
             PDMCritSectLeave(&pData->CritSect);
         }
     }
-    else
+    else 
         AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
 
     return rc;
@@ -450,7 +450,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
     SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
     int          rc = VINF_SUCCESS;
 
-    if (cb == 1)
+    if (cb == 1) 
     {
         rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_READ);
         if (rc == VINF_SUCCESS)
@@ -461,7 +461,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
             PDMCritSectLeave(&pData->CritSect);
         }
     }
-    else
+    else 
         rc = VERR_IOM_IOPORT_UNUSED;
 
     return rc;
@@ -511,7 +511,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     uint32_t     u32;
     SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
 
-    if (u32Version != SERIAL_SAVED_STATE_VERSION)
+    if (u32Version != SERIAL_SAVED_STATE_VERSION) 
     {
         AssertMsgFailed(("u32Version=%d\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -534,7 +534,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     if (VBOX_FAILURE(rc))
         return rc;
 
-    if (u32 != ~0U)
+    if (u32 != ~0U) 
     {
         AssertMsgFailed(("u32=%#x expected ~0\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -604,6 +604,26 @@ static DECLCALLBACK(void *) serialQueryInterface(PPDMIBASE pInterface, PDMINTERF
     }
 }
 
+/**
+ * Destruct a device instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(int) serialDestruct(PPDMDEVINS pDevIns)
+{
+    SerialState *pData = PDMINS2DATA(pDevIns, SerialState *);
+
+    RTSemEventDestroy(pData->ReceiveSem);
+    pData->ReceiveSem = NIL_RTSEMEVENT;
+
+    PDMR3CritSectDelete(&pData->CritSect);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Construct a device instance for a VM.
@@ -635,7 +655,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0IOBase\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0IOBase\0")) 
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pData->fGCEnabled);
@@ -675,11 +695,11 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
  * Also do AssertMsgFailed(("Configuration error:....)) in the failure cases of CFGMR3Query*()
  * and CFGR3AreValuesValid() like we're doing in the other devices.  */
     rc = CFGMR3QueryU8 (pCfgHandle, "IRQ", &irq_lvl);
-    if (VBOX_FAILURE (rc))
+    if (VBOX_FAILURE (rc)) 
         return rc;
 
     rc = CFGMR3QueryU16 (pCfgHandle, "IOBase", &io_base);
-    if (VBOX_FAILURE (rc))
+    if (VBOX_FAILURE (rc)) 
         return rc;
 
     Log(("serialConstruct instance %d iobase=%04x irq=%d\n", iInstance, io_base, irq_lvl));
@@ -799,7 +819,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* pfnConstruct */
     serialConstruct,
     /* pfnDestruct */
-    NULL,
+    serialDestruct,
     /* pfnRelocate */
     serialRelocate,
     /* pfnIOCtl */
