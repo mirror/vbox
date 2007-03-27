@@ -47,16 +47,9 @@ PROGRAMS = VirtualBox
 INSTALLS = VirtualBox.nls
 INSTALLS.darwin = VirtualBox.app
 
-
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
-
-
-# bird:
-# this is a sketch which later can be moved into kBuild core stuff perhaps.
-# I might not have got the logic in what causes what to be generated right
-# feel free to help.
 
 # QDesigner UI sources are imported from VBoxUI.pro as VirtualBox_QT_UISRC
 
@@ -90,6 +83,7 @@ ifeq ($(BUILD_TARGET),win)
 VirtualBox_QT_MOCUIHDRS += ui/VBoxVMNetworkSettings.ui.h
 endif
 
+
 # All generated sources. Note: this list MUST be in sync with Qt source
 # generation rules defined somewhere below!
 VirtualBox_GENSRCS = \
@@ -103,6 +97,16 @@ VirtualBox_GENHDRS = \
 	$(foreach mocui,$(notdir $(basename $(VirtualBox_QT_MOCUIHDRS))), $(PATH_VirtualBox)/moc/$(mocui).moc) \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCSRCS))), $(PATH_VirtualBox)/moc/$(moc).moc) \
 	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS))), $(PATH_VirtualBox)/ui/$(ui).h)
+
+# All existing .ui.h files for known .ui sources
+VirtualBox_QT_UIHDRS = \
+	$(wildcard $(addsuffix .h,$(VirtualBox_QT_UISRCS)))
+
+# All header files
+VirtualBox_HEADERS = \
+	$(wildcard include/*.h) \
+	$(VirtualBox_GENHDRS) \
+	$(VirtualBox_QT_UIHDRS)
 
 
 VirtualBox_SOURCES = \
@@ -143,6 +147,13 @@ endif
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
 	src/darwin/DarwinCursor.cpp
+
+## @todo how to detect what tool is used?
+## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
+#  more generic -Wno-extra
+ifneq ($(BUILD_TARGET),win)
+src/COMDefs.cpp_CXXFLAGS  = -Wno-extra
+endif
 
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
@@ -249,6 +260,8 @@ include $(PATH_KBUILD)/footer.kmk
 # Qt source file generation rules
 #
 
+## @todo move QT source generation macros to kBuild
+
 ##  Generate a rule to create a MOC source file from a header containing
 #   classes that use the Q_OBJECT macro.
 #   @param  $mochdr     header file with Q_OBJECT
@@ -260,8 +273,8 @@ $(target)_GENSRCS_REAL += $(mocsrc)
 
 $(mocsrc): $(mochdr)
 	$$(call MSG_L1,moc $(mochdr),=> $$@)
-	$$(QUIET)$(MKDIR) -p $$(@D)
-	$$(QUIET)$(VBOX_MOC) $(mochdr) -o $$@
+	$$(QUIET)$$(MKDIR) -p $$(@D)
+	$$(QUIET)$$(VBOX_MOC) $(mochdr) -o $$@
 
 endef
 
@@ -276,13 +289,13 @@ $(eval mocinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocsrc))).moc)
 
 $(target)_GENHDRS_REAL += $(mocinc)
 
-$(mocobj): $$(mocinc)
+$(mocobj): $(mocinc)
 
-.NOTPARALLEL: $$(mocinc)
+.NOTPARALLEL: $(mocinc)
 $(mocinc): $(mocsrc)
 	$$(call MSG_L1,moc $(mocsrc),=> $$@)
-	$$(QUIET)$(MKDIR) -p $$(@D)
-	$$(QUIET)$(VBOX_MOC) -i $(mocsrc) -o $$@
+	$$(QUIET)$$(MKDIR) -p $$(@D)
+	$$(QUIET)$$(VBOX_MOC) -i $(mocsrc) -o $$@
 
 endef
 
@@ -298,12 +311,12 @@ $(eval mocuiinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocuihdr))).moc)
 
 $(target)_GENHDRS_REAL += $(mocuiinc)
 
-.NOTPARALLEL: $$(mocuiinc)
-$(uisrc): $$(mocuiinc)
+.NOTPARALLEL: $(mocuiinc)
+$(uisrc): $(mocuiinc)
 $(mocuiinc): $(mocuihdr)
 	$$(call MSG_L1,moc $(mocuihdr),=> $$@)
-	$$(QUIET)$(MKDIR) -p $$(@D)
-	$$(QUIET)$(VBOX_MOC) -i $(mocuihdr) -o $$@
+	$$(QUIET)$$(MKDIR) -p $$(@D)
+	$$(QUIET)$$(VBOX_MOC) -i $(mocuihdr) -o $$@
 
 endef
 
@@ -319,18 +332,18 @@ $(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(uifile))).cpp)
 $(target)_GENSRCS_REAL += $(uisrc) $(mocsrc)
 $(target)_GENHDRS_REAL += $(uihdr)
 
-.NOTPARALLEL: $$(uihdr)
-$(uihdr): $(uifile) | $$(call DIRDEP,$$(dir $$(uihdr)))
+.NOTPARALLEL: $(uihdr)
+$(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
 	$$(call MSG_L1,uic $(uifile),=> $$@)
-	$$(QUIET)$(VBOX_UIC) $(uifile) -o $$@
+	$$(QUIET)$$(VBOX_UIC) $(uifile) -o $$@
 
-$(uisrc): $$(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$$(dir $$(uisrc)))
+$(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(uisrc)))
 	$$(call MSG_L1,uic $(uifile),=> $$@)
-	$$(QUIET)$(VBOX_UIC) $(uifile) -i $(uihdr) -o $$@
+	$$(QUIET)$$(VBOX_UIC) $(uifile) -i $(uihdr) -o $$@
 
-$(mocsrc): $$(uihdr) | $$(call DIRDEP,$$(dir $$(mocsrc)))
+$(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
 	$$(call MSG_L1,moc $(uihdr),=> $$@)
-	$$(QUIET)$(VBOX_MOC) $(uihdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC) $(uihdr) -o $$@
 
 endef
 
@@ -343,9 +356,9 @@ $(eval qmfile  := $(PATH_$(target))/nls/$(notdir $(basename $(tsfile))).qm)
 
 OTHER_CLEAN += $(qmfile)
 
-$(qmfile): $(tsfile) | $$(call DIRDEP,$$(dir $$(qmfile)))
+$(qmfile): $(tsfile) | $$(call DIRDEP,$(dir $(qmfile)))
 	$$(call MSG_L1,lrelease $(tsfile),=> $$@)
-	$$(QUIET)$(VBOX_LRELEASE) $(tsfile) -qm $$@
+	$$(QUIET)$$(VBOX_LRELEASE) $(tsfile) -qm $$@
 
 endef
 
@@ -368,7 +381,7 @@ $$(call DIRDEP,$(PATH_$(target))/ui/) \
 $$(call DIRDEP,$(PATH_$(target))/moc/) \
 $$(call DIRDEP,$(PATH_$(target))/nls/):
 	$$(call MSG_L2,Creating directory $$@)
-	$$(QUIET)$(MKDIR) -p $$@
+	$$(QUIET)$$(MKDIR) -p $$@
 
 endef
 
@@ -431,9 +444,13 @@ $(PATH_VirtualBox)/ui/VBoxDiskImageManagerDlg.cpp: \
 # Custom targets
 #
 
-# Update all known NLS translation (.ts) files in the nls/ subdirectory
-updatenls: $(VirtualBox_SOURCES) $(VirtualBox_QT_MOCHDRS) $(VirtualBox_GENHDRS)
-	$(VBOX_LUPDATE) $^ -ts $(VirtualBox_QT_TRANSLATIONS)
+# Update all known NLS translation (.ts) files in the nls/ subdirectory.
+# NOTE: This target is intened to be run only by the GUI maintainer shortly
+# before a new product release. VirtualBox_xx_YY.ts is a template for new
+# languages and should never be actually translated or installed.
+updatenls: $(VirtualBox_SOURCES) $(VirtualBox_HEADERS)
+	$(call MSG_L1,lupdate all languages (nls/*.ts))
+	$(QUIET)$(VBOX_LUPDATE) $^ -ts $(VirtualBox_QT_TRANSLATIONS) nls/VirtualBox_xx_YY.ts
 
 
 #
@@ -441,16 +458,21 @@ updatenls: $(VirtualBox_SOURCES) $(VirtualBox_QT_MOCHDRS) $(VirtualBox_GENHDRS)
 #
 
 test:
-	@echo ---------------
+	@echo ====================
 	@echo $(VirtualBox_GENSRCS) | $(SED) -e "s/ /\n/g"
-	@echo ---------------
+	@echo --------------------
+	@echo $(VirtualBox_GENSRCS_REAL) | $(SED) -e "s/ /\n/g"
+	@echo ====================
 	@echo $(VirtualBox_GENHDRS) | $(SED) -e "s/ /\n/g"
-	@echo ---------------
+	@echo --------------------
+	@echo $(VirtualBox_GENHDRS_REAL) | $(SED) -e "s/ /\n/g"
+	@echo ====================
 
 test2:
-	@echo ---------------
 	@echo $(OTHER_CLEAN) | $(SED) -e "s/ /\n/g"
-	@echo ---------------
+
+test3:
+	@echo $(VirtualBox_HEADERS) | $(SED) -e "s/ /\n/g"
 
 testwrappers: $(WRAPPERSFILE)
 

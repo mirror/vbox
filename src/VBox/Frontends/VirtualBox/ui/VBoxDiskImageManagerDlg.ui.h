@@ -89,7 +89,9 @@ public:
         QString compactString = QString ("<compact elipsis=\"%1\">").arg (aElipsis);
         QString info = QString ("<nobr>%1%2%3</nobr>")
                        .arg (aCompact ? compactString : "")
-                       .arg (aInfo.isEmpty() ? QObject::tr ("--") : aInfo)
+                       .arg (aInfo.isEmpty() ?
+                             VBoxDiskImageManagerDlg::tr ("--", "no info") :
+                             aInfo)
                        .arg (aCompact ? "</compact>" : "");
         return info;
     }

@@ -48,6 +48,8 @@ class VBoxVMListBoxItem;
  */
 class VBoxVMListBox : public QListBox
 {
+    Q_OBJECT
+
 public:
 
     VBoxVMListBox (QWidget *aParent = 0, const char *aName = NULL,
