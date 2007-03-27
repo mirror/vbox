@@ -580,6 +580,7 @@ void OPPROTO glue(op_movq_T0_mm, SUFFIX) (void)
 #if SHIFT == 0
 void OPPROTO glue(op_pshufw, SUFFIX) (void)
 {
+#if __GCC__ == 3 || defined(__AMD64__)
     Reg r, *d, *s;
     int order;
     d = (Reg *)((char *)env + PARAM1);
@@ -589,13 +590,22 @@ void OPPROTO glue(op_pshufw, SUFFIX) (void)
     r.W(1) = s->W((order >> 2) & 3);
     r.W(2) = s->W((order >> 4) & 3);
     r.W(3) = s->W((order >> 6) & 3);
-#if __GCC__ == 3 || defined(__AMD64__)
     *d = r;
 #else
-    d->_l[0] = r._l[0];
-    d->_l[1] = r._l[1];
-    XMM_ONLY(d->_l[2] = r._l[2];)
-    XMM_ONLY(d->_l[3] = r._l[3];)
+    Reg r, *s;
+    int order;
+    s = (Reg *)((char *)env + PARAM2);
+    order = PARAM3;
+    r.W(0) = s->W(order & 3);
+    r.W(1) = s->W((order >> 2) & 3);
+    r.W(2) = s->W((order >> 4) & 3);
+    r.W(3) = s->W((order >> 6) & 3);
+
+    s = (Reg *)((char *)env + PARAM1);
+    s->_l[0] = r._l[0];
+    s->_l[1] = r._l[1];
+    XMM_ONLY(s->_l[2] = r._l[2];)
+    XMM_ONLY(s->_l[3] = r._l[3];)
 #endif 
 }
 #else
