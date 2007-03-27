@@ -42,6 +42,9 @@
 #elif __LINUX__
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <linux/hdreg.h>
 #include <linux/fs.h>
 #endif /* !__WIN__ && !__LINUX__ */
@@ -340,7 +343,6 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
                 pThis->cCylinders = DriveGeo.Cylinders.QuadPart;
                 pThis->cHeads = DriveGeo.TracksPerCylinder;
                 pThis->cSectors = DriveGeo.SectorsPerTrack;
-                pThis->enmTranslation = PDMBIOSTRANSLATION_NONE;
                 if (!pThis->cbSize)
                 {
                     /* Windows NT has no IOCTL_DISK_GET_LENGTH_INFORMATION
@@ -358,29 +360,50 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         else
             rc = RTErrConvertFromWin32(GetLastError());
 #elif defined(__LINUX__)
-        struct hd_geometry DriveGeo;
-        if (!ioctl(pThis->HostDiskFile, HDIO_GETGEO, &DriveGeo))
+        struct stat DevStat;
+        if (!fstat(pThis->HostDiskFile, &DevStat) && S_ISBLK(DevStat.st_mode))
         {
-            pThis->cCylinders = DriveGeo.cylinders;
-            pThis->cHeads = DriveGeo.heads;
-            pThis->cSectors = DriveGeo.sectors;
-            pThis->enmTranslation = PDMBIOSTRANSLATION_NONE;
-            if (!pThis->cbSize)
+            struct hd_geometry DriveGeo;
+            if (!ioctl(pThis->HostDiskFile, HDIO_GETGEO, &DriveGeo))
             {
-                long cBlocks;
-                if (!ioctl(pThis->HostDiskFile, BLKGETSIZE, &cBlocks))
-                    pThis->cbSize = (uint64_t)cBlocks * 512;
-                else
-                    rc = RTErrConvertFromErrno(errno);
+                pThis->cCylinders = DriveGeo.cylinders;
+                pThis->cHeads = DriveGeo.heads;
+                pThis->cSectors = DriveGeo.sectors;
+                if (!pThis->cbSize)
+                {
+                    long cBlocks;
+                    if (!ioctl(pThis->HostDiskFile, BLKGETSIZE, &cBlocks))
+                        pThis->cbSize = (uint64_t)cBlocks * 512;
+                    else
+                        rc = RTErrConvertFromErrno(errno);
+                }
             }
+            else
+                rc = RTErrConvertFromErrno(errno);
         }
-        else
-            rc = RTErrConvertFromErrno(errno);
 #else
         /** @todo add further host OS geometry detection mechanisms. */
         AssertMsgFailed("Host disk support for this host is unimplemented.\n");
         rc = VERR_NOT_IMPLEMENTED;
 #endif
+        /* Do geometry cleanup common to all host operating systems.
+         * Very important, as Windows guests are very sensitive to odd
+         * PCHS settings, and for big disks they consider anything
+         * except the standard mapping as odd. */
+        if (pThis->cCylinders != 0)
+        {
+            if (pThis->cSectors == 63 && pThis->cCylinders >= 1024)
+            {
+                /* For big disks, use dummy PCHS values and let the BIOS
+                 * select an appropriate LCHS mapping. */
+                pThis->cCylinders = pThis->cbSize / 512 / 63 / 16;
+                pThis->cHeads = 16;
+                pThis->cSectors = 63;
+                pThis->enmTranslation = PDMBIOSTRANSLATION_LBA;
+            }
+            else
+                pThis->enmTranslation = PDMBIOSTRANSLATION_NONE;
+        }
     }
 
     LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
