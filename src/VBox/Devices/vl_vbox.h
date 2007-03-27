@@ -75,14 +75,6 @@ typedef RTGCPHYS                target_phys_addr_t;
 typedef PCIDEVICE               PCIDevice;
 typedef RTGCUINTREG             target_ulong;
 
-typedef struct SerialState SerialState;
-typedef struct {
-    int speed;
-    int parity;
-    int data_bits;
-    int stop_bits;
-} QEMUSerialSetParams;
-
 
 
 /*

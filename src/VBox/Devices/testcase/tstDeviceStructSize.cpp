@@ -56,6 +56,8 @@
 #endif
 #undef LOG_GROUP
 #include "VMMDev/VBoxDev.cpp"
+#undef LOG_GROUP
+#include "Serial/DevSerial.cpp"
 
 #include <stdio.h>
 
