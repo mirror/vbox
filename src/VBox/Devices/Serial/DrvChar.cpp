@@ -124,7 +124,10 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, s
                 rc = VINF_SUCCESS;
             }
             else
-                AssertRC(rc);
+            {
+                Log(("Write failed with %Vrc; skipping\n", rc));
+                break;
+            }
         }
     }
     else
