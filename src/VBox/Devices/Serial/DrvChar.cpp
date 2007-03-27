@@ -30,11 +30,17 @@
 #include <VBox/err.h>
 
 #include <VBox/log.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/stream.h>
+#include <iprt/semaphore.h>
 
 #include "Builtins.h"
 
+
+/** Size of the send fifo queue (in bytes) */
+#define CHAR_MAX_SEND_QUEUE             0x80
+#define CHAR_MAX_SEND_QUEUE_MASK        0x7f
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -57,6 +63,15 @@ typedef struct DRVCHAR
     volatile bool               fShutdown;
     /** Receive thread ID. */
     RTTHREAD                    ReceiveThread;
+    /** Send thread ID. */
+    RTTHREAD                    SendThread;
+    /** Send event semephore */
+    RTSEMEVENT                  SendSem;
+
+    /** Internal send FIFO queue */
+    uint8_t                     aSendQueue[CHAR_MAX_SEND_QUEUE];
+    uint32_t                    iSendQueueHead;
+    uint32_t                    iSendQueueTail;
 } DRVCHAR, *PDRVCHAR;
 
 
@@ -96,45 +111,81 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, PDMINTER
 static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, size_t cbWrite)
 {
     PDRVCHAR pData = PDMICHAR_2_DRVCHAR(pInterface);
+    const char *pBuffer = (const char *)pvBuf;
     int rc = VINF_SUCCESS;
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
-    /*
-     * Write the character to the attached stream (if present).
-     */
-    if (pData->pDrvStream)
+    for (uint32_t i=0;i<cbWrite;i++)
     {
-        const char *pBuffer = (const char *)pvBuf;
-        size_t cbProcessed = cbWrite;
+        uint32_t idx = pData->iSendQueueHead;
 
-        while (cbWrite)
+        pData->aSendQueue[idx] = pBuffer[i];
+        idx = (idx + 1) & CHAR_MAX_SEND_QUEUE_MASK;
+
+        ASMAtomicXchgU32(&pData->iSendQueueHead, idx);
+    }
+    RTSemEventSignal(pData->SendSem);
+    return VINF_SUCCESS;
+}
+
+
+/* -=-=-=-=- receive thread -=-=-=-=- */
+
+/**
+ * Send thread loop.
+ *
+ * @returns 0 on success.
+ * @param   ThreadSelf  Thread handle to this thread.
+ * @param   pvUser      User argument.
+ */
+static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
+{
+    PDRVCHAR pData = (PDRVCHAR)pvUser;
+
+    for(;;)
+    {
+        int rc = RTSemEventWait(pData->SendSem, RT_INDEFINITE_WAIT);
+        if (VBOX_FAILURE(rc))
+            break;
+
+        /*
+         * Write the character to the attached stream (if present).
+         */
+        if (    !pData->fShutdown 
+            &&  pData->pDrvStream)
         {
-            rc = pData->pDrvStream->pfnWrite(pData->pDrvStream, pBuffer, &cbProcessed);
-            if (VBOX_SUCCESS(rc))
+            while (pData->iSendQueueTail != pData->iSendQueueHead)
             {
-                Assert(cbProcessed);
-                cbWrite -= cbProcessed;
-                pBuffer += cbProcessed;
-            }
-            else if (rc == VERR_TIMEOUT)
-            {
-                /* Normal case, just means that the stream didn't accept a new
-                 * character before the timeout elapsed. Just retry. */
-                rc = VINF_SUCCESS;
-            }
-            else
-            {
-                Log(("Write failed with %Vrc; skipping\n", rc));
-                break;
+                size_t cbProcessed = 1;
+
+                rc = pData->pDrvStream->pfnWrite(pData->pDrvStream, &pData->aSendQueue[pData->iSendQueueTail], &cbProcessed);
+                if (VBOX_SUCCESS(rc))
+                {
+                    Assert(cbProcessed);
+                    pData->iSendQueueTail++;
+                    pData->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
+                }
+                else if (rc == VERR_TIMEOUT)
+                {
+                    /* Normal case, just means that the stream didn't accept a new
+                     * character before the timeout elapsed. Just retry. */
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    Log(("Write failed with %Vrc; skipping\n", rc));
+                    break;
+                }
             }
         }
+        else
+            break;
     }
-    else
-        rc = VERR_PDM_NO_ATTACHED_DRIVER;
 
-    LogFlow(("%s: returns rc=%Vrc\n", __FUNCTION__, rc));
-    return rc;
+    pData->SendThread = NIL_RTTHREAD;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -250,9 +301,16 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     if (!pData->pDrvStream)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
 
-    rc = RTThreadCreate(&pData->ReceiveThread, drvCharReceiveLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Char");
+    rc = RTThreadCreate(&pData->ReceiveThread, drvCharReceiveLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Char Receive");
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create receive thread"), pDrvIns->iInstance);
+
+    rc = RTSemEventCreate(&pData->SendSem);
+    AssertRC(rc);
+
+    rc = RTThreadCreate(&pData->SendThread, drvCharSendLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Char Send");
+    if (VBOX_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create send thread"), pDrvIns->iInstance);
 
     return VINF_SUCCESS;
 }
@@ -273,9 +331,19 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     pData->fShutdown = true;
-    RTThreadWait(pData->ReceiveThread, 5000, NULL);
+    RTThreadWait(pData->ReceiveThread, 1000, NULL);
     if (pData->ReceiveThread != NIL_RTTHREAD)
         LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
+
+    /* Empty the send queue */
+    pData->iSendQueueTail = pData->iSendQueueHead = 0;
+
+    RTSemEventDestroy(pData->SendSem);
+    pData->SendSem = NIL_RTSEMEVENT;
+
+    RTThreadWait(pData->SendThread, 1000, NULL);
+    if (pData->SendThread != NIL_RTTHREAD)
+        LogRel(("Char%d: send thread did not terminate\n", pDrvIns->iInstance));
 }
 
 
