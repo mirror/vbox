@@ -22,12 +22,6 @@
 #define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
 #include "Logging.h"
 
-#ifdef __WIN__
-#include <malloc.h> /* For alloca() */
-#else
-#include <alloca.h>
-#endif /* __WIN__ */
-
 #include "hgcm/HGCM.h"
 #include "hgcm/HGCMThread.h"
 
@@ -35,6 +29,7 @@
 #include <VBox/hgcmsvc.h>
 
 #include <iprt/alloc.h>
+#include <iprt/alloca.h>
 #include <iprt/avl.h>
 #include <iprt/critsect.h>
 #include <iprt/asm.h>
