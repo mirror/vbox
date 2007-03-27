@@ -269,8 +269,6 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
-    /** @todo r=bird: use RTThreadWait() and the RTTHREADFLAGS_WAITABLE instead of active waiting like this. 
-     * (the api is relatively new, which is why it's not used in all the places it should.) */
     pData->fShutdown = true;
     RTThreadWait(pData->ReceiveThread, 1000, NULL);
     if (pData->ReceiveThread != NIL_RTTHREAD)
