@@ -35,7 +35,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(IN_GUEST_R3)
 /** The previously returned nano TS.
  * This handles TSC drift on SMP systems and expired interval.
  * This is a valid range u64NanoTS to u64NanoTS + 1000000000 (ie. 1sec).
@@ -62,7 +62,7 @@ static uint32_t volatile    g_c1nsSteps = 0;
  */
 DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
 {
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(IN_GUEST_R3)
     uint64_t    u64Delta;
     uint32_t    u32NanoTSFactor0;
     uint64_t    u64TSC;
@@ -201,9 +201,9 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
     }
 
     return u64;
-#else /* IN_GUEST */
+#else /* IN_GUEST || IN_GUEST_R3 */
     return RTTimeSystemNanoTS();
-#endif /* IN_GUEST */
+#endif /* IN_GUEST || IN_GUEST_R3 */
 }
 
 
@@ -229,7 +229,7 @@ RTDECL(uint64_t) RTTimeMilliTS(void)
 }
 
 
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(IN_GUEST_R3)
 /**
  * Debugging the time api.
  *
