@@ -270,7 +270,7 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     pData->fShutdown = true;
-    RTThreadWait(pData->ReceiveThread, 1000, NULL);
+    RTThreadWait(pData->ReceiveThread, 5000, NULL);
     if (pData->ReceiveThread != NIL_RTTHREAD)
         LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
 }
