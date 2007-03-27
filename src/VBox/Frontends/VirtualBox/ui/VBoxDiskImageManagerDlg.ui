@@ -537,9 +537,9 @@
     <variable access="private">QString targetVMId;</variable>
     <variable access="private">QPixmap pxInaccessible;</variable>
     <variable access="private">QPixmap pxErroneous;</variable>
-    <variable access="private">QPixmap pxHD;</variable>
-    <variable access="private">QPixmap pxCD;</variable>
-    <variable access="private">QPixmap pxFD;</variable>
+    <variable access="private">QIconSet pxHD;</variable>
+    <variable access="private">QIconSet pxCD;</variable>
+    <variable access="private">QIconSet pxFD;</variable>
     <variable access="private">CMachine cmachine;</variable>
     <variable access="private">QPopupMenu *itemMenu;</variable>
     <variable access="private">VBoxToolBar *toolBar;</variable>
@@ -600,6 +600,7 @@
     <function returnType="int">exec()</function>
     <function access="private">done( int )</function>
     <function access="private" returnType="DiskImageItem*">searchItem( QListView*, const QUuid &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">searchItem( QListView*, VBoxMedia::Status )</function>
     <function specifier="static" access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; id )</function>
     <function specifier="static" access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; id )</function>
     <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
