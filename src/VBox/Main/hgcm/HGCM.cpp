@@ -88,7 +88,7 @@ class HGCMService
         static int sm_cServices;
 
         HGCMTHREADHANDLE m_thread;
-        friend DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUser);
+        friend static DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUser);
 
         uint32_t volatile m_u32RefCnt;
 
