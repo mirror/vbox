@@ -973,7 +973,7 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz)
 RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
 {
     /** @todo implement proper UTF-8 case-insensitive string comparison. */
-#ifdef __WIN32__
+#ifdef __WIN__
     return stricmp(psz1, psz2);
 #else /* !__WIN32__ */
     return strcasecmp(psz1, psz2);
