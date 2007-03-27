@@ -153,7 +153,7 @@ VirtualBox_SOURCES.darwin = \
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
 #  more generic -Wno-extra
 ifneq ($(BUILD_TARGET),win)
-src/COMDefs.cpp_CXXFLAGS  = -Wno-extra
+src/COMDefs.cpp_CXXFLAGS  = $(VBOX_GCC_Wno-extra)
 endif
 
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
