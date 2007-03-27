@@ -36,7 +36,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 
-#ifdef __WIN32__
+#ifdef __WIN__
 #include <windows.h>
 #include <winioctl.h>
 #elif __LINUX__
@@ -44,7 +44,7 @@
 #include <sys/ioctl.h>
 #include <linux/hdreg.h>
 #include <linux/fs.h>
-#endif /* !__WIN32__ && !__LINUX__ */
+#endif /* !__WIN__ && !__LINUX__ */
 
 #include "Builtins.h"
 
@@ -328,7 +328,7 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         pThis->cHeads = 0;
         pThis->cSectors = 0;
         pThis->enmTranslation = PDMBIOSTRANSLATION_AUTO;
-#ifdef __WIN32__
+#ifdef __WIN__
         DISK_GEOMETRY DriveGeo;
         DWORD cbDriveGeo;
         if (DeviceIoControl((HANDLE)pThis->HostDiskFile,
@@ -378,7 +378,7 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
             rc = RTErrConvertFromErrno(errno);
 #else
         /** @todo add further host OS geometry detection mechanisms. */
-        AssertMsgFail("Host disk support for this host is unimplemented.\n");
+        AssertMsgFailed("Host disk support for this host is unimplemented.\n");
         rc = VERR_NOT_IMPLEMENTED;
 #endif
     }
