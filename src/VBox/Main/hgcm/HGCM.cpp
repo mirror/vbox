@@ -88,7 +88,7 @@ class HGCMService
         static int sm_cServices;
 
         HGCMTHREADHANDLE m_thread;
-        friend static DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUser);
+        friend DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUser);
 
         uint32_t volatile m_u32RefCnt;
 
@@ -431,7 +431,7 @@ static HGCMMsgCore *hgcmMessageAllocSvc (uint32_t u32MsgId)
 /*
  * The service thread. Loads the service library and calls the service entry points.
  */
-static DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUser)
+DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUser)
 {
     HGCMService *pSvc = (HGCMService *)pvUser;
     AssertRelease(pSvc != NULL);
