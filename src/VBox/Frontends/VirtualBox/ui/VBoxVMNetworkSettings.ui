@@ -350,7 +350,7 @@
                                                         <enum>StrongFocus</enum>
                                                     </property>
                                                     <property name="text">
-                                                        <string>...</string>
+                                                        <string></string>
                                                     </property>
                                                     <property name="autoRaise">
                                                         <bool>true</bool>
@@ -370,7 +370,7 @@
                                                         <enum>StrongFocus</enum>
                                                     </property>
                                                     <property name="text">
-                                                        <string>...</string>
+                                                        <string></string>
                                                     </property>
                                                     <property name="autoRaise">
                                                         <bool>true</bool>
