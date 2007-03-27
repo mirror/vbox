@@ -124,6 +124,8 @@ struct SerialState
 
     /** Pointer to the device instance. */
     HCPTRTYPE(PPDMDEVINS)           pDevInsHC;
+    /** Pointer to the device instance. */
+    GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
     /** The base interface. */
     HCPTRTYPE(PDMIBASE)             IBase;
     /** The character port interface. */
@@ -157,8 +159,6 @@ struct SerialState
 #ifdef VBOX_SERIAL_PCI
     PCIDEVICE                       dev;
 #endif /* VBOX_SERIAL_PCI */
-    /** Pointer to the device instance. */
-    GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
 };
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
