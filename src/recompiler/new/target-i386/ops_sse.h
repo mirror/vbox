@@ -589,7 +589,14 @@ void OPPROTO glue(op_pshufw, SUFFIX) (void)
     r.W(1) = s->W((order >> 2) & 3);
     r.W(2) = s->W((order >> 4) & 3);
     r.W(3) = s->W((order >> 6) & 3);
+#if __GCC__ == 3 || defined(__AMD64__)
     *d = r;
+#else
+    d->_l[0] = r._l[0];
+    d->_l[1] = r._l[1];
+    XMM_ONLY(d->_l[2] = r._l[2];)
+    XMM_ONLY(d->_l[3] = r._l[3];)
+#endif 
 }
 #else
 void OPPROTO op_shufps(void)
