@@ -126,6 +126,9 @@ struct SerialState
     HCPTRTYPE(PPDMDEVINS)           pDevInsHC;
     /** Pointer to the device instance. */
     GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
+    RTGCPTR                         Alignment0;
+#endif
     /** The base interface. */
     HCPTRTYPE(PDMIBASE)             IBase;
     /** The character port interface. */
