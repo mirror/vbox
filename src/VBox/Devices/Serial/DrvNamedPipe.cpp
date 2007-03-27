@@ -550,6 +550,7 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
             DisconnectNamedPipe((HANDLE)pData->NamedPipe);
 
         RTFileClose(pData->NamedPipe);
+        pData->NamedPipe = NIL_RTFILE;
         CloseHandle(pData->OverlappedRead.hEvent);
         CloseHandle(pData->OverlappedWrite.hEvent);
     }
