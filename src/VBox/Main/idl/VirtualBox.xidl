@@ -1935,6 +1935,16 @@
             <desc>Video memory size in megabytes.</desc>
         </attribute>
 
+        <attribute name="MonitorCount" type="unsigned long">
+            <desc>
+                Number of virtual monitors.
+                <note>
+                    Only effective on Windows XP and later guests with
+                    Guest Additions installed.
+                </note>
+            </desc>
+        </attribute>
+
         <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">
             <desc>Object containing all BIOS settings.</desc>
         </attribute>

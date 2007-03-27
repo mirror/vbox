@@ -144,6 +144,18 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM)
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
+{
+    if (!maxMonitors)
+        return E_POINTER;
+    AutoLock lock(this);
+    CHECK_READY();
+
+    *maxMonitors = SchemaDefs::MaxGuestMonitors;
+
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
 {
     if (!maxVDISize)

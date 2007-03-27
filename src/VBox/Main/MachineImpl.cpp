@@ -161,6 +161,7 @@ Machine::HWData::HWData()
     /* default values for a newly created machine */
     mMemorySize = 128;
     mVRAMSize = 8;
+    mMonitorCount = 1;
     mHWVirtExEnabled = TriStateBool_False;
 
     /* default boot order: floppy - DVD - HDD */
@@ -184,6 +185,7 @@ bool Machine::HWData::operator== (const HWData &that) const
 
     if (mMemorySize != that.mMemorySize ||
         mVRAMSize != that.mVRAMSize ||
+        mMonitorCount != that.mMonitorCount ||
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
         mClipboardMode != that.mClipboardMode)
         return false;
@@ -943,6 +945,42 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize) (ULONG memorySize)
 
     mHWData.backup();
     mHWData->mVRAMSize = memorySize;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(MonitorCount) (ULONG *monitorCount)
+{
+    if (!monitorCount)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *monitorCount = mHWData->mMonitorCount;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(MonitorCount) (ULONG monitorCount)
+{
+    /* make sure monitor count is a sensible number */
+    if (monitorCount < 1 || monitorCount > SchemaDefs::MaxGuestMonitors)
+        return setError (E_INVALIDARG,
+            tr ("Invalid monitor count: %lu (must be in range [%lu, %lu])"),
+                monitorCount, 1, SchemaDefs::MaxGuestMonitors);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    CHECK_SETTER();
+
+    mHWData.backup();
+    mHWData->mMonitorCount = monitorCount;
 
     return S_OK;
 }
@@ -3543,6 +3581,11 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         uint32_t VRAMSize;
         CFGLDRQueryUInt32 (displayNode, "VRAMSize", &VRAMSize);
         mHWData->mVRAMSize = VRAMSize;
+
+        uint32_t MonitorCount;
+        CFGLDRQueryUInt32 (displayNode, "MonitorCount", &MonitorCount);
+        mHWData->mMonitorCount = MonitorCount;
+
         CFGLDRReleaseNode (displayNode);
     }
 
@@ -3951,7 +3994,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
 #ifdef __DARWIN__
         else if (driver == L"coreaudio")
             audioDriver = AudioDriverType_CoreAudioDriver;
-#endif 
+#endif
         else
             AssertMsgFailed (("Invalid driver: %ls\n", driver.raw()));
         mAudioAdapter->COMSETTER(AudioDriver) (audioDriver);
@@ -5401,6 +5444,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
         CFGNODE displayNode = 0;
         CFGLDRCreateChildNode (aNode, "Display", &displayNode);
         CFGLDRSetUInt32 (displayNode, "VRAMSize", mHWData->mVRAMSize);
+        CFGLDRSetUInt32 (displayNode, "MonitorCount", mHWData->mMonitorCount);
         CFGLDRReleaseNode (displayNode);
     }
 
@@ -5750,7 +5794,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                 CFGLDRSetString (adapterNode, "driver", "coreaudio");
                 break;
             }
-#endif 
+#endif
             default:
                 ComAssertMsgFailedBreak (("Wrong audio driver type! driver = %d\n",
                                           mAudioAdapter->data()->mAudioDriver),
