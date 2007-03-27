@@ -208,6 +208,10 @@ void hgcmObjDeleteHandle (uint32_t handle)
 
             hgcmObjLeave ();
         }
+        else if (rc == VERR_SEM_DESTROYED)
+        {
+            // Should only occur on shutdown, just ignore this case here
+        }
         else
         {
             AssertReleaseMsgFailed (("Failed to acquire object pool semaphore, rc = %Vrc", rc));
