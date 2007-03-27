@@ -39,7 +39,7 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
-#if !defined(IN_GUEST) && !defined(IN_GUEST_R3)
+#ifndef IN_GUEST
 # include <iprt/file.h>
 # include <VBox/sup.h>
 # include <stdlib.h>
@@ -100,7 +100,7 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
 {
     /* no entry log flow, because prefixes and thread may freak out. */
 
-#if !defined(IN_GUEST) && !defined(IN_GUEST_R3)
+#ifndef IN_GUEST
 # ifdef VBOX
     /*
      * This MUST be done as the very first thing, before any file is opened.
@@ -116,7 +116,7 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
         RTFileSetForceFlags(RTFILE_O_READWRITE, RTFILE_O_WRITE_THROUGH, 0);
     }
 # endif  /* VBOX */
-#endif /* !IN_GUEST and !IN_GUEST_R3 */
+#endif /* !IN_GUEST */
 
     /*
      * Thread Thread database and adopt the caller thread as 'main'.
@@ -130,7 +130,7 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
         return rc;
     }
 
-#if !defined(IN_GUEST) && !defined(IN_GUEST_R3)
+#ifndef IN_GUEST
     if (fInitSUPLib)
     {
         /*
@@ -147,7 +147,7 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
     g_u64ProgramStartNanoTS = RTTimeNanoTS();
     g_u64ProgramStartMilliTS = RTTimeMilliTS();
 
-#if !defined(IN_GUEST) && !defined(IN_GUEST_R3)
+#ifndef IN_GUEST
     /*
      * The threading is initialized we can safely sleep a bit if GIP
      * needs some time to update itself updating.
