@@ -646,7 +646,7 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
 
 int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
 {
-    LogFlow(("hgcmMsgAlloc: thread handle = %d, pHandle = %p, sizeof (HGCMMsgCore) = %d\n", hThread, pHandle, sizeof (HGCMMsgCore)));
+    LogFlow(("hgcmMsgAlloc: thread handle = 0x%08X, pHandle = %p, sizeof (HGCMMsgCore) = %d\n", hThread, pHandle, sizeof (HGCMMsgCore)));
 
     if (!pHandle)
     {
@@ -668,14 +668,14 @@ int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32
         hgcmObjDereference (pThread);
     }
 
-    LogFlow(("MAIN::hgcmMsgAlloc: handle %d, rc = %Vrc\n", *pHandle, rc));
+    LogFlow(("MAIN::hgcmMsgAlloc: handle 0x%08X, rc = %Vrc\n", *pHandle, rc));
 
     return rc;
 }
 
 static int hgcmMsgPostInternal (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback, bool fWait)
 {
-    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg = %d, pfnCallback = %p, fWait = %d\n", hMsg, pfnCallback, fWait));
+    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg = 0x%08X, pfnCallback = %p, fWait = %d\n", hMsg, pfnCallback, fWait));
 
     int rc = VINF_SUCCESS;
 
@@ -692,7 +692,7 @@ static int hgcmMsgPostInternal (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback
         hgcmObjDereference (pMsg);
     }
 
-    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg %d, rc = %Vrc\n", hMsg, rc));
+    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg 0x%08X, rc = %Vrc\n", hMsg, rc));
 
     return rc;
 }
@@ -705,7 +705,14 @@ static int hgcmMsgPostInternal (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback
 
 int hgcmMsgPost (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback)
 {
-    return hgcmMsgPostInternal (hMsg, pfnCallback, false);
+    int rc = hgcmMsgPostInternal (hMsg, pfnCallback, false);
+
+    if (VBOX_SUCCESS (rc))
+    {
+        rc = VINF_HGCM_ASYNC_EXECUTE;
+    }
+
+    return rc;
 }
 
 /* Send message to worker thread. Sending thread will block until message is processed.
@@ -721,7 +728,7 @@ int hgcmMsgSend (HGCMMSGHANDLE hMsg)
 
 int hgcmMsgGet (HGCMTHREADHANDLE hThread, HGCMMsgCore **ppMsg)
 {
-    LogFlow(("MAIN::hgcmMsgGet: hThread = %d, ppMsg = %p\n", hThread, ppMsg));
+    LogFlow(("MAIN::hgcmMsgGet: hThread = 0x%08X, ppMsg = %p\n", hThread, ppMsg));
 
     if (!hThread || !ppMsg)
     {

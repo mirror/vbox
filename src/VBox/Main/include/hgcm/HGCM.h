@@ -33,24 +33,21 @@
 #define HGCM_SSM_VERSION    2
 
 __BEGIN_DECLS
-int hgcmInit (void);
+int HGCMHostInit (void);
+int HGCMHostShutdown (void);
 
-int hgcmReset (void);
+int HGCMHostReset (void);
 
-int hgcmLoadInternal (const char *pszServiceName, const char *pszServiceLibrary);
+int HGCMHostLoad (const char *pszServiceName, const char *pszServiceLibrary);
 
-int hgcmConnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, PHGCMSERVICELOCATION pLoc, uint32_t *pClientID, bool fBlock);
-int hgcmDisconnectInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, bool fBlock);
-int hgcmGuestCallInternal (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[], bool fBlock);
-int hgcmHostCallInternal (const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
+int HGCMGuestConnect (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, const char *pszServiceName, uint32_t *pClientID);
+int HGCMGuestDisconnect (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID);
+int HGCMGuestCall (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
 
-#ifdef HGCMSS
-int hgcmSaveStateInternal (PSSMHANDLE pSSM);
-int hgcmLoadStateInternal (PSSMHANDLE pSSM);
-#else
-int hgcmSaveStateInternal (uint32_t clientID, PSSMHANDLE pSSM);
-int hgcmLoadStateInternal (uint32_t clientID, PSSMHANDLE pSSM);
-#endif /* HGCMSS */
+int HGCMHostCall (const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
+
+int HGCMHostSaveState (PSSMHANDLE pSSM);
+int HGCMHostLoadState (PSSMHANDLE pSSM);
 
 __END_DECLS
 

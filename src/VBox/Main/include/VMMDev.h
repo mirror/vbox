@@ -36,19 +36,11 @@ public:
     /** Pointer to the associated VMMDev driver. */
     struct DRVMAINVMMDEV *mpDrv;
 
-#ifdef HGCMSS
     bool fSharedFolderActive;
     bool isShFlActive()
     {
         return fSharedFolderActive;
     }
-#else
-    uint32_t mSharedFolderClientId;
-    uint32_t getShFlClientId()
-    {
-        return mSharedFolderClientId;
-    }
-#endif /* HGCMSS */
 
     Console *getParent()
     {
@@ -61,8 +53,6 @@ public:
     PPDMIVMMDEVPORT getVMMDevPort();
 
     int hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary);
-    int hgcmConnect (PVBOXHGCMCMD pCmd, PHGCMSERVICELOCATION pServiceLocation, uint32_t *pu32ClientID);
-    int hgcmDisconnect (PVBOXHGCMCMD pCmd, uint32_t u32ClientID);
     int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
 
 private:

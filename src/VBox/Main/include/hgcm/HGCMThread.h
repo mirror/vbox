@@ -123,6 +123,7 @@ typedef FNHGCMTHREAD *PFNHGCMTHREAD;
  * @return VBox error code
  */
 int hgcmThreadInit (void);
+void hgcmThreadUninit (void);
 
 
 /** Create a HGCM worker thread.
