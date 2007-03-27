@@ -63,6 +63,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIRichLabel.h \
 	include/VMGlobalSettings.h \
 	include/VBoxGlobal.h \
+	include/VBoxVMListBox.h \
 	include/VBoxMediaComboBox.h \
 	include/VBoxSelectorWnd.h \
 	include/VBoxConsoleWnd.h \
