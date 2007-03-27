@@ -1054,7 +1054,7 @@ static bool ataIdentifySS(ATADevState *s)
     p = (uint16_t *)s->CTXSUFF(pbIOBuffer);
     memset(p, 0, 512);
     p[0] = RT_H2LE_U16(0x0040);
-    p[1] = RT_H2LE_U16(s->cCHSCylinders);
+    p[1] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383));
     p[3] = RT_H2LE_U16(s->cCHSHeads);
     /* Block size; obsolete, but required for the BIOS. */
     p[5] = RT_H2LE_U16(512);
@@ -1074,11 +1074,11 @@ static bool ataIdentifySS(ATADevState *s)
     p[51] = RT_H2LE_U16(240); /* PIO transfer cycle */
     p[52] = RT_H2LE_U16(240); /* DMA transfer cycle */
     p[53] = RT_H2LE_U16(1 | 1 << 1 | 1 << 2); /* words 54-58,64-70,88 valid */
-    p[54] = RT_H2LE_U16(s->cCHSCylinders);
+    p[54] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383));
     p[55] = RT_H2LE_U16(s->cCHSHeads);
     p[56] = RT_H2LE_U16(s->cCHSSectors);
-    p[57] = RT_H2LE_U16(s->cCHSCylinders * s->cCHSHeads * s->cCHSSectors);
-    p[58] = RT_H2LE_U16(s->cCHSCylinders * s->cCHSHeads * s->cCHSSectors >> 16);
+    p[57] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383) * s->cCHSHeads * s->cCHSSectors);
+    p[58] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383) * s->cCHSHeads * s->cCHSSectors >> 16);
     if (s->cMultSectors)
         p[59] = RT_H2LE_U16(0x100 | s->cMultSectors);
     if (s->cTotalSectors <= (1 << 28) - 1)
@@ -3683,7 +3683,6 @@ static int ataGuessDiskLCHS(ATADevState *s, uint32_t *pcCylinders, uint32_t *pcH
             cCHSCylinders = s->cTotalSectors / (cCHSHeads * cCHSSectors);
             if (cCHSCylinders >= 1)
             {
-                cCHSCylinders = RT_MIN(cCHSCylinders, 16383);
                 *pcHeads = cCHSHeads;
                 *pcSectors = cCHSSectors;
                 *pcCylinders = cCHSCylinders;
@@ -5256,6 +5255,17 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
                 rc = ataGuessDiskLCHS(pIf, &pIf->cCHSCylinders, &pIf->cCHSHeads, &pIf->cCHSSectors);
                 if (VBOX_SUCCESS(rc))
                 {
+                    /* Caution: the above function returns LCHS, but the
+                     * disk must report proper PCHS values for disks bigger
+                     * than approximately 512MB. */
+                    if (pIf->cCHSSectors == 63 && pIf->cCHSCylinders >= 1024)
+                    {
+                        pIf->cCHSCylinders = pIf->cTotalSectors / 63 / 16;
+                        pIf->cCHSHeads = 16;
+                        pIf->cCHSSectors = 63;
+                        /* Set the disk CHS translation mode. */
+                         pIf->pDrvBlockBios->pfnSetTranslation(pIf->pDrvBlockBios, PDMBIOSTRANSLATION_LBA);
+                    }
                     /* Set the disk geometry information. */
                     rc = pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
                 }
@@ -5276,7 +5286,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             if (!pIf->cCHSCylinders)
             {
                 uint64_t cCHSCylinders = pIf->cTotalSectors / (16 * 63);
-                pIf->cCHSCylinders = (uint32_t)RT_MIN(RT_MAX(cCHSCylinders, 1), 16383);
+                pIf->cCHSCylinders = (uint32_t)RT_MAX(cCHSCylinders, 1);
                 pIf->cCHSHeads = 16;
                 pIf->cCHSSectors = 63;
                 /* Set the disk geometry information. */

@@ -219,14 +219,14 @@ static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo,
         {
             Log2(("pcbiosCmosInitHardDisk: offInfo=%#x: CHS=%d/%d/%d\n", offInfo, cCylinders, cHeads, cSectors));
             pcbiosCmosWrite(pDevIns, offType, 47);                              /* 19h - First Extended Hard Disk Drive Type */
-            pcbiosCmosWrite(pDevIns, offInfo + 0, cCylinders & 0xff);           /* 1Bh - (AMI) First Hard Disk (type 47) user defined: # of Cylinders, LSB */
-            pcbiosCmosWrite(pDevIns, offInfo + 1, cCylinders >> 8);             /* 1Ch - (AMI) First Hard Disk user defined: # of Cylinders, High Byte */
+            pcbiosCmosWrite(pDevIns, offInfo + 0, RT_MIN(cCylinders, 16383) & 0xff); /* 1Bh - (AMI) First Hard Disk (type 47) user defined: # of Cylinders, LSB */
+            pcbiosCmosWrite(pDevIns, offInfo + 1, RT_MIN(cCylinders, 16383) >> 8); /* 1Ch - (AMI) First Hard Disk user defined: # of Cylinders, High Byte */
             pcbiosCmosWrite(pDevIns, offInfo + 2, cHeads);                      /* 1Dh - (AMI) First Hard Disk user defined: Number of Heads */
             pcbiosCmosWrite(pDevIns, offInfo + 3, 0xff);                        /* 1Eh - (AMI) First Hard Disk user defined: Write Precompensation Cylinder, Low Byte */
             pcbiosCmosWrite(pDevIns, offInfo + 4, 0xff);                        /* 1Fh - (AMI) First Hard Disk user defined: Write Precompensation Cylinder, High Byte */
             pcbiosCmosWrite(pDevIns, offInfo + 5, 0xc0 | ((cHeads > 8) << 3));  /* 20h - (AMI) First Hard Disk user defined: Control Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 6, cCylinders & 0xff);           /* 21h - (AMI) First Hard Disk user defined: Landing Zone, Low Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 7, cCylinders >> 8);             /* 22h - (AMI) First Hard Disk user defined: Landing Zone, High Byte */
+            pcbiosCmosWrite(pDevIns, offInfo + 6, 0xff);                        /* 21h - (AMI) First Hard Disk user defined: Landing Zone, Low Byte */
+            pcbiosCmosWrite(pDevIns, offInfo + 7, 0xff);                        /* 22h - (AMI) First Hard Disk user defined: Landing Zone, High Byte */
             pcbiosCmosWrite(pDevIns, offInfo + 8, cSectors);                    /* 23h - (AMI) First Hard Disk user defined: # of Sectors per track */
             return;
         }
