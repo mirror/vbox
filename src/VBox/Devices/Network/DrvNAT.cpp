@@ -334,8 +334,10 @@ static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
             else if (!RTStrICmp(szProtocol, "UDP"))
                 fUDP = true;
             else
-                return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string returned %Vrc"), rc);
+                return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""), szProtocol);
         }
+        else
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string returned %Vrc"), rc);
 
         /* host port */
         int32_t iHostPort;
