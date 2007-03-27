@@ -232,21 +232,14 @@ void VBoxDiskImageManagerDlg::init()
     pxErroneous.convertFromImage (img);
     Assert (!pxErroneous.isNull());
 
-    pxHD = QPixmap::fromMimeSource ("diskim_16px.png");
-    pxCD = QPixmap::fromMimeSource ("cd_16px.png");
-    pxFD = QPixmap::fromMimeSource ("fd_16px.png");
+    pxHD = VBoxGlobal::iconSet ("hd_16px.png", "hd_disabled_16px.png");
+    pxCD = VBoxGlobal::iconSet ("cd_16px.png", "cd_disabled_16px.png");
+    pxFD = VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png");
 
     /* setup tab widget icons */
-    twImages->setTabIconSet (twImages->page (0),
-                             VBoxGlobal::iconSet ("hd_16px.png",
-                                                  "hd_disabled_16px.png"));
-    twImages->setTabIconSet (twImages->page (1),
-                             VBoxGlobal::iconSet ("cd_16px.png",
-                                                  "cd_disabled_16px.png"));
-    twImages->setTabIconSet (twImages->page (2),
-                             VBoxGlobal::iconSet ("fd_16px.png",
-                                                  "fd_disabled_16px.png"));
-
+    twImages->setTabIconSet (twImages->page (0), pxHD);
+    twImages->setTabIconSet (twImages->page (1), pxCD);
+    twImages->setTabIconSet (twImages->page (2), pxFD);
 
     /* setup image list views */
     hdsView->setColumnAlignment (1, Qt::AlignRight);
@@ -1252,6 +1245,20 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
 }
 
 
+DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
+                                                    VBoxMedia::Status aStatus)
+{
+    DiskImageItemIterator iterator (aList);
+    while (*iterator)
+    {
+        if ((*iterator)->getStatus() == aStatus)
+            return *iterator;
+        ++iterator;
+    }
+    return 0;
+}
+
+
 void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
                                      const QUuid *aTargetVMId /* = NULL */,
                                      bool aRefresh /* = true */,
@@ -1326,14 +1333,11 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
 void VBoxDiskImageManagerDlg::mediaEnumStarted()
 {
     /* load default tab icons */
-    twImages->changeTab (twImages->page (0),
-                         QIconSet (pxHD),
+    twImages->changeTab (twImages->page (0), pxHD,
                          twImages->tabLabel (twImages->page (0)));
-    twImages->changeTab (twImages->page (1),
-                         QIconSet (pxCD),
+    twImages->changeTab (twImages->page (1), pxCD,
                          twImages->tabLabel (twImages->page (1)));
-    twImages->changeTab (twImages->page (2),
-                         QIconSet (pxFD),
+    twImages->changeTab (twImages->page (2), pxFD,
                          twImages->tabLabel (twImages->page (2)));
 
     /* load current media list */
@@ -1487,6 +1491,19 @@ void VBoxDiskImageManagerDlg::mediaRemoved (VBoxDefs::DiskType aType,
     DiskImageItem *item = searchItem (listView, aId);
     delete item;
     setCurrentItem (listView, listView->currentItem());
+    /* search the list for inaccessible media */
+    if (!searchItem (listView, VBoxMedia::Inaccessible) &&
+        !searchItem (listView, VBoxMedia::Error))
+    {
+        QWidget *wt = aType == VBoxDefs::HD ? twImages->page (0) :
+                      aType == VBoxDefs::CD ? twImages->page (1) :
+                      aType == VBoxDefs::FD ? twImages->page (2) : 0;
+        const QIconSet &set = aType == VBoxDefs::HD ? pxHD :
+                              aType == VBoxDefs::CD ? pxCD :
+                              aType == VBoxDefs::FD ? pxFD : QIconSet();
+        Assert (wt && !set.isNull()); /* atype should be the correct one */
+        twImages->changeTab (wt, set, twImages->tabLabel (wt));
+    }
 }
 
 
