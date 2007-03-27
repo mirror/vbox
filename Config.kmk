@@ -818,6 +818,9 @@ endif
 ifeq ($(origin VBOX_GCC_Wno-invalid-offsetof),undefined)
  export VBOX_GCC_Wno-invalid-offsetof := $(call VBOX_GCC_CHECK_CXX,-Wno-invalid-offsetof,)
 endif
+ifeq ($(origin VBOX_GCC_Wno-extra),undefined)
+ export VBOX_GCC_Wno-extra := $(call VBOX_GCC_CHECK_CXX,-Wno-extra)
+endif
 ifeq ($(origin VBOX_GCC_fno-stack-protector),undefined)
  export VBOX_GCC_fno-stack-protector := $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)
 endif
