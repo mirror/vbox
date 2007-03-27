@@ -66,6 +66,8 @@
 #endif
 #undef LOG_GROUP
 #include "VMMDev/VBoxDev.cpp"
+#undef LOG_GROUP
+#include "Serial/DevSerial.cpp"
 
 
 /* we don't use iprt here because we're pretending to be in GC! */
@@ -765,6 +767,32 @@ int main()
 #endif /* VBOX_WITH_USB */
 
     /* VMMDev/VBoxDev.cpp */
+
+    /* Serial/DevSerial.cpp */
+    GEN_CHECK_SIZE(SerialState);
+    GEN_CHECK_OFF(SerialState, divider);
+    GEN_CHECK_OFF(SerialState, rbr);
+    GEN_CHECK_OFF(SerialState, ier);
+    GEN_CHECK_OFF(SerialState, iir);
+    GEN_CHECK_OFF(SerialState, lcr);
+    GEN_CHECK_OFF(SerialState, mcr);
+    GEN_CHECK_OFF(SerialState, lsr);
+    GEN_CHECK_OFF(SerialState, msr);
+    GEN_CHECK_OFF(SerialState, scr);
+    GEN_CHECK_OFF(SerialState, thr_ipending);
+    GEN_CHECK_OFF(SerialState, irq);
+    GEN_CHECK_OFF(SerialState, fGCEnabled);
+    GEN_CHECK_OFF(SerialState, fR0Enabled);
+    GEN_CHECK_OFF(SerialState, pDevInsGC);
+    GEN_CHECK_OFF(SerialState, pDevInsHC);
+    GEN_CHECK_OFF(SerialState, IBase);
+    GEN_CHECK_OFF(SerialState, ICharPort);
+    GEN_CHECK_OFF(SerialState, pDrvBase);
+    GEN_CHECK_OFF(SerialState, pDrvChar);
+    GEN_CHECK_OFF(SerialState, CritSect);
+    GEN_CHECK_OFF(SerialState, ReceiveSem);
+    GEN_CHECK_OFF(SerialState, last_break_enable);
+    GEN_CHECK_OFF(SerialState, base);
 
     return (0);
 }

@@ -182,7 +182,7 @@ DevicesR3_SOURCES       = \
 	Audio/DevIchAc97.cpp \
 	PC/dma.c \
 	Storage/fdc.c \
-	Serial/serial.c
+	Serial/DevSerial.cpp
 
 ifeq (0,1)
 DevicesR3_SOURCES += \
@@ -224,7 +224,8 @@ VBoxDDGC_SOURCES        = \
 	PC/DevPIC.cpp \
 	PC/DevRTC.cpp \
 	Storage/DevATA.cpp \
-	Network/DevPCNet.cpp
+	Network/DevPCNet.cpp \
+	Serial/DevSerial.cpp
 
 ifdef VBOX_WITH_USB
 VBoxDDGC_DEFS          += VBOX_WITH_USB IN_USB_GC
@@ -260,7 +261,8 @@ VBoxDDR0_SOURCES        = \
 	PC/DevPIC.cpp \
 	PC/DevRTC.cpp \
 	Storage/DevATA.cpp \
-	Network/DevPCNet.cpp
+	Network/DevPCNet.cpp \
+	Serial/DevSerial.cpp
 
 ifdef VBOX_WITH_USB
 VBoxDDR0_DEFS          += VBOX_WITH_USB IN_USB_R0
