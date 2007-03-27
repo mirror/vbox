@@ -50,7 +50,7 @@ if [ "$system" = "redhat" ]; then
     }
 
     begin() {
-        echo -n $1
+        echo -n "$1"
     }
 fi
 
@@ -67,7 +67,7 @@ if [ "$system" = "suse" ]; then
     }
 
     begin() {
-        echo -n $1
+        echo -n "$1"
     }
 fi
 
@@ -117,7 +117,7 @@ if [ "$system" = "slackware" ]; then
         echo -n $1
     }
 fi
-                                                
+
 kdir=/lib/modules/`uname -r`/misc
 dev=/dev/vboxadd
 modname=vboxadd
@@ -156,7 +156,7 @@ start() {
             fail "modprobe $modname failed"
         }
 
-        sleep 1
+        sleep .5
     }
     if [ ! -c $dev ]; then
         maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/devices`

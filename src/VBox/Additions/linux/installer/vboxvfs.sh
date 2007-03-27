@@ -37,7 +37,7 @@ else
     echo "$0: Unknown system" 1>&2
 fi
 
-if [ "$system" = redhat ]; then
+if [ "$system" = "redhat" ]; then
     . /etc/init.d/functions
     fail_msg() {
         echo_failure
@@ -50,11 +50,11 @@ if [ "$system" = redhat ]; then
     }
 
     begin() {
-        echo -n $1
+        echo -n "$1"
     }
 fi
 
-if [ "$system" = suse ]; then
+if [ "$system" = "suse" ]; then
     . /etc/rc.status
     fail_msg() {
         rc_failed 1
@@ -67,11 +67,11 @@ if [ "$system" = suse ]; then
     }
 
     begin() {
-        echo -n $1
+        echo -n "$1"
     }
 fi
 
-if [ "$system" = debian ]; then
+if [ "$system" = "debian" ]; then
     fail_msg() {
         echo " ...fail!"
     }
@@ -85,7 +85,7 @@ if [ "$system" = debian ]; then
     }
 fi
 
-if [ "$system" = gentoo ]; then
+if [ "$system" = "gentoo" ]; then
     . /sbin/functions.sh
     fail_msg() {
         eend 1
@@ -104,7 +104,7 @@ if [ "$system" = gentoo ]; then
     fi
 fi
 
-if [ "$system" = slackware ]; then
+if [ "$system" = "slackware" ]; then
     fail_msg() {
         echo " ...fail!"
     }
@@ -127,7 +127,7 @@ test -f $module.o  && file=$module.o
 test -f $module.ko && file=$module.ko
 
 fail() {
-    if [ "$system" = gentoo ]; then
+    if [ "$system" = "gentoo" ]; then
         eerror $1
         exit 1
     fi
@@ -145,7 +145,7 @@ running() {
 }
 
 start() {
-    begin "Starting VirtualBox Additions shared folder support";
+    begin "Starting VirtualBox Additions shared folder support ";
     running || {
         modprobe $modname > /dev/null 2>&1 || {
             if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
@@ -162,7 +162,7 @@ start() {
 }
 
 stop() {
-    begin "Stopping VirtualBox Additions shared folder support";
+    begin "Stopping VirtualBox Additions shared folder support ";
     if running; then
         rmmod $modname || fail "Cannot unload module $modname"
     fi
