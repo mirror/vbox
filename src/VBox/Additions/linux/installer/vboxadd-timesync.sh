@@ -42,7 +42,7 @@ else
     echo "$0: Unknown system" 1>&2
 fi
 
-if [ "$system" = redhat ]; then
+if [ "$system" = "redhat" ]; then
     . /etc/init.d/functions
     fail_msg() {
         echo_failure
@@ -55,7 +55,7 @@ if [ "$system" = redhat ]; then
     }
 fi
 
-if [ "$system" = suse ]; then
+if [ "$system" = "suse" ]; then
     . /etc/rc.status
     daemon() {
         startproc ${1+"$@"}
@@ -72,7 +72,7 @@ if [ "$system" = suse ]; then
     }
 fi
 
-if [ "$system" = debian ]; then
+if [ "$system" = "debian" ]; then
     daemon() {
         start-stop-daemon --start --exec $1 -- $2
     }
@@ -90,7 +90,7 @@ if [ "$system" = debian ]; then
     }
 fi
 
-if [ "$system" = gentoo ]; then
+if [ "$system" = "gentoo" ]; then
     . /sbin/functions.sh
     daemon() {
         start-stop-daemon --start --exec $1 -- $2
@@ -113,7 +113,7 @@ if [ "$system" = gentoo ]; then
     fi
 fi
 
-if [ "$system" = slackware ]; then
+if [ "$system" = "slackware" ]; then
     fail_msg() {
         echo " ...fail!"
     }
@@ -123,7 +123,7 @@ if [ "$system" = slackware ]; then
     }
 
     begin() {
-        echo -n $1
+        echo -n "$1"
     }
 fi
 
@@ -140,7 +140,7 @@ vboxaddrunning() {
 
 start() {
     if ! test -f $PIDFILE; then
-        echo -n "Starting VirtualBox host to guest time synchronisation";
+        echo -n "Starting VirtualBox host to guest time synchronisation ";
         vboxaddrunning || {
             echo "VirtualBox Additions module not loaded!"
             exit 1
@@ -155,7 +155,7 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        echo -n "Stopping VirtualBox host to guest time synchronisation";
+        echo -n "Stopping VirtualBox host to guest time synchronisation ";
         vboxaddrunning || {
             echo "VirtualBox Additions module not loaded!"
             exit 1
