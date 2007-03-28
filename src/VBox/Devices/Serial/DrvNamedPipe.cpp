@@ -206,7 +206,6 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
     LogFlow(("%s: pvBuf=%p cbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, cbWrite, pData->pszLocation));
 
     Assert(pvBuf);
-    /** @todo implement non-blocking I/O */
 #ifdef __WIN__
     if (pData->NamedPipe != NIL_RTFILE)
     {
