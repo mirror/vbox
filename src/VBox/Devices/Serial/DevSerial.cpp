@@ -155,6 +155,7 @@ struct SerialState
 
     bool                            fGCEnabled;
     bool                            fR0Enabled;
+    bool                            afAlignment[6];
 
     RTSEMEVENT                      ReceiveSem;
     int                             last_break_enable;
