@@ -581,15 +581,18 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
 
         Leave ();
 
+        hgcmObjDeleteHandle (pMsg->Handle ());
+
         if (fWaited)
         {
+            /* If message is being waited, then it is referenced by the waiter and the pointer 
+             * if valid even after hgcmObjDeleteHandle.
+             */
             pMsg->m_rcSend = result;
 
             /* Wake up all waiters. so they can decide if their message has been processed. */
             RTSemEventMultiSignal (m_eventSend);
         }
-
-        hgcmObjDeleteHandle (pMsg->Handle ());
     }
 
     return;
