@@ -348,9 +348,12 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     pData->fShutdown = true;
-    RTThreadWait(pData->ReceiveThread, 1000, NULL);
-    if (pData->ReceiveThread != NIL_RTTHREAD)
-        LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
+    if (pData->ReceiveThread)
+    {
+        RTThreadWait(pData->ReceiveThread, 1000, NULL);
+        if (pData->ReceiveThread != NIL_RTTHREAD)
+            LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
+    }
 
     /* Empty the send queue */
     pData->iSendQueueTail = pData->iSendQueueHead = 0;
@@ -359,11 +362,13 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
     RTSemEventDestroy(pData->SendSem);
     pData->SendSem = NIL_RTSEMEVENT;
 
-    RTThreadWait(pData->SendThread, 1000, NULL);
-    if (pData->SendThread != NIL_RTTHREAD)
-        LogRel(("Char%d: send thread did not terminate\n", pDrvIns->iInstance));
+    if (pData->SendThread)
+    {
+        RTThreadWait(pData->SendThread, 1000, NULL);
+        if (pData->SendThread != NIL_RTTHREAD)
+            LogRel(("Char%d: send thread did not terminate\n", pDrvIns->iInstance));
+    }
 }
-
 
 /**
  * Char driver registration record.
