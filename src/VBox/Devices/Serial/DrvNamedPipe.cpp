@@ -335,7 +335,8 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
         overlapped.hEvent = hEvent;
 
         BOOL fConnected = ConnectNamedPipe((HANDLE)NamedPipe, &overlapped);
-        if (!fConnected)
+        if (    !fConnected
+            &&  !pData->fShutdown)
         {
             DWORD hrc = GetLastError();
 
@@ -348,6 +349,9 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
                     hrc = GetLastError();
 
             }
+
+            if (!pData->fShutdown)
+                break;
 
             if (hrc == ERROR_PIPE_CONNECTED)
             {
