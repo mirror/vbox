@@ -253,9 +253,6 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             s->lsr &= ~UART_LSR_THRE;
             serial_update_irq(s);
             ch = val;
-            /** @todo implement backpressure for writing (don't set interrupt
-             * bits/line until the character is actually written). This way
-             * EMT wouldn't block for writes taking longer than normal. */
             if (RT_LIKELY(s->pDrvChar))
             {
                 Log(("serial_io_port_write: write 0x%X\n", ch));
