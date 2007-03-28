@@ -72,6 +72,10 @@ typedef struct DRVCHAR
     uint8_t                     aSendQueue[CHAR_MAX_SEND_QUEUE];
     uint32_t                    iSendQueueHead;
     uint32_t                    iSendQueueTail;
+
+    /** Read/write statistics */
+    STAMCOUNTER                 StatBytesRead;
+    STAMCOUNTER                 StatBytesWritten;
 } DRVCHAR, *PDRVCHAR;
 
 
@@ -123,6 +127,7 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, s
         pData->aSendQueue[idx] = pBuffer[i];
         idx = (idx + 1) & CHAR_MAX_SEND_QUEUE_MASK;
 
+        STAM_COUNTER_INC(&pData->StatBytesWritten);
         ASMAtomicXchgU32(&pData->iSendQueueHead, idx);
     }
     RTSemEventSignal(pData->SendSem);
@@ -235,6 +240,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
                 Assert(cbProcessed);
                 pBuffer += cbProcessed;
                 cbRemaining -= cbProcessed;
+                STAM_COUNTER_ADD(&pData->StatBytesRead, cbProcessed);
             }
             else if (rc == VERR_TIMEOUT)
             {
@@ -312,6 +318,10 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create send thread"), pDrvIns->iInstance);
 
+
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
+    
     return VINF_SUCCESS;
 }
 
