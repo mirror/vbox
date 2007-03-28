@@ -314,15 +314,23 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     pThis->IMedia.pfnBiosSetTranslation = drvHostHDDBiosSetTranslation;
     pThis->IMedia.pfnGetUuid = drvHostHDDGetUuid;
 
+    pThis->cbSize = 0;
+
     if (pThis->fReadOnly)
         rc = RTFileOpen(&pThis->HostDiskFile, pThis->pszPath, RTFILE_O_READ);
     else
         rc = RTFileOpen(&pThis->HostDiskFile, pThis->pszPath, RTFILE_O_READWRITE);
-    /* Get disk size (in case it's an image file). */
-    if (    VBOX_FAILURE(rc)
-        ||  VBOX_FAILURE(RTFileGetSize(pThis->HostDiskFile, &pThis->cbSize)))
+    if (VBOX_SUCCESS(rc))
     {
-        pThis->cbSize = 0;
+        /* Get disk size (in case it's an image file). */
+        rc = RTFileGetSize(pThis->HostDiskFile, &pThis->cbSize);
+        if (VBOX_FAILURE(rc))
+            pThis->cbSize = 0;
+    }
+    else
+    {
+        /* Failed to open the raw disk. Specify a proper error message. */
+        rc = PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawHDD#%d: cannot open file \"%s\", error code %Vrc"), pDrvIns->iInstance, pThis->pszPath, rc);
     }
 
     if (VBOX_SUCCESS(rc))
