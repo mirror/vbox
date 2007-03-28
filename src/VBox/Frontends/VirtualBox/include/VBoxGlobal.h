@@ -170,7 +170,7 @@ public:
     bool isDebuggerVisibleAtStartup() const { return dbg_visible_at_startup; }
 #endif
 
-    // VBox enum to/from string/icon/color convertors
+    /* VBox enum to/from string/icon/color convertors */
 
     QStringList vmGuestOSTypeDescriptions() const;
     CGuestOSType vmGuestOSType (int index) const;
@@ -360,9 +360,16 @@ public:
 
     bool openURL (const QString &aURL);
 
+    QString languageID() const;
+    QString languageName() const;
+    QString languageCountry() const;
+    QString languageNameEnglish() const;
+    QString languageCountryEnglish() const;
+    QString languageTranslators() const;
+
     void languageChange();
 
-    /* made public for internal purposes */
+    /** @internal made public for internal purposes */
     void cleanup();
 
     /* public static stuff */

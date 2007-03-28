@@ -1,5 +1,33 @@
 <!DOCTYPE TS><TS>
 <context>
+    <name>@@@</name>
+    <message>
+        <source>English</source>
+        <comment>Native language name</comment>
+        <translation>Русский</translation>
+    </message>
+    <message>
+        <source>built-in</source>
+        <comment>Native language country name (empty if this language is for all countries)</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>English</source>
+        <comment>Language name, in English</comment>
+        <translation>Russian</translation>
+    </message>
+    <message>
+        <source>built-in</source>
+        <comment>Language country name, in English (empty if native country name is empty)</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>InnoTek</source>
+        <comment>Comma-separated list of translators</comment>
+        <translation></translation>
+    </message>
+</context>
+<context>
     <name>BootItemsList</name>
     <message>
         <source>Move the selected boot device up.</source>
@@ -1302,6 +1330,16 @@
     <message>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
+        <comment>hard disk</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
