@@ -36,6 +36,7 @@
 #include <iprt/stream.h>
 #include <iprt/alloc.h>
 #include <iprt/string.h>
+#include <iprt/semaphore.h>
 
 #include "Builtins.h"
 
@@ -82,6 +83,8 @@ typedef struct DRVNAMEDPIPE
     OVERLAPPED          OverlappedWrite;
     /* Overlapped structure for reads. */
     OVERLAPPED          OverlappedRead;
+    /* Listen thread wakeup semaphore */
+    RTSEMEVENT          ListenSem;
 #else /* !__WIN__ */
     /** Socket handle of the local socket for server. */
     RTSOCKET            LocalSocketServer;
@@ -355,7 +358,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 
             if (hrc == ERROR_PIPE_CONNECTED)
             {
-                RTThreadSleep(250);
+                RTSemEventWait(pData->ListenSem, 250);
             }
             else
             if (hrc != ERROR_SUCCESS)
@@ -395,6 +398,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 #ifdef __WIN__
     CloseHandle(hEvent);
 #endif
+    pData->ListenThread = NIL_RTTHREAD;
     return VINF_SUCCESS;
 }
 
@@ -473,6 +477,9 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, 0, "NamedPipe");
         if VBOX_FAILURE(rc)
             return PDMDrvHlpVMSetError(pDrvIns, rc,  RT_SRC_POS, N_("NamedPipe#%d failed to create listening thread\n"), pDrvIns->iInstance);
+
+        rc = RTSemEventCreate(&pData->ListenSem);
+        AssertRC(rc);
     }
     else
     {
@@ -486,7 +493,6 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     memset(&pData->OverlappedRead, 0, sizeof(pData->OverlappedRead));
     pData->OverlappedWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     pData->OverlappedRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
 #else /* !__WIN__ */
     int s;
     struct sockaddr_un addr;
@@ -560,6 +566,9 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
         CloseHandle(pData->OverlappedRead.hEvent);
         CloseHandle(pData->OverlappedWrite.hEvent);
     }
+    /* Wake up listen thread */
+    RTSemEventSignal(pData->ListenSem);
+    RTSemEventDestroy(pData->ListenSem);
 #else /* !__WIN__ */
     if (pData->fIsServer)
     {
@@ -574,6 +583,14 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
             close(pData->LocalSocket);
     }
 #endif /* !__WIN__ */
+
+    if (pData->ListenThread)
+    {
+        RTThreadWait(pData->ListenThread, 250, NULL);
+        if (pData->ListenThread != NIL_RTTHREAD)
+            LogRel(("NamedPipe%d: listen thread did not terminate\n", pDrvIns->iInstance));
+    }
+
     if (pData->pszLocation)
         MMR3HeapFree(pData->pszLocation);
 }
