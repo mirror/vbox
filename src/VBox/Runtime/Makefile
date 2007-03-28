@@ -325,6 +325,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/timer-generic.cpp \
@@ -707,6 +708,7 @@ RuntimeR0Drv_SOURCES.win.amd64 = \
 
 RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	RTErrConvertFromErrno.cpp \
 	string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
