@@ -192,12 +192,14 @@ static void serial_update_irq(SerialState *s)
         s->iir = UART_IIR_NO_INT;
     }
     if (s->iir != UART_IIR_NO_INT) {
+        Log(("serial_update_irq %d 1\n", s->irq));
 #ifdef VBOX_SERIAL_PCI
         PDMDevHlpPCISetIrqNoWait(CTXSUFF(s->pDevIns), 0, 1);
 #else /* !VBOX_SERIAL_PCI */
         PDMDevHlpISASetIrqNoWait(CTXSUFF(s->pDevIns), s->irq, 1);
 #endif /* !VBOX_SERIAL_PCI */
     } else {
+        Log(("serial_update_irq %d 0\n", s->irq));
 #ifdef VBOX_SERIAL_PCI
         PDMDevHlpPCISetIrqNoWait(CTXSUFF(s->pDevIns), 0, 0);
 #else /* !VBOX_SERIAL_PCI */
@@ -254,8 +256,9 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             /** @todo implement backpressure for writing (don't set interrupt
              * bits/line until the character is actually written). This way
              * EMT wouldn't block for writes taking longer than normal. */
-            if (s->pDrvChar)
+            if (RT_LIKELY(s->pDrvChar))
             {
+                Log(("serial_io_port_write: write 0x%X\n", ch));
                 int rc = s->pDrvChar->pfnWrite(s->pDrvChar, &ch, 1);
                 AssertRC(rc);
             }
@@ -322,6 +325,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
 #ifndef IN_RING3
             *pRC = VINF_IOM_HC_IOPORT_READ;
 #else
+            Log(("serial_io_port_read: read 0x%X\n", s->rbr));
             ret = s->rbr;
             s->lsr &= ~(UART_LSR_DR | UART_LSR_BI);
             serial_update_irq(s);
@@ -433,7 +437,7 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
         rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
-            Log(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
+            Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
             rc = serial_ioport_write (pData, Port, u32);
             PDMCritSectLeave(&pData->CritSect);
         }
@@ -467,7 +471,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
         if (rc == VINF_SUCCESS)
         {
             *pu32 = serial_ioport_read (pData, Port, &rc);
-            Log(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
+            Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
             PDMCritSectLeave(&pData->CritSect);
         }
     }
