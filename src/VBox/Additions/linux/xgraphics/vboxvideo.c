@@ -416,6 +416,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     rgb rzeros = {0, 0, 0};
     ClockRange *clockRanges;
     int i;
+    DisplayModePtr m_prev;
 
     /* Are we really starting the server, or is this just a dummy run? */
     if (flags & PROBE_DETECT)
@@ -522,14 +523,14 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86SetGamma(pScrn, gzeros);
 
-    /* To get around the problem of SUSE specifying a single, invalid mode in their Xorg.conf
-       by default, we add an additional mode to the end of the user specified list.  This means
-       that if all user modes are invalid, X will try our mode before falling back to its standard
-       mode list. */
+    /* To get around the problem of SUSE specifying a single, invalid mode in their
+     * Xorg.conf by default, we add an additional mode to the end of the user specified
+     * list. This means that if all user modes are invalid, X will try our mode before
+     * falling back to its standard mode list. */
     if (pScrn->display->modes == NULL)
     {
         /* The user specified no modes at all - specify 1024x768 as a default. */
-        pScrn->display->modes = xnfalloc(2 * sizeof(char*));
+        pScrn->display->modes    = xnfalloc(2 * sizeof(char*));
         pScrn->display->modes[0] = "1024x768";
         pScrn->display->modes[1] = NULL;
     }
@@ -537,9 +538,46 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     {
         /* Add 1024x768 to the end of the mode list in case the others are all invalid. */
         for (i = 0; pScrn->display->modes[i] != NULL; i++);
-        pScrn->display->modes = xnfrealloc(pScrn->display->modes, (i + 2) * sizeof(char *));
-        pScrn->display->modes[i] = "1024x768";
-        pScrn->display->modes[i + 1] = NULL;
+        pScrn->display->modes      = xnfrealloc(pScrn->display->modes, (i + 2) 
+                                   * sizeof(char *));
+        pScrn->display->modes[i  ] = "1024x768";
+        pScrn->display->modes[i+1] = NULL;
+    }
+
+    /* Determine the virtual screen resolution from the first mode (which will be selected) */
+    sscanf(pScrn->display->modes[0], "%dx%d",
+           &pScrn->display->virtualX, &pScrn->display->virtualY);
+    pScrn->display->virtualX = (pScrn->display->virtualX + 7) & ~7;
+
+    /* Create a builtin mode for every specified mode. This allows to specify arbitrary
+     * screen resolutions */
+    m_prev = NULL;
+    for (i = 0; pScrn->display->modes[i] != NULL; i++)
+    {
+        DisplayModePtr m;
+        int x = 0, y = 0;
+
+        sscanf(pScrn->display->modes[i], "%dx%d", &x, &y);
+        /* sanity check, smaller resolutions does not make sense */
+        if (x < 64 || y < 64)
+        {
+            xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Ignoring mode \"%s\"\n",
+                       pScrn->display->modes[i]);
+            continue;
+        }
+        m                = xnfcalloc(sizeof(DisplayModeRec), 1);
+        m->status        = MODE_OK;
+        m->type          = M_T_BUILTIN;
+        /* VBox does only support screen widths which are a multiple of 8 */
+        m->HDisplay      = (x + 7) & ~7;
+        m->VDisplay      = y;
+        m->name          = strdup(pScrn->display->modes[i]);
+        if (!m_prev)
+            pScrn->modePool = m;
+        else
+            m_prev->next = m;
+        m->prev = m_prev;
+        m_prev  = m;
     }
 
     /* Filter out video modes not supported by the virtual hardware
