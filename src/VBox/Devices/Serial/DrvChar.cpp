@@ -179,7 +179,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
                 }
                 else
                 {
-                    Log(("Write failed with %Vrc; skipping\n", rc));
+                    LogFlow(("Write failed with %Vrc; skipping\n", rc));
                     break;
                 }
             }
