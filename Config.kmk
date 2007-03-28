@@ -92,7 +92,7 @@ PATH_SYS              = $(patsubst %/,%,$(PATH_INS)/$(INST_SYS))
 PATH_LIB              = $(patsubst %/,%,$(PATH_INS)/$(INST_LIB))
 PATH_DOC              = $(PATH_OUT)/doc
 VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
-
+VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
 
 
 # Delete targets on failure.
