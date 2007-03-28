@@ -2,7 +2,7 @@
 /** @file
  * PC-BIOS - Binary 2 C Structure Converter.
  */
- 
+
 /*
  * Copyright (C) 2006 InnoTek Systemberatung GmbH
  *
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     int           fAscii = 0;
     int           fExport = 0;
     unsigned char abLine[16];
-    unsigned int  off;
+    size_t        off;
     size_t        cbRead;
     size_t        cbBin;
 
@@ -173,7 +173,7 @@ syntax_error:
             fprintf(pFileOut, "      ");
         if (fAscii)
         {
-            fprintf(pFileOut, " /* 0x%08x: ", off);
+            fprintf(pFileOut, " /* 0x%08lx: ", (long)off);
             for (i = 0; i < cbRead; i++)
                 fprintf(pFileOut, "%c", isprint(abLine[i]) ? abLine[i] : '.');
             for (; i < sizeof(abLine); i++)
@@ -193,7 +193,7 @@ syntax_error:
     }
     if (off != cbBin)
     {
-        fprintf(stderr, "%s: read error off=%d cbBin=%ld\n", argv[0], off, (long)cbBin);
+        fprintf(stderr, "%s: read error off=%ld cbBin=%ld\n", argv[0], (long)off, (long)cbBin);
         goto error;
     }
 
