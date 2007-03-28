@@ -249,7 +249,10 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
                 rc = VINF_SUCCESS;
             }
             else
-                AssertRC(rc);
+            {
+                LogFlow(("Read failed with %Vrc; skipping\n", rc));
+                break;
+            }
         }
     }
 
