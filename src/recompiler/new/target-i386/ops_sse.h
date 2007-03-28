@@ -592,20 +592,19 @@ void OPPROTO glue(op_pshufw, SUFFIX) (void)
     r.W(3) = s->W((order >> 6) & 3);
     *d = r;
 #else
-    Reg r, *s;
+    Reg *s;
     int order;
+    uint32_t t, u;
     s = (Reg *)((char *)env + PARAM2);
     order = PARAM3;
-    r.W(0) = s->W(order & 3);
-    r.W(1) = s->W((order >> 2) & 3);
-    r.W(2) = s->W((order >> 4) & 3);
-    r.W(3) = s->W((order >> 6) & 3);
+    t = s->W(order & 3);
+    t |= (s->W((order >> 2) & 3) << 16);
+    u = s->W((order >> 4) & 3);
+    u |= (s->W((order >> 6) & 3) << 16);
 
     s = (Reg *)((char *)env + PARAM1);
-    s->_l[0] = r._l[0];
-    s->_l[1] = r._l[1];
-    XMM_ONLY(s->_l[2] = r._l[2];)
-    XMM_ONLY(s->_l[3] = r._l[3];)
+    s->_l[0] = t;
+    s->_l[1] = u;
 #endif 
 }
 #else
