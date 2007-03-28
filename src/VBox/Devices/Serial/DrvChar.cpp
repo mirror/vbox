@@ -347,6 +347,9 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
+    /* Detach attached drivers. */
+    pDrvIns->pDrvHlp->pfnDetach(pDrvIns);
+
     pData->fShutdown = true;
     RTThreadWait(pData->ReceiveThread, 1000, NULL);
     if (pData->ReceiveThread != NIL_RTTHREAD)
