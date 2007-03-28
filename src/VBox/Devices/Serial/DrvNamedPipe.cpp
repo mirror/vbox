@@ -146,8 +146,12 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         if (VBOX_FAILURE(rc))
         {
             Log(("drvNamedPipeRead: RTFileRead returned %Vrc\n", rc));
-            if (    rc == VERR_EOF
-                ||  rc == VERR_BROKEN_PIPE)
+            if (    !pData->fShutdown
+                &&  (   rc == VERR_EOF
+                        ||  rc == VERR_BROKEN_PIPE
+                    )
+               )
+
             {
                 RTFILE tmp = pData->NamedPipe;
                 FlushFileBuffers((HANDLE)tmp);
@@ -538,6 +542,8 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVNAMEDPIPE pData = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
     LogFlow(("%s: %s\n", __FUNCTION__, pData->pszLocation));
+
+    pData->fShutdown = true;
 
 #ifdef __WIN__
     if (pData->NamedPipe != NIL_RTFILE)
