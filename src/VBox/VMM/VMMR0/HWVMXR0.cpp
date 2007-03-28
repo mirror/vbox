@@ -480,8 +480,8 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_FS_BASE,           0);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_GS_BASE,           0);
 #else
-        rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,           ASMRdMsr(MSR_K8_FS_BASE));
-        rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,           ASMRdMsr(MSR_K8_GS_BASE));
+        rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,         ASMRdMsr(MSR_K8_FS_BASE));
+        rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,         ASMRdMsr(MSR_K8_GS_BASE));
 #endif
         AssertRC(rc);
 
