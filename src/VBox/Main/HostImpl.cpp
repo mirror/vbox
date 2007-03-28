@@ -1440,6 +1440,7 @@ bool Host::validateDevice(char *deviceNode, bool isCDROM)
                 if (fileHandle >= 0)
                 {
                     cdrom_subchnl cdChannelInfo;
+                    cdChannelInfo.cdsc_format = CDROM_MSF;
                     // this call will finally reveal the whole truth
                     if ((ioctl(fileHandle, CDROMSUBCHNL, &cdChannelInfo) == 0) ||
                         (errno == EIO) || (errno == ENOENT) ||
