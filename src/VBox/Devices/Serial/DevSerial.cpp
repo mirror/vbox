@@ -139,7 +139,7 @@ struct SerialState
     HCPTRTYPE(PPDMICHAR)            pDrvChar;
 
     uint16_t                        divider;
-    uint16_t                        afAlignment[3];
+    uint16_t                        auAlignment[3];
     uint8_t                         rbr; /* receive register */
     uint8_t                         ier;
     uint8_t                         iir; /* read only */
