@@ -221,7 +221,11 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
             {
                 cbRemaining = sizeof(aBuffer);
                 rc = pData->pDrvStream->pfnRead(pData->pDrvStream, aBuffer, &cbRemaining);
-                AssertRC(rc);
+                if (VBOX_FAILURE(rc))
+                {
+                    LogFlow(("Read failed with %Vrc\n", rc));
+                    break;
+                }
             }
             else
             {
@@ -250,7 +254,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
             }
             else
             {
-                LogFlow(("Read failed with %Vrc; skipping\n", rc));
+                LogFlow(("NotifyRead failed with %Vrc\n", rc));
                 break;
             }
         }
