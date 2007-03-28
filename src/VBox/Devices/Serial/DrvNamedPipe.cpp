@@ -145,7 +145,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
 
         if (VBOX_FAILURE(rc))
         {
-            Log(("drvNamedPipeRead: RTFileRead returned %Vrc\n", rc));
+            Log(("drvNamedPipeRead: RTFileRead returned %Vrc fShutdown=%d\n", rc, pData->fShutdown));
             if (    !pData->fShutdown
                 &&  (   rc == VERR_EOF
                      || rc == VERR_BROKEN_PIPE
