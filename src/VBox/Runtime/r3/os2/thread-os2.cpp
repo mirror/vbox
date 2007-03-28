@@ -110,9 +110,9 @@ static void rtThreadNativeMain(void *pvArgs)
     *g_ppCurThread = pThread;
 
 #ifdef fibGetTidPid
-    rtThreadMain(pThread, fibGetTidPid(), &pThread->&szName);
+    rtThreadMain(pThread, fibGetTidPid(), &pThread->szName[0]);
 #else
-    rtThreadMain(pThread, _gettid(), &pThread->&szName);
+    rtThreadMain(pThread, _gettid(), &pThread->szName[0]);
 #endif
 
     *g_ppCurThread = NULL;
