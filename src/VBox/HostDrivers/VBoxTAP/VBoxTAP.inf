@@ -19,7 +19,7 @@
 
 [Version]
    Signature = "$Windows NT$"
-   CatalogFile = VBoxTAP.cat
+;;;;   CatalogFile = VBoxTAP.cat
    ClassGUID = {4d36e972-e325-11ce-bfc1-08002be10318}
    Provider = %Provider%
    Class = Net
