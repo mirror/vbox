@@ -394,14 +394,20 @@ static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *
         PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
     }
 
-    Assert(!(pData->lsr & UART_LSR_DR));
-    pData->rbr = *(const char *)pvBuf;
-    pData->lsr |= UART_LSR_DR;
-    serial_update_irq(pData);
+    if (!(pData->lsr & UART_LSR_DR))
+    {
+        pData->rbr = *(const char *)pvBuf;
+        pData->lsr |= UART_LSR_DR;
+        serial_update_irq(pData);
+        *pcbRead = 1;
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_TIMEOUT;
+
     PDMCritSectLeave(&pData->CritSect);
 
-    *pcbRead = 1;
-    return VINF_SUCCESS;
+    return rc;
 }
 #endif /* IN_RING3 */
 
