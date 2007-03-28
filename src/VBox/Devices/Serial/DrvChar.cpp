@@ -338,6 +338,7 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
     /* Empty the send queue */
     pData->iSendQueueTail = pData->iSendQueueHead = 0;
 
+    RTSemEventSignal(pData->SendSem);
     RTSemEventDestroy(pData->SendSem);
     pData->SendSem = NIL_RTSEMEVENT;
 
