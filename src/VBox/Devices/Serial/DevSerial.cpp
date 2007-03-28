@@ -466,7 +466,6 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
         rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
-            Log(("%s: port %#06x\n", __FUNCTION__, Port));
             *pu32 = serial_ioport_read (pData, Port, &rc);
             Log(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
             PDMCritSectLeave(&pData->CritSect);
