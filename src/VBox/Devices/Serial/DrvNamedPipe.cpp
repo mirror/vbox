@@ -108,14 +108,13 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
     LogFlow(("%s: pvBuf=%p cbRead=%#x (%s)\n", __FUNCTION__, pvBuf, cbRead, pData->pszLocation));
 
     Assert(pvBuf);
-    /** @todo implement non-blocking I/O */
 #ifdef __WIN__
     if (pData->NamedPipe != NIL_RTFILE)
     {
-        unsigned cbReallyRead;
+        DWORD cbReallyRead;
         pData->OverlappedRead.Offset     = 0;
         pData->OverlappedRead.OffsetHigh = 0;
-        if (!ReadFile((HANDLE)pData->NamedPipe, pvBuf, *cbRead, NULL, &pData->OverlappedRead))
+        if (!ReadFile((HANDLE)pData->NamedPipe, pvBuf, *cbRead, &cbReallyRead, &pData->OverlappedRead))
         {
             DWORD uError = GetLastError();
 
@@ -135,7 +134,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                     uError = 0;
 
                     /* Wait for incoming bytes. */
-                    if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, (DWORD *)&cbReallyRead, TRUE) == FALSE)
+                    if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, &cbReallyRead, TRUE) == FALSE)
                         uError = GetLastError();
                 }
 
@@ -143,8 +142,6 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                 Log(("drvNamedPipeRead: ReadFile returned %d (%Vrc)\n", uError, rc));
             }
         }
-        else
-            cbReallyRead = *cbRead;
 
         if (VBOX_FAILURE(rc))
         {
@@ -165,7 +162,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             }
             cbReallyRead = 0;
         }
-        *cbRead = cbReallyRead;
+        *cbRead = (size_t)cbReallyRead;
     }
 #else /* !__WIN__ */
     if (pData->LocalSocket != NIL_RTSOCKET)
