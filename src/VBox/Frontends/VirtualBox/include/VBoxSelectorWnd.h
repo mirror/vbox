@@ -94,6 +94,8 @@ private slots:
     void vmListBoxCurrentChanged (bool aRefreshDetails = true,
                                   bool aRefreshSnapshots = true,
                                   bool aRefreshDescription = true);
+
+    void mediaEnumStarted();
     void mediaEnumFinished (const VBoxMediaList &);
 
     /* VirtualBox callback events we're interested in */
@@ -132,6 +134,8 @@ private:
 
     QPoint normal_pos;
     QSize normal_size;
+
+    bool doneInaccessibleWarningOnce : 1;
 };
 
 #endif // __VBoxSelectorWnd_h__

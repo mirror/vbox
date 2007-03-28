@@ -408,12 +408,12 @@ VBoxGlobal &VBoxGlobal::instance()
 
     if (!vboxGlobal_inited)
     {
-        // check that the QApplication instance is created
+        /* check that a QApplication instance is created */
         if (qApp)
         {
             vboxGlobal_inited = true;
             vboxGlobal_instance.init();
-            // add our cleanup handler to the list of Qt post routines
+            /* add our cleanup handler to the list of Qt post routines */
             qAddPostRoutine (vboxGlobalCleanup);
         }
         else
@@ -435,10 +435,9 @@ bool VBoxGlobal::setSettings (const VMGlobalSettings &gs)
         return false;
     }
 
-    // @note
-    //  we don't assign gs to our gset member here, because VBoxCallback
-    //  will update gset as necessary when new settings are successfullly
-    //  sent to the VirtualBox server by gs.save()
+    /* We don't assign gs to our gset member here, because VBoxCallback
+     * will update gset as necessary when new settings are successfullly
+     * sent to the VirtualBox server by gs.save(). */
 
     return true;
 }
@@ -611,16 +610,14 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */)
 {
     Assert (!aPredict || aHD.GetParent().isNull());
 
-/// @todo (r=dmik) later: we need to keep *all* media (including all hard disk
-//  children) in the current media list in order for the following to work.
-//    VBoxMedia media;
-//    if (!findMedia (CUnknown (aHD), media))
-//    {
-//        /* media may be new and not alredy in the media list, request refresh */
-//        startEnumeratingMedia();
-//        if (!findMedia (CUnknown (aHD), media))
-//            AssertFailed();
-//    }
+    VBoxMedia media;
+    if (!findMedia (CUnknown (aHD), media))
+    {
+        /* media may be new and not alredy in the media list, request refresh */
+        startEnumeratingMedia();
+        if (!findMedia (CUnknown (aHD), media))
+            AssertFailed();
+    }
 
     CHardDisk root = aHD.GetRoot();
     QString details;
@@ -635,24 +632,22 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */)
 
     details += ", ";
 
-    /// @todo (r=dmik) prepend the details with the warning/error
+    /// @todo prepend the details with the warning/error
     //  icon when not accessible
 
-/// @todo (r=dmik) later: we need to keep *all* media (including all hard disk
-//  children) in the current media list in order for the following to work.
-//    switch (media.status)
-//    {
-//        case VBoxMedia::Unknown:
-//            details += tr ("<i>Checking...</i>", "hard disk");
-//            break;
-//        case VBoxMedia::Ok:
+    switch (media.status)
+    {
+        case VBoxMedia::Unknown:
+            details += tr ("<i>Checking...</i>", "hard disk");
+            break;
+        case VBoxMedia::Ok:
             details += formatSize (root.GetSize() * _1M);
-//            break;
-//        case VBoxMedia::Error:
-//        case VBoxMedia::Inaccessible:
-//            details += tr ("Inaccessible", "hard disk");
-//            break;
-//    }
+            break;
+        case VBoxMedia::Error:
+        case VBoxMedia::Inaccessible:
+            details += tr ("<i>Inaccessible</i>", "hard disk");
+            break;
+    }
 
     return details;
 }

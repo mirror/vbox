@@ -373,6 +373,7 @@ VBoxSelectorWnd::
 VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
                  WFlags aFlags)
     : QMainWindow (aParent, aName, aFlags)
+    , doneInaccessibleWarningOnce (false)
 {
     if (aSelf)
         *aSelf = this;
@@ -579,7 +580,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (vmDetailsView, SIGNAL (linkClicked (const QString &)),
             this, SLOT (vmSettings (const QString &)));
 
-    /* listen to "media enumeration finished" signals */
+    /* listen to media enumeration signals */
+    connect (&vboxGlobal(), SIGNAL (mediaEnumStarted()),
+             this, SLOT (mediaEnumStarted()));
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
              this, SLOT (mediaEnumFinished (const VBoxMediaList &)));
 
@@ -1215,10 +1218,23 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
     }
 }
 
+void VBoxSelectorWnd::mediaEnumStarted()
+{
+    /* refresh the current details to pick up hard disk sizes */
+    vmListBoxCurrentChanged (true /* aRefreshDetails */);
+}
+
 void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
 {
     /* refresh the current details to pick up hard disk sizes */
     vmListBoxCurrentChanged (true /* aRefreshDetails */);
+
+    /* we warn about inaccessible media only once (after media emumeration
+     * started from main() at startup), to avoid annoying the user */
+    if (doneInaccessibleWarningOnce)
+        return;
+
+    doneInaccessibleWarningOnce = true;
 
     do
     {
@@ -1246,12 +1262,6 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
         }
     }
     while (0);
-
-    /* we react to the media enumeration event only once (after media
-     * emumeration started from main() at startup), and then disconnect
-     * to avoid annoying the user */
-    disconnect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
-                this, SLOT (mediaEnumFinished (const VBoxMediaList &)));
 }
 
 void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
