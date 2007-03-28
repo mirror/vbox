@@ -205,7 +205,7 @@ void rtThreadNativeDetach(void);
 
 
 /* thread.cpp */
-int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
+int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName);
 void rtThreadBlocking(PRTTHREADINT pThread, RTTHREADSTATE enmState, uint64_t u64Block,
                       const char *pszFile, unsigned uLine, RTUINTPTR uId);
 void rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState);

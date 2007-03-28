@@ -94,7 +94,7 @@ static unsigned __stdcall rtThreadNativeMain(void *pvArgs)
     if (!TlsSetValue(g_dwSelfTLS, pThread))
         AssertReleaseMsgFailed(("failed to set self TLS. lasterr=%d thread '%s'\n", GetLastError(), pThread->szName));
 
-    int rc = rtThreadMain(pThread, dwThreadId);
+    int rc = rtThreadMain(pThread, dwThreadId, &pThread->szName[0]);
 
     TlsSetValue(g_dwSelfTLS, NULL);
     _endthreadex(rc);

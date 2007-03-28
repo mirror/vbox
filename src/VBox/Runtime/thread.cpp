@@ -567,9 +567,11 @@ void rtThreadTerminate(PRTTHREADINT pThread, int rc)
  *          pThread is dereference by the thread before returning!
  * @param   pThread         The thread structure.
  * @param   NativeThread    The native thread id.
+ * @param   pszThreadName   The name of the thread (purely a dummy for backtrace).
  */
-int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
+int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName)
 {
+    NOREF(pszThreadName);
     rtThreadInsert(pThread, NativeThread);
     Log(("rtThreadMain: Starting: pThread=%p NativeThread=%RTnthrd Name=%s pfnThread=%p pvUser=%p\n",
          pThread, NativeThread, pThread->szName, pThread->pfnThread, pThread->pvUser));
