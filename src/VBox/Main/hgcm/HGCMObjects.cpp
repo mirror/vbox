@@ -208,6 +208,10 @@ void hgcmObjDeleteHandle (uint32_t handle)
 
             hgcmObjLeave ();
         }
+        else if (rc == VERR_SEM_DESTROYED)
+        {
+            /* @todo Implement hgcmThreadWait. */
+        }
         else
         {
             AssertReleaseMsgFailed (("Failed to acquire object pool semaphore, rc = %Vrc", rc));
