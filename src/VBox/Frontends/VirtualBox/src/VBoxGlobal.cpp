@@ -1465,6 +1465,73 @@ bool VBoxGlobal::openURL (const QString &aURL)
     return false;
 }
 
+/** 
+ *  Shortcut to QLocale::system().name().
+ */
+QString VBoxGlobal::languageID() const
+{
+    return  QLocale::system().name();
+}
+
+/** 
+ *  Native language name of the currently installed translation.
+ *  Returns "English [built-in]" if no translation is installed
+ *  or if the translation file is invalid.
+ */
+QString VBoxGlobal::languageName() const
+{
+
+    return qApp->translate ("@@@", "English",
+                            "Native language name");
+}
+
+/** 
+ *  Native language country name of the currently installed translation.
+ *  Returns "" if no translation is installed or if the translation file is
+ *  invalid, or if the language is independent on the country.
+ */
+QString VBoxGlobal::languageCountry() const
+{
+    return qApp->translate ("@@@", "built-in",
+                            "Native language country name "
+                            "(empty if this language is for all countries)");
+}
+
+/** 
+ *  Language name of the currently installed translation, in English.
+ *  Returns "English [built-in]" if no translation is installed
+ *  or if the translation file is invalid.
+ */
+QString VBoxGlobal::languageNameEnglish() const
+{
+
+    return qApp->translate ("@@@", "English",
+                            "Language name, in English");
+}
+
+/** 
+ *  Language country name of the currently installed translation, in English.
+ *  Returns "" if no translation is installed or if the translation file is
+ *  invalid, or if the language is independent on the country.
+ */
+QString VBoxGlobal::languageCountryEnglish() const
+{
+    return qApp->translate ("@@@", "built-in",
+                            "Language country name, in English "
+                            "(empty if native country name is empty)");
+}
+
+/** 
+ *  Comma-separated list of authors of the currently installed translation.
+ *  Returns "InnoTek" if no translation is installed or if the translation
+ *  file is invalid, or if the translation is supplied by InnoTek.
+ */
+QString VBoxGlobal::languageTranslators() const
+{
+    return qApp->translate ("@@@", "InnoTek",
+                            "Comma-separated list of translators");
+}
+
 /**
  *  Changes the language of all global string constants according to the
  *  currently installed translations tables.
