@@ -350,7 +350,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 
             }
 
-            if (!pData->fShutdown)
+            if (pData->fShutdown)
                 break;
 
             if (hrc == ERROR_PIPE_CONNECTED)
