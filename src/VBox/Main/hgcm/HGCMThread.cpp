@@ -579,9 +579,9 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
         pMsg->m_fu32Flags &= ~HGCM_MSG_F_WAIT;
         pMsg->m_fu32Flags |= HGCM_MSG_F_PROCESSED;
 
-        Leave ();
-
         hgcmObjDeleteHandle (pMsg->Handle ());
+
+        Leave ();
 
         if (fWaited)
         {
