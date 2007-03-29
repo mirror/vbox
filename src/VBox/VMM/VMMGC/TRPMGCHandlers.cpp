@@ -1006,7 +1006,9 @@ DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
  */
 DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser)
 {
+    Log(("********************************************************\n"));
     Log(("trpmGCTrapInGeneric: eip=%RX32 uUser=%#x\n", pRegFrame->eip, uUser));
+    Log(("********************************************************\n"));
 
     if (uUser & TRPM_TRAP_IN_HYPER)
     {
