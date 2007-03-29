@@ -137,6 +137,14 @@ void hgcmThreadUninit (void);
  */
 int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser);
 
+/** Wait for termination of a HGCM worker thread.
+ *
+ * @param handle The HGCM thread handle.
+ *
+ * @return VBox error code
+ */
+int hgcmThreadWait (HGCMTHREADHANDLE handle);
+
 /** Allocate a message to be posted to HGCM worker thread.
  *
  * @param hThread       Worker thread handle.
