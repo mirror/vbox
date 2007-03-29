@@ -327,19 +327,19 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
      * Iterate the device instances.
      * The attached drivers are processed first.
      * N.B. There is no need to mess around freeing memory allocated
-     *      from any MM heap since MM will do that in it's Term function.
+     *      from any MM heap since MM will do that in its Term function.
      */
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
         {
-            PPDMDRVINS pDrvIns;
+            /* Find the bottom driver. */
+            /** @todo Add pBottom to PDMLUN, this might not be the only place we will have to work it from the bottom up. */
+            PPDMDRVINS pDrvIns = pLun->pTop;
+            while (pDrvIns && pDrvIns->Internal.s.pDown)
+                pDrvIns = pDrvIns->Internal.s.pDown;
 
-            /* Find the bottom driver */
-            for (pDrvIns = pLun->pTop; pDrvIns && pDrvIns->Internal.s.pDown; pDrvIns = pDrvIns->Internal.s.pDown)
-                ;
-
-            /* And destroy them one at a time from the bottom up */
+            /* And destroy them one at a time from the bottom up. */
             while (pDrvIns)
             {
                 PPDMDRVINS pDrvNext = pDrvIns->Internal.s.pUp;
@@ -351,6 +351,7 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
                     pDrvIns->pDrvReg->pfnDestruct(pDrvIns);
                     TMR3TimerDestroyDriver(pVM, pDrvIns);
                 }
+
                 pDrvIns = pDrvNext;
             }
         }
@@ -599,6 +600,7 @@ PDMR3DECL(void) PDMR3PowerOn(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnPowerOn)
                 {
@@ -645,6 +647,7 @@ PDMR3DECL(void) PDMR3Reset(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnReset)
                 {
@@ -682,6 +685,7 @@ PDMR3DECL(void) PDMR3Suspend(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnSuspend)
                 {
@@ -719,6 +723,7 @@ PDMR3DECL(void) PDMR3Resume(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnResume)
                 {
@@ -756,6 +761,7 @@ PDMR3DECL(void) PDMR3PowerOff(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnPowerOff)
                 {
