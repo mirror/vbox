@@ -1828,9 +1828,8 @@ void VBoxDiskImageManagerDlg::addImage()
         AssertMsgFailed (("Root list should be equal to hdsView, cdsView or fdsView"));
     }
 
-    QString src = QFileDialog::getOpenFileName (dir, filter,
-                                                this, "AddDiskImageDialog",
-                                                title);
+    QString src = vboxGlobal().getOpenFileName (dir, filter, this,
+                                                "AddDiskImageDialog", title);
     src =  QDir::convertSeparators (src);
 
     addImageToList (src, type);

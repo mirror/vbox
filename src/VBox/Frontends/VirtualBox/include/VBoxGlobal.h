@@ -337,6 +337,10 @@ public:
 
     bool startMachine (const QUuid &id);
 
+    QString getOpenFileName (const QString &, const QString &, QWidget*, const char*,
+                             const QString &, QString *defaultFilter = 0,
+                             bool resolveSymLinks = true);
+
     void startEnumeratingMedia();
 
     /**

@@ -498,7 +498,6 @@
 </connections>
 <includes>
     <include location="global" impldecl="in implementation">qapplication.h</include>
-    <include location="global" impldecl="in implementation">qfiledialog.h</include>
     <include location="global" impldecl="in implementation">qprogressdialog.h</include>
     <include location="global" impldecl="in implementation">qfocusdata.h</include>
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
