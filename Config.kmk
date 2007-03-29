@@ -860,6 +860,47 @@ ifeq ($(BUILD_TARGET),l4)
 endif
 
 #
+# Coding Signing.
+#
+ifdef VBOX_SIGNING_MODE
+ ifeq ($(BUILD_PLATFORM),win)
+  # VBOX_PATH_SELFSIGN points to the Vista WDK bin/SelfSign directory.
+  ifndef VBOX_PATH_SELFSIGN
+   VBOX_PATH_SELFSIGN := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS)/win.x86/selfsign/*)))
+   ifeq ($(VBOX_PATH_SELFSIGN),)
+    VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign/r1
+   endif
+  endif
+  VBOX_SIGNTOOL ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
+
+  # There are two signing modes; 'self' and 'release'.
+  ifeq ($(VBOX_SIGNING_MODE),self)
+   ## @todo
+  else ifeq ($(VBOX_SIGNING_MODE),release)
+   VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/MSCV-GlobalSign.cer
+   VBOX_CERTIFICATE_STORE ?= my
+   VBOX_CERTIFICATE_SUBJECT_NAME ?= InnoTek Systemberatung GmbH
+   VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timestamp.dll
+   VBOX_SIGN_DRIVER_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_SIGNTOOL) sign \
+		/ac "$(VBOX_CROSS_CERTIFICATE_FILE)" \
+		/s "$(VBOX_CERTIFICATE_STORE)" \
+		/n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" \
+		/t "$(VBOX_TSA_URL)" \
+		$(out))
+   VBOX_SIGN_IMAGE_CMDS  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_SIGNTOOL) sign \
+		/ac "$(VBOX_CROSS_CERTIFICATE_FILE)" \
+		/s "$(VBOX_CERTIFICATE_STORE)" \
+		/n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" \
+		$(out))
+  else
+   $(error Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
+  endif
+ else
+  VBOX_SIGNING_MODE :=
+ endif
+endif
+
+#
 # Default prefixes and suffixes.
 #
 VBOX_PREF_LIB =
@@ -1182,6 +1223,7 @@ ifeq ($(BUILD_TARGET),win)
  endif
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
  TEMPLATE_VBOXR0DRV_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:32 -MapInfo:Exports -NoD -Debug
+ TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif
 
 ifeq ($(BUILD_TARGET),linux)
@@ -1308,6 +1350,7 @@ ifeq ($(BUILD_TARGET),win)
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib
+ TEMPLATE_VBOXR3EXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the gcc guys
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
@@ -1533,6 +1576,7 @@ ifeq ($(BUILD_TARGET),win)
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+ TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the GCC guys:
 
@@ -1667,6 +1711,7 @@ ifeq ($(BUILD_TARGET),win)
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+ TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the gcc guys:
  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
@@ -1877,6 +1922,7 @@ else
 	$(PATH_TOOL_VCC70_LIB)/libcmt.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/ntdll.lib
 endif
+TEMPLATE_VBOXW32GUESTR3_POST_CMDS           = $(VBOX_SIGN_IMAGE_CMDS)
 
 #
 # R3 win32 guest libraries
@@ -1929,6 +1975,7 @@ TEMPLATE_VBOXW32GUESTR0_LDFLAGS             = \
 	/DISALLOWLIB:msvcrt.lib \
 	/DISALLOWLIB:msvcrtd.lib \
 	/DISALLOWLIB:libcmtd.lib
+TEMPLATE_VBOXW32GUESTR0_POST_CMDS           = $(VBOX_SIGN_DRIVER_CMDS)
 
 #
 # R0 win32 guest libraries
