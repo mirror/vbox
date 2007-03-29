@@ -262,6 +262,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
@@ -294,6 +295,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/os2/sems-os2.cpp \
 	r3/os2/system-os2.cpp \
@@ -313,7 +315,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/semnoint-generic.cpp \
 	generic/sched-generic.cpp \
 	r3/os2/time-os2.cpp \
-	r3/posix/timer-posix.cpp \
+	generic/timer-generic.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
@@ -354,6 +356,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/uuid-generic.cpp \

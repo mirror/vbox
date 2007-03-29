@@ -32,6 +32,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/time.h>
 #include <iprt/log.h>
+#include "internal/magics.h"
 
 
 
@@ -70,8 +71,6 @@ typedef struct RTTIMER
     /** The current tick number (since u64StartTS). */
     uint64_t volatile       iTick;
 } RTTIMER;
-/** Magic number for timer handles. (Jared Mason Diamond) */
-#define RTTIMER_MAGIC       0x19370910
 
 
 /*******************************************************************************

@@ -63,8 +63,7 @@
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
 #include <iprt/err.h>
-
-#include <errno.h>
+#include "internal/magics.h"
 
 __BEGIN_DECLS
 /* from sysinternals. */
@@ -112,10 +111,6 @@ typedef struct RTTIMER
     volatile int            iError;
 #endif
 } RTTIMER;
-
-/** Timer handle magic. */
-#define RTTIMER_MAGIC       0x42424242
-
 
 
 
