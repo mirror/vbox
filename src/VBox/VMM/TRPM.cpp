@@ -1177,7 +1177,7 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
                 /* Also store it in our guest trap array. */
                 pVM->trpm.s.aGuestTrapHandler[iTrap] = pHandler;
 
-                Log(("Setting trap handler %x to %08X (direct)\n", iTrap, pHandler));
+                Log(("Setting trap handler %d to %08X\n", iTrap, pHandler));
                 return VINF_SUCCESS;
             }
             /* ok, let's try to install a trampoline handler then. */
@@ -1192,7 +1192,7 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
         /*
          * Save handler which can be used for a trampoline call inside the GC
          */
-        Log(("Setting trap handler %x to %08X\n", iTrap, pHandler));
+        Log(("Setting trap handler %d to %08X\n", iTrap, pHandler));
         pVM->trpm.s.aGuestTrapHandler[iTrap] = pHandler;
         return VINF_SUCCESS;
     }

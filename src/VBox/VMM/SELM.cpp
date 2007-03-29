@@ -1519,12 +1519,12 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                     uint32_t offRedirBitmap = tss.offIoBitmap - sizeof(tss.IntRedirBitmap);
                     
                     /** @todo not sure how the partial case is handled; probably not allowed */
-                    if (offRedirBitmap + sizeof(tss.IntRedirBitmap) <= cbTss)
+                    if (offRedirBitmap + sizeof(tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
                     {
                         rc = PGMPhysReadGCPtr(pVM, &pVM->selm.s.Tss.IntRedirBitmap, GCPtrTss + offRedirBitmap, sizeof(tss.IntRedirBitmap));
                         AssertRC(rc);
-                        Log2(("Redirection bitmap:\n"));
-                        Log2(("%.*Vhxd\n", sizeof(tss.IntRedirBitmap), &pVM->selm.s.Tss.IntRedirBitmap));
+                        Log(("Redirection bitmap:\n"));
+                        Log(("%.*Vhxd\n", sizeof(tss.IntRedirBitmap), &pVM->selm.s.Tss.IntRedirBitmap));
                     }
                 }
             }

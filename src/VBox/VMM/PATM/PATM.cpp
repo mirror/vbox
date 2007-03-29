@@ -4479,7 +4479,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
             pPatchPage->pHighestAddrGC = (RTGCPTR)pGuestToPatchRec->Core.Key;
             /* Increase by instruction size. */
             uint32_t size = patmGetInstrSize(pVM, pPatch, pPatchPage->pHighestAddrGC);
-            Assert(size);
+////            Assert(size);
             pPatchPage->pHighestAddrGC += size;
         }
     }
