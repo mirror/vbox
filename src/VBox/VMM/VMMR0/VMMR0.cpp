@@ -60,7 +60,7 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
-//#define DEBUG_NO_RING0_ASSERTIONS
+#define DEBUG_NO_RING0_ASSERTIONS
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
 #endif
@@ -170,7 +170,6 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
         RTLogSetDefaultInstanceThread(NULL, 0);
         LogCom(("VMMR0Init: after %p dereg2\n", RTLogDefaultInstance()));
 
-        RTLogLoggerEx(&pR0Logger->Logger, 0, ~0U, "hello ring-0 logger (RTLogLoggerEx)\n");
         LogCom(("VMMR0Init: RTLogLoggerEx returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
 #endif
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);

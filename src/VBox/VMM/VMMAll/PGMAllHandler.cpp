@@ -254,6 +254,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
             int rc2 = pgmr3PhysGrowRange(pVM, GCPhys);
 #else
             int rc2 = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
+AssertRC(rc2);
 #endif
             if (rc2 != VINF_SUCCESS)
                 return rc2;

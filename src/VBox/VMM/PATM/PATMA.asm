@@ -40,7 +40,7 @@
 %ifdef DEBUG
 ; Noisy, but useful for debugging certain problems
 ;;;%define PATM_LOG_PATCHINSTR
-;;%define PATM_LOG_PATCHIRET
+%define PATM_LOG_PATCHIRET
 %endif
 
 BEGINCODE
