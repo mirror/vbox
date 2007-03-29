@@ -34,7 +34,7 @@
 %define CPUM_HANDLER_GS                 4
 %define CPUM_HANDLER_IRET               5
 %define CPUM_HANDLER_TYPEMASK           0ffh
-%define CPUM_HANDLER_CORECTX_IN_EBP     BIT(31)
+%define CPUM_HANDLER_CTXCORE_IN_EBP     BIT(31)
 
 %define VMMGCRET_USED_FPU       040000000h
 
