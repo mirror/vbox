@@ -92,6 +92,10 @@ DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
             PCPUMCTXCORE  pGstCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Guest);
             uint32_t     *pEsp = (uint32_t *)pRegFrame->esp;
 
+#if 0       /** @todo r=bird: I think we're also missing the bits of the state that's already. I can't test this, so I've left the fix disabled for now. */
+            *pGstCtxCore = *pRegFrame;
+#endif
+
             pGstCtxCore->eip        = *pEsp++;
             pGstCtxCore->cs         = (RTSEL)*pEsp++;
             pGstCtxCore->eflags.u32 = *pEsp++;
