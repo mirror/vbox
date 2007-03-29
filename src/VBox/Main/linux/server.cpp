@@ -33,6 +33,7 @@
 #include <nsIFile.h>
 #include <nsILocalFile.h>
 
+#include "linux/server.h"
 #include "Logging.h"
 
 #include <iprt/runtime.h>
@@ -997,14 +998,14 @@ int main (int argc, char **argv)
             break;
         }
 
-        /* get the executable name (will be used below) */
+        /* not really necessary at the moment */
+#if 0
         if (!RTProcGetExecutableName (path, sizeof (path)))
         {
             printf ("ERROR: Failed to get executable name!\n");
             break;
         }
-
-        LogFlowFunc (("Will use \"%s\" as server name.\n", path));
+#endif
 
         nsCOMPtr<nsIServiceManager> servMan;
         NS_InitXPCOM2 (getter_AddRefs (servMan), nsAppPath, nsnull);
@@ -1049,8 +1050,9 @@ int main (int argc, char **argv)
 
         NS_ADDREF (gIpcServ = ipcServ);
 
-        /* use the executable name as the server name */
-        rc = gIpcServ->AddName (path);
+        LogFlowFunc (("Will use \"%s\" as server name.\n", VBOXSVC_IPC_NAME));
+
+        rc = gIpcServ->AddName (VBOXSVC_IPC_NAME);
         if (NS_FAILED (rc))
         {
             printf ("ERROR: Failed to register VirtualBoxServer! (rc=%08X)\n", rc);
