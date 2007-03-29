@@ -2168,7 +2168,8 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
  *
  *  On Win32, this funciton makes sure a file filter is applied automatically
  *  right after it is selected from the drop-down list, to conform to common
- *  experience in other applications.
+ *  experience in other applications. Note that currently, @a selectedFilter
+ *  is always set to null on return.
  *
  *  On all other platforms, this function is equivalent to
  *  QFileDialog::getOpenFileName().
@@ -2182,8 +2183,11 @@ QString VBoxGlobal::getOpenFileName (const QString &startWith,
                                      QString       *selectedFilter,
                                      bool           resolveSymlinks)
 {
-    LogTraceMsg (("filters=%s\n", filters.local8Bit().data()));
 #if defined Q_WS_WIN
+
+    /* not yet implemented */
+    if (selectedFilter)
+        *selectedFilter = QString::null;
 
     QString result;
 
@@ -2259,8 +2263,8 @@ QString VBoxGlobal::getOpenFileName (const QString &startWith,
 
 #else
 
-    return QFileDialog::getOpenFileName (startWith, filter, parent, name,
-                                         caption, selectedFilter, resolveSymlinks );
+    return QFileDialog::getOpenFileName (startWith, filters, parent, name,
+                                         caption, selectedFilter, resolveSymlinks);
 
 #endif
 }
