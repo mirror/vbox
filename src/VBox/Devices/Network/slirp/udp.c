@@ -338,7 +338,6 @@ udp_attach(PNATState pData, struct socket *so)
     } else {
       /* success, insert in queue */
       so->so_expire = curtime + SO_EXPIRE;
-      so->so_expire = curtime + SO_EXPIRE;
       insque(pData, so,&udb);
     }
   }
