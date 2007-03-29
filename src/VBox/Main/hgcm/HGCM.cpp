@@ -698,6 +698,11 @@ void HGCMService::instanceDestroy (void)
     if (VBOX_SUCCESS(rc))
     {
         rc = hgcmMsgSend (hMsg);
+
+        if (VBOX_SUCCESS (rc))
+        {
+            hgcmThreadWait (m_thread);
+        }
     }
 
     RTStrFree (m_pszSvcLibrary);
@@ -1946,6 +1951,9 @@ int HGCMHostShutdown (void)
 
             if (VBOX_SUCCESS (rc))
             {
+                /* Wait for the thread termination. */
+                hgcmThreadWait (g_hgcmThread);
+
                 hgcmThreadUninit ();
             }
         }

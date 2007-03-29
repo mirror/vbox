@@ -134,6 +134,8 @@ class HGCMThread: public HGCMObject
 
         HGCMThread ();
 
+        int WaitForTermination (void);
+
         int Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser);
 
         int MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
@@ -199,6 +201,8 @@ static DECLCALLBACK(int) hgcmWorkerThreadFunc (RTTHREAD ThreadSelf, void *pvUser
 
     hgcmObjDeleteHandle (pThread->Handle ());
 
+    pThread->m_thread = NIL_RTTHREAD;
+
     LogFlow(("MAIN::hgcmWorkerThreadFunc: completed HGCM thread %p\n", pThread));
 
     return rc;
@@ -230,6 +234,8 @@ HGCMThread::~HGCMThread ()
      * Free resources allocated for the thread.
      */
 
+    Assert(m_thread == NIL_RTTHREAD);
+
     if (RTCritSectIsInitialized (&m_critsect))
     {
         RTCritSectDelete (&m_critsect);
@@ -245,17 +251,21 @@ HGCMThread::~HGCMThread ()
         RTSemEventMultiDestroy (m_eventThread);
     }
 
-    /*
-     * Wait for the thread to terminate, but let's not wait forever.
-     */
-    if (     m_thread != NIL_RTTHREAD
-        && !(m_fu32ThreadFlags & HGCMMSG_TF_TERMINATED))
+    return;
+}
+
+int HGCMThread::WaitForTermination (void)
+{
+    int rc = VINF_SUCCESS;
+    LogFlowFunc(("\n"));
+
+    if (m_thread != NIL_RTTHREAD)
     {
-        int rc = RTThreadWait (m_thread, 5000, NULL);
-        AssertRC (rc);
+        rc = RTThreadWait (m_thread, 5000, NULL);
     }
 
-    return;
+    LogFlowFunc(("rc = %Vrc\n", rc));
+    return rc;
 }
 
 int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser)
@@ -644,6 +654,24 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
 
     LogFlow(("MAIN::hgcmThreadCreate: rc = %Vrc\n", rc));
 
+    return rc;
+}
+
+int hgcmThreadWait (HGCMTHREADHANDLE hThread)
+{
+    int rc = VERR_INVALID_HANDLE;
+    LogFlowFunc(("0x%08X\n", hThread));
+
+    HGCMThread *pThread = (HGCMThread *)hgcmObjReference (hThread, HGCMOBJ_THREAD);
+
+    if (pThread)
+    {
+        rc = pThread->WaitForTermination ();
+
+        hgcmObjDereference (pThread);
+    }
+
+    LogFlowFunc(("rc = %Vrc\n", rc));
     return rc;
 }
 
