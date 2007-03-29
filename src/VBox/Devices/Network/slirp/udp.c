@@ -336,8 +336,11 @@ udp_attach(PNATState pData, struct socket *so)
       errno=lasterrno;
 #endif
     } else {
+      int opt = 1;
       /* success, insert in queue */
       so->so_expire = curtime + SO_EXPIRE;
+      /* enable broadcast for later use */
+      setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt));
       insque(pData, so,&udb);
     }
   }
