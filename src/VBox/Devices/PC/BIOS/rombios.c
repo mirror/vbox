@@ -3748,7 +3748,10 @@ BX_DEBUG_INT15("int15 AX=%04x\n",regs.u.r16.ax);
       if (regs.u.r8.al != 0xc0)
         goto undecoded;
       /* GRUB calls int15 with ax=0x00c0 to get the ROM configuration table,
-       * which we don't support, but logging that event is annoying. */
+       * which we don't support, but logging that event is annoying. In fact
+       * it is likely that they just misread some specs, because there is a
+       * int15 BIOS function AH=0xc0 which sounds quite similar to what GRUB
+       * wants to achieve. */
       SET_CF();
       regs.u.r8.ah = UNSUPPORTED_FUNCTION;
       break;
@@ -4038,6 +4041,12 @@ ASM_END
       break;
 
 #ifdef VBOX
+    /* Make the BIOS warning for pretty much every Linux kernel start
+     * disappear - it calls with ax=0xe980 to figure out SMI info. */
+    case 0xe9: /* SMI functions (SpeedStep and similar things) */
+      SET_CF();
+      regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+      break;
 undecoded:
 #endif /* VBOX */
     default:
