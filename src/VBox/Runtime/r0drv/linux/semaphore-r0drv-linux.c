@@ -31,6 +31,8 @@
 #include <iprt/asm.h>
 #include <iprt/err.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -48,9 +50,6 @@ typedef struct RTSEMEVENTINTERNAL
     wait_queue_head_t   Head;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
-/** Magic for the Linux event semaphore structure. (Neil Gaiman) */
-#define RTSEMEVENT_MAGIC 0x19601110
-
 
 /**
  * Linux mutex semaphore.
@@ -67,9 +66,6 @@ typedef struct RTSEMMUTEXINTERNAL
     void * volatile     pOwner;
 } RTSEMMUTEXINTERNAL, *PRTSEMMUTEXINTERNAL;
 
-/** Magic for the Linux mutex semaphore structure. (Douglas Adams) */
-#define RTSEMMUTEX_MAGIC 0x19520311
-
 
 /**
  * Wrapper for the linux semaphore structure.
@@ -81,9 +77,6 @@ typedef struct RTSEMFASTMUTEXINTERNAL
     /** the linux semaphore. */
     struct semaphore    Semaphore;
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
-
-/** Magic value for RTSEMFASTMUTEXINTERNAL::u32Magic (John Ronald Reuel Tolkien). */
-#define RTSEMFASTMUTEX_MAGIC    0x18920102
 
 
 

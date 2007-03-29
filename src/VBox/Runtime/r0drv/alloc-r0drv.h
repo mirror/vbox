@@ -24,6 +24,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include "internal/magics.h"
 
 __BEGIN_DECLS
 
@@ -42,8 +43,6 @@ typedef struct RTMEMHDR
     uint32_t    u32Padding;
 } RTMEMHDR, *PRTMEMHDR;
 
-/** Magic number for heap blocks. (Edgar Allan Poe) */
-#define RTMEMHDR_MAGIC      0x18090119
 
 /** @name RTMEMHDR::fFlags.
  * @{ */

@@ -24,11 +24,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-nt-kernel.h"
+
 #include <iprt/spinlock.h>
 #include <iprt/err.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+
+#include "internal/magics.h"
 
 
 /*******************************************************************************
@@ -44,9 +47,6 @@ typedef struct RTSPINLOCKINTERNAL
     /** The NT spinlock structure. */
     KSPIN_LOCK          Spinlock;
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
-
-/** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
-#define RTSPINLOCK_MAGIC    0x19480428
 
 
 

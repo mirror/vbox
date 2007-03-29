@@ -39,6 +39,8 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -53,11 +55,6 @@ typedef struct RTSEMFASTMUTEXINTERNAL
     /** The KEE mutex. */
     MutexLock_t         Mtx;
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
-
-/** Magic value for RTSEMFASTMUTEXINTERNAL::u32Magic (John Ronald Reuel Tolkien). */
-#define RTSEMFASTMUTEX_MAGIC        0x18920102
-/** Dead magic value. */
-#define RTSEMFASTMUTEX_MAGIC_DEAD   0x0000000 /// @todo
 
 
 RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)

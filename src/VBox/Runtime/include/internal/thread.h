@@ -29,6 +29,7 @@
 # include <iprt/process.h>
 # include <iprt/critsect.h>
 #endif
+#include "internal/magics.h"
 
 __BEGIN_DECLS
 
@@ -130,10 +131,6 @@ typedef struct RTTHREADINT
     char                    szName[RTTHREAD_NAME_LEN];
 } RTTHREADINT, *PRTTHREADINT;
 
-/** RTTHREADINT::u32Magic value. (Gilbert Keith Chesterton) */
-#define RTTHREADINT_MAGIC       0x18740529
-/** RTTHREADINT::u32Magic value for a dead thread. */
-#define RTTHREADINT_MAGIC_DEAD  0x19360614
 
 /** @name RTTHREADINT::fIntFlags Masks and Bits.
  * @{ */

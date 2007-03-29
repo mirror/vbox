@@ -24,6 +24,7 @@
 
 #include <iprt/memobj.h>
 #include <iprt/assert.h>
+#include "internal/magics.h"
 
 
 /** @defgroup grp_rt_memobj_int Internals.
@@ -186,9 +187,6 @@ typedef struct RTR0MEMOBJINTERNAL
     } u;
 
 } RTR0MEMOBJINTERNAL;
-
-/** RTR0MEMOBJ::u32Magic. (Masakazu Katsura) */
-#define RTR0MEMOBJ_MAGIC   0x19611210
 
 
 /**

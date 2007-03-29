@@ -40,6 +40,8 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -60,9 +62,6 @@ typedef struct RTSEMEVENTINTERNAL
     /** The OS/2 spinlock protecting this structure. */
     SpinLock_t          Spinlock;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
-
-/** Magic for the OS/2 event semaphore structure. (Neil Gaiman) */
-#define RTSEMEVENT_MAGIC 0x19601110
 
 
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)

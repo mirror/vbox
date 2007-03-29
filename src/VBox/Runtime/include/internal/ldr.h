@@ -23,6 +23,7 @@
 #define __ldr_h__
 
 #include <iprt/types.h>
+#include "internal/magics.h"
 
 __BEGIN_DECLS
 
@@ -318,9 +319,6 @@ typedef struct RTLDRMODINTERNAL
     /** Loader ops. */
     PCRTLDROPS              pOps;
 } RTLDRMODINTERNAL;
-
-/** The magic value for RTLDRMODINTERNAL::u32Magic. (Alan Moore) */
-#define RTLDRMOD_MAGIC  0x19531118
 
 
 /**

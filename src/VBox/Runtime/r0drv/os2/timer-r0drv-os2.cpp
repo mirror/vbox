@@ -42,6 +42,8 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -77,9 +79,6 @@ typedef struct RTTIMER
     /** The current tick number (since u64StartTS). */
     uint64_t volatile       iTick;
 } RTTIMER;
-
-/** Magic number for timer handles. (Jared Mason Diamond) */
-#define RTTIMER_MAGIC       0x19370910
 
 
 /*******************************************************************************

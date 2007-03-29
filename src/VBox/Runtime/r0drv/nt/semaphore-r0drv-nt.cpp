@@ -31,6 +31,8 @@
 #include <iprt/asm.h>
 #include <iprt/err.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -46,8 +48,6 @@ typedef struct RTSEMEVENTINTERNAL
     KEVENT              Event;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
-/** Magic for the NT event semaphore structure. (Neil Gaiman) */
-#define RTSEMEVENT_MAGIC 0x19601110
 
 
 /**
@@ -66,8 +66,6 @@ typedef struct RTSEMMUTEXINTERNAL
 #endif
 } RTSEMMUTEXINTERNAL, *PRTSEMMUTEXINTERNAL;
 
-/** Magic for the NT mutex semaphore structure. (Douglas Adams) */
-#define RTSEMMUTEX_MAGIC 0x19520311
 
 
 /**
@@ -81,8 +79,6 @@ typedef struct RTSEMFASTMUTEXINTERNAL
     FAST_MUTEX          Mutex;
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
-/** Magic value for RTSEMFASTMUTEXINTERNAL::u32Magic (John Ronald Reuel Tolkien). */
-#define RTSEMFASTMUTEX_MAGIC    0x18920102
 
 
 

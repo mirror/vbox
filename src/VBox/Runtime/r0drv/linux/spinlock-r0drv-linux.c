@@ -24,13 +24,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+
 #include <iprt/spinlock.h>
 #include <iprt/err.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include "internal/magics.h"
 
-#include <linux/spinlock.h>
+#include <linux/spinlock.h> /** @todo why is this here and not in the-linux-kernel.h? */
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -49,9 +52,6 @@ typedef struct RTSPINLOCKINTERNAL
     void                *pvUniDummy;
 #endif
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
-
-/** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
-#define RTSPINLOCK_MAGIC    0x19480428
 
 
 
