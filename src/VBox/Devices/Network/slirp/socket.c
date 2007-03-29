@@ -483,6 +483,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 {
 	int ret;
 	struct sockaddr_in addr;
+        struct sockaddr_in host_addr;
 
 	DEBUG_CALL("sosendto");
 	DEBUG_ARG("so = %lx", (long)so);
@@ -492,6 +493,19 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 	if ((so->so_faddr.s_addr & htonl(0xffffff00)) == special_addr.s_addr) {
 	  /* It's an alias */
 	  switch(ntohl(so->so_faddr.s_addr) & 0xff) {
+          case CTL_BROADCAST:
+            addr.sin_addr.s_addr = INADDR_BROADCAST;
+            /* Send the packet to host to fully emulate broadcast */
+            /** @todo r=klaus: on Linux host this causes the host to receive
+             * the packet twice for some reason. And I cannot find any place
+             * in the man pages which states that sending a broadcast does not
+             * reach the host itself. */
+            host_addr.sin_family = AF_INET;
+            host_addr.sin_port = so->so_fport;
+            host_addr.sin_addr = loopback_addr;
+            sendto(so->s, m->m_data, m->m_len, 0,
+                  (struct sockaddr *)&host_addr, sizeof (struct sockaddr));
+            break;
 	  case CTL_DNS:
 	    addr.sin_addr = dns_addr;
 	    break;
