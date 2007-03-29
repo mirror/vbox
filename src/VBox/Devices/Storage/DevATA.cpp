@@ -5242,6 +5242,12 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         {
             PDMBIOSTRANSLATION enmTranslation;
             rc = pIf->pDrvBlockBios->pfnGetTranslation(pIf->pDrvBlockBios, &enmTranslation);
+            if (rc == VERR_PDM_TRANSLATION_NOT_SET)
+            {
+                enmTranslation = PDMBIOSTRANSLATION_AUTO;
+                pIf->cCHSCylinders = 0;
+                rc = VINF_SUCCESS;
+            }
             AssertRC(rc);
 
             if (    enmTranslation == PDMBIOSTRANSLATION_AUTO
@@ -5258,7 +5264,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
                     /* Caution: the above function returns LCHS, but the
                      * disk must report proper PCHS values for disks bigger
                      * than approximately 512MB. */
-                    if (pIf->cCHSSectors == 63 && pIf->cCHSCylinders >= 1024)
+                    if (pIf->cCHSSectors == 63 && (pIf->cCHSHeads != 16 || pIf->cCHSCylinders >= 1024))
                     {
                         pIf->cCHSCylinders = pIf->cTotalSectors / 63 / 16;
                         pIf->cCHSHeads = 16;

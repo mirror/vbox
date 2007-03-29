@@ -400,7 +400,7 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
          * except the standard mapping as odd. */
         if (pThis->cCylinders != 0)
         {
-            if (pThis->cSectors == 63 && pThis->cCylinders >= 1024)
+            if (pThis->cSectors == 63 && (pThis->cHeads != 16 || pThis->cCylinders >= 1024))
             {
                 /* For big disks, use dummy PCHS values and let the BIOS
                  * select an appropriate LCHS mapping. */
