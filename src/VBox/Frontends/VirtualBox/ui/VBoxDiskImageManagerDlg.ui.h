@@ -1790,11 +1790,12 @@ void VBoxDiskImageManagerDlg::addImage()
 
     QString dir;
     if (item && item->getStatus() == VBoxMedia::Ok)
-        dir = item->getPath().stripWhiteSpace();
+        dir = QFileInfo (item->getPath().stripWhiteSpace()).dirPath (true);
 
     if (!dir)
         if (currentList == hdsView)
             dir = vbox.GetSystemProperties().GetDefaultVDIFolder();
+
     if (!dir || !QFileInfo (dir).exists())
         dir = vbox.GetHomeFolder();
 
@@ -1828,8 +1829,8 @@ void VBoxDiskImageManagerDlg::addImage()
         AssertMsgFailed (("Root list should be equal to hdsView, cdsView or fdsView"));
     }
 
-    QString src = vboxGlobal().getOpenFileName (dir, filter, this,
-                                                "AddDiskImageDialog", title);
+    QString src = VBoxGlobal::getOpenFileName (dir, filter, this,
+                                               "AddDiskImageDialog", title);
     src =  QDir::convertSeparators (src);
 
     addImageToList (src, type);

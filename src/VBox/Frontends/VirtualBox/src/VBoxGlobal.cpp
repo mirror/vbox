@@ -290,45 +290,19 @@ NS_DECL_CLASSINFO (VBoxCallback)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxCallback, IVirtualBoxCallback)
 #endif
 
+// Helpers for VBoxGlobal::getOpenFileName()
+/////////////////////////////////////////////////////////////////////////////
+
 #if defined Q_WS_WIN
-/*
- * These definitions are used for Win32 API native dialog displaying.
- */
+
 extern void qt_enter_modal (QWidget*);
 extern void qt_leave_modal (QWidget*);
-const char qt_file_dialog_filter_reg_exp[] = "([a-zA-Z0-9 ]*)\\(([a-zA-Z0-9_.*? +;#\\[\\]]*)\\)$";
 
-/*
- * This static function made for convenience using QFileDialog filter
- * format with our own Win32 native dialog. It composes QStringList of
- * filters for Win32 API.
- */
-static QStringList makeFiltersList (const QString &aFilter)
-{
-    if (aFilter.isEmpty())
-        return QStringList();
-
-    int i = aFilter.find (";;", 0);
-    QString sep (";;");
-    if (i == -1)
-    {
-        if (aFilter.find ("\n", 0) != -1)
-        {
-            sep = "\n";
-            i = aFilter.find (sep, 0);
-        }
-    }
-
-    return QStringList::split (sep, aFilter);
-}
-
-/*
- * This static function made for convenience using QFileDialog filter
- * format with our own Win32 native dialog. It converts filter from
- * QFileDialog format into Win32 API format.
- */
 static QString extractFilter (const QString &aRawFilter)
 {
+    static const char qt_file_dialog_filter_reg_exp[] =
+        "([a-zA-Z0-9 ]*)\\(([a-zA-Z0-9_.*? +;#\\[\\]]*)\\)$";
+
     QString result = aRawFilter;
     QRegExp r (QString::fromLatin1 (qt_file_dialog_filter_reg_exp));
     int index = r.search (result);
@@ -337,14 +311,29 @@ static QString extractFilter (const QString &aRawFilter)
     return result.replace (QChar (' '), QChar (';'));
 }
 
-/*
- * This static function made for convenience using QFileDialog filter
- * format with our own Win32 native dialog. This is wrapper used for
- * all QFileDialog filter converting into Win32 API format.
+/**
+ * Converts QFileDialog filter list to Win32 API filter list.
  */
 static QString winFilter (const QString &aFilter)
 {
-    QStringList filterLst = makeFiltersList (aFilter);
+    QStringList filterLst;
+
+    if (!aFilter.isEmpty())
+    {
+        int i = aFilter.find (";;", 0);
+        QString sep (";;");
+        if (i == -1)
+        {
+            if (aFilter.find ("\n", 0) != -1)
+            {
+                sep = "\n";
+                i = aFilter.find (sep, 0);
+            }
+        }
+    
+        filterLst = QStringList::split (sep, aFilter);
+    }
+
     QStringList::Iterator it = filterLst.begin();
     QString winfilters;
     for (; it != filterLst.end(); ++it)
@@ -359,9 +348,7 @@ static QString winFilter (const QString &aFilter)
 }
 
 /*
- * This Win32 API callback function made for control using native
- * Win32 API dialog. It handles the situation of switching this dialog
- * from one file filter mode to another.
+ * Callback function to control the native Win32 API file dialog
  */
 UINT CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM aLParam)
 {
@@ -370,7 +357,7 @@ UINT CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM aLPar
         OFNOTIFY *notif = (OFNOTIFY*) aLParam;
         if (notif->hdr.code == CDN_TYPECHANGE)
         {
-            /* locating native dialog controls */
+            /* locate native dialog controls */
             HWND parent = GetParent (aHdlg);
             HWND button = GetDlgItem (parent, IDOK);
             HWND textfield = ::GetDlgItem (parent, cmb13);
@@ -389,7 +376,7 @@ UINT CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM aLPar
             SendMessage (textfield, WM_SETTEXT, 0, (LPARAM)buffer);
             free (buffer);
 
-            /* making request for focus moving to filter selector combo-box */
+            /* make request for focus moving to filter selector combo-box */
             HWND curFocus = GetFocus();
             PostMessage (curFocus, WM_KILLFOCUS, (WPARAM)selector, 0);
             PostMessage (selector, WM_SETFOCUS, (WPARAM)curFocus, 0);
@@ -400,57 +387,7 @@ UINT CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM aLPar
     return FALSE;
 }
 
-/*
- * This static function made for convenience using native Win32 API dialog.
- * This is function is used for composing settings for Win32 API native dialog.
- */
-static OPENFILENAME* makeOFN (QWidget* parent,
-                              const QString& initialSelection,
-                              const QString& initialDirectory,
-                              const QString& title,
-                              const QString& filters,
-                              QFileDialog::Mode mode)
-{
-    parent = parent ? parent->topLevelWidget() : qApp->mainWidget();
-
-    static QString tFilters = filters;
-    QString tInitDir = QDir::convertSeparators (initialDirectory);
-    QString initSel = QDir::convertSeparators (initialSelection);
-    int maxLen = 1023;
-    TCHAR *tInitSel = new TCHAR [maxLen+1];
-    if (initSel.length() > 0 && initSel.length() <= (uint)maxLen)
-        memcpy (tInitSel, initSel.ucs2(), (initSel.length()+1)*sizeof (QChar));
-    else
-        tInitSel[0] = 0;
-
-    OPENFILENAME* ofn = new OPENFILENAME;
-    memset (ofn, 0, sizeof (OPENFILENAME));
-
-    ofn->lStructSize    = sizeof(OPENFILENAME);
-    ofn->hwndOwner  = parent ? parent->winId() : 0;
-    ofn->lpstrFilter    = (TCHAR *)tFilters.ucs2();
-    ofn->lpstrFile  = tInitSel;
-    ofn->nMaxFile   = maxLen;
-    ofn->lpstrInitialDir = (TCHAR *)tInitDir.ucs2();
-    ofn->lpstrTitle = (TCHAR *)title.ucs2();
-    ofn->Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
-                  OFN_EXPLORER | OFN_ENABLEHOOK |
-                  OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST);
-    ofn->lpfnHook = OFNHookProc;
-    return ofn;
-}
-
-/*
- * This static function made for convenience using native Win32 API dialog.
- * This is function is used for cleaning settings for Win32 API native dialog.
- */
-static void cleanUpOFN (OPENFILENAME** ofn)
-{
-    delete (*ofn)->lpstrFile;
-    delete *ofn;
-    *ofn = 0;
-}
-#endif
+#endif /* Q_WS_WIN */
 
 
 // VBoxGlobal
@@ -662,57 +599,6 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
     }
 
     return *console_wnd;
-}
-
-QString VBoxGlobal::getOpenFileName (const QString &startWith,
-                                                  const QString &filter,
-                                                  QWidget       *parent,
-                                                  const char    *name,
-                                                  const QString &caption,
-                                                  QString       *selectedFilter,
-                                                  bool           resolveSymlinks )
-{
-#if defined Q_WS_WIN
-    QString result;
-    QFileInfo fi (startWith);
-    QString workingDirectory = fi.exists() ? fi.dirPath (TRUE) : QDir::homeDirPath();
-    QString initialSelection = fi.isFile() ? fi.fileName() : QString::null;
-    QString title = caption.isNull() ? tr ("Select file to open") : caption;
-
-    if (parent)
-    {
-        QEvent e (QEvent::WindowBlocked);
-        QApplication::sendEvent (parent, &e);
-        qt_enter_modal (parent);
-    }
-
-    OPENFILENAME* ofn = makeOFN (parent, initialSelection,
-                                 workingDirectory, title,
-                                 winFilter (filter), QFileDialog::ExistingFile);
-    if (GetOpenFileName (ofn))
-    {
-        result = QString::fromUcs2 ((ushort*)ofn->lpstrFile);
-    }
-    cleanUpOFN (&ofn);
-
-    if (parent)
-    {
-        qt_leave_modal (parent);
-        QEvent e (QEvent::WindowUnblocked);
-        QApplication::sendEvent (parent, &e);
-    }
-
-    // qt_win_eatMouseMove();
-    MSG msg = {0, 0, 0, 0, 0, 0, 0};
-    while (PeekMessage (&msg, 0, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
-    if (msg.message == WM_MOUSEMOVE)
-        PostMessage (msg.hwnd, msg.message, 0, msg.lParam);
-
-    return result.isEmpty() ? result : QFileInfo (result).absFilePath();
-#else
-    return QFileDialog::getOpenFileName (startWith, filter, parent, name,
-                                         caption, selectedFilter, resolveSymlinks );
-#endif
 }
 
 /**
@@ -2223,7 +2109,6 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
     return QString ("%1 %2").arg (number).arg (Suffixes [suffix]);
 }
 
-/* static */
 /**
  *  Reformats the input string @a aStr so that:
  *  - strings in single quotes will be put inside <nobr> and marked
@@ -2238,6 +2123,7 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
  *  If @a aToolTip is true, colouring is not applied, only the <nobr> tag
  *  is added. Also, new line chars are replaced with <br> instead of <p>.
  */
+/* static */
 QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 {
     QString strFont;
@@ -2274,6 +2160,109 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
         text.replace ('\n', "<br>");
 
     return text;
+}
+
+/** 
+ *  Reimplementation of QFileDialog::getOpenFileName() that removes some
+ *  oddities and limitations.
+ *
+ *  On Win32, this funciton makes sure a file filter is applied automatically
+ *  right after it is selected from the drop-down list, to conform to common
+ *  experience in other applications.
+ *
+ *  On all other platforms, this function is equivalent to
+ *  QFileDialog::getOpenFileName().
+ */
+/* static */
+QString VBoxGlobal::getOpenFileName (const QString &startWith,
+                                     const QString &filters,
+                                     QWidget       *parent,
+                                     const char    *name,
+                                     const QString &caption,
+                                     QString       *selectedFilter,
+                                     bool           resolveSymlinks)
+{
+    LogTraceMsg (("filters=%s\n", filters.local8Bit().data()));
+#if defined Q_WS_WIN
+
+    QString result;
+
+    QString workDir;
+    QString initSel;
+    QFileInfo fi (startWith);
+
+    if (fi.isDir())
+        workDir = startWith;
+    else
+    {
+        workDir = fi.dirPath (true);
+        initSel = fi.fileName();
+    }
+
+    workDir = QDir::convertSeparators (workDir);
+    if (!workDir.endsWith ("\\"))
+        workDir += "\\";
+
+    QString title = caption.isNull() ? tr ("Select file to open") : caption;
+
+    if (parent)
+    {
+        QEvent e (QEvent::WindowBlocked);
+        QApplication::sendEvent (parent, &e);
+        qt_enter_modal (parent);
+    }
+
+    parent = parent ? parent->topLevelWidget() : qApp->mainWidget();
+
+    QString winFilters = winFilter (filters);
+    AssertCompile (sizeof (TCHAR) == sizeof (QChar));
+    TCHAR buf [1024];
+    if (initSel.length() > 0 && initSel.length() < sizeof (buf))
+        memcpy (buf, initSel.ucs2(), (initSel.length() + 1) * sizeof (TCHAR));
+    else
+        buf [0] = 0;
+
+    OPENFILENAME ofn;
+    memset (&ofn, 0, sizeof (OPENFILENAME));
+
+    ofn.lStructSize = sizeof (OPENFILENAME);
+    ofn.hwndOwner = parent ? parent->winId() : 0;
+    ofn.lpstrFilter = (TCHAR *) winFilters.ucs2();
+    ofn.lpstrFile = buf;
+    ofn.nMaxFile = sizeof (buf) - 1;
+    ofn.lpstrInitialDir = (TCHAR *) workDir.ucs2();
+    ofn.lpstrTitle = (TCHAR *) title.ucs2();
+    ofn.Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
+                  OFN_EXPLORER | OFN_ENABLEHOOK |
+                  OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST);
+    ofn.lpfnHook = OFNHookProc;
+
+    if (GetOpenFileName (&ofn))
+    {
+        result = QString::fromUcs2 ((ushort *) ofn.lpstrFile);
+    }
+
+    if (parent)
+    {
+        qt_leave_modal (parent);
+        QEvent e (QEvent::WindowUnblocked);
+        QApplication::sendEvent (parent, &e);
+    }
+
+    // qt_win_eatMouseMove();
+    MSG msg = {0, 0, 0, 0, 0, 0, 0};
+    while (PeekMessage (&msg, 0, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
+    if (msg.message == WM_MOUSEMOVE)
+        PostMessage (msg.hwnd, msg.message, 0, msg.lParam);
+
+    return result.isEmpty() ? result : QFileInfo (result).absFilePath();
+
+#else
+
+    return QFileDialog::getOpenFileName (startWith, filter, parent, name,
+                                         caption, selectedFilter, resolveSymlinks );
+
+#endif
 }
 
 // Protected members
