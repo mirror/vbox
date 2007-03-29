@@ -494,7 +494,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
      */
     RTThreadUserReset(pTimer->Thread);
     ASMAtomicXchgU8(&pTimer->fSuspended, true);
-    if (RTThreadSelf() != pTimer->Timer)
+    if (RTThreadSelf() != pTimer->Thread)
     {
 #ifndef __OS2__
         pthread_kill((pthread_t)RTThreadGetNative(pTimer->Thread), SIGALRM);
