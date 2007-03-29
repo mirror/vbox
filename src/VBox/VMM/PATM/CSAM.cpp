@@ -2242,12 +2242,25 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
             PCSAMPAGE pPage = NULL;
             X86EFLAGS fakeflags;
+            SELMSELINFO selInfo;
 
             /* we're not in v86 mode here */
             fakeflags.u32 = 0;
 
             pHandler = (pGuestIdte->Gen.u16OffsetHigh << 16) | pGuestIdte->Gen.u16OffsetLow;
             pHandler = SELMToFlat(pVM, fakeflags, pGuestIdte->Gen.u16SegSel, 0, pHandler);
+
+            rc = SELMR3GetSelectorInfo(pVM, pGuestIdte->Gen.u16SegSel, &selInfo);
+            if (    VBOX_FAILURE(rc)
+                ||  selInfo.GCPtrBase != 0
+                ||  selInfo.cbLimit != ~0U
+               )
+            {
+                /* Refuse to patch a handler whose idt cs selector isn't wide open. */
+                Log(("CSAMCheckGates: check gate %d failed due to rc %Vrc GCPtrBase=%VGv limit=%x\n", rc, selInfo.GCPtrBase, selInfo.cbLimit));
+                continue;
+            }
+            
 
             if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
             {
