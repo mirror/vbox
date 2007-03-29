@@ -54,7 +54,9 @@ __END_DECLS
  */
 DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser)
 {
-    LogFlow(("cpumGCHandleNPAndGP: eip=%RX32 uUser=%#x\n", pRegFrame->eip, uUser));
+    Log(("********************************************************\n"));
+    Log(("cpumGCHandleNPAndGP: eip=%RX32 uUser=%#x\n", pRegFrame->eip, uUser));
+    Log(("********************************************************\n"));
 
     /*
      * Update the guest cpu state.
@@ -84,9 +86,28 @@ DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
             TRPMGCHyperReturnToHost(pVM, VINF_EM_RAW_STALE_SELECTOR);
             break;
 
+        /* Make sure we restore the guest context from the interrupt stack frame. */
         case CPUM_HANDLER_IRET:
+        {
+            PCPUMCTXCORE  pGstCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Guest);
+            uint32_t     *pEsp = (uint32_t *)pRegFrame->esp;
+
+            pGstCtxCore->eip        = *pEsp++;
+            pGstCtxCore->cs         = (RTSEL)*pEsp++;
+            pGstCtxCore->eflags.u32 = *pEsp++;
+            pGstCtxCore->esp        = *pEsp++;
+            pGstCtxCore->ss         = (RTSEL)*pEsp++;
+            if (pGstCtxCore->eflags.Bits.u1VM)
+            {
+                pGstCtxCore->es     = (RTSEL)*pEsp++;
+                pGstCtxCore->ds     = (RTSEL)*pEsp++;
+                pGstCtxCore->fs     = (RTSEL)*pEsp++;
+                pGstCtxCore->gs     = (RTSEL)*pEsp++;
+            }
+
             TRPMGCHyperReturnToHost(pVM, VINF_EM_RAW_IRET_TRAP);
             break;
+        }
     }
     return VERR_TRPM_DONT_PANIC;
 }
