@@ -594,17 +594,17 @@ void OPPROTO glue(op_pshufw, SUFFIX) (void)
 #else
     Reg *s;
     int order;
-    uint32_t t, u;
+    uint32_t l0, l1;
     s = (Reg *)((char *)env + PARAM2);
     order = PARAM3;
-    t = s->W(order & 3);
-    t |= (s->W((order >> 2) & 3) << 16);
-    u = s->W((order >> 4) & 3);
-    u |= (s->W((order >> 6) & 3) << 16);
+    l0 = s->W(order & 3);
+    l0 |= (uint32_t)s->W((order >> 2) & 3) << 16;
+    l1 = s->W((order >> 4) & 3);
+    l1 |= (uint32_t)s->W((order >> 6) & 3) << 16;
 
     s = (Reg *)((char *)env + PARAM1);
-    s->_l[0] = t;
-    s->_l[1] = u;
+    s->_l[0] = l0;
+    s->_l[1] = l1;
 #endif 
 }
 #else
