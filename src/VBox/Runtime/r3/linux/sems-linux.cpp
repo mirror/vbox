@@ -27,6 +27,7 @@
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include "internal/magics.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -61,8 +62,6 @@ struct RTSEMEVENTINTERNAL
     int32_t volatile    cWaiters;
 };
 
-#define RTSEMEVENT_MAGIC    ((intptr_t)-16)
-
 
 /** 
  * Linux multiple wakup event semaphore. 
@@ -79,7 +78,6 @@ struct RTSEMEVENTMULTIINTERNAL
     int32_t volatile    iState;
 };
 
-#define RTSEMEVENTMULTI_MAGIC ((intptr_t)-128)
 
 /**
  * Posix internal representation of a Mutex semaphore. 

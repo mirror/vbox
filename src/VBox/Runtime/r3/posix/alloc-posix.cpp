@@ -56,7 +56,7 @@ typedef struct RTMEMEXECHDR
 # endif 
 } RTMEMEXECHDR, *PRTMEMEXECHDR;
 
-/** MAgic for RTMEMEXECHDR. */
+/** Magic for RTMEMEXECHDR. */
 #define RTMEMEXECHDR_MAGIC (~(size_t)0xfeedbabe)
 
 #endif  /* RT_USE_MMAP */

@@ -30,6 +30,8 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -44,9 +46,6 @@ typedef struct RTSPINLOCKINTERNAL
     /** The Darwin spinlock structure. */
     lck_spin_t         *pSpinLock;
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
-
-/** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
-#define RTSPINLOCK_MAGIC    0x19480428
 
 
 

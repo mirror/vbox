@@ -73,9 +73,6 @@ struct RTSEMRWINTERNAL
 #endif
 };
 
-/** RTSEMRWINTERNAL::u32Magic value. (Kosuke Fujishima) */
-#define RTSEMRW_MAGIC   0x19640707
-
 
 /**
  * Validate a read-write semaphore handle passed to one of the interface.

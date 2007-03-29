@@ -39,6 +39,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include "internal/magics.h"
 
 
 /*******************************************************************************
@@ -60,9 +61,6 @@ typedef struct RTSEMEVENTMULTIINTERNAL
     /** The OS/2 spinlock protecting this structure. */
     SpinLock_t          Spinlock;
 } RTSEMEVENTMULTIINTERNAL, *PRTSEMEVENTMULTIINTERNAL;
-
-/** Magic for the OS/2 multiple release event semaphore structure. (Isaac Asimov) */
-#define RTSEMEVENTMULTI_MAGIC 0x19200102
 
 
 RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)

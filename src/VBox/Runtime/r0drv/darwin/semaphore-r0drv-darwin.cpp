@@ -25,11 +25,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
+
 #include <iprt/semaphore.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+
+#include "internal/magics.h"
 
 
 /*******************************************************************************
@@ -52,9 +55,6 @@ typedef struct RTSEMEVENTINTERNAL
     lck_spin_t         *pSpinlock;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
-/** Magic for the Darwin event semaphore structure. (Neil Gaiman) */
-#define RTSEMEVENT_MAGIC 0x19601110
-
 
 /**
  * Darwin multiple release event semaphore.
@@ -73,9 +73,6 @@ typedef struct RTSEMEVENTMULTIINTERNAL
     lck_spin_t         *pSpinlock;
 } RTSEMEVENTMULTIINTERNAL, *PRTSEMEVENTMULTIINTERNAL;
 
-/** Magic for the Darwin multiple release event semaphore structure. (Isaac Asimov) */
-#define RTSEMEVENTMULTI_MAGIC 0x19200102
-
 
 #if 0 /** @todo */
 /**
@@ -89,8 +86,6 @@ typedef struct RTSEMMUTEXINTERNAL
     lck_mtx_t          *pMtx;
 } RTSEMMUTEXINTERNAL, *PRTSEMMUTEXINTERNAL;
 
-/** Magic for the Darwin mutex semaphore structure. (Douglas Adams) */
-#define RTSEMMUTEX_MAGIC 0x19520311
 #endif
 
 
@@ -105,8 +100,6 @@ typedef struct RTSEMFASTMUTEXINTERNAL
     lck_mtx_t          *pMtx;
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
-/** Magic value for RTSEMFASTMUTEXINTERNAL::u32Magic (John Ronald Reuel Tolkien). */
-#define RTSEMFASTMUTEX_MAGIC    0x18920102
 
 
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)

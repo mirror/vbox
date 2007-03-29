@@ -32,6 +32,7 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include "internal/magics.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -56,9 +57,6 @@ typedef struct RTSTREAM
     /** Pointer to the LIBC file stream. */
     FILE                *pFile;
 } RTSTREAM;
-
-/** The value of RTSTREAM::u32Magic for a valid stream. */
-#define RTSTREAM_MAGIC  0xe44e44ee
 
 
 /*******************************************************************************

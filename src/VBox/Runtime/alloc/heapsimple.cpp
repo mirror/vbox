@@ -32,6 +32,8 @@
 #include <iprt/log.h>
 #include <iprt/param.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -144,9 +146,6 @@ typedef struct RTHEAPSIMPLEINTERNAL
     size_t                  auAlignment[2];
 } RTHEAPSIMPLEINTERNAL;
 AssertCompileSizeAlignment(RTHEAPSIMPLEINTERNAL, 32);
-
-/** Magic number for RTHEAPSIMPLEINTERNAL::u32Magic. (Kyoichi Katayama) */
-#define RTHEAPSIMPLE_MAGIC  0x19590105
 
 
 /** The minimum allocation size. */

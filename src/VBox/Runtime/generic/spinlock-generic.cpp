@@ -41,6 +41,8 @@
 # include <iprt/thread.h>
 #endif
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -56,8 +58,6 @@ typedef struct RTSPINLOCKINTERNAL
     uint32_t volatile   fLocked;
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
 
-/** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
-#define RTSPINLOCK_MAGIC    0x19480428
 
 RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
 {
