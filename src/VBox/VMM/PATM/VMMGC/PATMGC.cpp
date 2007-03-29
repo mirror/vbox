@@ -106,7 +106,7 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
 
 #ifdef LOG_ENABLED
     if (pPatchPage)
-        Log2(("PATMIsWriteToPatchPage: Found page %VGv for write to %VGv %d bytes\n", pPatchPage->Core.Key, GCPtr, cbWrite));
+        Log(("PATMIsWriteToPatchPage: Found page %VGv for write to %VGv %d bytes\n", pPatchPage->Core.Key, GCPtr, cbWrite));
 #endif
 
     if (pPatchPage)
@@ -295,12 +295,7 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
                     /* We are no longer executing PATM code; set PIF again. */
                     pVM->patm.s.CTXSUFF(pGCState)->fPIF = 1;
-
-#ifndef VBOX_RAW_V86
-                    return VINF_EM_RESCHEDULE;
-#else
                     CPUMGCCallV86Code(pRegFrame);
-#endif
                     /* does not return */
                 }
                 else 
@@ -411,11 +406,6 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                                 Log(("PATMGC: GATE->VM stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
                                 Log(("PATMGC: GATE->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
                             }
-if (eip == 0x690) 
-{
-   pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
-   return VINF_EM_RESCHEDULE;
-}
                         }
                         else
                             Log(("PATMGC: GATE stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
