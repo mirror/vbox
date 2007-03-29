@@ -337,10 +337,6 @@ public:
 
     bool startMachine (const QUuid &id);
 
-    QString getOpenFileName (const QString &, const QString &, QWidget*, const char*,
-                             const QString &, QString *defaultFilter = 0,
-                             bool resolveSymLinks = true);
-
     void startEnumeratingMedia();
 
     /**
@@ -398,6 +394,11 @@ public:
     static QString formatSize (Q_UINT64, int aMode = 0);
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
+
+    static QString getOpenFileName (const QString &, const QString &, QWidget*,
+                                    const char*, const QString &,
+                                    QString *defaultFilter = 0,
+                                    bool resolveSymLinks = true);
 
 signals:
 
