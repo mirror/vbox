@@ -494,12 +494,13 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
      */
     RTThreadUserReset(pTimer->Thread);
     ASMAtomicXchgU8(&pTimer->fSuspended, true);
+    int rc = VINF_SUCCESS;
     if (RTThreadSelf() != pTimer->Thread)
     {
 #ifndef __OS2__
         pthread_kill((pthread_t)RTThreadGetNative(pTimer->Thread), SIGALRM);
 #endif
-        int rc = RTThreadUserWait(pTimer->Thread, 45*1000);
+        rc = RTThreadUserWait(pTimer->Thread, 45*1000);
         AssertRC(rc);
         RTThreadUserReset(pTimer->Thread);
     }
