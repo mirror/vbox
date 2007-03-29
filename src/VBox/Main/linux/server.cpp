@@ -252,10 +252,11 @@ public:
                               VBoxSVC_ShutdownDelay));
 
                 /* Start a shutdown timer to provide some delay */
-                int vrc = RTTimerStart (sTimer, 0);
-/// @todo uncomment when implemented
-//                AssertRC (vrc);
+#if 0 /** @todo Doesn't work when the 2nd client attaches while before the timer ticks. Dmitry will debug. */
+                int vrc = RTTimerStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
+                AssertRC (vrc);
                 if (VBOX_FAILURE (vrc))
+#endif
                 {
                     /* failed to start the timer, post the shutdown event
                      * manually */
@@ -314,15 +315,6 @@ public:
     {
         NOREF (pvUser);
 
-        if (pTimer)
-        {
-            /* it's a single shot timer */
-            int vrc = RTTimerStop (pTimer);
-/// @todo uncomment when implemented
-//                AssertRC (vrc);
-            NOREF (vrc);
-        }
-
         /* post a destruction event to the main thread to safely release the
          * extra reference added in VirtualBoxClassFactory::GetInstance() */
 
@@ -349,16 +341,12 @@ public:
         if (VBOX_FAILURE (RTCritSectInit (&sLock)))
             return NS_ERROR_OUT_OF_MEMORY;
 
-        int vrc = RTTimerCreateEx (&sTimer,
-                                   uint64_t (VBoxSVC_ShutdownDelay) * 1000000,
-                                   0, ShutdownTimer, NULL);
-        NOREF (vrc);
-/// @todo uncomment when implemented
-//         if (VBOX_FAILURE (vrc))
-//         {
-//             LogFlowFunc (("Failed to create a timer! (vrc=%Vrc)\n", vrc));
-//             return NS_ERROR_FAILURE;
-//         }
+        int vrc = RTTimerCreateEx (&sTimer, 0, 0, ShutdownTimer, NULL);
+        if (VBOX_FAILURE (vrc))
+        {
+            LogFlowFunc (("Failed to create a timer! (vrc=%Vrc)\n", vrc));
+            return NS_ERROR_FAILURE;
+        }
 
         return NS_OK;
     }
