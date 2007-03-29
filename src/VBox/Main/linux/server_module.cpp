@@ -40,6 +40,7 @@
 // generated file
 #include <VirtualBox_XPCOM.h>
 
+#include "linux/server.h"
 #include "Logging.h"
 
 #include <VBox/err.h>
@@ -71,6 +72,12 @@ enum
     VBoxSVC_WaitSlice = 100,
 };
 
+/** 
+ *  Full path to the VBoxSVC executable.
+ */
+static char VBoxSVCPath [RTPATH_MAX];
+static bool IsVBoxSVCPathSet = false;
+
 /*
  *  The following macros define the method necessary to provide a list of
  *  interfaces implemented by the VirtualBox component. Note that this must be
@@ -79,16 +86,6 @@ enum
 
 NS_DECL_CLASSINFO (VirtualBox)
 NS_IMPL_CI_INTERFACE_GETTER1 (VirtualBox, IVirtualBox)
-
-/** 
- *  Name of the VBoxSVC server-side IPC client.
- *
- *  This name simply matches the full path to the VBoxSVC executable (to
- *  guarantee unicity) so it is also used to start the VBoxSVC process when it
- *  is not started.
- */
-static char VBoxSVCName [RTPATH_MAX];
-static bool IsVBoxSVCNameSet = false;
 
 /** 
  *  VirtualBox component constructor.
@@ -115,7 +112,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
             break;
         }
 
-        if (!IsVBoxSVCNameSet)
+        if (!IsVBoxSVCPathSet)
         {
             /* Get the directory containing XPCOM components -- the VBoxSVC
              * executable is expected in the parent directory. */
@@ -135,9 +132,11 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                     AssertBreak (path.Length() + strlen (VBoxSVC_exe) < RTPATH_MAX,
                                  rc = NS_ERROR_FAILURE);
 
-                    strcpy (VBoxSVCName, path.get());
-                    RTPathStripFilename (VBoxSVCName);
-                    strcat (VBoxSVCName, VBoxSVC_exe);
+                    strcpy (VBoxSVCPath, path.get());
+                    RTPathStripFilename (VBoxSVCPath);
+                    strcat (VBoxSVCPath, VBoxSVC_exe);
+
+                    IsVBoxSVCPathSet = true;
                 }
             }
             if (NS_FAILED (rc))
@@ -155,19 +154,19 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
         do
         {
-            LogFlowFunc (("Resolving server name \"%s\"...\n", VBoxSVCName));
+            LogFlowFunc (("Resolving server name \"%s\"...\n", VBOXSVC_IPC_NAME));
 
             PRUint32 serverID = 0;
-            rc = ipcServ->ResolveClientName (VBoxSVCName, &serverID);
+            rc = ipcServ->ResolveClientName (VBOXSVC_IPC_NAME, &serverID);
             if (NS_FAILED (rc))
             {
-                LogFlowFunc (("Starting server...\n", VBoxSVCName));
+                LogFlowFunc (("Starting server...\n", VBoxSVCPath));
 
                 startedOnce = true;
 
                 RTPROCESS pid = NIL_RTPROCESS;
-                const char *args[] = { VBoxSVCName, "--automate", 0 };
-                vrc = RTProcCreate (VBoxSVCName, args, NULL, 0, &pid);
+                const char *args[] = { VBoxSVCPath, "--automate", 0 };
+                vrc = RTProcCreate (VBoxSVCPath, args, NULL, 0, &pid);
                 if (VBOX_FAILURE (vrc))
                 {
                     rc = NS_ERROR_FAILURE;
@@ -178,7 +177,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                 do
                 {
                     RTThreadSleep (VBoxSVC_WaitSlice);
-                    rc = ipcServ->ResolveClientName (VBoxSVCName, &serverID);
+                    rc = ipcServ->ResolveClientName (VBOXSVC_IPC_NAME, &serverID);
                     if (NS_SUCCEEDED (rc))
                         break;
                     if (timeLeft <= VBoxSVC_WaitSlice)
@@ -217,7 +216,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
             if (!startedOnce)
             {
                 nsresult rc2 =
-                    ipcServ->ResolveClientName (VBoxSVCName, &serverID);
+                    ipcServ->ResolveClientName (VBOXSVC_IPC_NAME, &serverID);
                 if (NS_SUCCEEDED (rc2))
                     break;
             }
