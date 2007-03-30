@@ -658,7 +658,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
              * The current logic is very simple, match the major interface version.
              */
             if (    pIn->u32MinVersion > SUPDRVIOC_VERSION
-                ||  (pIn->u32ReqVersion & 0xffff0000) != (SUPDRVIOC_VERSION & 0xffff0000))
+                ||  (pIn->u32MinVersion & 0xffff0000) != (SUPDRVIOC_VERSION & 0xffff0000))
             {
                 OSDBGPRINT(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n", 
                             pIn->u32ReqVersion, pIn->u32MinVersion, SUPDRVIOC_VERSION));
@@ -674,12 +674,14 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
 
             /*
              * Fill in return data and be gone.
+             * N.B. The first one to change SUPDRVIOC_VERSION shall makes sure that 
+             *      u32SessionVersion <= u32ReqVersion!
              */
             /** @todo A more secure cookie negotiation? */
             pOut->u32Cookie         = pDevExt->u32Cookie;
             pOut->u32SessionCookie  = pSession->u32Cookie;
             pOut->u32SessionVersion = SUPDRVIOC_VERSION;
-            pOut->u32DriverVersion  = SUPDRVIOC_VERSION;
+            pOut->u32DriverVersion  = SUPDRVIOC_VERSION; 
             pOut->pSession          = pSession;
             pOut->cFunctions        = sizeof(g_aFunctions) / sizeof(g_aFunctions[0]);
             *pcbReturned = sizeof(*pOut);
@@ -2860,7 +2862,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
 
     /*
      * Call VMMR0Entry
-     *      We don't have to push the arguments here, but we have to
+     *      We don't have to push the arguments here, but we have top
      *      reserve some stack space for the interrupt forwarding.
      */
 # ifdef __WIN__
