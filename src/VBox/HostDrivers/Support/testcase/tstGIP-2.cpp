@@ -41,7 +41,7 @@ int main(void)
     /*
      * Init
      */
-    PSUPDRVSESSION pSession = NULL;
+    PSUPDRVSESSION pSession = NIL_RTR0PTR;
     int rc = SUPInit(&pSession);
     if (VBOX_SUCCESS(rc))
     {
