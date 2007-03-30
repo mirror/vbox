@@ -71,6 +71,7 @@ EXPORT_FILE_PAIRS = \
 	include/VBox/types.h=$(PATH_ROOT)/include/VBox/types.h \
 	include/internal/initterm.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/initterm.h \
 	include/internal/thread.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/thread.h \
+	include/internal/magics.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/magics.h \
 	linux/SUPDrv-linux.c=$(VBOX_PATH_SUPPORT)/linux/SUPDrv-linux.c \
 	Makefile=$(VBOX_PATH_SUPPORT)/linux/Makefile \
 	build_in_tmp=$(VBOX_PATH_SUPPORT)/linux/build_in_tmp \
