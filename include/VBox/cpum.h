@@ -684,21 +684,8 @@ CPUMDECL(void) CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid);
  * @returns cpl
  * @param   pVM         VM Handle.
  * @param   pRegFrame   Trap register frame.
- * @param   eflags      Current eflags
  */
-CPUMDECL(uint32_t) CPUMGetGuestCPLEx(PVM pVM, PCPUMCTXCORE pCtxCore, X86EFLAGS eflags);
-
-/**
- * Get the current privilege level of the guest.
- *
- * @returns cpl
- * @param   pVM         VM Handle.
- * @param   pRegFrame   Trap register frame.
- */
-DECLINLINE(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
-{
-    return CPUMGetGuestCPLEx(pVM, pCtxCore, pCtxCore->eflags);
-}
+CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore);
 
 
 #ifdef IN_RING3
