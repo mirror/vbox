@@ -87,6 +87,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]; /* We treat this as a PD with 2048 entries. */
 # endif
 
+    /* Determine current privilege level */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
 
 # ifdef PGM_SYNC_DIRTY_BIT
     /*
@@ -200,8 +202,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 /*
                  * Check if the EIP is in a virtual page access handler range.
                  */
-                if (    (pRegFrame->ss & X86_SEL_RPL) == 1
-                    &&  !pRegFrame->eflags.Bits.u1VM)
+                if (cpl == 0)
                 {
                     RTGCPTR pvEIP;
                     rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pvEIP);
@@ -551,8 +552,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  endif /* LOG_ENABLED */
 
 #  ifndef IN_RING0
-                Assert((pRegFrame->ss & X86_SEL_RPL) == 1 || (pRegFrame->ss & X86_SEL_RPL) == 3 || pRegFrame->eflags.Bits.u1VM);
-                if (CSAMIsEnabled(pVM) && (pRegFrame->ss & X86_SEL_RPL) == 1)
+                if (CSAMIsEnabled(pVM) && (cpl == 0))
                 {
                     uint64_t fPageGst;
                     rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
@@ -698,8 +698,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
      */
     /** @todo this stuff is completely broken by the out-of-sync stuff. since we don't use this stuff, that's not really a problem yet. */
     STAM_PROFILE_START(&pVM->pgm.s.StatEIPHandlers, d);
-    if (    (pRegFrame->ss & X86_SEL_RPL) == 1
-        &&  !pRegFrame->eflags.Bits.u1VM)
+    if (cpl == 0)
     {
         RTGCPTR pvEIP;
         rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pvEIP);

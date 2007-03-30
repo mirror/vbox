@@ -511,11 +511,8 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
             return VINF_SUCCESS;
     }
 
-    uint32_t cpl;
-    if (pRegFrame->eflags.Bits.u1VM)
-        cpl = 3;
-    else
-        cpl = (pRegFrame->ss & X86_SEL_RPL);
+    /* Get the current privilege level. */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
 
     /*
      * Get data size.

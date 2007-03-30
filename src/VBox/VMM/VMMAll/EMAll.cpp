@@ -1803,11 +1803,9 @@ static int emInterpretMonitor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     if (pRegFrame->ecx != 0)
         return VERR_EM_INTERPRETER; /* illegal value. */
 
-#ifdef IN_GC
-    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 1)
-#else
-    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0)
-#endif
+    /* Get the current privilege level. */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
     return VINF_SUCCESS;
@@ -1822,11 +1820,9 @@ static int emInterpretMWait(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     if (pRegFrame->ecx != 0)
         return VERR_EM_INTERPRETER; /* illegal value. */
 
-#ifdef IN_GC
-    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 1)
-#else
-    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0)
-#endif
+    /* Get the current privilege level. */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
     /** @todo not completely correct */
@@ -1847,11 +1843,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
      * Only supervisor guest code!!
      * And no complicated prefixes.
      */
-#ifdef IN_GC
-    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 1)
-#else
-    if (pRegFrame->eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0)
-#endif
+    /* Get the current privilege level. */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    if (cpl != 0)
     {
         Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
         STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,FailedUserMode));

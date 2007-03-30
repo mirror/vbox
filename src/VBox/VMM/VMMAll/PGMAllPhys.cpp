@@ -1768,9 +1768,9 @@ AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%VGv\n", cb, cb1, cb2, GCPtrSrc))
      * Raise a #PF.
      */
     uint32_t uErr;
-    uint32_t cpl;
 
-    cpl = (pCtxCore->eflags.Bits.u1VM) ? 3 : (pCtxCore->ss & X86_SEL_RPL);
+    /* Get the current privilege level. */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pCtxCore);
     switch (rc)
     {
         case VINF_SUCCESS:

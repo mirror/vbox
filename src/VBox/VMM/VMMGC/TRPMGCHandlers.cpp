@@ -614,6 +614,8 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
 {
     int rc;
 
+    Assert(!pRegFrame->eflags.Bits.u1VM);
+
     switch (pCpu->pCurInstr->opcode)
     {
         /*

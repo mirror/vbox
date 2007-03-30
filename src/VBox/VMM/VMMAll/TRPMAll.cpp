@@ -433,14 +433,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 
         Assert(PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame));
 
-        /* Must get the CPL from the SS selector (CS might be conforming) */
-        if (eflags.Bits.u1VM)
-            cpl = 3;
-        else
-        if ((pRegFrame->ss & X86_SEL_RPL) == 1)
-            cpl = 0;
-        else
-            cpl = (pRegFrame->ss & X86_SEL_RPL);
+        /* Get the current privilege level. */
+        cpl = CPUMGetGuestCPL(pVM, pRegFrame);
 
         if (GCPtrIDT && iGate * sizeof(VBOXIDTE) >= cbIDT)
             goto failure;
