@@ -245,45 +245,55 @@ public:
             if (gEventQ)
                 gEventQ->IsOnCurrentThread (&onMainThread);
 
-            if (!onMainThread)
-            {
-                LogFlowFunc (("Last VirtualBox instance was released, "
-                              "scheduling server shutdown in %d ms...\n",
-                              VBoxSVC_ShutdownDelay));
+            LogFlowFunc (("Last VirtualBox instance was released, "
+                          "scheduling server shutdown in %d ms...\n",
+                          VBoxSVC_ShutdownDelay));
 
-                /* Start a shutdown timer to provide some delay */
-#if 0 /** @todo Doesn't work when the 2nd client attaches while before the timer ticks. Dmitry will debug. */
-                int vrc = RTTimerStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
-                AssertRC (vrc);
-                if (VBOX_FAILURE (vrc))
-#endif
+            int vrc = RTTimerStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
+            AssertRC (vrc);
+            if (VBOX_FAILURE (vrc))
+            {
+                /* Failed to start the timer, post the shutdown event
+                 * manually if not on the main thread alreay. */
+                if (!onMainThread)
                 {
-                    /* failed to start the timer, post the shutdown event
-                     * manually */
                     ShutdownTimer (NULL, NULL);
                 }
-            }
-            else
-            {
-                /* Here we come if:
-                 *
-                 * a) gEventQ is 0 which means either FactoryDestructor() is called
-                 *    or the IPC/DCONNECT shutdown sequence is initiated by the
-                 *    XPCOM shutdown routine (NS_ShutdownXPCOM()), which always
-                 *    happens on the main thread.
-                 *
-                 * b) gEventQ has reported we're on the main thread. This means
-                 *    that DestructEventHandler() has been called, but another
-                 *    client was faster and requested VirtualBox again.
-                 *
-                 * We have nothing to do in these cases.
-                 */
+                else
+                {
+                    /* Here we come if:
+                     *
+                     * a) gEventQ is 0 which means either FactoryDestructor() is called
+                     *    or the IPC/DCONNECT shutdown sequence is initiated by the
+                     *    XPCOM shutdown routine (NS_ShutdownXPCOM()), which always
+                     *    happens on the main thread.
+                     *
+                     * b) gEventQ has reported we're on the main thread. This means
+                     *    that DestructEventHandler() has been called, but another
+                     *    client was faster and requested VirtualBox again.
+                     *
+                     * In either case, since we're on the main thread already,
+                     * it's necessary just to release the instance once more
+                     * to call its destructor.
+                     */
+                    count = VirtualBox::Release();
+                }
             }
         }
 
         return count;
     }
 
+    /* Returns the current value of the reference counter. */
+    nsrefcnt GetRefCount()
+    {
+        /* we don't use our own Release() to avoid its "side effect" */
+        nsrefcnt count = VirtualBox::AddRef();
+        count = VirtualBox::Release();
+        return count;
+    }
+
+    /* called on the main thread */
     static void *PR_CALLBACK DestructEventHandler (PLEvent* self)
     {
         Assert (RTCritSectIsInitialized (&sLock));
@@ -293,12 +303,23 @@ public:
 
         Assert (sInstance);
 
-        /* release the reference we added in GetInstance()
-         * (will call the destructor if nobody referenced us again) */
-        nsrefcnt count = sInstance->Release();
-        if (count != 0)
+        nsrefcnt count = sInstance->GetRefCount();
+        AssertMsg (count >= 1, ("count=%d\n", count));
+
+        if (count > 1)
         {
-            LogFlowFunc (("Destruction is canceled.\n"));
+            /* This case is very unlikely because we stop the timer when a new
+             * client connects after the instance was scheduled for
+             * destruction, but it's still possible. This is the only reason
+             * for the above GetRefCount() btw.  */
+            LogFlowFunc (("Destruction is canceled (refcnt=%d).\n", count));
+        }
+        else
+        {
+            /* release the last (first) reference we added in GetInstance()
+             * (this must call the destructor) */
+            nsrefcnt count = sInstance->Release();
+            AssertMsg (count == 0, ("count=%d\n", count));
         }
 
         RTCritSectLeave (&sLock);
@@ -313,7 +334,14 @@ public:
 
     static void ShutdownTimer (PRTTIMER pTimer, void *pvUser)
     {
+        NOREF (pTimer);
         NOREF (pvUser);
+
+        /* A "too late" event is theoretically possible if somebody
+         * manually ended the server after a destruction has been scheduled
+         * and this method was so lucky that it got a chance to run before
+         * the timer was killed. */
+        AssertReturnVoid (gEventQ);
 
         /* post a destruction event to the main thread to safely release the
          * extra reference added in VirtualBoxClassFactory::GetInstance() */
@@ -423,10 +451,9 @@ public:
                 LogFlowFunc (("Another client has requested "
                               "a reference of VirtualBox scheduled for destruction, "
                               "canceling detruction...\n"));
-
-                /* add a reference to compensate one that DestructEventHandler()
-                 * will release */
-                sInstance->AddRef();
+                
+                /* make sure the previous timer is stopped */
+                RTTimerStop (sTimer);
             }
         }
 
@@ -439,13 +466,19 @@ public:
 
 private:
 
-    static VirtualBox *sInstance;
+    /* Don't be confused that sInstance is of the *ClassFactory type. This is
+     * actually a singleton instance (*ClassFactory inherits the singleton
+     * class; we combined them just for "simplicity" and used "static" for
+     * factory methods. *ClassFactory here is necessary for a couple of extra
+     * methods. */
+
+    static VirtualBoxClassFactory *sInstance;
     static RTCRITSECT sLock;
 
     static PRTTIMER sTimer;
 };
 
-VirtualBox *VirtualBoxClassFactory::sInstance = 0;
+VirtualBoxClassFactory *VirtualBoxClassFactory::sInstance = 0;
 RTCRITSECT VirtualBoxClassFactory::sLock = {0};
 
 PRTTIMER VirtualBoxClassFactory::sTimer = NULL;
