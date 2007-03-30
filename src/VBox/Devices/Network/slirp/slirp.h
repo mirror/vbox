@@ -214,7 +214,7 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 
 #include <sys/stat.h>
 
-#ifndef _MSC_VER
+#if 1 /* ndef _MSC_VER */
 /* Avoid conflicting with the libc insque() and remque(), which
    have different prototypes. */
 #define insque slirp_insque
@@ -305,13 +305,8 @@ extern int do_echo;
 # define insque_32 insque
 # define remque_32 remque
 #else
-# ifdef _MSC_VER
- extern void insque_32 _P((PNATState, void *, void *));
- extern void remque_32 _P((PNATState, void *));
-# else
- inline void insque_32 _P((PNATState, void *, void *));
- inline void remque_32 _P((PNATState, void *));
-# endif
+extern void insque_32 _P((PNATState, void *, void *));
+extern void remque_32 _P((PNATState, void *));
 #endif
 
 #ifndef _WIN32

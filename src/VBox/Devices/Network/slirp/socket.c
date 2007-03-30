@@ -495,6 +495,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 	  switch(ntohl(so->so_faddr.s_addr) & 0xff) {
           case CTL_BROADCAST:
             addr.sin_addr.s_addr = INADDR_BROADCAST;
+#if 0
             /* Send the packet to host to fully emulate broadcast */
             /** @todo r=klaus: on Linux host this causes the host to receive
              * the packet twice for some reason. And I cannot find any place
@@ -502,9 +503,10 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
              * reach the host itself. */
             host_addr.sin_family = AF_INET;
             host_addr.sin_port = so->so_fport;
-            host_addr.sin_addr = loopback_addr;
+            host_addr.sin_addr = our_addr;
             sendto(so->s, m->m_data, m->m_len, 0,
                   (struct sockaddr *)&host_addr, sizeof (struct sockaddr));
+#endif
             break;
 	  case CTL_DNS:
 	    addr.sin_addr = dns_addr;
