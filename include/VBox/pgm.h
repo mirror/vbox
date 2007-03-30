@@ -354,7 +354,7 @@ PGMDECL(int) PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RT
  * @retval  VINF_SUCCESS on success.
  * @retval  VINF_PGM_SYNC_CR3 if we're out of shadow pages or something like that.
  * @param   pVM         VM handle.
- * @param   GCPtrPage   Page to invalidate.
+ * @param   GCPtrPage   Page to prefetch.
  */
 PGMDECL(int) PGMPrefetchPage(PVM pVM, RTGCPTR GCPtrPage);
 
