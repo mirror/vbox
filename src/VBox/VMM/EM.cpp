@@ -803,7 +803,7 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPoll(pVM);
 #endif
-        if (VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK & ~(VM_FF_CSAM_FLUSH_DIRTY_PAGE | VM_FF_CSAM_SCAN_PAGE)))
+        if (VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK & ~(VM_FF_CSAM_PENDING_ACTION | VM_FF_CSAM_SCAN_PAGE)))
         {
 l_REMDoForcedActions:
             if (fInREMState)
@@ -3040,8 +3040,8 @@ static int emR3HighPriorityPostForcedActions(PVM pVM, int rc)
     if (VM_FF_ISSET(pVM, VM_FF_PDM_CRITSECT))
         PDMR3CritSectFF(pVM);
 
-    if (VM_FF_ISSET(pVM, VM_FF_CSAM_FLUSH_DIRTY_PAGE))
-        CSAMR3FlushDirtyPages(pVM);
+    if (VM_FF_ISSET(pVM, VM_FF_CSAM_PENDING_ACTION))
+        CSAMR3DoPendingAction(pVM);
 
     return rc;
 }
