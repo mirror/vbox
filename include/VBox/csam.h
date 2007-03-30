@@ -239,12 +239,12 @@ CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC);
 CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fScanned);
 
 /**
- * Flush dirty code pages
+ * Perform any pending actions
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CSAMR3DECL(int) CSAMR3FlushDirtyPages(PVM pVM);
+CSAMR3DECL(int) CSAMR3DoPendingAction(PVM pVM);
 
 /**
  * Monitors a code page (if not already monitored)

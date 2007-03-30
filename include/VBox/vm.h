@@ -90,8 +90,8 @@
 
 /** CSAM needs to scan the page that's being executed */
 #define VM_FF_CSAM_SCAN_PAGE            BIT(24)
-/** CSAM needs to flush a code page that has been modified. */
-#define VM_FF_CSAM_FLUSH_DIRTY_PAGE     BIT(25)
+/** CSAM needs to do some homework. */
+#define VM_FF_CSAM_PENDING_ACTION       BIT(25)
 
 /** Force return to Ring-3. */
 #define VM_FF_TO_R3                     BIT(28)
@@ -109,7 +109,7 @@
 /** High priority pre raw-mode execution mask. */
 #define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK (VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_INHIBIT_INTERRUPTS)
 /** High priority post-execution actions. */
-#define VM_FF_HIGH_PRIORITY_POST_MASK   (VM_FF_PDM_CRITSECT|VM_FF_CSAM_FLUSH_DIRTY_PAGE)
+#define VM_FF_HIGH_PRIORITY_POST_MASK   (VM_FF_PDM_CRITSECT|VM_FF_CSAM_PENDING_ACTION)
 /** Normal priority post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_CSAM_SCAN_PAGE)
 /** Normal priority actions. */
@@ -119,7 +119,7 @@
 /** All the forced flags. */
 #define VM_FF_ALL_MASK                  (~0U)
 /** All the forced flags. */
-#define VM_FF_ALL_BUT_RAW_MASK          (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_CSAM_FLUSH_DIRTY_PAGE | VM_FF_PDM_CRITSECT))
+#define VM_FF_ALL_BUT_RAW_MASK          (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_CSAM_PENDING_ACTION | VM_FF_PDM_CRITSECT))
 
 /** @} */
 
