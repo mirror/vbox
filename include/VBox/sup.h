@@ -137,10 +137,11 @@ typedef struct SUPGLOBALINFOPAGE
 {
     /** Magic (SUPGLOBALINFOPAGE_MAGIC). */
     uint32_t            u32Magic;
+    /** The GIP version. */
+    uint32_t            u32Version;
 
     /** The GIP update mode, see SUPGIPMODE. */
     uint32_t            u32Mode;
-
     /** The update frequency of the of the NanoTS. */
     volatile uint32_t   u32UpdateHz;
     /** The update interval in nanoseconds. (10^9 / u32UpdateHz) */
@@ -169,6 +170,10 @@ typedef const SUPGLOBALINFOPAGE *PCSUPGLOBALINFOPAGE;
 
 /** The value of the SUPGLOBALINFOPAGE::u32Magic field. (Soryo Fuyumi) */
 #define SUPGLOBALINFOPAGE_MAGIC     0x19590106
+/** The GIP version. 
+ * Upper 16 bits is the major version. Major version is only changed with 
+ * incompatible changes in the GIP. */
+#define SUPGLOBALINFOPAGE_VERSION   0x00020000
 
 /** 
  * SUPGLOBALINFOPAGE::u32Mode values.
@@ -551,7 +556,7 @@ SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
 SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
 SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages);
 SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
-SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, PRTHCPHYS pHCPhysGid);
+SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGid);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 

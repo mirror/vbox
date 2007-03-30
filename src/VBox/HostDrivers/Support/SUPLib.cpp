@@ -114,7 +114,7 @@ static uint8_t      g_u8Interrupt = 3;
 static PFNCALLVMMR0 g_pfnCallVMMR0;
 #endif
 /** VMMR0 Load Address. */
-static void        *g_pvVMMR0 = NULL;
+static RTR0PTR      g_pvVMMR0 = NIL_RTR0PTR;
 /** Init counter. */
 static unsigned     g_cInits = 0;
 /** Fake mode indicator. (~0 at first, 0 or 1 after first test) */
@@ -182,13 +182,17 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
          * Negotiate the cookie.
          */
         SUPCOOKIE_IN    In;
-        SUPCOOKIE_OUT   Out = {0,0};
+        SUPCOOKIE_OUT   Out = {0,0,0,0,0,NIL_RTR0PTR};
         strcpy(In.szMagic, SUPCOOKIE_MAGIC);
-        In.u32Version = SUPDRVIOC_VERSION;
+        In.u32ReqVersion = SUPDRVIOC_VERSION;
+        if (SUPDRVIOC_VERSION < 0x00050000)
+            In.u32MinVersion = 0x00040002;
+        else
+            In.u32MinVersion = SUPDRVIOC_VERSION & 0xffff0000;
         rc = suplibOsIOCtl(SUP_IOCTL_COOKIE, &In, sizeof(In), &Out, sizeof(Out));
         if (VBOX_SUCCESS(rc))
         {
-            if (Out.u32Version == SUPDRVIOC_VERSION)
+            if ((Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000))
             {
                 /*
                  * Query the functions.
@@ -238,7 +242,21 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
                     rc = VERR_NO_MEMORY;
             }
             else
+            {
+                LogRel(("Support driver version mismatch: SessionVersion=%#x DriverVersion=%#x ClientVersion=%#x\n", 
+                        Out.u32SessionVersion, Out.u32DriverVersion, SUPDRVIOC_VERSION));
                 rc = VERR_VM_DRIVER_VERSION_MISMATCH;
+            }
+        }
+        else
+        {
+             if (rc == VERR_INVALID_PARAMETER) /* for pre 0x00040002 drivers */
+                 rc = VERR_VM_DRIVER_VERSION_MISMATCH;
+             if (rc == VERR_VM_DRIVER_VERSION_MISMATCH)
+                 LogRel(("Support driver version mismatch: DriverVersion=%#x ClientVersion=%#x\n", 
+                         Out.u32DriverVersion, SUPDRVIOC_VERSION));
+             else
+                 LogRel(("Support driver version/Cookie negotiations error: rc=%Vrc\n", rc));
         }
 
         suplibOsTerm();
@@ -258,46 +276,46 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
     static const SUPFUNC s_aFakeFunctions[] =
     {
         /* name                                     function */
-        { "SUPR0ObjRegister",                       (void *)0xefef0000 },
-        { "SUPR0ObjAddRef",                         (void *)0xefef0001 },
-        { "SUPR0ObjRelease",                        (void *)0xefef0002 },
-        { "SUPR0ObjVerifyAccess",                   (void *)0xefef0003 },
-        { "SUPR0LockMem",                           (void *)0xefef0004 },
-        { "SUPR0UnlockMem",                         (void *)0xefef0005 },
-        { "SUPR0ContAlloc",                         (void *)0xefef0006 },
-        { "SUPR0ContFree",                          (void *)0xefef0007 },
-        { "SUPR0MemAlloc",                          (void *)0xefef0008 },
-        { "SUPR0MemGetPhys",                        (void *)0xefef0009 },
-        { "SUPR0MemFree",                           (void *)0xefef000a },
-        { "SUPR0Printf",                            (void *)0xefef000b },
-        { "RTMemAlloc",                             (void *)0xefef000c },
-        { "RTMemAllocZ",                            (void *)0xefef000d },
-        { "RTMemFree",                              (void *)0xefef000e },
-        { "RTSemFastMutexCreate",                   (void *)0xefef000f },
-        { "RTSemFastMutexDestroy",                  (void *)0xefef0010 },
-        { "RTSemFastMutexRequest",                  (void *)0xefef0011 },
-        { "RTSemFastMutexRelease",                  (void *)0xefef0012 },
-        { "RTSemEventCreate",                       (void *)0xefef0013 },
-        { "RTSemEventSignal",                       (void *)0xefef0014 },
-        { "RTSemEventWait",                         (void *)0xefef0015 },
-        { "RTSemEventDestroy",                      (void *)0xefef0016 },
-        { "RTSpinlockCreate",                       (void *)0xefef0017 },
-        { "RTSpinlockDestroy",                      (void *)0xefef0018 },
-        { "RTSpinlockAcquire",                      (void *)0xefef0019 },
-        { "RTSpinlockRelease",                      (void *)0xefef001a },
-        { "RTSpinlockAcquireNoInts",                (void *)0xefef001b },
-        { "RTSpinlockReleaseNoInts",                (void *)0xefef001c },
-        { "RTThreadNativeSelf",                     (void *)0xefef001d },
-        { "RTThreadSleep",                          (void *)0xefef001e },
-        { "RTThreadYield",                          (void *)0xefef001f },
-        { "RTLogDefaultInstance",                   (void *)0xefef0020 },
-        { "RTLogRelDefaultInstance",                (void *)0xefef0021 },
-        { "RTLogSetDefaultInstanceThread",          (void *)0xefef0022 },
-        { "RTLogLogger",                            (void *)0xefef0023 },
-        { "RTLogLoggerEx",                          (void *)0xefef0024 },
-        { "RTLogLoggerExV",                         (void *)0xefef0025 },
-        { "AssertMsg1",                             (void *)0xefef0026 },
-        { "AssertMsg2",                             (void *)0xefef0027 },
+        { "SUPR0ObjRegister",                       0xefef0000 },
+        { "SUPR0ObjAddRef",                         0xefef0001 },
+        { "SUPR0ObjRelease",                        0xefef0002 },
+        { "SUPR0ObjVerifyAccess",                   0xefef0003 },
+        { "SUPR0LockMem",                           0xefef0004 },
+        { "SUPR0UnlockMem",                         0xefef0005 },
+        { "SUPR0ContAlloc",                         0xefef0006 },
+        { "SUPR0ContFree",                          0xefef0007 },
+        { "SUPR0MemAlloc",                          0xefef0008 },
+        { "SUPR0MemGetPhys",                        0xefef0009 },
+        { "SUPR0MemFree",                           0xefef000a },
+        { "SUPR0Printf",                            0xefef000b },
+        { "RTMemAlloc",                             0xefef000c },
+        { "RTMemAllocZ",                            0xefef000d },
+        { "RTMemFree",                              0xefef000e },
+        { "RTSemFastMutexCreate",                   0xefef000f },
+        { "RTSemFastMutexDestroy",                  0xefef0010 },
+        { "RTSemFastMutexRequest",                  0xefef0011 },
+        { "RTSemFastMutexRelease",                  0xefef0012 },
+        { "RTSemEventCreate",                       0xefef0013 },
+        { "RTSemEventSignal",                       0xefef0014 },
+        { "RTSemEventWait",                         0xefef0015 },
+        { "RTSemEventDestroy",                      0xefef0016 },
+        { "RTSpinlockCreate",                       0xefef0017 },
+        { "RTSpinlockDestroy",                      0xefef0018 },
+        { "RTSpinlockAcquire",                      0xefef0019 },
+        { "RTSpinlockRelease",                      0xefef001a },
+        { "RTSpinlockAcquireNoInts",                0xefef001b },
+        { "RTSpinlockReleaseNoInts",                0xefef001c },
+        { "RTThreadNativeSelf",                     0xefef001d },
+        { "RTThreadSleep",                          0xefef001e },
+        { "RTThreadYield",                          0xefef001f },
+        { "RTLogDefaultInstance",                   0xefef0020 },
+        { "RTLogRelDefaultInstance",                0xefef0021 },
+        { "RTLogSetDefaultInstanceThread",          0xefef0022 },
+        { "RTLogLogger",                            0xefef0023 },
+        { "RTLogLoggerEx",                          0xefef0024 },
+        { "RTLogLoggerExV",                         0xefef0025 },
+        { "AssertMsg1",                             0xefef0026 },
+        { "AssertMsg2",                             0xefef0027 },
     };
 
     /* fake r0 functions. */
@@ -1012,10 +1030,10 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
      */
     /** @todo call the SUPLoadModule caller.... */
     /** @todo proper reference counting and such. */
-    if (g_pvVMMR0)
+    if (g_pvVMMR0 != NIL_RTR0PTR)
     {
         void *pvValue;
-        if (!SUPGetSymbolR0(g_pvVMMR0, pszSymbol, &pvValue))
+        if (!SUPGetSymbolR0((void *)g_pvVMMR0, pszSymbol, &pvValue))
         {
             *pValue = (uintptr_t)pvValue;
             return VINF_SUCCESS;
@@ -1161,9 +1179,9 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
         else
         {
             OpenOut.fNeedsLoading = true;
-            OpenOut.pvImageBase = (void *)0xef423420;
+            OpenOut.pvImageBase = 0xef423420;
         }
-        *ppvImageBase = OpenOut.pvImageBase;
+        *ppvImageBase = (void *)OpenOut.pvImageBase;
         if (    VBOX_SUCCESS(rc)
             &&  OpenOut.fNeedsLoading)
         {
@@ -1219,13 +1237,13 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                      */
                     pIn->u32Cookie                  = g_u32Cookie;
                     pIn->u32SessionCookie           = g_u32SessionCookie;
-                    pIn->pfnModuleInit              = (PFNR0MODULEINIT)(uintptr_t)ModuleInit;
-                    pIn->pfnModuleTerm              = (PFNR0MODULETERM)(uintptr_t)ModuleTerm;
+                    pIn->pfnModuleInit              = (RTR0PTR)ModuleInit;
+                    pIn->pfnModuleTerm              = (RTR0PTR)ModuleTerm;
                     if (fIsVMMR0)
                     {
                         pIn->eEPType                = pIn->EP_VMMR0;
                         pIn->EP.VMMR0.pvVMMR0       = OpenOut.pvImageBase;
-                        pIn->EP.VMMR0.pvVMMR0Entry  = (void *)(uintptr_t)VMMR0Entry;
+                        pIn->EP.VMMR0.pvVMMR0Entry  = (RTR0PTR)VMMR0Entry;
                     }
                     else
                         pIn->eEPType                = pIn->EP_NOTHING;
@@ -1273,7 +1291,7 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase)
      * Note that we don't keep count of VMMR0.r0 loads here, so the
      *      first unload will free it.
      */
-    if (pvImageBase == g_pvVMMR0)
+    if ((RTR0PTR)pvImageBase == g_pvVMMR0)
     {
         /*
          * This is the point where we remove the IDT hook. We do
@@ -1286,7 +1304,7 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase)
             RTMemExecFree(*(void **)&g_pfnCallVMMR0);
             g_pfnCallVMMR0 = NULL;
 #endif
-            g_pvVMMR0 = NULL;
+            g_pvVMMR0 = NIL_RTR0PTR;
             return VINF_SUCCESS;
         }
 
@@ -1314,13 +1332,13 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase)
     SUPLDRFREE_IN In;
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
-    In.pvImageBase      = pvImageBase;
+    In.pvImageBase      = (RTR0PTR)pvImageBase;
     int rc = VINF_SUCCESS;
     if (!g_u32FakeMode)
         rc = suplibOsIOCtl(SUP_IOCTL_LDR_FREE, &In, sizeof(In), NULL, 0);
     if (    VBOX_SUCCESS(rc)
-        &&  pvImageBase == g_pvVMMR0)
-        g_pvVMMR0 = NULL;
+        &&  (RTR0PTR)pvImageBase == g_pvVMMR0)
+        g_pvVMMR0 = NIL_RTR0PTR;
     return rc;
 }
 
@@ -1334,11 +1352,11 @@ SUPR3DECL(int) SUPGetSymbolR0(void *pvImageBase, const char *pszSymbol, void **p
      */
     size_t              cchSymbol = strlen(pszSymbol);
     const size_t        cbIn = RT_OFFSETOF(SUPLDRGETSYMBOL_IN, szSymbol[cchSymbol + 1]);
-    SUPLDRGETSYMBOL_OUT Out = { NULL };
+    SUPLDRGETSYMBOL_OUT Out = { NIL_RTR0PTR };
     PSUPLDRGETSYMBOL_IN pIn = (PSUPLDRGETSYMBOL_IN)alloca(cbIn);
     pIn->u32Cookie        = g_u32Cookie;
     pIn->u32SessionCookie = g_u32SessionCookie;
-    pIn->pvImageBase      = pvImageBase;
+    pIn->pvImageBase      = (RTR0PTR)pvImageBase;
     memcpy(pIn->szSymbol, pszSymbol, cchSymbol + 1);
     int rc;
     if (RT_LIKELY(!g_u32FakeMode))
@@ -1346,10 +1364,10 @@ SUPR3DECL(int) SUPGetSymbolR0(void *pvImageBase, const char *pszSymbol, void **p
     else
     {
         rc = VINF_SUCCESS;
-        Out.pvSymbol = (void *)0xdeadf00d;
+        Out.pvSymbol = 0xdeadf00d;
     }
     if (VBOX_SUCCESS(rc))
-        *ppvValue = Out.pvSymbol;
+        *ppvValue = (void *)Out.pvSymbol;
     return rc;
 }
 
@@ -1363,7 +1381,7 @@ SUPR3DECL(int) SUPLoadVMM(const char *pszFilename)
 
 SUPR3DECL(int) SUPUnloadVMM(void)
 {
-    return SUPFreeModule(g_pvVMMR0);
+    return SUPFreeModule((void*)g_pvVMMR0);
 }
 
 
