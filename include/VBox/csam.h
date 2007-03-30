@@ -88,16 +88,15 @@ CSAMDECL(bool) CSAMIsPageScanned(PVM pVM, RTGCPTR pPage);
  */
 CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR pPage, bool fScanned);
 
+
 /**
- * Mark an instruction in a page as scanned/not scanned
+ * Remember a possible code page for later inspection
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pInstr      Instruction pointer
- * @param   opsize      Instruction size
- * @param   fScanned    Mark as scanned or not
+ * @param   GCPtr       GC pointer of page
  */
-CSAMDECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fScanned);
+CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTGCPTR GCPtr);
 
 /**
  * Query CSAM state (enabled/disabled)
@@ -227,6 +226,17 @@ CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel,
  * @param   pInstrGC    Instruction pointer (0:32 virtual address)
  */
 CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC);
+
+/**
+ * Mark an instruction in a page as scanned/not scanned
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pInstr      Instruction pointer
+ * @param   opsize      Instruction size
+ * @param   fScanned    Mark as scanned or not
+ */
+CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fScanned);
 
 /**
  * Flush dirty code pages
