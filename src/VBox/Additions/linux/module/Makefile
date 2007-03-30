@@ -62,6 +62,7 @@ vboxmod-bin_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.h=>VBoxCalls.h \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VMMDev.cpp=>VMMDev.c \
+	$(PATH_ROOT)/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.cpp=>r0drv/alloc-r0drv.c \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.h=>r0drv/alloc-r0drv.h \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
