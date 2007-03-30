@@ -201,6 +201,7 @@ CSAMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTGCPTR GCPtr)
     if (pVM->csam.s.cPossibleCodePages < RT_ELEMENTS(pVM->csam.s.pvPossibleCodePage))
     {
         pVM->csam.s.pvPossibleCodePage[pVM->csam.s.cPossibleCodePages++] = GCPtr;
+        VM_FF_SET(pVM, VM_FF_CSAM_PENDING_ACTION);
     }
     return;
 }
