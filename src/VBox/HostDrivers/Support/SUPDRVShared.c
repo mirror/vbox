@@ -643,28 +643,43 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    cbIn != sizeof(*pIn)
                 ||  cbOut != sizeof(*pOut))
             {
-                dprintf(("SUP_IOCTL_COOKIE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
+                OSDBGPRINT(("SUP_IOCTL_COOKIE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                            (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if (strncmp(pIn->szMagic, SUPCOOKIE_MAGIC, sizeof(pIn->szMagic)))
             {
-                dprintf(("SUP_IOCTL_COOKIE: invalid magic %.16s\n", pIn->szMagic));
+                OSDBGPRINT(("SUP_IOCTL_COOKIE: invalid magic %.16s\n", pIn->szMagic));
                 return SUPDRV_ERR_INVALID_MAGIC;
             }
-            if (pIn->u32Version != SUPDRVIOC_VERSION)
+
+            /*
+             * Match the version.
+             * The current logic is very simple, match the major interface version.
+             */
+            if (    pIn->u32MinVersion > SUPDRVIOC_VERSION
+                ||  (pIn->u32ReqVersion & 0xffff0000) != (SUPDRVIOC_VERSION & 0xffff0000))
             {
-                dprintf(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Current: %#x\n", pIn->u32Version, SUPDRVIOC_VERSION));
+                OSDBGPRINT(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n", 
+                            pIn->u32ReqVersion, pIn->u32MinVersion, SUPDRVIOC_VERSION));
+                pOut->u32Cookie         = 0xffffffff;
+                pOut->u32SessionCookie  = 0xffffffff;
+                pOut->u32SessionVersion = 0xffffffff;
+                pOut->u32DriverVersion  = SUPDRVIOC_VERSION;
+                pOut->pSession          = NULL;
+                pOut->cFunctions        = 0;
+                *pcbReturned = sizeof(*pOut);
                 return SUPDRV_ERR_VERSION_MISMATCH;
             }
 
             /*
              * Fill in return data and be gone.
              */
-            /** @todo secure cookie negotiation? */
+            /** @todo A more secure cookie negotiation? */
             pOut->u32Cookie         = pDevExt->u32Cookie;
             pOut->u32SessionCookie  = pSession->u32Cookie;
-            pOut->u32Version        = SUPDRVIOC_VERSION;
+            pOut->u32SessionVersion = SUPDRVIOC_VERSION;
+            pOut->u32DriverVersion  = SUPDRVIOC_VERSION;
             pOut->pSession          = pSession;
             pOut->cFunctions        = sizeof(g_aFunctions) / sizeof(g_aFunctions[0]);
             *pcbReturned = sizeof(*pOut);
@@ -1145,7 +1160,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /*
              * Execute.
              */
-            pOut->rc = pDevExt->pfnVMMR0Entry(pIn->pVMR0, pIn->uOperation, pIn->pvArg);
+            pOut->rc = pDevExt->pfnVMMR0Entry(pIn->pVMR0, pIn->uOperation, (void *)pIn->pvArg); /** @todo address the pvArg problem! */
             *pcbReturned = sizeof(*pOut);
             return 0;
         }
@@ -2231,25 +2246,25 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
  * @returns 0 on success.
  * @returns SUPDRV_ERR_* on failure.
  * @param   pSession        Session to which the GIP mapping should belong.
- * @param   ppGip           Where to store the address of the mapping. (optional)
+ * @param   ppGipR3         Where to store the address of the ring-3 mapping. (optional)
  * @param   pHCPhysGip      Where to store the physical address. (optional)
  *
  * @remark  There is no reference counting on the mapping, so one call to this function
  *          count globally as one reference. One call to SUPR0GipUnmap() is will unmap GIP
  *          and remove the session as a GIP user.
  */
-SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, PRTHCPHYS pHCPhysGid)
+SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGid)
 {
-    int                     rc = 0;
-    PSUPDRVDEVEXT           pDevExt = pSession->pDevExt;
-    PCSUPGLOBALINFOPAGE     pGip = NULL;
-    RTHCPHYS                HCPhys = NIL_RTHCPHYS;
-    dprintf(("SUPR0GipMap: pSession=%p ppGip=%p pHCPhysGid=%p\n", pSession, ppGip, pHCPhysGid));
+    int             rc = 0;
+    PSUPDRVDEVEXT   pDevExt = pSession->pDevExt;
+    RTR3PTR         pGip = NIL_RTR3PTR;
+    RTHCPHYS        HCPhys = NIL_RTHCPHYS;
+    dprintf(("SUPR0GipMap: pSession=%p ppGipR3=%p pHCPhysGid=%p\n", pSession, ppGipR3, pHCPhysGid));
 
     /*
      * Validate
      */
-    if (!ppGip && !pHCPhysGid)
+    if (!ppGipR3 && !pHCPhysGid)
         return 0;
 
     RTSemFastMutexRequest(pDevExt->mtxGip);
@@ -2258,7 +2273,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, 
         /*
          * Map it?
          */
-        if (ppGip)
+        if (ppGipR3)
         {
 #ifdef USE_NEW_OS_INTERFACE
             if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
@@ -2266,14 +2281,14 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, 
                                        RTMEM_PROT_READ, RTR0ProcHandleSelf());
             if (RT_SUCCESS(rc))
             {
-                pGip = (PCSUPGLOBALINFOPAGE)RTR0MemObjAddress(pSession->GipMapObjR3);
+                pGip = (RTR3PTR)RTR0MemObjAddress(pSession->GipMapObjR3);
                 rc = VINF_SUCCESS; /** @todo remove this and replace the !rc below with RT_SUCCESS(rc). */
             }
 #else /* !USE_NEW_OS_INTERFACE */
             if (!pSession->pGip)
                 rc = supdrvOSGipMap(pSession->pDevExt, &pSession->pGip);
             if (!rc)
-                pGip = pSession->pGip;
+                pGip = (RTR3PTR)pSession->pGip;
 #endif /* !USE_NEW_OS_INTERFACE */
         }
 
@@ -2322,10 +2337,10 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PCSUPGLOBALINFOPAGE *ppGip, 
      */
     if (pHCPhysGid)
         *pHCPhysGid = HCPhys;
-    if (ppGip)
-        *ppGip = pGip;
+    if (ppGipR3)
+        *ppGipR3 = pGip;
 
-    dprintf(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGip=%p\n", rc, (unsigned long)HCPhys, pGip));
+    dprintf(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)(uintptr_t)pGip));
     return rc;
 }
 

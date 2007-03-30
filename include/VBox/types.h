@@ -73,7 +73,7 @@ typedef VBOXGCPTR  *PVBOXGCPTR;
 /** Pointer to per support driver session data.
  * (The data is a R0 entity and private to the the R0 SUP part. All
  * other should consider this a sort of handle.) */
-typedef struct SUPDRVSESSION   *PSUPDRVSESSION;
+typedef R0PTRTYPE(struct SUPDRVSESSION *) PSUPDRVSESSION;
 
 /** Pointer to a VM. */
 typedef struct VM              *PVM;
