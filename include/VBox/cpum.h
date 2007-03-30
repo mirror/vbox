@@ -678,6 +678,28 @@ CPUMDECL(bool) CPUMAreHiddenSelRegsValid(PVM pVM);
  */
 CPUMDECL(void) CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid);
 
+/**
+ * Get the current privilege level of the guest.
+ *
+ * @returns cpl
+ * @param   pVM         VM Handle.
+ * @param   pRegFrame   Trap register frame.
+ * @param   eflags      Current eflags
+ */
+CPUMDECL(uint32_t) CPUMGetGuestCPLEx(PVM pVM, PCPUMCTXCORE pCtxCore, X86EFLAGS eflags);
+
+/**
+ * Get the current privilege level of the guest.
+ *
+ * @returns cpl
+ * @param   pVM         VM Handle.
+ * @param   pRegFrame   Trap register frame.
+ */
+DECLINLINE(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
+{
+    return CPUMGetGuestCPLEx(pVM, pCtxCore, pCtxCore->eflags);
+}
+
 
 #ifdef IN_RING3
 /** @defgroup grp_cpum_r3    The CPU Monitor(/Manager) API
