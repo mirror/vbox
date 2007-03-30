@@ -24,6 +24,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/cpum.h>
+#include <VBox/disopcode.h>
 
 #if defined(__L4ENV__) || defined(IN_RING0)
 #include <setjmp.h>
