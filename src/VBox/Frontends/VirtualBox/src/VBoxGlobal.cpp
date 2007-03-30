@@ -350,7 +350,7 @@ static QString winFilter (const QString &aFilter)
 /*
  * Callback function to control the native Win32 API file dialog
  */
-UINT CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM aLParam)
+UINT_PTR CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM aLParam)
 {
     if (aUiMsg == WM_NOTIFY)
     {
