@@ -1626,32 +1626,38 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PVBOX
                  * Map shadow page table.
                  */
                 PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, pPdeDst->u & SHW_PDE_PG_MASK);
-                PSHWPT          pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
-                PSHWPTE         pPteDst  = &pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK];
-                if (    pPteDst->n.u1Present    /** @todo Optimize accessed bit emulation? */
-                    &&  (pPteDst->u & PGM_PTFLAGS_TRACK_DIRTY))
+
+                if (pShwPage)
                 {
-                    LogFlow(("DIRTY page trap addr=%VGv\n", GCPtrPage));
+                    PSHWPT          pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+                    PSHWPTE         pPteDst  = &pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK];
+                    if (    pPteDst->n.u1Present    /** @todo Optimize accessed bit emulation? */
+                        &&  (pPteDst->u & PGM_PTFLAGS_TRACK_DIRTY))
+                    {
+                        LogFlow(("DIRTY page trap addr=%VGv\n", GCPtrPage));
 #ifdef VBOX_STRICT
-                    RTHCPHYS HCPhys;
-                    rc = PGMRamGCPhys2HCPhysWithFlags(&pVM->pgm.s, pPteSrc->u & X86_PTE_PG_MASK, &HCPhys);
-                    if (VBOX_SUCCESS(rc))
-                        AssertMsg(!(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)),
-                                  ("Unexpected dirty bit tracking on monitored page %VGv (phys %VGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
+                        RTHCPHYS HCPhys;
+                        rc = PGMRamGCPhys2HCPhysWithFlags(&pVM->pgm.s, pPteSrc->u & X86_PTE_PG_MASK, &HCPhys);
+                        if (VBOX_SUCCESS(rc))
+                            AssertMsg(!(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)),
+                                      ("Unexpected dirty bit tracking on monitored page %VGv (phys %VGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
 #endif
-                    STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,DirtyPageTrap));
+                        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,DirtyPageTrap));
 
-                    Assert(pPteSrc->n.u1Write);
+                        Assert(pPteSrc->n.u1Write);
 
-                    pPteDst->n.u1Write    = 1;
-                    pPteDst->n.u1Dirty    = 1;
-                    pPteDst->n.u1Accessed = 1;
-                    pPteDst->au32[0]     &= ~PGM_PTFLAGS_TRACK_DIRTY;
-                    PGM_INVL_PG(GCPtrPage);
+                        pPteDst->n.u1Write    = 1;
+                        pPteDst->n.u1Dirty    = 1;
+                        pPteDst->n.u1Accessed = 1;
+                        pPteDst->au32[0]     &= ~PGM_PTFLAGS_TRACK_DIRTY;
+                        PGM_INVL_PG(GCPtrPage);
 
-                    STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,DirtyBitTracking), a);
-                    return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                        STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,DirtyBitTracking), a);
+                        return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                    }
                 }
+                else
+                    AssertMsgFailed(("pgmPoolGetPageByHCPhys %VGp failed!\n", pPdeDst->u & SHW_PDE_PG_MASK));
             }
         }
 /** @todo Optimize accessed bit emulation? */
