@@ -1585,6 +1585,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PVBOX
             if (pPdeSrc->n.u1Present && pPteSrc->n.u1Present)
                 TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
 
+            STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,DirtyBitTracking), a);
             return VINF_EM_RAW_GUEST_TRAP;
         }
         LogFlow(("CheckPageFault: page fault at %VGv PteSrc.u=%08x\n", GCPtrPage, PteSrc.u));
@@ -1611,6 +1612,16 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PVBOX
 
             if (pPdeDst->n.u1Present)
             {
+                /* Bail out here as pgmPoolGetPageByHCPhys will return NULL and we'll crash below.
+                 * Our individual shadow handlers will provide more information and force a fatal exit.
+                 */
+                if (MMHyperIsInsideArea(pVM, (RTGCPTR)GCPtrPage))
+                {
+                    LogRel(("CheckPageFault: write to hypervisor region %VGv\n", GCPtrPage));
+                    STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,DirtyBitTracking), a);
+                    return VINF_SUCCESS;
+                }
+
                 /*
                  * Map shadow page table.
                  */
