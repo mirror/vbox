@@ -39,29 +39,31 @@
 #ifndef PGM_PTFLAGS_CSAM_VALIDATED
 /** Scanned and approved by CSAM (tm). */
 /** NOTE: Must be identical to the one defined in PGMInternal.h!! */
-#define PGM_PTFLAGS_CSAM_VALIDATED  BIT64(11)
+#define PGM_PTFLAGS_CSAM_VALIDATED              BIT64(11)
 #endif
 
 /** @} */
 
-#define CSAM_SSM_VERSION                       13
+#define CSAM_SSM_VERSION                        14
 
-#define CSAM_PGDIRBMP_CHUNKS                   1024
+#define CSAM_PGDIRBMP_CHUNKS                    1024
 
-#define CSAM_PAGE_BITMAP_SIZE                  (PAGE_SIZE/(sizeof(uint8_t)*8))
+#define CSAM_PAGE_BITMAP_SIZE                   (PAGE_SIZE/(sizeof(uint8_t)*8))
 
 /* Maximum nr of dirty page that are cached. */
-#define CSAM_MAX_DIRTY_PAGES                   32
+#define CSAM_MAX_DIRTY_PAGES                    32
 
 /* Maximum number of cached addresses of dangerous instructions that have been scanned before. */
-#define CSAM_MAX_DANGR_INSTR                   16 /* power of two! */
-#define CSAM_MAX_DANGR_INSTR_MASK              (CSAM_MAX_DANGR_INSTR-1)
+#define CSAM_MAX_DANGR_INSTR                    16 /* power of two! */
+#define CSAM_MAX_DANGR_INSTR_MASK               (CSAM_MAX_DANGR_INSTR-1)
 
+/* Maximum number of possible dangerous code pages that we'll flush after a world switch */
+#define CSAM_MAX_CODE_PAGES_FLUSH               32
 
-#define CSAM_MAX_CALLEXIT_RET                  16
+#define CSAM_MAX_CALLEXIT_RET                   16
 
 /* copy from PATMInternal.h */
-#define SIZEOF_NEARJUMP32                  5 //opcode byte + 4 byte relative offset
+#define SIZEOF_NEARJUMP32                       5 //opcode byte + 4 byte relative offset
 
 typedef struct
 {
@@ -173,6 +175,10 @@ typedef struct CSAM
     uint32_t            cDirtyPages;
     RTGCPTR             pvDirtyBasePage[CSAM_MAX_DIRTY_PAGES];
     RTGCPTR             pvDirtyFaultPage[CSAM_MAX_DIRTY_PAGES];
+
+    /* To keep track of possible code pages */
+    uint32_t            cPossibleCodePages;
+    RTGCPTR             pvPossibleCodePage[CSAM_MAX_CODE_PAGES_FLUSH];
 
     /* Set when scanning has started. */
     bool                fScanningStarted;
