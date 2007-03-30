@@ -29,7 +29,12 @@ BEGINCODE
 
 
 BEGINPROC WrapGCC2MSC0Int
+%ifdef USE_DIRECT_CALLS
     jmp     $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    jmp     rax
+%endif
 ENDPROC WrapGCC2MSC0Int
 
 
@@ -39,7 +44,12 @@ BEGINPROC WrapGCC2MSC1Int
     sub     rsp, 10h
 
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -53,7 +63,12 @@ BEGINPROC WrapGCC2MSC2Int
 
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -68,7 +83,12 @@ BEGINPROC WrapGCC2MSC3Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -84,7 +104,12 @@ BEGINPROC WrapGCC2MSC4Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -101,7 +126,12 @@ BEGINPROC WrapGCC2MSC5Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -119,7 +149,12 @@ BEGINPROC WrapGCC2MSC6Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -139,7 +174,12 @@ BEGINPROC WrapGCC2MSC7Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -161,7 +201,12 @@ BEGINPROC WrapGCC2MSC8Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -185,7 +230,12 @@ BEGINPROC WrapGCC2MSC9Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -211,7 +261,12 @@ BEGINPROC WrapGCC2MSC10Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -239,7 +294,12 @@ BEGINPROC WrapGCC2MSC11Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -269,7 +329,12 @@ BEGINPROC WrapGCC2MSC12Int
     mov     r8, rdx
     mov     rdx, rsi
     mov     rcx, rdi
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     leave
     ret
@@ -298,7 +363,13 @@ BEGINPROC WrapGCC2MSCVariadictInt
     mov     rcx, rdi
     mov     [rsp], rcx                  ; (*)
     mov     rsi, r11                    ; rsi is preserved by the callee.
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
+
     add     rsp, 30h
     jmp     rsi
     ; (*) unconditionally spill the registers, just in case '...' implies weird stuff on MSC. Check this out!
@@ -318,7 +389,12 @@ BEGINPROC WrapMSC2GCC0Int
     mov     [ebp - 10h], rsi
     mov     [ebp - 18h], rdi
 
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -335,7 +411,12 @@ BEGINPROC WrapMSC2GCC1Int
     mov     [ebp - 18h], rdi
 
     mov     rdi, rcx
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -353,7 +434,12 @@ BEGINPROC WrapMSC2GCC2Int
 
     mov     rdi, rcx
     mov     rsi, rdx
+%ifdef USE_DIRECT_CALLS
     call    $+5+0deadbeefh
+%else
+    mov     rax, 0xdeadf00df00ddead
+    call    rax
+%endif
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
