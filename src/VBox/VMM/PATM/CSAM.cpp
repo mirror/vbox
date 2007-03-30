@@ -225,7 +225,7 @@ static int csamReinit(PVM pVM)
     pVM->csam.s.fGatesChecked    = false;
     pVM->csam.s.fScanningStarted = false;
 
-    VM_FF_CLEAR(pVM, VM_FF_CSAM_FLUSH_DIRTY_PAGE);
+    VM_FF_CLEAR(pVM, VM_FF_CSAM_PENDING_ACTION);
     pVM->csam.s.cDirtyPages = 0;
     /* not necessary */
     memset(pVM->csam.s.pvDirtyBasePage, 0, sizeof(pVM->csam.s.pvDirtyBasePage));
@@ -461,6 +461,10 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     pVM->csam.s.cDirtyPages = csamInfo.cDirtyPages;
     memcpy(pVM->csam.s.pvDirtyBasePage,  csamInfo.pvDirtyBasePage, sizeof(pVM->csam.s.pvDirtyBasePage));
     memcpy(pVM->csam.s.pvDirtyFaultPage, csamInfo.pvDirtyFaultPage, sizeof(pVM->csam.s.pvDirtyFaultPage));
+
+     /* Restore possible code page  */
+    pVM->csam.s.cPossibleCodePages = csamInfo.cPossibleCodePages;
+    memcpy(pVM->csam.s.pvPossibleCodePage,  csamInfo.pvPossibleCodePage, sizeof(pVM->csam.s.pvPossibleCodePage));
 
     /* Restore pgdir bitmap (we'll change the pointers next). */
     rc = SSMR3GetMem(pSSM, pVM->csam.s.pPDBitmapHC, CSAM_PGDIRBMP_CHUNKS*sizeof(RTHCPTR));
@@ -2007,7 +2011,7 @@ static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTGCPTR pInstr, uint32_t opsi
  * @param   opsize      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-CSAMDECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fScanned)
+CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTGCPTR pInstr, uint32_t opsize, bool fScanned)
 {
     PCSAMPAGE pPage = 0;
 
@@ -2103,7 +2107,7 @@ CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CSAMR3DECL(int) CSAMR3FlushDirtyPages(PVM pVM)
+static int csamR3FlushDirtyPages(PVM pVM)
 {
     STAM_PROFILE_START(&pVM->csam.s.StatFlushDirtyPages, a);
 
@@ -2141,8 +2145,47 @@ CSAMR3DECL(int) CSAMR3FlushDirtyPages(PVM pVM)
         }
     }
     pVM->csam.s.cDirtyPages = 0;
-    VM_FF_CLEAR(pVM, VM_FF_CSAM_FLUSH_DIRTY_PAGE);
     STAM_PROFILE_STOP(&pVM->csam.s.StatFlushDirtyPages, a);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Flush potential new code pages
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+static int csamR3FlushCodePages(PVM pVM)
+{
+    for (uint32_t i=0;i<pVM->csam.s.cPossibleCodePages;i++)
+    {
+        int          rc;
+        RTGCPTR      GCPtr = pVM->csam.s.pvPossibleCodePage[i];
+
+        GCPtr = GCPtr & PAGE_BASE_GC_MASK;
+
+        CSAMMarkPage(pVM, GCPtr, false);
+        PGMInvalidatePage(pVM, GCPtr);
+        PGMPrefetchPage(pVM, GCPtr);
+
+        CSAMMarkPage(pVM, GCPtr, true);
+    }
+    pVM->csam.s.cPossibleCodePages = 0;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Perform any pending actions
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+CSAMR3DECL(int) CSAMR3DoPendingAction(PVM pVM)
+{
+    csamR3FlushDirtyPages(pVM);
+    csamR3FlushCodePages(pVM);
+
+    VM_FF_CLEAR(pVM, VM_FF_CSAM_PENDING_ACTION);
     return VINF_SUCCESS;
 }
 
