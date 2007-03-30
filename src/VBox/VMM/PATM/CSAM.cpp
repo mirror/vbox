@@ -2159,11 +2159,12 @@ static int csamR3FlushCodePages(PVM pVM)
 {
     for (uint32_t i=0;i<pVM->csam.s.cPossibleCodePages;i++)
     {
-        int          rc;
         RTGCPTR      GCPtr = pVM->csam.s.pvPossibleCodePage[i];
 
         GCPtr = GCPtr & PAGE_BASE_GC_MASK;
 
+        Log(("csamR3FlushCodePages: %VGv\n", GCPtr));
+        /* Resync the page to make sure instruction fetch will fault */
         CSAMMarkPage(pVM, GCPtr, false);
         PGMInvalidatePage(pVM, GCPtr);
         PGMPrefetchPage(pVM, GCPtr);
