@@ -65,8 +65,8 @@ extern int x_port, x_server, x_display;
 int show_x _P((char *, struct socket *));
 void redir_x _P((u_int32_t, int, int, int));
 void getouraddr _P((PNATState));
-inline  void slirp_insque  _P((PNATState, void *, void *));
-inline  void slirp_remque  _P((PNATState, void *));
+void slirp_insque  _P((PNATState, void *, void *));
+void slirp_remque  _P((PNATState, void *));
 int add_exec _P((struct ex_list **, int, char *, int, int));
 int slirp_openpty _P((int *, int *));
 int fork_exec _P((PNATState, struct socket *, char *, int));
@@ -78,10 +78,5 @@ void u_sleep _P((int));
 void fd_nonblock _P((int));
 void fd_block _P((int));
 int rsh_exec _P((struct socket *, struct socket *, char *, char *, char *));
-
-#ifdef _MSC_VER
-void insque(void *a, void *b);
-void remque(void *a);
-#endif
 
 #endif

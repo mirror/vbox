@@ -103,9 +103,6 @@ struct quehead_32 {
 	u_int32_t qh_rlink;
 };
 
-#ifndef _MSC_VER
-inline
-#endif
 void
 insque_32(PNATState pData, void *a, void *b)
 {
@@ -119,9 +116,6 @@ insque_32(PNATState pData, void *a, void *b)
 	link->qh_rlink = head->qh_link = ptr_to_u32(pData, element);
 }
 
-#ifndef _MSC_VER
-inline
-#endif
 void
 remque_32(PNATState pData, void *a)
 {
@@ -142,11 +136,7 @@ struct quehead {
 	struct quehead *qh_rlink;
 };
 
-#ifdef _MSC_VER
 void
-#else
-inline void
-#endif
 insque(PNATState pData, void *a, void *b)
 {
 	register struct quehead *element = (struct quehead *) a;
@@ -158,11 +148,7 @@ insque(PNATState pData, void *a, void *b)
 	= (struct quehead *)element;
 }
 
-#ifdef _MSC_VER
 void
-#else
-inline void
-#endif
 remque(PNATState pData, void *a)
 {
   register struct quehead *element = (struct quehead *) a;
