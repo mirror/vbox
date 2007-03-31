@@ -214,6 +214,9 @@ VBOX_WITH_TESTCASES = 1
 #VBOX_WITHOUT_COMPILER_REDIST = 1
 # Enabled internal networking.
 VBOX_WITH_INTERNAL_NETWORKING = 1
+# Enables the ffmpeg module for recording test runs.
+#VBOX_WITH_FFMPEG = 1
+
 
 #
 # Skip stuff.
@@ -942,7 +945,7 @@ SDK_VBOX_OPENSSL_INCS?= $(PATH_ROOT)/src/libs/openssl-0.9.7e/include
 SDK_VBOX_OPENSSL_LIBS?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 
 SDK_VBOX_FFMPEG       = .
-ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ifeq ($(filter-out win os2 darwin,$(BUILD_TARGET)),)
  SDK_VBOX_FFMPEG_INCS ?= \
  	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavutil \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
@@ -954,7 +957,7 @@ ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
   SDK_VBOX_FFMPEG_LIBS ?= $(PATH_BIN)/VBoxFFmpeg$(SUFF_DLL)
  endif
 else
- SDK_VBOX_FFMPEG_INCS ?=
+ SDK_VBOX_FFMPEG_INCS ?= /usr/include/ffmpeg /usr/include/libpng
  SDK_VBOX_FFMPEG_LIBS ?= avutil avcodec avformat
 endif
 
@@ -1641,9 +1644,13 @@ TEMPLATE_VBOXMAIN_EXTENDS = VBOXMAINEXE
 
 
 #
-# Template for building executables that use the VBox MAIN component (COM stuff etc.)
+# Template for building executables that use the VBox MAIN component (COM stuff etc.).
 #
-TEMPLATE_VBOXMAINCLIENT             = VBox MAIN Client
+TEMPLATE_VBOXMAINCLIENTEXE             = VBox MAIN Client (executable)
+TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS     = VBOXMAINCLIENT
+
+## @todo Cleanup the EXE/DLL usage of this template. In the mean time, don't use this template.
+TEMPLATE_VBOXMAINCLIENT             = VBox MAIN Client (executrable)
 TEMPLATE_VBOXMAINCLIENT_EXTENDS     = VBOXMAINEXE
 ifeq ($(BUILD_TARGET),win)
  TEMPLATE_VBOXMAINCLIENT_LIBS.win   = $(TEMPLATE_VBOXMAINEXE_LIBS.win) \
@@ -1671,6 +1678,22 @@ else
  TEMPLATE_VBOXMAINCLIENT_LDFLAGS.darwin = $(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin) \
    	-bind_at_load -framework Carbon
 endif
+
+#
+# Template for building shared libraries / DLLs that use the VBox MAIN component (COM stuff etc.).
+# This differ from VBOXMAINCLIENTEXE only in PIC handling and similar DLL stuff.
+#
+TEMPLATE_VBOXMAINCLIENTDLL              = VBox MAIN Client Shared Libraries
+TEMPLATE_VBOXMAINCLIENTDLL_EXTENDS      = VBOXMAINCLIENTEXE
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+ ifneq ($(BUILD_TARGET),win)
+  TEMPLATE_VBOXMAINCLIENTDLL_DEFS       = PIC $(TEMPLATE_VBOXMAINCLIENTEXE_DEFS)
+  TEMPLATE_VBOXMAINCLIENTDLL_CFLAGS     = -fPIC $(TEMPLATE_VBOXMAINCLIENTEXE_CFLAGS)
+  TEMPLATE_VBOXMAINCLIENTDLL_CXXFLAGS   = -fPIC $(TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS)
+  TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS    = -fPIC $(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS)
+ endif
+endif
+TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin))
 
 
 #
