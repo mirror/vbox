@@ -48,13 +48,19 @@ ifdef VBOX_WITH_MAIN
  ifeq ($(SDK_VBOX_XALAN_INCS),$(PATH_ROOT)/src/libs/xalan-1.10.0)
   subdirs += xalan-1.10.0
  endif
+ # FFmpeg for test videos
+ ifdef VBOX_WITH_FFMPEG
+  ifeq ($(BUILD_TARGET),darwin)
+   subdirs += ffmpeg-20060710
+  endif
+ endif
 endif
 
 # optimized walking
 SUBDIRS_BLDPROGS       = $(filter xpcom18a4,$(subdirs))
 SUBDIRS_LIBRARIES      = $(subdirs)
 SUBDIRS_BINARIES       = $(filter xpcom18a4,$(subdirs))
-SUBDIRS_DLLS           = $(filter xpcom18a4,$(subdirs))
+SUBDIRS_DLLS           = $(filter xpcom18a4 ffmpeg-20060710,$(subdirs))
 SUBDIRS_OTHERS         = $(filter xpcom18a4,$(subdirs))
 SUBDIRS_CLEAN          = $(subdirs)
 SUBDIRS_NOTHING        = $(subdirs)
