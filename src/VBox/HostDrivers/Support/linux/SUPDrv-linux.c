@@ -1627,6 +1627,15 @@ unsigned VBOXCALL supdrvOSGetCPUCount(void)
 #endif 
 }
 
+/**
+ * Force async tsc mode.
+ * @todo add a module argument for this.
+ */
+bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(void)
+{
+    return false;
+}
+
 
 /**
  * Converts a supdrv error code to an linux error code.
