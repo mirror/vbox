@@ -288,10 +288,10 @@ void tstASMCpuId(void)
         if (s.uEDX & BIT(5))   RTPrintf(" MSR");
         if (s.uEDX & BIT(6))   RTPrintf(" PAE");
         if (s.uEDX & BIT(7))   RTPrintf(" MCE");
-        if (s.uEDX & BIT(8))   RTPrintf(" CX8");
+        if (s.uEDX & BIT(8))   RTPrintf(" CMPXCHG8B");
         if (s.uEDX & BIT(9))   RTPrintf(" APIC");
         if (s.uEDX & BIT(10))  RTPrintf(" 10");
-        if (s.uEDX & BIT(11))  RTPrintf(" SCR");
+        if (s.uEDX & BIT(11))  RTPrintf(" SysCallSysRet");
         if (s.uEDX & BIT(12))  RTPrintf(" MTRR");
         if (s.uEDX & BIT(13))  RTPrintf(" PGE");
         if (s.uEDX & BIT(14))  RTPrintf(" MCA");
@@ -302,25 +302,24 @@ void tstASMCpuId(void)
         if (s.uEDX & BIT(19))  RTPrintf(" 19");
         if (s.uEDX & BIT(20))  RTPrintf(" NX");
         if (s.uEDX & BIT(21))  RTPrintf(" 21");
-        if (s.uEDX & BIT(22))  RTPrintf(" ExtMMX");
+        if (s.uEDX & BIT(22))  RTPrintf(" MmxExt");
         if (s.uEDX & BIT(23))  RTPrintf(" MMX");
         if (s.uEDX & BIT(24))  RTPrintf(" FXSR");
         if (s.uEDX & BIT(25))  RTPrintf(" FastFXSR");
         if (s.uEDX & BIT(26))  RTPrintf(" 26");
         if (s.uEDX & BIT(27))  RTPrintf(" RDTSCP");
-        if (s.uEDX & BIT(28))  RTPrintf(" 29");
+        if (s.uEDX & BIT(28))  RTPrintf(" 28");
         if (s.uEDX & BIT(29))  RTPrintf(" LongMode");
-        if (s.uEDX & BIT(30))  RTPrintf(" Ext3DNow");
+        if (s.uEDX & BIT(30))  RTPrintf(" 3DNowExt");
         if (s.uEDX & BIT(31))  RTPrintf(" 3DNow");
         RTPrintf("\n");
 
-        /** @todo Check intel docs. */
         RTPrintf("Features ECX:                   ");
-        if (s.uECX & BIT(0))   RTPrintf(" LAHF/SAHF");
-        if (s.uECX & BIT(1))   RTPrintf(" CMPL");
-        if (s.uECX & BIT(2))   RTPrintf(" 2");
+        if (s.uECX & BIT(0))   RTPrintf(" LahfSahf");
+        if (s.uECX & BIT(1))   RTPrintf(" CmpLegacy");
+        if (s.uECX & BIT(2))   RTPrintf(" SVM");
         if (s.uECX & BIT(3))   RTPrintf(" 3");
-        if (s.uECX & BIT(4))   RTPrintf(" CR8L");
+        if (s.uECX & BIT(4))   RTPrintf(" AltMovCr8");
         for (iBit = 5; iBit < 32; iBit++)
             if (s.uECX & BIT(iBit))
                 RTPrintf(" %d", iBit);
@@ -397,7 +396,10 @@ void tstASMCpuId(void)
          if (s.uEDX & BIT(3))   RTPrintf(" TTP");
          if (s.uEDX & BIT(4))   RTPrintf(" TM");
          if (s.uEDX & BIT(5))   RTPrintf(" STC");
-         for (iBit = 6; iBit < 32; iBit++)
+         if (s.uEDX & BIT(6))   RTPrintf(" 6");
+         if (s.uEDX & BIT(7))   RTPrintf(" 7");
+         if (s.uEDX & BIT(8))   RTPrintf(" TscInvariant");
+         for (iBit = 9; iBit < 32; iBit++)
              if (s.uEDX & BIT(iBit))
                  RTPrintf(" %d", iBit);
          RTPrintf("\n");
@@ -411,7 +413,18 @@ void tstASMCpuId(void)
                   (s.uEAX >> 0) & 0xff,
                   (s.uEAX >> 8) & 0xff);
          RTPrintf("Physical Core Count:             %d\n",
-                  (s.uECX >> 0) & 0xff);
+                  ((s.uECX >> 0) & 0xff) + 1);
+         if ((s.uECX >> 12) & 0xf)
+             RTPrintf("ApicIdCoreIdSize:                %d bits\n", (s.uECX >> 12) & 0xf);
+     }
+
+     if (cExtFunctions >= 0x8000000a)
+     {
+         ASMCpuId(0x8000000a, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+         RTPrintf("SVM Revision:                    %d (%#x)\n"
+                  "Number of Address Space IDs:     %d (%#x)\n",
+                  s.uEAX & 0xff, s.uEAX & 0xff,
+                  s.uEBX, s.uEBX);
      }
 }
 #endif /* !PIC || !X86 */
