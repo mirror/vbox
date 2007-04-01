@@ -4089,13 +4089,13 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
 #ifndef USE_NEW_OS_INTERFACE
     /*
      * The problem here is that AMD processors with power management features
-     * may easily end up with different TSCs because the CPUs or even core 
-     * on the same physical chip runs at different frequencies to safe power.
+     * may easily end up with different TSCs because the CPUs or even cores 
+     * on the same physical chip run at different frequencies to save power.
      *
      * It is rumoured that this will be corrected with Barcelona and it's 
      * expected that this will be indicated by the TscInvariant bit in 
      * cpuid(0x80000007). So, the "difficult" bit here is to correctly 
-     * identify the older CPUs which doesn't do different frequency and
+     * identify the older CPUs which don't do different frequency and
      * can be relied upon to have somewhat uniform TSC between the cpus.
      */
     if (supdrvOSGetCPUCount() > 1)
