@@ -35,7 +35,7 @@
 # elif defined(__FREEBSD__) || defined(__NETBSD__) || defined(__OPENBSD__)
 /*#  define CONFIG_BSD*/
 # elif defined(__SOLARIS__)
-#  error "configure me (decide if you HAVE_BYTESWAP_H or not, and check what HOST_SOLARIS does to the code)"
+/*#  define CONFIG_SUN*/
 # elif !defined(IPRT_NO_CRT)
 #  define HAVE_BYTESWAP_H 1
 # endif
