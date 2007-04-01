@@ -31,6 +31,9 @@
 #if !defined(__DARWIN__) && !defined(__FREEBSD__)
 # include <malloc.h>
 #endif
+#ifdef __SOLARIS__
+# include <alloca.h>
+#endif
 
 
 #endif
