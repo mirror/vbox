@@ -4040,6 +4040,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
      */
     memset(pGip, 0, PAGE_SIZE);
     pGip->u32Magic          = SUPGLOBALINFOPAGE_MAGIC;
+    pGip->u32Version        = SUPGLOBALINFOPAGE_VERSION;
     pGip->u32Mode           = supdrvGipDeterminTscMode();
     pGip->u32UpdateHz       = uUpdateHz;
     pGip->u32UpdateIntervalNS = 1000000000 / uUpdateHz;
@@ -4086,30 +4087,36 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
 static SUPGIPMODE supdrvGipDeterminTscMode(void)
 {
 #ifndef USE_NEW_OS_INTERFACE
+    /*
+     * The problem here is that AMD processors with power management features
+     * may easily end up with different TSCs because the CPUs or even core 
+     * on the same physical chip runs at different frequencies to safe power.
+     *
+     * It is rumoured that this will be corrected with Barcelona and it's 
+     * expected that this will be indicated by the TscInvariant bit in 
+     * cpuid(0x80000007). So, the "difficult" bit here is to correctly 
+     * identify the older CPUs which doesn't do different frequency and
+     * can be relied upon to have somewhat uniform TSC between the cpus.
+     */
     if (supdrvOSGetCPUCount() > 1)
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
 
+        /* Permit user users override. */
+        if (supdrvOSGetForcedAsyncTscMode())
+            return SUPGIPMODE_ASYNC_TSC;
+    
         /* Check for "AuthenticAMD" */
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
         if (uEAX >= 1 && uEBX == 0x68747541 && uECX == 0x444d4163 && uEDX == 0x69746e65)
         {
-            /* Check for family 15 and the RDTSCP feature - hope that's is sufficient. */
-            /* r=frank: The test for TscInvariant should be sufficient */
-            ASMCpuId(0x80000001, &uEAX, &uEBX, &uECX, &uEDX);
-            if (   ((uEAX >> 8) & 0xf) == 0xf && ((uEAX >> 20) & 0x7f) == 0 /* family=15 */
-                && (uEDX & BIT(27) /*RDTSCP*/))
+            /* Check for APM support and that TscInvariant is cleared. */
+            ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
+            if (uEAX >= 0x80000007)
             {
-                /* Check the power specs for Advanced Power Management Information */
-                ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
-                if (uEAX < 0x80000007)
-                    return SUPGIPMODE_ASYNC_TSC;
                 ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
-                /* TscInvariant 1=The TSC rate is ensured to be invariant across all P-States,
-                 * C-States, and stop-grant transitions (such as STPCLK Throttling); therefore
-                 * the TSC is suitable for use as a source of time. 0=No such guarantee is made
-                 * and software should avoid attempting to use the TSC as a source of time. */
-                if (!(uEDX & BIT(8)))
+                if (    !(uEDX & BIT(8))/* TscInvariant */
+                    &&  (uEDX & 0x3e))  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
                     return SUPGIPMODE_ASYNC_TSC;
             }
         }

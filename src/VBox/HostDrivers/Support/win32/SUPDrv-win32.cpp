@@ -904,7 +904,7 @@ static void _stdcall VBoxSupDrvGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID
             for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->aGipCpuDpcs); i++)
             {
                 if (    i != iSelf 
-                    &&  (Mask & (1 << i)))
+                    &&  (Mask & RT_BIT_64(i)))
                     KeInsertQueueDpc(&pDevExt->aGipCpuDpcs[i], 0, 0);
             }
 
@@ -1085,11 +1085,20 @@ unsigned VBOXCALL supdrvOSGetCPUCount(void)
     unsigned cCpus = 0;
     unsigned iBit;
     for (iBit = 0; iBit < sizeof(Mask) * 8; iBit++)
-        if (Mask & (1 << iBit))
+        if (Mask & RT_BIT_64(iBit))
             cCpus++;
     if (cCpus == 0) /* paranoia */
         cCpus = 1; 
     return cCpus;
+}
+
+
+/**
+ * Force async tsc mode (stub).
+ */
+bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(void)
+{
+    return false;
 }
 
 

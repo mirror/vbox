@@ -147,6 +147,17 @@ SUPR3DECL(int) SUPUninstall(void)
 SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /* 0 */)
 {
     /*
+     * Perform some sanity checks.
+     * (Got some trouble with compile time member alignment assertions.)
+     */
+    Assert(!(RT_OFFSETOF(SUPGLOBALINFOPAGE, u64NanoTSLastUpdateHz) & 0x7));
+    Assert(!(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs) & 0x1f));
+    Assert(!(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[1]) & 0x1f));
+    Assert(!(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[0].u64NanoTS) & 0x7));
+    Assert(!(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[0].u64TSC) & 0x7));
+    Assert(!(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[0].u64CpuHz) & 0x7));
+
+    /*
      * Check if already initialized.
      */
     if (ppSession)
@@ -186,13 +197,14 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
         strcpy(In.szMagic, SUPCOOKIE_MAGIC);
         In.u32ReqVersion = SUPDRVIOC_VERSION;
         if (SUPDRVIOC_VERSION < 0x00050000)
-            In.u32MinVersion = 0x00040002;
+            In.u32MinVersion = 0x00040003;
         else
             In.u32MinVersion = SUPDRVIOC_VERSION & 0xffff0000;
         rc = suplibOsIOCtl(SUP_IOCTL_COOKIE, &In, sizeof(In), &Out, sizeof(Out));
         if (VBOX_SUCCESS(rc))
         {
-            if ((Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000))
+            if (    (Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000)
+                &&  Out.u32SessionVersion >= 0x00040003)
             {
                 /*
                  * Query the functions.
@@ -227,6 +239,8 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
                             rc = suplibOsIOCtl(SUP_IOCTL_GIP_MAP, &GipIn, sizeof(GipIn), &GipOut, sizeof(GipOut));
                             if (VBOX_SUCCESS(rc))
                             {
+                                AssertRelease(GipOut.pGipR3->u32Magic == SUPGLOBALINFOPAGE_MAGIC);
+                                AssertRelease(GipOut.pGipR3->u32Version >= SUPGLOBALINFOPAGE_VERSION);
                                 ASMAtomicXchgSize(&g_HCPhysSUPGlobalInfoPage, GipOut.HCPhysGip);
                                 ASMAtomicCmpXchgPtr((void * volatile *)&g_pSUPGlobalInfoPage, (void *)GipOut.pGipR3, NULL);
                                 ASMAtomicCmpXchgPtr((void * volatile *)&g_pSUPGlobalInfoPageR0, (void *)GipOut.pGipR0, NULL);
@@ -1248,7 +1262,8 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                     else
                         pIn->eEPType                = pIn->EP_NOTHING;
                     pIn->offStrTab                  = offStrTab;
-                    pIn->cbStrTab                   = CalcArgs.cbStrings;
+                    pIn->cbStrTab                   = (uint32_t)CalcArgs.cbStrings; 
+                    AssertRelease(pIn->cbStrTab == CalcArgs.cbStrings);
                     pIn->offSymbols                 = offSymTab;
                     pIn->cSymbols                   = CalcArgs.cSymbols;
                     pIn->cbImage                    = cbImage;

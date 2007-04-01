@@ -686,6 +686,7 @@ int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE pGip
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt);
 void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
 unsigned VBOXCALL supdrvOSGetCPUCount(void);
+bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(void);
 #endif
 
 

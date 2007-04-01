@@ -47,11 +47,16 @@ int main(void)
     {
         if (g_pSUPGlobalInfoPage)
         {
-            RTPrintf("tstGIP-2: u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64\n"
+            RTPrintf("tstGIP-2: u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u32Mode=%d (%s) u32Version=%#x\n"
                      "tstGIP-2: it: u64NanoTS        u64TSC           UpIntTSC H TransId            CpuHz TSC Interval History...\n",
                      g_pSUPGlobalInfoPage->u32UpdateHz,
                      g_pSUPGlobalInfoPage->u32UpdateIntervalNS,
-                     g_pSUPGlobalInfoPage->u64NanoTSLastUpdateHz);
+                     g_pSUPGlobalInfoPage->u64NanoTSLastUpdateHz, 
+                     g_pSUPGlobalInfoPage->u32Mode,
+                     g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC       ? "sync"
+                     : g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_ASYNC_TSC    ? "async"
+                     :                                                            "???",
+                     g_pSUPGlobalInfoPage->u32Version);
             for (int i = 0; i < 80; i++)
             {
                 RTPrintf("tstGIP-2: %2d: %016llx %016llx %08x %d %08x %15llu %08x %08x %08x %08x %08x %08x %08x %08x\n",
