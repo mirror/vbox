@@ -1272,6 +1272,22 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
             }
         }
 #endif
+#if 1 /* for debugging problems with the async GIP code on linux */
+        if (    g_pSUPGlobalInfoPage 
+            &&  g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_ASYNC_TSC)
+        {
+            RTLogRelPrintf("**** Async GIP (the values should be somewhat similar) ****\n");
+            SUPGLOBALINFOPAGE GipCopy = *g_pSUPGlobalInfoPage;
+            for (unsigned i = 0; i < RT_ELEMENTS(GipCopy.aCPUs); i++)
+                if (GipCopy.aCPUs[i].u64CpuHz != 0 && GipCopy.aCPUs[i].u64CpuHz < _1T)
+                    RTLogRelPrintf("%#d: u64CpuHz=%RU64Hz u32TransactionId=%#x u64TSC=%RX64 u64NanoTS=%RX64n", 
+                                   i, 
+                                   GipCopy.aCPUs[i].u64CpuHz,
+                                   GipCopy.aCPUs[i].u32TransactionId,
+                                   GipCopy.aCPUs[i].u64TSC,
+                                   GipCopy.aCPUs[i].u64NanoTS);
+        }
+#endif 
         RTLogRelPrintf("************** End of Guest state at power off ***************\n");
     }
 
