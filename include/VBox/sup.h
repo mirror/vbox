@@ -142,6 +142,8 @@ typedef struct SUPGLOBALINFOPAGE
 
     /** The GIP update mode, see SUPGIPMODE. */
     uint32_t            u32Mode;
+    /** Reserved / padding. */
+    uint32_t            u32Padding0;
     /** The update frequency of the of the NanoTS. */
     volatile uint32_t   u32UpdateHz;
     /** The update interval in nanoseconds. (10^9 / u32UpdateHz) */
@@ -150,7 +152,7 @@ typedef struct SUPGLOBALINFOPAGE
     volatile uint64_t   u64NanoTSLastUpdateHz;
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding0[10];
+    uint32_t            au32Padding1[56];
 
     /** Array of per-cpu data.
      * If u32Mode == SUPGIPMODE_SYNC_TSC then only the first entry is used.
