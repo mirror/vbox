@@ -148,6 +148,10 @@ void VBoxGlobalSettingsDlg::init()
 
     /* General page */
 
+    mLastAccessedField = 0;
+    connect (&vboxGlobal(), SIGNAL (existingDirectoryResult (const QString&)),
+             this, SLOT (folderSelected (const QString&)));
+
 /// @todo (dmik) remove
 //    leVDIFolder->setValidator (new QRegExpValidator (QRegExp (".+"), this));
 //    leMachineFolder->setValidator (new QRegExpValidator (QRegExp (".+"), this));
@@ -349,7 +353,7 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
 
         /* disable validators if any */
         pageUSB->setEnabled (false);
-        
+
 #ifdef Q_OS_WIN32
         /* Show an error message (if there is any).
          * This message box may be suppressed if the user wishes so. */
@@ -498,22 +502,16 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
     QLineEdit *le = 0;
     if (tb == tbSelectVDIFolder) le = leVDIFolder;
     else if (tb == tbSelectMachineFolder) le = leMachineFolder;
+    mLastAccessedField = le;
     Assert (le);
 
-    QString homeFolder = vboxGlobal().virtualBox().GetHomeFolder();
-
-    QFileDialog dlg (homeFolder, QString::null, this);
-    dlg.setMode (QFileDialog::DirectoryOnly);
+    QString initDir = vboxGlobal().virtualBox().GetHomeFolder();
 
     if (!le->text().isEmpty())
     {
         /* set the first parent directory that exists as the current */
-#if 0 /** @todo fix this linux bustage properly */
-        QFileInfo fld (QDir (homeFolder), le->text());
-#else
-        const QDir _dir (homeFolder);
+        const QDir _dir (initDir);
         QFileInfo fld (_dir, le->text());
-#endif
         do
         {
             QString dp = fld.dirPath (false);
@@ -522,21 +520,30 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
         while (!fld.exists() && !QDir (fld.absFilePath()).isRoot());
 
         if (fld.exists())
-            dlg.setDir (fld.absFilePath());
+            initDir = fld.absFilePath();
     }
 
-    if (dlg.exec() == QDialog::Accepted)
-    {
-        QString folder = QDir::convertSeparators (dlg.selectedFile());
-        /* remove trailing slash */
-        folder.truncate (folder.length() - 1);
+    vboxGlobal().getExistingDirectory (initDir, this);
+}
 
-        /*
-         *  do this instead of le->setText (folder) to cause
-         *  isModified() return true
-         */
-        le->selectAll();
-        le->insert (folder);
+void VBoxGlobalSettingsDlg::folderSelected (const QString &aFolder)
+{
+    if (aFolder.isNull())
+        return;
+
+    QString folder = QDir::convertSeparators (aFolder);
+    /* remove trailing slash if any */
+    folder.remove (QRegExp ("[\\\\/]$"));
+
+    /*
+     *  do this instead of le->setText (folder) to cause
+     *  isModified() return true
+     */
+    if (mLastAccessedField)
+    {
+        mLastAccessedField->selectAll();
+        mLastAccessedField->insert (folder);
+        mLastAccessedField = 0;
     }
 }
 

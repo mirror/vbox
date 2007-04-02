@@ -486,7 +486,7 @@ default virtual machine folder.</string>
                                 </property>
                                 <property name="whatsThis" stdset="0">
                                     <string>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured, 
+captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
                                 </property>
                             </widget>
@@ -1040,6 +1040,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <variable access="private">ulong mLastUSBFilterNum;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
+    <variable access="private">QLineEdit *mLastAccessedField;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
@@ -1048,6 +1049,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <slot>updateWhatsThis( bool gotFocus = false )</slot>
     <slot>tbResetFolder_clicked()</slot>
     <slot>tbSelectFolder_clicked()</slot>
+    <slot>folderSelected( const QString &amp; )</slot>
     <slot>addUSBFilter( const CUSBDeviceFilter &amp;, bool )</slot>
     <slot>lvUSBFilters_currentChanged( QListViewItem * )</slot>
     <slot>lvUSBFilters_setCurrentText( const QString &amp; )</slot>

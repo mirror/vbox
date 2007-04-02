@@ -1849,13 +1849,10 @@ void VBoxVMSettingsDlg::tbSelectSavedStateFolder_clicked()
     QString settingsFolder =
         QFileInfo (cmachine.GetSettingsFilePath()).dirPath (true);
 
-    QFileDialog dlg (settingsFolder, QString::null, this);
-    dlg.setMode (QFileDialog::DirectoryOnly);
-
     if (!leSnapshotFolder->text().isEmpty())
     {
         /* set the first parent directory that exists as the current */
-        QDir dir (settingsFolder);
+        const QDir dir (settingsFolder);
         QFileInfo fld (dir, leSnapshotFolder->text());
         do
         {
@@ -1865,22 +1862,27 @@ void VBoxVMSettingsDlg::tbSelectSavedStateFolder_clicked()
         while (!fld.exists() && !QDir (fld.absFilePath()).isRoot());
 
         if (fld.exists())
-            dlg.setDir (fld.absFilePath());
+            settingsFolder = fld.absFilePath();
     }
 
-    if (dlg.exec() == QDialog::Accepted)
-    {
-        QString folder = QDir::convertSeparators (dlg.selectedFile());
-        /* remove trailing slash */
-        folder.truncate (folder.length() - 1);
+    vboxGlobal().getExistingDirectory (settingsFolder, this);
+}
 
-        /*
-         *  do this instead of le->setText (folder) to cause
-         *  isModified() return true
-         */
-        leSnapshotFolder->selectAll();
-        leSnapshotFolder->insert (folder);
-    }
+void VBoxVMSettingsDlg::folderSelected (const QString &aFolder)
+{
+    if (aFolder.isNull())
+        return;
+
+    QString folder = QDir::convertSeparators (aFolder);
+    /* remove trailing slash if any */
+    folder.remove (QRegExp ("[\\\\/]$"));
+
+    /*
+     *  do this instead of le->setText (folder) to cause
+     *  isModified() return true
+     */
+    leSnapshotFolder->selectAll();
+    leSnapshotFolder->insert (folder);
 }
 
 // USB Filter stuff

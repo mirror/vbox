@@ -187,6 +187,8 @@ public:
         connect (mLeName, SIGNAL (textChanged (const QString &)),
                  this, SLOT (validate()));
         connect (tbPath, SIGNAL (clicked()), this, SLOT (showFileDialog()));
+        connect (&vboxGlobal(), SIGNAL (existingDirectoryResult (const QString&)),
+                 this, SLOT (folderSelected (const QString&)));
         QWhatsThis::add (mLePath, tr ("Enter existing path for the shared folder here"));
         QWhatsThis::add (mLeName, tr ("Enter name for the shared folder to be created"));
         QWhatsThis::add (tbPath, tr ("Click to invoke <open folder> dialog"));
@@ -230,33 +232,38 @@ private slots:
 
     void showFileDialog()
     {
-        QFileDialog dlg (QDir::rootDirPath(), QString::null, this);
-        dlg.setMode (QFileDialog::DirectoryOnly);
-        dlg.setCaption (tr ("Select a folder to share"));
-        if (dlg.exec() == QDialog::Accepted)
+        vboxGlobal().getExistingDirectory (QDir::convertSeparators (
+                                           QDir::rootDirPath()),
+                                           this, "addSharedFolderDialog",
+                                           tr ("Select a folder to share"));
+    }
+
+    void folderSelected (const QString &aFolder)
+    {
+        if (aFolder.isNull())
+            return;
+
+        QString folderName = QDir::convertSeparators (aFolder);
+        QRegExp commonRule ("[\\\\/]([^\\\\^/]+)[\\\\/]?$");
+        QRegExp rootRule ("(([a-zA-Z])[^\\\\^/])?[\\\\/]$");
+        if (commonRule.search (folderName) != -1)
         {
-            QString folderName = QDir::convertSeparators (dlg.selectedFile());
-            QRegExp commonRule ("[\\\\/]([^\\\\^/]+)[\\\\/]?$");
-            QRegExp rootRule ("(([a-zA-Z])[^\\\\^/])?[\\\\/]$");
-            if (commonRule.search (folderName) != -1)
-            {
-                /* processing non-root folder */
-                mLePath->setText (folderName.remove (QRegExp ("[\\\\/]$")));
-                mLeName->setText (commonRule.cap (1));
-            }
-            else if (rootRule.search (folderName) != -1)
-            {
-                /* processing root folder */
-                mLePath->setText (folderName);
-#if defined(Q_WS_WIN32)
-                mLeName->setText (rootRule.cap (2) + "_DRIVE");
-#elif defined(Q_WS_X11)
-                mLeName->setText ("ROOT");
-#endif
-            }
-            else
-                return; /* hm, what type of folder it was? */
+            /* processing non-root folder */
+            mLePath->setText (folderName.remove (QRegExp ("[\\\\/]$")));
+            mLeName->setText (commonRule.cap (1));
         }
+        else if (rootRule.search (folderName) != -1)
+        {
+            /* processing root folder */
+            mLePath->setText (folderName);
+#if defined(Q_WS_WIN32)
+            mLeName->setText (rootRule.cap (2) + "_DRIVE");
+#elif defined(Q_WS_X11)
+            mLeName->setText ("ROOT");
+#endif
+        }
+        else
+            return; /* hm, what type of folder it was? */
     }
 
 private:
