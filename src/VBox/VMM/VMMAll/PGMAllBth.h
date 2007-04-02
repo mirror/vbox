@@ -562,10 +562,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         /** Note: can't check for X86_TRAP_ID bit, because that requires execute disable support on the CPU */
                         if (    pvFault == (RTGCPTR)pRegFrame->eip
                             ||  (RTGCUINTPTR)pvFault - pRegFrame->eip < 8    /* instruction crossing a page boundary */
-#if 0   /* Note: enable if ever required in the future; it's a bit aggressive */
+#ifdef CSAM_DETECT_NEW_CODE_PAGES
                             ||  (   !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip) 
                                  && CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip))   /* any new code we encounter here */
-#endif
+#endif /* CSAM_DETECT_NEW_CODE_PAGES */
                            )
                         {
                             LogFlow(("CSAMExecFault %VGv\n", pRegFrame->eip));
@@ -587,6 +587,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 return rc;
                             }
                         }
+#ifdef CSAM_DETECT_NEW_CODE_PAGES
                         else
                         if (    uErr == X86_TRAP_PF_RW
                             &&  pRegFrame->ecx >= 0x100         /* early check for movswd count */
@@ -617,6 +618,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 }
                             }                            
                         }
+#endif  /* CSAM_DETECT_NEW_CODE_PAGES */
 
                         /*
                          * Mark this page as safe.
