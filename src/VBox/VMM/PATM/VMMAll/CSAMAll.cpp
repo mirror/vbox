@@ -178,6 +178,9 @@ CSAMDECL(int) CSAMMarkPage(PVM pVM, RTGCPTR pPage, bool fScanned)
  */
 CSAMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTGCPTR GCPtr)
 {
+    if(!CSAMIsEnabled(pVM))
+        return false;
+
     if(CSAMIsPageScanned(pVM, GCPtr))
     {
         /* Already checked! */
