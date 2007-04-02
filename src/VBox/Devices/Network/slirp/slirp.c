@@ -118,6 +118,7 @@ static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 
 int slirp_init(PNATState *ppData, const char *pszNetAddr, void *pvUser)
 {
+    int fNATfailed = 0;
     PNATState pData = malloc(sizeof(NATState));
     *ppData = pData;
     if (!pData)
@@ -146,15 +147,15 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, void *pvUser)
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
+    inet_aton("127.0.0.1", &dns_addr);
 
-    if (get_dns_addr(pData, &dns_addr) < 0) {
-        return VERR_NAT_DNS;
-    }
+    if (get_dns_addr(pData, &dns_addr) < 0)
+        fNATfailed = 1;
 
     inet_aton(pszNetAddr, &special_addr);
     alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
     getouraddr(pData);
-    return VINF_SUCCESS;
+    return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
 
 /**

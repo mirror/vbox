@@ -36,6 +36,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/critsect.h>
+#include <iprt/stream.h>
 
 #include "Builtins.h"
 
@@ -444,9 +445,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             rc = slirp_init(&pData->pNATState, &szNetAddr[0], pData);
             if (VBOX_SUCCESS(rc))
             {
-                rc = drvNATConstructRedir(pData, pCfgHandle);
-                if (VBOX_SUCCESS(rc))
+                int rc2 = drvNATConstructRedir(pData, pCfgHandle);
+                if (VBOX_SUCCESS(rc2))
                 {
+		  RTPrintf("rc = %Vrc\n", rc);
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
 
                     pData->enmLinkState = PDMNETWORKLINKSTATE_UP;
@@ -454,7 +456,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                     RTSemEventSignal(g_EventSem);
                     RTThreadSleep(0);
 #endif
-                    return VINF_SUCCESS;
+                    /* might return VINF_NAT_DNS */
+                    return rc;
                 }
                 /* failure path */
                 slirp_term(pData->pNATState);
@@ -462,20 +465,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             }
             else
             {
-                switch (rc)
-                {
-                    case VERR_NAT_DNS:
-#ifdef __LINUX__
-                        PDMDRV_SET_ERROR(pDrvIns, rc, N_("Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <b>nameserver</b> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to the Internet"));
-#else
-                        PDMDRV_SET_ERROR(pDrvIns, rc, N_("Domain Name Server (DNS) for NAT networking could not be determined. Make sure that your host is correctly connected to the Internet"));
-#endif
-                        break;
-                    default:
-                        PDMDRV_SET_ERROR(pDrvIns, rc, N_("Unknown error during NAT networking setup: "));
-                        AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
-                        break;
-                }
+	      PDMDRV_SET_ERROR(pDrvIns, rc, N_("Unknown error during NAT networking setup: "));
+    	      AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
             }
 #if 0
             g_fThreadTerm = true;
