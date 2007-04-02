@@ -543,26 +543,33 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 else /* supervisor */
                     STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncSupervisor);
 
-#  ifdef LOG_ENABLED
+#  if defined(LOG_ENABLED) && !defined(IN_RING0)
                 RTGCPHYS   GCPhys;
                 uint64_t   fPageGst;
                 PGMGstGetPage(pVM, pvFault, &fPageGst, &GCPhys);
-                LogFlow(("Page out of sync: %p eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%VGp\n",
-                         pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys));
+                Log(("Page out of sync: %p eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%VGp scan=%d\n",
+                     pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys, CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip)));
 #  endif /* LOG_ENABLED */
 
 #  ifndef IN_RING0
-                if (CSAMIsEnabled(pVM) && (cpl == 0))
+                if (cpl == 0)
                 {
                     uint64_t fPageGst;
                     rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
                     if (    VBOX_SUCCESS(rc)
                         && !(fPageGst & X86_PTE_US))
                     {
-                        if (pvFault == (RTGCPTR)pRegFrame->eip)
+                        /** Note: can't check for X86_TRAP_ID bit, because that requires execute disable support on the CPU */
+                        if (    pvFault == (RTGCPTR)pRegFrame->eip
+                            ||  (RTGCUINTPTR)pvFault - pRegFrame->eip < 8    /* instruction crossing a page boundary */
+#if 0   /* Note: enable if ever required in the future; it's a bit aggressive */
+                            ||  (   !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip) 
+                                 && CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip))   /* any new code we encounter here */
+#endif
+                           )
                         {
-                            LogFlow(("CSAMExecFault %VGv\n", pvFault));
-                            rc = CSAMExecFault(pVM, pvFault);
+                            LogFlow(("CSAMExecFault %VGv\n", pRegFrame->eip));
+                            rc = CSAMExecFault(pVM, (RTGCPTR)pRegFrame->eip);
                             if (rc != VINF_SUCCESS)
                             {
                                 /*
@@ -580,13 +587,43 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 return rc;
                             }
                         }
+                        else
+                        if (    uErr == X86_TRAP_PF_RW
+                            &&  pRegFrame->ecx >= 0x100         /* early check for movswd count */
+                            &&  pRegFrame->ecx < 0x10000
+                           )
+                        {
+                            /* In case of a write to a non-present supervisor shadow page, we'll take special precautions
+                             * to detect loading of new code pages. 
+                             */
+
+                            /*
+                             * Decode the instruction.
+                             */
+                            RTGCPTR PC;
+                            rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
+                            if (rc == VINF_SUCCESS)
+                            {
+                                DISCPUSTATE Cpu;
+                                uint32_t    cbOp;
+                                rc = EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
+
+                                /* For now we'll restrict this to rep movsw/d instructions */
+                                if (    rc == VINF_SUCCESS
+                                    &&  Cpu.pCurInstr->opcode == OP_MOVSWD
+                                    &&  (Cpu.prefix & PREFIX_REP))
+                                {
+                                    CSAMMarkPossibleCodePage(pVM, pvFault);
+                                }
+                            }                            
+                        }
 
                         /*
                          * Mark this page as safe.
                          */
                         /** @todo not correct for pages that contain both code and data!! */
                         Log2(("CSAMMarkPage %p; scanned=%d\n", pvFault, true));
-                        CSAMMarkPage(pVM, (RTGCPTR)pvFault, true);
+                        CSAMMarkPage(pVM, pvFault, true);
                     }
                 }
 #  endif
@@ -863,7 +900,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  endif
             if (pShwPage->GCPhys == GCPhys)
             {
-#if 0 /* debug build + flash + xp (=1000Hz timer?) => bad invalidation + sync loops. */
                 const unsigned iPTEDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                 PSHWPT pPT = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
                 if (pPT->a[iPTEDst].n.u1Present)
@@ -874,11 +910,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  endif
                     pPT->a[iPTEDst].u = 0;
                 }
-#else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
-                rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
-                if (VBOX_SUCCESS(rc))
-                    rc = VINF_SUCCESS;
-#endif
                 STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4KBPages));
                 PGM_INVL_PG(GCPtrPage);
             }
@@ -1331,10 +1362,28 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                             if (!pPTDst->a[iPTDst].n.u1Present)
                             {
                                 VBOXPTE PteSrc = pPTSrc->a[offPTSrc + iPTDst];
-                                PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
-                                Log2(("SyncPage: 4K+ %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s\n",
-                                      (GCPtrPage & ~(RTGCUINTPTR)(X86_PT_MASK << X86_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT),
-                                      PteSrc.n.u1Present, PteSrc.n.u1Write, PteSrc.n.u1User, (uint64_t)PteSrc.u,
+                                RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(X86_PT_MASK << X86_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
+
+#ifndef IN_RING0
+                                /*
+                                 * Assuming kernel code will be marked as supervisor - and not as user level
+                                 * and executed using a conforming code selector - And marked as readonly.
+                                 * Also assume that if we're monitoring a page, it's of no interest to CSAM.
+                                 */
+                                if (    ((PdeSrc.u & PteSrc.u) & (X86_PTE_RW | X86_PTE_US))
+                                    ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
+                                    ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)GCPtrCurPage)
+                                    ||  PGMRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
+                                                        MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)
+                                   )
+#endif    
+                                    PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+                                Log2(("SyncPage: 4K+ %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
+                                      GCPtrCurPage, PteSrc.n.u1Present, 
+                                      PteSrc.n.u1Write & PdeSrc.n.u1Write,
+                                      PteSrc.n.u1User & PdeSrc.n.u1User, 
+                                      (uint64_t)PteSrc.u,
+                                      (uint64_t)pPTDst->a[iPTDst].u,
                                       pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                             }
                         }
@@ -1347,7 +1396,10 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                         const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                         PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPage: 4K  %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s\n",
-                              GCPtrPage, PteSrc.n.u1Present, PteSrc.n.u1Write, PteSrc.n.u1User, (uint64_t)PteSrc.u,
+                              GCPtrPage, PteSrc.n.u1Present, 
+                              PteSrc.n.u1Write & PdeSrc.n.u1Write,
+                              PteSrc.n.u1User & PdeSrc.n.u1User, 
+                              (uint64_t)PteSrc.u,
                               pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                     }
                 }
@@ -1885,7 +1937,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                          * Also assume that if we're monitoring a page, it's of no interest to CSAM.
                          */
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
-                            ||  !CSAMIsEnabled(pVM)
                             ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)))
                             ||  PGMRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
                                                 MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)
@@ -1894,7 +1945,10 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                             PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPT:   4K+ %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%VGp\n",
                               (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)),
-                              PteSrc.n.u1Present, PteSrc.n.u1Write, PteSrc.n.u1User, (uint64_t)PteSrc.u,
+                              PteSrc.n.u1Present, 
+                              PteSrc.n.u1Write & PdeSrc.n.u1Write,
+                              PteSrc.n.u1User & PdeSrc.n.u1User, 
+                              (uint64_t)PteSrc.u,
                               pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : "", pPTDst->a[iPTDst].u, iPTSrc, PdeSrc.au32[0],
                               (PdeSrc.u & GST_PDE_PG_MASK) + iPTSrc*sizeof(PteSrc)));
                     }
@@ -2003,7 +2057,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                          * 4MB can be code or readonly data. Linux enables write access for its large pages.
                          */
                         else if (    !PdeSrc.n.u1User
-                                 &&  CSAMIsEnabled(pVM)
                                  &&  CSAMDoesPageNeedScanning(pVM, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))))
                             PteDst.u = 0;
 #endif
