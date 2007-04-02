@@ -395,6 +395,12 @@ public:
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
 
+    void getExistingDirectory (const QString &aDir, QWidget *aParent,
+                               const char *aName = 0,
+                               const QString &aCaption = QString::null,
+                               bool aDirOnly = TRUE,
+                               bool resolveSymlinks = TRUE);
+
     static QString getOpenFileName (const QString &, const QString &, QWidget*,
                                     const char*, const QString &,
                                     QString *defaultFilter = 0,
@@ -439,6 +445,9 @@ signals:
     void machineRegistered (const VBoxMachineRegisteredEvent &e);
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
+
+    /* Emitted upon getExistingDirectory dialog accepting */
+    void existingDirectoryResult (const QString &);
 
 protected:
 

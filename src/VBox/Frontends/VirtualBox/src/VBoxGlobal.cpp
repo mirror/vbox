@@ -45,6 +45,10 @@
 #include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
 #endif
 
+#ifdef Q_WS_WIN
+#include "shlobj.h"
+#endif
+
 #if defined (VBOX_GUI_DEBUG)
 uint64_t VMCPUTimer::ticks_per_msec = (uint64_t) -1LL; // declared in VBoxDefs.h
 #endif
@@ -90,6 +94,20 @@ public:
     QThread *mThread;
     QString mURL;
     bool mOk;
+};
+
+class VBoxGetExistDirectoryEvent : public QEvent
+{
+public:
+
+    /** Constructs a regular enum event */
+    VBoxGetExistDirectoryEvent (QThread *aThread, const QString &aName)
+        : QEvent ((QEvent::Type) VBoxDefs::GetExistDirectoryEventType)
+        , mThread (aThread), mName (aName)
+        {}
+
+    QThread *mThread;
+    QString mName;
 };
 #endif
 
@@ -330,7 +348,7 @@ static QString winFilter (const QString &aFilter)
                 i = aFilter.find (sep, 0);
             }
         }
-    
+
         filterLst = QStringList::split (sep, aFilter);
     }
 
@@ -385,6 +403,35 @@ UINT_PTR CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM a
         }
     }
     return FALSE;
+}
+
+/*
+ * Callback function to control the native Win32 API folders dialog
+ */
+static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
+                                                 LPARAM lParam, LPARAM lpData)
+{
+    if (uMsg == BFFM_INITIALIZED && lpData != 0)
+    {
+        QString *initDir = (QString *)(lpData);
+        if (!initDir->isEmpty())
+        {
+            SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (initDir->ucs2()));
+            SendMessage (hwnd, BFFM_SETEXPANDED, TRUE, Q_ULONG (initDir->ucs2()));
+        }
+    }
+    else if (uMsg == BFFM_SELCHANGED)
+    {
+        TCHAR path [MAX_PATH];
+        SHGetPathFromIDList (LPITEMIDLIST (lParam), path);
+        QString tmpStr = QString::fromUcs2 ((ushort*)path);
+        if (!tmpStr.isEmpty())
+            SendMessage (hwnd, BFFM_ENABLEOK, 1, 1);
+        else
+            SendMessage (hwnd, BFFM_ENABLEOK, 0, 0);
+        SendMessage (hwnd, BFFM_SETSTATUSTEXT, 1, Q_ULONG (path));
+    }
+    return 0;
 }
 
 #endif /* Q_WS_WIN */
@@ -1566,7 +1613,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
     return false;
 }
 
-/** 
+/**
  *  Shortcut to QLocale::system().name().
  */
 QString VBoxGlobal::languageID() const
@@ -1574,7 +1621,7 @@ QString VBoxGlobal::languageID() const
     return  QLocale::system().name();
 }
 
-/** 
+/**
  *  Native language name of the currently installed translation.
  *  Returns "English [built-in]" if no translation is installed
  *  or if the translation file is invalid.
@@ -1586,7 +1633,7 @@ QString VBoxGlobal::languageName() const
                             "Native language name");
 }
 
-/** 
+/**
  *  Native language country name of the currently installed translation.
  *  Returns "" if no translation is installed or if the translation file is
  *  invalid, or if the language is independent on the country.
@@ -1598,7 +1645,7 @@ QString VBoxGlobal::languageCountry() const
                             "(empty if this language is for all countries)");
 }
 
-/** 
+/**
  *  Language name of the currently installed translation, in English.
  *  Returns "English [built-in]" if no translation is installed
  *  or if the translation file is invalid.
@@ -1610,7 +1657,7 @@ QString VBoxGlobal::languageNameEnglish() const
                             "Language name, in English");
 }
 
-/** 
+/**
  *  Language country name of the currently installed translation, in English.
  *  Returns "" if no translation is installed or if the translation file is
  *  invalid, or if the language is independent on the country.
@@ -1622,7 +1669,7 @@ QString VBoxGlobal::languageCountryEnglish() const
                             "(empty if native country name is empty)");
 }
 
-/** 
+/**
  *  Comma-separated list of authors of the currently installed translation.
  *  Returns "InnoTek" if no translation is installed or if the translation
  *  file is invalid, or if the translation is supplied by InnoTek.
@@ -2162,7 +2209,103 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
     return text;
 }
 
-/** 
+/**
+ *  Reimplementation of QFileDialog::getExistingDirectory() which is runs
+ *  "open existing directory" dialog.
+ *
+ *  On Win32, this function makes sure a native dialog will be launched in
+ *  another thread to avoid dialog visualization errors occured due to
+ *  multi-threaded COM apartment initialization on the main UI thread while
+ *  the appropriate native dialog function expects a single-threaded one.
+ *
+ *  On all other platforms, this function is equivalent to
+ *  QFileDialog::getExistingDirectory().
+ */
+void VBoxGlobal::getExistingDirectory (const QString &aDir,
+                                       QWidget *aParent, const char *aName,
+                                       const QString &aCaption,
+                                       bool aDirOnly,
+                                       bool aResolveSymlinks)
+{
+#if defined Q_WS_WIN
+
+    /* open existing directory thread class */
+    class Thread : public QThread
+    {
+    public:
+
+        Thread (const WId &aId, QObject *aTarget,
+                const QString &aDir, const QString &aCaption)
+            : mId (aId), mTarget (aTarget), mDir (aDir), mCaption (aCaption) {}
+
+        virtual void run()
+        {
+            QString result;
+
+            QWidget *parent = QWidget::find (mId);
+            QWidget *topParent = parent ? parent->topLevelWidget() : qApp->mainWidget();
+            QString title = mCaption.isNull() ? tr ("Select a Directory") : mCaption;
+
+            TCHAR path[MAX_PATH];
+            path [0] = 0;
+            TCHAR initPath [MAX_PATH];
+            initPath [0] = 0;
+
+            BROWSEINFO bi;
+            bi.hwndOwner = topParent ? topParent->winId() : 0;
+            bi.pidlRoot = NULL;
+            bi.lpszTitle = (TCHAR*)title.ucs2();
+            bi.pszDisplayName = initPath;
+            bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_NEWDIALOGSTYLE;
+            bi.lpfn = winGetExistDirCallbackProc;
+            bi.lParam = Q_ULONG (&mDir);
+            if (parent) parent->setEnabled (false);
+            LPITEMIDLIST itemIdList = SHBrowseForFolder (&bi);
+            if (itemIdList)
+            {
+                SHGetPathFromIDList (itemIdList, path);
+                IMalloc *pMalloc;
+                if (SHGetMalloc (&pMalloc) != NOERROR)
+                    result = QString::null;
+                else
+                {
+                    pMalloc->Free (itemIdList);
+                    pMalloc->Release();
+                    result = QString::fromUcs2 ((ushort*)path);
+                }
+            }
+            else
+                result = QString::null;
+            QApplication::postEvent (mTarget,
+                new VBoxGetExistDirectoryEvent (this, result));
+            if (parent) parent->setEnabled (true);
+        }
+
+    private:
+
+        WId mId;
+        QObject *mTarget;
+        QString mDir;
+        QString mCaption;
+    };
+
+    /* this dialog is proposed to be a modal */
+    if (!aParent) return;
+    QString dir = QDir::convertSeparators (aDir);
+    Thread *openDirThread = new Thread (aParent->winId(), this, dir, aCaption);
+    openDirThread->start();
+    /* thread will be deleted in the VBoxGetExistDirectoryEvent handler */
+
+#else
+
+    QString result = QFileDialog::getExistingDirectory (aDir, aParent,
+        aName, aCaption, aDirOnly, aResolveSymlinks);
+    emit existingDirectoryResult (result);
+
+#endif
+}
+
+/**
  *  Reimplementation of QFileDialog::getOpenFileName() that removes some
  *  oddities and limitations.
  *
@@ -2216,8 +2359,7 @@ QString VBoxGlobal::getOpenFileName (const QString &startWith,
         qt_enter_modal (parent);
     }
 
-    parent = parent ? parent->topLevelWidget() : qApp->mainWidget();
-
+    QWidget *topParent = parent ? parent->topLevelWidget() : qApp->mainWidget();
     QString winFilters = winFilter (filters);
     AssertCompile (sizeof (TCHAR) == sizeof (QChar));
     TCHAR buf [1024];
@@ -2230,7 +2372,7 @@ QString VBoxGlobal::getOpenFileName (const QString &startWith,
     memset (&ofn, 0, sizeof (OPENFILENAME));
 
     ofn.lStructSize = sizeof (OPENFILENAME);
-    ofn.hwndOwner = parent ? parent->winId() : 0;
+    ofn.hwndOwner = topParent ? topParent->winId() : 0;
     ofn.lpstrFilter = (TCHAR *) winFilters.ucs2();
     ofn.lpstrFile = buf;
     ofn.nMaxFile = sizeof (buf) - 1;
@@ -2285,6 +2427,16 @@ bool VBoxGlobal::event (QEvent *e)
             /* wait for the thread and free resources */
             ev->mThread->wait();
             delete ev->mThread;
+            return true;
+        }
+
+        case VBoxDefs::GetExistDirectoryEventType:
+        {
+            VBoxGetExistDirectoryEvent *ev = (VBoxGetExistDirectoryEvent *) e;
+            /* wait for the thread and free resources */
+            ev->mThread->wait();
+            delete ev->mThread;
+            emit existingDirectoryResult (ev->mName);
             return true;
         }
 #endif
