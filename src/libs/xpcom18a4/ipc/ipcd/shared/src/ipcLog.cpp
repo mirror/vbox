@@ -118,15 +118,15 @@ IPC_InitLog(const char *prefix)
 {
 #ifdef VBOX
     // initialize VBox Runtime
-    RTR3Init();
-    
+    RTR3Init(false);
+
     PL_strncpyz(ipcLogPrefix, prefix, sizeof(ipcLogPrefix));
 #else
     if (PR_GetEnv("IPC_LOG_ENABLE")) {
         ipcLogEnabled = PR_TRUE;
         PL_strncpyz(ipcLogPrefix, prefix, sizeof(ipcLogPrefix));
     }
-#endif        
+#endif
 }
 
 void
@@ -141,14 +141,14 @@ IPC_Log(const char *fmt, ... )
     if (ipcLogPrefix[0]) {
         nb = strlen(ipcLogPrefix);
         if (nb > sizeof(buf) - 2)
-            nb = sizeof(buf) - 2; 
+            nb = sizeof(buf) - 2;
         PL_strncpy(buf, ipcLogPrefix, nb);
         buf[nb++] = ' ';
     }
 #else
     if (ipcLogPrefix[0])
         nb = WritePrefix(buf, sizeof(buf));
-#endif    
+#endif
 
     PR_vsnprintf(buf + nb, sizeof(buf) - nb, fmt, ap);
     buf[sizeof(buf) - 1] = '\0';
@@ -157,7 +157,7 @@ IPC_Log(const char *fmt, ... )
     LogFlow(("%s", buf));
 #else
     fwrite(buf, strlen(buf), 1, stdout);
-#endif    
+#endif
 
     va_end(ap);
 }
@@ -171,7 +171,7 @@ IPC_LogBinary(const PRUint8 *data, PRUint32 len)
         const PRUint8 *p;
 
         ln = 0;
-        
+
         p = &data[i];
         for (j=0; j<PR_MIN(8, len - i); ++j, ++p)
             ln += PR_snprintf(line + ln, sizeof(line) - ln, "%02x  ", *p);
