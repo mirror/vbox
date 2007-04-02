@@ -1339,7 +1339,7 @@ static DECLCALLBACK(int) ne2000Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Attach status driver (optional).
      */
-    rc = pDevIns->pDevHlp->pfnDriverAttach(pDevIns, PDM_STATUS_LUN, &pData->IBase, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pData->IBase, &pBase, "Status Port");
     if (VBOX_SUCCESS(rc))
         pData->pLedsConnector = pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
@@ -1351,7 +1351,7 @@ static DECLCALLBACK(int) ne2000Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Attach driver.
      */
-    rc = pDevIns->pDevHlp->pfnDriverAttach(pDevIns, 0, &pData->IBase, &pData->pDrvBase, "Network Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->IBase, &pData->pDrvBase, "Network Port");
     if (VBOX_SUCCESS(rc))
     {
         pData->pDrv = (PPDMINETWORKCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_NETWORK_CONNECTOR);

@@ -2613,13 +2613,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
     /*
      * Try attach the block device and get the interfaces.
      */
-    rc = pDevIns->pDevHlp->pfnDriverAttach (
-        pDevIns,
-        drv->iLUN,
-        &drv->IBase,
-        &drv->pDrvBase,
-        descs[drv->iLUN]
-        );
+    rc = PDMDevHlpDriverAttach (pDevIns, drv->iLUN, &drv->IBase, &drv->pDrvBase, descs[drv->iLUN]);
     if (VBOX_SUCCESS (rc))
     {
         drv->pDrvBlock = drv->pDrvBase->pfnQueryInterface (
@@ -2976,12 +2970,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     /*
      * Attach the status port (optional).
      */
-    rc = pDevIns->pDevHlp->pfnDriverAttach (
-        pDevIns,
-        PDM_STATUS_LUN,
-        &fdctrl->IBaseStatus,
-        &pBase,
-        "Status Port");
+    rc = PDMDevHlpDriverAttach (pDevIns, PDM_STATUS_LUN, &fdctrl->IBaseStatus, &pBase, "Status Port");
     if (VBOX_SUCCESS (rc)) {
         fdctrl->pLedsConnector =
             pBase->pfnQueryInterface (pBase, PDMINTERFACE_LED_CONNECTORS);
