@@ -1320,10 +1320,13 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
 #ifdef CONFIG_SMP
     for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++) 
     {
+        pDevExt->aCPUs[i].u64LastMonotime = pDevExt->u64LastMonotime;
+        pDevExt->aCPUs[i].ulLastJiffies   = pDevExt->ulLastJiffies;
+        pDevExt->aCPUs[i].iSmpProcessorId = -512;
         init_timer(&pDevExt->aCPUs[i].Timer);
-        pDevExt->aCPUs[i].Timer.data = (unsigned long)pDevExt;
-        pDevExt->aCPUs[i].Timer.function = VBoxSupGipTimerPerCpu;
-        pDevExt->aCPUs[i].Timer.expires = jiffies;
+        pDevExt->aCPUs[i].Timer.data      = i;
+        pDevExt->aCPUs[i].Timer.function  = VBoxSupGipTimerPerCpu;
+        pDevExt->aCPUs[i].Timer.expires   = jiffies;
     }
 #endif 
 
@@ -1389,11 +1392,20 @@ static int VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt)
  */
 static void     VBoxSupGipTimer(unsigned long ulUser)
 {
-    PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)ulUser;
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-    unsigned long ulNow    = jiffies;
-    unsigned long ulDiff   = ulNow - pDevExt->ulLastJiffies;
-    uint64_t u64Monotime;
+    PSUPDRVDEVEXT       pDevExt;
+    PSUPGLOBALINFOPAGE  pGip;
+    unsigned long       ulNow;
+    unsigned long       ulDiff;
+    uint64_t            u64Monotime;
+    unsigned long       SavedFlags;
+
+    local_irq_save(SavedFlags);
+
+    pDevExt = (PSUPDRVDEVEXT)ulUser;
+    pGip    = pDevExt->pGip;
+    ulNow   = jiffies;
+    ulDiff  = ulNow - pDevExt->ulLastJiffies;
+
     pDevExt->ulLastJiffies = ulNow;
 #ifdef TICK_NSEC
     u64Monotime = pDevExt->u64LastMonotime + ulDiff * TICK_NSEC;
@@ -1404,6 +1416,8 @@ static void     VBoxSupGipTimer(unsigned long ulUser)
     if (RT_LIKELY(pGip))
         supdrvGipUpdate(pDevExt->pGip, u64Monotime);
     mod_timer(&g_GipTimer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
+
+    local_irq_restore(SavedFlags);
 }
 
 
@@ -1411,34 +1425,49 @@ static void     VBoxSupGipTimer(unsigned long ulUser)
 /**
  * Timer callback function for the other CPUs.
  * 
- * @param   ulUser  The device extension pointer.
+ * @param   iLnxCPU     The APIC ID of this timer.
  */
-static void VBoxSupGipTimerPerCpu(unsigned long ulUser)
+static void VBoxSupGipTimerPerCpu(unsigned long iLnxCPU)
 {
-    PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)ulUser;
-    PSUPGLOBALINFOPAGE  pGip    = pDevExt->pGip;
-    unsigned long       ulNow   = jiffies;
-    unsigned long       ulDiff  = ulNow - pDevExt->ulLastJiffies;
+    PSUPDRVDEVEXT       pDevExt;
+    PSUPGLOBALINFOPAGE  pGip;
+    uint8_t             iCPU;
     uint64_t            u64Monotime;
-    uint8_t             iCPU = ASMGetApicId();
+    unsigned long       SavedFlags;
 
-    if (RT_UNLIKELY(iCPU >= RT_ELEMENTS(pGip->aCPUs)))
+    local_irq_save(SavedFlags);
+
+    pDevExt = &g_DevExt;
+    pGip    = pDevExt->pGip;
+    iCPU    = ASMGetApicId();
+    
+    if (RT_LIKELY(iCPU < RT_ELEMENTS(pGip->aCPUs)))
     {
-        printk("vboxdrv: error: apicid=%d max=%d cpuid=%d\n", 
-               iCPU, RT_ELEMENTS(pGip->aCPUs), smp_processor_id());
-        return;
-    }
+        if (RT_LIKELY(iCPU == iLnxCPU)) 
+        {
+            unsigned long   ulNow  = jiffies;
+            unsigned long   ulDiff = ulNow - pDevExt->aCPUs[iLnxCPU].ulLastJiffies;
 
-    pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
+            pDevExt->aCPUs[iLnxCPU].ulLastJiffies = ulNow;
 #ifdef TICK_NSEC
-    u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
+            u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
 #else
-    u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * (1000000 / HZ);
+            u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * (1000000 / HZ);
 #endif
-    ASMAtomicXchgU64(&pDevExt->aCPUs[iCPU].u64LastMonotime, u64Monotime);
-    if (RT_LIKELY(pGip))
-        supdrvGipUpdatePerCpu(pGip, pDevExt->aCPUs[iCPU].u64LastMonotime, iCPU);
-    mod_timer(&pDevExt->aCPUs[iCPU].Timer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
+            ASMAtomicXchgU64(&pDevExt->aCPUs[iCPU].u64LastMonotime, u64Monotime);
+            if (RT_LIKELY(pGip))
+                supdrvGipUpdatePerCpu(pGip, u64Monotime, iCPU);
+            mod_timer(&pDevExt->aCPUs[iCPU].Timer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
+        }
+        else
+            printk("vboxdrv: error: GIP CPU update timer executing on the wrong CPU: apicid=%d != timer-apicid=%ld (cpuid=%d != timer-cpuid=%d)\n",
+                   iCPU, iLnxCPU, smp_processor_id(), pDevExt->aCPUs[iLnxCPU].iSmpProcessorId);
+    }
+    else
+        printk("vboxdrv: error: APIC ID is bogus (GIP CPU update): apicid=%d max=%d cpuid=%d\n", 
+               iCPU, RT_ELEMENTS(pGip->aCPUs), smp_processor_id());
+
+    local_irq_restore(SavedFlags);
 }
 #endif  /* CONFIG_SMP */
 
@@ -1575,7 +1604,6 @@ static void VBoxSupGipResumePerCpu(void *pvUser)
     PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
     uint8_t iCPU = ASMGetApicId();
 
-
     if (RT_UNLIKELY(iCPU >= RT_ELEMENTS(pDevExt->pGip->aCPUs)))
     {
         printk("vboxdrv: error: apicid=%d max=%d cpuid=%d\n", 
@@ -1583,6 +1611,7 @@ static void VBoxSupGipResumePerCpu(void *pvUser)
         return;
     }
 
+    pDevExt->aCPUs[iCPU].iSmpProcessorId = smp_processor_id();
     mod_timer(&pDevExt->aCPUs[iCPU].Timer, jiffies);
 }
 #endif /* CONFIG_SMP */

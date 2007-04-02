@@ -652,10 +652,12 @@ typedef struct SUPDRVDEVEXT
     /** Array of per CPU data for SUPGIPMODE_ASYNC_TSC. */
     struct LINUXCPU
     {
-        /** The last jiffies. */
-        unsigned long       ulLastJiffies;
         /** The last mono time stamp. */
         uint64_t volatile   u64LastMonotime;
+        /** The last jiffies. */
+        unsigned long       ulLastJiffies;
+        /** The Linux Process ID. */
+        unsigned            iSmpProcessorId;
         /** The per cpu timer. */
         struct timer_list   Timer;
     }                       aCPUs[256];
