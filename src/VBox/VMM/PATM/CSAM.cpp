@@ -62,6 +62,8 @@
 #define CSAM_MONITOR_CODE_PAGES
 /* Enable to monitor all scanned pages
 #define CSAM_MONITOR_CSAM_CODE_PAGES */
+/* Enable to scan beyond ret instructions.  
+#define CSAM_ANALYSE_BEYOND_RET */
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -957,6 +959,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCP
                 switch (cpu.pCurInstr->opcode)
                 {
                 case OP_NOP:
+                case OP_INT3:
                     break;  /* acceptable */
 
                 case OP_LEA:
@@ -2089,6 +2092,9 @@ CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC)
         // Cache record for PATMGCVirtToHCVirt
         CSAMP2GLOOKUPREC cacheRec = {0};
 
+if ((pInstrGC >> 24) == 0xf8
+    && (pInstrGC & 0xfff) == 0) _asm int 3;
+
         STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
         rc = csamAnalyseCallCodeStream(pVM, pInstrGC, pInstrGC, true /* 32 bits code */, CSAMR3AnalyseCallback, pPage, &cacheRec);
         STAM_PROFILE_STOP(&pVM->csam.s.StatTime, a);
@@ -2164,12 +2170,13 @@ static int csamR3FlushCodePages(PVM pVM)
         GCPtr = GCPtr & PAGE_BASE_GC_MASK;
 
         Log(("csamR3FlushCodePages: %VGv\n", GCPtr));
+        PGMShwSetPage(pVM, GCPtr, 1, 0);
         /* Resync the page to make sure instruction fetch will fault */
         CSAMMarkPage(pVM, GCPtr, false);
-        PGMInvalidatePage(pVM, GCPtr);
-        PGMPrefetchPage(pVM, GCPtr);
+//        PGMInvalidatePage(pVM, GCPtr);
+/////        PGMPrefetchPage(pVM, GCPtr);
 
-        CSAMMarkPage(pVM, GCPtr, true);
+/////        CSAMMarkPage(pVM, GCPtr, true);
     }
     pVM->csam.s.cPossibleCodePages = 0;
     return VINF_SUCCESS;
