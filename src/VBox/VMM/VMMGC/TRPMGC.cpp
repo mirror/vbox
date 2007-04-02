@@ -36,6 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <VBox/log.h>
+#include <VBox/selm.h>
 
 
 
@@ -167,6 +168,26 @@ TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, void *pvRange, uintptr_t offRange)
 {
     LogRel(("FATAL ERROR: trpmgcShadowIDTWriteHandler: eip=%08X pvFault=%08X pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
+
+    /* If we ever get here, then the guest has executed an sidt instruction that we failed to patch. In theory this could be very bad, but
+     * there are nasty applications out there that install device drivers that mess with the guest's IDT. In those cases, it's quite ok
+     * to simply ignore the writes and pretend success.
+     */
+    RTGCPTR PC;
+    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
+    if (rc == VINF_SUCCESS)
+    {
+        DISCPUSTATE Cpu;
+        uint32_t    cbOp;
+        rc = EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
+        if (rc == VINF_SUCCESS)
+        {
+            /* Just ignore the write. */
+            pRegFrame->eip += Cpu.opsize;
+            return VINF_SUCCESS;
+        }
+    }
+
     return VERR_TRPM_SHADOW_IDT_WRITE;
 }
 
