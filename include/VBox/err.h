@@ -923,7 +923,7 @@
  * @{
  */
 /** Failed to find the DNS configured for this machine. */
-#define VERR_NAT_DNS                                (-3000)
+#define VINF_NAT_DNS                                3000
 /** Failed to convert the specified Guest IP to a binary IP address.
  * Malformed input. */
 #define VERR_NAT_REDIR_GUEST_IP                     (-3001)
