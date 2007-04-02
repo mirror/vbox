@@ -4262,6 +4262,16 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->IBase, &pData->pDrvBase, "Network Port");
     if (VBOX_SUCCESS(rc))
     {
+        if (rc == VINF_NAT_DNS)
+        {
+#ifdef __LINUX__
+            VMSetRuntimeError(PDMDevHlpGetVM(pDevIns), false, "NoDNSforNAT",
+                              N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#else
+            VMSetRuntimeError(PDMDevHlpGetVM(pDevIns), false, "NoDNSforNAT",
+                              N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#endif
+        }
         pData->pDrv = (PPDMINETWORKCONNECTOR)
             pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_NETWORK_CONNECTOR);
         if (!pData->pDrv)
