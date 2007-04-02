@@ -1950,7 +1950,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                             Log(("PDM: Attached driver '%s'/%d to LUN#%d on device '%s'/%d.\n",
                                  pDrv->pDrvReg->szDriverName, pNew->iInstance, iLun, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
                             LogFlow(("pdmR3DevHlp_DriverAttach: caller '%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
-                            return VINF_SUCCESS;
+			    /*
+			     * Might return != VINF_SUCCESS (e.g. VINF_NAT_DNS) */
+                            return rc;
                         }
 
                         /*
