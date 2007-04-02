@@ -2170,10 +2170,6 @@ static int csamR3FlushCodePages(PVM pVM)
         PGMShwSetPage(pVM, GCPtr, 1, 0);
         /* Resync the page to make sure instruction fetch will fault */
         CSAMMarkPage(pVM, GCPtr, false);
-//        PGMInvalidatePage(pVM, GCPtr);
-/////        PGMPrefetchPage(pVM, GCPtr);
-
-/////        CSAMMarkPage(pVM, GCPtr, true);
     }
     pVM->csam.s.cPossibleCodePages = 0;
     return VINF_SUCCESS;
