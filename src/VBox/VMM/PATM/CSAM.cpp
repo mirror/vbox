@@ -2092,9 +2092,6 @@ CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTGCPTR pInstrGC)
         // Cache record for PATMGCVirtToHCVirt
         CSAMP2GLOOKUPREC cacheRec = {0};
 
-if ((pInstrGC >> 24) == 0xf8
-    && (pInstrGC & 0xfff) == 0) _asm int 3;
-
         STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
         rc = csamAnalyseCallCodeStream(pVM, pInstrGC, pInstrGC, true /* 32 bits code */, CSAMR3AnalyseCallback, pPage, &cacheRec);
         STAM_PROFILE_STOP(&pVM->csam.s.StatTime, a);
