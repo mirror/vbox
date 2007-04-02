@@ -465,7 +465,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 switch (rc)
                 {
                     case VERR_NAT_DNS:
-                        PDMDRV_SET_ERROR(pDrvIns, rc, N_("Domain Name Server (DNS) for NAT networking could not be determined"));
+#ifdef __LINUX__
+                        PDMDRV_SET_ERROR(pDrvIns, rc, N_("Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <b>nameserver</b> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to the Internet"));
+#else
+                        PDMDRV_SET_ERROR(pDrvIns, rc, N_("Domain Name Server (DNS) for NAT networking could not be determined. Make sure that your host is correctly connected to the Internet"));
+#endif
                         break;
                     default:
                         PDMDRV_SET_ERROR(pDrvIns, rc, N_("Unknown error during NAT networking setup: "));
