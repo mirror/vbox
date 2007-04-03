@@ -36,7 +36,6 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/critsect.h>
-#include <iprt/stream.h>
 
 #include "Builtins.h"
 
