@@ -582,7 +582,7 @@
 /** Opcode parameters
  * @{
  */
-//NOTE: Register order is important for translations!!
+/* NOTE: Register order is important for translations!! */
 #define OP_PARM_NONE    0
 #define OP_PARM_REG_EAX 1
 #define OP_PARM_REG_GEN32_START   OP_PARM_REG_EAX
