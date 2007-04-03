@@ -179,7 +179,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
     /*
      * Init support library.
      */
-    PSUPDRVSESSION pSession = NULL;
+    PSUPDRVSESSION pSession = 0;
     int rc = SUPInit(&pSession, 0);
     if (VBOX_SUCCESS(rc))
     {
