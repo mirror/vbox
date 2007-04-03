@@ -580,7 +580,7 @@ SUPR3DECL(void *) SUPContAlloc2(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhy
     /*
      * Validate.
      */
-    AssertMsg(cb > 64 && cb < PAGE_SIZE * 256, ("cb=%d must be > 64 and < %d (256 pages)\n", cb, PAGE_SIZE * 256));
+    AssertMsg(cPages > 0 && cPages < 256, ("cPages=%d must be > 0 and < 256\n", cPages));
     AssertPtr(pHCPhys);
     *pHCPhys = NIL_RTHCPHYS;
     AssertPtrNull(pR0Ptr);
