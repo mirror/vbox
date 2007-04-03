@@ -1234,7 +1234,7 @@ PATMIretStart:
 iret_notring0:
 
 ; if interrupts are pending, then we must go back to the host context to handle them! 
-; Note: This is very important as pending pic interrupts can be overriden by apic interrupts (Fedora 5 boot)
+; Note: This is very important as pending pic interrupts can be overriden by apic interrupts if we don't check early enough (Fedora 5 boot)
 ; @@todo fix this properly, so we can dispatch pending interrupts in GC 
     test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC
     jz      iret_continue 
