@@ -187,8 +187,6 @@ public:
         connect (mLeName, SIGNAL (textChanged (const QString &)),
                  this, SLOT (validate()));
         connect (tbPath, SIGNAL (clicked()), this, SLOT (showFileDialog()));
-        connect (&vboxGlobal(), SIGNAL (existingDirectoryResult (const QString&)),
-                 this, SLOT (folderSelected (const QString&)));
         QWhatsThis::add (mLePath, tr ("Enter existing path for the shared folder here"));
         QWhatsThis::add (mLeName, tr ("Enter name for the shared folder to be created"));
         QWhatsThis::add (tbPath, tr ("Click to invoke <open folder> dialog"));
@@ -232,18 +230,13 @@ private slots:
 
     void showFileDialog()
     {
-        vboxGlobal().getExistingDirectory (QDir::convertSeparators (
-                                           QDir::rootDirPath()),
-                                           this, "addSharedFolderDialog",
-                                           tr ("Select a folder to share"));
-    }
-
-    void folderSelected (const QString &aFolder)
-    {
-        if (aFolder.isNull())
+        QString folder = vboxGlobal().getExistingDirectory (QDir::rootDirPath(),
+                                                  this, "addSharedFolderDialog",
+                                                  tr ("Select a folder to share"));
+        if (folder.isNull())
             return;
 
-        QString folderName = QDir::convertSeparators (aFolder);
+        QString folderName = QDir::convertSeparators (folder);
         QRegExp commonRule ("[\\\\/]([^\\\\^/]+)[\\\\/]?$");
         QRegExp rootRule ("(([a-zA-Z])[^\\\\^/])?[\\\\/]$");
         if (commonRule.search (folderName) != -1)

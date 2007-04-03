@@ -1846,34 +1846,15 @@ void VBoxVMSettingsDlg::tbResetSavedStateFolder_clicked()
 
 void VBoxVMSettingsDlg::tbSelectSavedStateFolder_clicked()
 {
-    QString settingsFolder =
-        QFileInfo (cmachine.GetSettingsFilePath()).dirPath (true);
+    QString settingsFolder = VBoxGlobal::getStartingDir (leSnapshotFolder->text());
+    if (settingsFolder.isNull())
+        settingsFolder = QFileInfo (cmachine.GetSettingsFilePath()).dirPath (true);
 
-    if (!leSnapshotFolder->text().isEmpty())
-    {
-        /* set the first parent directory that exists as the current */
-        const QDir dir (settingsFolder);
-        QFileInfo fld (dir, leSnapshotFolder->text());
-        do
-        {
-            QString dp = fld.dirPath (false);
-            fld = QFileInfo (dp);
-        }
-        while (!fld.exists() && !QDir (fld.absFilePath()).isRoot());
-
-        if (fld.exists())
-            settingsFolder = fld.absFilePath();
-    }
-
-    vboxGlobal().getExistingDirectory (settingsFolder, this);
-}
-
-void VBoxVMSettingsDlg::folderSelected (const QString &aFolder)
-{
-    if (aFolder.isNull())
+    QString folder = vboxGlobal().getExistingDirectory (settingsFolder, this);
+    if (folder.isNull())
         return;
 
-    QString folder = QDir::convertSeparators (aFolder);
+    folder = QDir::convertSeparators (folder);
     /* remove trailing slash if any */
     folder.remove (QRegExp ("[\\\\/]$"));
 

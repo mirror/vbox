@@ -47,6 +47,7 @@
 
 #ifdef Q_WS_WIN
 #include "shlobj.h"
+#include <qeventloop.h>
 #endif
 
 #if defined (VBOX_GUI_DEBUG)
@@ -94,20 +95,6 @@ public:
     QThread *mThread;
     QString mURL;
     bool mOk;
-};
-
-class VBoxGetExistDirectoryEvent : public QEvent
-{
-public:
-
-    /** Constructs a regular enum event */
-    VBoxGetExistDirectoryEvent (QThread *aThread, const QString &aName)
-        : QEvent ((QEvent::Type) VBoxDefs::GetExistDirectoryEventType)
-        , mThread (aThread), mName (aName)
-        {}
-
-    QThread *mThread;
-    QString mName;
 };
 #endif
 
@@ -417,7 +404,7 @@ static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
         if (!initDir->isEmpty())
         {
             SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (initDir->ucs2()));
-            SendMessage (hwnd, BFFM_SETEXPANDED, TRUE, Q_ULONG (initDir->ucs2()));
+            //SendMessage (hwnd, BFFM_SETEXPANDED, TRUE, Q_ULONG (initDir->ucs2()));
         }
     }
     else if (uMsg == BFFM_SELCHANGED)
@@ -2221,15 +2208,38 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
  *  On all other platforms, this function is equivalent to
  *  QFileDialog::getExistingDirectory().
  */
-void VBoxGlobal::getExistingDirectory (const QString &aDir,
-                                       QWidget *aParent, const char *aName,
-                                       const QString &aCaption,
-                                       bool aDirOnly,
-                                       bool aResolveSymlinks)
+QString VBoxGlobal::getExistingDirectory (const QString &aDir,
+                                          QWidget *aParent, const char *aName,
+                                          const QString &aCaption,
+                                          bool aDirOnly,
+                                          bool aResolveSymlinks)
 {
 #if defined Q_WS_WIN
 
-    /* open existing directory thread class */
+    /**
+     *  QEvent type for VBoxGetExistDirectoryEvent event
+     */
+    enum { GetExistDirectoryEventType = QEvent::User + 300 };
+
+    /**
+     *  QEvent class reimplementation to carry Win32 API native dialog's
+     *  result folder information
+     */
+    class VBoxGetExistDirectoryEvent : public QEvent
+    {
+    public:
+
+        VBoxGetExistDirectoryEvent (const QString &aName)
+            : QEvent ((QEvent::Type) GetExistDirectoryEventType)
+            , mName (aName)
+            {}
+
+        QString mName;
+    };
+
+    /**
+     *  QThread class reimplementation to open Win32 API native folder's dialog
+     */
     class Thread : public QThread
     {
     public:
@@ -2276,8 +2286,7 @@ void VBoxGlobal::getExistingDirectory (const QString &aDir,
             }
             else
                 result = QString::null;
-            QApplication::postEvent (mTarget,
-                new VBoxGetExistDirectoryEvent (this, result));
+            QApplication::postEvent (mTarget, new VBoxGetExistDirectoryEvent (result));
             if (parent) parent->setEnabled (true);
         }
 
@@ -2289,18 +2298,49 @@ void VBoxGlobal::getExistingDirectory (const QString &aDir,
         QString mCaption;
     };
 
+    class LoopObject : public QObject
+    {
+    public:
+
+        LoopObject() : mFolder (QString::null) {}
+        const QString& folder() { return mFolder; }
+
+    private:
+
+        bool event (QEvent *e)
+        {
+            switch (e->type())
+            {
+                case GetExistDirectoryEventType:
+                {
+                    VBoxGetExistDirectoryEvent *ev = (VBoxGetExistDirectoryEvent *) e;
+                    mFolder = ev->mName;
+                    qApp->eventLoop()->exitLoop();
+                    return true;
+                }
+                default:
+                    break;
+            }
+            return QObject::event (e);
+        }
+
+        QString mFolder;
+    };
+
     /* this dialog is proposed to be a modal */
-    if (!aParent) return;
+    if (!aParent) return QString::null;
     QString dir = QDir::convertSeparators (aDir);
-    Thread *openDirThread = new Thread (aParent->winId(), this, dir, aCaption);
-    openDirThread->start();
-    /* thread will be deleted in the VBoxGetExistDirectoryEvent handler */
+    LoopObject loopObject;
+    Thread openDirThread (aParent->winId(), &loopObject, dir, aCaption);
+    openDirThread.start();
+    qApp->eventLoop()->enterLoop();
+    openDirThread.wait();
+    return loopObject.folder();
 
 #else
 
-    QString result = QFileDialog::getExistingDirectory (aDir, aParent,
-        aName, aCaption, aDirOnly, aResolveSymlinks);
-    emit existingDirectoryResult (result);
+    return QFileDialog::getExistingDirectory (aDir, aParent, aName, aCaption,
+                                              aDirOnly, aResolveSymlinks);
 
 #endif
 }
@@ -2411,6 +2451,27 @@ QString VBoxGlobal::getOpenFileName (const QString &startWith,
 #endif
 }
 
+/**
+ *  Search for the first directory that exists starting from the passed one.
+ *  In case of there is no directory (and all of its parent except root) exist
+ *  the function returns QString::null.
+ */
+/* static */
+QString VBoxGlobal::getStartingDir (const QString &aStartDir)
+{
+    QString result = QString::null;
+    QDir dir (aStartDir);
+    while (!dir.exists() && !dir.isRoot())
+    {
+        QFileInfo dirInfo (dir.absPath());
+        dir = dirInfo.dirPath (true);
+    }
+    if (dir.exists() && !dir.isRoot())
+        result = dir.absPath();
+    return result;
+}
+
+
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2427,16 +2488,6 @@ bool VBoxGlobal::event (QEvent *e)
             /* wait for the thread and free resources */
             ev->mThread->wait();
             delete ev->mThread;
-            return true;
-        }
-
-        case VBoxDefs::GetExistDirectoryEventType:
-        {
-            VBoxGetExistDirectoryEvent *ev = (VBoxGetExistDirectoryEvent *) e;
-            /* wait for the thread and free resources */
-            ev->mThread->wait();
-            delete ev->mThread;
-            emit existingDirectoryResult (ev->mName);
             return true;
         }
 #endif
