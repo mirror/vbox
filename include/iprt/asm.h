@@ -2872,6 +2872,8 @@ DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
 /**
  * Multiple a 64-bit by a 32-bit integer and divide the result by a 32-bit integer
  * using a 96 bit intermediate result.
+ * @note    Don't use 64-bit C arithmetic here since some gcc compilers generate references to
+ *          __udivdi3 and __umoddi3 even if this inline function is not used.
  * 
  * @returns (u64A * u32B) / u32C.
  * @param   u64A    The 64-bit value.
@@ -2883,7 +2885,8 @@ DECLASM(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t
 #else
 DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C)
 {
-# if RT_INLINE_ASM_GNU_STYLE && defined(__AMD64__)
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef __AMD64__
     uint64_t u64Result, u64Spill;
     __asm__ __volatile__("mulq %2\n\t"
                          "divq %3\n\t"
@@ -2894,13 +2897,42 @@ DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint3
                            "0" (u64A), 
                            "1" (0));
     return u64Result;
+#  else
+    uint32_t dummy;
+    uint64_t u64D;
+    __asm__ __volatile__("mull %%ecx       \n\t" /* eax = u64Lo.lo = (u64A.lo * u32B).lo
+                                                    edx = u64Lo.hi = (u64A.lo * u32B).hi */
+                         "xchg %%eax,%%esi \n\t" /* esi = u64Lo.lo
+                                                    eax = u64A.hi */
+                         "xchg %%edx,%%edi \n\t" /* edi = u64Low.hi
+                                                    edx = u32C */
+                         "xchg %%edx,%%ecx \n\t" /* ecx = u32C
+                                                    edx = u32B */
+                         "mull %%edx       \n\t" /* eax = u64Hi.lo = (u64A.hi * u32B).lo
+                                                    edx = u64Hi.hi = (u64A.hi * u32B).hi */
+                         "addl %%edi,%%eax \n\t" /* u64Hi.lo += u64Lo.hi */
+                         "adcl $0,%%edx    \n\t" /* u64Hi.hi += carry */
+                         "divl %%ecx       \n\t" /* eax = u64Hi / u32C
+                                                    edx = u64Hi % u32C */
+                         "movl %%eax,%%edi \n\t" /* edi = u64D.hi = u64Hi / u32C */
+                         "movl %%esi,%%eax \n\t" /* eax = u64Lo.lo */
+                         "divl %%ecx       \n\t" /* u64D.lo */
+                         "movl %%edi,%%edx \n\t" /* u64D.hi */
+                         : "=A"(u64D),
+                           "=S"(dummy), "=D"(dummy)
+                         : "a"((uint32_t)u64A),
+                           "S"((uint32_t)(u64A >> 32)),
+                           "c"(u32B),
+                           "D"(u32C));
+    return u64D;
+#  endif
 # else
     RTUINT64U   u;
-    uint64_t    u64Low = (uint64_t)(u64A & 0xffffffff) * u32B;
-    uint64_t    u64Hi  = (uint64_t)(u64A >> 32)        * u32B;
-    u64Hi  += (u64Low >> 32);
+    uint64_t    u64Lo = (uint64_t)(u64A & 0xffffffff) * u32B;
+    uint64_t    u64Hi = (uint64_t)(u64A >> 32)        * u32B;
+    u64Hi  += (u64Lo >> 32);
     u.s.Hi = (uint32_t)(u64Hi / u32C);
-    u.s.Lo = (uint32_t)((((u64Hi % u32C) << 32) + (u64Low & 0xffffffff)) / u32C);
+    u.s.Lo = (uint32_t)((((u64Hi % u32C) << 32) + (u64Lo & 0xffffffff)) / u32C);
     return u.u;
 # endif 
 }
