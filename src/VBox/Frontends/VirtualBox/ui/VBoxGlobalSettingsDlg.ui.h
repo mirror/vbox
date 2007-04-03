@@ -148,10 +148,6 @@ void VBoxGlobalSettingsDlg::init()
 
     /* General page */
 
-    mLastAccessedField = 0;
-    connect (&vboxGlobal(), SIGNAL (existingDirectoryResult (const QString&)),
-             this, SLOT (folderSelected (const QString&)));
-
 /// @todo (dmik) remove
 //    leVDIFolder->setValidator (new QRegExpValidator (QRegExp (".+"), this));
 //    leMachineFolder->setValidator (new QRegExpValidator (QRegExp (".+"), this));
@@ -502,36 +498,16 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
     QLineEdit *le = 0;
     if (tb == tbSelectVDIFolder) le = leVDIFolder;
     else if (tb == tbSelectMachineFolder) le = leMachineFolder;
-    mLastAccessedField = le;
     Assert (le);
 
-    QString initDir = vboxGlobal().virtualBox().GetHomeFolder();
-
-    if (!le->text().isEmpty())
-    {
-        /* set the first parent directory that exists as the current */
-        const QDir _dir (initDir);
-        QFileInfo fld (_dir, le->text());
-        do
-        {
-            QString dp = fld.dirPath (false);
-            fld = QFileInfo (dp);
-        }
-        while (!fld.exists() && !QDir (fld.absFilePath()).isRoot());
-
-        if (fld.exists())
-            initDir = fld.absFilePath();
-    }
-
-    vboxGlobal().getExistingDirectory (initDir, this);
-}
-
-void VBoxGlobalSettingsDlg::folderSelected (const QString &aFolder)
-{
-    if (aFolder.isNull())
+    QString initDir = VBoxGlobal::getStartingDir (le->text());
+    if (initDir.isNull())
+        initDir = vboxGlobal().virtualBox().GetHomeFolder();
+    QString folder = VBoxGlobal::getExistingDirectory (initDir, this);
+    if (folder.isNull())
         return;
 
-    QString folder = QDir::convertSeparators (aFolder);
+    folder = QDir::convertSeparators (folder);
     /* remove trailing slash if any */
     folder.remove (QRegExp ("[\\\\/]$"));
 
@@ -539,12 +515,8 @@ void VBoxGlobalSettingsDlg::folderSelected (const QString &aFolder)
      *  do this instead of le->setText (folder) to cause
      *  isModified() return true
      */
-    if (mLastAccessedField)
-    {
-        mLastAccessedField->selectAll();
-        mLastAccessedField->insert (folder);
-        mLastAccessedField = 0;
-    }
+    le->selectAll();
+    le->insert (folder);
 }
 
 // USB Filter stuff

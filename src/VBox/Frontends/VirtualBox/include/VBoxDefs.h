@@ -136,7 +136,6 @@ struct VBoxDefs
         EnumerateMediaEventType = QEvent::User + 100,
 #if defined (Q_WS_WIN)
         ShellExecuteEventType,
-        GetExistDirectoryEventType,
 #endif
         ActivateMenuEventType,
     };
