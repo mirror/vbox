@@ -657,8 +657,10 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
  */
 void Display::VideoAccelVRDP (bool fEnable)
 {
+#if 0
     /* Supporting all orders. */
     uint32_t fu32SupportedOrders = ~0;
+#endif
     
     int c = fEnable?
                 ASMAtomicIncS32 (&mcVideoAccelVRDPRefs):
