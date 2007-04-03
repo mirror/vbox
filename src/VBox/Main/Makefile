@@ -21,7 +21,7 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-ifdef VRDP_MC
+ifdef VBOX_WITH_VRDP_MC
 DEFS       += VRDP_MC
 endif
 
