@@ -406,7 +406,7 @@ public:
                                     QString *defaultFilter = 0,
                                     bool resolveSymLinks = true);
 
-    static QString getStartingDir (const QString &);
+    static QString getFirstExistingDir (const QString &);
 
 signals:
 

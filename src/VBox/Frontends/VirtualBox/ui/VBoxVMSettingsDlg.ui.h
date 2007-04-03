@@ -1846,7 +1846,7 @@ void VBoxVMSettingsDlg::tbResetSavedStateFolder_clicked()
 
 void VBoxVMSettingsDlg::tbSelectSavedStateFolder_clicked()
 {
-    QString settingsFolder = VBoxGlobal::getStartingDir (leSnapshotFolder->text());
+    QString settingsFolder = VBoxGlobal::getFirstExistingDir (leSnapshotFolder->text());
     if (settingsFolder.isNull())
         settingsFolder = QFileInfo (cmachine.GetSettingsFilePath()).dirPath (true);
 

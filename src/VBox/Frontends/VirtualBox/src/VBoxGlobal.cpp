@@ -2197,11 +2197,11 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 }
 
 /**
- *  Reimplementation of QFileDialog::getExistingDirectory() which is runs
- *  "open existing directory" dialog.
+ *  Reimplementation of QFileDialog::getExistingDirectory() that removes some
+ *  oddities and limitations.
  *
- *  On Win32, this function makes sure a native dialog will be launched in
- *  another thread to avoid dialog visualization errors occured due to
+ *  On Win32, this function makes sure a native dialog is launched in
+ *  another thread to avoid dialog visualization errors occuring due to
  *  multi-threaded COM apartment initialization on the main UI thread while
  *  the appropriate native dialog function expects a single-threaded one.
  *
@@ -2244,17 +2244,16 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
     {
     public:
 
-        Thread (const WId &aId, QObject *aTarget,
+        Thread (QWidget *aParent, QObject *aTarget,
                 const QString &aDir, const QString &aCaption)
-            : mId (aId), mTarget (aTarget), mDir (aDir), mCaption (aCaption) {}
+            : mParent (aParent), mTarget (aTarget), mDir (aDir), mCaption (aCaption) {}
 
         virtual void run()
         {
             QString result;
 
-            QWidget *parent = QWidget::find (mId);
-            QWidget *topParent = parent ? parent->topLevelWidget() : qApp->mainWidget();
-            QString title = mCaption.isNull() ? tr ("Select a Directory") : mCaption;
+            QWidget *topParent = mParent ? mParent->topLevelWidget() : qApp->mainWidget();
+            QString title = mCaption.isNull() ? tr ("Select a directory") : mCaption;
 
             TCHAR path[MAX_PATH];
             path [0] = 0;
@@ -2269,7 +2268,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_NEWDIALOGSTYLE;
             bi.lpfn = winGetExistDirCallbackProc;
             bi.lParam = Q_ULONG (&mDir);
-            if (parent) parent->setEnabled (false);
+            if (mParent) mParent->setEnabled (false);
             LPITEMIDLIST itemIdList = SHBrowseForFolder (&bi);
             if (itemIdList)
             {
@@ -2287,12 +2286,12 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             else
                 result = QString::null;
             QApplication::postEvent (mTarget, new VBoxGetExistDirectoryEvent (result));
-            if (parent) parent->setEnabled (true);
+            if (mParent) mParent->setEnabled (true);
         }
 
     private:
 
-        WId mId;
+        QWidget *mParent;
         QObject *mTarget;
         QString mDir;
         QString mCaption;
@@ -2327,11 +2326,9 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
         QString mFolder;
     };
 
-    /* this dialog is proposed to be a modal */
-    if (!aParent) return QString::null;
     QString dir = QDir::convertSeparators (aDir);
     LoopObject loopObject;
-    Thread openDirThread (aParent->winId(), &loopObject, dir, aCaption);
+    Thread openDirThread (aParent, &loopObject, dir, aCaption);
     openDirThread.start();
     qApp->eventLoop()->enterLoop();
     openDirThread.wait();
@@ -2390,7 +2387,7 @@ QString VBoxGlobal::getOpenFileName (const QString &startWith,
     if (!workDir.endsWith ("\\"))
         workDir += "\\";
 
-    QString title = caption.isNull() ? tr ("Select file to open") : caption;
+    QString title = caption.isNull() ? tr ("Select a file") : caption;
 
     if (parent)
     {
@@ -2452,12 +2449,12 @@ QString VBoxGlobal::getOpenFileName (const QString &startWith,
 }
 
 /**
- *  Search for the first directory that exists starting from the passed one.
- *  In case of there is no directory (and all of its parent except root) exist
- *  the function returns QString::null.
+ *  Search for the first directory that exists starting from the passed one
+ *  and going up through its parents.  In case if none of the directories
+ *  exist (except the root one), the function returns QString::null.
  */
 /* static */
-QString VBoxGlobal::getStartingDir (const QString &aStartDir)
+QString VBoxGlobal::getFirstExistingDir (const QString &aStartDir)
 {
     QString result = QString::null;
     QDir dir (aStartDir);
