@@ -559,7 +559,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     if (    VBOX_SUCCESS(rc)
                         && !(fPageGst & X86_PTE_US))
                     {
-                        /** Note: can't check for X86_TRAP_ID bit, because that requires execute disable support on the CPU */
+                        /* Note: can't check for X86_TRAP_ID bit, because that requires execute disable support on the CPU */
                         if (    pvFault == (RTGCPTR)pRegFrame->eip
                             ||  (RTGCUINTPTR)pvFault - pRegFrame->eip < 8    /* instruction crossing a page boundary */
 #ifdef CSAM_DETECT_NEW_CODE_PAGES
@@ -1365,7 +1365,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                             {
                                 VBOXPTE PteSrc = pPTSrc->a[offPTSrc + iPTDst];
                                 RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(X86_PT_MASK << X86_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
-
+                                NOREF(GCPtrCurPage);
 #ifndef IN_RING0
                                 /*
                                  * Assuming kernel code will be marked as supervisor - and not as user level
@@ -1386,7 +1386,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                                       PteSrc.n.u1User & PdeSrc.n.u1User, 
                                       (uint64_t)PteSrc.u,
                                       (uint64_t)pPTDst->a[iPTDst].u,
-                                      pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
+                                      pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : "")); 
                             }
                         }
                     }
