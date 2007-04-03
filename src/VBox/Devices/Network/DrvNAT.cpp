@@ -448,7 +448,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 int rc2 = drvNATConstructRedir(pData, pCfgHandle);
                 if (VBOX_SUCCESS(rc2))
                 {
-		  RTPrintf("rc = %Vrc\n", rc);
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
 
                     pData->enmLinkState = PDMNETWORKLINKSTATE_UP;
