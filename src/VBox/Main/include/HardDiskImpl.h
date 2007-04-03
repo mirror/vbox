@@ -128,7 +128,8 @@ public:
 
     ComObjPtr <HardDisk> root() const;
 
-    HRESULT getBaseAccessible (Bstr &aAccessError, bool aCheckBusy = false);
+    HRESULT getBaseAccessible (Bstr &aAccessError, bool aCheckBusy = false,
+                               bool aCheckReaders = false);
 
     // virtual methods that need to be [re]implemented by every subclass
 

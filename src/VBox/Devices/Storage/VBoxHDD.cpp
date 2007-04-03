@@ -346,7 +346,7 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
             return PDMDRV_SET_ERROR(pDrvIns, rc,
                                     N_("VHDD: Configuration error: Querying \"Path\" as string failed"));
 
-        rc = CFGMR3QueryBool(pCfgHandle, "ReadOnly", &fReadOnly);
+        rc = CFGMR3QueryBool(pCurNode, "ReadOnly", &fReadOnly);
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             fReadOnly = false;
         else if (VBOX_FAILURE(rc))

@@ -4868,6 +4868,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 STR_CONV();
                 rc = CFGMR3InsertString(pCur,  "Path", psz);                            RC_CHECK();
                 STR_FREE();
+                rc = CFGMR3InsertInteger(pCur, "ReadOnly", 1);                          RC_CHECK();
 
                 /* next */
                 pParent = pCur;

@@ -566,20 +566,32 @@ HRESULT HardDisk::trySetRegistered (BOOL aRegistered)
  *  Must be always called by every HardDisk::getAccessible() reimplementation
  *  in the first place.
  *
- *  When @a aCheckBusy is true, this method checks that mBusy = false and
- *  mReaders = 0 (and returns an appropriate error if not). This lets
- *  reimplementations successfully call setBusy() to lock the disk for the
- *  duration of the check if they need. Note that in this case, the
- *  reimplementation must enter the object lock before calling this method
- *  and not leave it before calling setBusy() to avoid race condition.
+ *  When @a aCheckBusy is true, this method checks that mBusy = false (and
+ *  returns an appropriate error if not). This lets reimplementations
+ *  successfully call addReader() after getBaseAccessible() succeeds to
+ *  reference the disk and protect it from being modified or deleted before
+ *  the remaining check steps are done. Note that in this case, the
+ *  reimplementation must enter the object lock before calling this method and
+ *  must not leave it before calling addReader() to avoid race condition.
  *
- *  @param aAccessError On output, a null string indicates the hard disk is
- *                      accessible, otherwise contains a message describing
- *                      the reason of inaccessibility.
- *  @param aCheckBusy   Whether to do the busy check or not.
+ *  When @a aCheckReaders is true, this method checks that mReaders = 0 (and
+ *  returns an appropriate error if not). When set to true together with
+ *  @a aCheckBusy, this lets reimplementations successfully call setBusy() after
+ *  getBaseAccessible() succeeds to lock the disk and make sure nobody is
+ *  referencing it until the remaining check steps are done. Note that in this
+ *  case, the reimplementation must enter the object lock before calling this
+ *  method and must not leave it before calling setBusy() to avoid race
+ *  condition.
+ *
+ *  @param aAccessError     On output, a null string indicates the hard disk is
+ *                          accessible, otherwise contains a message describing
+ *                          the reason of inaccessibility.
+ *  @param aCheckBusy       Whether to do the busy check or not.
+ *  @param aCheckReaders    Whether to do readers check or not.
  */
 HRESULT HardDisk::getBaseAccessible (Bstr &aAccessError,
-                                     bool aCheckBusy /* = false */)
+                                     bool aCheckBusy /* = false */,
+                                     bool aCheckReaders /* = false */)
 {
     AutoLock alock (this);
     CHECK_READY();
@@ -593,12 +605,18 @@ HRESULT HardDisk::getBaseAccessible (Bstr &aAccessError,
             aAccessError = Utf8StrFmt (
                 tr ("Hard disk '%ls' is being exclusively used by another task"),
                 toString().raw());
+            return S_OK;
         }
-        else if (mReaders > 0)
+    }
+
+    if (aCheckReaders)
+    {
+        if (mReaders > 0)
         {
             aAccessError = Utf8StrFmt (
                 tr ("Hard disk '%ls' is being used by another task (%d readers)"),
                 toString().raw(), mReaders);
+            return S_OK;
         }
     }
 
@@ -2309,10 +2327,10 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
     vrc = RTSemEventMultiCreate (&mStateCheckSem);
     ComAssertRCRet (vrc, E_FAIL);
 
-    /* go to Busy state to prevent any concurrent modifications
+    /* Reference the disk to prevent any concurrent modifications
      * after releasing the lock below (to unblock getters before 
-     * a lengthy operation) */
-    setBusy();
+     * a lengthy operation). */
+    addReader();
 
     alock.leave();
     
@@ -2414,8 +2432,8 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
     /* enter the lock again */
     alock.enter();
     
-    /* remove the busy flag */
-    clearBusy();
+    /* remove the reference */
+    releaseReader();
     
     if (FAILED (rc) || VBOX_FAILURE (vrc) || !errMsg.isNull())
     {
@@ -3908,10 +3926,10 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
     vrc = RTSemEventMultiCreate (&mStateCheckSem);
     ComAssertRCRet (vrc, E_FAIL);
 
-    /* go to Busy state to prevent any concurrent modifications
+    /* Reference the disk to prevent any concurrent modifications
      * after releasing the lock below (to unblock getters before 
-     * a lengthy operation) */
-    setBusy();
+     * a lengthy operation). */
+    addReader();
 
     alock.leave();
     
@@ -4019,8 +4037,8 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
     /* enter the lock again */
     alock.enter();
     
-    /* remove the busy flag */
-    clearBusy();
+    /* remove the reference */
+    releaseReader();
     
     if (FAILED (rc) || VBOX_FAILURE (vrc) || !errMsg.isNull())
     {
