@@ -4885,7 +4885,7 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
         }
 
         /* snapshotFolder (optional) */
-        if (mUserData->mSnapshotFolder)
+        if (!mUserData->mSnapshotFolder.isEmpty())
             CFGLDRSetBSTR (machineNode, "snapshotFolder", mUserData->mSnapshotFolder);
         else
             CFGLDRDeleteAttribute (machineNode, "snapshotFolder");
