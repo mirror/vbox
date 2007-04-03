@@ -38,7 +38,7 @@ typedef struct
 
 /* OS/2 2.0 Information Header Format. */
 typedef struct
-{  
+{
     Bit32u      Size;           /* Size of Remianing Header   */
     Bit32u      Width;          /* Width of Bitmap in Pixels        */
     Bit32u      Height;         /* Height of Bitmap in Pixels       */
@@ -138,7 +138,7 @@ unsigned char get_mode()
   ASM_START
     push bp
     mov  bp, sp
-  
+
       push bx
 
       mov  ax, #0x0F00
@@ -160,7 +160,7 @@ void set_mode(mode)
   ASM_START
     push bp
     mov  bp, sp
-  
+
       push ax
 
       mov  ah, #0
@@ -168,7 +168,7 @@ void set_mode(mode)
       int  #0x10
 
       pop  ax
-  
+
     pop  bp
   ASM_END
   }
@@ -183,7 +183,7 @@ Bit16u vesa_set_mode(mode)
   ASM_START
     push bp
     mov  bp, sp
-  
+
       push bx
 
       mov  ax, #0x4f02
@@ -191,7 +191,7 @@ Bit16u vesa_set_mode(mode)
       int  #0x10
 
       pop  bx
-  
+
     pop  bp
   ASM_END
 }
@@ -254,9 +254,9 @@ ASM_START
     out 0x40, al
     out 0x40, al
 
-    /* 
+    /*
      * Reinitialize the tick and rollover counts since we've
-     * screwed them up by running the timer at 1000HZ for a while. 
+     * screwed them up by running the timer at 1000HZ for a while.
      */
     pushad
     push ds
@@ -283,8 +283,8 @@ Bit8u wait(ms)
     Bit32u prev_ticks, t;
     Bit8u scan_code = 0;
 
-    /* 
-     * The 0:046c wraps around at 'midnight' according to a 18.2Hz clock. 
+    /*
+     * The 0:046c wraps around at 'midnight' according to a 18.2Hz clock.
      * We also have to be careful about interrupt storms.
      */
 ASM_START
@@ -328,7 +328,7 @@ void write_pixel(x,y,color)
   ASM_START
     push bp
     mov  bp, sp
-  
+
       push ax
       push bx
       push cx
@@ -345,7 +345,7 @@ void write_pixel(x,y,color)
       pop  cx
       pop  bx
       pop  ax
-  
+
     pop  bp
   ASM_END
   }
@@ -529,7 +529,7 @@ void vesa_set_bank(bank)
   ASM_START
     push bp
     mov  bp, sp
-  
+
       push bx
       push dx
 
@@ -540,7 +540,7 @@ void vesa_set_bank(bank)
 
       pop  dx
       pop  bx
-  
+
     pop  bp
   ASM_END
 }
@@ -967,20 +967,20 @@ show_bmp:
         if (is_fade_in)
         {
             scode = fade_in(pal_seg, palette_size);
-            if (scode)
+            if (scode && scan_code != F12_SCAN_CODE)
                 scan_code = scode;
         }
 
         // Wait (interval in milliseconds)
         scode = wait(logo_time);
-        if (scode)
+        if (scode && scan_code != F12_SCAN_CODE)
             scan_code = scode;
 
         // Fade out
         if (is_fade_out)
         {
             scode = fade_out(pal_seg, palette_size);
-            if (scode)
+            if (scode && scan_code != F12_SCAN_CODE)
                 scan_code = scode;
         }
     }
@@ -1026,12 +1026,16 @@ done:
             if (uBootMenu == 2)
                 printf("Press F12 to select boot device.");
 
-            // Wait for timeout or keystroke
-            for (i = 0; i < F12_WAIT_TIME; i++)
+            // if the user has pressed F12 don't wait here
+            if ( scan_code != F12_SCAN_CODE )
             {
-                scan_code = wait(1);
-                if (scan_code)
-                    break;
+                // Wait for timeout or keystroke
+                for (i = 0; i < F12_WAIT_TIME; i++)
+                {
+                    scan_code = wait(1);
+                    if (scan_code)
+                        break;
+                }
             }
         }
 
@@ -1065,6 +1069,8 @@ done:
             ASM_END
 
             // Show menu
+            printf("\n");
+            printf("VirtualBox temporary boot device selection\n");
             printf("\n");
             printf(" 1) Floppy\n");
             printf(" 2) Hard Disk\n");
