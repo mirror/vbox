@@ -670,6 +670,7 @@ int32_t patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t size, RTHCUINTP
 
 #define PATMREAD_RAWCODE        1  /* read code as-is */
 #define PATMREAD_ORGCODE        2  /* read original guest opcode bytes; not the patched bytes */
+#define PATMREAD_NOCHECK        4  /* don't check for patch conflicts */
 
 /*
  * Private structure used during disassembly

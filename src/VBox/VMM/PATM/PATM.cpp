@@ -540,7 +540,8 @@ int32_t patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t size, RTHCUINTP
         if (size == 0)
             return VINF_SUCCESS;
 #ifdef VBOX_STRICT
-        if (!(pDisInfo->pPatchInfo->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER)))
+        if (    !(pDisInfo->pPatchInfo->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER))
+            &&  !(pDisInfo->fReadFlags & PATMREAD_NOCHECK))
         {
             Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, pSrc, NULL) == false);
             Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, pSrc+size-1, NULL) == false);
@@ -4366,7 +4367,7 @@ static uint32_t patmGetInstrSize(PVM pVM, PPATCHINFO pPatch, RTGCPTR pInstrGC)
         uint32_t    opsize;
 
         cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, pPatch, &cpu, pInstrGC, pInstrHC, &opsize, NULL);
+        disret = PATMR3DISInstr(pVM, pPatch, &cpu, pInstrGC, pInstrHC, &opsize, NULL, PATMREAD_ORGCODE | PATMREAD_NOCHECK);
         if (disret)
             return opsize;
     }
