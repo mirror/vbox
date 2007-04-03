@@ -135,8 +135,9 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 static void rtThreadNativeMain(void *pvArg, wait_result_t Ignored)
 {
     const thread_t Self = current_thread();
+    PRTTHREADINT pThread = (PRTTHREADINT)pvArg;
 
-    rtThreadMain((PRTTHREADINT)pvArg, (RTNATIVETHREAD)Self);
+    rtThreadMain(pThread, (RTNATIVETHREAD)Self, &pThread->szName[0]);
 
     kern_return_t kr = thread_terminate(Self);
     AssertFatalMsgFailed(("kr=%d\n", kr));
