@@ -817,7 +817,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             }
             if (pIn->cPages <= 0 || !pIn->pvR3)
             {
-                dprintf(("SUP_IOCTL_PINPAGES: Illegal request %p %d\n", (void *)pIn->pvR3, pIn->cb));
+                dprintf(("SUP_IOCTL_PINPAGES: Illegal request %p %d\n", (void *)pIn->pvR3, pIn->cPages));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
             if ((unsigned)RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cPages]) > cbOut)
@@ -1752,8 +1752,8 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
-    dprintf(("SUPR0LockMem: pSession=%p pvR3=%p cb=%d paPages=%p\n",
-             pSession, (void *)pvR3, cb, paPages));
+    dprintf(("SUPR0LockMem: pSession=%p pvR3=%p cPages=%d paPages=%p\n",
+             pSession, (void *)pvR3, cPages, paPages));
 
     /*
      * Verify input.
@@ -1856,7 +1856,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
-    dprintf(("SUPR0ContAlloc: pSession=%p cb=%d ppvR0=%p ppvR3=%p pHCPhys=%p\n", pSession, cb, ppvR0, ppvR3, pHCPhys));
+    dprintf(("SUPR0ContAlloc: pSession=%p cPages=%d ppvR0=%p ppvR3=%p pHCPhys=%p\n", pSession, cPages, ppvR0, ppvR3, pHCPhys));
 
     /*
      * Validate input.
@@ -1870,7 +1870,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     }
     if (cPages == 0 || cPages >= 256)
     {
-        dprintf(("Illegal request cb=%d, must be greater than 64 and smaller than PAGE_SIZE*256\n", cb));
+        dprintf(("Illegal request cPages=%d, must be greater than 0 and smaller than 256\n", cPages));
         return SUPDRV_ERR_INVALID_PARAM;
     }
 
