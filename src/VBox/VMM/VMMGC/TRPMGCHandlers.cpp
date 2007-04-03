@@ -123,6 +123,7 @@ __END_DECLS
 static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
 {
     uint32_t uOldActiveVector = pVM->trpm.s.uActiveVector;
+    NOREF(uOldActiveVector);
 
     /* Reset trap? */
     if (    rc != VINF_EM_RAW_GUEST_TRAP
