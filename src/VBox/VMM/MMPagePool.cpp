@@ -116,7 +116,7 @@ void mmr3PagePoolTerm(PVM pVM)
         {
             int rc = SUPPageUnlock(pSubPool->pvPages);
             AssertMsgRC(rc, ("SUPPageUnlock(%p) failed with rc=%d\n", pSubPool->pvPages, rc));
-            rc = SUPPageFree(pSubPool->pvPages);
+            rc = SUPPageFree(pSubPool->pvPages, pSubPool->cPages);
             AssertMsgRC(rc, ("SUPPageFree(%p) failed with rc=%d\n", pSubPool->pvPages, rc));
             pSubPool->pvPages = NULL;
 
@@ -136,7 +136,7 @@ void mmr3PagePoolTerm(PVM pVM)
         PMMPAGESUBPOOL  pSubPool = pVM->mm.s.pPagePoolLow->pHead;
         while (pSubPool)
         {
-            int rc = SUPLowFree(pSubPool->pvPages);
+            int rc = SUPLowFree(pSubPool->pvPages, pSubPool->cPages);
             AssertMsgRC(rc, ("SUPPageFree(%p) failed with rc=%d\n", pSubPool->pvPages, rc));
             pSubPool->pvPages = NULL;
 
@@ -241,10 +241,10 @@ DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
         rc = SUPPageAlloc(cPages, &pSub->pvPages);
         if (VBOX_SUCCESS(rc))
         {
-            rc = SUPPageLock(pSub->pvPages, cPages << PAGE_SHIFT, paPhysPages);
+            rc = SUPPageLock(pSub->pvPages, cPages, paPhysPages);
             if (VBOX_FAILURE(rc))
             {
-                SUPPageFree(pSub->pvPages);
+                SUPPageFree(pSub->pvPages, cPages);
                 rc = VMSetError(pPool->pVM, rc, RT_SRC_POS,
                                 N_("Failed to lock host %zd bytes of memory (out of memory)"), (size_t)cPages << PAGE_SHIFT);
             }

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Darwin host:
- * Darwin implementations for support library
+ * SUPLib - FreeBSD Hosts,
  */
 
 /*
@@ -32,6 +30,7 @@
 #include <VBox/log.h>
 #include <iprt/path.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include "SUPLibInternal.h"
@@ -42,8 +41,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <mach/mach_port.h>
-#include <IOKit/IOKitLib.h>
 
 
 /*******************************************************************************
@@ -51,8 +48,6 @@
 *******************************************************************************/
 /** BSD Device name. */
 #define DEVICE_NAME     "/dev/vboxdrv"
-/** The IOClass key of the service (see SUPDrv-darwin.cpp / Info.plist). */
-#define IOCLASS_NAME    "org_virtualbox_SupDrv"
 
 
 /*******************************************************************************
@@ -60,10 +55,6 @@
 *******************************************************************************/
 /** Handle to the open device. */
 static int              g_hDevice = -1;
-/** The IOMasterPort. */
-static mach_port_t      g_MasterPort = 0;
-/** The current service connection. */
-static io_connect_t     g_Connection = NULL;
 
 
 int suplibOsInit(size_t cbReserve)
@@ -75,64 +66,13 @@ int suplibOsInit(size_t cbReserve)
         return VINF_SUCCESS;
 
     /*
-     * Open the IOKit client first - The first step is finding the service.
-     */
-    mach_port_t MasterPort;
-    kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort);
-    if (kr != kIOReturnSuccess)
-    {
-        LogRel(("IOMasterPort -> %d\n", kr));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    CFDictionaryRef ClassToMatch = IOServiceMatching(IOCLASS_NAME);
-    if (!ClassToMatch)
-    {
-        LogRel(("IOServiceMatching(\"%s\") failed.\n", IOCLASS_NAME));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /* Create an io_iterator_t for all instances of our drivers class that exist in the IORegistry. */
-    io_iterator_t Iterator;
-    kr = IOServiceGetMatchingServices(g_MasterPort, ClassToMatch, &Iterator);
-    if (kr != kIOReturnSuccess)
-    {
-        LogRel(("IOServiceGetMatchingServices returned %d\n", kr));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /* Get the first item in the iterator and release it. */
-    io_service_t ServiceObject = IOIteratorNext(Iterator);
-    IOObjectRelease(Iterator);
-    if (!ServiceObject)
-    {
-        LogRel(("Couldn't find any matches.\n"));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /*
-     * Open the service.
-     * This will cause the user client class in SUPDrv-darwin.cpp to be instantiated.
-     */
-    kr = IOServiceOpen(ServiceObject, mach_task_self(), 0, &g_Connection);
-    IOObjectRelease(ServiceObject);
-    if (kr != kIOReturnSuccess)
-    {
-        LogRel(("IOServiceOpen returned %d\n", kr));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /*
-     * Now, try open the BSD device.
+     * Try open the BSD device.
      */
     g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
     if (g_hDevice < 0)
     {
         int rc = errno;
         LogRel(("Failed to open \"%s\", errno=%d\n", rc));
-        kr = IOServiceClose(g_Connection);
-        if (kr != kIOReturnSuccess)
-            LogRel(("Warning: IOServiceClose(%p) returned %d\n", g_Connection, kr));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -155,21 +95,6 @@ int suplibOsTerm(void)
             AssertFailed();
         g_hDevice = -1;
     }
-
-    /*
-     * Close the connection to the IOService and destroy the connection handle.
-     */
-    if (g_Connection)
-    {
-        kern_return_t kr = IOServiceClose(g_Connection);
-        if (kr != kIOReturnSuccess)
-        {
-            LogRel(("Warning: IOServiceClose(%p) returned %d\n", g_Connection, kr));
-            AssertFailed();
-        }
-        g_Connection = NULL;
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -262,12 +187,9 @@ int suplibOSIOCtlFast(unsigned uFunction)
  */
 int suplibOsPageAlloc(size_t cPages, void **ppvPages)
 {
-    *ppvPages = valloc(cPages << PAGE_SHIFT);
+    *ppvPages = RTMemPageAllocZ(cPages << PAGE_SHIFT);
     if (*ppvPages)
-    {
-        memset(*ppvPages, 0, cPages << PAGE_SHIFT);
         return VINF_SUCCESS;
-    }
     return RTErrConvertFromErrno(errno);
 }
 
@@ -280,7 +202,7 @@ int suplibOsPageAlloc(size_t cPages, void **ppvPages)
  */
 int suplibOsPageFree(void *pvPages, size_t /* cPages */)
 {
-    free(pvPages);
+    RTMemPageFree(pvPages);
     return VINF_SUCCESS;
 }
 

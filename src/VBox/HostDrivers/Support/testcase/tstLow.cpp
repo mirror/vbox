@@ -81,7 +81,7 @@ int main(int argc, char **argv)
                             rcRet++;
                         }
             }
-            SUPLowFree(pvPages0);
+            SUPLowFree(pvPages0, ELEMENTS(aPages0));
         }
         else
         {
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
                                 rcRet++;
                             }
                 }
-                SUPLowFree(pvPages1);
+                SUPLowFree(pvPages1, cPages);
             }
             else
             {

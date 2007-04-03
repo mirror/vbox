@@ -364,8 +364,9 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
  *
  * @returns VBox status.
  * @param   pvPages     Pointer returned by SUPPageAlloc().
+ * @param   cPages      Number of x86 4KB pages to be freed.
  */
-SUPR3DECL(int) SUPPageFree(void *pvPages);
+SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
 
 /**
  * Locks down the physical memory backing a virtual memory
@@ -374,12 +375,11 @@ SUPR3DECL(int) SUPPageFree(void *pvPages);
  * @returns VBox status code.
  * @param   pvStart         Start of virtual memory range.
  *                          Must be page aligned.
- * @param   cbMemory        Number of bytes.
- *                          Must be page aligned.
+ * @param   cPages          Number of pages.
  * @param   paPages         Where to store the physical page addresses returned.
  *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
  */
-SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cbMemory, PSUPPAGE paPages);
+SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages);
 
 /**
  * Releases locked down pages.
@@ -398,10 +398,10 @@ SUPR3DECL(int) SUPPageUnlock(void *pvStart);
  *          *pHCPhys is set to the physical address of the memory.
  *          The returned memory must be freed using SUPContFree().
  * @returns NULL on failure.
- * @param   cb          Number of bytes to allocate.
+ * @param   cPages      Number of pages to allocate.
  * @param   pHCPhys     Where to store the physical address of the memory block.
  */
-SUPR3DECL(void *) SUPContAlloc(unsigned cb, PRTHCPHYS pHCPhys);
+SUPR3DECL(void *) SUPContAlloc(size_t cPages, PRTHCPHYS pHCPhys);
 
 /**
  * Allocated memory with page aligned memory with a contiguous and locked physical
@@ -412,7 +412,7 @@ SUPR3DECL(void *) SUPContAlloc(unsigned cb, PRTHCPHYS pHCPhys);
  *          If ppvR0 isn't NULL, *ppvR0 is set to the ring-0 mapping.
  *          The returned memory must be freed using SUPContFree().
  * @returns NULL on failure.
- * @param   cb          Number of bytes to allocate.
+ * @param   cPages      Number of pages to allocate.
  * @param   pR0Ptr      Where to store the ring-0 mapping of the allocation. (optional)
  * @param   pHCPhys     Where to store the physical address of the memory block.
  *
@@ -420,15 +420,16 @@ SUPR3DECL(void *) SUPContAlloc(unsigned cb, PRTHCPHYS pHCPhys);
  *          ring-3 mapping executable on WIN64. This is a serious problem in regard to
  *          the world switchers.
  */
-SUPR3DECL(void *) SUPContAlloc2(unsigned cb, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys);
+SUPR3DECL(void *) SUPContAlloc2(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys);
 
 /**
  * Frees memory allocated with SUPContAlloc().
  *
  * @returns VBox status code.
- * @param   pv      Pointer to the memory block which should be freed.
+ * @param   pv          Pointer to the memory block which should be freed.
+ * @param   cPages      Number of pages to be freed.
  */
-SUPR3DECL(int) SUPContFree(void *pv);
+SUPR3DECL(int) SUPContFree(void *pv, size_t cPages);
 
 /**
  * Allocated non contiguous physical memory below 4GB.
@@ -442,15 +443,16 @@ SUPR3DECL(int) SUPContFree(void *pv);
  * @param   ppvPagesR0  Where to store the ring-0 pointer to the allocated memory. optional.
  * @param   paPages     Where to store the physical addresses of the individual pages.
  */
-SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages);
+SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages);
 
 /**
  * Frees memory allocated with SUPLowAlloc().
  *
  * @returns VBox status code.
- * @param   pv      Pointer to the memory block which should be freed.
+ * @param   pv          Pointer to the memory block which should be freed.
+ * @param   cPages      Number of pages to be freed.
  */
-SUPR3DECL(int) SUPLowFree(void *pv);
+SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages);
 
 /**
  * Load a module into R0 HC.
@@ -549,9 +551,9 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName);
 
-SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cb, PSUPPAGE paPages);
+SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PSUPPAGE paPages);
 SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3);
-SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
+SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
 SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
 SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPages);
 SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);

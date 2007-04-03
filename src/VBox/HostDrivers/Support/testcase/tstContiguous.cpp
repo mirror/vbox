@@ -48,17 +48,17 @@ int main(int argc, char **argv)
          * Allocate a bit of contiguous memory.
          */
         RTHCPHYS HCPhys;
-        void *pv = SUPContAlloc(PAGE_SIZE * 8 + 1, &HCPhys);
+        void *pv = SUPContAlloc(8, &HCPhys);
         rcRet += pv == NULL || HCPhys == 0;
         if (pv && HCPhys)
         {
-            memset(pv, 0xff, PAGE_SIZE * 8 + 1);
-            pv = SUPContAlloc(PAGE_SIZE * 5 + 2, &HCPhys);
+            memset(pv, 0xff, PAGE_SIZE * 8);
+            pv = SUPContAlloc(5, &HCPhys);
             rcRet += pv == NULL || HCPhys == 0;
             if (pv && HCPhys)
             {
-                memset(pv, 0x7f, PAGE_SIZE * 5 + 2);
-                rc = SUPContFree(pv);
+                memset(pv, 0x7f, PAGE_SIZE * 5);
+                rc = SUPContFree(pv, 5);
                 rcRet += rc != 0;
                 if (rc)
                     RTPrintf("tstContiguous: SUPContFree failed! rc=%Vrc\n", rc);
@@ -74,6 +74,8 @@ int main(int argc, char **argv)
         rcRet += rc != 0;
     }
 
+    /* useless since SUPContAlloc/SUPContFree use cPages now */
+#if 0
     /*
      * 2nd part
      */
@@ -106,6 +108,7 @@ int main(int argc, char **argv)
             rcRet += rc != 0;
         }
     }
+#endif
 
     return rcRet;
 }

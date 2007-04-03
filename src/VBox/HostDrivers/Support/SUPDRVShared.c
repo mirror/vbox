@@ -815,23 +815,23 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
                          pIn->u32Cookie,  pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
                 return SUPDRV_ERR_INVALID_MAGIC;
             }
-            if (pIn->cb <= 0 || !pIn->pvR3)
+            if (pIn->cPages <= 0 || !pIn->pvR3)
             {
                 dprintf(("SUP_IOCTL_PINPAGES: Illegal request %p %d\n", (void *)pIn->pvR3, pIn->cb));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
-            if ((unsigned)RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cb >> PAGE_SHIFT]) > cbOut)
+            if ((unsigned)RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cPages]) > cbOut)
             {
                 dprintf(("SUP_IOCTL_PINPAGES: Output buffer is too small! %d required %d passed in.\n",
-                         RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cb >> PAGE_SHIFT]), cbOut));
+                         RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cPages]), cbOut));
                 return SUPDRV_ERR_INVALID_PARAM;
             }
 
             /*
              * Execute.
              */
-            *pcbReturned = RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cb >> PAGE_SHIFT]);
-            rc = SUPR0LockMem(pSession, pIn->pvR3, pIn->cb, &pOut->aPages[0]);
+            *pcbReturned = RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cPages]);
+            rc = SUPR0LockMem(pSession, pIn->pvR3, pIn->cPages, &pOut->aPages[0]);
             if (rc)
                 *pcbReturned = 0;
             return rc;
@@ -893,7 +893,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /*
              * Execute.
              */
-            rc = SUPR0ContAlloc(pSession, pIn->cb, &pOut->pvR0, &pOut->pvR3, &pOut->HCPhys);
+            rc = SUPR0ContAlloc(pSession, pIn->cPages, &pOut->pvR0, &pOut->pvR3, &pOut->HCPhys);
             if (!rc)
                 *pcbReturned = sizeof(*pOut);
             return rc;
@@ -1748,7 +1748,7 @@ SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const 
  * @param   cb          Size of the memory range to lock.
  *                      This must be page aligned.
  */
-SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cb, PSUPPAGE paPages)
+SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PSUPPAGE paPages)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
@@ -1761,11 +1761,6 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cb, 
     if (RT_ALIGN_R3PT(pvR3, PAGE_SIZE, RTR3PTR) != pvR3 || !pvR3)
     {
         dprintf(("pvR3 (%p) must be page aligned and not NULL!\n", (void *)pvR3));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
-    if (RT_ALIGN_Z(cb, PAGE_SIZE) != cb)
-    {
-        dprintf(("cb (%u) must be page aligned!\n", cb));
         return SUPDRV_ERR_INVALID_PARAM;
     }
     if (!paPages)
@@ -1814,7 +1809,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cb, 
     Mem.pvR0    = NULL;
     Mem.pvR3    = pvR3;
     Mem.eType   = MEMREF_TYPE_LOCKED;
-    Mem.cb      = cb;
+    Mem.cb      = cPages << PAGE_SHIFT;
     rc = supdrvOSLockMemOne(&Mem, paPages);
     if (rc)
         return rc;
@@ -1857,7 +1852,7 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
  * @param   ppvR3       Where to put the address of Ring-3 mapping the allocated memory.
  * @param   pHCPhys     Where to put the physical address of allocated memory.
  */
-SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys)
+SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
@@ -1873,7 +1868,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppv
         return SUPDRV_ERR_INVALID_PARAM;
 
     }
-    if (cb <= 64 || cb >= PAGE_SIZE * 256)
+    if (cPages == 0 || cPages >= 256)
     {
         dprintf(("Illegal request cb=%d, must be greater than 64 and smaller than PAGE_SIZE*256\n", cb));
         return SUPDRV_ERR_INVALID_PARAM;
@@ -1883,7 +1878,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppv
     /*
      * Let IPRT do the job.
      */
-    rc = RTR0MemObjAllocCont(&Mem.MemObj, cb, true /* executable R0 mapping */);
+    rc = RTR0MemObjAllocCont(&Mem.MemObj, cPages << PAGE_SHIFT, true /* executable R0 mapping */);
     if (RT_SUCCESS(rc))
     {
         int rc2;
@@ -1916,7 +1911,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppv
     Mem.pvR0    = NULL;
     Mem.pvR3    = NIL_RTR3PTR;
     Mem.eType   = MEMREF_TYPE_CONT;
-    Mem.cb      = cb;
+    Mem.cb      = cPages << PAGE_SHIFT;
     rc = supdrvOSContAllocOne(&Mem, ppvR0, ppvR3, pHCPhys);
     if (rc)
         return rc;
