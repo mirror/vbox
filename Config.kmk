@@ -161,7 +161,7 @@ VBOX_WITH_INSTALLER = 1
 # enable VRDP server
 VBOX_WITH_VRDP = 1
 # enable new multiconnection code
-# VBOX_WITH_VRDP_MC = 1
+VBOX_WITH_VRDP_MC = 1
 # build VRDP authentication modules
 VBOX_WITH_VRDP_AUTHMOD = 1
 # build enhanced version of rdesktop
