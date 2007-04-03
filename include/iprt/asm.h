@@ -2898,8 +2898,8 @@ DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint3
                            "1" (0));
     return u64Result;
 #  else
-    uint32_t dummy;
-    uint64_t u64D;
+    uint32_t u32Dummy;
+    uint64_t u64Result;
     __asm__ __volatile__("mull %%ecx       \n\t" /* eax = u64Lo.lo = (u64A.lo * u32B).lo
                                                     edx = u64Lo.hi = (u64A.lo * u32B).hi */
                          "xchg %%eax,%%esi \n\t" /* esi = u64Lo.lo
@@ -2914,17 +2914,17 @@ DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint3
                          "adcl $0,%%edx    \n\t" /* u64Hi.hi += carry */
                          "divl %%ecx       \n\t" /* eax = u64Hi / u32C
                                                     edx = u64Hi % u32C */
-                         "movl %%eax,%%edi \n\t" /* edi = u64D.hi = u64Hi / u32C */
+                         "movl %%eax,%%edi \n\t" /* edi = u64Result.hi = u64Hi / u32C */
                          "movl %%esi,%%eax \n\t" /* eax = u64Lo.lo */
-                         "divl %%ecx       \n\t" /* u64D.lo */
-                         "movl %%edi,%%edx \n\t" /* u64D.hi */
-                         : "=A"(u64D),
-                           "=S"(dummy), "=D"(dummy)
+                         "divl %%ecx       \n\t" /* u64Result.lo */
+                         "movl %%edi,%%edx \n\t" /* u64Result.hi */
+                         : "=A"(u64Result),
+                           "=S"(u32Dummy), "=D"(u32Dummy)
                          : "a"((uint32_t)u64A),
                            "S"((uint32_t)(u64A >> 32)),
                            "c"(u32B),
                            "D"(u32C));
-    return u64D;
+    return u64Result;
 #  endif
 # else
     RTUINT64U   u;
