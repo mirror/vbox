@@ -4744,7 +4744,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Allocate the VRAM.
      */
-    /** @todo freeing of the VRAM. */
     rc = SUPPageAlloc(pData->vram_size >> PAGE_SHIFT, (void **)&pData->vram_ptrHC);
     if (VBOX_FAILURE(rc))
     {
@@ -4985,6 +4984,17 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         pData->pu8VBEExtraData = NULL;
     }
 #endif
+
+    /*
+     * Allocate the VRAM.
+     */
+    int rc = SUPPageFree(pData->vram_ptrHC, pData->vram_size >> PAGE_SHIFT);
+    if (VBOX_FAILURE(rc))
+    {
+        AssertMsgFailed(("SUPPageFree(%p, %#x) -> %d\n", pData->vram_ptrHC, pData->vram_size, rc));
+        return rc;
+    }
+    pData->vram_ptrHC = NULL;
 
     return VINF_SUCCESS;
 }
