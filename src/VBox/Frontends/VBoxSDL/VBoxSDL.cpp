@@ -128,7 +128,6 @@ enum TitlebarMode
 *******************************************************************************/
 static bool    UseAbsoluteMouse(void);
 static void    ResetKeys(void);
-static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev);
 static void    ProcessKey(SDL_KeyboardEvent *ev);
 static void    InputGrabStart(void);
 static void    InputGrabEnd(void);
@@ -2585,7 +2584,7 @@ static bool UseAbsoluteMouse(void)
  * @returns XT scancode
  * @param   ev SDL scancode
  */
-static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
+static uint16_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
 {
     const SDLKey sym = ev->keysym.sym;
     Log(("SDL key event: sym=%d scancode=%#x unicode=%#x\n",
@@ -2632,9 +2631,9 @@ static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
         case SDLK_LEFTBRACKET:      return 0x1a;
         case SDLK_RIGHTBRACKET:     return 0x1b;
         case SDLK_RETURN:           return 0x1c;
-        case SDLK_KP_ENTER:         return 0x1c | 0x80;
+        case SDLK_KP_ENTER:         return 0x1c | 0x100;
         case SDLK_LCTRL:            return 0x1d;
-        case SDLK_RCTRL:            return 0x1d | 0x80;
+        case SDLK_RCTRL:            return 0x1d | 0x100;
         case SDLK_a:                return 0x1e;
         case SDLK_s:                return 0x1f;
         case SDLK_d:                return 0x20;
@@ -2670,7 +2669,7 @@ static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
         case SDLK_PRINT:            return 0x37; /* fixme */
         case SDLK_LALT:             return 0x38;
         case SDLK_MODE: /* alt gr*/
-        case SDLK_RALT:             return 0x38 | 0x80;
+        case SDLK_RALT:             return 0x38 | 0x100;
         case SDLK_SPACE:            return 0x39;
         case SDLK_CAPSLOCK:         return 0x3a;
         case SDLK_F1:               return 0x3b;
@@ -2687,39 +2686,39 @@ static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
         case SDLK_NUMLOCK:          return 0x45;
         case SDLK_SCROLLOCK:        return 0x46;
         case SDLK_KP7:              return 0x47;
-        case SDLK_HOME:             return 0x47 | 0x80;
+        case SDLK_HOME:             return 0x47 | 0x100;
         case SDLK_KP8:              return 0x48;
-        case SDLK_UP:               return 0x48 | 0x80;
+        case SDLK_UP:               return 0x48 | 0x100;
         case SDLK_KP9:              return 0x49;
-        case SDLK_PAGEUP:           return 0x49 | 0x80;
+        case SDLK_PAGEUP:           return 0x49 | 0x100;
         case SDLK_KP_MINUS:         return 0x4a;
         case SDLK_KP4:              return 0x4b;
-        case SDLK_LEFT:             return 0x4b | 0x80;
+        case SDLK_LEFT:             return 0x4b | 0x100;
         case SDLK_KP5:              return 0x4c;
         case SDLK_KP6:              return 0x4d;
-        case SDLK_RIGHT:            return 0x4d | 0x80;
+        case SDLK_RIGHT:            return 0x4d | 0x100;
         case SDLK_KP_PLUS:          return 0x4e;
         case SDLK_KP1:              return 0x4f;
-        case SDLK_END:              return 0x4f | 0x80;
+        case SDLK_END:              return 0x4f | 0x100;
         case SDLK_KP2:              return 0x50;
-        case SDLK_DOWN:             return 0x50 | 0x80;
+        case SDLK_DOWN:             return 0x50 | 0x100;
         case SDLK_KP3:              return 0x51;
-        case SDLK_PAGEDOWN:         return 0x51 | 0x80;
+        case SDLK_PAGEDOWN:         return 0x51 | 0x100;
         case SDLK_KP0:              return 0x52;
-        case SDLK_INSERT:           return 0x52 | 0x80;
+        case SDLK_INSERT:           return 0x52 | 0x100;
         case SDLK_KP_PERIOD:        return 0x53;
-        case SDLK_DELETE:           return 0x53 | 0x80;
+        case SDLK_DELETE:           return 0x53 | 0x100;
         case SDLK_SYSREQ:           return 0x54;
         case SDLK_F11:              return 0x57;
         case SDLK_F12:              return 0x58;
         case SDLK_F13:              return 0x5b;
         case SDLK_LMETA:
-        case SDLK_LSUPER:           return 0x5b | 0x80;
+        case SDLK_LSUPER:           return 0x5b | 0x100;
         case SDLK_F14:              return 0x5c;
         case SDLK_RMETA:
-        case SDLK_RSUPER:           return 0x5c | 0x80;
+        case SDLK_RSUPER:           return 0x5c | 0x100;
         case SDLK_F15:              return 0x5d;
-        case SDLK_MENU:             return 0x5d | 0x80;
+        case SDLK_MENU:             return 0x5d | 0x100;
 #if 0
         case SDLK_CLEAR:            return 0x;
         case SDLK_KP_EQUALS:        return 0x;
@@ -2744,79 +2743,77 @@ static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
  * @returns XT scancode
  * @param   ev SDL scancode
  */
-static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
+static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
 {
-    int keycode;
-
     // start with the scancode determined by SDL
-    keycode = ev->keysym.scancode;
+    int keycode = ev->keysym.scancode;
 
 #ifdef __LINUX__
     // workaround for SDL keyboard translation issues on Linux
     // keycodes > 0x80 are sent as 0xe0 keycode
-    static const uint8_t x_keycode_to_pc_keycode[61] =
+    static const uint16_t x_keycode_to_pc_keycode[61] =
     {
-       0xc7,      /*  97  Home   */
-       0xc8,      /*  98  Up     */
-       0xc9,      /*  99  PgUp   */
-       0xcb,      /* 100  Left   */
-       0x4c,      /* 101  KP-5   */
-       0xcd,      /* 102  Right  */
-       0xcf,      /* 103  End    */
-       0xd0,      /* 104  Down   */
-       0xd1,      /* 105  PgDn   */
-       0xd2,      /* 106  Ins    */
-       0xd3,      /* 107  Del    */
-       0x9c,      /* 108  Enter  */
-       0x9d,      /* 109  Ctrl-R */
-       0x0,       /* 110  Pause  */
-       0xb7,      /* 111  Print  */
-       0xb5,      /* 112  Divide */
-       0xb8,      /* 113  Alt-R  */
-       0xc6,      /* 114  Break  */
-       0xdb,      /* 115  Win Left */
-       0xdc,      /* 116  Win Right */
-       0xdd,      /* 117  Win Menu */
-       0x0,       /* 118 */
-       0x0,       /* 119 */
-       0x70,      /* 120 Hiragana_Katakana */
-       0x0,       /* 121 */
-       0x0,       /* 122 */
-       0x73,      /* 123 backslash */
-       0x0,       /* 124 */
-       0x0,       /* 125 */
-       0x0,       /* 126 */
-       0x0,       /* 127 */
-       0x0,       /* 128 */
-       0x79,      /* 129 Henkan */
-       0x0,       /* 130 */
-       0x7b,      /* 131 Muhenkan */
-       0x0,       /* 132 */
-       0x7d,      /* 133 Yen */
-       0x0,       /* 134 */
-       0x0,       /* 135 */
-       0x47,      /* 136 KP_7 */
-       0x48,      /* 137 KP_8 */
-       0x49,      /* 138 KP_9 */
-       0x4b,      /* 139 KP_4 */
-       0x4c,      /* 140 KP_5 */
-       0x4d,      /* 141 KP_6 */
-       0x4f,      /* 142 KP_1 */
-       0x50,      /* 143 KP_2 */
-       0x51,      /* 144 KP_3 */
-       0x52,      /* 145 KP_0 */
-       0x53,      /* 146 KP_. */
-       0x47,      /* 147 KP_HOME */
-       0x48,      /* 148 KP_UP */
-       0x49,      /* 149 KP_PgUp */
-       0x4b,      /* 150 KP_Left */
-       0x4c,      /* 151 KP_ */
-       0x4d,      /* 152 KP_Right */
-       0x4f,      /* 153 KP_End */
-       0x50,      /* 154 KP_Down */
-       0x51,      /* 155 KP_PgDn */
-       0x52,      /* 156 KP_Ins */
-       0x53,      /* 157 KP_Del */
+       0x47|0x100,  /*  97  Home   */
+       0x48|0x100,  /*  98  Up     */
+       0x49|0x100,  /*  99  PgUp   */
+       0x4b|0x100,  /* 100  Left   */
+       0x4c,        /* 101  KP-5   */
+       0x4d|0x100,  /* 102  Right  */
+       0x4f|0x100,  /* 103  End    */
+       0x50|0x100,  /* 104  Down   */
+       0x51|0x100,  /* 105  PgDn   */
+       0x52|0x100,  /* 106  Ins    */
+       0x53|0x100,  /* 107  Del    */
+       0x1c|0x100,  /* 108  Enter  */
+       0x1d|0x100,  /* 109  Ctrl-R */
+       0x0,         /* 110  Pause  */
+       0x37|0x100,  /* 111  Print  */
+       0x35|0x100,  /* 112  Divide */
+       0x38|0x100,  /* 113  Alt-R  */
+       0x46|0x100,  /* 114  Break  */
+       0x5b|0x100,  /* 115  Win Left */
+       0x5c|0x100,  /* 116  Win Right */
+       0x5d|0x100,  /* 117  Win Menu */
+       0x0,         /* 118 */
+       0x0,         /* 119 */
+       0x0,         /* 120 */
+       0xf1,        /* 121  Korean Hangul to Latin?? */
+       0xf2,        /* 122  Korean Hangul to Hanja?? */
+       0x0,         /* 123 */
+       0x0,         /* 124 */
+       0x0,         /* 125 */
+       0x0,         /* 126 */
+       0x0,         /* 127 */
+       0x0,         /* 128 */
+       0x79,        /* 129  Japanese Henkan */
+       0x0,         /* 130 */
+       0x7b,        /* 131  Japanese Muhenkan */
+       0x0,         /* 132 */
+       0x7d,        /* 133  Japanese Yen */
+       0x7e,        /* 134  Brazilian keypad */
+       0x0,         /* 135 */
+       0x47,        /* 136  KP_7 */
+       0x48,        /* 137  KP_8 */
+       0x49,        /* 138  KP_9 */
+       0x4b,        /* 139  KP_4 */
+       0x4c,        /* 140  KP_5 */
+       0x4d,        /* 141  KP_6 */
+       0x4f,        /* 142  KP_1 */
+       0x50,        /* 143  KP_2 */
+       0x51,        /* 144  KP_3 */
+       0x52,        /* 145  KP_0 */
+       0x53,        /* 146  KP_. */
+       0x47,        /* 147  KP_HOME */
+       0x48,        /* 148  KP_UP */
+       0x49,        /* 149  KP_PgUp */
+       0x4b,        /* 150  KP_Left */
+       0x4c,        /* 151  KP_ */
+       0x4d,        /* 152  KP_Right */
+       0x4f,        /* 153  KP_End */
+       0x50,        /* 154  KP_Down */
+       0x51,        /* 155  KP_PgDn */
+       0x52,        /* 156  KP_Ins */
+       0x53,        /* 157  KP_Del */
     };
 
     if (keycode < 9)
@@ -2833,6 +2830,16 @@ static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         // apply conversion table
         keycode = x_keycode_to_pc_keycode[keycode - 97];
     }
+    else if (keycode == 208)
+    {
+        // Japanese Hiragana to Katakana
+        keycode = 0x70;
+    }
+    else if (keycode == 211)
+    {
+        // Japanese backslash/underscore and Brazilian backslash/question mark
+        keycode = 0x73;
+    }
     else
     {
         keycode = 0;
@@ -2840,7 +2847,7 @@ static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
 
 #elif defined(__DARWIN__)
     /* This is derived partially from SDL_QuartzKeys.h and partially from testing. */
-    static const uint8_t s_aMacToSet1[] =
+    static const uint16_t s_aMacToSet1[] =
     {
      /*  set-1            SDL_QuartzKeys.h    */
         0x1e,        /* QZ_a            0x00 */
@@ -2897,15 +2904,15 @@ static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         0x0e,        /* QZ_BACKSPACE    0x33 */
         0x9c,        /* QZ_IBOOK_ENTER  0x34 */
         0x01,        /* QZ_ESCAPE       0x35 */
-        0x5c|0x80,   /* QZ_RMETA        0x36 */
-        0x5b|0x80,   /* QZ_LMETA        0x37 */
+        0x5c|0x100,  /* QZ_RMETA        0x36 */
+        0x5b|0x100,  /* QZ_LMETA        0x37 */
         0x2a,        /* QZ_LSHIFT       0x38 */
         0x3a,        /* QZ_CAPSLOCK     0x39 */
         0x38,        /* QZ_LALT         0x3A */
         0x1d,        /* QZ_LCTRL        0x3B */
         0x36,        /* QZ_RSHIFT       0x3C */
-        0x38|0x80,   /* QZ_RALT         0x3D */
-        0x1d|0x80,   /* QZ_RCTRL        0x3E */
+        0x38|0x100,  /* QZ_RALT         0x3D */
+        0x1d|0x100,  /* QZ_RCTRL        0x3E */
            0,        /*                      */
            0,        /*                      */
         0x53,        /* QZ_KP_PERIOD    0x41 */
@@ -2918,8 +2925,8 @@ static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
            0,        /*                      */
            0,        /*                      */
            0,        /*                      */
-        0x35|0x80,   /* QZ_KP_DIVIDE    0x4B */
-        0x1c|0x80,   /* QZ_KP_ENTER     0x4C */
+        0x35|0x100,  /* QZ_KP_DIVIDE    0x4B */
+        0x1c|0x100,  /* QZ_KP_ENTER     0x4C */
            0,        /*                      */
         0x4a,        /* QZ_KP_MINUS     0x4E */
            0,        /*                      */
@@ -2948,29 +2955,29 @@ static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
            0,        /*                      */
         0x57,        /* QZ_F11          0x67 */
            0,        /*                      */
-        0x37|0x80,   /* QZ_PRINT / F13  0x69 */
+        0x37|0x100,  /* QZ_PRINT / F13  0x69 */
         0x63,        /* QZ_F16          0x6A */
         0x46,        /* QZ_SCROLLOCK    0x6B */
            0,        /*                      */
         0x44,        /* QZ_F10          0x6D */
-        0x5d|0x80,   /*                      */
+        0x5d|0x100,  /*                      */
         0x58,        /* QZ_F12          0x6F */
            0,        /*                      */
            0/* 0xe1,0x1d,0x45*/, /* QZ_PAUSE        0x71 */
-        0x52|0x80,   /* QZ_INSERT / HELP 0x72 */
-        0x47|0x80,   /* QZ_HOME         0x73 */
-        0x49|0x80,   /* QZ_PAGEUP       0x74 */
-        0x53|0x80,   /* QZ_DELETE       0x75 */
+        0x52|0x100,  /* QZ_INSERT / HELP 0x72 */
+        0x47|0x100,  /* QZ_HOME         0x73 */
+        0x49|0x100,   /* QZ_PAGEUP       0x74 */
+        0x53|0x100,  /* QZ_DELETE       0x75 */
         0x3e,        /* QZ_F4           0x76 */
-        0x4f|0x80,   /* QZ_END          0x77 */
+        0x4f|0x100,  /* QZ_END          0x77 */
         0x3c,        /* QZ_F2           0x78 */
-        0x51|0x80,   /* QZ_PAGEDOWN     0x79 */
+        0x51|0x100,  /* QZ_PAGEDOWN     0x79 */
         0x3b,        /* QZ_F1           0x7A */
-        0x4b|0x80,   /* QZ_LEFT         0x7B */
-        0x4d|0x80,   /* QZ_RIGHT        0x7C */
-        0x50|0x80,   /* QZ_DOWN         0x7D */
-        0x48|0x80,   /* QZ_UP           0x7E */
-        0x5e|0x80,   /* QZ_POWER        0x7F */ /* have different break key! */
+        0x4b|0x100,  /* QZ_LEFT         0x7B */
+        0x4d|0x100,  /* QZ_RIGHT        0x7C */
+        0x50|0x100,  /* QZ_DOWN         0x7D */
+        0x48|0x100,  /* QZ_UP           0x7E */
+        0x5e|0x100,  /* QZ_POWER        0x7F */ /* have different break key! */
     };
 
     if (keycode == 0)
@@ -2981,14 +2988,14 @@ static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
             case SDLK_LSHIFT:           keycode = 0x2a; break;
             case SDLK_RSHIFT:           keycode = 0x36; break;
             case SDLK_LCTRL:            keycode = 0x1d; break;
-            case SDLK_RCTRL:            keycode = 0x1d | 0x80; break;
+            case SDLK_RCTRL:            keycode = 0x1d | 0x100; break;
             case SDLK_LALT:             keycode = 0x38; break;
             case SDLK_MODE: /* alt gr */
-            case SDLK_RALT:             keycode = 0x38 | 0x80; break;
+            case SDLK_RALT:             keycode = 0x38 | 0x100; break;
             case SDLK_RMETA:
-            case SDLK_RSUPER:           keycode = 0x5c | 0x80; break;
+            case SDLK_RSUPER:           keycode = 0x5c | 0x100; break;
             case SDLK_LMETA:
-            case SDLK_LSUPER:           keycode = 0x5b | 0x80; break;
+            case SDLK_LSUPER:           keycode = 0x5b | 0x100; break;
             /* Sssumes normal key. */
             default:                    keycode = s_aMacToSet1[keycode]; break;
         }
@@ -3011,7 +3018,7 @@ static uint8_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
     RTPrintf("scancode=%#x -> %#x\n", ev->keysym.scancode, keycode);
 #endif
 
-#endif
+#endif /* __DARWIN__ */
     return keycode;
 }
 
@@ -3169,12 +3176,12 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
             return;
         }
 
-        case 0x2a:  /* Left Shift */
-        case 0x36:  /* Right Shift */
-        case 0x1d:  /* Left CTRL */
-        case 0x9d:  /* Right CTRL */
-        case 0x38:  /* Left ALT */
-        case 0xb8:  /* Right ALT */
+        case 0x2a:        /* Left Shift */
+        case 0x36:        /* Right Shift */
+        case 0x1d:        /* Left CTRL */
+        case 0x1d|0x100:  /* Right CTRL */
+        case 0x38:        /* Left ALT */
+        case 0x38|0x100:  /* Right ALT */
         {
             if (ev->type == SDL_KEYUP)
                 gaModifiersState[keycode] = 0;
@@ -3229,11 +3236,11 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
     /*
      * Now we send the event. Apply extended and release prefixes.
      */
-    if (keycode & 0x80)
+    if (keycode & 0x100)
         gKeyboard->PutScancode(0xe0);
 
-    gKeyboard->PutScancode(ev->type == SDL_KEYUP ? keycode | 0x80
-                                                 : keycode & 0x7f);
+    gKeyboard->PutScancode(ev->type == SDL_KEYUP ? (keycode & 0x7f) | 0x80
+                                                 : (keycode & 0x7f));
 }
 
 #ifdef __DARWIN__
