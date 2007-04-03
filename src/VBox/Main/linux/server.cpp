@@ -320,6 +320,7 @@ public:
              * (this must call the destructor) */
             nsrefcnt count = sInstance->Release();
             AssertMsg (count == 0, ("count=%d\n", count));
+            NOREF(count);
         }
 
         RTCritSectLeave (&sLock);
