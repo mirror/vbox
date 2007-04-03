@@ -496,7 +496,6 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
      */
     AssertPtr(pvStart);
     AssertMsg(RT_ALIGN_P(pvStart, PAGE_SIZE) == pvStart, ("pvStart (%p) must be page aligned\n", pvStart));
-    AssertMsg(RT_ALIGN_Z(cbMemory, PAGE_SIZE) == cbMemory, ("cbMemory (%#zx) must be page aligned\n", cbMemory));
     AssertPtr(paPages);
 
     /*
@@ -514,7 +513,6 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
         AssertCompile(sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
 
 #if 0
-        const size_t cPages = cbMemory >> PAGE_SHIFT;
         size_t cbOut = RT_OFFSETOF(SUPPINPAGES_OUT, aPages[cPages]);
         pOut = (PSUPPINPAGES_OUT)RTMemTmpAllocZ(cbOut);
         if (!pOut)
