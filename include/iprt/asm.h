@@ -2870,6 +2870,44 @@ DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
 
 
 /**
+ * Multiple a 64-bit by a 32-bit integer and divide the result by a 32-bit integer
+ * using a 96 bit intermediate result.
+ * 
+ * @returns (u64A * u32B) / u32C.
+ * @param   u64A    The 64-bit value.
+ * @param   u32B    The 32-bit value to multiple by A.
+ * @param   u32C    The 32-bit value to divide A*B by.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C);
+#else
+DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C)
+{
+# if RT_INLINE_ASM_GNU_STYLE && defined(__AMD64__)
+    uint64_t u64Result, u64Spill;
+    __asm__ __volatile__("mulq %2\n\t"
+                         "divq %3\n\t"
+                         : "=a" (u64Result), 
+                           "=d" (u64Spill)
+                         : "r" ((uint64_t)u32B),
+                           "r" ((uint64_t)u32C),
+                           "0" (u64A), 
+                           "1" (0));
+    return u64Result;
+# else
+    RTUINT64U   u;
+    uint64_t    u64Low = (uint64_t)(u64A & 0xffffffff) * u32B;
+    uint64_t    u64Hi  = (uint64_t)(u64A >> 32)        * u32B;
+    u64Hi  += (u64Low >> 32);
+    u.s.Hi = (uint32_t)(u64Hi / u32C);
+    u.s.Lo = (uint32_t)((((u64Hi % u32C) << 32) + (u64Low & 0xffffffff)) / u32C);
+    return u.u;
+# endif 
+}
+#endif 
+
+
+/**
  * Probes a byte pointer for read access.
  *
  * While the function will not fault if the byte is not read accessible,

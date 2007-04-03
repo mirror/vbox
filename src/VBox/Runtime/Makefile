@@ -100,6 +100,7 @@ RuntimeWin64ASM_SOURCES = \
 	win64/ASMGetDR3.asm \
 	win64/ASMGetDR6.asm \
 	win64/ASMGetDR7.asm \
+	win64/ASMMultU64ByU32DivByU32.asm \
 
 #
 # RuntimeR3 - Static Runtime for Ring-3 executables.
