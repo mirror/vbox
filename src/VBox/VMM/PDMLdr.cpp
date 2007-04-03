@@ -481,7 +481,7 @@ PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName
             else
             {
                 AssertRC(rc);
-                SUPPageFree(pModule->pvBits);
+                SUPPageFree(pModule->pvBits, cb >> PAGE_SHIFT);
             }
         }
         else

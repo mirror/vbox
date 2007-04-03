@@ -489,7 +489,7 @@ SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0)
 }
 
 
-SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cbMemory, PSUPPAGE paPages)
+SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
 {
     /*
      * Validate.
@@ -506,7 +506,7 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cbMemory, PSUPPAGE paPages)
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
     In.pvR3             = pvStart;
-    In.cb               = (uint32_t)cbMemory; AssertRelease(In.cb == cbMemory);
+    In.cPages           = cPages; AssertRelease(In.cPages == cPages);
     int rc;
     if (!g_u32FakeMode)
     {
@@ -529,14 +529,14 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cbMemory, PSUPPAGE paPages)
         /* a hack to save some time. */
         pOut = (PSUPPINPAGES_OUT)(void*)paPages;
         Assert(RT_OFFSETOF(SUPPINPAGES_OUT, aPages) == 0 && sizeof(paPages[0]) == sizeof(pOut->aPages[0]));
-        rc = suplibOsIOCtl(SUP_IOCTL_PINPAGES, &In, sizeof(In), pOut, RT_OFFSETOF(SUPPINPAGES_OUT, aPages[cbMemory >> PAGE_SHIFT]));
+        rc = suplibOsIOCtl(SUP_IOCTL_PINPAGES, &In, sizeof(In), pOut, RT_OFFSETOF(SUPPINPAGES_OUT, aPages[cPages]));
 #endif
     }
     else
     {
         /* fake a successfull result. */
         RTHCPHYS    Phys = (uintptr_t)pvStart + PAGE_SIZE * 1024;
-        unsigned    iPage = (unsigned)cbMemory >> PAGE_SHIFT;
+        unsigned    iPage = cPages;
         while (iPage-- > 0)
             paPages[iPage].Phys = Phys + (iPage << PAGE_SHIFT);
         rc = VINF_SUCCESS;
@@ -571,13 +571,13 @@ SUPR3DECL(int) SUPPageUnlock(void *pvStart)
 }
 
 
-SUPR3DECL(void *) SUPContAlloc(unsigned cb, PRTHCPHYS pHCPhys)
+SUPR3DECL(void *) SUPContAlloc(size_t cPages, PRTHCPHYS pHCPhys)
 {
-    return SUPContAlloc2(cb, NIL_RTR0PTR, pHCPhys);
+    return SUPContAlloc2(cPages, NIL_RTR0PTR, pHCPhys);
 }
 
 
-SUPR3DECL(void *) SUPContAlloc2(unsigned cb, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys)
+SUPR3DECL(void *) SUPContAlloc2(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys)
 {
     /*
      * Validate.
@@ -595,14 +595,14 @@ SUPR3DECL(void *) SUPContAlloc2(unsigned cb, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys)
     SUPCONTALLOC_IN     In;
     In.u32Cookie        = g_u32Cookie;
     In.u32SessionCookie = g_u32SessionCookie;
-    In.cb               = RT_ALIGN_32(cb, PAGE_SIZE);
+    In.cPages           = cPages;
     SUPCONTALLOC_OUT    Out;
     int rc;
     if (!g_u32FakeMode)
         rc = suplibOsIOCtl(SUP_IOCTL_CONT_ALLOC, &In, sizeof(In), &Out, sizeof(Out));
     else
     {
-        rc = SUPPageAlloc(In.cb >> PAGE_SHIFT, &Out.pvR3);
+        rc = SUPPageAlloc(In.cPages, &Out.pvR3);
         Out.HCPhys = (uintptr_t)Out.pvR3 + (PAGE_SHIFT * 1024);
         Out.pvR0 = (uintptr_t)Out.pvR3;
     }
@@ -618,7 +618,7 @@ SUPR3DECL(void *) SUPContAlloc2(unsigned cb, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys)
 }
 
 
-SUPR3DECL(int) SUPContFree(void *pv)
+SUPR3DECL(int) SUPContFree(void *pv, size_t cPages)
 {
     /*
      * Validate.
@@ -638,13 +638,13 @@ SUPR3DECL(int) SUPContFree(void *pv)
     if (!g_u32FakeMode)
         rc = suplibOsIOCtl(SUP_IOCTL_CONT_FREE, &In, sizeof(In), NULL, 0);
     else
-        rc = SUPPageFree(pv);
+        rc = SUPPageFree(pv, cPages);
 
     return rc;
 }
 
 
-SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages)
+SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages)
 {
     /*
      * Validate.
@@ -706,7 +706,7 @@ SUPR3DECL(int) SUPLowAlloc(unsigned cPages, void **ppvPages, PRTR0PTR ppvPagesR0
 }
 
 
-SUPR3DECL(int) SUPLowFree(void *pv)
+SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages)
 {
     /*
      * Validate.
@@ -726,7 +726,7 @@ SUPR3DECL(int) SUPLowFree(void *pv)
     if (!g_u32FakeMode)
         rc = suplibOsIOCtl(SUP_IOCTL_LOW_FREE, &In, sizeof(In), NULL, 0);
     else
-        rc = SUPPageFree(pv);
+        rc = SUPPageFree(pv, cPages);
 
     return rc;
 }
@@ -754,7 +754,7 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages)
 }
 
 
-SUPR3DECL(int) SUPPageFree(void *pvPages)
+SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages)
 {
     /*
      * Validate.
@@ -766,7 +766,7 @@ SUPR3DECL(int) SUPPageFree(void *pvPages)
     /*
      * Call OS specific worker.
      */
-    return suplibOsPageFree(pvPages);
+    return suplibOsPageFree(pvPages, cPages);
 }
 
 

@@ -659,7 +659,7 @@ int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
  * @returns VBox status code.
  * @param   pvPages     Pointer to pages.
  */
-int     suplibOsPageFree(void *pvPages)
+int     suplibOsPageFree(void *pvPages, size_t /* cPages */)
 {
     if (VirtualFree(pvPages, 0, MEM_RELEASE))
         return VINF_SUCCESS;

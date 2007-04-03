@@ -46,7 +46,7 @@ int main(int argc, char **argv)
         if (!rc)
         {
             memset(pv, 0xff, PAGE_SIZE);
-            rc = SUPPageFree(pv);
+            rc = SUPPageFree(pv, 1);
             cErrors += rc != 0;
             if (rc)
                 RTPrintf("tstPage: SUPPageFree() failed rc=%d\n", rc);
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
         if (!rc)
         {
             memset(pv, 0xfe, 1023 << PAGE_SHIFT);
-            rc = SUPPageFree(pv);
+            rc = SUPPageFree(pv, 1023);
             cErrors += rc != 0;
             if (rc)
                 RTPrintf("tstPage: SUPPageFree() failed rc=%d\n", rc);

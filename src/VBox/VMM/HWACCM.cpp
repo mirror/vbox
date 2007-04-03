@@ -97,7 +97,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
 
     /** @todo Make sure both pages are either not accessible or readonly! */
     /* Allocate one page for VMXON. */
-    pVM->hwaccm.s.vmx.pVMXON = SUPContAlloc(PAGE_SIZE, &pVM->hwaccm.s.vmx.pVMXONPhys);
+    pVM->hwaccm.s.vmx.pVMXON = SUPContAlloc(1, &pVM->hwaccm.s.vmx.pVMXONPhys);
     if (pVM->hwaccm.s.vmx.pVMXON == 0)
     {
         AssertMsgFailed(("SUPContAlloc failed!!\n"));
@@ -106,7 +106,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     memset(pVM->hwaccm.s.vmx.pVMXON, 0, PAGE_SIZE);
 
     /* Allocate one page for the VM control structure (VMCS). */
-    pVM->hwaccm.s.vmx.pVMCS = SUPContAlloc(PAGE_SIZE, &pVM->hwaccm.s.vmx.pVMCSPhys);
+    pVM->hwaccm.s.vmx.pVMCS = SUPContAlloc(1, &pVM->hwaccm.s.vmx.pVMCSPhys);
     if (pVM->hwaccm.s.vmx.pVMCS == 0)
     {
         AssertMsgFailed(("SUPContAlloc failed!!\n"));
@@ -121,7 +121,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     pVM->hwaccm.s.svm.pVMCBPhys   = pVM->hwaccm.s.vmx.pVMCSPhys;
 
     /* Allocate one page for the SVM host control structure (used for vmsave/vmload). */
-    pVM->hwaccm.s.svm.pVMCBHost = SUPContAlloc(PAGE_SIZE, &pVM->hwaccm.s.svm.pVMCBHostPhys);
+    pVM->hwaccm.s.svm.pVMCBHost = SUPContAlloc(1, &pVM->hwaccm.s.svm.pVMCBHostPhys);
     if (pVM->hwaccm.s.svm.pVMCBHost == 0)
     {
         AssertMsgFailed(("SUPContAlloc failed!!\n"));
@@ -130,7 +130,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     memset(pVM->hwaccm.s.svm.pVMCBHost, 0, PAGE_SIZE);
 
     /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
-    pVM->hwaccm.s.svm.pIOBitmap = SUPContAlloc(PAGE_SIZE*3, &pVM->hwaccm.s.svm.pIOBitmapPhys);
+    pVM->hwaccm.s.svm.pIOBitmap = SUPContAlloc(3, &pVM->hwaccm.s.svm.pIOBitmapPhys);
     if (pVM->hwaccm.s.svm.pIOBitmap == 0)
     {
         AssertMsgFailed(("SUPContAlloc failed!!\n"));
@@ -140,7 +140,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     memset(pVM->hwaccm.s.svm.pIOBitmap, 0xff, PAGE_SIZE*3);
 
     /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
-    pVM->hwaccm.s.svm.pMSRBitmap = SUPContAlloc(PAGE_SIZE*2, &pVM->hwaccm.s.svm.pMSRBitmapPhys);
+    pVM->hwaccm.s.svm.pMSRBitmap = SUPContAlloc(2, &pVM->hwaccm.s.svm.pMSRBitmapPhys);
     if (pVM->hwaccm.s.svm.pMSRBitmap == 0)
     {
         AssertMsgFailed(("SUPContAlloc failed!!\n"));
@@ -390,27 +390,27 @@ HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
 
     if (pVM->hwaccm.s.vmx.pVMXON)
     {
-        SUPContFree(pVM->hwaccm.s.vmx.pVMXON);
+        SUPContFree(pVM->hwaccm.s.vmx.pVMXON, 1);
         pVM->hwaccm.s.vmx.pVMXON = 0;
     }
     if (pVM->hwaccm.s.vmx.pVMCS)
     {
-        SUPContFree(pVM->hwaccm.s.vmx.pVMCS);
+        SUPContFree(pVM->hwaccm.s.vmx.pVMCS, 1);
         pVM->hwaccm.s.vmx.pVMCS = 0;
     }
     if (pVM->hwaccm.s.svm.pVMCBHost)
     {
-        SUPContFree(pVM->hwaccm.s.svm.pVMCBHost);
+        SUPContFree(pVM->hwaccm.s.svm.pVMCBHost, 1);
         pVM->hwaccm.s.svm.pVMCBHost = 0;
     }
     if (pVM->hwaccm.s.svm.pIOBitmap)
     {
-        SUPContFree(pVM->hwaccm.s.svm.pIOBitmap);
+        SUPContFree(pVM->hwaccm.s.svm.pIOBitmap, 3);
         pVM->hwaccm.s.svm.pIOBitmap = 0;
     }
     if (pVM->hwaccm.s.svm.pMSRBitmap)
     {
-        SUPContFree(pVM->hwaccm.s.svm.pMSRBitmap);
+        SUPContFree(pVM->hwaccm.s.svm.pMSRBitmap, 2);
         pVM->hwaccm.s.svm.pMSRBitmap = 0;
     }
     return 0;

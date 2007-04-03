@@ -188,7 +188,7 @@ int suplibOsPageAlloc(size_t cPages, void **ppvPages)
 }
 
 
-int suplibOsPageFree(void *pvPages)
+int suplibOsPageFree(void *pvPages, size_t /* cPages */)
 {
     if (pvPages)
     {

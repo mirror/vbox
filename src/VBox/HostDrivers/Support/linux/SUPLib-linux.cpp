@@ -26,6 +26,7 @@
 *******************************************************************************/
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -34,6 +35,7 @@
 
 #include <VBox/sup.h>
 #include <VBox/types.h>
+#include <VBox/log.h>
 #include <iprt/path.h>
 #include <iprt/assert.h>
 #include <VBox/err.h>
@@ -48,6 +50,9 @@
 /** Unix Device name. */
 #define DEVICE_NAME     "/dev/vboxdrv"
 
+#ifndef MADV_DONTFORK
+#define MADV_DONTFORK      10
+#endif
 
 
 /*******************************************************************************
@@ -57,6 +62,8 @@
 static int      g_hDevice = -1;
 /** Flags whether or not we've loaded the kernel module. */
 static bool     g_fLoadedModule = false;
+/** Checks */
+static bool     g_fSysMadviseWorks = false;
 
 
 /*******************************************************************************
@@ -122,6 +129,15 @@ int     suplibOsInit(size_t cbReserve)
      * Check driver version.
      */
     /** @todo implement driver version checking. */
+
+    /*
+     * Check if madvise works.
+     */
+    void *pv = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (!pv)
+        return VERR_NO_MEMORY;
+    g_fSysMadviseWorks = (0 == madvise(pv, PAGE_SIZE, MADV_DONTFORK));
+    munmap(pv, PAGE_SIZE);
 
     /*
      * We're done.
@@ -248,9 +264,33 @@ int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
     }
     return RTErrConvertFromErrno(rc);
 #else
-    *ppvPages = memalign(PAGE_SIZE, cPages << PAGE_SHIFT);
-    if (*ppvPages)
+    size_t cbMmap = (g_fSysMadviseWorks ? cPages : cPages + 2) << PAGE_SHIFT;
+    char *pvPages = (char*)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (pvPages)
     {
+        if (g_fSysMadviseWorks)
+        {
+            /*
+             * It is not fatal if we fail here but a forked child (e.g. the ALSA sound server)
+             * could crash. Linux < 2.6.16 does not implement madvise(MADV_DONTFORK) but the
+             * kernel seems to split bigger VMAs and that is all that we want -- later we set the
+             * VM_DONTCOPY attribute in supdrvOSLockMemOne().
+             */
+            if (madvise (pvPages, cbMmap, MADV_DONTFORK))
+                LogRel(("SUPLib: madvise %p-%p failed\n", pvPages, cbMmap));
+            *ppvPages = pvPages;
+        }
+        else
+        {
+            /*
+             * madvise(MADV_DONTFORK) is not available (most probably Linux 2.4). Enclose any
+             * mmapped region by two unmapped pages to guarantee that there is exactly one VM
+             * area struct of the very same size as the mmap area.
+             */
+            mprotect(pvPages,                      PAGE_SIZE, PROT_NONE);
+            mprotect(pvPages + cbMmap - PAGE_SIZE, PAGE_SIZE, PROT_NONE);
+            *ppvPages = pvPages + PAGE_SIZE;
+        }
         memset(*ppvPages, 0, cPages << PAGE_SHIFT);
         return VINF_SUCCESS;
     }
@@ -265,13 +305,8 @@ int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
  * @returns VBox status code.
  * @param   pvPages     Pointer to pages.
  */
-int     suplibOsPageFree(void *pvPages)
+int     suplibOsPageFree(void *pvPages, size_t cPages)
 {
-    free(pvPages);
+    munmap(pvPages, cPages << PAGE_SHIFT);
     return VINF_SUCCESS;
 }
-
-
-
-
-

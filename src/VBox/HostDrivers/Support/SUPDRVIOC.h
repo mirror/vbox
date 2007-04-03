@@ -273,7 +273,7 @@ typedef struct SUPPINPAGES_IN
     /** Start of page range. Must be PAGE aligned. */
     RTR3PTR         pvR3;
     /** Size of the range. Must be PAGE aligned. */
-    uint32_t        cb;
+    uint32_t        cPages;
 } SUPPINPAGES_IN, *PSUPPINPAGES_IN;
 
 /** SUP_IOCTL_PINPAGES Output. */
@@ -306,7 +306,7 @@ typedef struct SUPCONTALLOC_IN
     /** Session cookie. */
     uint32_t        u32SessionCookie;
     /** Number of bytes to allocate. */
-    uint32_t        cb;
+    uint32_t        cPages;
 } SUPCONTALLOC_IN, *PSUPCONTALLOC_IN;
 
 

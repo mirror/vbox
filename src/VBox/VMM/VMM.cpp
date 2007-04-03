@@ -238,7 +238,7 @@ static int vmmR3InitCoreCode(PVM pVM)
      * conflicts in the intermediate mapping of the code.
      */
     pVM->vmm.s.cbCoreCode = RT_ALIGN_32(cbCoreCode, PAGE_SIZE);
-    pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
+    pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
     int rc = VERR_NO_MEMORY;
     if (pVM->vmm.s.pvHCCoreCodeR3)
     {
@@ -251,6 +251,7 @@ static int vmmR3InitCoreCode(PVM pVM)
                 RTR0PTR  pvR0;
                 void    *pvR3;
                 RTHCPHYS HCPhys;
+                RTUINT   cb;
             } aBadTries[16];
             unsigned i = 0;
             do
@@ -261,7 +262,7 @@ static int vmmR3InitCoreCode(PVM pVM)
                 i++;
                 pVM->vmm.s.pvHCCoreCodeR0 = NIL_RTR0PTR;
                 pVM->vmm.s.HCPhysCoreCode = NIL_RTHCPHYS;
-                pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
+                pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
                 if (!pVM->vmm.s.pvHCCoreCodeR3)
                     break;
                 rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
@@ -271,9 +272,10 @@ static int vmmR3InitCoreCode(PVM pVM)
             /* cleanup */
             if (VBOX_FAILURE(rc))
             {
-                aBadTries[i].pvR3 = pVM->vmm.s.pvHCCoreCodeR3;
-                aBadTries[i].pvR0 = pVM->vmm.s.pvHCCoreCodeR0;
+                aBadTries[i].pvR3   = pVM->vmm.s.pvHCCoreCodeR3;
+                aBadTries[i].pvR0   = pVM->vmm.s.pvHCCoreCodeR0;
                 aBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
+                aBadTries[i].cb     = pVM->vmm.s.cbCoreCode;
                 i++;
                 LogRel(("Failed to allocated and map core code: rc=%Vrc\n", rc));
             }
@@ -281,7 +283,7 @@ static int vmmR3InitCoreCode(PVM pVM)
             {
                 LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%VHp\n",
                         i, aBadTries[i].pvR3, aBadTries[i].pvR0, aBadTries[i].HCPhys));
-                SUPContFree(aBadTries[i].pvR3);
+                SUPContFree(aBadTries[i].pvR3, aBadTries[i].cb >> PAGE_SHIFT);
             }
         }
     }
@@ -319,7 +321,7 @@ static int vmmR3InitCoreCode(PVM pVM)
 
         /* shit */
         AssertMsgFailed(("PGMR3Map(,%VGv, %VGp, %#x, 0) failed with rc=%Vrc\n", pVM->vmm.s.pvGCCoreCode, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
-        SUPContFree(pVM->vmm.s.pvHCCoreCodeR3);
+        SUPContFree(pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.cbCoreCode >> PAGE_SHIFT);
     }
     else
         VMSetError(pVM, rc, RT_SRC_POS,

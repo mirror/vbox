@@ -264,7 +264,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
             AssertRC(rc2);
 
             /* free the VM memory */
-            rc2 = SUPLowFree(pVM);
+            rc2 = SUPLowFree(pVM, cPages);
             AssertRC(rc2);
         }
         else
@@ -1534,7 +1534,7 @@ void vmR3DestroyFinalBit(PVM pVM)
     /*
      * Free the VM structure.
      */
-    rc = SUPLowFree(pVM);
+    rc = SUPLowFree(pVM, RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT);
     AssertRC(rc);
     rc = SUPTerm();
     AssertRC(rc);

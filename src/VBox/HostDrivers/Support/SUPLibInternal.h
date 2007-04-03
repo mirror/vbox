@@ -53,7 +53,7 @@ int     suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, 
 int     suplibOSIOCtlFast(unsigned uFunction);
 #endif
 int     suplibOsPageAlloc(size_t cPages, void **ppvPages);
-int     suplibOsPageFree(void *pvPages);
+int     suplibOsPageFree(void *pvPages, size_t cPages);
 __END_DECLS
 
 

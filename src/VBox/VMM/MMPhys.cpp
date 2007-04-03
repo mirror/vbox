@@ -411,7 +411,7 @@ MMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const ch
         {
             rc = MMR3PhysRegister(pVM, pvPages, GCPhys, cbRange, MM_RAM_FLAGS_RESERVED, pszDesc);
             if (VBOX_FAILURE(rc))
-                SUPPageFree(pvPages);
+                SUPPageFree(pvPages, cbRange >> PAGE_SHIFT);
         }
         return rc;
     }

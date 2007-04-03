@@ -60,7 +60,7 @@ int main(int argc, char **argv)
             aPinnings[i].pv = malloc(0x10000);
 #endif
             aPinnings[i].pvAligned = ALIGNP(aPinnings[i].pv, PAGE_SIZE);
-            rc = SUPPageLock(aPinnings[i].pvAligned, 0xf000, &aPinnings[i].aPages[0]);
+            rc = SUPPageLock(aPinnings[i].pvAligned, 0xf000 >> PAGE_SHIFT, &aPinnings[i].aPages[0]);
             if (!rc)
             {
                 RTPrintf("i=%d: pvAligned=%p pv=%p:\n", i, aPinnings[i].pvAligned, aPinnings[i].pv);
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
                 RTPrintf("SUPPageLock -> rc=%d\n", rc);
                 rcRet++;
 #ifdef __OS2__
-                SUPPageFree(aPinnings[i].pv);
+                SUPPageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
 #else
                 free(aPinnings[i].pv);
 #endif
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
             {
                 memset(aPinnings[i].pv, 0xcc, 0x10000);
 #ifdef __OS2__
-                SUPPageFree(aPinnings[i].pv);
+                SUPPageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
 #else
                 free(aPinnings[i].pv);
 #endif
@@ -120,20 +120,20 @@ int main(int argc, char **argv)
         /*
          * Allocate a bit of contiguous memory.
          */
-        pv = SUPContAlloc(15003, &HCPhys);
+        pv = SUPContAlloc(RT_ALIGN_Z(15003, PAGE_SIZE) >> PAGE_SHIFT, &HCPhys);
         rcRet += pv == NULL || HCPhys == 0;
         if (pv && HCPhys)
         {
             RTPrintf("SUPContAlloc(15003) -> HCPhys=%llx pv=%p\n", HCPhys, pv);
             void *pv0 = pv;
             memset(pv0, 0xaf, 15003);
-            pv = SUPContAlloc(12999, &HCPhys);
+            pv = SUPContAlloc(RT_ALIGN_Z(12999, PAGE_SIZE) >> PAGE_SHIFT, &HCPhys);
             rcRet += pv == NULL || HCPhys == 0;
             if (pv && HCPhys)
             {
                 RTPrintf("SUPContAlloc(12999) -> HCPhys=%llx pv=%p\n", HCPhys, pv);
                 memset(pv, 0xbf, 12999);
-                rc = SUPContFree(pv);
+                rc = SUPContFree(pv, RT_ALIGN_Z(12999, PAGE_SIZE) >> PAGE_SHIFT);
                 rcRet += rc != 0;
                 if (rc)
                     RTPrintf("SUPContFree failed! rc=%d\n", rc);
@@ -160,8 +160,8 @@ int main(int argc, char **argv)
         if (pv)
         {
             static SUPPAGE      aPages[BIG_SIZE >> PAGE_SHIFT];
-            void *pvAligned = ALIGNP(pv, PAGE_SIZE);
-            rc = SUPPageLock(pvAligned, BIG_SIZE, &aPages[0]);
+            void *pvAligned = RT_ALIGN_P(pv, PAGE_SIZE);
+            rc = SUPPageLock(pvAligned, BIG_SIZE >> PAGE_SHIFT, &aPages[0]);
             if (!rc)
             {
                 /* dump */
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
                 rcRet++;
             }
 #ifdef __OS2__
-            SUPPageFree(pv);
+            SUPPageFree(pv, BIG_SIZEPP >> PAGE_SHIFT);
 #else
             free(pv);
 #endif

@@ -792,8 +792,7 @@ int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages)
 /**
  * Unlocks the memory pointed to by pv.
  *
- * @param   pv  Memory to unlock.
- * @param   cb  Size of the memory (debug).
+ * @param   pMem  Pointer to memory to unlock.
  *
  * @remark  See sgl_unmap_user_pages() for an example of an similar function.
  */
@@ -1247,7 +1246,7 @@ static RTR3PTR VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsign
         else
             dprintf(("VBoxSupDrvMapUser: find_vma failed!\n"));
 
-        MY_DO_MUNMAP(current->mm, ulAddr, cPages * PAGE_SIZE);
+        MY_DO_MUNMAP(current->mm, ulAddr, cPages << PAGE_SHIFT);
     }
     else
     {

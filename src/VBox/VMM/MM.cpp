@@ -298,7 +298,7 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
         switch (pLockedMem->eType)
         {
             case MM_LOCKED_TYPE_HYPER:
-                rc = SUPPageFree(pLockedMem->pv);
+                rc = SUPPageFree(pLockedMem->pv, pLockedMem->cb >> PAGE_SHIFT);
                 AssertMsgRC(rc, ("SUPPageFree(%p) -> rc=%d\n", pLockedMem->pv, rc));
                 break;
             case MM_LOCKED_TYPE_HYPER_NOFREE:
@@ -441,7 +441,7 @@ int mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *
     /*
      * Lock the memory.
      */
-    int rc = SUPPageLock(pv, cb, &pLockedMem->aPhysPages[0]);
+    int rc = SUPPageLock(pv, cPages, &pLockedMem->aPhysPages[0]);
     if (VBOX_SUCCESS(rc))
     {
         /*
