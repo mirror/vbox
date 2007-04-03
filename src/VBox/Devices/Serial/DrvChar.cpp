@@ -116,7 +116,6 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, s
 {
     PDRVCHAR pData = PDMICHAR_2_DRVCHAR(pInterface);
     const char *pBuffer = (const char *)pvBuf;
-    int rc = VINF_SUCCESS;
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
