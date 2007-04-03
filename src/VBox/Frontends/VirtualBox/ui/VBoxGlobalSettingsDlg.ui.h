@@ -500,7 +500,7 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
     else if (tb == tbSelectMachineFolder) le = leMachineFolder;
     Assert (le);
 
-    QString initDir = VBoxGlobal::getStartingDir (le->text());
+    QString initDir = VBoxGlobal::getFirstExistingDir (le->text());
     if (initDir.isNull())
         initDir = vboxGlobal().virtualBox().GetHomeFolder();
     QString folder = VBoxGlobal::getExistingDirectory (initDir, this);
