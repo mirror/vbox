@@ -815,7 +815,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Gebunden an:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
@@ -1346,6 +1346,34 @@
         <comment>hard disk</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Disabled</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished">Deaktiviert</translation>
+    </message>
+    <message>
+        <source>Host To Guest</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest To Host</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bidirectional</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
@@ -1478,7 +1506,7 @@ default virtual machine folder.</source>
         <source>When checked, the keyboard is automatically
 captured every time the VM window is activated. When the keyboard is captured, 
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Ist diese Einstellung aktiviert, dann wird die Tastatur jedesmal automatisch gefangen, wenn das VM-Fenster aktiviert wird. Dabei werden alle Tastendrücke (einschließlich Alt+Tab) an die VM weitergeleitet.</translation>
+        <translation type="obsolete">Ist diese Einstellung aktiviert, dann wird die Tastatur jedesmal automatisch gefangen, wenn das VM-Fenster aktiviert wird. Dabei werden alle Tastendrücke (einschließlich Alt+Tab) an die VM weitergeleitet.</translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
@@ -1600,6 +1628,12 @@ with all fields set to the values of the selected USB device attached to the hos
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation>Neuer Filter %1</translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically
+captured every time the VM window is activated. When the keyboard is captured,
+all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3326,7 +3360,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>&amp;Snapshot Folder</source>
-        <translation>Ordner &amp;Sicherungspunkte</translation>
+        <translation type="obsolete">Ordner &amp;Sicherungspunkte</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine
@@ -3696,7 +3730,7 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
@@ -3750,6 +3784,21 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
+        <translation type="unfinished">Neuer Filter %1</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+Defines the mode of sharing the clipboard between the guest and the host OS. Note
+that this feature requires Guest Additions to be installed in the guest OS.
+                                                </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;napshot Folder</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
