@@ -52,13 +52,12 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PIT
 #include <VBox/pdm.h>
-
 #include <VBox/log.h>
-#include <iprt/assert.h>
 #include <VBox/stam.h>
+#include <iprt/assert.h>
+#include <iprt/asm.h>
 
-#include "vl_vbox.h"
-
+#include "Builtins.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -171,18 +170,18 @@ static int pit_get_count(PITChannelState *s)
 #if 0
         d = TMTimerGet(pTimer);
         d -= s->u64ReloadTS;
-        d = muldiv64(d, PIT_FREQ, TMTimerGetFreq(pTimer));
+        d = ASMMultU64ByU32DivByU32(d, PIT_FREQ, TMTimerGetFreq(pTimer));
 #else /* variable time because of catch up */
         if (s->u64NextTS == UINT64_MAX)
             return 1; /** @todo check this value. */
         d = TMTimerGet(pTimer);
-        d = muldiv64(d - s->u64ReloadTS, s->count, s->u64NextTS - s->u64ReloadTS);
+        d = ASMMultU64ByU32DivByU32(d - s->u64ReloadTS, s->count, s->u64NextTS - s->u64ReloadTS);
 #endif
         if (d >= s->count)
             return 1;
         return s->count - d;
     }
-    d = muldiv64(TMTimerGet(pTimer) - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
+    d = ASMMultU64ByU32DivByU32(TMTimerGet(pTimer) - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
     switch(s->mode) {
     case 0:
     case 1:
@@ -209,7 +208,7 @@ static int pit_get_out1(PITChannelState *s, int64_t current_time)
     PTMTIMER pTimer = s->CTXSUFF(pPit)->channels[0].CTXSUFF(pTimer);
     int out;
 
-    d = muldiv64(current_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
+    d = ASMMultU64ByU32DivByU32(current_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
     switch(s->mode) {
     default:
     case 0:
@@ -258,7 +257,7 @@ static void pit_latch_count(PITChannelState *s)
         s->latched_count = pit_get_count(s);
         s->count_latched = s->rw_mode;
         LogFlow(("pit_latch_count: latched_count=%#06x / %10RU64 ns (c=%#06x m=%d)\n",
-                 s->latched_count, muldiv64(s->count - s->latched_count, 1000000000, PIT_FREQ), s->count, s->mode));
+                 s->latched_count, ASMMultU64ByU32DivByU32(s->count - s->latched_count, 1000000000, PIT_FREQ), s->count, s->mode));
     }
 }
 
@@ -315,7 +314,7 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
     uint64_t d, next_time, base;
     uint32_t period2;
 
-    d = muldiv64(current_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
+    d = ASMMultU64ByU32DivByU32(current_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
     switch(s->mode) {
     default:
     case 0:
@@ -365,8 +364,8 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
     }
     /* convert to timer units */
     LogFlow(("PIT: next_time=%14RI64 %20RI64 mode=%#x count=%#06x\n", next_time,
-             muldiv64(next_time, TMTimerGetFreq(pTimer), PIT_FREQ), s->mode, s->count));
-    next_time = s->count_load_time + muldiv64(next_time, TMTimerGetFreq(pTimer), PIT_FREQ);
+             ASMMultU64ByU32DivByU32(next_time, TMTimerGetFreq(pTimer), PIT_FREQ), s->mode, s->count));
+    next_time = s->count_load_time + ASMMultU64ByU32DivByU32(next_time, TMTimerGetFreq(pTimer), PIT_FREQ);
     /* fix potential rounding problems */
     /* XXX: better solution: use a clock at PIT_FREQ Hz */
     if (next_time <= current_time)
@@ -417,7 +416,7 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time)
                 s->u64NextTS = now + quarter;
                 LogFlow(("PIT: m=%d cnt=%#4x irq=%#x delay=%8RI64 next=%20RI64 now=%20RI64 load=%20RI64 %9RI64 delta=%9RI64\n",
                          s->mode, s->count, irq_level, quarter, s->u64NextTS, now, s->count_load_time,
-                         muldiv64(s->u64NextTS - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer)), delta));
+                         ASMMultU64ByU32DivByU32(s->u64NextTS - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer)), delta));
             }
             else
             {
@@ -426,7 +425,7 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time)
                 s->u64NextTS = expire_time = pit_get_next_transition_time(s, now);
                 LogFlow(("PIT: m=%d cnt=%#4x irq=%#x delay=%8RI64 next=%20RI64 now=%20RI64 load=%20RI64 %9RI64 delta=%9RI64 giving up!\n",
                          s->mode, s->count, irq_level, quarter, s->u64NextTS, now, s->count_load_time,
-                         muldiv64(s->u64NextTS - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer)), delta));
+                         ASMMultU64ByU32DivByU32(s->u64NextTS - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer)), delta));
             }
         }
         else
@@ -435,7 +434,7 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time)
             s->u64NextTS = expire_time;
             LogFlow(("PIT: m=%d cnt=%#4x irq=%#x delay=%8RI64 next=%20RI64 now=%20RI64 load=%20RI64 %9RI64\n",
                      s->mode, s->count, irq_level, expire_time - now, expire_time, now, s->count_load_time,
-                     muldiv64(expire_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer))));
+                     ASMMultU64ByU32DivByU32(expire_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer))));
         }
         TMTimerSet(s->CTXSUFF(pTimer), s->u64NextTS);
     }

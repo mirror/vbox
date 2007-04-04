@@ -197,15 +197,15 @@ $(BLIB): $(BOBJS) $(MAKEDEPS)
 
 # General rules for compiling/assembling source files.
 $(PATH_TARGET)/%.o: core/%.c $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,$@,$<,$@,CC)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
 
 $(PATH_TARGET)/%.o: drivers/net/%.c $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,$@,$<,$@,CC)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
 
 $(PATH_TARGET)/%.o: arch/$(ARCH)/core/%.c $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,$@,$<,$@,CC)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
 
 $(PATH_TARGET)/%.o: arch/$(ARCH)/firmware/pcbios/%.c $(MAKEDEPS)
@@ -226,6 +226,7 @@ $(PATH_TARGET)/%.o: arch/$(ARCH)/firmware/pcbios/%.S $(MAKEDEPS)
 
 # General rules for generating runtime (rt) files.
 $(PATH_TARGET)/%.rt.o: $(PATH_TARGET)/%.o $(START) $(PATH_TARGET)/config.o $(BLIB) $(MAKEDEPS)
+	$(call MSG_LINK,$@,$@)
 	$(call MSG_L1,Linking $@)
 	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -r $(START) $(PATH_TARGET)/config.o $< $(BLIB) -o $@
 
