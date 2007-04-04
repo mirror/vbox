@@ -1749,9 +1749,9 @@ void VBoxGlobal::languageChange()
     clipboardTypes [CEnums::ClipDisabled] =
         tr ("Disabled", "ClipboardType");
     clipboardTypes [CEnums::ClipHostToGuest] =
-        tr ("HostToGuest", "ClipboardType");
+        tr ("Host To Guest", "ClipboardType");
     clipboardTypes [CEnums::ClipGuestToHost] =
-        tr ("GuestToHost", "ClipboardType");
+        tr ("Guest To Host", "ClipboardType");
     clipboardTypes [CEnums::ClipBidirectional] =
         tr ("Bidirectional", "ClipboardType");
 
@@ -2202,18 +2202,22 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
  *  This does exactly the same as QLocale::system().name() but corrects its
  *  wrong behavior on Linux systems (LC_NUMERIC for some strange reason takes
  *  precedence over any other locale setting in the QLocale::system()
- *  implementation). This implementation first looks at LC_MESSAGES which is
- *  designed to define a language for program messages in case if it differs
- *  from the language for other locale categories. Then it looks for LC_ALL,
- *  then for LANG and finally falls back to QLocale::system().name().
+ *  implementation). This implementation first looks at LC_ALL (as defined by
+ *  SUS), then looks at LC_MESSAGES which is designed to define a language for
+ *  program messages in case if it differs from the language for other locale
+ *  categories. Then it looks for LANG and finally falls back to
+ *  QLocale::system().name().
+ *
+ *  The order of precedence is well defined here:
+ *  http://opengroup.org/onlinepubs/007908799/xbd/envvar.html
  */
 /* static */
 QString VBoxGlobal::systemLanguageID()
 {
 #ifdef Q_OS_UNIX
-    const char *s = getenv ("LC_MESSAGES");
+    const char *s = getenv ("LC_ALL");
     if (s == 0)
-        s = getenv ("LC_ALL");
+        s = getenv ("LC_MESSAGES");
     if (s == 0)
         s = getenv ("LANG");
     if (s != 0)
