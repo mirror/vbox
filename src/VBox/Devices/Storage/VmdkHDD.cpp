@@ -209,6 +209,7 @@ static DECLCALLBACK(int)  vmdkBiosSetTranslation(PPDMIMEDIA pInterface,
                                                 PDMBIOSTRANSLATION enmTranslation);
 static DECLCALLBACK(void *) vmdkQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
 
+#if 0
 static int vmdk_probe(const uint8_t *buf, int buf_size, const char *filename)
 {
     uint32_t magic;
@@ -222,6 +223,7 @@ static int vmdk_probe(const uint8_t *buf, int buf_size, const char *filename)
     else
         return 0;
 }
+#endif
 
 static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
 {
@@ -469,6 +471,7 @@ static uint64_t get_cluster_offset(BDRVVmdkState *s,
     return cluster_offset;
 }
 
+#if 0
 static int vmdk_is_allocated(BDRVVmdkState *s, int64_t sector_num,
                              int nb_sectors, int *pnum)
 {
@@ -483,6 +486,7 @@ static int vmdk_is_allocated(BDRVVmdkState *s, int64_t sector_num,
     *pnum = n;
     return (cluster_offset != 0);
 }
+#endif
 
 static int vmdk_read(BDRVVmdkState *s, int64_t sector_num,
                     uint8_t *buf, int nb_sectors)
