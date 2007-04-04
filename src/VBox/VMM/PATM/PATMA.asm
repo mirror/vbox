@@ -1217,7 +1217,7 @@ PATMIretStart:
 
     ; we can't do an iret to v86 code, as we run with CPL=1. The iret would attempt a protected mode iret and (most likely) fault.
     test    dword [esp+12], X86_EFL_VM
-    jnz near iret_return_to_v86
+    jnz     near iret_return_to_v86
 
     ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ;;@todo: not correct for iret back to ring 2!!!!!
@@ -1233,6 +1233,27 @@ PATMIretStart:
     or      dword [esp+8], 1
 iret_notring0:
 
+; if interrupts are pending, then we must go back to the host context to handle them! 
+; Note: This is very important as pending pic interrupts can be overriden by apic interrupts if we don't check early enough (Fedora 5 boot)
+; @@todo fix this properly, so we can dispatch pending interrupts in GC 
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC
+    jz      iret_continue 
+
+; Go to our hypervisor trap handler to dispatch the pending irq 
+    mov     dword [ss:PATM_TEMP_EAX], eax 
+    mov     dword [ss:PATM_TEMP_ECX], ecx 
+    mov     dword [ss:PATM_TEMP_EDI], edi 
+    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI 
+    mov     eax, PATM_ACTION_PENDING_IRQ_AFTER_IRET 
+    lock    or dword [ss:PATM_PENDINGACTION], eax 
+    mov     ecx, PATM_ACTION_MAGIC 
+    mov     edi, PATM_CURINSTRADDR 
+
+    popfd 
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap) 
+    ; does not return 
+
+iret_continue :
 	; This section must *always* be executed (!!)
 	; Extract the IOPL from the return flags, save them to our virtual flags and
 	; put them back to zero
@@ -1347,9 +1368,9 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      PATMIretEnd- PATMIretStart
 %ifdef PATM_LOG_PATCHIRET
-    DD      19
+    DD      26
 %else
-    DD      18
+    DD      25
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
@@ -1357,6 +1378,20 @@ GLOBALNAME PATMIretRecord
     DD      PATM_PENDINGACTION
     DD      0
 %endif
+    DD      PATM_VM_FORCEDACTIONS 
+    DD      0 
+    DD      PATM_TEMP_EAX 
+    DD      0 
+    DD      PATM_TEMP_ECX 
+    DD      0 
+    DD      PATM_TEMP_EDI 
+    DD      0 
+    DD      PATM_TEMP_RESTORE_FLAGS 
+    DD      0 
+    DD      PATM_PENDINGACTION 
+    DD      0 
+    DD      PATM_CURINSTRADDR 
+    DD      0 
     DD      PATM_VMFLAGS
     DD      0
     DD      PATM_VMFLAGS
