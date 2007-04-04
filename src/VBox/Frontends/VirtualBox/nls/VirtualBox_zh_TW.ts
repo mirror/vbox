@@ -1631,6 +1631,34 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
         <comment>USBDeviceState</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Disabled</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Host To Guest</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest To Host</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bidirectional</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
@@ -1790,12 +1818,6 @@ default virtual machine folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured, 
-all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;USB Device Filters</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1906,6 +1928,12 @@ with all fields set to the values of the selected USB device attached to the hos
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically
+captured every time the VM window is activated. When the keyboard is captured,
+all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3969,10 +3997,6 @@ plan to install into this virtual machine (called a guest operating system).</so
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Snapshot Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Displays the path where snapshots of this virtual machine
 will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="unfinished"></translation>
@@ -4373,6 +4397,21 @@ with all fields set to the values of the selected USB device attached to the hos
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Shared Clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+Defines the mode of sharing the clipboard between the guest and the host OS. Note
+that this feature requires Guest Additions to be installed in the guest OS.
+                                                </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;napshot Folder</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
