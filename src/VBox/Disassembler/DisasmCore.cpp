@@ -234,6 +234,16 @@ static unsigned g_aRegSegIndex[] =
     RT_OFFSETOF(CPUMCTXCORE, gs)          /* USE_REG_GS */
 };
 
+static unsigned g_aRegHidSegIndex[] =
+{
+    RT_OFFSETOF(CPUMCTXCORE, esHid),         /* USE_REG_ES */
+    RT_OFFSETOF(CPUMCTXCORE, csHid),         /* USE_REG_CS */
+    RT_OFFSETOF(CPUMCTXCORE, ssHid),         /* USE_REG_SS */
+    RT_OFFSETOF(CPUMCTXCORE, dsHid),         /* USE_REG_DS */
+    RT_OFFSETOF(CPUMCTXCORE, fsHid),         /* USE_REG_FS */
+    RT_OFFSETOF(CPUMCTXCORE, gsHid)          /* USE_REG_GS */
+};
+
 /**
  * Macro for accessing segment registers in CPUMCTXCORE structure.
  */
@@ -560,6 +570,20 @@ DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal)
 
     AssertCompile(sizeof(uint16_t) == sizeof(RTSEL));
     *pVal = DIS_READ_REGSEG(pCtx, sel);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Returns the value of the specified segment register including a pointer to the hidden register in the supplied cpu context
+ *
+ */
+DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg)
+{
+    AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
+
+    AssertCompile(sizeof(uint16_t) == sizeof(RTSEL));
+    *pVal = DIS_READ_REGSEG(pCtx, sel);
+    *ppSelHidReg = (CPUMSELREGHID *)((char *)pCtx + g_aRegHidSegIndex[sel]);
     return VINF_SUCCESS;
 }
 
