@@ -1149,6 +1149,12 @@ this feature after having installed a Windows guest operating system!</string>
                                             <property name="name">
                                                 <cstring>cbSharedClipboard</cstring>
                                             </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>
+Defines the mode of sharing the clipboard between the guest and the host OS. Note
+that this feature requires Guest Additions to be installed in the guest OS.
+                                                </string>
+                                            </property>
                                             <property name="sizePolicy">
                                                 <sizepolicy>
                                                     <hsizetype>5</hsizetype>
