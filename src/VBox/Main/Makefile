@@ -181,6 +181,9 @@ ifdef VBOX_WITH_VRDP
 VBoxSVC_SOURCES += VRDPServerImpl.cpp
 endif
 
+VBoxSVC_SOURCES.darwin = \
+	darwin/iokit.cpp
+
 VBoxSVC_SOURCES.win = \
 	HostNetworkInterfaceImpl.cpp \
 	win32/svcmain.cpp \
@@ -197,6 +200,7 @@ VBoxSVC_SOURCES.linux += linux/USBProxyServiceLinux.cpp
 VBoxSVC_SOURCES.win   += win32/USBProxyServiceWin32.cpp
 endif
 
+VBoxSVC_LDFLAGS.darwin = -framework IOKit
 ifeq ($(BUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
 endif
@@ -465,7 +469,7 @@ OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
 #
 ## @todo Figure out why Linux really needs this, darwin doesn't...
 xpcom-components_INST = $(INST_BIN)components/
-ifeq ($(BUILD_TARGET),linux) 
+ifeq ($(BUILD_TARGET),linux)
 xpcom-components_SYMLINKS = \
 	VirtualBox_XPCOM.xpt=>../VirtualBox_XPCOM.xpt \
 	VBoxXPCOMBase.xpt=>../VBoxXPCOMBase.xpt \
