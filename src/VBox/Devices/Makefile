@@ -140,7 +140,7 @@ VBoxDD2_TEMPLATE        = VBOXR3
 VBoxDD2_DEFS            = IN_VBOXDD2
 VBoxDD2_SOURCES         = \
 	Builtins2.cpp \
-	PC/apic.c
+	PC/DevAPIC.cpp
 VBoxDD2_LIBS            = \
 	$(PATH_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
@@ -288,7 +288,7 @@ VBoxDD2GC_SYSSUFF        = .gc
 VBoxDD2GC_INCS           = \
 	$(PATH_CURRENT)
 VBoxDD2GC_SOURCES        = \
-	PC/apic.c
+	PC/DevAPIC.cpp
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDD2GC_LDFLAGS        = -Entry:apicMMIOWrite
 endif
@@ -308,7 +308,7 @@ VBoxDD2R0_SYSSUFF        = .r0
 VBoxDD2R0_INCS           = \
 	$(PATH_CURRENT)
 VBoxDD2R0_SOURCES        = \
-        PC/apic.c
+        PC/DevAPIC.cpp
 ifeq ($(VBOX_LDR_FMT),pe)
 VBoxDD2R0_LDFLAGS        = -Entry:apicMMIOWrite
 endif

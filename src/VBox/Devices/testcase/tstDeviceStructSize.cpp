@@ -47,7 +47,7 @@
 #undef LOG_GROUP
 #include "PC/DevRTC.cpp"
 #undef LOG_GROUP
-#include "PC/apic.c"
+#include "PC/DevAPIC.cpp"
 #undef LOG_GROUP
 #include "Storage/DevATA.cpp"
 #ifdef VBOX_WITH_USB
