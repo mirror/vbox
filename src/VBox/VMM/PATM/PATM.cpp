@@ -3915,6 +3915,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
     HCPTRTYPE(uint8_t *) pInstrHC;
     uint32_t opsize;
     PPATMPATCHREC pPatchRec;
+    PCPUMCTX pCtx = 0;
     bool disret;
     int rc;
 
@@ -3947,18 +3948,11 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
     if (pVM->patm.s.fOutOfMemory == true)
         return VERR_PATCHING_REFUSED;
 
-#ifdef VBOX_STRICT
-    PCPUMCTX pCtx = 0;
-
+    /* Make sure the code selector is wide open; otherwise refuse. */
     CPUMQueryGuestCtxPtr(pVM, &pCtx);
-
-    if (    !pCtx->eflags.Bits.u1VM
-        &&  (pCtx->ss & X86_SEL_RPL) == 0)
-    {
-        RTGCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pInstrGC);
-        AssertMsg(pInstrGCFlat == pInstrGC, ("%04x:%VGv != %VGv eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32));
-    }
-#endif
+    Assert(!pCtx->eflags.Bits.u1VM && (pCtx->ss & X86_SEL_RPL) == 0);
+    RTGCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pInstrGC);
+    AssertMsgReturn(pInstrGCFlat == pInstrGC, ("%04x:%VGv != %VGv eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32), VERR_PATCHING_REFUSED);
 
     /** @note the OpenBSD specific check will break if we allow additional patches to be installed (int 3)) */
     if (!(flags & PATMFL_GUEST_SPECIFIC))
