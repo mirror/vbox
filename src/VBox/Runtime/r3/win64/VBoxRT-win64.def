@@ -29,4 +29,5 @@ EXPORTS
     ASMGetFlags
     ASMProbeReadByte
     ASMSetFlags
+    ASMMultU64ByU32DivByU32
 
