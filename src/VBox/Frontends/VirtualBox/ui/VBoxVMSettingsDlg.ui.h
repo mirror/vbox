@@ -696,6 +696,11 @@ void VBoxVMSettingsDlg::init()
     setTabOrder (tblBootOrder->focusProxy(), chbEnableACPI);
     groupBox12Layout->addWidget (tblBootOrder);
     tblBootOrder->fixTabStops();
+    /* Shared Clipboard mode */
+    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipDisabled));
+    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipHostToGuest));
+    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipGuestToHost));
+    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipBidirectional));
 
     /* HDD Images page */
 
@@ -1233,6 +1238,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* Description */
     teDescription->setText (machine.GetDescription());
 
+    /* Shared clipboard mode */
+    cbSharedClipboard->setCurrentItem (machine.GetClipboardMode());
+
     /* hard disk images */
     {
         struct
@@ -1544,6 +1552,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* Description */
     cmachine.SetDescription (teDescription->text());
+
+    /* Shared clipboard mode */
+    cmachine.SetClipboardMode ((CEnums::ClipboardMode)cbSharedClipboard->currentItem());
 
     /* hard disk images */
     {

@@ -233,6 +233,20 @@ public:
         return usbFilterActionTypes [t];
     }
 
+    QString toString (CEnums::ClipboardMode t) const
+    {
+        AssertMsg (!clipboardTypes [t].isNull(), ("No text for %d", t));
+        return clipboardTypes [t];
+    }
+
+    CEnums::ClipboardMode toClipboardModeType (const QString &s) const
+    {
+        QStringVector::const_iterator it =
+            qFind (clipboardTypes.begin(), clipboardTypes.end(), s);
+        AssertMsg (it != clipboardTypes.end(), ("No value for {%s}", s.latin1()));
+        return CEnums::ClipboardMode (it - clipboardTypes.begin());
+    }
+
     CEnums::VRDPAuthType toVRDPAuthType (const QString &s) const
     {
         QStringVector::const_iterator it =
@@ -509,6 +523,7 @@ private:
     QStringVector diskControllerDevices;
     QStringVector audioDriverTypes;
     QStringVector networkAttachmentTypes;
+    QStringVector clipboardTypes;
     QStringVector USBDeviceStates;
 
     mutable bool detailReportTemplatesReady;
