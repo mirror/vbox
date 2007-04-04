@@ -212,6 +212,7 @@ void ConsoleVRDPServer::Stop (void)
  */
 #define VRDP_DEVICE_LIST_PERIOD_MS (2000)
 
+#ifdef VBOX_WITH_USB
 static DECLCALLBACK(int) threadRemoteUSB (RTTHREAD self, void *pvUser)
 {
     ConsoleVRDPServer *pOwner = (ConsoleVRDPServer *)pvUser;
@@ -239,10 +240,12 @@ static DECLCALLBACK(int) threadRemoteUSB (RTTHREAD self, void *pvUser)
 
 void ConsoleVRDPServer::notifyRemoteUSBThreadRunning (RTTHREAD thread)
 {
+#ifdef VBOX_WITH_USB
     mUSBBackends.thread = thread;
     mUSBBackends.fThreadRunning = true;
     int rc = RTThreadUserSignal (thread);
     AssertRC (rc);
+#endif
 }
     
 bool ConsoleVRDPServer::isRemoteUSBThreadRunning (void)
@@ -254,6 +257,7 @@ void ConsoleVRDPServer::waitRemoteUSBThreadEvent (unsigned cMillies)
 {
     int rc = RTSemEventWait (mUSBBackends.event, cMillies);
     Assert (VBOX_SUCCESS(rc) || rc == VERR_TIMEOUT);
+    NOREF(rc);
 }
 
 void ConsoleVRDPServer::remoteUSBThreadStart (void)
@@ -308,6 +312,7 @@ void ConsoleVRDPServer::remoteUSBThreadStop (void)
         mUSBBackends.event = 0;
     }
 }
+#endif /* VBOX_WITH_USB */
 #endif /* VRDP_MC */
 
 VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
@@ -416,6 +421,7 @@ void ConsoleVRDPServer::unlockConsoleVRDPServer (void)
  */
 void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv)
 {
+#ifdef VBOX_WITH_USB
     LogFlow(("ConsoleVRDPServer::USBBackendCreate: u32ClientId = %d\n", u32ClientId));
     
     /* Create a new instance of the USB backend for the new client. */
@@ -452,10 +458,12 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBA
             pRemoteUSBBackend->Release ();
         }
     }
+#endif
 }
 
 void ConsoleVRDPServer::USBBackendDelete (uint32_t u32ClientId)
 {
+#ifdef VBOX_WITH_USB
     LogFlow(("ConsoleVRDPServer::USBBackendDelete: u32ClientId = %d\n", u32ClientId));
 
     RemoteUSBBackend *pRemoteUSBBackend = NULL;
@@ -481,10 +489,12 @@ void ConsoleVRDPServer::USBBackendDelete (uint32_t u32ClientId)
         /* Here the instance has been excluded from the list and can be dereferenced. */
         pRemoteUSBBackend->Release ();
     }
+#endif
 }
 
 void *ConsoleVRDPServer::USBBackendRequestPointer (uint32_t u32ClientId, const Guid *pGuid)
 {
+#ifdef VBOX_WITH_USB
     RemoteUSBBackend *pRemoteUSBBackend = NULL;
     
     /* Find the instance. */
@@ -518,11 +528,13 @@ void *ConsoleVRDPServer::USBBackendRequestPointer (uint32_t u32ClientId, const G
         return pRemoteUSBBackend->GetBackendCallbackPointer ();
     }
     
+#endif
     return NULL;
 }
 
 void ConsoleVRDPServer::USBBackendReleasePointer (const Guid *pGuid)
 {
+#ifdef VBOX_WITH_USB
     RemoteUSBBackend *pRemoteUSBBackend = NULL;
     
     /* Find the instance. */
@@ -544,6 +556,7 @@ void ConsoleVRDPServer::USBBackendReleasePointer (const Guid *pGuid)
             pRemoteUSBBackend->Release ();
         }
     }
+#endif
 }
 
 RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemoteUSBBackend)
@@ -551,6 +564,7 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemot
     LogFlow(("ConsoleVRDPServer::usbBackendGetNext: pBackend = %p\n", pRemoteUSBBackend));
 
     RemoteUSBBackend *pNextRemoteUSBBackend = NULL;
+#ifdef VBOX_WITH_USB
         
     int rc = lockConsoleVRDPServer ();
         
@@ -579,10 +593,12 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemot
             pRemoteUSBBackend->Release ();
         }
     }
+#endif
     
     return pNextRemoteUSBBackend;
 }
 
+#ifdef VBOX_WITH_USB
 /* Internal method. Called under the ConsoleVRDPServerLock. */
 RemoteUSBBackend *ConsoleVRDPServer::usbBackendFind (uint32_t u32ClientId)
 {
@@ -618,10 +634,12 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendFindByUUID (const Guid *pGuid)
     
     return pRemoteUSBBackend;
 }
+#endif
 
 /* Internal method. Called by the backend destructor. */
 void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBackend)
 {
+#ifdef VBOX_WITH_USB
     int rc = lockConsoleVRDPServer ();
     AssertRC (rc);
         
@@ -647,8 +665,9 @@ void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBa
     pRemoteUSBBackend->pNext = pRemoteUSBBackend->pPrev = NULL;
     
     unlockConsoleVRDPServer ();
+#endif
 }
-#else
+#else // VRDP_MC
 void ConsoleVRDPServer::CreateUSBBackend (PFNVRDPUSBCALLBACK *ppfn, void **ppv)
 {
 #ifdef VBOX_WITH_USB
