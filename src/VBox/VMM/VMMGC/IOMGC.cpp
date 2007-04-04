@@ -65,87 +65,6 @@ static bool iomGCSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCT
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/**
- * Array for accessing 32-bit general registers in VMMREGFRAME structure
- * by register's index from disasm.
- */
-static unsigned g_aReg32Index[] =
-{
-    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_EAX */
-    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_ECX */
-    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_EDX */
-    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_EBX */
-    RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_ESP */
-    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_EBP */
-    RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_ESI */
-    RT_OFFSETOF(CPUMCTXCORE, edi)         /* USE_REG_EDI */
-};
-
-/**
- * Macro for accessing 32-bit general purpose registers in CPUMCTXCORE structure.
- */
-#define ACCESS_REG32(p, idx) (*((uint32_t *)((char *)(p) + g_aReg32Index[idx])))
-
-/**
- * Array for accessing 16-bit general registers in CPUMCTXCORE structure
- * by register's index from disasm.
- */
-static unsigned g_aReg16Index[] =
-{
-    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AX */
-    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CX */
-    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_DX */
-    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_BX */
-    RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_SP */
-    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_BP */
-    RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_SI */
-    RT_OFFSETOF(CPUMCTXCORE, edi)         /* USE_REG_DI */
-};
-
-/**
- * Macro for accessing 16-bit general purpose registers in CPUMCTXCORE structure.
- */
-#define ACCESS_REG16(p, idx) (*((uint16_t *)((char *)(p) + g_aReg16Index[idx])))
-
-/**
- * Array for accessing 8-bit general registers in CPUMCTXCORE structure
- * by register's index from disasm.
- */
-static unsigned g_aReg8Index[] =
-{
-    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AL */
-    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CL */
-    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_DL */
-    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_BL */
-    RT_OFFSETOF(CPUMCTXCORE, eax) + 1,    /* USE_REG_AH */
-    RT_OFFSETOF(CPUMCTXCORE, ecx) + 1,    /* USE_REG_CH */
-    RT_OFFSETOF(CPUMCTXCORE, edx) + 1,    /* USE_REG_DH */
-    RT_OFFSETOF(CPUMCTXCORE, ebx) + 1     /* USE_REG_BH */
-};
-
-/**
- * Macro for accessing 8-bit general purpose registers in CPUMCTXCORE structure.
- */
-#define ACCESS_REG8(p, idx) (*((uint8_t *)((char *)(p) + g_aReg8Index[idx])))
-
-/**
- * Array for accessing segment registers in CPUMCTXCORE structure
- * by register's index from disasm.
- */
-static unsigned g_aRegSegIndex[] =
-{
-    RT_OFFSETOF(CPUMCTXCORE, es),         /* USE_REG_ES */
-    RT_OFFSETOF(CPUMCTXCORE, cs),         /* USE_REG_CS */
-    RT_OFFSETOF(CPUMCTXCORE, ss),         /* USE_REG_SS */
-    RT_OFFSETOF(CPUMCTXCORE, ds),         /* USE_REG_DS */
-    RT_OFFSETOF(CPUMCTXCORE, fs),         /* USE_REG_FS */
-    RT_OFFSETOF(CPUMCTXCORE, gs)          /* USE_REG_GS */
-};
-
-/**
- * Macro for accessing segment registers in CPUMCTXCORE structure.
- */
-#define ACCESS_REGSEG(p, idx) (*((uint16_t *)((char *)(p) + g_aRegSegIndex[idx])))
 
 /**
  * Array for fast recode of the operand size (1/2/4/8 bytes) to bit shift value.
@@ -288,21 +207,21 @@ static bool iomGCGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCT
     if (pParam->flags & USE_REG_GEN32)
     {
         *pcbSize  = 4;
-        *pu32Data = ACCESS_REG32(pRegFrame, pParam->base.reg_gen32);
+        DISFetchReg32(pRegFrame, pParam->base.reg_gen32, pu32Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN16)
     {
         *pcbSize  = 2;
-        *pu32Data = ACCESS_REG16(pRegFrame, pParam->base.reg_gen16);
+        DISFetchReg16(pRegFrame, pParam->base.reg_gen16, (uint16_t *)pu32Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN8)
     {
         *pcbSize  = 1;
-        *pu32Data = ACCESS_REG8(pRegFrame, pParam->base.reg_gen8);
+        DISFetchReg8(pRegFrame, pParam->base.reg_gen8, (uint8_t *)pu32Data);
         return true;
     }
 
@@ -330,7 +249,7 @@ static bool iomGCGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCT
     if (pParam->flags & USE_REG_SEG)
     {
         *pcbSize  = 2;
-        *pu32Data = ACCESS_REGSEG(pRegFrame, pParam->base.reg_seg);
+        DISFetchRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL *)pu32Data);
         return true;
     } /* Else - error. */
 
@@ -359,25 +278,25 @@ static bool iomGCSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCT
 
     if (pParam->flags & USE_REG_GEN32)
     {
-        ACCESS_REG32(pRegFrame, pParam->base.reg_gen32) = u32Data;
+        DISWriteReg32(pRegFrame, pParam->base.reg_gen32, u32Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN16)
     {
-        ACCESS_REG16(pRegFrame, pParam->base.reg_gen16) = (uint16_t)u32Data;
+        DISWriteReg16(pRegFrame, pParam->base.reg_gen16, (uint16_t)u32Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_GEN8)
     {
-        ACCESS_REG8(pRegFrame, pParam->base.reg_gen8) = (uint8_t)u32Data;
+        DISWriteReg8(pRegFrame, pParam->base.reg_gen8, (uint8_t)u32Data);
         return true;
     }
 
     if (pParam->flags & USE_REG_SEG)
     {
-        ACCESS_REGSEG(pRegFrame, pParam->base.reg_seg) = (uint16_t)u32Data;
+        DISWriteRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL)u32Data);
         return true;
     }
 
