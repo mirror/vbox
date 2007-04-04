@@ -3950,7 +3950,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
 
     /* Make sure the code selector is wide open; otherwise refuse. */
     CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    Assert(!pCtx->eflags.Bits.u1VM && CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)) == 0);
+    Assert(CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)) == 0);
     RTGCPTR pInstrGCFlat = SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pInstrGC);
     AssertMsgReturn(pInstrGCFlat == pInstrGC, ("%04x:%VGv != %VGv eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32), VERR_PATCHING_REFUSED);
 
