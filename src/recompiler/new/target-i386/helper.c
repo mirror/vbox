@@ -2049,6 +2049,16 @@ void load_seg(int seg_reg, int selector)
 
     selector &= 0xffff;
     cpl = env->hflags & HF_CPL_MASK;
+
+#ifdef VBOX
+    /* Trying to load a selector with CPL=1? */
+    if (cpl == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0)) 
+    {
+        Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
+        selector = selector & 0xfffc;
+    }
+#endif
+
     if ((selector & 0xfffc) == 0) {
         /* null selector case */
         if (seg_reg == R_SS
