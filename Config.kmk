@@ -530,12 +530,22 @@ ifdef L4_DIR
  endif
  L4_OBJ := $(L4_DIR)/build-x86-$(L4_CPU)-$(L4_API)
  ifeq ($(BUILD_TARGET),l4)
+  L4LINUX26_INCDIR := \
+  	$(L4LINUX26_DIR)/include \
+	$(L4LINUX26_DIR)/include/asm-l4/i386-arch
+  # support splitted Linux kernels (make O=<build directory>)
+  kernelsrc := $(shell sed -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(L4LINUX26_DIR)/Makefile)
+  ifneq ($(kernelsrc),)
+   kernelpath := $(realpath $(kernelsrc))
+   L4LINUX26_INCDIR += \
+	$(L4LINUX26_DIR)/include2 \
+	$(kernelpath)/include
+  endif
   L4_INCDIR := \
   	$(L4_OBJ)/include/uclibc++ \
   	$(L4_OBJ)/include/x86/uclibc \
   	$(L4_OBJ)/include/uclibc \
-  	$(L4LINUX26_DIR)/include \
-  	$(L4LINUX26_DIR)/include/asm-l4/i386-arch \
+  	$(L4LINUX26_INCDIR) \
   	$(L4_OBJ)/include/x86/$(L4_API) \
   	$(L4_OBJ)/include/x86 \
   	$(L4_OBJ)/include \
@@ -563,7 +573,7 @@ DEFS.amd64   = __AMD64__
 DEFS.darwin  = __DARWIN__
 DEFS.darwin.x86 = VBOX_WITH_HYBIRD_32BIT_KERNEL
 DEFS.freebsd = __FREEBSD__
-DEFS.l4      = __L4__ __L4ENV__ L4API_l4v2 __NO_CTYPE _FILE_OFFSET_BITS=64
+DEFS.l4      = __L4__ __L4ENV__ L4API_l4v2 ARCH_x86 __NO_CTYPE _FILE_OFFSET_BITS=64
 ifeq ($(L4_API),l4v2onv4)
  DEFS.l4    += L4API_l4v2onv4 STATIC_L4_INLINE
 endif
