@@ -441,6 +441,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_CONVERTDD)
     {
         RTPrintf("VBoxManage convertdd        <filename> <outputfile>\n"
+                 "VBoxManage convertdd        stdin <outputfile> <bytes>\n"
                  "\n");
     }
 
@@ -2326,37 +2327,48 @@ static int handleCloneVDI(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleConvertDDImage(int argc, char *argv[],
-                                ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleConvertDDImage(int argc, char *argv[])
 {
-    if (argc != 2)
-    {
-        return errorSyntax(USAGE_CONVERTDD, "Incorrect number of parameters");
-    }
+#ifdef __LINUX__
+    const bool fReadFromStdIn = !strcmp(argv[0], "stdin");
+#else
+    const bool fReadFromStdIn = false;
+#endif
 
+    if ((!fReadFromStdIn && argc != 2) || (fReadFromStdIn && argc != 3))
+        return errorSyntax(USAGE_CONVERTDD, "Incorrect number of parameters");
 
     RTPrintf("Converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
              argv[0], argv[1]);
 
     /* open raw image file. */
     RTFILE File;
-    int rc = RTFileOpen(&File, argv[0], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+    int rc = VINF_SUCCESS;
+    if (fReadFromStdIn)
+        File = 0;
+    else
+        rc = RTFileOpen(&File, argv[0], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("File=\"%s\" open error: %Rrf\n", argv[0], rc);
         return rc;
     }
 
-    /* get image size. */
     uint64_t cbFile;
-    rc = RTFileGetSize(File, &cbFile);
+    /* get image size. */
+    if (fReadFromStdIn)
+        cbFile = RTStrToUInt64(argv[2]);
+    else
+        rc = RTFileGetSize(File, &cbFile);
     if (VBOX_SUCCESS(rc))
     {
-        RTPrintf("Creating fixed image with size %u Bytes...\n", (unsigned)cbFile);
+        RTPrintf("Creating fixed image with size %RU64Bytes (%RU64MB)...\n", cbFile, (cbFile + _1M - 1) / _1M);
+        char pszComment[256];
+        RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", argv[0]);
         rc = VDICreateBaseImage(argv[1],
                                 VDI_IMAGE_TYPE_FIXED,
                                 cbFile,
-                                "Converted from DD test image", NULL, NULL);
+                                pszComment, NULL, NULL);
         if (VBOX_SUCCESS(rc))
         {
             PVDIDISK pVdi = VDIDiskCreate();
@@ -2395,6 +2407,8 @@ static int handleConvertDDImage(int argc, char *argv[],
                 VDIDeleteImage(argv[1]);
             }
         }
+        else
+            RTPrintf("Failed to create output file (%Vrc)!\n", rc);
     }
     RTFileClose(File);
 
@@ -6093,10 +6107,17 @@ int main(int argc, char *argv[])
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
 
-    /* update settings command (no VirtualBox instantiation!)*/
+    /* update settings command (no VirtualBox instantiation!) */
     if (argc >= 2 && (strcmp(argv[1], "updatesettings") == 0))
     {
-        rc = handleUpdateSettings(argc - 2 , argv + 2);
+        rc = handleUpdateSettings(argc - 2, argv + 2);
+        break;
+    }
+
+    /* convertdd: does not need a VirtualBox instantiation) */
+    if (argc >= 2 && (strcmp(argv[1], "convertdd") == 0))
+    {
+        rc = handleConvertDDImage(argc - 2, argv + 2);
         break;
     }
 
@@ -6145,7 +6166,6 @@ int main(int argc, char *argv[])
         { "createvm",         handleCreateVM },
         { "modifyvm",         handleModifyVM },
         { "clonevdi",         handleCloneVDI },
-        { "convertdd",        handleConvertDDImage },
         { "startvm",          handleStartVM },
         { "controlvm",        handleControlVM },
         { "discardstate",     handleDiscardState },
