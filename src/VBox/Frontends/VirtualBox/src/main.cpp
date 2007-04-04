@@ -161,7 +161,7 @@ int main( int argc, char ** argv )
 
     /* load a translation based on the current locale */
     QTranslator translator;
-    QString lang = QLocale::system().name();
+    QString lang = VBoxGlobal::systemLanguageID();
     QString nlsPath = a.applicationDirPath() + "/nls";
     LogFlowFunc (("lang=%S, nlsPath=\"%S\"\n",
                   lang.local8Bit().data(), nlsPath.local8Bit().data()));
