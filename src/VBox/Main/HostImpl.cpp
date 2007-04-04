@@ -59,6 +59,10 @@
 #include "MachineImpl.h"
 #include "Logging.h"
 
+#ifdef __DARWIN__
+#include "darwin/iokit.h"
+#endif
+
 #ifdef __WIN__
 #include "HostNetworkInterfaceImpl.h"
 #endif
@@ -225,6 +229,21 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
         // check the drives that can be mounted
         parseMountTable((char*)"/etc/fstab", list);
     }
+#elif defined(__DARWIN__)
+    PDARWINDVD cur = DarwinGetDVDDrives();
+    while (cur)
+    {
+        ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+        hostDVDDriveObj.createObject();
+        hostDVDDriveObj->init(Bstr(cur->szName));
+        list.push_back(hostDVDDriveObj);
+
+        /* next */
+        void *freeMe = cur;
+        cur = cur->pNext;
+        RTMemFree(freeMe);
+    }
+
 #else
     /* PORTME */
 #endif
