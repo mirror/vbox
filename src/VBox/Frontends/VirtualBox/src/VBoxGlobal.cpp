@@ -1602,14 +1602,6 @@ bool VBoxGlobal::openURL (const QString &aURL)
 }
 
 /**
- *  Shortcut to QLocale::system().name().
- */
-QString VBoxGlobal::languageID() const
-{
-    return  QLocale::system().name();
-}
-
-/**
  *  Native language name of the currently installed translation.
  *  Returns "English [built-in]" if no translation is installed
  *  or if the translation file is invalid.
@@ -2207,6 +2199,30 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 }
 
 /**
+ *  This does exactly the same as QLocale::system().name() but corrects its
+ *  wrong behavior on Linux systems (LC_NUMERIC for some strange reason takes
+ *  precedence over any other locale setting in the QLocale::system()
+ *  implementation). This implementation first looks at LC_MESSAGES which is
+ *  designed to define a language for program messages in case if it differs
+ *  from the language for other locale categories. Then it looks for LC_ALL,
+ *  then for LANG and finally falls back to QLocale::system().name().
+ */
+/* static */
+QString VBoxGlobal::systemLanguageID()
+{
+#ifdef Q_OS_UNIX
+    const char *s = getenv ("LC_MESSAGES");
+    if (s == 0)
+        s = getenv ("LC_ALL");
+    if (s == 0)
+        s = getenv ("LANG");
+    if (s != 0)
+        return QLocale (s).name();
+#endif
+    return  QLocale::system().name();
+}
+
+/**
  *  Reimplementation of QFileDialog::getExistingDirectory() that removes some
  *  oddities and limitations.
  *
@@ -2278,7 +2294,16 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_NEWDIALOGSTYLE;
             bi.lpfn = winGetExistDirCallbackProc;
             bi.lParam = Q_ULONG (&mDir);
-            if (mParent) mParent->setEnabled (false);
+
+            /* Qt is uncapable to properly handle modal state if the modal
+             * window is not a QWidget. For example, if we have the W1->W2->N
+             * ownership where Wx are QWidgets (W2 is modal), and N is a
+             * native modal window, cliking on the title bar of W1 will still
+             * activate W2 and redirect keyboard/mouse to it. The dirty hack
+             * to prevent it is to disable the entire widget... */
+            if (mParent)
+                mParent->setEnabled (false);
+
             LPITEMIDLIST itemIdList = SHBrowseForFolder (&bi);
             if (itemIdList)
             {
@@ -2296,7 +2321,10 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             else
                 result = QString::null;
             QApplication::postEvent (mTarget, new VBoxGetExistDirectoryEvent (result));
-            if (mParent) mParent->setEnabled (true);
+
+            /* Enable the parent widget again. */
+            if (mParent)
+                mParent->setEnabled (true);
         }
 
     private:

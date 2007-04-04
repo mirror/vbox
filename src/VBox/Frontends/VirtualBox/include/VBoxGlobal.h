@@ -374,7 +374,6 @@ public:
 
     bool openURL (const QString &aURL);
 
-    QString languageID() const;
     QString languageName() const;
     QString languageCountry() const;
     QString languageNameEnglish() const;
@@ -408,6 +407,8 @@ public:
     static QString formatSize (Q_UINT64, int aMode = 0);
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
+
+    static QString systemLanguageID();
 
     static QString getExistingDirectory (const QString &aDir, QWidget *aParent,
                                          const char *aName = 0,
