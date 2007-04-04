@@ -68,6 +68,10 @@ static int QueryModRM_SizeOnly(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMET
 static int UseSIB(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 static int ParseSIB_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+
 PFNDISPARSE  pfnFullDisasm[IDX_ParseMax] =
 {
     ParseIllegal,
@@ -149,6 +153,92 @@ PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
     ParseNopPause,
     ParseImmByteSX_SizeOnly
 };
+
+/**
+ * Array for accessing 32-bit general registers in VMMREGFRAME structure
+ * by register's index from disasm.
+ */
+static unsigned g_aReg32Index[] =
+{
+    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_EAX */
+    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_ECX */
+    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_EDX */
+    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_EBX */
+    RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_ESP */
+    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_EBP */
+    RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_ESI */
+    RT_OFFSETOF(CPUMCTXCORE, edi)         /* USE_REG_EDI */
+};
+
+/**
+ * Macro for accessing 32-bit general purpose registers in CPUMCTXCORE structure.
+ */
+#define DIS_READ_REG32(p, idx)       (*(uint32_t *)((char *)(p) + g_aReg32Index[idx]))
+#define DIS_WRITE_REG32(p, idx, val) (*(uint32_t *)((char *)(p) + g_aReg32Index[idx]) = val)
+
+/**
+ * Array for accessing 16-bit general registers in CPUMCTXCORE structure
+ * by register's index from disasm.
+ */
+static unsigned g_aReg16Index[] =
+{
+    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AX */
+    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CX */
+    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_DX */
+    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_BX */
+    RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_SP */
+    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_BP */
+    RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_SI */
+    RT_OFFSETOF(CPUMCTXCORE, edi)         /* USE_REG_DI */
+};
+
+/**
+ * Macro for accessing 16-bit general purpose registers in CPUMCTXCORE structure.
+ */
+#define DIS_READ_REG16(p, idx)          (*(uint16_t *)((char *)(p) + g_aReg16Index[idx]))
+#define DIS_WRITE_REG16(p, idx, val)    (*(uint16_t *)((char *)(p) + g_aReg16Index[idx]) = val)
+
+/**
+ * Array for accessing 8-bit general registers in CPUMCTXCORE structure
+ * by register's index from disasm.
+ */
+static unsigned g_aReg8Index[] =
+{
+    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AL */
+    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CL */
+    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_DL */
+    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_BL */
+    RT_OFFSETOF(CPUMCTXCORE, eax) + 1,    /* USE_REG_AH */
+    RT_OFFSETOF(CPUMCTXCORE, ecx) + 1,    /* USE_REG_CH */
+    RT_OFFSETOF(CPUMCTXCORE, edx) + 1,    /* USE_REG_DH */
+    RT_OFFSETOF(CPUMCTXCORE, ebx) + 1     /* USE_REG_BH */
+};
+
+/**
+ * Macro for accessing 8-bit general purpose registers in CPUMCTXCORE structure.
+ */
+#define DIS_READ_REG8(p, idx)           (*(uint8_t *)((char *)(p) + g_aReg8Index[idx]))
+#define DIS_WRITE_REG8(p, idx, val)     (*(uint8_t *)((char *)(p) + g_aReg8Index[idx]) = val)
+
+/**
+ * Array for accessing segment registers in CPUMCTXCORE structure
+ * by register's index from disasm.
+ */
+static unsigned g_aRegSegIndex[] =
+{
+    RT_OFFSETOF(CPUMCTXCORE, es),         /* USE_REG_ES */
+    RT_OFFSETOF(CPUMCTXCORE, cs),         /* USE_REG_CS */
+    RT_OFFSETOF(CPUMCTXCORE, ss),         /* USE_REG_SS */
+    RT_OFFSETOF(CPUMCTXCORE, ds),         /* USE_REG_DS */
+    RT_OFFSETOF(CPUMCTXCORE, fs),         /* USE_REG_FS */
+    RT_OFFSETOF(CPUMCTXCORE, gs)          /* USE_REG_GS */
+};
+
+/**
+ * Macro for accessing segment registers in CPUMCTXCORE structure.
+ */
+#define DIS_READ_REGSEG(p, idx)         (*((uint16_t *)((char *)(p) + g_aRegSegIndex[idx])))
+#define DIS_WRITE_REGSEG(p, idx, val)   (*((uint16_t *)((char *)(p) + g_aRegSegIndex[idx])) = val)
 
 /**
  * Parses one instruction.
@@ -423,41 +513,16 @@ DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
     }
 }
 
+
 /**
  * Returns the value of the specified 8 bits general purpose register
  *
  */
 DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, uint32_t reg8, uint8_t *pVal)
 {
-    switch(reg8)
-    {
-    case USE_REG_AL:
-        *pVal = RT_LOBYTE(pCtx->eax);
-        break;
-    case USE_REG_BL:
-        *pVal = RT_LOBYTE(pCtx->ebx);
-        break;
-    case USE_REG_CL:
-        *pVal = RT_LOBYTE(pCtx->ecx);
-        break;
-    case USE_REG_DL:
-        *pVal = RT_LOBYTE(pCtx->edx);
-        break;
-    case USE_REG_AH:
-        *pVal = RT_HIBYTE(RT_LOWORD(pCtx->eax));
-        break;
-    case USE_REG_BH:
-        *pVal = RT_HIBYTE(RT_LOWORD(pCtx->ebx));
-        break;
-    case USE_REG_CH:
-        *pVal = RT_HIBYTE(RT_LOWORD(pCtx->ecx));
-        break;
-    case USE_REG_DH:
-        *pVal = RT_HIBYTE(RT_LOWORD(pCtx->edx));
-        break;
-    default:
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(reg8 < ELEMENTS(g_aReg8Index), VERR_INVALID_PARAMETER);
+
+    *pVal = DIS_READ_REG8(pCtx, reg8);
     return VINF_SUCCESS;
 }
 
@@ -467,35 +532,9 @@ DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, uint32_t reg8, uint8_t *pVal)
  */
 DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t *pVal)
 {
-    switch(reg16)
-    {
-    case USE_REG_AX:
-        *pVal = RT_LOWORD(pCtx->eax);
-        break;
-    case USE_REG_BX:
-        *pVal = RT_LOWORD(pCtx->ebx);
-        break;
-    case USE_REG_CX:
-        *pVal = RT_LOWORD(pCtx->ecx);
-        break;
-    case USE_REG_DX:
-        *pVal = RT_LOWORD(pCtx->edx);
-        break;
-    case USE_REG_SI:
-        *pVal = RT_LOWORD(pCtx->esi);
-        break;
-    case USE_REG_DI:
-        *pVal = RT_LOWORD(pCtx->edi);
-        break;
-    case USE_REG_BP:
-        *pVal = RT_LOWORD(pCtx->ebp);
-        break;
-    case USE_REG_SP:
-        *pVal = RT_LOWORD(pCtx->esp);
-        break;
-    default:
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(reg16 < ELEMENTS(g_aReg16Index), VERR_INVALID_PARAMETER);
+
+    *pVal = DIS_READ_REG16(pCtx, reg16);
     return VINF_SUCCESS;
 }
 
@@ -505,35 +544,22 @@ DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t *pVal)
  */
 DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t *pVal)
 {
-    switch(reg32)
-    {
-    case USE_REG_EAX:
-        *pVal = pCtx->eax;
-        break;
-    case USE_REG_EBX:
-        *pVal = pCtx->ebx;
-        break;
-    case USE_REG_ECX:
-        *pVal = pCtx->ecx;
-        break;
-    case USE_REG_EDX:
-        *pVal = pCtx->edx;
-        break;
-    case USE_REG_ESI:
-        *pVal = pCtx->esi;
-        break;
-    case USE_REG_EDI:
-        *pVal = pCtx->edi;
-        break;
-    case USE_REG_EBP:
-        *pVal = pCtx->ebp;
-        break;
-    case USE_REG_ESP:
-        *pVal = pCtx->esp;
-        break;
-    default:
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(reg32 < ELEMENTS(g_aReg32Index), VERR_INVALID_PARAMETER);
+
+    *pVal = DIS_READ_REG32(pCtx, reg32);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Returns the value of the specified segment register
+ *
+ */
+DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal)
+{
+    AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
+
+    AssertCompile(sizeof(uint16_t) == sizeof(RTSEL));
+    *pVal = DIS_READ_REGSEG(pCtx, sel);
     return VINF_SUCCESS;
 }
 
@@ -543,36 +569,9 @@ DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t *pVal)
  */
 DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint32_t val32)
 {
-    switch(reg32)
-    {
-    case USE_REG_EAX:
-        pRegFrame->eax = val32;
-        break;
-    case USE_REG_EBX:
-        pRegFrame->ebx = val32;
-        break;
-    case USE_REG_ECX:
-        pRegFrame->ecx = val32;
-        break;
-    case USE_REG_EDX:
-        pRegFrame->edx = val32;
-        break;
-    case USE_REG_ESI:
-        pRegFrame->esi = val32;
-        break;
-    case USE_REG_EDI:
-        pRegFrame->edi = val32;
-        break;
-    case USE_REG_EBP:
-        pRegFrame->ebp = val32;
-        break;
-    case USE_REG_ESP:
-        pRegFrame->esp = val32;
-        break;
-    default:
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(reg32 < ELEMENTS(g_aReg32Index), VERR_INVALID_PARAMETER);
+
+    DIS_WRITE_REG32(pRegFrame, reg32, val32);
     return VINF_SUCCESS;
 }
 
@@ -580,38 +579,11 @@ DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint32_t val3
  * Updates the value of the specified 16 bits general purpose register
  *
  */
-DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint16_t val16)
+DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, uint32_t reg16, uint16_t val16)
 {
-    switch(reg32)
-    {
-    case USE_REG_EAX:
-        pRegFrame->eax = (pRegFrame->eax & 0xFFFF0000) | val16;
-        break;
-    case USE_REG_EBX:
-        pRegFrame->ebx = (pRegFrame->ebx & 0xFFFF0000) | val16;
-        break;
-    case USE_REG_ECX:
-        pRegFrame->ecx = (pRegFrame->ecx & 0xFFFF0000) | val16;
-        break;
-    case USE_REG_EDX:
-        pRegFrame->edx = (pRegFrame->edx & 0xFFFF0000) | val16;
-        break;
-    case USE_REG_ESI:
-        pRegFrame->esi = (pRegFrame->esi & 0xFFFF0000) | val16;
-        break;
-    case USE_REG_EDI:
-        pRegFrame->edi = (pRegFrame->edi & 0xFFFF0000) | val16;
-        break;
-    case USE_REG_EBP:
-        pRegFrame->ebp = (pRegFrame->ebp & 0xFFFF0000) | val16;
-        break;
-    case USE_REG_ESP:
-        pRegFrame->esp = (pRegFrame->esp & 0xFFFF0000) | val16;
-        break;
-    default:
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(reg16 < ELEMENTS(g_aReg16Index), VERR_INVALID_PARAMETER);
+
+    DIS_WRITE_REG16(pRegFrame, reg16, val16);
     return VINF_SUCCESS;
 }
 
@@ -621,36 +593,22 @@ DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint16_t val1
  */
 DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, uint32_t reg8, uint8_t val8)
 {
-    switch(reg8)
-    {
-    case USE_REG_AL:
-        pRegFrame->eax = (pRegFrame->eax & ~0xFF) | val8;
-        break;
-    case USE_REG_BL:
-        pRegFrame->ebx = (pRegFrame->ebx & ~0xFF) | val8;
-        break;
-    case USE_REG_CL:
-        pRegFrame->ecx = (pRegFrame->ecx & ~0xFF) | val8;
-        break;
-    case USE_REG_DL:
-        pRegFrame->edx = (pRegFrame->edx & ~0xFF) | val8;
-        break;
-    case USE_REG_AH:
-        pRegFrame->eax = (pRegFrame->eax & 0xFFFF00FF) | ((uint32_t)val8 << 8);
-        break;
-    case USE_REG_BH:
-        pRegFrame->ebx = (pRegFrame->ebx & 0xFFFF00FF) | ((uint32_t)val8 << 8);
-        break;
-    case USE_REG_CH:
-        pRegFrame->ecx = (pRegFrame->ecx & 0xFFFF00FF) | ((uint32_t)val8 << 8);
-        break;
-    case USE_REG_DH:
-        pRegFrame->edx = (pRegFrame->edx & 0xFFFF00FF) | ((uint32_t)val8 << 8);
-        break;
-    default:
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(reg8 < ELEMENTS(g_aReg8Index), VERR_INVALID_PARAMETER);
+
+    DIS_WRITE_REG8(pRegFrame, reg8, val8);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Updates the specified segment register
+ *
+ */
+DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL val)
+{
+    AssertReturn(sel < ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
+
+    AssertCompile(sizeof(uint16_t) == sizeof(RTSEL));
+    DIS_WRITE_REGSEG(pCtx, sel, val);
     return VINF_SUCCESS;
 }
 
