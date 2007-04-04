@@ -2589,6 +2589,15 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
             if (new_eflags & VM_MASK)
                 goto return_to_vm86;
         }
+#ifdef VBOX
+        if ((new_cs & 0x3) == 1 && (env->state & CPU_RAW_RING0)) 
+        {
+#ifdef DEBUG
+            printf("RPL 1 -> new_cs %04X -> %04X\n", new_cs, new_cs & 0xfffc);
+#endif
+            new_cs = new_cs & 0xfffc;
+        }
+#endif
     } else {
         /* 16 bits */
         POPW(ssp, sp, sp_mask, new_eip);
