@@ -1852,9 +1852,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         return VERR_EM_INTERPRETER;
     }
 
-    /* In HWACCM mode we can execute 16 bits code. Our emulation above can't cope with that yet. */
-    /** @note if not in HWACCM mode, then we will never execute 16 bits code, so don't bother checking. */
-    if (HWACCMIsEnabled(pVM) && !SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid))
+    /* Out emulation above can't cope with 16 bits code yet. */
+    if (!SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid))
         return VERR_EM_INTERPRETER;
 
     /** @note we could ignore PREFIX_LOCK here. Need to take special precautions when/if we support SMP in the guest.

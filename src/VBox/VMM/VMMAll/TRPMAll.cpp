@@ -422,6 +422,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
         && !(eflags.Bits.u1VM) /* @todo implement when needed (illegal for same privilege level transfers). */
 #endif
         && !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
+//testestset
+//        && iGate != 0xef
        )
     {
         uint16_t    cbIDT;
