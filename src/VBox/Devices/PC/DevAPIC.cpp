@@ -731,7 +731,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
         return -1;
     }
     reset_bit(s->irr, intno);
-    if (s->tpr && intno <= s->tpr) {
+    if (s->tpr && (uint32_t)intno <= s->tpr) {
         Log(("apic_get_interrupt: returns %d (sp)\n", s->spurious_vec & 0xff));
         return s->spurious_vec & 0xff;
     }
@@ -1079,7 +1079,7 @@ static int apic_mem_writel(APICState *s, target_phys_addr_t addr, uint32_t val)
 
 static void apic_save(QEMUFile *f, void *opaque)
 {
-    APICState *s = opaque;
+    APICState *s = (APICState*)opaque;
     int i;
 
     qemu_put_be32s(f, &s->apicbase);
@@ -1113,7 +1113,7 @@ static void apic_save(QEMUFile *f, void *opaque)
 
 static int apic_load(QEMUFile *f, void *opaque, int version_id)
 {
-    APICState *s = opaque;
+    APICState *s = (APICState*)opaque;
     int i;
 
     if (version_id != 1)
@@ -1152,7 +1152,7 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
 
 static void apic_reset(void *opaque)
 {
-    APICState *s = opaque;
+    APICState *s = (APICState*)opaque;
 #ifdef VBOX
     TMTimerStop(s->CTXSUFF(pTimer));
 
@@ -1276,7 +1276,7 @@ static
 #endif
 void ioapic_set_irq(void *opaque, int vector, int level)
 {
-    IOAPICState *s = opaque;
+    IOAPICState *s = (IOAPICState*)opaque;
 
     if (vector >= 0 && vector < IOAPIC_NUM_PINS) {
         uint32_t mask = 1 << vector;
@@ -1302,7 +1302,7 @@ void ioapic_set_irq(void *opaque, int vector, int level)
 
 static uint32_t ioapic_mem_readl(void *opaque, target_phys_addr_t addr)
 {
-    IOAPICState *s = opaque;
+    IOAPICState *s = (IOAPICState*)opaque;
     int index;
     uint32_t val = 0;
 
@@ -1338,7 +1338,7 @@ static uint32_t ioapic_mem_readl(void *opaque, target_phys_addr_t addr)
 
 static void ioapic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t val)
 {
-    IOAPICState *s = opaque;
+    IOAPICState *s = (IOAPICState*)opaque;
     int index;
 
     addr &= 0xff;
@@ -1376,7 +1376,7 @@ static void ioapic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t va
 
 static void ioapic_save(QEMUFile *f, void *opaque)
 {
-    IOAPICState *s = opaque;
+    IOAPICState *s = (IOAPICState*)opaque;
     int i;
 
     qemu_put_8s(f, &s->id);
@@ -1388,7 +1388,7 @@ static void ioapic_save(QEMUFile *f, void *opaque)
 
 static int ioapic_load(QEMUFile *f, void *opaque, int version_id)
 {
-    IOAPICState *s = opaque;
+    IOAPICState *s = (IOAPICState*)opaque;
     int i;
 
     if (version_id != 1)
@@ -1404,7 +1404,7 @@ static int ioapic_load(QEMUFile *f, void *opaque, int version_id)
 
 static void ioapic_reset(void *opaque)
 {
-    IOAPICState *s = opaque;
+    IOAPICState *s = (IOAPICState*)opaque;
 #ifdef VBOX
     PPDMDEVINSHC        pDevIns    = s->pDevInsHC;
     PCPDMIOAPICHLPR3    pIoApicHlp = s->pIoApicHlpR3;
