@@ -131,6 +131,7 @@ static STAMPROFILEADV gStatMemWriteHCPtr;
 static STAMPROFILE    gStatGCPhys2HCVirt;
 static STAMPROFILE    gStatHCVirt2GCPhys;
 #endif 
+static STAMCOUNTER    gStatCpuGetTSC;
 static STAMCOUNTER    gStatRefuseTFInhibit;
 static STAMCOUNTER    gStatRefuseVM86;
 static STAMCOUNTER    gStatRefusePaging;
@@ -369,6 +370,8 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatGCPhys2HCVirt,      STAMTYPE_PROFILE, "/PROF/REM/GCPhys2HCVirt", STAMUNIT_TICKS_PER_CALL, "Profiling memory convertion.");
 #endif
 
+    STAM_REG(pVM, &gStatCpuGetTSC,          STAMTYPE_COUNTER, "/REM/CpuGetTSC",         STAMUNIT_OCCURENCES,     "cpu_get_tsc calls");
+
     STAM_REG(pVM, &gStatRefuseTFInhibit,    STAMTYPE_COUNTER, "/REM/Refuse/TFInibit", STAMUNIT_OCCURENCES,     "Raw mode refused because of TF or irq inhibit");
     STAM_REG(pVM, &gStatRefuseVM86,         STAMTYPE_COUNTER, "/REM/Refuse/VM86",     STAMUNIT_OCCURENCES,     "Raw mode refused because of VM86");
     STAM_REG(pVM, &gStatRefusePaging,       STAMTYPE_COUNTER, "/REM/Refuse/Paging",   STAMUNIT_OCCURENCES,     "Raw mode refused because of disabled paging/pm");
@@ -398,6 +401,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[3],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/DS",        STAMUNIT_OCCURENCES,     "DS out of sync");
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[4],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/FS",        STAMUNIT_OCCURENCES,     "FS out of sync");
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[5],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/GS",        STAMUNIT_OCCURENCES,     "GS out of sync");
+
 
 #endif
 
@@ -4506,6 +4510,7 @@ void remR3RaiseRC(PVM pVM, int rc)
 
 uint64_t cpu_get_tsc(CPUX86State *env)
 {
+    STAM_COUNTER_INC(&gStatCpuGetTSC);
     return TMCpuTickGet(env->pVM);
 }
 
