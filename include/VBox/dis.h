@@ -509,6 +509,7 @@ DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, uint32_t reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t *pVal);
 DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t *pVal);
 DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal);
+DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg);
 DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, uint32_t reg8, uint8_t val8);
 DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint16_t val16);
 DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint32_t val32);
