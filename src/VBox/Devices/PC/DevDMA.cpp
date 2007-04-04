@@ -168,7 +168,7 @@ static int channels[8] = {-1, 2, 3, 1, -1, -1, -1, 0};
 
 static void write_page (void *opaque, uint32_t nport, uint32_t data)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int ichan;
 
     ichan = channels[nport & 7];
@@ -181,7 +181,7 @@ static void write_page (void *opaque, uint32_t nport, uint32_t data)
 
 static void write_pageh (void *opaque, uint32_t nport, uint32_t data)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int ichan;
 
     ichan = channels[nport & 7];
@@ -194,7 +194,7 @@ static void write_pageh (void *opaque, uint32_t nport, uint32_t data)
 
 static uint32_t read_page (void *opaque, uint32_t nport)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int ichan;
 
     ichan = channels[nport & 7];
@@ -207,7 +207,7 @@ static uint32_t read_page (void *opaque, uint32_t nport)
 
 static uint32_t read_pageh (void *opaque, uint32_t nport)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int ichan;
 
     ichan = channels[nport & 7];
@@ -238,7 +238,7 @@ static inline int getff (struct dma_cont *d)
 
 static uint32_t read_chan (void *opaque, uint32_t nport)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int ichan, nreg, iport, ff, val, dir;
     struct dma_regs *r;
 
@@ -260,7 +260,7 @@ static uint32_t read_chan (void *opaque, uint32_t nport)
 
 static void write_chan (void *opaque, uint32_t nport, uint32_t data)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int iport, ichan, nreg;
     struct dma_regs *r;
 
@@ -278,7 +278,7 @@ static void write_chan (void *opaque, uint32_t nport, uint32_t data)
 
 static void write_cont (void *opaque, uint32_t nport, uint32_t data)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int iport, ichan = 0;
 
     iport = (nport >> d->dshift) & 0x0f;
@@ -362,7 +362,7 @@ static void write_cont (void *opaque, uint32_t nport, uint32_t data)
 
 static uint32_t read_cont (void *opaque, uint32_t nport)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int iport, val;
 
     iport = (nport >> d->dshift) & 0x0f;
@@ -479,8 +479,8 @@ static uint32_t DMA_read_memory (DMAState *s,
     uint32_t addr = ((r->pageh & 0x7f) << 24) | (r->page << 16) | r->now[ADDR];
 
     if (r->mode & 0x20) {
-        int i;
-        uint8_t *p = buf;
+        unsigned i;
+        uint8_t *p = (uint8_t*)buf;
 
 #ifdef VBOX
         PDMDevHlpPhysRead (s->pDevIns, addr - pos - len, buf, len);
@@ -512,7 +512,7 @@ static uint32_t DMA_write_memory (DMAState *s,
     uint32_t addr = ((r->pageh & 0x7f) << 24) | (r->page << 16) | r->now[ADDR];
 
     if (r->mode & 0x20) {
-        int i;
+        unsigned i;
         uint8_t *p = (uint8_t *) buf;
 
 #ifdef VBOX
@@ -547,7 +547,7 @@ void DMA_schedule(int nchan)
 
 static void dma_reset(void *opaque)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     write_cont (d, (0x0d << d->dshift), 0);
 }
 
@@ -726,7 +726,7 @@ static void dma_init2(DMAState *s, struct dma_cont *d, int base, int dshift,
 
 static void dma_save (QEMUFile *f, void *opaque)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int i;
 
     /* qemu_put_8s (f, &d->status); */
@@ -751,7 +751,7 @@ static void dma_save (QEMUFile *f, void *opaque)
 
 static int dma_load (QEMUFile *f, void *opaque, int version_id)
 {
-    struct dma_cont *d = opaque;
+    struct dma_cont *d = (struct dma_cont*)opaque;
     int i;
 
     if (version_id != 1)

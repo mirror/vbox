@@ -51,8 +51,8 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_RTC
 #include <VBox/pdm.h>
-
 #include <VBox/log.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 
 #include "vl_vbox.h"
@@ -162,12 +162,12 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         /* compute 32 kHz clock */
         freq = TMTimerGetFreq(s->CTXSUFF(pPeriodicTimer));
 
-        cur_clock = muldiv64(current_time, 32768, freq);
+        cur_clock = ASMMultU64ByU32DivByU32(current_time, 32768, freq);
         next_irq_clock = (cur_clock & ~(uint64_t)(period - 1)) + period;
-        s->next_periodic_time = muldiv64(next_irq_clock, freq, 32768) + 1;
+        s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
 
         /* fiddly bits for dealing with running to keep up and losing interrupts. */
-        quarter_period_time = muldiv64(period, freq, 32768 * 4);
+        quarter_period_time = ASMMultU64ByU32DivByU32(period, freq, 32768 * 4);
         now = TMTimerGet(s->CTXSUFF(pPeriodicTimer));
         delta = s->next_periodic_time - now;
         if (delta >= (int64_t)quarter_period_time)

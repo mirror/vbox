@@ -172,8 +172,6 @@ DECLINLINE(int) lduw_raw(void *ptr)
 /*
  * Misc.
  */
-uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c);
-
 
 #ifdef _MSC_VER
 /**

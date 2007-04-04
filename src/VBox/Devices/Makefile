@@ -91,8 +91,7 @@ VBoxDDU_LDFLAGS.l4       = -Wl,--no-undefined
 VBoxDD_TEMPLATE         = VBOXR3
 VBoxDD_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
 VBoxDD_SOURCES          = \
-	Builtins.cpp \
-	muldiv64.c
+	Builtins.cpp
 VBoxDD_DEFS             = VBOX_ACPI
 ifdef VBOX_WITH_USB
  VBoxDD_DEFS           += VBOX_WITH_USB IN_USB_R3
@@ -180,7 +179,7 @@ DevicesR3_SOURCES       = \
 	VMMDev/VMMDevHGCM.cpp \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
-	PC/dma.c \
+	PC/DevDMA.cpp \
 	Storage/fdc.c \
 	Serial/DevSerial.cpp
 
@@ -215,7 +214,6 @@ VBoxDDGC_SYSSUFF        = .gc
 VBoxDDGC_INCS           = \
 	$(PATH_CURRENT)
 VBoxDDGC_SOURCES        = \
-	muldiv64.c \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
 	Input/pckbd.c \
@@ -252,7 +250,6 @@ VBoxDDR0_DEFS           = IN_RT_R0
 VBoxDDR0_INCS           = \
 	$(PATH_CURRENT)
 VBoxDDR0_SOURCES        = \
-	muldiv64.c \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
 	Input/pckbd.c \

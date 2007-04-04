@@ -25,6 +25,7 @@
 #include <VBox/pdm.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/asm.h>
 #ifdef IN_RING3
 #include <iprt/alloc.h>
 #endif /* IN_RING3 */
@@ -870,7 +871,7 @@ static void acpiPMTimerReset (ACPIState *s)
     uint64_t interval, freq;
 
     freq = TMTimerGetFreq (s->CTXSUFF(ts));
-    interval = muldiv64 (0xffffffff, freq, PM_TMR_FREQ);
+    interval = ASMMultU64ByU32DivByU32 (0xffffffff, freq, PM_TMR_FREQ);
     Log (("interval = %RU64\n", interval));
     TMTimerSet (s->CTXSUFF(ts), TMTimerGet (s->CTXSUFF(ts)) + interval);
 }
@@ -1215,7 +1216,7 @@ IO_READ_PROTO (acpiPMTmrRead)
         int64_t now = TMTimerGet (s->CTXSUFF(ts));
         int64_t elapsed = now - s->pm_timer_initial;
 
-        *pu32 = muldiv64 (elapsed, PM_TMR_FREQ, TMTimerGetFreq (s->CTXSUFF(ts)));
+        *pu32 = ASMMultU64ByU32DivByU32 (elapsed, PM_TMR_FREQ, TMTimerGetFreq (s->CTXSUFF(ts)));
         Log (("acpi: acpiPMTmrRead -> %#x\n", *pu32));
         return VINF_SUCCESS;
     }
