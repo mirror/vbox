@@ -31,6 +31,7 @@
 #include <VBox/mm.h>
 #include <VBox/stam.h>
 #include <VBox/csam.h>
+#include <VBox/patm.h>
 #include <VBox/trpm.h>
 #include <VBox/rem.h>
 #include <VBox/em.h>
@@ -254,7 +255,7 @@ static void pgmDumpPDEBig(const char *pszPrefix, int iPD, VBOXPDE Pde)
  */
 PGMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-    LogFlow(("PGMTrap0eHandler: uErr=%#x pvFault=%VGv eip=%VGv\n", uErr, pvFault, pRegFrame->eip));
+    Log(("PGMTrap0eHandler: uErr=%#x pvFault=%VGv eip=%VGv\n", uErr, pvFault, pRegFrame->eip));
     STAM_PROFILE_START(&pVM->pgm.s.StatGCTrap0e, a);
     STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = NULL; } );
 
