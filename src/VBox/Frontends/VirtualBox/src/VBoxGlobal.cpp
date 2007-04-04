@@ -500,6 +500,7 @@ VBoxGlobal::VBoxGlobal()
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
     , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
+    , clipboardTypes (CEnums::ClipboardMode_COUNT)
     , USBDeviceStates (CEnums::USBDeviceState_COUNT)
     , detailReportTemplatesReady (false)
 {
@@ -1752,6 +1753,15 @@ void VBoxGlobal::languageChange()
         tr ("Host Interface", "NetworkAttachmentType");
     networkAttachmentTypes [CEnums::InternalNetworkAttachment] =
         tr ("Internal Network", "NetworkAttachmentType");
+
+    clipboardTypes [CEnums::ClipDisabled] =
+        tr ("Disabled", "ClipboardType");
+    clipboardTypes [CEnums::ClipHostToGuest] =
+        tr ("HostToGuest", "ClipboardType");
+    clipboardTypes [CEnums::ClipGuestToHost] =
+        tr ("GuestToHost", "ClipboardType");
+    clipboardTypes [CEnums::ClipBidirectional] =
+        tr ("Bidirectional", "ClipboardType");
 
     USBDeviceStates [CEnums::USBDeviceNotSupported] =
         tr ("Not supported", "USBDeviceState");

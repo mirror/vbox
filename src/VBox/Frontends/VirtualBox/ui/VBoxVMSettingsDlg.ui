@@ -26,8 +26,8 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>465</width>
-            <height>493</height>
+            <width>486</width>
+            <height>405</height>
         </rect>
     </property>
     <property name="sizePolicy">
@@ -974,7 +974,7 @@ plan to install into this virtual machine (called a guest operating system).</st
                             <attribute name="title">
                                 <string>&amp;Advanced</string>
                             </attribute>
-                            <grid>
+                            <vbox>
                                 <property name="name">
                                     <cstring>unnamed</cstring>
                                 </property>
@@ -984,12 +984,205 @@ plan to install into this virtual machine (called a guest operating system).</st
                                 <property name="spacing">
                                     <number>10</number>
                                 </property>
-                                <widget class="QGroupBox" row="2" column="0" rowspan="1" colspan="3">
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout148</cstring>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLayoutWidget">
+                                            <property name="name">
+                                                <cstring>layout147</cstring>
+                                            </property>
+                                            <vbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <property name="margin">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="spacing">
+                                                    <number>0</number>
+                                                </property>
+                                                <widget class="QGroupBox">
+                                                    <property name="name">
+                                                        <cstring>groupBox12</cstring>
+                                                    </property>
+                                                    <property name="sizePolicy">
+                                                        <sizepolicy>
+                                                            <hsizetype>0</hsizetype>
+                                                            <vsizetype>0</vsizetype>
+                                                            <horstretch>0</horstretch>
+                                                            <verstretch>0</verstretch>
+                                                        </sizepolicy>
+                                                    </property>
+                                                    <property name="title">
+                                                        <string>Boo&amp;t Order</string>
+                                                    </property>
+                                                    <vbox>
+                                                        <property name="name">
+                                                            <cstring>unnamed</cstring>
+                                                        </property>
+                                                    </vbox>
+                                                </widget>
+                                                <spacer>
+                                                    <property name="name">
+                                                        <cstring>spacer129</cstring>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Vertical</enum>
+                                                    </property>
+                                                    <property name="sizeType">
+                                                        <enum>Minimum</enum>
+                                                    </property>
+                                                    <property name="sizeHint">
+                                                        <size>
+                                                            <width>21</width>
+                                                            <height>0</height>
+                                                        </size>
+                                                    </property>
+                                                </spacer>
+                                            </vbox>
+                                        </widget>
+                                        <widget class="QLayoutWidget">
+                                            <property name="name">
+                                                <cstring>layout146</cstring>
+                                            </property>
+                                            <vbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <property name="margin">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="spacing">
+                                                    <number>0</number>
+                                                </property>
+                                                <widget class="QGroupBox">
+                                                    <property name="name">
+                                                        <cstring>groupBox23</cstring>
+                                                    </property>
+                                                    <property name="sizePolicy">
+                                                        <sizepolicy>
+                                                            <hsizetype>7</hsizetype>
+                                                            <vsizetype>0</vsizetype>
+                                                            <horstretch>1</horstretch>
+                                                            <verstretch>0</verstretch>
+                                                        </sizepolicy>
+                                                    </property>
+                                                    <property name="title">
+                                                        <string>Extended Features</string>
+                                                    </property>
+                                                    <vbox>
+                                                        <property name="name">
+                                                            <cstring>unnamed</cstring>
+                                                        </property>
+                                                        <widget class="QCheckBox">
+                                                            <property name="name">
+                                                                <cstring>chbEnableACPI</cstring>
+                                                            </property>
+                                                            <property name="text">
+                                                                <string>Enable A&amp;CPI</string>
+                                                            </property>
+                                                            <property name="accel">
+                                                                <string>Alt+C</string>
+                                                            </property>
+                                                            <property name="whatsThis" stdset="0">
+                                                                <string>When checked, the virtual machine will support
+the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
+this feature after having installed a Windows guest operating system!</string>
+                                                            </property>
+                                                        </widget>
+                                                        <widget class="QCheckBox">
+                                                            <property name="name">
+                                                                <cstring>chbEnableIOAPIC</cstring>
+                                                            </property>
+                                                            <property name="text">
+                                                                <string>Enable IO A&amp;PIC</string>
+                                                            </property>
+                                                            <property name="accel">
+                                                                <string>Alt+P</string>
+                                                            </property>
+                                                            <property name="whatsThis" stdset="0">
+                                                                <string>When checked, the virtual machine will support
+the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable
+this feature after having installed a Windows guest operating system!</string>
+                                                            </property>
+                                                        </widget>
+                                                    </vbox>
+                                                </widget>
+                                                <spacer>
+                                                    <property name="name">
+                                                        <cstring>spacer128</cstring>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Vertical</enum>
+                                                    </property>
+                                                    <property name="sizeType">
+                                                        <enum>Minimum</enum>
+                                                    </property>
+                                                    <property name="sizeHint">
+                                                        <size>
+                                                            <width>20</width>
+                                                            <height>0</height>
+                                                        </size>
+                                                    </property>
+                                                </spacer>
+                                            </vbox>
+                                        </widget>
+                                    </hbox>
+                                </widget>
+                                <widget class="QGroupBox">
+                                    <property name="name">
+                                        <cstring>groupBox61</cstring>
+                                    </property>
+                                    <property name="title">
+                                        <string>&amp;Shared Clipboard</string>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QComboBox">
+                                            <property name="name">
+                                                <cstring>cbSharedClipboard</cstring>
+                                            </property>
+                                            <property name="sizePolicy">
+                                                <sizepolicy>
+                                                    <hsizetype>5</hsizetype>
+                                                    <vsizetype>0</vsizetype>
+                                                    <horstretch>0</horstretch>
+                                                    <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                            </property>
+                                        </widget>
+                                        <spacer>
+                                            <property name="name">
+                                                <cstring>spacer130</cstring>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Horizontal</enum>
+                                            </property>
+                                            <property name="sizeType">
+                                                <enum>Expanding</enum>
+                                            </property>
+                                            <property name="sizeHint">
+                                                <size>
+                                                    <width>0</width>
+                                                    <height>20</height>
+                                                </size>
+                                            </property>
+                                        </spacer>
+                                    </hbox>
+                                </widget>
+                                <widget class="QGroupBox">
                                     <property name="name">
                                         <cstring>groupBox5</cstring>
                                     </property>
                                     <property name="title">
-                                        <string>&amp;Snapshot Folder</string>
+                                        <string>S&amp;napshot Folder</string>
                                     </property>
                                     <grid>
                                         <property name="name">
@@ -1056,7 +1249,7 @@ The actual default path will be displayed after accepting the changes and openin
                                         </widget>
                                     </grid>
                                 </widget>
-                                <spacer row="3" column="1">
+                                <spacer>
                                     <property name="name">
                                         <cstring>spacer119_2</cstring>
                                     </property>
@@ -1073,81 +1266,7 @@ The actual default path will be displayed after accepting the changes and openin
                                         </size>
                                     </property>
                                 </spacer>
-                                <widget class="QGroupBox" row="0" column="1" rowspan="1" colspan="2">
-                                    <property name="name">
-                                        <cstring>groupBox23</cstring>
-                                    </property>
-                                    <property name="sizePolicy">
-                                        <sizepolicy>
-                                            <hsizetype>7</hsizetype>
-                                            <vsizetype>5</vsizetype>
-                                            <horstretch>1</horstretch>
-                                            <verstretch>0</verstretch>
-                                        </sizepolicy>
-                                    </property>
-                                    <property name="title">
-                                        <string>Extended Features</string>
-                                    </property>
-                                    <vbox>
-                                        <property name="name">
-                                            <cstring>unnamed</cstring>
-                                        </property>
-                                        <widget class="QCheckBox">
-                                            <property name="name">
-                                                <cstring>chbEnableACPI</cstring>
-                                            </property>
-                                            <property name="text">
-                                                <string>Enable A&amp;CPI</string>
-                                            </property>
-                                            <property name="accel">
-                                                <string>Alt+C</string>
-                                            </property>
-                                            <property name="whatsThis" stdset="0">
-                                                <string>When checked, the virtual machine will support
-the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
-this feature after having installed a Windows guest operating system!</string>
-                                            </property>
-                                        </widget>
-                                        <widget class="QCheckBox">
-                                            <property name="name">
-                                                <cstring>chbEnableIOAPIC</cstring>
-                                            </property>
-                                            <property name="text">
-                                                <string>Enable IO A&amp;PIC</string>
-                                            </property>
-                                            <property name="accel">
-                                                <string>Alt+P</string>
-                                            </property>
-                                            <property name="whatsThis" stdset="0">
-                                                <string>When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable
-this feature after having installed a Windows guest operating system!</string>
-                                            </property>
-                                        </widget>
-                                    </vbox>
-                                </widget>
-                                <widget class="QGroupBox" row="0" column="0" rowspan="2" colspan="1">
-                                    <property name="name">
-                                        <cstring>groupBox12</cstring>
-                                    </property>
-                                    <property name="sizePolicy">
-                                        <sizepolicy>
-                                            <hsizetype>7</hsizetype>
-                                            <vsizetype>5</vsizetype>
-                                            <horstretch>0</horstretch>
-                                            <verstretch>0</verstretch>
-                                        </sizepolicy>
-                                    </property>
-                                    <property name="title">
-                                        <string>Boo&amp;t Order</string>
-                                    </property>
-                                    <vbox>
-                                        <property name="name">
-                                            <cstring>unnamed</cstring>
-                                        </property>
-                                    </vbox>
-                                </widget>
-                            </grid>
+                            </vbox>
                         </widget>
                         <widget class="QWidget">
                             <property name="name">
@@ -1583,6 +1702,9 @@ a Floppy image to mount.</string>
                     </property>
                     <property name="margin">
                         <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
                     </property>
                     <widget class="QButtonGroup">
                         <property name="name">
@@ -2577,6 +2699,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <tabstop>leVRAM</tabstop>
     <tabstop>chbEnableACPI</tabstop>
     <tabstop>chbEnableIOAPIC</tabstop>
+    <tabstop>cbSharedClipboard</tabstop>
     <tabstop>leSnapshotFolder</tabstop>
     <tabstop>tbSelectSavedStateFolder</tabstop>
     <tabstop>tbResetSavedStateFolder</tabstop>
