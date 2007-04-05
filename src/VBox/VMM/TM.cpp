@@ -216,30 +216,19 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "TSCTicksPerSecond", &pVM->tm.s.cTSCTicksPerSecond);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-#if 0  /* when tmCpuTickGetRawVirtual is done */
         pVM->tm.s.cTSCTicksPerSecond = tmR3Calibrate();
-#else
-        if (pVM->tm.s.fTSCUseRealTSC)
-            pVM->tm.s.cTSCTicksPerSecond = tmR3Calibrate();
-        else
-            pVM->tm.s.cTSCTicksPerSecond = TMCLOCK_FREQ_VIRTUAL;/* same as the virtual clock. */
-#endif 
+        if (    !pVM->tm.s.fTSCUseRealTSC
+            &&  pVM->tm.s.cTSCTicksPerSecond >= _4G)
+            pVM->tm.s.cTSCTicksPerSecond = _4G - 1; /* (A limitation of our math code) */
     }
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, 
                           N_("Configuration error: Failed to querying uint64_t value \"TSCTicksPerSecond\". (%Vrc)"), rc); 
-#if 0 /* when tmCpuTickGetRawVirtual is done */
     else if (   pVM->tm.s.cTSCTicksPerSecond < _1M
-             || pVM->tm.s.cTSCTicksPerSecond > _1E)
+             || pVM->tm.s.cTSCTicksPerSecond >= _4G)
         return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, 
-                          N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not in the range 1MHz..1EHz!"),
+                          N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not in the range 1MHz..4GHz-1!"),
                           pVM->tm.s.cTSCTicksPerSecond);
-#else
-    else if (pVM->tm.s.cTSCTicksPerSecond != TMCLOCK_FREQ_VIRTUAL)
-        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, 
-                          N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not 1GHz! (temporary restriction)"),
-                          pVM->tm.s.cTSCTicksPerSecond);
-#endif
     else
     {
         pVM->tm.s.fTSCUseRealTSC = false;
@@ -635,12 +624,16 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
     /* the cpu tick clock. */
     pVM->tm.s.fTSCTicking = false;
+    SSMR3GetU64(pSSM, &pVM->tm.s.u64TSC);
     rc = SSMR3GetU64(pSSM, &u64Hz);
     if (VBOX_FAILURE(rc))
         return rc;
-    SSMR3GetU64(pSSM, &pVM->tm.s.u64TSC);
-    /** @todo check TSC frequency and virtualize the TSC properly! */
-    pVM->tm.s.u64TSCOffset = 0;
+    if (pVM->tm.s.fTSCUseRealTSC)
+        pVM->tm.s.u64TSCOffset = 0; /** @todo TSC restore stuff and HWACC. */
+    else
+        pVM->tm.s.cTSCTicksPerSecond = u64Hz;
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool (state load)\n", 
+            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC));
 
     /*
      * Make sure timers get rescheduled immediately.
@@ -1285,12 +1278,12 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
                     pVM->tm.s.fTSCVirtualized ? " - virtualized" : "");
     if (pVM->tm.s.fTSCUseRealTSC)
     {
-        pHlp->pfnPrintf(pHlp, "- real tsc");
+        pHlp->pfnPrintf(pHlp, " - real tsc");
         if (pVM->tm.s.u64TSCOffset)
             pHlp->pfnPrintf(pHlp, "\n          offset %#RX64", pVM->tm.s.u64TSCOffset);
     }
     else
-        pHlp->pfnPrintf(pHlp, "- virtual clock");
+        pHlp->pfnPrintf(pHlp, " - virtual clock");
     pHlp->pfnPrintf(pHlp, "\n");
 
     /* virtual */

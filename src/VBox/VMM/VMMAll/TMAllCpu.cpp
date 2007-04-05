@@ -41,7 +41,8 @@
 DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM)
 {
     uint64_t u64 = TMVirtualGet(pVM);
-    /** @todo calc tsc from virtual time. */
+    if (u64 != TMCLOCK_FREQ_VIRTUAL)
+        u64 = ASMMultU64ByU32DivByU32(u64, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
     return u64;
 }
 
@@ -81,13 +82,7 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
 {
     if (pVM->tm.s.fTSCTicking)
     {
-        if (!pVM->tm.s.fTSCVirtualized)
-        {
-            if (pVM->tm.s.fTSCUseRealTSC)
-                pVM->tm.s.u64TSC = ASMReadTSC() - pVM->tm.s.u64TSCOffset;
-            else
-                pVM->tm.s.u64TSC = tmCpuTickGetRawVirtual(pVM) - pVM->tm.s.u64TSCOffset;
-        }
+        pVM->tm.s.u64TSC = TMCpuTickGet(pVM);
         pVM->tm.s.fTSCTicking = false;
         return VINF_SUCCESS;
     }
@@ -106,20 +101,21 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
 TMDECL(uint64_t) TMCpuTickGet(PVM pVM)
 {
     uint64_t u64;
-    if (pVM->tm.s.fTSCUseRealTSC)
-        u64 = ASMReadTSC();
-    else
+    if (RT_LIKELY(pVM->tm.s.fTSCTicking))
     {
-        if (pVM->tm.s.fTSCTicking)
+        if (pVM->tm.s.fTSCVirtualized)
         {
             if (pVM->tm.s.fTSCUseRealTSC)
-                u64 = ASMReadTSC() - pVM->tm.s.u64TSCOffset;
+                u64 = ASMReadTSC();
             else
-                u64 = tmCpuTickGetRawVirtual(pVM) - pVM->tm.s.u64TSCOffset;
+                u64 = tmCpuTickGetRawVirtual(pVM);
+            u64 -= pVM->tm.s.u64TSCOffset;
         }
         else
-            u64 = pVM->tm.s.u64TSC;
+            u64 = ASMReadTSC();
     }
+    else
+        u64 = pVM->tm.s.u64TSC;
     return u64;
 }
 
