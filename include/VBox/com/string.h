@@ -245,7 +245,7 @@ public:
      *  characters plus the terminating zero character. If \a aSize is zero,
      *  a null object will be created.
      */
-    Utf8Str (size_t aSize) : str (NULL)
+    alloc (size_t aSize)
     {
         if (aSize)
         {
@@ -257,6 +257,11 @@ public:
             if (str)
                 str [0] = 0;
         }
+    }
+
+    Utf8Str (size_t aSize) : str (NULL)
+    {
+        alloc(aSize);
     }
 
     virtual ~Utf8Str () { setNull(); }
