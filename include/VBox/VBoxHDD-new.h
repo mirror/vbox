@@ -295,6 +295,14 @@ VBOXDDU_DECL(int) VBOXHDDRead(PVBOXHDD pDisk, uint64_t offStart, void *pvBuf, un
 VBOXDDU_DECL(int) VBOXHDDWrite(PVBOXHDD pDisk, uint64_t offStart, const void *pvBuf, unsigned cbToWrite);
 
 /**
+ * Make sure the on disk representation of a virtual HDD is up to date.
+ *
+ * @returns VBox status code.
+ * @param   pDisk           Pointer to VBox HDD container.
+ */
+VBOXDDU_DECL(int) VBOXHDDFlush(PVBOXHDD pDisk);
+
+/**
  * Get number of opened images in HDD container.
  *
  * @returns Number of opened images for HDD container. 0 if no images has been opened.
@@ -419,6 +427,28 @@ VBOXDDU_DECL(int) VBOXHDDGetImageType(PVBOXHDD pDisk, unsigned nImage, PVBOXHDDI
  * @param   puImageFlags    Where to store the image flags.
  */
 VBOXDDU_DECL(int) VBOXHDDGetImageFlags(PVBOXHDD pDisk, unsigned nImage, unsigned *puImageFlags);
+
+/**
+ * Get open flags of last opened image in HDD container.
+ *
+ * @returns VBox status code.
+ * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @param   pDisk           Pointer to VBox HDD container.
+ * @param   puOpenFlags     Where to store the image open flags.
+ */
+VBOXDDU_DECL(int) VBOXHDDGetOpenFlags(PVBOXHDD pDisk, unsigned *puOpenFlags);
+
+/**
+ * Set open flags of last opened image in HDD container.
+ * This operation may cause file locking changes and/or files being reopened.
+ * Note that in case of unrecoverable error all images in HDD container will be closed.
+ *
+ * @returns VBox status code.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to VBox HDD container.
+ * @param   uOpenFlags      Image file open mode, see VBOXHDD_OPEN_FLAGS_* constants.
+ */
+VBOXDDU_DECL(int) VBOXHDDSetOpenFlags(PVBOXHDD pDisk, unsigned uOpenFlags);
 
 /**
  * Get base filename of opened image in HDD container. Some image formats use
