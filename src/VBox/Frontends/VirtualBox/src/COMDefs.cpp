@@ -296,25 +296,31 @@ HRESULT COMBase::cleanupCOM()
 
 void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)
 {
-    Assert (!info.isNull());
-    if (info.isNull())
-        return;
+    AssertReturnVoid (!info.isNull());
 
     bool gotSomething = false;
+    bool gotAll = true;
 
     mResultCode = info.GetResultCode();
     gotSomething |= info.isOk();
+    gotAll &= info.isOk();
+
     mInterfaceID = info.GetInterfaceID();
     gotSomething |= info.isOk();
+    gotAll &= info.isOk();
     if (info.isOk())
         mInterfaceName = getInterfaceNameFromIID (mInterfaceID);
+
     mComponent = info.GetComponent();
     gotSomething |= info.isOk();
+    gotAll &= info.isOk();
+
     mText = info.GetText();
     gotSomething |= info.isOk();
+    gotAll &= info.isOk();
 
-    if (gotSomething)
-        mIsFullAvailable = mIsBasicAvailable = true;
+    mIsBasicAvailable = gotSomething;
+    mIsFullAvailable = gotAll;
 
     mIsNull = gotSomething;
 

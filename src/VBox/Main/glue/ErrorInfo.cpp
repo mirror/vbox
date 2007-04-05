@@ -248,29 +248,32 @@ void ErrorInfo::init (IUnknown *i, const GUID &iid)
 
 void ErrorInfo::init (IVirtualBoxErrorInfo *info)
 {
-    Assert (info);
-    if (!info)
-        return;
+    AssertReturnVoid (info);
 
     HRESULT rc = E_FAIL;
     bool gotSomething = false;
+    bool gotAll = true;
 
     rc = info->COMGETTER(ResultCode) (&mResultCode);
     gotSomething |= SUCCEEDED (rc);
+    gotAll &= SUCCEEDED (rc);
 
     rc = info->COMGETTER(InterfaceID) (mInterfaceID.asOutParam());
     gotSomething |= SUCCEEDED (rc);
+    gotAll &= SUCCEEDED (rc);
     if (SUCCEEDED (rc))
         GetInterfaceNameByIID (mInterfaceID, mInterfaceName.asOutParam());
 
     rc = info->COMGETTER(Component) (mComponent.asOutParam());
     gotSomething |= SUCCEEDED (rc);
+    gotAll &= SUCCEEDED (rc);
 
     rc = info->COMGETTER(Text) (mText.asOutParam());
     gotSomething |= SUCCEEDED (rc);
+    gotAll &= SUCCEEDED (rc);
 
-    if (gotSomething)
-        mIsFullAvailable = mIsBasicAvailable = true;
+    mIsBasicAvailable = gotSomething;
+    mIsFullAvailable = gotAll;
 
     AssertMsg (gotSomething, ("Nothing to fetch!\n"));
 }
