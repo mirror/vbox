@@ -245,7 +245,7 @@ public:
      *  characters plus the terminating zero character. If \a aSize is zero,
      *  a null object will be created.
      */
-    alloc (size_t aSize)
+    void alloc (size_t aSize)
     {
         if (aSize)
         {
