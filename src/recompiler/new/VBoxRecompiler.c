@@ -1591,7 +1591,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
         STAM_COUNTER_INC(&aStatTrap[uTrap]);
     }
 #endif
-    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
+    RTLogPrintf("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]);
     if(uTrap < 0x20)
     {
         remR3DisasInstr(env, 1, "remR3NotifyTrap: ");
@@ -2719,14 +2719,14 @@ DECLINLINE(void *) remR3GCPhys2HCVirtInlined(PVM pVM, target_ulong addr)
         if (off < pVM->rem.s.aPhysReg[i].cb)
         {
             pv = (void *)(pVM->rem.s.aPhysReg[i].HCVirt + off);
-            Log(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pv));
+            Log2(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pv));
             STAM_PROFILE_STOP(&gStatGCPhys2HCVirt, a);
             return pv;
         }
     }
     AssertMsg(addr < phys_ram_size, ("remR3GCPhys2HCVirt: unknown physical address %x\n", addr));
     pv = (void *)(pVM->rem.s.paGCPhysToHCVirt[addr >> PGM_DYNAMIC_CHUNK_SHIFT] + (addr & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
-    Log(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pv));
+    Log2(("remR3GCPhys2HCVirt: %x -> %x\n", addr, pv));
 #else
     /** @todo figure out why this is faster than the above code. */
     int rc = PGMPhysGCPhys2HCPtr(pVM, addr & X86_PTE_PAE_PG_MASK, PAGE_SIZE, &pv);
@@ -4126,6 +4126,9 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
         else
             Log(("%s", szOutput));
     }
+    remR3StateUpdate(pVM);
+    DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
+
     return true;
 
 #else /* !USE_OLD_DUMP_AND_DISASSEMBLY */
