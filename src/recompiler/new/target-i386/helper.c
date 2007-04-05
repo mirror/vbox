@@ -904,9 +904,9 @@ static void do_soft_interrupt_vme(int intno, int error_code, unsigned int next_e
     env->eflags &= ~(TF_MASK | RF_MASK);
 
     if (iopl < 3)
-        env->eflags &= ~IF_MASK;
-    else
         env->eflags &= ~VIF_MASK;
+    else
+        env->eflags &= ~IF_MASK;
 }
 #endif /* VBOX */
 
