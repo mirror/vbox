@@ -4126,9 +4126,6 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
         else
             Log(("%s", szOutput));
     }
-    remR3StateUpdate(pVM);
-    DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
-
     return true;
 
 #else /* !USE_OLD_DUMP_AND_DISASSEMBLY */
