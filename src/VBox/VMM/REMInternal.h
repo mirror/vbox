@@ -43,7 +43,7 @@
  */
 
 /** The saved state version number. */
-#define REM_SAVED_STATE_VERSION     4
+#define REM_SAVED_STATE_VERSION     5
 
 
 /** @def REM_MONITOR_CODE_PAGES
