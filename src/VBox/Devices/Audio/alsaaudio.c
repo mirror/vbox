@@ -565,7 +565,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
     if (err < 0)
     {
         LogRel(("ALSA: Failed to get period size\n"));
-	goto err;
+        goto err;
     }
     LogRel(("ALSA: %s frequency %dHz, period size %ld, buffer size %ld\n",
              typ, req->freq, obt_period_size, obt_buffer_size));
