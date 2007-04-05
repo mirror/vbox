@@ -97,8 +97,8 @@ struct alsa_params_req {
     int freq;
     audfmt_e fmt;
     int nchannels;
-    unsigned int buffer_size;
-    unsigned int period_size;
+    unsigned long buffer_size;
+    unsigned long period_size;
 };
 
 struct alsa_params_obt {
@@ -268,16 +268,19 @@ static int alsa_open (int in, struct alsa_params_req *req,
 {
     snd_pcm_t *handle;
     snd_pcm_hw_params_t *hw_params;
-    int err;
+    int err, dir;
     unsigned int freq, nchannels;
     const char *pcm_name = in ? conf.pcm_name_in : conf.pcm_name_out;
     unsigned int period_size, buffer_size;
-    snd_pcm_uframes_t obt_buffer_size;
+    snd_pcm_uframes_t period_size_f, buffer_size_f;
+    snd_pcm_uframes_t obt_buffer_size, obt_period_size;
     const char *typ = in ? "ADC" : "DAC";
 
     freq = req->freq;
     period_size = req->period_size;
     buffer_size = req->buffer_size;
+    period_size_f = (snd_pcm_uframes_t)period_size;
+    buffer_size_f = (snd_pcm_uframes_t)buffer_size;
     nchannels = req->nchannels;
 
     snd_pcm_hw_params_alloca (&hw_params);
@@ -414,11 +417,10 @@ static int alsa_open (int in, struct alsa_params_req *req,
             }
         }
         else {
-            int dir;
             snd_pcm_uframes_t minval;
 
-            if (period_size) {
-                minval = period_size;
+            if (period_size_f) {
+                minval = period_size_f;
                 dir = 0;
 
                 err = snd_pcm_hw_params_get_period_size_min (
@@ -439,16 +441,16 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 }
                 else {
                     dolog("minimal period size %ld\n", minval);
-                    if (period_size < minval) {
+                    if (period_size_f < minval) {
                         if ((in && conf.period_size_in_overriden)
                             || (!in && conf.period_size_out_overriden)) {
                             dolog ("%s period size(%d) is less "
                                    "than minmal period size(%ld)\n",
                                    typ,
-                                   period_size,
+                                   period_size_f,
                                    minval);
                         }
-                        period_size = minval;
+                        period_size_f = minval;
                     }
                 }
 
@@ -456,25 +458,25 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 err = snd_pcm_hw_params_set_period_size (
                     handle,
                     hw_params,
-                    period_size,
+                    period_size_f,
                     0
                     );
 #else
                 err = snd_pcm_hw_params_set_period_size_near (
                     handle,
                     hw_params,
-                    (snd_pcm_uframes_t*)&period_size,
+                    &period_size_f,
                     0
                     );
 #endif
-                dolog("PERIOD_SIZE %d\n", period_size);
+                dolog("PERIOD_SIZE %d\n", period_size_f);
                 if (err < 0) {
 #ifndef VBOX
                     alsa_logerr2 (err, typ, "Failed to set period size %d\n",
-                                  period_size);
+                                  period_size_f);
 #else
                     LogRel(("ALSA: Failed to set period size %d (%s)\n",
-                            period_size, snd_strerror(err)));
+                            period_size_f, snd_strerror(err)));
 #endif
                     goto err;
                 }
@@ -483,10 +485,10 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifdef VBOX
             /* Calculate default buffer size here since it might have been changed
              * in the _near functions */
-            buffer_size = 4 * period_size;
+            buffer_size_f = 4 * period_size_f;
 #endif
 
-            minval = buffer_size;
+            minval = buffer_size_f;
             err = snd_pcm_hw_params_get_buffer_size_min (
                 hw_params,
                 &minval
@@ -500,34 +502,34 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #endif
             }
             else {
-                if (buffer_size < minval) {
+                if (buffer_size_f < minval) {
                     if ((in && conf.buffer_size_in_overriden)
                         || (!in && conf.buffer_size_out_overriden)) {
                         dolog (
                             "%s buffer size(%d) is less "
                             "than minimal buffer size(%ld)\n",
                             typ,
-                            buffer_size,
+                            buffer_size_f,
                             minval
                             );
                     }
-                    buffer_size = minval;
+                    buffer_size_f = minval;
                 }
             }
 
             err = snd_pcm_hw_params_set_buffer_size_near (
                 handle,
                 hw_params,
-                (snd_pcm_uframes_t*)&buffer_size
+                &buffer_size_f
                 );
-            dolog("BUFFER_SIZE %d\n", buffer_size);
+            dolog("BUFFER_SIZE %d\n", buffer_size_f);
             if (err < 0) {
 #ifndef VBOX
                 alsa_logerr2 (err, typ, "Failed to set buffer size %d\n",
-                              buffer_size);
+                              buffer_size_f);
 #else
                 LogRel(("ALSA: Failed to set buffer size %d (%s)\n",
-                        buffer_size, snd_strerror(err)));
+                        buffer_size_f, snd_strerror(err)));
 #endif
                 goto err;
             }
@@ -558,8 +560,15 @@ static int alsa_open (int in, struct alsa_params_req *req,
     }
 
 #ifdef VBOX
-    LogRel(("ALSA: %s frequency %dHz, period size %d, buffer size %d\n",
-             typ, req->freq, period_size, obt_buffer_size));
+    dir = 0;
+    err = snd_pcm_hw_params_get_period_size (hw_params, &obt_period_size, &dir);
+    if (err < 0)
+    {
+        LogRel(("ALSA: Failed to get period size\n"));
+	goto err;
+    }
+    LogRel(("ALSA: %s frequency %dHz, period size %ld, buffer size %ld\n",
+             typ, req->freq, obt_period_size, obt_buffer_size));
 #endif
 
     err = snd_pcm_prepare (handle);
