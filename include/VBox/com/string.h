@@ -249,6 +249,7 @@ public:
     {
         if (aSize)
         {
+            setNull();
 #if defined (__WIN__)
             str = (char *) ::RTMemTmpAlloc (aSize);
 #else
