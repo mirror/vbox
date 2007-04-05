@@ -1591,7 +1591,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
         STAM_COUNTER_INC(&aStatTrap[uTrap]);
     }
 #endif
-    RTLogPrintf("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]);
+    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
     if(uTrap < 0x20)
     {
         remR3DisasInstr(env, 1, "remR3NotifyTrap: ");
