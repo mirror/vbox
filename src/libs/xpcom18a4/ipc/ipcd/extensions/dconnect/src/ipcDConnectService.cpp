@@ -20,7 +20,6 @@
  *
  * Contributor(s):
  *   Darin Fisher <darin@meer.net>
- *   Dmitry A. Kuminov <dmik@innotek.de>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -45,6 +44,7 @@
 #include "nsIInterfaceInfo.h"
 #include "nsIInterfaceInfoManager.h"
 #include "nsIExceptionService.h"
+#include "nsAutoPtr.h"
 #include "nsString.h"
 #include "nsVoidArray.h"
 #include "nsCRT.h"
@@ -157,8 +157,6 @@ struct DConnectSetupReply : DConnectOp
 {
   DConAddr instance;
   nsresult status;
-  // followed by a specially serialized nsIException instance if
-  // NS_FAILED(status) (see ipcDConnectService::SerializeException)
 };
 
 // RELEASE struct
@@ -182,9 +180,9 @@ struct DConnectInvoke : DConnectOp
 struct DConnectInvokeReply : DConnectOp
 {
   nsresult result;
-  // followed by an array of out-param blobs if NS_SUCCEEDED(result), or by a
-  // specially serialized nsIException instance if NS_FAILED(result)
-  // (see ipcDConnectService::SerializeException)
+  // followed by an array of out-param blobs if NS_SUCCEEDED (result)
+  // or by an nsIException instance if NS_FAILED (result) and the called
+  // method has set an exception for the current thread using nsIExceptionManager
 };
 
 //-----------------------------------------------------------------------------
@@ -1117,458 +1115,6 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-
-#define EXCEPTION_STUB_ID                          \
-{ /* 70578d68-b25e-4370-a70c-89bbe56e6699 */       \
-  0x70578d68,                                      \
-  0xb25e,                                          \
-  0x4370,                                          \
-  {0xa7, 0x0c, 0x89, 0xbb, 0xe5, 0x6e, 0x66, 0x99} \
-}
-static NS_DEFINE_IID(kExceptionStubID, EXCEPTION_STUB_ID);
-
-// ExceptionStub is used to cache all primitive-typed bits of a remote nsIException
-// instance (such as the error message or line number) to:
-//
-// a) reduce the number of IPC calls;
-// b) make sure exception information is available to the calling party even if
-//    the called party terminates immediately after returning an exception.
-//    To achieve this, all cacheable information is serialized together with
-//    the instance wrapper itself.
-
-class ExceptionStub : public nsIException
-{
-public:
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIEXCEPTION
-
-  ExceptionStub(const nsACString &aMessage, nsresult aResult,
-                const nsACString &aName, const nsACString &aFilename,
-                PRUint32 aLineNumber, PRUint32 aColumnNumber,
-                DConnectStub *aXcptStub)
-    : mMessage(aMessage), mResult(aResult)
-    , mName(aName), mFilename(aFilename)
-    , mLineNumber (aLineNumber), mColumnNumber (aColumnNumber)
-    , mXcptStub (aXcptStub) { NS_ASSERTION(aXcptStub, "NULL"); }
-
-  ~ExceptionStub() {}
-
-  nsIException *Exception() { return (nsIException *)(nsISupports *) mXcptStub; }
-  DConnectStub *Stub() { return mXcptStub; }
-
-private:
-
-  nsCString mMessage;
-  nsresult mResult;
-  nsCString mName;
-  nsCString mFilename;
-  PRUint32 mLineNumber;
-  PRUint32 mColumnNumber;
-  nsRefPtr<DConnectStub> mXcptStub;
-};
-
-NS_IMPL_ADDREF(ExceptionStub)
-NS_IMPL_RELEASE(ExceptionStub)
-
-NS_IMETHODIMP
-ExceptionStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
-{
-  NS_ASSERTION(aInstancePtr,
-               "QueryInterface requires a non-NULL destination!");
-
-  // used to discover if this is an ExceptionStub instance.
-  if (aIID.Equals(kExceptionStubID))
-  {
-    *aInstancePtr = this;
-    NS_ADDREF_THIS();
-    return NS_OK;
-  }
-
-  // regular NS_IMPL_QUERY_INTERFACE1 sequence
-
-  nsISupports* foundInterface = 0;
-
-  if (aIID.Equals(NS_GET_IID(nsIException)))
-    foundInterface = NS_STATIC_CAST(nsIException*, this);
-  else
-  if (aIID.Equals(NS_GET_IID(nsISupports)))
-    foundInterface = NS_STATIC_CAST(nsISupports*,
-                                    NS_STATIC_CAST(nsIException *, this));
-  else
-  if (mXcptStub)
-  {
-    // ask the real nsIException object
-    return mXcptStub->QueryInterface(aIID, aInstancePtr);
-  }
-
-  nsresult status;
-  if (!foundInterface)
-    status = NS_NOINTERFACE;
-  else
-  {
-    NS_ADDREF(foundInterface);
-    status = NS_OK;
-  }
-  *aInstancePtr = foundInterface;
-  return status;
-}
-
-/* readonly attribute string message; */
-NS_IMETHODIMP ExceptionStub::GetMessage(char **aMessage)
-{
-  if (!aMessage)
-    return NS_ERROR_INVALID_POINTER;
-  *aMessage = ToNewCString(mMessage);
-  return NS_OK;
-}
-
-/* readonly attribute nsresult result; */
-NS_IMETHODIMP ExceptionStub::GetResult(nsresult *aResult)
-{
-  if (!aResult)
-    return NS_ERROR_INVALID_POINTER;
-  *aResult = mResult;
-  return NS_OK;
-}
-
-/* readonly attribute string name; */
-NS_IMETHODIMP ExceptionStub::GetName(char **aName)
-{
-  if (!aName)
-    return NS_ERROR_INVALID_POINTER;
-  *aName = ToNewCString(mName);
-  return NS_OK;
-}
-
-/* readonly attribute string filename; */
-NS_IMETHODIMP ExceptionStub::GetFilename(char **aFilename)
-{
-  if (!aFilename)
-    return NS_ERROR_INVALID_POINTER;
-  *aFilename = ToNewCString(mFilename);
-  return NS_OK;
-}
-
-/* readonly attribute PRUint32 lineNumber; */
-NS_IMETHODIMP ExceptionStub::GetLineNumber(PRUint32 *aLineNumber)
-{
-  if (!aLineNumber)
-    return NS_ERROR_INVALID_POINTER;
-  *aLineNumber = mLineNumber;
-  return NS_OK;
-}
-
-/* readonly attribute PRUint32 columnNumber; */
-NS_IMETHODIMP ExceptionStub::GetColumnNumber(PRUint32 *aColumnNumber)
-{
-  if (!aColumnNumber)
-    return NS_ERROR_INVALID_POINTER;
-  *aColumnNumber = mColumnNumber;
-  return NS_OK;
-}
-
-/* readonly attribute nsIStackFrame location; */
-NS_IMETHODIMP ExceptionStub::GetLocation(nsIStackFrame **aLocation)
-{
-  if (Exception())
-    return Exception()->GetLocation (aLocation);
-  return NS_ERROR_UNEXPECTED;
-}
-
-/* readonly attribute nsIException inner; */
-NS_IMETHODIMP ExceptionStub::GetInner(nsIException **aInner)
-{
-  if (Exception())
-    return Exception()->GetInner (aInner);
-  return NS_ERROR_UNEXPECTED;
-}
-
-/* readonly attribute nsISupports data; */
-NS_IMETHODIMP ExceptionStub::GetData(nsISupports * *aData)
-{
-  if (Exception())
-    return Exception()->GetData (aData);
-  return NS_ERROR_UNEXPECTED;
-}
-
-/* string toString (); */
-NS_IMETHODIMP ExceptionStub::ToString(char **_retval)
-{
-  if (Exception())
-    return Exception()->ToString (_retval);
-  return NS_ERROR_UNEXPECTED;
-}
-
-nsresult
-ipcDConnectService::SerializeException(ipcMessageWriter &writer,
-                                       PRUint32 peer, nsIException *xcpt,
-                                       nsVoidArray &wrappers)
-{
-  PRBool cache_fields = PR_FALSE;
-
-  // first, seralize the nsIException pointer.  The code is merely the same as
-  // in SerializeInterfaceParam() except that when the exception to serialize
-  // is an ExceptionStub instance and the real instance it stores as mXcpt
-  // is a DConnectStub corresponding to an object in the address space of the
-  // peer, we simply pass that object back instead of creating a new wrapper.
-
-  {
-    nsAutoLock lock (mLock);
-
-    if (mDisconnected)
-      return NS_ERROR_NOT_INITIALIZED;
-
-    if (!xcpt)
-    {
-      // write null address
-      writer.PutBytes(&xcpt, sizeof(xcpt));
-    }
-    else
-    {
-      ExceptionStub *stub = nsnull;
-      nsresult rv = xcpt->QueryInterface(kExceptionStubID, (void **) &stub);
-      if (NS_SUCCEEDED(rv) && (stub->Stub()->PeerID() == peer))
-      {
-        // send the wrapper instance back to the peer
-        void *p = stub->Stub()->Instance();
-        writer.PutBytes(&p, sizeof(p));
-      }
-      else
-      {
-        // create instance wrapper
-
-        const nsID &iid = nsIException::GetIID();
-        nsCOMPtr<nsIInterfaceInfo> iinfo;
-        rv = GetInterfaceInfo(iid, getter_AddRefs(iinfo));
-        if (NS_FAILED(rv))
-          return rv;
-
-        DConnectInstance *wrapper = nsnull;
-
-        // first try to find an existing wrapper for the given object
-        if (!FindInstanceAndAddRef(peer, xcpt, &iid, &wrapper))
-        {
-          wrapper = new DConnectInstance(peer, iinfo, xcpt);
-          if (!wrapper)
-            return NS_ERROR_OUT_OF_MEMORY;
-
-          rv = StoreInstance(wrapper);
-          if (NS_FAILED(rv))
-          {
-            delete wrapper;
-            return rv;
-          }
-
-          // reference the newly created wrapper
-          wrapper->AddRef();
-        }
-        
-        if (!wrappers.AppendElement(wrapper))
-        {
-          wrapper->Release();
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-
-        // wrapper remains referenced when passing it to the client
-        // (will be released upon DCON_OP_RELEASE)
-      
-        // send address of the instance wrapper, and set the low bit
-        // to indicate that this is an instance wrapper.
-        PtrBits bits = ((PtrBits) wrapper) | 0x1;
-        writer.PutBytes(&bits, sizeof(bits));
-
-        // we want to cache fields to minimize the number of IPC calls when
-        // accessing exception data on the peer side
-        cache_fields = PR_TRUE;
-      }
-      NS_IF_RELEASE(stub);
-    }
-  }
-
-  if (!cache_fields)
-    return NS_OK;
-
-  nsresult rv;
-  nsXPIDLCString str;
-  PRUint32 num;
-
-  // message
-  rv = xcpt->GetMessage(getter_Copies(str));
-  if (NS_SUCCEEDED (rv))
-  {
-    PRUint32 len = str.Length();
-    nsACString::const_iterator begin;
-    const char *data = str.BeginReading(begin).get();
-    writer.PutInt32(len);
-    writer.PutBytes(data, len);
-  }
-  else
-    writer.PutInt32(0);
-
-  // result
-  nsresult res = 0;
-  xcpt->GetResult(&res);
-  writer.PutInt32(res);
-
-  // name
-  rv = xcpt->GetName(getter_Copies(str));
-  if (NS_SUCCEEDED (rv))
-  {
-    PRUint32 len = str.Length();
-    nsACString::const_iterator begin;
-    const char *data = str.BeginReading(begin).get();
-    writer.PutInt32(len);
-    writer.PutBytes(data, len);
-  }
-  else
-    writer.PutInt32(0);
-
-  // filename
-  rv = xcpt->GetFilename(getter_Copies(str));
-  if (NS_SUCCEEDED (rv))
-  {
-    PRUint32 len = str.Length();
-    nsACString::const_iterator begin;
-    const char *data = str.BeginReading(begin).get();
-    writer.PutInt32(len);
-    writer.PutBytes(data, len);
-  }
-  else
-    writer.PutInt32(0);
-
-  // lineNumber
-  num = 0;
-  xcpt->GetLineNumber(&num);
-  writer.PutInt32(num);
-
-  // columnNumber
-  num = 0;
-  xcpt->GetColumnNumber(&num);
-  writer.PutInt32(num);
-
-  return writer.HasError() ? NS_ERROR_OUT_OF_MEMORY : NS_OK;
-}
-
-nsresult
-ipcDConnectService::DeserializeException(const PRUint8 *data,
-                                         PRUint32 dataLen,
-                                         PRUint32 peer,
-                                         nsIException **xcpt)
-{
-  NS_ASSERTION (xcpt, "NULL");
-  if (!xcpt)
-    return NS_ERROR_INVALID_POINTER;
-
-  ipcMessageReader reader(data, dataLen);
-
-  nsresult rv;
-  PRUint32 len;
-
-  void *instance = 0;
-  reader.GetBytes(&instance, sizeof(void *));
-  if (reader.HasError())
-    return NS_ERROR_INVALID_ARG;
-
-  PtrBits bits = (PtrBits) (instance);
-
-  if (bits & 0x1)
-  {
-    // pointer is a peer-side exception instance wrapper,
-    // read cahced exception data and create a stub for it.
-
-    nsCAutoString message;
-    len = reader.GetInt32();
-    if (len)
-    {
-      message.SetLength(len);
-      char *buf = message.BeginWriting();
-      reader.GetBytes(buf, len);
-    }
-
-    nsresult result = reader.GetInt32();
-
-    nsCAutoString name;
-    len = reader.GetInt32();
-    if (len)
-    {
-      name.SetLength(len);
-      char *buf = name.BeginWriting();
-      reader.GetBytes(buf, len);
-    }
-
-    nsCAutoString filename;
-    len = reader.GetInt32();
-    if (len)
-    {
-      filename.SetLength(len);
-      char *buf = filename.BeginWriting();
-      reader.GetBytes(buf, len);
-    }
-
-    PRUint32 lineNumber = reader.GetInt32();
-    PRUint32 columnNumber = reader.GetInt32();
-
-    if (reader.HasError())
-      rv = NS_ERROR_INVALID_ARG;
-    else
-    {
-      DConAddr addr = (DConAddr) (bits & ~0x1);
-      nsRefPtr<DConnectStub> stub;
-      rv = CreateStub(nsIException::GetIID(), peer, addr,
-                      getter_AddRefs(stub));
-      if (NS_SUCCEEDED(rv))
-      {
-        // create a special exception "stub" with cached error info
-        ExceptionStub *xcptStub =
-          new ExceptionStub (message, result,
-                             name, filename,
-                             lineNumber, columnNumber,
-                             stub);
-        if (xcptStub)
-        {
-          *xcpt = xcptStub;
-          NS_ADDREF(xcptStub);
-        }
-        else
-          rv = NS_ERROR_OUT_OF_MEMORY;
-      }
-    }
-  }
-  else if (bits)
-  {
-    // pointer is to our instance wrapper for nsIException we've sent before
-    // (the remote method we've called had called us back and got an exception
-    // from us that it decided to return as its own result). Replace it with
-    // the real instance.
-    DConnectInstance *wrapper = (DConnectInstance *) bits;
-    if (CheckInstanceAndAddRef(wrapper))
-    {
-      *xcpt = (nsIException *) wrapper->RealInstance();
-      NS_ADDREF(wrapper->RealInstance());
-      wrapper->Release();
-    }
-    else
-    {
-      NS_NOTREACHED("instance wrapper not found");
-      rv = NS_ERROR_INVALID_ARG;
-    }
-  }
-  else
-  {
-    // the peer explicitly passed us a NULL exception to indicate that the
-    // exception on the current thread should be reset
-    *xcpt = NULL;
-    return NS_OK;
-  }
-
-
-  return rv;
-}
-
-//-----------------------------------------------------------------------------
-
 DConnectStub::~DConnectStub()
 {
 #ifdef IPC_LOGGING
@@ -1731,13 +1277,11 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   nsresult rv;
 
   // reset the exception early.  this is necessary because we may return a
-  // failure from here without setting an exception (which might be expected
-  // by the caller to detect the error origin: the interface we are stubbing
-  // may indicate in some way that it always sets the exception info on
-  // failure, therefore an "infoless" failure means the origin is RPC).
-  // besides that, resetting the excetion before every IPC call is exactly the
-  // same thing as Win32 RPC does, so doing this is useful for getting
-  // similarity in behaviors.
+  // failure from here without setting an exception (which might be expected by
+  // the caller because the interface we are stubbing may indicate in some way
+  // that it always sets the exception info on failure).  besides that, resetting
+  // the excetion before every IPC call is exactly the same thing as Win32 RPC
+  // does, so doing this is useful for getting similarity in behaviors.
 
   nsCOMPtr <nsIExceptionService> es;
   es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
@@ -1854,23 +1398,60 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   rv = completion.GetResult();
   if (NS_FAILED(rv))
   {
-    NS_ASSERTION(completion.ParamsLen() >= sizeof(void*),
-                 "invalid nsIException serialization length");
-    if (completion.ParamsLen() >= sizeof(void*))
+    if (completion.ParamsLen() > 0)
     {
-      LOG(("got nsIException instance (%p), will create a stub\n",
-           *((void **) completion.Params())));
+      // we've got an nsIException instance, deserialize it and set in the
+      // current thread
+      nsresult invoke_rv = rv;
+      PtrBits bits = (PtrBits) *((void **) completion.Params());
 
-      nsIException *xcpt = nsnull;
-      rv = dConnect->DeserializeException (completion.Params(),
-                                           completion.ParamsLen(),
-                                           mPeerID, &xcpt);
-      if (NS_SUCCEEDED(rv))
+      LOG(("got nsIException instance (%p), will create a stub\n", bits));
+
+      NS_ASSERTION(completion.ParamsLen() == sizeof(void*),
+                   "wrong nsIException serialization");
+
+      if (bits & 0x1)
       {
-        rv = em->SetCurrentException(xcpt);
-        NS_IF_RELEASE(xcpt);
+        DConAddr addr = (DConAddr) (bits & ~0x1);
+        nsRefPtr<DConnectStub> stub;
+        rv = dConnect->CreateStub(nsIException::GetIID(), mPeerID, addr,
+                                  getter_AddRefs(stub));
+        if (NS_SUCCEEDED(rv))
+        {
+          rv = em->SetCurrentException((nsIException *)(nsISupports *) stub);
+          // restore the method's result
+          rv = invoke_rv;
+        }
       }
-      NS_ASSERTION(NS_SUCCEEDED(rv), "failed to deserialize/set exception");
+      else if (bits)
+      {
+        // pointer is to our instance wrapper for nsIException we've set
+        // before (the remote method we've just called had called us back
+        // and got an exception from us that it decided to return as its
+        // own result). Replace it with the real instance.
+        DConnectInstance *wrapper = (DConnectInstance *) bits;
+        if (dConnect->CheckInstanceAndAddRef(wrapper))
+        {
+          rv = em->SetCurrentException((nsIException *) wrapper->RealInstance());
+          // restore the method's result
+          rv = invoke_rv;
+          wrapper->Release();
+        }
+        else
+        {
+          NS_NOTREACHED("instance wrapper not found");
+          rv = NS_ERROR_INVALID_ARG;
+        }
+      }
+      else
+      {
+        // reset the exception (as requested by the peer)
+        // (it doesn't seem to be really necessary since we always reset it at
+        // the beginning, but leave it here for clarity)
+        rv = em->SetCurrentException(NULL);
+        // restore the method's result
+        rv = invoke_rv;
+      }
     }
   }
   else if (completion.ParamsLen() > 0)
@@ -1964,13 +1545,6 @@ public:
       return;
     }
 
-    if (opLen < sizeof(DConnectSetupReply))
-    {
-      NS_NOTREACHED("unexpected response size");
-      mStatus = NS_ERROR_UNEXPECTED;
-      return;
-    }
-
     const DConnectSetupReply *reply = (const DConnectSetupReply *) op;
 
     LOG(("got SETUP_REPLY: status=%x instance=%p\n", reply->status, reply->instance));
@@ -1979,44 +1553,43 @@ public:
     {
       mStatus = reply->status;
 
-      const PRUint8 *params = ((const PRUint8 *) op) + sizeof (DConnectSetupReply);
-      const PRUint32 paramsLen = opLen - sizeof (DConnectSetupReply);
+      // we've been sent an nsIException (that can be null) in case of any error,
+      // set it in the current thread
+      LOG(("got nsIException instance (%p), will create a stub\n", reply->instance));
 
-      NS_ASSERTION(paramsLen >= sizeof(void*),
-                   "invalid nsIException serialization length");
-      if (paramsLen >= sizeof(void*))
+      nsresult rv;
+      nsCOMPtr <nsIExceptionService> es;
+      es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
+      if (NS_SUCCEEDED(rv))
       {
-        LOG(("got nsIException instance (%p), will create a stub\n",
-             *((void **) params)));
-
-        nsresult rv;
-        nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
+        nsCOMPtr <nsIExceptionManager> em;
+        rv = es->GetCurrentExceptionManager (getter_AddRefs(em));
         if (NS_SUCCEEDED(rv))
         {
-          nsCOMPtr <nsIExceptionManager> em;
-          rv = es->GetCurrentExceptionManager (getter_AddRefs(em));
-          if (NS_SUCCEEDED(rv))
+          if (reply->instance)
           {
             // ensure ipcDConnectService is not deleted before we finish
             nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
             if (dConnect)
-            {
-              nsIException *xcpt = nsnull;
-              rv = dConnect->DeserializeException (params, paramsLen,
-                                                   sender, &xcpt);
-              if (NS_SUCCEEDED(rv))
-              {
-                rv = em->SetCurrentException(xcpt);
-                NS_IF_RELEASE(xcpt);
-              }
-            }
+              rv = dConnect->CreateStub(nsIException::GetIID(), sender, reply->instance,
+                                        getter_AddRefs(mStub));
             else
-              rv = NS_ERROR_UNEXPECTED;
+              rv = NS_ERROR_FAILURE;
+            if (NS_SUCCEEDED(rv))
+            {
+              rv = em->SetCurrentException((nsIException *)(nsISupports *) mStub);
+            }
+          }
+          else
+          {
+            // reset the exception (as requested by the peer)
+            rv = em->SetCurrentException(NULL);
           }
         }
-        NS_ASSERTION(NS_SUCCEEDED(rv), "failed to deserialize/set exception");
       }
+
+      if (NS_FAILED(rv))
+        mStatus = rv;
     }
     else
     {
@@ -2766,8 +2339,6 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
       break;
   }
 
-  nsVoidArray wrappers;
-
   // now, create instance wrapper, and store it in our instances set.
   // this allows us to keep track of object references held on behalf of a
   // particular peer.  we can use this information to cleanup after a peer
@@ -2799,12 +2370,6 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
           {
             // reference the newly created wrapper
             wrapper->AddRef();
-
-            if (!wrappers.AppendElement(wrapper))
-            {
-              NS_RELEASE(wrapper);
-              rv = NS_ERROR_OUT_OF_MEMORY;
-            }
           }
         }
       }
@@ -2813,24 +2378,11 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
       // (will be released upon DCON_OP_RELEASE)
     }
   }
-
-  NS_IF_RELEASE(instance);
-
-  ipcMessageWriter writer(64);
-
-  DConnectSetupReply msg;
-  msg.opcode_major = DCON_OP_SETUP_REPLY;
-  msg.opcode_minor = 0;
-  msg.request_index = setup->request_index;
-  msg.instance = wrapper;
-  msg.status = rv;
-
-  writer.PutBytes(&msg, sizeof(msg));
-
-  if (NS_FAILED(rv))
+  else
   {
     // try to fetch an nsIException possibly set by one of the setup methods
     // and send it instead of the failed instance (even if it is null)
+    nsresult setup_rv = rv;
     nsCOMPtr <nsIExceptionService> es;
     es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
     if (NS_SUCCEEDED(rv))
@@ -2846,26 +2398,63 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
           LOG(("got nsIException instance (%p), will serialize\n",
                (nsIException *)exception));
 
-          rv = SerializeException(writer, peer, exception, wrappers);
+          if (exception)
+          {
+            nsCOMPtr<nsIInterfaceInfo> iinfo;
+            rv = GetInterfaceInfo(nsIException::GetIID(), getter_AddRefs(iinfo));
+            if (NS_SUCCEEDED(rv))
+            {
+              nsAutoLock lock (mLock);
+
+              // first try to find an existing wrapper for the given object
+              if (!FindInstanceAndAddRef(peer, exception,
+                                         &nsIException::GetIID(), &wrapper))
+              {
+                wrapper = new DConnectInstance(peer, iinfo, exception);
+                if (!wrapper)
+                  rv = NS_ERROR_OUT_OF_MEMORY;
+                else
+                {
+                  rv = StoreInstance(wrapper);
+                  if (NS_FAILED(rv))
+                  {
+                    delete wrapper;
+                    wrapper = nsnull;
+                  }
+                  else
+                  {
+                    // reference the newly created wrapper
+                    wrapper->AddRef();
+                  }
+                }
+              }
+
+              // wrapper remains referenced when passing it to the client
+              // (will be released upon DCON_OP_RELEASE)
+            }
+          }
+          // otherwise, wrapper = nsnull, which will indicate a null nsIException
+
+          // restore the setup result
+          if (NS_SUCCEEDED(rv))
+            rv = setup_rv;
         }
       }
     }
-    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialze exception");
   }
+
+  NS_IF_RELEASE(instance);
+
+  DConnectSetupReply msg;
+  msg.opcode_major = DCON_OP_SETUP_REPLY;
+  msg.opcode_minor = 0;
+  msg.request_index = setup->request_index;
+  msg.instance = wrapper;
+  msg.status = rv;
 
   // fire off SETUP_REPLY, don't wait for a response
-  if (NS_FAILED(rv))
-    rv = IPC_SendMessage(peer, kDConnectTargetID,
-                         (const PRUint8 *) &msg, sizeof(msg));
-  else
-    rv = IPC_SendMessage(peer, kDConnectTargetID,
-                         writer.GetBuffer(), writer.GetSize());
-
-  if (NS_FAILED(rv))
-  {
-    LOG(("unable to send SETUP_REPLY: rv=%x\n", rv));
-    ReleaseWrappers(wrappers);
-  }
+  IPC_SendMessage(peer, kDConnectTargetID,
+                  (const PRUint8 *) &msg, sizeof(msg));
 }
 
 void
@@ -3060,8 +2649,9 @@ end:
 
   if (got_exception)
   {
-    rv = SerializeException(writer, peer, exception, wrappers);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialze exception");
+    // serialize the exception
+    rv = SerializeInterfaceParam(writer, peer, nsIException::GetIID(),
+                                 exception, wrappers);
   }
   else if (NS_SUCCEEDED(rv) && params)
   {
