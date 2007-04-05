@@ -20,7 +20,6 @@
  *
  * Contributor(s):
  *   Darin Fisher <darin@meer.net>
- *   Dmitry A. Kuminov <dmik@innotek.de>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -79,9 +78,8 @@ struct DConnectRequest : public ipcListNode<DConnectRequest>
   const PRUint32 opLen;
 };
 
-#endif // DCONNECT_MULTITHREADED
+#endif
 
-class nsIException;
 class ipcMessageWriter;
 
 // a key class used to identify DConnectInstance objects stored in a hash table
@@ -217,12 +215,6 @@ public:
                                                PRUint32 peer, const nsID &iid,
                                                nsISupports *obj,
                                                nsVoidArray &wrappers);
-
-  NS_HIDDEN_(nsresult) SerializeException(ipcMessageWriter &writer,
-                                          PRUint32 peer, nsIException *xcpt,
-                                          nsVoidArray &wrappers);
-  NS_HIDDEN_(nsresult) DeserializeException(const PRUint8 *data, PRUint32 dataLen,
-                                            PRUint32 peer, nsIException **xcpt);
 
   NS_HIDDEN_(void)     ReleaseWrappers(nsVoidArray &wrappers);
 
