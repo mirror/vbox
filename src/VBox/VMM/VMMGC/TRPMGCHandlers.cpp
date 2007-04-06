@@ -311,7 +311,7 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     /*
      * Both PATM are using INT3s, let them have a go first.
      */
-    if (    (pRegFrame->ss & X86_SEL_RPL) == 1 
+    if (    (pRegFrame->ss & X86_SEL_RPL) == 1
         &&  !pRegFrame->eflags.Bits.u1VM)
     {
         rc = PATMHandleInt3PatchTrap(pVM, pRegFrame);
@@ -378,7 +378,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
-    else 
+    else
         /* Never generate a raw trap here; it might be a monitor instruction, that requires emulation. */
         rc = VINF_EM_RAW_EMULATE_INSTR;
 
@@ -512,7 +512,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
  * @param   pVM         The VM handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
- * @param   PC          Program counter.
+ * @param   PC          The program counter corresponding to cs:eip in pRegFrame.
  */
 static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR PC)
 {
@@ -610,8 +610,9 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
  * @param   pVM         The VM handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
+ * @param   PC          The program counter corresponding to cs:eip in pRegFrame.
  */
-static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR PC)
 {
     int rc;
 
@@ -673,6 +674,20 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_INTO:
             pVM->trpm.s.uActiveVector = ~0;
             return trpmGCExitTrap(pVM, VINF_EM_RAW_RING_SWITCH, pRegFrame);
+
+        /*
+         * Read TSC
+         */
+        case OP_RDTSC:
+        {
+            uint32_t cbIgnored;
+            rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, PC, &cbIgnored);
+            if (VBOX_SUCCESS(rc))
+                pRegFrame->eip += pCpu->opsize;
+            else if (rc != VERR_EM_INTERPRETER)
+                AssertReleaseMsgFailed(("rc=%Vrc\n", rc));    /* Can't happen with RDTSC. */
+            return trpmGCExitTrap(pVM, rc, pRegFrame);
+        }
     }
 
     /*
@@ -757,9 +772,9 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      * Deal with Ring-3 GPs.
      */
     if (!pRegFrame->eflags.Bits.u1VM)
-        return trpmGCTrap0dHandlerRing3(pVM, pRegFrame, &Cpu);
-    
-    /* 
+        return trpmGCTrap0dHandlerRing3(pVM, pRegFrame, &Cpu, PC);
+
+    /*
      * Deal with v86 code.
      */
 
@@ -1016,7 +1031,7 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
     if (uUser & TRPM_TRAP_IN_HYPER)
     {
         /*
-         * Check that there is still some stack left, if not we'll flag 
+         * Check that there is still some stack left, if not we'll flag
          * a guru meditation (the alternative is a triple fault).
          */
         RTGCUINTPTR cbStackUsed = (RTGCUINTPTR)VMMGetStackGC(pVM) - pRegFrame->esp;
@@ -1028,7 +1043,7 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
 
         /*
          * Just zero the register containing the selector in question.
-         * We'll deal with the actual stale or troublesome selector value in 
+         * We'll deal with the actual stale or troublesome selector value in
          * the outermost trap frame.
          */
         switch (uUser & TRPM_TRAP_IN_OP_MASK)
