@@ -1488,9 +1488,9 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     uint32_t cpl;
 
-    if (pVM->cpum.s.Guest.cr0 & X86_CR0_PE)
+    if (RT_LIKELY(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
     {
-        if (!pCtxCore->eflags.Bits.u1VM)
+        if (RT_LIKELY(!pCtxCore->eflags.Bits.u1VM))
         {
             cpl = (pCtxCore->ss & X86_SEL_RPL);
 #ifndef IN_RING0
