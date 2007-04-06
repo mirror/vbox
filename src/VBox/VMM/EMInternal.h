@@ -41,7 +41,7 @@ __BEGIN_DECLS
  */
 
 /** The saved state version. */
-#define EM_SAVED_STATE_VERSION  2
+#define EM_SAVED_STATE_VERSION  3
 
 /** Enable for tracing in raw mode.
  * @remark SvL: debugging help primarily for myself. */
@@ -236,6 +236,12 @@ typedef struct EM
      * This is used to prevent REM from trying to execute patch code.
      * The flag is cleared upon entering emR3RawExecute() and updated in certain return paths. */
     bool                    fForceRAW;
+
+    /* Set when raw mode was used for the first time */
+    bool                    fRawModeUsed;
+    /* Set when hardware accelerated mode was used for the first time */
+    bool                    fHwAccModeUsed;
+
 #ifdef DEBUG_TRACING_ENABLED
     /** @see DEBUG_TRACING_ENABLED */
     bool                    fTracing;
