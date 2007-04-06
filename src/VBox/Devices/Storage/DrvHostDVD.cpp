@@ -25,7 +25,21 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_DVD
-#ifdef __LINUX__
+#ifdef __DARWIN__
+# include <mach/mach.h>
+# include <Carbon/Carbon.h>
+# include <IOKit/IOKitLib.h>
+# include <IOKit/IOCFPlugIn.h>
+# include <IOKit/scsi-commands/SCSITaskLib.h>
+# include <IOKit/scsi-commands/SCSICommandOperationCodes.h>
+# include <IOKit/storage/IOStorageDeviceCharacteristics.h>
+# include <mach/mach_error.h>
+# define USE_MEDIA_POLLING
+
+#elif defined(__L4ENV__)
+/* nothing (yet). */
+
+#elif defined __LINUX__
 # include <sys/ioctl.h>
 /* This is a hack to work around conflicts between these linux kernel headers
  * and the GLIBC tcpip headers. They have different declarations of the 4
@@ -38,17 +52,17 @@
 # include <linux/cdrom.h>
 # include <sys/fcntl.h>
 # include <errno.h>
+# define USE_MEDIA_POLLING
 
 #elif defined(__WIN__)
 # include <Windows.h>
 # include <winioctl.h>
 # include <ntddscsi.h>
+# undef USE_MEDIA_POLLING
 
-#elif defined(__L4ENV__)
-
-#else /* !__WIN__ nor __LINUX__ nor __L4ENV__ */
+#else
 # error "Unsupported Platform."
-#endif /* !__WIN__ nor __LINUX__ nor __L4ENV__ */
+#endif
 
 #include <VBox/pdm.h>
 #include <VBox/cfgm.h>
@@ -83,7 +97,15 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface)
          /*
           * Eject the disc.
           */
-#ifdef __LINUX__
+#ifdef __DARWIN__
+         uint8_t abCmd[16] =
+         {
+             SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
+             0,0,0,0,0,0,0,0,0,0
+         };
+         rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
+
+#elif defined(__LINUX__)
          rc = ioctl(pThis->FileDevice, CDROMEJECT, 0);
          if (rc < 0)
          {
@@ -150,7 +172,19 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface)
  */
 static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
 {
-#ifdef __LINUX__
+#ifdef __DARWIN__
+# if 0 /// @todo dig up the specification for this command and implement it. (not important on mac)
+    uint8_t abCmd[16] =
+    {
+        SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, 0, 0,
+        0,0,0,0,0,0,0,0,0,0
+    };
+    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
+# else
+    int rc = VINF_SUCCESS;
+# endif
+
+#elif defined(__LINUX__)
     int rc = ioctl(pThis->FileDevice, CDROM_LOCKDOOR, (int)fLock);
     if (rc < 0)
     {
@@ -209,7 +243,7 @@ static int drvHostDvdGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
 #endif /* __LINUX__ */
 
 
-#ifdef __LINUX__
+#ifdef USE_MEDIA_POLLING
 /**
  * Do media change polling.
  */
@@ -218,7 +252,36 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     /*
      * Poll for media change.
      */
-#ifdef __LINUX__
+#ifdef __DARWIN__
+    AssertReturn(pThis->ppScsiTaskDI, VERR_INTERNAL_ERROR);
+
+    /*
+     * Issue a TEST UNIT READY request.
+     */
+    bool fMediaChanged = false;
+    bool fMediaPresent = false;
+    uint8_t abCmd[16] = { SCSI_TEST_UNIT_READY, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+    uint8_t abSense[32];
+    int rc2 = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, abSense, sizeof(abSense), 0);
+    if (VBOX_SUCCESS(rc2))
+        fMediaPresent = true;
+    else if (   rc2 == VERR_UNRESOLVED_ERROR
+             && abSense[2] == 6 /* unit attention */
+             && (   (abSense[12] == 0x29 && abSense[13] < 5 /* reset */)
+                 || (abSense[12] == 0x2a && abSense[13] == 0 /* parameters changed */)                        //???
+                 || (abSense[12] == 0x3f && abSense[13] == 0 /* target operating conditions have changed */)  //???
+                 || (abSense[12] == 0x3f && abSense[13] == 2 /* changed operating definition */)              //???
+                 || (abSense[12] == 0x3f && abSense[13] == 3 /* inquery parameters changed */)
+                 || (abSense[12] == 0x3f && abSense[13] == 5 /* device identifier changed */)
+                 )
+            )
+    {
+        fMediaPresent = false;
+        fMediaChanged = true;
+        /** @todo check this media chance stuff on Darwin. */
+    }
+
+#elif defined(__LINUX__)
     bool fMediaPresent = ioctl(pThis->FileDevice, CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
 
 #else
@@ -242,16 +305,15 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
         /*
          * Poll for media change.
          */
-        bool fMediaChanged;
-#ifdef __LINUX__
-        fMediaChanged = ioctl(pThis->FileDevice, CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
-
+#ifdef __DARWIN__
+        /* taken care of above. */
+#elif defined(__LINUX__)
+        bool fMediaChanged = ioctl(pThis->FileDevice, CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
 #else
 # error "Unsupported platform."
 #endif
         if (fMediaChanged)
         {
-            int rc;
             LogFlow(("drvHostDVDMediaThread: Media changed!\n"));
             DRVHostBaseMediaNotPresent(pThis);
             rc = DRVHostBaseMediaPresent(pThis);
@@ -261,17 +323,38 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     RTCritSectLeave(&pThis->CritSect);
     return rc;
 }
-#endif /* __LINUX__ */
+#endif /* USE_MEDIA_POLLING */
 
 
 /** @copydoc PDMIBLOCK::pfnSendCmd */
-static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLOCKTXDIR enmTxDir, void *pvBuf, size_t *pcbBuf, uint8_t *pbStat, uint32_t cTimeoutMillies)
+static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLOCKTXDIR enmTxDir, void *pvBuf, size_t *pcbBuf,
+                             uint8_t *pbStat, uint32_t cTimeoutMillies)
 {
     PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
-    int direction;
     int rc;
     LogFlow(("%s: cmd[0]=%#04x txdir=%d pcbBuf=%d timeout=%d\n", __FUNCTION__, pbCmd[0], enmTxDir, *pcbBuf, cTimeoutMillies));
-#ifdef __LINUX__
+
+#ifdef __DARWIN__
+    /*
+     * Pass the request on to the internal scsi command interface.
+     * The command seems to be 12 bytes long, the docs a bit copy&pasty on the command length point...
+     */
+    if (enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
+        memset(pvBuf, '\0', *pcbBuf); /* we got read size, but zero it anyway. */
+    uint8_t abSense[32];
+    rc = DRVHostBaseScsiCmd(pThis, pbCmd, 12, PDMBLOCKTXDIR_FROM_DEVICE, pvBuf, pcbBuf, abSense, sizeof(abSense), cTimeoutMillies);
+    if (rc == VERR_UNRESOLVED_ERROR)
+    {
+        *pbStat = abSense[2] & 0x0f;
+        rc = VINF_SUCCESS;
+    }
+
+#elif defined(__L4ENV__)
+    /* Not really ported to L4 yet. */
+    rc = VERR_INTERNAL_ERROR;
+
+#elif defined(__LINUX__)
+    int direction;
     struct cdrom_generic_command cgc;
     request_sense sense;
 
@@ -330,8 +413,11 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     /* The value of cgc.buflen does not reliably reflect the actual amount
      * of data transferred (for packet commands with little data transfer
      * it's 0). So just assume that everything worked ok. */
+
 #elif defined(__WIN__)
-    struct _REQ {
+    int direction;
+    struct _REQ
+    {
         SCSI_PASS_THROUGH_DIRECT spt;
         uint8_t aSense[18];
     } Req;
@@ -385,8 +471,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     else
         rc = RTErrConvertFromWin32(GetLastError());
     Log2(("%s: scsistatus=%d bytes returned=%d tlength=%d\n", __FUNCTION__, Req.spt.ScsiStatus, cbReturned, Req.spt.DataTransferLength));
-#elif defined(__L4ENV__)
-    /* L4 is silently unsupported. */
+
 #else
 # error "Unsupported platform."
 #endif
@@ -443,11 +528,13 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
 
         pThis->IMount.pfnUnmount = drvHostDvdUnmount;
         pThis->pfnDoLock         = drvHostDvdDoLock;
-#ifdef __LINUX__
+#ifdef USE_MEDIA_POLLING
         if (!fPassthrough)
-            pThis->pfnPoll           = drvHostDvdPoll;
+            pThis->pfnPoll       = drvHostDvdPoll;
         else
-            pThis->pfnPoll           = NULL;
+            pThis->pfnPoll       = NULL;
+#endif
+#ifdef __LINUX__
         pThis->pfnGetMediaSize   = drvHostDvdGetMediaSize;
 #endif
 

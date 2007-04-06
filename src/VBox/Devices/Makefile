@@ -121,13 +121,13 @@ ifeq ($(BUILD_TARGET),l4)
 endif
 VBoxDD_LIBS.darwin      = \
 	$(LIB_REM)
-VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib -framework CoreAudio
+VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib -framework CoreAudio -framework IOKit -framework Carbon
 VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
 
 # damn, fix this.
-ifeq ($(BUILD_TARGET),win) 
+ifeq ($(BUILD_TARGET),win)
 $(PATH_LIB)/VBoxDD2.lib: $(PATH_BIN)/VBoxDD2.dll
 $(PATH_LIB)/VBoxDDU.lib: $(PATH_BIN)/VBoxDDU.dll
 endif
@@ -335,30 +335,26 @@ Drivers_DEFS       = IN_IDE_R3
 Drivers_INCS       = \
 	Network/slirp
 Drivers_SOURCES    = \
-	Input/DrvMouseQueue.cpp \
+	Audio/audio.c \
+	Audio/audiosniffer.c \
+	Audio/mixeng.c \
+	Audio/noaudio.c \
 	Input/DrvKeyboardQueue.cpp \
-	Storage/VBoxHDD.cpp \
-	Storage/DrvBlock.cpp \
-	Storage/VmdkHDD.cpp \
-	Storage/DrvMediaISO.cpp \
-	Storage/DrvRawImage.cpp \
-	Storage/DrvHostBase.cpp \
-	Storage/DrvHostDVD.cpp \
-	Storage/DrvHostFloppy.cpp \
-	Storage/DrvHostRawDisk.cpp \
-	PC/DrvACPI.cpp \
+	Input/DrvMouseQueue.cpp \
 	Network/DrvIntNet.cpp \
-	Network/DrvNetSniffer.cpp \
 	Network/DrvNAT.cpp \
+	Network/DrvNetSniffer.cpp \
+	Network/slirp/bootp.c \
 	Network/slirp/cksum.c \
+	Network/slirp/debug.c \
 	Network/slirp/if.c \
 	Network/slirp/ip_icmp.c \
 	Network/slirp/ip_input.c \
 	Network/slirp/ip_output.c \
-	Network/slirp/slirp.c \
 	Network/slirp/mbuf.c \
 	Network/slirp/misc.c \
 	Network/slirp/sbuf.c \
+	Network/slirp/slirp.c \
 	Network/slirp/socket.c \
 	Network/slirp/tcp_input.c \
 	Network/slirp/tcp_output.c \
@@ -366,20 +362,25 @@ Drivers_SOURCES    = \
 	Network/slirp/tcp_timer.c \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c \
-	Network/slirp/bootp.c \
-	Network/slirp/debug.c \
-	Audio/audio.c \
-	Audio/mixeng.c \
-	Audio/noaudio.c \
-	Audio/audiosniffer.c \
+	PC/DrvACPI.cpp \
 	Serial/DrvChar.cpp \
-	Serial/DrvNamedPipe.cpp
+	Serial/DrvNamedPipe.cpp \
+	Storage/DrvBlock.cpp \
+	Storage/DrvHostBase.cpp \
+	Storage/DrvHostDVD.cpp \
+	Storage/DrvHostFloppy.cpp \
+	Storage/DrvHostRawDisk.cpp \
+	Storage/DrvMediaISO.cpp \
+	Storage/DrvRawImage.cpp \
+	Storage/VBoxHDD.cpp \
+	Storage/VmdkHDD.cpp
 
 # -- OS specific --
 
 ifeq ($(BUILD_TARGET),darwin)
 Drivers_SOURCES      := $(filter-out \
-	Storage/DrvHost% \
+	Storage/DrvHostRaw% \
+	Storage/DrvHostFloppy% \
 	, $(Drivers_SOURCES)) \
 	Audio/coreaudio.c
 Drivers_SOURCES.darwin =

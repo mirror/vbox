@@ -73,8 +73,10 @@ typedef struct DRVHOSTBASE
     /** The size of the media currently in the drive.
      * This is invalid if no drive is in the drive. */
     uint64_t volatile       cbSize;
+#ifndef __DARWIN__
     /** The filehandle of the device. */
     RTFILE                  FileDevice;
+#endif
 
     /** Handle of the poller thread. */
     RTTHREAD                ThreadPoller;
@@ -97,6 +99,20 @@ typedef struct DRVHOSTBASE
     uint32_t                cHeads;
     /** BIOS Geometry: Sectors. */
     uint32_t                cSectors;
+
+    /** The number of errors that could go into the release log. (flood gate) */
+    uint32_t                cLogRelErrors;
+
+#ifdef __DARWIN__
+    /** The master port. */
+    mach_port_t             MasterPort;
+    /** The MMC-2 Device Interface. (This is only used to get the scsi task interface.) */
+    MMCDeviceInterface    **ppMMCDI;
+    /** The SCSI Task Device Interface. */
+    SCSITaskDeviceInterface **ppScsiTaskDI;
+    /** The block size. Set when querying the media size. */
+    uint32_t                cbBlock;
+#endif
 
 #ifdef __WIN__
     /** Handle to the window we use to catch the device change broadcast messages. */
@@ -144,6 +160,10 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis);
 int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis);
 void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);
 DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns);
+#ifdef __DARWIN__
+DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMBLOCKTXDIR enmTxDir,
+                                     void *pvBuf, size_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies);
+#endif
 
 
 /** Makes a PDRVHOSTBASE out of a PPDMIMOUNT. */
