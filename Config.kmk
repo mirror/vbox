@@ -963,8 +963,9 @@ ifeq ($(filter-out win os2 darwin,$(BUILD_TARGET)),)
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavformat
  ifeq ($(BUILD_TARGET),win)
-  ## Michael! Where is $(PATH_LIB)/VBoxFFmpegImp$(VBOX_SUFF_LIB) supposed to come from?
-  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_LIB)/VBoxFFmpeg.a
+  ## @todo Michael! Where is $(PATH_LIB)/VBoxFFmpegImp$(VBOX_SUFF_LIB) supposed to come from?
+  #SDK_VBOX_FFMPEG_LIBS ?= $(PATH_LIB)/VBoxFFmpeg.a
+  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_LIB)/VBoxFFmpegImp.lib
  else
   SDK_VBOX_FFMPEG_LIBS ?= $(PATH_BIN)/VBoxFFmpeg$(SUFF_DLL)
  endif
