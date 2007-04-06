@@ -146,6 +146,25 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
         return VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;
     }
 
+#ifdef VBOX_STRICT
+    if (Sel == (pRegFrame->cs & ~X86_SEL_MASK))
+        Log(("GDT write to selector in CS register %04X\n", pRegFrame->cs));
+    else
+    if (Sel == (pRegFrame->ds & ~X86_SEL_MASK))
+        Log(("GDT write to selector in DS register %04X\n", pRegFrame->ds));
+    else
+    if (Sel == (pRegFrame->es & ~X86_SEL_MASK))
+        Log(("GDT write to selector in ES register %04X\n", pRegFrame->es));
+    else
+    if (Sel == (pRegFrame->fs & ~X86_SEL_MASK))
+        Log(("GDT write to selector in FS register %04X\n", pRegFrame->fs));
+    else
+    if (Sel == (pRegFrame->gs & ~X86_SEL_MASK))
+        Log(("GDT write to selector in GS register %04X\n", pRegFrame->gs));
+    else
+    if (Sel == (pRegFrame->ss & ~X86_SEL_MASK))
+        Log(("GDT write to selector in SS register %04X\n", pRegFrame->ss));
+#endif
     return VINF_SUCCESS;
 }
 
