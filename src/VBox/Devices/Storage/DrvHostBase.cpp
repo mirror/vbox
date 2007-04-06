@@ -25,7 +25,20 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
-#ifdef __LINUX__
+#ifdef __DARWIN__
+# include <mach/mach.h>
+# include <Carbon/Carbon.h>
+# include <IOKit/IOKitLib.h>
+# include <IOKit/storage/IOStorageDeviceCharacteristics.h>
+# include <IOKit/scsi-commands/SCSITaskLib.h>
+# include <IOKit/scsi-commands/SCSICommandOperationCodes.h>
+# include <mach/mach_error.h>
+# include <VBox/scsi.h>
+
+#elif defined(__L4ENV__)
+  /* Nothing special requires... yeah, right. */
+
+#elif defined(__LINUX__)
 # include <sys/ioctl.h>
 # include <sys/fcntl.h>
 # include <errno.h>
@@ -78,11 +91,9 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
         /*IN*/ ULONG                Length,
         /*IN*/ FS_INFORMATION_CLASS FileSystemInformationClass );
 
-#elif defined(__L4ENV__)
-
-#else /* !__WIN__ nor __LINUX__ nor __L4ENV__ */
+#else
 # error "Unsupported Platform."
-#endif /* !__WIN__ nor __LINUX__ nor __L4ENV__ */
+#endif
 
 #include <VBox/pdm.h>
 #include <VBox/cfgm.h>
@@ -99,6 +110,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 #include <iprt/uuid.h>
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
+#include <iprt/ctype.h>
 
 #include "DrvHostBase.h"
 
@@ -119,8 +131,32 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
      * Check the state.
      */
     int rc;
+#ifdef __DARWIN__
+    if (    pThis->fMediaPresent
+        &&  pThis->ppScsiTaskDI
+        &&  pThis->cbBlock)
+#else
     if (pThis->fMediaPresent)
+#endif
     {
+#ifdef __DARWIN__
+        /*
+         * Issue a READ(12) request.
+         */
+        const uint32_t LBA = off / pThis->cbBlock;
+        AssertReturn(!(off % pThis->cbBlock), VERR_INVALID_PARAMETER);
+        const uint32_t cBlocks = cbRead / pThis->cbBlock;
+        AssertReturn(!(cbRead % pThis->cbBlock), VERR_INVALID_PARAMETER);
+        uint8_t abCmd[16] =
+        {
+            SCSI_READ_12, 0,
+            RT_BYTE4(LBA),     RT_BYTE3(LBA),     RT_BYTE2(LBA),     RT_BYTE1(LBA),
+            RT_BYTE4(cBlocks), RT_BYTE3(cBlocks), RT_BYTE2(cBlocks), RT_BYTE1(cBlocks),
+            0, 0, 0, 0, 0
+        };
+        rc = DRVHostBaseScsiCmd(pThis, abCmd, 12, PDMBLOCKTXDIR_FROM_DEVICE, pvBuf, &cbRead, NULL, 0, 0);
+
+#else
         /*
          * Seek and read.
          */
@@ -142,6 +178,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
         else
             Log(("%s-%d: drvHostBaseRead: RTFileSeek(%d,%#llx,) -> %Vrc\n", pThis->pDrvIns->pDrvReg->szDriverName,
                  pThis->pDrvIns->iInstance, pThis->FileDevice, off, rc));
+#endif
     }
     else
         rc = VERR_MEDIA_NOT_PRESENT;
@@ -171,6 +208,11 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIBLOCK pInterface, uint64_t off, c
     {
         if (pThis->fMediaPresent)
         {
+#ifdef __DARWIN__
+            /** @todo write support... */
+            rc = VERR_WRITE_PROTECT;
+
+#else
             /*
              * Seek and write.
              */
@@ -186,6 +228,7 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIBLOCK pInterface, uint64_t off, c
             else
                 Log(("%s-%d: drvHostBaseWrite: RTFileSeek(%d,%#llx,) -> %Vrc\n",
                      pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, pThis->FileDevice, off, rc));
+#endif
         }
         else
             rc = VERR_MEDIA_NOT_PRESENT;
@@ -210,7 +253,12 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIBLOCK pInterface)
 
     if (pThis->fMediaPresent)
     {
+#ifdef __DARWIN__
+        rc = VINF_SUCCESS;
+        /** @todo scsi device buffer flush... */
+#else
         rc = RTFileFlush(pThis->FileDevice);
+#endif
     }
     else
         rc = VERR_MEDIA_NOT_PRESENT;
@@ -511,35 +559,234 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, PDM
 /* -=-=-=-=- poller thread -=-=-=-=- */
 
 /**
- * Wrapper for open / RTFileOpen.
+ * Wrapper for open / RTFileOpen / IOKit.
+ *
+ * @remark  The Darwin code must correspond exactly to the enumeration
+ *          done in Main/darwin/iokit.c.
  */
 static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOnly)
 {
-#ifdef __LINUX__
+#ifdef __DARWIN__
+    /* Darwin is kind of special... */
+    Assert(!pFileDevice); NOREF(pFileDevice);
+    Assert(!pThis->cbBlock);
+    Assert(!pThis->MasterPort);
+    Assert(!pThis->ppMMCDI);
+    Assert(!pThis->ppScsiTaskDI);
+
+    /*
+     * Open the master port on the first invocation.
+     */
+    kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &pThis->MasterPort);
+    AssertReturn(krc == KERN_SUCCESS, VERR_GENERAL_FAILURE);
+
+    /*
+     * Create a matching dictionary for searching for DVD services in the IOKit.
+     *
+     * [If I understand this correctly, plain CDROMs doesn't show up as
+     * IODVDServices. Too keep things simple, we will only support DVDs
+     * until somebody complains about it and we get hardware to test it on.
+     * (Unless I'm much mistaken, there aren't any (orignal) intel macs with
+     * plain cdroms.)]
+     */
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IODVDServices");
+    AssertReturn(RefMatchingDict, NULL);
+
+    /*
+     * do the search and get a collection of keyboards.
+     */
+    io_iterator_t DVDServices = NULL;
+    IOReturn irc = IOServiceGetMatchingServices(pThis->MasterPort, RefMatchingDict, &DVDServices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), NULL);
+    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
+
+    /*
+     * Enumerate the DVD drives (services).
+     * (This enumeration must be identical to the one performed in DrvHostBase.cpp.)
+     */
+    int rc = VERR_FILE_NOT_FOUND;
+    unsigned i = 0;
+    io_object_t DVDService;
+    while ((DVDService = IOIteratorNext(DVDServices)) != 0)
+    {
+        /*
+         * Get the properties we use to identify the DVD drive.
+         *
+         * While there is a (weird 12 byte) GUID, it isn't persistent
+         * accross boots. So, we have to use a combination of the
+         * vendor name and product name properties with an optional
+         * sequence number for identification.
+         */
+        CFMutableDictionaryRef PropsRef = 0;
+        kern_return_t krc = IORegistryEntryCreateCFProperties(DVDService, &PropsRef, kCFAllocatorDefault, kNilOptions);
+        if (krc == KERN_SUCCESS)
+        {
+            /* Get the Device Characteristics dictionary. */
+            CFDictionaryRef DevCharRef = (CFDictionaryRef)CFDictionaryGetValue(PropsRef, CFSTR(kIOPropertyDeviceCharacteristicsKey));
+            if (DevCharRef)
+            {
+                /* The vendor name. */
+                char szVendor[128];
+                char *pszVendor = &szVendor[0];
+                CFTypeRef ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyVendorNameKey));
+                if (    ValueRef
+                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
+                    &&  CFStringGetCString((CFStringRef)ValueRef, szVendor, sizeof(szVendor), kCFStringEncodingUTF8))
+                    pszVendor = RTStrStrip(szVendor);
+                else
+                    *pszVendor = '\0';
+
+                /* The product name. */
+                char szProduct[128];
+                char *pszProduct = &szProduct[0];
+                ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyProductNameKey));
+                if (    ValueRef
+                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
+                    &&  CFStringGetCString((CFStringRef)ValueRef, szProduct, sizeof(szProduct), kCFStringEncodingUTF8))
+                    pszProduct = RTStrStrip(szProduct);
+                else
+                    *pszProduct = '\0';
+
+                /* Construct the two names and compare thwm with the one we're searching for. */
+                char szName1[256 + 32];
+                char szName2[256 + 32];
+                if (*pszVendor || *pszProduct)
+                {
+                    if (*pszVendor && *pszProduct)
+                    {
+                        RTStrPrintf(szName1, sizeof(szName1), "%s %s", pszVendor, pszProduct);
+                        RTStrPrintf(szName2, sizeof(szName2), "%s %s (#%u)", pszVendor, pszProduct, i);
+                    }
+                    else
+                    {
+                        strcpy(szName1, *pszVendor ? pszVendor : pszProduct);
+                        RTStrPrintf(szName2, sizeof(szName2), "%s %s (#%u)", *pszVendor ? pszVendor : pszProduct, i);
+                    }
+                }
+                else
+                {
+                    RTStrPrintf(szName1, sizeof(szName1), "(#%u)", i);
+                    strcpy(szName2, szName1);
+                }
+
+                if (    !strcmp(szName1, pThis->pszDeviceOpen)
+                    ||  !strcmp(szName2, pThis->pszDeviceOpen))
+                {
+                    /*
+                     * Found it! Now, get the client interface and stuff.
+                     * Note that we could also query kIOSCSITaskDeviceUserClientTypeID here if the
+                     * MMC client plugin is missing. For now we assume this won't be necessary.
+                     */
+                    SInt32 Score = 0;
+                    IOCFPlugInInterface **ppPlugInInterface = NULL;
+                    krc = IOCreatePlugInInterfaceForService(DVDService, kIOMMCDeviceUserClientTypeID, kIOCFPlugInInterfaceID,
+                                                            &ppPlugInInterface, &Score);
+                    if (krc == KERN_SUCCESS)
+                    {
+                        HRESULT hrc = (*ppPlugInInterface)->QueryInterface(ppPlugInInterface,
+                                                                           CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
+                                                                           (LPVOID *)&pThis->ppMMCDI);
+                        (*ppPlugInInterface)->Release(ppPlugInInterface);
+                        ppPlugInInterface = NULL;
+                        if (hrc == S_OK)
+                        {
+                            pThis->ppScsiTaskDI = (*pThis->ppMMCDI)->GetSCSITaskDeviceInterface(pThis->ppMMCDI);
+                            if (pThis->ppScsiTaskDI)
+                                rc = VINF_SUCCESS;
+                            else
+                            {
+                                LogRel(("GetSCSITaskDeviceInterface failed on '%s'\n", pThis->pszDeviceOpen));
+                                rc = VERR_NOT_SUPPORTED;
+                                (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
+                            }
+                        }
+                        else
+                        {
+                            rc = VERR_GENERAL_FAILURE;//RTErrConvertFromDarwinCOM(krc);
+                            pThis->ppMMCDI = NULL;
+                        }
+                    }
+                    else /* Check for kIOSCSITaskDeviceUserClientTypeID? */
+                        rc = VERR_GENERAL_FAILURE;//RTErrConvertFromDarwinKern(krc);
+
+                    /*
+                     * Obtain exclusive access to the device
+                     * (to prevent the host and/or user from interfering).
+                     */
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        irc = (*pThis->ppScsiTaskDI)->ObtainExclusiveAccess(pThis->ppScsiTaskDI);
+                        if (irc == kIOReturnSuccess)
+                            rc = VINF_SUCCESS;
+                        else if (irc == kIOReturnBusy)
+                            rc = VERR_DRIVE_LOCKED;         /* mounted. */
+                        else if (irc == kIOReturnExclusiveAccess)
+                            rc = VERR_SHARING_VIOLATION;    /* already used exclusivly. */
+                        else
+                            rc = VERR_GENERAL_FAILURE;
+                    }
+
+                    /* Cleanup on failure. */
+                    if (VBOX_FAILURE(rc))
+                    {
+                        if (pThis->ppScsiTaskDI)
+                        {
+                            (*pThis->ppScsiTaskDI)->Release(pThis->ppScsiTaskDI);
+                            pThis->ppScsiTaskDI = NULL;
+                        }
+                        if (pThis->ppMMCDI)
+                        {
+                            (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
+                            pThis->ppMMCDI = NULL;
+                        }
+                    }
+
+                    IOObjectRelease(DVDService);
+                    break;
+                }
+            }
+            CFRelease(PropsRef);
+        }
+        else
+            AssertMsgFailed(("krc=%#x\n", krc));
+
+        IOObjectRelease(DVDService);
+        i++;
+    }
+
+    IOObjectRelease(DVDServices);
+    return rc;
+
+#elif defined(__LINUX__)
+    /** @todo we've got RTFILE_O_NON_BLOCK now. Change the code to use RTFileOpen. */
     int FileDevice = open(pThis->pszDeviceOpen, (pThis->fReadOnlyConfig ? O_RDONLY : O_RDWR) | O_NONBLOCK);
     if (FileDevice < 0)
         return RTErrConvertFromErrno(errno);
     *pFileDevice = FileDevice;
     return VINF_SUCCESS;
+
 #else
     return RTFileOpen(pFileDevice, pThis->pszDeviceOpen,
                       (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
 #endif
 }
 
+
 /**
  * (Re)opens the device.
+ *
+ * This is used to open the device during construction, but it's also used to re-open
+ * the device when a media is inserted. This re-open will kill off any cached data
+ * that Linux for some peculiar reason thinks should survive a media change...
  *
  * @returns VBOX status code.
  * @param   pThis       Instance data.
  */
 static int drvHostBaseReopen(PDRVHOSTBASE pThis)
 {
+#ifndef __DARWIN__ /* Only *one* open for darwin. */
     LogFlow(("%s-%d: drvHostBaseReopen: '%s'\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, pThis->pszDeviceOpen));
 
-    /*
-     * Reopen the device to kill any cached data which for some peculiar reason stays on some OSes (linux)...
-     */
     RTFILE FileDevice;
     int rc = drvHostBaseOpen(pThis, &FileDevice, pThis->fReadOnlyConfig);
     if (VBOX_FAILURE(rc))
@@ -563,6 +810,7 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
     if (pThis->FileDevice != NIL_RTFILE)
         RTFileClose(pThis->FileDevice);
     pThis->FileDevice = FileDevice;
+#endif /* !__DARWIN__ */
     return VINF_SUCCESS;
 }
 
@@ -576,7 +824,36 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
  */
 static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
 {
-#ifdef __WIN__
+#ifdef __DARWIN__
+    /*
+     * Try a READ_CAPACITY command...
+     */
+    struct
+    {
+        uint32_t cBlocks;
+        uint32_t cbBlock;
+    } Buf = {0, 0};
+    size_t cbBuf = sizeof(Buf);
+    uint8_t abCmd[16] =
+    {
+        SCSI_READ_CAPACITY, 0, 0, 0, 0, 0, 0,
+        0,0,0,0,0,0,0,0,0
+    };
+    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_FROM_DEVICE, &Buf, &cbBuf, NULL, 0, 0);
+    if (VBOX_SUCCESS(rc))
+    {
+        Assert(cbBuf == sizeof(Buf));
+        Buf.cBlocks = RT_BE2H_U32(Buf.cBlocks);
+        Buf.cbBlock = RT_BE2H_U32(Buf.cbBlock);
+        //if (Buf.cbBlock > 2048) /* everyone else is doing this... check if it needed/right.*/
+        //    Buf.cbBlock = 2048;
+        pThis->cbBlock = Buf.cbBlock;
+
+        *pcb = (uint64_t)Buf.cBlocks * Buf.cbBlock;
+    }
+    return rc;
+
+#elif defined(__WIN__)
     /* use NT api, retry a few times if the media is being verified. */
     IO_STATUS_BLOCK             IoStatusBlock = {0};
     FILE_FS_SIZE_INFORMATION    FsSize= {0};
@@ -609,6 +886,124 @@ static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
     return RTFileSeek(pThis->FileDevice, 0, RTFILE_SEEK_END, pcb);
 #endif
 }
+
+
+#ifdef __DARWIN__
+/**
+ * Execute a SCSI command.
+ *
+ * @param pThis             The instance data.
+ * @param pbCmd             Pointer to the SCSI command.
+ * @param cbCmd             The size of the SCSI command.
+ * @param enmTxDir          The transfer direction.
+ * @param pvBuf             The buffer. Can be NULL if enmTxDir is PDMBLOCKTXDIR_NONE.
+ * @param pcbBuf            Where to get the buffer size from and put the actual transfer size. Can be NULL.
+ * @param pbSense           Where to put the sense data. Can be NULL.
+ * @param cbSense           Size of the sense data buffer.
+ * @param cTimeoutMillies   The timeout. 0 mean the default timeout.
+ *
+ * @returns VINF_SUCCESS on success (no sense code).
+ * @returns VERR_UNRESOLVED_ERROR if sense code is present.
+ * @returns Some other VBox status code on failures without sense code.
+ *
+ * @todo Fix VERR_UNRESOLVED_ERROR abuse.
+ */
+DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMBLOCKTXDIR enmTxDir,
+                                     void *pvBuf, size_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies)
+{
+    /*
+     * Minimal input validation.
+     */
+    Assert(enmTxDir == PDMBLOCKTXDIR_NONE || enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE || enmTxDir == PDMBLOCKTXDIR_TO_DEVICE);
+    Assert(!pvBuf || (pcbBuf && *pcbBuf));
+    Assert(pvBuf || enmTxDir == PDMBLOCKTXDIR_NONE);
+    Assert(pbSense || !cbSense);
+    AssertPtr(pbCmd);
+    Assert(cbCmd <= 16 && cbCmd >= 1);
+    const size_t cbBuf = pcbBuf ? *pcbBuf : 0;
+    if (pcbBuf)
+        *pcbBuf = 0;
+
+# ifdef __DARWIN__
+    Assert(pThis->ppScsiTaskDI);
+
+    int rc = VERR_GENERAL_FAILURE;
+    SCSITaskInterface **ppScsiTaskI = (*pThis->ppScsiTaskDI)->CreateSCSITask(pThis->ppScsiTaskDI);
+    if (!ppScsiTaskI)
+        return VERR_NO_MEMORY;
+    do
+    {
+        /* Setup the scsi command. */
+        SCSICommandDescriptorBlock cdb = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        memcpy(&cdb[0], pbCmd, cbCmd);
+        IOReturn irc = (*ppScsiTaskI)->SetCommandDescriptorBlock(ppScsiTaskI, cdb, cbCmd);
+        AssertBreak(irc == kIOReturnSuccess,);
+
+        /* Setup the buffer. */
+        if (enmTxDir == PDMBLOCKTXDIR_NONE)
+            irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, NULL, 0, 0, kSCSIDataTransfer_NoDataTransfer);
+        else
+        {
+            IOVirtualRange Range = { (IOVirtualAddress)pvBuf, cbBuf };
+            irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, &Range, 1, cbBuf,
+                                                          enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE
+                                                          ? kSCSIDataTransfer_FromTargetToInitiator
+                                                          : kSCSIDataTransfer_FromInitiatorToTarget);
+        }
+        AssertBreak(irc == kIOReturnSuccess,);
+
+        /* Set the timeout. */
+        irc = (*ppScsiTaskI)->SetTimeoutDuration(ppScsiTaskI, cTimeoutMillies ? cTimeoutMillies : 30000 /*ms*/);
+        AssertBreak(irc == kIOReturnSuccess,);
+
+        /* Execute the command and get the response. */
+        SCSI_Sense_Data SenseData = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        SCSIServiceResponse	ServiceResponse	= kSCSIServiceResponse_Request_In_Process;
+        SCSITaskStatus TaskStatus = kSCSITaskStatus_GOOD;
+        UInt64 cbReturned = 0;
+        irc = (*ppScsiTaskI)->ExecuteTaskSync(ppScsiTaskI, &SenseData, &TaskStatus, &cbReturned);
+        AssertBreak(irc == kIOReturnSuccess,);
+        if (pcbBuf)
+            *pcbBuf = cbReturned;
+
+        irc = (*ppScsiTaskI)->GetSCSIServiceResponse(ppScsiTaskI, &ServiceResponse);
+        AssertBreak(irc == kIOReturnSuccess,);
+        AssertBreak(ServiceResponse == kSCSIServiceResponse_TASK_COMPLETE,);
+
+        if (TaskStatus == kSCSITaskStatus_GOOD)
+            rc = VINF_SUCCESS;
+        else if (   TaskStatus == kSCSITaskStatus_CHECK_CONDITION
+                 && pbSense)
+        {
+            memset(pbSense, 0, cbSense); /* lazy */
+            memcpy(pbSense, &SenseData, RT_MIN(sizeof(SenseData), cbSense));
+            rc = VERR_UNRESOLVED_ERROR;
+        }
+        /** @todo convert sense codes when caller doesn't wish to do this himself. */
+        /*else if (   TaskStatus == kSCSITaskStatus_CHECK_CONDITION
+                 && SenseData.ADDITIONAL_SENSE_CODE == 0x3A)
+            rc = VERR_MEDIA_NOT_PRESENT; */
+        else
+        {
+            rc = enmTxDir == PDMBLOCKTXDIR_NONE
+               ? VERR_DEV_IO_ERROR
+               : enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE
+               ? VERR_READ_ERROR
+               : VERR_WRITE_ERROR;
+            if (pThis->cLogRelErrors++ < 10)
+                LogRel(("DVD scsi error: cmd={%.*Rhxs} TaskStatus=%#x key=%#x ASC=%#x ASCQ=%#x (%Vrc)\n",
+                        cbCmd, pbCmd, TaskStatus, SenseData.SENSE_KEY, SenseData.ADDITIONAL_SENSE_CODE,
+                        SenseData.ADDITIONAL_SENSE_CODE_QUALIFIER, rc));
+        }
+    } while (0);
+
+    (*ppScsiTaskI)->Release(ppScsiTaskI);
+
+# endif
+
+    return rc;
+}
+#endif
 
 
 /**
@@ -906,7 +1301,11 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
      * Unlock the drive if we've locked it.
      */
     if (    pThis->fLocked
+#ifdef __DARWIN__
+        &&  pThis->ppScsiTaskDI
+#else
         &&  pThis->FileDevice != NIL_RTFILE
+#endif
         &&  pThis->pfnDoLock)
     {
         int rc = pThis->pfnDoLock(pThis, false);
@@ -932,12 +1331,31 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     }
 #endif
 
+#ifdef __DARWIN__
+    if (pThis->ppScsiTaskDI)
+    {
+        (*pThis->ppScsiTaskDI)->ReleaseExclusiveAccess(pThis->ppScsiTaskDI);
+        (*pThis->ppScsiTaskDI)->Release(pThis->ppScsiTaskDI);
+        pThis->ppScsiTaskDI = NULL;
+    }
+    if (pThis->ppMMCDI)
+    {
+        (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
+        pThis->ppMMCDI = NULL;
+    }
+    if (pThis->MasterPort)
+    {
+        mach_port_deallocate(mach_task_self(), pThis->MasterPort);
+        pThis->MasterPort = NULL;
+    }
+#else
     if (pThis->FileDevice != NIL_RTFILE)
     {
         int rc = RTFileClose(pThis->FileDevice);
         AssertRC(rc);
         pThis->FileDevice = NIL_RTFILE;
     }
+#endif
 
     if (pThis->pszDevice)
     {
@@ -979,8 +1397,16 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
      */
     pThis->pDrvIns                          = pDrvIns;
     pThis->ThreadPoller                     = NIL_RTTHREAD;
+#ifdef __DARWIN__
+    pThis->MasterPort                       = NULL;
+    pThis->ppMMCDI                          = NULL;
+    pThis->ppScsiTaskDI                     = NULL;
+    pThis->cbBlock                          = 0;
+#else
     pThis->FileDevice                       = NIL_RTFILE;
+#endif
     pThis->enmType                          = enmType;
+    //pThis->cErrors                          = 0;
 
     pThis->pfnGetMediaSize                  = drvHostBaseGetMediaSize;
 
@@ -1196,15 +1622,21 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     /*
      * Open the device.
      */
+#ifdef __DARWIN__
+    rc = drvHostBaseOpen(pThis, NULL, pThis->fReadOnlyConfig);
+#else
     rc = drvHostBaseReopen(pThis);
+#endif
     if (VBOX_FAILURE(rc))
     {
-        char pszPathReal[256];
         char *pszDevice = pThis->pszDevice;
-        if (RT_SUCCESS(RTPathReal(pszDevice, pszPathReal, sizeof(pszPathReal))))
-            pszDevice = pszPathReal;
-        AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pThis->pszDevice, rc));
+#ifndef __DARWIN__
+        char szPathReal[256];
+        if (RT_SUCCESS(RTPathReal(pszDevice, szPathReal, sizeof(szPathReal))))
+            pszDevice = szPathReal;
         pThis->FileDevice = NIL_RTFILE;
+#endif
+        AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pszDevice, rc));
         switch (rc)
         {
             case VERR_ACCESS_DENIED:
@@ -1218,8 +1650,8 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
                         N_("Cannot open host device '%s' for %s access. Check the permissions "
                            "of that device"),
 #endif
-                       pszPathReal, pThis->fReadOnlyConfig ? "readonly" : "read/write",
-                       pszPathReal);
+                       pszDevice, pThis->fReadOnlyConfig ? "readonly" : "read/write",
+                       pszDevice);
             default:
                 return rc;
         }
