@@ -915,7 +915,7 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
      * Minimal input validation.
      */
     Assert(enmTxDir == PDMBLOCKTXDIR_NONE || enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE || enmTxDir == PDMBLOCKTXDIR_TO_DEVICE);
-    Assert(!pvBuf || (pcbBuf && *pcbBuf));
+    Assert(!pvBuf || pcbBuf);
     Assert(pvBuf || enmTxDir == PDMBLOCKTXDIR_NONE);
     Assert(pbSense || !cbSense);
     AssertPtr(pbCmd);
