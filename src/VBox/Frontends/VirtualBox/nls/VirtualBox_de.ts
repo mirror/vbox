@@ -2249,7 +2249,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Einzelheiten</translation>
+        <translation>&amp;Details</translation>
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
@@ -2409,7 +2409,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished">&amp;Snapshots</translation>
+        <translation type="unfinished">&amp;Sicherungspunkte</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
