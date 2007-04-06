@@ -2409,7 +2409,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished">&amp;Aufnahmen</translation>
+        <translation type="unfinished">&amp;Snapshots</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
