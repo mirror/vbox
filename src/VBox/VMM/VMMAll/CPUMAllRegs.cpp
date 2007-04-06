@@ -1488,16 +1488,21 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     uint32_t cpl;
 
-    if (!pCtxCore->eflags.Bits.u1VM)
+    if (pVM->cpum.s.Guest.cr0 & X86_CR0_PE)
     {
-        cpl = (pCtxCore->ss & X86_SEL_RPL);
+        if (!pCtxCore->eflags.Bits.u1VM)
+        {
+            cpl = (pCtxCore->ss & X86_SEL_RPL);
 #ifndef IN_RING0
-        if (cpl == 1)
-            cpl = 0;
+            if (cpl == 1)
+                cpl = 0;
 #endif
+        }
+        else
+            cpl = 3;
     }
     else
-        cpl = 3;
+        cpl = 0;        /* real mode; cpl is zero */
 
     return cpl;
 }
