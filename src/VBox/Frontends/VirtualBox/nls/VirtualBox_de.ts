@@ -317,7 +317,7 @@
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation type="unfinished">Sendet die Sequenz Strg-Alt-Rücktaste an die virtuelle Maschine</translation>
+        <translation>Sendet die Sequenz Strg-Alt-Rücktaste an die virtuelle Maschine</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -337,7 +337,7 @@
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation type="unfinished">&amp;Schließen</translation>
+        <translation>&amp;Schließen...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
@@ -345,7 +345,7 @@
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation type="unfinished">&amp;Sicherungspunkt erstellen</translation>
+        <translation>&amp;Sicherungspunkt erstellen...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
@@ -353,7 +353,7 @@
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
-        <translation type="unfinished">&amp;Diskettenabbild</translation>
+        <translation>&amp;Diskettenabbild...</translation>
     </message>
     <message>
         <source>Mount a floppy image file</source>
@@ -771,12 +771,12 @@
     </message>
     <message>
         <source>Checking accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Überprüfe Zugriffsrecht</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>HDD</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Überprüfe Zugriffsrecht...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
@@ -795,7 +795,7 @@
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>HDD</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Fehler beim Prüfen der Zugriffsrechte auf das Medium</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
@@ -805,7 +805,7 @@
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Überprüfe Zugriffsrechte...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -829,7 +829,7 @@
     <message>
         <source>The image file is not accessible</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zugriffsrecht für Abbild nicht ausreichend</translation>
     </message>
     <message>
         <source>&amp;Select</source>
@@ -841,23 +841,23 @@
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie ein Plattenabbild aus</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso)</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM-Abbilder (*.iso)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie ein CD/DVD-ROM-Abbild aus</translation>
     </message>
     <message>
         <source>Floppy images (*.img)</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskettenabbild</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie ein Diskettenabbild aus</translation>
     </message>
 </context>
 <context>
@@ -1339,40 +1339,40 @@
     <message>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Überprüfe...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Nicht zugreifbar&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished">Deaktiviert</translation>
+        <translation>Deaktiviert</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Host zu Gast</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Gast zu Host</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bidirektional</translation>
     </message>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie ein Verzeichnis</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie eine Datei</translation>
     </message>
 </context>
 <context>
@@ -1633,7 +1633,7 @@ with all fields set to the values of the selected USB device attached to the hos
         <source>When checked, the keyboard is automatically
 captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedesmal automatisch gefangen, wenn das das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
 </context>
 <context>
@@ -2301,23 +2301,23 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation type="unfinished">Neue virtuelle Maschine erzeugen</translation>
+        <translation>Neue virtuelle Maschine erzeugen</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished">&amp;Ändern</translation>
+        <translation>&amp;Ändern...</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Ändern</translation>
+        <translation>Ändern</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation type="unfinished">Strg+Ä</translation>
+        <translation>Strg+Ä</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation type="unfinished">Einstellungen der ausgewählten virtuellen Maschine ändern</translation>
+        <translation>Einstellungen der ausgewählten virtuellen Maschine ändern</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
@@ -2506,15 +2506,15 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Add a new shared folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Neuen gemeinsamen Ordner hinzufügen</translation>
     </message>
     <message>
         <source>Edit the selected shared folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändert den ausgewählten gemeinsamen Ordner</translation>
     </message>
     <message>
         <source>Remove the selected shared folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Löscht den ausgewählten gemeinsamen Ordner</translation>
     </message>
     <message>
         <source> Machine Folders</source>
@@ -2526,7 +2526,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Pfad:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -2577,7 +2577,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Details of %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Deteils von %1 (%2)</translation>
     </message>
 </context>
 <context>
@@ -3062,36 +3062,36 @@ value.</source>
     <message>
         <source>When checked, plugs this virtual network adapter into
                 the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fügt der virtuellen Maschine einen virtuellen Netzwerk-Adapter hinzu.</translation>
     </message>
     <message>
         <source>Controls the way how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt fest, wie dieser virtuelle Netzwerk-Adapter mit dem realen Netzwerk des Host-Betriebssystems verbunden ist.</translation>
     </message>
     <message>
         <source>Displays the MAC address of
                                         this adapter. It contains exactly 12
                                         characters chosen from
                                         {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeugt eine neue zufällige MAC-Adresse.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged
                         in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt an, ob das virtuelle Netzwerk-Kabel an diese virtuelle Maschine angeschlossen ist.</translation>
     </message>
     <message>
         <source>Displays the
                                                         name of the host
                                                         interface selected for
                                                         this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Namen des Hostinterfaces dieses Adapters.</translation>
     </message>
     <message>
         <source>Lists all available
@@ -3810,7 +3810,7 @@ that this feature requires Guest Additions to be installed in the guest OS.
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Wert &apos;%1&apos; des Schlüssels &apos;%2&apos; stimmt nicht mit dem regulären Ausdruck &apos;%3&apos; überein.</translation>
     </message>
 </context>
 </TS>
