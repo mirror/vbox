@@ -407,6 +407,14 @@ EMR3DECL(void) EMR3FatalError(PVM pVM, int rc);
 EMR3DECL(int) EMR3ExecuteVM(PVM pVM);
 
 /**
+ * Check for pending raw actions
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+EMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM);
+
+/**
  * Interpret instructions.
  * This works directly on the Guest CPUM context.
  * The interpretation will try execute at least one instruction. It will
