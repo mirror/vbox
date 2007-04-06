@@ -676,7 +676,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
             return trpmGCExitTrap(pVM, VINF_EM_RAW_RING_SWITCH, pRegFrame);
 
         /*
-         * Read TSC
+         * Handle virtualized TSC reads.
          */
         case OP_RDTSC:
         {
