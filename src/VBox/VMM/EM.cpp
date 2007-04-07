@@ -372,8 +372,6 @@ EMR3DECL(int) EMR3Term(PVM pVM)
  */
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    SSMR3PutBool(pSSM, pVM->em.s.fRawModeUsed);
-    SSMR3PutBool(pSSM, pVM->em.s.fHwAccModeUsed);
     return SSMR3PutBool(pSSM, pVM->em.s.fForceRAW);
 }
 
@@ -400,15 +398,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Load the saved state.
      */
-    int rc = SSMR3GetBool(pSSM, &pVM->em.s.fRawModeUsed);
-    if (VBOX_FAILURE(rc))
-        pVM->em.s.fRawModeUsed = false;
-
-    rc = SSMR3GetBool(pSSM, &pVM->em.s.fHwAccModeUsed);
-    if (VBOX_FAILURE(rc))
-        pVM->em.s.fHwAccModeUsed = false;
-
-    rc = SSMR3GetBool(pSSM, &pVM->em.s.fForceRAW);
+    int rc = SSMR3GetBool(pSSM, &pVM->em.s.fForceRAW);
     if (VBOX_FAILURE(rc))
         pVM->em.s.fForceRAW = false;
 
@@ -2447,17 +2437,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
  */
 EMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
-
-    /* Too early if we haven't entered raw or hw accelerated mode yet */
-    /** @todo fix this properly */
-    if (    pVM->em.s.fHwAccModeUsed 
-        ||  pVM->em.s.fRawModeUsed)
-    {
-        rc = emR3RawForcedActions(pVM, pVM->em.s.pCtx);
-    }
-
-    return rc;
+    return emR3RawForcedActions(pVM, pVM->em.s.pCtx);
 }
 
 
@@ -2657,9 +2637,6 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
 
         LogFlow(("RR0-E: %08X ESP=%08X IF=%d VMFlags=%x PIF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags, pGCState->fPIF, (pCtx->ss & X86_SEL_RPL)));
         LogFlow(("VMMR3RawRunGC returned %Vrc\n", rc));
-
-        /* Signal that we've used raw mode for the first time */
-        pVM->em.s.fRawModeUsed = true;
 
         /*
          * Restore the real CPU state and deal with high priority post
@@ -2870,9 +2847,6 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         rc = VMMR3HwAccRunGC(pVM);
         VMMR3Lock(pVM);
         STAM_PROFILE_STOP(&pVM->em.s.StatHwAccExec, x);
-
-        /* Signal that we've used hardware accelerated mode for the first time */
-        pVM->em.s.fHwAccModeUsed = true;
 
         /*
          * Deal with high priority post execution FFs before doing anything else.
