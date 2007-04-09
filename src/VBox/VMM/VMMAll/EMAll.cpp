@@ -1213,7 +1213,7 @@ static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
         {
 #endif
             RTGCPTR  pParam1;
-            uint32_t valpar1, valpar2;
+            uint32_t valpar1 = 0, valpar2;
 
             /* The destination is always a virtual address */
             if (param1.type != PARMTYPE_ADDRESS)
@@ -1234,6 +1234,7 @@ static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER;
             }
 
+            Log2(("emInterpretBtr: pvFault=%VGv pParam1=%VGv val2=%x\n", pvFault, pParam1, valpar2));
             pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
 #ifdef IN_GC
             /* Safety check. */
@@ -1246,8 +1247,10 @@ static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER;
             }
 
+            Log2(("emInterpretBtr: val=%x\n", valpar1));
             /* Data read, emulate BTR. */
             uint32_t eflags = EMEmulateBtr(&valpar1, valpar2 & 0x7);
+            Log2(("emInterpretBtr: val=%x CF=%d\n", valpar1, !!(eflags & X86_EFL_CF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
