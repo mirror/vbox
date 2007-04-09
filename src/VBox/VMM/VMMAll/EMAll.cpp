@@ -1238,7 +1238,7 @@ static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 #ifdef IN_GC
             /* Safety check. */
             /** @todo cpu may access two or four bytes */
-            AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
+            AssertMsgReturn(pParam1 == pvFault, ("pParam1=%VGv pvFault=%VGv\n", pParam1, pvFault), VERR_EM_INTERPRETER);
 #endif
             rc = emRamRead(pVM, &valpar1, pParam1, 1);
             if (VBOX_FAILURE(rc))
