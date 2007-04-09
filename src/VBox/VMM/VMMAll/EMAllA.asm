@@ -622,3 +622,34 @@ BEGINPROC   EMEmulateSub
     pop     MY_RET_REG
     retn
 ENDPROC     EMEmulateSub
+
+
+;;
+; Emulate BTR instruction, CDECL calling conv.
+; EMDECL(uint32_t) EMEmulateBtr(uint32_t *pu32Param1, uint32_t u32Param2);
+;
+; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
+; @param    [esp + 08h]    Param 2 - Second parameter.
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMEmulateBtr
+%ifdef __AMD64__
+%ifndef __WIN64__
+    mov     rcx, rdi                    ; rcx = first parameter
+    mov     rdx, rsi                    ; rdx = second parameter
+%endif  ; !__WIN64__
+%else   ; !__AMD64__
+    mov     ecx, [esp + 04h]            ; ecx = first parameter
+    mov     edx, [esp + 08h]            ; edx = second parameter
+%endif
+
+    and     edx, 7
+    btr    [MY_PTR_REG], edx
+
+    ; collect flags and return.
+    pushf
+    pop     MY_RET_REG
+    retn
+ENDPROC     EMEmulateBtr
