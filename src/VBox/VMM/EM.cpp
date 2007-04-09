@@ -191,8 +191,10 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatHCXor,                  STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/Xor",       STAMUNIT_OCCURENCES,    "The number of times XOR was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCMonitor,              STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/Monitor",   STAMUNIT_OCCURENCES,    "The number of times MONITOR was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatHCMonitor,              STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/Monitor",   STAMUNIT_OCCURENCES,    "The number of times MONITOR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatGCMWait,                STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/MWait",     STAMUNIT_OCCURENCES,    "The number of times MONITOR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatHCMWait,                STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/MWait",     STAMUNIT_OCCURENCES,    "The number of times MONITOR was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatGCMWait,                STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/MWait",     STAMUNIT_OCCURENCES,    "The number of times MWAIT was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatHCMWait,                STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/MWait",     STAMUNIT_OCCURENCES,    "The number of times MWAIT was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatGCBtr,                  STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/Btr",       STAMUNIT_OCCURENCES,    "The number of times BTR was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatHCBtr,                  STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/Btr",       STAMUNIT_OCCURENCES,    "The number of times BTR was successfully interpreted.");
 
     STAM_REG(pVM, &pStats->StatGCInterpretFailed,           STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
     STAM_REG(pVM, &pStats->StatHCInterpretFailed,           STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
