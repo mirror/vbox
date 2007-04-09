@@ -1193,6 +1193,83 @@ static int emInterpretSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 }
 
 /**
+ * BTR Emulation.
+ */
+static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    OP_PARAMVAL param1, param2;
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+#ifdef IN_GC
+    if (TRPMHasTrap(pVM))
+    {
+        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        {
+#endif
+            RTGCPTR  pParam1;
+            uint32_t valpar1, valpar2;
+
+            /* The destination is always a virtual address */
+            if (param1.type != PARMTYPE_ADDRESS)
+                return VERR_EM_INTERPRETER;
+
+            pParam1 = (RTGCPTR)param1.val.val32;
+            pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+
+            /* Register or immediate data */
+            switch(param2.type)
+            {
+            case PARMTYPE_IMMEDIATE:    /* both immediate data and register (ugly) */
+                valpar2 = param2.val.val32;
+                break;
+
+            default:
+                AssertFailed();
+                return VERR_EM_INTERPRETER;
+            }
+
+            pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
+#ifdef IN_GC
+            /* Safety check. */
+            /** @todo cpu may access two or four bytes */
+            AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
+#endif
+            rc = emRamRead(pVM, &valpar1, pParam1, 1);
+            if (VBOX_FAILURE(rc))
+            {
+                AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                return VERR_EM_INTERPRETER;
+            }
+
+            /* Data read, emulate BTR. */
+            uint32_t eflags = EMEmulateBtr(&valpar1, valpar2 & 0x7);
+
+            /* Update guest's eflags and finish. */
+            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
+                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
+
+            /* And write it back */
+            rc = emRamWrite(pVM, pParam1, &valpar1, 1);
+            if (VBOX_SUCCESS(rc))
+            {
+                /* All done! */
+                *pcbSize = 1;
+                return VINF_SUCCESS;
+            }
+#ifdef IN_GC
+        }
+    }
+#endif
+    return VERR_EM_INTERPRETER;
+}
+
+/**
  * MOV emulation.
  */
 static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
@@ -1942,6 +2019,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_ADD,Add);
         INTERPRET_CASE(OP_ADC,Adc);
         INTERPRET_CASE(OP_SUB,Sub);
+        INTERPRET_CASE(OP_BTR,Btr);
 #ifdef IN_GC
         INTERPRET_CASE(OP_RDTSC,Rdtsc);
         INTERPRET_CASE(OP_STI,Sti);
@@ -1949,7 +2027,6 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_HLT,Hlt);
         INTERPRET_CASE(OP_IRET,Iret);
 #ifdef VBOX_WITH_STATISTICS
-        INTERPRET_STAT_CASE(OP_BTR,Btr);
         INTERPRET_STAT_CASE(OP_BTS,Bts);
         INTERPRET_STAT_CASE(OP_CMPXCHG,CmpXchg);
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);
