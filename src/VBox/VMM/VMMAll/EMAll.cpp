@@ -1264,6 +1264,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 break;
             default:
                 AssertFailed();
+                eflags = 0;
                 break;
             }
             Log2(("emInterpretBtx: val=%x CF=%d\n", valpar1, !!(eflags & X86_EFL_CF)));
