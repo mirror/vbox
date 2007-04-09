@@ -1510,6 +1510,7 @@ static int csamFlushPage(PVM pVM, RTGCPTR addr, bool fRemovePage)
  */
 CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr)
 {
+    addr = addr & PAGE_BASE_GC_MASK;
     return csamFlushPage(pVM, addr, true /* remove page record */);
 }
 
