@@ -303,6 +303,7 @@ EMDECL(uint32_t) EMEmulateXor(uint32_t *pu32Param1, uint32_t u32Param2, size_t c
 EMDECL(uint32_t) EMEmulateAdd(uint32_t *pu32Param1, uint32_t u32Param2, size_t cb);
 EMDECL(uint32_t) EMEmulateSub(uint32_t *pu32Param1, uint32_t u32Param2, size_t cb);
 EMDECL(uint32_t) EMEmulateAdcWithCarrySet(uint32_t *pu32Param1, uint32_t u32Param2, size_t cb);
+EMDECL(uint32_t) EMEmulateBtr(uint32_t *pu32Param1, uint32_t u32Param2);
 
 #ifdef IN_RING3
 /** @defgroup grp_em_r3     The EM Host Context Ring-3 API
