@@ -206,6 +206,14 @@ CSAMR3DECL(int) CSAMR3Reset(PVM pVM);
  */
 CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr);
 
+/**
+ * Remove a CSAM monitored page. Use with care!
+ *
+ * @returns VBox status code
+ * @param   pVM         The VM to operate on.
+ * @param   addr        GC address of the page to flush
+ */
+CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR addr);
 
 /**
  * Scan and analyse code
