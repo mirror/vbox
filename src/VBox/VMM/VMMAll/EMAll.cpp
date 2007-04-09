@@ -1193,9 +1193,9 @@ static int emInterpretSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 }
 
 /**
- * BTR Emulation.
+ * BTR/C/S Emulation.
  */
-static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1, param2;
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
@@ -1214,6 +1214,7 @@ static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 #endif
             RTGCPTR  pParam1;
             uint32_t valpar1 = 0, valpar2;
+            uint32_t eflags;
 
             /* The destination is always a virtual address */
             if (param1.type != PARMTYPE_ADDRESS)
@@ -1234,7 +1235,8 @@ static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER;
             }
 
-            Log2(("emInterpretBtr: pvFault=%VGv pParam1=%VGv val2=%x\n", pvFault, pParam1, valpar2));
+            Log2(("emInterpretBt%c: pvFault=%VGv pParam1=%VGv val2=%x\n", (pCpu->pCurInstr->opcode == OP_BTR) ? 'r' : ((pCpu->pCurInstr->opcode == OP_BTC) ? 'c' : 'r'),
+                  pvFault, pParam1, valpar2));
             pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
 #ifdef IN_GC
             /* Safety check. */
@@ -1247,10 +1249,24 @@ static int emInterpretBtr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER;
             }
 
-            Log2(("emInterpretBtr: val=%x\n", valpar1));
-            /* Data read, emulate BTR. */
-            uint32_t eflags = EMEmulateBtr(&valpar1, valpar2 & 0x7);
-            Log2(("emInterpretBtr: val=%x CF=%d\n", valpar1, !!(eflags & X86_EFL_CF)));
+            Log2(("emInterpretBtx: val=%x\n", valpar1));
+            /* Data read, emulate bit test instruction. */
+            switch (pCpu->pCurInstr->opcode)
+            {
+            case OP_BTR:
+                eflags = EMEmulateBtr(&valpar1, valpar2 & 0x7);
+                break;
+            case OP_BTC:
+                eflags = EMEmulateBtc(&valpar1, valpar2 & 0x7);
+                break;
+            case OP_BTS:
+                eflags = EMEmulateBts(&valpar1, valpar2 & 0x7);
+                break;
+            default:
+                AssertFailed();
+                break;
+            }
+            Log2(("emInterpretBtx: val=%x CF=%d\n", valpar1, !!(eflags & X86_EFL_CF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -2021,7 +2037,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_ADD,Add);
         INTERPRET_CASE(OP_ADC,Adc);
         INTERPRET_CASE(OP_SUB,Sub);
-        INTERPRET_CASE(OP_BTR,Btr);
+        INTERPRET_CASE_EX(OP_BTR,Btr, BitTest);
+        INTERPRET_CASE_EX(OP_BTS,Bts, BitTest);
+        INTERPRET_CASE_EX(OP_BTC,Btc, BitTest);
 #ifdef IN_GC
         INTERPRET_CASE(OP_RDTSC,Rdtsc);
         INTERPRET_CASE(OP_STI,Sti);
@@ -2029,7 +2047,6 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_HLT,Hlt);
         INTERPRET_CASE(OP_IRET,Iret);
 #ifdef VBOX_WITH_STATISTICS
-        INTERPRET_STAT_CASE(OP_BTS,Bts);
         INTERPRET_STAT_CASE(OP_CMPXCHG,CmpXchg);
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);
         INTERPRET_STAT_CASE(OP_STOSWD,StosWD);
