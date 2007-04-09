@@ -1510,7 +1510,6 @@ static int csamFlushPage(PVM pVM, RTGCPTR addr, bool fRemovePage)
  */
 CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr)
 {
-    addr = addr & PAGE_BASE_GC_MASK;
     return csamFlushPage(pVM, addr, true /* remove page record */);
 }
 
@@ -1523,10 +1522,20 @@ CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr)
  */
 CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR addr)
 {
-    int rc = csamRemovePageRecord(pVM, addr);
-    if (VBOX_SUCCESS(rc))
-        PATMR3FlushPage(pVM, addr);
-    return VINF_SUCCESS;
+    PCSAMPAGEREC pPageRec;
+    int          rc;
+
+    addr = addr & PAGE_BASE_GC_MASK;
+
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)addr);
+    if (pPageRec)
+    {
+        rc = csamRemovePageRecord(pVM, addr);
+        if (VBOX_SUCCESS(rc))
+            PATMR3FlushPage(pVM, addr);
+        return VINF_SUCCESS;
+    }
+    return VWRN_CSAM_PAGE_NOT_FOUND;
 }
 
 /**
