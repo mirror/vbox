@@ -353,6 +353,8 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
     if (pVM->pgm.s.pTreesHC->VirtHandlers != 0)
     {
         PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, pNew->Core.Key, true);
+        if (!pCur || GCPtr > pCur->GCPtrLast || GCPtrLast < pCur->GCPtr)
+            pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, pNew->Core.Key, false);
         if (pCur && GCPtr <= pCur->GCPtrLast && GCPtrLast >= pCur->GCPtr)
         {
             /*
