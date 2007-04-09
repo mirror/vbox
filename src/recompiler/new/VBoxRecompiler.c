@@ -1594,8 +1594,9 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
     Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
     if(uTrap < 0x20)
     {
+#ifdef DEBUG
         remR3DisasInstr(env, 1, "remR3NotifyTrap: ");
-
+#endif
         if(pVM->rem.s.uPendingException == uTrap && ++pVM->rem.s.cPendingExceptions > 128)
         {
             LogRel(("VERR_REM_TOO_MANY_TRAPS -> uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
