@@ -1514,6 +1514,21 @@ CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTGCPTR addr)
 }
 
 /**
+ * Remove a CSAM monitored page. Use with care!
+ *
+ * @returns VBox status code
+ * @param   pVM         The VM to operate on.
+ * @param   addr        GC address of the page to flush
+ */
+CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR addr)
+{
+    int rc = csamRemovePageRecord(pVM, addr);
+    if (VBOX_SUCCESS(rc))
+        PATMR3FlushPage(pVM, addr);
+    return VINF_SUCCESS;
+}
+
+/**
  * Check a page record in case a page has been changed
  *
  * @returns VBox status code. (trap handled or not)
