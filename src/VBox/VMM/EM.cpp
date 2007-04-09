@@ -195,6 +195,10 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatHCMWait,                STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/MWait",     STAMUNIT_OCCURENCES,    "The number of times MWAIT was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCBtr,                  STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/Btr",       STAMUNIT_OCCURENCES,    "The number of times BTR was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatHCBtr,                  STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/Btr",       STAMUNIT_OCCURENCES,    "The number of times BTR was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatGCBts,                  STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/Bts",       STAMUNIT_OCCURENCES,    "The number of times BTS was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatHCBts,                  STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/Bts",       STAMUNIT_OCCURENCES,    "The number of times BTS was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatGCBtc,                  STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/Btc",       STAMUNIT_OCCURENCES,    "The number of times BTC was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatHCBtc,                  STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/Btc",       STAMUNIT_OCCURENCES,    "The number of times BTC was successfully interpreted.");
 
     STAM_REG(pVM, &pStats->StatGCInterpretFailed,           STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
     STAM_REG(pVM, &pStats->StatHCInterpretFailed,           STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
@@ -248,6 +252,8 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatHCFailedBtr,            STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/Btr",        STAMUNIT_OCCURENCES,    "The number of times BTR was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCFailedBts,            STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/Bts",        STAMUNIT_OCCURENCES,    "The number of times BTS was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatHCFailedBts,            STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/Bts",        STAMUNIT_OCCURENCES,    "The number of times BTS was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatGCFailedBtc,            STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/Btc",        STAMUNIT_OCCURENCES,    "The number of times BTC was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatHCFailedBtc,            STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/Btc",        STAMUNIT_OCCURENCES,    "The number of times BTC was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCFailedCli,            STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/Cli",        STAMUNIT_OCCURENCES,    "The number of times CLI was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatHCFailedCli,            STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/Cli",        STAMUNIT_OCCURENCES,    "The number of times CLI was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCFailedCmpXchg,        STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/CmpXchg",    STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was not interpreted.");
