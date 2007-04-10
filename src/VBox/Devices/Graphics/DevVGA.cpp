@@ -4986,7 +4986,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
 #endif
 
     /*
-     * Allocate the VRAM.
+     * Free the VRAM.
      */
     int rc = SUPPageFree(pData->vram_ptrHC, pData->vram_size >> PAGE_SHIFT);
     if (VBOX_FAILURE(rc))
