@@ -67,21 +67,8 @@ public:
     Bstr (const Utf8Str &that);
     Bstr (const char *that);
 
-    /**
-     *  Allocates memory for a new string capable to store \a aSize - 1
-     *  characters plus the terminating zero character. If \a aSize is zero,
-     *  a null object will be created.
-     */
-    Bstr (size_t aSize) : bstr (NULL)
-    {
-        if (aSize)
-        {
-            unsigned int size = (unsigned int)aSize; Assert(size == aSize);
-            bstr = ::SysAllocStringLen (NULL, size - 1);
-            if (bstr)
-                bstr [0] = 0;
-        }
-    }
+    /** Shortcut that calls #alloc(aSize) right after object creation. */
+    Bstr (size_t aSize) : bstr (NULL) { alloc (aSize); }
 
     ~Bstr () { setNull(); }
 
@@ -91,23 +78,46 @@ public:
     Bstr &operator = (const Utf8Str &that);
     Bstr &operator = (const char *that);
 
-    Bstr &setNull() {
-        if (bstr) {
+    Bstr &setNull()
+    {
+        if (bstr)
+        {
             ::SysFreeString (bstr);
             bstr = NULL;
         }
         return *this;
     }
 
-    Bstr &setNullIfEmpty() {
-        if (bstr && *bstr == 0) {
+    Bstr &setNullIfEmpty()
+    {
+        if (bstr && *bstr == 0)
+        {
             ::SysFreeString (bstr);
             bstr = NULL;
         }
         return *this;
     }
 
-    int compare (const BSTR str) const {
+    /**
+     *  Allocates memory for a string capable to store \a aSize - 1 characters
+     *  plus the terminating zero character. If \a aSize is zero, or if a
+     *  memory allocation error occurs, this object will become null.
+     */
+    Bstr &alloc (size_t aSize)
+    {
+        if (aSize)
+        {
+            AssertCompile (sizeof (unsigned int) >= sizeof (aSize));
+            unsigned int size = (unsigned int) aSize;
+            bstr = ::SysAllocStringLen (NULL, size - 1);
+            if (bstr)
+                bstr [0] = 0;
+        }
+        return *this;
+    }
+
+    int compare (const BSTR str) const
+    {
         return ::RTStrUcs2Cmp ((PRTUCS2) bstr, (PRTUCS2) str);
     }
 
@@ -133,7 +143,8 @@ public:
         return compare ((const BSTR) that) < 0;
     }
 
-    int compareIgnoreCase (const BSTR str) const {
+    int compareIgnoreCase (const BSTR str) const
+    {
         return ::RTUtf16LocaleICmp (bstr, str);
     }
 
@@ -165,8 +176,10 @@ public:
      *  interface method. Transfers the ownership of the duplicated string to
      *  the caller.
      */
-    const Bstr &cloneTo (BSTR *pstr) const {
-        if (pstr) {
+    const Bstr &cloneTo (BSTR *pstr) const
+    {
+        if (pstr)
+        {
             *pstr = NULL;
             raw_copy (*pstr, bstr);
         }
@@ -188,20 +201,25 @@ public:
 
 private:
 
-    void safe_assign (const BSTR str) {
-        if (bstr != str) {
+    void safe_assign (const BSTR str)
+    {
+        if (bstr != str)
+        {
             setNull();
             raw_copy (bstr, str);
         }
     }
 
-    inline static void raw_copy (BSTR &ls, const BSTR rs) {
+    inline static void raw_copy (BSTR &ls, const BSTR rs)
+    {
         if (rs)
             ls = ::SysAllocString ((const OLECHAR *) rs);
     }
 
-    inline static void raw_copy (BSTR &ls, const char *rs) {
-        if (rs) {
+    inline static void raw_copy (BSTR &ls, const char *rs)
+    {
+        if (rs)
+        {
             PRTUCS2 s = NULL;
             ::RTStrUtf8ToUcs2 (&s, rs);
             raw_copy (ls, (BSTR) s);
@@ -240,12 +258,61 @@ public:
     Utf8Str (const Bstr &that) : str (NULL) { raw_copy (str, that); }
     Utf8Str (const BSTR that) : str (NULL) { raw_copy (str, that); }
 
+    /** Shortcut that calls #alloc(aSize) right after object creation. */
+    Utf8Str (size_t aSize) : str (NULL) { alloc(aSize); }
+
+    virtual ~Utf8Str () { setNull(); }
+
+    Utf8Str &operator = (const Utf8Str &that) { safe_assign (that.str); return *this; }
+    Utf8Str &operator = (const char *that) { safe_assign (that); return *this; }
+
+    Utf8Str &operator = (const Bstr &that)
+    {
+        setNull();
+        raw_copy (str, that);
+        return *this;
+    }
+    Utf8Str &operator = (const BSTR that)
+    {
+        setNull();
+        raw_copy (str, that);
+        return *this;
+    }
+
+    Utf8Str &setNull()
+    {
+        if (str)
+        {
+#if defined (__WIN__)
+            ::RTStrFree (str);
+#else
+            nsMemory::Free (str);
+#endif
+            str = NULL;
+        }
+        return *this;
+    }
+
+    Utf8Str &setNullIfEmpty()
+    {
+        if (str && *str == 0)
+        {
+#if defined (__WIN__)
+            ::RTStrFree (str);
+#else
+            nsMemory::Free (str);
+#endif
+            str = NULL;
+        }
+        return *this;
+    }
+
     /**
-     *  Allocates memory for a new string capable to store \a aSize - 1
-     *  characters plus the terminating zero character. If \a aSize is zero,
-     *  a null object will be created.
+     *  Allocates memory for a string capable to store \a aSize - 1 characters
+     *  plus the terminating zero character. If \a aSize is zero, or if a
+     *  memory allocation error occurs, this object will become null.
      */
-    void alloc (size_t aSize)
+    Utf8Str &alloc (size_t aSize)
     {
         if (aSize)
         {
@@ -258,54 +325,11 @@ public:
             if (str)
                 str [0] = 0;
         }
+        return *this;
     }
 
-    Utf8Str (size_t aSize) : str (NULL)
+    int compare (const char *s) const
     {
-        alloc(aSize);
-    }
-
-    virtual ~Utf8Str () { setNull(); }
-
-    Utf8Str &operator = (const Utf8Str &that) { safe_assign (that.str); return *this; }
-    Utf8Str &operator = (const char *that) { safe_assign (that); return *this; }
-
-    Utf8Str &operator = (const Bstr &that) {
-        setNull();
-        raw_copy (str, that);
-        return *this;
-    }
-    Utf8Str &operator = (const BSTR that) {
-        setNull();
-        raw_copy (str, that);
-        return *this;
-    }
-
-    Utf8Str &setNull() {
-        if (str) {
-#if defined (__WIN__)
-            ::RTStrFree (str);
-#else
-            nsMemory::Free (str);
-#endif
-            str = NULL;
-        }
-        return *this;
-    }
-
-    Utf8Str &setNullIfEmpty() {
-        if (str && *str == 0) {
-#if defined (__WIN__)
-            ::RTStrFree (str);
-#else
-            nsMemory::Free (str);
-#endif
-            str = NULL;
-        }
-        return *this;
-    }
-
-    int compare (const char *s) const {
         return str == s ? 0 : ::strcmp (str, s);
     }
 
@@ -344,8 +368,10 @@ public:
      *  interface method. Transfers the ownership of the duplicated string to the
      *  caller.
      */
-    const Utf8Str &cloneTo (char **pstr) const {
-        if (pstr) {
+    const Utf8Str &cloneTo (char **pstr) const
+    {
+        if (pstr)
+        {
             *pstr = NULL;
             raw_copy (*pstr, str);
         }
@@ -357,8 +383,10 @@ public:
      *  interface method. Transfers the ownership of the duplicated string to the
      *  caller.
      */
-    const Utf8Str &cloneTo (BSTR *pstr) const {
-        if (pstr) {
+    const Utf8Str &cloneTo (BSTR *pstr) const
+    {
+        if (pstr)
+        {
             *pstr = NULL;
             Bstr::raw_copy (*pstr, str);
         }
@@ -373,14 +401,17 @@ public:
 
 private:
 
-    void safe_assign (const char *s) {
-        if (str != s) {
+    void safe_assign (const char *s)
+    {
+        if (str != s)
+        {
             setNull();
             raw_copy (str, s);
         }
     }
 
-    inline static void raw_copy (char *&ls, const char *rs) {
+    inline static void raw_copy (char *&ls, const char *rs)
+    {
         if (rs)
 #if defined (__WIN__)
             ::RTStrDupEx (&ls, rs);
@@ -389,8 +420,10 @@ private:
 #endif
     }
 
-    inline static void raw_copy (char *&ls, const BSTR rs) {
-        if (rs) {
+    inline static void raw_copy (char *&ls, const BSTR rs)
+    {
+        if (rs)
+        {
 #if defined (__WIN__)
             ::RTStrUcs2ToUtf8 (&ls, (PRTUCS2) rs);
 #else
@@ -422,18 +455,21 @@ WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP (Utf8Str)
 inline Bstr::Bstr (const Utf8Str &that) : bstr (NULL) { raw_copy (bstr, that); }
 inline Bstr::Bstr (const char *that) : bstr (NULL) { raw_copy (bstr, that); }
 
-inline Bstr &Bstr::operator = (const Utf8Str &that) {
+inline Bstr &Bstr::operator = (const Utf8Str &that)
+{
     setNull();
     raw_copy (bstr, that);
     return *this;
 }
-inline Bstr &Bstr::operator = (const char *that) {
+inline Bstr &Bstr::operator = (const char *that)
+{
     setNull();
     raw_copy (bstr, that);
     return *this;
 }
 
-inline const Bstr &Bstr::cloneTo (char **pstr) const {
+inline const Bstr &Bstr::cloneTo (char **pstr) const
+{
     if (pstr) {
         *pstr = NULL;
         Utf8Str::raw_copy (*pstr, bstr);
@@ -469,7 +505,8 @@ public:
      *         other constructor since va_list is defined as char * on some
      *         platforms. If unsure, add an extra dummy argument.
      */
-    explicit Utf8StrFmt (const char *format, ...) {
+    explicit Utf8StrFmt (const char *format, ...)
+    {
         va_list args;
         va_start (args, format);
         init (format, args);
