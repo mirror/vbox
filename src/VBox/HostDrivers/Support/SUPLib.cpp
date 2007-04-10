@@ -196,15 +196,11 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
         SUPCOOKIE_OUT   Out = {0,0,0,0,0,NIL_RTR0PTR};
         strcpy(In.szMagic, SUPCOOKIE_MAGIC);
         In.u32ReqVersion = SUPDRVIOC_VERSION;
-        if (SUPDRVIOC_VERSION < 0x00050000)
-            In.u32MinVersion = 0x00040004;
-        else
-            In.u32MinVersion = SUPDRVIOC_VERSION & 0xffff0000;
+        In.u32MinVersion = SUPDRVIOC_VERSION & 0xffff0000;
         rc = suplibOsIOCtl(SUP_IOCTL_COOKIE, &In, sizeof(In), &Out, sizeof(Out));
         if (VBOX_SUCCESS(rc))
         {
-            if (    (Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000)
-                &&  Out.u32SessionVersion >= 0x00040004)
+            if ((Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000))
             {
                 /*
                  * Query the functions.

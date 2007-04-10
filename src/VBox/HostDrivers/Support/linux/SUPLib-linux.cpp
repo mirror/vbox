@@ -50,8 +50,9 @@
 /** Unix Device name. */
 #define DEVICE_NAME     "/dev/vboxdrv"
 
+/* define MADV_DONTFORK if it's missing from the system headers. */
 #ifndef MADV_DONTFORK
-#define MADV_DONTFORK      10
+# define MADV_DONTFORK  10
 #endif
 
 
@@ -62,7 +63,7 @@
 static int      g_hDevice = -1;
 /** Flags whether or not we've loaded the kernel module. */
 static bool     g_fLoadedModule = false;
-/** Checks */
+/** Indicates whether madvise(,,MADV_DONTFORK) works.  */
 static bool     g_fSysMadviseWorks = false;
 
 
@@ -124,11 +125,6 @@ int     suplibOsInit(size_t cbReserve)
         g_hDevice = -1;
         return RTErrConvertFromErrno(errno);
     }
-
-    /*
-     * Check driver version.
-     */
-    /** @todo implement driver version checking. */
 
     /*
      * Check if madvise works.
@@ -265,7 +261,7 @@ int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
     return RTErrConvertFromErrno(rc);
 #else
     size_t cbMmap = (g_fSysMadviseWorks ? cPages : cPages + 2) << PAGE_SHIFT;
-    char *pvPages = (char*)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    char *pvPages = (char *)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (pvPages)
     {
         if (g_fSysMadviseWorks)

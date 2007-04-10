@@ -53,12 +53,8 @@ int main(int argc, char **argv)
         } aPinnings[500];
         for (unsigned i = 0; i < sizeof(aPinnings) / sizeof(aPinnings[0]); i++)
         {
-#ifdef __OS2__
             aPinnings[i].pv = NULL;
             SUPPageAlloc(0x10000 >> PAGE_SHIFT, &aPinnings[i].pv);
-#else
-            aPinnings[i].pv = malloc(0x10000);
-#endif
             aPinnings[i].pvAligned = ALIGNP(aPinnings[i].pv, PAGE_SIZE);
             rc = SUPPageLock(aPinnings[i].pvAligned, 0xf000 >> PAGE_SHIFT, &aPinnings[i].aPages[0]);
             if (!rc)
@@ -78,11 +74,7 @@ int main(int argc, char **argv)
             {
                 RTPrintf("SUPPageLock -> rc=%d\n", rc);
                 rcRet++;
-#ifdef __OS2__
                 SUPPageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
-#else
-                free(aPinnings[i].pv);
-#endif
                 aPinnings[i].pv = aPinnings[i].pvAligned = NULL;
                 break;
             }
@@ -107,11 +99,7 @@ int main(int argc, char **argv)
             if (aPinnings[i].pv)
             {
                 memset(aPinnings[i].pv, 0xcc, 0x10000);
-#ifdef __OS2__
                 SUPPageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
-#else
-                free(aPinnings[i].pv);
-#endif
                 aPinnings[i].pv = NULL;
             }
         }
@@ -151,12 +139,8 @@ int main(int argc, char **argv)
          */
         #define BIG_SIZE    72*1024*1024
         #define BIG_SIZEPP  (BIG_SIZE + PAGE_SIZE)
-#ifdef __OS2__
         pv = NULL;
         SUPPageAlloc(BIG_SIZEPP >> PAGE_SHIFT, &pv);
-#else
-        pv = malloc(BIG_SIZEPP);
-#endif
         if (pv)
         {
             static SUPPAGE      aPages[BIG_SIZE >> PAGE_SHIFT];
@@ -186,11 +170,7 @@ int main(int argc, char **argv)
                 RTPrintf("SUPPageLock(%p) -> rc=%d\n", pvAligned, rc);
                 rcRet++;
             }
-#ifdef __OS2__
             SUPPageFree(pv, BIG_SIZEPP >> PAGE_SHIFT);
-#else
-            free(pv);
-#endif
         }
 
         rc = SUPTerm();
