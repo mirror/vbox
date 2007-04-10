@@ -50,7 +50,7 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 typedef EMDECL(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, uint32_t val2);
-typedef EMDECL(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, uint32_t val3);
+typedef EMDECL(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, size_t val3);
 
 /*******************************************************************************
  *   Internal Functions                                                        *
