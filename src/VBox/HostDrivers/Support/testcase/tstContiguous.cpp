@@ -74,41 +74,5 @@ int main(int argc, char **argv)
         rcRet += rc != 0;
     }
 
-    /* useless since SUPContAlloc/SUPContFree use cPages now */
-#if 0
-    /*
-     * 2nd part
-     */
-    if (!rcRet)
-    {
-        rc = SUPInit();
-        RTPrintf("tstContiguous: SUPInit -> rc=%Vrc\n", rc);
-        rcRet += rc != 0;
-        if (!rc)
-        {
-            for (int i = 0; i < 256; i++)
-            {
-                RTHCPHYS HCPhys = 0;
-                void *pv = SUPContAlloc(PAGE_SIZE + 512 + i, &HCPhys);
-                rcRet += pv == NULL || HCPhys == 0;
-                if (pv && HCPhys)
-                {
-                    memset(pv, 0x7f, PAGE_SIZE + 512 + i);
-                    rc = SUPContFree(pv);
-                    rcRet += rc != 0;
-                    if (rc)
-                        RTPrintf("tstContiguous: %d: SUPContFree failed! rc=%Vrc\n", i, rc);
-                }
-                else
-                    RTPrintf("tstContiguous: %d: SUPContAlloc failed!\n", i);
-            }
-
-            rc = SUPTerm();
-            RTPrintf("tstContiguous: SUPTerm -> rc=%Vrc\n", rc);
-            rcRet += rc != 0;
-        }
-    }
-#endif
-
     return rcRet;
 }

@@ -353,8 +353,7 @@ SUPR3DECL(SUPPAGINGMODE) SUPGetPagingMode(void);
  * to free the pages once done with them.
  *
  * @returns VBox status.
- * @param   cPages      Number of x86 4KB pages to allocate.
- *                      Max of 32MB.
+ * @param   cPages      Number of pages to allocate.
  * @param   ppvPages    Where to store the base pointer to the allocated pages.
  */
 SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
@@ -364,7 +363,7 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
  *
  * @returns VBox status.
  * @param   pvPages     Pointer returned by SUPPageAlloc().
- * @param   cPages      Number of x86 4KB pages to be freed.
+ * @param   cPages      Number of pages that was allocated.
  */
 SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
 
@@ -450,7 +449,7 @@ SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, 
  *
  * @returns VBox status code.
  * @param   pv          Pointer to the memory block which should be freed.
- * @param   cPages      Number of pages to be freed.
+ * @param   cPages      Number of pages that was allocated.
  */
 SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages);
 
