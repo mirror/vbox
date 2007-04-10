@@ -470,7 +470,7 @@ static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM,   ~0);            /* separator */
 
     /* Remember if we've entered raw mode (vital for ring 1 checks in e.g. iret emulation). */
-    SSMR3PutBool(pSSM, !!(pRem->Env.state & CPU_RAW_RING0));
+    SSMR3PutU32(pSSM, !!(pRem->Env.state & CPU_RAW_RING0));
 
     /*
      * Save the REM stuff.
@@ -497,7 +497,7 @@ static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
     uint32_t u32Dummy;
-    bool     fRawRing0 = false;
+    uint32_t fRawRing0 = false;
     LogFlow(("remR3Load:\n"));
 
     /*
@@ -539,7 +539,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     }
 
     /* Remember if we've entered raw mode (vital for ring 1 checks in e.g. iret emulation). */
-    SSMR3GetBool(pSSM, &fRawRing0);
+    SSMR3GetUInt(pSSM, &fRawRing0);
     if (fRawRing0)
         pRem->Env.state |= CPU_RAW_RING0;
 
