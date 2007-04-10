@@ -1602,13 +1602,19 @@ static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  */
 static int emInterpretMonitor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
+    uint32_t u32Dummy, u32ExtFeatures, cpl;
+
     if (pRegFrame->ecx != 0)
         return VERR_EM_INTERPRETER; /* illegal value. */
 
     /* Get the current privilege level. */
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
+
+    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
+    if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
+        return VERR_EM_INTERPRETER; /* not supported */
 
     return VINF_SUCCESS;
 }
@@ -1619,13 +1625,19 @@ static int emInterpretMonitor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
  */
 static int emInterpretMWait(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
+    uint32_t u32Dummy, u32ExtFeatures, cpl;
+
     if (pRegFrame->ecx != 0)
         return VERR_EM_INTERPRETER; /* illegal value. */
 
     /* Get the current privilege level. */
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
+
+    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
+    if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
+        return VERR_EM_INTERPRETER; /* not supported */
 
     /** @todo not completely correct */
     return VINF_EM_HALT;
