@@ -2750,7 +2750,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
 
 #ifdef __LINUX__
     // workaround for SDL keyboard translation issues on Linux
-    // keycodes > 0x80 are sent as 0xe0 keycode
+    // keycodes > 0x100 are sent as 0xe0 keycode
     static const uint16_t x_keycode_to_pc_keycode[61] =
     {
        0x47|0x100,  /*  97  Home   */
