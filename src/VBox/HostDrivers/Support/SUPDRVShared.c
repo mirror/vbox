@@ -1752,6 +1752,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
+    const size_t    cb = (size_t)cPages << PAGE_SHIFT;
     dprintf(("SUPR0LockMem: pSession=%p pvR3=%p cPages=%d paPages=%p\n",
              pSession, (void *)pvR3, cPages, paPages));
 
@@ -1780,7 +1781,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
         AssertMsg(RTR0MemObjAddress(Mem.MemObj) == pvR3, ("%p == %p\n", RTR0MemObjAddress(Mem.MemObj), pvR3));
         AssertMsg(RTR0MemObjSize(Mem.MemObj) == cb, ("%x == %x\n", RTR0MemObjSize(Mem.MemObj), cb));
 
-        unsigned iPage = cb >> PAGE_SHIFT;
+        unsigned iPage = cPages;
         while (iPage-- > 0)
         {
             paPages[iPage].uReserved = 0;
@@ -1809,7 +1810,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
     Mem.pvR0    = NULL;
     Mem.pvR3    = pvR3;
     Mem.eType   = MEMREF_TYPE_LOCKED;
-    Mem.cb      = cPages << PAGE_SHIFT;
+    Mem.cb      = cb;
     rc = supdrvOSLockMemOne(&Mem, paPages);
     if (rc)
         return rc;
