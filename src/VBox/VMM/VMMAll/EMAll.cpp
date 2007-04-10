@@ -46,6 +46,11 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef EMDECL(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, uint32_t val2);
+typedef EMDECL(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, uint32_t val3);
 
 /*******************************************************************************
  *   Internal Functions                                                        *
@@ -477,7 +482,8 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 /**
  * INC and DEC emulation.
  */
-static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+                             PFN_EMULATE_PARAM2 pfnEmulate)
 {
     OP_PARAMVAL param1;
 
@@ -517,10 +523,7 @@ static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 
             uint32_t eflags;
 
-            if (pCpu->pCurInstr->opcode == OP_DEC)
-                eflags = EMEmulateDec(&valpar1, param1.size);
-            else
-                eflags = EMEmulateInc(&valpar1, param1.size);
+            eflags = pfnEmulate(&valpar1, param1.size);
 
             /* Write result back */
             rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
@@ -626,10 +629,12 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     return VERR_EM_INTERPRETER;
 }
 
+
 /**
- * OR Emulation.
+ * XOR/OR/AND Emulation.
  */
-static int emInterpretOr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+                               PFN_EMULATE_PARAM3 pfnEmulate)
 {
     OP_PARAMVAL param1, param2;
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
@@ -639,6 +644,19 @@ static int emInterpretOr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTG
     rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
     if(VBOX_FAILURE(rc))
         return VERR_EM_INTERPRETER;
+
+#ifdef DEBUG
+    char *pszInstr;
+
+    if (pCpu->pCurInstr->opcode == OP_XOR)
+        pszInstr = "Xor";
+    else
+    if (pCpu->pCurInstr->opcode == OP_OR)
+        pszInstr = "Or";
+    else
+    if (pCpu->pCurInstr->opcode == OP_AND)
+        pszInstr = "And";
+#endif
 
 #ifdef IN_GC
     if (TRPMHasTrap(pVM))
@@ -653,7 +671,7 @@ static int emInterpretOr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTG
             {
                 if (pCpu->param1.size < pCpu->param2.size)
                 {
-                    AssertMsgFailed(("Or at %VGv parameter mismatch %d vs %d!!\n", pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", pszInstr, pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -696,100 +714,8 @@ static int emInterpretOr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTG
                 return VERR_EM_INTERPRETER;
             }
 
-            /* Data read, emulate OR. */
-            uint32_t eflags = EMEmulateOr(&valpar1, valpar2, param2.size);
-
-            /* Update guest's eflags and finish. */
-            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
-                                  | (eflags & (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
-
-            /* And write it back */
-            rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
-            if (VBOX_SUCCESS(rc))
-            {
-                /* All done! */
-                *pcbSize = param2.size;
-                return VINF_SUCCESS;
-            }
-#ifdef IN_GC
-        }
-    }
-#endif
-    return VERR_EM_INTERPRETER;
-}
-
-/**
- * XOR Emulation.
- */
-static int emInterpretXor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-#ifdef IN_GC
-    if (TRPMHasTrap(pVM))
-    {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
-        {
-#endif
-            RTGCPTR  pParam1;
-            uint32_t valpar1, valpar2;
-
-            if (pCpu->param1.size != pCpu->param2.size)
-            {
-                if (pCpu->param1.size < pCpu->param2.size)
-                {
-                    AssertMsgFailed(("Xor at %VGv parameter mismatch %d vs %d!!\n", pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
-                    return VERR_EM_INTERPRETER;
-                }
-                /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pCpu->param2.size = pCpu->param1.size;
-                param2.size     = param1.size;
-            }
-
-            /* The destination is always a virtual address */
-            if (param1.type == PARMTYPE_ADDRESS)
-            {
-                pParam1 = (RTGCPTR)param1.val.val32;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
-#endif
-                rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
-                if (VBOX_FAILURE(rc))
-                {
-                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
-                    return VERR_EM_INTERPRETER;
-                }
-            }
-            else
-            {
-                AssertFailed();
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Register or immediate data */
-            switch(param2.type)
-            {
-            case PARMTYPE_IMMEDIATE:    /* both immediate data and register (ugly) */
-                valpar2 = param2.val.val32;
-                break;
-
-            default:
-                AssertFailed();
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Data read, emulate XOR. */
-            uint32_t eflags = EMEmulateXor(&valpar1, valpar2, param2.size);
+            /* Data read, emulate instruction. */
+            uint32_t eflags = pfnEmulate(&valpar1, valpar2, param2.size);
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -810,10 +736,12 @@ static int emInterpretXor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     return VERR_EM_INTERPRETER;
 }
 
+
 /**
- * AND Emulation.
+ * ADD, ADC & SUB Emulation.
  */
-static int emInterpretAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+                             PFN_EMULATE_PARAM3 pfnEmulate)
 {
     OP_PARAMVAL param1, param2;
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
@@ -823,6 +751,19 @@ static int emInterpretAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
     if(VBOX_FAILURE(rc))
         return VERR_EM_INTERPRETER;
+
+#ifdef DEBUG
+    char *pszInstr;
+
+    if (pCpu->pCurInstr->opcode == OP_SUB)
+        pszInstr = "Sub";
+    else
+    if (pCpu->pCurInstr->opcode == OP_ADD)
+        pszInstr = "Add";
+    else
+    if (pCpu->pCurInstr->opcode == OP_ADC)
+        pszInstr = "Adc";
+#endif
 
 #ifdef IN_GC
     if (TRPMHasTrap(pVM))
@@ -837,101 +778,7 @@ static int emInterpretAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             {
                 if (pCpu->param1.size < pCpu->param2.size)
                 {
-                    AssertMsgFailed(("And at %VGv parameter mismatch %d vs %d!!\n", pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
-                    return VERR_EM_INTERPRETER;
-                }
-                /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pCpu->param2.size = pCpu->param1.size;
-                param2.size     = param1.size;
-            }
-
-            /* The destination is always a virtual address */
-            if (param1.type == PARMTYPE_ADDRESS)
-            {
-                pParam1 = (RTGCPTR)param1.val.val32;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == pvFault, ("pParam1 = %VGv pvFault = %VGv\n", pParam1, pvFault), VERR_EM_INTERPRETER);
-#endif
-                rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
-                if (VBOX_FAILURE(rc))
-                {
-                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
-                    return VERR_EM_INTERPRETER;
-                }
-            }
-            else
-            {
-#ifndef DEBUG_bird
-                AssertFailed();
-#endif
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Register or immediate data */
-            switch(param2.type)
-            {
-            case PARMTYPE_IMMEDIATE:    /* both immediate data and register (ugly) */
-                valpar2 = param2.val.val32;
-                break;
-
-            default:
-                AssertFailed();
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Data read, emulate AND. */
-            uint32_t eflags = EMEmulateAnd(&valpar1, valpar2, param2.size);
-
-            /* Update guest's eflags and finish. */
-            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
-                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
-
-            /* And write it back */
-            rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
-            if (VBOX_SUCCESS(rc))
-            {
-                /* All done! */
-                *pcbSize = param2.size;
-                return VINF_SUCCESS;
-            }
-#ifdef IN_GC
-        }
-    }
-#endif
-    return VERR_EM_INTERPRETER;
-}
-
-/**
- * ADD Emulation.
- */
-static int emInterpretAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-#ifdef IN_GC
-    if (TRPMHasTrap(pVM))
-    {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
-        {
-#endif
-            RTGCPTR  pParam1;
-            uint32_t valpar1, valpar2;
-
-            if (pCpu->param1.size != pCpu->param2.size)
-            {
-                if (pCpu->param1.size < pCpu->param2.size)
-                {
-                    AssertMsgFailed(("Add at %VGv parameter mismatch %d vs %d!!\n", pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", pszInstr, pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -976,8 +823,8 @@ static int emInterpretAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER;
             }
 
-            /* Data read, emulate ADD. */
-            uint32_t eflags = EMEmulateAdd(&valpar1, valpar2, param2.size);
+            /* Data read, emulate instruction. */
+            uint32_t eflags = pfnEmulate(&valpar1, valpar2, param2.size);
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1000,202 +847,20 @@ static int emInterpretAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
 /**
  * ADC Emulation.
- * @todo combine with add
  */
 static int emInterpretAdc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-#ifdef IN_GC
-    if (TRPMHasTrap(pVM))
-    {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
-        {
-#endif
-            RTGCPTR  pParam1;
-            uint32_t valpar1, valpar2;
-
-            if (pCpu->param1.size != pCpu->param2.size)
-            {
-                if (pCpu->param1.size < pCpu->param2.size)
-                {
-                    AssertMsgFailed(("Adc at %VGv parameter mismatch %d vs %d!!\n", pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
-                    return VERR_EM_INTERPRETER;
-                }
-                /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pCpu->param2.size = pCpu->param1.size;
-                param2.size     = param1.size;
-            }
-
-            /* The destination is always a virtual address */
-            if (param1.type == PARMTYPE_ADDRESS)
-            {
-                pParam1 = (RTGCPTR)param1.val.val32;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
-#endif
-                rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
-                if (VBOX_FAILURE(rc))
-                {
-                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
-                    return VERR_EM_INTERPRETER;
-                }
-            }
-            else
-            {
-#ifndef DEBUG_bird
-                AssertFailed();
-#endif
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Register or immediate data */
-            switch(param2.type)
-            {
-            case PARMTYPE_IMMEDIATE:    /* both immediate data and register (ugly) */
-                valpar2 = param2.val.val32;
-                break;
-
-            default:
-                AssertFailed();
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Data read, emulate ADC. */
-            uint32_t eflags;
-
-            if (pRegFrame->eflags.u32 & X86_EFL_CF)
-                eflags = EMEmulateAdcWithCarrySet(&valpar1, valpar2, param2.size);
-            else
-                eflags = EMEmulateAdd(&valpar1, valpar2, param2.size);
-
-            /* Update guest's eflags and finish. */
-            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
-                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
-
-            /* And write it back */
-            rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
-            if (VBOX_SUCCESS(rc))
-            {
-                /* All done! */
-                *pcbSize = param2.size;
-                return VINF_SUCCESS;
-            }
-#ifdef IN_GC
-        }
-    }
-#endif
-    return VERR_EM_INTERPRETER;
-}
-
-/**
- * SUB Emulation.
- */
-static int emInterpretSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
-    if(VBOX_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-#ifdef IN_GC
-    if (TRPMHasTrap(pVM))
-    {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
-        {
-#endif
-            RTGCPTR  pParam1;
-            uint32_t valpar1, valpar2;
-
-            if (pCpu->param1.size != pCpu->param2.size)
-            {
-                if (pCpu->param1.size < pCpu->param2.size)
-                {
-                    AssertMsgFailed(("Sub at %VGv parameter mismatch %d vs %d!!\n", pRegFrame->eip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
-                    return VERR_EM_INTERPRETER;
-                }
-                /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pCpu->param2.size = pCpu->param1.size;
-                param2.size     = param1.size;
-            }
-
-            /* The destination is always a virtual address */
-            if (param1.type == PARMTYPE_ADDRESS)
-            {
-                pParam1 = (RTGCPTR)param1.val.val32;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
-#endif
-                rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
-                if (VBOX_FAILURE(rc))
-                {
-                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
-                    return VERR_EM_INTERPRETER;
-                }
-            }
-            else
-            {
-#ifndef DEBUG_bird
-                AssertFailed();
-#endif
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Register or immediate data */
-            switch(param2.type)
-            {
-            case PARMTYPE_IMMEDIATE:    /* both immediate data and register (ugly) */
-                valpar2 = param2.val.val32;
-                break;
-
-            default:
-                AssertFailed();
-                return VERR_EM_INTERPRETER;
-            }
-
-            /* Data read, emulate SUB. */
-            uint32_t eflags = EMEmulateSub(&valpar1, valpar2, param2.size);
-
-            /* Update guest's eflags and finish. */
-            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
-                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
-
-            /* And write it back */
-            rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
-            if (VBOX_SUCCESS(rc))
-            {
-                /* All done! */
-                *pcbSize = param2.size;
-                return VINF_SUCCESS;
-            }
-#ifdef IN_GC
-        }
-    }
-#endif
-    return VERR_EM_INTERPRETER;
+    if (pRegFrame->eflags.Bits.u1CF)
+        return emInterpretAddSub(pVM, pCpu, pRegFrame, pvFault, pcbSize, EMEmulateAdcWithCarrySet);
+    else
+        return emInterpretAddSub(pVM, pCpu, pRegFrame, pvFault, pcbSize, EMEmulateAdd);
 }
 
 /**
  * BTR/C/S Emulation.
  */
-static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+                              PFN_EMULATE_PARAM2 pfnEmulate)
 {
     OP_PARAMVAL param1, param2;
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
@@ -1205,6 +870,19 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
     if(VBOX_FAILURE(rc))
         return VERR_EM_INTERPRETER;
+
+#ifdef DEBUG
+    char *pszInstr;
+
+    if (pCpu->pCurInstr->opcode == OP_BTR)
+        pszInstr = "Btr";
+    else
+    if (pCpu->pCurInstr->opcode == OP_BTS)
+        pszInstr = "Bts";
+    else
+    if (pCpu->pCurInstr->opcode == OP_BTC)
+        pszInstr = "Btc";
+#endif
 
 #ifdef IN_GC
     if (TRPMHasTrap(pVM))
@@ -1235,8 +913,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            Log2(("emInterpretBt%c: pvFault=%VGv pParam1=%VGv val2=%x\n", (pCpu->pCurInstr->opcode == OP_BTR) ? 'r' : ((pCpu->pCurInstr->opcode == OP_BTC) ? 'c' : 'r'),
-                  pvFault, pParam1, valpar2));
+            Log2(("emInterpret%s: pvFault=%VGv pParam1=%VGv val2=%x\n", pszInstr, pvFault, pParam1, valpar2));
             pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
 #ifdef IN_GC
             /* Safety check. */
@@ -1251,22 +928,8 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 
             Log2(("emInterpretBtx: val=%x\n", valpar1));
             /* Data read, emulate bit test instruction. */
-            switch (pCpu->pCurInstr->opcode)
-            {
-            case OP_BTR:
-                eflags = EMEmulateBtr(&valpar1, valpar2 & 0x7);
-                break;
-            case OP_BTC:
-                eflags = EMEmulateBtc(&valpar1, valpar2 & 0x7);
-                break;
-            case OP_BTS:
-                eflags = EMEmulateBts(&valpar1, valpar2 & 0x7);
-                break;
-            default:
-                AssertFailed();
-                eflags = 0;
-                break;
-            }
+            eflags = pfnEmulate(&valpar1, valpar2 & 0x7);
+
             Log2(("emInterpretBtx: val=%x CF=%d\n", valpar1, !!(eflags & X86_EFL_CF)));
 
             /* Update guest's eflags and finish. */
@@ -2008,26 +1671,41 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
     int rc;
     switch (pCpu->pCurInstr->opcode)
     {
-#define INTERPRET_CASE_EX(opcode,Instr,InstrFn) \
+#define INTERPRET_CASE_EX_PARAM3(opcode,Instr,InstrFn, pfnEmulate) \
         case opcode:\
-            rc = emInterpret##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize); \
+            rc = emInterpret##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize, pfnEmulate); \
             if (VBOX_SUCCESS(rc)) \
                 STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,Instr)); \
             else \
                 STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,Failed##Instr)); \
             return rc
-#define INTERPRET_CASE(opcode,Instr) INTERPRET_CASE_EX(opcode,Instr,Instr)
+#define INTERPRET_CASE_EX_PARAM2(opcode,Instr,InstrFn, pfnEmulate) \
+        case opcode:\
+            rc = emInterpret##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize, pfnEmulate); \
+            if (VBOX_SUCCESS(rc)) \
+                STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,Instr)); \
+            else \
+                STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,Failed##Instr)); \
+            return rc
+#define INTERPRET_CASE(opcode,Instr) \
+        case opcode:\
+            rc = emInterpret##Instr(pVM, pCpu, pRegFrame, pvFault, pcbSize); \
+            if (VBOX_SUCCESS(rc)) \
+                STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,Instr)); \
+            else \
+                STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,Failed##Instr)); \
+            return rc
 #define INTERPRET_STAT_CASE(opcode,Instr) \
         case opcode: STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,Failed##Instr)); return VERR_EM_INTERPRETER;
 
         INTERPRET_CASE(OP_XCHG,Xchg);
-        INTERPRET_CASE_EX(OP_DEC,Dec,IncDec);
-        INTERPRET_CASE_EX(OP_INC,Inc,IncDec);
+        INTERPRET_CASE_EX_PARAM2(OP_DEC,Dec,IncDec,EMEmulateDec);
+        INTERPRET_CASE_EX_PARAM2(OP_INC,Inc,IncDec,EMEmulateInc);
         INTERPRET_CASE(OP_POP,Pop);
-        INTERPRET_CASE(OP_OR,Or);
-        INTERPRET_CASE(OP_XOR,Xor);
+        INTERPRET_CASE_EX_PARAM3(OP_OR, Or,  OrXorAnd, EMEmulateOr);
+        INTERPRET_CASE_EX_PARAM3(OP_XOR,Xor, OrXorAnd, EMEmulateXor);
+        INTERPRET_CASE_EX_PARAM3(OP_AND,And, OrXorAnd, EMEmulateAnd);
         INTERPRET_CASE(OP_MOV,Mov);
-        INTERPRET_CASE(OP_AND,And);
         INTERPRET_CASE(OP_INVLPG,InvlPg);
         INTERPRET_CASE(OP_CPUID,CpuId);
         INTERPRET_CASE(OP_MOV_CR,MovCRx);
@@ -2035,12 +1713,12 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_LLDT,LLdt);
         INTERPRET_CASE(OP_MONITOR, Monitor);
         INTERPRET_CASE(OP_MWAIT, MWait);
-        INTERPRET_CASE(OP_ADD,Add);
+        INTERPRET_CASE_EX_PARAM3(OP_ADD,Add, AddSub, EMEmulateAdd);
+        INTERPRET_CASE_EX_PARAM3(OP_SUB,Sub, AddSub, EMEmulateSub);
         INTERPRET_CASE(OP_ADC,Adc);
-        INTERPRET_CASE(OP_SUB,Sub);
-        INTERPRET_CASE_EX(OP_BTR,Btr, BitTest);
-        INTERPRET_CASE_EX(OP_BTS,Bts, BitTest);
-        INTERPRET_CASE_EX(OP_BTC,Btc, BitTest);
+        INTERPRET_CASE_EX_PARAM2(OP_BTR,Btr, BitTest, EMEmulateBtr);
+        INTERPRET_CASE_EX_PARAM2(OP_BTS,Bts, BitTest, EMEmulateBts);
+        INTERPRET_CASE_EX_PARAM2(OP_BTC,Btc, BitTest, EMEmulateBtc);
 #ifdef IN_GC
         INTERPRET_CASE(OP_RDTSC,Rdtsc);
         INTERPRET_CASE(OP_STI,Sti);
@@ -2057,7 +1735,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
             Log3(("emInterpretInstructionCPU: opcode=%d\n", pCpu->pCurInstr->opcode));
             STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,FailedMisc));
             return VERR_EM_INTERPRETER;
+#undef INTERPRET_CASE_EX_PARAM2
 #undef INTERPRET_STAT_CASE
+#undef INTERPRET_CASE_EX
 #undef INTERPRET_CASE
     }
     AssertFailed();
