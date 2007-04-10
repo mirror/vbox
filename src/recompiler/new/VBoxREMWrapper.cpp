@@ -1506,13 +1506,13 @@ static DECLCALLBACK(int) remGetImport(RTLDRMOD hLdrMod, const char *pszModule, c
     for (i = 0; i < ELEMENTS(g_aCRTImports); i++)
         if (!strcmp(g_aCRTImports[i].pszName, pszSymbol))
             return remGenerateImportGlue(pValue, &g_aCRTImports[i]);
+    LogRel(("Missing REM Import: %s\n", pszSymbol));
 #if 1
-    AssertMsg2("missing: %s\n", pszSymbol);
-    return remGenerateImportGlue(pValue, &g_aCRTImports[0]);
-#else
     *pValue = 0;
     AssertMsgFailed(("%s.%s\n", pszModule, pszSymbol));
     return VERR_SYMBOL_NOT_FOUND;
+#else
+    return remGenerateImportGlue(pValue, &g_aCRTImports[0]);
 #endif
 }
 
