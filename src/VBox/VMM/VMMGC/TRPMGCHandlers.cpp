@@ -342,9 +342,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 
     LogFlow(("TRPMGCTrap06Handler %VGv eflags=%x\n", pRegFrame->eip, pRegFrame->eflags.u32));
 
-    if (    (pRegFrame->ss & X86_SEL_RPL) == 1
-        &&  !pRegFrame->eflags.Bits.u1VM
-        &&  PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip))
+    if (CPUMGetGuestCPL(pVM, pRegFrame) == 0)
     {
         /*
          * Decode the instruction.
@@ -363,23 +361,32 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         if (VBOX_FAILURE(rc))
             return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
 
-        /** @note monitor causes an #UD exception instead of #GP when not executed in ring 0. */
-        if (Cpu.pCurInstr->opcode == OP_ILLUD2)
+        if (    PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
+            &&  Cpu.pCurInstr->opcode == OP_ILLUD2)
         {
             rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
             if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_DUPLICATE_FUNCTION || rc == VINF_PATM_PENDING_IRQ_AFTER_IRET || rc == VINF_EM_RESCHEDULE)
                 return trpmGCExitTrap(pVM, rc, pRegFrame);
         }
-        /* Never generate a raw trap here; it might be a monitor instruction, that requires emulation. */
-        rc = VINF_EM_RAW_EMULATE_INSTR;
+        else
+        /** Note: monitor causes an #UD exception instead of #GP when not executed in ring 0. */
+        if (Cpu.pCurInstr->opcode == OP_MONITOR)
+        {
+            uint32_t cbIgnored;
+            rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, PC, &cbIgnored);
+        }
+        else
+            /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
+            rc = VINF_EM_RAW_EMULATE_INSTR;
     }
-    else if (pRegFrame->eflags.Bits.u1VM)
+    else
+    if (pRegFrame->eflags.Bits.u1VM)
     {
         rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
     else
-        /* Never generate a raw trap here; it might be a monitor instruction, that requires emulation. */
+        /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
         rc = VINF_EM_RAW_EMULATE_INSTR;
 
     return trpmGCExitTrap(pVM, rc, pRegFrame);
