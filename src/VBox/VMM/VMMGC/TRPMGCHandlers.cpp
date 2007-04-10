@@ -374,6 +374,8 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         {
             uint32_t cbIgnored;
             rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, PC, &cbIgnored);
+            if (RT_LIKELY(VBOX_SUCCESS(rc)))
+                pRegFrame->eip += Cpu.opsize;
         }
         else
             /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
