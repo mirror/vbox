@@ -49,7 +49,8 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef EMDECL(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, uint32_t val2);
+typedef EMDECL(uint32_t) PFN_EMULATE_PARAM2_UINT32(uint32_t *pu32Param1, uint32_t val2);
+typedef EMDECL(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, size_t val2);
 typedef EMDECL(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, size_t val3);
 
 /*******************************************************************************
@@ -483,7 +484,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
  * INC and DEC emulation.
  */
 static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
-                             PFN_EMULATE_PARAM2 pfnEmulate)
+                             PFN_EMULATE_PARAM2_UINT32 pfnEmulate)
 {
     OP_PARAMVAL param1;
 
