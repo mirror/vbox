@@ -105,6 +105,7 @@ public:
      */
     Bstr &alloc (size_t aSize)
     {
+        setNull();
         if (aSize)
         {
             AssertCompile (sizeof (unsigned int) >= sizeof (aSize));
@@ -314,9 +315,9 @@ public:
      */
     Utf8Str &alloc (size_t aSize)
     {
+        setNull();
         if (aSize)
         {
-            setNull();
 #if defined (__WIN__)
             str = (char *) ::RTMemTmpAlloc (aSize);
 #else
