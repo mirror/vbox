@@ -140,7 +140,8 @@ public:
     STDMETHOD(OpenHardDisk) (INPTR BSTR aLocation, IHardDisk **aHardDisk);
     STDMETHOD(OpenVirtualDiskImage) (INPTR BSTR aFilePath, IVirtualDiskImage **aImage);
     STDMETHOD(RegisterHardDisk) (IHardDisk *aHardDisk);
-    STDMETHOD(GetHardDisk) (INPTR GUIDPARAM id, IHardDisk **hardDisk);
+    STDMETHOD(GetHardDisk) (INPTR GUIDPARAM aId, IHardDisk **aHardDisk);
+    STDMETHOD(FindHardDisk) (INPTR BSTR aLocation, IHardDisk **aHardDisk);
     STDMETHOD(FindVirtualDiskImage) (INPTR BSTR aFilePath, IVirtualDiskImage **aImage);
     STDMETHOD(UnregisterHardDisk) (INPTR GUIDPARAM aId, IHardDisk **aHardDisk);
 
@@ -228,7 +229,7 @@ public:
     //  after switching to VirtualBoxBaseNEXT
     HRESULT getHardDisk (const Guid &aId, ComObjPtr <HardDisk> &aHardDisk)
     {
-        return findHardDisk (aId, true /* aDoSetError */, &aHardDisk);
+        return findHardDisk (&aId, NULL, true /* aDoSetError */, &aHardDisk);
     }
 
     BOOL getDVDImageUsage (const Guid &id, ResourceUsage_T usage,
@@ -273,8 +274,8 @@ private:
     HRESULT findMachine (const Guid &aId, bool aSetError,
                          ComObjPtr <Machine> *machine = NULL);
 
-    HRESULT findHardDisk (const Guid &aId, bool aSetError,
-                          ComObjPtr <HardDisk> *aHardDisk = NULL);
+    HRESULT findHardDisk (const Guid *aId, const BSTR aLocation,
+                          bool aSetError, ComObjPtr <HardDisk> *aHardDisk = NULL);
 
     HRESULT findVirtualDiskImage (const Guid *aId, const BSTR aFilePathFull,
                           bool aSetError, ComObjPtr <HVirtualDiskImage> *aImage = NULL);

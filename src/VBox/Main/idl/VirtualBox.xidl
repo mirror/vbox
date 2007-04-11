@@ -616,7 +616,7 @@
 
     <interface
         name="IVirtualBox" extends="$dispatched"
-        uuid="00f4e8eb-d737-4c88-9ccb-b434edf8b912"
+        uuid="ce54ff3d-0e46-41ae-a0de-202ed0c3c668"
     >
       <desc> The main interface exposed by the product that provides virtual
       machine management.
@@ -968,6 +968,8 @@
                 The opened hard disk remains unregistered
                 until <link to="#registerHardDisk()"/> is called.
 
+                @deprecated Use <link to="#openHardDisk()"/> instead.
+
                 <note>Opening differencing images is not supported.</note>
 
                 <note>The specified file path can be absolute (full path) or
@@ -1015,10 +1017,42 @@
             </param>
         </method>
 
+        <method name="findHardDisk">
+            <desc>
+
+                Returns a registered hard disk that uses the given location to
+                store data. The search is done by comparing the
+                value of the @a location argument to the
+                <link to="IHardDisk::location"/> attribute of each registered
+                hard disk.
+
+                For locations repesented by file paths (such as VDI and VMDK
+                images), the specified location can be either an absolute file
+                path or a path relative to
+                the <link to="IVirtualBox::homeFolder"> VirtualBox home
+                directory</link>. If only a file name without any path is
+                given, the <link to="ISystemProperties::defaultVDIFolder">
+                default VDI folder</link> will be used as a path to construct
+                the absolute image file name to search for. Note that on host
+                systems with case sensitive filesystems, a case sensitive
+                comparison is performed, otherwise the case of symbols in the
+                file path is ignored.
+
+            </desc>
+            <param name="location" type="wstring" dir="in">
+                <desc>Hard disk location specification to search for.</desc>
+            </param>
+            <param name="hardDisk" type="IHardDisk" dir="return">
+                <desc>Found hard disk object.</desc>
+            </param>
+        </method>
+
         <method name="findVirtualDiskImage">
             <desc>
 
                 Returns a registered hard disk that uses the given image file.
+
+                @deprecated Use <link to="#findHardDisk()"/> instead.
 
                 <note>The specified file path can be absolute (full path) or
                 relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
