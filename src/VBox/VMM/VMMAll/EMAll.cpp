@@ -1127,7 +1127,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
             }
 
 #ifdef VBOX_STRICT
-            Log(("CmpXchg %VGv=%08x eax=%08x %08x\n", pParam1, valpar1, pRegFrame->eax, valpar));
+            LogFlow(("CmpXchg %VGv=%08x eax=%08x %08x\n", pParam1, valpar1, pRegFrame->eax, valpar));
 #endif
             if (pCpu->prefix & PREFIX_LOCK)
                 eflags = EMGCEmulateLockCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size);
@@ -1136,7 +1136,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 
 #ifdef VBOX_STRICT
             rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
-            Log(("CmpXchg %VGv=%08x eax=%08x %08x ZF=%d\n", pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("CmpXchg %VGv=%08x eax=%08x %08x ZF=%d\n", pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
 #endif
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
