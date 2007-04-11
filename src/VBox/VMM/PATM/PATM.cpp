@@ -233,6 +233,9 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->patm.s.StatPatchWriteInterpreted, STAMTYPE_COUNTER, "/PATM/Write/Interpreted/Success", STAMUNIT_OCCURENCES,  "Nr of interpreted patch writes.");
     STAM_REG(pVM, &pVM->patm.s.StatPatchWriteInterpretedFailed, STAMTYPE_COUNTER, "/PATM/Write/Interpreted/Failed", STAMUNIT_OCCURENCES,  "Nr of failed interpreted patch writes.");
 
+    STAM_REG(pVM, &pVM->patm.s.StatPatchRefreshSuccess, STAMTYPE_COUNTER, "/PATM/Refresh/Success",    STAMUNIT_OCCURENCES, "Successful patch refreshes");
+    STAM_REG(pVM, &pVM->patm.s.StatPatchRefreshFailed,  STAMTYPE_COUNTER, "/PATM/Refresh/Failure",    STAMUNIT_OCCURENCES, "Failed patch refreshes");
+
     STAM_REG(pVM, &pVM->patm.s.StatPatchPageInserted, STAMTYPE_COUNTER, "/PATM/Page/Inserted",      STAMUNIT_OCCURENCES,     "Nr of inserted guest pages that were patched");
     STAM_REG(pVM, &pVM->patm.s.StatPatchPageRemoved,  STAMTYPE_COUNTER, "/PATM/Page/Removed",       STAMUNIT_OCCURENCES,     "Nr of removed guest pages that were patched");
 
@@ -1165,7 +1168,7 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
     pPatchToGuestRec->Core.Key    = PatchOffset;
     pPatchToGuestRec->pOrgInstrGC = pInstrGC;
     pPatchToGuestRec->enmType     = enmType;
-    pPatchToGuestRec->fDirty      = fDirty;
+    pPatchToGuestRec->fDirty     = fDirty;
 
     ret = RTAvlU32Insert(&pPatch->Patch2GuestAddrTree, &pPatchToGuestRec->Core);
     Assert(ret);
@@ -3074,12 +3077,11 @@ static bool patmIsCommonIDTHandlerPatch(PVM pVM, RTGCPTR pInstrGC)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pCpu        Disassembly CPU structure ptr
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pPatchRec   Patch record
  *
  */
-static int patmDuplicateFunction(PVM pVM, DISCPUSTATE *pCpu, RTGCPTR pInstrGC, PPATMPATCHREC pPatchRec)
+static int patmDuplicateFunction(PVM pVM, RTGCPTR pInstrGC, PPATMPATCHREC pPatchRec)
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
@@ -3240,7 +3242,17 @@ static int patmCreateTrampoline(PVM pVM, RTGCPTR pInstrGC, PPATMPATCHREC pPatchR
                 {
                     pPatchTargetGC = patmGuestGCPtrToPatchGCPtr(pVM, pPatch, pInstrGC);
                     if (pPatchTargetGC)
+                    {
+                        uint32_t         offsetPatch      = pPatchTargetGC - pVM->patm.s.pPatchMemGC;
+                        PRECPATCHTOGUEST pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->Patch2GuestAddrTree, offsetPatch, false);
+                        Assert(pPatchToGuestRec);
+
+                        pPatchToGuestRec->fJumpTarget = true;
+                        Assert(pPatchTargetGC != pPatch->pPrivInstrGC);
+                        Log(("patmCreateTrampoline: generating jump to code inside patch at %VGv\n", pPatch->pPrivInstrGC));
+                        pPatch->flags |= PATMFL_EXTERNAL_JUMP_INSIDE;
                         break;
+                    }
                 }
             }
         }
@@ -4155,7 +4167,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
     else
     if (pPatchRec->patch.flags & (PATMFL_DUPLICATE_FUNCTION ))
     {
-        rc = patmDuplicateFunction(pVM, &cpu, pInstrGC, pPatchRec);
+        rc = patmDuplicateFunction(pVM, pInstrGC, pPatchRec);
     }
     else
     if (pPatchRec->patch.flags & PATMFL_TRAMPOLINE)
@@ -4899,7 +4911,7 @@ PATMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTGCPTR pInstrGC)
             if (iGate != (uint32_t)~0)
             {
                 TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
-                LogRel(("Disabling IDT %x patch handler %VGv\n", iGate, pInstrGC));
+                LogRel(("PATM: Disabling IDT %x patch handler %VGv\n", iGate, pInstrGC));
             }
         }
 
@@ -5306,6 +5318,116 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
 }
 
 /**
+ * Attempt to refresh the patch by recompiling its entire code block
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM to operate on.
+ * @param   pPatchRec       Patch record
+ */
+int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
+{
+    PPATCHINFO  pPatch;
+    int         rc;
+    RTGCPTR     pInstrGC = pPatchRec->patch.pPrivInstrGC;
+
+    Log(("patmR3RefreshPatch: attempt to refresh patch at %VGv\n", pInstrGC));
+
+    pPatch = &pPatchRec->patch;
+    AssertReturn(pPatch->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER|PATMFL_TRAPHANDLER), VERR_PATCHING_REFUSED);
+    AssertReturn(!(pPatch->flags & PATMFL_EXTERNAL_JUMP_INSIDE), VERR_PATCHING_REFUSED);
+
+    /** Note: quite ugly to enable/disable/remove/insert old and new patches, but there's no easy way around it. */
+
+    rc = PATMR3DisablePatch(pVM, pInstrGC);
+    AssertRC(rc);
+
+    /** Kick it out of the lookup tree to make sure PATMR3InstallPatch doesn't fail (hack alert) */
+    RTAvloGCPtrRemove(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pPatchRec->Core.Key);
+#ifdef VBOX_WITH_STATISTICS
+    if (PATM_STAT_INDEX_IS_VALID(pPatchRec->patch.uPatchIdx))
+    {
+        STAMR3Deregister(pVM, &pPatchRec->patch);
+#ifndef DEBUG_sandervl
+        STAMR3Deregister(pVM, &pVM->patm.s.pStatsHC[pPatchRec->patch.uPatchIdx]);
+        STAMR3Deregister(pVM, &pPatchRec->patch.cbPatchBlockSize);
+        STAMR3Deregister(pVM, &pPatchRec->patch.cbPatchJump);
+        STAMR3Deregister(pVM, &pPatchRec->patch.cbPrivInstr);
+        STAMR3Deregister(pVM, &pPatchRec->patch.cCodeWrites);
+        STAMR3Deregister(pVM, &pPatchRec->patch.cInvalidWrites);
+        STAMR3Deregister(pVM, &pPatchRec->patch.cTraps);
+        STAMR3Deregister(pVM, &pPatchRec->patch.flags);
+        STAMR3Deregister(pVM, &pPatchRec->patch.nrJumpRecs);
+        STAMR3Deregister(pVM, &pPatchRec->patch.nrFixups);
+        STAMR3Deregister(pVM, &pPatchRec->patch.opcode);
+        STAMR3Deregister(pVM, &pPatchRec->patch.uState);
+        STAMR3Deregister(pVM, &pPatchRec->patch.uOldState);
+        STAMR3Deregister(pVM, &pPatchRec->patch.uOpMode);
+#endif
+    }
+#endif
+
+    /** Note: We don't attempt to reuse patch memory here as it's quite common that the new code block requires more memory. */
+
+    /* Attempt to install a new patch. */
+    rc = PATMR3InstallPatch(pVM, pInstrGC, pPatch->flags & (PATMFL_CODE32|PATMFL_IDTHANDLER|PATMFL_INTHANDLER|PATMFL_TRAPHANDLER|PATMFL_DUPLICATE_FUNCTION|PATMFL_TRAPHANDLER_WITH_ERRORCODE|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT));
+    if (VBOX_SUCCESS(rc))
+    {
+        RTGCPTR         pPatchTargetGC;
+        PPATMPATCHREC   pNewPatchRec;
+
+        /* Determine target address in new patch */
+        pPatchTargetGC = PATMR3QueryPatchGCPtr(pVM, pInstrGC);
+        Assert(pPatchTargetGC);
+        if (!pPatchTargetGC)
+        {
+            rc = VERR_PATCHING_REFUSED;
+            goto failure;
+        }
+
+        /* Reset offset into patch memory to put the next code blocks right at the beginning. */
+        pPatch->uCurPatchOffset   = 0;
+
+        /* insert jump to new patch in old patch block */
+        rc = patmPatchGenPatchJump(pVM, pPatch, pInstrGC, pPatchTargetGC, false /* no lookup record */);
+        if (VBOX_FAILURE(rc))
+            goto failure;
+
+        pNewPatchRec = (PPATMPATCHREC)RTAvloGCPtrGet(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC);
+        Assert(pNewPatchRec); /* can't fail */
+
+        /* Remove old patch (only do that when everything is finished) */
+        int rc2 = PATMRemovePatch(pVM, pPatchRec, true /* force removal */);
+        AssertRC(rc2);
+
+        /* Put the new patch back into the tree, because removing the old one kicked this one out. (hack alert) */
+        RTAvloGCPtrInsert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pNewPatchRec->Core);
+
+        LogRel(("PATM: patmR3RefreshPatch: succeeded to refresh patch at %VGv \n", pInstrGC));
+        STAM_COUNTER_INC(&pVM->patm.s.StatPatchRefreshSuccess);
+    }
+
+failure:
+    if (VBOX_FAILURE(rc))
+    {
+        LogRel(("PATM: patmR3RefreshPatch: failed to refresh patch at %VGv. Reactiving old one. \n", pInstrGC));
+
+        /* Remove the new inactive patch */
+        rc = PATMR3RemovePatch(pVM, pInstrGC);
+        AssertRC(rc);
+
+        /* Put the old patch back into the tree (or else it won't be saved) (hack alert) */
+        RTAvloGCPtrInsert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pPatchRec->Core);
+
+        /* Enable again in case the dirty instruction is near the end and there are safe code paths. */
+        int rc2 = PATMR3EnablePatch(pVM, pInstrGC);
+        AssertRC(rc2);
+
+        STAM_COUNTER_INC(&pVM->patm.s.StatPatchRefreshFailed);
+    }
+    return rc;
+}
+
+/**
  * Find patch for privileged instruction at specified location
  *
  * @returns Patch structure pointer if found; else NULL
@@ -5613,13 +5735,21 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     /* Find all adjacent dirty instructions */
     while (true)
     {
+        if (pRec->fJumpTarget)
+        {
+            LogRel(("PATM: patmR3HandleDirtyInstr: dirty instruction at %VGv (%VGv) ignored, because instruction in function was reused as target of jump\n", pEip, pPatchToGuestRec->pOrgInstrGC));
+            pRec->fDirty = false;
+            return VERR_PATCHING_REFUSED;
+        }
+
         /* Restore original instruction opcode byte so we can check if the write was indeed safe. */
         pCurPatchInstrHC  = patmPatchGCPtr2PatchHCPtr(pVM, pCurPatchInstrGC);
         *pCurPatchInstrHC = pRec->u8DirtyOpcode;
 
         /* Only harmless instructions are acceptable. */
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCurPatchInstrGC, &CpuOld, 0);
-        if (VBOX_FAILURE(rc) || !(CpuOld.pCurInstr->optype & OPTYPE_HARMLESS))
+        if (    VBOX_FAILURE(rc) 
+            ||  !(CpuOld.pCurInstr->optype & OPTYPE_HARMLESS))
             break;
 
 #ifdef DEBUG
@@ -5728,6 +5858,18 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         STAM_COUNTER_INC(&pVM->patm.s.StatInstrDirtyBad);
         /* Mark the whole instruction stream with breakpoints. */
         memset(pPatchInstrHC, 0xCC, cbDirty);
+
+        if (    pVM->patm.s.fOutOfMemory == false
+            &&  (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER|PATMFL_TRAPHANDLER)))
+        {
+            rc = patmR3RefreshPatch(pVM, pPatch);
+            if (VBOX_FAILURE(rc))
+            {
+                LogRel(("PATM: Failed to refresh dirty patch at %VGv. Disabling it.\n", pPatch->patch.pPrivInstrGC));
+            }
+            /* Even if we succeed, we must go back to the original instruction as the patched one could be invalid. */
+            rc = VERR_PATCHING_REFUSED;
+        }
     }
     return rc;
 }
@@ -5872,7 +6014,12 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTGCPTR pEip, RTGCPTR *
             rc = VINF_PATCH_CONTINUE;   /* Continue at current patch instruction. */
         }
         else
+        {
+            /* Reset the PATM stack. */
+            CTXSUFF(pVM->patm.s.pGCState)->Psp = PATM_STACK_SIZE;
+
             rc = VINF_SUCCESS;  /* Continue at original instruction. */
+        }
 
         *ppNewEip = pNewEip;
         STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);

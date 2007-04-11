@@ -1530,7 +1530,7 @@ int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pRet
 /*
  * Relative jump from patch code to patch code (no fixup required)
  */
-int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, GCPTRTYPE(uint8_t *)pPatchAddrGC)
+int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, GCPTRTYPE(uint8_t *)pPatchAddrGC, bool fAddLookupRecord)
 {
     int32_t displ;
     int     rc = VINF_SUCCESS;
@@ -1538,8 +1538,11 @@ int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, GCPTR
     Assert(PATMIsPatchGCAddr(pVM, pPatchAddrGC));
     PATCHGEN_PROLOG(pVM, pPatch);
 
-    /* Add lookup record for patch to guest address translation */
-    patmr3AddP2GLookupRecord(pVM, pPatch, pPB, pCurInstrGC, PATM_LOOKUP_PATCH2GUEST);
+    if (fAddLookupRecord)
+    {
+        /* Add lookup record for patch to guest address translation */
+        patmr3AddP2GLookupRecord(pVM, pPatch, pPB, pCurInstrGC, PATM_LOOKUP_PATCH2GUEST);
+    }
 
     pPB[0] = 0xE9;  //JMP
 
