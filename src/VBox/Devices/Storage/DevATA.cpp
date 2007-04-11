@@ -3168,6 +3168,16 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
                     ataCmdOK(s, ATA_STAT_SEEK);
                     ataSetIRQ(s); /* Shortcut, do not use AIO thread. */
                     break;
+                case 0xcc: /* reverting to power-on defaults enable */
+                    Log2(("%s: revert to power-on defaults enable\n", __FUNCTION__));
+                    ataCmdOK(s, ATA_STAT_SEEK);
+                    ataSetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    break;
+                case 0x66: /* reverting to power-on defaults disable */
+                    Log2(("%s: revert to power-on defaults disable\n", __FUNCTION__));
+                    ataCmdOK(s, ATA_STAT_SEEK);
+                    ataSetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    break;
                 case 0x82: /* write cache disable */
                     Log2(("%s: write cache disable\n", __FUNCTION__));
                     /* As per the ATA/ATAPI-6 specs, a write cache disable
