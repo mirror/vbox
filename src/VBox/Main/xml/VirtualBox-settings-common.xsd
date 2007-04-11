@@ -98,7 +98,7 @@
 
 <xsd:simpleType name="TPresentDateTimeUTC">
   <xsd:restriction base="xsd:dateTime">
-    <xsd:minInclusive value="2005-01-01T00:00:00Z"/>
+    <xsd:minInclusive value="1900-01-01T00:00:00Z"/>
     <xsd:maxInclusive value="199999999-12-31T23:59:59Z"/>
     <xsd:pattern value=".+-.+-.+T.+:.+:[0-9]{2}Z"/>
   </xsd:restriction>
