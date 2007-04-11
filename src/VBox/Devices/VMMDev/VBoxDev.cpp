@@ -952,7 +952,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             break;
         }
-#endif
+#endif /* VBOX_HGCM */
 
         case VMMDevReq_VideoAccelEnable:
         {
