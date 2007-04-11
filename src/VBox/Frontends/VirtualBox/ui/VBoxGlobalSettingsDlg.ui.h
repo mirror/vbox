@@ -30,6 +30,10 @@
 *****************************************************************************/
 
 
+extern const QString transFileName;
+extern const QString langIdRegExp;
+extern const QString builtInName;
+
 /**
  *  Returns the path to the item in the form of 'grandparent > parent > item'
  *  using the text of the first column of every item.
@@ -72,11 +76,105 @@ public:
 enum { lvUSBFilters_Name = 0 };
 
 
+class LanguageItem : public QListViewItem
+{
+public:
+
+    enum { TypeId = 1001 };
+
+    LanguageItem (QListView *aParent, const QString &aName)
+        : QListViewItem (aParent, aName)
+    {
+        /* making separator field */
+        if (aName == "-")
+        {
+            QString sepLine;
+            while (listView()->fontMetrics().width (sepLine) < listView()->width())
+                sepLine += "-";
+            setText (0, sepLine);
+            setSelectable (false);
+        }
+    }
+
+    LanguageItem (QListView *aParent, const QTranslator &aTranslator,
+                  const QString &aId, bool aBuiltIn = false)
+        : QListViewItem (aParent)
+    {
+        QTranslatorMessage transMes;
+
+        QString nativeLanguage = translate (aTranslator,
+            "@@@", "English", "Native language name", aBuiltIn);
+        QString nativeCountry = translate (aTranslator,
+            "@@@", "built-in", "Native language country name "
+            "(empty if this language is for all countries)", aBuiltIn);
+
+        QString englishLanguage = translate (aTranslator,
+            "@@@", "English", "Language name, in English", aBuiltIn);
+        QString englishCountry = translate (aTranslator,
+            "@@@", "built-in", "Language country name, in English "
+            "(empty if native country name is empty)", aBuiltIn);
+
+        QString translatorsName = translate (aTranslator,
+            "@@@", "InnoTek", "Comma-separated list of translators", aBuiltIn);
+        if (translatorsName.isNull())
+            translatorsName = QListView::tr ("--", "no info");
+
+        QString itemName = nativeLanguage;
+        if (!nativeCountry.isNull())
+            itemName += " (" + nativeCountry + ")";
+
+        QString langName = englishLanguage;
+        if (!englishCountry.isNull())
+            langName += " (" + englishCountry + ")";
+        if (!aBuiltIn)
+            langName = itemName + " / " + langName;
+
+        setText (0, itemName);
+        setText (1, aId);
+        setText (2, langName);
+        setText (3, translatorsName);
+    }
+
+    int rtti() const { return TypeId; }
+
+    int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
+    {
+        QString thisValue = text (1);
+        QString thatValue = aItem->text (1);
+        if (thisValue == builtInName)
+            return -1;
+        else if (thatValue == builtInName)
+            return 1;
+        else
+            return QListViewItem::compare (aItem, aColumn, aAscending);
+    }
+
+    void paintCell (QPainter *aPainter, const QColorGroup &aGroup,
+                    int aColumn, int aWidth, int aSlign)
+    {
+        /* adjusting list-view width */
+        int fullwidth = width (listView()->fontMetrics(), listView(), 0) + 4;
+        if (listView()->width() < fullwidth)
+            listView()->setFixedWidth (fullwidth);
+        /* standard paint procedure */
+        QListViewItem::paintCell (aPainter, aGroup, aColumn, aWidth, aSlign);
+    }
+
+private:
+
+    QString translate (const QTranslator &aTranslator, const char *aCtxt,
+                       const char *aSrc, const char *aCmnt, bool aBuiltIn)
+    {
+        QTranslatorMessage msg = aTranslator.findMessage (aCtxt, aSrc, aCmnt);
+        return msg.translation().isNull() && aBuiltIn ? QString (aSrc) : msg.translation();
+    }
+};
+
+
 void VBoxGlobalSettingsDlg::init()
 {
     polished = false;
 
-    setCaption (tr ("VirtualBox Global Settings"));
     setIcon (QPixmap::fromMimeSource ("global_settings_16px.png"));
 
     /*  all pages are initially valid */
@@ -97,11 +195,6 @@ void VBoxGlobalSettingsDlg::init()
     /*  sort by the id column (to have pages in the desired order) */
     listView->setSorting (listView_Id);
     listView->sort();
-    /*  disable further sorting (important for network adapters) */
-    listView->setSorting (-1);
-    /*  set the first item selected */
-    listView->setSelected (listView->firstChild(), true);
-    listView_currentChanged (listView->firstChild());
 
     warningPixmap->setMaximumSize( 16, 16 );
     warningPixmap->setPixmap( QMessageBox::standardIcon( QMessageBox::Warning ) );
@@ -202,12 +295,49 @@ void VBoxGlobalSettingsDlg::init()
 
     /* keyboard page */
 
+    /* Language page */
+
+    lvLanguages->header()->hide();
+    lvLanguages->setSorting (0);
+    QString nlsPath = qApp->applicationDirPath() + "/nls";
+    QDir nlsDir (nlsPath);
+    QStringList files = nlsDir.entryList (transFileName + "*", QDir::Files);
+    QTranslator translator;
+    new LanguageItem (lvLanguages, translator, builtInName, true /* built-in */);
+    new LanguageItem (lvLanguages, tr ("-"));
+    for (QStringList::Iterator it = files.begin(); it != files.end(); ++it)
+    {
+        const QString &fileName = *it;
+        bool status = translator.load (fileName, nlsPath);
+        if (!status) continue;
+
+        QRegExp regExp (transFileName + langIdRegExp);
+        int pos = regExp.search (fileName);
+        if (pos == -1) continue;
+
+        new LanguageItem (lvLanguages, translator, regExp.cap (1));
+    }
+
     /*
      *  update the Ok button state for pages with validation
      *  (validityChanged() connected to enableNext() will do the job)
      */
     wvalGeneral->revalidate();
     wvalKeyboard->revalidate();
+}
+
+bool VBoxGlobalSettingsDlg::event (QEvent *aEvent)
+{
+    bool result = QWidget::event (aEvent);
+    if (aEvent->type() == QEvent::LanguageChange)
+    {
+        /* set the first item selected */
+        listView->setSelected (listView->firstChild(), true);
+        listView_currentChanged (listView->firstChild());
+        lvLanguages_currentChanged (lvLanguages->currentItem());
+        mLanguageChanged = false;
+    }
+    return result;
 }
 
 bool VBoxGlobalSettingsDlg::eventFilter (QObject *object, QEvent *event)
@@ -368,6 +498,15 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
     }
 #endif
+
+    /* language properties */
+
+    QListViewItem *item = lvLanguages->findItem (VBoxGlobal::languageID(), 1);
+    if (item)
+    {
+        lvLanguages->setCurrentItem (item);
+        lvLanguages->setSelected (item, true);
+    }
 }
 
 /**
@@ -427,6 +566,16 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
                                         insertedFilter);
     }
     mUSBFilterListModified = false;
+
+    /* language properties */
+
+    QListViewItem *selItem = lvLanguages->selectedItem();
+    if (mLanguageChanged && selItem)
+    {
+        gs.setLanguageId (selItem->text (1) == VBoxGlobal::systemLanguageID() ?
+                          QString::null : selItem->text (1));
+        VBoxGlobal::loadLanguage (selItem->text (1));
+    }
 }
 
 void VBoxGlobalSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
@@ -688,4 +837,14 @@ void VBoxGlobalSettingsDlg::tbUSBFilterDown_clicked()
 
     lvUSBFilters_currentChanged (item);
     mUSBFilterListModified = true;
+}
+
+void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (QListViewItem *aItem)
+{
+    if (!aItem) return;
+
+    tlLangData->setText (aItem->text (2));
+    tlAuthorData->setText (aItem->text (3));
+    if (!mLanguageChanged)
+        mLanguageChanged = true;
 }

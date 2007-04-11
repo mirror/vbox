@@ -160,13 +160,7 @@ int main( int argc, char ** argv )
 #endif
 
     /* load a translation based on the current locale */
-    QTranslator translator;
-    QString lang = VBoxGlobal::systemLanguageID();
-    QString nlsPath = a.applicationDirPath() + "/nls";
-    LogFlowFunc (("lang=%S, nlsPath=\"%S\"\n",
-                  lang.local8Bit().data(), nlsPath.local8Bit().data()));
-    translator.load (QString ("VirtualBox_%1").arg (lang), nlsPath);
-    a.installTranslator (&translator);
+    VBoxGlobal::loadLanguage();
 
     int rc = 1;
 

@@ -55,12 +55,14 @@ VMGlobalSettingsData::VMGlobalSettingsData()
 #endif
     autoCapture = true;
     guiFeatures = QString::null;
+    languageId  = QString::null;
 }
 
 VMGlobalSettingsData::VMGlobalSettingsData( const VMGlobalSettingsData &that ) {
     hostkey = that.hostkey;
     autoCapture = that.autoCapture;
     guiFeatures = that.guiFeatures;
+    languageId  = that.languageId;
 }
 
 VMGlobalSettingsData::~VMGlobalSettingsData()
@@ -72,7 +74,8 @@ bool VMGlobalSettingsData::operator==( const VMGlobalSettingsData &that ) const
     return this == &that || (
         hostkey == that.hostkey &&
         autoCapture == that.autoCapture &&
-        guiFeatures == that.guiFeatures
+        guiFeatures == that.guiFeatures &&
+        languageId  == that.languageId
     );
 }
 
@@ -93,6 +96,7 @@ gPropertyMap[] =
     { "GUI/Input/HostKey",      "hostKey",      "\\d*[1-9]\\d*" },
     { "GUI/Input/AutoCapture",  "autoCapture",  "true|false" },
     { "GUI/Customizations",     "guiFeatures",  "\\S+" },
+    { "GUI/LanguageID",         "languageId",   "([a-z]{2,5}(_[a-zA-Z]{2})?)?" },
 };
 
 void VMGlobalSettings::setHostKey (int key)

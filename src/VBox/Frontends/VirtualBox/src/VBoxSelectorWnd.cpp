@@ -318,8 +318,10 @@ void VBoxVMDescriptionPage::setMachineItem (VBoxVMListBoxItem *aItem)
 void VBoxVMDescriptionPage::languageChange()
 {
     mBtnEdit->setTextLabel (tr ("Edit"));
-    mBtnEdit->setAccel (QString ("Ctrl+E"));
+    mBtnEdit->setAccel (tr ("Ctrl+E"));
     QToolTip::add (mBtnEdit, tr ("Edit (Ctrl+E)"));
+    mBtnEdit->adjustSize();
+    mBtnEdit->updateGeometry();
 }
 
 /**
@@ -972,6 +974,11 @@ bool VBoxSelectorWnd::event (QEvent *e)
                 normal_pos = pos();
             break;
         }
+        case QEvent::LanguageChange:
+        {
+            languageChange();
+            break;
+        }
 
         default:
             break;
@@ -994,6 +1001,8 @@ void VBoxSelectorWnd::languageChange()
 #else
     setCaption (tr ("InnoTek VirtualBox"));
 #endif
+
+    vboxGlobal().languageChange();
 
     vmTabWidget->changeTab (vmDetailsView, tr ("&Details"));
     /* note: Snapshots and Details tabs are changed dynamically by
@@ -1026,7 +1035,7 @@ void VBoxSelectorWnd::languageChange()
 
     vmDeleteAction->setMenuText (tr ("&Delete"));
     vmDeleteAction->setText (tr ("Delete"));
-    vmDeleteAction->setAccel( QString::null );
+    vmDeleteAction->setAccel (QString::null);
     vmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
 
     /* Note: vmStartAction text is set up in vmListBoxCurrentChanged() */
@@ -1101,7 +1110,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         {
             vmDetailsView->setDetailsText (
                 vboxGlobal().detailsReport (m, false /* isNewVM */,
-                                               modifyEnabled /* withLinks */));
+                                            modifyEnabled /* withLinks */));
         }
         if (aRefreshSnapshots)
         {
