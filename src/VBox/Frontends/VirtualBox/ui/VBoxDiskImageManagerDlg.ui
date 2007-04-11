@@ -524,7 +524,7 @@
     <forward>class DiskImageItem</forward>
     <forward>class VBoxToolBar</forward>
     <forward>class QSizeGrip</forward>
-    <forward>class QIRichLabel</forward>
+    <forward>class InfoPaneLabel</forward>
     <forward>class QProgressBar</forward>
 </forwards>
 <variables>
@@ -550,17 +550,17 @@
     <variable access="private">QAction *imRemoveAction;</variable>
     <variable access="private">QAction *imReleaseAction;</variable>
     <variable access="private">QAction *imRefreshAction;</variable>
-    <variable access="private">QIRichLabel *hdsPane1;</variable>
-    <variable access="private">QIRichLabel *hdsPane2;</variable>
-    <variable access="private">QIRichLabel *hdsPane3;</variable>
-    <variable access="private">QIRichLabel *hdsPane4;</variable>
-    <variable access="private">QIRichLabel *hdsPane5;</variable>
-    <variable access="private">QIRichLabel *hdsPane6;</variable>
-    <variable access="private">QIRichLabel *hdsPane7;</variable>
-    <variable access="private">QIRichLabel *cdsPane1;</variable>
-    <variable access="private">QIRichLabel *cdsPane2;</variable>
-    <variable access="private">QIRichLabel *fdsPane1;</variable>
-    <variable access="private">QIRichLabel *fdsPane2;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane1;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane2;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane3;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane4;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane5;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane6;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane7;</variable>
+    <variable access="private">InfoPaneLabel *cdsPane1;</variable>
+    <variable access="private">InfoPaneLabel *cdsPane2;</variable>
+    <variable access="private">InfoPaneLabel *fdsPane1;</variable>
+    <variable access="private">InfoPaneLabel *fdsPane2;</variable>
     <variable>QSizeGrip *sizeGrip;</variable>
     <variable>QPushButton *defaultButton;</variable>
     <variable access="private">static VBoxDiskImageManagerDlg *mModelessDialog;</variable>
@@ -619,11 +619,12 @@
     <function access="private" returnType="DiskImageItem*">createHdItem( QListView*, const VBoxMedia &amp; )</function>
     <function access="private" returnType="DiskImageItem*">createCdItem( QListView*, const VBoxMedia &amp; )</function>
     <function access="private" returnType="DiskImageItem*">createFdItem( QListView*, const VBoxMedia &amp; )</function>
+    <function access="protected" returnType="bool">event( QEvent* )</function>
     <function access="protected">showEvent( QShowEvent * )</function>
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function access="protected">keyPressEvent( QKeyEvent* )</function>
     <function access="protected">closeEvent( QCloseEvent* )</function>
-    <function access="protected" returnType="QIRichLabel*">createInfoString( const QString &amp;, QWidget*, int, int )</function>
+    <function access="protected">createInfoString( InfoPaneLabel *&amp;, QWidget*, int, int )</function>
     <function access="protected" returnType="QPushButton*">searchDefaultButton()</function>
     <function access="protected">setCurrentItem( QListView*, QListViewItem* )</function>
     <function specifier="static"> showModeless( bool aRefresh = true )</function>
@@ -633,6 +634,7 @@
     <function access="protected">clearInfoPanes()</function>
     <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
     <function access="protected">makeWarningMark( DiskImageItem*, VBoxMedia::Status, VBoxDefs::DiskType )</function>
+    <function access="pritave">languageChangeImp()</function>
 </functions>
 <layoutdefaults spacing="10" margin="10"/>
 </UI>
