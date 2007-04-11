@@ -453,6 +453,47 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
+#if 1
+    // find a registered hard disk by location
+    ///////////////////////////////////////////////////////////////////////////
+    do
+    {
+        ComPtr <IHardDisk> hd;
+        static wchar_t *Names[] =
+        {
+#ifndef __LINUX__
+            L"E:/Develop/innotek/images/thinker/freedos.vdi",
+            L"E:/Develop/innotek/images/thinker/fReeDoS.vDI",
+            L"E:/Develop/innotek/images/vmdk/haiku.vmdk",
+#else
+            L"/mnt/host/common/Develop/innotek/images/maggot/freedos.vdi",
+            L"/mnt/host/common/Develop/innotek/images/maggot/fReeDoS.vDI",
+#endif
+        };
+        for (size_t i = 0; i < ELEMENTS (Names); ++ i)
+        {
+            Bstr src = Names [i];
+            printf ("Searching for hard disk '%ls'...\n", src.raw());
+            rc = virtualBox->FindHardDisk (src, hd.asOutParam());
+            if (SUCCEEDED (rc))
+            {
+                Guid id;
+                Bstr location;
+                CHECK_ERROR_BREAK (hd, COMGETTER(Id) (id.asOutParam()));
+                CHECK_ERROR_BREAK (hd, COMGETTER(Location) (location.asOutParam()));
+                printf ("Found, UUID={%Vuuid}, location='%ls'.\n",
+                        id.raw(), location.raw());
+            }
+            else
+            {
+                PRINT_ERROR_INFO (com::ErrorInfo (virtualBox));
+            }
+        }
+    }
+    while (FALSE);
+    printf ("\n");
+#endif
+
 #if 0
     // access the machine in read-only mode
     ///////////////////////////////////////////////////////////////////////////

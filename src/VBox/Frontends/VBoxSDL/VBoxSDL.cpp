@@ -1329,22 +1329,14 @@ int main(int argc, char *argv[])
          */
         Bstr hdaFileBstr = hdaFile;
         ComPtr<IHardDisk> hardDisk;
-        ComPtr<IVirtualDiskImage> vdi;
-        virtualBox->FindVirtualDiskImage(hdaFileBstr, vdi.asOutParam());
-        if (vdi)
-        {
-            vdi.queryInterfaceTo (hardDisk.asOutParam());
-        }
-        else
+        virtualBox->FindHardDisk(hdaFileBstr, hardDisk.asOutParam());
+        if (!hardDisk)
         {
             /* we've not found the image */
             RTPrintf("Registering hard disk image %s\n", hdaFile);
-            virtualBox->OpenVirtualDiskImage (hdaFileBstr, vdi.asOutParam());
-            if (vdi)
-            {
-                vdi.queryInterfaceTo (hardDisk.asOutParam());
+            virtualBox->OpenHardDisk (hdaFileBstr, hardDisk.asOutParam());
+            if (hardDisk)
                 virtualBox->RegisterHardDisk (hardDisk);
-            }
         }
         /* do we have the right image now? */
         if (hardDisk)

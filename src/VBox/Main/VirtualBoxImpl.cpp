@@ -1081,10 +1081,59 @@ STDMETHODIMP VirtualBox::GetHardDisk (INPTR GUIDPARAM aId, IHardDisk **aHardDisk
 
     Guid id = aId;
     ComObjPtr <HardDisk> hd;
-    HRESULT rc = findHardDisk (id, true /* setError */, &hd);
+    HRESULT rc = findHardDisk (&id, NULL, true /* setError */, &hd);
 
     /* the below will set *aHardDisk to NULL if hd is null */
     hd.queryInterfaceTo (aHardDisk);
+
+    return rc;
+}
+
+/** @note Locks objects! */
+STDMETHODIMP VirtualBox::FindHardDisk (INPTR BSTR aLocation,
+                                       IHardDisk **aHardDisk)
+{
+   if (!aLocation)
+        return E_INVALIDARG;
+   if (!aHardDisk)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    Utf8Str location = aLocation;
+    if (strncmp (location, "iscsi:", 6) == 0)
+    {
+        /* nothing special */
+    }
+    else
+    {
+        /* For locations represented by file paths, append the default path if
+         * only a name is given, and then get the full path. */
+        if (!RTPathHavePath (location))
+        {
+            AutoLock propsLock (mData.mSystemProperties);
+            location = Utf8StrFmt ("%ls%c%s",
+                                   mData.mSystemProperties->defaultVDIFolder().raw(),
+                                   RTPATH_DELIMITER,
+                                   location.raw());
+        }
+
+        /* get the full file name */
+        char buf [RTPATH_MAX];
+        int vrc = RTPathAbsEx (mData.mHomeDir, location, buf, sizeof (buf));
+        if (VBOX_FAILURE (vrc))
+            return setError (E_FAIL, tr ("Invalid hard disk location '%ls' (%Vrc)"),
+                             aLocation, vrc);
+        location = buf;
+    }
+
+    ComObjPtr <HardDisk> hardDisk;
+    HRESULT rc = findHardDisk (NULL, Bstr (location), true /* setError */,
+                               &hardDisk);
+
+    /* the below will set *aHardDisk to NULL if hardDisk is null */
+    hardDisk.queryInterfaceTo (aHardDisk);
 
     return rc;
 }
@@ -1145,7 +1194,7 @@ STDMETHODIMP VirtualBox::UnregisterHardDisk (INPTR GUIDPARAM aId, IHardDisk **aH
 
     Guid id = aId;
     ComObjPtr <HardDisk> hd;
-    HRESULT rc = findHardDisk (id, true /* setError */, &hd);
+    HRESULT rc = findHardDisk (&id, NULL, true /* setError */, &hd);
     CheckComRCReturnRC (rc);
 
     rc = unregisterHardDisk (hd);
@@ -2961,35 +3010,94 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
     return rc;
 }
 
-/** @note Locks this object for reading. */
-HRESULT VirtualBox::findHardDisk (const Guid &aId, bool aSetError,
-                                  ComObjPtr <HardDisk> *aHardDisk /* = NULL */)
+/**
+ *  Searches for a HardDisk object with the given ID or location specification
+ *  in the collection of registered hard disks. If both ID and location are
+ *  specified, the first object that matches either of them (not necessarily
+ *  both) is returned.
+ *
+ *  @param aId          ID of the hard disk (NULL when unused)
+ *  @param aLocation    full location specification (NULL when unused)
+ *  @param aSetError    if TRUE, the appropriate error info is set in case when
+ *                      the disk is not found and only one search criteria (ID
+ *                      or file name) is specified.
+ *  @param aHardDisk    where to store the found hard disk object (can be NULL)
+ *
+ *  @return
+ *      S_OK when found or E_INVALIDARG when not found
+ *
+ *  @note Locks objects for reading!
+ */
+HRESULT VirtualBox::
+findHardDisk (const Guid *aId, const BSTR aLocation,
+              bool aSetError, ComObjPtr <HardDisk> *aHardDisk /* = NULL */)
 {
-    AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    ComAssertRet (aId || aLocation, E_INVALIDARG);
 
     AutoReaderLock alock (this);
 
-    HardDiskMap::const_iterator it = mData.mHardDiskMap.find (aId);
-
-    if (it != mData.mHardDiskMap.end())
+    /* first lookup the map by UUID if UUID is provided */
+    if (aId)
     {
-        if (aHardDisk)
-            *aHardDisk = (*it).second;
-        return S_OK;
+        HardDiskMap::const_iterator it = mData.mHardDiskMap.find (*aId);
+        if (it != mData.mHardDiskMap.end())
+        {
+            if (aHardDisk)
+                *aHardDisk = (*it).second;
+            return S_OK;
+        }
     }
 
-    if (aSetError)
+    /* then iterate and find by location */
+    bool found = false;
+    if (aLocation)
     {
-        setError (E_INVALIDARG,
-            tr ("Could not find a registered hard disk with UUID {%Vuuid}"),
-            aId.raw());
+        Utf8Str location = aLocation;
+
+        for (HardDiskMap::const_iterator it = mData.mHardDiskMap.begin();
+             !found && it != mData.mHardDiskMap.end();
+             ++ it)
+        {
+            const ComObjPtr <HardDisk> &hd = (*it).second;
+            AutoReaderLock hdLock (hd);
+
+            if (hd->storageType() == HardDiskStorageType_VirtualDiskImage ||
+                hd->storageType() == HardDiskStorageType_VMDKImage)
+            {
+                /* locations of VDI and VMDK hard disks for now are just
+                 * file paths */
+                found = RTPathCompare (location, 
+                                       Utf8Str (hd->toString
+                                                (false /* aShort */))) == 0;
+            }
+            else
+            {
+                found = aLocation == hd->toString (false /* aShort */);
+            }
+
+            if (found && aHardDisk)
+                *aHardDisk = hd;
+        }
     }
 
-    return E_INVALIDARG;
+    HRESULT rc = found ? S_OK : E_INVALIDARG;
+
+    if (aSetError && !found)
+    {
+        if (aId && !aLocation)
+            setError (rc, tr ("Could not find a registered hard disk "
+                              "with UUID {%Vuuid}"), aId->raw());
+        else if (aLocation && !aId)
+            setError (rc, tr ("Could not find a registered hard disk "
+                              "with location '%ls'"), aLocation);
+    }
+
+    return rc;
 }
 
 /**
+ *  @deprecated Use #findHardDisk() instead.
+ *
  *  Searches for a HVirtualDiskImage object with the given ID or file path in the
  *  collection of registered hard disks. If both ID and file path are specified,
  *  the first object that matches either of them (not necessarily both)
