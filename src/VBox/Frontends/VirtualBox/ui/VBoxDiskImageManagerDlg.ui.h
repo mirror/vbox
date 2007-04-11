@@ -172,6 +172,21 @@ public:
 };
 
 
+class InfoPaneLabel : public QIRichLabel
+{
+public:
+
+    InfoPaneLabel (QWidget *aParent, QLabel *aLabel = 0)
+        : QIRichLabel (aParent, "infoLabel"), mLabel (aLabel) {}
+
+    QLabel* label() { return mLabel; }
+
+private:
+
+    QLabel *mLabel;
+};
+
+
 VBoxDiskImageManagerDlg *VBoxDiskImageManagerDlg::mModelessDialog = 0;
 
 
@@ -295,34 +310,6 @@ void VBoxDiskImageManagerDlg::init()
     connect (imRefreshAction, SIGNAL (activated()),
              this, SLOT (refreshAll()));
 
-    imNewAction->setMenuText (tr ("&New..."));
-    imAddAction->setMenuText (tr ("&Add..."));
-    // imEditAction->setMenuText (tr ("&Edit..."));
-    imRemoveAction->setMenuText (tr ("R&emove"));
-    imReleaseAction->setMenuText (tr ("Re&lease"));
-    imRefreshAction->setMenuText (tr ("Re&fresh"));
-
-    imNewAction->setText (tr ("New"));
-    imAddAction->setText (tr ("Add"));
-    // imEditAction->setText (tr ("Edit"));
-    imRemoveAction->setText (tr ("Remove"));
-    imReleaseAction->setText (tr ("Release"));
-    imRefreshAction->setText (tr ("Refresh"));
-
-    imNewAction->setAccel (tr ("Ctrl+N"));
-    imAddAction->setAccel (tr ("Ctrl+A"));
-    // imEditAction->setAccel (tr ("Ctrl+E"));
-    imRemoveAction->setAccel (tr ("Ctrl+D"));
-    imReleaseAction->setAccel (tr ("Ctrl+L"));
-    imRefreshAction->setAccel (tr ("Ctrl+R"));
-
-    imNewAction->setStatusTip (tr ("Create new VDI file and attach it to media list"));
-    imAddAction->setStatusTip (tr ("Add existing media image file to media list"));
-    // imEditAction->setStatusTip (tr ("Edit properties of selected media image file"));
-    imRemoveAction->setStatusTip (tr ("Remove selected media image file from media list"));
-    imReleaseAction->setStatusTip (tr ("Release selected media image file from being using in some VM"));
-    imRefreshAction->setStatusTip (tr ("Refresh media image list"));
-
     imNewAction->setIconSet (VBoxGlobal::iconSetEx (
         "vdm_new_22px.png", "vdm_new_16px.png",
         "vdm_new_disabled_22px.png", "vdm_new_disabled_16px.png"));
@@ -373,7 +360,7 @@ void VBoxDiskImageManagerDlg::init()
     imReleaseAction->addTo (actionMenu);
     actionMenu->insertSeparator();
     imRefreshAction->addTo (actionMenu);
-    menuBar()->insertItem (QString (tr ("&Actions")), actionMenu, 1);
+    menuBar()->insertItem (QString::null, actionMenu, 1);
 
 
     /* setup size grip */
@@ -392,21 +379,21 @@ void VBoxDiskImageManagerDlg::init()
     QGridLayout *fdsContainerLayout = new QGridLayout (fdsContainer, 2, 4);
     fdsContainerLayout->setMargin (10);
     /* create info-pane for hd list-view */
-    hdsPane1 = createInfoString (tr ("Location"), hdsContainer, 0, -1);
-    hdsPane2 = createInfoString (tr ("Disk Type"), hdsContainer, 1, 0);
-    hdsPane3 = createInfoString (tr ("Storage Type"), hdsContainer, 1, 1);
-    hdsPane4 = createInfoString (tr ("Attached to"), hdsContainer, 2, 0);
-    hdsPane5 = createInfoString (tr ("Snapshot"), hdsContainer, 2, 1);
+    createInfoString (hdsPane1, hdsContainer, 0, -1);
+    createInfoString (hdsPane2, hdsContainer, 1, 0);
+    createInfoString (hdsPane3, hdsContainer, 1, 1);
+    createInfoString (hdsPane4, hdsContainer, 2, 0);
+    createInfoString (hdsPane5, hdsContainer, 2, 1);
     /* create info-pane for cd list-view */
-    cdsPane1 = createInfoString (tr ("Location"), cdsContainer, 0, -1);
-    cdsPane2 = createInfoString (tr ("Attached to"), cdsContainer, 1, -1);
+    createInfoString (cdsPane1, cdsContainer, 0, -1);
+    createInfoString (cdsPane2, cdsContainer, 1, -1);
     /* create info-pane for fd list-view */
-    fdsPane1 = createInfoString (tr ("Location"), fdsContainer, 0, -1);
-    fdsPane2 = createInfoString (tr ("Attached to"), fdsContainer, 1, -1);
+    createInfoString (fdsPane1, fdsContainer, 0, -1);
+    createInfoString (fdsPane2, fdsContainer, 1, -1);
 
 
     /* enumeration progressbar creation */
-    mProgressText = new QLabel (tr ("Checking accessibility"), centralWidget());
+    mProgressText = new QLabel (centralWidget());
     mProgressText->setHidden (true);
     buttonLayout->insertWidget (2, mProgressText);
     mProgressBar = new QProgressBar (centralWidget());
@@ -416,48 +403,88 @@ void VBoxDiskImageManagerDlg::init()
     mProgressBar->setPercentageVisible (false);
     mProgressBar->setMaximumWidth (100);
     buttonLayout->insertWidget (3, mProgressBar);
+
+
+    /* applying language settings */
+    languageChangeImp();
 }
 
 
-QIRichLabel *VBoxDiskImageManagerDlg::createInfoString (const QString &name, QWidget *root, int row, int column)
+void VBoxDiskImageManagerDlg::languageChangeImp()
 {
-    QLabel *nameLabel = new QLabel (name, root, "nameLabel");
-    QIRichLabel *infoLabel = new QIRichLabel (root, "infoPane");
+    imNewAction->setMenuText (tr ("&New..."));
+    imAddAction->setMenuText (tr ("&Add..."));
+    // imEditAction->setMenuText (tr ("&Edit..."));
+    imRemoveAction->setMenuText (tr ("R&emove"));
+    imReleaseAction->setMenuText (tr ("Re&lease"));
+    imRefreshAction->setMenuText (tr ("Re&fresh"));
+
+    imNewAction->setText (tr ("New"));
+    imAddAction->setText (tr ("Add"));
+    // imEditAction->setText (tr ("Edit"));
+    imRemoveAction->setText (tr ("Remove"));
+    imReleaseAction->setText (tr ("Release"));
+    imRefreshAction->setText (tr ("Refresh"));
+
+    imNewAction->setAccel (tr ("Ctrl+N"));
+    imAddAction->setAccel (tr ("Ctrl+A"));
+    // imEditAction->setAccel (tr ("Ctrl+E"));
+    imRemoveAction->setAccel (tr ("Ctrl+D"));
+    imReleaseAction->setAccel (tr ("Ctrl+L"));
+    imRefreshAction->setAccel (tr ("Ctrl+R"));
+
+    imNewAction->setStatusTip (tr ("Create new VDI file and attach it to media list"));
+    imAddAction->setStatusTip (tr ("Add existing media image file to media list"));
+    // imEditAction->setStatusTip (tr ("Edit properties of selected media image file"));
+    imRemoveAction->setStatusTip (tr ("Remove selected media image file from media list"));
+    imReleaseAction->setStatusTip (tr ("Release selected media image file from being using in some VM"));
+    imRefreshAction->setStatusTip (tr ("Refresh media image list"));
+
+    if (menuBar()->findItem(1))
+        menuBar()->findItem(1)->setText (tr ("&Actions"));
+
+    hdsPane1->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
+    hdsPane2->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Disk Type")));
+    hdsPane3->label()->setText (QString ("<nobr>&nbsp;&nbsp;%1:</nobr>").arg (tr ("Storage Type")));
+    hdsPane4->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
+    hdsPane5->label()->setText (QString ("<nobr>&nbsp;&nbsp;%1:</nobr>").arg (tr ("Snapshot")));
+    cdsPane1->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
+    cdsPane2->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
+    fdsPane1->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
+    fdsPane2->label()->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
+
+    mProgressText->setText (tr ("Checking accessibility"));
+
+    if (hdsView->childCount() || cdsView->childCount() || fdsView->childCount())
+        refreshAll();
+}
+
+
+void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
+                                                QWidget *aRoot,
+                                                int aRow, int aColumn)
+{
+    QLabel *nameLabel = new QLabel (aRoot);
+    aInfo = new InfoPaneLabel (aRoot, nameLabel);
 
     /* Setup focus policy <strong> default for info pane */
-    infoLabel->setFocusPolicy (QWidget::StrongFocus);
+    aInfo->setFocusPolicy (QWidget::StrongFocus);
 
     /* prevent the name columns from being expanded */
     nameLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    if (column == -1)
+    if (aColumn == -1)
     {
-        /* add qt-html tags to prevent wrapping and to have the same initial
-         * height of nameLabel and infoLabel (plain text gets a height smaller
-         * than rich text */
-        nameLabel->setText (QString ("<nobr>%1:</nobr>").arg (name));
-
-        ((QGridLayout *) root->layout())->addWidget (nameLabel, row, 0);
-        ((QGridLayout *) root->layout())->
-            addMultiCellWidget (infoLabel, row, row,
-                                1, ((QGridLayout *) root->layout())->numCols() - 1);
+        ((QGridLayout *) aRoot->layout())->addWidget (nameLabel, aRow, 0);
+        ((QGridLayout *) aRoot->layout())->
+            addMultiCellWidget (aInfo, aRow, aRow,
+                                1, ((QGridLayout *) aRoot->layout())->numCols() - 1);
     }
     else
     {
-        /* add some spacing to the left of the name field for all columns but
-         * the first one, to separate it from the value field (note that adding
-         * spacing to the right is not necessary since Qt does it anyway for
-         * rich text for whatever stupid reason). */
-        if (column == 0)
-            nameLabel->setText (QString ("<nobr>%1:</nobr>").arg (name));
-        else
-            nameLabel->setText (QString ("<nobr>&nbsp;&nbsp;%1:</nobr>").arg (name));
-
-        ((QGridLayout *) root->layout())->addWidget (nameLabel, row, column * 2);
-        ((QGridLayout *) root->layout())->addWidget (infoLabel, row, column * 2 + 1);
+        ((QGridLayout *) aRoot->layout())->addWidget (nameLabel, aRow, aColumn * 2);
+        ((QGridLayout *) aRoot->layout())->addWidget (aInfo, aRow, aColumn * 2 + 1);
     }
-
-    return infoLabel;
 }
 
 
@@ -676,6 +703,23 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
             break;
     }
     return QMainWindow::eventFilter (aObject, aEvent);
+}
+
+
+bool VBoxDiskImageManagerDlg::event (QEvent *aEvent)
+{
+    bool result = QMainWindow::event (aEvent);
+    switch (aEvent->type())
+    {
+        case QEvent::LanguageChange:
+        {
+            languageChangeImp();
+            break;
+        }
+        default:
+            break;
+    }
+    return result;
 }
 
 
