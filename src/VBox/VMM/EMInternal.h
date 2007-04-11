@@ -131,6 +131,8 @@ typedef struct EMSTATS
     STAMCOUNTER             StatHCBts;
     STAMCOUNTER             StatGCBtc;
     STAMCOUNTER             StatHCBtc;
+    STAMCOUNTER             StatGCCmpXchg;
+    STAMCOUNTER             StatHCCmpXchg;
 
     STAMCOUNTER             StatGCInterpretFailed;
     STAMCOUNTER             StatHCInterpretFailed;
