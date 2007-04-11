@@ -4985,6 +4985,8 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
     }
 #endif
 
+#if 0 /** @todo r=bird: We can't free the buffer here because it's still locked.
+       * (That's the reason why we didn't do it earlier.) */
     /*
      * Free the VRAM.
      */
@@ -4995,6 +4997,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         return rc;
     }
     pData->vram_ptrHC = NULL;
+#endif 
 
     return VINF_SUCCESS;
 }
