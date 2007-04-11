@@ -374,6 +374,10 @@ public:
 
     bool openURL (const QString &aURL);
 
+    static const QString& languageID();
+    static void loadLanguage (const QString &aLangId = QString::null);
+    static bool loadLanguageFile (const QString &);
+
     QString languageName() const;
     QString languageCountry() const;
     QString languageNameEnglish() const;
@@ -505,6 +509,8 @@ private:
     typedef QValueVector <QString> QStringVector;
 
     QString verString;
+
+    static QString mLoadedLangId;
 
     QValueVector <CGuestOSType> vm_os_types;
     QDict <QPixmap> vm_os_type_icons;
