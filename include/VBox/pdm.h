@@ -3207,6 +3207,8 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 #define PDM_DEVREG_CLASS_ACPI           BIT(15)
 /** Serial controller device. */
 #define PDM_DEVREG_CLASS_SERIAL         BIT(16)
+/** Misc devices (always last). */
+#define PDM_DEVREG_CLASS_MISC           BIT(31)
 /** @} */
 
 
