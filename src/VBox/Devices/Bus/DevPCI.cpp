@@ -289,7 +289,11 @@ static void pci_update_mappings(PCIDevice *d)
                         int rc = d->pDevIns->pDevHlp->pfnMMIODeregister(d->pDevIns,
                                                                         r->addr + PCIBUS2PCIGLOBALS(d->Int.s.pBus)->pci_mem_base,
                                                                         r->size);
+#if 0 /** @todo deal correctly with deregistration of MMIO2 ranges and such like. */
                         AssertMsg(VBOX_SUCCESS(rc) || !strcmp(d->name, "vga") || !strcmp(d->name, "VMMDev"), ("rc=%Vrc d=%s\n", rc, d->name)); NOREF(rc);
+#else /* less strict check */
+                        AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_IOM_MMIO_RANGE_NOT_FOUND, ("rc=%Vrc d=%s\n", rc, d->name)); NOREF(rc);
+#endif 
                     }
                 }
                 r->addr = new_addr;
