@@ -209,6 +209,7 @@ VMMGC_SOURCES   = \
 	VMMGC/VMMGCDeps.cpp \
 	VMMGC/CPUMGC.cpp \
 	VMMGC/CPUMGCA.asm \
+	VMMGC/EMGCA.asm \
 	VMMGC/DBGFGC.cpp \
 	VMMGC/IOMGC.cpp \
 	VMMGC/MMRamGC.cpp \
