@@ -176,6 +176,8 @@ typedef enum LOGGROUP
     LOG_GROUP_IPC,
     /** Main group. */
     LOG_GROUP_MAIN,
+    /** Misc. group intended for external use only. */
+    LOG_GROUP_MISC,
     /** MM group. */
     LOG_GROUP_MM,
     /** MM group. */
@@ -332,6 +334,7 @@ typedef enum LOGGROUP
     "IOM",          \
     "IPC",          \
     "MAIN",         \
+    "MISC",         \
     "MM",           \
     "MM_HEAP",      \
     "MM_HYPER",     \
