@@ -59,9 +59,6 @@ typedef EMDECL(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2,
 
 DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
 
-/* Enable to allow segment prefix support */
-#define EM_ALLOW_SEG_PREFIX
-
 /**
  * Get the current execution manager status.
  *
@@ -327,7 +324,6 @@ inline int emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 /* Convert sel:addr to a flat GC address */
 static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, POP_PARAMETER pParam, RTGCPTR pvAddr)
 {
-#ifdef EM_ALLOW_SEG_PREFIX
     int   prefix_seg, rc;
     RTSEL sel;
     CPUMSELREGHID *pSelHidReg;
@@ -338,9 +334,6 @@ static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE
         return pvAddr;
 
     return SELMToFlat(pVM, pRegFrame->eflags, sel, pSelHidReg, pvAddr);
-#else
-    return pvAddr;
-#endif
 }
 
 /**
@@ -478,7 +471,6 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 #endif
     return VERR_EM_INTERPRETER;
 }
-
 
 /**
  * INC and DEC emulation.
@@ -1079,6 +1071,84 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     return VERR_EM_INTERPRETER;
 }
 
+#ifdef IN_GC
+static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    OP_PARAMVAL param1, param2;
+
+    /* Source to make DISQueryParamVal read the register value - ugly hack */
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    if (TRPMHasTrap(pVM))
+    {
+        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        {
+            RTGCPTR pParam1;
+            uint32_t valpar, eflags;
+#ifdef VBOX_STRICT
+            uint32_t valpar1;
+#endif
+
+            AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+            switch(param1.type)
+            {
+            case PARMTYPE_ADDRESS:
+                pParam1 = (RTGCPTR)param1.val.val32;
+                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+
+                /* Safety check (in theory it could cross a page boundary and fault there though) */
+                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+
+#ifdef VBOX_STRICT
+                rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
+                if (VBOX_FAILURE(rc))
+                    return VERR_EM_INTERPRETER;
+#endif
+                break;
+
+            default:
+                return VERR_EM_INTERPRETER;
+            }
+
+            switch(param2.type)
+            {
+            case PARMTYPE_IMMEDIATE: /* register actually */
+                valpar = param2.val.val32;
+                break;
+
+            default:
+                return VERR_EM_INTERPRETER;
+            }
+
+#ifdef VBOX_STRICT
+            Log(("CmpXchg %VGv=%08x eax=%08x %08x\n", pParam1, valpar1, pRegFrame->eax, valpar));
+#endif
+            if (pCpu->prefix & PREFIX_LOCK)
+                eflags = EMGCEmulateLockCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size);
+            else
+                eflags = EMGCEmulateCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size);
+
+#ifdef VBOX_STRICT
+            rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
+            Log(("CmpXchg %VGv=%08x eax=%08x %08x ZF=%d\n", pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
+#endif
+            /* Update guest's eflags and finish. */
+            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
+                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
+
+            *pcbSize = param2.size;
+            return VINF_SUCCESS;
+        }
+    }
+    return VERR_EM_INTERPRETER;
+}
+#endif
 
 /**
  * Interpret IRET (currently only to V86 code)
@@ -1666,14 +1736,14 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         return VERR_EM_INTERPRETER;
     }
 
-#ifdef EM_ALLOW_SEG_PREFIX
-    if (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP | PREFIX_LOCK))
+#ifdef IN_GC
+    if (    (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP))
+        ||  (   (pCpu->prefix & PREFIX_LOCK) 
+             && (pCpu->pCurInstr->opcode != OP_CMPXCHG)
+            )
+       )
 #else
-    /* Out emulation above can't cope with 16 bits code yet. */
-    if (!SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid))
-        return VERR_EM_INTERPRETER;
-
-    if (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP | PREFIX_SEG | PREFIX_LOCK))
+    if (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP | PREFIX_LOCK))
 #endif
     {
         //Log(("EMInterpretInstruction: wrong prefix!!\n"));
@@ -1735,11 +1805,14 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #ifdef IN_GC
         INTERPRET_CASE(OP_RDTSC,Rdtsc);
         INTERPRET_CASE(OP_STI,Sti);
+        INTERPRET_CASE(OP_CMPXCHG, CmpXchg);
 #endif
         INTERPRET_CASE(OP_HLT,Hlt);
         INTERPRET_CASE(OP_IRET,Iret);
 #ifdef VBOX_WITH_STATISTICS
+#ifndef IN_GC
         INTERPRET_STAT_CASE(OP_CMPXCHG,CmpXchg);
+#endif
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);
         INTERPRET_STAT_CASE(OP_STOSWD,StosWD);
         INTERPRET_STAT_CASE(OP_WBINVD,WbInvd);
