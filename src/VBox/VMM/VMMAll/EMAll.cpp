@@ -1012,7 +1012,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
 #ifdef IN_GC
             /* Safety check (in theory it could cross a page boundary and fault there though) */
-            AssertReturn(pDest == pvFault, VERR_EM_INTERPRETER);
+            AssertMsgReturn(pDest == pvFault, ("eip=%VGv pDest=%VGv pvFault=%VGv\n", pRegFrame->eip, pDest, pvFault), VERR_EM_INTERPRETER);
 #endif
             rc = emRamWrite(pVM, pDest, &val32, param2.size);
             if (VBOX_FAILURE(rc))
