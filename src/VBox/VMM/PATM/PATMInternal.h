@@ -36,7 +36,7 @@
 #endif
 
 
-#define PATM_SSM_VERSION                    52
+#define PATM_SSM_VERSION                    53
 
 /* Enable for call patching. */
 #define PATM_ENABLE_CALL
@@ -69,6 +69,7 @@
 #define PATMFL_PATCHED_GUEST_CODE           BIT64(30) /** Patched guest code. */
 #define PATMFL_MUST_INSTALL_PATCHJMP        BIT64(31) /** Need to patch guest code in order to activate patch. */
 #define PATMFL_INT3_REPLACEMENT_BLOCK       BIT64(32) /** int 3 replacement block */
+#define PATMFL_EXTERNAL_JUMP_INSIDE         BIT64(33) /** A trampoline patch was created that jumps to an instruction in the patch block */
 
 #define SIZEOF_NEARJUMP8                   2 //opcode byte + 1 byte relative offset
 #define SIZEOF_NEARJUMP16                  3 //opcode byte + 2 byte relative offset
@@ -89,7 +90,7 @@
 #define MAX_PATCH_TRAPS                    4
 #define PATM_MAX_CALL_DEPTH                32
 /* Maximum nr of writes before a patch is marked dirty. (disabled) */
-#define PATM_MAX_CODE_WRITES               16
+#define PATM_MAX_CODE_WRITES               32
 /* Maximum nr of invalid writes before a patch is disabled. */
 #define PATM_MAX_INVALID_WRITES            16384
 
@@ -177,6 +178,7 @@ typedef struct RECPATCHTOGUEST
     RTGCPTR          pOrgInstrGC;
     PATM_LOOKUP_TYPE enmType;
     bool             fDirty;
+    bool             fJumpTarget;
     uint8_t          u8DirtyOpcode;  /* original opcode before writing 0xCC there to mark it dirty */
 } RECPATCHTOGUEST, *PRECPATCHTOGUEST;
 
@@ -483,6 +485,9 @@ typedef struct PATM
 
     STAMCOUNTER             StatPatchPageInserted;
     STAMCOUNTER             StatPatchPageRemoved;
+
+    STAMCOUNTER             StatPatchRefreshSuccess;
+    STAMCOUNTER             StatPatchRefreshFailed;
 
     STAMCOUNTER             StatGenRet;
     STAMCOUNTER             StatGenRetReused;
