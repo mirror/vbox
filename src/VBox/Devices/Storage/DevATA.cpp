@@ -3057,9 +3057,9 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             ataSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_SET_MULTIPLE_MODE:
-            if (s->uATARegNSector > ATA_MAX_MULT_SECTORS ||
-                s->uATARegNSector == 0 ||
-                (s->uATARegNSector & (s->uATARegNSector - 1)) != 0)
+            if (    s->uATARegNSector != 0
+                &&  (   s->uATARegNSector > ATA_MAX_MULT_SECTORS
+                     || (s->uATARegNSector & (s->uATARegNSector - 1)) != 0))
             {
                 ataCmdError(s, ABRT_ERR);
             }
