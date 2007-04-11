@@ -1142,7 +1142,7 @@ void HGCMService::ReleaseService (void)
  */
 int HGCMService::CreateAndConnectClient (uint32_t *pu32ClientIdOut, uint32_t u32ClientIdIn)
 {
-    LogFlowFunc(("pu32ClientIdOut = %p, u32ClientIdIn = %d", pu32ClientIdOut, u32ClientIdIn));
+    LogFlowFunc(("pu32ClientIdOut = %p, u32ClientIdIn = %d\n", pu32ClientIdOut, u32ClientIdIn));
 
     /* Allocate a client information structure. */
     HGCMClient *pClient = new HGCMClient ();
