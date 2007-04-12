@@ -25,8 +25,7 @@ ifdef VBOX_WITH_VRDP_MC
 DEFS       += VRDP_MC
 endif
 
-SUBDIRS_AFTER    = testcase
-# webservice
+SUBDIRS_AFTER    = testcase webservice
 
 LIBRARIES        =
 DLLS             = VBoxXML VBoxC
