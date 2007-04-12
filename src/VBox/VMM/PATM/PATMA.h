@@ -183,6 +183,8 @@ extern PATCHASMRECORD PATMSetInhibitIRQRecord;
 extern PATCHASMRECORD PATMClearInhibitIRQFaultIF0Record;
 extern PATCHASMRECORD PATMClearInhibitIRQContIF0Record;
 
+extern PATCHASMRECORD PATMMovFromSSRecord;
+
 extern uint32_t       PATMInterruptFlag;
 #ifdef __cplusplus
 }

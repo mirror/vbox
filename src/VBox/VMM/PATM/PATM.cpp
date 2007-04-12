@@ -1661,7 +1661,21 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
             {
                 Log(("Force recompilation of next instruction for OP_MOV at %VGv\n", pCurInstrGC));
                 pPatch->flags |= PATMFL_RECOMPILE_NEXT;
+                /** @todo this could cause a fault (ring 0 selector being loaded in ring 1) */
             }
+#if 0
+            else
+            if (    (pCpu->param2.flags & USE_REG_SEG)
+                &&  (pCpu->param2.base.reg_seg == USE_REG_SS)
+                &&  (pCpu->param1.flags & (USE_REG_GEN32|USE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
+            {
+                /* mov GPR, ss */
+                rc = patmPatchGenMovFromSS(pVM, pPatch, pCpu);
+                if (VBOX_SUCCESS(rc))
+                    rc = VWRN_CONTINUE_RECOMPILE;
+                break;
+            }
+#endif
         }
         goto duplicate_instr;
 
