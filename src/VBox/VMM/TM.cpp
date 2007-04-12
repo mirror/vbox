@@ -185,11 +185,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     /* mode */
     rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "TSCVirtualized", &pVM->tm.s.fTSCVirtualized);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-#if 0 /* seems to kind of work... */
-        pVM->tm.s.fTSCVirtualized = true;
-#else
-        pVM->tm.s.fTSCVirtualized = false;
-#endif 
+        pVM->tm.s.fTSCVirtualized = true; /* trap rdtsc */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, 
                           N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc); 
@@ -197,18 +193,10 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     /* source */
     rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "UseRealTSC", &pVM->tm.s.fTSCTicking);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-#if 0 /* doesn't seem to work reliably yet... xp takes several ~2 min to shutdown now. darn. */
-        pVM->tm.s.fTSCUseRealTSC = false; /* virtualize it */
-#else
-        pVM->tm.s.fTSCUseRealTSC = true; /* don't virtualize it */
-#endif 
+        pVM->tm.s.fTSCUseRealTSC = false; /* use virtual time */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, 
                           N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc); 
-#if 1 /* temporary hack */
-    if (RTEnvExist("VBOX_TM_VIRTUALIZED_TSC"))
-        pVM->tm.s.fTSCUseRealTSC = false;
-#endif 
     if (!pVM->tm.s.fTSCUseRealTSC)
         pVM->tm.s.fTSCVirtualized = true;
 
