@@ -413,6 +413,12 @@ bool VBoxProblemReporter::showModalProgressDialog (
  */
 QWidget *VBoxProblemReporter::mainWindowShown()
 {
+    /* It may happen that this method is called during VBoxGlobal
+     * initialization or even after it failed (for example, to show some
+     * error message). Return no main window in this case. */
+    if (!vboxGlobal().isValid())
+        return 0;
+
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
     if (vboxGlobal().isVMConsoleProcess())
     {
