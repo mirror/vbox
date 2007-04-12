@@ -638,6 +638,8 @@ VBoxSelectorWnd &VBoxGlobal::selectorWnd()
                ("Must NOT be a VM console process"));
 #endif
 
+    Assert (valid);
+
     if (!selector_wnd)
     {
         /*
@@ -667,7 +669,9 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
                ("Must be a VM console process"));
 #endif
 
-    if ( !console_wnd )
+    Assert (valid);
+
+    if (!console_wnd)
     {
         /*
          *  We pass the address of console_wnd to the constructor to let it be
@@ -1306,9 +1310,7 @@ CSession VBoxGlobal::openSession (const QUuid &id)
  */
 bool VBoxGlobal::startMachine (const QUuid &id)
 {
-    Assert (valid);
-    if (!valid)
-        return false;
+    AssertReturn (valid, false);
 
     CSession session;
     CVirtualBox vbox = vboxGlobal().virtualBox();
