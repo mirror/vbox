@@ -295,7 +295,7 @@ NS_DECL_CLASSINFO (VBoxCallback)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxCallback, IVirtualBoxCallback)
 #endif
 
-// Helpers for VBoxGlobal::getOpenFileName()
+// Helpers for VBoxGlobal::getOpenFileName() & getExistingDirectory()
 /////////////////////////////////////////////////////////////////////////////
 
 #if defined Q_WS_WIN
@@ -420,6 +420,53 @@ static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
     }
     return 0;
 }
+
+/**
+ *  QEvent class to carry Win32 API native dialog's result information
+ */
+class OpenNativeDialogEvent : public QEvent
+{
+public:
+
+    OpenNativeDialogEvent (const QString &aResult, QEvent::Type aType)
+        : QEvent (aType), mResult (aResult) {}
+
+    const QString& result() { return mResult; }
+
+private:
+
+    QString mResult;
+};
+
+/**
+ *  QObject class reimplementation which is the target for OpenNativeDialogEvent
+ *  event. It receives OpenNativeDialogEvent event from another thread,
+ *  stores result information and exits event processing loop.
+ */
+class LoopObject : public QObject
+{
+public:
+
+    LoopObject (QEvent::Type aType) : mType (aType), mResult (QString::null) {}
+    const QString& result() { return mResult; }
+
+private:
+
+    bool event (QEvent *aEvent)
+    {
+        if (aEvent->type() == mType)
+        {
+            OpenNativeDialogEvent *ev = (OpenNativeDialogEvent*) aEvent;
+            mResult = ev->result();
+            qApp->eventLoop()->exitLoop();
+            return true;
+        }
+        return QObject::event (aEvent);
+    }
+
+    QEvent::Type mType;
+    QString mResult;
+};
 
 #endif /* Q_WS_WIN */
 
@@ -2379,24 +2426,17 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
 #if defined Q_WS_WIN
 
     /**
-     *  QEvent type for VBoxGetExistDirectoryEvent event
-     */
-    enum { GetExistDirectoryEventType = QEvent::User + 300 };
-
-    /**
      *  QEvent class reimplementation to carry Win32 API native dialog's
      *  result folder information
      */
-    class VBoxGetExistDirectoryEvent : public QEvent
+    class GetExistDirectoryEvent : public OpenNativeDialogEvent
     {
     public:
 
-        VBoxGetExistDirectoryEvent (const QString &aName)
-            : QEvent ((QEvent::Type) GetExistDirectoryEventType)
-            , mName (aName)
-            {}
+        enum { TypeId = QEvent::User + 300 };
 
-        QString mName;
+        GetExistDirectoryEvent (const QString &aResult)
+            : OpenNativeDialogEvent (aResult, (QEvent::Type) TypeId) {}
     };
 
     /**
@@ -2456,7 +2496,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             }
             else
                 result = QString::null;
-            QApplication::postEvent (mTarget, new VBoxGetExistDirectoryEvent (result));
+            QApplication::postEvent (mTarget, new GetExistDirectoryEvent (result));
 
             /* Enable the parent widget again. */
             if (mParent)
@@ -2471,42 +2511,13 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
         QString mCaption;
     };
 
-    class LoopObject : public QObject
-    {
-    public:
-
-        LoopObject() : mFolder (QString::null) {}
-        const QString& folder() { return mFolder; }
-
-    private:
-
-        bool event (QEvent *e)
-        {
-            switch (e->type())
-            {
-                case GetExistDirectoryEventType:
-                {
-                    VBoxGetExistDirectoryEvent *ev = (VBoxGetExistDirectoryEvent *) e;
-                    mFolder = ev->mName;
-                    qApp->eventLoop()->exitLoop();
-                    return true;
-                }
-                default:
-                    break;
-            }
-            return QObject::event (e);
-        }
-
-        QString mFolder;
-    };
-
     QString dir = QDir::convertSeparators (aDir);
-    LoopObject loopObject;
+    LoopObject loopObject ((QEvent::Type) GetExistDirectoryEvent::TypeId);
     Thread openDirThread (aParent, &loopObject, dir, aCaption);
     openDirThread.start();
     qApp->eventLoop()->enterLoop();
     openDirThread.wait();
-    return loopObject.folder();
+    return loopObject.result();
 
 #else
 
@@ -2529,95 +2540,131 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
  *  QFileDialog::getOpenFileName().
  */
 /* static */
-QString VBoxGlobal::getOpenFileName (const QString &startWith,
-                                     const QString &filters,
-                                     QWidget       *parent,
-                                     const char    *name,
-                                     const QString &caption,
-                                     QString       *selectedFilter,
-                                     bool           resolveSymlinks)
+QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
+                                     const QString &aFilters,
+                                     QWidget       *aParent,
+                                     const char    *aName,
+                                     const QString &aCaption,
+                                     QString       *aSelectedFilter,
+                                     bool           aResolveSymlinks)
 {
 #if defined Q_WS_WIN
 
-    /* not yet implemented */
-    if (selectedFilter)
-        *selectedFilter = QString::null;
-
-    QString result;
-
-    QString workDir;
-    QString initSel;
-    QFileInfo fi (startWith);
-
-    if (fi.isDir())
-        workDir = startWith;
-    else
+    /**
+     *  QEvent class reimplementation to carry Win32 API native dialog's
+     *  result folder information
+     */
+    class GetOpenFileNameEvent : public OpenNativeDialogEvent
     {
-        workDir = fi.dirPath (true);
-        initSel = fi.fileName();
-    }
+    public:
 
-    workDir = QDir::convertSeparators (workDir);
-    if (!workDir.endsWith ("\\"))
-        workDir += "\\";
+        enum { TypeId = QEvent::User + 301 };
 
-    QString title = caption.isNull() ? tr ("Select a file") : caption;
+        GetOpenFileNameEvent (const QString &aResult)
+            : OpenNativeDialogEvent (aResult, (QEvent::Type) TypeId) {}
+    };
 
-    if (parent)
+    /**
+     *  QThread class reimplementation to open Win32 API native file dialog
+     */
+    class Thread : public QThread
     {
-        QEvent e (QEvent::WindowBlocked);
-        QApplication::sendEvent (parent, &e);
-        qt_enter_modal (parent);
-    }
+    public:
 
-    QWidget *topParent = parent ? parent->topLevelWidget() : qApp->mainWidget();
-    QString winFilters = winFilter (filters);
-    AssertCompile (sizeof (TCHAR) == sizeof (QChar));
-    TCHAR buf [1024];
-    if (initSel.length() > 0 && initSel.length() < sizeof (buf))
-        memcpy (buf, initSel.ucs2(), (initSel.length() + 1) * sizeof (TCHAR));
-    else
-        buf [0] = 0;
+        Thread (QWidget *aParent, QObject *aTarget,
+                const QString &aStartWith, const QString &aFilters,
+                const QString &aCaption) :
+                mParent (aParent), mTarget (aTarget),
+                mStartWith (aStartWith), mFilters (aFilters),
+                mCaption (aCaption) {}
 
-    OPENFILENAME ofn;
-    memset (&ofn, 0, sizeof (OPENFILENAME));
+        virtual void run()
+        {
+            QString result;
 
-    ofn.lStructSize = sizeof (OPENFILENAME);
-    ofn.hwndOwner = topParent ? topParent->winId() : 0;
-    ofn.lpstrFilter = (TCHAR *) winFilters.ucs2();
-    ofn.lpstrFile = buf;
-    ofn.nMaxFile = sizeof (buf) - 1;
-    ofn.lpstrInitialDir = (TCHAR *) workDir.ucs2();
-    ofn.lpstrTitle = (TCHAR *) title.ucs2();
-    ofn.Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
-                  OFN_EXPLORER | OFN_ENABLEHOOK |
-                  OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST);
-    ofn.lpfnHook = OFNHookProc;
+            QString workDir;
+            QString initSel;
+            QFileInfo fi (mStartWith);
 
-    if (GetOpenFileName (&ofn))
-    {
-        result = QString::fromUcs2 ((ushort *) ofn.lpstrFile);
-    }
+            if (fi.isDir())
+                workDir = mStartWith;
+            else
+            {
+                workDir = fi.dirPath (true);
+                initSel = fi.fileName();
+            }
 
-    if (parent)
-    {
-        qt_leave_modal (parent);
-        QEvent e (QEvent::WindowUnblocked);
-        QApplication::sendEvent (parent, &e);
-    }
+            workDir = QDir::convertSeparators (workDir);
+            if (!workDir.endsWith ("\\"))
+                workDir += "\\";
 
-    // qt_win_eatMouseMove();
-    MSG msg = {0, 0, 0, 0, 0, 0, 0};
-    while (PeekMessage (&msg, 0, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
-    if (msg.message == WM_MOUSEMOVE)
-        PostMessage (msg.hwnd, msg.message, 0, msg.lParam);
+            QString title = mCaption.isNull() ? tr ("Select a file") : mCaption;
 
-    return result.isEmpty() ? result : QFileInfo (result).absFilePath();
+            QWidget *topParent = mParent ? mParent->topLevelWidget() : qApp->mainWidget();
+            QString winFilters = winFilter (mFilters);
+            AssertCompile (sizeof (TCHAR) == sizeof (QChar));
+            TCHAR buf [1024];
+            if (initSel.length() > 0 && initSel.length() < sizeof (buf))
+                memcpy (buf, initSel.ucs2(), (initSel.length() + 1) * sizeof (TCHAR));
+            else
+                buf [0] = 0;
+
+            OPENFILENAME ofn;
+            memset (&ofn, 0, sizeof (OPENFILENAME));
+
+            ofn.lStructSize = sizeof (OPENFILENAME);
+            ofn.hwndOwner = topParent ? topParent->winId() : 0;
+            ofn.lpstrFilter = (TCHAR *) winFilters.ucs2();
+            ofn.lpstrFile = buf;
+            ofn.nMaxFile = sizeof (buf) - 1;
+            ofn.lpstrInitialDir = (TCHAR *) workDir.ucs2();
+            ofn.lpstrTitle = (TCHAR *) title.ucs2();
+            ofn.Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
+                          OFN_EXPLORER | OFN_ENABLEHOOK |
+                          OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST);
+            ofn.lpfnHook = OFNHookProc;
+
+            if (GetOpenFileName (&ofn))
+            {
+                result = QString::fromUcs2 ((ushort *) ofn.lpstrFile);
+            }
+
+            // qt_win_eatMouseMove();
+            MSG msg = {0, 0, 0, 0, 0, 0, 0};
+            while (PeekMessage (&msg, 0, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
+            if (msg.message == WM_MOUSEMOVE)
+                PostMessage (msg.hwnd, msg.message, 0, msg.lParam);
+
+            result = result.isEmpty() ? result : QFileInfo (result).absFilePath();
+
+            QApplication::postEvent (mTarget, new GetOpenFileNameEvent (result));
+        }
+
+    private:
+
+        QWidget *mParent;
+        QObject *mTarget;
+        QString mStartWith;
+        QString mFilters;
+        QString mCaption;
+    };
+
+    if (aSelectedFilter)
+        *aSelectedFilter = QString::null;
+    QString startWith = QDir::convertSeparators (aStartWith);
+    LoopObject loopObject ((QEvent::Type) GetOpenFileNameEvent::TypeId);
+    if (aParent) qt_enter_modal (aParent);
+    Thread openDirThread (aParent, &loopObject, startWith, aFilters, aCaption);
+    openDirThread.start();
+    qApp->eventLoop()->enterLoop();
+    openDirThread.wait();
+    if (aParent) qt_leave_modal (aParent);
+    return loopObject.result();
 
 #else
 
-    return QFileDialog::getOpenFileName (startWith, filters, parent, name,
-                                         caption, selectedFilter, resolveSymlinks);
+    return QFileDialog::getOpenFileName (aStartWith, aFilters, aParent, aName,
+                                         aCaption, aSelectedFilter, aResolveSymlinks);
 
 #endif
 }
