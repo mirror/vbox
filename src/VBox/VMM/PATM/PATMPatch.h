@@ -29,7 +29,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
 int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC);
 int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu);
 int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu);
-int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu);
+int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC);
 int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pTargetGC, uint32_t opcode, bool fSizeOverride);
 int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pTargetGC, uint32_t opcode, bool fSizeOverride);
 int patmPatchGenPushf(PVM pVM, PPATCHINFO pPatch, bool fSizeOverride);

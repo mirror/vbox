@@ -1651,10 +1651,8 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
     }
 
     case OP_MOV:
-        if (pCpu->pCurInstr->optype & OPTYPE_INHIBIT_IRQS)
+        if (pCpu->pCurInstr->optype & OPTYPE_POTENTIALLY_DANGEROUS)
         {
-            Assert(pCpu->pCurInstr->param1 == OP_PARM_Sw && (pCpu->param1.flags & USE_REG_SEG));
-
             /* mov ss, src? */
             if (    (pCpu->param1.flags & USE_REG_SEG)
                 &&  (pCpu->param1.base.reg_seg == USE_REG_SS))
@@ -1663,19 +1661,17 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
                 pPatch->flags |= PATMFL_RECOMPILE_NEXT;
                 /** @todo this could cause a fault (ring 0 selector being loaded in ring 1) */
             }
-#if 0
             else
             if (    (pCpu->param2.flags & USE_REG_SEG)
                 &&  (pCpu->param2.base.reg_seg == USE_REG_SS)
                 &&  (pCpu->param1.flags & (USE_REG_GEN32|USE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
             {
                 /* mov GPR, ss */
-                rc = patmPatchGenMovFromSS(pVM, pPatch, pCpu);
+                rc = patmPatchGenMovFromSS(pVM, pPatch, pCpu, pCurInstrGC);
                 if (VBOX_SUCCESS(rc))
                     rc = VWRN_CONTINUE_RECOMPILE;
                 break;
             }
-#endif
         }
         goto duplicate_instr;
 

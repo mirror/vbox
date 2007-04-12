@@ -2556,8 +2556,8 @@ GLOBALNAME PATMMovFromSSRecord
     RTCCPTR_DEF PATMMovFromSS_Start
     DD      0
     DD      0
-    DD      PATMMovFromSS_Start_End - PATMMovFromSS_Start
     DD      0
+    DD      PATMMovFromSS_Start_End - PATMMovFromSS_Start
     DD      0
     DD      0ffffffffh
 
