@@ -1280,12 +1280,14 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 /*
  * mov GPR, SS
  */
-int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
+int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC)
 {
     uint32_t size, offset;
 
+    Log(("patmPatchGenMovFromSS %VGv\n", pCurInstrGC));
+
     PATCHGEN_PROLOG(pVM, pPatch);
-    size = patmPatchGenCode(pVM, pPatch, pPB, &PATMSetPIFRecord, 0, false);
+    size = patmPatchGenCode(pVM, pPatch, pPB, &PATMClearPIFRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
     /* pushes ss, checks and corrects RPL */
@@ -1298,12 +1300,12 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
     offset = 0;
     if (pPatch->flags & PATMFL_CODE32)
         pPB[offset++] = 0x66; /* size override -> 16 bits pop */
-    pPB[offset++] = 0x50 + pCpu->param1.base.reg_gen32;
+    pPB[offset++] = 0x58 + pCpu->param1.base.reg_gen32;
     PATCHGEN_EPILOG(pPatch, offset);
 
 
     PATCHGEN_PROLOG_NODEF(pVM, pPatch);
-    size = patmPatchGenCode(pVM, pPatch, pPB, &PATMClearPIFRecord, 0, false);
+    size = patmPatchGenCode(pVM, pPatch, pPB, &PATMSetPIFRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
     return VINF_SUCCESS;
