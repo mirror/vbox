@@ -7,7 +7,7 @@
         <translation>Русский</translation>
     </message>
     <message>
-        <source>built-in</source>
+        <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
         <translation></translation>
     </message>
@@ -17,7 +17,7 @@
         <translation>Russian</translation>
     </message>
     <message>
-        <source>built-in</source>
+        <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
         <translation></translation>
     </message>

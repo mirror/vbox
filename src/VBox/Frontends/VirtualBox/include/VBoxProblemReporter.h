@@ -97,6 +97,9 @@ public:
 
     void cannotOpenURL (const QString &aURL);
 
+    void cannotFindLanguage (const QString &aLangID, const QString &aNlsPath);
+    void cannotLoadLanguage (const QString &aLangFile);
+
     void cannotInitCOM (HRESULT rc);
     void cannotCreateVirtualBox (const CVirtualBox &vbox);
 

@@ -470,35 +470,6 @@ private:
 
 #endif /* Q_WS_WIN */
 
-// Helpers for VBoxGlobal::loadLanguage()
-/////////////////////////////////////////////////////////////////////////////
-
-extern const QString transFileName = "VirtualBox_";
-extern const QString langIdRegExp  = "(([a-z]{2})(_([A-Z]{2}))?)";
-extern const QString builtInName   = "built_in";
-static const QString transFileExt  = ".qm";
-class VBoxTranslator : public QTranslator
-{
-public:
-
-    VBoxTranslator (QObject *aParent = 0)
-        : QTranslator (aParent, "VBoxTranslatorObject") {}
-
-    bool loadFile (const QString &aFileName)
-    {
-        QFile file (aFileName);
-        if (!file.open (IO_ReadOnly))
-            return false;
-        mData = file.readAll();
-        return load ((uchar*)mData.data(), mData.size());
-    }
-
-private:
-
-    QByteArray mData;
-};
-static VBoxTranslator *mTranslator = 0;
-
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -514,6 +485,7 @@ static bool vboxGlobal_cleanup = false;
  */
 static void vboxGlobalCleanup()
 {
+    Assert (!vboxGlobal_cleanup);
     vboxGlobal_cleanup = true;
     vboxGlobal().cleanup();
 }
@@ -1677,112 +1649,8 @@ bool VBoxGlobal::openURL (const QString &aURL)
 }
 
 /**
- *  This variable used for storing loaded language id.
- */
-/* static */
-QString VBoxGlobal::mLoadedLangId = builtInName;
-
-/**
- *  This method returns loaded language id.
- */
-/* static */
-const QString& VBoxGlobal::languageID()
-{
-    return mLoadedLangId;
-}
-
-/**
- *  This method is used to load language by language id.
- */
-/* static */
-void VBoxGlobal::loadLanguage (const QString &aLang)
-{
-    const QString &langId = aLang.isNull() ?
-        VBoxGlobal::systemLanguageID() : aLang;
-    QString languageFileName = QString::null;
-    QString selectedLangId = builtInName;
-
-    if (aLang != builtInName)
-    {
-        QRegExp regExp (langIdRegExp);
-        int rule = regExp.search (langId);
-        /* this rule should match the language id completely */
-        Assert (!rule);
-        if (rule == -1) return;
-
-        QString mId1part = regExp.cap (2);
-        QString mId2part = regExp.cap (4);
-        /* language localization (second part) should not be empty? */
-        // Assert (!mId2part.isEmpty());
-
-        QString nlsPath = qApp->applicationDirPath() + "/nls";
-        QDir nlsDir (nlsPath);
-        if (nlsDir.exists (transFileName + langId + transFileExt))
-        {
-            languageFileName = nlsDir.absFilePath (transFileName + langId + transFileExt);
-            selectedLangId = langId;
-        }
-        else if (nlsDir.exists (transFileName + mId1part + transFileExt))
-        {
-            languageFileName = nlsDir.absFilePath (transFileName + mId1part + transFileExt);
-            selectedLangId = mId1part;
-        }
-
-        if (mTranslator && languageFileName.isNull())
-        {
-            /* process downgrade situation */
-            int loadLanguageQuest = vboxProblem().message (
-                0, VBoxProblemReporter::Question,
-                tr ("<p>Correct *.qm language file for language with "
-                    "<b>%1</b> id could not be found in the "
-                    "%2 location.</p> Do you want to use built-in language "
-                    "instead of it?</p>").arg (langId).arg (nlsPath),
-                0, /* autoConfirmId */
-                QIMessageBox::Ok | QIMessageBox::Default,
-                QIMessageBox::Cancel | QIMessageBox::Escape);
-            if (loadLanguageQuest == QIMessageBox::Cancel)
-                return;
-        }
-    }
-
-    if (loadLanguageFile (languageFileName))
-    {
-        mLoadedLangId = selectedLangId;
-    }
-    else
-    {
-        /* passed file is not loaded */
-        vboxProblem().message (
-            0, VBoxProblemReporter::Warning,
-            tr ("<p>Language file <b>%1</b> could not be loaded. This "
-                "issue could be caused by incorrect file content.</p>")
-                .arg (languageFileName),
-            0, /* autoConfirmId */
-            QIMessageBox::Ok | QIMessageBox::Default);
-    }
-}
-
-/**
- *  This method is used to load language file into translator
- *  and install loaded translator.
- */
-/* static */
-bool VBoxGlobal::loadLanguageFile (const QString &aFileName)
-{
-    if (mTranslator)
-        qApp->removeTranslator (mTranslator);
-    delete mTranslator;
-    mTranslator = new VBoxTranslator();
-    bool status = true;
-    if (!aFileName.isNull())
-        status = mTranslator->loadFile (aFileName);
-    qApp->installTranslator (mTranslator);
-    return status;
-}
-
-/**
  *  Native language name of the currently installed translation.
- *  Returns "English [built-in]" if no translation is installed
+ *  Returns "English" if no translation is installed
  *  or if the translation file is invalid.
  */
 QString VBoxGlobal::languageName() const
@@ -1794,19 +1662,19 @@ QString VBoxGlobal::languageName() const
 
 /**
  *  Native language country name of the currently installed translation.
- *  Returns "" if no translation is installed or if the translation file is
+ *  Returns "--" if no translation is installed or if the translation file is
  *  invalid, or if the language is independent on the country.
  */
 QString VBoxGlobal::languageCountry() const
 {
-    return qApp->translate ("@@@", "built-in",
+    return qApp->translate ("@@@", "--",
                             "Native language country name "
                             "(empty if this language is for all countries)");
 }
 
 /**
  *  Language name of the currently installed translation, in English.
- *  Returns "English [built-in]" if no translation is installed
+ *  Returns "English" if no translation is installed
  *  or if the translation file is invalid.
  */
 QString VBoxGlobal::languageNameEnglish() const
@@ -1818,12 +1686,12 @@ QString VBoxGlobal::languageNameEnglish() const
 
 /**
  *  Language country name of the currently installed translation, in English.
- *  Returns "" if no translation is installed or if the translation file is
+ *  Returns "--" if no translation is installed or if the translation file is
  *  invalid, or if the language is independent on the country.
  */
 QString VBoxGlobal::languageCountryEnglish() const
 {
-    return qApp->translate ("@@@", "built-in",
+    return qApp->translate ("@@@", "--",
                             "Language country name, in English "
                             "(empty if native country name is empty)");
 }
@@ -1952,6 +1820,128 @@ void VBoxGlobal::languageChange()
 
 // public static stuff
 ////////////////////////////////////////////////////////////////////////////////
+
+extern const char *gVBoxLangSubDir = "/nls";
+extern const char *gVBoxLangFileBase = "VirtualBox_";
+extern const char *gVBoxLangFileExt = ".qm";
+extern const char *gVBoxLangIDRegExp = "(([a-z]{2})(?:_([A-Z]{2}))?)";
+extern const char *gVBoxBuiltInLangName   = "built_in";
+
+class VBoxTranslator : public QTranslator
+{
+public:
+
+    VBoxTranslator (QObject *aParent = 0)
+        : QTranslator (aParent, "VBoxTranslatorObject") {}
+
+    bool loadFile (const QString &aFileName)
+    {
+        QFile file (aFileName);
+        if (!file.open (IO_ReadOnly))
+            return false;
+        mData = file.readAll();
+        return load ((uchar*) mData.data(), mData.size());
+    }
+
+private:
+
+    QByteArray mData;
+};
+
+static VBoxTranslator *sTranslator = 0;
+static QString sLoadedLangId = gVBoxBuiltInLangName;
+
+/**
+ *  Returns the loaded (active) language ID.
+ *  Note that it may not match with VMGlobalSettings::languageId() if the
+ *  specified language cannot be loaded.
+ *  If the built-in language is active, this method returns "built_in".
+ */
+/* static */
+QString VBoxGlobal::languageId()
+{
+    return sLoadedLangId;
+}
+
+/**
+ *  Loads the language by language ID.
+ *  @param aLang language ID in in form of xx_YY
+ */
+/* static */
+void VBoxGlobal::loadLanguage (const QString &aLang)
+{
+    QString langId = aLang.isNull() ?
+        VBoxGlobal::systemLanguageId() : aLang;
+    QString languageFileName = QString::null;
+    QString selectedLangId = gVBoxBuiltInLangName;
+
+    if (aLang != gVBoxBuiltInLangName)
+    {
+        QRegExp regExp (gVBoxLangIDRegExp);
+        int rule = regExp.search (langId);
+        /* this rule should match the language id completely */
+        Assert (!rule);
+        if (rule == -1) return;
+
+        QString mId1part = regExp.cap (2);
+        QString mId2part = regExp.cap (4);
+        /* language localization (second part) should not be empty? */
+        // Assert (!mId2part.isEmpty());
+
+        QString nlsPath = qApp->applicationDirPath() + gVBoxLangSubDir;
+        QDir nlsDir (nlsPath);
+        if (nlsDir.exists (gVBoxLangFileBase + langId + gVBoxLangFileExt))
+        {
+            languageFileName = nlsDir.absFilePath (gVBoxLangFileBase + langId +
+                                                   gVBoxLangFileExt);
+            selectedLangId = langId;
+        }
+        else if (nlsDir.exists (gVBoxLangFileBase + mId1part + gVBoxLangFileExt))
+        {
+            languageFileName = nlsDir.absFilePath (gVBoxLangFileBase + mId1part +
+                                                   gVBoxLangFileExt);
+            selectedLangId = mId1part;
+        }
+
+        if (sTranslator && languageFileName.isNull())
+        {
+            vboxProblem().cannotFindLanguage (langId, nlsPath);
+            return;
+        }
+    }
+
+    /* load the language file */
+    if (sTranslator)
+    {
+        qApp->removeTranslator (sTranslator);
+        delete sTranslator;
+    }
+    sTranslator = new VBoxTranslator (qApp);
+    Assert (sTranslator);
+    bool loadOk = true;
+    if (sTranslator)
+    {
+        /* an empty file name means built-in English*/
+        if (selectedLangId != gVBoxBuiltInLangName)
+        {
+            Assert (!languageFileName.isNull());
+            loadOk = sTranslator->loadFile (languageFileName);
+        }
+        /* we install the translator in any case: on failure, this will
+         * activate an empty (aka built-in) translator */
+        qApp->installTranslator (sTranslator);
+    }
+    else
+        loadOk = false;
+    
+    if (loadOk)
+        sLoadedLangId = selectedLangId;
+    else
+    {
+        vboxProblem().cannotLoadLanguage (languageFileName);
+        sLoadedLangId = gVBoxBuiltInLangName;
+    }
+}
 
 /* static */
 QIconSet VBoxGlobal::iconSet (const char *aNormal,
@@ -2391,7 +2381,7 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
  *  http://opengroup.org/onlinepubs/007908799/xbd/envvar.html
  */
 /* static */
-QString VBoxGlobal::systemLanguageID()
+QString VBoxGlobal::systemLanguageId()
 {
 #ifdef Q_OS_UNIX
     const char *s = getenv ("LC_ALL");
@@ -2898,7 +2888,7 @@ void VBoxGlobal::init()
     }
 
     /* Load predefined language */
-    const QString &languageId = gset.languageId();
+    QString languageId = gset.languageId();
     if (!languageId.isNull())
         loadLanguage (languageId);
 

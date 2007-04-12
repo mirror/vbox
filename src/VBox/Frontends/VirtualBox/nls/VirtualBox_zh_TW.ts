@@ -7,7 +7,7 @@
         <translation type="unfinished">Chinese</translation>
     </message>
     <message>
-        <source>built-in</source>
+        <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
         <translation type="unfinished">Taiwan</translation>
     </message>
@@ -17,14 +17,14 @@
         <translation type="unfinished">Chinese</translation>
     </message>
     <message>
-        <source>built-in</source>
+        <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
         <translation type="unfinished">Taiwan</translation>
     </message>
     <message>
         <source>InnoTek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">bluebat</translation>
     </message>
 </context>
 <context>

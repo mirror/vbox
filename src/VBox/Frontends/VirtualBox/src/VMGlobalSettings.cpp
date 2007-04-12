@@ -96,7 +96,9 @@ gPropertyMap[] =
     { "GUI/Input/HostKey",      "hostKey",      "\\d*[1-9]\\d*" },
     { "GUI/Input/AutoCapture",  "autoCapture",  "true|false" },
     { "GUI/Customizations",     "guiFeatures",  "\\S+" },
-    { "GUI/LanguageID",         "languageId",   "([a-z]{2,5}(_[a-zA-Z]{2})?)?" },
+    /* LanguageID regexp must correlate with gVBoxLangIDRegExp in
+     * VBoxGlobal.cpp */
+    { "GUI/LanguageID",         "languageId",   "(([a-z]{2})(_([A-Z]{2}))?)|(built_in)" },
 };
 
 void VMGlobalSettings::setHostKey (int key)

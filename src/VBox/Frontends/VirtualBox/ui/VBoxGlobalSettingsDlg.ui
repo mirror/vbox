@@ -781,6 +781,9 @@ with all fields set to the values of the selected USB device attached to the hos
                             <property name="name">
                                 <cstring>unnamed</cstring>
                             </property>
+                            <property name="spacing">
+                                <number>10</number>
+                            </property>
                             <widget class="QListView">
                                 <column>
                                     <property name="text">
@@ -790,7 +793,7 @@ with all fields set to the values of the selected USB device attached to the hos
                                         <bool>false</bool>
                                     </property>
                                     <property name="resizable">
-                                        <bool>false</bool>
+                                        <bool>true</bool>
                                     </property>
                                 </column>
                                 <property name="name">
@@ -798,17 +801,20 @@ with all fields set to the values of the selected USB device attached to the hos
                                 </property>
                                 <property name="sizePolicy">
                                     <sizepolicy>
-                                        <hsizetype>0</hsizetype>
+                                        <hsizetype>4</hsizetype>
                                         <vsizetype>7</vsizetype>
                                         <horstretch>0</horstretch>
                                         <verstretch>0</verstretch>
                                     </sizepolicy>
                                 </property>
                                 <property name="resizeMode">
-                                    <enum>AllColumns</enum>
+                                    <enum>NoColumn</enum>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>The list of languages available for interface translation.</string>
+                                    <string>
+Lists all available user interface languages. The effective language
+is written in &lt;b&gt;bold&lt;/b&gt;.
+                                    </string>
                                 </property>
                             </widget>
                             <widget class="QLayoutWidget">
@@ -833,8 +839,8 @@ with all fields set to the values of the selected USB device attached to the hos
                                                 </property>
                                                 <property name="sizePolicy">
                                                     <sizepolicy>
-                                                        <hsizetype>7</hsizetype>
-                                                        <vsizetype>5</vsizetype>
+                                                        <hsizetype>1</hsizetype>
+                                                        <vsizetype>1</vsizetype>
                                                         <horstretch>0</horstretch>
                                                         <verstretch>0</verstretch>
                                                     </sizepolicy>
@@ -853,7 +859,7 @@ with all fields set to the values of the selected USB device attached to the hos
                                                 <property name="sizePolicy">
                                                     <sizepolicy>
                                                         <hsizetype>1</hsizetype>
-                                                        <vsizetype>5</vsizetype>
+                                                        <vsizetype>1</vsizetype>
                                                         <horstretch>0</horstretch>
                                                         <verstretch>0</verstretch>
                                                     </sizepolicy>
@@ -872,7 +878,7 @@ with all fields set to the values of the selected USB device attached to the hos
                                                 <property name="sizePolicy">
                                                     <sizepolicy>
                                                         <hsizetype>1</hsizetype>
-                                                        <vsizetype>5</vsizetype>
+                                                        <vsizetype>1</vsizetype>
                                                         <horstretch>0</horstretch>
                                                         <verstretch>0</verstretch>
                                                     </sizepolicy>
@@ -890,8 +896,8 @@ with all fields set to the values of the selected USB device attached to the hos
                                                 </property>
                                                 <property name="sizePolicy">
                                                     <sizepolicy>
-                                                        <hsizetype>7</hsizetype>
-                                                        <vsizetype>5</vsizetype>
+                                                        <hsizetype>1</hsizetype>
+                                                        <vsizetype>1</vsizetype>
                                                         <horstretch>0</horstretch>
                                                         <verstretch>0</verstretch>
                                                     </sizepolicy>
@@ -918,12 +924,29 @@ with all fields set to the values of the selected USB device attached to the hos
                                         <property name="sizeHint">
                                             <size>
                                                 <width>20</width>
-                                                <height>121</height>
+                                                <height>0</height>
                                             </size>
                                         </property>
                                     </spacer>
                                 </vbox>
                             </widget>
+                            <spacer>
+                                <property name="name">
+                                    <cstring>spacer8</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>0</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
                         </hbox>
                     </widget>
                 </vbox>
@@ -1213,6 +1236,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <include location="global" impldecl="in implementation">qvalidator.h</include>
     <include location="global" impldecl="in implementation">qmessagebox.h</include>
     <include location="global" impldecl="in implementation">qfont.h</include>
+    <include location="global" impldecl="in implementation">qpainter.h</include>
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
     <include location="global" impldecl="in implementation">qfiledialog.h</include>
     <include location="global" impldecl="in implementation">qfocusdata.h</include>
