@@ -2887,7 +2887,7 @@ void VBoxGlobal::init()
         return;
     }
 
-    /* Load predefined language */
+    /* Load customized language if any */
     QString languageId = gset.languageId();
     if (!languageId.isNull())
         loadLanguage (languageId);

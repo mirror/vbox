@@ -564,6 +564,8 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
     /* language properties */
 
     QString langId = gs.languageId();
+    if (langId.isNull())
+        langId = VBoxGlobal::languageId();
     QListViewItem *item = lvLanguages->findItem (langId, 1);
     if (!item)
     {
