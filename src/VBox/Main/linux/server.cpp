@@ -245,18 +245,33 @@ public:
             if (gEventQ)
                 gEventQ->IsOnCurrentThread (&onMainThread);
 
-            LogFlowFunc (("Last VirtualBox instance was released, "
-                          "scheduling server shutdown in %d ms...\n",
-                          VBoxSVC_ShutdownDelay));
+            PRBool timerStarted = PR_FALSE;
 
-            int vrc = RTTimerStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
-            AssertRC (vrc);
-            if (VBOX_FAILURE (vrc))
+            /* sTimes is null if this call originates from
+             * FactoryDestructor() */
+            if (sTimer != NULL)
             {
-                /* Failed to start the timer, post the shutdown event
-                 * manually if not on the main thread alreay. */
+                LogFlowFunc (("Last VirtualBox instance was released, "
+                              "scheduling server shutdown in %d ms...\n",
+                              VBoxSVC_ShutdownDelay));
+
+                int vrc = RTTimerStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
+                AssertRC (vrc);
+                timerStarted = SUCCEEDED (vrc);
+            }
+            else
+            {
+                LogFlowFunc (("Last VirtualBox instance was released "
+                              "on XPCOM shutdown.\n"));
+                Assert (onMainThread);
+            }
+
+            if (!timerStarted)
+            {
                 if (!onMainThread)
                 {
+                    /* Failed to start the timer, post the shutdown event
+                     * manually if not on the main thread alreay. */
                     ShutdownTimer (NULL, NULL);
                 }
                 else
@@ -272,11 +287,14 @@ public:
                      *    that DestructEventHandler() has been called, but another
                      *    client was faster and requested VirtualBox again.
                      *
-                     * In either case, since we're on the main thread already,
-                     * it's necessary just to release the instance once more
-                     * to call its destructor.
+                     * In either case, there is nothing to do.
+                     * 
+                     * Note: case b) is actually no more valid since we don't
+                     * call Release() from DestructEventHandler() in this case
+                     * any more. Thus, we assert below.
                      */
-                    count = VirtualBox::Release();
+
+                    Assert (gEventQ == NULL);
                 }
             }
         }
