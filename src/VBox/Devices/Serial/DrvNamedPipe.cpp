@@ -552,6 +552,30 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
     PDRVNAMEDPIPE pData = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
     LogFlow(("%s: %s\n", __FUNCTION__, pData->pszLocation));
 
+    if (pData->ListenThread)
+    {
+        RTThreadWait(pData->ListenThread, 250, NULL);
+        if (pData->ListenThread != NIL_RTTHREAD)
+            LogRel(("NamedPipe%d: listen thread did not terminate\n", pDrvIns->iInstance));
+    }
+
+    if (pData->pszLocation)
+        MMR3HeapFree(pData->pszLocation);
+}
+
+
+/**
+ * Power off a named pipe stream driver instance.
+ *
+ * This does most of the destruction work, to avoid ordering dependencies.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVNAMEDPIPE pData = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
+    LogFlow(("%s: %s\n", __FUNCTION__, pData->pszLocation));
+
     pData->fShutdown = true;
 
 #ifdef __WIN__
@@ -583,16 +607,6 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
             close(pData->LocalSocket);
     }
 #endif /* !__WIN__ */
-
-    if (pData->ListenThread)
-    {
-        RTThreadWait(pData->ListenThread, 250, NULL);
-        if (pData->ListenThread != NIL_RTTHREAD)
-            LogRel(("NamedPipe%d: listen thread did not terminate\n", pDrvIns->iInstance));
-    }
-
-    if (pData->pszLocation)
-        MMR3HeapFree(pData->pszLocation);
 }
 
 
@@ -632,5 +646,5 @@ const PDMDRVREG g_DrvNamedPipe =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    NULL
+    drvNamedPipePowerOff,
 };
