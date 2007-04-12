@@ -60,10 +60,12 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
-//#define DEBUG_NO_RING0_ASSERTIONS
+#ifdef DEBUG
+#define DEBUG_NO_RING0_ASSERTIONS
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
 #endif
+#endif 
 
 /*******************************************************************************
 *   Global Variables                                                           *
