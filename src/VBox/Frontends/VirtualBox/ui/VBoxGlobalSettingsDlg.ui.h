@@ -30,9 +30,12 @@
 *****************************************************************************/
 
 
-extern const QString transFileName;
-extern const QString langIdRegExp;
-extern const QString builtInName;
+/* defined in VBoxGlobal.cpp */
+extern const char *gVBoxLangSubDir;
+extern const char *gVBoxLangFileBase;
+extern const char *gVBoxLangFileExt;
+extern const char *gVBoxLangIDRegExp;
+extern const char *gVBoxBuiltInLangName;
 
 /**
  *  Returns the path to the item in the form of 'grandparent > parent > item'
@@ -82,57 +85,67 @@ public:
 
     enum { TypeId = 1001 };
 
-    LanguageItem (QListView *aParent, const QString &aName)
-        : QListViewItem (aParent, aName)
-    {
-        /* making separator field */
-        if (aName == "-")
-        {
-            QString sepLine;
-            while (listView()->fontMetrics().width (sepLine) < listView()->width())
-                sepLine += "-";
-            setText (0, sepLine);
-            setSelectable (false);
-        }
-    }
-
     LanguageItem (QListView *aParent, const QTranslator &aTranslator,
                   const QString &aId, bool aBuiltIn = false)
-        : QListViewItem (aParent)
+        : QListViewItem (aParent), mBuiltIn (aBuiltIn), mInvalid (false)
     {
         QTranslatorMessage transMes;
 
-        QString nativeLanguage = translate (aTranslator,
-            "@@@", "English", "Native language name", aBuiltIn);
-        QString nativeCountry = translate (aTranslator,
-            "@@@", "built-in", "Native language country name "
-            "(empty if this language is for all countries)", aBuiltIn);
+        /* Note: context/source/comment arguments below must match strings
+         * used in VBoxGlobal::languageName() and friends (the latter are the
+         * source of information for the lupdate tool that generates
+         * translation files) */
 
-        QString englishLanguage = translate (aTranslator,
-            "@@@", "English", "Language name, in English", aBuiltIn);
-        QString englishCountry = translate (aTranslator,
-            "@@@", "built-in", "Language country name, in English "
-            "(empty if native country name is empty)", aBuiltIn);
+        QString nativeLanguage = tratra (aTranslator,
+            "@@@", "English", "Native language name");
+        QString nativeCountry = tratra (aTranslator,
+            "@@@", "--", "Native language country name "
+            "(empty if this language is for all countries)");
 
-        QString translatorsName = translate (aTranslator,
-            "@@@", "InnoTek", "Comma-separated list of translators", aBuiltIn);
-        if (translatorsName.isNull())
-            translatorsName = QListView::tr ("--", "no info");
+        QString englishLanguage = tratra (aTranslator,
+            "@@@", "English", "Language name, in English");
+        QString englishCountry = tratra (aTranslator,
+            "@@@", "--", "Language country name, in English "
+            "(empty if native country name is empty)");
+
+        QString translatorsName = tratra (aTranslator,
+            "@@@", "InnoTek", "Comma-separated list of translators");
 
         QString itemName = nativeLanguage;
-        if (!nativeCountry.isNull())
-            itemName += " (" + nativeCountry + ")";
-
         QString langName = englishLanguage;
-        if (!englishCountry.isNull())
-            langName += " (" + englishCountry + ")";
+
         if (!aBuiltIn)
-            langName = itemName + " / " + langName;
+        {
+            if (nativeCountry != "--")
+                itemName += " (" + nativeCountry + ")";
+
+            if (englishCountry != "--")
+                langName += " (" + englishCountry + ")";
+
+            if (itemName != langName)
+                langName = itemName + " / " + langName;
+        }
+        else
+        {
+            itemName += VBoxGlobalSettingsDlg::tr (" (built-in)", "Language");
+            langName += VBoxGlobalSettingsDlg::tr (" (built-in)", "Language");
+        }
 
         setText (0, itemName);
         setText (1, aId);
         setText (2, langName);
         setText (3, translatorsName);
+    }
+
+    /* Constructs an item for an invalid language ID (i.e. when a language
+     * file is missing or corrupt). */
+    LanguageItem (QListView *aParent, const QString &aId)
+        : QListViewItem (aParent), mBuiltIn (false), mInvalid (true)
+    {
+        setText (0, QString ("<%1>").arg (aId));
+        setText (1, aId);
+        setText (2, VBoxGlobalSettingsDlg::tr ("<unavailabie>", "Language"));
+        setText (3, VBoxGlobalSettingsDlg::tr ("<unknown>", "Author(s)"));
     }
 
     int rtti() const { return TypeId; }
@@ -141,33 +154,76 @@ public:
     {
         QString thisValue = text (1);
         QString thatValue = aItem->text (1);
-        if (thisValue == builtInName)
+        if (thisValue == gVBoxBuiltInLangName)
             return -1;
-        else if (thatValue == builtInName)
+        else if (thatValue == gVBoxBuiltInLangName)
             return 1;
         else
             return QListViewItem::compare (aItem, aColumn, aAscending);
     }
 
     void paintCell (QPainter *aPainter, const QColorGroup &aGroup,
-                    int aColumn, int aWidth, int aSlign)
+                    int aColumn, int aWidth, int aAlign)
     {
-        /* adjusting list-view width */
-        int fullwidth = width (listView()->fontMetrics(), listView(), 0) + 4;
-        if (listView()->width() < fullwidth)
-            listView()->setFixedWidth (fullwidth);
-        /* standard paint procedure */
-        QListViewItem::paintCell (aPainter, aGroup, aColumn, aWidth, aSlign);
+        QFont font = aPainter->font();
+
+        if (mInvalid)
+            font.setItalic (true);
+        /* mark the effectively active language */
+        if (text (1) == VBoxGlobal::languageId())
+            font.setBold (true);
+
+        if (aPainter->font() != font)
+            aPainter->setFont (font);
+
+        QListViewItem::paintCell (aPainter, aGroup, aColumn, aWidth, aAlign);
+        
+        if (mBuiltIn)
+        {
+            int y = height() - 1;
+            aPainter->setPen (aGroup.mid());
+            aPainter->drawLine (0, y, aWidth - 1, y);
+        }
+    }
+
+    int width (const QFontMetrics &aFM, const QListView *aLV, int aC) const
+    {
+        QFont font = aLV->font();
+
+        if (mInvalid)
+            font.setItalic (true);
+        /* mark the effectively active language */
+        if (text (1) == VBoxGlobal::languageId())
+            font.setBold (true);
+
+        QFontMetrics fm = aFM;
+        if (aLV->font() != font)
+            fm = QFontMetrics (font);
+
+        return QListViewItem::width (fm, aLV, aC);
+    }
+
+    void setup ()
+    {
+        QListViewItem::setup();
+        if (mBuiltIn)
+            setHeight (height() + 1);
     }
 
 private:
 
-    QString translate (const QTranslator &aTranslator, const char *aCtxt,
-                       const char *aSrc, const char *aCmnt, bool aBuiltIn)
+    QString tratra (const QTranslator &aTranslator, const char *aCtxt,
+                       const char *aSrc, const char *aCmnt)
     {
-        QTranslatorMessage msg = aTranslator.findMessage (aCtxt, aSrc, aCmnt);
-        return msg.translation().isNull() && aBuiltIn ? QString (aSrc) : msg.translation();
+        QString msg = aTranslator.findMessage (aCtxt, aSrc, aCmnt).translation();
+        /* return the source text if no translation is found */
+        if (msg.isEmpty())
+            msg = QString (aSrc);
+        return msg;
     }
+
+    bool mBuiltIn : 1;
+    bool mInvalid : 1;
 };
 
 
@@ -299,24 +355,30 @@ void VBoxGlobalSettingsDlg::init()
 
     lvLanguages->header()->hide();
     lvLanguages->setSorting (0);
-    QString nlsPath = qApp->applicationDirPath() + "/nls";
+    QString nlsPath = qApp->applicationDirPath() + gVBoxLangSubDir;
     QDir nlsDir (nlsPath);
-    QStringList files = nlsDir.entryList (transFileName + "*", QDir::Files);
+    QStringList files = nlsDir.entryList (QString ("%1*%2")
+                                          .arg (gVBoxLangFileBase, gVBoxLangFileExt),
+                                          QDir::Files);
     QTranslator translator;
-    new LanguageItem (lvLanguages, translator, builtInName, true /* built-in */);
-    new LanguageItem (lvLanguages, tr ("-"));
-    for (QStringList::Iterator it = files.begin(); it != files.end(); ++it)
+    /* add the built-in language */
+    new LanguageItem (lvLanguages, translator, gVBoxBuiltInLangName, true /* built-in */);
+    /* add all existing languages */
+    for (QStringList::Iterator it = files.begin(); it != files.end(); ++ it)
     {
-        const QString &fileName = *it;
-        bool status = translator.load (fileName, nlsPath);
-        if (!status) continue;
-
-        QRegExp regExp (transFileName + langIdRegExp);
+        QString fileName = *it;
+        QRegExp regExp (QString (gVBoxLangFileBase) + gVBoxLangIDRegExp);
         int pos = regExp.search (fileName);
-        if (pos == -1) continue;
+        if (pos == -1)
+            continue;
+
+        bool loadOk = translator.load (fileName, nlsPath);
+        if (!loadOk)
+            continue;
 
         new LanguageItem (lvLanguages, translator, regExp.cap (1));
     }
+    lvLanguages->adjustColumn (0);
 
     /*
      *  update the Ok button state for pages with validation
@@ -501,7 +563,15 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
 
     /* language properties */
 
-    QListViewItem *item = lvLanguages->findItem (VBoxGlobal::languageID(), 1);
+    QString langId = gs.languageId();
+    QListViewItem *item = lvLanguages->findItem (langId, 1);
+    if (!item)
+    {
+        /* add an item for an invalid language to represent it in the list */
+        item = new LanguageItem (lvLanguages, langId);
+        lvLanguages->adjustColumn (0);
+    }
+    Assert (item);
     if (item)
     {
         lvLanguages->setCurrentItem (item);
@@ -572,7 +642,7 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
     QListViewItem *selItem = lvLanguages->selectedItem();
     if (mLanguageChanged && selItem)
     {
-        gs.setLanguageId (selItem->text (1) == VBoxGlobal::systemLanguageID() ?
+        gs.setLanguageId (selItem->text (1) == VBoxGlobal::systemLanguageId() ?
                           QString::null : selItem->text (1));
         VBoxGlobal::loadLanguage (selItem->text (1));
     }
@@ -845,6 +915,5 @@ void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (QListViewItem *aItem)
 
     tlLangData->setText (aItem->text (2));
     tlAuthorData->setText (aItem->text (3));
-    if (!mLanguageChanged)
-        mLanguageChanged = true;
+    mLanguageChanged = true;
 }

@@ -445,6 +445,34 @@ void VBoxProblemReporter::cannotOpenURL (const QString &aURL)
          .arg (aURL));
 }
 
+void VBoxProblemReporter::cannotFindLanguage (const QString &aLangID,
+                                              const QString &aNlsPath)
+{
+    message
+        (0, VBoxProblemReporter::Error,
+         tr ("<p>Could not find a language file for the language "
+             "<b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
+             "<p>The language will be temporarily reset to the system "
+             "default language. Please go to the <b>Global Settings</b> "
+             "dialog which you can open from the <b>File</b> menu of the "
+             "main VirtualBox window, and select one of the existing "
+             "languages on the <b>Language</b> page.</p>")
+         .arg (aLangID).arg (aNlsPath));
+}
+
+void VBoxProblemReporter::cannotLoadLanguage (const QString &aLangFile)
+{
+    message
+        (0, VBoxProblemReporter::Error,
+         tr ("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
+             "<p>The language will be temporarily reset to English (built-in). "
+             "Please go to the <b>Global Settings</b> "
+             "dialog which you can open from the <b>File</b> menu of the "
+             "main VirtualBox window, and select one of the existing "
+             "languages on the <b>Language</b> page.</p>")
+         .arg (aLangFile));
+}
+
 void VBoxProblemReporter::cannotInitCOM (HRESULT rc)
 {
     message (

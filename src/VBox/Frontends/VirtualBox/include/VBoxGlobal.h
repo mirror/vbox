@@ -374,10 +374,6 @@ public:
 
     bool openURL (const QString &aURL);
 
-    static const QString& languageID();
-    static void loadLanguage (const QString &aLangId = QString::null);
-    static bool loadLanguageFile (const QString &);
-
     QString languageName() const;
     QString languageCountry() const;
     QString languageNameEnglish() const;
@@ -390,6 +386,9 @@ public:
     void cleanup();
 
     /* public static stuff */
+
+    static QString languageId();
+    static void loadLanguage (const QString &aLangId = QString::null);
 
     static QIconSet iconSet (const char *aNormal,
                              const char *aDisabled = 0,
@@ -412,7 +411,7 @@ public:
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
 
-    static QString systemLanguageID();
+    static QString systemLanguageId();
 
     static QString getExistingDirectory (const QString &aDir, QWidget *aParent,
                                          const char *aName = 0,
@@ -509,8 +508,6 @@ private:
     typedef QValueVector <QString> QStringVector;
 
     QString verString;
-
-    static QString mLoadedLangId;
 
     QValueVector <CGuestOSType> vm_os_types;
     QDict <QPixmap> vm_os_type_icons;
