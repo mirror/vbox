@@ -381,6 +381,7 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pv
 static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     VMMDevState *pData = (VMMDevState*)pvUser;
+    int rcRet = VINF_SUCCESS;
     int rc;
 
     /*
@@ -711,14 +712,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     case VMMDevPowerState_Pause:
                     {
                         LogRel(("Guest requests the VM to be suspended (paused)\n"));
-                        requestHeader->rc = PDMDevHlpVMSuspend(pDevIns);
+                        requestHeader->rc = rcRet = PDMDevHlpVMSuspend(pDevIns);
                         break;
                     }
 
                     case VMMDevPowerState_PowerOff:
                     {
                         LogRel(("Guest requests the VM to be turned off\n"));
-                        requestHeader->rc = PDMDevHlpVMPowerOff(pDevIns); /** @todo pass the rc around! */
+                        requestHeader->rc = rcRet = PDMDevHlpVMPowerOff(pDevIns);
                         break;
                     }
 
@@ -1148,7 +1149,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         }
     }
 
-    return VINF_SUCCESS;
+    return rcRet;
 }
 
 /**
