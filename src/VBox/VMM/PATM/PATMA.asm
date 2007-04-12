@@ -2533,10 +2533,9 @@ GLOBALNAME PATMJumpToGuest_IF1Record
     DD      0ffffffffh
 
 
-; push ss, check and correct RPL
+; check and correct RPL of pushed ss
 BEGINPROC PATMMovFromSS
 PATMMovFromSS_Start:
-    push    ss
     push    eax
     pushfd
     mov     ax, ss
@@ -2548,7 +2547,6 @@ PATMMovFromSS_Start:
 PATMMovFromSS_Continue:
     popfd
     pop     eax
-    add     esp, 2          ; ss popped off as 16 bits value
 PATMMovFromSS_Start_End:
 ENDPROC PATMMovFromSS
 
