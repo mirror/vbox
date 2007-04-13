@@ -746,7 +746,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     AssertRC(rc);
 
     /** TSC offset. */
-    uint64_t u64TSCOffset = TMCpuTickGetOffset(pVM);
+    uint64_t u64TSCOffset = TMCpuTickGet(pVM) - ASMReadTSC();
 
 #if HC_ARCH_BITS == 64
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
