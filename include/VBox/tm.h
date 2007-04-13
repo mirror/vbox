@@ -258,7 +258,7 @@ TMDECL(int) TMCpuTickPause(PVM pVM);
 TMDECL(uint64_t) TMCpuTickGet(PVM pVM);
 
 /**
- * Returns the TSC offset
+ * Returns the TSC offset (virtual TSC - host TSC)
  *
  * @returns TSC ofset
  * @param   pVM         The VM to operate on.
