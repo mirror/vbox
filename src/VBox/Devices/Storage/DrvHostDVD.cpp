@@ -173,16 +173,12 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface)
 static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
 {
 #ifdef __DARWIN__
-# if 0 /// @todo dig up the specification for this command and implement it. (not important on mac)
     uint8_t abCmd[16] =
     {
-        SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, 0, 0,
+        SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, fLock, 0,
         0,0,0,0,0,0,0,0,0,0
     };
     int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
-# else
-    int rc = VINF_SUCCESS;
-# endif
 
 #elif defined(__LINUX__)
     int rc = ioctl(pThis->FileDevice, CDROM_LOCKDOOR, (int)fLock);

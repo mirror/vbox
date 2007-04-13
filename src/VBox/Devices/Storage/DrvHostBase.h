@@ -112,6 +112,10 @@ typedef struct DRVHOSTBASE
     SCSITaskDeviceInterface **ppScsiTaskDI;
     /** The block size. Set when querying the media size. */
     uint32_t                cbBlock;
+    /** The disk arbitration session reference. NULL if we didn't have to claim & unmount the device. */
+    DASessionRef            pDASession;
+    /** The disk arbritation disk reference. NULL if we didn't have to claim & unmount the device. */
+    DADiskRef               pDADisk;
 #endif
 
 #ifdef __WIN__
