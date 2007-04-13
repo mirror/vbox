@@ -39,7 +39,7 @@
 /**
  * Gets the raw cpu tick from current virtual time.
  */
-DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers = true)
+DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
 {
     uint64_t u64 = TMVirtualGetEx(pVM, fCheckTimers);
     if (u64 != TMCLOCK_FREQ_VIRTUAL)
@@ -64,7 +64,8 @@ TMDECL(int) TMCpuTickResume(PVM pVM)
             if (pVM->tm.s.fTSCUseRealTSC)
                 pVM->tm.s.u64TSCOffset = ASMReadTSC() - pVM->tm.s.u64TSC;
             else
-                pVM->tm.s.u64TSCOffset = tmCpuTickGetRawVirtual(pVM) - pVM->tm.s.u64TSC;
+                pVM->tm.s.u64TSCOffset = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */) 
+                                       - pVM->tm.s.u64TSC;
         }
         return VINF_SUCCESS;
     }
@@ -108,7 +109,7 @@ TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM)
             if (pVM->tm.s.fTSCUseRealTSC)
                 u64 = ASMReadTSC();
             else
-                u64 = tmCpuTickGetRawVirtual(pVM, false /* don't check pending timers */);
+                u64 = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */);
             u64 -= pVM->tm.s.u64TSCOffset;
         }
         else
@@ -137,7 +138,7 @@ TMDECL(uint64_t) TMCpuTickGet(PVM pVM)
             if (pVM->tm.s.fTSCUseRealTSC)
                 u64 = ASMReadTSC();
             else
-                u64 = tmCpuTickGetRawVirtual(pVM);
+                u64 = tmCpuTickGetRawVirtual(pVM, true /* check for pending timers */);
             u64 -= pVM->tm.s.u64TSCOffset;
         }
         else
