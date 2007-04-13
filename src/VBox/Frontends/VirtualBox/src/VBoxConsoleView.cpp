@@ -823,6 +823,12 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* report to the VM thread that we finished resizing */
                 cconsole.GetDisplay().ResizeCompleted();
 
+                /* reset the last auto-resize hint to confirm the guest has
+                 * accepted it (which may not always be the case if a
+                 * "natural" guest resize occasionally happened right after
+                 * we've sent a resize hint) */
+                autoresize_guest_hint = QSize();
+
                 ignore_mainwnd_resize = false;
 
                 return true;
@@ -2798,14 +2804,27 @@ void VBoxConsoleView::doResizeHint()
 {
     if (autoresize_guest)
     {
-        /* Get the available size for the guest display.
-         * We assume here that the centralWidget() contains this view only
-         * and gives it all available space. */
-        QSize sz (mainwnd->centralWidget()->size());
-        sz -= QSize (frameWidth() * 2, frameWidth() * 2);
-        LogFlowFunc (("Will suggest %d,%d\n", sz.width(), sz.height()));
+        if (!autoresize_guest_hint.isValid())
+        {
+            /* Get the available size for the guest display.  We assume here
+             * that the centralWidget() contains this view only and gives it
+             * all available space. */
+            QSize sz (mainwnd->centralWidget()->size());
+            sz -= QSize (frameWidth() * 2, frameWidth() * 2);
+            LogFlowFunc (("Will suggest (%d,%d)\n", sz.width(), sz.height()));
 
-        cconsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0);
+            autoresize_guest_hint = sz;
+            cconsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0);
+        }
+        else
+        {
+            /* A previous resize hint has not been served yet (at least we
+             * didn't get ResizeEvent from the guest). */
+            LogFlowFunc (("Guest is ignoring our last resize hint (%d,%d), "
+                          "don't suggest any more.\n",
+                          autoresize_guest_hint.width(),
+                          autoresize_guest_hint.height()));
+        }
     }
 }
 
