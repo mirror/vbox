@@ -40,6 +40,9 @@ static WCHAR VBoxDACType[] = L"Integrated RAMDAC";
 static WCHAR VBoxAdapterString[] = L"VirtualBox Video Adapter";
 static WCHAR VBoxBiosString[] = L"Version 0xB0C2 or later";
 
+/* Number of reported monitors. Defaults to 1 (no DualView) */
+static int gNumDisplays = 1;
+
 /*
  * Globals for the last custom resolution set. This is important
  * for system startup so that we report the last currently set
@@ -191,7 +194,12 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     size_t maxModesPerColorDepth = MAX_VIDEO_MODES / 2 / 4;
 
     /* size of the VRAM in bytes */
-    ULONG vramSize = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+    ULONG totalVramSize = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+    ULONG vramSize;
+
+    /* Split up VRAM for DualView */
+    vramSize = totalVramSize / gNumDisplays;
+    dprintf(("VBoxVideo: Total VRAM %u bytes, per display %u bytes\n", totalVramSize, vramSize));
 
     gNumVideoModes = 0;
 
@@ -676,6 +684,59 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     }
 }
 
+/**
+ * Helper function to register secondary displays (DualView). Note that this will not
+ * be available on pre-XP versions, and some editions on XP will fail because they are
+ * intentionally crippled.
+ */
+VOID VBoxRegisterSecondaryDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
+{
+   typedef VP_STATUS (*pCreateSecDisp)(PVOID, PVOID *, ULONG);
+   pCreateSecDisp pVPCreateSecDisp;
+   PVOID pFunc;
+   int iDisplay;
+   VP_STATUS rc;
+   PDEVICE_EXTENSION pSecExt;
+
+   dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays\n"));
+
+   /* Initialize DualView related stuff in device extension (must be done always!) */
+   PrimaryExtension->iDevice      = 0;
+   PrimaryExtension->pvPrimaryExt = PrimaryExtension;
+
+   /* Dynamically query the VideoPort import to be binary compatible across Windows versions */
+   if (vboxQueryWinVersion() <= WINNT4) 
+   {
+       pFunc = NULL;
+   } 
+   else 
+   {
+       /* This bluescreens on NT4, hence the above version check */
+       pFunc = (pConfigInfo->VideoPortGetProcAddress)(PrimaryExtension,
+                                                      (PUCHAR)"VideoPortCreateSecondaryDisplay");
+   }
+
+   if (pFunc != NULL) {
+      pVPCreateSecDisp = (pCreateSecDisp)pFunc;
+
+      /* Query the configured number of displays */
+      VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_CMONITORS);
+      gNumDisplays = VideoPortReadPortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
+      dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays: gNumDisplays = %d\n", gNumDisplays));
+
+      for (iDisplay = 1; iDisplay < gNumDisplays; ++iDisplay)
+      {
+         rc = pVPCreateSecDisp(PrimaryExtension, (PVOID*)&pSecExt, VIDEO_DUALVIEW_REMOVABLE);
+         dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays: VideoPortCreateSecondaryDisplay returned %#x\n", rc));
+         if (rc != NO_ERROR)   /* Failure to create secondary displays is not fatal */
+            break;
+
+         pSecExt->iDevice = iDisplay;
+         pSecExt->pvPrimaryExt = PrimaryExtension;
+      }
+   }
+}
+
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
                                IN PVOID HwContext, IN PWSTR ArgumentString,
                                IN OUT PVIDEO_PORT_CONFIG_INFO ConfigInfo,
@@ -755,6 +816,9 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       rc = VbglInit ();
 
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: VbglInit returned 0x%x\n", rc));
+
+      /* Attempt to register secondary displays */
+      VBoxRegisterSecondaryDisplays((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo);
 
       // pretend success to make the driver work.
       rc = NO_ERROR;
@@ -1135,6 +1199,19 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             break;
         }
 
+        /* Attach/detach DualView devices */
+        case IOCTL_VIDEO_SWITCH_DUALVIEW:
+        {
+            ULONG ulAttach;
+
+            ulAttach = *((PULONG)RequestPacket->InputBuffer);
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_SWITCH_DUALVIEW (%ld)\n", ulAttach));
+
+            pDevExt->bEnabled = (BOOLEAN)ulAttach;
+            Result = TRUE;
+            break;
+        }
+
         case IOCTL_VIDEO_VBVA_ENABLE:
         {
             int rc;
@@ -1257,6 +1334,12 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     dprintf(("VBoxVideoSetCurrentMode: width: %d, height: %d, bpp: %d\n", ModeInfo->VisScreenWidth,
              ModeInfo->VisScreenHeight, ModeInfo->BitsPerPlane));
 
+    if (DeviceExtension->iDevice > 0) {
+        dprintf(("VBoxVideo::VBoxVideoSetCurrentMode: Skipping for non-primary display %d\n",
+                 DeviceExtension->iDevice));
+        return TRUE;
+    }
+
     /* set the mode characteristics */
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenWidth);
@@ -1309,17 +1392,19 @@ BOOLEAN FASTCALL VBoxVideoMapVideoMemory(PDEVICE_EXTENSION DeviceExtension,
 {
     PHYSICAL_ADDRESS FrameBuffer;
     ULONG inIoSpace = 0;
+    ULONG ulOffset;
+    ULONG AdapterMemorySize;
     VP_STATUS Status;
 
     dprintf(("VBoxVideo::VBoxVideoMapVideoMemory\n"));
 
+    AdapterMemorySize = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+
     FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
     MapInformation->VideoRamBase = RequestedAddress->RequestedVirtualAddress;
-    MapInformation->VideoRamLength = (
-       VideoModes[DeviceExtension->CurrentMode - 1].VideoMemoryBitmapWidth *
-       VideoModes[DeviceExtension->CurrentMode - 1].VideoMemoryBitmapHeight *
-       VideoModes[DeviceExtension->CurrentMode - 1].BitsPerPlane
-       ) >> 3;
+    MapInformation->VideoRamLength = AdapterMemorySize;
+//       VideoModes[DeviceExtension->CurrentMode - 1].VideoMemoryBitmapHeight *
+//       VideoModes[DeviceExtension->CurrentMode - 1].ScreenStride;
 
     Status = VideoPortMapMemory(DeviceExtension, FrameBuffer,
        &MapInformation->VideoRamLength, &inIoSpace,
@@ -1327,9 +1412,15 @@ BOOLEAN FASTCALL VBoxVideoMapVideoMemory(PDEVICE_EXTENSION DeviceExtension,
 
     if (Status == NO_ERROR)
     {
-        MapInformation->FrameBufferBase = MapInformation->VideoRamBase;
-        MapInformation->FrameBufferLength = MapInformation->VideoRamLength;
+        /* Calculate VRAM offset for DualView */
+        ulOffset = AdapterMemorySize / gNumDisplays * DeviceExtension->iDevice;
+
+        MapInformation->FrameBufferBase = (PUCHAR)MapInformation->VideoRamBase + ulOffset;
+        MapInformation->FrameBufferLength =
+            VideoModes[DeviceExtension->CurrentMode - 1].VisScreenHeight *
+            VideoModes[DeviceExtension->CurrentMode - 1].ScreenStride;
         StatusBlock->Information = sizeof(VIDEO_MEMORY_INFORMATION);
+
         return TRUE;
     }
 
