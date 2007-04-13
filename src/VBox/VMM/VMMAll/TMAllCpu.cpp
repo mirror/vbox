@@ -39,9 +39,9 @@
 /**
  * Gets the raw cpu tick from current virtual time.
  */
-DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM)
+DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers = true)
 {
-    uint64_t u64 = TMVirtualGet(pVM);
+    uint64_t u64 = TMVirtualGetEx(pVM, fCheckTimers);
     if (u64 != TMCLOCK_FREQ_VIRTUAL)
         u64 = ASMMultU64ByU32DivByU32(u64, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
     return u64;
@@ -93,14 +93,31 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
 
 
 /**
- * Returns the TSC offset
+ * Returns the TSC offset (virtual TSC - host TSC)
  *
  * @returns TSC ofset
  * @param   pVM         The VM to operate on.
  */
 TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM)
 {
-    return pVM->tm.s.u64TSCOffset;
+    uint64_t u64;
+    if (RT_LIKELY(pVM->tm.s.fTSCTicking))
+    {
+        if (pVM->tm.s.fTSCVirtualized)
+        {
+            if (pVM->tm.s.fTSCUseRealTSC)
+                u64 = ASMReadTSC();
+            else
+                u64 = tmCpuTickGetRawVirtual(pVM, false /* don't check pending timers */);
+            u64 -= pVM->tm.s.u64TSCOffset;
+        }
+        else
+            u64 = ASMReadTSC();
+    }
+    else
+        u64 = pVM->tm.s.u64TSC;
+
+    return u64 - ASMReadTSC();
 }
 
 
