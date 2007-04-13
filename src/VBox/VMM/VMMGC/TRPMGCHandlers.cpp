@@ -545,7 +545,6 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
             Assert(!(PATMIsPatchGCAddr(pVM, PC)));
             if (pCpu->param1.parval == 3)
             {
-                /* Obsolete!! */
                 /* Int 3 replacement patch? */
                 if (PATMHandleInt3PatchTrap(pVM, pRegFrame) == VINF_SUCCESS)
                 {
