@@ -187,7 +187,9 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
 
     /* Init TSC offset to zero. */
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, 0);
+#if HC_ARCH_BITS == 32
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_HIGH, 0);
+#endif
     AssertRC(rc);
 
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_A_FULL, 0);
@@ -743,7 +745,17 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           val);
     AssertRC(rc);
 
-    /** @todo TSC offset. */
+    /** TSC offset. */
+    uint64_t u64TSCOffset = TMCpuTickGetOffset(pVM);
+
+#if HC_ARCH_BITS == 64
+    rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
+#else
+    rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, (uint32_t)u64TSCOffset);
+    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_HIGH, (uint32_t)(u64TSCOffset >> 32ULL));
+#endif
+    AssertRC(rc);
+
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
