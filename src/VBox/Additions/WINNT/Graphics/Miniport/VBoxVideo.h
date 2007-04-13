@@ -42,6 +42,7 @@ __END_DECLS
 #define VBE_DISPI_INDEX_ENABLE          0x4
 #define VBE_DISPI_INDEX_VIRT_WIDTH      0x6
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
+#define VBE_DISPI_INDEX_CMONITORS       0xa
 #define VBE_DISPI_ID2                   0xB0C2
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
@@ -60,6 +61,10 @@ typedef struct
     * Allocated when VBVA status is changed. Deallocated on HwReset.
     */
    void *pvReqFlush;
+
+   ULONG iDevice;       /* Device index (0 for primary) */
+   PVOID pvPrimaryExt;  /* Pointer to primary device extension */
+   BOOLEAN bEnabled;    /* Device enabled flag */
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 extern "C"
