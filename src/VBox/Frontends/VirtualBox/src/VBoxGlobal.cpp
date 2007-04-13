@@ -1867,28 +1867,26 @@ QString VBoxGlobal::languageId()
 
 /**
  *  Loads the language by language ID.
- *  @param aLang language ID in in form of xx_YY
+ *
+ *  @param aLangId Language ID in in form of xx_YY. QString::null means the
+ *                 system default language.
  */
 /* static */
-void VBoxGlobal::loadLanguage (const QString &aLang)
+void VBoxGlobal::loadLanguage (const QString &aLangId)
 {
-    QString langId = aLang.isNull() ?
-        VBoxGlobal::systemLanguageId() : aLang;
-    QString languageFileName = QString::null;
+    QString langId = aLangId.isNull() ?
+        VBoxGlobal::systemLanguageId() : aLangId;
+    QString languageFileName;
     QString selectedLangId = gVBoxBuiltInLangName;
 
-    if (aLang != gVBoxBuiltInLangName)
+    if (!aLangId.isNull() && aLangId != gVBoxBuiltInLangName)
     {
         QRegExp regExp (gVBoxLangIDRegExp);
         int rule = regExp.search (langId);
         /* this rule should match the language id completely */
-        Assert (!rule);
-        if (rule == -1) return;
+        AssertReturnVoid (rule == 0);
 
-        QString mId1part = regExp.cap (2);
-        QString mId2part = regExp.cap (4);
-        /* language localization (second part) should not be empty? */
-        // Assert (!mId2part.isEmpty());
+        QString lang = regExp.cap (2);
 
         QString nlsPath = qApp->applicationDirPath() + gVBoxLangSubDir;
         QDir nlsDir (nlsPath);
@@ -1898,14 +1896,14 @@ void VBoxGlobal::loadLanguage (const QString &aLang)
                                                    gVBoxLangFileExt);
             selectedLangId = langId;
         }
-        else if (nlsDir.exists (gVBoxLangFileBase + mId1part + gVBoxLangFileExt))
+        else if (nlsDir.exists (gVBoxLangFileBase + lang + gVBoxLangFileExt))
         {
-            languageFileName = nlsDir.absFilePath (gVBoxLangFileBase + mId1part +
+            languageFileName = nlsDir.absFilePath (gVBoxLangFileBase + lang +
                                                    gVBoxLangFileExt);
-            selectedLangId = mId1part;
+            selectedLangId = lang;
         }
 
-        if (sTranslator && languageFileName.isNull())
+        if (languageFileName.isNull())
         {
             vboxProblem().cannotFindLanguage (langId, nlsPath);
             return;
@@ -1923,7 +1921,6 @@ void VBoxGlobal::loadLanguage (const QString &aLang)
     bool loadOk = true;
     if (sTranslator)
     {
-        /* an empty file name means built-in English*/
         if (selectedLangId != gVBoxBuiltInLangName)
         {
             Assert (!languageFileName.isNull());

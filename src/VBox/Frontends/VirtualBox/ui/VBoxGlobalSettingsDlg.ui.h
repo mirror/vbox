@@ -89,6 +89,8 @@ public:
                   const QString &aId, bool aBuiltIn = false)
         : QListViewItem (aParent), mBuiltIn (aBuiltIn), mInvalid (false)
     {
+        Assert (!aId.isEmpty());
+
         QTranslatorMessage transMes;
 
         /* Note: context/source/comment arguments below must match strings
@@ -142,24 +144,40 @@ public:
     LanguageItem (QListView *aParent, const QString &aId)
         : QListViewItem (aParent), mBuiltIn (false), mInvalid (true)
     {
+        Assert (!aId.isEmpty());
+
         setText (0, QString ("<%1>").arg (aId));
         setText (1, aId);
         setText (2, VBoxGlobalSettingsDlg::tr ("<unavailabie>", "Language"));
         setText (3, VBoxGlobalSettingsDlg::tr ("<unknown>", "Author(s)"));
     }
 
+    /* Constructs an item for the default language ID (column 1 will be set
+     * to QString::null) */
+    LanguageItem (QListView *aParent)
+        : QListViewItem (aParent), mBuiltIn (false), mInvalid (false)
+    {
+        setText (0, VBoxGlobalSettingsDlg::tr ("Default", "Language"));
+        setText (1, QString::null);
+        setText (2, QString::null);
+        setText (3, QString::null);
+    }
+
     int rtti() const { return TypeId; }
 
     int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
     {
-        QString thisValue = text (1);
-        QString thatValue = aItem->text (1);
-        if (thisValue == gVBoxBuiltInLangName)
+        QString thisId = text (1);
+        QString thatId = aItem->text (1);
+        if (thisId.isNull())
             return -1;
-        else if (thatValue == gVBoxBuiltInLangName)
+        if (thatId.isNull())
             return 1;
-        else
-            return QListViewItem::compare (aItem, aColumn, aAscending);
+        if (mBuiltIn)
+            return -1;
+        if (aItem->rtti() == TypeId && ((LanguageItem *) aItem)->mBuiltIn)
+            return 1;
+        return QListViewItem::compare (aItem, aColumn, aAscending);
     }
 
     void paintCell (QPainter *aPainter, const QColorGroup &aGroup,
@@ -361,6 +379,8 @@ void VBoxGlobalSettingsDlg::init()
                                           .arg (gVBoxLangFileBase, gVBoxLangFileExt),
                                           QDir::Files);
     QTranslator translator;
+    /* add the default language */
+    new LanguageItem (lvLanguages);
     /* add the built-in language */
     new LanguageItem (lvLanguages, translator, gVBoxBuiltInLangName, true /* built-in */);
     /* add all existing languages */
@@ -564,8 +584,6 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
     /* language properties */
 
     QString langId = gs.languageId();
-    if (langId.isNull())
-        langId = VBoxGlobal::languageId();
     QListViewItem *item = lvLanguages->findItem (langId, 1);
     if (!item)
     {
@@ -642,10 +660,10 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
     /* language properties */
 
     QListViewItem *selItem = lvLanguages->selectedItem();
+    Assert (selItem);
     if (mLanguageChanged && selItem)
     {
-        gs.setLanguageId (selItem->text (1) == VBoxGlobal::systemLanguageId() ?
-                          QString::null : selItem->text (1));
+        gs.setLanguageId (selItem->text (1));
         VBoxGlobal::loadLanguage (selItem->text (1));
     }
 }
@@ -913,9 +931,16 @@ void VBoxGlobalSettingsDlg::tbUSBFilterDown_clicked()
 
 void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (QListViewItem *aItem)
 {
+    Assert (aItem);
     if (!aItem) return;
 
+    /* disable labels for the Default language item */
+    bool enabled = !aItem->text (1).isNull();
+
+    tlLangName->setEnabled (enabled);
+    tlAuthorName->setEnabled (enabled);
     tlLangData->setText (aItem->text (2));
     tlAuthorData->setText (aItem->text (3));
+
     mLanguageChanged = true;
 }

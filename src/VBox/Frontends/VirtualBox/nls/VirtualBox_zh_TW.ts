@@ -1953,13 +1953,6 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>
-Lists all available user interface languages. The effective language
-is written in &lt;b&gt;bold&lt;/b&gt;.
-                                    </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Author(s):</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1980,6 +1973,19 @@ is written in &lt;b&gt;bold&lt;/b&gt;.
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+Lists all available user interface languages. The effective language is
+written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
+to the system default language.
+                                    </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4481,6 +4487,10 @@ that this feature requires Guest Additions to be installed in the guest OS.
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot delete the key &apos;%1&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
