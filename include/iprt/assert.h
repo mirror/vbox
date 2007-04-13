@@ -78,7 +78,7 @@ __END_DECLS
  * @param   expr    Expression which should be true.
  */
 #ifdef __GNUC__
-# define AssertCompile(expr)    extern int RTASSERTVAR[(expr) ? 1 : 0] __attribute__((unused))
+# define AssertCompile(expr)    extern int RTASSERTVAR[1] __attribute__((unused)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((unused))
 #else
 # define AssertCompile(expr)    typedef int RTASSERTTYPE[(expr) ? 1 : 0]
 #endif
