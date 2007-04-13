@@ -104,6 +104,7 @@ TMDECL(uint64_t) TMVirtualGet(PVM pVM)
     return TMVirtualGetEx(pVM, true /* check timers */);
 }
 
+
 /**
  * Gets the current TMCLOCK_VIRTUAL time
  *
@@ -147,6 +148,7 @@ TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
         u64 = pVM->tm.s.u64Virtual;
     return u64;
 }
+
 
 /**
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
