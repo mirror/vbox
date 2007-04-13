@@ -244,6 +244,14 @@ TMDECL(int) TMCpuTickPause(PVM pVM);
 TMDECL(uint64_t) TMCpuTickGet(PVM pVM);
 
 /**
+ * Returns the TSC offset
+ *
+ * @returns TSC ofset
+ * @param   pVM         The VM to operate on.
+ */
+TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM);
+
+/**
  * Sets the current CPU timestamp counter.
  *
  * @returns VBox status code.
