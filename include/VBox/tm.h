@@ -99,6 +99,20 @@ TMDECL(uint64_t) TMRealGetFreq(PVM pVM);
 TMDECL(uint64_t) TMVirtualGet(PVM pVM);
 
 /**
+ * Gets the current TMCLOCK_VIRTUAL time
+ *
+ * @returns The timestamp.
+ * @param   pVM             VM handle.
+ * @param   fCheckTimers    Check timers or not
+ *
+ * @remark  While the flow of time will never go backwards, the speed of the
+ *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
+ *          influenced by power saving (SpeedStep, PowerNow!), while the former
+ *          makes use of TSC and kernel timers.
+ */
+TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers);
+
+/**
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
