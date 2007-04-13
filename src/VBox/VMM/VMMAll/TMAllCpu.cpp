@@ -91,6 +91,17 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
 }
 
 
+/**
+ * Returns the TSC offset
+ *
+ * @returns TSC ofset
+ * @param   pVM         The VM to operate on.
+ */
+TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM)
+{
+    return pVM->tm.s.u64TSCOffset;
+}
+
 
 /**
  * Read the current CPU timstamp counter.
