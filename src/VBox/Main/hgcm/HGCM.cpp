@@ -293,7 +293,7 @@ int HGCMService::loadServiceDLL (void)
     }
     else
     {
-        LogFlow(("HGCMService::loadServiceDLL: failed to load service library. The service is not available.\n"));
+        LogFlow(("HGCMService::loadServiceDLL: failed to load service library. The service is not available %Vrc\n", rc));
         m_hLdrMod = NIL_RTLDRMOD;
     }
 
