@@ -58,10 +58,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  error "32-bit guest mode is only implemented for 32-bit and PAE shadow modes."
 # endif
 
-# ifdef PGM_CACHE_VERY_STRICT
-    pgmCacheCheckPD(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR3(pVM), CPUMGetGuestCR4(pVM));
-# endif
-
 # if PGM_SHW_TYPE == PGM_TYPE_PAE
     /*
      * Hide the instruction fetch trap indicator for now.
