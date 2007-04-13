@@ -1647,7 +1647,6 @@ static int emInterpretHlt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 }
 
 
-#ifdef IN_GC
 /**
  * RDTSC Emulation.
  */
@@ -1665,7 +1664,6 @@ static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
 
     return VINF_SUCCESS;
 }
-#endif
 
 /**
  * MONITOR Emulation.
@@ -1729,7 +1727,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
      */
     /* Get the current privilege level. */
     uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
-    if (cpl != 0)
+    if (    cpl != 0
+        &&  pCpu->pCurInstr->opcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
     {
         Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
         STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->CTXMID(Stat,FailedUserMode));
@@ -1802,8 +1801,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE_EX_PARAM2(OP_BTR,Btr, BitTest, EMEmulateBtr);
         INTERPRET_CASE_EX_PARAM2(OP_BTS,Bts, BitTest, EMEmulateBts);
         INTERPRET_CASE_EX_PARAM2(OP_BTC,Btc, BitTest, EMEmulateBtc);
-#ifdef IN_GC
         INTERPRET_CASE(OP_RDTSC,Rdtsc);
+#ifdef IN_GC
         INTERPRET_CASE(OP_STI,Sti);
         INTERPRET_CASE(OP_CMPXCHG, CmpXchg);
 #endif
