@@ -32,6 +32,8 @@
 # include <IOKit/storage/IOStorageDeviceCharacteristics.h>
 # include <IOKit/scsi-commands/SCSITaskLib.h>
 # include <IOKit/scsi-commands/SCSICommandOperationCodes.h>
+# include <IOKit/IOBSD.h>
+# include <DiskArbitration/DiskArbitration.h>
 # include <mach/mach_error.h>
 # include <VBox/scsi.h>
 
@@ -558,6 +560,182 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, PDM
 
 /* -=-=-=-=- poller thread -=-=-=-=- */
 
+#ifdef __DARWIN__
+/** The runloop input source name for the disk arbitration events. */
+#define MY_RUN_LOOP_MODE    CFSTR("drvHostBaseDA")
+
+/**
+ * Gets the BSD Name (/dev/disc[0-9]+) for the service.
+ * 
+ * This is done by recursing down the I/O registry until we hit upon an entry 
+ * with a BSD Name. Usually we find it two levels down. (Further down under 
+ * the IOCDPartitionScheme, the volume (slices) BSD Name is found. We don't
+ * seem to have to go this far fortunately.)
+ * 
+ * @return  VINF_SUCCESS if found, VERR_FILE_NOT_FOUND otherwise.
+ * @param   Entry       The current I/O registry entry reference.
+ * @param   pszName     Where to store the name. 128 bytes.
+ * @param   cRecursions Number of recursions. This is used as an precation 
+ *                      just to limit the depth and avoid blowing the stack
+ *                      should we hit a bug or something.
+ */
+static int drvHostBaseGetBSDName(io_registry_entry_t Entry, char *pszName, unsigned cRecursions)
+{
+    int rc = VERR_FILE_NOT_FOUND;
+    io_iterator_t Children = 0;
+    kern_return_t krc = IORegistryEntryGetChildIterator(Entry, kIOServicePlane, &Children);
+    if (krc == KERN_SUCCESS)
+    {
+        io_object_t Child;
+        while (     rc == VERR_FILE_NOT_FOUND
+               &&   (Child = IOIteratorNext(Children)) != 0)
+        {
+            CFStringRef BSDNameStrRef = (CFStringRef)IORegistryEntryCreateCFProperty(Child, CFSTR(kIOBSDNameKey), kCFAllocatorDefault, 0);
+            if (BSDNameStrRef)
+            {
+                if (CFStringGetCString(BSDNameStrRef, pszName, 128, kCFStringEncodingUTF8))
+                    rc = VINF_SUCCESS;
+                else
+                    AssertFailed();
+                CFRelease(BSDNameStrRef);
+            }
+            if (rc == VERR_FILE_NOT_FOUND && cRecursions < 10)
+                rc = drvHostBaseGetBSDName(Child, pszName, cRecursions + 1);
+            IOObjectRelease(Child);
+        }
+        IOObjectRelease(Children);
+    }
+    return rc;
+}
+
+
+/** 
+ * Callback notifying us that the async DADiskClaim()/DADiskUnmount call has completed.
+ * 
+ * @param   DiskRef         The disk that was attempted claimed / unmounted.
+ * @param   DissenterRef    NULL on success, contains details on failure.
+ * @param   pvContext       Pointer to the return code variable.
+ */
+static void drvHostBaseDADoneCallback(DADiskRef DiskRef, DADissenterRef DissenterRef, void *pvContext)
+{
+    int *prc = (int *)pvContext;
+    if (!DissenterRef)
+        *prc = 0;
+    else
+        *prc = DADissenterGetStatus(DissenterRef) ? DADissenterGetStatus(DissenterRef) : -1;
+    CFRunLoopStop(CFRunLoopGetCurrent());
+}
+
+
+/**
+ * Obtain exclusive access to the DVD device, umount it if necessary.
+ * 
+ * @return  VBox status code.
+ * @param   pThis       The driver instance.
+ * @param   DVDService  The DVD service object.
+ */
+static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDService)
+{
+    PPDMDRVINS pDrvIns = pThis->pDrvIns; NOREF(pDrvIns);
+
+    for (unsigned iTry = 0;; iTry++)
+    {
+        IOReturn irc = (*pThis->ppScsiTaskDI)->ObtainExclusiveAccess(pThis->ppScsiTaskDI);
+        if (irc == kIOReturnSuccess)
+        {
+            /* 
+             * This is a bit weird, but if we unmounted the DVD drive we also need to
+             * unlock it afterwards or the guest won't be able to eject it later on.
+             */
+            if (pThis->pDADisk)
+            {
+                uint8_t abCmd[16] =
+                {
+                    SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, false, 0,
+                    0,0,0,0,0,0,0,0,0,0
+                };
+                DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
+            }
+            return VINF_SUCCESS;
+        }
+        if (irc == kIOReturnExclusiveAccess)
+            return VERR_SHARING_VIOLATION;      /* already used exclusivly. */
+        if (irc != kIOReturnBusy) 
+            return VERR_GENERAL_FAILURE;        /* not mounted */
+
+        /*
+         * Attempt to the unmount all volumes of the device.
+         * It seems we can can do this all in one go without having to enumerate the 
+         * volumes (sessions) and deal with them one by one. This is very fortuitous 
+         * as the disk arbitration API is a bit cumbersome to deal with.
+         */
+        if (iTry > 2)
+            return VERR_DRIVE_LOCKED;
+        char szName[128];
+        int rc = drvHostBaseGetBSDName(DVDService, &szName[0], 0);
+        if (VBOX_SUCCESS(rc))
+        {
+            pThis->pDASession = DASessionCreate(kCFAllocatorDefault);
+            if (pThis->pDASession)
+            {
+                DASessionScheduleWithRunLoop(pThis->pDASession, CFRunLoopGetCurrent(), MY_RUN_LOOP_MODE);
+                pThis->pDADisk = DADiskCreateFromBSDName(kCFAllocatorDefault, pThis->pDASession, szName);
+                if (pThis->pDADisk)
+                {
+                    /* 
+                     * Try claim the device.
+                     */
+                    Log(("%s-%d: calling DADiskClaim on '%s'.\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, szName));
+                    int rcDA = -2;
+                    DADiskClaim(pThis->pDADisk, kDADiskClaimOptionDefault, NULL, NULL, drvHostBaseDADoneCallback, &rcDA);
+                    SInt32 rc32 = CFRunLoopRunInMode(MY_RUN_LOOP_MODE, 120.0, FALSE);
+                    AssertMsg(rc32 == kCFRunLoopRunStopped, ("rc32=%RI32 (%RX32)\n", rc32, rc32));
+                    if (    rc32 == kCFRunLoopRunStopped
+                        &&  !rcDA)
+                    {
+                        /*
+                         * Try unmount the device.
+                         */
+                        Log(("%s-%d: calling DADiskUnmount on '%s'.\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, szName));
+                        rcDA = -2;
+                        DADiskUnmount(pThis->pDADisk, kDADiskUnmountOptionWhole, drvHostBaseDADoneCallback, &rcDA);
+                        SInt32 rc32 = CFRunLoopRunInMode(MY_RUN_LOOP_MODE, 120.0, FALSE);
+                        AssertMsg(rc32 == kCFRunLoopRunStopped, ("rc32=%RI32 (%RX32)\n", rc32, rc32));
+                        if (    rc32 == kCFRunLoopRunStopped
+                            &&  !rcDA)
+                        {
+                            iTry = 99;
+                            DASessionUnscheduleFromRunLoop(pThis->pDASession, CFRunLoopGetCurrent(), MY_RUN_LOOP_MODE);
+                            Log(("%s-%d: unmount succeed - retrying.\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
+                            continue;
+                        }
+                        Log(("%s-%d: umount => rc32=%d & rcDA=%#x\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc32, rcDA));
+
+                        /* failed - cleanup */
+                        DADiskUnclaim(pThis->pDADisk);
+                    }
+                    else
+                        Log(("%s-%d: claim => rc32=%d & rcDA=%#x\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc32, rcDA));
+                    
+                    CFRelease(pThis->pDADisk);
+                    pThis->pDADisk = NULL;
+                }
+                else
+                    Log(("%s-%d: failed to open disk '%s'!\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, szName));
+
+                DASessionUnscheduleFromRunLoop(pThis->pDASession, CFRunLoopGetCurrent(), MY_RUN_LOOP_MODE);
+                CFRelease(pThis->pDASession);
+                pThis->pDASession = NULL;
+            }
+            else
+                Log(("%s-%d: failed to create DA session!\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
+        }
+        RTThreadSleep(10);
+    }
+}
+#endif /* __DARWIN__ */
+
+
 /**
  * Wrapper for open / RTFileOpen / IOKit.
  *
@@ -709,22 +887,9 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
                     else /* Check for kIOSCSITaskDeviceUserClientTypeID? */
                         rc = VERR_GENERAL_FAILURE;//RTErrConvertFromDarwinKern(krc);
 
-                    /*
-                     * Obtain exclusive access to the device
-                     * (to prevent the host and/or user from interfering).
-                     */
+                    /* Obtain exclusive access to the device so we can send SCSI commands. */
                     if (VBOX_SUCCESS(rc))
-                    {
-                        irc = (*pThis->ppScsiTaskDI)->ObtainExclusiveAccess(pThis->ppScsiTaskDI);
-                        if (irc == kIOReturnSuccess)
-                            rc = VINF_SUCCESS;
-                        else if (irc == kIOReturnBusy)
-                            rc = VERR_DRIVE_LOCKED;         /* mounted. */
-                        else if (irc == kIOReturnExclusiveAccess)
-                            rc = VERR_SHARING_VIOLATION;    /* already used exclusivly. */
-                        else
-                            rc = VERR_GENERAL_FAILURE;
-                    }
+                        rc = drvHostBaseObtainExclusiveAccess(pThis, DVDService);
 
                     /* Cleanup on failure. */
                     if (VBOX_FAILURE(rc))
@@ -1298,12 +1463,15 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     }
 
     /*
-     * Unlock the drive if we've locked it.
+     * Unlock the drive if we've locked it or we're in passthru mode.
      */
-    if (    pThis->fLocked
 #ifdef __DARWIN__
+    if (    (   pThis->fLocked
+             || pThis->IBlock.pfnSendCmd)
         &&  pThis->ppScsiTaskDI
-#else
+#else /** @todo Check if the other guys can mix pfnDoLock with scsi passthru.
+       * (We're currently not unlocking the device after use. See todo in DevATA.cpp.) */
+    if (    pThis->fLocked
         &&  pThis->FileDevice != NIL_RTFILE
 #endif
         &&  pThis->pfnDoLock)
@@ -1332,14 +1500,33 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
 #endif
 
 #ifdef __DARWIN__
+    /* 
+     * The unclaiming doesn't seem to mean much, the DVD is actaully 
+     * remounted when we release exclusive access. I'm not quite sure
+     * if I should put the unclaim first or not...
+     *
+     * Anyway, that it's automatically remounted very good news for us,
+     * because that means we don't have to mess with that ourselves. Of
+     * course there is the unlikely scenario that we've succeeded in claiming
+     * and umount the DVD but somehow failed to gain exclusive scsi access...
+     */
     if (pThis->ppScsiTaskDI)
     {
+        LogFlow(("%s-%d: releasing exclusive scsi access!\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
         (*pThis->ppScsiTaskDI)->ReleaseExclusiveAccess(pThis->ppScsiTaskDI);
         (*pThis->ppScsiTaskDI)->Release(pThis->ppScsiTaskDI);
         pThis->ppScsiTaskDI = NULL;
     }
+    if (pThis->pDADisk)
+    {
+        LogFlow(("%s-%d: unclaiming the disk!\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
+        DADiskUnclaim(pThis->pDADisk);
+        CFRelease(pThis->pDADisk);
+        pThis->pDADisk = NULL;
+    }
     if (pThis->ppMMCDI)
     {
+        LogFlow(("%s-%d: releasing the MMC object!\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
         (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
         pThis->ppMMCDI = NULL;
     }
@@ -1347,6 +1534,12 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     {
         mach_port_deallocate(mach_task_self(), pThis->MasterPort);
         pThis->MasterPort = NULL;
+    }
+    if (pThis->pDASession)
+    {
+        LogFlow(("%s-%d: releasing the DA session!\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
+        CFRelease(pThis->pDASession);
+        pThis->pDASession = NULL;
     }
 #else
     if (pThis->FileDevice != NIL_RTFILE)
@@ -1371,6 +1564,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
 
     if (RTCritSectIsInitialized(&pThis->CritSect))
         RTCritSectDelete(&pThis->CritSect);
+    LogFlow(("%s-%d: drvHostBaseDestruct completed\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
 }
 
 
@@ -1402,6 +1596,8 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     pThis->ppMMCDI                          = NULL;
     pThis->ppScsiTaskDI                     = NULL;
     pThis->cbBlock                          = 0;
+    pThis->pDADisk                          = NULL;
+    pThis->pDASession                       = NULL;
 #else
     pThis->FileDevice                       = NIL_RTFILE;
 #endif

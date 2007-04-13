@@ -121,7 +121,11 @@ ifeq ($(BUILD_TARGET),l4)
 endif
 VBoxDD_LIBS.darwin      = \
 	$(LIB_REM)
-VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib -framework CoreAudio -framework IOKit -framework Carbon
+VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib \
+	-framework CoreAudio \
+	-framework IOKit \
+	-framework Carbon \
+	-framework DiskArbitration
 VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
