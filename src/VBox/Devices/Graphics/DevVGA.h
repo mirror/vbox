@@ -73,7 +73,8 @@
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
 #define VBE_DISPI_INDEX_X_OFFSET        0x8
 #define VBE_DISPI_INDEX_Y_OFFSET        0x9
-#define VBE_DISPI_INDEX_NB              0xa
+#define VBE_DISPI_INDEX_CMONITORS       0xa
+#define VBE_DISPI_INDEX_NB              0xb
 
 #define VBE_DISPI_ID0                   0xB0C0
 #define VBE_DISPI_ID1                   0xB0C1
@@ -275,6 +276,10 @@ typedef struct VGAState {
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
 
+    /** Number of virtual monitors */
+    uint32_t                    monitor_count;
+    uint32_t                    Padding0;   /* May be removed if more data is added */
+
     /** Size of the buffer*/
     uint32_t                    cbExtVRAM;
     /** Address of external video memory buffer overlaying VRAM. */
@@ -282,6 +287,7 @@ typedef struct VGAState {
 #if HC_ARCH_BITS ==32
     uint32_t                    Alignment0;
 #endif
+
     /** The PCI device. */
     PCIDEVICE                   Dev;
 

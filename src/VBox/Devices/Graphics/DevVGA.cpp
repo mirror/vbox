@@ -55,6 +55,8 @@
 #define VGA_VRAM_MAX        (128 * _1M)
 /** The minimum amount of VRAM. */
 #define VGA_VRAM_MIN        (_1M)
+/** The maximum number of monitors. */
+#define VGA_MONITORS_MAX    64
 
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
@@ -583,6 +585,8 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
                 val = s->vbe_regs[s->vbe_index];
                 break;
           }
+      } else if (s->vbe_index == VBE_DISPI_INDEX_CMONITORS) {
+            val = s->monitor_count;
       } else {
         val = s->vbe_regs[s->vbe_index];
       }
@@ -4285,6 +4289,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     pData->graphic_mode   = -1;         /* Force full update. */
 #ifdef CONFIG_BOCHS_VBE
     pData->vbe_regs[VBE_DISPI_INDEX_ID] = VBE_DISPI_ID0;
+    pData->vbe_regs[VBE_DISPI_INDEX_CMONITORS] = pData->monitor_count;
     pData->vbe_bank_mask    = ((pData->vram_size >> 16) - 1);
 #endif /* CONFIG_BOCHS_VBE */
 
@@ -4512,6 +4517,17 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         pData->vram_size = RT_ALIGN_32(pData->vram_size, _1M);
     }
     Log(("VGA: VRamSize=%#x\n", pData->vram_size));
+
+    rc = CFGMR3QueryU32(pCfgHandle, "MonitorCount", &pData->monitor_count);
+    if (VBOX_FAILURE(rc) || !pData->monitor_count)
+        pData->monitor_count = 1;
+    else if (pData->monitor_count > VGA_MONITORS_MAX)
+    {
+        AssertMsgFailed(("monitor_count=%d max=%d\n", pData->monitor_count, VGA_MONITORS_MAX));
+        pData->monitor_count = 1;
+    }
+    pData->vbe_regs[VBE_DISPI_INDEX_CMONITORS] = pData->monitor_count;
+    Log(("VGA: MonitorCount=%d\n", pData->monitor_count));
 
     pData->fGCEnabled = true;
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &f);
