@@ -90,15 +90,16 @@ static struct
     const char *publicName;
     const char *name;
     const char *rx;
+    bool canDelete;
 }
 gPropertyMap[] =
 {
-    { "GUI/Input/HostKey",      "hostKey",      "\\d*[1-9]\\d*" },
-    { "GUI/Input/AutoCapture",  "autoCapture",  "true|false" },
-    { "GUI/Customizations",     "guiFeatures",  "\\S+" },
+    { "GUI/Input/HostKey",      "hostKey",      "\\d*[1-9]\\d*", true },
+    { "GUI/Input/AutoCapture",  "autoCapture",  "true|false", true },
+    { "GUI/Customizations",     "guiFeatures",  "\\S+", true },
     /* LanguageID regexp must correlate with gVBoxLangIDRegExp in
      * VBoxGlobal.cpp */
-    { "GUI/LanguageID",         "languageId",   "(([a-z]{2})(_([A-Z]{2}))?)|(built_in)" },
+    { "GUI/LanguageID",         "languageId",   "(([a-z]{2})(_([A-Z]{2}))?)|(built_in)", true },
 };
 
 void VMGlobalSettings::setHostKey (int key)
@@ -222,13 +223,25 @@ bool VMGlobalSettings::setPublicProperty (const QString &publicName, const QStri
 
 void VMGlobalSettings::setPropertyPrivate (int index, const QString &value)
 {
-    if (!QRegExp (gPropertyMap [index].rx).exactMatch (value))
+    if (value.isNull())
     {
-        last_err = tr ("The value '%1' of the key '%2' doesn't match the "
-                       "regexp constraint '%3'.")
-                       .arg (value, gPropertyMap [index].publicName,
-                             gPropertyMap [index].rx);
-        return;
+        if (!gPropertyMap [index].canDelete)
+        {
+            last_err = tr ("Cannot delete the key '%1'.")
+                .arg (gPropertyMap [index].publicName);
+            return;
+        }
+    }
+    else
+    {
+        if (!QRegExp (gPropertyMap [index].rx).exactMatch (value))
+        {
+            last_err = tr ("The value '%1' of the key '%2' doesn't match the "
+                           "regexp constraint '%3'.")
+                .arg (value, gPropertyMap [index].publicName,
+                      gPropertyMap [index].rx);
+            return;
+        }
     }
 
     QVariant oldVal = property (gPropertyMap [index].name);
@@ -240,8 +253,11 @@ void VMGlobalSettings::setPropertyPrivate (int index, const QString &value)
         bool ok = setProperty (gPropertyMap [index].name, value);
         Assert (ok);
         if (ok)
+        {
+            last_err = QString::null;
             emit propertyChanged (gPropertyMap [index].publicName,
                                   gPropertyMap [index].name);
+        }
     }
 }
 
