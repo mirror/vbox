@@ -1227,7 +1227,7 @@ PATMIretStart:
     jnz     iret_notring0
 
     test    dword [esp+12], X86_EFL_IF
-    jz      iret_clearIF
+    jz near iret_clearIF
 
     ; force ring 1 CS RPL
     or      dword [esp+8], 1
