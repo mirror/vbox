@@ -255,7 +255,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
         switch (pPage->enmKind)
         {
-             case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
+            case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
             {
                 const unsigned iShw = off / sizeof(X86PTE);
                 if (uShw.pPT->a[iShw].n.u1Present)
