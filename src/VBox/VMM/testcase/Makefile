@@ -155,6 +155,13 @@ include	$(PATH_KBUILD)/footer.kmk
 # Some handcrafted support for tstAsmStructs.
 #
 
+ifeq ($(BUILD_PLATFORM),win)
+ include $(PATH_KBUILD)/tools/MINGW32.kmk
+ VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
+else
+ VBOX_NM ?= nm -p
+endif
+
 # 1a. make a header file which makes all the structures+members globals.
 $(PATH_TARGET)/tstAsmStructsAsm.mac: tstAsmStructsAsm.asm tstAsmStructsAsm-lst.sed \
 		$(DEPTH)/include/iprt/asmdefs.mac \
@@ -192,7 +199,7 @@ else
 		) \
 		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
 		$(foreach inc,$(INCS),-I$(inc)/) -o $@.o -l $@.lst $<
-		nm $@.o | $(SED) \
+		$(VBOX_NM) $@.o | $(SED) \
 			-e '/[0-9a-fA-F][0-9a-fA-F]* [^a] /d' \
 			-e 's/[0-9a-fA-F][0-9a-fA-F]* a \([^ ]*\)/global \1/' \
 			> $@
@@ -234,12 +241,6 @@ else
 endif
 
 # 2. use nm and sed to transform this into the header we want.
-ifeq ($(BUILD_PLATFORM),win)
- include $(PATH_KBUILD)/tools/MINGW32.kmk
- VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
-else
- VBOX_NM ?= nm -p
-endif
 $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
 	$(call MSG_L1,Generating $@)
 	$(QUIET)$(RM) -f $@ $@.dump $@.tmp
