@@ -255,7 +255,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
         switch (pPage->enmKind)
         {
-            case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
+             case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
             {
                 const unsigned iShw = off / sizeof(X86PTE);
                 if (uShw.pPT->a[iShw].n.u1Present)
@@ -864,6 +864,13 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
     switch (enmKind1)
     {
         /*
+         * It's prefectly fine to reuse these..
+         */
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+            return true;
+
+        /*
          * It's prefectly fine to reuse these, except for PAE stuff.
          */
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
@@ -902,7 +909,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
             }
 
         /*
-         * These cannot be flushed, and it's common to reused the PDs as PTs.
+         * These cannot be flushed, and it's common to reuse the PDs as PTs.
          */
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
@@ -1108,6 +1115,8 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                     break;
                 default:
                     AssertFatalMsgFailed(("enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
@@ -1144,6 +1153,8 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
@@ -1223,6 +1234,8 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
@@ -1543,6 +1556,8 @@ void pgmPoolClearAll(PVM pVM)
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 {
 #ifdef PGMPOOL_WITH_USER_TRACKING
                     if (pPage->cPresent)
@@ -1893,10 +1908,12 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
     switch (enmKind)
     {
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_ROOT_32BIT_PD:
             return 4;
 
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
@@ -1921,7 +1938,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
  * @param enmKind
  *          The kind of page.
  *
- * @returns The size of the entry in bytes. That is, 4 or 8.
+ * @returns The size of the entry in bytes. That is, 0, 4 or 8.
  * @returns If the kind is not for a table, an assertion is raised and 0 is
  *          returned.
  */
@@ -1945,6 +1962,11 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_ROOT_PDPTR:
         case PGMPOOLKIND_ROOT_PML4:
             return 8;
+
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+            /** @todo can we return 0? (nobody is calling this...) */
+            return 0;
 
         default:
             AssertFatalMsgFailed(("enmKind=%d\n", enmKind));
@@ -1980,6 +2002,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCRTHCPHYS pHCPhys, uint16_t i
     {
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         {
             const uint32_t  u32 = (*pHCPhys & X86_PTE_PAE_PG_MASK) | X86_PTE_P;
             PX86PT          pPT = (PX86PT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -2009,6 +2032,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCRTHCPHYS pHCPhys, uint16_t i
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         {
             const uint64_t  u64 = (*pHCPhys & X86_PTE_PAE_PG_MASK) | X86_PTE_P;
             PX86PTPAE       pPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -2152,6 +2176,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PRTHCPHYS pHCPhys)
                  */
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 {
                     unsigned    cPresent = pPage->cPresent;
                     PX86PT      pPT = (PX86PT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -2173,6 +2198,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PRTHCPHYS pHCPhys)
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 {
                     unsigned  cPresent = pPage->cPresent;
                     PX86PTPAE pPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -2723,7 +2749,6 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
  * @param   pPool       The pool.
  * @param   pPage       The page.
  * @param   pShwPT      The shadow page table (mapping of the page).
- * @param   pGstPT      The guest page table.
  */
 DECLINLINE(void) pgmPoolTrackDerefPT32Bit4MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PT pShwPT)
 {
@@ -2849,6 +2874,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             break;
         }
 
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS: /* treat it like a 4 MB page */
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
         {
             STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
@@ -2857,6 +2883,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             break;
         }
 
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:   /* treat it like a 4 MB page */
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         {
             STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
@@ -2871,6 +2898,8 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
             break;
 #endif /* !PGMPOOL_WITH_GCPHYS_TRACKING */
 
