@@ -204,6 +204,11 @@
 #define PGM_TYPE_AMD64      5
 /** @} */
 
+/** @name Defines used to check if the guest is using paging
+ * @{ */
+#define PGM_WITH_PAGING(a)  (a == PGM_TYPE_32BIT || a == PGM_TYPE_PAE || a == PGM_TYPE_AMD64)
+/** @} */
+
 /** @def PGM_HCPHYS_2_PTR
  * Maps a HC physical page pool address to a virtual address.
  *
@@ -595,15 +600,19 @@ typedef const PGMPOOLPHYSEXT *PCPGMPOOLPHYSEXT;
  */
 typedef enum PGMPOOLKIND
 {
-    /** The ritual invalid 0 entry. */
+    /** The virtual invalid 0 entry. */
     PGMPOOLKIND_INVALID = 0,
     /** The entry is free (=unused). */
     PGMPOOLKIND_FREE,
 
+    /** Shw: 32-bit page table; Gst: no paging  */
+    PGMPOOLKIND_32BIT_PT_FOR_PHYS,
     /** Shw: 32-bit page table; Gst: 32-bit page table.  */
     PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT,
     /** Shw: 32-bit page table; Gst: 4MB page.  */
     PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB,
+    /** Shw: PAE page table; Gst: no paging  */
+    PGMPOOLKIND_PAE_PT_FOR_PHYS,
     /** Shw: PAE page table;    Gst: 32-bit page table. */
     PGMPOOLKIND_PAE_PT_FOR_32BIT_PT,
     /** Shw: PAE page table;    Gst: Half of a 4MB page.  */
