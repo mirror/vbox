@@ -178,8 +178,10 @@ ifndef DONT_USE_YASM
 		) \
 		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
 		$(foreach inc,$(INCS),-I$(inc)/) -o $@.o -l $@.lst $<
+	$(SED) -f tstAsmStructsAsm-lst.sed $@.lst > $@
 else
 	$(QUIET)$(TOOL_NASM_AS) \
+		-g \
 		$(addprefix -D, \
 			$(DEFS) \
 			$(DEFS.$(BUILD_TYPE)) \
@@ -190,8 +192,11 @@ else
 		) \
 		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
 		$(foreach inc,$(INCS),-I$(inc)/) -o $@.o -l $@.lst $<
+		nm $@.o | $(SED) \
+			-e '/[0-9a-fA-F][0-9a-fA-F]* [^a] /d' \
+			-e 's/[0-9a-fA-F][0-9a-fA-F]* a \([^ ]*\)/global \1/' \
+			> $@
 endif
-	$(SED) -f tstAsmStructsAsm-lst.sed $@.lst > $@ 
 
 
 
