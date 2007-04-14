@@ -19,7 +19,7 @@
 #
 
 DEPTH ?= ../../../..
-SUB_PATH = ..
+SUB_DEPTH = ..
 include	$(PATH_KBUILD)/subheader.kmk
 
 #
