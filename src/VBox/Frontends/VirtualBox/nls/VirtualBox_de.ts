@@ -743,7 +743,7 @@
     </message>
     <message>
         <source>Refresh media image list</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste der Abbilder aktualisieren</translation>
     </message>
     <message>
         <source>&amp;Actions</source>
@@ -751,7 +751,7 @@
     </message>
     <message>
         <source>Location</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicherort</translation>
     </message>
     <message>
         <source>Disk Type</source>
@@ -2065,43 +2065,43 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der gesicherte Zustand der virtuellen Machine &lt;b&gt;%1&lt;/b&gt; konnte nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Sicherungspunkt &lt;b&gt;%1&lt;/b&gt; der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der aktuelle Sicherungspunkt sowie der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es gibt keine virtuelle Maschine mit dem Namen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; wirklich dauerhaft löschen?&lt;/p&gt;&lt;p&gt;Dieser Vorgang kann nicht rückgängig gemacht werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie die Bindung der inaktiven virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; wirklich aufheben?&lt;/p&gt;&lt;p&gt;Sie kann mit dieser GUI nicht wieder eingebunden werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie wirklich den gesicherten Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; wirklich freigeben?&lt;/p&gt;&lt;p&gt;Diese Operation ist gleichbedeutend mit dem Ausschalten der VM ohne sauberes Herunterfahren durch das Gast-Betriebssystem.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Durch Freigeben dieses Medienabbildes wird die Bindung an folgende virtuelle Maschinen aufgehoben: &lt;b&gt;%1&gt;/b&gt;.&lt;p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Medienabbild &lt;b&gt;%1&lt;/b&gt; ist bereits vorhanden. Sie können keine neue virtuelle Maschine erzeugen, die diese Datei benutzt, weil sie bereits von einer anderen virtuellen Maschine benutzt sein könnte.&lt;/p&gt;&lt;p&gt;Bitte wählen Sie einen anderen Dateinamen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
@@ -2145,7 +2145,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte Registrierung der %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; nicht aufheben.</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -2153,7 +2153,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte keine neue virtuelle Maschine mit der UUID &lt;b&gt;%1&lt;/b&gt; öffnen.</translation>
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2173,11 +2173,11 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das USB-Gerät &lt;b&gt;%1&lt;/b&gt; konnte nicht an die virtuelle Maschine &lt;b&gt;%2&lt;/b&gt; gebunden werden.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Bindung des USB-Gerätes &lt;b&gt;%1&lt;/b&gt; an die virtuelle Maschine &lt;b&gt;%2&lt;/b&gt; konnte nicht aufgehoben werden.</translation>
     </message>
     <message>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -2185,11 +2185,11 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der gemeinsame Ordner &lt;b&gt;%1&lt;/b&gt; (Verweis auf &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) konnte nicht aus der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; entfernt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Sie haben innerhalb des VM-Fensters &lt;b&gt;geklickt&lt;/b&gt; oder die &lt;b&gt;Host-Taste&lt;/b&gt; gedrückt. Die virtuelle Maschine wird daher Maus &lt;b&gt;fangen&lt;/b&gt; (nur, wenn Mauszeigerintegration vom aktuellen Gast-System nicht unterstützt wird) sowie die Tastatur. Dadurch werden diese für andere Anwendungen nicht verfügbar.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -2201,15 +2201,15 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Der VM-Monitor zeigt an, dass das Gastbetriebssystem keine &lt;b&gt;Mauszeiger-Integration&lt;/b&gt; für den aktuellen Videomodus unterstützt. Um die Maus im Gastsystem zu nutzen, muss diese durch Mausklick im VM-Fenster gefangen werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine is momentan &lt;b&gt;angehalten&lt;/b&gt; und nimmt deshalb keine Maus- und Tastatureingaben entgegen. Um mit der Arbeit der virtuellen Maschine forzufahren müssen Sie die virtuelle Maschine weiterlaufen lassen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Mindestens eins der registrierten virtullen Medien ist momentan nicht zugreifbar. Virtuelle Maschinen, die auf eins dieser Medien zugreifen, können so lange nicht gestartet werden, bis diese Medien wieder zugreifbar werden.&lt;/p&gt;&lt;/p&gt;Bestätigen Sie mit &lt;b&gt;OK&lt;/b&gt; um den Manager für virtuelle Medien zu starten und zu überprüfen, welche Medien nicht zugreifbar sind. Oder drücken Sie &lt;b&gt;Ignore&lt;/b&gt; um diese Meldung zu ignorieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -2246,11 +2246,11 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occured during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Während der Ausführung der virtuellen Maschine ist ein schwerwiegender Fehler aufgetreten! Die VM wird abgeschaltet. Es wird empfohlen, die folgende Fehlermeldung für eine spätere Untersuchung in die Zwischenablage zu kopieren:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occured during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Während der Ausführung der virtuellen Maschine ist ein Fehler aufgetreten. Einzelheiten werden unten gezeigt. Sie können versuchen, den angezeigten Fehler zu beheben und mit der Ausführung fortzufahren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
@@ -2274,12 +2274,12 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Callee:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Callee&amp;nbsp;RC:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -3799,7 +3799,7 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     <message>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nicht angeschlossen&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
@@ -3819,15 +3819,15 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das zweite Slave-Laufwerk ist bereits an einen anderen Slot gebunden.</translation>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM-Abbild ist nicht ausgewählt.</translation>
     </message>
     <message>
         <source>Floppy drive image file is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskettenabbild ist nicht ausgewählt.</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
@@ -3835,11 +3835,11 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     </message>
     <message>
         <source>VRDP Port is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDP-Port is nicht gesetzt.</translation>
     </message>
     <message>
         <source>VRDP Timeout is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDP-Timeout ist nicht gesetzt.</translation>
     </message>
     <message>
         <source> - Settings</source>
@@ -3848,7 +3848,7 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Neuer Filter %1</translation>
+        <translation>Neuer Filter %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
@@ -3859,11 +3859,11 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
 Defines the mode of sharing the clipboard between the guest and the host OS. Note
 that this feature requires Guest Additions to be installed in the guest OS.
                                                 </source>
-        <translation type="unfinished"></translation>
+        <translation>Legt den Modus des Clipboards zwischen Host und Gast fest. Dieses Feature benötigt installierte Gast-Erweiterungen im Gast-Betriebssystem.</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordner &amp;Sicherungspunkte</translation>
     </message>
 </context>
 <context>
