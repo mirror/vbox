@@ -22,33 +22,67 @@
 
 /** @page pg_tm        TM - The Time Manager
  *
- * The Time Manager abstracts the CPU clocks and manages timers used by VM device.
+ * The Time Manager abstracts the CPU clocks and manages timers used by the VMM,
+ * device and drivers.
  *
+ * 
+ * @section sec_tm_clocks   Clocks
+ * 
+ * There are currently 4 clocks:
+ *   - Virtual (guest).
+ *   - Synchronous virtual (guest).
+ *   - CPU Tick (TSC) (guest). Only current use is rdtsc emulation. Usually a 
+ *     function of the virtual clock.
+ *   - Real (host). The only current use is display updates for not real 
+ *     good reason...
+ * 
+ * The interesting clocks are two first ones, the virtual and synchronous virtual 
+ * clock. The synchronous virtual clock is tied to the virtual clock except that 
+ * it will take into account timer delivery lag caused by host scheduling. It will
+ * normally never advance beyond the header timer, and when lagging too far behind
+ * it will gradually speed up to catch up with the virtual clock.
  *
+ * The CPU tick (TSC) is normally virtualized as a function of the virtual time, 
+ * where the frequency defaults to the host cpu frequency (as we measure it). It
+ * can also use the host TSC as source and either present it with an offset or
+ * unmodified. It is of course possible to configure the TSC frequency and mode 
+ * of operation.
+ * 
+ * @subsection subsec_tm_timesync Guest Time Sync / UTC time
+ * 
+ * Guest time syncing is primarily taken care of by the VMM device. The principle
+ * is very simple, the guest additions periodically asks the VMM device what the 
+ * current UTC time is and makes adjustments accordingly. Now, because the 
+ * synchronous virtual clock might be doing catchups and we would therefore
+ * deliver more than the normal rate for a little while, some adjusting of the
+ * UTC time is required before passing it on to the guest. This is why TM provides 
+ * an API for query the current UTC time.
  *
+ * 
  * @section sec_tm_timers   Timers
  *
- * The timers supports multiple clocks. Currently there are two clocks in the
- * TM, the host real time clock and the guest virtual clock. Each clock has it's
- * own set of scheduling facilities which are identical but for the clock source.
+ * The timers can use any of the TM clocks described in the previous section. Each
+ * clock has its own scheduling facility, or timer queue if you like. There are
+ * a few factors which makes it a bit complex. First there is the usual R0 vs R3 
+ * vs. GC thing. Then there is multiple threads, and then there is the timer thread
+ * that periodically checks whether any timers has expired without EMT noticing. On 
+ * the API level, all but the create and save APIs must be mulithreaded. EMT will
+ * always run the timers.
  *
- * Take one such timer scheduling facility, or timer queue if you like. There are
- * a few factors which makes it a bit complex. First there is the usual GC vs. HC
- * thing. Then there is multiple threads, and then there is the fact that on Unix
- * we might just as well take a timer signal which checks whether it's wise to
- * schedule timers while we're scheduling them. On API level, all but the create
- * and save APIs must be mulithreaded.
+ * The design is using a doubly linked list of active timers which is ordered
+ * by expire date. This list is only modified by the EMT thread. Updates to the 
+ * list are are batched in a singly linked list, which is then process by the EMT 
+ * thread at the first opportunity (immediately, next time EMT modifies a timer 
+ * on that clock, or next timer timeout). Both lists are offset based and all
+ * the elements therefore allocated from the hyper heap.
  *
- * The design is using a doubly linked HC list of active timers which is ordered
- * by expire date. Updates to the list is batched in a singly linked list (linked
- * by handle not pointer for atomically update support in both GC and HC) and
- * will be processed by the emulation thread.
- *
- * For figuring out when there is need to schedule timers a high frequency
- * asynchronous timer is employed using Host OS services. Its task is to check if
- * there are anything batched up or if a head has expired. If this is the case
- * a forced action is signals and the emulation thread will process this ASAP.
- *
+ * For figuring out when there is need to schedule and run timers TM will:
+ *    - Poll whenever somebody queries the virtual clock.
+ *    - Poll the virtual clocks from the EM and REM loops.
+ *    - Poll the virtual clocks from trap exit path.
+ *    - Poll the virtual clocks and calculate first timeout from the halt loop.
+ *    - Employ a thread which periodically (100Hz) polls all the timer queues.
+ * 
  */
 
 
