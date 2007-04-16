@@ -92,11 +92,9 @@ VMDisplay::VMDisplay()
     mpu8VbvaPartial = NULL;
     mcbVbvaPartial = 0;
 
-    RTSemEventMultiCreate(&mResizeSem);
     RTSemEventMultiCreate(&mUpdateSem);
 
     // reset the event sems
-    RTSemEventMultiReset(mResizeSem);
     RTSemEventMultiReset(mUpdateSem);
 
     // by default, we have an internal Framebuffer which is
@@ -104,12 +102,13 @@ VMDisplay::VMDisplay()
     mFramebuffer = 0;
     mInternalFramebuffer = true;
     mFramebufferOpened = false;
+
+    mu32ResizeStatus = ResizeStatus_Void;
 }
 
 VMDisplay::~VMDisplay()
 {
     mFramebuffer = 0;
-    RTSemEventMultiDestroy(mResizeSem);
     RTSemEventMultiDestroy(mUpdateSem);
 }
 
@@ -123,21 +122,24 @@ VMDisplay::~VMDisplay()
  * @param w New display width
  * @param h New display height
  */
-void VMDisplay::handleDisplayResize (int w, int h)
+int VMDisplay::handleDisplayResize (int w, int h)
 {
     LogFlow(("VMDisplay::handleDisplayResize(): w=%d, h=%d\n", w, h));
 
     // if there is no Framebuffer, this call is not interesting
     if (mFramebuffer == NULL)
-        return;
+        return VINF_SUCCESS;
 
-     // callback into the Framebuffer to notify it
+    /* Atomically set the resize status before calling the framebuffer. The new InProgress status will
+     * disable access to the VGA device by the EMT thread.
+     */
+    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_InProgress, ResizeStatus_Void);
+    AssertRelease(f);NOREF(f);
+
+    // callback into the Framebuffer to notify it
     BOOL finished;
 
     mFramebuffer->Lock();
-
-    /* Reset the event here. It could be signalled before it gets to after 'if (!finished)' */
-    RTSemEventMultiReset(mResizeSem);
 
     mFramebuffer->RequestResize(w, h, &finished);
 
@@ -149,16 +151,42 @@ void VMDisplay::handleDisplayResize (int w, int h)
          *       The EMT keeps the framebuffer lock until the resize process completes.
          */
 
-        /// @todo is this compatible with VBOX_NEXT_STEP?
-        // the framebuffer needs more time to process
-        // the event so we have to halt the VM until it's done
-        RTSemEventMultiWait(mResizeSem, RT_INDEFINITE_WAIT);
+        return VINF_VGA_RESIZE_IN_PROGRESS;
     }
 
-    updateDisplayData();
+    /* Set the status so the 'handleResizeCompleted' would work.  */
+    f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    AssertRelease(f);NOREF(f);
 
-    mFramebuffer->Unlock();
-    return;
+    /* The method also unlocks the framebuffer. */
+    handleResizeCompletedEMT();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ *  Framebuffer has been resized.
+ *  Read the new display data and unlock the framebuffer.
+ *
+ *  @thread EMT
+ */
+void VMDisplay::handleResizeCompletedEMT (void)
+{
+    LogFlowFunc(("\n"));
+    if (mFramebuffer)
+    {
+        /* Framebuffer has completed the resize. Update the connector data. */
+        updateDisplayData();
+    
+        mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, true);
+
+        /* Unlock framebuffer. */
+        mFramebuffer->Unlock();
+    }
+
+    /* Go into non resizing state. */
+    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_Void, ResizeStatus_UpdateDisplayData);
+    AssertRelease(f);NOREF(f);
 }
 
 /**
@@ -175,14 +203,9 @@ STDMETHODIMP VMDisplay::ResizeCompleted()
     if (mInternalFramebuffer)
         return E_FAIL;
 
-    /* The framebuffer can already be locked by the thread waiting for completion; due to recent
-     * changes when calling the VGA device. We don't really need to lock it here, so just don't
-     * bother.
-     */
-    //mFramebuffer->Lock();
-    // signal our semaphore
-    RTSemEventMultiSignal(mResizeSem);
-    //mFramebuffer->Unlock();
+    /* Set the flag indicating that the resize has completed and display data need to be updated. */
+    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    AssertRelease(f);NOREF(f);
 
     return S_OK;
 }
@@ -422,12 +445,12 @@ void VMDisplay::resetFramebuffer()
  * @param  cx         New width in pixels.
  * @param  cy         New height in pixels.
  */
-DECLCALLBACK(void) VMDisplay::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy)
+DECLCALLBACK(int) VMDisplay::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
     // forward call to instance handler
-    pDrv->pDisplay->handleDisplayResize(cx, cy);
+    return pDrv->pDisplay->handleDisplayResize(cx, cy);
 }
 
 /**
@@ -464,6 +487,27 @@ DECLCALLBACK(void) VMDisplay::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
      * of any locking issues. */
 
     VMDisplay *pDisplay = pDrv->pDisplay;
+
+    uint32_t u32ResizeStatus = pDisplay->mu32ResizeStatus;
+    
+    if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
+    {
+#ifdef DEBUG_sunlover
+        LogFlowFunc (("ResizeStatus_UpdateDisplayData\n"));
+#endif /* DEBUG_sunlover */
+        /* The framebuffer was resized and display data need to be updated. */
+        pDisplay->handleResizeCompletedEMT ();
+        /* Continue with normal processing because the status here is ResizeStatus_Void. */
+        Assert (pDisplay->mu32ResizeStatus == ResizeStatus_Void);
+    }
+    else if (u32ResizeStatus == ResizeStatus_InProgress)
+    {
+#ifdef DEBUG_sunlover
+        LogFlowFunc (("ResizeStatus_InProcess\n"));
+#endif /* DEBUG_sunlover */
+        /* The framebuffer is being resized. Do not call the VGA device back. Immediately return. */
+        return;
+    }
 
     if (pDisplay->mfPendingVideoAccelEnable)
     {

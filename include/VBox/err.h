@@ -1030,6 +1030,8 @@
 /** One of the custom modes was incorrect.
  * The format or bit count of the custom mode value is invalid. */
 #define VERR_VGA_INVALID_CUSTOM_MODE                (-3500)
+/** The display connector is resizing. */
+#define VINF_VGA_RESIZE_IN_PROGRESS                 (3501)
 /** @} */
 
 

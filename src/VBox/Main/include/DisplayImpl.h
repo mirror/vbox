@@ -58,7 +58,7 @@ public:
     void uninit();
 
     // public methods only for internal purposes
-    void handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h);
+    int handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h);
     void handleDisplayUpdate (int x, int y, int cx, int cy);
     IFramebuffer *getFramebuffer()
     {
@@ -139,7 +139,7 @@ private:
     static DECLCALLBACK(void*) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
     static DECLCALLBACK(int)   drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
     static DECLCALLBACK(void)  drvDestruct(PPDMDRVINS pDrvIns);
-    static DECLCALLBACK(void)  displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy);
+    static DECLCALLBACK(int)   displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy);
     static DECLCALLBACK(void)  displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInterface,
                                                      uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
     static DECLCALLBACK(void)  displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterface);
@@ -158,7 +158,6 @@ private:
     bool mFramebufferOpened;
     /** bitmask of acceleration operations supported by current framebuffer */
     ULONG mSupportedAccelOps;
-    RTSEMEVENTMULTI mResizeSem;
     RTSEMEVENTMULTI mUpdateSem;
 
     /* arguments of the last handleDisplayResize() call */
@@ -185,7 +184,14 @@ private:
     bool vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
     void vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd);
 
-    void callFramebufferResize (FramebufferPixelFormat_T pixelFormat, void *pvVRAM, uint32_t cbLine, int w, int h);
+    void handleResizeCompletedEMT (void);
+    volatile uint32_t mu32ResizeStatus;
+    
+    enum {
+        ResizeStatus_Void,
+        ResizeStatus_InProgress,
+        ResizeStatus_UpdateDisplayData
+    };
 };
 
 #endif // ____H_DISPLAYIMPL

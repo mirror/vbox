@@ -280,13 +280,8 @@ typedef struct VGAState {
     uint32_t                    monitor_count;
     uint32_t                    Padding0;   /* May be removed if more data is added */
 
-    /** Size of the buffer*/
-    uint32_t                    cbExtVRAM;
-    /** Address of external video memory buffer overlaying VRAM. */
-    R3PTRTYPE(void *)           pvExtVRAMHC;
-#if HC_ARCH_BITS ==32
-    uint32_t                    Alignment0;
-#endif
+    /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
+    uint32_t                    fRenderVRAM;
 
     /** The PCI device. */
     PCIDEVICE                   Dev;
