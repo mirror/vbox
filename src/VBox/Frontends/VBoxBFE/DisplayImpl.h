@@ -96,7 +96,7 @@ private:
     bool vbvaFetchCmd (struct _VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
     void vbvaReleaseCmd (struct _VBVACMDHDR *pHdr, int32_t cbCmd);
 
-    void VMDisplay::handleResizeCompletedEMT (void);
+    void handleResizeCompletedEMT (void);
     volatile uint32_t mu32ResizeStatus;
     
     enum {
