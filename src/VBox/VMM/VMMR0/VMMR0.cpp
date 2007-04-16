@@ -742,7 +742,7 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
             rc = g_pVMAssert->vmm.s.rcCallHost;
     }
 
-    return true;
+    return false;
 }
 
 
