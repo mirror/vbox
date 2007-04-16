@@ -494,9 +494,7 @@ PGMDECL(int) PGMPhysHCPhys2HCPtr(PVM pVM, RTHCPHYS HCPhys, PRTHCPTR pHCPtr)
  */
 PGMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
-    int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
-    /** @todo real mode & protected mode? */
-    return rc;
+    return PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
 }
 
 
@@ -516,7 +514,6 @@ PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (VBOX_SUCCESS(rc))
         rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPhys);
-    /** @todo real mode & protected mode? */
     return rc;
 }
 
@@ -537,7 +534,6 @@ PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (VBOX_SUCCESS(rc))
         rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
-    /** @todo real mode & protected mode? */
     return rc;
 }
 
