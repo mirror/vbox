@@ -26,6 +26,7 @@
 
 #include "vboxmod.h"
 #include "waitcompat.h"
+#include <VBox/log.h>
 
 #define VERSION "0.5"
 
@@ -40,10 +41,14 @@ MODULE_VERSION(VBOX_VERSION_STRING);
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
                         const char *pszFile, const char *pszFunction)
 {
-    elog ("!!Assertion Failed!!\n"
-          "Expression: %s\n"
-          "Location  : %s(%d) %s\n",
-          pszExpr, pszFile, uLine, pszFunction);
+    elog("!!Assertion Failed!!\n"
+         "Expression: %s\n"
+         "Location  : %s(%d) %s\n",
+         pszExpr, pszFile, uLine, pszFunction);
+    Log(("!!Assertion Failed!!\n"
+         "Expression: %s\n"
+         "Location  : %s(%d) %s\n",
+         pszExpr, pszFile, uLine, pszFunction));
 }
 
 /* Runtime assert implementation for Linux ring 0 */
@@ -55,10 +60,12 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     va_start(ap, pszFormat);
     vsnprintf(msg, sizeof(msg) - 1, pszFormat, ap);
     msg[sizeof(msg) - 1] = '\0';
-    ilog ("%s", msg);
+    elog("%s", msg);
+    Log(("%s", msg));
     va_end(ap);
 }
 
+#if 0  /* We now have real backdoor logging */
 /* Backdoor logging function, needed by the runtime */
 RTDECL(size_t) RTLogBackdoorPrintf (const char *pszFormat, ...)
 {
@@ -73,6 +80,7 @@ RTDECL(size_t) RTLogBackdoorPrintf (const char *pszFormat, ...)
     va_end(ap);
     return n;
 }
+#endif
 
 /** device extension structure (we only support one device instance) */
 static VBoxDevice *vboxDev = NULL;
@@ -251,171 +259,22 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 
         case IOCTL_VBOXGUEST_HGCM_CALL:
         {
-            VBoxGuestHGCMCallInfo callHeader, *hgcmR3, *hgcmR0;
-            uint8_t *pu8PointerData;
-            size_t cbPointerData = 0, offPointerData = 0;
-            int i, rc;
-
-            compiler_assert(_IOC_SIZE(IOCTL_VBOXGUEST_HGCM_CALL) == sizeof(VBoxGuestHGCMCallInfo));
-            if (copy_from_user(&callHeader, (void*)arg, _IOC_SIZE(cmd)))
-            {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n");
-                return -EFAULT;
-            }
-            hgcmR3 = kmalloc(sizeof(*hgcmR3) + callHeader.cParms * sizeof(HGCMFunctionParameter),
-                               GFP_KERNEL);
-            if (!hgcmR3)
-            {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n");
-                return -ENOMEM;
-            }
-            if (copy_from_user(hgcmR3, (void*)arg,
-                               sizeof(*hgcmR3) +   callHeader.cParms
-                                                 * sizeof(HGCMFunctionParameter)))
-            {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n");
-                kfree(hgcmR3);
-                return -EFAULT;
-            }
-            hgcmR0 = kmalloc(sizeof(*hgcmR0) + callHeader.cParms * sizeof(HGCMFunctionParameter),
-                               GFP_KERNEL);
-            if (!hgcmR0)
-            {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n");
-                kfree(hgcmR3);
-                return -ENOMEM;
-            }
-            hgcmR0->u32ClientID = callHeader.u32ClientID;
-            hgcmR0->u32Function = callHeader.u32Function;
-            hgcmR0->cParms = callHeader.cParms;
-            /* Calculate the total size of pointer space.  Will normally be for a single pointer */
-            for (i = 0; i < callHeader.cParms; ++i)
-            {
-                switch (VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type)
-                {
-                case VMMDevHGCMParmType_32bit:
-                case VMMDevHGCMParmType_64bit:
-                    break;
-                case VMMDevHGCMParmType_LinAddr:
-                case VMMDevHGCMParmType_LinAddr_In:
-                case VMMDevHGCMParmType_LinAddr_Out:
-                    cbPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
-                    break;
-                default:
-                    elog("IOCTL_VBOXGUEST_HGCM_CALL: unsupported or unknown parameter type\n");
-                    kfree(hgcmR3);
-                    kfree(hgcmR0);
-                    return -EINVAL;
-                }
-            }
-            pu8PointerData = kmalloc (cbPointerData, GFP_KERNEL);
-            /* Reconstruct the pointer parameter data in kernel space */
-            if (pu8PointerData == NULL)
-            {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: out of memory allocating %d bytes for pointer data\n",
-                       cbPointerData);
-                kfree(hgcmR3);
-                kfree(hgcmR0);
-                return -ENOMEM;
-            }
-            for (i = 0; i < callHeader.cParms; ++i)
-            {
-                VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].type
-                    = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type;
-                if (   (VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type == VMMDevHGCMParmType_LinAddr)
-                    || (VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type
-                            == VMMDevHGCMParmType_LinAddr_In))
-                {
-                    /* We are sending data to the host or sending and reading. */
-                    void *pvR3LinAddr
-                        = (void *)VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.u.linearAddr;
-                    if (copy_from_user(&pu8PointerData[offPointerData],
-                                       pvR3LinAddr,
-                                       VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size))
-                    {
-                        elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n");
-                        rc = -EFAULT;
-                        goto hgcm_exit;
-                    }
-                    VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr
-                        = (vmmDevHypPtr)&pu8PointerData[offPointerData];
-                    VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size
-                        = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
-                    offPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
-                }
-                else if (VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type
-                             == VMMDevHGCMParmType_LinAddr_Out)
-                {
-                    /* We are reading data from the host */
-                    VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr
-                        = (vmmDevHypPtr)&pu8PointerData[offPointerData];
-                    VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size
-                        = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
-                    offPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
-                }
-                else
-                {
-                    /* If it is not a pointer, then it is a 32bit or 64bit value */
-                    VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.value64
-                        = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.value64;
-                }
-            }
-            /* Internal VBoxGuest IOCTL interface */
-            rc = vboxadd_cmc_call(vboxDev, IOCTL_VBOXGUEST_HGCM_CALL, hgcmR0);
-            if (rc != VINF_SUCCESS)
-            {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: internal ioctl call failed, rc=%d\n", rc);
-                /** @todo We need a function to convert VBox error codes back to Linux. */
-                rc = -EINVAL;
-                goto hgcm_exit;
-            }
-            for (i = 0; i < callHeader.cParms; ++i)
-            {
-                if (   (VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type == VMMDevHGCMParmType_LinAddr)
-                    || (VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type
-                            == VMMDevHGCMParmType_LinAddr_Out))
-                {
-                    /* We are sending data to the host or sending and reading. */
-                    void *pvR3LinAddr
-                        = (void *)VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.u.linearAddr;
-                    void *pvR0LinAddr
-                        = (void *)VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr;
-                    if (copy_to_user(pvR3LinAddr, pvR0LinAddr,
-                                     VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size))
-                    {
-                        elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n");
-                        rc = -EFAULT;
-                        goto hgcm_exit;
-                    }
-                    VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size
-                        = VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size;
-                }
-                else if (VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type
-                             != VMMDevHGCMParmType_LinAddr_Out)
-                {
-                    /* If it is not a pointer, then it is a 32bit or 64bit value */
-                    VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.value64
-                        = VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.value64;
-                }
-            }
-            hgcmR3->result = hgcmR0->result;
-            if (copy_to_user((void*)arg, hgcmR3,
-                             sizeof(*hgcmR3) + callHeader.cParms * sizeof(HGCMFunctionParameter)))
-            {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n");
-                rc = -EFAULT;
-                goto hgcm_exit;
-            }
-        hgcm_exit:
-            kfree(hgcmR3);
-            kfree(hgcmR0);
-            kfree(pu8PointerData);
-            return rc;
+            /* This IOCTL allows the guest to make an HGCM call from user space.  The
+               OS-independant part of the Guest Additions already contain code for making an
+               HGCM call from the guest, but this code assumes that the call is made from the
+               kernel's address space.  So before calling it, we have to copy all parameters
+               to the HGCM call from user space to kernel space and reconstruct the structures
+               passed to the call (which include pointers to other memory) inside the kernel's
+               address space. */
+            return vbox_ioctl_hgcm_call(arg, vboxDev);
         }
 
         default:
         {
-            printk(KERN_ERR "vboxadd_ioctl: unknown command: %x\n", cmd);
+            elog("vboxadd_ioctl: unknown command: %x, IOCTL_VBOXGUEST_HGCM_CALL is %x\n", cmd,
+                 IOCTL_VBOXGUEST_HGCM_CALL);
+            Log(("vboxadd_ioctl: unknown command: %x, IOCTL_VBOXGUEST_HGCM_CALL is %x\n", cmd,
+                 IOCTL_VBOXGUEST_HGCM_CALL));
             return -EINVAL;
         }
     }

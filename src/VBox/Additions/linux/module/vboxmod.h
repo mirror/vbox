@@ -80,4 +80,18 @@ extern int vboxadd_cmc_init (void);
 extern void vboxadd_cmc_fini (void);
 DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
 
+/**
+ * This IOCTL wrapper allows the guest to make an HGCM call from user space.  The
+ * OS-independant part of the Guest Additions already contain code for making an
+ * HGCM call from the guest, but this code assumes that the call is made from the
+ * kernel's address space.  So before calling it, we have to copy all parameters
+ * to the HGCM call from user space to kernel space and reconstruct the structures
+ * passed to the call (which include pointers to other memory) inside the kernel's
+ * address space.
+ *
+ * @returns   0 on success or Linux error code on failure
+ * @param arg User space pointer to the call data structure
+ */
+extern int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev);
+
 #endif /* !VBOXMOD_H */
