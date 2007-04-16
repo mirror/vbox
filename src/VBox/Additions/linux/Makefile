@@ -31,7 +31,8 @@ SUBDIRS += \
 	xmouse
 ifndef VBOX_OSE
 SUBDIRS += \
-	sharedfolders
+	sharedfolders \
+	xclient
 endif
 endif
 
@@ -51,6 +52,7 @@ include	$(PATH_KBUILD)/footer.kmk
 $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(INSTARGET_vboxmod-bin) \
 		$(PATH_BIN)/additions/vboxadd-timesync \
+		$(PATH_BIN)/additions/vboxadd-xclient \
 		installer/vboxadd-timesync.sh \
 		installer/vboxadd.sh \
 		installer/install.sh \
@@ -77,6 +79,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0644 installer/Makefile.test  $(PATH_TARGET)/install/module/test/Makefile
 	$(QUIET)$(INSTALL) -m 0644 installer/test.c $(PATH_TARGET)/install/module/test/
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxadd-timesync $(PATH_TARGET)/install/vboxadd-timesync
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxadd-xclient $(PATH_TARGET)/install/vboxadd-xclient
 	$(QUIET)$(SED) "s;_VERSION_;$(VBOX_VERSION_STRING);g" installer/install.sh | $(SED) "s;_BUILD_;$(shell date);g" | $(SED) "s;_OSE_;$(VBOX_OSE);g" > $(PATH_TARGET)/install/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/install/install_.sh $(PATH_TARGET)/install/install.sh
 	$(QUIET)$(RM) $(PATH_TARGET)/install/install_.sh
