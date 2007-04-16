@@ -85,7 +85,7 @@ ifndef KERN_INCL
  KERN_INCL = $(KERN_DIR)/include
 endif
 ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
- $(error Error: unable to find the include directory for your current Linux kernel. Specify $KERN_INCL=<directory> and run Make again.)
+ $(error Error: unable to find the include directory for your current Linux kernel. Specify KERN_INCL=<directory> and run Make again.)
 endif
 
 # module install dir.
