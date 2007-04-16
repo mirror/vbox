@@ -306,10 +306,10 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                 break;
             case VERR_VM_DRIVER_NOT_ACCESSIBLE:
 #ifdef __LINUX__
-                pszError = N_("VirtualBox kernel driver not accessible, permission problem. "
-		              "Make sure that the current user has write permissions to "
-			      "/dev/vboxdrv by adding him to the vboxusers groups. Don't "
-			      "forget to logout to take the change effect");
+                pszError = N_("The VirtualBox kernel driver is not accessible to the current "
+		              "user. Make sure that the user has write permissions for "
+			      "/dev/vboxdrv by adding them to the vboxusers groups. You "
+			      "will need to logout for the change to take effect.");
 #else
                 pszError = N_("VirtualBox kernel driver not accessible, permission problem");
 #endif
@@ -328,7 +328,9 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                 pszError = N_("VirtualBox support library out of memory");
                 break;
             case VERR_VERSION_MISMATCH:
-                pszError = N_("VirtualBox support driver version mismatch");
+                pszError = N_("The VirtualBox support driver which is running is from a different "
+                              "version of VirtualBox.  You can correct this by stopping all "
+                              "running instances of VirtualBox and reinstalling the software.");
                 break;
             default:
                 pszError = N_("Unknown error initializing kernel driver (%Vrc)");
