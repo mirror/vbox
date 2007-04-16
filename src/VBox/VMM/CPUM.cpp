@@ -1545,10 +1545,12 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     State.pvPageHC        = NULL;
     State.rc              = VINF_SUCCESS;
     State.pVM             = pVM;
+
     /*
      * Get selector information.
      */
-    if (pCtx->eflags.Bits.u1VM == 0)
+    if (    (pCtx->cr0 & X86_CR0_PE)
+        &&   pCtx->eflags.Bits.u1VM == 0)
     {
         if (CPUMAreHiddenSelRegsValid(pVM))
         {
@@ -1585,8 +1587,8 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     }
     else
     {
-        /* V86 mode */
-        pCpu->mode            = CPUMODE_16BIT;  /* @todo */
+        /* real or V86 mode */
+        pCpu->mode            = CPUMODE_16BIT;
         State.GCPtrSegBase    = pCtx->cs * 16;
         State.GCPtrSegEnd     = 0xFFFFFFFF;
         State.cbSegLimit      = 0xFFFFFFFF;
