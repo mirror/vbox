@@ -1770,6 +1770,8 @@ typedef const X86DESC *PCX86DESC;
  * @{ */
 /** Code(=set)/Data(=clear) bit. */
 #define X86_SEL_TYPE_CODE                   8
+/** Memory(=set)/System(=clear) bit. */
+#define X86_SEL_TYPE_MEMORY                 BIT(4)
 /** Accessed bit. */
 #define X86_SEL_TYPE_ACCESSED               1
 /** Expand down bit (for data selectors only). */
