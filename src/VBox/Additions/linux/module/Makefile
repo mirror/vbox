@@ -72,6 +72,7 @@ vboxmod-bin_SOURCES = \
 	$(PATH_OUT)/version-generated.h=>version-generated.h \
 	vboxmod.c=>vboxmod.c \
 	cmc.c=>cmc.c \
+	hgcmcall.c=>hgcmcall.c \
 	vboxmod.h=>vboxmod.h \
 	waitcompat.h=>waitcompat.h \
 	Makefile.module=>Makefile
@@ -87,7 +88,7 @@ vboxmod-sh_SOURCES = \
 vboxadd_TEMPLATE = VBOXLNX32GUESTR0
 vboxadd_DEFS     = KBUILD_MODNAME=KBUILD_STR\(vboxadd\) KBUILD_BASENAME=KBUILD_STR\(vboxadd\) MODULE IN_RING0 IN_RT_R0 VBGL_VBOXGUEST EXPORT_SYMTAB VBGL_HGCM VBOX_HGCM
 vboxadd_LIBS     = $(PATH_LIB)/RuntimeLnx32GuestR0.a
-vboxadd_SOURCES  = vboxmod.c cmc.c
+vboxadd_SOURCES  = vboxmod.c cmc.c hgcmcall.c
 vboxadd_INCS     = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxadd_NOINST   = 1
 
