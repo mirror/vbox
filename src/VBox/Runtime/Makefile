@@ -112,7 +112,6 @@ ifdef IPRT_WITH_KLDR
  RuntimeR3_DEFS        += LDR_WITH_KLDR KLDR_USE_CRT
  RuntimeR3_DEFS.debug  += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
 endif
-RuntimeR3_DEFS.l4       = L4
 ifdef VBOX_MAIN_RELEASE_LOG ## @todo (dmik): temporary, until RTThreadSelf/RTThreadAdopt are properly updated
  RuntimeR3_DEFS         += RTCRITSECT_STRICT
 endif
@@ -388,7 +387,7 @@ RuntimeR3_SOURCES.freebsd = \
 # L4 RuntimeR3 subtarget since L4 headers won't work with VBOXR3.
 #
 RuntimeR3L4_TEMPLATE      = VBOXR3NP
-RuntimeR3L4_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF LDR_WITH_PE
+RuntimeR3L4_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF LDR_WITH_PE __PIC__
 RuntimeR3L4_INCS          = $(L4_INCDIR)
 
 RuntimeR3L4_SOURCES = \
