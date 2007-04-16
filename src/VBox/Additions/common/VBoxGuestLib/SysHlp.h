@@ -42,6 +42,8 @@ __BEGIN_DECLS
 #  include <ntddk.h>
 __END_DECLS
 # endif
+/* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so... */
+#undef ExFreePool
 #endif
 
 typedef struct _VBGLDRIVER
