@@ -1405,7 +1405,11 @@ static const uint8_t cursor_glyph[32 * 4] = {
  * - underline
  * - flashing
  */
+#ifndef VBOX
 static void vga_draw_text(VGAState *s, int full_update)
+#else
+static int vga_draw_text(VGAState *s, int full_update)
+#endif /* !VBOX */
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
     int cx_min, cx_max, linesize, x_incr;
@@ -1483,7 +1487,11 @@ static void vga_draw_text(VGAState *s, int full_update)
     }
     if ((height * width) > CH_ATTR_SIZE) {
         /* better than nothing: exit if transient size is too big */
+#ifndef VBOX
         return;
+#else
+        return VINF_SUCCESS;
+#endif /* VBOX */
     }
 
     if (width != (int)s->last_width || height != (int)s->last_height ||
@@ -1492,15 +1500,23 @@ static void vga_draw_text(VGAState *s, int full_update)
         s->last_scr_height = height * cheight;
 #ifndef VBOX
         dpy_resize(s->ds, s->last_scr_width, s->last_scr_height);
-#else /* VBOX */
-        /* For text modes the external memory buffer can not be used, so bpp and cbLine are 0 here. */
-        s->pDrv->pfnResize(s->pDrv, 0, NULL, 0, s->last_scr_width, s->last_scr_height);
-#endif /* VBOX */
         s->last_width = width;
         s->last_height = height;
         s->last_ch = cheight;
         s->last_cw = cw;
         full_update = 1;
+#else /* VBOX */
+        /* For text modes the direct use of guest VRAM is not implemented, so bpp and cbLine are 0 here. */
+        int rc = s->pDrv->pfnResize(s->pDrv, 0, NULL, 0, s->last_scr_width, s->last_scr_height);
+        s->last_width = width;
+        s->last_height = height;
+        s->last_ch = cheight;
+        s->last_cw = cw;
+        full_update = 1;
+        if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
+            return rc;
+        AssertRC(rc);
+#endif /* VBOX */
     }
     cursor_offset = ((s->cr[0x0e] << 8) | s->cr[0x0f]) - s->start_addr;
     if (cursor_offset != s->cursor_offset ||
@@ -1611,6 +1627,9 @@ static void vga_draw_text(VGAState *s, int full_update)
         dest += linesize * cheight;
         s1 += line_offset;
     }
+#ifdef VBOX
+        return VINF_SUCCESS;
+#endif /* VBOX */
 }
 
 enum {
@@ -1743,18 +1762,11 @@ void vga_invalidate_scanlines(VGAState *s, int y1, int y2)
 static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
 {
     const unsigned cBits = s->get_bpp(s);
-#if 0 /** @todo kill the nasty resize deadlocks! */
-    int rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTXSUFF(vram_ptr), s->line_offset, cx, cy);
-    if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
-        return rc;
-    AssertRC(rc);
-#else
     /** @todo r=sunlover: If the guest changes VBE_DISPI_INDEX_X_OFFSET, VBE_DISPI_INDEX_Y_OFFSET
      *                    registers, then the third parameter of the following call should be
      *                    probably 's->CTXSUFF(vram_ptr) + s->vbe_start_addr'.
      */
-    s->pDrv->pfnResize(s->pDrv, cBits, s->CTXSUFF(vram_ptr), s->line_offset, cx, cy);
-#endif
+    int rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTXSUFF(vram_ptr), s->line_offset, cx, cy);
 
     /* last stuff */
     s->last_bpp = cBits;
@@ -1762,6 +1774,10 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     s->last_scr_height = cy;
     s->last_width = cx;
     s->last_height = cy;
+
+    if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
+        return rc;
+    AssertRC(rc);
 
     /* update palette */
     switch (s->pDrv->cBits)
@@ -1783,7 +1799,11 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
 /*
  * graphic modes
  */
+#ifndef VBOX
 static void vga_draw_graphic(VGAState *s, int full_update)
+#else
+static int vga_draw_graphic(VGAState *s, int full_update)
+#endif /* !VBOX */
 {
     int y1, y, update, page_min, page_max, linesize, y_start, double_scan, mask;
     int width, height, shift_control, line_offset, page0, page1, bwidth;
@@ -1874,9 +1894,11 @@ static void vga_draw_graphic(VGAState *s, int full_update)
     if (    disp_width     != (int)s->last_width
         ||  height         != (int)s->last_height
         ||  s->get_bpp(s)  != (int)s->last_bpp
-        ||  offsets_changed) {
-        if (vga_resize_graphic(s, disp_width, height, v) != VINF_SUCCESS)
-            return;
+        ||  offsets_changed)
+    {
+        int rc = vga_resize_graphic(s, disp_width, height, v);
+        if (rc != VINF_SUCCESS)  /* Return any rc, particularly VINF_VGA_RESIZE_IN_PROGRESS, to the caller. */
+            return rc;
         full_update = 1;
     }
     vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(s->pDrv->cBits)];
@@ -1899,7 +1921,7 @@ static void vga_draw_graphic(VGAState *s, int full_update)
     /* In some cases the variable is not yet set, probably due to incomplete
      * programming of the virtual hardware ports. Just return.
      */
-    if (bwidth == 0) return;
+    if (bwidth == 0) return VINF_SUCCESS;
 #endif /* VBOX */ 
     y_start = -1;
     page_min = 0x7fffffff;
@@ -1956,7 +1978,7 @@ static void vga_draw_graphic(VGAState *s, int full_update)
 #ifndef VBOX
             vga_draw_line(s, d, s->vram_ptr + addr, width);
 #else /* VBOX */
-            if (s->pvExtVRAMHC != s->pDrv->pu8Data) /* Only if external VRAM was not setup. */
+            if (s->fRenderVRAM)
                 vga_draw_line(s, d, s->CTXSUFF(vram_ptr) + addr, width);
 #endif /* VBOX */
             if (s->cursor_draw_line)
@@ -2006,6 +2028,9 @@ static void vga_draw_graphic(VGAState *s, int full_update)
 #endif /* VBOX */
     }
     memset(s->invalidated_y_table, 0, ((height + 31) >> 5) * 4);
+#ifdef VBOX
+    return VINF_SUCCESS;
+#endif /* VBOX */
 }
 
 static void vga_draw_blank(VGAState *s, int full_update)
@@ -2061,14 +2086,11 @@ static void vga_draw_blank(VGAState *s, int full_update)
 #ifndef VBOX
 void vga_update_display(void)
 {
-#ifdef DEBUG_sunlover
-    LogFlow(("vga_update_display"));
-#endif /* DEBUG_sunlover */
-
     VGAState *s = vga_state;
 #else /* VBOX */
-static void vga_update_display(PVGASTATE s)
+static int vga_update_display(PVGASTATE s)
 {
+    int rc = VINF_SUCCESS;
 #endif /* VBOX */
     int full_update, graphic_mode;
 
@@ -2111,9 +2133,15 @@ static void vga_update_display(PVGASTATE s)
         }
         switch(graphic_mode) {
         case GMODE_TEXT:
+#ifdef VBOX
+            rc =
+#endif /* VBOX */
             vga_draw_text(s, full_update);
             break;
         case GMODE_GRAPH:
+#ifdef VBOX
+            rc =
+#endif /* VBOX */
             vga_draw_graphic(s, full_update);
             break;
         case GMODE_BLANK:
@@ -2122,6 +2150,9 @@ static void vga_update_display(PVGASTATE s)
             break;
         }
     }
+#ifdef VBOX
+    return rc;
+#endif /* VBOX */
 }
 
 /* force a full display refresh */
@@ -3521,8 +3552,9 @@ static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, PDMINTER
  * @param   cy                  New display height
  * @thread  The emulation thread.
  */
-static DECLCALLBACK(void) vgaDummyResize(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy)
+static DECLCALLBACK(int) vgaDummyResize(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy)
 {
+    return VINF_SUCCESS;
 }
 
 
@@ -3571,7 +3603,7 @@ static DECLCALLBACK(void) vgaDummyRefresh(PPDMIDISPLAYCONNECTOR pInterface)
  * @param   pInterface          Pointer to this interface.
  * @see     PDMIKEYBOARDPORT::pfnUpdateDisplay() for details.
  */
-static DECLCALLBACK(void) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
+static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 {
     PVGASTATE pData = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pData));
@@ -3582,7 +3614,9 @@ static DECLCALLBACK(void) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 
     /* This should be called only in non VBVA mode. */
 
-    vga_update_display(pData);
+    int rc = vga_update_display(pData);
+    if (rc != VINF_SUCCESS)
+        return rc;
 
     if (pData->fHaveDirtyBits)
     {
@@ -3590,6 +3624,8 @@ static DECLCALLBACK(void) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
         PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
         pData->fHaveDirtyBits = false;
     }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -3599,7 +3635,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
  * @param   pInterface          Pointer to this interface.
  * @see     PDMIKEYBOARDPORT::pfnUpdateDisplayAll() for details.
  */
-static DECLCALLBACK(void) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
+static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
 {
     PVGASTATE pData = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pData));
@@ -3611,7 +3647,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
 #endif /* DEBUG_sunlover */
 
     pData->graphic_mode = -1; /* force full update */
-    vga_update_display(pData);
+    return vga_update_display(pData);
 }
 
 
@@ -3659,6 +3695,7 @@ static DECLCALLBACK(int) vgaPortQueryColorDepth(PPDMIDISPLAYPORT pInterface, uin
  */
 static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvData, size_t cbData, uint32_t *pcx, uint32_t *pcy, size_t *pcbData)
 {
+    /* @todo r=sunlover: replace the method with a direct VRAM rendering like in vgaPortUpdateDisplayRect.  */
     PPDMIDISPLAYCONNECTOR   pConnector;
     PDMIDISPLAYCONNECTOR    Connector;
     int32_t                 graphic_mode;
@@ -3712,7 +3749,9 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
     pData->graphic_mode = -1;           /* force a full refresh. */
 
     /* make the snapshot. */
-    vga_update_display(pData);
+    int rc = vga_update_display(pData);
+    if (rc != VINF_SUCCESS)
+        return rc;
 
     /* restore */
     pData->pDrv = pConnector;
@@ -3842,11 +3881,11 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     Assert(s->pDrv->pu8Data);
 
     /* Check if there is something to do at all. */
-    if (s->pvExtVRAMHC == s->pDrv->pu8Data)
+    if (!s->fRenderVRAM)
     {
         /* The framebuffer uses the guest VRAM directly. */
 #ifdef DEBUG_sunlover
-        LogFlow(("vgaPortUpdateDisplayRect: nothing to do: s->pvExtVRAMHC %p, s->pDrv->pu8Data %p\n", s->pvExtVRAMHC, s->pDrv->pu8Data));
+        LogFlow(("vgaPortUpdateDisplayRect: nothing to do fRender is false.\n"));
 #endif /* DEBUG_sunlover */
         return;
     }
@@ -3943,7 +3982,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     /* Assume that rendering is performed only on visible part of VRAM.
      * This is true because coordinates were verified.
      */
-    pu8Src = s->pvExtVRAMHC? (uint8_t *)s->pvExtVRAMHC: s->vram_ptrHC;
+    pu8Src = s->vram_ptrHC;
     pu8Src += u32OffsetSrc + y * cbLineSrc + x * cbPixelSrc;
 
     /* Render VRAM to framebuffer. */
@@ -3964,80 +4003,13 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
 #endif /* DEBUG_sunlover */
 }
 
-static DECLCALLBACK(int) vgaPortSetupVRAM (PPDMIDISPLAYPORT pInterface, void *pvBuffer, uint32_t cbBuffer)
+static DECLCALLBACK(void) vgaPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool fRender)
 {
-    int rc = VINF_SUCCESS;
     PVGASTATE s = IDISPLAYPORT_2_VGASTATE(pInterface);
-    PPDMDEVINS pDevIns;
-    PVM pVM;
 
-    uint32_t u32OverlayOffset = 0;
+    LogFlow(("vgaPortSetRenderVRAM: fRender = %d\n", fRender));
 
-    LogFlow(("vgaPortSetupVRAM: pvBuffer = %p, cbBuffer = 0x%08X, s->vram_ptrHC = %p\n", pvBuffer, cbBuffer, s->vram_ptrHC));
-
-    /* Check input values, Main::Display rely on that. */
-    if (ALIGNP(pvBuffer, PAGE_SIZE) != pvBuffer)
-    {
-        LogFlow(("vgaPortSetupVRAM: Not aligned address.\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    pDevIns = s->pDevInsHC;
-    Assert(pDevIns);
-
-    pVM = PDMDevHlpGetVM(pDevIns);
-    Assert(pVM);
-
-    if (s->pvExtVRAMHC != NULL)
-    {
-        if (s->pvExtVRAMHC != s->vram_ptrHC)
-        {
-            /* @todo */
-            AssertMsgFailed(("Too early to call SetupVRAM with external VRAM\n"));
-
-            /* Remove existing overlay mapping. */
-//            MMR3PPhysUnregisterOverlay (pVM, s->GCPhysVRAM, u32OverlayOffset, s->pvExtVRAMHC, s->cbExtVRAM);
-
-            /* Copy the content of the external VRAM to the device VRAM. */
-            memcpy (s->vram_ptrHC + u32OverlayOffset, s->pvExtVRAMHC, s->cbExtVRAM);
-        }
-
-        s->pvExtVRAMHC = NULL;
-        s->cbExtVRAM = 0;
-    }
-
-    if (pvBuffer == NULL)
-    {
-        /* Resetting VRAM to use only vga device allocated memory. */
-        Assert (cbBuffer == 0);
-        return VINF_SUCCESS;
-    }
-
-    if (pvBuffer == s->vram_ptrHC)
-    {
-        /* Caller will use the guest VRAM directly. Do nothing. Ignore cbBuffer. */
-        cbBuffer = 0;
-        rc = VINF_SUCCESS;
-    }
-    else
-    {
-        /* Register new overlay. */
-
-        /* @todo */
-        AssertMsgFailed(("Too early to call SetupVRAM with external VRAM\n"));
-
-        cbBuffer = RT_ALIGN_32(cbBuffer, PAGE_SIZE);
-
-//        rc = MMR3PhysRegisterOverlay(pVM, s->GCPhysVRAM, u32OverlayOffset, pvBuffer, cbBuffer, "FBVRam");
-    }
-
-    if (VBOX_SUCCESS (rc))
-    {
-        s->pvExtVRAMHC = pvBuffer;
-        s->cbExtVRAM = cbBuffer;
-    }
-
-    return rc;
+    s->fRenderVRAM = fRender;
 }
 
 
@@ -4574,7 +4546,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pData->Port.pfnSnapshot         = vgaPortSnapshot;
     pData->Port.pfnDisplayBlt       = vgaPortDisplayBlt;
     pData->Port.pfnUpdateDisplayRect= vgaPortUpdateDisplayRect;
-    pData->Port.pfnSetupVRAM        = vgaPortSetupVRAM;
+    pData->Port.pfnSetRenderVRAM    = vgaPortSetRenderVRAM;
 
 
     /*

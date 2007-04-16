@@ -654,10 +654,11 @@ typedef struct PDMIDISPLAYPORT
      * PDMIDISPLAYCONNECTOR interface and calles PDMIDISPLAYCONNECTOR::pfnUpdateRect()
      * while doing so.
      *
+     * @returns VBox status code.
      * @param   pInterface          Pointer to this interface.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnUpdateDisplay,(PPDMIDISPLAYPORT pInterface));
+    DECLR3CALLBACKMEMBER(int, pfnUpdateDisplay,(PPDMIDISPLAYPORT pInterface));
 
     /**
      * Update the entire display.
@@ -665,10 +666,11 @@ typedef struct PDMIDISPLAYPORT
      * Flushes the entire display content to the memory pointed to by the
      * PDMIDISPLAYCONNECTOR interface and calles PDMIDISPLAYCONNECTOR::pfnUpdateRect().
      *
+     * @returns VBox status code.
      * @param   pInterface          Pointer to this interface.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnUpdateDisplayAll,(PPDMIDISPLAYPORT pInterface));
+    DECLR3CALLBACKMEMBER(int, pfnUpdateDisplayAll,(PPDMIDISPLAYPORT pInterface));
 
     /**
      * Return the current guest color depth in bits per pixel (bpp).
@@ -748,16 +750,14 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(void, pfnUpdateDisplayRect,(PPDMIDISPLAYPORT pInterface, int32_t x, int32_t y, uint32_t cx, uint32_t cy));
 
     /**
-     * Setup guest physical VRAM to use the provided page aligned
-     * memory buffer as the guest VRAM, may be equal to current guest VRAM.
+     * Inform the VGA device whether the Display is directly using the guest VRAM and there is no need
+     * to render the VRAM to the framebuffer memory.
      *
-     * @returns VBox status code.
      * @param   pInterface          Pointer to this interface.
-     * @param   pvBuffer            Page aligned address. NULL for removing previously set buffer.
-     * @param   cbBuffer            Size of buffer. Must be equal to a whole number of pages.
+     * @param   fRender             Whether the VRAM content must be rendered to the framebuffer.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetupVRAM,(PPDMIDISPLAYPORT pInterface, void *pvBuffer, uint32_t cbBuffer));
+    DECLR3CALLBACKMEMBER(void, pfnSetRenderVRAM,(PPDMIDISPLAYPORT pInterface, bool fRender));
 } PDMIDISPLAYPORT;
 
 
@@ -773,16 +773,20 @@ typedef struct PDMIDISPLAYCONNECTOR
      * Resize the display.
      * This is called when the resolution changes. This usually happens on
      * request from the guest os, but may also happen as the result of a reset.
+     * If the callback returns VINF_VGA_RESIZE_IN_PROGRESS, the caller (VGA device)
+     * must not access the connector and return.
      *
+     * @returns VINF_SUCCESS if the framebuffer resize was completed,
+     *          VINF_VGA_RESIZE_IN_PROGRESS if resize takes time and not yet finished.
      * @param   pInterface          Pointer to this interface.
      * @param   cBits               Color depth (bits per pixel) of the new video mode.
-     * @param   pvVRAM              Address of guest VRAM.
+     * @param   pvVRAM              Address of the guest VRAM.
      * @param   cbLine              Size in bytes of a single scan line.
      * @param   cx                  New display width.
      * @param   cy                  New display height.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnResize,(PPDMIDISPLAYCONNECTOR pInterface, uint32_t cBits, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy));
+    DECLR3CALLBACKMEMBER(int, pfnResize,(PPDMIDISPLAYCONNECTOR pInterface, uint32_t cBits, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy));
 
     /**
      * Update a rectangle of the display.

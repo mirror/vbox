@@ -82,7 +82,6 @@ HRESULT Display::FinalConstruct()
     mpDrv = NULL;
     mpVMMDev = NULL;
     mfVMMDevInited = false;
-    RTSemEventMultiCreate(&mResizeSem);
     RTSemEventMultiCreate(&mUpdateSem);
 
     mLastAddress = NULL;
@@ -90,6 +89,8 @@ HRESULT Display::FinalConstruct()
     mLastColorDepth = 0,
     mLastWidth = 0;
     mLastHeight = 0;
+
+    mu32ResizeStatus = ResizeStatus_Void;
 
     return S_OK;
 }
@@ -122,7 +123,6 @@ HRESULT Display::init (Console *parent)
     mParent = parent;
 
     /* reset the event sems */
-    RTSemEventMultiReset(mResizeSem);
     RTSemEventMultiReset(mUpdateSem);
 
     // by default, we have an internal framebuffer which is
@@ -150,7 +150,6 @@ void Display::uninit()
     AssertReturn (isReady(), (void) 0);
 
     mFramebuffer.setNull();
-    RTSemEventMultiDestroy(mResizeSem);
     RTSemEventMultiDestroy(mUpdateSem);
 
     if (mParent)
@@ -186,42 +185,40 @@ STDMETHODIMP Display::OnStateChange(MachineState_T machineState)
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-void Display::callFramebufferResize (FramebufferPixelFormat_T pixelFormat, void *pvVRAM, uint32_t cbLine, int w, int h)
+/**
+ *  @thread EMT
+ */
+static int callFramebufferResize (IFramebuffer *pFramebuffer, FramebufferPixelFormat_T pixelFormat, void *pvVRAM, uint32_t cbLine, int w, int h)
 {
-    Assert (!mFramebuffer.isNull());
+    Assert (pFramebuffer);
 
     /* Call the framebuffer to try and set required pixelFormat. */
     BOOL finished = TRUE;
 
-    /* Reset the event here. It could be signalled before it gets to after 'if (!finished)' */
-    RTSemEventMultiReset(mResizeSem);
-
-    mFramebuffer->RequestResize (pixelFormat, (BYTE *) pvVRAM, cbLine, w, h, &finished);
+    pFramebuffer->RequestResize (pixelFormat, (BYTE *) pvVRAM, cbLine, w, h, &finished);
 
     if (!finished)
     {
         LogFlowFunc (("External framebuffer wants us to wait!\n"));
-
-        /* Note: The previously obtained framebuffer lock is preserved.
-         *       The EMT keeps the lock until the resize process completes.
-         */
-
-        /* The framebuffer needs more time to process
-         * the event so we have to halt the VM until it's done.
-         */
-        RTSemEventMultiWait(mResizeSem, RT_INDEFINITE_WAIT); /** @todo r=bird: this is a serious deadlock point, where EMT is stuck while the main thread is doing VMR3Req for some reason. */
+        return VINF_VGA_RESIZE_IN_PROGRESS;
     }
+
+    return VINF_SUCCESS;
 }
 
 /**
  *  Handles display resize event.
+ *  Disables access to VGA device; 
+ *  calls the framebuffer RequestResize method;
+ *  if framebuffer resizes synchronously,
+ *      updates the display connector data and enables access to the VGA device.
  *
  *  @param w New display width
  *  @param h New display height
  *
  *  @thread EMT
  */
-void Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h)
+int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h)
 {
     LogRel (("Display::handleDisplayResize(): pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X\n",
              pvVRAM, w, h, bpp, cbLine));
@@ -229,7 +226,7 @@ void Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, 
     /* If there is no framebuffer, this call is not interesting. */
     if (mFramebuffer.isNull())
     {
-        return;
+        return VINF_SUCCESS;
     }
 
     mLastAddress = pvVRAM;
@@ -248,74 +245,82 @@ void Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, 
         default:  pixelFormat = FramebufferPixelFormat_PixelFormatDefault; cbLine = 0;
     }
 
+    /* Atomically set the resize status before calling the framebuffer. The new InProgress status will
+     * disable access to the VGA device by the EMT thread.
+     */
+    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_InProgress, ResizeStatus_Void);
+    AssertRelease(f);NOREF(f);
+
+    /* The framebuffer is locked in the state.
+     * The lock is kept, because the framebuffer is in undefined state.
+     */
     mFramebuffer->Lock();
 
-    callFramebufferResize (pixelFormat, pvVRAM, cbLine, w, h);
-
-    /* Indicated whether the FB should be set to a default format in case something went wrong. */
-    bool fResetFormat = false;
-
-    /* Check the framebuffer pixel format. */
-    FramebufferPixelFormat_T newPixelFormat;
-
-    mFramebuffer->COMGETTER(PixelFormat) (&newPixelFormat);
-
-    if (newPixelFormat == FramebufferPixelFormat_PixelFormatDefault)
+    int rc = callFramebufferResize (mFramebuffer, pixelFormat, pvVRAM, cbLine, w, h);
+    if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
     {
-        mpDrv->pUpPort->pfnSetupVRAM (mpDrv->pUpPort, NULL, 0);
-    }
-    else
-    {
-        Assert(pixelFormat == newPixelFormat);
-
-        /* Framebuffer successfully set the requested format. */
-        BYTE *address;
-        mFramebuffer->COMGETTER(Address) (&address);
-
-        ULONG lineSize;
-        mFramebuffer->COMGETTER(LineSize) (&lineSize);
-        Assert(lineSize == cbLine);
-
-        /* Trust Framebuffer implementation that it allocated a buffer,
-         * which size is a multiple of PAGE_SIZE.
+        /* Immediately return to the caller. ResizeCompleted will be called back by the
+         * GUI thread. The ResizeCompleted callback will change the resize status from
+         * InProgress to UpdateDisplayData. The latter status will be checked by the
+         * display timer callback on EMT and all required adjustments will be done there.
          */
-        uint32_t cbBuffer = cbLine * h;
+        return rc;
+    }
 
-        int rc = mpDrv->pUpPort->pfnSetupVRAM (mpDrv->pUpPort, address, cbBuffer);
+    /* Set the status so the 'handleResizeCompleted' would work.  */
+    f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    AssertRelease(f);NOREF(f);
 
-        if (VBOX_FAILURE(rc))
-        {
-            LogFlowFunc (("pfnSetupVRAM returns %Vrc\n", rc));
-            fResetFormat = true;
-        }
+    /* The method also unlocks the framebuffer. */
+    handleResizeCompletedEMT();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ *  Framebuffer has been resized.
+ *  Read the new display data and unlock the framebuffer.
+ *
+ *  @thread EMT
+ */
+void Display::handleResizeCompletedEMT (void)
+{
+    LogFlowFunc(("\n"));
+    if (!mFramebuffer.isNull())
+    {
+        /* Framebuffer has completed the resize. Update the connector data. */
+        updateDisplayData();
+    
+        /* Check the framebuffer pixel format to setup the rendering in VGA device. */
+        FramebufferPixelFormat_T newPixelFormat;
+
+        mFramebuffer->COMGETTER(PixelFormat) (&newPixelFormat);
+
+        mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, newPixelFormat == FramebufferPixelFormat_PixelFormatDefault);
+
+        /* Unlock framebuffer. */
+        mFramebuffer->Unlock();
+    }
 
 #ifdef DEBUG_sunlover
-        if (!stam)
-        {
-            /* protect mpVM */
-            Console::SafeVMPtr pVM (mParent);
-            AssertComRC (pVM.rc());
-
-            STAM_REG(pVM, &StatDisplayRefresh, STAMTYPE_PROFILE, "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
-            stam = 1;
-        }
-#endif /* DEBUG_sunlover */
-    }
-
-    if (fResetFormat)
+    if (!stam)
     {
-        callFramebufferResize (FramebufferPixelFormat_PixelFormatDefault, NULL, 0, w, h);
+        /* protect mpVM */
+        Console::SafeVMPtr pVM (mParent);
+        AssertComRC (pVM.rc());
+
+        STAM_REG(pVM, &StatDisplayRefresh, STAMTYPE_PROFILE, "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
+        stam = 1;
     }
+#endif /* DEBUG_sunlover */
 
-    updateDisplayData();
-
+    /* Inform VRDP server about the change of display parameters. */
     LogFlowFunc (("Calling VRDP\n"));
-
     mParent->consoleVRDPServer()->SendResize();
 
-    mFramebuffer->Unlock();
-
-    return;
+    /* Go into non resizing state. */
+    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_Void, ResizeStatus_UpdateDisplayData);
+    AssertRelease(f);NOREF(f);
 }
 
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
@@ -611,7 +616,10 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     mfVideoAccelEnabled = false;
 
     /* Update entire display. */
-    mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
+    if (mu32ResizeStatus == ResizeStatus_Void)
+    {
+        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
+    }
 
     /* Everything OK. VBVA status can be changed. */
 
@@ -1533,8 +1541,9 @@ STDMETHODIMP Display::ResizeCompleted()
             tr ("Resize completed notification is valid only "
                 "for external framebuffers"));
 
-    /* signal our semaphore */
-    RTSemEventMultiSignal(mResizeSem);
+    /* Set the flag indicating that the resize has completed and display data need to be updated. */
+    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    AssertRelease(f);NOREF(f);
 
     return S_OK;
 }
@@ -1719,15 +1728,15 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
  *
  * @see PDMIDISPLAYCONNECTOR::pfnResize
  */
-DECLCALLBACK(void) Display::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterface,
-                                                  uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy)
+DECLCALLBACK(int) Display::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterface,
+                                                 uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
     LogFlowFunc (("bpp %d, pvVRAM %p, cbLine %d, cx %d, cy %d\n",
                   bpp, pvVRAM, cbLine, cx, cy));
 
-    pDrv->pDisplay->handleDisplayResize(bpp, pvVRAM, cbLine, cx, cy);
+    return pDrv->pDisplay->handleDisplayResize(bpp, pvVRAM, cbLine, cx, cy);
 }
 
 /**
@@ -1772,6 +1781,26 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 #endif /* DEBUG_sunlover */
 
     Display *pDisplay = pDrv->pDisplay;
+
+    /* Check the resize status. The status can be checked normally because
+     * the status affects only the EMT.
+     */
+    uint32_t u32ResizeStatus = pDisplay->mu32ResizeStatus;
+
+    if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
+    {
+        LogFlowFunc (("ResizeStatus_UpdateDisplayData\n"));
+        /* The framebuffer was resized and display data need to be updated. */
+        pDisplay->handleResizeCompletedEMT ();
+        /* Continue with normal processing because the status here is ResizeStatus_Void. */
+        Assert (pDisplay->mu32ResizeStatus == ResizeStatus_Void);
+    }
+    else if (u32ResizeStatus == ResizeStatus_InProgress)
+    {
+        /* The framebuffer is being resized. Do not call the VGA device back. Immediately return. */
+        LogFlowFunc (("ResizeStatus_InProcess\n"));
+        return;
+    }
 
     if (pDisplay->mFramebuffer.isNull())
     {
