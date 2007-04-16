@@ -219,12 +219,14 @@ STDMETHODIMP DVDImage::COMGETTER(Size) (ULONG64 *size)
                        mImageFileFull.raw(), vrc);
     else
     {
+        AssertCompile (sizeof (uint64_t) == sizeof (ULONG64));
+
         uint64_t u64Size = 0;
 
         vrc = RTFileGetSize (file, &u64Size);
 
         if (VBOX_SUCCESS (vrc))
-            *size = (ULONG) u64Size;
+            *size = u64Size;
         else
             rc = setError (E_FAIL,
                 tr ("Failed to determine size of ISO image '%ls' (%Vrc)\n"),
