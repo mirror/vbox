@@ -1862,15 +1862,16 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
            *((void **) completion.Params())));
 
       nsIException *xcpt = nsnull;
-      rv = dConnect->DeserializeException (completion.Params(),
-                                           completion.ParamsLen(),
-                                           mPeerID, &xcpt);
-      if (NS_SUCCEEDED(rv))
+      nsresult rv2; // preserve rv for returning to the caller
+      rv2 = dConnect->DeserializeException (completion.Params(),
+                                            completion.ParamsLen(),
+                                            mPeerID, &xcpt);
+      if (NS_SUCCEEDED(rv2))
       {
-        rv = em->SetCurrentException(xcpt);
+        rv2 = em->SetCurrentException(xcpt);
         NS_IF_RELEASE(xcpt);
       }
-      NS_ASSERTION(NS_SUCCEEDED(rv), "failed to deserialize/set exception");
+      NS_ASSERTION(NS_SUCCEEDED(rv2), "failed to deserialize/set exception");
     }
   }
   else if (completion.ParamsLen() > 0)
