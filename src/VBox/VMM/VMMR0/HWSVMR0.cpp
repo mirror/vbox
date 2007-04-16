@@ -400,9 +400,10 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             }
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
-        /* Illegal when cache is turned on. */
-        val &= ~X86_CR0_NW;
+        if (!(val & X86_CR0_CD))            
+            val &= ~X86_CR0_NW;     /* Illegal when cache is turned on. */
 
+        val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
         pVMCB->guest.u64CR0 = val;
     }
     /* CR2 as well */
@@ -1053,7 +1054,7 @@ ResumeExecution:
 
     case SVM_EXIT_INVLPG:               /* Guest software attempted to execute INVPG. */
     {
-        Log2(("VMX: invlpg\n"));
+        Log2(("SVM: invlpg\n"));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvpg);
 
         /* Truly a pita. Why can't SVM give the same information as VMX? */
@@ -1068,7 +1069,7 @@ ResumeExecution:
     {
         uint32_t cbSize;
 
-        Log2(("VMX: %VGv mov cr%d, \n", pCtx->eip, exitCode - SVM_EXIT_WRITE_CR0));
+        Log2(("SVM: %VGv mov cr%d, \n", pCtx->eip, exitCode - SVM_EXIT_WRITE_CR0));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxWrite);
         rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
 
@@ -1119,7 +1120,7 @@ ResumeExecution:
     {
         uint32_t cbSize;
 
-        Log2(("VMX: %VGv mov x, cr%d\n", pCtx->eip, exitCode - SVM_EXIT_READ_CR0));
+        Log2(("SVM: %VGv mov x, cr%d\n", pCtx->eip, exitCode - SVM_EXIT_READ_CR0));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxRead);
         rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
         if (rc == VINF_SUCCESS)
