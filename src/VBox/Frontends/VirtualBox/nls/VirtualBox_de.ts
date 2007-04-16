@@ -304,10 +304,6 @@
         <translation>Passt Fenstergröße und -position an die Auflösung des Gastes an</translation>
     </message>
     <message>
-        <source>&amp;Insert Ctrl-Alt-Entf</source>
-        <translation type="obsolete">&amp;Sende Strg-Alt-Entf</translation>
-    </message>
-    <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
         <translation>Sendet die Sequenz Strg-Alt-Entf an die virtuelle Maschine</translation>
     </message>
@@ -526,7 +522,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;virtual&amp;nbsp;hard&amp;nbsp;disks</source>
-        <translation>&lt;qt&gt;Zeigt&amp;nbsp;die&amp;nbsp;Aktivität&amp;nbsp;der;virtuellen&amp;nbsp;Festplatten</translation>
+        <translation>&lt;qt&gt;Zeigt&amp;nbsp;die&amp;nbsp;Aktivität&amp;nbsp;der&amp;nbsp;virtuellen&amp;nbsp;Festplatten</translation>
     </message>
     <message>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
@@ -1499,12 +1495,6 @@ default virtual machine folder.</source>
         <translation></translation>
     </message>
     <message>
-        <source>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured, 
-all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">Ist diese Einstellung aktiviert, dann wird die Tastatur jedesmal automatisch gefangen, wenn das VM-Fenster aktiviert wird. Dabei werden alle Tastendrücke (einschließlich Alt+Tab) an die VM weitergeleitet.</translation>
-    </message>
-    <message>
         <source>&amp;USB Device Filters</source>
         <translation>Filter für &amp;USB-Geräte</translation>
     </message>
@@ -1633,15 +1623,15 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprache</translation>
     </message>
     <message>
         <source> Language </source>
-        <translation type="unfinished"></translation>
+        <translation>Sprache</translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#language</source>
@@ -1649,30 +1639,30 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
     </message>
     <message>
         <source>&amp;Interface Language</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sprache der Nutzeroberfläche</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>Autor(en):</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprache:</translation>
     </message>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation> (eingebaut)</translation>
     </message>
     <message>
         <source>&lt;unavailabie&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;verfügbar&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;unbekannt&gt;</translation>
     </message>
     <message>
         <source>
@@ -1680,12 +1670,12 @@ Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.
                                     </source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache einzustellen.</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>Voreingestellt</translation>
     </message>
 </context>
 <context>
@@ -1715,7 +1705,7 @@ bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zu wechseln.&lt;
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished">Neue Virtuelle Festplatte erstellen</translation>
+        <translation type="unfinished">Neue virtuelle Festplatte erstellen</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -1816,7 +1806,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation>Neue Virtuelle Maschine erstellen</translation>
+        <translation>Neue virtuelle Maschine erstellen</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
@@ -2093,7 +2083,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie wirklich den gesicherten Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; wirklich freigeben?&lt;/p&gt;&lt;p&gt;Diese Operation ist gleichbedeutend mit dem Ausschalten der VM ohne sauberes Herunterfahren durch das Gast-Betriebssystem.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie den gesicherten Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; wirklich freigeben?&lt;/p&gt;&lt;p&gt;Diese Operation ist gleichbedeutend mit dem Ausschalten der VM ohne sauberes Herunterfahren durch das Gast-Betriebssystem.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
@@ -2157,7 +2147,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte keine neue Sitzung eröffnet werden.</translation>
     </message>
     <message>
         <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
@@ -2205,7 +2195,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die virtuelle Maschine is momentan &lt;b&gt;angehalten&lt;/b&gt; und nimmt deshalb keine Maus- und Tastatureingaben entgegen. Um mit der Arbeit der virtuellen Maschine forzufahren müssen Sie die virtuelle Maschine weiterlaufen lassen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine is momentan &lt;b&gt;angehalten&lt;/b&gt; und nimmt deshalb keine Maus- und Tastatureingaben entgegen. Um mit der Arbeit der virtuellen Maschine fortzufahren, müssen Sie die virtuelle Maschine weiterlaufen lassen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
@@ -2283,11 +2273,11 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Für die Sprache &lt;b&gt;%1&lt;/b&gt; konnte im Verzeichnis &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; keine Sprachdatei gefunden werden.&lt;/p&gt;&lt;p&gt;Die Sprache wird vorübergehend auf die voreingestellte Systemsprache zurückgesetzt. Bitte benutzen Sie die &lt;b&gt;Globalen Einstellungen&lt;/b&gt;, um eine andere Sprache auszuwählen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die Sprachdatei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; konnte nicht geöffnet werden.&lt;p&gt;Die Sprache wird vorübergehend auf Englisch zurückgesetzt. Bitte wählen Sie in den &lt;b&gt;Globalen Einstellungen&lt;/b&gt; eine neue Sprache aus.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3011,24 +3001,12 @@ value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Enable Network Adapter (plug it into the corresponding slot)</source>
-        <translation type="obsolete">Netzwerkkarte &amp;aktivieren (Einstecken in den entsprechenden Slot)</translation>
-    </message>
-    <message>
         <source>&amp;Attached to</source>
         <translation>&amp;Angeschlossen an</translation>
     </message>
     <message>
-        <source>Type of network attachment.</source>
-        <translation type="obsolete">Typ des Netzwerkanschlusses.</translation>
-    </message>
-    <message>
         <source>&amp;MAC Address</source>
         <translation>&amp;MAC-Adresse</translation>
-    </message>
-    <message>
-        <source>MAC address of the current adapter. It contains exactly 12 characters choosen from {0-9,A-F}.</source>
-        <translation type="obsolete">MAC-Adresse des Adapters. Sie enthält genau 12 Zeichen aus dem Vorrat {0-9,A-F}.</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
@@ -3039,20 +3017,12 @@ value.</source>
         <translation>Alt+G</translation>
     </message>
     <message>
-        <source>Generate a new random MAC address.</source>
-        <translation type="obsolete">Erzeugt eine zufällige MAC-Adresse.</translation>
-    </message>
-    <message>
         <source>Ca&amp;ble Connected</source>
         <translation>Netzwerk&amp;kabel angeschlossen</translation>
     </message>
     <message>
         <source>Alt+B</source>
         <translation>Alt+K</translation>
-    </message>
-    <message>
-        <source>This controls whether the virtual network cable is plugged in.</source>
-        <translation type="obsolete">Legt fest, ob das Netzwerkkabel angeschlossen ist.</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
@@ -3063,31 +3033,6 @@ value.</source>
         <translation>Name des &amp;Interfaces</translation>
     </message>
     <message>
-        <source>Enter name for the new interface here</source>
-        <translation type="obsolete">Tragen Sie hier den Namen der Netzwerk-Schnittstelle ein</translation>
-    </message>
-    <message>
-        <source>...</source>
-        <translation type="obsolete">...</translation>
-    </message>
-    <message>
-        <source>Add a new host interface</source>
-        <translation type="obsolete">Neues Host-Interface anlegen</translation>
-    </message>
-    <message>
-        <source>Remove
-                                                        the selected host interface</source>
-        <translation type="obsolete">Ausgewähltes Host-Interface löschen</translation>
-    </message>
-    <message>
-        <source>The list of interfaces available</source>
-        <translation type="obsolete">Liste der verfügbaren Interfaces.</translation>
-    </message>
-    <message>
-        <source>TAP interface name</source>
-        <translation type="obsolete">Name des TAP-Interfaces</translation>
-    </message>
-    <message>
         <source>&amp;File Descriptor</source>
         <translation>&amp;Dateidescriptor</translation>
     </message>
@@ -3096,28 +3041,12 @@ value.</source>
         <translation>Programm zum &amp;Einrichten</translation>
     </message>
     <message>
-        <source>Setup application</source>
-        <translation type="obsolete">Ein Programm, das zum Einrichten des Interfaces gestartet wird.</translation>
-    </message>
-    <message>
         <source>Select</source>
         <translation>Auswählen</translation>
     </message>
     <message>
-        <source>Select setup application</source>
-        <translation type="obsolete">Wählt das Programm zum Einrichten aus.</translation>
-    </message>
-    <message>
         <source>&amp;Terminate Application</source>
-        <translation>Programm zum &amp;Abbau</translation>
-    </message>
-    <message>
-        <source>Terminate application</source>
-        <translation type="obsolete">Ein Programm, das zum Abbau des Interfaces gestartet wird.</translation>
-    </message>
-    <message>
-        <source>Select terminate application</source>
-        <translation type="obsolete">Programm zum Abbau des Interfaces auswählen</translation>
+        <translation>Programm zum &amp;Entfernen</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
@@ -3220,7 +3149,7 @@ value.</source>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation>Wählen Sie eine Anwendung zum Abbauen des TAP-Interfaces aus</translation>
+        <translation>Wählen Sie eine Anwendung zum Entfernen des TAP-Interfaces aus</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
@@ -3421,10 +3350,6 @@ plan to install into this virtual machine (called a guest operating system).</so
     <message>
         <source>&amp;Basic</source>
         <translation>&amp;Grundlegend</translation>
-    </message>
-    <message>
-        <source>&amp;Snapshot Folder</source>
-        <translation type="obsolete">Ordner &amp;Sicherungspunkte</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine
@@ -3831,7 +3756,7 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Für den Adapter %1 wurde ein ungültiges Host-Netzwerkinterface ausgewählt.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
@@ -3843,7 +3768,7 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     </message>
     <message>
         <source> - Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>- Einstellungen</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -3852,14 +3777,14 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gemeinsame Zwischenablage</translation>
     </message>
     <message>
         <source>
 Defines the mode of sharing the clipboard between the guest and the host OS. Note
 that this feature requires Guest Additions to be installed in the guest OS.
                                                 </source>
-        <translation>Legt den Modus des Clipboards zwischen Host und Gast fest. Dieses Feature benötigt installierte Gast-Erweiterungen im Gast-Betriebssystem.</translation>
+        <translation>Legt den Modus der gemeinsamen Zwischenablage zwischen Host und Gast fest. Dieses Feature benötigt installierte Gasterweiterungen im Gast-Betriebssystem.</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
@@ -3878,7 +3803,7 @@ that this feature requires Guest Additions to be installed in the guest OS.
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Schlüssel &apos;%1&apos; konnte nicht gelöscht werden.</translation>
     </message>
 </context>
 </TS>
