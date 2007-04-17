@@ -1041,10 +1041,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
         DBGFR3DisasInstrCurrentLog(pVM, pszPrefix);
     }
 #endif /* LOG_ENABLED */
-
-
-    Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
-
+    
     /*
      * PATM is making life more interesting.
      * We cannot hand anything to REM which has an EIP inside patch code. So, we'll
