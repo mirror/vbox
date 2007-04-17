@@ -96,11 +96,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
         pVMCB->guest.REG.u16Sel   = pCtx->reg;                          \
         pVMCB->guest.REG.u32Limit = pCtx->reg##Hid.u32Limit;            \
         pVMCB->guest.REG.u64Base  = pCtx->reg##Hid.u32Base;             \
-        if (    pCtx->reg                                               \
-            ||  !(pCtx->cr0 & X86_CR0_PE))                              \
-            pVMCB->guest.REG.u16Attr = SVM_HIDSEGATTR_VMX2SVM(pCtx->reg##Hid.Attr.u);           \
-        else                                                                                    \
-            pVMCB->guest.REG.u16Attr = 0;
+        pVMCB->guest.REG.u16Attr  = SVM_HIDSEGATTR_VMX2SVM(pCtx->reg##Hid.Attr.u);
 
 #define SVM_READ_SELREG(REG, reg)                                       \
         pCtx->reg                = pVMCB->guest.REG.u16Sel;             \
