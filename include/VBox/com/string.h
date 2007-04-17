@@ -39,7 +39,7 @@ namespace com
 class Utf8Str;
 
 /**
- *  Helper class that represents the |BSTR| type and hides platform-siecific
+ *  Helper class that represents the |BSTR| type and hides platform-specific
  *  implementation details.
  *
  *  @note

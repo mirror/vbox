@@ -350,6 +350,7 @@
         name="IVirtualBoxErrorInfo" extends="$errorinfo"
         uuid="37EDE76D-6E16-4CE4-9D48-2C5A87AFFEA2"
         supportsErrorInfo="no"
+        wsmanage="struct"
     >
         <desc>
             The IVirtualBoxErrorInfo interface represents extended error information
@@ -418,6 +419,7 @@
     <interface
         name="IVirtualBoxCallback" extends="$unknown"
         uuid="1293842f-0380-47cf-80b5-e4f821861b26"
+        wsmanage="suppress"
     >
         <method name="onMachineStateChange">
             <desc>
@@ -617,6 +619,7 @@
     <interface
         name="IVirtualBox" extends="$dispatched"
         uuid="ce54ff3d-0e46-41ae-a0de-202ed0c3c668"
+        wsmanage="global"
     >
       <desc> The main interface exposed by the product that provides virtual
       machine management.
@@ -1531,6 +1534,7 @@
         name="IInternalMachineControl" extends="$unknown"
         uuid="F466BF2E-BD6B-4af0-9C08-46DD42B28A44"
         internal="yes"
+        wsmanage="suppress"
     >
         <method name="updateState">
             <desc>
@@ -1783,6 +1787,7 @@
     <interface
         name="IBIOSSettings" extends="$unknown"
         uuid="00fff9d7-983e-462d-a1aa-4cc26de4f0d4"
+        wsmanage="struct"
     >
         <attribute name="LogoFadeIn" type="boolean">
             <desc>Fade in flag for BIOS logo animation.</desc>
@@ -1820,6 +1825,7 @@
     <interface
         name="IMachine" extends="$unknown"
         uuid="50fa9181-d2d4-45ca-bf0e-742677b9c707"
+        wsmanage="uuid"
     >
         <attribute name="parent" type="IVirtualBox" readonly="yes">
             <desc>Associated parent obect.</desc>
@@ -2513,6 +2519,7 @@
     <interface
         name="IConsoleCallback" extends="$unknown"
         uuid="05D3DD3F-0550-4953-BB3C-4ECB3EBF7C2E"
+        wsmanage="suppress"
     >
 
         <method name="onMousePointerShapeChange">
@@ -2690,6 +2697,7 @@
     <interface
         name="IRemoteDisplayInfo" extends="$unknown"
         uuid="550104cd-2dfd-4a6c-857d-f6f8e088e62c"
+        wsmanage="struct"
     >
         <attribute name="active" type="boolean" readonly="yes">
             <desc>
@@ -2783,6 +2791,7 @@
     <interface
         name="IConsole" extends="$unknown"
         uuid="1DEA5C4B-0753-4193-B909-22330F64EC45"
+        wsmanage="wstring"
     >
         <attribute name="machine" type="IMachine" readonly="yes">
             <desc>
@@ -3282,6 +3291,7 @@
     <interface
         name="IHostDVDDrive" extends="$unknown"
         uuid="c2308775-85f3-45ab-ade5-97f02d1e61e0"
+        wsmanage="struct"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
@@ -3320,6 +3330,7 @@
     <interface
         name="IHostFloppyDrive" extends="$unknown"
         uuid="2b2ad1ab-2ea9-4cf8-be3c-2a76677d8725"
+        wsmanage="struct"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
@@ -3358,6 +3369,7 @@
     <interface
         name="IHostNetworkInterface" extends="$unknown"
         uuid="F4512D7C-B074-4e97-99B8-6D2BD27C3F5A"
+        wsmanage="uuid"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the host network interface name.</desc>
@@ -3415,6 +3427,7 @@
     <interface
         name="IHost" extends="$unknown"
         uuid="FD443EC1-000B-4F5B-9282-D72760A66916"
+        wsmanage="global"
     >
         <attribute name="DVDDrives" type="IHostDVDDriveCollection" readonly="yes">
             <desc>List of DVD drives available on the host.</desc>
@@ -3604,8 +3617,10 @@
     -->
 
     <interface
-        name="ISystemProperties" extends="$unknown"
+        name="ISystemProperties"
+        extends="$unknown"
         uuid="6dc28c62-7924-43de-8336-fa754aa531d7"
+        wsmanage="struct"
     >
         <desc>
             The ISystemProperties interface represents global properties
@@ -3763,6 +3778,7 @@
     <interface
         name="IGuestOSType" extends="$unknown"
         uuid="da94f478-1f37-4726-b750-2235950dc2fe"
+        wsmanage="struct"
     >
         <attribute name="id" type="wstring" readonly="yes">
             <desc>Guest OS identifier string.</desc>
@@ -3800,6 +3816,7 @@
     <interface
         name="IGuest" extends="$unknown"
         uuid="FD443EC1-000E-4F5B-9282-D72760A66916"
+        wsmanage="suppress"
     >
         <desc>
             The IGuest interface represents a guest (virtual machine's) operating
@@ -3885,6 +3902,7 @@
     <interface
         name="IProgress" extends="$unknown"
         uuid="10CC03A1-717E-429b-992D-C67B56175A51"
+        wsmanage="uuid"
     >
         <desc>
             The IProgress interface represents a task progress object that allows
@@ -4033,6 +4051,7 @@
     <interface
         name="ISnapshot" extends="$unknown"
         uuid="9f1bbf79-13b0-4da2-abba-4a992c65c083"
+        wsmanage="uuid"
     >
         <desc>
             The ISnapshot interface represents a snapshot of the virtual
@@ -4301,6 +4320,7 @@
     <interface
         name="IHardDiskAttachment" extends="$unknown"
         uuid="c0ffe596-21c6-4797-8d8a-b47b66881e7a"
+        wsmanage="struct"
     >
         <attribute name="hardDisk" type="IHardDisk" readonly="yes">
             <desc>Harddisk object this attachment is about.</desc>
@@ -4343,6 +4363,7 @@
     <interface
         name="IHardDisk" extends="$unknown"
         uuid="FD443EC1-000F-4F5B-9282-D72760A66916"
+        wsmanage="uuid"
     >
         <desc>
             The IHardDisk interface represents a virtual hard disk drive
@@ -4870,6 +4891,7 @@
     <interface
         name="IVirtualDiskImage" extends="$unknown"
         uuid="a8265b5a-0d20-4a46-a02f-65693a4e8239"
+        wsmanage="uuid"
     >
 
         <desc>
@@ -5017,6 +5039,7 @@
     <interface
         name="IISCSIHardDisk" extends="$unknown"
         uuid="003f6ca9-3257-4ef9-99c9-c66ce44576cb"
+        wsmanage="uuid"
     >
 
         <desc>
@@ -5113,6 +5136,7 @@
     <interface
         name="IVMDKImage" extends="$unknown"
         uuid="178398f5-8559-4fee-979e-420af5b53eef"
+        wsmanage="uuid"
     >
         <desc>
 
@@ -5292,6 +5316,7 @@
     <interface
         name="IDVDImage" extends="$unknown"
         uuid="140FFF03-E479-4194-8562-ABC4F8171009"
+        wsmanage="uuid"
     >
         <desc>
 
@@ -5373,6 +5398,7 @@
     <interface
         name="IDVDDrive" extends="$unknown"
         uuid="d9bd101a-8079-4fb9-bad1-31bf32482b75"
+        wsmanage="suppress"
     >
         <attribute name="state" type="DriveState" readonly="yes">
             <desc>Current drive state.</desc>
@@ -5448,6 +5474,7 @@
     <interface
         name="IFloppyImage" extends="$unknown"
         uuid="CC696755-EA98-4ffe-9DC5-C003047034AB"
+        wsmanage="uuid"
     >
         <desc>
 
@@ -5519,6 +5546,7 @@
     <interface
         name="IFloppyDrive" extends="$unknown"
         uuid="E9318F71-78D2-4b00-863C-B7CB0030A2D9"
+        wsmanage="suppress"
     >
         <attribute name="enabled" type="boolean">
             <desc>
@@ -5566,6 +5594,7 @@
     <interface
         name="IKeyboard" extends="$unknown"
         uuid="FD443EC1-000A-4F5B-9282-D72760A66916"
+        wsmanage="suppress"
     >
         <method name="putScancode">
             <desc>Sends a scancode to the keyboard.</desc>
@@ -5606,6 +5635,7 @@
     <interface
         name="IMouse" extends="$unknown"
         uuid="FD443EC1-0006-4F5B-9282-D72760A66916"
+        wsmanage="suppress"
     >
         <desc>
             The IMouse interface represents a virtual mouse device.
@@ -5742,6 +5772,7 @@
     <interface
         name="IFramebuffer" extends="$unknown"
         uuid="4481F27F-5C79-48d9-86C1-A2EC6747034D"
+        wsmanage="suppress"
     >
         <attribute name="address" type="octet" mod="ptr" readonly="yes">
             <desc>Address of the start byte of the framebuffer.</desc>
@@ -5934,6 +5965,7 @@
     <interface
         name="IFramebufferOverlay" extends="IFrameBuffer"
         uuid="0bcc1c7e-e415-47d2-bfdb-e4c705fb0f47"
+        wsmanage="suppress"
     >
       <desc>
           An alpha blended overlay for displaying status icons above an IFramebuffer.
@@ -5978,6 +6010,7 @@
     <interface
         name="IDisplay" extends="$unknown"
         uuid="FD443EC1-0012-4F5B-9282-D72760A66916"
+        wsmanage="suppress"
     >
         <attribute name="width" type="unsigned long" readonly="yes">
             <desc>Current display width.</desc>
@@ -6107,6 +6140,7 @@
     <interface
         name="INetworkAdapter" extends="$unknown"
         uuid="78dfc978-ecb0-44ee-8b20-54549dd4539e"
+        wsmanage="suppress"
     >
         <attribute name="adapterType" type="NetworkAdapterType">
             <desc>
@@ -6242,6 +6276,7 @@
     <interface
         name="IMachineDebugger" extends="$unknown"
         uuid="288da658-74fa-4877-ab5c-dafdad19a1cd"
+        wsmanage="suppress"
     >
         <method name="resetStats">
             <desc>
@@ -6312,6 +6347,7 @@
     <interface
         name="IUSBController" extends="$unknown"
         uuid="9a110c34-93c2-46b0-8ac2-b09d1067be56"
+        wsmanage="suppress"
     >
         <attribute name="enabled" type="boolean">
             <desc>
@@ -6483,6 +6519,7 @@
     <interface
         name="IUSBDevice" extends="$unknown"
         uuid="c5ab8d05-1999-4e48-ae34-cdeb235aacf0"
+        wsmanage="uuid"
     >
         <desc>
             The IUSBDevice interface represents a USB device captured by
@@ -6566,6 +6603,7 @@
     <interface
         name="IUSBDeviceFilter" extends="$unknown"
         uuid="d6831fb4-1a94-4c2c-96ef-8d0d6192066d"
+        wsmanage="suppress"
     >
         <desc>
             The IUSBDeviceFilter interface represents an USB device filter used
@@ -6850,6 +6888,7 @@
     <interface
         name="IHostUSBDevice" extends="IUSBDevice"
         uuid="173b4b44-d268-4334-a00d-b6521c9a740a"
+        wsmanage="uuid"
     >
         <desc>
             The IHostUSBDevice interface represents a USB device attached to
@@ -6911,6 +6950,7 @@
     <interface
         name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"
         uuid="4cc70246-d74a-400f-8222-3900489c0374"
+        wsmanage="struct"
     >
         <desc>
             The IHostUSBDeviceFilter interface represents a USB device filter used
@@ -6958,6 +6998,7 @@
     <interface
         name="IAudioAdapter" extends="$unknown"
         uuid="921873db-5f3f-4b69-91f9-7be9e535a2cb"
+        wsmanage="struct"
     >
         <attribute name="enabled" type="boolean">
             <desc>
@@ -6992,6 +7033,7 @@
     <interface
         name="IVRDPServer" extends="$unknown"
         uuid="2e88bf9e-2085-421f-9aa2-32088b0378b3"
+        wsmanage="struct"
     >
         <attribute name="enabled" type="boolean">
             <desc>VRDP server status.</desc>
@@ -7054,6 +7096,7 @@
     <interface
         name="ISharedFolder" extends="$unknown"
         uuid="8b0c5f70-9139-4f97-a421-64d5e9c335d5"
+        wsmanage="struct"
     >
         <desc>
             The ISharedFolder interface represents a folder in the host
@@ -7104,6 +7147,7 @@
         name="IInternalSessionControl" extends="$unknown"
         uuid="A99D5EB3-02DE-48e4-B059-91A8A41B4DA1"
         internal="yes"
+        wsmanage="suppress"
     >
         <method name="getPID">
             <desc>PID of the process that has created this Session object.
@@ -7209,6 +7253,7 @@
     <interface
         name="ISession" extends="$dispatched"
         uuid="12F4DCDB-12B2-4ec1-B7CD-DDD9F6C5BF4D"
+        wsmanage="wstring"
     >
         <attribute name="state" type="SessionState" readonly="yes">
             <desc>Current state of this session.</desc>
