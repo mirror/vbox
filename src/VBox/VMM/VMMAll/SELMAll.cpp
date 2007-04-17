@@ -82,10 +82,11 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  * for that.
  *
  * @returns Flat address.
- * @param   pVM     VM Handle.
- * @param   eflags  Current eflags
- * @param   Sel     Selector part.
- * @param   Addr    Address part.
+ * @param   pVM         VM Handle.
+ * @param   eflags      Current eflags
+ * @param   Sel         Selector part.
+ * @param   pHiddenSel  Hidden selector register
+ * @param   Addr        Address part.
  */
 SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr)
 {
@@ -113,17 +114,18 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
  * Some basic checking is done, but not all kinds yet.
  *
  * @returns VBox status
- * @param   pVM     VM Handle.
- * @param   eflags  Current eflags
- * @param   Sel     Selector part.
- * @param   Addr    Address part.
- * @param   fFlags  SELMTOFLAT_FLAGS_*
- *                  GDT entires are valid.
- * @param   ppvGC   Where to store the GC flat address.
- * @param   pcb     Where to store the bytes from *ppvGC which can be accessed according to
- *                  the selector. NULL is allowed.
+ * @param   pVM         VM Handle.
+ * @param   eflags      Current eflags
+ * @param   Sel         Selector part.
+ * @param   Addr        Address part.
+ * @param   pHiddenSel  Hidden selector register (can be NULL)
+ * @param   fFlags      SELMTOFLAT_FLAGS_*
+ *                      GDT entires are valid.
+ * @param   ppvGC       Where to store the GC flat address.
+ * @param   pcb         Where to store the bytes from *ppvGC which can be accessed according to
+ *                      the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
+SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
     /*
      * Deal with real & v86 mode first.
@@ -141,28 +143,50 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, u
         return VINF_SUCCESS;
     }
 
-    Assert(!CPUMAreHiddenSelRegsValid(pVM));
 
     VBOXDESC    Desc;
-    if (!(Sel & X86_SEL_LDT))
+    uint32_t    u32Limit;
+    RTGCPTR     pvFlat;
+
+    if (    pHiddenSel 
+        &&  CPUMAreHiddenSelRegsValid(pVM))
     {
-        if (   !(fFlags & SELMTOFLAT_FLAGS_HYPER)
-            && (unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.GuestGdtr.cbGdt)
-            return VERR_INVALID_SELECTOR;
-        Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+        Desc.Gen.u1Present = pHiddenSel->Attr.n.u1Present;
     }
     else
     {
-        if ((unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.cbLdtLimit)
-            return VERR_INVALID_SELECTOR;
+        if (!(Sel & X86_SEL_LDT))
+        {
+            if (   !(fFlags & SELMTOFLAT_FLAGS_HYPER)
+                && (unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.GuestGdtr.cbGdt)
+                return VERR_INVALID_SELECTOR;
+            Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+        }
+        else
+        {
+            if ((unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.cbLdtLimit)
+                return VERR_INVALID_SELECTOR;
 
-        /** @todo handle LDT page(s) not present! */
-        #ifdef IN_GC
-        PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-        #else
-        PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-        #endif
-        Desc = paLDT[Sel >> X86_SEL_SHIFT];
+            /** @todo handle LDT page(s) not present! */
+            #ifdef IN_GC
+            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
+            #else
+            PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
+            #endif
+            Desc = paLDT[Sel >> X86_SEL_SHIFT];
+        }
+
+        /* calc limit. */
+        u32Limit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
+        if (Desc.Gen.u1Granularity)
+            u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+
+        /* calc address assuming straight stuff. */
+        pvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
+                           + (   (Desc.Gen.u8BaseHigh2 << 24)
+                              |  (Desc.Gen.u8BaseHigh1 << 16)
+                              |   Desc.Gen.u16BaseLow )
+                             );
     }
 
     /*
@@ -170,17 +194,6 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, u
      */
     if (Desc.Gen.u1Present)
     {
-        /* calc limit. */
-        uint32_t    u32Limit = Desc.Gen.u4LimitHigh << 16 | Desc.Gen.u16LimitLow;
-        if (Desc.Gen.u1Granularity)
-            u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-
-        /* calc address assuming straight stuff. */
-        RTGCPTR pvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
-                                       + (   (Desc.Gen.u8BaseHigh2 << 24)
-                                          |  (Desc.Gen.u8BaseHigh1 << 16)
-                                          |   Desc.Gen.u16BaseLow )
-                                          );
         /*
          * Type check.
          */
@@ -210,6 +223,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, u
                 if (pcb)
                     *pcb = u32Limit - (uint32_t)Addr + 1;
                 return VINF_SUCCESS;
+
             case BOTH(1,X86_SEL_TYPE_EO_CONF):
             case BOTH(1,X86_SEL_TYPE_EO_CONF_ACC):
             case BOTH(1,X86_SEL_TYPE_ER_CONF):
