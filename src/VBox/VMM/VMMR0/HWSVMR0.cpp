@@ -320,22 +320,11 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
         SVM_WRITE_SELREG(CS, cs);
-        Assert(pVMCB->guest.CS.u16Sel || !pVMCB->guest.CS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
-
         SVM_WRITE_SELREG(SS, ss);
-        Assert(pVMCB->guest.SS.u16Sel || !pVMCB->guest.SS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
-
         SVM_WRITE_SELREG(DS, ds);
-        Assert(pVMCB->guest.DS.u16Sel || !pVMCB->guest.DS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
-
         SVM_WRITE_SELREG(ES, es);
-        Assert(pVMCB->guest.ES.u16Sel || !pVMCB->guest.ES.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
-
         SVM_WRITE_SELREG(FS, fs);
-        Assert(pVMCB->guest.FS.u16Sel || !pVMCB->guest.FS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
-
         SVM_WRITE_SELREG(GS, gs);
-        Assert(pVMCB->guest.GS.u16Sel || !pVMCB->guest.GS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
     }
 
     /* Guest CPU context: LDTR. */
