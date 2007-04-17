@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_im_h__
-#define __VBox_im_h__
+#ifndef __VBox_trpm_h__
+#define __VBox_trpm_h__
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -37,17 +37,22 @@ __BEGIN_DECLS
 typedef enum
 {
     TRPM_TRAP_HAS_ERRORCODE = 0,
-    TRPM_TRAP_NO_ERRORCODE
+    TRPM_TRAP_NO_ERRORCODE,
+    /** The usual 32-bit paranoia. */
+    TRPM_TRAP_32BIT_HACK = 0x7fffffff
 } TRPMERRORCODE;
 
 /**
  * TRPM event type
  */
+/** Note: must match trpm.mac! */
 typedef enum
 {
-    TRPM_TRAP = 0,
-    TRPM_HARDWARE_INT,
-    TRPM_SOFTWARE_INT
+    TRPM_TRAP         = 0,
+    TRPM_HARDWARE_INT = 1,
+    TRPM_SOFTWARE_INT = 2,
+    /** The usual 32-bit paranoia. */
+    TRPM_32BIT_HACK   = 0x7fffffff
 } TRPMEVENT;
 
 /**
@@ -62,9 +67,9 @@ typedef enum
  * @returns VBox status code.
  * @param   pVM                     The virtual machine.
  * @param   pu8TrapNo               Where to store the trap number.
- * @param   pfSoftwareInterrupt     Where to store the software interrupt indicator.
+ * @param   pEnmType                Where to store the trap type
  */
-TRPMDECL(int)  TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInterrupt);
+TRPMDECL(int)  TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType);
 
 /**
  * Gets the trap number for the current trap.
@@ -119,9 +124,9 @@ TRPMDECL(int) TRPMResetTrap(PVM pVM);
  * @returns VBox status code.
  * @param   pVM                 The virtual machine.
  * @param   u8TrapNo            The trap vector to assert.
- * @param   fSoftwareInterrupt  Indicate if it's a software interrupt or not.
+ * @param   enmType             Trap type.
  */
-TRPMDECL(int)  TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, bool fSoftwareInterrupt);
+TRPMDECL(int)  TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, TRPMEVENT enmType);
 
 /**
  * Sets the error code of the current trap.
@@ -175,12 +180,12 @@ TRPMDECL(bool)  TRPMHasTrap(PVM pVM);
  * @returns VBox status code.
  * @param   pVM                     The virtual machine.
  * @param   pu8TrapNo               Where to store the trap number.
- * @param   pfSoftwareInterrupt   Where to store the software interrupt indicator.
+ * @param   pEnmType                Where to store the trap type.
  * @param   puErrorCode             Where to store the error code associated with some traps.
  *                                  ~0U is stored if the trap have no error code.
  * @param   puCR2                   Where to store the CR2 associated with a trap 0E.
  */
-TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInterrupt, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2);
+TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2);
 
 
 /**
