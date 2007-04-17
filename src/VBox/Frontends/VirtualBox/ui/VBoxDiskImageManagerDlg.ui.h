@@ -284,6 +284,8 @@ void VBoxDiskImageManagerDlg::init()
 
 
     /* status-bar currently disabled */
+    /// @todo we must enable it and disable our size grip hack!
+    /// (at least, to have action help text showh)
     statusBar()->setHidden (true);
 
 
@@ -433,12 +435,12 @@ void VBoxDiskImageManagerDlg::languageChangeImp()
     imReleaseAction->setAccel (tr ("Ctrl+L"));
     imRefreshAction->setAccel (tr ("Ctrl+R"));
 
-    imNewAction->setStatusTip (tr ("Create new VDI file and attach it to media list"));
-    imAddAction->setStatusTip (tr ("Add existing media image file to media list"));
-    // imEditAction->setStatusTip (tr ("Edit properties of selected media image file"));
-    imRemoveAction->setStatusTip (tr ("Remove selected media image file from media list"));
-    imReleaseAction->setStatusTip (tr ("Release selected media image file from being using in some VM"));
-    imRefreshAction->setStatusTip (tr ("Refresh media image list"));
+    imNewAction->setStatusTip (tr ("Create a new virtual hard disk"));
+    imAddAction->setStatusTip (tr ("Add (register) an existing image file"));
+    // imEditAction->setStatusTip (tr ("Edit the properties of the selected item"));
+    imRemoveAction->setStatusTip (tr ("Remove (unregister) the selected media"));
+    imReleaseAction->setStatusTip (tr ("Release the selected media by detaching it from the machine"));
+    imRefreshAction->setStatusTip (tr ("Refresh the media list"));
 
     if (menuBar()->findItem(1))
         menuBar()->findItem(1)->setText (tr ("&Actions"));

@@ -840,7 +840,7 @@ to the system default language.
                                                 </property>
                                                 <property name="sizePolicy">
                                                     <sizepolicy>
-                                                        <hsizetype>1</hsizetype>
+                                                        <hsizetype>3</hsizetype>
                                                         <vsizetype>1</vsizetype>
                                                         <horstretch>0</horstretch>
                                                         <verstretch>0</verstretch>
@@ -897,7 +897,7 @@ to the system default language.
                                                 </property>
                                                 <property name="sizePolicy">
                                                     <sizepolicy>
-                                                        <hsizetype>1</hsizetype>
+                                                        <hsizetype>3</hsizetype>
                                                         <vsizetype>1</vsizetype>
                                                         <horstretch>0</horstretch>
                                                         <verstretch>0</verstretch>
@@ -931,7 +931,7 @@ to the system default language.
                                     </spacer>
                                 </vbox>
                             </widget>
-                            <spacer>
+                            <!--spacer>
                                 <property name="name">
                                     <cstring>spacer8</cstring>
                                 </property>
@@ -947,7 +947,7 @@ to the system default language.
                                         <height>20</height>
                                     </size>
                                 </property>
-                            </spacer>
+                            </spacer-->
                         </hbox>
                     </widget>
                 </vbox>

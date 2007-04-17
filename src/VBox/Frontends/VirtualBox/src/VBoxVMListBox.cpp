@@ -461,7 +461,7 @@ int VBoxVMListBoxItem::width (const QListBox *) const
         /// @todo (r=dmik) temporary
         pmOSType = QPixmap::fromMimeSource ("os_other.png");
         pmState = QPixmap::fromMimeSource ("state_aborted_16px.png");
-        strState = QListBox::tr ("Inaccessible");
+        strState = VBoxVMListBox::tr ("Inaccessible");
     }
 
     int nameWidth = fmName.width (mName);
@@ -621,7 +621,7 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
         /// @todo (r=dmik) temporary
         pmOSType = QPixmap::fromMimeSource ("os_other.png");
         pmState = QPixmap::fromMimeSource ("state_aborted_16px.png");
-        strState = QListBox::tr("Inaccessible");
+        strState = VBoxVMListBox::tr ("Inaccessible");
     }
 
     const QColorGroup &cg = lb->activeColorGroup();

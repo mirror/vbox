@@ -174,10 +174,10 @@ public:
 
         /* Setup Input layout */
         QGridLayout *inputLayout = new QGridLayout (mainLayout, 2, 3, 10, "inputLayout");
-        QLabel *lbPath = new QLabel ("Folder Path", this);
+        QLabel *lbPath = new QLabel (tr ("Folder Path"), this);
         mLePath = new QLineEdit (this);
         QToolButton *tbPath = new QToolButton (this);
-        QLabel *lbName = new QLabel ("Folder Name", this);
+        QLabel *lbName = new QLabel (tr ("Folder Name"), this);
         mLeName = new QLineEdit (this);
         tbPath->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                                  "select_file_dis_16px.png"));
@@ -187,9 +187,10 @@ public:
         connect (mLeName, SIGNAL (textChanged (const QString &)),
                  this, SLOT (validate()));
         connect (tbPath, SIGNAL (clicked()), this, SLOT (showFileDialog()));
-        QWhatsThis::add (mLePath, tr ("Enter existing path for the shared folder here"));
-        QWhatsThis::add (mLeName, tr ("Enter name for the shared folder to be created"));
-        QWhatsThis::add (tbPath, tr ("Click to invoke <open folder> dialog"));
+        QWhatsThis::add (mLePath, tr ("Displays the path to an existing folder on the host PC."));
+        QWhatsThis::add (mLeName, tr ("Displays the name of the shared folder "
+                                      "(as it will be seen by the guest OS)."));
+        QWhatsThis::add (tbPath, tr ("Opens the dialog to select a folder."));
 
         inputLayout->addWidget (lbPath,  0, 0);
         inputLayout->addWidget (mLePath, 0, 1);
@@ -199,9 +200,9 @@ public:
 
         /* Setup Button layout */
         QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
-        mBtOk = new QPushButton ("OK", this, "btOk");
+        mBtOk = new QPushButton (tr ("OK"), this, "btOk");
         QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-        QPushButton *btCancel = new QPushButton ("Cancel", this, "btCancel");
+        QPushButton *btCancel = new QPushButton (tr ("Cancel"), this, "btCancel");
         connect (mBtOk, SIGNAL (clicked()), this, SLOT (accept()));
         connect (btCancel, SIGNAL (clicked()), this, SLOT (reject()));
 

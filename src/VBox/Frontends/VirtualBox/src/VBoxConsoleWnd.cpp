@@ -1249,7 +1249,7 @@ void VBoxConsoleWnd::languageChange()
     devicesMenu->changeItem (devicesMountDVDMenuId, tr ("Mount &CD/DVD-ROM"));
     devicesMenu->changeItem (devicesUSBMenuId, tr ("&USB Devices"));
 
-    menuBar()->changeItem (vmMenuId, tr ("&VM"));
+    menuBar()->changeItem (vmMenuId, tr ("&Machine"));
     menuBar()->changeItem (devicesMenuId, tr ("&Devices"));
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
@@ -2360,9 +2360,9 @@ VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession, QAction *aAct
 
     /* Setup button's layout */
     QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
-    QPushButton *pbOk = new QPushButton ("OK", this, "pbOk");
+    QPushButton *pbOk = new QPushButton (tr ("OK"), this, "pbOk");
     QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    QPushButton *pbCancel = new QPushButton ("Cancel", this, "pbCancel");
+    QPushButton *pbCancel = new QPushButton (tr ("Cancel"), this, "pbCancel");
     connect (pbOk, SIGNAL (clicked()), this, SLOT (accept()));
     connect (pbCancel, SIGNAL (clicked()), this, SLOT (reject()));
     buttonLayout->addWidget (pbOk);

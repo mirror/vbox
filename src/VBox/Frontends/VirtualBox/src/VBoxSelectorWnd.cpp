@@ -1073,7 +1073,7 @@ void VBoxSelectorWnd::languageChange()
     if (menuBar()->findItem(1))
         menuBar()->findItem(1)->setText(tr("&File"));
     if (menuBar()->findItem(2))
-        menuBar()->findItem(2)->setText (tr ("&VM"));
+        menuBar()->findItem(2)->setText (tr ("&Machine"));
     if (menuBar()->findItem(3))
         menuBar()->findItem(3)->setText (tr ("&Help"));
 
