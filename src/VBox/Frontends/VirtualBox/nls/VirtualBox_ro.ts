@@ -4,123 +4,123 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="unfinished">Chinese</translation>
+        <translation>Română</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="unfinished">China</translation>
+        <translation></translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="unfinished">Chinese</translation>
+        <translation>Romanian</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="unfinished">China</translation>
+        <translation></translation>
     </message>
     <message>
         <source>InnoTek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="unfinished">victor</translation>
+        <translation>Alex Eftimie</translation>
     </message>
 </context>
 <context>
     <name>BootItemsList</name>
     <message>
         <source>Move the selected boot device up.</source>
-        <translation>向上移动所选启动设备.</translation>
+        <translation>Mută dispozitivul de boot în sus.</translation>
     </message>
     <message>
         <source>Move the selected boot device down.</source>
-        <translation>向下移动所选启动设备.</translation>
+        <translation>Mută dispozitivul de boot în jos.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>向上移动 (Ctrl-Up)</translation>
+        <translation>Mută în sus (Ctrl-Up)</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>向下移动 (Ctrl-Down)</translation>
+        <translation>Mută în jos (Ctrl-Down)</translation>
     </message>
 </context>
 <context>
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>设置启动顺序。用选择框来开启或关闭需要支持的启动设备。使用上下键改变设备启动顺序.</translation>
+        <translation>Defineşte ordinea de boot. Folosiţi căsuţele de selecţie din stânga pentru a activa sau dezactiva dispozitivele de boot, individual. Mutaţi itemii în sus şi în jos pentru a schimba ordinea.</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
-        <translation>可执行的 &lt;b&gt;%1&lt;/b&gt; 程序要求 Qt %2.x, 发现 Qt %3.</translation>
+        <translation>Executabilul &lt;b&gt;%1&lt;/b&gt; necesită Qt %2.x, găsit instalat Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>不兼容的 Qt 库错误</translation>
+        <translation>Eroare de incompatibilitate a bibliotecii Qt</translation>
     </message>
 </context>
 <context>
     <name>QIHotKeyEdit</name>
     <message>
         <source>Left </source>
-        <translation>左</translation>
+        <translation>Stânga </translation>
     </message>
     <message>
         <source>Right </source>
-        <translation>右</translation>
+        <translation>Dreapta </translation>
     </message>
 </context>
 <context>
     <name>QIMessageBox</name>
     <message>
         <source>OK</source>
-        <translation>确定</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation>是</translation>
+        <translation>Da</translation>
     </message>
     <message>
         <source>No</source>
-        <translation>否</translation>
+        <translation>Nu</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation>跳过</translation>
+        <translation>Ignoră</translation>
     </message>
 </context>
 <context>
     <name>QIRichLabel</name>
     <message>
         <source>Copy to clipboard</source>
-        <translation>复制到粘贴板</translation>
+        <translation>Copiază în clipboard</translation>
     </message>
 </context>
 <context>
     <name>QListBox</name>
     <message>
         <source>Inaccessible</source>
-        <translation type="obsolete">不可使用</translation>
+        <translation type="obsolete">Inaccesibil</translation>
     </message>
 </context>
 <context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation>VirtualBox - About</translation>
+        <translation>Despre VirtualBox</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
@@ -128,57 +128,57 @@
     </message>
     <message>
         <source>VirtualBox Graphical User Interface Version %1</source>
-        <translation>VirtualBox Graphical User Interface Version %1</translation>
+        <translation>VirtualBox Graphical User Interface Versiunea %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>添加主机网络界面</translation>
+        <translation>Adaugă interfaţă Gazdă</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>主机网络界面名称</translation>
+        <translation>Nume interfaţă</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation>新增网络界面描述信息</translation>
+        <translation>Descriere a noii interfeţe de reţea</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
         <source>Add Share</source>
-        <translation>添加网络共享</translation>
+        <translation>Adaugă Partajare</translation>
     </message>
     <message>
         <source>Edit Share</source>
-        <translation>编辑网络共享</translation>
+        <translation>Editează Partajare</translation>
     </message>
     <message>
         <source>Enter existing path for the shared folder here</source>
-        <translation type="obsolete">在这里输入用于网络共享的文件夹</translation>
+        <translation type="obsolete">Introduceţi cale existentă pentru directorul partajat aici</translation>
     </message>
     <message>
         <source>Enter name for the shared folder to be created</source>
-        <translation type="obsolete">为即将建立的网络共享指定一个名称</translation>
+        <translation type="obsolete">Introduceţi nume pentru folderul partajat ce va fi creat</translation>
     </message>
     <message>
         <source>Click to invoke &lt;open folder&gt; dialog</source>
-        <translation type="obsolete">单击此处打开文件浏览对话框</translation>
+        <translation type="obsolete">Click pentru a deschide dialogul &lt;deschidere director&gt;</translation>
     </message>
     <message>
         <source>Select a folder to share</source>
-        <translation>选择一个文件夹用于共享</translation>
+        <translation>Selectaţi un director pentru partajare</translation>
     </message>
     <message>
         <source>Folder Path</source>
@@ -202,34 +202,34 @@
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">确定</translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation type="unfinished">Revocare</translation>
     </message>
 </context>
 <context>
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>关闭虚拟电脑</translation>
+        <translation>Inchidere Maşină Virtuală</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>你想要:</translation>
+        <translation>Doriţi să:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>保存虚拟电脑当前运行状态(&amp;S)</translation>
+        <translation>&amp;Salvaţi starea curentă a maşinii</translation>
     </message>
     <message>
         <source>Alt+S</source>
-        <translation>Als+S</translation>
+        <translation>Alt+S</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>直接关闭虚拟电脑(&amp;P)</translation>
+        <translation>O&amp;priţi maşina</translation>
     </message>
     <message>
         <source>Alt+P</source>
@@ -237,7 +237,7 @@
     </message>
     <message>
         <source>&amp;Revert to the current shapshot</source>
-        <translation>恢复到当前快照(&amp;R)</translation>
+        <translation>&amp;Restaurare instantaneu curent</translation>
     </message>
     <message>
         <source>Alt+R</source>
@@ -245,11 +245,11 @@
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>把虚拟电脑恢复到最近生成快照时的状态</translation>
+        <translation>Restaurează maşina la starea salvată în instantaneul curent</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>F1</source>
@@ -257,7 +257,7 @@
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
@@ -265,7 +265,7 @@
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <translation>Revo&amp;care</translation>
     </message>
     <message>
         <source>Alt+C</source>
@@ -277,17 +277,17 @@
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;attached&amp;nbsp;USB&amp;nbsp;devices&lt;br&gt;%1&lt;/qt&gt;</source>
         <comment>USB device indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;dispozitivele&amp;nbsp;USB&amp;nbsp;ataşate&lt;br&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;not attached&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;nobr&gt;[&lt;b&gt;没有加载&lt;/b&gt;]&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;[&lt;b&gt;nu e ataşat&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;USB Controller is disabled&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;nobr&gt;[&lt;b&gt;USB 控制器未启用&lt;/b&gt;]&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;[&lt;b&gt;Controlorul USB este dezactivat&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>VirtualBox OSE</source>
@@ -299,323 +299,335 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>全屏模式(&amp;F)</translation>
+        <translation>Ecran &amp;Complet</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>切换到全屏模式</translation>
+        <translation>Treci pe ecran complet</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>自动捕获鼠标</translation>
+        <translation>Integrare Mouse</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>自动调整显示尺寸</translation>
+        <translation>Redimensionare automată Ecran Musafir</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>自动调整显示尺寸(&amp;G)</translation>
+        <translation>R&amp;edimensionare automată Ecran Musafir</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>当窗口大小变动时自动调整虚拟电脑内的显示尺寸(需要在虚拟电脑上安装辅助工具包)</translation>
+        <translation>Redimensionare automată a ecranului musafir când fereastra este redimensionată (necesită Guest Additions)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>自动调整窗口大小(&amp;A)</translation>
+        <translation>&amp;Ajustare Dimensiune Fereastră</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>自动调整窗口尺寸和位置以适应虚拟电脑内的显示尺寸</translation>
+        <translation>Ajustează dimensiunea şi poziţia ferestrei pentru cea mai bună potrivire pe ecranul musafir</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>发送 Ctrl-Alt-Del (&amp;E)</translation>
+        <translation>&amp;Inserare Ctrl-Alt-Del</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>发送 Ctrl-Alt-Del 键盘序列到虚拟电脑</translation>
+        <translation>Trimite secvenţa Ctrl-Alt-Del către maşina virtuală</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>发送 Ctrl-Alt-Backspace (&amp;B)</translation>
+        <translation>&amp;Inserează Ctrl-Alt-Backspace</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>发送 Ctrl-Alt-Backspace 键盘序列到虚拟电脑</translation>
+        <translation>Trimite secvenţa Ctrl-Alt-Backspace către maşina virtuală</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>重启 (&amp;R)</translation>
+        <translation>&amp;Resetare</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>重新启动虚拟电脑</translation>
+        <translation>Resetează maşina virtuală</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>正常关机 (&amp;H)</translation>
+        <translation>Inc&amp;hidere ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>发送关机信号到虚拟电脑</translation>
+        <translation>Trimite evenimentul apăsare buton ACPI către maşina virtuală</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>关闭(&amp;C)...</translation>
+        <translation>în&amp;chidere...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>关闭虚拟电脑</translation>
+        <translation>închide maşina virtuală</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>生成快照(&amp;S)...</translation>
+        <translation>Salvează In&amp;stantaneu...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>为当前虚拟电脑生成一个快照</translation>
+        <translation>Salvează un instantaneu al maşinii virtuale</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
-        <translation>软盘映像文件(&amp;F)...</translation>
+        <translation>Imagine &amp;Dischetă...</translation>
     </message>
     <message>
-        <source>Mount a floppy image file</source>
-        <translation>加载一个软盘映像</translation>
+        <source>Mount a Floppy image file</source>
+        <translation type="obsolete">Montează fişier imagine dischetă</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>卸载软驱(&amp;L)</translation>
+        <translation>Demontează F&amp;loppy</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
-        <translation>卸载当前加载的软盘或软盘映像</translation>
+        <source>Unmount the currently mounted Floppy media</source>
+        <translation type="obsolete">Demontează mediul dischetă montat în prezent</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>光盘映像(&amp;C)...</translation>
+        <translation>Imagine &amp;CD/DVD-ROM...</translation>
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>加载一个光盘映像文件</translation>
+        <translation>Montare fişier imagine CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>卸载光盘或光盘映像(&amp;D)</translation>
+        <translation>Demontare C&amp;D/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>卸载当前光盘或光盘映像文件</translation>
+        <translation>Demontează mediul CD/DVD-ROM montat în prezent</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>启用 (RDP) 远程桌面服务</translation>
+        <translation>Remote Desktop (RDP) Server</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
-        <translation>远程桌面(&amp;P)</translation>
+        <translation>Remote Dis&amp;play</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>开启或关闭到当前虚拟电脑的远程桌面连接</translation>
+        <translation>Activare sau dezactivare conexiuni remote desktop (RDP) către această maşină</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>打开</translation>
+        <translation>Deschide</translation>
     </message>
     <message>
         <source>&amp;Shared Folders</source>
-        <translation>共享文件夹(&amp;S)</translation>
+        <translation>Directoare &amp;partajate</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>
-        <translation>打开网络共享对话框</translation>
+        <translation>Deschide dialogul directoare partajate</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>安装虚拟专用电脑辅助工具包(&amp;I)...</translation>
+        <translation>&amp;Instalare Guest Additions...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>加载虚拟电脑辅助工具包映像</translation>
+        <translation>Montare imaginea de instalare Guest Additions</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
-        <translation>统计信息(&amp;S)...</translation>
+        <translation>&amp;Statistici...</translation>
     </message>
     <message>
         <source>&amp;Command line...</source>
-        <translation>命令行(&amp;C)...</translation>
+        <translation>Linie de &amp;comandă...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>&amp;VirtualBox Web Site...</translation>
+        <translation>Site Web &amp;VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Open the browser and go to the VirtualBox product web site</translation>
+        <translation>Deschide browserul şi navighează pe site-ul VirtualBox</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation>&amp;About VirtualBox...</translation>
+        <translation>&amp;Despre VirtualBox...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation>Show a dialog with product information</translation>
+        <translation>Arată dialogul cu informaţii despre produs</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Reset All Warnings</translation>
+        <translation>&amp;Resetează toate avertizările</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation>Cause all suppressed warnings and messages to be shown again</translation>
+        <translation>Arată din nou toate avertizările şi mesajele ascunse</translation>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>加载软驱(&amp;F)</translation>
+        <translation>Montare &amp;dischetă</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>加载光驱(&amp;C)</translation>
+        <translation>Montare &amp;CD/DVD-ROM</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>&amp;USB 设备</translation>
+        <translation>Dispozitive &amp;USB</translation>
     </message>
     <message>
         <source>&amp;VM</source>
-        <translation type="obsolete">虚拟电脑(&amp;V)</translation>
+        <translation type="obsolete">M&amp;V</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>设备(&amp;D)</translation>
+        <translation>&amp;Dispozitive</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>调试(&amp;b)</translation>
+        <translation>De&amp;bug</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>帮助(&amp;H)</translation>
+        <translation>&amp;Ajutor</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>指示自动调整显示尺寸功能已 打开 (&lt;img src=auto_resize_on_16px.png/&gt;) 或关闭 (&lt;img src=auto_resize_off_16px.png/&gt;).</translation>
+        <translation>Indica dacă funcţia de autoredimnsionare a ecranului musafir este Activă (&lt;img src=auto_resize_on_16px.png/&gt;) sau Inactivă (&lt;Img src=auto_resize_off_16px.png/&gt;). Notă: această funcţie necesită Guest Addition instalat pe SO musafir.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>指示鼠标是否已被虚拟电脑捕获:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成已开启&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标自动捕获已关闭，鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标自动捕获已关闭，鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;.</translation>
+        <translation>Inidică dacă cursorul mouse sistemului gazdă este capturat de către SO musafir:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul nu este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrare mouse (IM) este Activată&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul nu este capturat.&lt;/nobr&gt;&lt;br&gt;Notă: funcţia integrare mouse necesită instalate pe SO musafir a Guest Additions.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
-        <translation>指示键盘已被虚拟电脑捕获 (&lt;img src=hostkey_captured_16px.png/&gt;) 或未被捕获 (&lt;img src=hostkey_16px.png/&gt;)</translation>
+        <translation>Indică dacă tastatura este capturată de către SO musafir (&lt;img src=hostkey_captured_16px.png/&gt;) sau nu (&lt;img src=hostkey_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>显示当前所分配的热键.</translation>
+        <translation>Arată tasta Gazdă setată în prezent.&lt;br&gt;Această tastă, când este apăsată singură, schimbă starea de captură a mouse şi tastaturii. Poate fi utilizată în combinaţie cu alte taste pentru a efectua rapdi acţiuni din meniul prncipal.</translation>
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>用鼠标右键单击此处可访问共享文件夹.</translation>
+        <translation>Oferă acces rapid la directoarele partajate (printr-un clic dreapta).&lt;br&gt;Notă: funcţia directoare partajate necesită instalarea pe SO musafir a Guest Additions.</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;dischet?&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;dischetă&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>Floppy tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Drive&amp;nbsp;Gazdă&amp;nbsp;</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
         <comment>Floppy tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>nu&amp;nbsp;este&amp;nbsp;montat</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;CD/DVD-ROM&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Unitatea&amp;nbsp;Gazdei</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>nu&amp;nbsp;este&amp;nbsp;montat</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;virtual&amp;nbsp;hard&amp;nbsp;disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;discurilor&amp;nbsp;hard&amp;nbsp;virtuale&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;[&lt;b&gt;没有加载&lt;/b&gt;]</translation>
+        <translation>&lt;br&gt;[&lt;b&gt;nu este ataşat&lt;/b&gt;]</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;interfeţelor&amp;nbsp;de&amp;nbsp;reţea&lt;br&gt;[&lt;b&gt;%1 dispozitiv(e)&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
-        <translation>指示远程桌面服务 (VRDP Server) 已开启 (&lt;img src=vrdp_16px.png/&gt;) 或被禁止 (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
+        <translation>Indică dacă Remote Display (Server VRDP) este activat (&lt;img src=vrdp_16px.png/&gt;) sau nu (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP 服务器监听端口 %1</translation>
+        <translation>&lt;hr&gt;Serverul VRDP ascultă pe portul %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>暂停(&amp;P)</translation>
+        <translation>&amp;Pauză</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>将正在运行的虚拟电脑休眠</translation>
+        <translation>Suspendă execuţia maşinii virtuale</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>唤醒(&amp;e)</translation>
+        <translation>R&amp;estabilirie</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>唤醒休眠的虚拟电脑</translation>
+        <translation>Restabileşte execuţia maşinii virtuale</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>禁止自动捕获鼠标(&amp;M)</translation>
+        <translation>Dezactivare integrare &amp;Mouse</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>临时禁止自动捕获鼠标</translation>
+        <translation>Dezactivare temporară intergrare Mouse</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>启用自动捕获鼠标(&amp;M)</translation>
+        <translation>Activare integrare &amp;Mouse</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>可临时禁止自动捕获鼠标</translation>
+        <translation>Activare integrare mouse temporar dezactivată</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>快照 %1</translation>
+        <translation>Instantaneu %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;不能发现虚拟电脑辅助工具包映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 或者 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am găsit imaginea CD a VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>主机设备</translation>
+        <translation>Drive Gazdă </translation>
+    </message>
+    <message>
+        <source>Mount a floppy image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unmount the currently mounted floppy media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -626,39 +638,39 @@
     <name>VBoxDiskImageManagerDlg</name>
     <message>
         <source>Name</source>
-        <translation>名称</translation>
+        <translation>Nume</translation>
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation>虚拟分配空间</translation>
+        <translation>Dimensiune virtuală</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation>实际分配空间</translation>
+        <translation>Dimensiune actuală</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>大小</translation>
+        <translation>Dimensiune</translation>
     </message>
     <message>
         <source>Virtual Disk Manager</source>
-        <translation>虚拟存储管理器</translation>
+        <translation>Manager discuri virtuale</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation>虚拟硬盘(&amp;H)</translation>
+        <translation>Discuri &amp;hard</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation>虚拟光盘(&amp;C)</translation>
+        <translation>Imagine &amp;CD/DVD</translation>
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation>虚拟软盘(&amp;F)</translation>
+        <translation>Imagine &amp;dischetă</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>F1</source>
@@ -666,11 +678,11 @@
     </message>
     <message>
         <source>Invoke dialog&apos;s help</source>
-        <translation>打开帮助对话框</translation>
+        <translation>Apelează dialogul ajutor</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
@@ -678,60 +690,60 @@
     </message>
     <message>
         <source>Accept dialog</source>
-        <translation>接受对话框</translation>
+        <translation>Acceptă dialog</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <translation>Revo&amp;care</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
-        <translation>取消对话框</translation>
+        <translation>Dialog revocare</translation>
     </message>
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation>新建(&amp;N)...</translation>
+        <translation>&amp;Nou...</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
-        <translation>添加(&amp;A)...</translation>
+        <translation>&amp;Adăugare...</translation>
     </message>
     <message>
         <source>R&amp;emove</source>
-        <translation>删除(&amp;e)</translation>
+        <translation>Şte&amp;rge</translation>
     </message>
     <message>
         <source>Re&amp;lease</source>
-        <translation>释放(&amp;l)</translation>
+        <translation>E&amp;liberează</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation>刷新(&amp;f)</translation>
+        <translation>Reî&amp;mprospătare</translation>
     </message>
     <message>
         <source>New</source>
-        <translation>新建</translation>
+        <translation>Nou</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>添加</translation>
+        <translation>Adaugă</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>删除</translation>
+        <translation>Şterge</translation>
     </message>
     <message>
         <source>Release</source>
-        <translation>释放</translation>
+        <translation>Eliberează</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>刷新</translation>
+        <translation>Reîmprospătare</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
@@ -755,137 +767,137 @@
     </message>
     <message>
         <source>Create new VDI file and attach it to media list</source>
-        <translation type="obsolete">创建并注册新的虚拟硬盘</translation>
+        <translation type="obsolete">Creează un fişier VDI nou şi îl conectează la lista de medii</translation>
     </message>
     <message>
         <source>Add existing media image file to media list</source>
-        <translation type="obsolete">注册已存在的虚拟存储设备</translation>
+        <translation type="obsolete">Adaugă fişier imagine media existent la lista de medii</translation>
     </message>
     <message>
         <source>Remove selected media image file from media list</source>
-        <translation type="obsolete">从注册表中删除选中的虚拟存储设备</translation>
+        <translation type="obsolete">Şterge fişierul imagine mediu selectat din lista de medii</translation>
     </message>
     <message>
         <source>Release selected media image file from being using in some VM</source>
-        <translation type="obsolete">释放被某虚拟电脑使用的虚拟存储设备</translation>
+        <translation type="obsolete">Eliberează fişierul imagine mediu din uzul unor MV</translation>
     </message>
     <message>
         <source>Refresh media image list</source>
-        <translation type="obsolete">刷新注册表</translation>
+        <translation type="obsolete">Reîmprospătează lista de imagini de medii</translation>
     </message>
     <message>
         <source>&amp;Actions</source>
-        <translation>动作(&amp;A)</translation>
+        <translation>&amp;Acţiuni</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation>位置</translation>
+        <translation>Amplasare</translation>
     </message>
     <message>
         <source>Disk Type</source>
-        <translation>虚拟存储类型</translation>
+        <translation>Tip disc</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>存储设备类型</translation>
+        <translation>TIp stocare</translation>
     </message>
     <message>
         <source>Attached to</source>
-        <translation>注册到</translation>
+        <translation>Conectat la</translation>
     </message>
     <message>
         <source>Snapshot</source>
-        <translation>快照</translation>
+        <translation>Instantaneu</translation>
     </message>
     <message>
         <source>Checking accessibility</source>
-        <translation>检测可访问性</translation>
+        <translation>Verificare accesibilitate</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;正在检查可访问性...</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Verificare accesibilitate...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tip disc:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tip stocare:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>HDD</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Conectat la:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
         <comment>HDD</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;快照:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Instantaneu:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;检查存储介质可访问性出错</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Eroare la verificarea accesibilităţii mediului</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;正在检查可访问性...</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Verificare accesibilitate...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Conectat la:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;检查存储介质可访问性出错</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Eroare la verificarea accesibilităţii mediului</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>The image file is not accessible</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>映像文件不可访问</translation>
+        <translation>Fişierul imagine nu este accesibil</translation>
     </message>
     <message>
         <source>&amp;Select</source>
-        <translation>选择(&amp;S)</translation>
+        <translation>&amp;Selectare</translation>
     </message>
     <message>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
-        <translation>所有虚拟硬盘映像 (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</translation>
+        <translation>Toate imaginile de hard disc (*.vdi; *.vmdk);;Imagini Virtual Disk (*.vdi);;Imagini VMDK (*.vmdk);;Toate fişierele (*)</translation>
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>选择一个虚拟硬盘映像</translation>
+        <translation>Selectare un fişier imagine hard disk</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso)</source>
-        <translation>光盘映像 (*.iso)</translation>
+        <translation>Imagine CD/DVD-ROM (*.iso)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>选择一个光盘映像</translation>
+        <translation>Selectare un fişier imagine CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy images (*.img)</source>
-        <translation>软盘映像 (*.img)</translation>
+        <translation>Imagine dischetă (*.img)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
-        <translation>选择一个软盘映像</translation>
+        <source>Select a Floppy disk image file</source>
+        <translation type="obsolete">Selectare un fişier imagine dischetă</translation>
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
@@ -907,332 +919,336 @@
         <source>Refresh the media list</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select a floppy disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobal</name>
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>
-        <translation>快照部分</translation>
+        <translation>Diferenţiere</translation>
     </message>
     <message>
         <source>Unknown device %04hX:%04hX</source>
         <comment>USB device details</comment>
-        <translation>不可识别的设备 %04hX:%04hX</translation>
+        <translation>Dispozitiv necunoscut %04hX:%04hX</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ID Vânzător: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produs: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revizie: %04hX&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Nr. Serie %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Stare %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation>电脑名称</translation>
+        <translation>Nume</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>系统类型</translation>
+        <translation>Tip SO</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>内存大小</translation>
+        <translation>Memorie RAM</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation>一般</translation>
+        <translation> General </translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>显存大小</translation>
+        <translation>Memorie Video</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>优先启动</translation>
+        <translation>Ordine de boot</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>IO ACPI</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation>未加载</translation>
+        <translation>Neconectat</translation>
     </message>
     <message>
         <source>Hard Disks</source>
         <comment>details report</comment>
-        <translation>硬盘</translation>
+        <translation>Discuri hard</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>开启</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>禁用</translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation>开启</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation>禁用</translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>Not mounted</source>
-        <comment>details report (floppy)</comment>
-        <translation>未加载</translation>
+        <comment>details report (dischet?)</comment>
+        <translation type="obsolete">Nu este montată</translation>
     </message>
     <message>
         <source>Image</source>
-        <comment>details report (floppy)</comment>
-        <translation>映像</translation>
+        <comment>details report (dischet?)</comment>
+        <translation type="obsolete">Imagine</translation>
     </message>
     <message>
         <source>Host Drive</source>
-        <comment>details report (floppy)</comment>
-        <translation>主机设备</translation>
+        <comment>details report (dischet?)</comment>
+        <translation type="obsolete">Drive Gazdă</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>details report</comment>
-        <translation>软驱</translation>
+        <translation>Dischetă</translation>
     </message>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>未加载</translation>
+        <translation>Nu este montat</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (DVD)</comment>
-        <translation>映像</translation>
+        <translation>Imagine</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation>主机设备</translation>
+        <translation>Drive Gazdă</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation>光驱</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
-        <translation>声卡类型</translation>
+        <translation>Dispozitiv</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation>禁用</translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation>声音</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>网络类型 %1</translation>
+        <translation>Dispozitiv %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation>禁用</translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>details report</comment>
-        <translation>网络</translation>
+        <translation>Reţea</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>设备筛选</translation>
+        <translation>Filtru dispozitive</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2 active)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation>禁用</translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details report</comment>
-        <translation>USB 控制器</translation>
+        <translation>Controlor USB</translation>
     </message>
     <message>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
-        <translation>VRDP 服务器端口</translation>
+        <translation>Port Server VRDP</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
-        <translation type="unfinished">%1</translation>
+        <translation>%1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
-        <translation>禁用</translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>Remote Display</source>
         <comment>details report</comment>
-        <translation>远程桌面</translation>
+        <translation>Remote Display</translation>
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschidere de URL nu este incă implementată.</translation>
     </message>
     <message>
         <source>Powered Off</source>
         <comment>MachineState</comment>
-        <translation>关机</translation>
+        <translation>Oprită</translation>
     </message>
     <message>
         <source>Saved</source>
         <comment>MachineState</comment>
-        <translation>保存</translation>
+        <translation>Salvată</translation>
     </message>
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>异常退出</translation>
+        <translation>întreruptă</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>运行中</translation>
+        <translation>Rulând</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation>暂停</translation>
+        <translation>Pauză</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>MachineState</comment>
-        <translation>正在启动</translation>
+        <translation>Pornind</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>MachineState</comment>
-        <translation>正在关机</translation>
+        <translation>Oprire</translation>
     </message>
     <message>
         <source>Saving</source>
         <comment>MachineState</comment>
-        <translation>正在保存</translation>
+        <translation>Salvând</translation>
     </message>
     <message>
         <source>Restoring</source>
         <comment>MachineState</comment>
-        <translation>正在恢复</translation>
+        <translation>Restaurând</translation>
     </message>
     <message>
         <source>Discarding</source>
         <comment>MachineState</comment>
-        <translation>正在删除</translation>
+        <translation>Renunţând</translation>
     </message>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>关闭</translation>
+        <translation>Închisă</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>打开</translation>
+        <translation>Deschide</translation>
     </message>
     <message>
         <source>Spawning</source>
         <comment>SessionState</comment>
-        <translation>正在准备</translation>
+        <translation>În curs de pornire</translation>
     </message>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>正在关闭</translation>
+        <translation>în curs de închidere</translation>
     </message>
     <message>
         <source>None</source>
         <comment>DeviceType</comment>
-        <translation>空</translation>
+        <translation>Nici unul</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>DeviceType</comment>
-        <translation>软驱</translation>
+        <translation>Dischetă</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
-        <translation>光驱</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation>硬盘</translation>
+        <translation>Disc hard</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>DeviceType</comment>
-        <translation>网络</translation>
+        <translation>Reţea</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
-        <translation>第一IDE控制器</translation>
+        <translation>Primar</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
-        <translation>第二IDE控制器</translation>
+        <translation>Secundar</translation>
     </message>
     <message>
         <source>Normal</source>
@@ -1242,17 +1258,17 @@
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation>Immutable</translation>
+        <translation>Nu poate fi modificat</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
-        <translation>Writethrough</translation>
+        <translation>Scrie peste</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
-        <translation>虚拟硬盘映像</translation>
+        <translation>Imagine disc Virtuală</translation>
     </message>
     <message>
         <source>iSCSI</source>
@@ -1262,220 +1278,235 @@
     <message>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Imagine VMDK</translation>
     </message>
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>Null</translation>
+        <translation>NULL</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation>External</translation>
+        <translation>Extern</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation>Guest</translation>
+        <translation>Musafir</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
-        <translation>Ignore</translation>
+        <translation>Ignoră</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rezervă</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
-        <translation>主通道</translation>
+        <translation>Master</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
-        <translation>从通道</translation>
+        <translation>Slave</translation>
     </message>
     <message>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
-        <translation>设备&amp;nbsp;%1</translation>
+        <translation>Dispozitiv&amp;nbsp;%1</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Driver Audio Null</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WIndows Multimedia</translation>
     </message>
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Driver Audio OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Driver Audio ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WIndows DirectSound</translation>
     </message>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>CoreAudio</translation>
     </message>
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>未加载</translation>
+        <translation>Neconectat</translation>
     </message>
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>NAT</translation>
     </message>
     <message>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>主机网络界面</translation>
+        <translation>Interfaţă gazdă</translation>
     </message>
     <message>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Reţea internă</translation>
     </message>
     <message>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
-        <translation>不支持</translation>
+        <translation>Nu este suportat</translation>
     </message>
     <message>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
-        <translation>不可用</translation>
+        <translation>Indisponibil</translation>
     </message>
     <message>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
-        <translation>忙</translation>
+        <translation>Ocupat</translation>
     </message>
     <message>
         <source>Available</source>
         <comment>USBDeviceState</comment>
-        <translation>可用</translation>
+        <translation>Disponibil</translation>
     </message>
     <message>
         <source>Held</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rezervat</translation>
     </message>
     <message>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
-        <translation>捕获</translation>
+        <translation>Capturat</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Verificare...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;I&gt;Inaccesibil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished">禁用</translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Gazdă către Musafir</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Musafir către Gazdă</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bidirecţional</translation>
     </message>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectare director</translation>
     </message>
     <message>
         <source>Select a file</source>
+        <translation>Selectare fişier</translation>
+    </message>
+    <message>
+        <source>Not mounted</source>
+        <comment>details report (floppy)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <comment>details report (floppy)</comment>
+        <translation type="unfinished">Imagine</translation>
+    </message>
+    <message>
+        <source>Host Drive</source>
+        <comment>details report (floppy)</comment>
+        <translation type="unfinished">Drive Gazdă</translation>
     </message>
 </context>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation>目录</translation>
+        <translation>Categorie</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished"></translation>
+        <translation>[id]</translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished"></translation>
+        <translation>[link]</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished"></translation>
+        <translation>[nume]</translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation>&lt;i&gt;从左边的设置列表中选择一个类别，然后移动鼠标到一个具体的设置项目将获取更多信息&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Selectaţi o categorie de setări din lista din stânga şi mergeţi cu mouseul peste un item din listă pentru a obţine informaţii suplimentare&lt;/i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
-        <translation>一般</translation>
+        <translation> General </translation>
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <source>#general</source>
-        <translation>#一般</translation>
+        <translation>#general</translation>
     </message>
     <message>
         <source> Input </source>
-        <translation>输入</translation>
+        <translation> Input </translation>
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished"></translation>
+        <translation>1</translation>
     </message>
     <message>
         <source>#input</source>
-        <translation>#输入</translation>
+        <translation>#input</translation>
     </message>
     <message>
         <source> USB </source>
-        <translation>USB</translation>
+        <translation> USB </translation>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished"></translation>
+        <translation>2</translation>
     </message>
     <message>
         <source>#usb</source>
@@ -1483,244 +1514,249 @@
     </message>
     <message>
         <source>Default &amp;Folders</source>
-        <translation>默认文件夹(&amp;F)</translation>
+        <translation>Directoare &amp;partajate</translation>
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is
 used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>显示用于存放虚拟硬盘映像文件的默认文件夹。如果没有在此明确指定其它文件夹，当新建或注册虚拟硬盘时将使用此文件夹.</translation>
+        <translation>Afişează calea către directorul VDI implicit. Acest director este
+folosit, daca nu este explicit specificat altfel, atunci când creaţi noi sau adăugaţi discuri hard virtuale existente.</translation>
     </message>
     <message>
         <source>Machines</source>
-        <translation>虚拟电脑</translation>
+        <translation>Maşini</translation>
     </message>
     <message>
         <source>VDI files</source>
-        <translation>虚拟硬盘</translation>
+        <translation>Fişiere VDI</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>将存放虚拟电脑的文件夹重新设置为默认值。接受更改后，再次打开本对话框时将显示默认路径.</translation>
+        <translation>Restează calea către directorul maşinii virtuale la valoarea implicită.
+Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acet dialog din nou.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>将存放虚拟硬盘的文件夹重新设置为默认值。接受更改后，再次打开本对话框时将显示默认路径.</translation>
+        <translation>Restează calea către directorul VDI la valoarea implicită.
+Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acet dialog din nou.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine
 folder. This folder is used, if not explicitly specified otherwise, when creating new
 virtual machines.</source>
-        <translation>显示用于存放虚拟电脑的默认文件夹。如果没有特别指定，当新建虚拟电脑时将使用此文件夹.</translation>
+        <translation>Afişează calea către directorul maşinii virtuală implicită.
+Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creaţi noi 
+maşini virtuale.</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>选择</translation>
+        <translation>Selectare</translation>
     </message>
     <message>
         <source>Opens a dialog to select the
 default VDI folder.</source>
-        <translation>打开对话框选择用于存放虚拟硬盘的默认文件夹.</translation>
+        <translation>Deschide dialogul pentru a selecta
+directorul VDI implicit.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the
 default virtual machine folder.</source>
-        <translation>打开对话框选择用于存放虚拟电脑的默认文件夹.</translation>
+        <translation>Deschide dialogul pentru a selecta
+directorul maşinii virtuale implicite.</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
-        <translation>键盘(&amp;K)</translation>
+        <translation>&amp;Tastatură</translation>
     </message>
     <message>
         <source>&amp;Host Key</source>
-        <translation>热键(&amp;H)</translation>
+        <translation>Tastă &amp;Gazdă</translation>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
-        <translation>自动捕获键盘(&amp;A)</translation>
+        <translation>Capturare &amp;automată a tastaturii</translation>
     </message>
     <message>
         <source>Alt+A</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured, 
-all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">选中后，当虚拟电脑窗口处于活动状态时将自动捕获键盘输入。当键盘被捕获时，所有的键盘输入(包括系统切换键如 Alt-Tab) 都将被发送到虚拟电脑.</translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
-        <translation>USB 设备筛选器(&amp;U)</translation>
+        <translation>Filtre Dispozitive &amp;USB</translation>
     </message>
     <message>
         <source>Lists all global USB filters.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>显示所有全局USB筛选器.
-左边的选择框决定该筛选器是否必启用.</translation>
+        <translation>Listează toate filtrele USB globale.
+Căsuţa de selecţie din stânga defineşte dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă filtru vid (Ins)</translation>
     </message>
     <message>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation>添加一个各个域的值都为空的USB筛选器。
-需要注意的是：这样的筛选器将会匹配所有连接到主机上的USB设备.</translation>
+        <translation>Adaugă un filtru USB nou cu
+toate câmpurile setate iniţial la şiruri goale. Notaţi ca un astfel de filtru se va potrivi la orice
+dispozitiv USB ataşat.</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă din (Alt+Ins)</translation>
     </message>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
+        <translation>Adaugă un filtru USB nou cu
+toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished">删除</translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished">删除 (Del)</translation>
+        <translation>Şterge (Del)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>删除所选的USB筛选器.</translation>
+        <translation>Şterge filtrul USB selectat.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished">Ctrl+Up</translation>
+        <translation>Ctrl+Up</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>向上移动 (Ctrl+Up)</translation>
+        <translation>Mută în sus (Ctrl-Up)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>向上移动所选的USB筛选器.</translation>
+        <translation>Mută filtrul USB în sus.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Down</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>向下移动 (Ctrl+Down)</translation>
+        <translation>Mută în jos (Ctrl-Down)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>向下移动所选的USB筛选器.</translation>
+        <translation>Mută filtrul USB în jos.</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation>显示帮助对话框.</translation>
+        <translation>Afişează dialogul ajutor.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>发现无效设置</translation>
+        <translation>Setări nevalide detectate</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation>保存设置变动并关闭对话框.</translation>
+        <translation>Acceptă schimbările şi închide acest dialog.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation>放弃更改并关闭对话框.</translation>
+        <translation>Revocă schimbările şi închide acest dialog.</translation>
     </message>
     <message>
         <source>VirtualBox Global Settings</source>
-        <translation>VirtualBox 全局设置</translation>
+        <translation>Setări globale VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>显示当前虚拟电脑窗口所用热键。你可以激活该输入框并定义一个新的热键。需要注意的是：数字键、光标键和编辑键不能用作热键.</translation>
+        <translation>Afişează tastele utilizate ca Tastă Gazdă în fereastra MV. Activează câmpul de intrare şi apasă noua Tastă Gazdă. Notează faptul că tastele alfanumerice, de mişcare a cursoului şi de editare nu pot fi utilizate ca Tastă Gazdă.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>新筛选器 %1</translation>
+        <translation>Filtru nou %1</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically
 captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Când este selectat, tastatura este capturată
+automat de fiecare dată când fereastra MV este activată. Atunci când tastatura este capturată,
+toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt direcţionate către MV.</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Limbă</translation>
     </message>
     <message>
         <source> Language </source>
-        <translation type="unfinished"></translation>
+        <translation> Limbă </translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation>3</translation>
     </message>
     <message>
         <source>#language</source>
-        <translation type="unfinished"></translation>
+        <translation>#limbă</translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Limbaj &amp;Interfaţă</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>Autor(i):</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>Limbă:</translation>
     </message>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation> (implicită)</translation>
     </message>
     <message>
         <source>&lt;unavailabie&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;indisponibil&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;necunoscut&gt;</translation>
     </message>
     <message>
         <source>
@@ -1728,42 +1764,46 @@ Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.
                                     </source>
-        <translation type="unfinished"></translation>
+        <translation>
+Listează toate limbajele de interfaţă disponibile. Limba efectivă este
+scrisă &lt;b&gt;îngroşat&lt;/b&gt;. Selectaţi &lt;i&gt;Implicită&lt;/i&gt; pentru a reseta
+către limba implicită a sistemului.
+                                                                                                               </translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>Implicită</translation>
     </message>
 </context>
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
-        <translation>&lt;没有硬盘&gt;</translation>
+        <translation>&lt;lipsă disc hard&gt;</translation>
     </message>
     <message>
         <source>No hard disk</source>
-        <translation>没有硬盘</translation>
+        <translation>Lipsă disc hard</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>创建新的虚拟硬盘</translation>
+        <translation>Crează disc hard virtual nou</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘.&lt;/p&gt;
-&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面
-单击&lt;b&gt;后退&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Acest vrăjitor vă va ajuta să creaţi o nouă imagine virtuală de disc hard pentru maşina dvs virtuală.&lt;/p&gt;
+&lt;p&gt;Folosiţi butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare 
+şi butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a vă intoarce la precedenta.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>欢迎使用新建虚拟硬盘向导!</translation>
+        <translation>Bun venit la Vrăjitorul creează disc virtual nou!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -1772,159 +1812,167 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择你要建立的虚拟硬盘类型.&lt;/p&gt;
-&lt;p&gt;一个&lt;b&gt;动态扩展映像&lt;/b&gt;最初只需占用非常小的物理硬盘空间. 然后不断增加(最高
-到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配.&lt;/p&gt;
-&lt;p&gt;一个&lt;b&gt;固定大小映像&lt;/b&gt; 一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selectaţi tipul de imagine de disc hard virtual pe care doriţi să-l creaţi.&lt;/p&gt;
+&lt;p&gt;O &lt;b&gt;imagine expandabilă dinamic&lt;/b&gt; ocupă iniţial un spaţiu foarte mic
+pe discul hard fizic. Va creşte dinamic (până la dimensiunre specificată), 
+pe măsură ce SO Musafir face uz de spaţiul pe disc. &lt;/p&gt;
+&lt;p&gt;O &lt;b&gt;imagine de dimensiune fixă&lt;/b&gt; nu creşte. Este salvată într-un fişier de
+aproximativ aceeaşi dimensiune cu discul hard virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image Type</source>
-        <translation>映像类型</translation>
+        <translation>Tip Imagine</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
-        <translation>动态扩展映像(&amp;D)</translation>
+        <translation>Imagine expandabilă &amp;dinamic</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+D</translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation>固定大小映像(&amp;F)</translation>
+        <translation>Imagine de dimensiune &amp;fixă</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+F</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
-        <translation>虚拟硬盘类型</translation>
+        <translation>Tip imagine disc Virtuală</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮指定虚拟硬盘所在映像文件名及其存储位置或者直接在输入框中输入一个映像文件名.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Apăsaţi butonul &lt;b&gt;Selectare&lt;/b&gt; pentru a selecta amplasarea şi numele fişierului 
+pentru a stoca imaginea discului hard virtual sau tastaţi un nume de fişier în câmpul de intrare.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Image File Name</source>
-        <translation>映像文件名(&amp;I)</translation>
+        <translation>Nume fişier &amp;imagine</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>选择</translation>
+        <translation>Selectare</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;设定所需创建的虚拟硬盘的大小. &lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selectare dimensiunea imaginii discului hard virtual (în megaocteţi). Această dimensiune va fi raportată SO Musafir
+ca dimensiunea discului hard virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image &amp;Size</source>
-        <translation>虚拟硬盘大小(&amp;S)</translation>
+        <translation>Dimen&amp;siune Imagine</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>虚拟硬盘所在位置和空间大小</translation>
+        <translation>Amplasare disc virtual şi dimensiune</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation>现在将根据下面所列参数创建一个新的虚拟硬盘:</translation>
+        <translation>Veţi crea o nouă imagine de disc hard virtual cu următorii parametrii:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation>如果上面的设置正确, 单击&lt;b&gt;完成&lt;/b&gt; 按钮， 一个新的虚拟硬盘将会被建立.
-                            </translation>
+        <translation>Dacă setările următoare sunt corecte, apăsaţi butonul &lt;b&gt;Finish&lt;/b&gt;
+                                                            O dată apăsat, o nouă imagine de disc hard va fi creată.
+                                                            </translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>摘要</translation>
+        <translation>Sumar</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation></translation>
+        <translation>&lt;nobr&gt;%1 Octeţi&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;类型:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;位置:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Amplasare:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Dimensiune:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Octeţi)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation>虚拟硬盘映像 (*.vdi)</translation>
+        <translation>Imagini disc hard (*.vdi)</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>选择一个文件作为新的虚拟硬盘映像</translation>
+        <translation>Selectaţi un fişier pentru noua imagine de disc hard</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation>新建虚拟电脑</translation>
+        <translation>Creează o maşină virtuală nouă</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;本向导将指引你一步步建立一个虚拟电脑.&lt;/p&gt;
-&lt;p&gt;使用&lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一步操作界面，
-使用&lt;b&gt;上一部&lt;/b&gt;按钮返回向导的上一个页面.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Acest vrăjitor vă va ghida prin paşii necesari creării
+unei noi maşini virtuale pentru VirtualBox.&lt;/p&gt;
+&lt;p&gt;Folosiţi butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare  a vrăjitorului
+şi butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a vă întoarce la pagina precedentă.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>欢迎使用新建虚拟电脑向导!</translation>
+        <translation>Bun venit la vrăjitorul maşină virtuală nouă!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
 system you plan to install in the machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;
-&lt;p&gt;每台虚拟电脑都要有一个唯一的名称来标识，用来区分该电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare
+musafir pe care plănuiţi să îl instalaţi în maşină.&lt;/p&gt;
+&lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware.
+Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina virtuală creată.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished">名称(&amp;a)</translation>
+        <translation>N&amp;ume</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished">系统类型(&amp;T)</translation>
+        <translation>&amp;Tip SO</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation>虚拟电脑名称和系统类型</translation>
+        <translation>Nume MV şi Tip SO</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;指定虚拟电脑可用内存大小，单位为: MB .&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selectaţi cantitatea de memorie RAM în megaocteţi pentru a fi alocată maşinii virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">内存大小(&amp;M)</translation>
+        <translation>Dimensiune &amp;Memorie RAM</translation>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;</translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation>=</translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&gt;</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MO</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation>内存</translation>
+        <translation>Memorie</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
@@ -1934,26 +1982,28 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择一个硬盘映像文件作为虚拟电脑的主硬盘.。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的硬盘映像，
-也可以在下拉列表中选择一个现有的硬盘映像，或者单击&lt;b&gt;现有&lt;/b&gt;
-按钮 (打开虚拟存储管理器).&lt;/p&gt;
-&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以跳过这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selectaţi imaginea de disc hard virtual ce va fi folosită
+ca disc de boot pentru maşina virtuală. Puteţi fie creea un disc hard nou
+utilizând butonul &lt;b&gt;Nou&lt;/b&gt; sau selecta o imagine de disc hard existentă
+din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialogul Manager Disc Virtual).&lt;/p&gt;
+&lt;p&gt;Dacă aveţi nevoie de setarea mai complexă a unui disc virtual, puteţi sări peste acest pas
+şi să ataşaţi ulterior un disc hard utilizând dialogul Setări MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="unfinished">启动盘(第一IDE控制器主通道)(&amp;o)</translation>
+        <translation>Disc de B&amp;oot (Primar Master)</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
-        <translation type="unfinished">新建(&amp;e)...</translation>
+        <translation>N&amp;ou...</translation>
     </message>
     <message>
         <source>E&amp;xisting...</source>
-        <translation type="unfinished">现有(&amp;x)...</translation>
+        <translation>E&amp;xistent...</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation>虚拟硬盘</translation>
+        <translation>Hard disc Virtual</translation>
     </message>
     <message>
         <source>
@@ -1962,8 +2012,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             with the following parameters:
                             &lt;/p&gt;
                             </source>
-        <translation>&lt;p&gt;现在将根据下列参数来创建一台新的虚拟电脑:&lt;/p&gt;
-                         </translation>
+        <translation>
+                                                                       &lt;p&gt;
+                                                                       Veţi crea  o nouă maşină virtuală
+                                                                       cu următorii parametrii:
+                                                                       &lt;/p&gt;</translation>
     </message>
     <message>
         <source>
@@ -1977,33 +2030,40 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             the menu of the main window.
                             &lt;/p&gt;
                             </source>
-        <translation>&lt;p&gt;如果上面的设置正确，请按&lt;b&gt;完成&lt;/b&gt; 按钮，一台新的虚拟电脑就会被创建。&lt;/p&gt;
-&lt;p&gt;今后你还可以通过主窗口中的&lt;b&gt;设置&lt;/b&gt;对话框随时调整这些或其它设置.&lt;/p&gt;
-                            </translation>
+        <translation>
+                                                           &lt;p&gt;
+                                                           Dacă informaţiile sunt corecte, apăsaţi butonul &lt;b&gt;Terminare&lt;/b&gt;.
+                                                           O dată ce l-aţi apăsat, o nouă maşină virtuală va fi creată.
+                                                           &lt;/p&gt;&lt;p&gt;
+                                                           Puteţi schimba aceste setări şi altele în orice moment
+                                                           prin dialogul &lt;b&gt;Setări&lt;/b&gt; accesibil din
+                                                           meniul ferestrei principale.
+                                                           &lt;/p&gt;
+                                                           </translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>摘要</translation>
+        <translation>Sumar</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;电脑名称:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;系统类型:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;内存大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Nume:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tip SO:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memorie:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;引导盘:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Disc de boot&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>建议分配的内存大小是 &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>Memoria RAM recomandată este &lt;b&gt;%1&lt;/b&gt; MO.</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>建议分配的虚拟硬盘大小是： &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>Dimensiunea discului de boot recomandată este &lt;b&gt;%1&lt;/b&gt; MO.</translation>
     </message>
 </context>
 <context>
@@ -2011,333 +2071,342 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - 信息</translation>
+        <translation>Informaţii - VirtualBox</translation>
     </message>
     <message>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - 问题</translation>
+        <translation>Întrebare - VirtualBox</translation>
     </message>
     <message>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - 警告</translation>
+        <translation>Avertisment - VirtualBox</translation>
     </message>
     <message>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - 错误</translation>
+        <translation>Eroare - VirtualBox</translation>
     </message>
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - 严重错误</translation>
+        <translation>Eroare critică - VirtualBox</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
-        <translation>不要再显示这个信息</translation>
+        <translation>Nu afişa acest mesaj din nou</translation>
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>打开&lt;tt&gt;%1&lt;tt&gt;失败。请确认你的桌面环境设置能正确处理这种类型的URL地址.</translation>
+        <translation>Nu am putut deschide &lt;tt&gt;%1&lt;/tt&gt;. Verificaţi dacă sistemul dvs poate manipula URL de acest tip.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;初始化 COM 失败，或未找到 VirtualBox COM 服务器. 可能是VirtualBox 服务器不在运行或启动失败.&lt;/p&gt;&lt;p&gt;应用程序现在将被中断.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut iniţializa COM sau nu am putut găsi serverul COM al VirtualBox. Se pare că serverul VirtualBox nu rulează sau nu a putut porni.&lt;/p&gt;&lt;p&gt;Aplicaţia se va inchide acum.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;创建 VirtualBox COM 对象失败.&lt;/p&gt;&lt;p&gt;应用程序将被中断.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut crea obiectul COM VirtualBox.&lt;/p&gt;&lt;p&gt;Aplicaţia se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;加载全局 GUI 配置失败.&lt;/p&gt;&lt;p&gt;应用程序将被中断.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut încărca configuraţia globală GUI.&lt;/p&gt;&lt;p&gt;Aplicaţia se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation>&lt;p&gt;保存全局 GUI 配置失败.&lt;p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut salva configuraţia GUI globală.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>设置 VirtualBox 全局属性失败.</translation>
+        <translation>Nu am putut seta proprietăţile VirtualBox globale.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
-        <translation>访问 USB 子系统失败.</translation>
+        <translation>Nu am putut accesa subsistemul USB.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation>创建一个新的虚拟电脑失败.</translation>
+        <translation>Nu am putut crea o maşină virtuală nouă.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>创建一个新的虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>Nu am putut crea o maşină vrituală nouă &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>应用设置到虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>Nu am putut aplica setările maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>保存虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 设置失败.</translation>
+        <translation>Nu am putut salva setările maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>加载虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 设置失败.</translation>
+        <translation>Nu am putut încărca setările maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>启动虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>Nu am putut porni maşina virtuală nouă &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>暂时执行虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>Nu am putut întrerupe execuţia maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>恢复虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的执行失败.</translation>
+        <translation>Nu am putut restabili execuţia maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>保存虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的状态失败.</translation>
+        <translation>Nu am putut salva starea maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>建立虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的快照失败.</translation>
+        <translation>Nu am putut crea un instantaneu al maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>不能正常关闭虚拟电脑 &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nu am putut opri maşina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>删除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>Nu am putut şterge maşina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的保存 状态失败.</translation>
+        <translation>Nu am putut renunţa la starea salvată a maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>Nu am putut renunţa la instantaneul &lt;b&gt;%1&lt;/b&gt; maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的当前状态失败.</translation>
+        <translation>Nu am putut renunţa la starea curentă a maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的当前快照和状态失败.</translation>
+        <translation>Nu am putut renunţa la instantaneul curent şi la starea curentă a maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>找不到名称为 &lt;b&gt;%1&lt;/b&gt; 的虚拟电脑.</translation>
+        <translation>Nu există o maşină virtuală numită &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;你确认要永久性地删除虚拟电脑 &lt;b&gt;%1&lt;/b&gt;吗?&lt;/p&gt;&lt;p&gt;这个操作一旦执行就无法被撤销.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sunteţi sigur că doriţi sa ştergeţi pentru totdeauna maşina virtuală &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operaţie este definitivă.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;你是否确认要取消注册这个不能正常访问的虚拟电脑 &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;一旦取消，今后就不能再通过图形用户界面来再次注册它.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sunteţi sigur că doriţi să dezînregistraţi maşina virtuală inaccesibilă &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Nu veţi mai fi capabil să o reînregistraţi din GUI.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;你是否要清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt;的保存状态?&lt;/p&gt;&lt;p&gt;该操作相当于对虚拟电脑内的操作系统进行一次硬重启或硬关机.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sunteţi sigur că doriţi să renunţaţi la starea salvată a maşinii virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operaţie este echivalentă cu resetarea sau stingerea maşinii fără a face shutdown normal din punctul de vedere al SO musafir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;释放这个映像文件将会把它从这些虚拟电脑: &lt;b&gt;%1&lt;/b&gt;中分离.&lt;/p&gt;&lt;p&gt;是否要继续?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Deconectarea acestei imagini o va detaşa de la următoarele maşini virtuale: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Doriţi să continuaţi?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;映像文件 &lt;b&gt;%1&lt;/b&gt;已经存在. 你不能用这个文件建立一个新的虚拟硬盘, 因为它可能已被其它的虚拟硬盘所使用.&lt;/p&gt;&lt;p&gt;请指定一个其它映像文件名.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Fişierul imagine &lt;b&gt;%1&lt;/b&gt; există deja. Nu puteţi crea un nou disc hard virtual care să utilizeze acest fişier, pentru că este deja utilizat de către un alt disc virtual.&lt;/p&gt;&lt;p&gt;Vă rugăm alegeţi un nume de fişier diferit pentru imagine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;你真的要删除虚拟硬盘映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;吗?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;如果你选择 &lt;b&gt;No&lt;/b&gt; 将取消该虚拟硬盘的注册并把它从下面列表中删除, 但该映像文件还会保留在你的物理硬盘上.&lt;/p&gt;&lt;p&gt;如果你选择 &lt;b&gt;Yes&lt;/b&gt; 不但会取消该虚拟硬盘的注册，而且会将它永久性删除. 请注意这个操作是不可撤销的.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Doriţi să ştergeţi acest fişier imagine disc &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Dacă alegeţi &lt;b&gt;Nu&lt;/b&gt; discul virtual va fi dezînregistrat şi şters din colecţie, dar fişierul imagine va rămâne pe discul dvs fizic.&lt;/p&gt;&lt;p&gt;Dacă alegeţi &lt;b&gt;Da&lt;/b&gt;a tunci fişierul imagine va fi şters pentru totdeauna după dezînregistrare. Această operaţie este definitivă.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>删除虚拟硬盘映像 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>Nu am putut şterge imaginea discului hard virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;你真的想删除虚拟硬盘 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;吗?&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Doriţi să ştergeţi (dezînregistraţi) discul hard virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>创建虚拟硬盘映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失败.&lt;/nobr&gt;</translation>
+        <translation>Nu am putut crea imaginea discului hard virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation>加载 UUID 号为 %1 的虚拟硬盘映像到虚拟电脑 &lt;b&gt;%4&lt;/b&gt; 的第 %3 控制器的第 %2 个通道失败.</translation>
+        <translation>Nu am putut ataşa imaginea discului hard cu UUID %1 la slotul %2 al controlerului %3 maşinii &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>不能将虚拟硬盘映像从虚拟电脑 &lt;b&gt;%3&lt;/b&gt; 的第 %2 控制器的第 %1 个通道分离.</translation>
+        <translation>Nu am putut detaşa imaginea discului hard de la slotul %1 al controlerului %2 maşinii &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation>硬盘映像</translation>
+        <translation>disc hard</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
-        <translation>光盘映像</translation>
+        <translation>Imagine CD/DVD</translation>
     </message>
     <message>
-        <source>floppy image</source>
-        <translation>软盘映像</translation>
+        <source>Floppy image</source>
+        <translation type="obsolete">Imagine dischetă</translation>
     </message>
     <message>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>注册 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 失败.</translation>
+        <translation>Nu am putut înregistra %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>取消注册 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 失败.</translation>
+        <translation>Nu am putut dezînregistra %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
-        <translation>创建一个新会话失败.</translation>
+        <translation>Nu am putut crea o nouă sesiune.</translation>
     </message>
     <message>
         <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>不能为 UUID 为 &lt;b&gt;%1&lt;/b&gt; 的虚拟电脑打开一个新会话.</translation>
+        <translation>Nu am putut deschide o sesiune pentru maşina virtuală cu UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>不能为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 打开一个新会话.</translation>
+        <translation>Nu am putut deschide o sesiune pentru maşina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation>不能获取映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 的可访问状态. 部分注册映像可能已经变成不可访问.</translation>
+        <translation>Nu am putut obţine starea de accesibilitate a mediului &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Unele dintre mediile înregistrate pot deveni inaccesibile.</translation>
     </message>
     <message>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>不能创建主机网络界面 &lt;b&gt;%1&lt;/b&gt;&apos;.</translation>
+        <translation>Nu am putut crea interfaţa de reţea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>不能删除主机网络界面 &lt;b&gt;%1&lt;/b&gt;&apos;.</translation>
+        <translation>Nu am putut şterge interfaţa de reţea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>不能加载 USB 设备 &lt;b&gt;%1&lt;/b&gt; 到虚拟电脑 &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Nu am putut conecta dispozitivul USB &lt;b&gt;%1&lt;/b&gt; la maşina virtuală &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>不能将 USB 设备 &lt;b&gt;%1&lt;/b&gt; 从虚拟电脑 &lt;b&gt;%2&lt;/b&gt; 中分离.</translation>
+        <translation>Nu am putut deconecta dispozitivul USB &lt;b&gt;%1&lt;/b&gt; de la maşina virtuală &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>为虚拟电脑 &lt;b&gt;%3&lt;/b&gt; 创建共享文件夹 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 失败.</translation>
+        <translation>Nu am putut crea un director partajat &lt;b&gt;%1&lt;/b&gt; (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) pentru maşina virtuală &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>从虚拟电脑 &lt;b&gt;%3&lt;/b&gt; 删除共享文件夹 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 失败.</translation>
+        <translation>Nu am putut şterge directorul partajat &lt;b&gt;%1&lt;/b&gt; (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) din maşina virtuală &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aţi &lt;b&gt;dat clic&lt;/b&gt; în interiorul ecranului Maşinii Virtuale sau aţi apăsat &lt;b&gt;tasta gazdă&lt;/b&gt;. Acest lucru va cauza &lt;b&gt;capturarea&lt;/b&gt; de către maşina virtuală a cursorului mouse (numai dacă integrarea mouse nu este suportată de către SO musafir) şi a tastaturi, ceea ce o va face indisponibilă celorlate aplicaţii rulând pe maşina dvs gazdă.&lt;/p&gt;&lt;p&gt;Puteţi oricând apăsa &lt;b&gt;tasta gazdă&lt;/b&gt; pentru a &lt;b&gt;opri capturarea&lt;/b&gt; mouse şi tastaturii şi a le întoarce la operare normală. Tasta gazdă asociată în prezent este afişată în bara de stare, în partea de jos a ferestrei maşinii virtuale, lângă iconul&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Acest icon, împreună cu iconul mouse alăturat, indică starea curentă a capturării mouse şi tastaturii.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Opţiunea &lt;b&gt;Captură automată tastatură&lt;/b&gt; este pornită. Acest lucru va face ca maşina virtuală să &lt;b&gt;captureze&lt;/b&gt; automat tastatura de fiecare dată când fereastra MV este activată şi să facă tastatura indisponibilă celorlate aplicaţii rulând pe maşina gazđă.&lt;/p&gt;&lt;p&gt;Puteţi apăsa &lt;b&gt;tasta gazdă&lt;/b&gt; în orice moment pentru a &lt;b&gt;opri captura&lt;/b&gt; tastaturii şi a mouse (dacă este capturat) şi a le readuce la modul normal de funcţionare. Tasta gazdă asociată în prezent este afişată în bara de stare, în partea de jos a ferestrei maşinii virtuale, lângă iconul&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Acest icon, împreună cu iconul mouse alăturat, indică starea curentă a capturării mouse şi tastaturii.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Maşina virtuală a detectat că SO musafir suportă &lt;b&gt;integrare cursor mouse&lt;/b&gt;. Aceasta însemnă că nu trebuie să &lt;i&gt;capturaţi&lt;/i&gt; cursorul mouse pentru a-l putea folosi în SO musafir -- toate acţiunile cu mouse pe care le faceţi când cursorul este deasupra ecranului MV sunt trimise direct către SO musafir. Dacă mouse este capturat, va fi automat eliberat.&lt;/p&gt;&lt;p&gt;Iconul mouse din bara de stare va arăta&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;pentru a vă informa că integrarea mouse este suportată şi pornită.,/p&gt;&lt;p&gt;&lt;b&gt;Notă&lt;/b&gt;: Unele aplicaţii se pot comporta incorect în modul integrare cursor mouse. Puteţi oricând să o dezactivaţi în sesiunea curentă (şi să o reactivaţi) selectând acţiunea corespunzătoare din bara meniu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Maşina Virtuală raportează că SO musafir nu suportă &lt;b&gt;integrarea cursorului mouse&lt;/b&gt; în modul video curent. Va trebui să capturaţi mouse (dând click pe ecranul MV sau apăsând tasta gazdă) pentru a-l putea folosi în SO musafir.&lt;/P&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虚拟电脑当前正处于 &lt;b&gt;暂停&lt;/b&gt; 状态，因此不接受任何鼠标或键盘输入. 如果想继续在虚拟电脑内工作, 你需要通过选择菜单栏内的相应项目来重新激活它.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Maşina virtuală este în prezent în starea &lt;b&gt;Pauză&lt;/b&gt;, astfel nu acceptă input de la tastatură sau mouse. Dacă doriţi sa reluaţi lucrul în maşina vrituală, trebuie să restabiliţi rularea selectând acest lucru din acţiunea corespunzătoare de pe bara meniu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;一个或多个注册的虚拟硬盘映像、光盘映像或软盘映像当前不可访问. 因此使用了这些映像的虚拟电脑当前已不能工作，只有等到这些映像能再次访问时才能继续工作.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;确定&lt;/b&gt; 打开虚拟存储管理器看看是哪些映像不能访问, 或者按 &lt;b&gt;跳过&lt;/b&gt; 忽略这个信息.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or dischet? media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Unul sau mai multe discuri virtuale sau medii CD/DVD sau dischetă înregistrate nu sunt accesibile. Prin urmare, nu veţi putea opera maşinile virtuale care fac uz de aceste medii până când ele devin accesibile din nou.&lt;/p&gt;&lt;p&gt;Apăsaţi &lt;b&gt;OK&lt;/b&gt; pentru a deschide fereastra Manager de discuri virtuale şi a vedea care medii sunt inaccesibile, sau apăsaţi &lt;b&gt;Ignoră&lt;/b&gt; pentru a ignora acest mesaj.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虚拟电脑窗口将会被切换到 &lt;b&gt;全屏&lt;/b&gt; 模式. 在任何时候按 &lt;b&gt;%1&lt;/b&gt; 都能返回窗口模式. 注意：当前 &lt;i&gt;热键&lt;/i&gt; 已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Maşina virtuală va trece acum în modul &lt;b&gt;ecran complet&lt;/b&gt;. Puteţi oricând să vă întoarceţi în modul fereastră, apăsând &lt;b&gt;%1&lt;/b&gt;. Notă: &lt;i&gt;tasta gazdă&lt;/i&gt; este definită în prezent ca &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut rula VirtualBox în mod &lt;i&gt;Selector MV&lt;/i&gt; datorită restricţiilor locale.&lt;/p&gt;&lt;p&gt;Aplicaţia se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;致命错误&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Eroare fatală&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;非致命性错误&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Eroare nefatală&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;警告&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Avertisment&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobrl&gt;错误 ID: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID eroare:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>严重: </translation>
+        <translation>Grad de importanţă: </translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occured during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虚拟电脑运行发生致命性错误! 虚拟电脑将被关闭. 建议你将错误信息复制到粘贴板以备将来检查:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;O eroare fatală s-a produs în timpul execuţiei maşinii virtuale! Maşina virtuală va fi oprită. Este recomandat să folosiţi clipboard pentru a copia următorul mesaj de eroare pentru examinare ulterioară:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occured during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虚拟电脑运行发生错误! 详细的错误信息显示在下面. 你可以试着修复这个描述的错误并恢复虚拟电脑的运行.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;O eroare s-a produs în timpul execuţiei maşinii virtuale! Detalii despre eroare sunt afişate în continuare. Puteţi încerca să corectaţi eroarea descrisă şi să restabiliţi execuţia maşinii virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Execuţia maşinii virtuale poate ajunge la eroare descrisă mai jos. Puteţi ignora acest mesaj dar este recomandat să urmaţi instrucţiunile pentru ca eroarea descrisă să nu se mai producă.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cod&amp;nbsp;rezultat: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Componentă: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Interfaţă: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Callee: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Callee&amp;nbsp;RC: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nu am putut găsi un fişier de limbă pentru limba &lt;b&gt;%1&lt;/b&gt; în directorul &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;
+&lt;p&gt;Limbajul interfeţei va fi resetată temporar la cea implicită a sistemului. Mergeţi la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteţi deschide din meniul &lt;b&gt;Fişier&lt;/b&gt; al ferestrei principale VirtualBox, şi selectaţi o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nu am putut încărca fişierul de limbă &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Limbajul interfeţei va fi resetată temporar la Engleză (implicit). Mergeţi la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteţi deschide din meniul &lt;b&gt;Fişier&lt;/b&gt; al ferestrei principale VirtualBox, şi selectaţi o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2345,226 +2414,226 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation>共享文件夹</translation>
+        <translation>Creare Disc Virtual Nou</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">确定</translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation type="unfinished">Revocare</translation>
     </message>
 </context>
 <context>
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished">VirtualBox OSE</translation>
+        <translation>VirtualBox OSE</translation>
     </message>
     <message>
         <source>InnoTek VirtualBox</source>
-        <translation type="unfinished">InnoTek VirtualBox</translation>
+        <translation>InnotTek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>明细(&amp;D)</translation>
+        <translation>&amp;Detalii</translation>
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation>虚拟存储管理器(&amp;D)...</translation>
+        <translation>Manager &amp;discuri virtuale...</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation type="unfinished">Ctrl+D</translation>
+        <translation>Ctrl+D</translation>
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation>显示虚拟存储管理对话框</translation>
+        <translation>Afişeză dialogul Manager discuri virtuale</translation>
     </message>
     <message>
         <source>&amp;Global Settings...</source>
-        <translation>全局设定(&amp;G)...</translation>
+        <translation>Setări &amp;globale...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+G</translation>
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation>显示全局设置对话框</translation>
+        <translation>Afişează dialogul setări globale</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
-        <translation>退出(&amp;x)</translation>
+        <translation>Ieşi&amp;re</translation>
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Q</translation>
     </message>
     <message>
         <source>Close application</source>
-        <translation>关闭应用程序</translation>
+        <translation>Închide aplicaţia</translation>
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation>新建(&amp;N)...</translation>
+        <translation>&amp;Nou...</translation>
     </message>
     <message>
         <source>New</source>
-        <translation>新建</translation>
+        <translation>Nou</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
-        <translation type="unfinished">Ctrl+N</translation>
+        <translation>Ctrl+N</translation>
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation>新建虚拟电脑</translation>
+        <translation>Creează o maşină virtuală nouă</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>设置(&amp;S)...</translation>
+        <translation>&amp;Setări...</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>设置</translation>
+        <translation>Setări</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+S</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation>设置选择的虚拟电脑</translation>
+        <translation>Configurează maşina virtuală selectată</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>删除(&amp;D)</translation>
+        <translation>&amp;Şterge</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>删除</translation>
+        <translation>Şterge</translation>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation>删除选择的虚拟电脑</translation>
+        <translation>Şterge maşina virtuală selectată</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
-        <translation>清除(&amp;i)</translation>
+        <translation>Renun&amp;ţă</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation>清除</translation>
+        <translation>Renunţă</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation>清除选定虚拟电脑的保存状态</translation>
+        <translation>Înlătură starea salvată a maşinii virtuale selectate</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>刷新(&amp;R)</translation>
+        <translation>&amp;Reîmprospătare</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>刷新</translation>
+        <translation>Reîmprospătare</translation>
     </message>
     <message>
         <source>Ctrl+R</source>
-        <translation type="unfinished">Ctrl+R</translation>
+        <translation>Ctrl+R</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>刷新所选虚拟电脑的当前状态</translation>
+        <translation>Reîmprospătează starea de accesibilitate a maşinii virtuale selectate</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation>&amp;Contents...</translation>
+        <translation>&amp;Conţinut...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation>Show the online help contents</translation>
+        <translation>Arată conţinutul ajutorului online</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">&amp;VirtualBox Web Site...</translation>
+        <translation>Site Web &amp;VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">Open the browser and go to the VirtualBox product web site</translation>
+        <translation>Deschide browserul şi navighează pe site-ul VirtualBox</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">&amp;About VirtualBox...</translation>
+        <translation>&amp;Despre VirtualBox...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished">Show a dialog with product information</translation>
+        <translation>Arată dialogul cu informaţii despre produs</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">&amp;Reset All Warnings</translation>
+        <translation>&amp;Resetează toate avertizările</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">Cause all suppressed warnings and messages to be shown again</translation>
+        <translation>Arată din nou toate avertizările şi mesajele ascunse</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>文件(&amp;F)</translation>
+        <translation>&amp;Fişier</translation>
     </message>
     <message>
         <source>&amp;VM</source>
-        <translation type="obsolete">虚拟电脑(&amp;V)</translation>
+        <translation type="obsolete">M&amp;V</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>帮助(&amp;H)</translation>
+        <translation>&amp;Ajutor</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>快照(&amp;S)</translation>
+        <translation>In&amp;stantaneu</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>描述(&amp;e)</translation>
+        <translation>&amp;Descriere</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>描述(&amp;e) *</translation>
+        <translation>&amp;Descriere *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation>显示(&amp;h)</translation>
+        <translation>A&amp;rată</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation>显示</translation>
+        <translation>Arată</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation>切换到所选虚拟电脑窗口</translation>
+        <translation>Treci la fereastra maşinii virtuale selectate</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation>开始(&amp;t)</translation>
+        <translation>S&amp;tart</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation>启动</translation>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation>启动所选虚拟电脑</translation>
+        <translation>Porneşte maşina virtuală selectată</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor maşinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o maşină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o nouă maşină virtuală apăsaţi butonul &lt;b&gt;Nou&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteţi apăsa tasta &lt;b&gt;F1&lt;/b&gt; pentru a obţine ajutor instantaneu, sau puteţi vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele ştiri şi informaţii.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -2575,20 +2644,20 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxSharedFoldersSettings</name>
     <message>
         <source>Name</source>
-        <translation>名称</translation>
+        <translation>Nume</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation>路径</translation>
+        <translation>Cale</translation>
     </message>
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation></translation>
+        <translation>VBoxUSBFilterSettings</translation>
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation>共享文件夹(&amp;F)</translation>
+        <translation>Directoare &amp;partajate</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
@@ -2597,253 +2666,253 @@ Use
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;列出本虚拟电脑可访问的所有共享文件夹。
-使用
-&lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
-从DOS或Windows中访问名为: &lt;i&gt;share&lt;/i&gt; 的共享文件夹，或使用
+        <translation>&lt;qt&gt;Listează toate directoarele partajate accesibile acestei maşini
+Folosiţi comanda:
+&lt;tt&gt;net use x:\\vboxsvr\share&lt;/tt&gt;
+pentru a accesa un director partajat denumit &lt;i&gt;share&lt;/i&gt; dintr-un SO gen DOS, sau
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
-从Linux类的操作系统中访问该文件夹。该功能需要在虚拟电脑中安装辅助工具包.&lt;/qt&gt;</translation>
+pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>添加</translation>
+        <translation>Adaugă</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
-        <translation>添加一个新的共享文件夹.</translation>
+        <translation>Adaugă o definiţie nouă de director partajat.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>编辑</translation>
+        <translation>Editare</translation>
     </message>
     <message>
         <source>Edit selected shared folder definition.</source>
-        <translation>编辑所选共享文件夹.</translation>
+        <translation>Editează definiţia de director partajat selectată.</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>删除</translation>
+        <translation>Şterge</translation>
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation>删除所选共享文件夹.</translation>
+        <translation>Şterge definiţia de director partajat selectată.</translation>
     </message>
     <message>
         <source>Add a new shared folder</source>
-        <translation>添加一个新的共享文件夹</translation>
+        <translation>Adaugă un nou director partajat</translation>
     </message>
     <message>
         <source>Edit the selected shared folder</source>
-        <translation>编辑所选共享文件夹</translation>
+        <translation>Editează directorul partajat selectat</translation>
     </message>
     <message>
         <source>Remove the selected shared folder</source>
-        <translation>删除所选共享文件夹</translation>
+        <translation>Şterge directorul partajat selectat</translation>
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation>固定文件夹</translation>
+        <translation> Directoarele maşinii</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation>临时文件夹</translation>
+        <translation> Directoare de Tranzit</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;名称:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;路径:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Nume:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Cale:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
         <source> Snapshot Details </source>
-        <translation>快照明细</translation>
+        <translation> Detalii Instantaneu </translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>名称(&amp;N)</translation>
+        <translation>&amp;Nume</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation>描述(&amp;D)</translation>
+        <translation>&amp;Descriere</translation>
     </message>
     <message>
         <source>&amp;Machine Details</source>
-        <translation>电脑明细(&amp;M)</translation>
+        <translation>Detalii &amp;Maşină</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <translation>Revo&amp;care</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished">Alt+C</translation>
+        <translation>Alt+C</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
-        <translation>明细 %1 (%2)</translation>
+        <translation>Detalii despre %1 (%2)</translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotsWgt</name>
     <message>
         <source>[snapshot]</source>
-        <translation>[快照]</translation>
+        <translation>[isntantaneu]</translation>
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxSnapshotsWgt</translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>snapshotActionGroup</translation>
     </message>
     <message>
         <source>Discard Snapshot</source>
-        <translation>清除快照</translation>
+        <translation>Renunţă la Instantaneu</translation>
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>清除快照(&amp;D)</translation>
+        <translation>&amp;Renunţă la Instantaneu</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Shift+D</translation>
     </message>
     <message>
         <source>curStateActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation>curStateActionGroup</translation>
     </message>
     <message>
         <source>Take Snapshot</source>
-        <translation>生成快照</translation>
+        <translation>Salvează Instantaneu</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
-        <translation>生成快照(&amp;S)</translation>
+        <translation>&amp;Salvează Instantaneu</translation>
     </message>
     <message>
         <source>Ctrl+Alt+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Alt+S</translation>
     </message>
     <message>
         <source>Discard Current State</source>
-        <translation>清除当前状态</translation>
+        <translation>Renunţă la Starea Curentă</translation>
     </message>
     <message>
         <source>D&amp;iscard Current State</source>
-        <translation>清除当前状态(&amp;i)</translation>
+        <translation>Re&amp;nunţă la Starea Curentă</translation>
     </message>
     <message>
         <source>Ctrl+Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Alt+D</translation>
     </message>
     <message>
         <source>Discard Current Snapshot and State</source>
-        <translation>清除当前快照和状态</translation>
+        <translation>Renunţă la Instantaneu şi Stare Curentă</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>清除当前快照和状态(&amp;i)</translation>
+        <translation>Renunţă la &amp;Instantaneu şi Stare Curentă</translation>
     </message>
     <message>
         <source>Ctrl+Alt+Shift+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Alt+Shift+D</translation>
     </message>
     <message>
         <source>Show Details</source>
-        <translation>显示明细</translation>
+        <translation>Afişează Detalii</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
-        <translation>显示明细(&amp;h)</translation>
+        <translation>A&amp;fişează Detalii</translation>
     </message>
     <message>
         <source>Space</source>
-        <translation>空间</translation>
+        <translation>Spaţiu</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>当前状态 (已改变)</translation>
+        <translation>Stare curentă (schimbată)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>当前状态</translation>
+        <translation>Stare curentă</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>当前状态与保存在快照中的状态不一致</translation>
+        <translation>Starea curentă diferă de starea salvată în instantaneul curent</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>当前状态与保存在快照中的状态一致</translation>
+        <translation>Starea curentă este identică starea salvată în instantaneul curent</translation>
     </message>
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation> (当前, </translation>
+        <translation> (curent, </translation>
     </message>
     <message>
         <source>online)</source>
         <comment>Snapshot details</comment>
-        <translation>在线)</translation>
+        <translation>online)</translation>
     </message>
     <message>
         <source>offline)</source>
         <comment>Snapshot details</comment>
-        <translation>离线)</translation>
+        <translation>offline)</translation>
     </message>
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation>生成于 %1</translation>
+        <translation>Luat la data %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation>生成于 %1</translation>
+        <translation>Luat la %1</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation>%1 自从 %2</translation>
+        <translation>din %1 până in %2</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>快照 %1</translation>
+        <translation>Instantaneu %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
-        <translation>禁止</translation>
+        <translation>Dezactivează</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation>开启</translation>
+        <translation>Activează</translation>
     </message>
     <message>
         <source>%1 %2</source>
@@ -2854,39 +2923,39 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxTakeSnapshotDlg</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>生成虚拟电脑快照</translation>
+        <translation>Salvează Instantaneu al maşinii virtuale</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>快照名称(&amp;N)</translation>
+        <translation>&amp;Nume Instantaneu</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>快照描述(&amp;D)</translation>
+        <translation>&amp;Descriere Instantaneu</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <translation>Revo&amp;care</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished">Alt+C</translation>
+        <translation>Alt+C</translation>
     </message>
 </context>
 <context>
@@ -2894,97 +2963,116 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
+        <translation>VBoxUSBFilterSettings</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>名称(&amp;N)</translation>
+        <translation>&amp;Nume</translation>
     </message>
     <message>
         <source>Displays the filter name.</source>
-        <translation>显示筛选器名称.</translation>
+        <translation>Afişează numele filtrului.</translation>
     </message>
     <message>
         <source>&amp;Manufacturer</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Manufacturat</translation>
     </message>
     <message>
         <source>Pro&amp;duct</source>
-        <translation type="unfinished"></translation>
+        <translation>Pro&amp;dus</translation>
     </message>
     <message>
         <source>&amp;Serial No.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nr &amp;serie.</translation>
     </message>
     <message>
         <source>Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte filtrul &apos;manufacturat de&apos; ca 
+un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
+valori.</translation>
     </message>
     <message>
         <source>Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte filtrul &apos;produs de&apos; ca 
+un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
+valori.</translation>
     </message>
     <message>
         <source>Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte filtrul &apos;număr serie&apos; ca 
+un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
+valori.</translation>
     </message>
     <message>
         <source>Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte dacă acest filtru se aplică
+dispozitivelor USB ataşate local computerului gazdă (&lt;i&gt;Nu&lt;/i&gt;),
+la un client VRDP al computerului (&lt;i&gt;Da&lt;/i&gt;),
+sau amândurora (&lt;i&gt;Oricare&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>R&amp;emote</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;emote</translation>
     </message>
     <message>
         <source>&amp;Action</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Acţiune</translation>
     </message>
     <message>
         <source>Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte acţiunea executată de computerul 
+gazdă atunci când un dispozitiv care respectă condiţiile este conectat: 
+îl oferă SO gazdă (&lt;i&gt;Ignoră&lt;/i&gt;) sau îl capturează pentru a fi folosit
+ulterior în maşinile virtuale (&lt;i&gt;Menţine&lt;/i&gt;).
+</translation>
     </message>
     <message>
         <source>&amp;Vendor ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID &amp;Vânzător</translation>
     </message>
     <message>
         <source>&amp;Product ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID &amp;Produs</translation>
     </message>
     <message>
         <source>&amp;Revision</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Revizie</translation>
     </message>
     <message>
         <source>Por&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>Por&amp;t</translation>
     </message>
     <message>
         <source>Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte filtrul ID vânzător. Formatul
+şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde
+&lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi 
+oricărei valori.</translation>
     </message>
     <message>
         <source>Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte filtrul ID produs. Formatul
+şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde
+&lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi 
+oricărei valori.</translation>
     </message>
     <message>
         <source>Defines the revision number filter. The
@@ -2992,28 +3080,34 @@ value.</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte filtrul număr revizie. Formatul
+şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;IIFF&lt;/tt&gt; unde
+&lt;tt&gt;I&lt;/tt&gt; este un caracter hexazecimal al părţii întregi, iar &lt;tt&gt;F&lt;/tt&gt; 
+este un caracter zecimal al părţii fracţionale. Un şir gol se va potrivi 
+oricărei valori.</translation>
     </message>
     <message>
         <source>Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte filtrul port USB gazdă ca 
+un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
+valori.</translation>
     </message>
     <message>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished"></translation>
+        <translation>Oricare</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">是</translation>
+        <translation>Da</translation>
     </message>
     <message>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">否</translation>
+        <translation>Nu</translation>
     </message>
 </context>
 <context>
@@ -3021,38 +3115,38 @@ value.</source>
     <message>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
-        <translation>&lt;没有可用设备&gt;</translation>
+        <translation>&lt;lipsă dispozitive&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation>没有可支持的设备连接到主机</translation>
+        <translation>Nici un dispozitiv suportat nu este conectat la PC gazdă</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>没有任何描述信息，单击下面的编辑按钮开始添加.</translation>
+        <translation>Lipsă descriere. Apăsaţi butonul Editare pentru a o adăuga.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>编辑</translation>
+        <translation>Editare</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>编辑 (Ctrl+E)</translation>
+        <translation>Editare (Ctrl+E)</translation>
     </message>
     <message>
         <source>Ctrl+E</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+E</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>所选的虚拟电脑&lt;i&gt;不能正常访问&lt;/i&gt;. 请检查下面的错误信息或者按一下&lt;b&gt;刷新&lt;/b&gt;按钮，如果你想重复可访问性检查:</translation>
+        <translation>Maşina virtuală selectată este &lt;i&gt;incaccesibilă&lt;/i&gt;. Vă rugăm verificaţi mesajele de eroare afişate mai jos şi apăsaţi butonul &lt;b&gt;Reîmprospătare&lt;/b&gt; dacă doriţi să repetaţi verificarea accesibilităţii:</translation>
     </message>
 </context>
 <context>
@@ -3060,289 +3154,295 @@ value.</source>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 自从 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;会话 %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 din %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sesiune %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;不能正常访问自从 %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccesibil din %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">不可使用</translation>
+        <translation type="unfinished">Inaccesibil</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
         <source>VBoxVMNetworkSettings</source>
-        <translation>网络设置</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation>启用网络适配器(&amp;E)</translation>
+        <translation>Activ&amp;ează placă de reţea</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into
                 the virtual machine.</source>
-        <translation>选中，将虚拟网络适配器插入虚拟电脑.</translation>
+        <translation>Când este selectat, conectează această placă de reţea
+                              la maşina virtuală.</translation>
     </message>
     <message>
         <source>&amp;Attached to</source>
-        <translation>连接到(&amp;A)</translation>
+        <translation>Conect&amp;at la</translation>
     </message>
     <message>
         <source>Controls the way how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
-        <translation>设置虚拟网络适配器以何种方式接入到主机上的真实网络.</translation>
+        <translation>Controlează modul în care această
+                                                                         placă de reţea este ataşată la
+                                                                         reţeaua reală a SO Gazdă.</translation>
     </message>
     <message>
         <source>&amp;MAC Address</source>
-        <translation>MAC 地址(&amp;M)</translation>
+        <translation>Adresă &amp;MAC</translation>
     </message>
     <message>
         <source>Displays the MAC address of
                                         this adapter. It contains exactly 12
                                         characters chosen from
                                         {0-9,A-F}.</source>
-        <translation>显示虚拟网络适配器的MAC地址。它可包含处于{0-9,A-F}中的12位字符.</translation>
+        <translation>Afişează adresa MAC a
+                                                                                 acestei plăci de reţea. Conţine exact 12
+                                                                                 caractere alese din {0-9,A-F}.</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
-        <translation>生成(&amp;G)</translation>
+        <translation>&amp;Generează</translation>
     </message>
     <message>
         <source>Alt+G</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+G</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation>生成一个新的随机MAC 地址.</translation>
+        <translation>Generează o nouă adresă MAC aleatoare.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
-        <translation>接入网线(&amp;b)</translation>
+        <translation>Un ca&amp;blu de reţea este conectat</translation>
     </message>
     <message>
         <source>Alt+B</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+B</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged
                         in on machine startup or not.</source>
-        <translation>指示虚拟网线在启动时是否与主机连接.</translation>
+        <translation>Indică dacă cablul reţelei virtuale este conectat sau nu la maşină atunci când aceasta porneşte.</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation>主机网络界面设置</translation>
+        <translation>Setări interfaţă Gazdă</translation>
     </message>
     <message>
         <source>&amp;Interface Name</source>
-        <translation>主机网络界面名称(&amp;I)</translation>
+        <translation>Nume &amp;interfaţă</translation>
     </message>
     <message>
         <source>Displays the
                                                         name of the host
                                                         interface selected for
                                                         this adapter.</source>
-        <translation>显示为该适配器选择的主机网络界面名称.</translation>
+        <translation>Afişează numele interfeţei gazdă selectată pentru această placă.</translation>
     </message>
     <message>
         <source>Lists all available
                                                 host interfaces.</source>
-        <translation>显示所有的可用主机网络界面名称.</translation>
+        <translation>Listează toate interfeţele gazdă disponibile.</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation>添加一个新的主机网络界面.</translation>
+        <translation>Adaugă o nouă interfaţă Gazdă.</translation>
     </message>
     <message>
         <source>Removes
                                                         the selected host interface.</source>
-        <translation>删除所选的主机网络界面.</translation>
+        <translation>Şterge
+                                                                                                                interfaţa gazdă selectată.</translation>
     </message>
     <message>
         <source>Displays the
                                                         TAP interface
                                                         name.</source>
-        <translation>显示主机上的TAP网络界面名称.</translation>
+        <translation>Afişează numele interfeţei TAP.</translation>
     </message>
     <message>
         <source>&amp;File Descriptor</source>
-        <translation>文件描述符(&amp;F)</translation>
+        <translation>Descriptor &amp;Fişier</translation>
     </message>
     <message>
         <source>&amp;Setup Application</source>
-        <translation>设置程序(&amp;S)</translation>
+        <translation>Aplicaţie &amp;Setup</translation>
     </message>
     <message>
         <source>Displays the
                                                         command executed to
                                                         setup the TAP
                                                         interface.</source>
-        <translation>显示用于设置TAP主机网络界面的命令.</translation>
+        <translation>Afişează comanda executată pentru a instala interfaţa TAP.</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>选择</translation>
+        <translation>Selectare</translation>
     </message>
     <message>
         <source>Selects the
                                                         setup
                                                         application.</source>
-        <translation>选择设置程序.</translation>
+        <translation>Selectează aplicaţia de instalare.</translation>
     </message>
     <message>
         <source>&amp;Terminate Application</source>
-        <translation>中断程序(&amp;T)</translation>
+        <translation>&amp;Închide aplicaţia</translation>
     </message>
     <message>
         <source>Displays the
                                                         command executed to
                                                         terminate the TAP
                                                         interface.</source>
-        <translation>显示用于中断TAP主机网络界面的命令.</translation>
+        <translation>Afişează comanda executată pentru a închide interfaţa TAP.</translation>
     </message>
     <message>
         <source>Selects the
                                                         terminate application.</source>
-        <translation>选择中断程序.</translation>
+        <translation>Selectează aplicaţia închisă.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
-        <translation>&lt;没有合适的网络界面&gt;</translation>
+        <translation>&lt;lipsă interfeţe potrivite&gt;</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>添加</translation>
+        <translation>Adaugă</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>删除</translation>
+        <translation>Şterge</translation>
     </message>
     <message>
         <source>Select TAP setup application</source>
-        <translation>选择TAP设置程序</translation>
+        <translation>Selectare aplicaţie instalare TAP</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation>选择TAP中断程序</translation>
+        <translation>Selectare aplicaţie închidere TAP</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation>VirtualBox 主机网络界面 %1</translation>
+        <translation>Interfaţă gazdă VirtualBox %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a differnet interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;你是否要删除所选的主机网络界面&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt;该界面可能被这台或其它台虚拟电脑的一个或多个网络适配器所使用。 删除该界面后，这些网络适配器将不能正常工作，直到你通过选择其它网络界面或使用一个不同的适配器接入类型来修正它们.&lt;/p&gt;</translation>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation>目录</translation>
+        <translation>Categorie</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished"></translation>
+        <translation>[id]</translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished"></translation>
+        <translation>[link]</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished"></translation>
+        <translation>[nume]</translation>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVMSettingsDlg</translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation>&lt;i&gt;从左边的设置列表中选择一个类别，然后移动鼠标到一个具体的设置项目将获取更多信息&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Selectaţi o categorie de setări din listă şi mergeţi cu mouseul peste un item din listă pentru a obţine informaţii suplimentare&lt;/i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
-        <translation>一般</translation>
+        <translation> General </translation>
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <source>#general</source>
-        <translation>#一般</translation>
+        <translation>#general</translation>
     </message>
     <message>
         <source> Hard Disks </source>
-        <translation>硬盘</translation>
+        <translation> Discuri hard </translation>
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished"></translation>
+        <translation>1</translation>
     </message>
     <message>
         <source>#hdds</source>
-        <translation>#硬盘</translation>
+        <translation>#hdduri</translation>
     </message>
     <message>
         <source> Floppy </source>
-        <translation>软驱</translation>
+        <translation> Dischetă </translation>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished"></translation>
+        <translation>2</translation>
     </message>
     <message>
-        <source>#floppy</source>
-        <translation>#软驱</translation>
+        <source>#dischet?</source>
+        <translation type="obsolete">#dischetă</translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
-        <translation>光驱</translation>
+        <translation> CD/DVD-ROM </translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation>3</translation>
     </message>
     <message>
         <source>#dvd</source>
-        <translation>#光驱</translation>
+        <translation>#dvd</translation>
     </message>
     <message>
         <source> Audio </source>
-        <translation>声音</translation>
+        <translation> Audio </translation>
     </message>
     <message>
         <source>4</source>
-        <translation type="unfinished"></translation>
+        <translation>4</translation>
     </message>
     <message>
         <source>#audio</source>
-        <translation>#声音</translation>
+        <translation>#audio</translation>
     </message>
     <message>
         <source> Network </source>
-        <translation>网络</translation>
+        <translation> Reţea </translation>
     </message>
     <message>
         <source>5</source>
-        <translation type="unfinished"></translation>
+        <translation>5</translation>
     </message>
     <message>
         <source>#network</source>
-        <translation>#网络</translation>
+        <translation>#network</translation>
     </message>
     <message>
         <source> USB </source>
-        <translation>USB </translation>
+        <translation> USB </translation>
     </message>
     <message>
         <source>6</source>
-        <translation type="unfinished"></translation>
+        <translation>6</translation>
     </message>
     <message>
         <source>#usb</source>
@@ -3350,11 +3450,11 @@ value.</source>
     </message>
     <message>
         <source> Remote Display </source>
-        <translation>远程桌面</translation>
+        <translation> Remote Display </translation>
     </message>
     <message>
         <source>7</source>
-        <translation type="unfinished"></translation>
+        <translation>7</translation>
     </message>
     <message>
         <source>#vrdp</source>
@@ -3362,139 +3462,141 @@ value.</source>
     </message>
     <message>
         <source> Shared Folders </source>
-        <translation>共享</translation>
+        <translation> Directoare partajate </translation>
     </message>
     <message>
         <source>8</source>
-        <translation type="unfinished"></translation>
+        <translation>8</translation>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation>共享</translation>
+        <translation>#directoarep</translation>
     </message>
     <message>
         <source>&amp;Identification</source>
-        <translation>标识信息(&amp;I)</translation>
+        <translation>&amp;Identificare</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>名称(&amp;N)</translation>
+        <translation>&amp;Nume</translation>
     </message>
     <message>
         <source>Displays the name of the virtual machine.</source>
-        <translation>显示虚拟电脑名称.</translation>
+        <translation>Afişează numele maşinii virtuale.</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>系统类型(&amp;T)</translation>
+        <translation>&amp;Tip SO</translation>
     </message>
     <message>
         <source>Displays the operating system type that you
 plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>显示你要安装到虚拟电脑的系统类型.</translation>
+        <translation>Afişează tipul sistemului de operare pe care
+plănuiţi să îl isntalaţi în această maşină virtuală (denumit sistem de operare musafir).</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>内存大小(&amp;M)</translation>
+        <translation>Dimensiune &amp;Memorie RAM</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>分配给虚拟电脑的内存要控制在合理范围，分配太多会导致虚拟电脑不能正常启动.</translation>
+        <translation>Controlează cantitatea de memorie rezervată maşinii virtuale. Dacă alocaţi prea multă, maşina ar putea să nu pornească.</translation>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;</translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation>=</translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&gt;</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MO</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation>显存大小(&amp;V)</translation>
+        <translation>Dimensiune Memorie &amp;Video</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>指定可以分配给虚拟电脑的显存大小.</translation>
+        <translation>Controlează cantitatea de memorie video oferită maşinii virtuale.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
-        <translation>基本(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Snapshot Folder</source>
-        <translation type="obsolete">快照文件夹(&amp;S)</translation>
+        <translation>De &amp;bază</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine
 will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation>指定用于存放虚拟电脑快照的文件夹。需要注意的是快照会占用很多磁盘空间.</translation>
+        <translation>Afişează calea unde vor fi stocate instantaneele acestei maşini
+virtuale. Notaţi faptul că instantaneele pot ocupa puţin mai mult spaţiu pe disc.</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>选择</translation>
+        <translation>Selectare</translation>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
-        <translation>选择用于存放快照的文件夹.</translation>
+        <translation>Selectează amplasarea directorului de instantanee.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>重设</translation>
+        <translation>Resetare</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>将存放快照的文件夹重新设定为默认值。改变被接受后，下次打开本对话框时将会显示默认路径.</translation>
+        <translation>Restează calea către directorul de instantanee la valoarea implicită.
+Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acet dialog din nou.</translation>
     </message>
     <message>
         <source>Extended Features</source>
-        <translation>扩展特性</translation>
+        <translation>Facilităţi Avansate</translation>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
-        <translation>启用 A&amp;CPI</translation>
+        <translation>Activează A&amp;CPI</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished">Alt+C</translation>
+        <translation>Alt+C</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation> &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再关闭本选项!</translation>
+        <translation>Când este activat, maşina virtuală va suporta
+ACPI (Advanced Confirguration şi Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
+această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation>启用 IO A&amp;PIC</translation>
+        <translation>Activează IO A&amp;CPI</translation>
     </message>
     <message>
         <source>Alt+P</source>
-        <translation type="unfinished">Alt+P</translation>
+        <translation>Alt+P</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation>启用 (IO APIC)支持，可能会降低虚拟电脑的性能。
-&lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再关闭本选项!</translation>
+        <translation>Când este activat, maşina virtuală va suporta
+IO ACPI (Input Output Advanced Confirguration şi Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
+această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
-        <translation>启动顺序(&amp;t)</translation>
+        <translation>Ordine de boo&amp;t</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
-        <translation>高级(&amp;A)</translation>
+        <translation>&amp;Avansat</translation>
     </message>
     <message>
         <source>Displays the description of
@@ -3502,177 +3604,188 @@ this feature after having installed a Windows guest operating system!</source>
                                         field is useful for commenting
                                         configuration details of the installed
                                         guest OS.</source>
-        <translation>显示有关虚拟电脑的描述信息。这可用于对虚拟电脑上所装操作系统进行补充说明.</translation>
+        <translation>Afişează descrierea
+                                                                        maşinii virtuale. Descrierea
+                                                                        este utilă pentru comentarea
+                                                                        detaliilor de configurare ale SO musafir.</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation>描述(&amp;D)</translation>
+        <translation>&amp;Descriere</translation>
     </message>
     <message>
         <source>&amp;Primary Master</source>
-        <translation>第一IDE控制器主盘(&amp;P)</translation>
+        <translation>&amp;Primar Master</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new
 or select an existing virtual hard disk to attach.</source>
-        <translation>打开虚拟存储管理器新建或选择一个已经存在的虚拟硬盘.</translation>
+        <translation>Invocă dialogul Manager discuri virtuale pentru a crea o nouă imagine disc
+sau a selecta un disc hard virtual existent.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation>&lt;没有选择&gt;</translation>
+        <translation>&lt;neselectat&gt;</translation>
     </message>
     <message>
         <source>P&amp;rimary Slave</source>
-        <translation>第一IDE控制器从盘(&amp;r)</translation>
+        <translation>&amp;Primar Slave</translation>
     </message>
     <message>
         <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation>第二IDE控制器从盘(&amp;S)</translation>
+        <translation>&amp;Secundar (IDE 1) Slave</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>加载软驱(&amp;M)</translation>
+        <translation>&amp;Montare unitate de dischetă</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>主机上的软驱(&amp;D)</translation>
+        <translation>&amp;Drive dischetă gazdă</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+D</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>将主机上的软驱加载到虚拟电脑上.</translation>
+        <translation>Montează unitatea de dischetă specificată a gazdei la unitatea de dischetă virtuală.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to
 the virtual machine.</source>
-        <translation>显示可以加载到虚拟电脑上的主机上的软驱.</translation>
+        <translation>Listează driveuri dischetă disponibile pentru montare
+la maşina virtuală.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>映像文件(&amp;I)</translation>
+        <translation>Fişier &amp;imagine</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+I</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>加载指定的软盘映像到虚拟电脑.</translation>
+        <translation>Montează imaginea de dischetă specificată la unitatea de dischetă virtuală.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select
 a Floppy image to mount.</source>
-        <translation>打开虚拟存储管理器选择一个用于加载的软盘映像.</translation>
+        <translation>Invocă dailogul Manager discuri virtuale pentru a selecta
+o imagine de dischetă pentru montare.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>加载光驱(&amp;M)</translation>
+        <translation>Montare drive &amp;CD/DVD</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>主机上的光驱(&amp;D)</translation>
+        <translation>&amp;Drive CD/DVD gazdă</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>加载主机上的光驱到虚拟电脑.</translation>
+        <translation>Montează drive CD/DVD specificat al gazdei la drive virtual CD/DVD.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to
 the virtual machine.</source>
-        <translation>显示可以加载到虚拟电脑上的主机上的光驱.</translation>
+        <translation>Listează driveuri CD/DVD disponibile pentru montare
+la maşina virtuală.</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation>&amp;ISO光盘映像</translation>
+        <translation>Fişier &amp;imagine ISO</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>加载指定的光盘映像到虚拟电脑.</translation>
+        <translation>Montează imaginea CD/DVD specificată la unitatea de CD/DVD virtuală.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select
 a CD/DVD image to mount.</source>
-        <translation>打开虚拟存储管理器选择一个用于加载的ISO光盘映像.</translation>
+        <translation>Invocă dialogul Manager discuri virtuale pentru a selecta
+o imagine CD/DVD pentru montare.</translation>
     </message>
     <message>
         <source>&amp;Enable Audio</source>
-        <translation>启用声音(&amp;E)</translation>
+        <translation>Activ&amp;ează Audio</translation>
     </message>
     <message>
         <source>Host Audio &amp;Driver</source>
-        <translation>声卡驱动类型(&amp;D)</translation>
+        <translation>&amp;Driver audio gazdă</translation>
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>选择声卡驱动类型。选项  &lt;b&gt;Null Audio Driver&lt;/b&gt;
-让虚拟电脑拥有一张声卡，但其输出的声音将被忽略.</translation>
+        <translation>Controlează driverul de ieşire aurio. &lt;b&gt;Null Audio Driver&lt;/b&gt; 
+determină musafirul să vadă o placă audio, oricum orice acces la aceasta va fi ignorat.</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation>启用&amp;USB控制器</translation>
+        <translation>Activează Controlor &amp;USB</translation>
     </message>
     <message>
         <source>Alt+U</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+U</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller
 of this machine.</source>
-        <translation>选中后，将在这台虚拟电脑中启用USB控制器.</translation>
+        <translation>Când este selectat, activează controlorul USB virtual
+al acestei maşini.</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation>USB设备筛选器(&amp;F)</translation>
+        <translation>&amp;Filtre Dispozitive USB</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>显示本台虚拟电脑上的所有USB筛选器.
-左边的选择框决定该筛选器是否必启用.</translation>
+        <translation>Listează toate filtrele USB ale acestei maşini.
+Căsuţa de selecţie din stânga defineşte dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă filtru vid (Ins)</translation>
     </message>
     <message>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation>添加一个各个域的值都为空的USB筛选器。
-需要注意的是：这样的筛选器将会匹配所有的连接到主机上的USB设备.</translation>
+        <translation>Adaugă un filtru USB nou cu
+toate câmpurile setate iniţial la şiruri goale. Notaţi ca un astfel de filtru se va potrivi la orice
+dispozitiv USB ataşat.</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished">Add From (Alt+Ins)</translation>
+        <translation>Adaugă din (Alt+Ins)</translation>
     </message>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
+        <translation>Adaugă un filtru USB nou cu
+toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation>删除</translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation>删除 (Del)</translation>
+        <translation>Şterge (Del)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>删除所选的USB筛选器.</translation>
+        <translation>Şterge filtrul USB selectat.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
@@ -3680,199 +3793,206 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>向上移动 (Ctrl+Up)</translation>
+        <translation>Mută în sus (Ctrl-Up)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>向上移动所选的USB筛选器.</translation>
+        <translation>Mută filtrul USB în sus.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Down</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>向下移动 (Ctrl+Down)</translation>
+        <translation>Mută în jos (Ctrl-Down)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>向下移动所选的USB筛选器.</translation>
+        <translation>Mută filtrul USB în jos.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation>启用 VRDP 服务(&amp;E)</translation>
+        <translation>Activ&amp;ează Server VRDP</translation>
     </message>
     <message>
         <source>Server port </source>
-        <translation>服务端口</translation>
+        <translation>Port server </translation>
     </message>
     <message>
         <source>Authentication Method </source>
-        <translation>认证方式</translation>
+        <translation>Mod autentificare </translation>
     </message>
     <message>
         <source>Authentication Timeout </source>
-        <translation>认证超时</translation>
+        <translation>Timeout autentificare </translation>
     </message>
     <message>
         <source>Displays the VRDP Server port.</source>
-        <translation>显示 VRDP 服务端口.</translation>
+        <translation>Afişează dialogul port server VRDP.</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation>定义 VRDP 认证方式.</translation>
+        <translation>Defineşte metoda de autentificare VRDP.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>指定客户认证超时时间，以毫秒为单位.</translation>
+        <translation>Specifică timeoutul pentru autentificarea musafirului, în milisecunde.</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation>显示帮助对话框.</translation>
+        <translation>Afişează dialogul ajutor.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>发现无效设置</translation>
+        <translation>Setări nevalide detectate</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>确定(&amp;O)</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation>保存设置变动并关闭对话框.</translation>
+        <translation>Acceptă schimbările şi închide acest dialog.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation>放弃更改并关闭对话框.</translation>
+        <translation>Revocă schimbările şi închide acest dialog.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation>选中，将加载下面指定的虚拟硬盘到该虚拟电脑第一IDE控制器的主通道.</translation>
+        <translation>Când este selectat, conectează discul hard virtual selectat la slotul Master al controlorului IDE Primar.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation>选中，将加载下面指定的虚拟硬盘到该虚拟电脑第一IDE控制器的从通道.</translation>
+        <translation>Când este selectat, conectează discul hard virtual selectat la slotul Slave al controlorului IDE Primar.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation>选中，将加载下面指定的虚拟硬盘到该虚拟电脑第二IDE控制器的从通道.</translation>
+        <translation>Când este selectat, conectează discul hard virtual selectat la slotul Slave al controlorului IDE Secundar.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation>显示加载到该IDE通道的虚拟硬盘，同时还允许快速选择一个其它虚拟硬盘.</translation>
+        <translation>Afişează discul hard virtual de ataşat la acest slot IDE şi permite selectarea rapidă a unui disc diferit.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>选中，将加载指定光驱到虚拟电脑上。该光驱将固定地被加载到虚拟电脑第二IDE控制器的主通道.</translation>
+        <translation>Când este activat, montează mediul specificat la unitatea CD/DVD al maşinii virtuale. Notă: unitatea CD/DVD va fi întotdeauna conectat la controlerul IDE Secundar Master al maşinii.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>显示加载该虚拟电脑的光盘映像，同时还允许快速选择一个其它光盘映像.</translation>
+        <translation>Afişează fişierul imagine de montat la unitatea CD/DVD virtuală şi permite selectarea rapidă a unei imagini diferite.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>选中，将加载指定软驱到虚拟电脑.</translation>
+        <translation>Când este selectat, montează mediul specificat la unitatea de dischetă a maşinii virtuale.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation>显示加载到虚拟电脑的软盘映像，同时还允许快速选择一个其它软盘映像.</translation>
+        <translation>Afişează fişierul imagine de montat la unitatea de dischetă virtuală şi permite selectarea rapidă a unei imagini diferite.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>选中，将加载虚拟声卡到该虚拟电脑，并使用指定的驱动程序和主机上的声卡通讯.</translation>
+        <translation>Când este selectat, placa audio PCI virtuală este conectată la maşina virtuală care foloseşte driverul specificat pentru a comunica cu placa audio a gazdei.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>选中，该虚拟电脑将被作为一个 RDP 服务器，允许远程客户在它运行时通过标准 RDP 客户端登录到它上面来操作.</translation>
+        <translation>Când este activat, MV va acţiuna ca server de RDP (Remote Desktop Protocol), permiţând clienţilor de la distanţă să se conecteze şi să opereze în MV (atunci când aceasta rulează) folosind un client standard RDP.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
-        <translation>&lt;没有连接&gt;</translation>
+        <translation>&lt;neconectat&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation>没有指定第一IDE控制器主通道上使用的虚拟硬盘.</translation>
+        <translation>Discul hard Primar Master nu este selectat.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation>没有指定第一IDE控制器从通道上使用的虚拟硬盘.</translation>
+        <translation>Discul hard Primar Slave nu este selectat.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Discul hard Primar Slave este ataşat deja la un slot diferit.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation>没有指定第二IDE控制器从通道上使用的虚拟硬盘.</translation>
+        <translation>Discul hard Secundar Slave nu este selectat.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Discul hard Secundar Slave este ataşat deja la un slot diferit.</translation>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
-        <translation>没有指定虚拟电脑上使用的光盘映像文件.</translation>
+        <translation>Fişierul imagine CD/DVD drive nu este selctat.</translation>
     </message>
     <message>
         <source>Floppy drive image file is not selected.</source>
-        <translation>没有指定虚拟电脑上使用的软盘映像.</translation>
+        <translation>Fişierul imagine dischetă nu este selectat.</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation>为网络适配器 %1 选择了不正确的主机网络界面.</translation>
+        <translation>Interfaţa reţea gazdă incorectă este selectată pentru Placa %1.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
-        <translation>没有设定 VRDP 端口.</translation>
+        <translation>Nu este setat portul VRDP.</translation>
     </message>
     <message>
         <source>VRDP Timeout is not set.</source>
-        <translation>没有设定 VRDP 超时时间.</translation>
+        <translation>Nu este setat Timeout pentru VRDP.</translation>
     </message>
     <message>
         <source> - Settings</source>
-        <translation>设置</translation>
+        <translation> - Setări</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>新筛选器 %1</translation>
+        <translation>Filtru nou %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Clipboard &amp;partajat</translation>
     </message>
     <message>
         <source>
 Defines the mode of sharing the clipboard between the guest and the host OS. Note
 that this feature requires Guest Additions to be installed in the guest OS.
                                                 </source>
-        <translation type="unfinished"></translation>
+        <translation>
+Defineşte modul partajării clipboard între musafir şi SO gazdă. Notă:
+aceasta funcţie necesită instalarea Guest Additions pe SO musafir.
+                                                                               </translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
+        <translation>Director I&amp;nstantanee</translation>
+    </message>
+    <message>
+        <source>#floppy</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3880,15 +4000,15 @@ that this feature requires Guest Additions to be installed in the guest OS.
     <name>VMGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; 是一个不可用的热键编码.</translation>
+        <translation>&apos;%1 (0x%2)&apos; este un cod cheie gazdă invalid.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>关键字 &apos;%2&apos; 的值 &apos;%1&apos; 不能通过正则表达式 &apos;%3&apos; 的强制性检查.</translation>
+        <translation>Valoarea &apos;%1&apos; a cheii &apos;%2&apos; nu se potriveşte constrângerii expresiei regulare &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu pot şterge cheia &apos;%1&apos;.</translation>
     </message>
 </context>
 </TS>

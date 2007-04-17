@@ -243,8 +243,12 @@ IMAGES	= images/tpixel.png \
 	images/about_600px.png
 
 TRANSLATIONS = \
-	nls/VirtualBox_zh_CN.ts \
-	nls/VirtualBox_zh_TW.ts \
 	nls/VirtualBox_de.ts \
-	nls/VirtualBox_ru.ts
+	nls/VirtualBox_es.ts \
+	nls/VirtualBox_fr.ts \
+	nls/VirtualBox_it.ts \
+	nls/VirtualBox_ro.ts \
+	nls/VirtualBox_ru.ts \
+	nls/VirtualBox_zh_CN.ts \
+	nls/VirtualBox_zh_TW.ts
 

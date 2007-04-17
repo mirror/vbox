@@ -159,8 +159,10 @@ public:
     {
         setText (0, VBoxGlobalSettingsDlg::tr ("Default", "Language"));
         setText (1, QString::null);
-        setText (2, QString::null);
-        setText (3, QString::null);
+        /* empty strings of some reasonable length to prevent the info part
+         * from being shrinked too much when the list wants to be wider */
+        setText (2, "                ");
+        setText (3, "                ");
     }
 
     int rtti() const { return TypeId; }

@@ -109,7 +109,7 @@
     <name>QListBox</name>
     <message>
         <source>Inaccessible</source>
-        <translation>Nicht zugreifbar</translation>
+        <translation type="obsolete">Nicht zugreifbar</translation>
     </message>
 </context>
 <context>
@@ -166,19 +166,47 @@
     </message>
     <message>
         <source>Enter existing path for the shared folder here</source>
-        <translation>Geben Sie einen Pfad für einen vorhandenen Ordner an</translation>
+        <translation type="obsolete">Geben Sie einen Pfad für einen vorhandenen Ordner an</translation>
     </message>
     <message>
         <source>Enter name for the shared folder to be created</source>
-        <translation>Geben Sie einen Namen für einen zu erzeugenden gemeinsamen Ordner an</translation>
+        <translation type="obsolete">Geben Sie einen Namen für einen zu erzeugenden gemeinsamen Ordner an</translation>
     </message>
     <message>
         <source>Click to invoke &lt;open folder&gt; dialog</source>
-        <translation>Klicken, um den Dialog &lt;Ordner öffnen&gt; aufzurufen</translation>
+        <translation type="obsolete">Klicken, um den Dialog &lt;Ordner öffnen&gt; aufzurufen</translation>
     </message>
     <message>
         <source>Select a folder to share</source>
         <translation>Ordner zur gemeinsamen Nutzung mit dem Gast auswählen</translation>
+    </message>
+    <message>
+        <source>Folder Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the path to an existing folder on the host PC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the dialog to select a folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -458,7 +486,7 @@
     </message>
     <message>
         <source>&amp;VM</source>
-        <translation>&amp;VM</translation>
+        <translation type="obsolete">&amp;VM</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -588,6 +616,10 @@
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
         <translation>&amp;Sende Strg-Alt-Entf</translation>
+    </message>
+    <message>
+        <source>&amp;Machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -723,23 +755,19 @@
     </message>
     <message>
         <source>Create new VDI file and attach it to media list</source>
-        <translation>Erstellt eine neue VDI-Datei und nimmt diese in die Liste der Medien auf</translation>
+        <translation type="obsolete">Erstellt eine neue VDI-Datei und nimmt diese in die Liste der Medien auf</translation>
     </message>
     <message>
         <source>Add existing media image file to media list</source>
-        <translation>Fügt ein existierendes Medium zur Liste der Medien hinzu</translation>
+        <translation type="obsolete">Fügt ein existierendes Medium zur Liste der Medien hinzu</translation>
     </message>
     <message>
         <source>Remove selected media image file from media list</source>
-        <translation>Entfernt die ausgewählte Mediumdatei aus der Liste der Medien</translation>
+        <translation type="obsolete">Entfernt die ausgewählte Mediumdatei aus der Liste der Medien</translation>
     </message>
     <message>
         <source>Release selected media image file from being using in some VM</source>
-        <translation>Hebt die Bindung des ausgewählten Plattenabbilds an eine virtuelle Maschine auf</translation>
-    </message>
-    <message>
-        <source>Refresh media image list</source>
-        <translation>Liste der Abbilder aktualisieren</translation>
+        <translation type="obsolete">Hebt die Bindung des ausgewählten Plattenabbilds an eine virtuelle Maschine auf</translation>
     </message>
     <message>
         <source>&amp;Actions</source>
@@ -854,6 +882,26 @@
     <message>
         <source>Select a floppy disk image file</source>
         <translation>Wählen Sie ein Diskettenabbild aus</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add (register) an existing image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove (unregister) the selected media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release the selected media by detaching it from the machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the media list</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2286,6 +2334,14 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
         <source>Shared Folders</source>
         <translation>Gemeinsame Ordner</translation>
     </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Abbrechen</translation>
+    </message>
 </context>
 <context>
     <name>VBoxSelectorWnd</name>
@@ -2451,7 +2507,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&amp;VM</source>
-        <translation type="unfinished">&amp;VM</translation>
+        <translation type="obsolete">&amp;VM</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -2496,6 +2552,10 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters zeigt eine Liste aller virtuellen Maschinen auf Ihrem Computer. Diese Liste ist momentan leer, da Sie noch keine virtuelle Maschine erstellt haben.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Um eine virtuelle Maschine anzulegen, drücken Sie &lt;b&gt;Neu&lt;/b&gt; in der Symbolleiste am oberen Rand des Fensters.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;F1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2992,6 +3052,10 @@ value.</source>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished">Nicht zugreifbar</translation>
     </message>
 </context>
 <context>

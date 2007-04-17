@@ -106,13 +106,6 @@
     </message>
 </context>
 <context>
-    <name>QListBox</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
@@ -165,19 +158,35 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter existing path for the shared folder here</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter name for the shared folder to be created</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Click to invoke &lt;open folder&gt; dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a folder to share</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the path to an existing folder on the host PC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the dialog to select a folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -461,10 +470,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;VM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Devices</source>
         <translation type="unfinished"></translation>
     </message>
@@ -587,6 +592,10 @@
     </message>
     <message>
         <source>Host Drive </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Machine</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -722,26 +731,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create new VDI file and attach it to media list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add existing media image file to media list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove selected media image file from media list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Release selected media image file from being using in some VM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Refresh media image list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Actions</source>
         <translation type="unfinished"></translation>
     </message>
@@ -853,6 +842,26 @@
     </message>
     <message>
         <source>Select a floppy disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add (register) an existing image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove (unregister) the selected media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release the selected media by detaching it from the machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the media list</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2272,6 +2281,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Shared Folders</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSelectorWnd</name>
@@ -2436,10 +2453,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;VM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2481,6 +2494,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Machine</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2973,6 +2990,10 @@ value.</source>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
