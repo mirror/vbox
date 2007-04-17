@@ -1932,9 +1932,9 @@ REMR3DECL(int) REMR3State(PVM pVM)
      * Check for traps.
      */
     pVM->rem.s.Env.exception_index = -1; /** @todo this won't work :/ */
-    bool            fIsSoftwareInterrupt;
-    uint8_t         u8TrapNo;
-    int rc = TRPMQueryTrap(pVM, &u8TrapNo, &fIsSoftwareInterrupt);
+    TRPMEVENT   enmType;
+    uint8_t     u8TrapNo;
+    int rc = TRPMQueryTrap(pVM, &u8TrapNo, &enmType);
     if (VBOX_SUCCESS(rc))
     {
         #ifdef DEBUG
@@ -1946,7 +1946,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
         #endif
 
         pVM->rem.s.Env.exception_index = u8TrapNo;
-        if (!fIsSoftwareInterrupt)
+        if (enmType != TRPM_SOFTWARE_INT)
         {
             pVM->rem.s.Env.exception_is_int     = 0;
             pVM->rem.s.Env.exception_next_eip   = pVM->rem.s.Env.eip;
