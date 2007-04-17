@@ -1,0 +1,42 @@
+;/** @file
+; * TRPM - The Trap Monitor.
+; */
+
+;/*
+; * Copyright (C) 2006 InnoTek Systemberatung GmbH
+; *
+; * This file is part of VirtualBox Open Source Edition (OSE), as
+; * available from http://www.virtualbox.org. This file is free software;
+; * you can redistribute it and/or modify it under the terms of the GNU
+; * General Public License as published by the Free Software Foundation,
+; * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; * distribution. VirtualBox OSE is distributed in the hope that it will
+; * be useful, but WITHOUT ANY WARRANTY of any kind.
+; *
+; * If you received this file as part of a commercial VirtualBox
+; * distribution, then only the terms of your commercial VirtualBox
+; * license agreement apply instead of the previous paragraph.
+; */
+
+%ifndef __VBox_trpm_mac__
+%define __VBox_trpm_mac__
+
+
+;/**
+; * TRPM event type
+; */
+;/** Note: must match trpm.mac! */
+;typedef enum
+;{
+;    TRPM_TRAP         = 0,
+;    TRPM_HARDWARE_INT = 1,
+;    TRPM_SOFTWARE_INT = 2,
+;    /** The usual 32-bit paranoia. */
+;    TRPM_32BIT_HACK   = 0x7fffffff
+;} TRPMEVENT;
+
+%define TRPM_TRAP         0
+%define TRPM_HARDWARE_INT 1
+%define TRPM_SOFTWARE_INT 2
+%endif
+
