@@ -2338,7 +2338,11 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
     if (ppGipR3)
         *ppGipR3 = pGip;
 
+#ifdef DEBUG_DARWIN_GIP
+    OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGip=%p GipMapObjR3\n", rc, (unsigned long)HCPhys, pGip, pSession->GipMapObjR3));
+#else
     dprintf(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)(uintptr_t)pGip));
+#endif 
     return rc;
 }
 
@@ -2355,7 +2359,14 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 {
     int                     rc = 0;
     PSUPDRVDEVEXT           pDevExt = pSession->pDevExt;
+#ifdef DEBUG_DARWIN_GIP
+    OSDBGPRINT(("SUPR0GipUnmap: pSession=%p pGip=%p GipMapObjR3=%p\n", 
+                pSession, 
+                pSession->GipMapObjR3 != NIL_RTR0MEMOBJ ? RTR0MemObjAddress(pSession->GipMapObjR3) : NULL, 
+                pSession->GipMapObjR3));
+#else
     dprintf(("SUPR0GipUnmap: pSession=%p\n", pSession));
+#endif 
 
     RTSemFastMutexRequest(pDevExt->mtxGip);
 
@@ -3965,6 +3976,11 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 static int supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
 {
     int rc;
+#ifdef DEBUG_DARWIN_GIP
+    OSDBGPRINT(("supdrvGipDestroy: pDevExt=%p pGip=%p pGipTimer=%p GipMemObj=%p\n", pDevExt, 
+                pDevExt->GipMemObj != NIL_RTR0MEMOBJ ? RTR0MemObjAddress(pDevExt->GipMemObj) : NULL, 
+                pDevExt->pGipTimer, pDevExt->GipMemObj));
+#endif
 
     /*
      * Invalid the GIP data.
@@ -4029,7 +4045,11 @@ static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser)
 int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz)
 {
     unsigned i;
+#ifdef DEBUG_DARWIN_GIP
+    OSDBGPRINT(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz));
+#else
     dprintf(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz));
+#endif
 
     /*
      * Initialize the structure.
