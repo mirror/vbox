@@ -65,7 +65,7 @@ static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars,
 RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
 {
     for (const uint8_t *pu8 = (const uint8_t *)pch; cb-- > 0; pu8++)
-        ASMOutB(RTLOG_DEBUG_PORT, *pu8);
+        ASMOut8(RTLOG_DEBUG_PORT, *pu8);
     /** @todo a rep outs could be more efficient, I don't know...
      * @code
      * __asm {
