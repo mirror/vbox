@@ -106,12 +106,12 @@ RTDECL(void) RTLogWriteCom(const char *pach, size_t cb)
         register uint8_t    u8;
         do
         {
-            u8 = ASMIn8(UART_BASE + 5);
+            u8 = ASMInU8(UART_BASE + 5);
             cMaxWait--;
         } while (!(u8 & 0x20) && u8 != 0xff && cMaxWait);
 
         /* write */
-        ASMOut8(UART_BASE, *pu8);
+        ASMOutU8(UART_BASE, *pu8);
     }
 }
 
