@@ -564,8 +564,6 @@ ResumeExecution:
         goto end;
     }
 
-    /** @todo check timers?? */
-
     /* Load the guest state */
     rc = SVMR0LoadGuestState(pVM, pCtx);
     if (rc != VINF_SUCCESS)
