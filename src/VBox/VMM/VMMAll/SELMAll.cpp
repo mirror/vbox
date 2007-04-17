@@ -144,17 +144,22 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
     }
 
 
-    VBOXDESC    Desc;
     uint32_t    u32Limit;
     RTGCPTR     pvFlat;
+    uint32_t    u1Present, u1DescType, u1Granularity, u4Type;
 
     if (    pHiddenSel 
         &&  CPUMAreHiddenSelRegsValid(pVM))
     {
-        Desc.Gen.u1Present = pHiddenSel->Attr.n.u1Present;
+        u1Present     = pHiddenSel->Attr.n.u1Present;
+        u1Granularity = pHiddenSel->Attr.n.u1Granularity;
+        u1DescType    = pHiddenSel->Attr.n.u1DescType;
+        u4Type        = pHiddenSel->Attr.n.u4Type;
     }
     else
     {
+        VBOXDESC Desc;
+
         if (!(Sel & X86_SEL_LDT))
         {
             if (   !(fFlags & SELMTOFLAT_FLAGS_HYPER)
@@ -187,18 +192,23 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
                               |  (Desc.Gen.u8BaseHigh1 << 16)
                               |   Desc.Gen.u16BaseLow )
                              );
+
+        u1Present     = Desc.Gen.u1Present;
+        u1Granularity = Desc.Gen.u1Granularity;
+        u1DescType    = Desc.Gen.u1DescType;
+        u4Type        = Desc.Gen.u4Type;
     }
 
     /*
      * Check if present.
      */
-    if (Desc.Gen.u1Present)
+    if (u1Present)
     {
         /*
          * Type check.
          */
         #define BOTH(a, b) ((a << 16) | b)
-        switch (BOTH(Desc.Gen.u1DescType, Desc.Gen.u4Type))
+        switch (BOTH(u1DescType, u4Type))
         {
 
             /** Read only selector type. */
@@ -251,7 +261,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
                     /** @todo fix this mess */
                 }
                 /* check limit. */
-                if (!Desc.Gen.u1Granularity && (RTGCUINTPTR)Addr > (RTGCUINTPTR)0xffff)
+                if (!u1Granularity && (RTGCUINTPTR)Addr > (RTGCUINTPTR)0xffff)
                     return VERR_OUT_OF_SELECTOR_BOUNDS;
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                     return VERR_OUT_OF_SELECTOR_BOUNDS;
@@ -260,7 +270,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
                 if (ppvGC)
                     *ppvGC = pvFlat;
                 if (pcb)
-                    *pcb = (Desc.Gen.u1Granularity ? 0xffffffff : 0xffff) - (RTGCUINTPTR)Addr + 1;
+                    *pcb = (u1Granularity ? 0xffffffff : 0xffff) - (RTGCUINTPTR)Addr + 1;
                 return VINF_SUCCESS;
 
             case BOTH(0,X86_SEL_TYPE_SYS_286_TSS_AVAIL):
