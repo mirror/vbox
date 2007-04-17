@@ -56,10 +56,6 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#if 0
-static bool iomGCCalcParamEA(PDISCPUSTATE pCpu, POP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, void **ppAddr);
-static unsigned iomGCGetRegSize(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam);
-#endif
 static bool iomGCGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint32_t *pu32Data, unsigned *pcbSize);
 static bool iomGCSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint32_t u32Data);
 
@@ -467,6 +463,8 @@ static int iomGCInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
 /** @todo All the string MMIO stuff can do terrible things since physical contiguous mappings are
  * assumed all over the place! This must be addressed in a general way, like for example let EM do
  * all the interpretation and checking of selectors and addresses.
+ *
+ * -> I don't see the problem here. MMIO ranges are by definition linear ranges. The virtual source or destination is read/written properly.
  */
 
 
@@ -493,10 +491,9 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
     STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovs, a);
 
     /*
-     * We do not support segment prefixes, REPNE or 16-bit addressing.
+     * We do not support segment prefixes or REPNE.
      */
-    if (    pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE)
-        || (pCpu->addrmode != CPUMODE_32BIT))
+    if (pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE))
         return VINF_IOM_HC_MMIO_READ_WRITE;
 
 
@@ -545,7 +542,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
 
         /* Convert source address ds:esi. */
         uint8_t *pu8Virt;
-        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi,
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
                                 SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                                 (PRTGCPTR)&pu8Virt, NULL);
         if (VBOX_SUCCESS(rc))
@@ -601,7 +598,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
 
         /* Convert destination address. */
         uint8_t *pu8Virt;
-        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi,
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid,
                                 SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                                 (PRTGCPTR)&pu8Virt, NULL);
         if (VBOX_FAILURE(rc))
@@ -728,10 +725,9 @@ static int iomGCInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFa
     STAM_PROFILE_START(&pVM->iom.s.StatGCInstStos, a);
 
     /*
-     * We do not support segment prefixes, REPNE or 16-bit addressing.
+     * We do not support segment prefixes or REPNE..
      */
-    if (    pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE)
-        || (pCpu->addrmode != CPUMODE_32BIT))
+    if (pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE))
         return VINF_IOM_HC_MMIO_READ_WRITE;
 
     /*
@@ -851,10 +847,9 @@ static int iomGCInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFa
     STAM_PROFILE_START(&pVM->iom.s.StatGCInstLods, a1);
 
     /*
-     * We do not support segment prefixes, REP* or 16-bit addressing.
+     * We do not support segment prefixes or REP*.
      */
-    if (    (pCpu->prefix & (PREFIX_SEG | PREFIX_REP | PREFIX_REPNE))
-        ||  (pCpu->addrmode != CPUMODE_32BIT))
+    if (pCpu->prefix & (PREFIX_SEG | PREFIX_REP | PREFIX_REPNE))
         return VINF_IOM_HC_MMIO_READ_WRITE;
 
     /* Check that we can handle it. */
