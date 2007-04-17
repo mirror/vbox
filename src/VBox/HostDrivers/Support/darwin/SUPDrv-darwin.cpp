@@ -299,7 +299,7 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
 {
     int                 rc;
     PSUPDRVSESSION      pSession;
-#ifdef DEBUG
+#ifdef DEBUG_DARWIN_GIP
     char szName[128];
     szName[0] = '\0';
     proc_name(proc_pid(pProcess), szName, sizeof(szName));
@@ -333,10 +333,10 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     }
 
-#if 1
-    dprintf(("VBoxSupDrvOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, proc_pid(pProcess)));
-#else
+#ifdef DEBUG_DARWIN_GIP
     OSDBGPRINT(("VBoxSupDrvOpen: pid=%d '%s' pSession=%p rc=%d\n", proc_pid(pProcess), szName, pSession, rc));
+#else
+    dprintf(("VBoxSupDrvOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, proc_pid(pProcess)));
 #endif
     return VBoxSupDrvErr2DarwinErr(rc);
 }
