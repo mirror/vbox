@@ -96,8 +96,8 @@ typedef struct TRPM
      */
     RTUINT          uActiveVector;
 
-    /** If set the active trap is a software interrupt. */
-    RTUINT          fActiveSoftwareInterrupt;
+    /** Active trap type. */
+    TRPMEVENT       enmActiveType;
 
     /** Errorcode for the active interrupt/trap. */
     RTGCUINT        uActiveErrorCode;
@@ -108,8 +108,8 @@ typedef struct TRPM
     /** Saved trap vector number. */
     RTGCUINT        uSavedVector;
 
-    /** Saved software interrupt indicator. */
-    RTUINT          fSavedSoftwareInterrupt;
+    /** Saved trap type. */
+    TRPMEVENT       enmSavedType;
 
     /** Saved errorcode. */
     RTGCUINT        uSavedErrorCode;

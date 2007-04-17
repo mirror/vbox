@@ -201,7 +201,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
             STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
 
             /* Assert the trap and go to the recompiler to dispatch it. */
-            TRPMAssertTrap(pVM, u8Interrupt, false);
+            TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
 
             STAM_PROFILE_ADV_START(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
             rc = VINF_EM_RAW_INTERRUPT_PENDING;
@@ -557,7 +557,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
                 return trpmGCExitTrap(pVM, VINF_SUCCESS, pRegFrame);
 
             pVM->trpm.s.uActiveVector = (pVM->trpm.s.uActiveErrorCode & X86_TRAP_ERR_SEL_MASK) >> X86_TRAP_ERR_SEL_SHIFT;
-            pVM->trpm.s.fActiveSoftwareInterrupt = true;
+            pVM->trpm.s.enmActiveType = TRPM_SOFTWARE_INT;
             return trpmGCExitTrap(pVM, VINF_EM_RAW_RING_SWITCH_INT, pRegFrame);
         }
 
@@ -663,7 +663,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
                 return trpmGCExitTrap(pVM, VINF_SUCCESS, pRegFrame);
 
             pVM->trpm.s.uActiveVector = (pVM->trpm.s.uActiveErrorCode & X86_TRAP_ERR_SEL_MASK) >> X86_TRAP_ERR_SEL_SHIFT;
-            pVM->trpm.s.fActiveSoftwareInterrupt = true;
+            pVM->trpm.s.enmActiveType = TRPM_SOFTWARE_INT;
             return trpmGCExitTrap(pVM, VINF_EM_RAW_RING_SWITCH_INT, pRegFrame);
         }
 

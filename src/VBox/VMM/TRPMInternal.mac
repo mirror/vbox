@@ -34,11 +34,11 @@
 struc TRPM
     .offVM              resd 1
     .uActiveVector      resd 1
-    .fActiveSoftwareInterrupt resd 1
+    .enmActiveType      resd 1
     .uActiveErrorCode   resd 1
     .uActiveCR2         resd 1
     .uSavedVector       resd 1
-    .fSavedSoftwareInterrupt resd 1
+    .enmSavedType       resd 1
     .uSavedErrorCode    resd 1
     .uSavedCR2          resd 1
     .uPrevVector        resd 1

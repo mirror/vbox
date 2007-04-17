@@ -1531,10 +1531,10 @@ static int emR3RawGuestTrap(PVM pVM)
      * Get the trap info.
      */
     uint8_t         u8TrapNo;
-    bool            fSoftwareInterrupt;
+    TRPMEVENT       enmType;;
     RTGCUINT        uErrorCode;
     RTGCUINTPTR     uCR2;
-    int rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &fSoftwareInterrupt, &uErrorCode, &uCR2);
+    int rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
     if (VBOX_FAILURE(rc))
     {
         AssertReleaseMsgFailed(("No trap! (rc=%Vrc)\n", rc));
@@ -1613,7 +1613,7 @@ static int emR3RawGuestTrap(PVM pVM)
     RTGCPHYS    GCPhys = 0;
     int rc2 = PGMGstGetPage(pVM, uCR2, &fFlags, &GCPhys);
     Log(("emR3RawGuestTrap: cs:eip=%04x:%08x: trap=%02x err=%08x cr2=%08x cr0=%08x%s: Phys=%VGp fFlags=%08llx %s %s %s%s rc2=%d\n",
-         pCtx->cs, pCtx->eip, u8TrapNo, uErrorCode, uCR2, pCtx->cr0, fSoftwareInterrupt ? " software" : "",  GCPhys, fFlags,
+         pCtx->cs, pCtx->eip, u8TrapNo, uErrorCode, uCR2, pCtx->cr0, (enmType == TRPM_SOFTWARE_INT) ? " software" : "",  GCPhys, fFlags,
          fFlags & X86_PTE_P  ? "P " : "NP", fFlags & X86_PTE_US ? "U"  : "S",
          fFlags & X86_PTE_RW ? "RW" : "R0", fFlags & X86_PTE_G  ? " G" : "", rc2));
 #endif
@@ -1699,7 +1699,7 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
 {
     uint8_t         u8TrapNo;
     int             rc;
-    bool            fSoftwareInterrupt;
+    TRPMEVENT       enmType;
     RTGCUINT        uErrorCode;
     RTGCUINTPTR     uCR2;
 
@@ -1721,7 +1721,7 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
     }
     else
     {
-        rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &fSoftwareInterrupt, &uErrorCode, &uCR2);
+        rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
         if (VBOX_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("emR3PatchTrap: no trap! (rc=%Vrc) gcret=%Vrc\n", rc, gcret));

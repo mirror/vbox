@@ -410,7 +410,7 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 /** @} */
 
 /** TRPM saved state version. */
-#define TRPM_SAVED_STATE_VERSION    7
+#define TRPM_SAVED_STATE_VERSION    8
 
 
 /*******************************************************************************
@@ -712,11 +712,11 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     PTRPM pTrpm = &pVM->trpm.s;
     SSMR3PutUInt(pSSM,      pTrpm->uActiveVector);
-    SSMR3PutUInt(pSSM,      pTrpm->fActiveSoftwareInterrupt);
+    SSMR3PutUInt(pSSM,      pTrpm->enmActiveType);
     SSMR3PutGCUInt(pSSM,    pTrpm->uActiveErrorCode);
     SSMR3PutGCUIntPtr(pSSM, pTrpm->uActiveCR2);
     SSMR3PutGCUInt(pSSM,    pTrpm->uSavedVector);
-    SSMR3PutUInt(pSSM,      pTrpm->fSavedSoftwareInterrupt);
+    SSMR3PutUInt(pSSM,      pTrpm->enmSavedType);
     SSMR3PutGCUInt(pSSM,    pTrpm->uSavedErrorCode);
     SSMR3PutGCUIntPtr(pSSM, pTrpm->uSavedCR2);
     SSMR3PutGCUInt(pSSM,    pTrpm->uPrevVector);
@@ -773,11 +773,11 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
      */
     PTRPM pTrpm = &pVM->trpm.s;
     SSMR3GetUInt(pSSM,      &pTrpm->uActiveVector);
-    SSMR3GetUInt(pSSM,      &pTrpm->fActiveSoftwareInterrupt);
+    SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpm->enmActiveType);
     SSMR3GetGCUInt(pSSM,    &pTrpm->uActiveErrorCode);
     SSMR3GetGCUIntPtr(pSSM, &pTrpm->uActiveCR2);
     SSMR3GetGCUInt(pSSM,    &pTrpm->uSavedVector);
-    SSMR3GetUInt(pSSM,      &pTrpm->fSavedSoftwareInterrupt);
+    SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpm->enmSavedType);
     SSMR3GetGCUInt(pSSM,    &pTrpm->uSavedErrorCode);
     SSMR3GetGCUIntPtr(pSSM, &pTrpm->uSavedCR2);
     SSMR3GetGCUInt(pSSM,    &pTrpm->uPrevVector);
@@ -1318,7 +1318,7 @@ TRPMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
         {
             if (HWACCMR3IsActive(pVM))
             {
-                rc = TRPMAssertTrap(pVM, u8Interrupt, false);
+                rc = TRPMAssertTrap(pVM, u8Interrupt, enmEvent);
                 AssertRC(rc);
                 STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
                 return VINF_EM_RESCHEDULE_HWACC;

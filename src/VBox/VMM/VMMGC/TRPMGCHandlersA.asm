@@ -27,6 +27,7 @@
 %include "VBox/vm.mac"
 %include "TRPMInternal.mac"
 %include "VBox/err.mac"
+%include "VBox/trpm.mac"
 
 
 ;*******************************************************************************
@@ -333,7 +334,7 @@ gt_SkipV86Entry:
     mov     [eax + TRPM.uActiveVector], edx
     mov     edx, [esp + 4h + ESPOFF]       ; error code
     mov     [eax + TRPM.uActiveErrorCode], edx
-    mov     dword [eax + TRPM.fActiveSoftwareInterrupt], 0
+    mov     dword [eax + TRPM.enmActiveType], TRPM_TRAP
     mov     edx, cr2                       ;; @todo Check how expensive cr2 reads are!
     mov     dword [eax + TRPM.uActiveCR2], edx
 
@@ -803,7 +804,7 @@ ti_SkipV86Entry:
     movzx   edx, byte [esp + 0h + ESPOFF]  ; vector number
     mov     [eax + TRPM.uActiveVector], edx
     xor     edx, edx
-    mov     [eax + TRPM.fActiveSoftwareInterrupt], edx
+    mov     dword [eax + TRPM.enmActiveType], TRPM_HARDWARE_INT
     dec     edx
     mov     [eax + TRPM.uActiveErrorCode], edx
     mov     [eax + TRPM.uActiveCR2], edx

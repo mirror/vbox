@@ -327,7 +327,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
             Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
             if (VBOX_SUCCESS(rc))
             {
-                rc = TRPMAssertTrap(pVM, u8Interrupt, false);
+                rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
                 AssertRC(rc);
             }
             else
@@ -348,7 +348,6 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
         uint8_t     u8Vector;
         rc = TRPMQueryTrapAll(pVM, &u8Vector, 0, 0, 0);
         AssertRC(rc);
-        Assert(u8Vector >= 0x20);
     }
 #endif
 
@@ -359,14 +358,14 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
     {
         uint8_t     u8Vector;
         int         rc;
-        bool        fSoftwareInt;
+        TRPMEVENT   enmType;
         RTGCUINTPTR intInfo, errCode;
 
         /* If a new event is pending, then dispatch it now. */
-        rc = TRPMQueryTrapAll(pVM, &u8Vector, &fSoftwareInt, &errCode, 0);
+        rc = TRPMQueryTrapAll(pVM, &u8Vector, &enmType, &errCode, 0);
         AssertRC(rc);
-        Assert(pCtx->eflags.Bits.u1IF == 1 || u8Vector < 0x20);
-        Assert(fSoftwareInt == false);
+        Assert(pCtx->eflags.Bits.u1IF == 1 || enmType == TRPM_TRAP);
+        Assert(enmType != TRPM_SOFTWARE_INT);
 
         /* Clear the pending trap. */
         rc = TRPMResetTrap(pVM);
@@ -375,26 +374,27 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
         intInfo  = u8Vector;
         intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
 
-        switch (u8Vector) {
-        case 8:
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-        case 17:
-            /* Valid error codes. */
-            intInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-            break;
-        default:
-            break;
+        if (enmType == TRPM_TRAP)
+        {
+            switch (u8Vector) {
+            case 8:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 17:
+                /* Valid error codes. */
+                intInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+                break;
+            default:
+                break;
+            }
+            if (u8Vector == X86_XCPT_BP || u8Vector == X86_XCPT_OF)
+                intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            else
+                intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
         }
-
-        if (u8Vector == X86_XCPT_BP || u8Vector == X86_XCPT_OF)
-            intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-        else
-        if (u8Vector < 0x20)
-            intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
         else
             intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
@@ -755,7 +755,6 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_HIGH, (uint32_t)(u64TSCOffset >> 32ULL));
 #endif
     AssertRC(rc);
-
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
@@ -1270,7 +1269,7 @@ ResumeExecution:
             {
                 Log2(("Page fault at %VGv error code %x\n", exitQualification ,errCode));
                 /* Exit qualification contains the linear address of the page fault. */
-                TRPMAssertTrap(pVM, X86_XCPT_PF, false);
+                TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
                 TRPMSetErrorCode(pVM, errCode);
                 TRPMSetFaultAddress(pVM, exitQualification);
 
