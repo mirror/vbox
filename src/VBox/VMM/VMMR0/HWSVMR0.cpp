@@ -148,10 +148,10 @@ inline void SVMR0InjectEvent(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx, SVM_EVENT*
 {
 #ifdef VBOX_STRICT
     if (pEvent->n.u8Vector == 0xE)
-        Log(("SVMR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", pEvent->n.u8Vector, pCtx->eip, pEvent->n.u32ErrorCode, pCtx->cr2, pEvent->au64[0]));
+        Log(("SVM: Inject int %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", pEvent->n.u8Vector, pCtx->eip, pEvent->n.u32ErrorCode, pCtx->cr2, pEvent->au64[0]));
     else
     if (pEvent->n.u8Vector < 0x20)
-        Log(("SVMR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x\n", pEvent->n.u8Vector, pCtx->eip, pEvent->n.u32ErrorCode));
+        Log(("SVM: Inject int %d at %VGv error code=%08x\n", pEvent->n.u8Vector, pCtx->eip, pEvent->n.u32ErrorCode));
     else
     {
         Log(("INJ-EI: %x at %VGv\n", pEvent->n.u8Vector, pCtx->eip));
@@ -303,7 +303,6 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
  */
 HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 {
-    int         rc = VINF_SUCCESS;
     RTGCUINTPTR val;
     SVM_VMCB *pVMCB;
 
@@ -487,7 +486,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
