@@ -437,6 +437,8 @@ HWACCMR3DECL(void) HWACCMR3Reset(PVM pVM)
 
     pVM->hwaccm.s.vmx.cr0_mask = 0;
     pVM->hwaccm.s.vmx.cr4_mask = 0;
+
+    pVM->hwaccm.s.Event.fPending = false;
 }
 
 /**
