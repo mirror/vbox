@@ -193,29 +193,23 @@ EMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE
  */
 EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    /*
-     * Only allow 32-bit code.
-     */
-    if (SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid))
+    RTGCPTR pbCode;
+    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pbCode);
+    if (VBOX_SUCCESS(rc))
     {
-        RTGCPTR pbCode;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pbCode);
+        uint32_t    cbOp;
+        DISCPUSTATE Cpu;
+        Cpu.mode = SELMIsSelector32Bit(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) ? CPUMODE_32BIT : CPUMODE_16BIT;
+        rc = emDisCoreOne(pVM, &Cpu, (RTGCUINTPTR)pbCode, &cbOp);
         if (VBOX_SUCCESS(rc))
         {
-            uint32_t    cbOp;
-            DISCPUSTATE Cpu;
-            Cpu.mode = CPUMODE_32BIT;
-            rc = emDisCoreOne(pVM, &Cpu, (RTGCUINTPTR)pbCode, &cbOp);
+            Assert(cbOp == Cpu.opsize);
+            rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, pvFault, pcbSize);
             if (VBOX_SUCCESS(rc))
             {
-                Assert(cbOp == Cpu.opsize);
-                rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, pvFault, pcbSize);
-                if (VBOX_SUCCESS(rc))
-                {
-                    pRegFrame->eip += cbOp; /* Move on to the next instruction. */
-                }
-                return rc;
+                pRegFrame->eip += cbOp; /* Move on to the next instruction. */
             }
+            return rc;
         }
     }
     return VERR_EM_INTERPRETER;
