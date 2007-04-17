@@ -140,10 +140,11 @@ SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTs
  * for that.
  *
  * @returns Flat address.
- * @param   pVM     VM Handle.
- * @param   eflags  Current eflags
- * @param   Sel     Selector part.
- * @param   Addr    Address part.
+ * @param   pVM         VM Handle.
+ * @param   eflags      Current eflags
+ * @param   Sel         Selector part.
+ * @param   pHiddenSel  Hidden selector register
+ * @param   Addr        Address part.
  */
 SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr);
 
@@ -173,17 +174,18 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
  * Some basic checking is done, but not all kinds yet.
  *
  * @returns VBox status
- * @param   pVM     VM Handle.
- * @param   eflags  Current eflags
- * @param   Sel     Selector part.
- * @param   Addr    Address part.
- * @param   fFlags  SELMTOFLAT_FLAGS_*
- *                  GDT entires are valid.
- * @param   ppvGC   Where to store the GC flat address.
- * @param   pcb     Where to store the bytes from *ppvGC which can be accessed according to
- *                  the selector. NULL is allowed.
+ * @param   pVM         VM Handle.
+ * @param   eflags      Current eflags
+ * @param   Sel         Selector part.
+ * @param   Addr        Address part.
+ * @param   pHiddenSel  Hidden selector register (can be NULL)
+ * @param   fFlags      SELMTOFLAT_FLAGS_*
+ *                      GDT entires are valid.
+ * @param   ppvGC       Where to store the GC flat address.
+ * @param   pcb         Where to store the bytes from *ppvGC which can be accessed according to
+ *                      the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
+SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
 
 /**
  * Validates and converts a GC selector based code address to a flat address.
