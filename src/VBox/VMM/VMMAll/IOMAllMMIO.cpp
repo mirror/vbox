@@ -469,6 +469,44 @@ static int iomGCInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
 
 
 #ifdef IOMGC_MOVS_SUPPORT
+
+inline int iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
+{
+#ifdef IN_GC
+    return MMGCRamReadNoTrapHandler(pDest, GCSrc, cb);
+#else
+    int         rc;
+    RTGCPHYS    GCPhys;
+    RTGCUINTPTR offset;
+
+    offset = GCSrc & PAGE_OFFSET_MASK;
+
+    /** @todo optimize the loop; no need to convert the address all the time */
+    rc = PGMPhysGCPtr2GCPhys(pVM, GCSrc, &GCPhys);
+    AssertRCReturn(rc, rc);
+    PGMPhysRead(pVM, GCPhys + offset, pDest, cb);
+    return VINF_SUCCESS;
+#endif
+}
+
+inline int iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
+{
+#ifdef IN_GC
+    return MMGCRamWriteNoTrapHandler(GCDest, pSrc, cb);
+#else
+    int         rc;
+    RTGCPHYS    GCPhys;
+    RTGCUINTPTR offset;
+
+    /** @todo optimize the loop; no need to convert the address all the time */
+    offset = GCDest & PAGE_OFFSET_MASK;
+    rc = PGMPhysGCPtr2GCPhys(pVM, GCDest, &GCPhys);
+    AssertRCReturn(rc, rc);
+    PGMPhysWrite(pVM, GCPhys + offset, pSrc, cb);
+    return VINF_SUCCESS;
+#endif
+}
+
 /**
  * [REP] MOVSB
  * [REP] MOVSW
@@ -541,7 +579,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
         }
 
         /* Convert source address ds:esi. */
-        uint8_t *pu8Virt;
+        RTGCUINTPTR pu8Virt;
         rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
                                 SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                                 (PRTGCPTR)&pu8Virt, NULL);
@@ -549,7 +587,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
         {
 
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
-            rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pu8Virt, cTransfers * cbSize, (cpl == 3) ? X86_PTE_US : 0);
+            rc = PGMVerifyAccess(pVM, pu8Virt, cTransfers * cbSize, (cpl == 3) ? X86_PTE_US : 0);
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
@@ -557,13 +595,15 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
+#ifdef IN_GC
             MMGCRamRegisterTrapHandler(pVM);
+#endif
 
             /* copy loop. */
             while (cTransfers)
             {
                 uint32_t u32Data = 0;
-                rc = MMGCRamReadNoTrapHandler(&u32Data, pu8Virt, cbSize);
+                rc = iomRamRead(pVM, &u32Data, (RTGCPTR)pu8Virt, cbSize);
                 if (rc != VINF_SUCCESS)
                     break;
                 rc = iomGCMMIODoWrite(pVM, pRange, Phys, &u32Data, cbSize);
@@ -576,8 +616,9 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
                 pRegFrame->edi += offIncrement;
                 cTransfers--;
             }
+#ifdef IN_GC
             MMGCRamDeregisterTrapHandler(pVM);
-
+#endif
             /* Update ecx. */
             if (pCpu->prefix & PREFIX_REP)
                 pRegFrame->ecx = cTransfers;
@@ -597,16 +638,16 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
             return VINF_IOM_HC_MMIO_READ;
 
         /* Convert destination address. */
-        uint8_t *pu8Virt;
+        RTGCUINTPTR pu8Virt;
         rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid,
                                 SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                                (PRTGCPTR)&pu8Virt, NULL);
+                                (RTGCPTR *)&pu8Virt, NULL);
         if (VBOX_FAILURE(rc))
             return VINF_EM_RAW_GUEST_TRAP;
 
         /* Check if destination address is MMIO. */
         RTGCPHYS PhysDst;
-        rc = PGMGstGetPage(pVM, pu8Virt, NULL, &PhysDst);
+        rc = PGMGstGetPage(pVM, (RTGCPTR)pu8Virt, NULL, &PhysDst);
         if (    VBOX_SUCCESS(rc)
             &&  iomMMIOGetRangeHC(&pVM->iom.s, PhysDst))
         {
@@ -617,7 +658,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
             STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
 
             PhysDst |= (RTGCUINTPTR)pu8Virt & PAGE_OFFSET_MASK;
-            PIOMMMIORANGEGC pMMIODst = iomMMIOGetRange(&pVM->iom.s, PhysDst);
+            CTXALLSUFF(PIOMMMIORANGE) pMMIODst = iomMMIOGetRange(&pVM->iom.s, PhysDst);
             if (    !pMMIODst
                 ||  !pMMIODst->pfnWriteCallback)
             {
@@ -654,7 +695,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
             STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
 
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
-            rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pu8Virt, cTransfers * cbSize, X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
+            rc = PGMVerifyAccess(pVM, pu8Virt, cTransfers * cbSize, X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
@@ -663,14 +704,16 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
             }
 
             /* copy loop. */
+#ifdef IN_GC
             MMGCRamRegisterTrapHandler(pVM);
+#endif
             while (cTransfers)
             {
                 uint32_t u32Data;
                 rc = iomGCMMIODoRead(pVM, pRange, Phys, &u32Data, cbSize);
                 if (rc != VINF_SUCCESS)
                     break;
-                rc = MMGCRamWriteNoTrapHandler(pu8Virt, &u32Data, cbSize);
+                rc = iomRamWrite(pVM, (RTGCPTR)pu8Virt, &u32Data, cbSize);
                 if (rc != VINF_SUCCESS)
                 {
                     Log(("MMGCRamWriteNoTrapHandler %08X size=%d failed with %d\n", pu8Virt, cbSize, rc));
@@ -683,7 +726,9 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
                 pRegFrame->edi += offIncrement;
                 cTransfers--;
             }
+#ifdef IN_GC
             MMGCRamDeregisterTrapHandler(pVM);
+#endif
             STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
         }
 
