@@ -1504,10 +1504,21 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
 #endif
 
 
-/** @deprecated */
-#define ASMOutB(p, b)   ASMOutU8(p,b)
-/** @deprecated */
-#define ASMInB(p)       ASMInU8(p)
+/**
+ * Ensure that gcc does not use any register value before this instruction. This function is used
+ * for assembler instructions with side-effects, e.g. port writes to magical guest ports causing
+ * guest memory changes by the host
+ */
+#if RT_INLINE_ASM_GNU_STYLE
+DECLINLINE(void) ASMMemoryClobber(void)
+{
+    __asm__ __volatile__ ("" : : : "memory");
+}
+#else
+DECLINLINE(void) ASMMemoryClobber(void)
+{
+}
+#endif
 
 /**
  * Writes a 8-bit unsigned integer to an I/O port.
