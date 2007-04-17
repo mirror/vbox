@@ -2370,15 +2370,15 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
         {
             /* Trap? */
             uint32_t        uEIP = CPUMGetHyperEIP(pVM);
-            bool            fSoftwareInterrupt = false;
+            TRPMEVENT       enmType;
             uint8_t         u8TrapNo   =       0xce;
             RTGCUINT        uErrorCode = 0xdeadface;
             RTGCUINTPTR     uCR2       = 0xdeadface;
-            int rc2 = TRPMQueryTrapAll(pVM, &u8TrapNo, &fSoftwareInterrupt, &uErrorCode, &uCR2);
+            int rc2 = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
             if (VBOX_SUCCESS(rc2))
                 pHlp->pfnPrintf(pHlp,
-                                "!! TRAP=%02x ERRCD=%VGv CR2=%VGv EIP=%VGv fSoft=%d\n",
-                                u8TrapNo, uErrorCode, uCR2, uEIP, fSoftwareInterrupt);
+                                "!! TRAP=%02x ERRCD=%VGv CR2=%VGv EIP=%VGv Type=%d\n",
+                                u8TrapNo, uErrorCode, uCR2, uEIP, enmType);
             else
                 pHlp->pfnPrintf(pHlp,
                                 "!! EIP=%VGv NOTRAP\n",

@@ -211,7 +211,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
             Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
             if (VBOX_SUCCESS(rc))
             {
-                rc = TRPMAssertTrap(pVM, u8Interrupt, false);
+                rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
                 AssertRC(rc);
             }
             else
@@ -232,7 +232,6 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
         uint8_t     u8Vector;
         rc = TRPMQueryTrapAll(pVM, &u8Vector, 0, 0, 0);
         AssertRC(rc);
-        Assert(u8Vector >= 0x20);
     }
 #endif
 
@@ -243,17 +242,17 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
     {
         uint8_t     u8Vector;
         int         rc;
-        bool        fSoftwareInt;
+        TRPMEVENT   enmType;
         SVM_EVENT   Event;
         uint32_t    u32ErrorCode;
 
         Event.au64[0] = 0;
 
         /* If a new event is pending, then dispatch it now. */
-        rc = TRPMQueryTrapAll(pVM, &u8Vector, &fSoftwareInt, &u32ErrorCode, 0);
+        rc = TRPMQueryTrapAll(pVM, &u8Vector, &enmType, &u32ErrorCode, 0);
         AssertRC(rc);
-        Assert(pCtx->eflags.Bits.u1IF == 1 || u8Vector < 0x20);
-        Assert(fSoftwareInt == false);
+        Assert(pCtx->eflags.Bits.u1IF == 1 || enmType == TRPM_TRAP);
+        Assert(enmType != TRPM_SOFTWARE_INT);
 
         /* Clear the pending trap. */
         rc = TRPMResetTrap(pVM);
@@ -263,26 +262,27 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
         Event.n.u1Valid  = 1;
         Event.n.u32ErrorCode = u32ErrorCode;
 
-        switch (u8Vector) {
-        case 8:
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-        case 17:
-            /* Valid error codes. */
-            Event.n.u1ErrorCodeValid = 1;
-            break;
-        default:
-            break;
+        if (enmType == TRPM_TRAP)
+        {
+            switch (u8Vector) {
+            case 8:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 17:
+                /* Valid error codes. */
+                Event.n.u1ErrorCodeValid = 1;
+                break;
+            default:
+                break;
+            }
+            if (u8Vector == X86_XCPT_NMI)
+                Event.n.u3Type = SVM_EVENT_NMI;
+            else
+                Event.n.u3Type = SVM_EVENT_EXCEPTION;
         }
-
-        if (u8Vector == X86_XCPT_NMI)
-            Event.n.u3Type = SVM_EVENT_NMI;
-        else
-        if (u8Vector < 0x20)
-            Event.n.u3Type = SVM_EVENT_EXCEPTION;
         else
             Event.n.u3Type = SVM_EVENT_EXTERNAL_IRQ;
 
@@ -320,22 +320,22 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
         SVM_WRITE_SELREG(CS, cs);
-        Assert(pVMCB->guest.CS.u16Sel || !pVMCB->guest.CS.u16Attr);
+        Assert(pVMCB->guest.CS.u16Sel || !pVMCB->guest.CS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
 
         SVM_WRITE_SELREG(SS, ss);
-        Assert(pVMCB->guest.SS.u16Sel || !pVMCB->guest.SS.u16Attr);
+        Assert(pVMCB->guest.SS.u16Sel || !pVMCB->guest.SS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
 
         SVM_WRITE_SELREG(DS, ds);
-        Assert(pVMCB->guest.DS.u16Sel || !pVMCB->guest.DS.u16Attr);
+        Assert(pVMCB->guest.DS.u16Sel || !pVMCB->guest.DS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
 
         SVM_WRITE_SELREG(ES, es);
-        Assert(pVMCB->guest.ES.u16Sel || !pVMCB->guest.ES.u16Attr);
+        Assert(pVMCB->guest.ES.u16Sel || !pVMCB->guest.ES.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
 
         SVM_WRITE_SELREG(FS, fs);
-        Assert(pVMCB->guest.FS.u16Sel || !pVMCB->guest.FS.u16Attr);
+        Assert(pVMCB->guest.FS.u16Sel || !pVMCB->guest.FS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
 
         SVM_WRITE_SELREG(GS, gs);
-        Assert(pVMCB->guest.GS.u16Sel || !pVMCB->guest.GS.u16Attr);
+        Assert(pVMCB->guest.GS.u16Sel || !pVMCB->guest.GS.u16Attr || !(pCtx->cr0 & X86_CR0_PE));
     }
 
     /* Guest CPU context: LDTR. */
@@ -888,7 +888,7 @@ ResumeExecution:
 
             Log2(("Page fault at %VGv cr2=%VGv error code %x\n", pCtx->eip, uFaultAddress, errCode));
             /* Exit qualification contains the linear address of the page fault. */
-            TRPMAssertTrap(pVM, X86_XCPT_PF, false);
+            TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
             TRPMSetErrorCode(pVM, errCode);
             TRPMSetFaultAddress(pVM, uFaultAddress);
 
@@ -1000,7 +1000,6 @@ ResumeExecution:
                 Event.n.u32ErrorCode        = pVMCB->ctrl.u64ExitInfo1; /* EXITINFO1 = error code */
                 break;
             }
-
             Log(("Trap %x at %VGv\n", vector, pCtx->eip));
             SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 

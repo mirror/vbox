@@ -49,9 +49,9 @@
  * @returns VBox status code.
  * @param   pVM                     The virtual machine.
  * @param   pu8TrapNo               Where to store the trap number.
- * @param   pfSoftwareInterrupt     Where to store the software interrupt indicator.
+ * @param   pEnmType                Where to store the trap type
  */
-TRPMDECL(int)  TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInterrupt)
+TRPMDECL(int)  TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType)
 {
     /*
      * Check if we have a trap at present.
@@ -60,8 +60,8 @@ TRPMDECL(int)  TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInterr
     {
         if (pu8TrapNo)
             *pu8TrapNo = (uint8_t)pVM->trpm.s.uActiveVector;
-        if (pfSoftwareInterrupt)
-            *pfSoftwareInterrupt = !!pVM->trpm.s.fActiveSoftwareInterrupt;
+        if (pEnmType)
+            *pEnmType = pVM->trpm.s.enmActiveType;
         return VINF_SUCCESS;
     }
 
@@ -171,11 +171,11 @@ TRPMDECL(int) TRPMResetTrap(PVM pVM)
  * @returns VBox status code.
  * @param   pVM                 The virtual machine.
  * @param   u8TrapNo            The trap vector to assert.
- * @param   fSoftwareInterrupt  Indicate if it's a software interrupt or not.
+ * @param   enmType             Trap type.
  */
-TRPMDECL(int)  TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, bool fSoftwareInterrupt)
+TRPMDECL(int)  TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, TRPMEVENT enmType)
 {
-    Log2(("TRPMAssertTrap: u8TrapNo=%02x fSoftwareInterrupt=%d\n", u8TrapNo, fSoftwareInterrupt));
+    Log2(("TRPMAssertTrap: u8TrapNo=%02x type=%d\n", u8TrapNo, enmType));
 
     /*
      * Cannot assert a trap when one is already active.
@@ -187,7 +187,7 @@ TRPMDECL(int)  TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, bool fSoftwareInterrupt
     }
 
     pVM->trpm.s.uActiveVector               = u8TrapNo;
-    pVM->trpm.s.fActiveSoftwareInterrupt    = fSoftwareInterrupt;
+    pVM->trpm.s.enmActiveType               = enmType;
     pVM->trpm.s.uActiveErrorCode            = ~0;
     pVM->trpm.s.uActiveCR2                  = 0xdeadface;
     return VINF_SUCCESS;
@@ -259,7 +259,7 @@ TRPMDECL(void)  TRPMSetFaultAddress(PVM pVM, RTGCUINTPTR uCR2)
 TRPMDECL(bool) TRPMIsSoftwareInterrupt(PVM pVM)
 {
     AssertMsg(pVM->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
-    return !!pVM->trpm.s.fActiveSoftwareInterrupt;
+    return (pVM->trpm.s.enmActiveType == TRPM_SOFTWARE_INT);
 }
 
 
@@ -282,12 +282,12 @@ TRPMDECL(bool)  TRPMHasTrap(PVM pVM)
  * @returns VBox status code.
  * @param   pVM                     The virtual machine.
  * @param   pu8TrapNo               Where to store the trap number.
- * @param   pfSoftwareInterrupt     Where to store the software interrupt indicator.
+ * @param   pEnmType                Where to store the trap type
  * @param   puErrorCode             Where to store the error code associated with some traps.
  *                                  ~0U is stored if the trap has no error code.
  * @param   puCR2                   Where to store the CR2 associated with a trap 0E.
  */
-TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInterrupt, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2)
+TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2)
 {
     /*
      * Check if we have a trap at present.
@@ -296,13 +296,13 @@ TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInt
         return VERR_TRPM_NO_ACTIVE_TRAP;
 
     if (pu8TrapNo)
-        *pu8TrapNo              = (uint8_t)pVM->trpm.s.uActiveVector;
-    if (pfSoftwareInterrupt)
-        *pfSoftwareInterrupt    = !!pVM->trpm.s.fActiveSoftwareInterrupt;
+        *pu8TrapNo      = (uint8_t)pVM->trpm.s.uActiveVector;
+    if (pEnmType)
+        *pEnmType       = pVM->trpm.s.enmActiveType;
     if (puErrorCode)
-        *puErrorCode            = pVM->trpm.s.uActiveErrorCode;
+        *puErrorCode    = pVM->trpm.s.uActiveErrorCode;
     if (puCR2)
-        *puCR2                  = pVM->trpm.s.uActiveCR2;
+        *puCR2          = pVM->trpm.s.uActiveCR2;
 
     return VINF_SUCCESS;
 }
@@ -319,10 +319,10 @@ TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, bool *pfSoftwareInt
  */
 TRPMDECL(void) TRPMSaveTrap(PVM pVM)
 {
-    pVM->trpm.s.uSavedVector            = pVM->trpm.s.uActiveVector;
-    pVM->trpm.s.fSavedSoftwareInterrupt = pVM->trpm.s.fActiveSoftwareInterrupt;
-    pVM->trpm.s.uSavedErrorCode         = pVM->trpm.s.uActiveErrorCode;
-    pVM->trpm.s.uSavedCR2               = pVM->trpm.s.uActiveCR2;
+    pVM->trpm.s.uSavedVector        = pVM->trpm.s.uActiveVector;
+    pVM->trpm.s.enmSavedType        = pVM->trpm.s.enmActiveType;
+    pVM->trpm.s.uSavedErrorCode     = pVM->trpm.s.uActiveErrorCode;
+    pVM->trpm.s.uSavedCR2           = pVM->trpm.s.uActiveCR2;
 }
 
 
@@ -335,10 +335,10 @@ TRPMDECL(void) TRPMSaveTrap(PVM pVM)
  */
 TRPMDECL(void) TRPMRestoreTrap(PVM pVM)
 {
-    pVM->trpm.s.uActiveVector            = pVM->trpm.s.uSavedVector;
-    pVM->trpm.s.fActiveSoftwareInterrupt = pVM->trpm.s.fSavedSoftwareInterrupt;
-    pVM->trpm.s.uActiveErrorCode         = pVM->trpm.s.uSavedErrorCode;
-    pVM->trpm.s.uActiveCR2               = pVM->trpm.s.uSavedCR2;
+    pVM->trpm.s.uActiveVector       = pVM->trpm.s.uSavedVector;
+    pVM->trpm.s.enmActiveType       = pVM->trpm.s.enmSavedType;
+    pVM->trpm.s.uActiveErrorCode    = pVM->trpm.s.uSavedErrorCode;
+    pVM->trpm.s.uActiveCR2          = pVM->trpm.s.uSavedCR2;
 }
 
 
@@ -760,7 +760,7 @@ TRPMDECL(int) TRPMRaiseXcpt(PVM pVM, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt)
     LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x\n", pCtxCore->cs, pCtxCore->eip, enmXcpt));
 /** @todo dispatch the trap. */
     pVM->trpm.s.uActiveVector            = enmXcpt;
-    pVM->trpm.s.fActiveSoftwareInterrupt = false;
+    pVM->trpm.s.enmActiveType            = TRPM_TRAP;
     pVM->trpm.s.uActiveErrorCode         = 0xdeadbeef;
     pVM->trpm.s.uActiveCR2               = 0xdeadface;
     return VINF_EM_RAW_GUEST_TRAP;
@@ -787,7 +787,7 @@ TRPMDECL(int) TRPMRaiseXcptErr(PVM pVM, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, 
     LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32\n", pCtxCore->cs, pCtxCore->eip, enmXcpt, uErr));
 /** @todo dispatch the trap. */
     pVM->trpm.s.uActiveVector            = enmXcpt;
-    pVM->trpm.s.fActiveSoftwareInterrupt = false;
+    pVM->trpm.s.enmActiveType            = TRPM_TRAP;
     pVM->trpm.s.uActiveErrorCode         = uErr;
     pVM->trpm.s.uActiveCR2               = 0xdeadface;
     return VINF_EM_RAW_GUEST_TRAP;
@@ -815,7 +815,7 @@ TRPMDECL(int) TRPMRaiseXcptErrCR2(PVM pVM, PCPUMCTXCORE pCtxCore, X86XCPT enmXcp
     LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32 uCR2=%RGv\n", pCtxCore->cs, pCtxCore->eip, enmXcpt, uErr, uCR2));
 /** @todo dispatch the trap. */
     pVM->trpm.s.uActiveVector            = enmXcpt;
-    pVM->trpm.s.fActiveSoftwareInterrupt = false;
+    pVM->trpm.s.enmActiveType            = TRPM_TRAP;
     pVM->trpm.s.uActiveErrorCode         = uErr;
     pVM->trpm.s.uActiveCR2               = uCR2;
     return VINF_EM_RAW_GUEST_TRAP;
