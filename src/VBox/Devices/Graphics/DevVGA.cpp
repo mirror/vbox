@@ -3699,6 +3699,7 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
     PPDMIDISPLAYCONNECTOR   pConnector;
     PDMIDISPLAYCONNECTOR    Connector;
     int32_t                 graphic_mode;
+    uint32_t                fRenderVRAM;
     size_t                  cbRequired;
     PVGASTATE               pData = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pData));
@@ -3747,15 +3748,19 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
     pData->pDrv = &Connector;
     graphic_mode = pData->graphic_mode;
     pData->graphic_mode = -1;           /* force a full refresh. */
+    fRenderVRAM = pData->fRenderVRAM;
+    pData->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
 
     /* make the snapshot. */
     int rc = vga_update_display(pData);
-    if (rc != VINF_SUCCESS)
-        return rc;
 
     /* restore */
     pData->pDrv = pConnector;
     pData->graphic_mode = graphic_mode;
+    pData->fRenderVRAM = fRenderVRAM;
+
+    if (rc != VINF_SUCCESS)
+        return rc;
 
     /*
      * Return the result.
