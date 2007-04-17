@@ -234,6 +234,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
      * Get the Sel and GCPtr if fFlags requests that.
      */
     PCCPUMCTXCORE pCtxCore = NULL;
+    CPUMSELREGHID *pHiddenSel = NULL;
     int rc;
     if (fFlags & (DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_CURRENT_HYPER))
     {
@@ -241,8 +242,9 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
             pCtxCore = CPUMGetGuestCtxCore(pVM);
         else
             pCtxCore = CPUMGetHyperCtxCore(pVM);
-        Sel = pCtxCore->cs;
-        GCPtr = pCtxCore->eip;
+        Sel        = pCtxCore->cs;
+        pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
+        GCPtr      = pCtxCore->eip;
     }
 
     /*
@@ -253,6 +255,26 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
     SELMSELINFO SelInfo;
     const PGMMODE enmMode = PGMGetGuestMode(pVM);
     bool fRealModeAddress = false;
+
+    if (    pHiddenSel
+        &&  CPUMAreHiddenSelRegsValid(pVM))
+    {
+        SelInfo.GCPtrBase           = pHiddenSel->u32Base;
+        SelInfo.cbLimit             = pHiddenSel->u32Limit;
+        SelInfo.fHyper              = false;
+        SelInfo.fRealMode           = !!(pCtxCore && pCtxCore->eflags.Bits.u1VM || enmMode == PGMMODE_REAL);
+        SelInfo.Raw.au32[0]         = 0;
+        SelInfo.Raw.au32[1]         = 0;
+        SelInfo.Raw.Gen.u16LimitLow = ~0;
+        SelInfo.Raw.Gen.u4LimitHigh = ~0;
+        SelInfo.Raw.Gen.u1Present   = pHiddenSel->Attr.n.u1Present;
+        SelInfo.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
+        SelInfo.Raw.Gen.u1DefBig    = pHiddenSel->Attr.n.u1DefBig;
+        SelInfo.Raw.Gen.u1DescType  = pHiddenSel->Attr.n.u1DescType;
+        SelInfo.Raw.Gen.u4Type      = pHiddenSel->Attr.n.u4Type;
+        fRealModeAddress            = SelInfo.fRealMode;
+    }
+    else
     if (    !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
         &&  (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
              ||  enmMode == PGMMODE_REAL) )
