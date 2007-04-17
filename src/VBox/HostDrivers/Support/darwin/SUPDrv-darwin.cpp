@@ -218,8 +218,9 @@ static kern_return_t    VBoxSupDrvStart(struct kmod_info *pKModInfo, void *pvDat
                 g_iMajorDeviceNo = cdevsw_add(-1, &g_DevCW);
                 if (g_iMajorDeviceNo >= 0)
                 {
+                    /** @todo the UID, GID and mode mask should be configurable! This isn't very secure... */
                     g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
-                                                     UID_ROOT, GID_WHEEL, 0660, DEVICE_NAME); /** @todo the UID and GID should be configurable! */
+                                                     UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME);
                     if (g_hDevFsDevice)
                     {
                         OSDBGPRINT(("VBoxDrv: Successfully started. (major=%d)\n", g_iMajorDeviceNo));
@@ -298,7 +299,12 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
 {
     int                 rc;
     PSUPDRVSESSION      pSession;
-    dprintf(("VBoxSupDrvOpen:\n"));
+#ifdef DEBUG
+    char szName[128];
+    szName[0] = '\0';
+    proc_name(proc_pid(pProcess), szName, sizeof(szName));
+    dprintf(("VBoxSupDrvOpen: pid=%d '%s'\n", proc_pid(pProcess), szName));
+#endif
 
     /*
      * Create a new session.
@@ -327,8 +333,11 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     }
 
+#if 1
     dprintf(("VBoxSupDrvOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, proc_pid(pProcess)));
-
+#else
+    OSDBGPRINT(("VBoxSupDrvOpen: pid=%d '%s' pSession=%p rc=%d\n", proc_pid(pProcess), szName, pSession, rc));
+#endif
     return VBoxSupDrvErr2DarwinErr(rc);
 }
 
@@ -379,7 +388,8 @@ static int VBoxSupDrvClose(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxSupDrvIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d\n", (int)Process));
+        OSDBGPRINT(("VBoxSupDrvClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n", 
+                    (int)Process));
         return EINVAL;
     }
 
@@ -421,7 +431,8 @@ static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxSupDrvIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d\n", (int)Process));
+        OSDBGPRINT(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n", 
+                    (int)Process, iCmd));
         return EINVAL;
     }
 
@@ -455,14 +466,14 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
     unsigned long       cbBuf = 0;
     unsigned            cbOut = 0;
     PSUPDRVIOCTLDATA    pArgs = (PSUPDRVIOCTLDATA)pData;
-    dprintf(("VBoxSupDrvIOCtl: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
+    dprintf(("VBoxSupDrvIOCtlSlow: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
 
     /*
      * Copy ioctl data structure from user space.
      */
     if (IOCPARM_LEN(iCmd) != sizeof(SUPDRVIOCTLDATA))
     {
-        dprintf(("VBoxSupDrvIOCtl: incorrect input length! cbArgs=%d\n", IOCPARM_LEN(iCmd)));
+        dprintf(("VBoxSupDrvIOCtlSlow: incorrect input length! cbArgs=%d\n", IOCPARM_LEN(iCmd)));
         return EINVAL;
     }
 
@@ -477,13 +488,13 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
             pvPageBuf = pvBuf = IOMallocAligned(cbBuf, 8);
         if (pvBuf == NULL)
         {
-            dprintf(("VBoxSupDrvIOCtl: failed to allocate buffer of %d bytes.\n", cbBuf));
+            dprintf(("VBoxSupDrvIOCtlSlow: failed to allocate buffer of %d bytes.\n", cbBuf));
             return ENOMEM;
         }
         rc = copyin((const user_addr_t)pArgs->pvIn, pvBuf, pArgs->cbIn);
         if (rc)
         {
-            dprintf(("VBoxSupDrvIOCtl: copyin(%p,,%d) failed.\n", pArgs->pvIn, cbBuf));
+            dprintf(("VBoxSupDrvIOCtlSlow: copyin(%p,,%d) failed.\n", pArgs->pvIn, cbBuf));
             if (pvPageBuf)
                 IOFreeAligned(pvPageBuf, cbBuf);
             else
@@ -503,7 +514,7 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
      */
     if (rc)
     {
-        dprintf(("VBoxSupDrvIOCtl: pid=%d iCmd=%x pData=%p failed, rc=%d (darwin rc=%d)\n",
+        dprintf(("VBoxSupDrvIOCtlSlow: pid=%d iCmd=%x pData=%p failed, rc=%d (darwin rc=%d)\n",
                  proc_pid(pProcess), iCmd, (void *)pData, rc, VBoxSupDrvErr2DarwinErr(rc)));
         rc = VBoxSupDrvErr2DarwinErr(rc);
     }
@@ -514,7 +525,7 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
             int rc2 = copyout(pvBuf, (user_addr_t)pArgs->pvOut, cbOut);
             if (rc2)
             {
-                dprintf(("VBoxSupDrvIOCtl: copyout(,%p,%d) failed.\n", pArgs->pvOut, cbBuf));
+                dprintf(("VBoxSupDrvIOCtlSlow: copyout(,%p,%d) failed.\n", pArgs->pvOut, cbBuf));
                 rc = rc2;
             }
         }
@@ -530,7 +541,7 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
     else if (pvBuf)
         RTMemTmpFree(pvBuf);
 
-    dprintf2(("VBoxSupDrvIOCtl: returns %d\n", rc));
+    dprintf2(("VBoxSupDrvIOCtlSlow: returns %d\n", rc));
     return rc;
 }
 
