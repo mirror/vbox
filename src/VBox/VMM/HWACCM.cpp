@@ -452,14 +452,12 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     Assert(pVM->fHWACCMEnabled);
 
-#if 0
     /* AMD SVM supports real & protected mode with or without paging. */
     if (pVM->hwaccm.s.svm.fEnabled)
     {
         pVM->hwaccm.s.fActive = true;
         return true;
     }
-#endif
 
     /* @todo we can support real-mode by using v86 and protected mode without paging with identity mapped pages.
      * (but do we really care?)
@@ -469,7 +467,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     /** @note The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 
-    /* Too early for VMX and SVN (?). */
+    /* Too early for VMX. */
     if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
         return false;
 
@@ -511,17 +509,6 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
         pVM->hwaccm.s.fActive = true;
         return true;
-    }
-    else
-    {
-        Assert(pVM->hwaccm.s.svm.fEnabled);
-
-        /* Let's start with protected mode with paging enabled first. */
-        if ((pCtx->cr0 & (X86_CR0_PE|X86_CR0_PG)) == (X86_CR0_PE|X86_CR0_PG))
-        {
-            pVM->hwaccm.s.fActive = true;
-            return true;
-        }
     }
 
     return false;
