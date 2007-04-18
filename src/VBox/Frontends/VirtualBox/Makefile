@@ -51,6 +51,11 @@ VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
 
+# Each nls/VirtualBox_xx_YY.ts file must have a qt_xx_YY.ts counterpart
+VirtualBox_QT_TRANSLATIONS_QT := \
+	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts,\
+		$(filter nls/VirtualBox_%.ts,$(VirtualBox_QT_TRANSLATIONS)))
+
 # QDesigner UI sources are imported from VBoxUI.pro as VirtualBox_QT_UISRC
 
 # Headers containing definitions of classes that use the Q_OBJECT macro
@@ -246,7 +251,8 @@ $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIR
 #
 
 VirtualBox.nls_INST = $(INST_BIN)nls/
-VirtualBox.nls_SOURCES = $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS)))
+VirtualBox.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS)))
+VirtualBox.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS_QT)))
 VirtualBox.nls_MODE = 644
 
 
@@ -377,6 +383,7 @@ $(foreach mocuihdr,$($(target)_QT_MOCUIHDRS),$(eval $(def_qt_gen_inc_mocuihdr)))
 $(foreach uifile,$($(target)_QT_UISRCS),$(eval $(def_qt_gen_src_ui)))
 # NLS files
 $(foreach tsfile,$($(target)_QT_TRANSLATIONS),$(eval $(def_qt_gen_nls)))
+$(foreach tsfile,$($(target)_QT_TRANSLATIONS_QT),$(eval $(def_qt_gen_nls)))
 # dirs
 $$(call DIRDEP,$(PATH_$(target))/ui/) \
 $$(call DIRDEP,$(PATH_$(target))/moc/) \

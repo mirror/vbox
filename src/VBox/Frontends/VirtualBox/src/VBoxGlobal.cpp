@@ -1911,6 +1911,9 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     QString languageFileName;
     QString selectedLangId = gVBoxBuiltInLangName;
 
+    QString nlsPath = qApp->applicationDirPath() + gVBoxLangSubDir;
+    QDir nlsDir (nlsPath);
+
     Assert (!langId.isEmpty());
     if (!langId.isEmpty() && langId != gVBoxBuiltInLangName)
     {
@@ -1921,8 +1924,6 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 
         QString lang = regExp.cap (2);
 
-        QString nlsPath = qApp->applicationDirPath() + gVBoxLangSubDir;
-        QDir nlsDir (nlsPath);
         if (nlsDir.exists (gVBoxLangFileBase + langId + gVBoxLangFileExt))
         {
             languageFileName = nlsDir.absFilePath (gVBoxLangFileBase + langId +
@@ -1977,6 +1978,34 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     {
         vboxProblem().cannotLoadLanguage (languageFileName);
         sLoadedLangId = gVBoxBuiltInLangName;
+    }
+
+    /* Try to load the corresponding Qt translation */
+    QTranslator *qtTr = new QTranslator (sTranslator);
+    Assert (qtTr);
+    if (sLoadedLangId != gVBoxBuiltInLangName)
+    {
+#ifdef Q_OS_UNIX
+        /* We use system installations of Qt on Linux systems, so first, try
+         * to load the Qt translation from the system location. */
+        languageFileName = QString (qInstallPathTranslations()) + "/qt_" +
+                           sLoadedLangId + gVBoxLangFileExt;
+        loadOk = qtTr->load (languageFileName);
+        if (!loadOk)
+#endif
+        {
+            languageFileName =  nlsDir.absFilePath (QString ("qt_") +
+                                                    sLoadedLangId +
+                                                    gVBoxLangFileExt);
+            loadOk = qtTr->load (languageFileName);
+        }
+        qApp->installTranslator (qtTr);
+        /* The below message doesn't fit 100% (because it's an additonal
+         * language and the main one won't be reset to built-in on failure)
+         * but the load failure is so rare here that it's not worth a separate
+         * message (but still, having something is better than having none) */
+        if (!loadOk && !aLangId.isNull())
+            vboxProblem().cannotLoadLanguage (languageFileName);
     }
 }
 
