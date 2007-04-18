@@ -1522,6 +1522,8 @@ else
  TEMPLATE_VBOXNOCRTGCC_TOOL             = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXNOCRTGCC_ASTOOL           = $(VBOX_ASTOOL)
  TEMPLATE_VBOXNOCRTGCC_ASFLAGS          = $(VBOX_ASFLAGS)
+ TEMPLATE_VBOXNOCRTGCC_CFLAGS          += $(VBOX_GCC_fno-stack-protector)
+ TEMPLATE_VBOXNOCRTGCC_CXXFLAGS        += $(VBOX_GCC_fno-stack-protector)
  TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -nostdlib
  ifneq ($(filter-out os2 darwin solaris,$(BUILD_TARGET)),)
   ifneq ($(BUILD_TARGET_ARCH),amd64)
