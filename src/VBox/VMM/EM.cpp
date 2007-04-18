@@ -1008,10 +1008,7 @@ static int emR3HwAccStep(PVM pVM)
      * Make sure the trap flag is cleared.
      * (Too bad if the guest is trying to single step too.)
      */
-    if (fGuest)
-        CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
-    else
-        CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) & ~X86_EFL_TF);
+    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
 
     /*
      * Deal with the return codes.
