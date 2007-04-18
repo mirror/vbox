@@ -26,7 +26,7 @@
         if (!(condition))                                       \
                 __wait_event_timeout(wq, condition, __ret);     \
         __ret;                                                  \
-})
+ })
 
 #define __wait_event_timeout(wq, condition, ret)                \
 do {                                                            \

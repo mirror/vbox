@@ -32,33 +32,18 @@ vboxadd_hgcm_callback (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t 
     wait_event (dev->eventq, pHeader->fu32Flags & VBOX_HGCM_REQ_DONE);
 }
 
-static int vboxadd_hgcm_connect (VBoxDevice *dev, VBoxGuestHGCMConnectInfo *info)
-{
-    return VbglHGCMConnect (info, vboxadd_hgcm_callback, dev, 0);
-}
-
-static int vboxadd_hgcm_disconnect (VBoxDevice *dev, VBoxGuestHGCMDisconnectInfo *info)
-{
-    return VbglHGCMDisconnect (info, vboxadd_hgcm_callback, dev, 0);
-}
-
-static int vboxadd_hgcm_call (VBoxDevice *dev, VBoxGuestHGCMCallInfo *info)
-{
-    return VbglHGCMCall (info, vboxadd_hgcm_callback, dev, 0);
-}
-
 DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data)
 {
     switch (func)
     {
         case IOCTL_VBOXGUEST_HGCM_CONNECT:
-            return vboxadd_hgcm_connect (opaque, data);
+            return VbglHGCMConnect (data, vboxadd_hgcm_callback, opaque, 0);
 
         case IOCTL_VBOXGUEST_HGCM_DISCONNECT:
-            return vboxadd_hgcm_disconnect (opaque, data);
+            return VbglHGCMDisconnect (data, vboxadd_hgcm_callback, opaque, 0);
 
         case IOCTL_VBOXGUEST_HGCM_CALL:
-            return vboxadd_hgcm_call (opaque, data);
+            return VbglHGCMCall (data, vboxadd_hgcm_callback, opaque, 0);
 
         default:
             return VERR_VBGL_IOCTL_FAILED;
