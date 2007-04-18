@@ -1714,11 +1714,11 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
     </message>
     <message>
         <source>
-Lists all available user interface languages. The effective language is
+&lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.
+to the system default language.&lt;/qt&gt;
                                     </source>
-        <translation>Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache einzustellen.</translation>
+        <translation>&lt;qt&gt;Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache einzustellen.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Default</source>

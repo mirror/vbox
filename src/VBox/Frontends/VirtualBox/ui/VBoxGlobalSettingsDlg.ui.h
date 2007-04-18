@@ -287,7 +287,6 @@ void VBoxGlobalSettingsDlg::init()
     whatsThisTimer = new QTimer (this);
     connect (whatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     whatsThisCandidate = NULL;
-    whatsThisLabel->setTextFormat (Qt::RichText);
     whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
                                       6 /* seems that RichText adds some margin */ +
                                       whatsThisLabel->fontMetrics().lineSpacing() * 3);

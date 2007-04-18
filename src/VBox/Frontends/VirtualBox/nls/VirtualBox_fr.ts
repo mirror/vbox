@@ -24,7 +24,7 @@
     <message>
         <source>InnoTek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="unfinished">jean-jacques</translation>
+        <translation>Jean-Jacques Sarton</translation>
     </message>
 </context>
 <context>
@@ -391,7 +391,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>&amp;Déinstaller ladisquette</translation>
+        <translation>&amp;Déinstaller la disquette</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
@@ -680,7 +680,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Accept dialog</source>
-        <translation>Boite de dialogue d&apos;acceptation</translation>
+        <translation>Boite de dialogue de validation</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
@@ -915,7 +915,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Traîtement des différences</translation>
     </message>
     <message>
         <source>Unknown device %04hX:%04hX</source>
@@ -975,7 +975,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>Orre d&apos;amorçage</translation>
+        <translation>Ordre d&apos;amorçage</translation>
     </message>
     <message>
         <source>ACPI</source>
@@ -1129,7 +1129,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouverture d&apos;une URL non implémentée actuellement.</translation>
     </message>
     <message>
         <source>Powered Off</source>
@@ -1441,7 +1441,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation>]nom]</translation>
+        <translation>[nom]</translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -1453,7 +1453,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>0</source>
-        <translation></translation>
+        <translation>0</translation>
     </message>
     <message>
         <source>#general</source>
@@ -1473,7 +1473,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source> USB </source>
-        <translation>(sp)USB(sp)</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>2</source>
@@ -1490,7 +1490,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Displays the path to the default VDI folder. This folder is
 used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Affiche le chemin par défaut du répertoire VDI. Ce répertoire est utilisé. s&apos;il n&apos;a pas été spécifié explicitement, lors de la création de noveaux disques durs virteles.</translation>
+        <translation>Affiche le chemin par défaut du répertoire VDI. Ce répertoire est utilisé. s&apos;il n&apos;a pas été spécifié explicitement, lors de la création de nouveaux disques durs virtuels.</translation>
     </message>
     <message>
         <source>Machines</source>
@@ -1504,18 +1504,21 @@ used, if not explicitly specified otherwise, when adding existing or creating ne
         <source>Resets the virtual machine folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation>Remet le chemin pour le répertoire des machines virtuelles à la valeur par défaut.
-Le chemin par défaut sera affiché après l´acceptation des changements et la réouverture de la boite de dialogue.</translation>
+Le chemin par défaut sera affiché après la validation des changements et la réouverture de la boite de dialogue.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Remet le chemin par défaut du répertoire VDI à la valeur initiale.
+Le chemin par defaut sera affiché après la validation des modifications et la réouverture de cette boite de dialogue.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine
 folder. This folder is used, if not explicitly specified otherwise, when creating new
 virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le chemin par defaut du répertoire des machines virtuelles.
+Ce répertire est utilisé, lors de la création d&apos;une nouvelle machine virtuelle, a moins qu&apos;il soit spécifié de façon explicite.
+</translation>
     </message>
     <message>
         <source>Select</source>
@@ -1524,12 +1527,12 @@ virtual machines.</source>
     <message>
         <source>Opens a dialog to select the
 default VDI folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la boite de dialogue pour le choix du répertoire par défaut des fichiers VDI.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the
 default virtual machine folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la boite de dialogue pour le choix du répertoire par défaut des machines virtuelles.</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
@@ -1537,7 +1540,7 @@ default virtual machine folder.</source>
     </message>
     <message>
         <source>&amp;Host Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Touche &amp;Hôte</translation>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
@@ -1554,125 +1557,129 @@ default virtual machine folder.</source>
     <message>
         <source>Lists all global USB filters.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste globale de tous les filtres USB.
+La case a cocher située à gauche définit si un filtre paticulier est activé ou désactivé.</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>INS</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter un filtre vide (INS)</translation>
     </message>
     <message>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vides.
+Notre qu&apos;un telle filtre cadrent tous les périphériques USB raccordés.</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>ALT+INS</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute à partir de (ALT+INS)</translation>
     </message>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB
+Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation>SUPP</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished"></translation>
+        <translation>Supprimmer (SUPP)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Supprimer le filtre USB sélectionné.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctlr+Haut</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplace vers le haut /Ctrl+Haut)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplace le filtre USB sélectionné vers le haut.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Bas</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplace vers le bas (Ctlr+Bas)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplace le filtre USB sélectionné vers le bas.</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Aide</translation>
+        <translation>Aide</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invoque la boite d&apos;aide</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Un paramètre invalide a été détecté</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valide (enregistre) les modifications et fermer la boite de dialogue.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulle les modifications et ferme la boite de dialogue.</translation>
     </message>
     <message>
         <source>VirtualBox Global Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Préférences globales de VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche la touche utilisée comme &lt;i&gt;touche hôte&lt;/i&gt; dans la fenêtre de la machine virtuelle. Activer le champs d&apos;entrée et presser une nouvelle &lt;i&gt;touche hôte&lt;/i&gt;. Noter que les touches d&apos;éditions et de mouvement du curseur ainsi que les touches alphanumériques ne peuvent pas être utilisées.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nouveau filtre %1</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically
 captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si la case est cochée, le clavier estcapturé  automatiquement à chaque foix que la fenêtre VM est active.
+Toutes les frappes sur le clavier (ainsi que les combinaisons telles que Alt-Tab) sont dirigés vers la VM.</translation>
     </message>
     <message>
         <source>Language</source>
@@ -1705,7 +1712,7 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation> (incorporer)</translation>
     </message>
     <message>
         <source>&lt;unavailabie&gt;</source>
@@ -1719,11 +1726,13 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
     </message>
     <message>
         <source>
-Lists all available user interface languages. The effective language is
+&lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.
+to the system default language.&lt;/qt&gt;
                                     </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Liste de toutes les langues disponibles pour l&apos;interface graphique utilisateur.
+La langue actuelle est imprimée en &lt;b&gt;gras&lt;/b&gt;.
+Choisir &lt;i&gt;par defaut&lt;/i&gt; pour réactiver la langue par défaut du système.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Default</source>
@@ -1746,7 +1755,7 @@ to the system default language.
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>Créer un noveau disque virtuel</translation>
+        <translation>Créer un nouveau disque virtuel</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
@@ -1811,11 +1820,11 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Image &amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Image et &amp;Taille</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Disque virtuel, Emplacement et taille</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
@@ -1845,7 +1854,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisissez un fichier pour la novelle image de disque dur </translation>
     </message>
 </context>
 <context>
@@ -2340,75 +2349,75 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished">VirtualBox OSE</translation>
+        <translation>VirtualBox OSE</translation>
     </message>
     <message>
         <source>InnoTek VirtualBox</source>
-        <translation type="unfinished">InnoTek VirtualBox</translation>
+        <translation>InnoTek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Détails</translation>
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Gestionnaire de &amp;disque virtuel</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation type="unfinished">Ctrl+D</translation>
+        <translation>Ctrl+D</translation>
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche la boite de dialogue de gestion des disques virtuels</translation>
     </message>
     <message>
         <source>&amp;Global Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Préférences &amp;globales...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+G</translation>
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la boite de dialogue des préférences globales</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Quitter</translation>
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Q</translation>
     </message>
     <message>
         <source>Close application</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Nouveau...</translation>
+        <translation>&amp;Nouveau...</translation>
     </message>
     <message>
         <source>New</source>
-        <translation type="unfinished">Nouveau</translation>
+        <translation>Nouveau</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
-        <translation type="unfinished">Ctrl+N</translation>
+        <translation>Ctrl+N</translation>
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Créer une nouvelle machine virtuelle</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Préférences</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Préférences</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
@@ -2420,35 +2429,35 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Supprimer</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Supprimer</translation>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Supprimer la machine virtuelle sélectionnée</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Rejeter</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>Rejeter</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Rejet de l&apos;etat sauvegardé pour la machine virtuelle sélectionnée</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Actualiser</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished">Actualiser</translation>
+        <translation>Actualiser</translation>
     </message>
     <message>
         <source>Ctrl+R</source>
@@ -2460,67 +2469,71 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Contenu...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher l&apos;aide en ligne</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">Site &amp;VirtualBox sur la toile...</translation>
+        <translation>Site &amp;VirtualBox sur la toile...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">Lancer le navigateur WEB et se rendre sur la page des produits VirtualBox </translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">&amp;A propos de VirtualBox...</translation>
+        <translation>&amp;A propos de VirtualBox...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished">Affiche une boite contenant des insformations sur ce produit</translation>
+        <translation>Afficher la boite de dialogue avec les informations du produit</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">Supp&amp;rimer toutes les avertissements</translation>
+        <translation>&amp;Supprimer tous les avertissements</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">Permet de revisualiser tous les avertissements et messages supprimés</translation>
+        <translation>Permet de revisualiser tous les avertissements et messages supprimés</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fichier</translation>
+    </message>
+    <message>
+        <source>&amp;VM</source>
+        <translation>&amp;VM</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Aide</translation>
+        <translation>&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Instantané</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation type="unfinished"></translation>
+        <translation>D&amp;escription</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation type="unfinished"></translation>
+        <translation>D&amp;escription *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;fficher</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
@@ -2528,15 +2541,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lancer</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Lancer</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Lancer la machine virtuelle sélectionnée</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
@@ -2632,7 +2645,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source> Snapshot Details </source>
-        <translation type="unfinished"></translation>
+        <translation>Détails de l&apos;instantané</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -2683,19 +2696,19 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Discard Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminer un instantané</translation>
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Eliminer un instantané</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -2703,15 +2716,15 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>curStateActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Take Snapshot</source>
-        <translation type="unfinished">Saisie d&apos;un instantané</translation>
+        <translation>Saisir un instantané</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
-        <translation>&amp;Saisie d&apos;un instantané</translation>
+        <translation>&amp;Saisir un instantané</translation>
     </message>
     <message>
         <source>Ctrl+Alt+S</source>
@@ -2719,7 +2732,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Discard Current State</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminer l&apos;´etat actuel</translation>
     </message>
     <message>
         <source>D&amp;iscard Current State</source>
@@ -2731,79 +2744,79 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Discard Current Snapshot and State</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminé l&apos;instantané actuel et l&apos;ètat</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished"></translation>
+        <translation>El&amp;iminé l&apos;instantané actuel et l&apos;ètat</translation>
     </message>
     <message>
         <source>Ctrl+Alt+Shift+D</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Show Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher les détails</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher les &amp;détails</translation>
     </message>
     <message>
         <source>Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Espace</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etat actuel (modifié)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etat actuel</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;état actuel diffère de l&apos;ètat mémorisé dans l&apos;instantané actuel</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;état actuelest identique à  l&apos;ètat mémorisé dans l&apos;instantané actuel</translation>
     </message>
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation type="unfinished"></translation>
+        <translation> (actuel, </translation>
     </message>
     <message>
         <source>online)</source>
         <comment>Snapshot details</comment>
-        <translation type="unfinished"></translation>
+        <translation>en ligne)</translation>
     </message>
     <message>
         <source>offline)</source>
         <comment>Snapshot details</comment>
-        <translation type="unfinished"></translation>
+        <translation>hors ligne)</translation>
     </message>
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Saisi à %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Saisi le %1</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 depuis %2</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">Instantané %1</translation>
+        <translation>Instantané %1</translation>
     </message>
 </context>
 <context>
@@ -2885,7 +2898,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>&amp;Serial No.</source>
-        <translation type="unfinished">Numéro de &amp;série</translation>
+        <translation>Numéro de &amp;série</translation>
     </message>
     <message>
         <source>Defines the manufacturer filter as an
@@ -2914,7 +2927,7 @@ or both (&lt;i&gt;Any&lt;/i&gt;).</source>
     </message>
     <message>
         <source>R&amp;emote</source>
-        <translation type="unfinished"></translation>
+        <translation>A &amp;Distance</translation>
     </message>
     <message>
         <source>&amp;Action</source>
@@ -2929,11 +2942,11 @@ computer when a matching device is attached: give it up to the host OS
     </message>
     <message>
         <source>&amp;Vendor ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID &amp;Fabricant</translation>
     </message>
     <message>
         <source>&amp;Product ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID &amp;Produit</translation>
     </message>
     <message>
         <source>&amp;Revision</source>
@@ -2941,7 +2954,7 @@ computer when a matching device is attached: give it up to the host OS
     </message>
     <message>
         <source>Por&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>Por&amp;t</translation>
     </message>
     <message>
         <source>Defines the vendor ID filter. The
@@ -2979,12 +2992,12 @@ value.</source>
     <message>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">Oui</translation>
+        <translation>Oui</translation>
     </message>
     <message>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">Non</translation>
+        <translation>Non</translation>
     </message>
 </context>
 <context>
@@ -2997,26 +3010,26 @@ value.</source>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">pas de périphériques soutenus, attachés à l´ordinateur.</translation>
+        <translation>pas de périphériques soutenus, attachés à l´ordinateur.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pas de description. Activé le bouton Editer pour ajouter une description.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer (Ctrl+E)</translation>
     </message>
     <message>
         <source>Ctrl+E</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+E</translation>
     </message>
 </context>
 <context>
@@ -3213,160 +3226,160 @@ value.</source>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation type="unfinished">Catégorie</translation>
+        <translation>Catégorie</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished">[id]</translation>
+        <translation>[id]</translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished">[lien]</translation>
+        <translation>[lien]</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished">]nom]</translation>
+        <translation>[nom]</translation>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="unfinished">&lt;i&gt;Choisir une catégorie de configuration sur la liste à gauche et déplacer la souris sur  un paramètre afin d&apos;avoir plus d&apos;informations&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Choisissez une catégorie de préférences dans la liste située à gauche et déplacé la souris au dessus d&apos;un élément afin d&apos;avoir plus d&apos;informations&lt;/i&gt;</translation>
     </message>
     <message>
         <source> General </source>
-        <translation type="unfinished">Général</translation>
+        <translation>Général</translation>
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished">0</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#general</source>
-        <translation type="unfinished">#géneral</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
-        <translation type="unfinished"></translation>
+        <translation>Disque dur</translation>
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished">1</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#hdds</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Floppy </source>
-        <translation type="unfinished"></translation>
+        <translation>Disquette</translation>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished">2</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#floppy</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished">3</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#dvd</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Audio </source>
-        <translation type="unfinished"></translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>4</source>
-        <translation type="unfinished">4</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#audio</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Network </source>
-        <translation type="unfinished"></translation>
+        <translation>Réseau</translation>
     </message>
     <message>
         <source>5</source>
-        <translation type="unfinished">5</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#network</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
-        <translation type="unfinished">(sp)USB(sp)</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>6</source>
-        <translation type="unfinished">6</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation type="unfinished">#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Remote Display </source>
-        <translation type="unfinished"></translation>
+        <translation>Ecran à distance</translation>
     </message>
     <message>
         <source>7</source>
-        <translation type="unfinished">7</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
-        <translation type="unfinished"></translation>
+        <translation>Répertoires partagés</translation>
     </message>
     <message>
         <source>8</source>
-        <translation type="unfinished">8</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Identification</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Identification</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished">&amp;Nom</translation>
+        <translation>&amp;Nom</translation>
     </message>
     <message>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le nom de la machine virtuelle.</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Système d&apos;exploitation et type</translation>
     </message>
     <message>
         <source>Displays the operating system type that you
 plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appeller Système d&apos;exploitation client).</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Taiile la &amp;mémoire vive de base</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -3374,23 +3387,23 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MO</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Taille de la mémoire vive pour la &amp;vidéo</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
@@ -3403,15 +3416,15 @@ plan to install into this virtual machine (called a guest operating system).</so
     <message>
         <source>Displays the path where snapshots of this virtual machine
 will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le chemin sous lequel les instantanés de cette machine virtuelle seront sauvegardés. Noter que les instantanés peuvent utiliser beaucoup d&apos;espace sur le disque</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Choisir</translation>
+        <translation>Choisir</translation>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisir le chemin du répertoire pour l&apos;instantané</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3456,7 +3469,7 @@ this feature after having installed a Windows guest operating system!</source>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
-        <translation type="unfinished"></translation>
+        <translation>Odre d&apos;&amp;amorçage</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
@@ -3472,7 +3485,7 @@ this feature after having installed a Windows guest operating system!</source>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation type="unfinished">&amp;Description</translation>
+        <translation>&amp;Description</translation>
     </message>
     <message>
         <source>&amp;Primary Master</source>
@@ -3481,7 +3494,8 @@ this feature after having installed a Windows guest operating system!</source>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new
 or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>Appelle le gestionnaire de disques virtuels
+pour la créer ou pour attacher un disque dur virtuel.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -3497,7 +3511,7 @@ or select an existing virtual hard disk to attach.</source>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Installer la disquette</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>

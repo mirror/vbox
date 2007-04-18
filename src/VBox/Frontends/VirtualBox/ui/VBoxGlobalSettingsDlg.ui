@@ -812,9 +812,9 @@ with all fields set to the values of the selected USB device attached to the hos
                                 </property>
                                 <property name="whatsThis" stdset="0">
                                     <string>
-Lists all available user interface languages. The effective language is
+&lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.
+to the system default language.&lt;/qt&gt;
                                     </string>
                                 </property>
                             </widget>
