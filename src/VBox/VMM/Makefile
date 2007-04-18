@@ -281,6 +281,7 @@ endif
 VMMR0_SYSSUFF   = .r0
 VMMR0_SOURCES   = \
 	VMMR0/VMMR0.cpp \
+	VMMR0/DBGFR0.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/CPUMAllRegs.cpp \
