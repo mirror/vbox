@@ -478,6 +478,14 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
      * - KernelGSBase
      */
 
+#ifdef DEBUG
+    /* Intercept X86_TRAP_DB if stepping is enabled */
+    if (DBGFIsStepping(pVM))
+        pVMCB->ctrl.u32InterceptException |=  BIT(1);
+    else
+        pVMCB->ctrl.u32InterceptException &= ~BIT(1);
+#endif
+
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
