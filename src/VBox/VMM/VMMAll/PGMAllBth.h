@@ -134,6 +134,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PdeSrc.n.u1Present  = 1;
     PdeSrc.n.u1Write    = 1;
     PdeSrc.n.u1Accessed = 1;
+    PdeSrc.n.u1User     = 1;
 # endif
     if (    !(uErr & X86_TRAP_PF_P) /* not set means page not present instead of page protection violation */
         &&  !pPDDst->a[iPDDst].n.u1Present
@@ -1596,6 +1597,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                 PteSrc.n.u1Dirty    = 1;
                 PteSrc.n.u1Accessed = 1;
                 PteSrc.n.u1Write    = 1;
+                PteSrc.n.u1User     = 1;
 
                 PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
 
@@ -1622,6 +1624,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
         PteSrc.n.u1Dirty    = 1;
         PteSrc.n.u1Accessed = 1;
         PteSrc.n.u1Write    = 1;
+        PteSrc.n.u1User     = 1;
         PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
 
         Log2(("SyncPage: 4K  %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s\n",
@@ -2267,6 +2270,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
     PdeSrc.n.u1Present  = 1;
     PdeSrc.n.u1Write    = 1;
     PdeSrc.n.u1Accessed = 1;
+    PdeSrc.n.u1User     = 1;
 
     /*
      * Allocate & map the page table.
@@ -2343,6 +2347,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PdeSrc.n.u1Present  = 1;
     PdeSrc.n.u1Write    = 1;
     PdeSrc.n.u1Accessed = 1;
+    PdeSrc.n.u1User     = 1;
 # endif
 
 # ifdef PGM_SYNC_ACCESSED_BIT
