@@ -864,7 +864,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
     switch (enmKind1)
     {
         /*
-         * It's prefectly fine to reuse these..
+         * Never reuse them. There is no remapping in non-paging mode.
          */
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
@@ -884,6 +884,8 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -903,6 +905,8 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -964,7 +968,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
                 /*
                  * The kind is different. In some cases we should now flush the page
                  * as it has been reused, but in most cases this is normal remapping
-                 * of PDs as PT or big pages using the GCPhys field in a sligly
+                 * of PDs as PT or big pages using the GCPhys field in a slighly
                  * different way than the other kinds.
                  */
                 if (pgmPoolCacheReusedByKind((PGMPOOLKIND)pPage->enmKind, enmKind))
