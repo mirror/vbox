@@ -30,14 +30,6 @@
 <context>
     <name>BootItemsList</name>
     <message>
-        <source>Move the selected boot device up.</source>
-        <translation type="obsolete">Bewegt das ausgewählte Gerät weiter nach oben und erhöht damit dessen Priorität in der Bootreihenfolge.</translation>
-    </message>
-    <message>
-        <source>Move the selected boot device down.</source>
-        <translation type="obsolete">Bewegt das ausgewählte Gerät weiter nach unten und vermindet damit dessen Priorität in der Bootreihenfolge.</translation>
-    </message>
-    <message>
         <source>Move Up (Ctrl-Up)</source>
         <translation>Aufwärts (Strg+Auf)</translation>
     </message>
@@ -47,11 +39,11 @@
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewegt das ausgewählte Gerät weiter nach oben und erhöht damit dessen Priorität in der Bootreihenfolge.</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewegt das ausgewählte Gerät weiter nach unten und vermindet damit dessen Priorität in der Bootreihenfolge.</translation>
     </message>
 </context>
 <context>
@@ -114,13 +106,6 @@
     </message>
 </context>
 <context>
-    <name>QListBox</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="obsolete">Nicht zugreifbar</translation>
-    </message>
-</context>
-<context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
@@ -173,48 +158,36 @@
         <translation>Ordner ändern</translation>
     </message>
     <message>
-        <source>Enter existing path for the shared folder here</source>
-        <translation type="obsolete">Geben Sie einen Pfad für einen vorhandenen Ordner an</translation>
-    </message>
-    <message>
-        <source>Enter name for the shared folder to be created</source>
-        <translation type="obsolete">Geben Sie einen Namen für einen zu erzeugenden gemeinsamen Ordner an</translation>
-    </message>
-    <message>
-        <source>Click to invoke &lt;open folder&gt; dialog</source>
-        <translation type="obsolete">Klicken, um den Dialog &lt;Ordner öffnen&gt; aufzurufen</translation>
-    </message>
-    <message>
         <source>Select a folder to share</source>
         <translation>Ordner zur gemeinsamen Nutzung mit dem Gast auswählen</translation>
     </message>
     <message>
         <source>Folder Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Pfad des Ordners</translation>
     </message>
     <message>
         <source>Folder Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Name des Ordners</translation>
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Pfad zu einem vorhandenen Ordner auf dem Hostrechner.</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Namen des gemeinsamen Ordners (wie er vom Gastsystem gesehen wird).</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet einen Dialogfenster zur Auswahl des Ordners.</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -389,7 +362,7 @@
     </message>
     <message>
         <source>Mount a floppy image file</source>
-        <translation type="unfinished">Bindet ein Diskettenabbild ein</translation>
+        <translation>Bindet ein Diskettenabbild ein</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
@@ -491,10 +464,6 @@
     <message>
         <source>&amp;USB Devices</source>
         <translation>&amp;USB-Geräte</translation>
-    </message>
-    <message>
-        <source>&amp;VM</source>
-        <translation type="obsolete">&amp;VM</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -627,7 +596,7 @@
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Maschine</translation>
     </message>
 </context>
 <context>
@@ -658,11 +627,11 @@
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation type="unfinished">&amp;CD/DVD-Abbilder</translation>
+        <translation>&amp;CD/DVD-Abbilder</translation>
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation type="unfinished">&amp;Floppy-Abbilder</translation>
+        <translation>&amp;Floppy-Abbilder</translation>
     </message>
     <message>
         <source>Help</source>
@@ -751,7 +720,7 @@
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation type="unfinished">Strg+M</translation>
+        <translation>Strg+M</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
@@ -759,23 +728,7 @@
     </message>
     <message>
         <source>Ctrl+R</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Create new VDI file and attach it to media list</source>
-        <translation type="obsolete">Erstellt eine neue VDI-Datei und nimmt diese in die Liste der Medien auf</translation>
-    </message>
-    <message>
-        <source>Add existing media image file to media list</source>
-        <translation type="obsolete">Fügt ein existierendes Medium zur Liste der Medien hinzu</translation>
-    </message>
-    <message>
-        <source>Remove selected media image file from media list</source>
-        <translation type="obsolete">Entfernt die ausgewählte Mediumdatei aus der Liste der Medien</translation>
-    </message>
-    <message>
-        <source>Release selected media image file from being using in some VM</source>
-        <translation type="obsolete">Hebt die Bindung des ausgewählten Plattenabbilds an eine virtuelle Maschine auf</translation>
+        <translation>Strg+R</translation>
     </message>
     <message>
         <source>&amp;Actions</source>
@@ -832,7 +785,7 @@
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
@@ -842,21 +795,21 @@
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Gebunden an:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Gebunden an:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Fehler beim Prüfen der Zugriffsrechte auf das Medium</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Fehler beim Prüfen der Zugriffsrechte auf das Medium</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>The image file is not accessible</source>
@@ -893,23 +846,23 @@
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstellt eine neue virtuelle Festplatte</translation>
     </message>
     <message>
         <source>Add (register) an existing image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Registriert ein vorhandenes Medien-Abbild</translation>
     </message>
     <message>
         <source>Remove (unregister) the selected media</source>
-        <translation type="unfinished"></translation>
+        <translation>Entfernt das ausgewählte Medium aus der Liste</translation>
     </message>
     <message>
         <source>Release the selected media by detaching it from the machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Gibt das ausgewählte Medium frei und hebt die Bindung an die virtuelle Maschine auf</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualisiert die Medienliste</translation>
     </message>
 </context>
 <context>
@@ -917,7 +870,7 @@
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Differentiell</translation>
+        <translation>Differentiell</translation>
     </message>
     <message>
         <source>Unknown device %04hX:%04hX</source>
@@ -1077,7 +1030,7 @@
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Adapter %1</translation>
+        <translation>Adapter %1</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1087,7 +1040,7 @@
     <message>
         <source>Network</source>
         <comment>details report</comment>
-        <translation type="unfinished">Netzwerk</translation>
+        <translation>Netzwerk</translation>
     </message>
     <message>
         <source>Device Filters</source>
@@ -1191,7 +1144,7 @@
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>Öffne</translation>
+        <translation>Geöffnet</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -1490,11 +1443,6 @@
         <translation>Voreingestellte &amp;Ordner</translation>
     </message>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is
-used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Zeigt den Pfad für voreingestellte VDI Ordner. Falls nicht anders festgelegt wird dieser Ordner wird benutzt, um bestehende oder neue virtuelle Medien zu benutzen.</translation>
-    </message>
-    <message>
         <source>Machines</source>
         <translation>Machinen</translation>
     </message>
@@ -1503,36 +1451,8 @@ used, if not explicitly specified otherwise, when adding existing or creating ne
         <translation>VDI-Dateien</translation>
     </message>
     <message>
-        <source>Resets the virtual machine folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Restauriert die Standardeinstellung des Ordners für virtuelle Maschinen.
-Der tatsächliche Pfad wird angezeigt, nachdem die Änderungen übernommen wurden und dieser Dialog erneut geöffnet wurde.</translation>
-    </message>
-    <message>
-        <source>Resets the VDI folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Restauriert die Standardeinstellung des Ordners für virtuelle Medien (VDI).
-Der tatsächliche Pfad wird angezeigt, nachdem die Änderungen übernommen wurden und dieser Dialog erneut geöffnet wurde.</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default virtual machine
-folder. This folder is used, if not explicitly specified otherwise, when creating new
-virtual machines.</source>
-        <translation type="obsolete">Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen erzeugt.</translation>
-    </message>
-    <message>
         <source>Select</source>
         <translation>Auswählen</translation>
-    </message>
-    <message>
-        <source>Opens a dialog to select the
-default VDI folder.</source>
-        <translation type="obsolete">Öffnet einen Dialog zum Auswählen des voreingestellten VDI-Ordners.</translation>
-    </message>
-    <message>
-        <source>Opens a dialog to select the
-default virtual machine folder.</source>
-        <translation type="obsolete">Öffnet einen Dialog zum Auswählen des voreingestellten Ordners für virtuelle Maschinen.</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
@@ -1555,11 +1475,6 @@ default virtual machine folder.</source>
         <translation>Filter für &amp;USB-Geräte</translation>
     </message>
     <message>
-        <source>Lists all global USB filters.
-The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="obsolete">Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht.</translation>
-    </message>
-    <message>
         <source>Ins</source>
         <translation>Einf</translation>
     </message>
@@ -1568,23 +1483,12 @@ The checkbox to the left defines whether the particular filter is enabled or not
         <translation>Leerer Filter (Einf)</translation>
     </message>
     <message>
-        <source>Adds a new USB filter with
-all fields initially set to empty strings. Note that such a filter will match any attached
-USB device.</source>
-        <translation type="obsolete">Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
-    </message>
-    <message>
         <source>Alt+Ins</source>
         <translation>Alt+Einf</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
         <translation>Hinzufügen von (Alt+Einf)</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter
-with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="obsolete">Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
     </message>
     <message>
         <source>Del</source>
@@ -1672,12 +1576,6 @@ with all fields set to the values of the selected USB device attached to the hos
         <translation>Neuer Filter %1</translation>
     </message>
     <message>
-        <source>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured,
-all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">Ist diese Funktion eingeschaltet, wird die Tastatur jedesmal automatisch gefangen, wenn das das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
-    </message>
-    <message>
         <source>Language</source>
         <translation>Sprache</translation>
     </message>
@@ -1691,7 +1589,7 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
     </message>
     <message>
         <source>#language</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -1735,43 +1633,43 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Pfad für voreingestellte VDI Ordner. Falls nicht anders festgelegt wird dieser Ordner wird benutzt, wenn bestehende oder neue virtuelle Medien hinzugefügt werden.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Restauriert die Standardeinstellung des Ordners für virtuelle Maschinen. Der tatsächliche Pfad wird angezeigt, nachdem die Änderungen übernommen wurden und dieser Dialog erneut geöffnet wurde.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Restauriert die Standardeinstellung des Ordners für virtuelle Medien (VDI). Der tatsächliche Pfad wird angezeigt, nachdem die Änderungen übernommen wurden und dieser Dialog erneut geöffnet wurde.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen erzeugt.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet einen Dialog zum Auswählen des voreingestellten VDI-Ordners.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet einen Dialog zum Auswählen des voreingestellten Ordners für virtuelle Maschinen.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedesmal automatisch gefangen, wenn das das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschlie�~_lich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
     </message>
 </context>
 <context>
@@ -2384,11 +2282,11 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -2435,7 +2333,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation></translation>
+        <translation>Strg+Q</translation>
     </message>
     <message>
         <source>Close application</source>
@@ -2554,10 +2452,6 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
         <translation type="unfinished">&amp;Datei</translation>
     </message>
     <message>
-        <source>&amp;VM</source>
-        <translation type="obsolete">&amp;VM</translation>
-    </message>
-    <message>
         <source>&amp;Help</source>
         <translation type="unfinished">&amp;Hilfe</translation>
     </message>
@@ -2603,7 +2497,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Maschine</translation>
     </message>
 </context>
 <context>
@@ -2651,10 +2545,6 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>Ändern</translation>
     </message>
     <message>
-        <source>Edit selected shared folder definition.</source>
-        <translation type="obsolete">Ändert einen gemeinsamen Ordner.</translation>
-    </message>
-    <message>
         <source>Remove</source>
         <translation>Entfernen</translation>
     </message>
@@ -2688,7 +2578,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändert den ausgewählten gemeinsamen Ordner.</translation>
     </message>
 </context>
 <context>
@@ -2955,44 +2845,12 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>&amp;Serielle Nr.</translation>
     </message>
     <message>
-        <source>Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</source>
-        <translation type="obsolete">Verwendet den Hersteller als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Hersteller.</translation>
-    </message>
-    <message>
-        <source>Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</source>
-        <translation type="obsolete">Verwendet den Produktnamen als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Produktnamen.</translation>
-    </message>
-    <message>
-        <source>Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</source>
-        <translation type="obsolete">Verwendet die serielle Nummer als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf alle seriellen Nummer.</translation>
-    </message>
-    <message>
-        <source>Defines whether this filter applies
-to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
-to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
-or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="obsolete">Legt fest, ob dieser Filter auf USB-Geräte angewendet wird, die nur lokal an den Hostcomputer angeschlossen sind (&lt;i&gt;Nein&lt;/i&gt;), nur an einen entfernten Computer über VRDP (&lt;i&gt;Ja&lt;/i&gt;) oder beides (&lt;i&gt;alle&lt;/i&gt;).</translation>
-    </message>
-    <message>
         <source>R&amp;emote</source>
         <translation>&amp;Entfernt</translation>
     </message>
     <message>
         <source>&amp;Action</source>
         <translation>&amp;Handlung</translation>
-    </message>
-    <message>
-        <source>Defines an action performed by the host
-computer when a matching device is attached: give it up to the host OS
-(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
-(&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation type="obsolete">Legt fest, was der Host machen soll, wenn ein passendes Gerät angeschlossen wurde: Zur Verwendung durch das Host-BS freigeben (&lt;i&gt;Ignorieren&lt;/i&gt;) oder für spätere Verwendung durch das Gast-BS ergreifen (&lt;i&gt;Halten&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>&amp;Vendor ID</source>
@@ -3009,34 +2867,6 @@ computer when a matching device is attached: give it up to the host OS
     <message>
         <source>Por&amp;t</source>
         <translation>&amp;Por&amp;t</translation>
-    </message>
-    <message>
-        <source>Defines the vendor ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
-value.</source>
-        <translation type="obsolete">Legt die Hersteller-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
-    </message>
-    <message>
-        <source>Defines the product ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
-value.</source>
-        <translation type="obsolete">Legt die Produkt-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
-    </message>
-    <message>
-        <source>Defines the revision number filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
-&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
-value.</source>
-        <translation type="obsolete">Legt die Revisions-Nr für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
-    </message>
-    <message>
-        <source>Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
-value.</source>
-        <translation type="obsolete">Legt den USB-Port für den Filter fest mit &lt;i&gt;genauer&lt;/i&gt; Übereinstimmung fest. Eine leere Zeichenfolge passt auf beliebig Ports.</translation>
     </message>
     <message>
         <source>Any</source>
@@ -3057,47 +2887,47 @@ value.</source>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Verwendet den Hersteller als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Hersteller.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Verwendet den Produktnamen als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Produktnamen.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Verwendet die serielle Nummer als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf alle seriellen Nummer.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Legt fest, ob dieser Filter auf USB-Geräte angewendet wird, die nur lokal an den Hostcomputer angeschlossen sind (&lt;i&gt;Nein&lt;/i&gt;), nur an einen entfernten Computer über VRDP (&lt;i&gt;Ja&lt;/i&gt;) oder beides (&lt;i&gt;alle&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Legt fest, was der Host machen soll, wenn ein passendes Gerät angeschlossen wurde: Zur Verwendung durch das Host-BS freigeben (&lt;i&gt;Ignorieren&lt;/i&gt;) oder für spätere Verwendung durch das Gast-BS ergreifen (&lt;i&gt;Halten&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Legt die Hersteller-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Legt die Produkt-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the revision number filter. The
@@ -3105,13 +2935,13 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Legt die Revisions-Nr für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Legt den USB-Port für den Filter fest mit &lt;i&gt;genauer&lt;/i&gt; �~\bereinstimmung fest. Eine leere Zeichenfolge passt auf beliebig Ports.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -3143,7 +2973,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ctrl+E</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+E</translation>
     </message>
 </context>
 <context>
@@ -3167,7 +2997,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">Nicht zugreifbar</translation>
+        <translation>Nicht zugreifbar</translation>
     </message>
 </context>
 <context>
@@ -3226,45 +3056,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">Netzwerk-Adapter &amp;aktivieren</translation>
-    </message>
-    <message>
-        <source>When checked, plugs this virtual network adapter into
-                the virtual machine.</source>
-        <translation type="obsolete">Fügt der virtuellen Maschine einen virtuellen Netzwerk-Adapter hinzu.</translation>
-    </message>
-    <message>
-        <source>Controls the way how this
-                                        virtual adapter is attached to the
-                                        real network of the Host OS.</source>
-        <translation type="obsolete">Legt fest, wie dieser virtuelle Netzwerk-Adapter mit dem realen Netzwerk des Host-Betriebssystems verbunden ist.</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of
-                                        this adapter. It contains exactly 12
-                                        characters chosen from
-                                        {0-9,A-F}.</source>
-        <translation type="obsolete">Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}.</translation>
+        <translation>Netzwerk-Adapter &amp;aktivieren</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
         <translation>Erzeugt eine neue zufällige MAC-Adresse.</translation>
     </message>
     <message>
-        <source>Indicates whether the virtual network cable is plugged
-                        in on machine startup or not.</source>
-        <translation type="obsolete">Zeigt an, ob das virtuelle Netzwerk-Kabel an diese virtuelle Maschine angeschlossen ist.</translation>
-    </message>
-    <message>
-        <source>Displays the
-                                                        name of the host
-                                                        interface selected for
-                                                        this adapter.</source>
-        <translation type="obsolete">Zeigt den Namen des Hostinterfaces dieses Adapters.</translation>
-    </message>
-    <message>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fügt ein neues Hostinterface hinzu.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
@@ -3494,11 +3294,6 @@ value.&lt;/qt&gt;</source>
         <translation>BS &amp;Typ</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you
-plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">Zeigt den Typ des Betriebssystems das Sie in der virtuellen Maschine installieren wollen (auch als Gast bezeichnet).</translation>
-    </message>
-    <message>
         <source>Base &amp;Memory Size</source>
         <translation>Größe &amp;Hauptspeicher</translation>
     </message>
@@ -3535,11 +3330,6 @@ plan to install into this virtual machine (called a guest operating system).</so
         <translation>&amp;Grundlegend</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine
-will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="obsolete">Stell den Pfad für die Sicherungspunkte der virtuellen Maschine ein. Beachten Sie, dass Sicherungspunkte sehr viel Platz beanspruchen können.</translation>
-    </message>
-    <message>
         <source>Select</source>
         <translation>Auswahl</translation>
     </message>
@@ -3550,11 +3340,6 @@ will be stored. Note that snapshots can take quite a lot of disk space.</source>
     <message>
         <source>Reset</source>
         <translation>Zurücksetzen</translation>
-    </message>
-    <message>
-        <source>Resets the snapshot folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Zurücksetzen des Pfades für Sicherungspunkte auf den voreingestellten Wert.</translation>
     </message>
     <message>
         <source>Extended Features</source>
@@ -3569,24 +3354,12 @@ The actual default path will be displayed after accepting the changes and openin
         <translation></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support
-the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
-this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Aktiviert die Unterstützung für ACPI (Advanced Configuration and Power Management (ACPI) im Gast. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die ACPI-Unterstützung nicht, nachdem Sie Windows installiert haben!</translation>
-    </message>
-    <message>
         <source>Enable IO A&amp;PIC</source>
         <translation>&amp;IO-APIC aktivieren</translation>
     </message>
     <message>
         <source>Alt+P</source>
         <translation></translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
-this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Aktiviert die Unterstützung für den Input/Output APIC (IO-APIC). Dies kann die Performance des Gastes leicht herabsetzen. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die Unterstützung nicht, nachdem Sie Windows installiert haben!</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -3597,25 +3370,12 @@ this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished">Erweitert</translation>
     </message>
     <message>
-        <source>Displays the description of
-                                        the virtual machine. The description
-                                        field is useful for commenting
-                                        configuration details of the installed
-                                        guest OS.</source>
-        <translation type="obsolete">Zeigt die Beschreibung der virtuellen Maschine. Eine Beschreibung kann für die Beschreibung von Einstellungen im Gast verwendet werden.</translation>
-    </message>
-    <message>
         <source>&amp;Description</source>
         <translation>&amp;Beschreibung</translation>
     </message>
     <message>
         <source>&amp;Primary Master</source>
         <translation>&amp;Primärer Master</translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Disk Manager to create a new
-or select an existing virtual hard disk to attach.</source>
-        <translation type="obsolete">Ruft den Manager für virtuelle Laufwerke auf, um eine neue virtuelle Festplatte zu erstellen oder eine vorhandene einzubinden.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -3646,11 +3406,6 @@ or select an existing virtual hard disk to attach.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to
-the virtual machine.</source>
-        <translation type="obsolete">Zeigt die Diskettenlaufwerke des Hosts, die mit der virtuellen Maschine verbunden werden können.</translation>
-    </message>
-    <message>
         <source>&amp;Image File</source>
         <translation>&amp;Abbild</translation>
     </message>
@@ -3675,22 +3430,12 @@ the virtual machine.</source>
         <translation>Verbindet das eingestellte CD/DVD-Laufwerk mit der virtuellen Maschine.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to
-the virtual machine.</source>
-        <translation type="obsolete">Zeigt eine Liste verfügbarer CD/DVD-Laufwerke, die in die virtuelle Maschine eingebunden werden können.</translation>
-    </message>
-    <message>
         <source>&amp;ISO Image File</source>
         <translation>&amp;ISO-Abbild</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation>Bindet das angegebene CD/DVD-Abbild als virtuelles CD/DVD-Laufwerk ein.</translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Disk Manager to select
-a CD/DVD image to mount.</source>
-        <translation type="obsolete">Ruft den Manager für virtuelle Laufwerke auf, um ein CD/DVD-Abbild einzubinden.</translation>
     </message>
     <message>
         <source>&amp;Enable Audio</source>
@@ -3701,11 +3446,6 @@ a CD/DVD image to mount.</source>
         <translation>Audio-&amp;Treiber des Hosts</translation>
     </message>
     <message>
-        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
-makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="obsolete">Treiber für Audio-Ausgabe einstellen. Ist der &lt;b&gt;Null Audio-Treiber&lt;/b&gt; eingestellt, sieht der Gast eine Audio-Karte, die Aus- und Eingabe werden allerdings ignoriert.</translation>
-    </message>
-    <message>
         <source>Enable &amp;USB Controller</source>
         <translation>&amp;USB-Controller aktivieren</translation>
     </message>
@@ -3714,18 +3454,8 @@ makes the guest see an audio card, however every access to it will be ignored.</
         <translation></translation>
     </message>
     <message>
-        <source>When checked, enables the virtual USB controller
-of this machine.</source>
-        <translation type="obsolete">Aktiviert den virtuellen USB-Controller dieser VM.</translation>
-    </message>
-    <message>
         <source>USB Device &amp;Filters</source>
         <translation>&amp;Filter für USB-Geräte</translation>
-    </message>
-    <message>
-        <source>Lists all USB filters of this machine.
-The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="obsolete">Zeigt alle USB-Geräte dieser virtuellen Maschine. Die Checkbox auf der linken Seite legt fest, ob der jeweilige Filter aktiv ist.</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -3736,24 +3466,12 @@ The checkbox to the left defines whether the particular filter is enabled or not
         <translation>Leerer Filter (Einf)</translation>
     </message>
     <message>
-        <source>Adds a new USB filter with
-all fields initially set to empty strings. Note that such a filter will match any attached
-USB device.</source>
-        <translation type="obsolete">Erstellt einen neuen USB-Filter mit leeren Feldern. Beachten Sie, dass dieser Filter auf alle USB-Geräte passt.</translation>
-    </message>
-    <message>
         <source>Alt+Ins</source>
         <translation>Alt+Einf</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
         <translation>Hinzufügen aus (Alt+Einf)</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter
-with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="obsolete">Erstellt einen neuen USB-Filter
-wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</translation>
     </message>
     <message>
         <source>Del</source>
@@ -3958,35 +3676,28 @@ wobei die Felder aus dem angeschlossenen USB-Gerät am PC übernommen werden.</t
         <translation>&amp;Gemeinsame Zwischenablage</translation>
     </message>
     <message>
-        <source>
-Defines the mode of sharing the clipboard between the guest and the host OS. Note
-that this feature requires Guest Additions to be installed in the guest OS.
-                                                </source>
-        <translation type="obsolete">Legt den Modus der gemeinsamen Zwischenablage zwischen Host und Gast fest. Dieses Feature benötigt installierte Gasterweiterungen im Gast-Betriebssystem.</translation>
-    </message>
-    <message>
         <source>S&amp;napshot Folder</source>
         <translation>Ordner &amp;Sicherungspunkte</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Typ des Betriebssystems, das Sie in der virtuellen Maschine installieren wollen (auch als Gast bezeichnet).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Aktiviert die Unterstützung für ACPI (Advanced Configuration and Power Management (ACPI) im Gast. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die ACPI-Unterstützung nicht, nachdem Sie Windows installiert haben!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Aktiviert die Unterstützung für den Input/Output APIC (IO-APIC). Dies kann die Performance des Gastes leicht herabsetzen. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die Unterstützung nicht, nachdem Sie Windows installiert haben!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt den Modus der gemeinsamen Zwischenablage zwischen Host und Gast fest. Dieses Feature benötigt installierte Gasterweiterungen im Gast-Betriebssystem.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
