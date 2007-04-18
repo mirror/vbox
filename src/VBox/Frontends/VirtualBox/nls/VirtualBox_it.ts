@@ -1733,14 +1733,14 @@ tutte le pressioni di tasti (incluse quelle di sistema come Alt-Tab) vengono dir
     </message>
     <message>
         <source>
-Lists all available user interface languages. The effective language is
+&lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.
+to the system default language.&lt;/qt&gt;
                                     </source>
         <translation>
-Elenca tutte le lingue disponibile per l&apos;interfaccia utente. La lingua attuale
+&lt;qt&gt;Elenca tutte le lingue disponibile per l&apos;interfaccia utente. La lingua attuale
 è scritta in &lt;b&gt;grassetto&lt;/b&gt;. Seleziona &lt;i&gt;Default&lt;/i&gt; per ripristinare
-la lingua a quella predefinita di sistema.
+la lingua a quella predefinita di sistema.&lt;/qt&gt;
                                     </translation>
     </message>
     <message>

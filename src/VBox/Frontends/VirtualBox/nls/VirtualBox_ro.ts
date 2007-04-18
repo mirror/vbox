@@ -1760,14 +1760,14 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
     </message>
     <message>
         <source>
-Lists all available user interface languages. The effective language is
+&lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.
+to the system default language.&lt;/qt&gt;
                                     </source>
         <translation>
-Listează toate limbajele de interfaţă disponibile. Limba efectivă este
+&lt;qt&gt;Listează toate limbajele de interfaţă disponibile. Limba efectivă este
 scrisă &lt;b&gt;îngroşat&lt;/b&gt;. Selectaţi &lt;i&gt;Implicită&lt;/i&gt; pentru a reseta
-către limba implicită a sistemului.
+către limba implicită a sistemului.&lt;/qt&gt;
                                                                                                                </translation>
     </message>
     <message>
