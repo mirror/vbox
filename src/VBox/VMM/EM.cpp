@@ -964,6 +964,73 @@ static int emR3RawStep(PVM pVM)
     return rc;
 }
 
+/**
+ * Steps hardware accelerated mode.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM handle.
+ */
+static int emR3HwAccStep(PVM pVM)
+{
+    Assert(pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC);
+
+    int         rc;
+    PCPUMCTX    pCtx   = pVM->em.s.pCtx;
+    bool        fGuest = pVM->em.s.enmState != EMSTATE_DEBUG_HYPER;
+    if (fGuest)
+    {
+        VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
+
+        /*
+         * Check vital forced actions, but ignore pending interrupts and timers.
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+        {
+            rc = emR3RawForcedActions(pVM, pCtx);
+            if (VBOX_FAILURE(rc))
+                return rc;
+        }
+
+        /*
+         * Set flags for single stepping.
+         */
+        CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
+    }
+    else
+        CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
+
+    /*
+     * Single step.
+     * We do not start time or anything, if anything we should just do a few nanoseconds.
+     */
+    do
+    {
+        if (pVM->em.s.enmState == EMSTATE_DEBUG_HYPER)
+            rc = VMMR3ResumeHyper(pVM);
+        else
+            rc = VMMR3RawRunGC(pVM);
+    } while (   rc == VINF_SUCCESS
+             || rc == VINF_EM_RAW_INTERRUPT);
+    VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
+
+    /*
+     * Make sure the trap flag is cleared.
+     * (Too bad if the guest is trying to single step too.)
+     */
+    if (fGuest)
+        CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
+    else
+        CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) & ~X86_EFL_TF);
+
+    /*
+     * Deal with the return codes.
+     */
+    rc = emR3HighPriorityPostForcedActions(pVM, rc);
+    rc = emR3RawHandleRC(pVM, pCtx, rc);
+    rc = emR3RawUpdateForceFlag(pVM, pCtx, rc);
+    return rc;
+}
+
 #ifdef DEBUG_sandervl
 void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 {
@@ -978,6 +1045,25 @@ void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
         emR3RawStep(pVM);
+    }
+    Log(("Single step END:\n"));
+    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
+    pVM->em.s.enmState = enmOldState;
+}
+
+void emR3SingleStepExecHwAcc(PVM pVM, uint32_t cIterations)
+{
+    EMSTATE  enmOldState = pVM->em.s.enmState;
+    PCPUMCTX pCtx        = pVM->em.s.pCtx;
+
+    pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_HWACC;
+
+    Log(("Single step BEGIN:\n"));
+    for(uint32_t i=0;i<cIterations;i++)
+    {
+        DBGFR3PrgStep(pVM);
+        DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
+        emR3HwAccStep(pVM);
     }
     Log(("Single step END:\n"));
     CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
@@ -2794,35 +2880,16 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         /*
          * Check various preconditions.
          */
-        Assert(!(pCtx->cr4 & X86_CR4_PAE));
-
         VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
 
         /*
-         * Sync page directory.
+         * Process high priority pre-execution raw-mode FFs.
          */
-        if (VM_FF_ISPENDING(pVM, (VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL)))
+        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            rc = emR3RawForcedActions(pVM, pCtx);
             if (VBOX_FAILURE(rc))
-                return rc;
-
-            Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT));
-
-            /* Prefetch pages for EIP and ESP */
-            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip));
-            if (rc == VINF_SUCCESS)
-                rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->ss, &pCtx->ssHid, pCtx->esp));
-            if (rc != VINF_SUCCESS)
-            {
-                if (rc != VINF_PGM_SYNC_CR3)
-                    return rc;
-                rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
-                if (VBOX_FAILURE(rc))
-                    return rc;
-            }
-
-            /** @todo maybe prefetch the supervisor stack page as well */
+                break;
         }
 
 #ifdef LOG_ENABLED
