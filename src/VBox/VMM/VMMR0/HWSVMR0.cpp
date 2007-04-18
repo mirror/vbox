@@ -36,6 +36,7 @@
 #include <VBox/selm.h>
 #include <VBox/iom.h>
 #include <VBox/dis.h>
+#include <VBox/dbgf.h>
 #include <VBox/disopcode.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
@@ -822,6 +823,13 @@ ResumeExecution:
         Log2(("Hardware/software interrupt %d\n", vector));
         switch (vector)
         {
+#ifdef DEBUG
+        case X86_XCPT_DB:
+            rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), pCtx->dr6);
+            Assert(rc != VINF_EM_RAW_GUEST_TRAP);
+            break;
+#endif
+
         case X86_XCPT_NM:
         {
             uint32_t oldCR0;
