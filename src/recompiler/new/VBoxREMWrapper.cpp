@@ -779,13 +779,13 @@ static const REMPARMDESC g_aArgsTRPMAssertTrap[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t) },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(TRPMEVENT) }
 };
 static const REMPARMDESC g_aArgsTRPMQueryTrap[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *) },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool *) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(TRPMEVENT *) }
 };
 static const REMPARMDESC g_aArgsTRPMSetErrorCode[] =
 {
