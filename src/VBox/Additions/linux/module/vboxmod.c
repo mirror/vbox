@@ -235,6 +235,15 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 
             /* now issue the request */
             rc = VbglGRPerform(reqFull);
+
+            /* asynchronous processing? */
+            if (rc == VINF_HGCM_ASYNC_EXECUTE)
+            {
+                VMMDevHGCMRequestHeader *reqHGCM = (VMMDevHGCMRequestHeader*)reqFull;
+                wait_event (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
+                rc = reqFull->rc;
+            }
+
             /* failed? */
             if (VBOX_FAILURE(rc) || VBOX_FAILURE(reqFull->rc))
             {
