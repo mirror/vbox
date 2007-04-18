@@ -70,7 +70,7 @@ DBGFGCDECL(int) DBGFGCTrap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame);
 /** @} */
 #endif
 
-#ifdef IN_R0
+#ifdef IN_RING0
 /** @addgroup grp_dbgf_gc  The R0 DBGF API
  * @ingroup grp_dbgf
  * @{
