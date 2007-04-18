@@ -39,11 +39,11 @@
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>Déplacement vers le haut</translation>
+        <translation>Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>Déplace vers le bas</translation>
+        <translation>Déplacer vers le bas</translation>
     </message>
 </context>
 <context>
@@ -323,7 +323,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Redimensionne automatiquement l&apos;écran du client si la taile de la fenêtre modifiée (exige les additions client)</translation>
+        <translation>Redimensionne automatiquement l&apos;écran du client si la taille de la fenêtre modifiée (exige les additions client)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -1761,11 +1761,13 @@ Choisir &lt;i&gt;par defaut&lt;/i&gt; pour réactiver la langue par défaut du s
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt; Cet assistant vous permet de créer une nouvelle image  de disque dur pour votre machine virtuelle.&lt;/p&gt;
+&lt;p&gt;Utilisez le boution &lt;b&gt;Suivant&lt;/b&gt; pour accédé à la page suivante de l&apos;assistant
+et le bouuton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Bienvenue sur l&apos;assistant de création de disques virtuels!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -1774,15 +1776,17 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Choisissez le type d&apos;image de disque dur que vous désiré créer.&lt;/p&gt;
+&lt;p&gt;Une &lt;b&gt;image à taille dynamique&lt;/b&gt; est de taille initiale réduite et est agrandie en fonction des besoins (jusqu&apos;à la taille spécifiée) en fonction des besoins du système d&apos;exploitation client.&lt;/p&gt;
+&lt;p&gt;Une &lt;b&gt;image à taiile fixe&lt;/b&gt; est de taille constante et est gérée dans un fichier dont la taille correspond approximativement à la taille du disque dur virtuel&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Type de l&apos;image</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
-        <translation type="unfinished"></translation>
+        <translation>Image &amp;dynamique</translation>
     </message>
     <message>
         <source>Alt+D</source>
@@ -1790,7 +1794,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation type="unfinished"></translation>
+        <translation>Image à taiile &amp;Fixe</translation>
     </message>
     <message>
         <source>Alt+F</source>
@@ -1798,12 +1802,13 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Type de l&apos;image de disque dur virtuel</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Chosir&lt;/b&gt; pour choisir l&apos;emplacement et le nom du fichier qui
+contiendra l&apos;image du disque dur, ou entrez le nom du fichier dans le champs d&apos;entrée&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Image File Name</source>
@@ -1816,7 +1821,7 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Choisissez la taille de l&apos;image du disque dur em mega octets. Cette taille est annoncée au système d&apos;exploitation client comme taille du disque dur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image &amp;Size</source>
@@ -1828,13 +1833,14 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Vous êtent en train der créer und disque dur avec les paramètres suivants:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation type="unfinished"></translation>
+        <translation>Si les paramètres ci dessus sont correct, actionnez le bouton &lt;b&gt;Finir&lt;/b&gt;.
+Le nouveau disque dur sera créer.</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -1861,65 +1867,68 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Créer une nouvelle  machine virtuelle</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Cet assistant vous guideras pas à pas a travers les étappes nécessaires à la création d&apos;une nouvelle machine virtuelle pour VirtualBox.&lt;/p&gt;
+&lt;p&gt;Utilisez le bouton &lt;b&gt;Suivant&lt;/b&gt; aller à la page suivante et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Bienvenue sur l&apos;assistant Nouvelle machine virtuelle!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
 system you plan to install in the machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Entrez un nom pour la nouvelle machine virtuelle er chosissez le type du système d&apos;exploitation que vous désiré installer sur cette machine&lt;/p&gt;
+&lt;p&gt;Le nom de la machine virtuelle inddique normalement la configuration matériel et logiciel.
+Il est utilisé par tous les produits de VirtualBox pour l&apos;identification de la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nom</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished">Système d&apos;exploitation et type</translation>
+        <translation>Système d&apos;exploitation et &amp;type</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom le la machine virtuelle et Type du système d&apos;exploitation</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Choisissez la taille, en méga octets, de la mèmoire vive (RAM) réservée à la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">Taiile la &amp;mémoire vive de base</translation>
+        <translation>Taille de la &amp;mémoire vive de base</translation>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MO</translation>
+        <translation>MO</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Mémoire</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
@@ -1929,23 +1938,26 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Choisi l&apos;image de disque dur utilisé comme disque dur d&apos;ammorçage de la machine virtuelle.
+Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou chosir une image de disque dur existante sur le menu déroulant, ou encore activer le bouton &lt;b&gt;Existant&lt;/b&gt; afin de lancer l&apos;assistant de création de disque dur.&lt;/p&gt;
+&lt;p&gt;Si vôtre configuarzon est plus compliquée, vous pouvez sauter ce aps et attaché le disque dur plus tard, en utilisant la boite de dialogue Préférences VM .&lt;/p&gt;
+</translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>Disque dur d&apos;amm&amp;orçage (primaire maître)</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouv&amp;eau...</translation>
     </message>
     <message>
         <source>E&amp;xisting...</source>
-        <translation type="unfinished"></translation>
+        <translation>E&amp;xistant...</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Disque dur virtuel</translation>
     </message>
     <message>
         <source>
@@ -1954,7 +1966,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             with the following parameters:
                             &lt;/p&gt;
                             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>
@@ -1968,31 +1980,33 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             the menu of the main window.
                             &lt;/p&gt;
                             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Finir&lt;/b&gt; si la configuration si dessus est correcte.&lt;/p&gt;
+&lt;p&gt;Notez que vous pouvez modifier ces paramètres et ainsi que d&apos;autres en tout temps. Utiliseu pour ce faite la
+boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessibles sut le menu de la boite de dialogue principale.&lt;/p&gt;l</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Sommaire</translation>
+        <translation>Sommaire</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Type du systéme d&apos;exploitation:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mémoire vive de base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Disque dur s&apos;ammorçage:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation>La taille recommandée pou la mémoire vive de base est &lt;b&gt;%1&lt;/b&gt; MO.</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation>La taille recommandée pour le disque dur d&apos;ammorçage est &lt;b&gt;%1&lt;/b&gt; MO.</translation>
     </message>
 </context>
 <context>
@@ -2000,27 +2014,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox -Information</translation>
     </message>
     <message>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Question</translation>
     </message>
     <message>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Avertissement</translation>
     </message>
     <message>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Erreur</translation>
     </message>
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtialBox - Erreur critique</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
@@ -2053,7 +2067,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Erreur d&apos;accès au soussystème USB</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
@@ -2121,7 +2135,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il n&apos;y as pas de machine virtuelle nommée &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
@@ -2169,15 +2183,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Disque dur</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
-        <translation type="unfinished"></translation>
+        <translation>Images CD/DVD</translation>
     </message>
     <message>
         <source>floppy image</source>
-        <translation type="unfinished"></translation>
+        <translation>Images disquette</translation>
     </message>
     <message>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -2262,27 +2276,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Erreur fatale&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Erreur non Fatale&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Avertissement&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobrl&gt;ID Erreur: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sévérité:</translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occured during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
@@ -2299,17 +2313,17 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Code&amp;nbsp;de résultat: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Composant:</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Interface: </translation>
     </message>
     <message>
         <source>Callee: </source>
@@ -2425,7 +2439,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Configure öa machine virtuelle sélectionnée</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
@@ -2485,7 +2499,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">Lancer le navigateur WEB et se rendre sur la page des produits VirtualBox </translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
@@ -3383,7 +3397,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlle la taille de mémoire vive réservée pour la machine virtuelle. Si la taille assignée est trop importante il est possible que la machine vrtuelle ne fonctionne pas.</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -3605,7 +3619,7 @@ of this machine.</source>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Filtres Périphériques USB</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine.
@@ -3735,7 +3749,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
@@ -3783,12 +3797,12 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Non attaché&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
@@ -3812,7 +3826,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le fichier image de lecteur CD/DVD n&apos;est pas sélectionné.</translation>
     </message>
     <message>
         <source>Floppy drive image file is not selected.</source>
@@ -3837,7 +3851,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Nouveau filtre %1</translation>
+        <translation>Nouveau filtre USB %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
@@ -3852,7 +3866,7 @@ that this feature requires Guest Additions to be installed in the guest OS.
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Répertoire des in&amp;stantanés</translation>
     </message>
 </context>
 <context>
