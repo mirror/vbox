@@ -1887,7 +1887,7 @@ It will be used by all VirtualBox products to identify the created virtual machi
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Système d&apos;exploitation et type</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -1899,7 +1899,7 @@ It will be used by all VirtualBox products to identify the created virtual machi
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Taiile la &amp;mémoire vive de base</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -1915,7 +1915,7 @@ It will be used by all VirtualBox products to identify the created virtual machi
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MO</translation>
     </message>
     <message>
         <source>Memory</source>
@@ -2485,7 +2485,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Lancer le navigateur WEB et se rendre sur la page des produits VirtualBox </translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
@@ -2509,7 +2509,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;VM</source>
-        <translation>&amp;VM</translation>
+        <translation type="obsolete">&amp;VM</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -2598,7 +2598,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Editer</translation>
     </message>
     <message>
         <source>Edit selected shared folder definition.</source>
@@ -3614,66 +3614,68 @@ The checkbox to the left defines whether the particular filter is enabled or not
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">INS</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ajouter un filtre vide (INS)</translation>
     </message>
     <message>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vides.
+Notre qu&apos;un telle filtre cadrent tous les périphériques USB raccordés.</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ALT+INS</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ajoute à partir de (ALT+INS)</translation>
     </message>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ajoute un nouveau filtre USB
+Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">SUPP</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Supprimmer (SUPP)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Supprimer le filtre USB sélectionné.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctlr+Haut</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Déplace vers le haut /Ctrl+Haut)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Déplace le filtre USB sélectionné vers le haut.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+Bas</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Déplace vers le bas (Ctlr+Bas)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Déplace le filtre USB sélectionné vers le bas.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
@@ -3713,11 +3715,11 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Invoque la boite d&apos;aide</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Un paramètre invalide a été détecté</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -3729,7 +3731,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Valide (enregistre) les modifications et fermer la boite de dialogue.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3737,7 +3739,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Annulle les modifications et ferme la boite de dialogue.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
@@ -3835,7 +3837,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nouveau filtre %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
