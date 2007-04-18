@@ -991,7 +991,7 @@ static int emR3HwAccStep(PVM pVM)
     /*
      * Set flags for single stepping.
      */
-    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) | X86_EFL_TF);
+    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
 
     /*
      * Single step.
