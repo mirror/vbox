@@ -470,32 +470,6 @@ private:
 
 #endif /* Q_WS_WIN */
 
-// QIConstrainKeeper
-////////////////////////////////////////////////////////////////////////////////
-
-QIConstrainKeeper::QIConstrainKeeper (QWidget *aParent) : QObject (aParent)
-{
-    aParent->setMinimumSize (aParent->size());
-    aParent->installEventFilter (this);
-}
-
-bool QIConstrainKeeper::eventFilter (QObject *aObject, QEvent *aEvent)
-{
-    if (aObject == parent() && aEvent->type() == QEvent::Resize)
-    {
-        QResizeEvent *ev = static_cast<QResizeEvent*> (aEvent);
-        QSize oldSize = ev->oldSize();
-        QSize newSize = ev->size();
-        int maxWidth = newSize.width() > oldSize.width() ?
-            newSize.width() : oldSize.width();
-        int maxHeight = newSize.height() > oldSize.height() ?
-            newSize.height() : oldSize.height();
-        if (maxWidth > oldSize.width() || maxHeight > oldSize.height())
-            ((QWidget*)parent())->setMinimumSize (maxWidth, maxHeight);
-    }
-    return QObject::eventFilter (aObject, aEvent);
-}
-
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 

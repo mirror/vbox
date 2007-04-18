@@ -125,5 +125,46 @@ protected:
     }
 };
 
+/** 
+ *  Watches the given widget and makes sure the minimum widget size set by the layout
+ *  manager does never get smaller than the previous minimum size set by the
+ *  layout manager. This way, widgets with dynamic contents (i.e. text on some
+ *  toggle buttons) will be able only to grow, never shrink, to avoid flicker
+ *  during alternate contents updates (Pause -> Resume -> Pause -> ...).
+ * 
+ *  @todo not finished
+ */
+class QIConstraintKeeper : public QObject
+{
+    Q_OBJECT
+
+public:
+
+    QIConstraintKeeper (QWidget *aParent) : QObject (aParent)
+    {
+        aParent->setMinimumSize (aParent->size());
+        aParent->installEventFilter (this);
+    }
+
+private:
+
+    bool eventFilter (QObject *aObject, QEvent *aEvent)
+    {
+        if (aObject == parent() && aEvent->type() == QEvent::Resize)
+        {
+            QResizeEvent *ev = static_cast<QResizeEvent*> (aEvent);
+            QSize oldSize = ev->oldSize();
+            QSize newSize = ev->size();
+            int maxWidth = newSize.width() > oldSize.width() ?
+                newSize.width() : oldSize.width();
+            int maxHeight = newSize.height() > oldSize.height() ?
+                newSize.height() : oldSize.height();
+            if (maxWidth > oldSize.width() || maxHeight > oldSize.height())
+                ((QWidget*)parent())->setMinimumSize (maxWidth, maxHeight);
+        }
+        return QObject::eventFilter (aObject, aEvent);
+    }
+};
+
 #endif // __VBoxUtils_h__
 

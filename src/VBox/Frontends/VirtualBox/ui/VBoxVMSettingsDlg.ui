@@ -2804,7 +2804,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <variable access="private">VBoxMediaComboBox *cbISODVD;</variable>
     <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
-    <variable access="private">QLabel *whatsThisLabel;</variable>
+    <variable access="private">QIRichLabel *whatsThisLabel;</variable>
     <variable access="private">BootItemsList *tblBootOrder;</variable>
 </variables>
 <slots>
@@ -2840,6 +2840,7 @@ with all fields set to the values of the selected USB device attached to the hos
     <slot>hddMediaChanged()</slot>
     <slot>cdMediaChanged()</slot>
     <slot>fdMediaChanged()</slot>
+    <slot>processAdjustSize()</slot>
     <slot>updateInterfaces( QWidget* )</slot>
     <slot>networkPageUpdate( QWidget* )</slot>
 </slots>

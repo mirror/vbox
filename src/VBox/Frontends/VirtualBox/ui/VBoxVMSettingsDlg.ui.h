@@ -403,12 +403,11 @@ void VBoxVMSettingsDlg::init()
     connect (whatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     whatsThisCandidate = NULL;
 
-    whatsThisLabel = new QLabel (this, "whatsThisLabel");
-    whatsThisLabel->setTextFormat (Qt::RichText);
+    whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
     VBoxVMSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
     whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
-    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
     whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
     whatsThisLabel->setFrameShape (QLabel::Box);
     whatsThisLabel->setFrameShadow (QLabel::Sunken);
@@ -418,12 +417,14 @@ void VBoxVMSettingsDlg::init()
                                        QLabel::AlignJustify |
                                        QLabel::AlignTop));
 
-    whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
+    whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
                                       6 /* seems that RichText adds some margin */ +
                                       whatsThisLabel->fontMetrics().lineSpacing() * 3);
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
                                      6 /* seems that RichText adds some margin */ +
                                      whatsThisLabel->fontMetrics().width ('m') * 40);
+    /// @todo possibly, remove after QIConstraintKeeper is properly done
+    connect (whatsThisLabel, SIGNAL (textChanged()), this, SLOT (processAdjustSize())); 
 
     /*
      *  setup connections and set validation for pages
@@ -798,8 +799,21 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
 
     VBoxGlobal::centerWidget (this, parentWidget());
 
-    new QIConstrainKeeper (whatsThisLabel);
+    /// @todo improve
+#if 0
+    new QIConstraintKeeper (whatsThisLabel);
+#endif
 }
+
+/// @todo possibly, remove after QIConstraintKeeper is properly done
+/// (should be at least possible to move this functionality into it)
+void VBoxVMSettingsDlg::processAdjustSize() 	 	 
+{ 	 	 
+    int newHeight = minimumSize().height(); 	 	 
+    int oldHeight = height(); 	 	 
+    if (newHeight > oldHeight) 	 	 
+        resize (minimumSize()); 	 	 
+} 	 	 
 
 void VBoxVMSettingsDlg::updateShortcuts()
 {
