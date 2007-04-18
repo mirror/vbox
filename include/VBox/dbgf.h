@@ -36,7 +36,7 @@ __BEGIN_DECLS
  * @{
  */
 
- #ifdef IN_GC
+#ifdef IN_GC
 /** @addgroup grp_dbgf_gc  The GC DBGF API
  * @ingroup grp_dbgf
  * @{
