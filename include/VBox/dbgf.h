@@ -750,6 +750,13 @@ DBGFDECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM);
  */
 DBGFDECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM);
 
+/**
+ * Returns single stepping state
+ *
+ * @returns stepping or not
+ * @param   pVM         The VM handle.
+ */
+DBGFDECL(bool) DBGFIsStepping(PVM pVM);
 
 
 /** Pointer to a info helper callback structure. */
