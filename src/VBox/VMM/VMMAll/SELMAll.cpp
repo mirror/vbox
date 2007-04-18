@@ -138,7 +138,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
             if (    pHiddenSel
                 &&  CPUMAreHiddenSelRegsValid(pVM))
             {
-                *ppvGC = (RTGCPTR)pHiddenSel->u32Base;
+                *ppvGC = (RTGCPTR)(pHiddenSel->u32Base + Addr);
             }
             else
             {
@@ -421,7 +421,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
             if (!CPUMAreHiddenSelRegsValid(pVM))
                 uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)SelCS << 4);
             else
-                uFlat = pHiddenCSSel->u32Base;
+                uFlat = pHiddenCSSel->u32Base + Addr;
 
             *ppvFlat = (RTGCPTR)uFlat;
         }
