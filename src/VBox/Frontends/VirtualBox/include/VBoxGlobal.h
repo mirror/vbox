@@ -133,19 +133,6 @@ public:
     const QUuid snapshotId;
 };
 
-class QIConstrainKeeper : public QObject
-{
-    Q_OBJECT
-
-public:
-
-    QIConstrainKeeper (QWidget*);
-
-private:
-
-    bool eventFilter (QObject*, QEvent*);
-};
-
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
