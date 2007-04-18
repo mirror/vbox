@@ -133,13 +133,21 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
     {
-        if (pcb)
-            *pcb = 0x10000 - ((RTGCUINTPTR)Addr & 0xffff);
         if (ppvGC)
         {
-            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)Sel << 4);
-            *ppvGC = (RTGCPTR)uFlat;
+            if (    pHiddenSel
+                &&  CPUMAreHiddenSelRegsValid(pVM))
+            {
+                *ppvGC = (RTGCPTR)pHiddenSel->u32Base;
+            }
+            else
+            {
+                RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)Sel << 4);
+                *ppvGC = (RTGCPTR)uFlat;
+            }
         }
+        if (pcb)
+            *pcb = 0x10000 - ((RTGCUINTPTR)Addr & 0xffff);
         return VINF_SUCCESS;
     }
 
@@ -400,22 +408,23 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
  */
 SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
-    /*
-     * Deal with real & v86 mode first.
-     */
-    if (    CPUMIsGuestInRealMode(pVM)
-        ||  eflags.Bits.u1VM)
-    {
-        if (ppvFlat)
-        {
-            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)SelCS << 4);
-            *ppvFlat = (RTGCPTR)uFlat;
-        }
-        return VINF_SUCCESS;
-    }
-
     if (!CPUMAreHiddenSelRegsValid(pVM))
+    {
+        /*
+         * Deal with real & v86 mode first.
+         */
+        if (    CPUMIsGuestInRealMode(pVM)
+            ||  eflags.Bits.u1VM)
+        {
+            if (ppvFlat)
+            {
+                RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)SelCS << 4);
+                *ppvFlat = (RTGCPTR)uFlat;
+            }
+            return VINF_SUCCESS;
+        }
         return selmValidateAndConvertCSAddr(pVM, SelCPL, SelCS, Addr, ppvFlat);
+    }
 
     /*
      * Check if present.
@@ -499,16 +508,17 @@ static bool selmIsSelector32Bit(PVM pVM, RTSEL Sel)
  */
 SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
 {
-    /*
-     * Deal with real & v86 mode first.
-     */
-    if (    CPUMIsGuestInRealMode(pVM)
-        ||  eflags.Bits.u1VM)
-        return false;
-
     if (!CPUMAreHiddenSelRegsValid(pVM))
-        return selmIsSelector32Bit(pVM, Sel);
+    {
+        /*
+         * Deal with real & v86 mode first.
+         */
+        if (    CPUMIsGuestInRealMode(pVM)
+            ||  eflags.Bits.u1VM)
+            return false;
 
+        return selmIsSelector32Bit(pVM, Sel);
+    }
     return pHiddenSel->Attr.n.u1DefBig;
 }
 
