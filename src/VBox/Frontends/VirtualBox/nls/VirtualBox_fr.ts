@@ -2499,7 +2499,7 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessibles sut le menu de la
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Lancer le navigateur WEB et se rendre sur la page des produits VirtualBox </translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
