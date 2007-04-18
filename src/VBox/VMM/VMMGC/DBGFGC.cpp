@@ -47,6 +47,7 @@ DBGFGCDECL(int) DBGFGCTrap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTUINTREG u
 {
     const bool fInHyper = !(pRegFrame->ss & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM;
 
+    /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
     /*
      * A breakpoint?
      */
