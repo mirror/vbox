@@ -1,0 +1,136 @@
+/* $Id: DBGFR0.cpp 19495 2007-03-13 15:22:09Z bird $ */
+/** @file
+ * DBGF - Debugger Facility, R0 part.
+ */
+
+/*
+ * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include <VBox/dbgf.h>
+#include <VBox/selm.h>
+#include "DBGFInternal.h"
+#include <VBox/vm.h>
+#include <VBox/err.h>
+#include <iprt/assert.h>
+
+
+
+/**
+ * \#DB (Debug event) handler.
+ *
+ * @returns VBox status code.
+ *          VINF_SUCCESS means we completely handled this trap,
+ *          other codes are passed execution to host context.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @param   uDr6        The DR6 register value.
+ */
+DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTUINTREG uDr6)
+{
+    /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
+    /*
+     * A breakpoint?
+     */
+    if (uDr6 & (X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3))
+    {
+        Assert(X86_DR6_B0 == 1 && X86_DR6_B1 == 2 && X86_DR6_B2 == 4 && X86_DR6_B3 == 8);
+        for (unsigned iBp = 0; iBp < ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+        {
+            if (    (uDr6 & BIT(iBp))
+                &&  pVM->dbgf.s.aHwBreakpoints[iBp].enmType == DBGFBPTYPE_REG)
+            {
+                pVM->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
+                pVM->dbgf.s.fSingleSteppingRaw = false;
+                LogFlow(("DBGFR0Trap03Handler: hit hw breakpoint %d at %04x:%08x\n",
+                         pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pRegFrame->cs, pRegFrame->eip));
+
+                return VINF_EM_DBG_BREAKPOINT;
+            }
+        }
+    }
+
+    /*
+     * Single step?
+     * Are we single stepping or is it the guest?
+     */
+    if (    (uDr6 & X86_DR6_BS)
+        &&  (pVM->dbgf.s.fSingleSteppingRaw))
+    {
+        pVM->dbgf.s.fSingleSteppingRaw = false;
+        LogFlow(("DBGFR0Trap01Handler: single step at %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
+        return VINF_EM_DBG_STEPPED;
+    }
+
+    /*
+     * Currently we only implement single stepping in the guest,
+     * so we'll bitch if this is not a BS event.
+     */
+    AssertMsg(uDr6 & X86_DR6_BS, ("hey! we're not doing guest BPs yet! dr6=%RTreg %04x:%08\n",
+                                  uDr6, pRegFrame->cs, pRegFrame->eip));
+    /** @todo virtualize DRx. */
+    LogFlow(("DBGFR0Trap01Handler: guest debug event %RTreg at %04x:%08x!\n", uDr6, pRegFrame->cs, pRegFrame->eip));
+    return VINF_EM_RAW_GUEST_TRAP;
+}
+
+
+/**
+ * \#BP (Breakpoint) handler.
+ *
+ * @returns VBox status code.
+ *          VINF_SUCCESS means we completely handled this trap,
+ *          other codes are passed execution to host context.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ */
+DBGFR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    /*
+     * Get the trap address and look it up in the breakpoint table.
+     * Don't bother if we don't have any breakpoints.
+     */
+    if (pVM->dbgf.s.cBreakpoints > 0)
+    {
+        RTGCPTR pPc;
+        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
+                                              (RTGCPTR)((RTGCUINTPTR)pRegFrame->eip - 1),                                              
+                                              &pPc);
+        AssertRCReturn(rc, rc);
+
+        for (unsigned iBp = 0; iBp < ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
+        {
+            if (    pVM->dbgf.s.aBreakpoints[iBp].GCPtr == (RTGCUINTPTR)pPc
+                &&  pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_INT3)
+            {
+                pVM->dbgf.s.aBreakpoints[iBp].cHits++;
+                pVM->dbgf.s.iActiveBp = pVM->dbgf.s.aBreakpoints[iBp].iBp;
+
+                LogFlow(("DBGFR0Trap03Handler: hit breakpoint %d at %RGv (%04x:%08x) cHits=0x%RX64\n",
+                         pVM->dbgf.s.aBreakpoints[iBp].iBp, pPc, pRegFrame->cs, pRegFrame->eip,
+                         pVM->dbgf.s.aBreakpoints[iBp].cHits));
+                return VINF_EM_DBG_BREAKPOINT;
+            }
+        }
+    }
+
+    return VINF_EM_RAW_GUEST_TRAP;
+}
+
