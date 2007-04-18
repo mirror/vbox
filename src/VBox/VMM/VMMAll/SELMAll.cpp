@@ -408,23 +408,28 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
  */
 SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
-    if (!CPUMAreHiddenSelRegsValid(pVM))
+    /*
+     * Deal with real & v86 mode first.
+     */
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  eflags.Bits.u1VM)
     {
-        /*
-         * Deal with real & v86 mode first.
-         */
-        if (    CPUMIsGuestInRealMode(pVM)
-            ||  eflags.Bits.u1VM)
+        if (ppvFlat)
         {
-            if (ppvFlat)
-            {
-                RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)SelCS << 4);
-                *ppvFlat = (RTGCPTR)uFlat;
-            }
-            return VINF_SUCCESS;
+            RTGCUINTPTR uFlat;
+
+            if (!CPUMAreHiddenSelRegsValid(pVM))
+                uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)SelCS << 4);
+            else
+                uFlat = pHiddenCSSel->u32Base;
+
+            *ppvFlat = (RTGCPTR)uFlat;
         }
-        return selmValidateAndConvertCSAddr(pVM, SelCPL, SelCS, Addr, ppvFlat);
+        return VINF_SUCCESS;
     }
+
+    if (!CPUMAreHiddenSelRegsValid(pVM))
+        return selmValidateAndConvertCSAddr(pVM, SelCPL, SelCS, Addr, ppvFlat);
 
     /*
      * Check if present.
