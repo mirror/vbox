@@ -50,16 +50,11 @@ vboxmod-bin_SOURCES = \
 	$(PATH_ROOT)/include/VBox/VBoxGuest.h=>include/VBox/VBoxGuest.h \
 	$(PATH_ROOT)/include/VBox/VBoxGuestLib.h=>include/VBox/VBoxGuestLib.h \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/GenericRequest.cpp=>GenericRequest.c \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/HGCM.cpp=>HGCM.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/HGCMInternal.cpp=>HGCMInternal.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/Init.cpp=>Init.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/PhysHeap.cpp=>PhysHeap.c \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/PhysHeap.h=>PhysHeap.h \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/SysHlp.cpp=>SysHlp.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/SysHlp.h=>SysHlp.h \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBGLInternal.h=>VBGLInternal.h \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.c=>VBoxCalls.c \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.h=>VBoxCalls.h \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VMMDev.cpp=>VMMDev.c \
 	$(PATH_ROOT)/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
@@ -87,7 +82,7 @@ vboxmod-sh_SOURCES = \
 #
 vboxadd_TEMPLATE = VBOXLNX32GUESTR0
 vboxadd_DEFS     = KBUILD_MODNAME=KBUILD_STR\(vboxadd\) KBUILD_BASENAME=KBUILD_STR\(vboxadd\) MODULE IN_RING0 IN_RT_R0 VBGL_VBOXGUEST EXPORT_SYMTAB VBGL_HGCM VBOX_HGCM
-vboxadd_LIBS     = $(PATH_LIB)/RuntimeLnx32GuestR0.a
+vboxadd_LIBS     = $(PATH_LIB)/VBoxGuestLibBaseLinux.a $(PATH_LIB)/RuntimeLnx32GuestR0.a
 vboxadd_SOURCES  = vboxmod.c cmc.c hgcmcall.c
 vboxadd_INCS     = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxadd_NOINST   = 1
