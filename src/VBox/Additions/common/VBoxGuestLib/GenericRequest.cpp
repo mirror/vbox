@@ -23,12 +23,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBGLInternal.h"
 #include <iprt/asm.h>
-
-#if defined(__LINUX__) && defined(__KERNEL__)
-#include <linux/string.h>
-#else
-#include <string.h>
-#endif
+#include <iprt/string.h>
 
 DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevRequestType reqType)
 {
