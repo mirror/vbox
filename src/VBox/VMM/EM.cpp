@@ -976,28 +976,22 @@ static int emR3HwAccStep(PVM pVM)
 
     int         rc;
     PCPUMCTX    pCtx   = pVM->em.s.pCtx;
-    bool        fGuest = pVM->em.s.enmState != EMSTATE_DEBUG_HYPER;
-    if (fGuest)
+    VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
+
+    /*
+     * Check vital forced actions, but ignore pending interrupts and timers.
+     */
+    if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
     {
-        VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
-
-        /*
-         * Check vital forced actions, but ignore pending interrupts and timers.
-         */
-        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
-        {
-            rc = emR3RawForcedActions(pVM, pCtx);
-            if (VBOX_FAILURE(rc))
-                return rc;
-        }
-
-        /*
-         * Set flags for single stepping.
-         */
-        CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
+        rc = emR3RawForcedActions(pVM, pCtx);
+        if (VBOX_FAILURE(rc))
+            return rc;
     }
-    else
-        CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
+
+    /*
+     * Set flags for single stepping.
+     */
+    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) | X86_EFL_TF);
 
     /*
      * Single step.
