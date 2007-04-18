@@ -58,6 +58,8 @@ typedef enum EMSTATE
     EMSTATE_TERMINATING,
     /** Guest debug event from raw-mode is being processed. */
     EMSTATE_DEBUG_GUEST_RAW,
+    /** Guest debug event from hardware accelerated mode is being processed. */
+    EMSTATE_DEBUG_GUEST_HWACC,
     /** Guest debug event from recompiled-mode is being processed. */
     EMSTATE_DEBUG_GUEST_REM,
     /** Hypervisor debug event being processed. */
