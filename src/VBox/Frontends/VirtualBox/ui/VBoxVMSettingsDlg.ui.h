@@ -403,11 +403,12 @@ void VBoxVMSettingsDlg::init()
     connect (whatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     whatsThisCandidate = NULL;
 
-    whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
+    whatsThisLabel = new QLabel (this, "whatsThisLabel");
+    whatsThisLabel->setTextFormat (Qt::RichText);
     VBoxVMSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
     whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
-    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
+    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
     whatsThisLabel->setFrameShape (QLabel::Box);
     whatsThisLabel->setFrameShadow (QLabel::Sunken);
@@ -417,9 +418,9 @@ void VBoxVMSettingsDlg::init()
                                        QLabel::AlignJustify |
                                        QLabel::AlignTop));
 
-    whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
-                                    6 /* seems that RichText adds some margin */ +
-                                    whatsThisLabel->fontMetrics().lineSpacing() * 3);
+    whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
+                                      6 /* seems that RichText adds some margin */ +
+                                      whatsThisLabel->fontMetrics().lineSpacing() * 3);
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
                                      6 /* seems that RichText adds some margin */ +
                                      whatsThisLabel->fontMetrics().width ('m') * 40);
@@ -796,6 +797,8 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
     resize (minimumSize());
 
     VBoxGlobal::centerWidget (this, parentWidget());
+
+    new QIConstrainKeeper (whatsThisLabel);
 }
 
 void VBoxVMSettingsDlg::updateShortcuts()
