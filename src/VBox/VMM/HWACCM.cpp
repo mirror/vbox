@@ -454,12 +454,14 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     Assert(pVM->fHWACCMEnabled);
 
+#if 0
     /* AMD SVM supports real & protected mode with or without paging. */
     if (pVM->hwaccm.s.svm.fEnabled)
     {
         pVM->hwaccm.s.fActive = true;
         return true;
     }
+#endif
 
     /* @todo we can support real-mode by using v86 and protected mode without paging with identity mapped pages.
      * (but do we really care?)
@@ -512,7 +514,13 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         pVM->hwaccm.s.fActive = true;
         return true;
     }
-
+    else
+    if (pVM->hwaccm.s.svm.fEnabled)
+    {
+        pVM->hwaccm.s.fActive = true;
+        return true;
+    }
+    
     return false;
 }
 
@@ -587,7 +595,6 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
         Log(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
-
     rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.Event.fPending);
     AssertRCReturn(rc, rc);
     rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.Event.errCode);
