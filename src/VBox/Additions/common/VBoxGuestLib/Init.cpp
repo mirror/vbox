@@ -20,31 +20,13 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__LINUX__) && defined(__KERNEL__)
-#ifndef bool /* Linux 2.6.19 C++ nightmare */
-#define bool bool_type
-#define true true_type
-#define false false_type
-#define _Bool int
-#define bool_Init_cpp
-#endif
-#include <linux/string.h>
-#ifdef bool_Init_cpp
-#undef bool
-#undef true
-#undef false
-#undef _Bool
-#undef bool_Init_cpp
-#endif
-#else
-#include <string.h>
-#endif
 
 #include <VBox/VBoxGuestLib.h>
 
 #define VBGL_DECL_DATA
 #include "VBGLInternal.h"
 
+#include <iprt/string.h>
 #include <iprt/assert.h>
 
 VBGLDATA g_vbgldata;

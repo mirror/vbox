@@ -27,33 +27,12 @@
 /* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
 #ifndef VBGL_VBOXGUEST
 
-/** @todo r=bird: These two issues with string.h and bool are handled by
- * iprt/string.h and iprt/types.h respectivly. Please change after the release. */
-#if defined(__LINUX__) && defined(__KERNEL__)
-#ifndef bool /* Linux 2.6.19 C++ nightmare */
-#define bool bool_type
-#define true true_type
-#define false false_type
-#define _Bool int
-#define bool_HGCM_cpp
-#endif
-#include <linux/string.h>
-#ifdef bool_HGCM_cpp
-#undef bool
-#undef true
-#undef false
-#undef _Bool
-#undef bool_HGCM_cpp
-#endif
-#else
-#include <string.h>
-#endif
-
 #include <VBox/VBoxGuestLib.h>
 #include "VBGLInternal.h"
 
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 
 #define VBGL_HGCM_ASSERTMsg AssertReleaseMsg
 
