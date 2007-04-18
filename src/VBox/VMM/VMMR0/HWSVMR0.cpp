@@ -541,14 +541,21 @@ ResumeExecution:
     }
 
     /* Check for pending actions that force us to go back to ring 3. */
-    if (VM_FF_ISPENDING(pVM, VM_FF_TO_R3 | VM_FF_TIMER))
+#ifdef DEBUG
+    /* Intercept X86_XCPT_DB if stepping is enabled */
+    if (!DBGFIsStepping(pVM))
+#endif
     {
-        VM_FF_CLEAR(pVM, VM_FF_TO_R3);
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatSwitchToR3);
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
-        rc = VINF_EM_RAW_TO_R3;
-        goto end;
+        if (VM_FF_ISPENDING(pVM, VM_FF_TO_R3 | VM_FF_TIMER))
+        {
+            VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatSwitchToR3);
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+            rc = VINF_EM_RAW_TO_R3;
+            goto end;
+        }
     }
+
     /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
     if (VM_FF_ISPENDING(pVM, VM_FF_REQUEST))
     {
