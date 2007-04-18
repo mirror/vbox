@@ -59,7 +59,11 @@
 // defines
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef __DARWIN__
+#define VBOXCONFIGDIR        "Library/VirtualBox"
+#else
 #define VBOXCONFIGDIR        ".VirtualBox"
+#endif 
 #define VBOXCONFIGGLOBALFILE "VirtualBox.xml"
 
 // globals
