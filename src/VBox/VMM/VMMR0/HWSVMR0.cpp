@@ -455,13 +455,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     pVMCB->guest.u64RFlags = pCtx->eflags.u32;
 
     /* Set CPL */
-    if (!(pCtx->cr0 & X86_CR0_PE))
-        pVMCB->guest.u8CPL     = 0;
-    else
-    if (pCtx->eflags.Bits.u1VM)
-        pVMCB->guest.u8CPL     = 3;
-    else
-        pVMCB->guest.u8CPL     = (pCtx->ss & X86_SEL_RPL);
+    pVMCB->guest.u8CPL     = pCtx->ssHid.Attr.n.u2Dpl;
 
     /* RAX/EAX too, as VMRUN uses RAX as an implicit parameter. */
     pVMCB->guest.u64RAX    = pCtx->eax;
