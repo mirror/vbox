@@ -36,7 +36,7 @@ __BEGIN_DECLS
  * @{
  */
 
-#ifdef IN_GC
+ #ifdef IN_GC
 /** @addgroup grp_dbgf_gc  The GC DBGF API
  * @ingroup grp_dbgf
  * @{
@@ -66,6 +66,40 @@ DBGFGCDECL(int) DBGFGCTrap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTUINTREG u
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
 DBGFGCDECL(int) DBGFGCTrap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame);
+
+/** @} */
+#endif
+
+#ifdef IN_R0
+/** @addgroup grp_dbgf_gc  The R0 DBGF API
+ * @ingroup grp_dbgf
+ * @{
+ */
+
+/**
+ * \#DB (Debug event) handler.
+ *
+ * @returns VBox status code.
+ *          VINF_SUCCESS means we completely handled this trap,
+ *          other codes are passed execution to host context.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @param   uDr6        The DR6 register value.
+ */
+DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTUINTREG uDr6);
+
+/**
+ * \#BP (Breakpoint) handler.
+ *
+ * @returns VBox status code.
+ *          VINF_SUCCESS means we completely handled this trap,
+ *          other codes are passed execution to host context.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ */
+DBGFR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /** @} */
 #endif
