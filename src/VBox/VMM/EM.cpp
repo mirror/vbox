@@ -1005,10 +1005,7 @@ static int emR3HwAccStep(PVM pVM)
      */
     do
     {
-        if (pVM->em.s.enmState == EMSTATE_DEBUG_HYPER)
-            rc = VMMR3ResumeHyper(pVM);
-        else
-            rc = VMMR3RawRunGC(pVM);
+        rc = VMMR3HwAccRunGC(pVM);
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
     VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
