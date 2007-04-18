@@ -37,6 +37,13 @@ ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
 	VBoxGuestLibBaseLinux
 endif
 
+SOURCES_GUESTLIBBASE = \
+	GenericRequest.cpp \
+	PhysHeap.cpp \
+	Init.cpp \
+	VMMDev.cpp \
+	HGCMInternal.cpp
+
 SOURCES_GUESTLIB = \
 	GenericRequest.cpp \
 	SysHlp.cpp \
@@ -44,10 +51,7 @@ SOURCES_GUESTLIB = \
 	Init.cpp \
 	VMMDev.cpp \
 	HGCM.cpp \
-	HGCMInternal.cpp \
 	VBoxCalls.c
-SOURCES_GUESTLIBBASE = \
-	$(SOURCES_GUESTLIB)
 
 #
 # VBoxGuestLib

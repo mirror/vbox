@@ -38,7 +38,6 @@
 # define dprintf(a) do {} while (0)
 #endif
 
-#include "PhysHeap.h"
 #include "SysHlp.h"
 
 #pragma pack(4)

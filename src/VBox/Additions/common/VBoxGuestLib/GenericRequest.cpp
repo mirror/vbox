@@ -31,9 +31,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
     VMMDevRequestHeader *pReq;
 
     if (VBOX_FAILURE(rc))
-    {
         return rc;
-    }
 
     if (!ppReq || cbSize < sizeof (VMMDevRequestHeader))
     {
@@ -42,7 +40,6 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
     }
 
     pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc (cbSize);
-
     if (!pReq)
     {
         dprintf(("VbglGRAlloc: no memory\n"));
@@ -71,22 +68,15 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq)
     int rc = VbglEnter ();
 
     if (VBOX_FAILURE(rc))
-    {
         return rc;
-    }
 
     if (!pReq)
-    {
         return VERR_INVALID_PARAMETER;
-    }
 
     if (g_vbgldata.portVMMDev == 0)
-    {
         return VERR_VBGL_NOT_INITIALIZED;
-    }
 
     physaddr = VbglPhysHeapGetPhysAddr (pReq);
-
     if (!physaddr)
     {
         rc = VERR_VBGL_INVALID_ADDR;
@@ -96,7 +86,6 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq)
         ASMOutU32(g_vbgldata.portVMMDev + PORT_VMMDEV_REQUEST_OFFSET, (uint32_t)physaddr);
         /* Make the compiler aware that the host has changed memory. */
         ASMMemoryClobber();
-
         rc = pReq->rc;
     }
     return rc;
@@ -107,9 +96,7 @@ DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq)
     int rc = VbglEnter ();
 
     if (VBOX_FAILURE(rc))
-    {
         return;
-    }
 
     VbglPhysHeapFree (pReq);
 }

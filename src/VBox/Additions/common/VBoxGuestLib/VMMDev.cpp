@@ -29,18 +29,12 @@ DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory)
     int rc = VbglEnter ();
 
     if (VBOX_FAILURE(rc))
-    {
         return rc;
-    }
     
     /* If the memory was not found, return an error. */
     if (!g_vbgldata.pVMMDevMemory)
-    {
         return VERR_NOT_SUPPORTED;
-    }
 
     *ppVMMDevMemory = g_vbgldata.pVMMDevMemory;
-
     return rc;
 }
-

@@ -38,9 +38,7 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
     int rc;
 
     if (!pConnectInfo || !pAsyncCallback)
-    {
         return VERR_INVALID_PARAMETER;
-    }
 
     pHGCMConnect = NULL;
 
@@ -70,9 +68,7 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
             pConnectInfo->result = pHGCMConnect->header.result;
 
             if (VBOX_SUCCESS (pConnectInfo->result))
-            {
                 pConnectInfo->u32ClientID = pHGCMConnect->u32ClientID;
-            }
         }
 
         VbglGRFree (&pHGCMConnect->header.header);
@@ -89,9 +85,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
     int rc;
 
     if (!pDisconnectInfo || !pAsyncCallback)
-    {
         return VERR_INVALID_PARAMETER;
-    }
 
     pHGCMDisconnect = NULL;
 
@@ -135,9 +129,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     int rc;
 
     if (!pCallInfo || !pAsyncCallback)
-    {
         return VERR_INVALID_PARAMETER;
-    }
 
     dprintf (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
 
@@ -214,17 +206,12 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         }
 
         if ((pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_CANCELLED) == 0)
-        {
             VbglGRFree (&pHGCMCall->header.header);
-        }
         else
-        {
             rc = VERR_INTERRUPTED;
-        }
     }
 
     return rc;
 }
-
 
 #endif /* VBGL_VBOXGUEST */

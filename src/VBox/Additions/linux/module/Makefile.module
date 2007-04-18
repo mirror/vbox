@@ -25,13 +25,10 @@ OBJS   = \
 	hgcmcall.o \
 	vboxmod.o \
 	GenericRequest.o \
-	SysHlp.o \
 	PhysHeap.o \
 	Init.o \
 	VMMDev.o \
-	HGCM.o \
 	HGCMInternal.o \
-	VBoxCalls.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o
