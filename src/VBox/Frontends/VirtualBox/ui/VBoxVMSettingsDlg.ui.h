@@ -146,8 +146,8 @@ public:
         QVBoxLayout *buttonLayout = new QVBoxLayout (mainLayout, 0, "buttonLayout");
         mBtnUp = new QToolButton (this, "mBtnUp");
         mBtnDown = new QToolButton (this, "mBtnDown");
-        QWhatsThis::add (mBtnUp, tr ("Move the selected boot device up."));
-        QWhatsThis::add (mBtnDown, tr ("Move the selected boot device down."));
+        QWhatsThis::add (mBtnUp, tr ("Moves the selected boot device up."));
+        QWhatsThis::add (mBtnDown, tr ("Moves the selected boot device down."));
         QToolTip::add (mBtnUp, tr ("Move Up (Ctrl-Up)"));
         QToolTip::add (mBtnDown, tr ("Move Down (Ctrl-Down)"));
         mBtnUp->setAutoRaise (true);

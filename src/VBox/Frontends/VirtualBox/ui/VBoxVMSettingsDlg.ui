@@ -471,8 +471,7 @@
                                                         <cstring>cbOS</cstring>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Displays the operating system type that you
-plan to install into this virtual machine (called a guest operating system).</string>
+                                                        <string>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</string>
                                                     </property>
                                                 </widget>
                                             </hbox>
@@ -1090,9 +1089,9 @@ plan to install into this virtual machine (called a guest operating system).</st
                                                                 <string>Alt+C</string>
                                                             </property>
                                                             <property name="whatsThis" stdset="0">
-                                                                <string>When checked, the virtual machine will support
+                                                                <string>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
-this feature after having installed a Windows guest operating system!</string>
+this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
                                                             </property>
                                                         </widget>
                                                         <widget class="QCheckBox">
@@ -1106,9 +1105,9 @@ this feature after having installed a Windows guest operating system!</string>
                                                                 <string>Alt+P</string>
                                                             </property>
                                                             <property name="whatsThis" stdset="0">
-                                                                <string>When checked, the virtual machine will support
+                                                                <string>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable
-this feature after having installed a Windows guest operating system!</string>
+this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
                                                             </property>
                                                         </widget>
                                                     </vbox>
@@ -1150,10 +1149,7 @@ this feature after having installed a Windows guest operating system!</string>
                                                 <cstring>cbSharedClipboard</cstring>
                                             </property>
                                             <property name="whatsThis" stdset="0">
-                                                <string>
-Defines the mode of sharing the clipboard between the guest and the host OS. Note
-that this feature requires Guest Additions to be installed in the guest OS.
-                                                </string>
+                                                <string>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</string>
                                             </property>
                                             <property name="sizePolicy">
                                                 <sizepolicy>
@@ -1208,8 +1204,7 @@ that this feature requires Guest Additions to be installed in the guest OS.
                                                 <bool>false</bool>
                                             </property>
                                             <property name="whatsThis" stdset="0">
-                                                <string>Displays the path where snapshots of this virtual machine
-will be stored. Note that snapshots can take quite a lot of disk space.</string>
+                                                <string>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</string>
                                             </property>
                                         </widget>
                                         <widget class="QToolButton" row="0" column="1">
@@ -1249,8 +1244,7 @@ will be stored. Note that snapshots can take quite a lot of disk space.</string>
                                                 <bool>true</bool>
                                             </property>
                                             <property name="whatsThis" stdset="0">
-                                                <string>Resets the snapshot folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
+                                                <string>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
                                             </property>
                                         </widget>
                                     </grid>
@@ -1296,11 +1290,7 @@ The actual default path will be displayed after accepting the changes and openin
                                         <cstring>teDescription</cstring>
                                     </property>
                                     <property name="whatsThis" stdset="0">
-                                        <string>Displays the description of
-                                        the virtual machine. The description
-                                        field is useful for commenting
-                                        configuration details of the installed
-                                        guest OS.</string>
+                                        <string>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</string>
                                     </property>
                                 </widget>
                             </vbox>
@@ -1367,8 +1357,7 @@ The actual default path will be displayed after accepting the changes and openin
                                             <bool>true</bool>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to create a new
-or select an existing virtual hard disk to attach.</string>
+                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
                                         </property>
                                     </widget>
                                 </hbox>
@@ -1425,8 +1414,7 @@ or select an existing virtual hard disk to attach.</string>
                                             <bool>true</bool>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to create a new
-or select an existing virtual hard disk to attach.</string>
+                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
                                         </property>
                                     </widget>
                                 </hbox>
@@ -1483,8 +1471,7 @@ or select an existing virtual hard disk to attach.</string>
                                             <bool>true</bool>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to create a new
-or select an existing virtual hard disk to attach.</string>
+                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
                                         </property>
                                     </widget>
                                 </hbox>
@@ -1576,8 +1563,7 @@ or select an existing virtual hard disk to attach.</string>
                                             <cstring>cbHostFloppy</cstring>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Lists host Floppy drives available to mount to
-the virtual machine.</string>
+                                            <string>Lists host Floppy drives available to mount to the virtual machine.</string>
                                         </property>
                                     </widget>
                                     <spacer>
@@ -1668,8 +1654,7 @@ the virtual machine.</string>
                                             <bool>true</bool>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to select
-a Floppy image to mount.</string>
+                                            <string>Invokes the Virtual Disk Manager to select a Floppy image to mount.</string>
                                         </property>
                                     </widget>
                                 </hbox>
@@ -1753,8 +1738,7 @@ a Floppy image to mount.</string>
                                             <cstring>cbHostDVD</cstring>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Lists host CD/DVD drives available to mount to
-the virtual machine.</string>
+                                            <string>Lists host CD/DVD drives available to mount to the virtual machine.</string>
                                         </property>
                                     </widget>
                                     <spacer>
@@ -1845,8 +1829,7 @@ the virtual machine.</string>
                                             <bool>true</bool>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to select
-a CD/DVD image to mount.</string>
+                                            <string>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</string>
                                         </property>
                                     </widget>
                                 </hbox>
@@ -1930,8 +1913,8 @@ a CD/DVD image to mount.</string>
                                     </sizepolicy>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
-makes the guest see an audio card, however every access to it will be ignored.</string>
+                                    <string>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
+makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</string>
                                 </property>
                             </widget>
                             <spacer>
@@ -2005,8 +1988,7 @@ makes the guest see an audio card, however every access to it will be ignored.</
                             <string>Alt+U</string>
                         </property>
                         <property name="whatsThis" stdset="0">
-                            <string>When checked, enables the virtual USB controller
-of this machine.</string>
+                            <string>When checked, enables the virtual USB controller of this machine.</string>
                         </property>
                     </widget>
                     <widget class="QGroupBox">
@@ -2044,8 +2026,7 @@ of this machine.</string>
                                             <cstring>lvUSBFilters</cstring>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Lists all USB filters of this machine.
-The checkbox to the left defines whether the particular filter is enabled or not.</string>
+                                            <string>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</string>
                                         </property>
                                     </widget>
                                     <widget class="QLayoutWidget">
@@ -2082,9 +2063,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                                     <bool>true</bool>
                                                 </property>
                                                 <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter with
-all fields initially set to empty strings. Note that such a filter will match any attached
-USB device.</string>
+                                                    <string>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</string>
                                                 </property>
                                             </widget>
                                             <widget class="QToolButton">
@@ -2110,8 +2089,7 @@ USB device.</string>
                                                     <bool>true</bool>
                                                 </property>
                                                 <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter
-with all fields set to the values of the selected USB device attached to the host PC.</string>
+                                                    <string>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</string>
                                                 </property>
                                             </widget>
                                             <widget class="QToolButton">
