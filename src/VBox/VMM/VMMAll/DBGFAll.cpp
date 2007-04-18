@@ -116,3 +116,14 @@ DBGFDECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
     return pBp->GCPtr;
 }
 
+
+/**
+ * Returns single stepping state
+ *
+ * @returns stepping or not
+ * @param   pVM         The VM handle.
+ */
+DBGFDECL(bool) DBGFIsStepping(PVM pVM)
+{
+    return pVM->dbgf.s.fSingleSteppingRaw;
+}
