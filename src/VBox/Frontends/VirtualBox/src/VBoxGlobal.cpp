@@ -1826,8 +1826,8 @@ void VBoxGlobal::languageChange()
 extern const char *gVBoxLangSubDir = "/nls";
 extern const char *gVBoxLangFileBase = "VirtualBox_";
 extern const char *gVBoxLangFileExt = ".qm";
-extern const char *gVBoxLangIDRegExp = "(([a-z]{2})(?:_([A-Z]{2}))?)";
-extern const char *gVBoxBuiltInLangName   = "built_in";
+extern const char *gVBoxLangIDRegExp = "(([a-z]{2})(?:_([A-Z]{2}))?)|(C)";
+extern const char *gVBoxBuiltInLangName   = "C";
 
 class VBoxTranslator : public QTranslator
 {
@@ -1857,7 +1857,13 @@ static QString sLoadedLangId = gVBoxBuiltInLangName;
  *  Returns the loaded (active) language ID.
  *  Note that it may not match with VMGlobalSettings::languageId() if the
  *  specified language cannot be loaded.
- *  If the built-in language is active, this method returns "built_in".
+ *  If the built-in language is active, this method returns "C".
+ *
+ *  @note "C" is treated as the built-in language for simplicity -- the C
+ *  locale is used in unix environments as a fallback when the requested
+ *  locale is invalid. This way we don't need to process both the "built_in"
+ *  language and the "C" language (which is a valid environment setting)
+ *  separately.
  */
 /* static */
 QString VBoxGlobal::languageId()
@@ -1879,12 +1885,13 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     QString languageFileName;
     QString selectedLangId = gVBoxBuiltInLangName;
 
-    if (!aLangId.isNull() && aLangId != gVBoxBuiltInLangName)
+    Assert (!langId.isEmpty());
+    if (!langId.isEmpty() && langId != gVBoxBuiltInLangName)
     {
         QRegExp regExp (gVBoxLangIDRegExp);
-        int rule = regExp.search (langId);
-        /* this rule should match the language id completely */
-        AssertReturnVoid (rule == 0);
+        int pos = regExp.search (langId);
+        /* the language ID should match the regexp completely */
+        AssertReturnVoid (pos == 0);
 
         QString lang = regExp.cap (2);
 
@@ -1902,11 +1909,15 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
                                                    gVBoxLangFileExt);
             selectedLangId = lang;
         }
-
-        if (languageFileName.isNull())
+        else
         {
-            vboxProblem().cannotFindLanguage (langId, nlsPath);
-            return;
+            /* Never complain when the default language is requested.  In any
+             * case, if no explicit language file exists, we will simply
+             * fall-back to English (built-in). */
+            if (!aLangId.isNull())
+                vboxProblem().cannotFindLanguage (langId, nlsPath);
+            /* selectedLangId remains built-in here */
+            AssertReturnVoid (selectedLangId == gVBoxBuiltInLangName);
         }
     }
 
@@ -1927,7 +1938,8 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
             loadOk = sTranslator->loadFile (languageFileName);
         }
         /* we install the translator in any case: on failure, this will
-         * activate an empty (aka built-in) translator */
+         * activate an empty translator that will give us English
+         * (built-in) */
         qApp->installTranslator (sTranslator);
     }
     else
@@ -2378,6 +2390,9 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
  *
  *  The order of precedence is well defined here:
  *  http://opengroup.org/onlinepubs/007908799/xbd/envvar.html
+ *
+ *  @note This method will return "C" when the requested locale is invalid or
+ *  when the "C" locale is set explicitly.
  */
 /* static */
 QString VBoxGlobal::systemLanguageId()

@@ -85,6 +85,9 @@ bool VMGlobalSettingsData::operator==( const VMGlobalSettingsData &that ) const
  *  to implement implicit sharing of VirtualBox global data.
  */
 
+/* Defined in VBoxGlobal.cpp */
+extern const char *gVBoxLangIDRegExp;
+
 static struct
 {
     const char *publicName;
@@ -97,9 +100,7 @@ gPropertyMap[] =
     { "GUI/Input/HostKey",      "hostKey",      "\\d*[1-9]\\d*", true },
     { "GUI/Input/AutoCapture",  "autoCapture",  "true|false", true },
     { "GUI/Customizations",     "guiFeatures",  "\\S+", true },
-    /* LanguageID regexp must correlate with gVBoxLangIDRegExp in
-     * VBoxGlobal.cpp */
-    { "GUI/LanguageID",         "languageId",   "(([a-z]{2})(_([A-Z]{2}))?)|(built_in)", true },
+    { "GUI/LanguageID",         "languageId",   gVBoxLangIDRegExp, true },
 };
 
 void VMGlobalSettings::setHostKey (int key)
