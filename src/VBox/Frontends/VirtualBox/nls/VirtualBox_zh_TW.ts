@@ -69,11 +69,11 @@
     <name>BootItemsList</name>
     <message>
         <source>Move the selected boot device up.</source>
-        <translation>將所選開機裝置往上移動。</translation>
+        <translation type="obsolete">將所選開機裝置往上移動。</translation>
     </message>
     <message>
         <source>Move the selected boot device down.</source>
-        <translation>將所選開機裝置往下移動。</translation>
+        <translation type="obsolete">將所選開機裝置往下移動。</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
@@ -82,6 +82,14 @@
     <message>
         <source>Move Down (Ctrl-Down)</source>
         <translation>往下移動 (Ctrl-Down)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1821,7 +1829,7 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     <message>
         <source>Displays the path to the default VDI folder. This folder is
 used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>顯示預設的 VDI 資料夾路徑。
+        <translation type="obsolete">顯示預設的 VDI 資料夾路徑。
 當加入現有或是建立新的虛擬硬碟時，如果沒有明確地額外指定，就會使用這個資料夾。</translation>
     </message>
     <message>
@@ -1835,20 +1843,20 @@ used, if not explicitly specified otherwise, when adding existing or creating ne
     <message>
         <source>Resets the virtual machine folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>重新設定虛擬機器的資料夾路徑為預設值。
+        <translation type="obsolete">重新設定虛擬機器的資料夾路徑為預設值。
 實際的預設路徑將會在接受變更後顯示，並且再次開啟這個對話框。</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>重新設定 VDI 資料夾路徑為預設值。
+        <translation type="obsolete">重新設定 VDI 資料夾路徑為預設值。
 實際的預設路徑將會在接受變更後顯示，並且再次開啟這個對話框。</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine
 folder. This folder is used, if not explicitly specified otherwise, when creating new
 virtual machines.</source>
-        <translation>顯示預設的虛擬機器資料夾路徑。
+        <translation type="obsolete">顯示預設的虛擬機器資料夾路徑。
 當建立新的虛擬機器時，如果沒有明確地額外指定，就會使用這個資料夾。</translation>
     </message>
     <message>
@@ -1858,12 +1866,12 @@ virtual machines.</source>
     <message>
         <source>Opens a dialog to select the
 default VDI folder.</source>
-        <translation>開啟一個對話框以選取預設的 VDI 資料夾。</translation>
+        <translation type="obsolete">開啟一個對話框以選取預設的 VDI 資料夾。</translation>
     </message>
     <message>
         <source>Opens a dialog to select the
 default virtual machine folder.</source>
-        <translation>開啟一個對話框以選取預設的虛擬機器資料夾。</translation>
+        <translation type="obsolete">開啟一個對話框以選取預設的虛擬機器資料夾。</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
@@ -1887,7 +1895,7 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</sou
     <message>
         <source>Lists all global USB filters.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>列出所有全域的 USB 篩選器。
+        <translation type="obsolete">列出所有全域的 USB 篩選器。
 左側的核取方塊用來定義特定篩選器是否要啟用。</translation>
     </message>
     <message>
@@ -1902,7 +1910,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation>加入新的 USB 篩選器時，所有欄位以空白字串初始。
+        <translation type="obsolete">加入新的 USB 篩選器時，所有欄位以空白字串初始。
 注意：此種篩選器會與任何附掛的 USB 裝置匹配。</translation>
     </message>
     <message>
@@ -1916,7 +1924,7 @@ USB device.</source>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>加入新的 USB 篩選器時，所有欄位設為附掛到主端 PC 上所選 USB 裝置的值。</translation>
+        <translation type="obsolete">加入新的 USB 篩選器時，所有欄位設為附掛到主端 PC 上所選 USB 裝置的值。</translation>
     </message>
     <message>
         <source>Del</source>
@@ -2012,12 +2020,6 @@ with all fields set to the values of the selected USB device attached to the hos
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured,
-all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Interface Language</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2055,6 +2057,46 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Default</source>
         <comment>Language</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens a dialog to select the default VDI folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3212,7 +3254,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Edit selected shared folder definition.</source>
-        <translation>編輯所選的分享資料夾定義。</translation>
+        <translation type="obsolete">編輯所選的分享資料夾定義。</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -3245,6 +3287,10 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;名稱： %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;路徑： %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Edits the selected shared folder definition.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3514,7 +3560,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <source>Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation>定義製造商篩選器為
+        <translation type="obsolete">定義製造商篩選器為
 &lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
 值。</translation>
     </message>
@@ -3522,7 +3568,7 @@ value.</source>
         <source>Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation>定義產品篩選器為
+        <translation type="obsolete">定義產品篩選器為
 &lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
 值。</translation>
     </message>
@@ -3530,7 +3576,7 @@ value.</source>
         <source>Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation>定義序號篩選器為
+        <translation type="obsolete">定義序號篩選器為
 &lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
 值。</translation>
     </message>
@@ -3539,7 +3585,7 @@ value.</source>
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>定義篩選器是否套用至
+        <translation type="obsolete">定義篩選器是否套用至
 附掛於主端電腦的本機 USB 裝置 (&lt;i&gt;否&lt;/i&gt;)、
 至 VRDP 客戶端的電腦 (&lt;i&gt;是&lt;/i&gt;)，
 或是兩者 (&lt;i&gt;任何&lt;/i&gt;)。</translation>
@@ -3557,7 +3603,7 @@ or both (&lt;i&gt;Any&lt;/i&gt;).</source>
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>定義當符合的裝置附掛時，
+        <translation type="obsolete">定義當符合的裝置附掛時，
 由主端電腦所執行的動作：放棄給主端作業系統
 (&lt;i&gt;忽略&lt;/i&gt;) 或是抓住它以便稍後由虛擬機器使用
 (&lt;i&gt;保留&lt;/i&gt;)。</translation>
@@ -3583,7 +3629,7 @@ computer when a matching device is attached: give it up to the host OS
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.</source>
-        <translation>定義廠商 ID 篩選器。
+        <translation type="obsolete">定義廠商 ID 篩選器。
 &lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。空的字串將會符合任何
 值。</translation>
@@ -3593,7 +3639,7 @@ value.</source>
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.</source>
-        <translation>定義產品 ID 篩選器。
+        <translation type="obsolete">定義產品 ID 篩選器。
 &lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。空的字串將會符合任何
 值。</translation>
@@ -3604,7 +3650,7 @@ value.</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.</source>
-        <translation>定義版本編號篩選器。
+        <translation type="obsolete">定義版本編號篩選器。
 &lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;IIFF&lt;/tt&gt; 其中的
 &lt;tt&gt;I&lt;/tt&gt; 是整數部份的十進位數字，而 &lt;tt&gt;F&lt;/tt&gt;
 是小數部份的十進位數字。空的字串將會符合任何
@@ -3614,7 +3660,7 @@ value.</source>
         <source>Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation>定義主端 USB 埠號篩選器為
+        <translation type="obsolete">定義主端 USB 埠號篩選器為
 完全符合的字串。空的字串將會符合任何
 值。</translation>
     </message>
@@ -3632,6 +3678,66 @@ value.</source>
         <source>No</source>
         <comment>remote</comment>
         <translation>否</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the manufacturer filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the product name filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the serial number filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines whether this filter applies
+to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
+to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
+or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines an action performed by the host
+computer when a matching device is attached: give it up to the host OS
+(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
+(&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the vendor ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the product ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the revision number filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
+&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
+is a decimal digit of the fractional part. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the host USB port filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3703,7 +3809,7 @@ value.</source>
     <message>
         <source>When checked, plugs this virtual network adapter into
                 the virtual machine.</source>
-        <translation>如果勾選，就會將這塊虛擬網路卡插入
+        <translation type="obsolete">如果勾選，就會將這塊虛擬網路卡插入
                 虛擬機器之中。</translation>
     </message>
     <message>
@@ -3714,7 +3820,7 @@ value.</source>
         <source>Controls the way how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
-        <translation>控制這塊虛擬網路卡
+        <translation type="obsolete">控制這塊虛擬網路卡
                                         附掛到主端作業系統實際網路的方式。</translation>
     </message>
     <message>
@@ -3726,7 +3832,7 @@ value.</source>
                                         this adapter. It contains exactly 12
                                         characters chosen from
                                         {0-9,A-F}.</source>
-        <translation>顯示網路卡的 MAC 地址。
+        <translation type="obsolete">顯示網路卡的 MAC 地址。
                                         它包含剛好 12 個來自 {0-9,A-F} 所組成的字元。</translation>
     </message>
     <message>
@@ -3752,7 +3858,7 @@ value.</source>
     <message>
         <source>Indicates whether the virtual network cable is plugged
                         in on machine startup or not.</source>
-        <translation>指出虛擬網路線是否
+        <translation type="obsolete">指出虛擬網路線是否
                         已於機器啟動時接妥。</translation>
     </message>
     <message>
@@ -3768,13 +3874,13 @@ value.</source>
                                                         name of the host
                                                         interface selected for
                                                         this adapter.</source>
-        <translation>顯示選用於
+        <translation type="obsolete">顯示選用於
                                                         此配接卡的主端介面名稱。</translation>
     </message>
     <message>
         <source>Lists all available
                                                 host interfaces.</source>
-        <translation>列出所有可用的
+        <translation type="obsolete">列出所有可用的
                                                 主端介面。</translation>
     </message>
     <message>
@@ -3784,14 +3890,14 @@ value.</source>
     <message>
         <source>Removes
                                                         the selected host interface.</source>
-        <translation>移除所選的
+        <translation type="obsolete">移除所選的
                                                         主端介面。</translation>
     </message>
     <message>
         <source>Displays the
                                                         TAP interface
                                                         name.</source>
-        <translation>顯示 TAP
+        <translation type="obsolete">顯示 TAP
                                                         介面名稱。</translation>
     </message>
     <message>
@@ -3807,7 +3913,7 @@ value.</source>
                                                         command executed to
                                                         setup the TAP
                                                         interface.</source>
-        <translation>顯示設定
+        <translation type="obsolete">顯示設定
                                                         TAP 介面
                                                         時所執行的命令。</translation>
     </message>
@@ -3819,7 +3925,7 @@ value.</source>
         <source>Selects the
                                                         setup
                                                         application.</source>
-        <translation>選取設定
+        <translation type="obsolete">選取設定
                                                         應用軟體。</translation>
     </message>
     <message>
@@ -3831,14 +3937,14 @@ value.</source>
                                                         command executed to
                                                         terminate the TAP
                                                         interface.</source>
-        <translation>顯示終止
+        <translation type="obsolete">顯示終止
                                                         TAP 介面
                                                         時所執行的命令。</translation>
     </message>
     <message>
         <source>Selects the
                                                         terminate application.</source>
-        <translation>選取終止
+        <translation type="obsolete">選取終止
                                                         應用軟體。</translation>
     </message>
     <message>
@@ -3868,6 +3974,54 @@ value.</source>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a differnet interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;您想要移除所選的主端網路介面 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 嗎？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意：&lt;/b&gt; 這個介面可能正被一或多個此機器或其他虛擬機器的網路卡所使用。在移除它之後，這些網路卡將失去作用，直到您選擇了不同的介面卡名稱或不同的介面卡附掛類型，以改正它們的設定值。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the name of the host interface selected for this adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all available host interfaces.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes the selected host interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the TAP interface name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the command executed to setup the TAP interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the setup application.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the command executed to terminate the TAP interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the terminate application.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4175,7 +4329,7 @@ value.</source>
     <message>
         <source>Displays the operating system type that you
 plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>顯示您計畫要安裝到這個虛擬機器之內的
+        <translation type="obsolete">顯示您計畫要安裝到這個虛擬機器之內的
 作業系統類型(稱之為客端作業系統)。</translation>
     </message>
     <message>
@@ -4221,7 +4375,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     <message>
         <source>Displays the path where snapshots of this virtual machine
 will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation>顯示用來儲存此虛擬機器快照的路徑。
+        <translation type="obsolete">顯示用來儲存此虛擬機器快照的路徑。
 請注意，快照有可能會佔用相當多的磁碟空間。</translation>
     </message>
     <message>
@@ -4239,7 +4393,7 @@ will be stored. Note that snapshots can take quite a lot of disk space.</source>
     <message>
         <source>Resets the snapshot folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>重新將快照資料夾路徑設定為預設值。
+        <translation type="obsolete">重新將快照資料夾路徑設定為預設值。
 接受了變更並且重新開啟這個對話框之後，將會顯示實際的預設路徑。</translation>
     </message>
     <message>
@@ -4258,7 +4412,7 @@ The actual default path will be displayed after accepting the changes and openin
         <source>When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation>如果勾選，虛擬機器將會支援「進階配置與電源管理介面(ACPI)」。
+        <translation type="obsolete">如果勾選，虛擬機器將會支援「進階配置與電源管理介面(ACPI)」。
 &lt;b&gt;注意：&lt;/b&gt; 在安裝 Windows 客端作業系統之後，請不要停用此功能！</translation>
     </message>
     <message>
@@ -4269,7 +4423,7 @@ this feature after having installed a Windows guest operating system!</source>
         <source>When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation>如果勾選，虛擬機器將會支援「輸入輸出 APIC (IO ACPI)」，
+        <translation type="obsolete">如果勾選，虛擬機器將會支援「輸入輸出 APIC (IO ACPI)」，
 而它也許會稍微降低虛擬機器的效能。&lt;b&gt;注意：&lt;/b&gt; 在安裝 Windows 客端作業系統之後，請不要停用此功能！</translation>
     </message>
     <message>
@@ -4286,7 +4440,7 @@ this feature after having installed a Windows guest operating system!</source>
                                         field is useful for commenting
                                         configuration details of the installed
                                         guest OS.</source>
-        <translation>顯示虛擬機器的描述。描述欄位可用來
+        <translation type="obsolete">顯示虛擬機器的描述。描述欄位可用來
                                         註記所安裝客端作業系統的配置細節。</translation>
     </message>
     <message>
@@ -4300,7 +4454,7 @@ this feature after having installed a Windows guest operating system!</source>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new
 or select an existing virtual hard disk to attach.</source>
-        <translation>調用虛擬磁碟管理器以建立一顆新的
+        <translation type="obsolete">調用虛擬磁碟管理器以建立一顆新的
 或是選取一顆現有的虛擬硬碟來附掛。</translation>
     </message>
     <message>
@@ -4330,7 +4484,7 @@ or select an existing virtual hard disk to attach.</source>
     <message>
         <source>Lists host Floppy drives available to mount to
 the virtual machine.</source>
-        <translation>列出可用於掛載到虛擬機器的主端軟碟機。</translation>
+        <translation type="obsolete">列出可用於掛載到虛擬機器的主端軟碟機。</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -4343,7 +4497,7 @@ the virtual machine.</source>
     <message>
         <source>Invokes the Virtual Disk Manager to select
 a Floppy image to mount.</source>
-        <translation>調用虛擬磁碟管理器以選取要掛載的軟碟映像檔。</translation>
+        <translation type="obsolete">調用虛擬磁碟管理器以選取要掛載的軟碟映像檔。</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
@@ -4360,7 +4514,7 @@ a Floppy image to mount.</source>
     <message>
         <source>Lists host CD/DVD drives available to mount to
 the virtual machine.</source>
-        <translation>列出要掛載到虛擬機器的主端光碟機。</translation>
+        <translation type="obsolete">列出要掛載到虛擬機器的主端光碟機。</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
@@ -4373,7 +4527,7 @@ the virtual machine.</source>
     <message>
         <source>Invokes the Virtual Disk Manager to select
 a CD/DVD image to mount.</source>
-        <translation>調用虛擬磁碟管理器以選取要掛載的光碟映像檔。</translation>
+        <translation type="obsolete">調用虛擬磁碟管理器以選取要掛載的光碟映像檔。</translation>
     </message>
     <message>
         <source>&amp;Enable Audio</source>
@@ -4386,7 +4540,7 @@ a CD/DVD image to mount.</source>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>控制音效輸出驅動程式。&lt;b&gt;空的音效驅動程式&lt;/b&gt;
+        <translation type="obsolete">控制音效輸出驅動程式。&lt;b&gt;空的音效驅動程式&lt;/b&gt;
 讓客端系統看得到音效卡，然而所有對它的存取都會被忽略。</translation>
     </message>
     <message>
@@ -4400,7 +4554,7 @@ makes the guest see an audio card, however every access to it will be ignored.</
     <message>
         <source>When checked, enables the virtual USB controller
 of this machine.</source>
-        <translation>如果勾選，就會啟用此機器的虛擬 USB 控制器。</translation>
+        <translation type="obsolete">如果勾選，就會啟用此機器的虛擬 USB 控制器。</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -4409,7 +4563,7 @@ of this machine.</source>
     <message>
         <source>Lists all USB filters of this machine.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>列出此機器所有的 USB 篩選器。
+        <translation type="obsolete">列出此機器所有的 USB 篩選器。
 左側的核取方塊用來定義是否要啟用特定的篩選器。</translation>
     </message>
     <message>
@@ -4424,7 +4578,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation>加入一個新的 USB 篩選器，
+        <translation type="obsolete">加入一個新的 USB 篩選器，
 其中所有的欄位都初始設定為空字串。請注意，
 此種篩選器將會符合任何附掛的 USB 裝置。</translation>
     </message>
@@ -4439,7 +4593,7 @@ USB device.</source>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>加入一個新的 USB 篩選器，
+        <translation type="obsolete">加入一個新的 USB 篩選器，
 其中所有的欄位都設定為附掛到主端 PC 的所選 USB 裝置值。</translation>
     </message>
     <message>
@@ -4637,14 +4791,80 @@ with all fields set to the values of the selected USB device attached to the hos
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>
-Defines the mode of sharing the clipboard between the guest and the host OS. Note
-that this feature requires Guest Additions to be installed in the guest OS.
-                                                </source>
+        <source>S&amp;napshot Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>S&amp;napshot Folder</source>
+        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;When checked, the virtual machine will support
+the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;When checked, the virtual machine will support
+the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
+makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB controller of this machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

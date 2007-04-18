@@ -283,8 +283,7 @@
                                     <enum>Sunken</enum>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Displays the path to the default VDI folder. This folder is
-used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</string>
+                                    <string>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</string>
                                 </property>
                             </widget>
                             <widget class="QLabel" row="1" column="0">
@@ -320,8 +319,7 @@ used, if not explicitly specified otherwise, when adding existing or creating ne
                                     <bool>true</bool>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Resets the virtual machine folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
+                                    <string>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
                                 </property>
                             </widget>
                             <widget class="QToolButton" row="0" column="3">
@@ -341,8 +339,7 @@ The actual default path will be displayed after accepting the changes and openin
                                     <bool>true</bool>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Resets the VDI folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
+                                    <string>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
                                 </property>
                             </widget>
                             <widget class="QLineEdit" row="1" column="1">
@@ -350,9 +347,7 @@ The actual default path will be displayed after accepting the changes and openin
                                     <cstring>leMachineFolder</cstring>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Displays the path to the default virtual machine
-folder. This folder is used, if not explicitly specified otherwise, when creating new
-virtual machines.</string>
+                                    <string>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</string>
                                 </property>
                             </widget>
                             <widget class="QToolButton" row="0" column="2">
@@ -375,8 +370,7 @@ virtual machines.</string>
                                     <bool>true</bool>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Opens a dialog to select the
-default VDI folder.</string>
+                                    <string>Opens a dialog to select the default VDI folder.</string>
                                 </property>
                             </widget>
                             <widget class="QToolButton" row="1" column="2">
@@ -399,8 +393,7 @@ default VDI folder.</string>
                                     <bool>true</bool>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Opens a dialog to select the
-default virtual machine folder.</string>
+                                    <string>Opens a dialog to select the default virtual machine folder.</string>
                                 </property>
                             </widget>
                         </grid>
@@ -505,9 +498,7 @@ default virtual machine folder.</string>
                                     <string>Alt+A</string>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured,
-all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
+                                    <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
                                 </property>
                             </widget>
                         </vbox>
@@ -580,8 +571,7 @@ all keystrokes (including system ones like Alt-Tab) are directed to the VM.</str
                                             <cstring>lvUSBFilters</cstring>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Lists all global USB filters.
-The checkbox to the left defines whether the particular filter is enabled or not.</string>
+                                            <string>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</string>
                                         </property>
                                     </widget>
                                     <widget class="QLayoutWidget">
@@ -618,9 +608,7 @@ The checkbox to the left defines whether the particular filter is enabled or not
                                                     <bool>true</bool>
                                                 </property>
                                                 <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter with
-all fields initially set to empty strings. Note that such a filter will match any attached
-USB device.</string>
+                                                    <string>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</string>
                                                 </property>
                                             </widget>
                                             <widget class="QToolButton">
@@ -646,8 +634,7 @@ USB device.</string>
                                                     <bool>true</bool>
                                                 </property>
                                                 <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter
-with all fields set to the values of the selected USB device attached to the host PC.</string>
+                                                    <string>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</string>
                                                 </property>
                                             </widget>
                                             <widget class="QToolButton">

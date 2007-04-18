@@ -146,7 +146,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
                                 <bool>true</bool>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>Edit selected shared folder definition.</string>
+                                <string>Edits the selected shared folder definition.</string>
                             </property>
                         </widget>
                         <widget class="QToolButton">

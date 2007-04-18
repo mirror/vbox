@@ -56,8 +56,7 @@
                 <string>&amp;Enable Network Adapter</string>
             </property>
             <property name="whatsThis" stdset="0">
-                <string>When checked, plugs this virtual network adapter into
-                the virtual machine.</string>
+                <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
             </property>
             <property name="checkable">
                 <bool>true</bool>
@@ -106,9 +105,7 @@
                                         <cstring>cbNetworkAttachment</cstring>
                                     </property>
                                     <property name="whatsThis" stdset="0">
-                                        <string>Controls the way how this
-                                        virtual adapter is attached to the
-                                        real network of the Host OS.</string>
+                                        <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
                                     </property>
                                 </widget>
                             </vbox>
@@ -151,10 +148,7 @@
                                         <enum>Sunken</enum>
                                     </property>
                                     <property name="whatsThis" stdset="0">
-                                        <string>Displays the MAC address of
-                                        this adapter. It contains exactly 12
-                                        characters chosen from
-                                        {0-9,A-F}.</string>
+                                        <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</string>
                                     </property>
                                 </widget>
                             </vbox>
@@ -216,8 +210,7 @@
                         <string>Alt+B</string>
                     </property>
                     <property name="whatsThis" stdset="0">
-                        <string>Indicates whether the virtual network cable is plugged
-                        in on machine startup or not.</string>
+                        <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
                     </property>
                 </widget>
                 <widget class="QGroupBox">
@@ -303,10 +296,7 @@
                                                         <bool>true</bool>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Displays the
-                                                        name of the host
-                                                        interface selected for
-                                                        this adapter.</string>
+                                                        <string>Displays the name of the host interface selected for this adapter.</string>
                                                     </property>
                                                 </widget>
                                             </hbox>
@@ -324,8 +314,7 @@
                                                 </sizepolicy>
                                             </property>
                                             <property name="whatsThis" stdset="0">
-                                                <string>Lists all available
-                                                host interfaces.</string>
+                                                <string>Lists all available host interfaces.</string>
                                             </property>
                                         </widget>
                                         <widget class="QLayoutWidget" row="1" column="1">
@@ -379,8 +368,7 @@
                                                         <string></string>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Removes
-                                                        the selected host interface.</string>
+                                                        <string>Removes the selected host interface.</string>
                                                     </property>
                                                 </widget>
                                                 <spacer>
@@ -470,9 +458,7 @@
                                                         <cstring>leHostInterface</cstring>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Displays the
-                                                        TAP interface
-                                                        name.</string>
+                                                        <string>Displays the TAP interface name.</string>
                                                     </property>
                                                 </widget>
                                             </vbox>
@@ -612,10 +598,7 @@
                                                         <cstring>leTAPSetup</cstring>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Displays the
-                                                        command executed to
-                                                        setup the TAP
-                                                        interface.</string>
+                                                        <string>Displays the command executed to setup the TAP interface.</string>
                                                     </property>
                                                 </widget>
                                                 <widget class="QToolButton">
@@ -626,9 +609,7 @@
                                                         <string>Select</string>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Selects the
-                                                        setup
-                                                        application.</string>
+                                                        <string>Selects the setup application.</string>
                                                     </property>
                                                 </widget>
                                             </hbox>
@@ -706,10 +687,7 @@
                                                         <enum>Sunken</enum>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Displays the
-                                                        command executed to
-                                                        terminate the TAP
-                                                        interface.</string>
+                                                        <string>Displays the command executed to terminate the TAP interface.</string>
                                                     </property>
                                                 </widget>
                                                 <widget class="QToolButton">
@@ -720,8 +698,7 @@
                                                         <string>Select</string>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>Selects the
-                                                        terminate application.</string>
+                                                        <string>Selects the terminate application.</string>
                                                     </property>
                                                 </widget>
                                             </hbox>
