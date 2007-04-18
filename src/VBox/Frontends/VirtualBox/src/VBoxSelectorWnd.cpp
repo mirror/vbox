@@ -979,6 +979,17 @@ bool VBoxSelectorWnd::event (QEvent *e)
             languageChange();
             break;
         }
+        case QEvent::Show:
+        {
+            /* Constrain StartVM button size */
+            QObjectList *list = queryList ("QToolButton",
+                QString (vmStartAction->name()) + "_action_button");
+            QToolButton *actionButton = list->first() ?
+                static_cast<QToolButton*> (list->first()) : 0;
+            if (actionButton)
+                new QIConstrainKeeper (actionButton);
+            break;
+        }
 
         default:
             break;

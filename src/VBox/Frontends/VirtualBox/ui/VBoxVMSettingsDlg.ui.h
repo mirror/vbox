@@ -423,7 +423,6 @@ void VBoxVMSettingsDlg::init()
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
                                      6 /* seems that RichText adds some margin */ +
                                      whatsThisLabel->fontMetrics().width ('m') * 40);
-    connect (whatsThisLabel, SIGNAL (textChanged()), this, SLOT (processAdjustSize()));
 
     /*
      *  setup connections and set validation for pages
@@ -798,15 +797,6 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
 
     VBoxGlobal::centerWidget (this, parentWidget());
 }
-
-void VBoxVMSettingsDlg::processAdjustSize()
-{
-    int newHeight = minimumSize().height();
-    int oldHeight = height();
-    if (newHeight > oldHeight)
-        resize (minimumSize());
-}
-
 
 void VBoxVMSettingsDlg::updateShortcuts()
 {
