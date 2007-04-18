@@ -479,7 +479,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
      */
 
 #ifdef DEBUG
-    /* Intercept X86_TRAP_DB if stepping is enabled */
+    /* Intercept X86_XCPT_DB if stepping is enabled */
     if (DBGFIsStepping(pVM))
         pVMCB->ctrl.u32InterceptException |=  BIT(1);
     else
@@ -833,7 +833,7 @@ ResumeExecution:
         {
 #ifdef DEBUG
         case X86_XCPT_DB:
-            rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), pCtx->dr6);
+            rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), pVMCB->guest.u64DR6);
             Assert(rc != VINF_EM_RAW_GUEST_TRAP);
             break;
 #endif
