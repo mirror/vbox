@@ -508,6 +508,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
     bool        fForceTLBFlush = false;
+    bool        fGuestStateSynced = false;
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -580,6 +581,7 @@ ResumeExecution:
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
     }
+    fGuestStateSynced = true;
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
@@ -1346,27 +1348,29 @@ ResumeExecution:
         break;
     }
 
-    /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR. */
-    SVM_READ_SELREG(LDTR, ldtr);
-    SVM_READ_SELREG(TR, tr);
+end:
+    if (fGuestStateSynced)
+    {
+        /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR. */
+        SVM_READ_SELREG(LDTR, ldtr);
+        SVM_READ_SELREG(TR, tr);
 
-    pCtx->gdtr.cbGdt        = pVMCB->guest.GDTR.u32Limit;
-    pCtx->gdtr.pGdt         = pVMCB->guest.GDTR.u64Base;
+        pCtx->gdtr.cbGdt        = pVMCB->guest.GDTR.u32Limit;
+        pCtx->gdtr.pGdt         = pVMCB->guest.GDTR.u64Base;
 
-    pCtx->idtr.cbIdt        = pVMCB->guest.IDTR.u32Limit;
-    pCtx->idtr.pIdt         = pVMCB->guest.IDTR.u64Base;
+        pCtx->idtr.cbIdt        = pVMCB->guest.IDTR.u32Limit;
+        pCtx->idtr.pIdt         = pVMCB->guest.IDTR.u64Base;
 
-    /*
-     * System MSRs
-     */
-    pCtx->SysEnter.cs       = pVMCB->guest.u64SysEnterCS;
-    pCtx->SysEnter.eip      = pVMCB->guest.u64SysEnterEIP;
-    pCtx->SysEnter.esp      = pVMCB->guest.u64SysEnterESP;
+        /*
+         * System MSRs
+         */
+        pCtx->SysEnter.cs       = pVMCB->guest.u64SysEnterCS;
+        pCtx->SysEnter.eip      = pVMCB->guest.u64SysEnterEIP;
+        pCtx->SysEnter.esp      = pVMCB->guest.u64SysEnterESP;
+    }
 
     /* Signal changes for the recompiler. */
     CPUMSetChangedFlags(pVM, CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_LDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_TR | CPUM_CHANGED_HIDDEN_SEL_REGS);
-
-end:
 
     /* If we executed vmrun and an external irq was pending, then we don't have to do a full sync the next time. */
     if (exitCode == SVM_EXIT_INTR)
