@@ -272,7 +272,7 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
     AssertRelease(f);NOREF(f);
 
     /* The method also unlocks the framebuffer. */
-    handleResizeCompletedEMT();
+    handleResizeCompletedEMT(false /* fAsync */);
 
     return VINF_SUCCESS;
 }
@@ -283,7 +283,7 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
  *
  *  @thread EMT
  */
-void Display::handleResizeCompletedEMT (void)
+void Display::handleResizeCompletedEMT (bool fAsync)
 {
     LogFlowFunc(("\n"));
     if (!mFramebuffer.isNull())
@@ -322,8 +322,13 @@ void Display::handleResizeCompletedEMT (void)
     bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_Void, ResizeStatus_UpdateDisplayData);
     AssertRelease(f);NOREF(f);
 
-    /* Repaint the display. This could lead to a new call to handleDisplayResize, so do this after the status change. */
-    // @todo mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
+    if (fAsync)
+    {
+        /* Repaint the display, but only if the resize was asynchronous. That is only
+         * when VINF_VGA_RESIZE_IN_PROGRESS was returned to the VGA device and VM continued
+         * to run during the framebuffer resize. */
+        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
+    }
 }
 
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
@@ -1794,7 +1799,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     {
         LogFlowFunc (("ResizeStatus_UpdateDisplayData\n"));
         /* The framebuffer was resized and display data need to be updated. */
-        pDisplay->handleResizeCompletedEMT ();
+        pDisplay->handleResizeCompletedEMT (true /* fAsync */);
         /* Continue with normal processing because the status here is ResizeStatus_Void. */
         Assert (pDisplay->mu32ResizeStatus == ResizeStatus_Void);
     }
