@@ -63,10 +63,10 @@
         </property>
         <property name="geometry">
             <rect>
-                <x>330</x>
-                <y>0</y>
-                <width>260</width>
-                <height>16</height>
+                <x>14</x>
+                <y>10</y>
+                <width>566</width>
+                <height>20</height>
             </rect>
         </property>
         <property name="backgroundMode">
@@ -89,7 +89,7 @@
             <string>VirtualBox Graphical User Interface Version %1</string>
         </property>
         <property name="alignment">
-            <set>WordBreak|AlignBottom|AlignRight</set>
+            <set>WordBreak|AlignBottom|AlignLeft</set>
         </property>
     </widget>
 </widget>
