@@ -69,11 +69,12 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+__BEGIN_DECLS
 PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-
+__END_DECLS
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 #endif /* VBOX */
 
@@ -379,14 +380,14 @@ static void kbd_queue(KBDState *s, int b, int aux)
 #ifdef IN_RING3
 static void pc_kbd_put_keycode(void *opaque, int keycode)
 {
-    KBDState *s = opaque;
+    KBDState *s = (KBDState*)opaque;
     kbd_queue(s, keycode, 0);
 }
 #endif /* IN_RING3 */
 
 static uint32_t kbd_read_status(void *opaque, uint32_t addr)
 {
-    KBDState *s = opaque;
+    KBDState *s = (KBDState*)opaque;
     int val;
     val = s->status;
 #if defined(DEBUG_KBD)
@@ -403,7 +404,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 {
     int rc = VINF_SUCCESS;
 #endif /* VBOX */
-    KBDState *s = opaque;
+    KBDState *s = (KBDState*)opaque;
 
 #ifdef DEBUG_KBD
     Log(("kbd: write cmd=0x%02x\n", val));
@@ -514,7 +515,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 
 static uint32_t kbd_read_data(void *opaque, uint32_t addr)
 {
-    KBDState *s = opaque;
+    KBDState *s = (KBDState*)opaque;
     KBDQueue *q;
 #ifdef VBOX
     MouseCmdQueue *mcq;
@@ -653,11 +654,13 @@ static int  kbd_write_keyboard(KBDState *s, int val)
     case KBD_CMD_SET_LEDS:
         {
 #ifdef IN_RING3
-            PDMKEYBLEDS enmLeds = 0
-                                | ((val & 0x01) ? PDMKEYBLEDS_SCROLLLOCK : 0)
-                                | ((val & 0x02) ? PDMKEYBLEDS_NUMLOCK    : 0)
-                                | ((val & 0x04) ? PDMKEYBLEDS_CAPSLOCK   : 0)
-                                ;
+            PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
+            if (val & 0x01)
+                enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_SCROLLLOCK);
+            if (val & 0x02)
+                enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_NUMLOCK);
+            if (val & 0x04)
+                enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
             s->Keyboard.pDrv->pfnLedStatusChange(s->Keyboard.pDrv, enmLeds);
 #else
             return VINF_IOM_HC_IOPORT_WRITE;
@@ -748,7 +751,7 @@ static void kbd_mouse_send_packet(KBDState *s)
 static void pc_kbd_mouse_event(void *opaque,
                                int dx, int dy, int dz, int buttons_state)
 {
-    KBDState *s = opaque;
+    KBDState *s = (KBDState*)opaque;
 
     /* check if deltas are recorded when disabled */
     if (!(s->mouse_status & MOUSE_STATUS_ENABLED))
@@ -944,7 +947,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
 {
     int rc = VINF_SUCCESS;
 #endif /* VBOX */
-    KBDState *s = opaque;
+    KBDState *s = (KBDState*)opaque;
 
 #ifdef DEBUG_KBD
     Log(("kbd: write data=0x%02x\n", val));
@@ -1006,7 +1009,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
 
 static void kbd_reset(void *opaque)
 {
-    KBDState *s = opaque;
+    KBDState *s = (KBDState*)opaque;
     KBDQueue *q;
 #ifdef VBOX
     MouseCmdQueue *mcq;
@@ -1201,7 +1204,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     rc = SSMR3GetU32(f, &u32);
     if (VBOX_FAILURE(rc))
         return rc;
-    if (u32 != ~0)
+    if (u32 != ~0U)
     {
         AssertMsgFailed(("u32=%#x\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -1495,7 +1498,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
             rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pData->Keyboard.Base, &pData->Keyboard.pDrvBase, "Keyboard Port");
             if (VBOX_SUCCESS(rc))
             {
-                pData->Keyboard.pDrv = pData->Keyboard.pDrvBase->pfnQueryInterface(pData->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR);
+                pData->Keyboard.pDrv = (PDMIKEYBOARDCONNECTOR*)(pData->Keyboard.pDrvBase->pfnQueryInterface(pData->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR));
                 if (!pData->Keyboard.pDrv)
                 {
                     AssertMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Vrc\n", rc));
@@ -1516,7 +1519,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
             rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pData->Mouse.Base, &pData->Mouse.pDrvBase, "Aux (Mouse) Port");
             if (VBOX_SUCCESS(rc))
             {
-                pData->Mouse.pDrv = pData->Mouse.pDrvBase->pfnQueryInterface(pData->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR);
+                pData->Mouse.pDrv = (PDMIMOUSECONNECTOR*)(pData->Mouse.pDrvBase->pfnQueryInterface(pData->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR));
                 if (!pData->Mouse.pDrv)
                 {
                     AssertMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Vrc\n", rc));

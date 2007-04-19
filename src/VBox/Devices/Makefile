@@ -169,7 +169,7 @@ DevicesR3_SDKS.win      = WINPSDK W2K3DDK
 DevicesR3_INCS          = \
 	$(PATH_CURRENT)
 DevicesR3_SOURCES       = \
-	Input/pckbd.c \
+	Input/DevPS2.cpp \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
 	Storage/DevATA.cpp \
@@ -220,7 +220,7 @@ VBoxDDGC_INCS           = \
 VBoxDDGC_SOURCES        = \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
-	Input/pckbd.c \
+	Input/DevPS2.cpp \
 	PC/DevACPI.cpp \
 	PC/DevPit-i8254.cpp \
 	PC/DevPIC.cpp \
@@ -256,7 +256,7 @@ VBoxDDR0_INCS           = \
 VBoxDDR0_SOURCES        = \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
-	Input/pckbd.c \
+	Input/DevPS2.cpp \
 	PC/DevACPI.cpp \
 	PC/DevPit-i8254.cpp \
 	PC/DevPIC.cpp \

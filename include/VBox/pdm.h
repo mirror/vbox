@@ -610,6 +610,7 @@ typedef struct PDMIKEYBOARDPORT
  */
 typedef enum PDMKEYBLEDS
 {
+    PDMKEYBLEDS_NONE             = 0x0000,
     /** Num Lock */
     PDMKEYBLEDS_NUMLOCK          = 0x0001,
     /** Caps Lock */
