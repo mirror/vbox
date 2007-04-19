@@ -779,6 +779,7 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     RTGCUINTPTR exitQualification;
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo, uInterruptState;
+    bool        fGuestStateSynced = false;
 
     Log2(("\nE"));
 
@@ -929,6 +930,7 @@ ResumeExecution:
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
     }
+    fGuestStateSynced = true;
 
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
@@ -1631,32 +1633,7 @@ ResumeExecution:
         break;
     }
 
-    /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR. */
-    VMX_READ_SELREG(LDTR, ldtr);
-    VMX_READ_SELREG(TR, tr);
-
-    VMXReadVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       &val);
-    pCtx->gdtr.cbGdt        = val;
-    VMXReadVMCS(VMX_VMCS_GUEST_GDTR_BASE,        &val);
-    pCtx->gdtr.pGdt         = val;
-
-    VMXReadVMCS(VMX_VMCS_GUEST_IDTR_LIMIT,       &val);
-    pCtx->idtr.cbIdt        = val;
-    VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE,        &val);
-    pCtx->idtr.pIdt         = val;
-
-    /*
-     * System MSRs
-     */
-    VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_CS,      &val);
-    pCtx->SysEnter.cs       = val;
-    VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_EIP,     &val);
-    pCtx->SysEnter.eip      = val;
-    VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     &val);
-    pCtx->SysEnter.esp      = val;
-
-    /* Signal changes for the recompiler. */
-    CPUMSetChangedFlags(pVM, CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_LDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_TR | CPUM_CHANGED_HIDDEN_SEL_REGS);
+    /** Note: the guest state isn't entirely synced back at this stage. */
 
     /* Investigate why there was a VM-exit. (part 2) */
     switch (exitReason)
@@ -1754,6 +1731,35 @@ ResumeExecution:
 
     }
 end:
+    if (fGuestStateSynced)
+    {
+        /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR. */
+        VMX_READ_SELREG(LDTR, ldtr);
+        VMX_READ_SELREG(TR, tr);
+
+        VMXReadVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       &val);
+        pCtx->gdtr.cbGdt        = val;
+        VMXReadVMCS(VMX_VMCS_GUEST_GDTR_BASE,        &val);
+        pCtx->gdtr.pGdt         = val;
+
+        VMXReadVMCS(VMX_VMCS_GUEST_IDTR_LIMIT,       &val);
+        pCtx->idtr.cbIdt        = val;
+        VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE,        &val);
+        pCtx->idtr.pIdt         = val;
+
+        /*
+         * System MSRs
+         */
+        VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_CS,      &val);
+        pCtx->SysEnter.cs       = val;
+        VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_EIP,     &val);
+        pCtx->SysEnter.eip      = val;
+        VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     &val);
+        pCtx->SysEnter.esp      = val;
+    }
+
+    /* Signal changes for the recompiler. */
+    CPUMSetChangedFlags(pVM, CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_LDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_TR | CPUM_CHANGED_HIDDEN_SEL_REGS);
 
     /* If we executed vmlaunch/vmresume and an external irq was pending, then we don't have to do a full sync the next time. */
     if (    exitReason == VMX_EXIT_EXTERNAL_IRQ
