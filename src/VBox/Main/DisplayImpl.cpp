@@ -323,7 +323,7 @@ void Display::handleResizeCompletedEMT (void)
     AssertRelease(f);NOREF(f);
 
     /* Repaint the display. This could lead to a new call to handleDisplayResize, so do this after the status change. */
-    mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
+    // @todo mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
 }
 
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
