@@ -99,6 +99,7 @@ VMMR3_SOURCES   = \
 	VMMAll/CPUMAllA.asm \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/IOMAll.cpp \
+	VMMAll/IOMAllMMIO.cpp \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
 	VMMAll/MMAllPagePool.cpp \
