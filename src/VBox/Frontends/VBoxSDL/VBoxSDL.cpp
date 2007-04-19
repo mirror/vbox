@@ -1024,7 +1024,7 @@ int main(int argc, char *argv[])
         {
             if (++curArg >= argc)
             {
-                RTPrintf("Error: missing file/device name for first hard disk!\n");
+                RTPrintf("Error: missing file/device name for cdrom!\n");
                 rc = E_FAIL;
                 break;
             }
@@ -1333,7 +1333,7 @@ int main(int argc, char *argv[])
         if (!hardDisk)
         {
             /* we've not found the image */
-            RTPrintf("Registering hard disk image %s\n", hdaFile);
+            RTPrintf("Registering hard disk image '%S'...\n", hdaFile);
             virtualBox->OpenHardDisk (hdaFileBstr, hardDisk.asOutParam());
             if (hardDisk)
                 virtualBox->RegisterHardDisk (hardDisk);
@@ -1357,180 +1357,129 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (fdaFile)
-    {
-        ComPtr<IFloppyDrive> floppyDrive;
-        gMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-        Assert(floppyDrive);
-
-        ComPtr<IFloppyImageCollection> collection;
-        virtualBox->COMGETTER(FloppyImages)(collection.asOutParam());
-        Assert(collection);
-        ComPtr<IFloppyImageEnumerator> enumerator;
-        collection->Enumerate(enumerator.asOutParam());
-        Assert(enumerator);
-        ComPtr<IFloppyImage> floppyImage;
-        BOOL hasMore = false;
-        while (enumerator->HasMore(&hasMore), hasMore)
-        {
-            enumerator->GetNext(floppyImage.asOutParam());
-            Assert(floppyImage);
-            Bstr file;
-            floppyImage->COMGETTER(FilePath)(file.asOutParam());
-            Assert(file);
-            /// @todo this will not work on case insensitive systems if the casing does not match the registration!!!
-            if (file == fdaFile)
-                break;
-            else
-                floppyImage = NULL;
-        }
-        /* we've not found the image? */
-        if (!floppyImage)
-        {
-            RTPrintf("Registering floppy disk image %s\n", fdaFile);
-            Guid uuid;
-            Bstr fileBstr = fdaFile;
-            virtualBox->OpenFloppyImage (fileBstr, uuid, floppyImage.asOutParam());
-            virtualBox->RegisterFloppyImage (floppyImage);
-        }
-        /* do we have the right image now? */
-        if (floppyImage)
-        {
-            /*
-             * Go and attach it!
-             */
-            Guid uuid;
-            floppyImage->COMGETTER(Id)(uuid.asOutParam());
-            floppyDrive->MountImage(uuid);
-        }
-        else
-        {
-            RTPrintf("Error: failed to mount the specified floppy disk image!\n");
-            goto leave;
-        }
-    }
-
-    /*
-     * Are we supposed to use a different CDROM image?
+    /* 
+     * Mount a floppy if requested.
      */
-    if (cdromFile)
+    if (fdaFile)
+    do
     {
-        ComPtr<IDVDDrive> dvdDrive;
-        gMachine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
-        Assert(dvdDrive);
+        ComPtr<IFloppyDrive> drive;
+        CHECK_ERROR_BREAK (gMachine, COMGETTER(FloppyDrive)(drive.asOutParam()));
 
         /*
          * First special case 'none' to unmount
          */
-        if (strcmp(cdromFile, "none") == 0)
+        if (strcmp (fdaFile, "none") == 0)
         {
-            dvdDrive->Unmount();
+            CHECK_ERROR_BREAK (drive, Unmount());
+            break;
         }
-        else
+
+        Bstr media = fdaFile;
+        bool done = false;
+
+        /* Assume it's a host drive name */
         {
-            /*
-             * Determine if it's a host device or ISO image
-             */
-            bool fHostDrive = false;
-#ifdef __WIN__
-            /* two characters with the 2nd being a colon */
-            if ((strlen(cdromFile) == 2) && (cdromFile[1] == ':'))
+            ComPtr <IHost> host;
+            CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
+            ComPtr <IHostFloppyDriveCollection> coll;
+            CHECK_ERROR_BREAK (host, COMGETTER(FloppyDrives)(coll.asOutParam()));
+            ComPtr <IHostFloppyDrive> hostDrive;
+            rc = coll->FindByName (media, hostDrive.asOutParam());
+            if (SUCCEEDED (rc))
             {
-                cdromFile[0] = toupper(cdromFile[0]);
-                fHostDrive = true;
+                done = true;
+                CHECK_ERROR_BREAK (drive, CaptureHostDrive (hostDrive));
             }
-#else /* !__WIN__ */
-            /* it has to start with /dev/ */
-            if (strncmp(cdromFile, "/dev/", 5) == 0)
-                fHostDrive = true;
-#endif /* !__WIN__ */
-            if (fHostDrive)
+        }
+
+        /* Must be an image */
+        if (!done)
+        {
+            /* try to find an existing one */
+            ComPtr <IFloppyImage> image;
+            rc = virtualBox->FindFloppyImage (media, image.asOutParam());
+            if (FAILED (rc))
             {
-                ComPtr<IHost> host;
-                virtualBox->COMGETTER(Host)(host.asOutParam());
-                ComPtr<IHostDVDDriveCollection> collection;
-                host->COMGETTER(DVDDrives)(collection.asOutParam());
-                ComPtr<IHostDVDDriveEnumerator> enumerator;
-                collection->Enumerate(enumerator.asOutParam());
-                ComPtr<IHostDVDDrive> hostDVDDrive;
-                BOOL hasMore = FALSE;
-                while (enumerator->HasMore(&hasMore), hasMore)
-                {
-                    enumerator->GetNext(hostDVDDrive.asOutParam());
-                    Bstr driveName;
-                    hostDVDDrive->COMGETTER(Name)(driveName.asOutParam());
-                    Utf8Str driveNameUtf8 = driveName;
-                    char *driveNameStr = (char*)driveNameUtf8.raw();
-                    if (strcmp(driveNameStr, cdromFile) == 0)
-                    {
-                        rc = dvdDrive->CaptureHostDrive(hostDVDDrive);
-                        if (rc != S_OK)
-                        {
-                            RTPrintf("Error: could not mount host DVD drive %s! rc = 0x%x\n", driveNameStr, rc);
-                        }
-                        break;
-                    }
-                }
-                if (!hasMore)
-                    RTPrintf("Error: did not recognize DVD drive '%s'!\n", cdromFile);
+                /* try to register */
+                RTPrintf ("Registering floppy image '%S'...\n", fdaFile);
+                Guid uuid;
+                CHECK_ERROR_BREAK (virtualBox, OpenFloppyImage (media, uuid,
+                                                                image.asOutParam()));
+                CHECK_ERROR_BREAK (virtualBox, RegisterFloppyImage (image));
             }
-            else
-            {
-                /*
-                 * Same strategy as with the HDD images: check if already registered,
-                 * if not, register on the fly.
-                 */
-                ComPtr<IDVDImageCollection> collection;
-                virtualBox->COMGETTER(DVDImages)(collection.asOutParam());
-                Assert(collection);
-                ComPtr<IDVDImageEnumerator> enumerator;
-                collection->Enumerate(enumerator.asOutParam());
-                Assert(enumerator);
-                ComPtr<IDVDImage> dvdImage;
-                BOOL hasMore = false;
-                while (enumerator->HasMore(&hasMore), hasMore)
-                {
-                    enumerator->GetNext(dvdImage.asOutParam());
-                    Assert(dvdImage);
-                    Bstr dvdImageFile;
-                    dvdImage->COMGETTER(FilePath)(dvdImageFile.asOutParam());
-                    Assert(dvdImageFile);
-                    /// @todo not correct for case insensitive platforms (win32)
-                    /// See comment on hdaFile.
-                    if (dvdImageFile == cdromFile)
-                        break;
-                    else
-                        dvdImage = NULL;
-                }
-                /* we've not found the image? */
-                if (!dvdImage)
-                {
-                    RTPrintf("Registering ISO image %s\n", cdromFile);
-                    Guid uuid; // the system will generate UUID
-                    Bstr cdImageFileBstr = cdromFile;
-                    virtualBox->OpenDVDImage(cdImageFileBstr, uuid, dvdImage.asOutParam());
-                    rc = virtualBox->RegisterDVDImage(dvdImage);
-                    if (!SUCCEEDED(rc))
-                    {
-                       RTPrintf("Image registration failed with %08X\n", rc);
-                    }
-                }
-                /* do we have the right image now? */
-                if (dvdImage)
-                {
-                    /* attach */
-                    Guid uuid;
-                    dvdImage->COMGETTER(Id)(uuid.asOutParam());
-                    dvdDrive->MountImage(uuid);
-                }
-                else
-                {
-                    RTPrintf("Error: failed to mount the specified ISO image!\n");
-                    goto leave;
-                }
-            }
+
+            /* attach */
+            Guid uuid;
+            image->COMGETTER(Id)(uuid.asOutParam());
+            CHECK_ERROR_BREAK (drive, MountImage (uuid));
         }
     }
+    while (0);
+    if (FAILED (rc))
+        goto leave;
+
+    /* 
+     * Mount a CD-ROM if requested.
+     */
+    if (cdromFile)
+    do
+    {
+        ComPtr<IDVDDrive> drive;
+        CHECK_ERROR_BREAK (gMachine, COMGETTER(DVDDrive)(drive.asOutParam()));
+
+        /*
+         * First special case 'none' to unmount
+         */
+        if (strcmp (cdromFile, "none") == 0)
+        {
+            CHECK_ERROR_BREAK (drive, Unmount());
+            break;
+        }
+
+        Bstr media = cdromFile;
+        bool done = false;
+
+        /* Assume it's a host drive name */
+        {
+            ComPtr <IHost> host;
+            CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
+            ComPtr <IHostDVDDriveCollection> coll;
+            CHECK_ERROR_BREAK (host, COMGETTER(DVDDrives)(coll.asOutParam()));
+            ComPtr <IHostDVDDrive> hostDrive;
+            rc = coll->FindByName (media, hostDrive.asOutParam());
+            if (SUCCEEDED (rc))
+            {
+                done = true;
+                CHECK_ERROR_BREAK (drive, CaptureHostDrive (hostDrive));
+            }
+        }
+
+        /* Must be an image */
+        if (!done)
+        {
+            /* try to find an existing one */
+            ComPtr <IDVDImage> image;
+            rc = virtualBox->FindDVDImage (media, image.asOutParam());
+            if (FAILED (rc))
+            {
+                /* try to register */
+                RTPrintf ("Registering ISO image '%S'...\n", cdromFile);
+                Guid uuid;
+                CHECK_ERROR_BREAK (virtualBox, OpenDVDImage (media, uuid,
+                                                             image.asOutParam()));
+                CHECK_ERROR_BREAK (virtualBox, RegisterDVDImage (image));
+            }
+
+            /* attach */
+            Guid uuid;
+            image->COMGETTER(Id)(uuid.asOutParam());
+            CHECK_ERROR_BREAK (drive, MountImage (uuid));
+        }
+    }
+    while (0);
+    if (FAILED (rc))
+        goto leave;
 
     if (fDiscardState)
     {
