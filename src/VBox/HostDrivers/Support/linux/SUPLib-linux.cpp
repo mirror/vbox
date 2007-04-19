@@ -236,6 +236,7 @@ int     suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, 
         case EEXIST: return VERR_ALREADY_LOADED;
         case EPERM:  return VERR_PERMISSION_DENIED;
         case ENOSYS: return VERR_VERSION_MISMATCH;
+        case 1000:   return VERR_IDT_FAILED;
     }
 
     return RTErrConvertFromErrno(errno);

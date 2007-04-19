@@ -1685,6 +1685,7 @@ static int     VBoxSupDrvErr2LinuxErr(int rc)
         case SUPDRV_ERR_ALREADY_LOADED:     return -EEXIST;
         case SUPDRV_ERR_PERMISSION_DENIED:  return -EPERM;
         case SUPDRV_ERR_VERSION_MISMATCH:   return -ENOSYS;
+        case SUPDRV_ERR_IDT_FAILED:         return -1000;
     }
 
     return -EPERM;
