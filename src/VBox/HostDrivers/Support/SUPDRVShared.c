@@ -2737,7 +2737,10 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
      */
     ASMGetIDTR(&Idtr);
     paIdt = (PSUPDRVIDTE)Idtr.pIdt;
-    if ((uintptr_t)paIdt < 0x80000000)
+    /*
+     * Recent Linux kernels can be configured to 1G user /3G kernel.
+     */
+    if ((uintptr_t)paIdt < 0x40000000)
     {
         AssertMsgFailed(("bad paIdt=%p\n", paIdt));
         return NULL;
