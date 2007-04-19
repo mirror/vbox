@@ -3,15 +3,15 @@
     <name>QAccel</name>
     <message>
         <source>Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Spaţiu</translation>
     </message>
     <message>
         <source>Esc</source>
-        <translation type="unfinished"></translation>
+        <translation>Esc</translation>
     </message>
     <message>
         <source>Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Tab</translation>
     </message>
     <message>
         <source>Backtab</source>
@@ -19,135 +19,135 @@
     </message>
     <message>
         <source>Backspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Backspace</translation>
     </message>
     <message>
         <source>Return</source>
-        <translation type="unfinished"></translation>
+        <translation>Enter</translation>
     </message>
     <message>
         <source>Enter</source>
-        <translation type="unfinished"></translation>
+        <translation>Enter</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pauză</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă</translation>
     </message>
     <message>
         <source>SysReq</source>
-        <translation type="unfinished"></translation>
+        <translation>SysReq</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished"></translation>
+        <translation>Home</translation>
     </message>
     <message>
         <source>End</source>
-        <translation type="unfinished"></translation>
+        <translation>Final</translation>
     </message>
     <message>
         <source>Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Stânga</translation>
     </message>
     <message>
         <source>Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Sus</translation>
     </message>
     <message>
         <source>Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Dreapta</translation>
     </message>
     <message>
         <source>Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Jos</translation>
     </message>
     <message>
         <source>PgUp</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagină în sus</translation>
     </message>
     <message>
         <source>PgDown</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagină în jos</translation>
     </message>
     <message>
         <source>CapsLock</source>
-        <translation type="unfinished"></translation>
+        <translation>CapsLock</translation>
     </message>
     <message>
         <source>NumLock</source>
-        <translation type="unfinished"></translation>
+        <translation>NumLock</translation>
     </message>
     <message>
         <source>ScrollLock</source>
-        <translation type="unfinished"></translation>
+        <translation>ScrollLock</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt</translation>
     </message>
     <message>
         <source>Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Shift</translation>
     </message>
     <message>
         <source>+</source>
-        <translation type="unfinished"></translation>
+        <translation>+</translation>
     </message>
     <message>
         <source>F%1</source>
-        <translation type="unfinished"></translation>
+        <translation>F%1</translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Meniu</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Înapoi</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Înainte</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Stop</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Reîmprospătare</translation>
     </message>
     <message>
         <source>Volume Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Volum mai încet</translation>
     </message>
     <message>
         <source>Volume Mute</source>
-        <translation type="unfinished"></translation>
+        <translation>Volum mut</translation>
     </message>
     <message>
         <source>Volume Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Volum mai tare</translation>
     </message>
     <message>
         <source>Bass Boost</source>
@@ -155,131 +155,131 @@
     </message>
     <message>
         <source>Bass Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Bas mai tare</translation>
     </message>
     <message>
         <source>Bass Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Bas mai încet</translation>
     </message>
     <message>
         <source>Treble Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Înalte mai tare</translation>
     </message>
     <message>
         <source>Treble Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Înalte mai încet</translation>
     </message>
     <message>
         <source>Media Play</source>
-        <translation type="unfinished"></translation>
+        <translation>Rulare media</translation>
     </message>
     <message>
         <source>Media Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Oprire media</translation>
     </message>
     <message>
         <source>Media Previous</source>
-        <translation type="unfinished"></translation>
+        <translation>Precedent media</translation>
     </message>
     <message>
         <source>Media Next</source>
-        <translation type="unfinished"></translation>
+        <translation>Următor media</translation>
     </message>
     <message>
         <source>Media Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Înregistrare media</translation>
     </message>
     <message>
         <source>Favorites</source>
-        <translation type="unfinished"></translation>
+        <translation>Favorite</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Căutare</translation>
     </message>
     <message>
         <source>Standby</source>
-        <translation type="unfinished"></translation>
+        <translation>Stare de veghe</translation>
     </message>
     <message>
         <source>Open URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide URL</translation>
     </message>
     <message>
         <source>Launch Mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansează Poştă electronică</translation>
     </message>
     <message>
         <source>Launch Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare media</translation>
     </message>
     <message>
         <source>Launch (0)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (0)</translation>
     </message>
     <message>
         <source>Launch (1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (1)</translation>
     </message>
     <message>
         <source>Launch (2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (2)</translation>
     </message>
     <message>
         <source>Launch (3)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (3)</translation>
     </message>
     <message>
         <source>Launch (4)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (4)</translation>
     </message>
     <message>
         <source>Launch (5)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (5)</translation>
     </message>
     <message>
         <source>Launch (6)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (6)</translation>
     </message>
     <message>
         <source>Launch (7)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (7)</translation>
     </message>
     <message>
         <source>Launch (8)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (8)</translation>
     </message>
     <message>
         <source>Launch (9)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (9)</translation>
     </message>
     <message>
         <source>Launch (A)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (A)</translation>
     </message>
     <message>
         <source>Launch (B)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (B)</translation>
     </message>
     <message>
         <source>Launch (C)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (C)</translation>
     </message>
     <message>
         <source>Launch (D)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (D)</translation>
     </message>
     <message>
         <source>Launch (E)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (E)</translation>
     </message>
     <message>
         <source>Launch (F)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lansare (F)</translation>
     </message>
     <message>
         <source>Meta</source>
-        <translation type="unfinished"></translation>
+        <translation>Meta</translation>
     </message>
 </context>
 <context>
@@ -287,26 +287,26 @@
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="unfinished"></translation>
+        <translation>LTR</translation>
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Executabilul &apos;%1&apos; necesită Qt %2, am găsit Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare bibliotecă Qt incompatibilă</translation>
     </message>
 </context>
 <context>
     <name>QAquaStyle</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
@@ -317,7 +317,7 @@
     </message>
     <message>
         <source>&amp;Sat:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sat:</translation>
     </message>
     <message>
         <source>&amp;Val:</source>
@@ -353,480 +353,482 @@
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>&amp;Add to Custom Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adaugă la Culori personalizate</translation>
     </message>
     <message>
         <source>Select color</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectare culoare</translation>
     </message>
 </context>
 <context>
     <name>QDataTable</name>
     <message>
         <source>True</source>
-        <translation type="unfinished"></translation>
+        <translation>Adevărat</translation>
     </message>
     <message>
         <source>False</source>
-        <translation type="unfinished"></translation>
+        <translation>Fals</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserare</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Modificare</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Ştergere</translation>
     </message>
 </context>
 <context>
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation type="unfinished"></translation>
+        <translation>Ce este aceasta?</translation>
     </message>
 </context>
 <context>
     <name>QErrorMessage</name>
     <message>
         <source>&amp;Show this message again</source>
-        <translation type="unfinished"></translation>
+        <translation>Arată ace&amp;st mesaj din nou</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Debug Message:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mesaj depanare:</translation>
     </message>
     <message>
         <source>Warning:</source>
-        <translation type="unfinished"></translation>
+        <translation>Avertisment:</translation>
     </message>
     <message>
         <source>Fatal Error:</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare fatală:</translation>
     </message>
 </context>
 <context>
     <name>QFileDialog</name>
     <message>
         <source>Copy or Move a File</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiere sau mutare fişier</translation>
     </message>
     <message>
         <source>Read: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Citeşte: %1</translation>
     </message>
     <message>
         <source>Write: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrie: %1</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Toate fişierele (*)</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nume</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensiune</translation>
     </message>
     <message>
         <source>Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tip</translation>
     </message>
     <message>
         <source>Date</source>
-        <translation type="unfinished"></translation>
+        <translation>Data</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Atribute</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Look &amp;in:</source>
-        <translation type="unfinished"></translation>
+        <translation>Caută &amp;in:</translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nume fişier:</translation>
     </message>
     <message>
         <source>File &amp;type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tip fişier:</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Înapoi</translation>
     </message>
     <message>
         <source>One directory up</source>
-        <translation type="unfinished"></translation>
+        <translation>Mergi un director în sus</translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Creează director nou</translation>
     </message>
     <message>
         <source>List View</source>
-        <translation type="unfinished"></translation>
+        <translation>Vizualizare ca listă</translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation type="unfinished"></translation>
+        <translation>Vizualizare detalii</translation>
     </message>
     <message>
         <source>Preview File Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Previzualizare informaţii fişier</translation>
     </message>
     <message>
         <source>Preview File Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Previzualizare conţinut fişier</translation>
     </message>
     <message>
         <source>Read-write</source>
-        <translation type="unfinished"></translation>
+        <translation>Citire-scriere</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Doar în citire</translation>
     </message>
     <message>
         <source>Write-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Doar în scriere</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished"></translation>
+        <translation>Inaccesibil</translation>
     </message>
     <message>
         <source>Symlink to File</source>
-        <translation type="unfinished"></translation>
+        <translation>Legătură simbolică fişier</translation>
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Legătură simbolică director</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
-        <translation type="unfinished"></translation>
+        <translation>Legătură simbolică special</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>Fişier</translation>
     </message>
     <message>
         <source>Dir</source>
-        <translation type="unfinished"></translation>
+        <translation>Director</translation>
     </message>
     <message>
         <source>Special</source>
-        <translation type="unfinished"></translation>
+        <translation>Special</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide</translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvează ca</translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Deschide</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Salvează</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Redenumeşte</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Ş&amp;terge</translation>
     </message>
     <message>
         <source>R&amp;eload</source>
-        <translation type="unfinished"></translation>
+        <translation>Reî&amp;mprospătare</translation>
     </message>
     <message>
         <source>Sort by &amp;Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Sortare după &amp;Nume</translation>
     </message>
     <message>
         <source>Sort by &amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Sortare după dimen&amp;siune</translation>
     </message>
     <message>
         <source>Sort by &amp;Date</source>
-        <translation type="unfinished"></translation>
+        <translation>Sortare după &amp;Dată</translation>
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nesortat</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>Sortează</translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează &amp;fişiere ascunse</translation>
     </message>
     <message>
         <source>the file</source>
-        <translation type="unfinished"></translation>
+        <translation>fişierul</translation>
     </message>
     <message>
         <source>the directory</source>
-        <translation type="unfinished"></translation>
+        <translation>directorul</translation>
     </message>
     <message>
         <source>the symlink</source>
-        <translation type="unfinished"></translation>
+        <translation>legătura simbolică</translation>
     </message>
     <message>
         <source>Delete %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Şterge %1</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Sunteţi sigur că doriţi să ştergeţi %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Da</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nu</translation>
     </message>
     <message>
         <source>New Folder 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Director nou 1</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Director nou</translation>
     </message>
     <message>
         <source>New Folder %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Director nou %1</translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Găseşte director</translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Directoare</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvează</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare</translation>
     </message>
     <message>
         <source>%1
 File not found.
 Check path and filename.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1
+Fişier negăsit.
+Verificaţi calea şi numele de fişier.</translation>
     </message>
     <message>
         <source>All Files (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Toate fişierele (*)</translation>
     </message>
     <message>
         <source>Open </source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide </translation>
     </message>
     <message>
         <source>Select a Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectare director</translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation type="unfinished"></translation>
+        <translation>Director:</translation>
     </message>
 </context>
 <context>
     <name>QFont</name>
     <message>
         <source>Latin</source>
-        <translation type="unfinished"></translation>
+        <translation>Latin</translation>
     </message>
     <message>
         <source>Greek</source>
-        <translation type="unfinished"></translation>
+        <translation>Grec</translation>
     </message>
     <message>
         <source>Cyrillic</source>
-        <translation type="unfinished"></translation>
+        <translation>Chirilic</translation>
     </message>
     <message>
         <source>Armenian</source>
-        <translation type="unfinished"></translation>
+        <translation>Armenian</translation>
     </message>
     <message>
         <source>Georgian</source>
-        <translation type="unfinished"></translation>
+        <translation>Georgian</translation>
     </message>
     <message>
         <source>Runic</source>
-        <translation type="unfinished"></translation>
+        <translation>Runic</translation>
     </message>
     <message>
         <source>Ogham</source>
-        <translation type="unfinished"></translation>
+        <translation>Ogham</translation>
     </message>
     <message>
         <source>Hebrew</source>
-        <translation type="unfinished"></translation>
+        <translation>Hebrew</translation>
     </message>
     <message>
         <source>Arabic</source>
-        <translation type="unfinished"></translation>
+        <translation>Arabic</translation>
     </message>
     <message>
         <source>Syriac</source>
-        <translation type="unfinished"></translation>
+        <translation>Sirian</translation>
     </message>
     <message>
         <source>Thaana</source>
-        <translation type="unfinished"></translation>
+        <translation>Thaana</translation>
     </message>
     <message>
         <source>Devanagari</source>
-        <translation type="unfinished"></translation>
+        <translation>Devanagari</translation>
     </message>
     <message>
         <source>Bengali</source>
-        <translation type="unfinished"></translation>
+        <translation>Bengali</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation type="unfinished"></translation>
+        <translation>Gurmukhi</translation>
     </message>
     <message>
         <source>Gujarati</source>
-        <translation type="unfinished"></translation>
+        <translation>Gujarati</translation>
     </message>
     <message>
         <source>Oriya</source>
-        <translation type="unfinished"></translation>
+        <translation>Oriya</translation>
     </message>
     <message>
         <source>Tamil</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamil</translation>
     </message>
     <message>
         <source>Telugu</source>
-        <translation type="unfinished"></translation>
+        <translation>Telugu</translation>
     </message>
     <message>
         <source>Kannada</source>
-        <translation type="unfinished"></translation>
+        <translation>Kannada</translation>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation type="unfinished"></translation>
+        <translation>Malayalam</translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinhala</translation>
     </message>
     <message>
         <source>Thai</source>
-        <translation type="unfinished"></translation>
+        <translation>Thai</translation>
     </message>
     <message>
         <source>Lao</source>
-        <translation type="unfinished"></translation>
+        <translation>Lao</translation>
     </message>
     <message>
         <source>Tibetan</source>
-        <translation type="unfinished"></translation>
+        <translation>Tibetan</translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation type="unfinished"></translation>
+        <translation>Myanmar</translation>
     </message>
     <message>
         <source>Khmer</source>
-        <translation type="unfinished"></translation>
+        <translation>Khmer</translation>
     </message>
     <message>
         <source>Han</source>
-        <translation type="unfinished"></translation>
+        <translation>Han</translation>
     </message>
     <message>
         <source>Hiragana</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiragana</translation>
     </message>
     <message>
         <source>Katakana</source>
-        <translation type="unfinished"></translation>
+        <translation>Katakana</translation>
     </message>
     <message>
         <source>Hangul</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul</translation>
     </message>
     <message>
         <source>Bopomofo</source>
-        <translation type="unfinished"></translation>
+        <translation>Bopomofo</translation>
     </message>
     <message>
         <source>Yi</source>
-        <translation type="unfinished"></translation>
+        <translation>Yi</translation>
     </message>
     <message>
         <source>Ethiopic</source>
-        <translation type="unfinished"></translation>
+        <translation>Etiopic</translation>
     </message>
     <message>
         <source>Cherokee</source>
-        <translation type="unfinished"></translation>
+        <translation>Cherokee</translation>
     </message>
     <message>
         <source>Canadian Aboriginal</source>
-        <translation type="unfinished"></translation>
+        <translation>Aborigen Canadian</translation>
     </message>
     <message>
         <source>Mongolian</source>
-        <translation type="unfinished"></translation>
+        <translation>Mongolic</translation>
     </message>
     <message>
         <source>Currency Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Simboluri valută</translation>
     </message>
     <message>
         <source>Letterlike Symbols</source>
@@ -834,23 +836,23 @@ Check path and filename.</source>
     </message>
     <message>
         <source>Number Forms</source>
-        <translation type="unfinished"></translation>
+        <translation>Format număr</translation>
     </message>
     <message>
         <source>Mathematical Operators</source>
-        <translation type="unfinished"></translation>
+        <translation>Operatori matematici</translation>
     </message>
     <message>
         <source>Technical Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Simboluri tehnice</translation>
     </message>
     <message>
         <source>Geometric Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Simboluri geometrice</translation>
     </message>
     <message>
         <source>Miscellaneous Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Simboluri misc</translation>
     </message>
     <message>
         <source>Enclosed and Square</source>
@@ -862,26 +864,26 @@ Check path and filename.</source>
     </message>
     <message>
         <source>Unicode</source>
-        <translation type="unfinished"></translation>
+        <translation>Unicode</translation>
     </message>
 </context>
 <context>
     <name>QFontDialog</name>
     <message>
         <source>&amp;Font</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Font</translation>
     </message>
     <message>
         <source>Font st&amp;yle</source>
-        <translation type="unfinished"></translation>
+        <translation>Sti&amp;l font</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dimensiune</translation>
     </message>
     <message>
         <source>Effects</source>
-        <translation type="unfinished"></translation>
+        <translation>Efecte</translation>
     </message>
     <message>
         <source>Stri&amp;keout</source>
@@ -889,39 +891,39 @@ Check path and filename.</source>
     </message>
     <message>
         <source>&amp;Underline</source>
-        <translation type="unfinished"></translation>
+        <translation>S&amp;ubliniat</translation>
     </message>
     <message>
         <source>&amp;Color</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Culoare</translation>
     </message>
     <message>
         <source>Sample</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostră</translation>
     </message>
     <message>
         <source>Scr&amp;ipt</source>
-        <translation type="unfinished"></translation>
+        <translation>Scr&amp;ipt</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplică</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Închide</translation>
     </message>
     <message>
         <source>Select Font</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectare font</translation>
     </message>
 </context>
 <context>
@@ -1020,7 +1022,7 @@ Check path and filename.</source>
     <name>QHeader</name>
     <message>
         <source>%1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1</translation>
     </message>
 </context>
 <context>
@@ -1094,11 +1096,11 @@ Check path and filename.</source>
     <name>QInputDialog</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
@@ -1113,23 +1115,23 @@ Check path and filename.</source>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>Decu&amp;pare</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Copiere</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lipire</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Goleşte</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectare totală</translation>
     </message>
 </context>
 <context>
@@ -1139,231 +1141,239 @@ Check path and filename.</source>
 %1
 to
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut redenumi
+%1
+la
+%2</translation>
     </message>
     <message>
         <source>Could not open
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut deschide
+%1</translation>
     </message>
     <message>
         <source>Could not write
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut scrie
+%1</translation>
     </message>
     <message>
         <source>Could not read directory
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut citi directorul
+%1</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut crea directorul
+%1</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut şterge fişierul sau directorul
+%1</translation>
     </message>
 </context>
 <context>
     <name>QMainWindow</name>
     <message>
         <source>Line up</source>
-        <translation type="unfinished"></translation>
+        <translation>Aliniere</translation>
     </message>
     <message>
         <source>Customize...</source>
-        <translation type="unfinished"></translation>
+        <translation>Personalizare...</translation>
     </message>
 </context>
 <context>
     <name>QMenuBar</name>
     <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation>Despre</translation>
     </message>
     <message>
         <source>Config</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurare</translation>
     </message>
     <message>
         <source>Preference</source>
-        <translation type="unfinished"></translation>
+        <translation>Preferinţa</translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opţiuni</translation>
     </message>
     <message>
         <source>Setting</source>
-        <translation type="unfinished"></translation>
+        <translation>Setare</translation>
     </message>
     <message>
         <source>Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Setare</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieşire</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieşire</translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Da</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nu</translation>
     </message>
     <message>
         <source>&amp;Abort</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;enunţă</translation>
     </message>
     <message>
         <source>&amp;Retry</source>
-        <translation type="unfinished"></translation>
+        <translation>Înce&amp;rcă din nou</translation>
     </message>
     <message>
         <source>&amp;Ignore</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ignoră</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;&lt;p&gt;Qt is a C++ toolkit for multiplatform GUI &amp;amp; application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants.&lt;br&gt;Qt is also available for embedded devices.&lt;/p&gt;&lt;p&gt;Qt is a Trolltech product. See &lt;tt&gt;http://www.trolltech.com/qt/&lt;/tt&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Despre Qt&lt;/h3&gt;&lt;p&gt;Acest program foloseşte Qt versiunea %1.&lt;/p&gt;&lt;p&gt;Qt este un toolkit C++ pentru dezvoltarea de GUI multiplatformă.&lt;/p&gt;&lt;p&gt;Qt oferă portabilitate single-source peste MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, şi toate variantele majore comerciale de Unix.&lt;br&gt;Qt este disponibil de asemenea pentru dispozitive portabile.&lt;/p&gt;&lt;p&gt;Qt este un produs al Trolltech. Vezi &lt;tt&gt;http://www.trolltech.com/qt/&lt;/tt&gt; pentru mai multe informaţii.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>QNetworkProtocol</name>
     <message>
         <source>Operation stopped by the user</source>
-        <translation type="unfinished"></translation>
+        <translation>Operaţie întreruptă de utilizator</translation>
     </message>
 </context>
 <context>
     <name>QPrintDialog</name>
     <message>
         <source>locally connected</source>
-        <translation type="unfinished"></translation>
+        <translation>conectată local</translation>
     </message>
     <message>
         <source>Aliases: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Aliasuri: %1</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>necunoscut</translation>
     </message>
     <message>
         <source>Unknown Location</source>
-        <translation type="unfinished"></translation>
+        <translation>Amplasare necunoscută</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Printer settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Setări imprimantă</translation>
     </message>
     <message>
         <source>Print in color if available</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă color dacă este disponibil</translation>
     </message>
     <message>
         <source>Print in grayscale</source>
-        <translation type="unfinished"></translation>
+        <translation>Imiprimă în nuanţe de gri</translation>
     </message>
     <message>
         <source>Print destination</source>
-        <translation type="unfinished"></translation>
+        <translation>Destinaţie imprimare</translation>
     </message>
     <message>
         <source>Print to printer:</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă la imprimanta:</translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimantă</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazdă</translation>
     </message>
     <message>
         <source>Comment</source>
-        <translation type="unfinished"></translation>
+        <translation>Comentariu</translation>
     </message>
     <message>
         <source>Print to file:</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă în fişier:</translation>
     </message>
     <message>
         <source>Browse...</source>
-        <translation type="unfinished"></translation>
+        <translation>Răsfoieşte...</translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opţiuni</translation>
     </message>
     <message>
         <source>Print all</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă tot</translation>
     </message>
     <message>
         <source>Print range</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă interval</translation>
     </message>
     <message>
         <source>From page:</source>
-        <translation type="unfinished"></translation>
+        <translation>De la:</translation>
     </message>
     <message>
         <source>To page:</source>
-        <translation type="unfinished"></translation>
+        <translation>La:</translation>
     </message>
     <message>
         <source>Print first page first</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă prima pagină la început</translation>
     </message>
     <message>
         <source>Print last page first</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimă ultima pagină la început</translation>
     </message>
     <message>
         <source>Number of copies:</source>
-        <translation type="unfinished"></translation>
+        <translation>Număr copii:</translation>
     </message>
     <message>
         <source>Paper format</source>
-        <translation type="unfinished"></translation>
+        <translation>Format hârtie</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Portret</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Tablou</translation>
     </message>
     <message>
         <source>A0 (841 x 1189 mm)</source>
@@ -1487,29 +1497,29 @@ to
     </message>
     <message>
         <source>Setup Printer</source>
-        <translation type="unfinished"></translation>
+        <translation>Setare imprimantă</translation>
     </message>
     <message>
         <source>PostScript Files (*.ps);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fişiere PostScript (*.ps);;Toate fişierele (*)</translation>
     </message>
 </context>
 <context>
     <name>QProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
-        <translation type="unfinished"></translation>
+        <translation>fără erori</translation>
     </message>
     <message>
         <source>disabled feature used</source>
-        <translation type="unfinished"></translation>
+        <translation>funcţie dezactivată utilizată</translation>
     </message>
     <message>
         <source>bad char class syntax</source>
@@ -1544,66 +1554,66 @@ to
     <name>QSql</name>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Ştergere</translation>
     </message>
     <message>
         <source>Delete this record?</source>
-        <translation type="unfinished"></translation>
+        <translation>Şterge această inregistrare?</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Da</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserare</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Modificare</translation>
     </message>
     <message>
         <source>Save edits?</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvare modificări?</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmare</translation>
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare modificări?</translation>
     </message>
 </context>
 <context>
     <name>QTabDialog</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplică</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajutor</translation>
     </message>
     <message>
         <source>Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Valori implicite</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
@@ -1618,30 +1628,30 @@ to
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>Decu&amp;pare</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Copiere</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lipire</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Goleşte</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectare totală</translation>
     </message>
 </context>
 <context>
     <name>QTitleBar</name>
     <message>
         <source>System Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Meniu sistem</translation>
     </message>
     <message>
         <source>Shade</source>
@@ -1657,173 +1667,173 @@ to
     </message>
     <message>
         <source>Minimize</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimizare</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximizare</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Închide</translation>
     </message>
 </context>
 <context>
     <name>QToolBar</name>
     <message>
         <source>More...</source>
-        <translation type="unfinished"></translation>
+        <translation>Mai mult...</translation>
     </message>
 </context>
 <context>
     <name>QUrlOperator</name>
     <message>
         <source>The protocol `%1&apos; is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu este suportat</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu suportă listarea directoarelor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu suportă crearea de noi directoare</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu suportă ştergerea fişierelor sau a directoarelor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu suportă redenumirea fişierelor sau a directoarelor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu suportă obţinerea fişierelor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu suportă trimiterea fişierelor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolul &apos;%1&apos; nu suportă copierea sau mutarea fişierelor sau a directoarelor</translation>
     </message>
     <message>
         <source>(unknown)</source>
-        <translation type="unfinished"></translation>
+        <translation>(necunoscut)</translation>
     </message>
 </context>
 <context>
     <name>QWSDecoration</name>
     <message>
         <source>&amp;Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Restabilire</translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mutare</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dimensiune</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation type="unfinished"></translation>
+        <translation>Mi&amp;nimizare</translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation type="unfinished"></translation>
+        <translation>Ma&amp;ximizare</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Închide</translation>
     </message>
     <message>
         <source>Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Ferestre</translation>
     </message>
     <message>
         <source>KDE</source>
-        <translation type="unfinished"></translation>
+        <translation>KDE</translation>
     </message>
     <message>
         <source>KDE2</source>
-        <translation type="unfinished"></translation>
+        <translation>KDE2</translation>
     </message>
     <message>
         <source>BeOS</source>
-        <translation type="unfinished"></translation>
+        <translation>BeOS</translation>
     </message>
     <message>
         <source>Hydro</source>
-        <translation type="unfinished"></translation>
+        <translation>Hydro</translation>
     </message>
     <message>
         <source>Default</source>
-        <translation type="unfinished"></translation>
+        <translation>Implicit</translation>
     </message>
 </context>
 <context>
     <name>QWhatsThisButton</name>
     <message>
         <source>What&apos;s this?</source>
-        <translation type="unfinished"></translation>
+        <translation>Ce este aceasta?</translation>
     </message>
 </context>
 <context>
     <name>QWizard</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Revo&amp;care</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; Îna&amp;poi</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Î&amp;nainte &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Terminare</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ajutor</translation>
     </message>
 </context>
 <context>
     <name>QWorkspace</name>
     <message>
         <source>&amp;Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Restabilire</translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mutare</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dimensiune</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation type="unfinished"></translation>
+        <translation>Mi&amp;nimizare</translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation type="unfinished"></translation>
+        <translation>Ma&amp;ximizare</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>În&amp;chide</translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Prim p&amp;lan</translation>
     </message>
     <message>
         <source>Sh&amp;ade</source>
@@ -1835,15 +1845,15 @@ to
     </message>
     <message>
         <source>Minimize</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimizare</translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Restabilire jos</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Închide</translation>
     </message>
     <message>
         <source>&amp;Unshade</source>
@@ -1957,27 +1967,27 @@ to
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Decupare</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiere</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Lipire</translation>
     </message>
     <message>
         <source>Paste special...</source>
-        <translation type="unfinished"></translation>
+        <translation>Lipire specială...</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Goleşte</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectare totală</translation>
     </message>
 </context>
 </TS>

@@ -47,11 +47,11 @@
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mută dispozitivele de boot selectate în sus.</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mută dispozitivele de boot selectate în jos.</translation>
     </message>
 </context>
 <context>
@@ -190,31 +190,31 @@
     </message>
     <message>
         <source>Folder Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Cale director</translation>
     </message>
     <message>
         <source>Folder Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nume director</translation>
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează calea către un director existent pe PC gazdă.</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează numele directorului partajat (aşa cum va fi văzut de SO musafir).</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide dialogul selectare director.</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Revocare</translation>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
@@ -627,19 +627,19 @@
     </message>
     <message>
         <source>Mount a floppy image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Montează fişier imagine dischetă</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation type="unfinished"></translation>
+        <translation>Demontează mediul dischetă montat curent</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea mediului dischetă&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Maşină</translation>
     </message>
 </context>
 <context>
@@ -909,27 +909,27 @@
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Crează un nou disc hard virtual</translation>
     </message>
     <message>
         <source>Add (register) an existing image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă (înregistrează) un fişier imagine existent</translation>
     </message>
     <message>
         <source>Remove (unregister) the selected media</source>
-        <translation type="unfinished"></translation>
+        <translation>Şterge (dezîregistreză) mediul selectat</translation>
     </message>
     <message>
         <source>Release the selected media by detaching it from the machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliberează mediul selectat prin detaşarea de maşină</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation type="unfinished"></translation>
+        <translation>Reîmprospătează lista mediilor</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectează un fişier imagine dischetă</translation>
     </message>
 </context>
 <context>
@@ -1449,17 +1449,17 @@
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nu este montat</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (floppy)</comment>
-        <translation type="unfinished">Imagine</translation>
+        <translation>Imagine</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation type="unfinished">Drive Gazdă</translation>
+        <translation>Drive Gazdă</translation>
     </message>
 </context>
 <context>
@@ -1785,43 +1785,49 @@ către limba implicită a sistemului.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează calea către directorul VDI implicit. Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creaţi noi sau adăugaţi discuri hard virtuale existente.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Restează calea către directorul maşinii virtuale la valoarea implicită. Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acest dialog din nou.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Restează calea către directorul VDI la valoarea implicită.
+Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acet dialog din nou.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează calea către directorul maşinii virtuală implicită.
+Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creaţi noi maşini virtuale.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide dialogul pentru a selecta
+directorul VDI implicit.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide dialogul pentru a selecta directorul maşinii virtuale implicite.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Când este selectat, tastatura este capturată
+automat de fiecare dată când fereastra MV este activată. Atunci când tastatura este capturată,
+toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt direcţionate către MV.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listează toate filtrele USB globale.
+Căsuţa de selecţie din stânga defineşte dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă un filtru USB nou cu toate câmpurile setate iniţial la şiruri goale. Notaţi ca un astfel de filtru se va potrivi la orice dispozitiv USB ataşat.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă un filtru USB nou cu toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
 </context>
 <context>
@@ -2451,11 +2457,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>floppy image</source>
-        <translation type="unfinished"></translation>
+        <translation>imagine dischetă</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Unul sau mai multe discuri virtuale sau medii CD/DVD sau dischetă înregistrate nu sunt accesibile. Prin urmare, nu veţi putea opera maşinile virtuale care fac uz de aceste medii până când ele devin accesibile din nou.&lt;/p&gt;&lt;p&gt;Apăsaţi &lt;b&gt;OK&lt;/b&gt; pentru a deschide fereastra Manager de discuri virtuale şi a vedea care medii sunt inaccesibile, sau apăsaţi &lt;b&gt;Ignoră&lt;/b&gt; pentru a ignora acest mesaj.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2466,11 +2472,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Revocare</translation>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
@@ -2685,7 +2691,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Maşină</translation>
     </message>
 </context>
 <context>
@@ -2771,7 +2777,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Editează definiţia de director partajat selectată.</translation>
     </message>
 </context>
 <context>
@@ -3165,47 +3171,47 @@ valori.</translation>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte filtrul &apos;manufacturat de&apos; ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte filtrul &apos;nume produs&apos; ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte filtrul &apos;număr serie&apos; ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte dacă acest filtru se aplică dispozitivelor USB ataşate local computerului gazdă (&lt;i&gt;Nu&lt;/i&gt;), la un client VRDP al computerului (&lt;i&gt;Da&lt;/i&gt;), sau amândurora (&lt;i&gt;Oricare&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte acţiunea executată de computerul gazdă atunci când un dispozitiv care respectă condiţiile este conectat: îl oferă SO gazdă (&lt;i&gt;Ignoră&lt;/i&gt;) sau îl capturează pentru a fi folosit ulterior în maşinile virtuale (&lt;i&gt;Menţine&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte filtrul ID vânzător. Formatul şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde &lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte filtrul ID produs. Formatul şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde &lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the revision number filter. The
@@ -3213,13 +3219,13 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte filtrul număr revizie. Formatul şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;IIFF&lt;/tt&gt; unde &lt;tt&gt;I&lt;/tt&gt; este un caracter hexazecimal al părţii întregi, iar &lt;tt&gt;F&lt;/tt&gt; este un caracter zecimal al părţii fracţionale. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Defineşte filtrul port USB ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -3275,7 +3281,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">Inaccesibil</translation>
+        <translation>Inaccesibil</translation>
     </message>
 </context>
 <context>
@@ -3451,51 +3457,51 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Când este activat, conectează placa de reţea virtuală la maşina virtuală.</translation>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlează modul în care această placă de reţea virtuală este ataşată la reţeaua reală a SO gazdă.</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează adresa MAC a acestei plăci de reţea. Conţine exact 12 caractere alese din {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indică dacă reţeaua virtuală este conectată la maşină la pornire sau nu.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează numele interfeţei gazdă selectată pentru această placă de reţea.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listează toate interfeţele gazdă disponibile.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Şterge interfaţa gazdă selectată.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează numele TAP al interfeţei.</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează comanda executată pentru configurarea interfeţei TAP.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectează aplicaţia de configurare.</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează comanda executată pentru a inchide interfaţa TAP.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectează aplicaţia de închidere.</translation>
     </message>
 </context>
 <context>
@@ -4153,80 +4159,86 @@ aceasta funcţie necesită instalarea Guest Additions pe SO musafir.
     </message>
     <message>
         <source>#floppy</source>
-        <translation type="unfinished"></translation>
+        <translation>#dischetă</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează tipul sistemului de operare pe care plănuiţi să îl instalaţi în această maşină virtuală (denumit sistem de operare musafir).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Când este activat, maşina virtuală va suporta
+ACPI (Advanced Confirguration şi Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
+această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Când este activat, maşina virtuală va suporta
+IO ACPI (Input Output Advanced Confirguration şi Power Management Interface), care ar putea afecta performanţa sistemului. &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
+această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Defineşte modul partajării clipboard între musafir şi SO gazdă. Notă: această funcţie necesită instalarea Guest Additions pe SO musafir.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează calea unde vor fi stocate instantaneele acestei maşini virtuale. Notaţi faptul că instantaneele pot ocupa puţin mai mult spaţiu pe disc.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Restează calea către directorul de instantanee la valoarea implicită. Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acet dialog din nou.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează descrierea maşinii virtuale. Descrierea este utilă pentru comentarea detaliilor de configurare ale SO musafir.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invocă dialogul Manager discuri virtuale pentru a crea o nouă imagine disc sau a selecta un disc hard virtual existent.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listează unităţile de dischetă de pe gazdă disponibile pentru montarea pe maşina virtuală.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invocă dialogul Manager discuri virtuale pentru a selecta
+o imagine de dischetă pentru montare.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listează unităţi CD/DVD disponibile pentru montare
+la maşina virtuală.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invocă dialogul Manager discuri virtuale pentru a selecta o imagine CD/DVD pentru montare.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Controlează driverul audio de ieşiere. &lt;b&gt;Driver Audio Null&lt;/b&gt; face ca musafirul să vadă o placă de sunet, dar orice acces la aceasta va fi ignorat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Când este selectat, activează controlorul USB virtual al acestei maşini.</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listează toate filtrele USB ale acestei maşini. Căsuţa de selecţie din stânga defineşte dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă un filtru USB nou cu toate câmpurile setate iniţial la şiruri goale. Notaţi ca un astfel de filtru se va potrivi la orice dispozitiv USB ataşat.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă un filtru USB nou cu toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
 </context>
 <context>
