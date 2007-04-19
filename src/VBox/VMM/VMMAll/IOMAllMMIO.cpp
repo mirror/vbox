@@ -44,13 +44,6 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
-#ifndef IN_RING3
-
-/** @def IOMGC_MOVS_SUPPORT
- * Define IOMGC_MOVS_SUPPORT for movsb/w/d support in GC and R0.
- */
-#define IOMGC_MOVS_SUPPORT
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -466,8 +459,6 @@ static int iomGCInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
  */
 
 
-#ifdef IOMGC_MOVS_SUPPORT
-
 inline int iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 {
 #ifdef IN_GC
@@ -714,7 +705,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
                 rc = iomRamWrite(pVM, (RTGCPTR)pu8Virt, &u32Data, cbSize);
                 if (rc != VINF_SUCCESS)
                 {
-                    Log(("MMGCRamWriteNoTrapHandler %08X size=%d failed with %d\n", pu8Virt, cbSize, rc));
+                    Log(("iomRamWrite %08X size=%d failed with %d\n", pu8Virt, cbSize, rc));
                     break;
                 }
 
@@ -743,7 +734,6 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
     }
     return rc;
 }
-#endif /* IOMGC_MOVS_SUPPORT */
 
 
 
@@ -1416,4 +1406,396 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 }
 
 
+/**
+ * Reads a MMIO register.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         VM handle.
+ * @param   GCPhys      The physical address to read.
+ * @param   pu32Value   Where to store the value read.
+ * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
+ */
+IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t cbValue)
+{
+/** @todo add return to ring-3 statistics when this function is used in GC! */
+
+    /*
+     * Lookup the current context range node and statistics.
+     */
+    CTXALLSUFF(PIOMMMIORANGE) pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+#ifdef VBOX_WITH_STATISTICS
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys);
+    if (!pStats && (!pRange || pRange->cbSize <= PAGE_SIZE))
+# ifdef IN_RING3
+        pStats = iomR3MMIOStatsCreate(pVM, GCPhys, pRange ? pRange->pszDesc : NULL);
+# else
+        return VINF_IOM_HC_MMIO_READ;
+# endif
+#endif /* VBOX_WITH_STATISTICS */
+#ifdef IN_RING3
+    if (pRange)
+#else /* !IN_RING3 */
+    if (pRange && pRange->pfnReadCallback)
 #endif /* !IN_RING3 */
+    {
+        /*
+         * Perform the read and deal with the result.
+         */
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfRead), a);
+#endif
+        int rc = pRange->pfnReadCallback(pRange->pDevIns, pRange->pvUser, GCPhys, pu32Value, cbValue);
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfRead), a);
+        if (pStats && rc != VINF_IOM_HC_MMIO_READ)
+            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Read));
+#endif
+        switch (rc)
+        {
+            case VINF_SUCCESS:
+            default:
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
+                return rc;
+
+            case VINF_IOM_MMIO_UNUSED_00:
+                switch (cbValue)
+                {
+                    case 1: *(uint8_t *)pu32Value  = 0x00; break;
+                    case 2: *(uint16_t *)pu32Value = 0x0000; break;
+                    case 4: *(uint32_t *)pu32Value = 0x00000000; break;
+                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
+                }
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
+                return VINF_SUCCESS;
+
+            case VINF_IOM_MMIO_UNUSED_FF:
+                switch (cbValue)
+                {
+                    case 1: *(uint8_t *)pu32Value  = 0xff; break;
+                    case 2: *(uint16_t *)pu32Value = 0xffff; break;
+                    case 4: *(uint32_t *)pu32Value = 0xffffffff; break;
+                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
+                }
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
+                return VINF_SUCCESS;
+        }
+    }
+
+#ifndef IN_RING3
+    /*
+     * Lookup the ring-3 range.
+     */
+    PIOMMMIORANGER3 pRangeR3 = iomMMIOGetRangeHC(&pVM->iom.s, GCPhys);
+    if (pRangeR3)
+    {
+        if (pRangeR3->pfnReadCallback)
+            return VINF_IOM_HC_MMIO_READ;
+# ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Read));
+# endif
+        *pu32Value = 0;
+        Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
+        return VINF_SUCCESS;
+    }
+#endif
+
+    AssertMsgFailed(("Handlers and page tables are out of sync or something! GCPhys=%VGp cbValue=%d\n", GCPhys, cbValue));
+    return VERR_INTERNAL_ERROR;
+}
+
+
+/**
+ * Writes to a MMIO register.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         VM handle.
+ * @param   GCPhys      The physical address to write to.
+ * @param   u32Value    The value to write.
+ * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
+ */
+IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue)
+{
+/** @todo add return to ring-3 statistics when this function is used in GC! */
+    /*
+     * Lookup the current context range node.
+     */
+    CTXALLSUFF(PIOMMMIORANGE) pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+#ifdef VBOX_WITH_STATISTICS
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys);
+    if (!pStats && (!pRange || pRange->cbSize <= PAGE_SIZE))
+# ifdef IN_RING3
+        pStats = iomR3MMIOStatsCreate(pVM, GCPhys, pRange ? pRange->pszDesc : NULL);
+# else
+        return VINF_IOM_HC_MMIO_WRITE;
+# endif
+#endif /* VBOX_WITH_STATISTICS */
+
+    /*
+     * Perform the write if we found a range.
+     */
+#ifdef IN_RING3
+    if (pRange)
+#else /* !IN_RING3 */
+    if (pRange && pRange->pfnWriteCallback)
+#endif /* !IN_RING3 */
+    {
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfWrite), a);
+#endif
+        int rc = pRange->pfnWriteCallback(pRange->pDevIns, pRange->pvUser, GCPhys, &u32Value, cbValue);
+#ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfWrite), a);
+        if (pStats && rc != VINF_IOM_HC_MMIO_WRITE)
+            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Write));
+#endif
+        Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue, rc));
+        return rc;
+    }
+
+#ifndef IN_RING3
+    /*
+     * Lookup the ring-3 range.
+     */
+    PIOMMMIORANGER3 pRangeR3 = iomMMIOGetRangeHC(&pVM->iom.s, GCPhys);
+    if (pRangeR3)
+    {
+        if (pRangeR3->pfnWriteCallback)
+            return VINF_IOM_HC_MMIO_WRITE;
+# ifdef VBOX_WITH_STATISTICS
+        if (pStats)
+            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Write));
+# endif
+        Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue));
+        return VINF_SUCCESS;
+    }
+#endif
+
+    AssertMsgFailed(("Handlers and page tables are out of sync or something! GCPhys=%VGp cbValue=%d\n", GCPhys, cbValue));
+    return VERR_INTERNAL_ERROR;
+}
+
+
+/**
+ * [REP*] INSB/INSW/INSD
+ * ES:EDI,DX[,ECX]
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
+ * @param   pCpu        Disassembler CPU state.
+ */
+IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+{
+#ifdef VBOX_WITH_STATISTICS
+    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstIns);
+#endif
+
+    /*
+     * We do not support REPNE or decrementing destination
+     * pointer. Segment prefixes are deliberately ignored, as per the instruction specification.
+     */
+    if (   pCpu->prefix & PREFIX_REPNE
+        || pRegFrame->eflags.Bits.u1DF)
+        return VINF_IOM_HC_IOPORT_READ;
+
+    /*
+     * Get port number directly from the register (no need to bother the
+     * disassembler). And get the I/O register size from the opcode / prefix.
+     */
+    uint32_t    uPort = pRegFrame->edx & 0xffff;
+    unsigned    cbSize = 0;
+    if (pCpu->pCurInstr->opcode == OP_INSB)
+        cbSize = 1;
+    else
+        cbSize = pCpu->opmode == CPUMODE_32BIT ? 4 : 2;
+
+    int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
+    if (rc == VINF_SUCCESS)
+    {
+        /*
+         * Get bytes/words/dwords count to transfer.
+         */
+        RTGCUINTREG cTransfers = 1;
+        if (pCpu->prefix & PREFIX_REP)
+        {
+            cTransfers = pRegFrame->ecx;
+            if (!cTransfers)
+                return VINF_SUCCESS;
+        }
+
+        /* Convert destination address es:edi. */
+        RTGCPTR GCPtrDst;
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid, 
+                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                          &GCPtrDst, NULL);
+        if (VBOX_FAILURE(rc))
+        {
+            Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
+            return VINF_IOM_HC_IOPORT_READ;
+        }
+
+        /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
+        uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+
+        rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrDst, cTransfers * cbSize,
+                             X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
+        if (rc != VINF_SUCCESS)
+        {
+            Log(("INS will generate a trap -> fallback, rc=%d\n", rc));
+            return VINF_IOM_HC_IOPORT_READ;
+        }
+
+        Log(("IOM: rep ins%d port %#x count %d\n", cbSize * 8, uPort, cTransfers));
+#ifdef IN_GC
+        MMGCRamRegisterTrapHandler(pVM);
+#endif
+
+        /* If the device supports string transfers, ask it to do as
+         * much as it wants. The rest is done with single-word transfers. */
+        const RTGCUINTREG cTransfersOrg = cTransfers;
+        rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbSize);
+        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+        pRegFrame->edi += (cTransfersOrg - cTransfers) * cbSize;
+
+        while (cTransfers && rc == VINF_SUCCESS)
+        {
+            uint32_t u32Value;
+            rc = IOMIOPortRead(pVM, uPort, &u32Value, cbSize);
+            if (rc == VINF_IOM_HC_IOPORT_READ || VBOX_FAILURE(rc))
+                break;
+            int rc2 = iomRamWrite(pVM, GCPtrDst, &u32Value, cbSize);
+            Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
+            GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbSize);
+            pRegFrame->edi += cbSize;
+            cTransfers--;
+        }
+#ifdef IN_GC
+        MMGCRamDeregisterTrapHandler(pVM);
+#endif
+
+        /* Update ecx on exit. */
+        if (pCpu->prefix & PREFIX_REP)
+            pRegFrame->ecx = cTransfers;
+    }
+    return rc;
+}
+
+
+
+/**
+ * [REP*] OUTSB/OUTSW/OUTSD
+ * DS:ESI,DX[,ECX]
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
+ * @param   pCpu        Disassembler CPU state.
+ */
+IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+{
+#ifdef VBOX_WITH_STATISTICS
+    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstOuts);
+#endif
+
+    /*
+     * We do not support segment prefixes, REPNE or
+     * decrementing source pointer.
+     */
+    if (   pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE)
+        || pRegFrame->eflags.Bits.u1DF)
+        return VINF_IOM_HC_IOPORT_WRITE;
+
+    /*
+     * Get port number from the first parameter.
+     * And get the I/O register size from the opcode / prefix.
+     */
+    uint32_t    uPort = 0;
+    unsigned    cbSize = 0;
+    bool fRc = iomGCGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uPort, &cbSize);
+    AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
+    if (pCpu->pCurInstr->opcode == OP_OUTSB)
+        cbSize = 1;
+    else
+        cbSize = (pCpu->opmode == CPUMODE_32BIT) ? 4 : 2;
+
+    int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
+    if (rc == VINF_SUCCESS)
+    {
+        /*
+         * Get bytes/words/dwords count to transfer.
+         */
+        RTGCUINTREG cTransfers = 1;
+        if (pCpu->prefix & PREFIX_REP)
+        {
+            cTransfers = pRegFrame->ecx;
+            if (!cTransfers)
+                return VINF_SUCCESS;
+        }
+
+        /* Convert source address ds:esi. */
+        RTGCPTR GCPtrSrc;
+        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
+                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                          &GCPtrSrc, NULL);
+        if (VBOX_FAILURE(rc))
+        {
+            Log(("OUTS source address conversion failed -> fallback, rc=%d\n", rc));
+            return VINF_IOM_HC_IOPORT_WRITE;
+        }
+
+        /* Access verification first; we currently can't recover properly from traps inside this instruction */
+        uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+        rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbSize,
+                             (cpl == 3) ? X86_PTE_US : 0);
+        if (rc != VINF_SUCCESS)
+        {
+            Log(("OUTS will generate a trap -> fallback, rc=%d\n", rc));
+            return VINF_IOM_HC_IOPORT_WRITE;
+        }
+
+        Log(("IOM: rep outs%d port %#x count %d\n", cbSize * 8, uPort, cTransfers));
+#ifdef IN_GC
+        MMGCRamRegisterTrapHandler(pVM);
+#endif
+        /*
+         * If the device supports string transfers, ask it to do as
+         * much as it wants. The rest is done with single-word transfers.
+         */
+        const RTGCUINTREG cTransfersOrg = cTransfers;
+        rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbSize);
+        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+        pRegFrame->esi += (cTransfersOrg - cTransfers) * cbSize;
+
+        while (cTransfers && rc == VINF_SUCCESS)
+        {
+            uint32_t u32Value;
+            rc = iomRamRead(pVM, &u32Value, GCPtrSrc, cbSize);
+            if (rc != VINF_SUCCESS)
+                break;
+            rc = IOMIOPortWrite(pVM, uPort, u32Value, cbSize);
+            if (rc == VINF_IOM_HC_IOPORT_WRITE)
+                break;
+            GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbSize);
+            pRegFrame->esi += cbSize;
+            cTransfers--;
+        }
+
+#ifdef IN_GC
+        MMGCRamDeregisterTrapHandler(pVM);
+#endif
+
+        /* Update ecx on exit. */
+        if (pCpu->prefix & PREFIX_REP)
+            pRegFrame->ecx = cTransfers;
+    }
+    return rc;
+}
