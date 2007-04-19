@@ -2681,7 +2681,6 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
         {
-            AssertMsg(pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK, ("GCPhysHint=%VGp\n", GCPhysHint));
             if ((pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK) == HCPhys)
             {
                 Log4(("pgmPoolTracDerefGCPhysHint: Linear HCPhys=%VHp GCPhysHint=%VGp GCPhysReal=%VGp\n",
