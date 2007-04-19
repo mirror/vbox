@@ -2301,12 +2301,12 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
         <translation>Fallimento nel recupero dello stato di accessibilità del media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Alcuni dei media registrati potrebbero diventare inaccessibili.</translation>
     </message>
     <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>Fallimento nella creazione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt;&apos;.</translation>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Fallimento nella creazione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>Fallimento nella rimozione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt;&apos;.</translation>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Fallimento nella rimozione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>

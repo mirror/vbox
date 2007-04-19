@@ -2827,12 +2827,12 @@ with UUID %2!</source>
         <translation>取得媒體 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 的存取能力狀態時失敗。某些已註冊的媒體可能成為無法存取。</translation>
     </message>
     <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>建立主端網路介面 &lt;b&gt;%1&lt;/b&gt;&apos; 時失敗。</translation>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>建立主端網路介面 &lt;b&gt;%1&lt;/b&gt; 時失敗。</translation>
     </message>
     <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>移除主端網路介面 &lt;b&gt;%1&lt;/b&gt;&apos; 時失敗。</translation>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>移除主端網路介面 &lt;b&gt;%1&lt;/b&gt; 時失敗。</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
