@@ -1508,6 +1508,19 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
  * Ensure that gcc does not use any register value before this instruction. This function is used
  * for assembler instructions with side-effects, e.g. port writes to magical guest ports causing
  * guest memory changes by the host
+ *
+ * @todo r=bird: There are two things I don't like there, 1) the name and 2) what about msc?
+ *
+ *      Unless I'm not much mistaken this construct is what is 'barrier' or 'mb' in the linux 
+ *      kernel. The ASMMem is used as prefix elsewhere in this file, so ASMMemory* is a confusing
+ *      way to name a new function. I think a more fitting name would be ASMCompilerBarrier, 
+ *      ASMCompilerMemoryBarrier, or perhaps ASMMemBarrier.
+ *
+ *      For MSC I guess _ReadWriteBarrier is what we're looking for. 
+ *      See http://msdn2.microsoft.com/en-us/library/f20w0x5e(VS.80).aspx
+ *
+ *      We should also add a little note about considering using 'volatile' similar to the one found 
+ *      with the _ReadWriteBarrier docs.
  */
 #if RT_INLINE_ASM_GNU_STYLE
 DECLINLINE(void) ASMMemoryClobber(void)
