@@ -834,6 +834,13 @@ typedef DECLCALLBACK(void) FNDBGFHANDLEREXT(void *pvUser, PCDBGFINFOHLP pHlp, co
 typedef FNDBGFHANDLEREXT  *PFNDBGFHANDLEREXT;
 
 
+/** @name Flags for the info registration functions.
+ * @{ */
+/** The handler must run on the EMT. */
+#define DBGFINFO_FLAGS_RUN_ON_EMT       BIT(0)
+/** @} */
+
+
 /**
  * Register a info handler owned by a device.
  *
@@ -868,6 +875,18 @@ DBGFR3DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const cha
  * @param   pfnHandler  The handler function to be called to display the info.
  */
 DBGFR3DECL(int) DBGFR3InfoRegisterInternal(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler);
+
+/**
+ * Register a info handler owned by an internal component.
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pszName     The identifier of the info.
+ * @param   pszDesc     The description of the info and any arguments the handler may take.
+ * @param   pfnHandler  The handler function to be called to display the info.
+ * @param   fFlags      Flags, see the DBGFINFO_FLAGS_*.
+ */
+DBGFR3DECL(int) DBGFR3InfoRegisterInternalEx(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler, uint32_t fFlags);
 
 /**
  * Register a info handler owned by an external component.

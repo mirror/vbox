@@ -182,23 +182,18 @@ DBGFR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogRelHlp(void)
  * @param   pVM         VM handle.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
+ * @param   fFlags      The flags.
  * @param   ppInfo      Where to store the created
  */
-static int dbgfR3InfoRegister(PVM pVM, const char *pszName, const char *pszDesc, PDBGFINFO *ppInfo)
+static int dbgfR3InfoRegister(PVM pVM, const char *pszName, const char *pszDesc, uint32_t fFlags, PDBGFINFO *ppInfo)
 {
     /*
      * Validate.
      */
-    if (!pszName)
-    {
-        AssertMsgFailed(("!pszName\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!pszDesc)
-    {
-        AssertMsgFailed(("!pszDesc\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(*pszName, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
+    AssertMsgReturn(!(fFlags & ~(DBGFINFO_FLAGS_RUN_ON_EMT)), ("fFlags=%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Allocate and initialize.
@@ -209,6 +204,7 @@ static int dbgfR3InfoRegister(PVM pVM, const char *pszName, const char *pszDesc,
     if (pInfo)
     {
         pInfo->enmType = DBGFINFOTYPE_INVALID;
+        pInfo->fFlags = fFlags;
         pInfo->pszDesc = pszDesc;
         pInfo->cchName = cchName - 1;
         memcpy(pInfo->szName, pszName, cchName);
@@ -279,7 +275,7 @@ DBGFR3DECL(int) DBGFR3InfoRegisterDevice(PVM pVM, const char *pszName, const cha
      * Register
      */
     PDBGFINFO pInfo;
-    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, &pInfo);
+    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, 0, &pInfo);
     if (VBOX_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_DEV;
@@ -325,7 +321,7 @@ DBGFR3DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const cha
      * Register
      */
     PDBGFINFO pInfo;
-    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, &pInfo);
+    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, 0, &pInfo);
     if (VBOX_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_DRV;
@@ -349,8 +345,24 @@ DBGFR3DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const cha
  */
 DBGFR3DECL(int) DBGFR3InfoRegisterInternal(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler)
 {
-    LogFlow(("DBGFR3InfoRegisterInternal: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
-             pszName, pszName, pszDesc, pszDesc, pfnHandler));
+    return DBGFR3InfoRegisterInternalEx(pVM, pszName, pszDesc, pfnHandler, 0);
+}
+
+
+/**
+ * Register a info handler owned by an internal component.
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pszName     The identifier of the info.
+ * @param   pszDesc     The description of the info and any arguments the handler may take.
+ * @param   pfnHandler  The handler function to be called to display the info.
+ * @param   fFlags      Flags, see the DBGFINFO_FLAGS_*.
+ */
+DBGFR3DECL(int) DBGFR3InfoRegisterInternalEx(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler, uint32_t fFlags)
+{
+    LogFlow(("DBGFR3InfoRegisterInternal: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p fFlags=%x\n",
+             pszName, pszName, pszDesc, pszDesc, pfnHandler, fFlags));
 
     /*
      * Validate the specific stuff.
@@ -365,7 +377,7 @@ DBGFR3DECL(int) DBGFR3InfoRegisterInternal(PVM pVM, const char *pszName, const c
      * Register
      */
     PDBGFINFO pInfo;
-    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, &pInfo);
+    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, fFlags, &pInfo);
     if (VBOX_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_INT;
@@ -406,7 +418,7 @@ DBGFR3DECL(int) DBGFR3InfoRegisterExternal(PVM pVM, const char *pszName, const c
      * Register
      */
     PDBGFINFO pInfo;
-    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, &pInfo);
+    int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, 0, &pInfo);
     if (VBOX_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_EXT;
@@ -699,25 +711,43 @@ DBGFR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PC
         rc = RTCritSectLeave(&pVM->dbgf.s.InfoCritSect);
         AssertRC(rc);
         rc = VINF_SUCCESS;
+        PVMREQ pReq = NULL;
         switch (Info.enmType)
         {
             case DBGFINFOTYPE_DEV:
-                Info.u.Dev.pfnHandler(Info.u.Dev.pDevIns, pHlp, pszArgs);
+                if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                    rc = VMR3ReqCallVoid(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)Info.u.Dev.pfnHandler, 3, Info.u.Dev.pDevIns, pHlp, pszArgs);
+                else
+                    Info.u.Dev.pfnHandler(Info.u.Dev.pDevIns, pHlp, pszArgs);
                 break;
+
             case DBGFINFOTYPE_DRV:
-                Info.u.Drv.pfnHandler(Info.u.Drv.pDrvIns, pHlp, pszArgs);
+                if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                    rc = VMR3ReqCallVoid(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)Info.u.Drv.pfnHandler, 3, Info.u.Drv.pDrvIns, pHlp, pszArgs);
+                else
+                    Info.u.Drv.pfnHandler(Info.u.Drv.pDrvIns, pHlp, pszArgs);
                 break;
+
             case DBGFINFOTYPE_INT:
-                Info.u.Int.pfnHandler(pVM, pHlp, pszArgs);
+                if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                    rc = VMR3ReqCallVoid(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)Info.u.Int.pfnHandler, 3, pVM, pHlp, pszArgs);
+                else
+                    Info.u.Int.pfnHandler(pVM, pHlp, pszArgs);
                 break;
+
             case DBGFINFOTYPE_EXT:
-                Info.u.Ext.pfnHandler(Info.u.Ext.pvUser, pHlp, pszArgs);
+                if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                    rc = VMR3ReqCallVoid(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)Info.u.Ext.pfnHandler, 3, Info.u.Ext.pvUser, pHlp, pszArgs);
+                else
+                    Info.u.Ext.pfnHandler(Info.u.Ext.pvUser, pHlp, pszArgs);
                 break;
+
             default:
                 AssertMsgFailed(("Invalid info type enmType=%d\n", Info.enmType));
                 rc = VERR_INTERNAL_ERROR;
                 break;
         }
+        VMR3ReqFree(pReq);
     }
     else
     {
