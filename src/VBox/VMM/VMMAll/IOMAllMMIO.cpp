@@ -1586,14 +1586,20 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  * [REP*] INSB/INSW/INSD
  * ES:EDI,DX[,ECX]
  *
+ * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
- * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
- * @param   pCpu        Disassembler CPU state.
+ * @param   pVM             The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
+ * @param   uPort           IO Port
+ * @param   uPrefix         IO instruction prefix
+ * @param   cbTransfer      Size of transfer unit
  */
-IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
+    int rc = VINF_SUCCESS;
+
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVM->iom.s.StatGCInstIns);
 #endif
@@ -1602,10 +1608,91 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
      * We do not support REPNE or decrementing destination
      * pointer. Segment prefixes are deliberately ignored, as per the instruction specification.
      */
-    if (   pCpu->prefix & PREFIX_REPNE
+    if (   (uPrefix & PREFIX_REPNE)
         || pRegFrame->eflags.Bits.u1DF)
         return VINF_IOM_HC_IOPORT_READ;
 
+    /*
+     * Get bytes/words/dwords count to transfer.
+     */
+    RTGCUINTREG cTransfers = 1;
+    if (uPrefix & PREFIX_REP)
+    {
+        cTransfers = pRegFrame->ecx;
+        if (!cTransfers)
+            return VINF_SUCCESS;
+    }
+
+    /* Convert destination address es:edi. */
+    RTGCPTR GCPtrDst;
+    rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid, 
+                      SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                      &GCPtrDst, NULL);
+    if (VBOX_FAILURE(rc))
+    {
+        Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
+        return VINF_IOM_HC_IOPORT_READ;
+    }
+
+    /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+
+    rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
+                         X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
+    if (rc != VINF_SUCCESS)
+    {
+        Log(("INS will generate a trap -> fallback, rc=%d\n", rc));
+        return VINF_IOM_HC_IOPORT_READ;
+    }
+
+    Log(("IOM: rep ins%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
+#ifdef IN_GC
+    MMGCRamRegisterTrapHandler(pVM);
+#endif
+
+    /* If the device supports string transfers, ask it to do as
+     * much as it wants. The rest is done with single-word transfers. */
+    const RTGCUINTREG cTransfersOrg = cTransfers;
+    rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
+    AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+    pRegFrame->edi += (cTransfersOrg - cTransfers) * cbTransfer;
+
+    while (cTransfers && rc == VINF_SUCCESS)
+    {
+        uint32_t u32Value;
+        rc = IOMIOPortRead(pVM, uPort, &u32Value, cbTransfer);
+        if (rc == VINF_IOM_HC_IOPORT_READ || VBOX_FAILURE(rc))
+            break;
+        int rc2 = iomRamWrite(pVM, GCPtrDst, &u32Value, cbTransfer);
+        Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
+        GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbTransfer);
+        pRegFrame->edi += cbTransfer;
+        cTransfers--;
+    }
+#ifdef IN_GC
+    MMGCRamDeregisterTrapHandler(pVM);
+#endif
+
+    /* Update ecx on exit. */
+    if (uPrefix & PREFIX_REP)
+        pRegFrame->ecx = cTransfers;
+
+    return rc;
+}
+
+
+/**
+ * [REP*] INSB/INSW/INSD
+ * ES:EDI,DX[,ECX]
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
+ * @param   pCpu        Disassembler CPU state.
+ */
+IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+{
     /*
      * Get port number directly from the register (no need to bother the
      * disassembler). And get the I/O register size from the opcode / prefix.
@@ -1618,73 +1705,108 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
         cbSize = pCpu->opmode == CPUMODE_32BIT ? 4 : 2;
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
-    if (rc == VINF_SUCCESS)
+    if (RT_UNLIKELY(VBOX_FAILURE(rc)))
+        return rc;
+
+    return IOMInterpretINSEx(pVM, pRegFrame, uPort, pCpu->prefix, cbSize);
+}
+
+/**
+ * [REP*] OUTSB/OUTSW/OUTSD
+ * DS:ESI,DX[,ECX]
+ *
+ * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
+ * @param   uPort           IO Port
+ * @param   uPrefix         IO instruction prefix
+ * @param   cbTransfer      Size of transfer unit
+ */
+IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
+{
+    int rc = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_STATISTICS
+    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstOuts);
+#endif
+
+    /*
+     * We do not support segment prefixes, REPNE or
+     * decrementing source pointer.
+     */
+    if (   (uPrefix & (PREFIX_SEG | PREFIX_REPNE))
+        || pRegFrame->eflags.Bits.u1DF)
+        return VINF_IOM_HC_IOPORT_WRITE;
+
+    /*
+     * Get bytes/words/dwords count to transfer.
+     */
+    RTGCUINTREG cTransfers = 1;
+    if (uPrefix & PREFIX_REP)
     {
-        /*
-         * Get bytes/words/dwords count to transfer.
-         */
-        RTGCUINTREG cTransfers = 1;
-        if (pCpu->prefix & PREFIX_REP)
-        {
-            cTransfers = pRegFrame->ecx;
-            if (!cTransfers)
-                return VINF_SUCCESS;
-        }
-
-        /* Convert destination address es:edi. */
-        RTGCPTR GCPtrDst;
-        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid, 
-                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                          &GCPtrDst, NULL);
-        if (VBOX_FAILURE(rc))
-        {
-            Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
-            return VINF_IOM_HC_IOPORT_READ;
-        }
-
-        /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
-        uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
-
-        rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrDst, cTransfers * cbSize,
-                             X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
-        if (rc != VINF_SUCCESS)
-        {
-            Log(("INS will generate a trap -> fallback, rc=%d\n", rc));
-            return VINF_IOM_HC_IOPORT_READ;
-        }
-
-        Log(("IOM: rep ins%d port %#x count %d\n", cbSize * 8, uPort, cTransfers));
-#ifdef IN_GC
-        MMGCRamRegisterTrapHandler(pVM);
-#endif
-
-        /* If the device supports string transfers, ask it to do as
-         * much as it wants. The rest is done with single-word transfers. */
-        const RTGCUINTREG cTransfersOrg = cTransfers;
-        rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbSize);
-        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->edi += (cTransfersOrg - cTransfers) * cbSize;
-
-        while (cTransfers && rc == VINF_SUCCESS)
-        {
-            uint32_t u32Value;
-            rc = IOMIOPortRead(pVM, uPort, &u32Value, cbSize);
-            if (rc == VINF_IOM_HC_IOPORT_READ || VBOX_FAILURE(rc))
-                break;
-            int rc2 = iomRamWrite(pVM, GCPtrDst, &u32Value, cbSize);
-            Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
-            GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbSize);
-            pRegFrame->edi += cbSize;
-            cTransfers--;
-        }
-#ifdef IN_GC
-        MMGCRamDeregisterTrapHandler(pVM);
-#endif
-
-        /* Update ecx on exit. */
-        if (pCpu->prefix & PREFIX_REP)
-            pRegFrame->ecx = cTransfers;
+        cTransfers = pRegFrame->ecx;
+        if (!cTransfers)
+            return VINF_SUCCESS;
     }
+
+    /* Convert source address ds:esi. */
+    RTGCPTR GCPtrSrc;
+    rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
+                      SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                      &GCPtrSrc, NULL);
+    if (VBOX_FAILURE(rc))
+    {
+        Log(("OUTS source address conversion failed -> fallback, rc=%d\n", rc));
+        return VINF_IOM_HC_IOPORT_WRITE;
+    }
+
+    /* Access verification first; we currently can't recover properly from traps inside this instruction */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
+                         (cpl == 3) ? X86_PTE_US : 0);
+    if (rc != VINF_SUCCESS)
+    {
+        Log(("OUTS will generate a trap -> fallback, rc=%d\n", rc));
+        return VINF_IOM_HC_IOPORT_WRITE;
+    }
+
+    Log(("IOM: rep outs%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
+#ifdef IN_GC
+    MMGCRamRegisterTrapHandler(pVM);
+#endif
+    /*
+     * If the device supports string transfers, ask it to do as
+     * much as it wants. The rest is done with single-word transfers.
+     */
+    const RTGCUINTREG cTransfersOrg = cTransfers;
+    rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
+    AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+    pRegFrame->esi += (cTransfersOrg - cTransfers) * cbTransfer;
+
+    while (cTransfers && rc == VINF_SUCCESS)
+    {
+        uint32_t u32Value;
+        rc = iomRamRead(pVM, &u32Value, GCPtrSrc, cbTransfer);
+        if (rc != VINF_SUCCESS)
+            break;
+        rc = IOMIOPortWrite(pVM, uPort, u32Value, cbTransfer);
+        if (rc == VINF_IOM_HC_IOPORT_WRITE)
+            break;
+        GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbTransfer);
+        pRegFrame->esi += cbTransfer;
+        cTransfers--;
+    }
+
+#ifdef IN_GC
+    MMGCRamDeregisterTrapHandler(pVM);
+#endif
+
+    /* Update ecx on exit. */
+    if (uPrefix & PREFIX_REP)
+        pRegFrame->ecx = cTransfers;
     return rc;
 }
 
@@ -1702,18 +1824,6 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  */
 IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef VBOX_WITH_STATISTICS
-    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstOuts);
-#endif
-
-    /*
-     * We do not support segment prefixes, REPNE or
-     * decrementing source pointer.
-     */
-    if (   pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE)
-        || pRegFrame->eflags.Bits.u1DF)
-        return VINF_IOM_HC_IOPORT_WRITE;
-
     /*
      * Get port number from the first parameter.
      * And get the I/O register size from the opcode / prefix.
@@ -1728,74 +1838,8 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
         cbSize = (pCpu->opmode == CPUMODE_32BIT) ? 4 : 2;
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
-    if (rc == VINF_SUCCESS)
-    {
-        /*
-         * Get bytes/words/dwords count to transfer.
-         */
-        RTGCUINTREG cTransfers = 1;
-        if (pCpu->prefix & PREFIX_REP)
-        {
-            cTransfers = pRegFrame->ecx;
-            if (!cTransfers)
-                return VINF_SUCCESS;
-        }
+    if (RT_UNLIKELY(VBOX_FAILURE(rc)))
+        return rc;
 
-        /* Convert source address ds:esi. */
-        RTGCPTR GCPtrSrc;
-        rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
-                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                          &GCPtrSrc, NULL);
-        if (VBOX_FAILURE(rc))
-        {
-            Log(("OUTS source address conversion failed -> fallback, rc=%d\n", rc));
-            return VINF_IOM_HC_IOPORT_WRITE;
-        }
-
-        /* Access verification first; we currently can't recover properly from traps inside this instruction */
-        uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
-        rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbSize,
-                             (cpl == 3) ? X86_PTE_US : 0);
-        if (rc != VINF_SUCCESS)
-        {
-            Log(("OUTS will generate a trap -> fallback, rc=%d\n", rc));
-            return VINF_IOM_HC_IOPORT_WRITE;
-        }
-
-        Log(("IOM: rep outs%d port %#x count %d\n", cbSize * 8, uPort, cTransfers));
-#ifdef IN_GC
-        MMGCRamRegisterTrapHandler(pVM);
-#endif
-        /*
-         * If the device supports string transfers, ask it to do as
-         * much as it wants. The rest is done with single-word transfers.
-         */
-        const RTGCUINTREG cTransfersOrg = cTransfers;
-        rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbSize);
-        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->esi += (cTransfersOrg - cTransfers) * cbSize;
-
-        while (cTransfers && rc == VINF_SUCCESS)
-        {
-            uint32_t u32Value;
-            rc = iomRamRead(pVM, &u32Value, GCPtrSrc, cbSize);
-            if (rc != VINF_SUCCESS)
-                break;
-            rc = IOMIOPortWrite(pVM, uPort, u32Value, cbSize);
-            if (rc == VINF_IOM_HC_IOPORT_WRITE)
-                break;
-            GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbSize);
-            pRegFrame->esi += cbSize;
-            cTransfers--;
-        }
-
-#ifdef IN_GC
-        MMGCRamDeregisterTrapHandler(pVM);
-#endif
-
-        /* Update ecx on exit. */
-        if (pCpu->prefix & PREFIX_REP)
-            pRegFrame->ecx = cTransfers;
-    }
-    return rc;
+    return IOMInterpretOUTSEx(pVM, pRegFrame, uPort, pCpu->prefix, cbSize);
 }
