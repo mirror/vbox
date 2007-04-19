@@ -309,6 +309,30 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
 IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PRTGCUINTREG pcTransfers, unsigned cb);
 
 /**
+ * [REP*] INSB/INSW/INSD
+ * ES:EDI,DX[,ECX]
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
+ * @param   pCpu        Disassembler CPU state.
+ */
+IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+
+/**
+ * [REP*] OUTSB/OUTSW/OUTSD
+ * DS:ESI,DX[,ECX]
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
+ * @param   pCpu        Disassembler CPU state.
+ */
+IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+
+/**
  * Flushes the IOM port & statistics lookup cache
  *
  * @param   pVM     The VM.
