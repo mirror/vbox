@@ -1197,6 +1197,10 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
 {
     LogFlow(("vmR3PowerOff: pVM=%p\n", pVM));
 
+    /** @todo there is still a problem here so we have to ignore the second poweroff */
+    if (pVM->enmVMState == VMSTATE_OFF)
+        return VINF_EM_OFF;
+
     /*
      * Validate input.
      */
