@@ -5782,13 +5782,8 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
         if (fR0Enabled)
         {
-#if 1
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pData->aCts[i].IOPortBase1, 8, (RTHCPTR)i,
-                                           "ataIOPortWrite1", "ataIOPortRead1", NULL, NULL, "ATA I/O Base 1");
-#else
             rc = PDMDevHlpIOPortRegisterR0(pDevIns, pData->aCts[i].IOPortBase1, 8, (RTHCPTR)i,
                                            "ataIOPortWrite1", "ataIOPortRead1", "ataIOPortWriteStr1", "ataIOPortReadStr1", "ATA I/O Base 1");
-#endif
             if (VBOX_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, "PIIX3 cannot register I/O handlers (R0).");
         }
