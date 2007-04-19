@@ -1549,6 +1549,7 @@ ResumeExecution:
     {
         uint32_t uIOWidth = VMX_EXIT_QUALIFICATION_IO_WIDTH(exitQualification);
         uint32_t uPort;
+        bool     fIOWrite = (VMX_EXIT_QUALIFICATION_IO_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
 
         /** @todo necessary to make the distinction? */
         if (VMX_EXIT_QUALIFICATION_IO_ENCODING(exitQualification) == VMX_EXIT_QUALIFICATION_IO_ENCODING_DX)
@@ -1558,19 +1559,43 @@ ResumeExecution:
         else
             uPort = VMX_EXIT_QUALIFICATION_IO_PORT(exitQualification);  /* Immediate encoding. */
 
-        /* First simple in and out instructions. */
-        /** @todo str & rep */
-        if (    !VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification)
-            &&  !VMX_EXIT_QUALIFICATION_IO_REP(exitQualification)
-            /* paranoid checks ahead */
-            &&  uIOWidth != 2
-            &&  uIOWidth < 4
-           )
+        /* paranoia */
+        if (RT_UNLIKELY(uIOWidth == 2 || uIOWidth >= 4))
         {
-            uint32_t cbSize  = aIOSize[uIOWidth];
+            rc = VINF_IOM_HC_IOPORT_READWRITE;
+            break;
+        }
+
+        uint32_t cbSize = aIOSize[uIOWidth];
+
+        if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
+        {
+            /* ins/outs */
+            uint32_t prefix = 0;
+            if (VMX_EXIT_QUALIFICATION_IO_REP(exitQualification))
+                prefix |= PREFIX_REP;
+
+            if (fIOWrite)
+            {
+                Log2(("IOMInterpretOUTSEx %VGv %x size=%d\n", pCtx->eip, uPort, cbSize));
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringWrite);
+                rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
+            }
+            else
+            {
+                Log2(("IOMInterpretINSEx  %VGv %x size=%d\n", pCtx->eip, uPort, cbSize));
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
+                rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
+            }
+        }
+        else
+        {
+            /* normal in/out */
             uint32_t uAndVal = aIOOpAnd[uIOWidth];
 
-            if (VMX_EXIT_QUALIFICATION_IO_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT)
+            Assert(!VMX_EXIT_QUALIFICATION_IO_REP(exitQualification));
+
+            if (fIOWrite)
             {
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, uPort, pCtx->eax & uAndVal, cbSize);
@@ -1587,19 +1612,16 @@ ResumeExecution:
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
                 }
             }
-            if (rc == VINF_SUCCESS)
-            {
-                /* Update EIP and continue execution. */
-                pCtx->eip += cbInstr;
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-                goto ResumeExecution;
-            }
-            Assert(rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE);
-            rc = (VMX_EXIT_QUALIFICATION_IO_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT)
-                        ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
         }
-        else
-            rc = VINF_IOM_HC_IOPORT_READWRITE;
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->eip += cbInstr;
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+        Assert(rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE);
+        rc = (fIOWrite) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
 
         break;
     }
