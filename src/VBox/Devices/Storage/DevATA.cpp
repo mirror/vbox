@@ -4788,7 +4788,6 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     return rc;
 }
 
-#ifndef IN_RING0
 /**
  * Port I/O Handler for primary port range IN string operations.
  * @see FNIOMIOPORTINSTRING for details.
@@ -4901,7 +4900,6 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     PDMCritSectLeave(&pCtl->lock);
     return rc;
 }
-#endif /* !IN_RING0 */
 
 /**
  * Port I/O Handler for secondary port range OUT operations.
