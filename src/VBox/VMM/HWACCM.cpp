@@ -456,7 +456,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     Assert(pVM->fHWACCMEnabled);
 
-#if 1
+#if 0
     /* AMD SVM supports real & protected mode with or without paging. */
     if (pVM->hwaccm.s.svm.fEnabled)
     {
