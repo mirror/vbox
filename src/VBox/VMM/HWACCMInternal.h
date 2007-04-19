@@ -275,6 +275,8 @@ typedef struct HWACCM
     STAMCOUNTER             StatExitLMSW;
     STAMCOUNTER             StatExitIOWrite;
     STAMCOUNTER             StatExitIORead;
+    STAMCOUNTER             StatExitIOStringWrite;
+    STAMCOUNTER             StatExitIOStringRead;
     STAMCOUNTER             StatExitIrqWindow;
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
