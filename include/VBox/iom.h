@@ -283,6 +283,29 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
 IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cbValue);
 
 /**
+ * OUT <DX|imm16>, <AL|AX|EAX>
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
+ * @param   pCpu        Disassembler CPU state.
+ */
+IOMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+
+/**
+ * IN <AL|AX|EAX>, <DX|imm16>
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
+ * @param   pCpu        Disassembler CPU state.
+ */
+IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+
+
+/**
  * Reads the string buffer of an I/O port register.
  *
  * @returns VBox status code.
