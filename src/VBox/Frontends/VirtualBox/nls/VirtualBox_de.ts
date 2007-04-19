@@ -2148,11 +2148,11 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

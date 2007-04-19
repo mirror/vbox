@@ -2257,12 +2257,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>不能获取映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 的可访问状态. 部分注册映像可能已经变成不可访问.</translation>
     </message>
     <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>不能创建主机网络界面 &lt;b&gt;%1&lt;/b&gt;&apos;.</translation>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>不能创建主机网络界面 &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
-        <translation>不能删除主机网络界面 &lt;b&gt;%1&lt;/b&gt;&apos;.</translation>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>不能删除主机网络界面 &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>

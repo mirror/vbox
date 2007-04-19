@@ -1099,7 +1099,7 @@ void VBoxProblemReporter::cannotCreateHostInterface (
     const CHost &host, const QString &name, QWidget *parent)
 {
     message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to create the host network interface <b>%1</b>'.")
+        tr ("Failed to create the host network interface <b>%1</b>.")
             .arg (name),
         formatErrorInfo (host));
 }
@@ -1108,7 +1108,7 @@ void VBoxProblemReporter::cannotCreateHostInterface (
     const CProgress &progress, const QString &name, QWidget *parent)
 {
     message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to create the host network interface <b>%1</b>'.")
+        tr ("Failed to create the host network interface <b>%1</b>.")
             .arg (name),
         formatErrorInfo (progress.GetErrorInfo()));
 }
@@ -1117,7 +1117,7 @@ void VBoxProblemReporter::cannotRemoveHostInterface (
     const CHost &host, const CHostNetworkInterface &iface, QWidget *parent)
 {
     message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to remove the host network interface <b>%1</b>'.")
+        tr ("Failed to remove the host network interface <b>%1</b>.")
             .arg (iface.GetName()),
         formatErrorInfo (host));
 }
@@ -1126,7 +1126,7 @@ void VBoxProblemReporter::cannotRemoveHostInterface (
     const CProgress &progress, const CHostNetworkInterface &iface, QWidget *parent)
 {
     message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to remove the host network interface <b>%1</b>'.")
+        tr ("Failed to remove the host network interface <b>%1</b>.")
             .arg (iface.GetName()),
         formatErrorInfo (progress.GetErrorInfo()));
 }
