@@ -27,6 +27,7 @@
 #include <VBox/tm.h>
 #ifdef IN_RING3
 # include <VBox/rem.h>
+# include <iprt/thread.h>
 #endif
 #include "TMInternal.h"
 #include <VBox/vm.h>
@@ -52,7 +53,7 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
  * @returns The timestamp.
  * @param   pVM     The VM handle.
  */
-uint64_t tmVirtualGetRawNonNormal(PVM pVM)
+static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
 {
     /* 
      * Recalculate the RTTimeNanoTS() value for the period where 
@@ -89,35 +90,9 @@ DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
 
 
 /**
- * Gets the current TMCLOCK_VIRTUAL time
- *
- * @returns The timestamp.
- * @param   pVM     VM handle.
- *
- * @remark  While the flow of time will never go backwards, the speed of the
- *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
- *          influenced by power saving (SpeedStep, PowerNow!), while the former
- *          makes use of TSC and kernel timers.
+ * Inlined version of tmVirtualGetEx.
  */
-TMDECL(uint64_t) TMVirtualGet(PVM pVM)
-{
-    return TMVirtualGetEx(pVM, true /* check timers */);
-}
-
-
-/**
- * Gets the current TMCLOCK_VIRTUAL time
- *
- * @returns The timestamp.
- * @param   pVM             VM handle.
- * @param   fCheckTimers    Check timers or not
- *
- * @remark  While the flow of time will never go backwards, the speed of the
- *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
- *          influenced by power saving (SpeedStep, PowerNow!), while the former
- *          makes use of TSC and kernel timers.
- */
-TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
+DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
 {
     uint64_t u64;
     if (pVM->tm.s.fVirtualTicking)
@@ -151,20 +126,58 @@ TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
 
 
 /**
+ * Gets the current TMCLOCK_VIRTUAL time
+ *
+ * @returns The timestamp.
+ * @param   pVM     VM handle.
+ *
+ * @remark  While the flow of time will never go backwards, the speed of the
+ *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
+ *          influenced by power saving (SpeedStep, PowerNow!), while the former
+ *          makes use of TSC and kernel timers.
+ */
+TMDECL(uint64_t) TMVirtualGet(PVM pVM)
+{
+    return TMVirtualGetEx(pVM, true /* check timers */);
+}
+
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL time
+ *
+ * @returns The timestamp.
+ * @param   pVM             VM handle.
+ * @param   fCheckTimers    Check timers or not
+ *
+ * @remark  While the flow of time will never go backwards, the speed of the
+ *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
+ *          influenced by power saving (SpeedStep, PowerNow!), while the former
+ *          makes use of TSC and kernel timers.
+ */
+TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
+{
+    return tmVirtualGet(pVM, fCheckTimers);
+}
+
+
+/**
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
  * @param   pVM     VM handle.
+ * @thread  EMT.
  */
-TMDECL(uint64_t) TMVirtualGetSync(PVM pVM)
+TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
 {
+    VM_ASSERT_EMT(pVM);
+
     uint64_t u64;
     if (pVM->tm.s.fVirtualSyncTicking)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSync);
 
         /*
-         * Do TMVirtualGet() to get the current TMCLOCK_VIRTUAL time.
+         * Query the virtual clock and do the usual expired timer check.
          */
         Assert(pVM->tm.s.fVirtualTicking);
         u64 = tmVirtualGetRaw(pVM);
@@ -182,10 +195,7 @@ TMDECL(uint64_t) TMVirtualGetSync(PVM pVM)
          * Read the offset and adjust if we're playing catch-up.
          *
          * The catch-up adjusting work by us decrementing the offset by a percentage of
-         * the time elapsed since the previous TMVritualGetSync call. We take some simple
-         * precautions against racing other threads here, but assume that this isn't going
-         * to be much of a problem since calls to this function is unlikely from threads
-         * other than the EMT.
+         * the time elapsed since the previous TMVirtualGetSync call.
          *
          * It's possible to get a very long or even negative interval between two read
          * for the following reasons:
@@ -208,41 +218,46 @@ TMDECL(uint64_t) TMVirtualGetSync(PVM pVM)
         {
             const uint64_t u64Prev = pVM->tm.s.u64VirtualSyncCatchUpPrev;
             uint64_t u64Delta = u64 - u64Prev;
-            if (!(u64Delta >> 32))
+            if (RT_LIKELY(!(u64Delta >> 32)))
             {
-                uint32_t u32Sub = ASMDivU64ByU32RetU32(ASMMult2xU32RetU64((uint32_t)u64Delta, pVM->tm.s.u32VirtualSyncCatchupPercentage),
+                uint32_t u32Sub = ASMDivU64ByU32RetU32(ASMMult2xU32RetU64((uint32_t)u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage),
                                                        100);
-                if (u32Sub < (uint32_t)u64Delta)
+                if (u64Offset > u32Sub)
                 {
-                    const uint64_t u64NewOffset = u64Offset - u32Sub;
-                    if (ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64, u64Prev))
-                        ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualSyncOffset, u64NewOffset, u64Offset);
-                    u64Offset = u64NewOffset;
+                    u64Offset -= u32Sub;
+                    ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSyncOffset, u64Offset);
+                    pVM->tm.s.u64VirtualSyncCatchUpPrev = u64;
                 }
                 else
                 {
                     /* we've completely caught up. */
-                    if (    ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64, u64Prev)
-                        &&  ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualSyncOffset, 0, u64Offset))
-                        ASMAtomicXchgSize(&pVM->tm.s.fVirtualSyncCatchUp, false);
+                    u64Offset = 0;
+                    ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSyncOffset, 0);
+                    ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
+                    pVM->tm.s.u64VirtualSyncCatchUpPrev = u64;
                 }
             }
             else
             {
-                /* Update the previous TMVirtualGetSync time it's not a negative delta. */
-                if (!(u64Delta >> 63))
-                    ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64, u64Prev);
-                Log(("TMVirtualGetSync: u64Delta=%VRU64\n", u64Delta));
+                /* More than 4 seconds since last time (or negative), ignore it. */
+                if (!(u64Delta & RT_BIT_64(63)))
+                    pVM->tm.s.u64VirtualSyncCatchUpPrev = u64;
+                Log(("TMVirtualGetSync: u64Delta=%RX64\n", u64Delta));
             }
         }
 
         /*
-         * Complete the calculation of the current TMCLOCK_VIRTUAL_SYNC time.
-         * The current approach will not let us pass any expired timer.
+         * Complete the calculation of the current TMCLOCK_VIRTUAL_SYNC time. The current
+         * approach is to never pass the head timer. So, when we do stop the clock and
+         * set the the timer pending flag.
          */
         u64 -= u64Offset;
-        if (pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64)
+        const uint64_t u64Expire = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
+        if (u64 >= u64Expire)
         {
+            u64 = u64Expire;
+            ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64);
+            ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
             if (!VM_FF_ISSET(pVM, VM_FF_TIMER))
             {
                 VM_FF_SET(pVM, VM_FF_TIMER);
@@ -251,14 +266,37 @@ TMDECL(uint64_t) TMVirtualGetSync(PVM pVM)
                 VMR3NotifyFF(pVM, true);
 #endif
             }
-            const uint64_t u64Expire = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
-            if (u64Expire < u64)
-                u64 = u64Expire;
         }
     }
     else
         u64 = pVM->tm.s.u64VirtualSync;
     return u64;
+}
+
+
+/**
+ * Gets the current lag of the synchronous virtual clock (relative to the virtual clock).
+ * 
+ * @return  The current lag.
+ * @param   pVM     VM handle.
+ */
+TMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
+{
+    return pVM->tm.s.u64VirtualSyncOffset;
+}
+
+
+/**
+ * Get the current catch-up percent.
+ * 
+ * @return  The current catch0up percent. 0 means running at the same speed as the virtual clock.
+ * @param   pVM     VM handle.
+ */
+TMDECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
+{
+    if (pVM->tm.s.fVirtualSyncCatchUp)
+        return pVM->tm.s.u32VirtualSyncCatchUpPercentage;
+    return 0;
 }
 
 
@@ -273,8 +311,6 @@ TMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
     return TMCLOCK_FREQ_VIRTUAL;
 }
 
-
-//#define TM_CONTINUOUS_TIME
 
 /**
  * Resumes the virtual clock.
@@ -295,12 +331,8 @@ TMDECL(int) TMVirtualResume(PVM pVM)
         return VINF_SUCCESS;
     }
 
-#ifndef TM_CONTINUOUS_TIME
     AssertFailed();
     return VERR_INTERNAL_ERROR;
-#else
-    return VINF_SUCCESS;
-#endif
 }
 
 
@@ -315,12 +347,10 @@ TMDECL(int) TMVirtualPause(PVM pVM)
 {
     if (pVM->tm.s.fVirtualTicking)
     {
-#ifndef TM_CONTINUOUS_TIME
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualPause);
         pVM->tm.s.u64Virtual = tmVirtualGetRaw(pVM);
         pVM->tm.s.fVirtualSyncTicking = false;
         pVM->tm.s.fVirtualTicking = false;
-#endif
         return VINF_SUCCESS;
     }
 

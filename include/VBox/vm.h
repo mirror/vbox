@@ -476,7 +476,7 @@ typedef struct VM
 #ifdef __TMInternal_h__
         struct TM   s;
 #endif
-        char        padding[768];       /* multiple of 32 */
+        char        padding[1056];      /* multiple of 32 */
     } tm;
 
     /** DBGF part. */
