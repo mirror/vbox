@@ -1646,16 +1646,19 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     }
 
     Log(("IOM: rep ins%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
+    if (cTransfers > 1)
+    {
+        /* If the device supports string transfers, ask it to do as
+         * much as it wants. The rest is done with single-word transfers. */
+        const RTGCUINTREG cTransfersOrg = cTransfers;
+        rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
+        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+        pRegFrame->edi += (cTransfersOrg - cTransfers) * cbTransfer;
+    }
+
 #ifdef IN_GC
     MMGCRamRegisterTrapHandler(pVM);
 #endif
-
-    /* If the device supports string transfers, ask it to do as
-     * much as it wants. The rest is done with single-word transfers. */
-    const RTGCUINTREG cTransfersOrg = cTransfers;
-    rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
-    AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
-    pRegFrame->edi += (cTransfersOrg - cTransfers) * cbTransfer;
 
     while (cTransfers && rc == VINF_SUCCESS)
     {
@@ -1774,17 +1777,21 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     }
 
     Log(("IOM: rep outs%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
+    if (cTransfers > 1)
+    {
+        /*
+        * If the device supports string transfers, ask it to do as
+        * much as it wants. The rest is done with single-word transfers.
+        */
+        const RTGCUINTREG cTransfersOrg = cTransfers;
+        rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
+        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+        pRegFrame->esi += (cTransfersOrg - cTransfers) * cbTransfer;
+    }
+
 #ifdef IN_GC
     MMGCRamRegisterTrapHandler(pVM);
 #endif
-    /*
-     * If the device supports string transfers, ask it to do as
-     * much as it wants. The rest is done with single-word transfers.
-     */
-    const RTGCUINTREG cTransfersOrg = cTransfers;
-    rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
-    AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
-    pRegFrame->esi += (cTransfersOrg - cTransfers) * cbTransfer;
 
     while (cTransfers && rc == VINF_SUCCESS)
     {
