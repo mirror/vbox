@@ -3143,7 +3143,7 @@ findVirtualDiskImage (const Guid *aId, const BSTR aFilePathFull,
         }
     }
 
-    // then iterate and find by name
+    /* then iterate and find by name */
     bool found = false;
     if (aFilePathFull)
     {
@@ -3156,12 +3156,8 @@ findVirtualDiskImage (const Guid *aId, const BSTR aFilePathFull,
             if (hd->storageType() != HardDiskStorageType_VirtualDiskImage)
                 continue;
 
-            found =
-#if defined (__LINUX__)
-                 hd->asVDI()->filePathFull() == aFilePathFull;
-#else
-                 !hd->asVDI()->filePathFull().compareIgnoreCase (aFilePathFull);
-#endif
+            found = RTPathCompare (Utf8Str (aFilePathFull),
+                                   Utf8Str (hd->asVDI()->filePathFull())) == 0;
             if (found && aImage)
                 *aImage = hd->asVDI();
         }
@@ -3221,11 +3217,8 @@ HRESULT VirtualBox::findDVDImage (const Guid *aId, const BSTR aFilePathFull,
             /* DVDImage fields are constant, so no need to lock  */
             found = (aId && (*it)->id() == *aId) ||
                     (aFilePathFull &&
-#if defined (__LINUX__)
-                        (*it)->filePathFull() == aFilePathFull);
-#else
-                        !(*it)->filePathFull().compareIgnoreCase (aFilePathFull));
-#endif
+                     RTPathCompare (Utf8Str (aFilePathFull),
+                                    Utf8Str ((*it)->filePathFull())) == 0);
             if (found && aImage)
                 *aImage = *it;
         }
@@ -3285,11 +3278,8 @@ HRESULT VirtualBox::findFloppyImage (const Guid *aId, const BSTR aFilePathFull,
             /* FloppyImage fields are constant, so no need to lock  */
             found = (aId && (*it)->id() == *aId) ||
                     (aFilePathFull &&
-#if defined (__LINUX__)
-                        (*it)->filePathFull() == aFilePathFull);
-#else
-                        !(*it)->filePathFull().compareIgnoreCase (aFilePathFull));
-#endif
+                     RTPathCompare (Utf8Str (aFilePathFull),
+                                    Utf8Str ((*it)->filePathFull())) == 0);
             if (found && aImage)
                 *aImage = *it;
         }
@@ -3372,7 +3362,7 @@ HRESULT VirtualBox::checkMediaForConflicts (HardDisk *aHardDisk,
     {
         if (!aHardDisk)
         {
-            rc = findVirtualDiskImage (aId, aFilePathFull, false /* aSetError */);
+            rc = findHardDisk (aId, aFilePathFull, false /* aSetError */);
             found = SUCCEEDED (rc);
             if (found)
                 break;
@@ -3392,11 +3382,11 @@ HRESULT VirtualBox::checkMediaForConflicts (HardDisk *aHardDisk,
 
     if (found)
     {
-        if (aId)
+        if (aId && !aFilePathFull)
             rc = setError (E_INVALIDARG,
                 tr ("A disk image with UUID {%Vuuid} is already registered"),
                 aId->raw());
-        else if (aFilePathFull)
+        else if (aFilePathFull && !aId)
             rc = setError (E_INVALIDARG,
                 tr ("A disk image with file path '%ls' is already registered"),
                 aFilePathFull);
