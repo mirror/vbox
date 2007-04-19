@@ -1220,10 +1220,9 @@ ResumeExecution:
             break;
         }
 
-        if (    IoExitInfo.n.u1REP
-            ||  IoExitInfo.n.u1STR
-           )
+        if (IoExitInfo.n.u1STR)
         {
+            /* ins/outs */
             uint32_t prefix = 0;
             if (IoExitInfo.n.u1REP)
                 prefix |= PREFIX_REP;
@@ -1243,6 +1242,9 @@ ResumeExecution:
         }
         else
         {
+            /* normal in/out */
+            Assert(!IoExitInfo.n.u1REP);
+
             if (IoExitInfo.n.u1Type == 0)
             {
                 Log2(("IOMIOPortWrite %VGv %x %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
@@ -1272,7 +1274,6 @@ ResumeExecution:
         }
         Assert(rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE);
         rc = (IoExitInfo.n.u1Type == 0) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
-
         Log2(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
         break;
     }
