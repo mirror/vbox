@@ -184,7 +184,7 @@ private:
     bool vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
     void vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd);
 
-    void handleResizeCompletedEMT (void);
+    void handleResizeCompletedEMT (bool fAsync);
     volatile uint32_t mu32ResizeStatus;
     
     enum {
