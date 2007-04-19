@@ -33,7 +33,7 @@
 #undef LOG_GROUP
 #include "Graphics/DevVGA.cpp"
 #undef LOG_GROUP
-#include "Input/pckbd.c"
+#include "Input/DevPS2.cpp"
 #undef LOG_GROUP
 #include "Network/DevPCNet.cpp"
 //#undef LOG_GROUP
