@@ -987,7 +987,6 @@ static int emR3HwAccStep(PVM pVM)
         if (VBOX_FAILURE(rc))
             return rc;
     }
-
     /*
      * Set flags for single stepping.
      */
@@ -1019,7 +1018,7 @@ static int emR3HwAccStep(PVM pVM)
     return rc;
 }
 
-#ifdef DEBUG_sandervl
+#if 1 //def DEBUG_sandervl
 void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
@@ -1270,51 +1269,167 @@ int emR3RawExecuteIOInstruction(PVM pVM)
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "IO EMU");
     if (VBOX_SUCCESS(rc))
     {
+#ifdef VBOX_WITH_STATISTICS
+        switch (Cpu.pCurInstr->opcode)
+        {
+            case OP_INSB:
+            case OP_INSWD:
+            case OP_IN:
+                STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatIn);
+                break;
+
+            case OP_OUTSB:
+            case OP_OUTSWD:
+            case OP_OUT:
+                STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatOut);
+                break;
+        }
+#endif
+
         if (!(Cpu.prefix & (PREFIX_REP | PREFIX_REPNE)))
         {
+            OP_PARAMVAL ParmVal;
+            int         rc;
             switch (Cpu.pCurInstr->opcode)
             {
                 case OP_IN:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatIn);
+                    rc = DISQueryParamVal(CPUMCTX2CORE(pCtx), &Cpu, &Cpu.param2, &ParmVal, PARAM_SOURCE);
+                    if (    VBOX_FAILURE(rc)
+                        ||  ParmVal.type != PARMTYPE_IMMEDIATE)
+                        break;
 
-                    rc = IOMInterpretIN(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
+                    if (!(Cpu.param1.flags & (USE_REG_GEN8 | USE_REG_GEN16 | USE_REG_GEN32)))
+                        break;
+
+                    /* Make sure port access is allowed */
+                    rc = IOMInterpretCheckPortIOAccess(pVM, CPUMCTX2CORE(pCtx), ParmVal.val.val16, Cpu.param1.size);
+                    if (rc != VINF_SUCCESS)
                     {
-                        pCtx->eip += Cpu.opsize;
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        return VINF_SUCCESS;
-                    }
-                    else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
+                        if (rc == VINF_EM_RAW_GUEST_TRAP)
+                            rc = emR3RawGuestTrap(pVM);
+
                         return rc;
                     }
-                    /* emulate in the recompiler */
+
+                    uint32_t    u32Value = 0;
+                    switch (Cpu.param1.size)
+                    {
+                        case 1:
+                            Assert(Cpu.param1.base.reg_gen8 == USE_REG_AL);
+                            rc = IOMIOPortRead(pVM, ParmVal.val.val16, &u32Value, sizeof(uint8_t));
+                            if (VBOX_SUCCESS(rc))
+                            {
+                                pCtx->eax = (pCtx->eax & ~0xFF) | (uint8_t)u32Value;
+                                Log(("EMU: in8 %x, %x\n", ParmVal.val.val16, pCtx->eax & 0xFF));
+                                pCtx->eip += Cpu.opsize;
+                                STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                                return rc;
+                            }
+                            AssertRC(rc);
+                            break;
+
+                        case 2:
+                            Assert(Cpu.param1.base.reg_gen16 == USE_REG_AX);
+                            rc = IOMIOPortRead(pVM, ParmVal.val.val16, &u32Value, sizeof(uint16_t));
+                            if (VBOX_SUCCESS(rc))
+                            {
+                                pCtx->eax = (pCtx->eax & ~0xFFFF) | (uint16_t)u32Value;
+                                Log(("EMU: in16 %x, %x\n", ParmVal.val.val16, pCtx->eax & 0xFFFF));
+                                pCtx->eip += Cpu.opsize;
+                                STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                                return rc;
+                            }
+                            AssertRC(rc);
+                            break;
+
+                        case 4:
+                            Assert(Cpu.param1.base.reg_gen32 == USE_REG_EAX);
+                            rc = IOMIOPortRead(pVM, ParmVal.val.val16, &u32Value, sizeof(uint32_t));
+                            if (VBOX_SUCCESS(rc))
+                            {
+                                pCtx->eax = u32Value;
+                                Log(("EMU: in32 %x, %x\n", ParmVal.val.val16, pCtx->eax));
+                                pCtx->eip += Cpu.opsize;
+                                STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                                return rc;
+                            }
+                            AssertRC(rc);
+                            break;
+
+                        default:
+                            AssertMsgFailed(("Unexpected port size %d\n", ParmVal.size));
+                            break;
+                    }
                     break;
                 }
 
                 case OP_OUT:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatOut);
+                    // it really is the destination, but we're interested in the destination value. hence we specify PARAM_SOURCE (bit of a hack)
+                    rc = DISQueryParamVal(CPUMCTX2CORE(pCtx), &Cpu, &Cpu.param1, &ParmVal, PARAM_SOURCE);
+                    if (    VBOX_FAILURE(rc)
+                        ||  ParmVal.type != PARMTYPE_IMMEDIATE)
+                        break;
+                    OP_PARAMVAL ParmVal2;
+                    rc = DISQueryParamVal(CPUMCTX2CORE(pCtx), &Cpu, &Cpu.param2, &ParmVal2, PARAM_SOURCE);
+                    if (    VBOX_FAILURE(rc)
+                        ||  ParmVal2.type != PARMTYPE_IMMEDIATE)
+                        break;
 
-                    rc = IOMInterpretOUT(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
+                    /* Make sure port access is allowed */
+                    rc = IOMInterpretCheckPortIOAccess(pVM, CPUMCTX2CORE(pCtx), ParmVal.val.val16, Cpu.param1.size);
+                    if (rc != VINF_SUCCESS)
                     {
-                        pCtx->eip += Cpu.opsize;
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        return VINF_SUCCESS;
-                    }
-                    else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
+                        if (rc == VINF_EM_RAW_GUEST_TRAP)
+                            rc = emR3RawGuestTrap(pVM);
+
                         return rc;
                     }
-                    /* emulate in the recompiler */
+
+                    AssertMsg(Cpu.param2.size == ParmVal2.size, ("size %d vs %d\n", Cpu.param2.size, ParmVal2.size));
+                    switch (ParmVal2.size)
+                    {
+                        case 1:
+                            Log(("EMU: out8 %x, %x\n", ParmVal.val.val16, ParmVal2.val.val8));
+                            rc = IOMIOPortWrite(pVM, ParmVal.val.val16, ParmVal2.val.val8, sizeof(ParmVal2.val.val8));
+                            if (VBOX_SUCCESS(rc))
+                            {
+                                pCtx->eip += Cpu.opsize;
+                                STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                                return rc;
+                            }
+                            AssertRC(rc);
+                            break;
+
+                        case 2:
+                            Log(("EMU: out16 %x, %x\n", ParmVal.val.val16, ParmVal2.val.val16));
+                            rc = IOMIOPortWrite(pVM, ParmVal.val.val16, ParmVal2.val.val16, sizeof(ParmVal2.val.val16));
+                            if (VBOX_SUCCESS(rc))
+                            {
+                                pCtx->eip += Cpu.opsize;
+                                STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                                return rc;
+                            }
+                            AssertRC(rc);
+                            break;
+
+                        case 4:
+                            Log(("EMU: out32 %x, %x\n", ParmVal.val.val16, ParmVal2.val.val32));
+                            rc = IOMIOPortWrite(pVM, ParmVal.val.val16, ParmVal2.val.val32, sizeof(ParmVal2.val.val32));
+                            if (VBOX_SUCCESS(rc))
+                            {
+                                pCtx->eip += Cpu.opsize;
+                                STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                                return rc;
+                            }
+                            AssertRC(rc);
+                            break;
+
+                        default:
+                            AssertMsgFailed(("Unexpected port size %d\n", ParmVal2.size));
+                            break;
+                    }
                     break;
                 }
 
@@ -1329,44 +1444,139 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                 case OP_INSB:
                 case OP_INSWD:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatIn);
-                    rc = IOMInterpretINS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        pCtx->eip += Cpu.opsize;
-                        return rc;
-                    }
+                    /*
+                     * Do not optimize the destination address decrement case (not worth the effort)
+                     * and likewise for 16 bit address size (would need to use and update only cx/di).
+                     */
+                    if (pCtx->eflags.Bits.u1DF || Cpu.addrmode != CPUMODE_32BIT)
+                        break;
+                    /*
+                     * Get port number and transfer count directly from the registers (no need to bother the
+                     * disassembler). And get the I/O register size from the opcode / prefix.
+                     */
+                    uint32_t    uPort = pCtx->edx & 0xffff;
+                    RTGCUINTREG cTransfers = pCtx->ecx;
+                    unsigned    cbUnit;
+                    if (Cpu.pCurInstr->opcode == OP_INSB)
+                        cbUnit = 1;
                     else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
+                        cbUnit = Cpu.opmode == CPUMODE_32BIT ? 4 : 2;
+
+                    RTGCPTR  GCPtrDst = pCtx->edi;
+                    uint32_t cpl = (pCtx->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
+
+                    /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
+                    rc = PGMVerifyAccess(pVM, GCPtrDst, cTransfers * cbUnit,
+                                         X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
+                    if (rc != VINF_SUCCESS)
                     {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
+                        Log(("EMU: rep ins%d will generate a trap -> fallback, rc=%d\n", cbUnit * 8, rc));
+                        break;
+                    }
+
+                    Log(("EMU: rep ins%d port %#x count %d\n", cbUnit * 8, uPort, cTransfers));
+
+                    /* Make sure port access is allowed */
+                    rc = IOMInterpretCheckPortIOAccess(pVM, CPUMCTX2CORE(pCtx), uPort, cbUnit);
+                    if (rc != VINF_SUCCESS)
+                    {
+                        if (rc == VINF_EM_RAW_GUEST_TRAP)
+                            rc = emR3RawGuestTrap(pVM);
+
                         return rc;
                     }
-                    /* emulate in the recompiler */
-                    break;
+
+                    /*
+                     * If the device supports string transfers, ask it to do as
+                     * much as it wants. The rest is done with single-word transfers.
+                     */
+                    rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbUnit);
+                    AssertRC(rc); Assert(cTransfers <= pCtx->ecx);
+
+                    while (cTransfers && rc == VINF_SUCCESS)
+                    {
+                        uint32_t u32Value;
+                        rc = IOMIOPortRead(pVM, uPort, &u32Value, cbUnit);
+                        AssertRC(rc);
+                        int rc2 = PGMPhysWriteGCPtrDirty(pVM, GCPtrDst, &u32Value, cbUnit);
+                        AssertRC(rc2);
+                        GCPtrDst += cbUnit;
+                        cTransfers--;
+                    }
+                    pCtx->edi += (pCtx->ecx - cTransfers) * cbUnit;
+                    pCtx->ecx = cTransfers;
+                    if (!cTransfers && VBOX_SUCCESS(rc))
+                        pCtx->eip += Cpu.opsize;
+                    STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                    return rc;
                 }
                 case OP_OUTSB:
                 case OP_OUTSWD:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatOut);
-                    rc = IOMInterpretOUTS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        pCtx->eip += Cpu.opsize;
-                        return rc;
-                    }
+                    /*
+                     * Do not optimize the source address decrement case (not worth the effort)
+                     * and likewise for 16 bit address size (would need to use and update only cx/si).
+                     */
+                    if (pCtx->eflags.Bits.u1DF || Cpu.addrmode != CPUMODE_32BIT)
+                        break;
+                    /*
+                     * Get port number and transfer count directly from the registers (no need to bother the
+                     * disassembler). And get the I/O register size from the opcode / prefix.
+                     */
+                    uint32_t    uPort = pCtx->edx & 0xffff;
+                    RTGCUINTREG cTransfers = pCtx->ecx;
+                    unsigned    cbUnit;
+                    if (Cpu.pCurInstr->opcode == OP_OUTSB)
+                        cbUnit = 1;
                     else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
+                        cbUnit = Cpu.opmode == CPUMODE_32BIT ? 4 : 2;
+
+                    RTGCPTR  GCPtrSrc = pCtx->esi;
+                    uint32_t cpl = (pCtx->eflags.Bits.u1VM) ? 3 : (pCtx->ss & X86_SEL_RPL);
+
+                    /* Access verification first; we currently can't recover properly from traps inside this instruction */
+                    rc = PGMVerifyAccess(pVM, GCPtrSrc, cTransfers * cbUnit, ((cpl == 3) ? X86_PTE_US : 0));
+                    if (rc != VINF_SUCCESS)
                     {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
+                        Log(("EMU: rep outs%d will generate a trap -> fallback, rc=%d\n", cbUnit * 8, rc));
+                        break;
+                    }
+
+                    Log(("EMU: rep outs%d port %#x count %d\n", cbUnit * 8, uPort, cTransfers));
+
+                    /* Make sure port access is allowed */
+                    rc = IOMInterpretCheckPortIOAccess(pVM, CPUMCTX2CORE(pCtx), uPort, cbUnit);
+                    if (rc != VINF_SUCCESS)
+                    {
+                        if (rc == VINF_EM_RAW_GUEST_TRAP)
+                            rc = emR3RawGuestTrap(pVM);
+
                         return rc;
                     }
-                    /* emulate in the recompiler */
-                    break;
+
+                    /*
+                     * If the device supports string transfers, ask it to do as
+                     * much as it wants. The rest is done with single-word transfers.
+                     */
+                    rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbUnit);
+                    AssertRC(rc); Assert(cTransfers <= pCtx->ecx);
+
+                    while (cTransfers && rc == VINF_SUCCESS)
+                    {
+                        uint32_t u32Value;
+                        rc = PGMPhysReadGCPtr(pVM, &u32Value, GCPtrSrc, cbUnit);
+                        Assert(rc == VINF_SUCCESS);
+                        rc = IOMIOPortWrite(pVM, uPort, u32Value, cbUnit);
+                        AssertRC(rc);
+                        GCPtrSrc += cbUnit;
+                        cTransfers--;
+                    }
+                    pCtx->esi += (pCtx->ecx - cTransfers) * cbUnit;
+                    pCtx->ecx = cTransfers;
+                    if (!cTransfers && VBOX_SUCCESS(rc))
+                        pCtx->eip += Cpu.opsize;
+                    STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+                    return rc;
                 }
             }
         }//if(Cpu.prefix & PREFIX_REP)
@@ -2688,6 +2898,8 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
             Log(("HWR3: %08X ESP=%08X IF=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF));
 #endif
 
+//        DBGFR3InfoLog(pVM, "cpumguest", "PRE");
+//        DBGFR3DisasInstrCurrentLog(pVM, "PRE");
 
         /*
          * Execute the code.
@@ -2698,6 +2910,9 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         rc = VMMR3HwAccRunGC(pVM);
         VMMR3Lock(pVM);
         STAM_PROFILE_STOP(&pVM->em.s.StatHwAccExec, x);
+
+//        DBGFR3InfoLog(pVM, "cpumguest", "POST");
+//        DBGFR3DisasInstrCurrentLog(pVM, "POST");
 
         /*
          * Deal with high priority post execution FFs before doing anything else.

@@ -432,7 +432,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
  * If you want to log in non-debug modes, you'll have to remember to change SUPDRvShared.c
  * to not stub all the log functions.
  */
-# ifdef DEBUG_sandervl
+# if 1 //def DEBUG_sandervl
                     rc = MMHyperAlloc(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
                                       0, MM_TAG_VMM, (void **)&pVM->vmm.s.pR0Logger);
                     if (VBOX_SUCCESS(rc))

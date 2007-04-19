@@ -726,6 +726,9 @@ void R0LogFlush()
 }
 
 #ifdef DEBUG_NO_RING0_ASSERTIONS
+#undef LOG_GROUP
+#define LOG_GROUP LOG_GROUP_EM
+
 /**
  * Check if we really want to hit a breakpoint.
  * Can jump back to ring-3 when the longjmp is armed.
@@ -746,8 +749,6 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
 }
 
 
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_EM
 
 /** Runtime assert implementation for Native Win32 Ring-0. */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
