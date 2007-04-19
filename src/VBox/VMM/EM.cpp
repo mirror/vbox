@@ -1018,7 +1018,7 @@ static int emR3HwAccStep(PVM pVM)
     return rc;
 }
 
-#if 1 //def DEBUG_sandervl
+#ifdef DEBUG
 void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
