@@ -310,7 +310,7 @@ typedef struct TM
     /** Virtual time is not running at 100%. */
     bool                        fVirtualWarpDrive;
     /** Virtual timer synchronous time ticking enabled indicator (bool). (TMCLOCK_VIRTUAL_SYNC) */
-    bool                        fVirtualSyncTicking;
+    bool volatile               fVirtualSyncTicking;
     /** Virtual timer synchronous time catch-up active. */
     bool volatile               fVirtualSyncCatchUp;
     /** WarpDrive percentage. 
@@ -334,15 +334,26 @@ typedef struct TM
     /** The TMCLOCK_VIRTUAL at the previous TMVirtualGetSync call when catch-up is active. */
     uint64_t volatile           u64VirtualSyncCatchUpPrev;
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
-    uint64_t                    u64VirtualSync;
-    /** How many percent faster the clock should advance when catch-up is active. */
-    uint32_t                    u32VirtualSyncCatchupPercentage;
+    uint64_t volatile           u64VirtualSync;
+    /** The current catch-up percentage. */
+    uint32_t volatile           u32VirtualSyncCatchUpPercentage;
+    /** How much slack when processing timers. */
+    uint32_t                    u32VirtualSyncScheduleSlack;
     /** When to stop catch-up. */
-    uint32_t                    u32VirtualSyncCatchupStopThreashold;
-    /** When to start catch-up. */
-    uint64_t                    u64VirtualSyncCatchupStartTreashold;
+    uint64_t                    u64VirtualSyncCatchUpStopThreshold;
     /** When to give up catch-up. */
-    uint64_t                    u64VirtualSyncCatchupGiveUpTreashold;
+    uint64_t                    u64VirtualSyncCatchUpGiveUpThreshold;
+/** @def TM_MAX_CATCHUP_PERIODS 
+ * The number of catchup rates. */
+#define TM_MAX_CATCHUP_PERIODS  8
+    /** The agressivness of the catch-up relative to how far we've lagged behind. 
+     * The idea is to have increasing catch-up percentage as the lag increases. */
+    struct TMCATCHUPPERIOD
+    {
+        uint64_t                u64Start;       /**< When this period starts. (u64VirtualSyncOffset). */
+        uint32_t                u32Percentage;  /**< The catch-up percent to apply. */
+        uint32_t                u32Alignment;   /**< Structure alignment */
+    }                           aVirtualSyncCatchUpPeriods[TM_MAX_CATCHUP_PERIODS];
 
     /** Timer queues for the different clock types - R3 Ptr */
     R3PTRTYPE(PTMTIMERQUEUE)    paTimerQueuesR3;
@@ -389,11 +400,17 @@ typedef struct TM
     STAMPROFILE                 StatScheduleOneR0;
     STAMPROFILE                 StatScheduleOneR3;
     STAMCOUNTER                 StatScheduleSetFF;
+    STAMCOUNTER                 StatPostponedR3;
+    STAMCOUNTER                 StatPostponedR0;
+    STAMCOUNTER                 StatPostponedGC;
     /** @} */
+    /** Read the time 
+     * @{ */
     STAMCOUNTER                 StatVirtualGet;
     STAMCOUNTER                 StatVirtualGetSync;
     STAMCOUNTER                 StatVirtualPause;
     STAMCOUNTER                 StatVirtualResume;
+    /* @} */
     /** TMTimerPoll
      * @{ */
     STAMCOUNTER                 StatPollAlreadySet;
@@ -413,11 +430,18 @@ typedef struct TM
     STAMPROFILE                 StatTimerStopR0;
     STAMPROFILE                 StatTimerStopR3;
     /** @} */
-    /**
+    /** VirtualSync - Running and Catching Up
      * @{ */
-    STAMCOUNTER                 StatPostponedR3;
-    STAMCOUNTER                 StatPostponedR0;
-    STAMCOUNTER                 StatPostponedGC;
+    STAMCOUNTER                 StatVirtualSyncRun;
+    STAMCOUNTER                 StatVirtualSyncRunRestart;
+    STAMPROFILE                 StatVirtualSyncRunSlack;
+    STAMCOUNTER                 StatVirtualSyncRunStop;
+    STAMCOUNTER                 StatVirtualSyncRunStoppedAlready;
+    STAMCOUNTER                 StatVirtualSyncGiveUp;
+    STAMCOUNTER                 StatVirtualSyncGiveUpBeforeStarting;
+    STAMPROFILEADV              StatVirtualSyncCatchup;
+    STAMCOUNTER                 aStatVirtualSyncCatchupInitial[TM_MAX_CATCHUP_PERIODS];
+    STAMCOUNTER                 aStatVirtualSyncCatchupAdjust[TM_MAX_CATCHUP_PERIODS];
     /** @} */
     /** The timer callback. */
     STAMCOUNTER                 StatTimerCallbackSetFF;

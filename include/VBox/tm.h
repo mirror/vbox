@@ -113,13 +113,20 @@ TMDECL(uint64_t) TMVirtualGet(PVM pVM);
 TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers);
 
 /**
- * Gets the current TMCLOCK_VIRTUAL_SYNC time.
- *
- * @returns The timestamp.
+ * Gets the current lag of the synchronous virtual clock (relative to the virtual clock).
+ * 
+ * @return  The current lag.
  * @param   pVM     VM handle.
- *
  */
-TMDECL(uint64_t) TMVirtualGetSync(PVM pVM);
+TMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM);
+
+/**
+ * Get the current catch-up percent.
+ * 
+ * @return  The current catch0up percent. 0 means running at the same speed as the virtual clock.
+ * @param   pVM     VM handle.
+ */
+TMDECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM);
 
 /**
  * Gets the current TMCLOCK_VIRTUAL frequency.
@@ -128,6 +135,15 @@ TMDECL(uint64_t) TMVirtualGetSync(PVM pVM);
  * @param   pVM     VM handle.
  */
 TMDECL(uint64_t) TMVirtualGetFreq(PVM pVM);
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL_SYNC time.
+ *
+ * @returns The timestamp.
+ * @param   pVM     VM handle.
+ * @thread  EMT.
+ */
+TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM);
 
 /**
  * Resumes the virtual clock.
