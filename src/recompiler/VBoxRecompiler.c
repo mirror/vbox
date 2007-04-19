@@ -2107,7 +2107,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
         &&  pVM->rem.s.Env.exception_index < 256)
     {
         Log(("REMR3StateBack: Pending trap %x %d\n", pVM->rem.s.Env.exception_index, pVM->rem.s.Env.exception_is_int));
-        int rc = TRPMAssertTrap(pVM, pVM->rem.s.Env.exception_index, pVM->rem.s.Env.exception_is_int);
+        int rc = TRPMAssertTrap(pVM, pVM->rem.s.Env.exception_index, (pVM->rem.s.Env.exception_is_int) ? TRPM_SOFTWARE_INT : TRPM_HARDWARE_INT);
         AssertRC(rc);
         switch (pVM->rem.s.Env.exception_index)
         {
