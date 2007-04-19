@@ -300,6 +300,9 @@ void Display::handleResizeCompletedEMT (void)
 
         /* Unlock framebuffer. */
         mFramebuffer->Unlock();
+
+        /* Repaint the display. */
+        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
     }
 
 #ifdef DEBUG_sunlover
