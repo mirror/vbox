@@ -272,7 +272,7 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
     AssertRelease(f);NOREF(f);
 
     /* The method also unlocks the framebuffer. */
-    handleResizeCompletedEMT(false /* fAsync */);
+    handleResizeCompletedEMT();
 
     return VINF_SUCCESS;
 }
@@ -283,7 +283,7 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
  *
  *  @thread EMT
  */
-void Display::handleResizeCompletedEMT (bool fAsync)
+void Display::handleResizeCompletedEMT (void)
 {
     LogFlowFunc(("\n"));
     if (!mFramebuffer.isNull())
@@ -297,9 +297,6 @@ void Display::handleResizeCompletedEMT (bool fAsync)
         mFramebuffer->COMGETTER(PixelFormat) (&newPixelFormat);
 
         mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, newPixelFormat == FramebufferPixelFormat_PixelFormatDefault);
-
-        /* Unlock framebuffer. */
-        mFramebuffer->Unlock();
     }
 
 #ifdef DEBUG_sunlover
@@ -321,13 +318,11 @@ void Display::handleResizeCompletedEMT (bool fAsync)
     /* Go into non resizing state. */
     bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_Void, ResizeStatus_UpdateDisplayData);
     AssertRelease(f);NOREF(f);
-
-    if (fAsync)
+    
+    if (!mFramebuffer.isNull())
     {
-        /* Repaint the display, but only if the resize was asynchronous. That is only
-         * when VINF_VGA_RESIZE_IN_PROGRESS was returned to the VGA device and VM continued
-         * to run during the framebuffer resize. */
-        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
+        /* Unlock framebuffer after evrything is done. */
+        mFramebuffer->Unlock();
     }
 }
 
@@ -1799,9 +1794,14 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     {
         LogFlowFunc (("ResizeStatus_UpdateDisplayData\n"));
         /* The framebuffer was resized and display data need to be updated. */
-        pDisplay->handleResizeCompletedEMT (true /* fAsync */);
+        pDisplay->handleResizeCompletedEMT ();
         /* Continue with normal processing because the status here is ResizeStatus_Void. */
         Assert (pDisplay->mu32ResizeStatus == ResizeStatus_Void);
+        /* Repaint the display because VM continued to run during the framebuffer resize. */
+        if (!pDisplay->mFramebuffer.isNull())
+            pDrv->pUpPort->pfnUpdateDisplayAll(pDrv->pUpPort);
+        /* Ignore the refresh to replay the logic. */
+        return;
     }
     else if (u32ResizeStatus == ResizeStatus_InProgress)
     {
