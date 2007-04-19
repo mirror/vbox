@@ -168,12 +168,11 @@ void QIRichLabel::setText (const QString &text)
 
    updateLabel (osh);
 
-   if (baseheight == 0)
-       baseheight = heightForWidth (width());
    if ((int)baseheight < heightForWidth (width()))
-       QFrame::setFixedHeight (heightForWidth (width()));
-   else
+   {
+       baseheight = heightForWidth (width());
        QFrame::setFixedHeight (baseheight);
+   }
    emit textChanged();
 }
 

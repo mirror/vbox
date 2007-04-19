@@ -418,13 +418,11 @@ void VBoxVMSettingsDlg::init()
                                        QLabel::AlignTop));
 
     whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
-                                      6 /* seems that RichText adds some margin */ +
-                                      whatsThisLabel->fontMetrics().lineSpacing() * 3);
+                                    6 /* seems that RichText adds some margin */ +
+                                    whatsThisLabel->fontMetrics().lineSpacing() * 3);
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
                                      6 /* seems that RichText adds some margin */ +
                                      whatsThisLabel->fontMetrics().width ('m') * 40);
-    /// @todo possibly, remove after QIConstraintKeeper is properly done
-    connect (whatsThisLabel, SIGNAL (textChanged()), this, SLOT (processAdjustSize())); 
 
     /*
      *  setup connections and set validation for pages
@@ -798,22 +796,7 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
     resize (minimumSize());
 
     VBoxGlobal::centerWidget (this, parentWidget());
-
-    /// @todo improve
-#if 0
-    new QIConstraintKeeper (whatsThisLabel);
-#endif
 }
-
-/// @todo possibly, remove after QIConstraintKeeper is properly done
-/// (should be at least possible to move this functionality into it)
-void VBoxVMSettingsDlg::processAdjustSize() 	 	 
-{ 	 	 
-    int newHeight = minimumSize().height(); 	 	 
-    int oldHeight = height(); 	 	 
-    if (newHeight > oldHeight) 	 	 
-        resize (minimumSize()); 	 	 
-} 	 	 
 
 void VBoxVMSettingsDlg::updateShortcuts()
 {

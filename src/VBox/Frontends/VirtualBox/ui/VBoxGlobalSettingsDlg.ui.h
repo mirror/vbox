@@ -197,7 +197,7 @@ public:
             aPainter->setFont (font);
 
         QListViewItem::paintCell (aPainter, aGroup, aColumn, aWidth, aAlign);
-        
+
         if (mBuiltIn)
         {
             int y = height() - 1;
@@ -287,7 +287,22 @@ void VBoxGlobalSettingsDlg::init()
     whatsThisTimer = new QTimer (this);
     connect (whatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     whatsThisCandidate = NULL;
-    whatsThisLabel->setMinimumHeight (whatsThisLabel->frameWidth() * 2 +
+
+    whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
+    VBoxGlobalSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
+
+    whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
+    whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
+    whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
+    whatsThisLabel->setFrameShape (QLabel::Box);
+    whatsThisLabel->setFrameShadow (QLabel::Sunken);
+    whatsThisLabel->setMargin (7);
+    whatsThisLabel->setScaledContents (FALSE);
+    whatsThisLabel->setAlignment (int (QLabel::WordBreak |
+                                       QLabel::AlignJustify |
+                                       QLabel::AlignTop));
+
+    whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
                                       6 /* seems that RichText adds some margin */ +
                                       whatsThisLabel->fontMetrics().lineSpacing() * 3);
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
