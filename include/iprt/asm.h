@@ -1764,6 +1764,19 @@ DECLINLINE(int8_t) ASMAtomicXchgS8(volatile int8_t *pi8, int8_t i8)
 
 
 /**
+ * Atomically Exchange a bool value.
+ *
+ * @returns Current *pf value
+ * @param   pf      Pointer to the 8-bit variable to update.
+ * @param   f       The 8-bit value to assign to *pi8.
+ */
+DECLINLINE(bool) ASMAtomicXchgBool(volatile bool *pf, bool f)
+{
+    return (bool)ASMAtomicXchgU8((volatile uint8_t *)pf, (uint8_t)f);
+}
+
+
+/**
  * Atomically Exchange an unsigned 16-bit value.
  *
  * @returns Current *pu16 value
