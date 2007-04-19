@@ -90,10 +90,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]; /* We treat this as a PD with 2048 entries. */
 # endif
 
+# if PGM_WITH_PAGING(PGM_GST_TYPE)
     /* Determine current privilege level */
     uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
 
-# if PGM_WITH_PAGING(PGM_GST_TYPE)
 #  ifdef PGM_SYNC_DIRTY_BIT
     /*
      * If we successfully correct the write protection fault due to dirty bit
