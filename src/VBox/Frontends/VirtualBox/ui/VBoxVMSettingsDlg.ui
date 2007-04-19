@@ -2818,7 +2818,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>hddMediaChanged()</slot>
     <slot>cdMediaChanged()</slot>
     <slot>fdMediaChanged()</slot>
-    <slot>processAdjustSize()</slot>
     <slot>updateInterfaces( QWidget* )</slot>
     <slot>networkPageUpdate( QWidget* )</slot>
 </slots>

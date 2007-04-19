@@ -1081,37 +1081,6 @@ to the system default language.&lt;/qt&gt;
                 </widget>
             </hbox>
         </widget>
-        <widget class="QLabel" row="2" column="1">
-            <property name="name">
-                <cstring>whatsThisLabel</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>7</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="backgroundMode">
-                <enum>PaletteMidlight</enum>
-            </property>
-            <property name="frameShape">
-                <enum>Box</enum>
-            </property>
-            <property name="frameShadow">
-                <enum>Sunken</enum>
-            </property>
-            <property name="margin">
-                <number>7</number>
-            </property>
-            <property name="scaledContents">
-                <bool>false</bool>
-            </property>
-            <property name="alignment">
-                <set>WordBreak|AlignJustify|AlignTop</set>
-            </property>
-        </widget>
     </grid>
 </widget>
 <connections>
@@ -1237,9 +1206,11 @@ to the system default language.&lt;/qt&gt;
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxUSBFilterSettings.h</include>
+    <include location="local" impldecl="in implementation">QIRichLabel.h</include>
 </includes>
 <forwards>
     <forward>class VBoxUSBMenu</forward>
+    <forward>class QIRichLabel</forward>
 </forwards>
 <variables>
     <variable access="private">bool polished;</variable>
@@ -1255,6 +1226,7 @@ to the system default language.&lt;/qt&gt;
     <variable access="private">bool mUSBFilterListModified;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">bool mLanguageChanged;</variable>
+    <variable access="private">QIRichLabel *whatsThisLabel;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
