@@ -290,9 +290,8 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
     }
 
 #else
-    /* real / protected mode. */
-    AssertFailed();
-    return VERR_NOT_SUPPORTED;
+    /* real / protected mode: ignore. */
+    return VINF_SUCCESS;
 #endif
 }
 
