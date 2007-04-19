@@ -646,7 +646,7 @@ INPUT                  = \
     src/VBox/Devices/USB/VUSBDevice.cpp \
     src/VBox/Devices/USB/VUSBUrb.cpp \
     \
-    src/VBox/Devices/Input/pckbd.c \
+    src/VBox/Devices/Input/DevPS2.cpp \
     src/VBox/Devices/Graphics/DevVGA.cpp \
     src/VBox/Devices/Bus/DevPCI.cpp \
     \
