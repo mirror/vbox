@@ -249,7 +249,7 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
      * disable access to the VGA device by the EMT thread.
      */
     bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_InProgress, ResizeStatus_Void);
-    AssertRelease(f);NOREF(f);
+    AssertReleaseMsg(f, ("f = %d\n", f));NOREF(f);
 
     /* The framebuffer is locked in the state.
      * The lock is kept, because the framebuffer is in undefined state.
@@ -300,9 +300,6 @@ void Display::handleResizeCompletedEMT (void)
 
         /* Unlock framebuffer. */
         mFramebuffer->Unlock();
-
-        /* Repaint the display. */
-        mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
     }
 
 #ifdef DEBUG_sunlover
@@ -324,6 +321,9 @@ void Display::handleResizeCompletedEMT (void)
     /* Go into non resizing state. */
     bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_Void, ResizeStatus_UpdateDisplayData);
     AssertRelease(f);NOREF(f);
+
+    /* Repaint the display. This could lead to a new call to handleDisplayResize, so do this after the status change. */
+    mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
 }
 
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
