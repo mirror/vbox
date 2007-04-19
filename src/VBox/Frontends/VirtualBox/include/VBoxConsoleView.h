@@ -202,7 +202,6 @@ private:
 
     bool ignore_mainwnd_resize : 1;
     bool autoresize_guest : 1;
-    QSize autoresize_guest_hint;
 
     bool mfNumLock : 1;
     bool mfScrollLock : 1;
