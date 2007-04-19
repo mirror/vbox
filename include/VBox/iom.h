@@ -321,6 +321,22 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
 IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
 
 /**
+ * [REP*] INSB/INSW/INSD
+ * ES:EDI,DX[,ECX]
+ *
+ * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
+ * @param   uPort           IO Port
+ * @param   uPrefix         IO instruction prefix
+ * @param   cbTransfer      Size of transfer unit
+ */
+IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer);
+
+/**
  * [REP*] OUTSB/OUTSW/OUTSD
  * DS:ESI,DX[,ECX]
  *
@@ -331,6 +347,22 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  * @param   pCpu        Disassembler CPU state.
  */
 IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+
+/**
+ * [REP*] OUTSB/OUTSW/OUTSD
+ * DS:ESI,DX[,ECX]
+ *
+ * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The virtual machine (GC pointer ofcourse).
+ * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
+ * @param   uPort           IO Port
+ * @param   uPrefix         IO instruction prefix
+ * @param   cbTransfer      Size of transfer unit
+ */
+IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer);
 
 /**
  * Flushes the IOM port & statistics lookup cache
