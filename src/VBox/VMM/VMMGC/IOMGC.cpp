@@ -45,18 +45,9 @@
 #include <iprt/string.h>
 
 
-/** @def IOMGC_MOVS_SUPPORT
- * Define IOMGC_MOVS_SUPPORT for movsb/w/d support in GC.
- */
-#define IOMGC_MOVS_SUPPORT
-
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#if 0
-static bool iomGCCalcParamEA(PDISCPUSTATE pCpu, POP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, void **ppAddr);
-#endif
 static unsigned iomGCGetRegSize(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam);
 static bool iomGCGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint32_t *pu32Data, unsigned *pcbSize);
 static bool iomGCSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint32_t u32Data);
@@ -86,76 +77,6 @@ static const unsigned g_aSize2Shift[] =
  * Macro for fast recode of the operand size (1/2/4/8 bytes) to bit shift value.
  */
 #define SIZE2SHIFT(cb) (g_aSize2Shift[cb])
-
-
-#if 0
-/**
- * Calculates effective address (offset from current segment register) for
- * instruction parameter, i.e. [eax + esi*4 + 1234h] -> virtual address.
- *
- * @returns true on success.
- * @param   pCpu                Pointer to current disassembler context.
- * @param   pParam              Pointer to parameter of instruction to calc EA.
- * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
- * @param   ppAddr              Where to store result address.
- */
-static bool iomGCCalcParamEA(PDISCPUSTATE pCpu, POP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, void **ppAddr)
-{
-    uint8_t *pAddr = 0;
-
-    if (pCpu->addrmode == CPUMODE_32BIT)
-    {
-        /* 32-bit addressing. */
-        if (pParam->flags & USE_BASE)
-            pAddr += ACCESS_REG32(pRegFrame, pParam->base.reg_gen32);
-        if (pParam->flags & USE_INDEX)
-        {
-            unsigned i = ACCESS_REG32(pRegFrame, pParam->index.reg_gen);
-            if (pParam->flags & USE_SCALE)
-                i *= pParam->scale;
-            pAddr += i;
-        }
-        if (pParam->flags & USE_DISPLACEMENT8)
-            pAddr += pParam->disp8;
-        else
-            if (pParam->flags & USE_DISPLACEMENT16)
-            pAddr += pParam->disp16;
-        else
-            if (pParam->flags & USE_DISPLACEMENT32)
-            pAddr += pParam->disp32;
-
-        if (pParam->flags & (USE_BASE | USE_INDEX | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32))
-        {
-            /* EA present in parameter. */
-            *ppAddr = pAddr;
-            return true;
-        }
-    }
-    else
-    {
-        /* 16-bit addressing. */
-        if (pParam->flags & USE_BASE)
-            pAddr += ACCESS_REG16(pRegFrame, pParam->base.reg_gen16);
-        if (pParam->flags & USE_INDEX)
-            pAddr += ACCESS_REG16(pRegFrame, pParam->index.reg_gen);
-        if (pParam->flags & USE_DISPLACEMENT8)
-            pAddr += pParam->disp8;
-        else
-            if (pParam->flags & USE_DISPLACEMENT16)
-            pAddr += pParam->disp16;
-
-        if (pParam->flags & (USE_BASE | USE_INDEX | USE_DISPLACEMENT8 | USE_DISPLACEMENT16))
-        {
-            /* EA present in parameter. */
-            *ppAddr = pAddr;
-            return true;
-        }
-    }
-
-    /* Error exit. */
-    return false;
-}
-#endif
 
 /**
  * Calculates the size of register parameter.
