@@ -1220,11 +1220,28 @@ ResumeExecution:
             break;
         }
 
-        /* First simple in and out instructions. */
-        /** @todo str & rep */
-        if (    !IoExitInfo.n.u1REP
-            &&  !IoExitInfo.n.u1STR
+        if (    IoExitInfo.n.u1REP
+            ||  IoExitInfo.n.u1STR
            )
+        {
+            uint32_t prefix = 0;
+            if (IoExitInfo.n.u1REP)
+                prefix |= PREFIX_REP;
+
+            if (IoExitInfo.n.u1Type == 0)
+            {
+                Log2(("IOMInterpretOUTSEx %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringWrite);
+                rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
+            }
+            else
+            {
+                Log2(("IOMInterpretINSEx  %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
+                rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
+            }
+        }
+        else
         {
             if (IoExitInfo.n.u1Type == 0)
             {
@@ -1245,21 +1262,18 @@ ResumeExecution:
                     Log2(("IOMIOPortRead %VGv %x %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, u32Val & uAndVal, uIOSize));
                 }
             }
-            if (rc == VINF_SUCCESS)
-            {
-                /* Update EIP and continue execution. */
-                pCtx->eip = pVMCB->ctrl.u64ExitInfo2;      /* RIP/EIP of the next instruction is saved in EXITINFO2. */
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-                goto ResumeExecution;
-            }
-            Assert(rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE);
-            rc = (IoExitInfo.n.u1Type == 0) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
         }
-        else
-            rc = VINF_IOM_HC_IOPORT_READWRITE;
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->eip = pVMCB->ctrl.u64ExitInfo2;      /* RIP/EIP of the next instruction is saved in EXITINFO2. */
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+        Assert(rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE);
+        rc = (IoExitInfo.n.u1Type == 0) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
 
         Log2(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
-
         break;
     }
 
