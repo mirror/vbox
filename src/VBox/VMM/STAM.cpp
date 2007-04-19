@@ -993,6 +993,10 @@ STAMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
         case STAMUNIT_GOOD_BAD:             return "good:bad";
         case STAMUNIT_MEGABYTES:            return "megabytes";
         case STAMUNIT_KILOBYTES:            return "kilobytes";
+        case STAMUNIT_NS:                   return "ns";
+        case STAMUNIT_NS_PER_CALL:          return "ns/call";
+        case STAMUNIT_NS_PER_OCCURENCE:     return "ns/time";
+        case STAMUNIT_PCT:                  return "%";
 
         default:
             AssertMsgFailed(("Unknown unit %d\n", enmUnit));

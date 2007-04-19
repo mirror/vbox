@@ -191,6 +191,14 @@ typedef enum STAMUNIT
     STAMUNIT_MEGABYTES,
     /** Kilobytes. */
     STAMUNIT_KILOBYTES,
+    /** Nano seconds. */
+    STAMUNIT_NS,
+    /** Nanoseconds per call. */
+    STAMUNIT_NS_PER_CALL,
+    /** Nanoseconds per call. */
+    STAMUNIT_NS_PER_OCCURENCE,
+    /** Percentage. */
+    STAMUNIT_PCT,
     /** The end (exclusive). */
     STAMUNIT_END
 } STAMUNIT;
