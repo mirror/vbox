@@ -1653,7 +1653,8 @@ REMR3DECL(int) REMR3State(PVM pVM)
     Log2(("REMR3State:\n"));
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
     register const CPUMCTX *pCtx = pVM->rem.s.pCtx;
-    register unsigned fFlags;
+    register unsigned       fFlags;
+    bool                    fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVM);
 
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
@@ -1779,7 +1780,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
 
         if (fFlags & CPUM_CHANGED_LDTR)
         {
-            if (fFlags & CPUM_CHANGED_HIDDEN_SEL_REGS)
+            if (fHiddenSelRegsValid)
             {
                 pVM->rem.s.Env.ldt.selector = pCtx->ldtr;
                 pVM->rem.s.Env.ldt.base     = pCtx->ldtrHid.u32Base;
@@ -1792,7 +1793,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
 
         if (fFlags & CPUM_CHANGED_TR)
         {
-            if (fFlags & CPUM_CHANGED_HIDDEN_SEL_REGS)
+            if (fHiddenSelRegsValid)
             {
                 pVM->rem.s.Env.tr.selector = pCtx->tr;
                 pVM->rem.s.Env.tr.base     = pCtx->trHid.u32Base;
@@ -1818,7 +1819,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
      * wrong CPL can cause QEmu to raise an exception in sync_seg!!
      */
 
-    if (fFlags & CPUM_CHANGED_HIDDEN_SEL_REGS)
+    if (fHiddenSelRegsValid)
     {
         /* The hidden selector registers are valid in the CPU context. */
         /** @note QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
