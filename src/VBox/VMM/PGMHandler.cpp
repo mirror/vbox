@@ -85,7 +85,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
  */
 PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                             PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
-                                            const char *pszModR0, const char *pszHandlerR0, RTHCPTR pvUserR0,
+                                            const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
                                             const char *pszModGC, const char *pszHandlerGC, RTGCPTR pvUserGC, const char *pszDesc)
 {
     LogFlow(("PGMR3HandlerPhysicalRegister: enmType=%d GCPhys=%VGv GCPhysLast=%VGv pfnHandlerR3=%VHv pvUserHC=%VHv pszModGC=%p:{%s} pszHandlerGC=%p:{%s} pvUser=%VGv pszDesc=%s\n",

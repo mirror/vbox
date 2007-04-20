@@ -80,10 +80,10 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
-                                          HCPTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTHCPTR pvUserR3,
-                                          R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTHCPTR pvUserR0,
+                                          R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
+                                          R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
                                           GCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
-                                          HCPTRTYPE(const char *) pszDesc)
+                                          R3PTRTYPE(const char *) pszDesc)
 {
     Log(("PGMHandlerPhysicalRegisterEx: enmType=%d GCPhys=%VGp GCPhysLast=%VGp pfnHandlerR3=%VHv pvUserR3=%VHv pfnHandlerR0=%VHv pvUserR0=%VHv pfnHandlerGC=%VGv pvUserGC=%VGv pszDesc=%s\n",
           enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pfnHandlerR0, pvUserR0, pfnHandlerGC, pvUserGC, HCSTRING(pszDesc)));
@@ -600,10 +600,10 @@ PGMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 PGMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
-                                               HCPTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTHCPTR pvUserR3,
-                                               R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTHCPTR pvUserR0,
+                                               R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
+                                               R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
                                                GCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
-                                               HCPTRTYPE(const char *) pszDesc)
+                                               R3PTRTYPE(const char *) pszDesc)
 {
     /*
      * Get the handler.

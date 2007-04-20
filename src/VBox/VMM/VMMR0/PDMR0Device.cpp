@@ -47,7 +47,7 @@
 #ifdef VBOX_STRICT
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { Assert(VALID_PTR(pDevIns)); \
                                               Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); \
-                                              Assert(pDevIns->pvInstanceDataHC == (void *)&pDevIns->achInstanceData[0]); \
+                                              Assert(pDevIns->pvInstanceDataR0 == (void *)&pDevIns->achInstanceData[0]); \
                                          } while (0)
 #else
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)

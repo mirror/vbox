@@ -51,25 +51,47 @@ typedef struct IOMMMIORANGER3
     /** Size of the range. */
     RTUINT                      cbSize;
     /** Pointer to user argument. */
-    RTHCPTR                     pvUser;
+    RTR3PTR                     pvUser;
     /** Pointer to device instance. */
-    HCPTRTYPE(PPDMDEVINS)       pDevIns;
+    R3PTRTYPE(PPDMDEVINS)       pDevIns;
     /** Pointer to write callback function. */
-    HCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallback;
+    R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallback;
     /** Pointer to read callback function. */
-    HCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallback;
+    R3PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallback;
     /** Pointer to fill (memset) callback function. */
-    HCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
+    R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
     /** Description / Name. For easing debugging. */
-    HCPTRTYPE(const char *)     pszDesc;
+    R3PTRTYPE(const char *)     pszDesc;
 } IOMMMIORANGER3;
 /** Pointer to a MMIO range descriptor, R3 version. */
 typedef struct IOMMMIORANGER3 *PIOMMMIORANGER3;
 
-/** MMIO range descriptor, R0 version. */
-typedef IOMMMIORANGER3  IOMMMIORANGER0;
+/**
+ * MMIO range descriptor, R0 version.
+ */
+typedef struct IOMMMIORANGER0
+{
+    /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
+    AVLROGCPHYSNODECORE         Core;
+    /** Start physical address. */
+    RTGCPHYS                    GCPhys;
+    /** Size of the range. */
+    RTUINT                      cbSize;
+    /** Pointer to user argument. */
+    RTR0PTR                     pvUser;
+    /** Pointer to device instance. */
+    R0PTRTYPE(PPDMDEVINS)       pDevIns;
+    /** Pointer to write callback function. */
+    R0PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallback;
+    /** Pointer to read callback function. */
+    R0PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallback;
+    /** Pointer to fill (memset) callback function. */
+    R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
+    /** Description / Name. For easing debugging. */
+    R3PTRTYPE(const char *)     pszDesc;
+} IOMMMIORANGER0;
 /** Pointer to a MMIO range descriptor, R0 version. */
-typedef PIOMMMIORANGER3 PIOMMMIORANGER0;
+typedef struct IOMMMIORANGER0 *PIOMMMIORANGER0;
 
 /**
  * MMIO range descriptor, GC version.
@@ -158,27 +180,51 @@ typedef struct IOMIOPORTRANGER3
     /** Size of the range. */
     uint16_t                    cPorts;
     /** Pointer to user argument. */
-    RTHCPTR                     pvUser;
+    RTR3PTR                     pvUser;
     /** Pointer to the associated device instance. */
-    HCPTRTYPE(PPDMDEVINS)       pDevIns;
+    R3PTRTYPE(PPDMDEVINS)       pDevIns;
     /** Pointer to OUT callback function. */
-    HCPTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
+    R3PTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
     /** Pointer to IN callback function. */
-    HCPTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
+    R3PTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
     /** Pointer to string OUT callback function. */
-    HCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
+    R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
     /** Pointer to string IN callback function. */
-    HCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
+    R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
     /** Description / Name. For easing debugging. */
-    HCPTRTYPE(const char *)     pszDesc;
+    R3PTRTYPE(const char *)     pszDesc;
 } IOMIOPORTRANGER3;
 /** Pointer to I/O port range descriptor, R3 version. */
 typedef IOMIOPORTRANGER3 *PIOMIOPORTRANGER3;
 
-/** I/O port range descriptor, R0 version. */
-typedef IOMIOPORTRANGER3  IOMIOPORTRANGER0;
+/**
+ * I/O port range descriptor, R0 version.
+ */
+typedef struct IOMIOPORTRANGER0
+{
+    /** Avl node core with Port as Key and Port + cPorts - 1 as KeyLast. */
+    AVLROIOPORTNODECORE         Core;
+    /** Start I/O port address. */
+    RTIOPORT                    Port;
+    /** Size of the range. */
+    uint16_t                    cPorts;
+    /** Pointer to user argument. */
+    RTR0PTR                     pvUser;
+    /** Pointer to the associated device instance. */
+    R0PTRTYPE(PPDMDEVINS)       pDevIns;
+    /** Pointer to OUT callback function. */
+    R0PTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
+    /** Pointer to IN callback function. */
+    R0PTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
+    /** Pointer to string OUT callback function. */
+    R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
+    /** Pointer to string IN callback function. */
+    R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
+    /** Description / Name. For easing debugging. */
+    R3PTRTYPE(const char *)     pszDesc;
+} IOMIOPORTRANGER0;
 /** Pointer to I/O port range descriptor, R0 version. */
-typedef PIOMIOPORTRANGER3 PIOMIOPORTRANGER0;
+typedef IOMIOPORTRANGER0 *PIOMIOPORTRANGER0;
 
 /**
  * I/O port range descriptor.

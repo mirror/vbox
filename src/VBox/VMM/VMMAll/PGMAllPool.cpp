@@ -1204,9 +1204,9 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         const RTGCPHYS GCPhysPage = pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
         rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                           GCPhysPage, GCPhysPage + (PAGE_SIZE - 1),
-                                          pPool->pfnAccessHandlerR3, MMHyper2HC(pVM, (uintptr_t)pPage),
-                                          pPool->pfnAccessHandlerR0, MMHyper2HC(pVM, (uintptr_t)pPage),
-                                          pPool->pfnAccessHandlerGC, MMHyper2GC(pVM, (uintptr_t)pPage),
+                                          pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
+                                          pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
+                                          pPool->pfnAccessHandlerGC, MMHyperCCToGC(pVM, pPage),
                                           pPool->pszAccessHandler);
         /** @todo we should probably deal with out-of-memory conditions here, but for now increasing
          * the heap size should suffice. */
@@ -1276,9 +1276,9 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             pNewHead->iMonitoredPrev = NIL_PGMPOOL_IDX;
             pNewHead->fCR3Mix = pPage->fCR3Mix;
             rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
-                                                   pPool->pfnAccessHandlerR3, MMHyper2HC(pVM, (uintptr_t)pNewHead),
-                                                   pPool->pfnAccessHandlerR0, MMHyper2HC(pVM, (uintptr_t)pNewHead),
-                                                   pPool->pfnAccessHandlerGC, MMHyper2GC(pVM, (uintptr_t)pNewHead),
+                                                   pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pNewHead),
+                                                   pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pNewHead),
+                                                   pPool->pfnAccessHandlerGC, MMHyperCCToGC(pVM, pNewHead),
                                                    pPool->pszAccessHandler);
             AssertFatalRCSuccess(rc);
             pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
@@ -3148,9 +3148,9 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         {
             PVM pVM = pPool->CTXSUFF(pVM);
             int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
-                                                       pPool->pfnAccessHandlerR3, MMHyper2HC(pVM, (uintptr_t)pPage),
-                                                       pPool->pfnAccessHandlerR0, MMHyper2HC(pVM, (uintptr_t)pPage),
-                                                       pPool->pfnAccessHandlerGC, MMHyper2GC(pVM, (uintptr_t)pPage),
+                                                       pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
+                                                       pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
+                                                       pPool->pfnAccessHandlerGC, MMHyperCCToGC(pVM, pPage),
                                                        pPool->pszAccessHandler);
             AssertFatalRCSuccess(rc);
 # ifdef PGMPOOL_WITH_CACHE
