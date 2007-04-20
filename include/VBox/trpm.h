@@ -54,6 +54,10 @@ typedef enum
     /** The usual 32-bit paranoia. */
     TRPM_32BIT_HACK   = 0x7fffffff
 } TRPMEVENT;
+/** Pointer to a TRPM event type. */
+typedef TRPMEVENT *PTRPMEVENT;
+/** Pointer to a const TRPM event type. */
+typedef TRPMEVENT const *PCTRPMEVENT;
 
 /**
  * Invalid trap handler for trampoline calls
@@ -67,9 +71,9 @@ typedef enum
  * @returns VBox status code.
  * @param   pVM                     The virtual machine.
  * @param   pu8TrapNo               Where to store the trap number.
- * @param   pEnmType                Where to store the trap type
+ * @param   pEnmType                Where to store the trap type.
  */
-TRPMDECL(int)  TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType);
+TRPMDECL(int)  TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType);
 
 /**
  * Gets the trap number for the current trap.
@@ -185,7 +189,7 @@ TRPMDECL(bool)  TRPMHasTrap(PVM pVM);
  *                                  ~0U is stored if the trap have no error code.
  * @param   puCR2                   Where to store the CR2 associated with a trap 0E.
  */
-TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2);
+TRPMDECL(int)  TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2);
 
 
 /**
