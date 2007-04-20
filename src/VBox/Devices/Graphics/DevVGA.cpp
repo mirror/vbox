@@ -4078,7 +4078,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
                     rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                                       GCPhysAddress, GCPhysAddress + (pData->vram_size - 1),
                                                       vgaR3LFBAccessHandler, pData,
-                                                      g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pData->pDevInsHC->pvInstanceDataHC,
+                                                      g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pData->pDevInsHC->pvInstanceDataR0,
                                                       g_DeviceVga.szGCMod, "vgaGCLFBAccessHandler", pData->pDevInsHC->pvInstanceDataGC,
                                                       "VGA LFB");
                 if (VBOX_SUCCESS(rc))

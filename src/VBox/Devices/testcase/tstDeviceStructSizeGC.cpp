@@ -88,8 +88,9 @@ int main()
     GEN_CHECK_OFF(PDMDEVINS, pDevReg);
     GEN_CHECK_OFF(PDMDEVINS, pCfgHandle);
     GEN_CHECK_OFF(PDMDEVINS, iInstance);
-    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataHC);
+    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataR3);
     GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataGC);
+    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataR0);
     GEN_CHECK_OFF(PDMDEVINS, IBase);
     GEN_CHECK_OFF(PDMDEVINS, achInstanceData);
 

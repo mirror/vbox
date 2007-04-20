@@ -991,10 +991,10 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     {
         pData->pPicHlpR0 = pData->pPicHlpR3->pfnGetR0Helpers(pDevIns);
 
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x20, 2, (void *)0, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #0");
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x20, 2, 0, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #0");
         if (VBOX_FAILURE(rc))
             return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0xa0, 2, (void *)1, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #1");
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0xa0, 2, 1, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #1");
         if (VBOX_FAILURE(rc))
             return rc;
     }
@@ -1021,11 +1021,12 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
     if (fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x4d0, 1, &pData->aPics[0],
+        RTR0PTR pDataR0 = PDMINS2DATA_R0PTR(pDevIns);
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x4d0, 1, pDataR0 + RT_OFFSETOF(DEVPIC, aPics[0]),
                                        "picIOPortElcrWrite", "picIOPortElcrRead", NULL, NULL, "i8259 PIC #0 - elcr");
         if (VBOX_FAILURE(rc))
             return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x4d1, 1, &pData->aPics[1],
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x4d1, 1, pDataR0 + RT_OFFSETOF(DEVPIC, aPics[1]),
                                        "picIOPortElcrWrite", "picIOPortElcrRead", NULL, NULL, "i8259 PIC #1 - elcr");
         if (VBOX_FAILURE(rc))
             return rc;
