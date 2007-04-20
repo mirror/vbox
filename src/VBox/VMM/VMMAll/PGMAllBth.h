@@ -2475,7 +2475,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     AssertRC(rc);
 
     /* Everything is allowed */
-    return VINF_SUCCESS;
+    return rc;
 
 #else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
 
