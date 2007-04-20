@@ -237,6 +237,8 @@ typedef struct VMM
 #if HC_ARCH_BITS == 32
     uint32_t                    u32Padding0; /**< Alignment padding. */
 #endif
+    /** The timestamp of the previous yield. (nano) */
+    uint64_t                    u64LastYield;
 
     /** @name CallHost
      * @{ */

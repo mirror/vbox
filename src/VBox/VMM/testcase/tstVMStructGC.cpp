@@ -597,9 +597,10 @@ int main()
     GEN_CHECK_OFF(TM, u64VirtualOffset);
     GEN_CHECK_OFF(TM, u64Virtual);
     GEN_CHECK_OFF(TM, u64VirtualWarpDriveStart);
-    GEN_CHECK_OFF(TM, u64VirtualSyncOffset);
-    GEN_CHECK_OFF(TM, u64VirtualSyncCatchUpPrev);
     GEN_CHECK_OFF(TM, u64VirtualSync);
+    GEN_CHECK_OFF(TM, offVirtualSync);
+    GEN_CHECK_OFF(TM, offVirtualSyncGivenUp);
+    GEN_CHECK_OFF(TM, u64VirtualSyncCatchUpPrev);
     GEN_CHECK_OFF(TM, u32VirtualSyncCatchUpPercentage);
     GEN_CHECK_OFF(TM, u32VirtualSyncScheduleSlack);
     GEN_CHECK_OFF(TM, u64VirtualSyncCatchUpStopThreshold);
