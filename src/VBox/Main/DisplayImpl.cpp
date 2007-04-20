@@ -1106,8 +1106,11 @@ void Display::VideoAccelFlush (void)
         mFramebuffer->Unlock ();
     }
 
-    /* Draw the framebuffer. */
-    vbvaRgnUpdateFramebuffer (&rgn);
+    if (mu32ResizeStatus == ResizeStatus_Void)
+    {
+        /* Draw the framebuffer. */
+        vbvaRgnUpdateFramebuffer (&rgn);
+    }
 }
 
 
