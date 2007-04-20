@@ -160,7 +160,9 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
      */
     const uint64_t u64Now = TMVirtualGet(pVM);
 
-    /* TMCLOCK_VIRTUAL */
+    /* 
+     * TMCLOCK_VIRTUAL
+     */
     const uint64_t u64Expire1 = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
     const int64_t i64Delta1 = u64Expire1 - u64Now;
     if (i64Delta1 <= 0)
@@ -174,9 +176,35 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
         return 0;
     }
 
-    /* TMCLOCK_VIRTUAL_SYNC */
+    /* 
+     * TMCLOCK_VIRTUAL_SYNC 
+     * This isn't quite as stright forward if in a catch-up, not only do 
+     * we have to adjust the 'now' but when have to adjust the delta as well.
+     */
     const uint64_t u64Expire2 = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
-    const int64_t i64Delta2 = u64Expire2 - (u64Now - pVM->tm.s.u64VirtualSyncOffset);
+    uint64_t u64VirtualSyncNow;
+    if (!pVM->tm.s.fVirtualSyncTicking)
+        u64VirtualSyncNow = pVM->tm.s.u64VirtualSync;
+    else
+    {
+        if (!pVM->tm.s.fVirtualSyncCatchUp)
+            u64VirtualSyncNow = u64Now - pVM->tm.s.offVirtualSync;
+        else
+        {
+            uint64_t off = pVM->tm.s.offVirtualSync;
+            uint64_t u64Delta = u64Now - pVM->tm.s.u64VirtualSyncCatchUpPrev;
+            if (RT_LIKELY(!(u64Delta >> 32)))
+            {
+                uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
+                if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
+                    off -= u64Sub;
+                else
+                    off = pVM->tm.s.offVirtualSyncGivenUp;
+            }
+            u64VirtualSyncNow = u64Now - off;
+        }
+    }
+    int64_t i64Delta2 = u64Expire2 - u64VirtualSyncNow;
     if (i64Delta2 <= 0)
     {
         LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
@@ -187,9 +215,11 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
 #endif
         return 0;
     }
+    if (pVM->tm.s.fVirtualSyncCatchUp)
+        i64Delta2 = ASMMultU64ByU32DivByU32(i64Delta2, 100, pVM->tm.s.u32VirtualSyncCatchUpPercentage + 100);
 
     /*
-     * Return the time self to the next event.
+     * Return the time left to the next event.
      */
     STAM_COUNTER_INC(&pVM->tm.s.StatPollMiss);
     return RT_MIN(i64Delta1, i64Delta2);
@@ -358,6 +388,10 @@ TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                 {
                     Assert(!pTimer->offPrev);
                     Assert(!pTimer->offNext);
+                    AssertMsg(      pTimer->enmClock != TMCLOCK_VIRTUAL_SYNC
+                              ||    pTimer->CTXALLSUFF(pVM)->tm.s.fVirtualSyncTicking
+                              ||    u64Expire >= pTimer->CTXALLSUFF(pVM)->tm.s.u64VirtualSync,
+                              ("%RU64 < %RU64 %s\n", u64Expire, pTimer->CTXALLSUFF(pVM)->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);

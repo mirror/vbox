@@ -38,6 +38,7 @@
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 
 
@@ -307,7 +308,6 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
      * The CPU TSC is running while halted,
      * and the yielder is suspended.
      */
-//    TMCpuTickResume(pVM);
     VMMR3YieldSuspend(pVM);
 
     /*
@@ -315,10 +315,9 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
      */
     int rc = VINF_SUCCESS;
     ASMAtomicXchgU32(&pVM->vm.s.fWait, 1);
-    //unsigned cLoops = 0;
+    unsigned cLoops = 0;
     for (;;)
     {
-#ifdef VBOX_HIGH_RES_TIMERS_HACK
         /*
          * Work the timers and check if we can exit.
          * The poll call gives us the ticks left to the next event in
@@ -342,64 +341,37 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
          */
         if (u64NanoTS < 50000)
         {
-            //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d spin\n", u64NanoTS, cLoops++);
+            RTLogPrintf("u64NanoTS=%RI64 cLoops=%d spin\n", u64NanoTS, cLoops++);
             /* spin */;
         }
         else
         {
             VMMR3YieldStop(pVM);
+            uint64_t u64Start = RTTimeNanoTS();
             if (u64NanoTS <  870000) /* this is a bit speculative... works fine on linux. */
             {
-                //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d yield\n", u64NanoTS, cLoops++);
+                RTLogPrintf("u64NanoTS=%RI64 cLoops=%d yield", u64NanoTS, cLoops++);
                 STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltYield, a);
                 RTThreadYield(); /* this is the best we can do here */
                 STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltYield, a);
             }
             else if (u64NanoTS < 2000000)
             {
-                //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep 1ms\n", u64NanoTS, cLoops++);
+                RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep 1ms", u64NanoTS, cLoops++);
                 STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltBlock, a);
                 rc = RTSemEventWait(pVM->vm.s.EventSemWait, 1);
                 STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltBlock, a);
             }
             else
             {
-                //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep %dms\n", u64NanoTS, cLoops++, (uint32_t)RT_MIN(u64NanoTS / 1000000, 15));
+                RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep %dms", u64NanoTS, cLoops++, (uint32_t)RT_MIN((u64NanoTS - 500000) / 1000000, 15));
                 STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltBlock, a);
-                rc = RTSemEventWait(pVM->vm.s.EventSemWait, RT_MIN(u64NanoTS / 1000000, 15));
+                rc = RTSemEventWait(pVM->vm.s.EventSemWait, RT_MIN((u64NanoTS - 1000000) / 1000000, 15));
                 STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltBlock, a);
             }
+            uint64_t u64Slept = RTTimeNanoTS() - u64Start;
+            RTLogPrintf(" -> rc=%Vrc in %RU64 ns / %RI64 ns delta\n", rc, u64Slept, u64NanoTS - u64Slept);
         }
-#else
-
-        /*
-         * We have to check if we can exit, run timers, and then recheck.
-         */
-        /** @todo
-         * The other thing we have to check is how long it is till the next timer
-         * can be serviced and not wait any longer than that.
-         */
-        if (VM_FF_ISPENDING(pVM, fMask))
-            break;
-        STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltTimers, b);
-        TMR3TimerQueuesDo(pVM);
-        STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltTimers, b);
-        if (VM_FF_ISPENDING(pVM, fMask))
-            break;
-        /* hacking */
-        RTThreadYield();
-        TMR3TimerQueuesDo(pVM);
-        if (VM_FF_ISPENDING(pVM, fMask))
-            break;
-
-        /*
-         * Wait for a while. Someone will wake us up or interrupt the call if
-         * anything needs our attention.
-         */
-        STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltBlock, a);
-        rc = RTSemEventWait(pVM->vm.s.EventSemWait, 10);
-        STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltBlock, a);
-#endif
         if (rc == VERR_TIMEOUT)
             rc = VINF_SUCCESS;
         else if (VBOX_FAILURE(rc))
@@ -418,7 +390,6 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
      * Pause the TSC, it's restarted when we start executing,
      * and resume the yielder.
      */
-//    TMCpuTickPause(pVM);
     VMMR3YieldResume(pVM);
 
 

@@ -1746,6 +1746,7 @@ VMMR3DECL(void) VMMR3YieldSuspend(PVM pVM)
             pVM->vmm.s.cYieldResumeMillies = TMTimerToMilli(pVM->vmm.s.pYieldTimer, u64Expire - u64Now);
         TMTimerStop(pVM->vmm.s.pYieldTimer);
     }
+    pVM->vmm.s.u64LastYield = RTTimeNanoTS();
 }
 
 
@@ -1759,6 +1760,7 @@ VMMR3DECL(void) VMMR3YieldStop(PVM pVM)
     if (!pVM->vmm.s.cYieldResumeMillies)
         TMTimerStop(pVM->vmm.s.pYieldTimer);
     pVM->vmm.s.cYieldResumeMillies = pVM->vmm.s.cYieldEveryMillies;
+    pVM->vmm.s.u64LastYield = RTTimeNanoTS();
 }
 
 
@@ -1786,12 +1788,34 @@ VMMR3DECL(void) VMMR3YieldResume(PVM pVM)
  */
 static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
+    /*
+     * This really needs some careful tuning. While we shouldn't be too gready since 
+     * that'll cause the rest of the system to stop up, we shouldn't be too nice either
+     * because that'll cause us to stop up.
+     *
+     * The current logic is to use the default interval when there is no lag worth 
+     * mentioning, but when we start accumulating lag we don't bother yielding at all.
+     *
+     * (This depends on the TMCLOCK_VIRTUAL_SYNC to be scheduled before TMCLOCK_REAL
+     * so the lag is up to date.)
+     */
+    const uint64_t u64Lag = TMVirtualSyncGetLag(pVM);
+    if (    u64Lag     <   50000000 /* 50ms */
+        ||  (   u64Lag < 1000000000 /*  1s */
+             && RTTimeNanoTS() - pVM->vmm.s.u64LastYield < 500000000 /* 500 ms */)
+       )
+    {
+        uint64_t u64Elapsed = RTTimeNanoTS();
+        pVM->vmm.s.u64LastYield = u64Elapsed;
+
+        RTThreadYield();
+
 #ifdef LOG_ENABLED
-    uint64_t u64Elapsed = RTTimeNanoTS();
+        u64Elapsed = RTTimeNanoTS() - u64Elapsed;
+        Log(("vmmR3YieldEMT: %RI64 ns\n", u64Elapsed));
 #endif
-    RTThreadYield();
+    }
     TMTimerSetMillies(pTimer, pVM->vmm.s.cYieldEveryMillies);
-    Log(("vmmR3YieldEMT: %RI64 ns\n", RTTimeNanoTS() - u64Elapsed));
 }
 
 

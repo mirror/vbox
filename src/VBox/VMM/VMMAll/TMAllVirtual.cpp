@@ -95,7 +95,7 @@ DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
 DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
 {
     uint64_t u64;
-    if (pVM->tm.s.fVirtualTicking)
+    if (RT_LIKELY(pVM->tm.s.fVirtualTicking))
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGet);
         u64 = tmVirtualGetRaw(pVM);
@@ -107,12 +107,13 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
             &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
             &&  (   pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
                  || (   pVM->tm.s.fVirtualSyncTicking
-                     && pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.u64VirtualSyncOffset
+                     && pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
                     )
                 )
            )
         {
             VM_FF_SET(pVM, VM_FF_TIMER);
+            STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSetFF);
 #ifdef IN_RING3
             REMR3NotifyTimerPending(pVM);
             VMR3NotifyFF(pVM, true);
@@ -189,6 +190,7 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
             REMR3NotifyTimerPending(pVM);
             VMR3NotifyFF(pVM, true);
 #endif
+            STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
         }
 
         /*
@@ -209,32 +211,33 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
          *    this function.
          *
          * Assuming nano second virtual time, we can simply ignore any intervals which has
-         * any of the upper 32 bits set. This will have the nice sideeffect of allowing us
-         * to use (faster) 32-bit math.
+         * any of the upper 32 bits set.
          */
-        AssertCompile(TMCLOCK_FREQ_VIRTUAL <= 2000000000); /* (assumes low 32-bit >= 2 seconds) */
-        uint64_t u64Offset = pVM->tm.s.u64VirtualSyncOffset;
+        AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
+        uint64_t off = pVM->tm.s.offVirtualSync;
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
             const uint64_t u64Prev = pVM->tm.s.u64VirtualSyncCatchUpPrev;
             uint64_t u64Delta = u64 - u64Prev;
             if (RT_LIKELY(!(u64Delta >> 32)))
             {
-                uint32_t u32Sub = ASMDivU64ByU32RetU32(ASMMult2xU32RetU64((uint32_t)u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage),
-                                                       100);
-                if (u64Offset > u32Sub)
+                uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
+                if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
                 {
-                    u64Offset -= u32Sub;
-                    ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSyncOffset, u64Offset);
+                    off -= u64Sub;
+                    ASMAtomicXchgU64(&pVM->tm.s.offVirtualSync, off);
                     pVM->tm.s.u64VirtualSyncCatchUpPrev = u64;
+                    Log4(("TM: %RU64/%RU64: sub %RU32\n", u64 - off, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp, u64Sub));
                 }
                 else
                 {
                     /* we've completely caught up. */
-                    u64Offset = 0;
-                    ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSyncOffset, 0);
+                    STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
+                    off = pVM->tm.s.offVirtualSyncGivenUp;
+                    ASMAtomicXchgU64(&pVM->tm.s.offVirtualSync, off);
                     ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
                     pVM->tm.s.u64VirtualSyncCatchUpPrev = u64;
+                    Log4(("TM: %RU64/0: caught up\n", u64));
                 }
             }
             else
@@ -251,7 +254,7 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
          * approach is to never pass the head timer. So, when we do stop the clock and
          * set the the timer pending flag.
          */
-        u64 -= u64Offset;
+        u64 -= off;
         const uint64_t u64Expire = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
         if (u64 >= u64Expire)
         {
@@ -265,7 +268,11 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
                 REMR3NotifyTimerPending(pVM);
                 VMR3NotifyFF(pVM, true);
 #endif
+                STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
+                Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
             }
+            else
+                Log4(("TM: %RU64/%RU64: exp tmr\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         }
     }
     else
@@ -282,7 +289,7 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
  */
 TMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
 {
-    return pVM->tm.s.u64VirtualSyncOffset;
+    return pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp;
 }
 
 

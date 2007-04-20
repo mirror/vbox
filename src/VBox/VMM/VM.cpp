@@ -2560,6 +2560,17 @@ VMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
  */
 DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *pArgs)
 {
+#ifdef LOG_ENABLED
+    /*
+     * Log the error.
+     */
+    RTLogPrintf("VMSetError: %s(%d) %s\n", pszFile, iLine, pszFunction);
+    va_list va3;
+    va_copy(va3, *pArgs);
+    RTLogPrintfV(pszFormat, va3);
+    va_end(va3);
+#endif 
+
     /*
      * Make a copy of the message.
      */

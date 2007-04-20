@@ -328,13 +328,17 @@ typedef struct TM
      * Only valid when fVirtualWarpDrive is set. */
     uint64_t                    u64VirtualWarpDriveStart;
 
-    /** The offset of the virtual timer synchronous clock (TMCLOCK_VIRTUAL_SYNC) relative
-     * to the virtual clock. */
-    uint64_t volatile           u64VirtualSyncOffset;
-    /** The TMCLOCK_VIRTUAL at the previous TMVirtualGetSync call when catch-up is active. */
-    uint64_t volatile           u64VirtualSyncCatchUpPrev;
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
     uint64_t volatile           u64VirtualSync;
+    /** The offset of the timer synchronous virtual clock (TMCLOCK_VIRTUAL_SYNC) relative
+     * to the virtual clock (TMCLOCK_VIRTUAL). 
+     * (This is accessed by the timer thread and must be updated atomically.) */
+    uint64_t volatile           offVirtualSync;
+    /** The offset into offVirtualSync that's been irrevocably given up by failed catch-up attempts. 
+     * Thus the current lag is offVirtualSync - offVirtualSyncGivenUp. */
+    uint64_t                    offVirtualSyncGivenUp;
+    /** The TMCLOCK_VIRTUAL at the previous TMVirtualGetSync call when catch-up is active. */
+    uint64_t volatile           u64VirtualSyncCatchUpPrev;
     /** The current catch-up percentage. */
     uint32_t volatile           u32VirtualSyncCatchUpPercentage;
     /** How much slack when processing timers. */
@@ -345,7 +349,7 @@ typedef struct TM
     uint64_t                    u64VirtualSyncCatchUpGiveUpThreshold;
 /** @def TM_MAX_CATCHUP_PERIODS 
  * The number of catchup rates. */
-#define TM_MAX_CATCHUP_PERIODS  8
+#define TM_MAX_CATCHUP_PERIODS  10
     /** The agressivness of the catch-up relative to how far we've lagged behind. 
      * The idea is to have increasing catch-up percentage as the lag increases. */
     struct TMCATCHUPPERIOD
@@ -386,7 +390,7 @@ typedef struct TM
     uint32_t                    u32TimerMillies;
 
     /** Alignment padding to ensure that the statistics are 64-bit aligned when using GCC. */
-    uint32_t                    u32Padding;
+    uint32_t                    u32Padding1;
 
     /** TMR3TimerQueuesDo
      * @{ */
@@ -407,7 +411,9 @@ typedef struct TM
     /** Read the time 
      * @{ */
     STAMCOUNTER                 StatVirtualGet;
+    STAMCOUNTER                 StatVirtualGetSetFF;
     STAMCOUNTER                 StatVirtualGetSync;
+    STAMCOUNTER                 StatVirtualGetSyncSetFF;
     STAMCOUNTER                 StatVirtualPause;
     STAMCOUNTER                 StatVirtualResume;
     /* @} */
