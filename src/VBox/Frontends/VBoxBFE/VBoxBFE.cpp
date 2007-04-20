@@ -469,7 +469,8 @@ int main(int argc, char **argv)
                 return SyntaxError("missing file name for first hard disk!\n");
 
             /* resolve it. */
-            hdaFile = RTPathRealDup(argv[curArg]);
+            if (RTPathExists(argv[curArg]))
+                hdaFile = RTPathRealDup(argv[curArg]);
             if (!hdaFile)
                 return SyntaxError("The path to the specified harddisk, '%s', could not be resolved.\n", argv[curArg]);
         }
@@ -479,7 +480,8 @@ int main(int argc, char **argv)
                 return SyntaxError("missing file/device name for first floppy disk!\n");
 
             /* resolve it. */
-            fdaFile = RTPathRealDup(argv[curArg]);
+            if (RTPathExists(argv[curArg]))
+                fdaFile = RTPathRealDup(argv[curArg]);
             if (!fdaFile)
                 return SyntaxError("The path to the specified floppy disk, '%s', could not be resolved.\n", argv[curArg]);
         }
@@ -489,7 +491,8 @@ int main(int argc, char **argv)
                 return SyntaxError("missing file/device name for first hard disk!\n");
 
             /* resolve it. */
-            cdromFile = RTPathRealDup(argv[curArg]);
+            if (RTPathExists(argv[curArg]))
+                cdromFile = RTPathRealDup(argv[curArg]);
             if (!cdromFile)
                 return SyntaxError("The path to the specified cdrom, '%s', could not be resolved.\n", argv[curArg]);
         }
