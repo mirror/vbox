@@ -26,6 +26,12 @@ include	$(PATH_KBUILD)/header.kmk
 #
 PROGRAMS = tstDeviceStructSize tstDeviceStructSizeGC
 
+# temp hack.
+ifeq ($(USERNAME),bird)
+ DEFS += VBOX_WITH_VIRTUAL_SYNC_TIMERS
+endif
+
+
 #
 # We setup one 'other' targets for executing the structure & alignment
 # validation testcases. Perhaps a bit hackish, but extremely useful.
