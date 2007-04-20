@@ -511,21 +511,21 @@ PGMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
             cbSize = 0;
 
         /* Don't recursively call PGMVerifyAccess as we might run out of stack. */
-        for(;;)
+        for (;;)
         {
             rc = PGMVerifyAccess(pVM, Addr, 1, fAccess);
             if (rc != VINF_SUCCESS)
                 break;
 
-            Addr += PAGE_SIZE;
-            if (cbSize > PAGE_SIZE)
-                cbSize =- PAGE_SIZE;
-            else
+            if (cbSize <= PAGE_SIZE)
                 break;
+            cbSize =- PAGE_SIZE;
+            Addr += PAGE_SIZE;
         }
     }
     return rc;
 }
+
 
 #ifndef IN_GC
 /**
