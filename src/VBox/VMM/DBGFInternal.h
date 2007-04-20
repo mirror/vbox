@@ -114,6 +114,8 @@ typedef struct DBGFINFO *PDBGFINFO;
  */
 typedef struct DBGFINFO
 {
+    /** The flags. */
+    uint32_t        fFlags;
     /** Owner type. */
     DBGFINFOTYPE    enmType;
     /** Per type data. */
