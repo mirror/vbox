@@ -1001,7 +1001,6 @@ static int await_bootp(int ival __unused, void *ptr __unused,
 	if (bootpreply->bp_xid != xid)
 		return 0;
 #ifdef PXE_DHCP_STRICT
-#ifndef VBOX /* Disabled, but it would never be active, as we don't use 4011 as source port. */
 	/* in principle one could check here:
 	 *
 	 * - DHCPACK
@@ -1018,7 +1017,6 @@ static int await_bootp(int ival __unused, void *ptr __unused,
 		memcpy(KERNEL_BUF, bootpreply->bp_file, sizeof(KERNEL_BUF));
 		return 1;
 	}
-#endif /* !VBOX */
 #endif /* PXE_DHCP_STRICT */
 #ifndef VBOX /* This fails for an ACK from a DHCP server that doesn't know the next server IP address. Annoying, as this is the default for DHCP with RIS ProxyDHCP. */
 	if (memcmp(&bootpreply->bp_siaddr, &zeroIP, sizeof(in_addr)) == 0)
@@ -1895,7 +1893,14 @@ static void decode_pxe_boot_servers(unsigned char*p)
 		++num_boot_menu;
 		pxe_boot_menu[i].id = item;
 	}
+#ifndef VBOX
 	memcpy(&pxe_boot_menu[i].ip, p + 3, sizeof(in_addr));
+#else /* VBOX */
+        if (*(p + 2) > 0)
+            memcpy(&pxe_boot_menu[i].ip, p + 3, sizeof(in_addr));
+        else
+            pxe_boot_menu[i].ip.s_addr = arptable[ARP_SERVER].ipaddr.s_addr;
+#endif /* VBOX */
 }
 
 /**************************************************************************
