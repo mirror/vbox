@@ -1795,7 +1795,7 @@ to
     <name>QWizard</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation>&amp;Отмена</translation>
+        <translation>О&amp;тмена</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -1803,11 +1803,11 @@ to
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;Вперед &gt;</translation>
+        <translation>&amp;Далее &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Финиш</translation>
+        <translation>&amp;Готово</translation>
     </message>
     <message>
         <source>&amp;Help</source>
