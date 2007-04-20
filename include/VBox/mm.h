@@ -418,7 +418,6 @@ DECLINLINE(RTGCPTR) MMHyper2GC(PVM pVM, uintptr_t Ptr)
 }
 #endif
 
-
 /**
  * Converts a HC address in the Hypervisor memory region to a GC address.
  * The memory must have been allocated with MMGCHyperAlloc() or MMR3HyperAlloc().

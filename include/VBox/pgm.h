@@ -618,10 +618,10 @@ PGMDECL(const char *) PGMGetModeName(PGMMODE enmMode);
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
-                                          HCPTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTHCPTR pvUserR3,
-                                          R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTHCPTR pvUserR0,
+                                          R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
+                                          R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
                                           GCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
-                                          HCPTRTYPE(const char *) pszDesc);
+                                          R3PTRTYPE(const char *) pszDesc);
 
 /**
  * Modify a physical page access handler.
@@ -663,10 +663,10 @@ PGMDECL(int) PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys);
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 PGMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
-                                               HCPTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTHCPTR pvUserR3,
-                                               R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTHCPTR pvUserR0,
+                                               R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
+                                               R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
                                                GCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
-                                               HCPTRTYPE(const char *) pszDesc);
+                                               R3PTRTYPE(const char *) pszDesc);
 
 /**
  * Splitts a physical access handler in two.
@@ -1446,7 +1446,7 @@ PGMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
  */
 PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                             PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
-                                            const char *pszModR0, const char *pszHandlerR0, RTHCPTR pvUserR0,
+                                            const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
                                             const char *pszModGC, const char *pszHandlerGC, RTGCPTR pvUserGC, const char *pszDesc);
 
 /**

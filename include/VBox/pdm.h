@@ -4500,7 +4500,7 @@ typedef struct PDMDEVHLP
      * @param   pszInStr            Name of the R0 function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterR0,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterR0,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser,
                                                    const char *pszOut, const char *pszIn,
                                                    const char *pszOutStr, const char *pszInStr, const char *pszDesc));
 
@@ -4575,7 +4575,7 @@ typedef struct PDMDEVHLP
      * @param   pszFill             Name of the GC function which is gonna handle Fill/memset operations. (optional)
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill,
                                                  const char *pszDesc));
 
@@ -5498,22 +5498,24 @@ typedef struct PDMDEVINS
     } Internal;
 
     /** Pointer the HC PDM Device API. */
-    HCPTRTYPE(PCPDMDEVHLP)      pDevHlp;
+    R3PTRTYPE(PCPDMDEVHLP)      pDevHlp;
     /** Pointer the R0 PDM Device API. */
     R0PTRTYPE(PCPDMDEVHLPR0)    pDevHlpR0;
     /** Pointer to device registration structure.  */
-    HCPTRTYPE(PCPDMDEVREG)      pDevReg;
+    R3PTRTYPE(PCPDMDEVREG)      pDevReg;
     /** Configuration handle. */
-    HCPTRTYPE(PCFGMNODE)        pCfgHandle;
+    R3PTRTYPE(PCFGMNODE)        pCfgHandle;
     /** Pointer to device instance data. */
-    HCPTRTYPE(void *)           pvInstanceDataHC;
+    R3PTRTYPE(void *)           pvInstanceDataR3;
+    /** Pointer to device instance data. */
+    R0PTRTYPE(void *)           pvInstanceDataR0;
     /** Pointer the GC PDM Device API. */
     GCPTRTYPE(PCPDMDEVHLPGC)    pDevHlpGC;
     /** Pointer to device instance data. */
     GCPTRTYPE(void *)           pvInstanceDataGC;
 #if HC_ARCH_BITS == 32
     /* padding to make achInstanceData aligned at 16 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 2 : 0];
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 1 : 0];
 #endif
     /** Device instance data. The size of this area is defined
      * in the PDMDEVREG::cbInstanceData field. */
@@ -5571,20 +5573,30 @@ typedef struct PDMDEVINS
  */
 #define PDMINS2DATA_GCPTR(pIns)     ( (pIns)->pvInstanceDataGC )
 
-/** @def PDMINS2DATA_HCPTR
+/** @def PDMINS2DATA_R3PTR
  * Converts a PDM Device or Driver instance pointer to a HC pointer to the instance data.
  */
-#define PDMINS2DATA_HCPTR(pIns)     ( (pIns)->pvInstanceDataHC )
+#define PDMINS2DATA_R3PTR(pIns)     ( (pIns)->pvInstanceDataR3 )
+
+ /** @def PDMINS2DATA_R0PTR
+ * Converts a PDM Device or Driver instance pointer to a R0 pointer to the instance data.
+ */
+#define PDMINS2DATA_R0PTR(pIns)     ( (pIns)->pvInstanceDataR0 )
 
 /** @def PDMDEVINS_2_GCPTR
  * Converts a PDM Device instance pointer a GC PDM Device instance pointer.
  */
 #define PDMDEVINS_2_GCPTR(pDevIns)  ( (GCPTRTYPE(PPDMDEVINS))((RTGCUINTPTR)(pDevIns)->pvInstanceDataGC - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
 
-/** @def PDMDEVINS_2_HCPTR
+/** @def PDMDEVINS_2_R3PTR
  * Converts a PDM Device instance pointer a HC PDM Device instance pointer.
  */
-#define PDMDEVINS_2_HCPTR(pDevIns)  ( (HCPTRTYPE(PPDMDEVINS))((RTHCUINTPTR)(pDevIns)->pvInstanceDataHC - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
+#define PDMDEVINS_2_R3PTR(pDevIns)  ( (HCPTRTYPE(PPDMDEVINS))((RTHCUINTPTR)(pDevIns)->pvInstanceDataR3 - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
+
+/** @def PDMDEVINS_2_R0PTR
+ * Converts a PDM Device instance pointer a R0 PDM Device instance pointer.
+ */
+#define PDMDEVINS_2_R0PTR(pDevIns)  ( (R0PTRTYPE(PPDMDEVINS))((RTR0UINTPTR)(pDevIns)->pvInstanceDataR0 - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
 
 
 /**
@@ -5639,7 +5651,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
 /**
  * @copydoc PDMDEVHLP::pfnIOPortRegisterR0
  */
-DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser,
+DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser,
                                           const char *pszOut, const char *pszIn, const char *pszOutStr,
                                           const char *pszInStr, const char *pszDesc)
 {
@@ -5668,7 +5680,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 /**
  * @copydoc PDMDEVHLP::pfnMMIORegisterR0
  */
-DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill, const char *pszDesc)
 {
     return pDevIns->pDevHlp->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, pszDesc);
