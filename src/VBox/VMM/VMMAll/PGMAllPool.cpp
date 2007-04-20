@@ -262,7 +262,6 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
                     PCX86PTE pGstPte = (PCX86PTE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-
                     Log4(("pgmPoolMonitorChainChanging 32_32: deref %VHp GCPhys %VGp\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PG_MASK));
                     pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK,
@@ -875,7 +874,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
             return true;
 
         /*
-         * It's prefectly fine to reuse these, except for PAE and non-paging stuff.
+         * It's perfectly fine to reuse these, except for PAE and non-paging stuff.
          */
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
@@ -896,7 +895,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
             }
 
         /*
-         * It's prefectly fine to reuse these, except for PAE and non-paging stuff.
+         * It's perfectly fine to reuse these, except for PAE and non-paging stuff.
          */
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
@@ -2797,6 +2796,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
         }
 }
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
+
 
 /**
  * Clear references to shadowed pages in a PAE page directory.
