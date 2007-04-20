@@ -406,6 +406,17 @@ void VBoxVMSettingsDlg::init()
     whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
     VBoxVMSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
+#ifndef DEBUG
+    /* Enforce rich text format to avoid jumping margins (margins of plain
+     * text labels seem to be smaller). We don't do it in the DEBUG builds to
+     * be able to immediately catch badly formatted text (i.e. text that
+     * contains HTML tags but doesn't start with <qt> so that Qt isn't able to
+     * recognize it as rich text and draws all tags as is instead of doing
+     * formatting). We want to catch this text because this is how it will look
+     * in the whatsthis balloon where we cannot enforce rich text. */
+    whatsThisLabel->setTextFormat (Qt::RichText);
+#endif
+
     whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
     whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
     whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
