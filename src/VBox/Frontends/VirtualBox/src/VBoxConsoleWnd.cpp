@@ -1587,9 +1587,6 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         resize (normal_size);
         /* let our toplevel widget calculate its sizeHint properly */
         QApplication::sendPostedEvents (0, QEvent::LayoutHint);
-        /* normalize to the optimal size (the guest screen could have been
-         * resized while we were in fullscreen) */
-        console->normalizeGeometry (true /* adjustPosition */);
         /* restore the maximized state */
         if (was_max)
             setWindowState (windowState() | WindowMaximized);
