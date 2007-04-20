@@ -204,10 +204,12 @@
 #define PGM_TYPE_AMD64      5
 /** @} */
 
-/** @name Defines used to check if the guest is using paging
- * @{ */
-#define PGM_WITH_PAGING(a)  (a == PGM_TYPE_32BIT || a == PGM_TYPE_PAE || a == PGM_TYPE_AMD64)
-/** @} */
+/** Macro for checking if the guest is using paging.
+ * @param uType     PGM_TYPE_*
+ * @remark  ASSUMES certain order of the PGM_TYPE_* values.
+ */
+#define PGM_WITH_PAGING(uType)  ((uType) >= PGM_TYPE_32BIT)
+
 
 /** @def PGM_HCPHYS_2_PTR
  * Maps a HC physical page pool address to a virtual address.
