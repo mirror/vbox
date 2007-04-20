@@ -1770,7 +1770,8 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     VBoxVMNetworkSettings *page = new VBoxVMNetworkSettings();
     page->loadList (mInterfaceList);
     page->getFromAdapter (aAdapter);
-    tbwNetwork->addTab (page, QString ("Adapter %1").arg (aAdapter.GetSlot()));
+    tbwNetwork->addTab (page, QString (tr ("Adapter %1", "network"))
+                                       .arg (aAdapter.GetSlot()));
 
     /* fix the tab order so that main dialog's buttons are always the last */
     setTabOrder (page->leTAPTerminate, buttonHelp);
