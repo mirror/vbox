@@ -5514,8 +5514,8 @@ typedef struct PDMDEVINS
     GCPTRTYPE(PCPDMDEVHLPGC)    pDevHlpGC;
     /** Pointer to device instance data. */
     GCPTRTYPE(void *)           pvInstanceDataGC;
-    /* padding to make achInstanceData aligned at 16 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 1 : 2];
+    /* padding to make achInstanceData aligned at 32 byte boundrary. */
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 1 : 6];
     /** Device instance data. The size of this area is defined
      * in the PDMDEVREG::cbInstanceData field. */
     char                        achInstanceData[8];
