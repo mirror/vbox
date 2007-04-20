@@ -4035,6 +4035,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation type="unfinished">网络类型 %1</translation>
+    </message>
 </context>
 <context>
     <name>VMGlobalSettings</name>
