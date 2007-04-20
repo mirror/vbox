@@ -1085,8 +1085,8 @@ PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     const uintptr_t off = pVM->pgm.s.pbDynPageMapBaseGC - pMapping->GCPtr;
     const unsigned iPT = off >> X86_PD_SHIFT;
     const unsigned iPG = (off >> X86_PT_SHIFT) & X86_PT_MASK;
-    pVM->pgm.s.paDynPageMap32BitPTEsGC = pMapping->aPTs[iPT].pPTGC      + iPG * sizeof(pMapping->aPTs[0].pPTHC->a[0]);
-    pVM->pgm.s.paDynPageMapPaePTEsGC   = pMapping->aPTs[iPT].paPaePTsGC + iPG * sizeof(pMapping->aPTs[0].paPaePTsHC->a[0]);
+    pVM->pgm.s.paDynPageMap32BitPTEsGC = pMapping->aPTs[iPT].pPTGC      + iPG * sizeof(pMapping->aPTs[0].pPTR3->a[0]);
+    pVM->pgm.s.paDynPageMapPaePTEsGC   = pMapping->aPTs[iPT].paPaePTsGC + iPG * sizeof(pMapping->aPTs[0].paPaePTsR3->a[0]);
 
     /* init cache */
     RTHCPHYS HCPhysDummy = MMR3PageDummyHCPhys(pVM);
@@ -1158,17 +1158,17 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * Update the two page directories with all page table mappings.
      * (One or more of them have changed, that's why we're here.)
      */
-    pVM->pgm.s.pMappingsGC = MMHyperHC2GC(pVM, pVM->pgm.s.pMappingsHC);
-    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsHC; pCur->pNextHC; pCur = pCur->pNextHC)
-        pCur->pNextGC = MMHyperHC2GC(pVM, pCur->pNextHC);
+    pVM->pgm.s.pMappingsGC = MMHyperHC2GC(pVM, pVM->pgm.s.pMappingsR3);
+    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur->pNextR3; pCur = pCur->pNextR3)
+        pCur->pNextGC = MMHyperHC2GC(pVM, pCur->pNextR3);
 
     /* Relocate GC addresses of Page Tables. */
-    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsHC; pCur; pCur = pCur->pNextHC)
+    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
     {
         for (RTHCUINT i = 0; i < pCur->cPTs; i++)
         {
-            pCur->aPTs[i].pPTGC = MMHyperHC2GC(pVM, pCur->aPTs[i].pPTHC);
-            pCur->aPTs[i].paPaePTsGC = MMHyperHC2GC(pVM, pCur->aPTs[i].paPaePTsHC);
+            pCur->aPTs[i].pPTGC = MMHyperHC2GC(pVM, pCur->aPTs[i].pPTR3);
+            pCur->aPTs[i].paPaePTsGC = MMHyperHC2GC(pVM, pCur->aPTs[i].paPaePTsR3);
         }
     }
 
@@ -1348,7 +1348,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
      * The guest mappings.
      */
     uint32_t i = 0;
-    for (PPGMMAPPING pMapping = pPGM->pMappingsHC; pMapping; pMapping = pMapping->pNextHC, i++)
+    for (PPGMMAPPING pMapping = pPGM->pMappingsR3; pMapping; pMapping = pMapping->pNextR3, i++)
     {
         SSMR3PutU32(pSSM, i);
         SSMR3PutStrZ(pSSM, pMapping->pszDesc); /* This is the best unique id we have... */
@@ -1500,7 +1500,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
         /* find matching range. */
         PPGMMAPPING pMapping;
-        for (pMapping = pPGM->pMappingsHC; pMapping; pMapping = pMapping->pNextHC)
+        for (pMapping = pPGM->pMappingsR3; pMapping; pMapping = pMapping->pNextR3)
             if (    pMapping->cPTs == cPTs
                 &&  !strcmp(pMapping->pszDesc, szDesc))
                 break;
@@ -2576,7 +2576,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                         pPT = (PX86PTPAE)MMPagePhys2Page(pVM, HCPhysPT);
                     else
                     {
-                        for (PPGMMAPPING pMap = pVM->pgm.s.pMappingsHC; pMap; pMap = pMap->pNextHC)
+                        for (PPGMMAPPING pMap = pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
                         {
                             uint64_t off = u64AddressPT - pMap->GCPtr;
                             if (off < pMap->cb)
@@ -2587,7 +2587,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                                     pHlp->pfnPrintf(pHlp, "%0*llx error! Mapping error! PT %d has HCPhysPT=%VHp not %VHp is in the PD.\n",
                                                     fLongMode ? 16 : 8, u64AddressPT, iPDE,
                                                     iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0, HCPhysPT);
-                                pPT = &pMap->aPTs[iPDE].paPaePTsHC[iSub];
+                                pPT = &pMap->aPTs[iPDE].paPaePTsR3[iSub];
                             }
                         }
                     }
@@ -2842,14 +2842,14 @@ int  pgmR3DumpHierarchyHC32BitPD(PVM pVM, uint32_t cr3, uint32_t cr4, unsigned c
                         pPT = (PX86PT)MMPagePhys2Page(pVM, HCPhys);
                     else
                     {
-                        for (PPGMMAPPING pMap = pVM->pgm.s.pMappingsHC; pMap; pMap = pMap->pNextHC)
+                        for (PPGMMAPPING pMap = pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
                             if (u32Address - pMap->GCPtr < pMap->cb)
                             {
                                 int iPDE = (u32Address - pMap->GCPtr) >> X86_PD_SHIFT;
                                 if (pMap->aPTs[iPDE].HCPhysPT != HCPhys)
                                     pHlp->pfnPrintf(pHlp, "%08x error! Mapping error! PT %d has HCPhysPT=%VHp not %VHp is in the PD.\n",
                                                     u32Address, iPDE, pMap->aPTs[iPDE].HCPhysPT, HCPhys);
-                                pPT = pMap->aPTs[iPDE].pPTHC;
+                                pPT = pMap->aPTs[iPDE].pPTR3;
                             }
                     }
                     int rc2 = VERR_INVALID_PARAMETER;
@@ -3127,7 +3127,7 @@ static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      */
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
-    if (!pVM->pgm.s.pMappingsHC)
+    if (!pVM->pgm.s.pMappingsR3)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no mappings are registered.\n");
 
     /*
@@ -3141,7 +3141,7 @@ static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      * Dump the ranges.
      */
     PPGMMAPPING pCur;
-    for (pCur = pVM->pgm.s.pMappingsHC; pCur; pCur = pCur->pNextHC)
+    for (pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
     {
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
             "%08x - %08x %s\n",

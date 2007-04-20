@@ -434,13 +434,13 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         pRange->pfnReadCallback = pfnReadCallback;
         pRange->pfnWriteCallback= pfnWriteCallback;
         pRange->pfnFillCallback = pfnFillCallback;
-        #ifdef IN_GC
+#ifdef IN_GC
         pRange->pDevIns         = pDevIns;
         pRange->pszDesc         = MMHyperGC2HC(pVM, (void *)pszDesc);
-        #else
+#else
         pRange->pDevIns         = MMHyperHC2GC(pVM, pDevIns);
         pRange->pszDesc         = pszDesc;
-        #endif
+#endif
 
         /*
          * Try insert it.
@@ -477,9 +477,9 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
  * @param   pfnInStrCallback    Pointer to function which is gonna handle IN operations in GC.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-IOMDECL(int)  IOMIOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
-                                  HCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, HCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                  HCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, HCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
+IOMDECL(int)  IOMIOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
+                                  R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                  R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
                                   const char *pszDesc)
 {
     LogFlow(("IOMIOPortRegisterR0: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%VHv pfnOutCallback=%VGv pfnInCallback=%VGv pfnOutStrCallback=%VGv  pfnInStrCallback=%VGv pszDesc=%s\n",
@@ -547,11 +547,14 @@ IOMDECL(int)  IOMIOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStar
         pRange->pfnOutStrCallback = pfnOutStrCallback;
         pRange->pfnInStrCallback = pfnInStrCallback;
 #ifdef IN_GC
-        pRange->pDevIns         = MMHyperGC2HC(pVM, pDevIns);
-        pRange->pszDesc         = MMHyperGC2HC(pVM, (void *)pszDesc);
+        pRange->pDevIns         = MMHyperGCToR0(pVM, pDevIns);
+        pRange->pszDesc         = MMHyperGCToR3(pVM, (void *)pszDesc);
+#elif defined(IN_RING3)
+        pRange->pDevIns         = MMHyperR3ToR0(pVM, pDevIns);
+        pRange->pszDesc         = pszDesc;
 #else
         pRange->pDevIns         = pDevIns;
-        pRange->pszDesc         = pszDesc;
+        pRange->pszDesc         = MMHyperR0ToR3(pVM, (RTR0PTR)pszDesc);
 #endif
 
         /*
@@ -589,9 +592,9 @@ IOMDECL(int)  IOMIOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStar
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                HCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, HCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                HCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
+IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+                                R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                                R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
     LogFlow(("IOMMMIORegisterR0: pDevIns=%p GCPhysStart=%#x cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
@@ -657,11 +660,14 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         pRange->pfnWriteCallback= pfnWriteCallback;
         pRange->pfnFillCallback = pfnFillCallback;
 #ifdef IN_GC
-        pRange->pDevIns         = MMHyperGC2HC(pVM, pDevIns);
-        pRange->pszDesc         = MMHyperGC2HC(pVM, (void *)pszDesc);
+        pRange->pDevIns         = MMHyperGCToR0(pVM, pDevIns);
+        pRange->pszDesc         = MMHyperGCToR3(pVM, (void *)pszDesc);
+#elif defined(IN_RING3)
+        pRange->pDevIns         = MMHyperR3ToR0(pVM, pDevIns);
+        pRange->pszDesc         = pszDesc;
 #else
         pRange->pDevIns         = pDevIns;
-        pRange->pszDesc         = pszDesc;
+        pRange->pszDesc         = MMHyperR0ToR3(pVM, (RTR0PTR)pszDesc);
 #endif
 
         /*

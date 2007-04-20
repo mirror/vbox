@@ -87,7 +87,7 @@ replace: \/\*\* @copydoc PDMDEVHLP::pfn\2 \*\/\nstatic DECLCALLBACK\(\1\) pdmR3D
  */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn, PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTGCPTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
+static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts);
 static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                          PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
@@ -95,7 +95,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS G
 static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                            const char *pszWrite, const char *pszRead, const char *pszFill,
                                            const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                            const char *pszWrite, const char *pszRead, const char *pszFill,
                                            const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
@@ -251,7 +251,7 @@ static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns);
  * Asserts the validity of the driver instance.
  */
 #ifdef VBOX_STRICT
-# define PDMDEV_ASSERT_DEVINS(pDevIns)   do { Assert(pDevIns); Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); Assert(pDevIns->pvInstanceDataHC == (void *)&pDevIns->achInstanceData[0]); } while (0)
+# define PDMDEV_ASSERT_DEVINS(pDevIns)   do { Assert(pDevIns); Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); Assert(pDevIns->pvInstanceDataR3 == (void *)&pDevIns->achInstanceData[0]); } while (0)
 #else
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)
 #endif
@@ -824,9 +824,11 @@ int pdmR3DevInit(PVM pVM)
         pDevIns->pDevReg                        = paDevs[i].pDev->pDevReg;
         pDevIns->pCfgHandle                     = pConfigNode;
         pDevIns->iInstance                      = paDevs[i].iInstance;
-        pDevIns->pvInstanceDataHC               = &pDevIns->achInstanceData[0];
+        pDevIns->pvInstanceDataR3               = &pDevIns->achInstanceData[0];
         pDevIns->pvInstanceDataGC               =  pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC
-                                                   ? MMHyperHC2GC(pVM, pDevIns->pvInstanceDataHC) : 0;
+                                                   ? MMHyperHC2GC(pVM, pDevIns->pvInstanceDataR3) : 0;
+        pDevIns->pvInstanceDataR0               =  pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0
+                                                   ? MMHyperR3ToR0(pVM, pDevIns->pvInstanceDataR3) : 0;
 
         /*
          * Link it into all the lists.
@@ -1205,7 +1207,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPO
 
 
 /** @copydoc PDMDEVHLP::pfnIOPortRegisterR0 */
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser,
                                                       const char *pszOut, const char *pszIn,
                                                       const char *pszOutStr, const char *pszInStr, const char *pszDesc)
 {
@@ -1224,25 +1226,25 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
     if (    pDevIns->pDevReg->szR0Mod[0]
         &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0))
     {
-        PFNIOMIOPORTIN pfnR0PtrIn = 0;
+        R0PTRTYPE(PFNIOMIOPORTIN) pfnR0PtrIn = 0;
         if (pszIn)
         {
             rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszIn, (void **)&pfnR0PtrIn);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pDevReg->szR0Mod, pszIn));
         }
-        PFNIOMIOPORTOUT pfnR0PtrOut = 0;
+        R0PTRTYPE(PFNIOMIOPORTOUT) pfnR0PtrOut = 0;
         if (pszOut && VBOX_SUCCESS(rc))
         {
             rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszOut, (void **)&pfnR0PtrOut);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pDevReg->szR0Mod, pszOut));
         }
-        PFNIOMIOPORTINSTRING pfnR0PtrInStr = 0;
+        R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnR0PtrInStr = 0;
         if (pszInStr && VBOX_SUCCESS(rc))
         {
             rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszInStr, (void **)&pfnR0PtrInStr);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pDevReg->szR0Mod, pszInStr));
         }
-        PFNIOMIOPORTOUTSTRING pfnR0PtrOutStr = 0;
+        R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnR0PtrOutStr = 0;
         if (pszOutStr && VBOX_SUCCESS(rc))
         {
             rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszOutStr, (void **)&pfnR0PtrOutStr);
@@ -1348,7 +1350,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS
 }
 
 /** @copydoc PDMDEVHLP::pfnMMIORegisterR0 */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                                     const char *pszWrite, const char *pszRead, const char *pszFill,
                                                     const char *pszDesc)
 {
@@ -1368,14 +1370,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
     if (    pDevIns->pDevReg->szR0Mod[0]
         &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0))
     {
-        PFNIOMMMIOWRITE pfnR0PtrWrite = 0;
+        R0PTRTYPE(PFNIOMMMIOWRITE) pfnR0PtrWrite = 0;
         if (pszWrite)
             rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszWrite, (void **)&pfnR0PtrWrite);
-        PFNIOMMMIOREAD pfnR0PtrRead = 0;
+        R0PTRTYPE(PFNIOMMMIOREAD) pfnR0PtrRead = 0;
         int rc2 = VINF_SUCCESS;
         if (pszRead)
             rc2 = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszRead, (void **)&pfnR0PtrRead);
-        PFNIOMMMIOFILL pfnR0PtrFill = 0;
+        R0PTRTYPE(PFNIOMMMIOFILL) pfnR0PtrFill = 0;
         int rc3 = VINF_SUCCESS;
         if (pszFill)
             rc3 = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszFill, (void **)&pfnR0PtrFill);

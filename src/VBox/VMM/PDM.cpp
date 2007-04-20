@@ -292,7 +292,8 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
         {
             pDevIns->pDevHlpGC = pDevHlpGC;
-            pDevIns->pvInstanceDataGC = MMHyperHC2GC(pVM, pDevIns->pvInstanceDataHC);
+            pDevIns->pvInstanceDataGC = MMHyperHC2GC(pVM, pDevIns->pvInstanceDataR3);
+            pDevIns->pvInstanceDataR0 = MMHyperR3ToR0(pVM, pDevIns->pvInstanceDataR3);
             pDevIns->Internal.s.pVMGC = pVM->pVMGC;
             if (pDevIns->Internal.s.pPciBusHC)
                 pDevIns->Internal.s.pPciBusGC = MMHyperHC2GC(pVM, pDevIns->Internal.s.pPciBusHC);

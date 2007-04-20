@@ -168,8 +168,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
         STAM_PROFILE_START(&pVM->pgm.s.StatMapping, a);
-        PPGMMAPPING pMapping = CTXSUFF(pVM->pgm.s.pMappings);
-        for ( ; pMapping; pMapping = CTXSUFF(pMapping->pNext))
+        PPGMMAPPING pMapping = CTXALLSUFF(pVM->pgm.s.pMappings);
+        for ( ; pMapping; pMapping = CTXALLSUFF(pMapping->pNext))
         {
             if ((RTGCUINTPTR)pvFault < (RTGCUINTPTR)pMapping->GCPtr)
                 break;
@@ -2612,7 +2612,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
     /* Only check mappings if they are supposed to be put into the shadow page table. */
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
-        pMapping      = pVM->pgm.s.CTXSUFF(pMappings);
+        pMapping      = pVM->pgm.s.CTXALLSUFF(pMappings);
         iPdNoMapping  = (pMapping) ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
     }
     else
@@ -2643,7 +2643,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                     const unsigned cPTs = pMapping->cPTs;
                     iPD += cPTs - 1;
                     pPDEDst += cPTs + (PGM_SHW_TYPE != PGM_TYPE_32BIT) * cPTs;
-                    pMapping = pMapping->CTXSUFF(pNext);
+                    pMapping = pMapping->CTXALLSUFF(pNext);
                     iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
                     continue;
                 }
@@ -2656,9 +2656,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                 /*
                  * Update iPdNoMapping and pMapping.
                  */
-                pMapping = pVM->pgm.s.pMappingsHC;
+                pMapping = pVM->pgm.s.pMappingsR3;
                 while (pMapping && pMapping->GCPtr < (iPD << PGDIR_SHIFT))
-                    pMapping = pMapping->pNextHC;
+                    pMapping = pMapping->pNextR3;
                 iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
 #else
                 LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
@@ -2776,7 +2776,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
             if (pVM->pgm.s.fMappingsFixed)
             {
                 /* It's fixed, just skip the mapping. */
-                pMapping = pMapping->CTXSUFF(pNext);
+                pMapping = pMapping->CTXALLSUFF(pNext);
                 iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
             }
             else
@@ -2800,9 +2800,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                         /*
                          * Update iPdNoMapping and pMapping.
                          */
-                        pMapping = pVM->pgm.s.CTXSUFF(pMappings);
+                        pMapping = pVM->pgm.s.CTXALLSUFF(pMappings);
                         while (pMapping && pMapping->GCPtr < (iPD << PGDIR_SHIFT))
-                            pMapping = pMapping->CTXSUFF(pNext);
+                            pMapping = pMapping->CTXALLSUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
                         break;
 #  else
@@ -2813,7 +2813,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                 }
                 if (iPdNoMapping == ~0U && pMapping)
                 {
-                    pMapping = pMapping->CTXSUFF(pNext);
+                    pMapping = pMapping->CTXALLSUFF(pNext);
                     if (pMapping)
                         iPdNoMapping = pMapping->GCPtr >> PGDIR_SHIFT;
                 }

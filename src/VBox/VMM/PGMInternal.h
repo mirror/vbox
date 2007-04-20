@@ -303,9 +303,11 @@
 typedef struct PGMMAPPING
 {
     /** Pointer to next entry. */
-    HCPTRTYPE(struct PGMMAPPING *)  pNextHC;
+    R3PTRTYPE(struct PGMMAPPING *)  pNextR3;
     /** Pointer to next entry. */
     GCPTRTYPE(struct PGMMAPPING *)  pNextGC;
+    /** Pointer to next entry. */
+    R0PTRTYPE(struct PGMMAPPING *)  pNextR0;
     /** Start Virtual address. */
     RTGCUINTPTR                     GCPtr;
     /** Last Virtual address (inclusive). */
@@ -313,11 +315,11 @@ typedef struct PGMMAPPING
     /** Range size (bytes). */
     RTGCUINTPTR                     cb;
     /** Pointer to relocation callback function. */
-    HCPTRTYPE(PFNPGMRELOCATE)       pfnRelocate;
+    R3PTRTYPE(PFNPGMRELOCATE)       pfnRelocate;
     /** User argument to the callback. */
-    HCPTRTYPE(void *)               pvUser;
+    R3PTRTYPE(void *)               pvUser;
     /** Mapping description / name. For easing debugging. */
-    HCPTRTYPE(const char *)         pszDesc;
+    R3PTRTYPE(const char *)         pszDesc;
     /** Number of page tables. */
     RTUINT                          cPTs;
 #if HC_ARCH_BITS != GC_ARCH_BITS
@@ -336,13 +338,17 @@ typedef struct PGMMAPPING
         /** The HC physical address of the second PAE page table. */
         RTHCPHYS                HCPhysPaePT1;
         /** The HC virtual address of the 32-bit page table. */
-        HCPTRTYPE(PVBOXPT)      pPTHC;
+        R3PTRTYPE(PVBOXPT)      pPTR3;
         /** The HC virtual address of the two PAE page table. (i.e 1024 entries instead of 512) */
-        HCPTRTYPE(PX86PTPAE)    paPaePTsHC;
+        R3PTRTYPE(PX86PTPAE)    paPaePTsR3;
         /** The GC virtual address of the 32-bit page table. */
         GCPTRTYPE(PVBOXPT)      pPTGC;
         /** The GC virtual address of the two PAE page table. */
         GCPTRTYPE(PX86PTPAE)    paPaePTsGC;
+        /** The GC virtual address of the 32-bit page table. */
+        R0PTRTYPE(PVBOXPT)      pPTR0;
+        /** The GC virtual address of the two PAE page table. */
+        R0PTRTYPE(PX86PTPAE)    paPaePTsR0;
     } aPTs[1];
 } PGMMAPPING;
 /** Pointer to structure for tracking GC Mappings. */
@@ -365,19 +371,19 @@ typedef struct PGMPHYSHANDLER
     /** Number of pages to update. */
     uint32_t                            cPages;
     /** Pointer to R3 callback function. */
-    HCPTRTYPE(PFNPGMR3PHYSHANDLER)      pfnHandlerR3;
+    R3PTRTYPE(PFNPGMR3PHYSHANDLER)      pfnHandlerR3;
     /** User argument for R3 handlers. */
-    HCPTRTYPE(void *)                   pvUserR3;
+    R3PTRTYPE(void *)                   pvUserR3;
     /** Pointer to R0 callback function. */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)      pfnHandlerR0;
     /** User argument for R0 handlers. */
-    HCPTRTYPE(void *)                   pvUserR0;
+    R0PTRTYPE(void *)                   pvUserR0;
     /** Pointer to GC callback function. */
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)      pfnHandlerGC;
     /** User argument for GC handlers. */
     GCPTRTYPE(void *)                   pvUserGC;
     /** Description / Name. For easing debugging. */
-    HCPTRTYPE(const char *)             pszDesc;
+    R3PTRTYPE(const char *)             pszDesc;
 #ifdef VBOX_WITH_STATISTICS
     /** Profiling of this handler. */
     STAMPROFILE                         Stat;
@@ -516,7 +522,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 typedef struct PGMPHYSCACHE_ENTRY
 {
     /** HC pointer to physical page */
-    HCPTRTYPE(uint8_t *)            pbHC;
+    R3PTRTYPE(uint8_t *)            pbHC;
     /** GC Physical address for cache entry */
     RTGCPHYS                        GCPhys;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
@@ -786,9 +792,9 @@ typedef struct PGMPOOL
     /** Access handler, R0. */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnAccessHandlerR0;
     /** Access handler, R3. */
-    HCPTRTYPE(PFNPGMR3PHYSHANDLER)  pfnAccessHandlerR3;
+    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnAccessHandlerR3;
     /** The access handler description (HC ptr). */
-    HCPTRTYPE(const char *)         pszAccessHandler;
+    R3PTRTYPE(const char *)         pszAccessHandler;
 #endif /* PGMPOOL_WITH_MONITORING */
     /** The number of pages currently in use. */
     uint16_t        cUsedPages;
@@ -1367,7 +1373,11 @@ typedef struct PGM
     /** Linked list of GC mappings - for HC.
      * The list is sorted ascending on address.
      */
-    HCPTRTYPE(PPGMMAPPING)          pMappingsHC;
+    R3PTRTYPE(PPGMMAPPING)          pMappingsR3;
+    /** Linked list of GC mappings - for R0.
+     * The list is sorted ascending on address.
+     */
+    R0PTRTYPE(PPGMMAPPING)          pMappingsR0;
 
     /** If set no conflict checks are required.  (boolean) */
     bool                            fMappingsFixed;
