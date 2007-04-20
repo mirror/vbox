@@ -933,19 +933,23 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
 
 void VBoxSelectorWnd::showHelpContents()
 {
+#ifndef VBOX_OSE
 #if defined (Q_WS_WIN32)
     QString fullHelpFilePath = qApp->applicationDirPath() + "/VirtualBox.chm";
 
     HtmlHelp (GetDesktopWindow(), fullHelpFilePath.ucs2(),
               HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
-# ifndef VBOX_OSE
     QString fullProgPath = qApp->applicationDirPath();
     QProcess kchmViewer (fullProgPath + "/kchmviewer");
     kchmViewer.addArgument (fullProgPath + "/VirtualBox.chm");
     kchmViewer.launch ("");
-# endif
+#elif defined (Q_WS_MAC)
+    QProcess openApp (QString("/usr/bin/open"));
+    openApp.addArgument (qApp->applicationDirPath() + "/UserManual.pdf");
+    openApp.launch ("");
 #endif
+#endif /* VBOX_OSE */
 }
 
 // Protected members
