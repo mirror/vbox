@@ -995,7 +995,8 @@ int main(int argc, char *argv[])
                 break;
             }
             /* resolve it. */
-            hdaFile = RTPathRealDup(argv[curArg]);
+            if (RTPathExists(argv[curArg]))
+                hdaFile = RTPathRealDup(argv[curArg]);
             if (!hdaFile)
             {
                 RTPrintf("Error: The path to the specified harddisk, '%s', could not be resolved.\n", argv[curArg]);
@@ -1012,7 +1013,8 @@ int main(int argc, char *argv[])
                 break;
             }
             /* resolve it. */
-            fdaFile = RTPathRealDup(argv[curArg]);
+            if (RTPathExists(argv[curArg]))
+                fdaFile = RTPathRealDup(argv[curArg]);
             if (!fdaFile)
             {
                 RTPrintf("Error: The path to the specified floppy disk, '%s', could not be resolved.\n", argv[curArg]);
@@ -1029,7 +1031,8 @@ int main(int argc, char *argv[])
                 break;
             }
             /* resolve it. */
-            cdromFile = RTPathRealDup(argv[curArg]);
+            if (RTPathExists(argv[curArg]))
+                cdromFile = RTPathRealDup(argv[curArg]);
             if (!cdromFile)
             {
                 RTPrintf("Error: The path to the specified cdrom, '%s', could not be resolved.\n", argv[curArg]);
