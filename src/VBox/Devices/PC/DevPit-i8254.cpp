@@ -92,8 +92,10 @@ typedef struct PITChannelState
     /** The actual time of the next tick.
      * As apposed to the next_transition_time which contains the correct time of the next tick. */
     uint64_t            u64NextTS;
+#ifndef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     /** When to give up catching up. (negative number) */
     int64_t             i64MaxCatchupTS;
+#endif
 
     /** (count_load_time is only set by TMTimerGet() which returns uint64_t) */
     uint64_t count_load_time;
@@ -135,10 +137,12 @@ typedef struct PITState
     STAMCOUNTER             StatPITIrq;
     /** Profiling the timer callback handler. */
     STAMPROFILEADV          StatPITHandler;
+#ifndef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     /** The number of times we've had to speed up the time because we lagged too far behind. */
     STAMCOUNTER             StatPITCatchup;
     /** The number of times we've lagged too far behind for it to be worth trying to catch up. */
     STAMCOUNTER             StatPITGiveup;
+#endif
 } PITState;
 
 
@@ -399,6 +403,13 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time)
         STAM_COUNTER_INC(&s->CTXSUFF(pPit)->StatPITIrq);
     }
 
+#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
+    if (expire_time != -1)
+    {
+        s->u64NextTS = expire_time;
+        TMTimerSet(s->CTXSUFF(pTimer), s->u64NextTS);
+    }
+#else
     /* check if it expires too soon - move at 4x rate if it does. */
     if (expire_time != -1)
     {
@@ -438,6 +449,7 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time)
         }
         TMTimerSet(s->CTXSUFF(pTimer), s->u64NextTS);
     }
+#endif 
     else
     {
         LogFlow(("PIT: m=%d count=%#4x irq_level=%#x stopped\n", s->mode, s->count, irq_level));
@@ -980,7 +992,11 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create timer, register I/O Ports and save state.
      */
+#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, pitTimer, "i8254 Programmable Interval Timer",
+#else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pitTimer, "i8254 Programmable Interval Timer",
+#endif
                                 &pData->channels[0].CTXSUFF(pTimer));
     if (VBOX_FAILURE(rc))
     {
@@ -1023,11 +1039,13 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (VBOX_FAILURE(rc))
         return rc;
 
+#ifndef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     /*
      * Calculate max catchup time.
      */
     pData->channels[0].i64MaxCatchupTS = pData->channels[1].i64MaxCatchupTS
         = pData->channels[2].i64MaxCatchupTS = -TMTimerFromMilli(pData->channels[0].CTXSUFF(pTimer), 1000*60*2); /* 2 min */
+#endif 
 
     /*
      * Initialize the device state.
@@ -1039,8 +1057,10 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     PDMDevHlpSTAMRegister(pDevIns, &pData->StatPITIrq,      STAMTYPE_COUNTER, "/TM/PIT/Irq",      STAMUNIT_OCCURENCES,     "The number of times a timer interrupt was triggered.");
     PDMDevHlpSTAMRegister(pDevIns, &pData->StatPITHandler,  STAMTYPE_PROFILE, "/TM/PIT/Handler",  STAMUNIT_TICKS_PER_CALL, "Profiling timer callback handler.");
+#ifndef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     PDMDevHlpSTAMRegister(pDevIns, &pData->StatPITCatchup,  STAMTYPE_COUNTER, "/TM/PIT/Catchup",  STAMUNIT_OCCURENCES,     "The number of times we lagged too far behind.");
     PDMDevHlpSTAMRegister(pDevIns, &pData->StatPITGiveup,   STAMTYPE_COUNTER, "/TM/PIT/Giveup",   STAMUNIT_OCCURENCES,     "The number of times we lagged so far behind that we simply gave up.");
+#endif 
 
     PDMDevHlpDBGFInfoRegister(pDevIns, "pit", "Display PIT (i8254) status. (no arguments)", pitInfo);
 

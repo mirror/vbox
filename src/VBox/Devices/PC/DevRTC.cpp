@@ -148,8 +148,7 @@ static void rtc_copy_date(RTCState *s);
 static void rtc_timer_update(RTCState *s, int64_t current_time)
 {
     int period_code, period;
-    uint64_t cur_clock, next_irq_clock, now, quarter_period_time;
-    int64_t delta;
+    uint64_t cur_clock, next_irq_clock;
     uint32_t freq;
 
     period_code = s->cmos_data[RTC_REG_A] & 0x0f;
@@ -165,11 +164,14 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         cur_clock = ASMMultU64ByU32DivByU32(current_time, 32768, freq);
         next_irq_clock = (cur_clock & ~(uint64_t)(period - 1)) + period;
         s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
-
+#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
+        TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
+        
+#else
         /* fiddly bits for dealing with running to keep up and losing interrupts. */
-        quarter_period_time = ASMMultU64ByU32DivByU32(period, freq, 32768 * 4);
-        now = TMTimerGet(s->CTXSUFF(pPeriodicTimer));
-        delta = s->next_periodic_time - now;
+        uint64_t quarter_period_time = ASMMultU64ByU32DivByU32(period, freq, 32768 * 4);
+        uint64_t now = TMTimerGet(s->CTXSUFF(pPeriodicTimer));
+        int64_t delta = s->next_periodic_time - now;
         if (delta >= (int64_t)quarter_period_time)
         {
             TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
@@ -182,6 +184,7 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
             Log2(("period=%d current_time=%RU64 next=%RU64 delta=%-10RI64 now=%RU64 real_next=%RU64\n", period, current_time,
                   s->next_periodic_time, delta, now, next));
         }
+#endif
     } else {
         TMTimerStop(s->CTXSUFF(pPeriodicTimer));
     }
@@ -852,19 +855,31 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create timers, arm them, register I/O Ports and save state.
      */
+#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pData->pPeriodicTimerHC);
+#else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pData->pPeriodicTimerHC);
+#endif
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
+#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond, "MC146818 RTC/CMOS - Second", &pData->pSecondTimerHC);
+#else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerSecond, "MC146818 RTC/CMOS - Second", &pData->pSecondTimerHC);
+#endif 
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
+#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2, "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2HC);
+#else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerSecond2, "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2HC);
+#endif 
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));

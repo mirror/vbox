@@ -1594,7 +1594,11 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
         AssertRCReturn(rc, rc);
     }
 
+#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
+    rc = PDMDevHlpTMTimerCreate (pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiTimer, "ACPI Timer", &s->tsHC);
+#else
     rc = PDMDevHlpTMTimerCreate (pDevIns, TMCLOCK_VIRTUAL, acpiTimer, "ACPI Timer", &s->tsHC);
+#endif 
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
