@@ -1845,7 +1845,6 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
         cbSize = (pCpu->opmode == CPUMODE_32BIT) ? 4 : 2;
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
-    Log(("IOMInterpretCheckPortIOAccess -> %Vrc\n", rc));
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
