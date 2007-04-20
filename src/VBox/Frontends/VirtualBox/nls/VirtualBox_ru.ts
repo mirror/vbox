@@ -171,11 +171,11 @@
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation>Отображает путь к существующей папке на основном ПК.</translation>
+        <translation>Показывает путь к существующей папке на основном ПК.</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Отображает имя общей папки (под этим именем папка будет видна в гостевой ОС).</translation>
+        <translation>Показывает имя общей папки (под этим именем папка будет видна в гостевой ОС).</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
@@ -419,7 +419,7 @@
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>Установить рас&amp;ширения гостевой ОС...</translation>
+        <translation>Установить &amp;пакет Guest Additions...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
@@ -1384,7 +1384,7 @@
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation>Категория</translation>
+        <translation>Раздел</translation>
     </message>
     <message>
         <source>[id]</source>
@@ -1400,7 +1400,7 @@
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation>&lt;i&gt;Выберите категорию настроек из списка слева, после чего поместите курсор мыши над нужным элементом настроек для получения подробной информации&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Выберите раздел настроек из списка слева, после чего поместите курсор мыши над нужным элементом настроек для получения подробной информации&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
@@ -1536,7 +1536,7 @@
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation>Отображает диалоговую справку.</translation>
+        <translation>Показывает диалоговую справку.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -1593,7 +1593,7 @@
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Отображает путь к папке по умолчанию для файлов VDI. Эта папка используется (если другая папка не указана явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
+        <translation>Показывает путь к папке по умолчанию для файлов VDI. Эта папка используется (если другая папка не указана явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
@@ -1605,7 +1605,7 @@
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Отображает путь к папке по умолчанию для виртуальных машин. Эта папка используется (если другая папка не указана явным образом) при создании новых виртуальных машин.</translation>
+        <translation>Показывает путь к папке по умолчанию для виртуальных машин. Эта папка используется (если другая папка не указана явным образом) при создании новых виртуальных машин.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
@@ -3144,191 +3144,191 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation type="unfinished">Категория</translation>
+        <translation>Раздел</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished">[id]</translation>
+        <translation>[id]</translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished">[link]</translation>
+        <translation>[link]</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished">[name]</translation>
+        <translation>[name]</translation>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation>&lt;i&gt;Выберите категорию настроек из списка слева, после чего поместите курсор мыши над нужным элементом настроек для получения подробной информации&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Выберите раздел настроек из списка слева, после чего поместите курсор мыши над нужным элементом настроек для получения подробной информации&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
-        <translation type="unfinished"> Общие</translation>
+        <translation> Общие </translation>
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#general</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
-        <translation type="unfinished"></translation>
+        <translation> Жесткие диски </translation>
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#hdds</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Floppy </source>
-        <translation type="unfinished"></translation>
+        <translation> Дискета </translation>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#floppy</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
-        <translation type="unfinished"></translation>
+        <translation> CD/DVD-ROM </translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#dvd</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Audio </source>
-        <translation type="unfinished"></translation>
+        <translation> Аудио </translation>
     </message>
     <message>
         <source>4</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#audio</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Network </source>
-        <translation type="unfinished"></translation>
+        <translation> Сеть </translation>
     </message>
     <message>
         <source>5</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#network</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
-        <translation type="unfinished"> USB </translation>
+        <translation> USB </translation>
     </message>
     <message>
         <source>6</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Remote Display </source>
-        <translation type="unfinished"></translation>
+        <translation>Удаленный дисплей</translation>
     </message>
     <message>
         <source>7</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
-        <translation type="unfinished"></translation>
+        <translation>Общие папки</translation>
     </message>
     <message>
         <source>8</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Identification</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Идентификация</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished"></translation>
+        <translation>И&amp;мя</translation>
     </message>
     <message>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Указывает имя виртуальной машины.</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Тип ОС</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Размер основной памяти</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Управляет количеством памяти, доступным для виртуальной машины. Если установить слишком большое значение, то машина может не запуститься.</translation>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Р&amp;азмер видеопамяти</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Управляет количеством видеопамяти, доступным для виртуальной машины.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
-        <translation type="unfinished"></translation>
+        <translation>О&amp;сновные</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Выбрать</translation>
+        <translation>Выбрать</translation>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
@@ -3336,119 +3336,119 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить</translation>
     </message>
     <message>
         <source>Extended Features</source>
-        <translation type="unfinished"></translation>
+        <translation>Дополнительные возможности</translation>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
-        <translation type="unfinished"></translation>
+        <translation>В&amp;ключить ACPI</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished">Alt+т</translation>
+        <translation>Alt+к</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Вк&amp;лючить IO APIC</translation>
     </message>
     <message>
         <source>Alt+P</source>
-        <translation type="unfinished">Alt+В</translation>
+        <translation>Alt+л</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Порядок загрузки</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Дополнительно</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Оп&amp;исание</translation>
     </message>
     <message>
         <source>&amp;Primary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Первичный Мастер</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;не выбран&gt;</translation>
     </message>
     <message>
         <source>P&amp;rimary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;ервичный Слейв</translation>
     </message>
     <message>
         <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>Вто&amp;ричный Слейв</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подключить дискету</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Физический привод</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished">Alt+D</translation>
+        <translation>Alt+Ф</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключает указанный привод гибких дисков к виртуальному приводу гибких дисков.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>Ф&amp;айл образа</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+а</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключает указанный файл образа дискеты к виртуальному приводу гибких дисков.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подключить CD/DVD</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Физический CD/DVD-привод</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключает указанный CD/DVD-привод к виртуальному CD/DVD-приводу.</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>Ф&amp;айл ISO-образа</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключает указанный файл образа CD/DVD к виртуальному CD/DVD-приводу.</translation>
     </message>
     <message>
         <source>&amp;Enable Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить аудио</translation>
     </message>
     <message>
         <source>Host Audio &amp;Driver</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Аудио-драйвер</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить контроллер USB</translation>
     </message>
     <message>
         <source>Alt+U</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+В</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -3456,79 +3456,79 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished">Ins</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished">Добавить пустой (Ins)</translation>
+        <translation>Добавить пустой (Ins)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished">Alt+Ins</translation>
+        <translation>Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished">Добавить из (Alt+Ins)</translation>
+        <translation>Добавить из (Alt+Ins)</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished">Del</translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished">Удалить (Del)</translation>
+        <translation>Удалить (Del)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished">Удаляет выбранный USB-фильтр.</translation>
+        <translation>Удаляет выбранный USB-фильтр.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished">Ctrl+Up</translation>
+        <translation>Ctrl+Up</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation type="unfinished">Вверх (Ctrl+Up)</translation>
+        <translation>Вверх (Ctrl+Up)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished">Перемещает выбранный USB-фильтр вверх.</translation>
+        <translation>Перемещает выбранный USB-фильтр вверх.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished">Ctrl+Down</translation>
+        <translation>Ctrl+Down</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation type="unfinished">Вниз (Ctrl+Down)</translation>
+        <translation>Вниз (Ctrl+Down)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished">Перемещает выбранный USB-фильтр вниз.</translation>
+        <translation>Перемещает выбранный USB-фильтр вниз.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить VRDP-сервер</translation>
     </message>
     <message>
         <source>Server port </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">По&amp;рт сервера</translation>
     </message>
     <message>
         <source>Authentication Method </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Способ авторизации</translation>
     </message>
     <message>
         <source>Authentication Timeout </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Вр&amp;емя ожидания авторизации</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задает порт VRDP-сервера.</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задает способ авторизации VRDP-сервера.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
@@ -3536,39 +3536,39 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Справка</translation>
+        <translation>Справка</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished">Отображает диалоговую справку.</translation>
+        <translation>Показывает диалоговую справку.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished">Обнаружены неправильные настройки</translation>
+        <translation>Обнаружены неправильные настройки</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;ОК</translation>
+        <translation>&amp;ОК</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+О</translation>
+        <translation>Alt+О</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished">Сохраняет изменения и закрывает диалог.</translation>
+        <translation>Сохраняет изменения и закрывает диалог.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Отменить</translation>
+        <translation>Отменить</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished">Отменяет изменения и закрывает диалог.</translation>
+        <translation>Отменяет изменения и закрывает диалог.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
@@ -3584,7 +3584,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает виртуальный жесткий диск, который будет присоединен к данному IDE-разъему, и позволяет быстро выбрать другой жесткий диск.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
@@ -3592,7 +3592,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает файл образа для подключения к виртуальному CD/DVD-приводу и позволяет быстро выбрать другой файл образа.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
@@ -3600,7 +3600,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает файл образа для подключения к виртуальному приводу гибких дисков и позволяет быстро выбрать другой файл образа.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
@@ -3612,12 +3612,12 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MБ&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;не присоединен&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
@@ -3641,15 +3641,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран файл образа CD/DVD.</translation>
     </message>
     <message>
         <source>Floppy drive image file is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран файл образа дискеты.</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбран неверный сетевой host-интерфейс для адаптера %1.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
@@ -3666,7 +3666,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Новый фильтр %1</translation>
+        <translation>Новый фильтр %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
@@ -3678,7 +3678,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Задает тип операционной системы, которую вы хотите установить на эту виртуальную машину (эта операционная система называется гостевая ОС).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
@@ -3694,11 +3694,11 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задает режим работы буфера обмена между гостевой и основной ОС. Заметьте, что использование этой функции требует установки пакета Guest Additions в гостевой ОС.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает путь к папке для сохранения снимков этой виртуальной машины. Заметьте, что снимки могут занимать достаточно много места на жестком диске.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
@@ -3706,7 +3706,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает описание виртуальной машины. Поле описания удобно использовать для занесения заметок о настройках установленной гостевой ОС.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
@@ -3714,24 +3714,25 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает список физических приводов гибких дисков, доступных для подключения к виртуальной машине.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает диалог Менеджера виртуальных дисков для выбора файла образа.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает список физических CD/DVD-приводов, доступных для подключения к виртуальной машине.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает диалог Менеджера виртуальных дисков для выбора файла образа.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Управляет драйвером основного ПК, используемым для вывода аудио. Пункт &lt;b&gt;Пустой аудиодрайвер&lt;/b&gt;
+позволяет гостевой ОС видеть аудиокарту, однако доступ к ней будет проигнорирован.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
@@ -3739,7 +3740,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает список всех USB-фильтров этой машины. Галочка слева указывает, включен данный фильтр или нет.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
@@ -3759,15 +3760,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <name>VMGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hеправильный код host-клавиши: &apos;%1 (0x%2)&apos;.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Значение &apos;%1&apos; параметра &apos;%2&apos; не совпадает с regexp-выражением &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удается удалить параметр &apos;%1&apos;.</translation>
     </message>
 </context>
 </TS>
