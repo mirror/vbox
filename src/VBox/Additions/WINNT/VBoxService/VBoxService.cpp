@@ -590,6 +590,12 @@ VOID DisplayChangeThread(void *dummy)
                                 if (status != DISP_CHANGE_SUCCESSFUL)
                                 {
                                     SvcDebugOut("VBoxService: error from ChangeDisplaySettings: %d\n", status);
+
+                                    if (status = DISP_CHANGE_BADMODE)
+                                    {
+                                        /* Our driver can not set the requested mode. Stop trying. */
+                                        break;
+                                    }
                                 }
                                 else
                                 {
