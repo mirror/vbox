@@ -610,6 +610,7 @@ typedef struct PDMIKEYBOARDPORT
  */
 typedef enum PDMKEYBLEDS
 {
+    /** No leds. */
     PDMKEYBLEDS_NONE             = 0x0000,
     /** Num Lock */
     PDMKEYBLEDS_NUMLOCK          = 0x0001,
@@ -5513,10 +5514,8 @@ typedef struct PDMDEVINS
     GCPTRTYPE(PCPDMDEVHLPGC)    pDevHlpGC;
     /** Pointer to device instance data. */
     GCPTRTYPE(void *)           pvInstanceDataGC;
-#if HC_ARCH_BITS == 32
     /* padding to make achInstanceData aligned at 16 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 1 : 0];
-#endif
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 1 : 2];
     /** Device instance data. The size of this area is defined
      * in the PDMDEVREG::cbInstanceData field. */
     char                        achInstanceData[8];
