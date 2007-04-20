@@ -30,20 +30,12 @@
 <context>
     <name>BootItemsList</name>
     <message>
-        <source>Move the selected boot device up.</source>
-        <translation type="obsolete">Переместить выбранное загрузочное устройство вверх.</translation>
-    </message>
-    <message>
-        <source>Move the selected boot device down.</source>
-        <translation type="obsolete">Переместить выбранное загрузочное устройство вниз.</translation>
-    </message>
-    <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>Переместить вверх (Ctrl-Up)</translation>
+        <translation>Вверх (Ctrl-Up)</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>Переместить вниз (Ctrl-Down)</translation>
+        <translation>Вниз (Ctrl-Down)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
@@ -58,14 +50,14 @@
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Определяет порядок загрузочных устройств. Используйте галочки слева, чтобы разрешить или запретить отдельные устройства. Порядок устройств изменяется перемещением их вверх и вниз.</translation>
+        <translation>Определяет порядок загрузочных устройств. Используйте галочки слева, чтобы разрешить или запретить загрузку с отдельных устройств. Порядок устройств изменяется перемещением их вверх и вниз.</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
-        <translation>Программе &lt;b&gt;%1&lt;/b&gt; требуется Qt %2.x, а найден Qt %3.</translation>
+        <translation>Приложение &lt;b&gt;%1&lt;/b&gt; требует Qt %2.x, найден Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
@@ -111,13 +103,6 @@
     <message>
         <source>Copy to clipboard</source>
         <translation>Скопировать в буфер обмена</translation>
-    </message>
-</context>
-<context>
-    <name>QListBox</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="obsolete">Недоступна</translation>
     </message>
 </context>
 <context>
@@ -171,18 +156,6 @@
     <message>
         <source>Edit Share</source>
         <translation>Изменить общую папку</translation>
-    </message>
-    <message>
-        <source>Enter existing path for the shared folder here</source>
-        <translation type="obsolete">Введите существующий путь для общей папки</translation>
-    </message>
-    <message>
-        <source>Enter name for the shared folder to be created</source>
-        <translation type="obsolete">Введите имя создаваемой общей папки</translation>
-    </message>
-    <message>
-        <source>Click to invoke &lt;open folder&gt; dialog</source>
-        <translation type="obsolete">Нажмите на кнопку мыши, чтобы вызвать диалог &lt;открыть папку&gt;</translation>
     </message>
     <message>
         <source>Select a folder to share</source>
@@ -497,10 +470,6 @@
         <translation>&amp;Устройства USB</translation>
     </message>
     <message>
-        <source>&amp;VM</source>
-        <translation type="obsolete">&amp;ВМ</translation>
-    </message>
-    <message>
         <source>&amp;Devices</source>
         <translation>&amp;Устройства</translation>
     </message>
@@ -579,7 +548,7 @@
     </message>
     <message>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP-сервер ожидает соедиений на порту %1</translation>
+        <translation>&lt;hr&gt;VRDP-сервер ожидает соединений на порту %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
@@ -650,7 +619,7 @@
     </message>
     <message>
         <source>Virtual Disk Manager</source>
-        <translation>Диспетчер виртуальных дисков</translation>
+        <translation>Менеджер виртуальных дисков</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
@@ -727,7 +696,7 @@
     </message>
     <message>
         <source>Add</source>
-        <translation>Добавиь</translation>
+        <translation>Добавить</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -762,26 +731,6 @@
         <translation>Ctrl+R</translation>
     </message>
     <message>
-        <source>Create new VDI file and attach it to media list</source>
-        <translation type="obsolete">Создать новый VDI-файл и добавить его в список носителей</translation>
-    </message>
-    <message>
-        <source>Add existing media image file to media list</source>
-        <translation type="obsolete">Добавить существующий образ носителя к списку носителей</translation>
-    </message>
-    <message>
-        <source>Remove selected media image file from media list</source>
-        <translation type="obsolete">Удалить выбранный образ носителя из списка носителей</translation>
-    </message>
-    <message>
-        <source>Release selected media image file from being using in some VM</source>
-        <translation type="obsolete">Освободить выбранный образ носителя от использования в ВМ</translation>
-    </message>
-    <message>
-        <source>Refresh media image list</source>
-        <translation type="obsolete">Обновить список образов носителей</translation>
-    </message>
-    <message>
         <source>&amp;Actions</source>
         <translation>&amp;Действия</translation>
     </message>
@@ -799,7 +748,7 @@
     </message>
     <message>
         <source>Attached to</source>
-        <translation>Подсоединен к</translation>
+        <translation>Присоединен к</translation>
     </message>
     <message>
         <source>Snapshot</source>
@@ -1450,10 +1399,6 @@
         <translation>[name]</translation>
     </message>
     <message>
-        <source>VBoxGlobalSettingsDlg</source>
-        <translation type="obsolete">VBoxGlobalSettingsDlg</translation>
-    </message>
-    <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation>&lt;i&gt;Выберите категорию настроек из списка слева, после чего поместите курсор мыши над нужным элементом настроек для получения подробной информации&lt;i&gt;.</translation>
     </message>
@@ -1498,11 +1443,6 @@
         <translation>&amp;Папки по умолчанию</translation>
     </message>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is
-used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Отображает путь к папке по умолчанию для файлов VDI. Эта папка используется (если другая папка не указывается явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
-    </message>
-    <message>
         <source>Machines</source>
         <translation>Машины</translation>
     </message>
@@ -1511,217 +1451,149 @@ used, if not explicitly specified otherwise, when adding existing or creating ne
         <translation>Файлы VDI</translation>
     </message>
     <message>
-        <source>Resets the virtual machine folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Задает значение по умолчанию для папки виртаульных машин.
-Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
-    </message>
-    <message>
-        <source>Resets the VDI folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Задает значение по умолчанию для папки файлов VDI.
-Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default virtual machine
-folder. This folder is used, if not explicitly specified otherwise, when creating new
-virtual machines.</source>
-        <translation type="obsolete">Отображает путь к папке по умолчанию для виртуальных машин. Эта папка используется (если другая папка не указывается явным образом) при создании новых виртуальных машин.</translation>
-    </message>
-    <message>
         <source>Select</source>
         <translation>Выбрать</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the
-default VDI folder.</source>
-        <translation type="obsolete">Открывает диалог для выбора папки по умолчанию для файлов VDI.</translation>
-    </message>
-    <message>
-        <source>Opens a dialog to select the
-default virtual machine folder.</source>
-        <translation type="obsolete">Открывает диалог для выбора папки по умолчанию для виртуальных машин.</translation>
-    </message>
-    <message>
         <source>&amp;Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Клавиатура</translation>
     </message>
     <message>
         <source>&amp;Host Key</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Host-клавиша</translation>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Автозахват клавиатуры</translation>
     </message>
     <message>
         <source>Alt+A</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+А</translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
-        <translation type="unfinished"></translation>
+        <translation>Фильтры &amp;устройств USB</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить пустой (Ins)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить из (Alt+Ins)</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить (Del)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаляет выбранный USB-фильтр.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Up</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation type="unfinished"></translation>
+        <translation>Вверх (Ctrl+Up)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перемещает выбранный USB-фильтр вверх.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Down</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation type="unfinished"></translation>
+        <translation>Вниз (Ctrl+Down)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перемещает выбранный USB-фильтр вниз.</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Справка</translation>
+        <translation>Справка</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отображает диалоговую справку.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Обнаружены неправильные настройки</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;ОК</translation>
+        <translation>&amp;ОК</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+О</translation>
+        <translation>Alt+О</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохраняет изменения и закрывает диалог.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Отменить</translation>
+        <translation>Отменить</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменяет изменения и закрывает диалог.</translation>
     </message>
     <message>
         <source>VirtualBox Global Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Глобальные настройки VirtualBox </translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает клавишу, используемую в качестве host-клавиши в окне ВМ. Активируйте поле ввода и нажмите новую host-клавишу. Обратите внимание, что в качестве host-клавиши нельзя использовать буквенные, цифровые клавиши, клавиши управления курсором и редактирования.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished"></translation>
+        <translation>Новый фильтр %1</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Язык</translation>
     </message>
     <message>
         <source> Language </source>
-        <translation type="unfinished"></translation>
+        <translation> Язык</translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Interface Language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>
-&lt;qt&gt;Lists all available user interface languages. The effective language is
-written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.&lt;/qt&gt;
-                                    </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Author(s):</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;unavailabie&gt;</source>
-        <comment>Language</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Отображает путь к папке по умолчанию для файлов VDI. Эта папка используется (если другая папка не указывается явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
+        <translation>Отображает путь к папке по умолчанию для файлов VDI. Эта папка используется (если другая папка не указана явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
@@ -1733,59 +1605,103 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Отображает путь к папке по умолчанию для виртуальных машин. Эта папка используется (если другая папка не указывается явным образом) при создании новых виртуальных машин.</translation>
+        <translation>Отображает путь к папке по умолчанию для виртуальных машин. Эта папка используется (если другая папка не указана явным образом) при создании новых виртуальных машин.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation>Открывает диалог для выбора папки по умолчанию для файлов VDI.</translation>
+        <translation>Открывает диалог выбора папки по умолчанию для файлов VDI.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation>Открывает диалог для выбора папки по умолчанию для виртуальных машин.</translation>
+        <translation>Открывает диалог выбора папки по умолчанию для виртуальных машин.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, происходит автоматический захват клавиатуры при каждом переключении в окно виртуальной машины. Когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab), направляются в ВМ.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перечисляет все глобальные фильтры USB устройств. Галочка слева определяет, включен данный фильтр или нет.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый USB-фильтр, в котором все поля первоначально пустые. Обратите внимание, что такой фильтр будет соответствовать любому присоединенному USB-устройству.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый USB-фильтр, в котором все поля заполнены значениями одного из USB-устройств, подключенных к ПК.</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Language</source>
+        <translation>&amp;Язык интерфейса</translation>
+    </message>
+    <message>
+        <source>
+&lt;qt&gt;Lists all available user interface languages. The effective language is
+written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
+to the system default language.&lt;/qt&gt;
+                                    </source>
+        <translation>&lt;qt&gt;Перечисляет все доступные языки интерфейса. Активный в настоящий момент язык
+выделен &lt;b&gt;жирным&lt;/b&gt;. Выберите &lt;i&gt;По умолчанию&lt;/i&gt; для активации
+языка, используемого в системе по умолчанию.&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Author(s):</source>
+        <translation>Автор(ы):</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>Язык:</translation>
+    </message>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation> (встроенный)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailabie&gt;</source>
+        <comment>Language</comment>
+        <translation>&lt;недоступен&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation>&lt;неизвестно&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation>По умолчанию</translation>
     </message>
 </context>
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;нет жесткого диска&gt;</translation>
     </message>
     <message>
         <source>No hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет жесткого диска</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать новый виртуальный диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Этот мастер поможет создать образ нового виртуального диска для Вашей виртуальной машины.&lt;/p&gt;
+&lt;p&gt;Нажмите кнопку &lt;b&gt;Далее&lt;/b&gt;, чтобы перейти к следующей странице мастера,
+или кнопку &lt;b&gt;Назад&lt;/b&gt; для возврата на предыдущую страницу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Мастер создания нового виртуального диска</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -1794,94 +1710,103 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выберите тип образа виртуального жесткого диска, который Вы хотите создать.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Динамически расширяющийся образ&lt;/b&gt; первоначально занимает очень мало
+места на физическом жестком диске. Он будет динамически расти (до заданного
+размера) по мере того, как гостевая ОС использует дисковое пространство.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Образ фиксированного размера&lt;/b&gt; не увеличивается. Он хранится в файле примерно
+того же размера, что и размер виртуального жесткого диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип образа</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
-        <translation type="unfinished"></translation>
+        <translation>Д&amp;инамически расширяющийся образ</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Д</translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation type="unfinished"></translation>
+        <translation>Образ &amp;фиксированного размера</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+ф</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип образа виртуального диска</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Нажмите кнопку &lt;b&gt;Выбрать&lt;/b&gt; для выбора местоположения и имени файла
+образа виртуального жесткого диска или введите имя файла в поле ввода.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Image File Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя файла образа</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Выбрать</translation>
+        <translation>Выбрать</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выберите размер виртуального жесткого диска в мегабайтах. Указанный размер будет фигурировать
+в гостевой ОС в качестве размера данного жесткого диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image &amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Размер образа</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Местоположение и размер виртуального диска</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы собираетесь создать образ виртуального жесткого диска со следующими параметрами:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation type="unfinished"></translation>
+        <translation>Если указанные выше настройки правильные, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;.
+                            После этого будет создан образ нового виртуального диска.
+                            </translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation>Итог</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 байт&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Тип:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Местоположение:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Размер:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;байт)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished"></translation>
+        <translation>Образы жестких дисков (*.vdi)</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите файл для образа нового жесткого диска</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать новую виртуальную машину</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
@@ -1992,7 +1917,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Итог</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -2369,51 +2294,51 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished">VirtualBox OSE</translation>
+        <translation>VirtualBox OSE</translation>
     </message>
     <message>
         <source>InnoTek VirtualBox</source>
-        <translation type="unfinished">InnoTek VirtualBox</translation>
+        <translation>InnoTek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Детали</translation>
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Менеджер виртуальных дисков...</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation type="unfinished">Ctrl+D</translation>
+        <translation>Ctrl+D</translation>
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог Менеджера виртуальных дисков</translation>
     </message>
     <message>
         <source>&amp;Global Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Глобальные настройки...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+G</translation>
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог глобальных настроек</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Выход</translation>
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Q</translation>
     </message>
     <message>
         <source>Close application</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть приложение</translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -2429,51 +2354,51 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать новую вируальную машину</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>С&amp;войства...</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Свойства</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+S</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Настроить выбранную виртуальную машину</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Удалить</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить</translation>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранную виртуальную машину</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Отменить</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменить</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменить сохраненное состояние выбранной виртуальной машины</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Обновить</translation>
+        <translation>О&amp;бновить</translation>
     </message>
     <message>
         <source>Refresh</source>
@@ -2485,19 +2410,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Перепроверить доступность выбранной виртуальной машины</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Содержание...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать содержание оперативной справки</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -2533,43 +2458,43 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Снимки</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Описание</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Описание *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показать</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Переключиться в окно выбранной виртуальной машины</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Запустить</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустить</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Начать выполнение выбранной виртуальной машины</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Добро пожаловать в мир VirtualBox!&lt;/h3&gt;&lt;p&gt;Левая часть этого окна предназначена для отображения списка Ваших  виртуальных машин. Этот список сейчас пуст, потому что Вы не создали ни одной виртуальной машины.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Чтобы создать новую машину, нажмите кнопку &lt;b&gt;New&lt;/b&gt; на основной панели инструментов, расположенной вверху окна.&lt;/p&gt;&lt;p&gt;Hажмите клавишу &lt;b&gt;F1&lt;/b&gt; для получения оперативной помощи или посетите сайт &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;, чтобы узнать свежие новости и получить актуальную информацию.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Добро пожаловать в мир VirtualBox!&lt;/h3&gt;&lt;p&gt;Левая часть этого окна предназначена для отображения списка Ваших  виртуальных машин. Этот список сейчас пуст, потому что Вы не создали ни одной виртуальной машины.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Чтобы создать новую машину, нажмите кнопку &lt;b&gt;Создать&lt;/b&gt; на основной панели инструментов, расположенной вверху окна.&lt;/p&gt;&lt;p&gt;Hажмите клавишу &lt;b&gt;F1&lt;/b&gt; для получения оперативной помощи или посетите сайт &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;, чтобы узнать свежие новости и получить актуальную информацию.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -2606,7 +2531,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Добавиь</translation>
+        <translation type="unfinished">Добавить</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
@@ -2818,7 +2743,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished">Сделан в %1</translation>
+        <translation>Сделан в %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
@@ -2854,39 +2779,39 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxTakeSnapshotDlg</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Сделать снимок виртуальной машины</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя снимка</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation type="unfinished"></translation>
+        <translation>О&amp;писание снимка</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Справка</translation>
+        <translation>Справка</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;ОК</translation>
+        <translation>&amp;ОК</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+О</translation>
+        <translation>Alt+О</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">О&amp;тменить</translation>
+        <translation>О&amp;тменить</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished">Alt+т</translation>
+        <translation>Alt+т</translation>
     </message>
 </context>
 <context>
@@ -3033,19 +2958,19 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Описание отсутствует. Чтобы его добавить, нажмите кнопку &lt;b&gt;Изменить&lt;/b&gt; внизу окна.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменить</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменить (Ctrl+E)</translation>
     </message>
     <message>
         <source>Ctrl+E</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+E</translation>
     </message>
 </context>
 <context>
@@ -3144,7 +3069,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Добавиь</translation>
+        <translation type="unfinished">Добавить</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -3471,7 +3396,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+D</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
@@ -3531,55 +3456,55 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Добавить пустой (Ins)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Добавить из (Alt+Ins)</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Удалить (Del)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Удаляет выбранный USB-фильтр.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+Up</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Вверх (Ctrl+Up)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Перемещает выбранный USB-фильтр вверх.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+Down</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Вниз (Ctrl+Down)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Перемещает выбранный USB-фильтр вниз.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
@@ -3619,11 +3544,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Отображает диалоговую справку.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Обнаружены неправильные настройки</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -3635,7 +3560,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Сохраняет изменения и закрывает диалог.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3643,7 +3568,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Отменяет изменения и закрывает диалог.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
@@ -3741,7 +3666,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Новый фильтр %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
