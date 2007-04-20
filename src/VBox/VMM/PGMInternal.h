@@ -305,9 +305,9 @@ typedef struct PGMMAPPING
     /** Pointer to next entry. */
     R3PTRTYPE(struct PGMMAPPING *)  pNextR3;
     /** Pointer to next entry. */
-    GCPTRTYPE(struct PGMMAPPING *)  pNextGC;
-    /** Pointer to next entry. */
     R0PTRTYPE(struct PGMMAPPING *)  pNextR0;
+    /** Pointer to next entry. */
+    GCPTRTYPE(struct PGMMAPPING *)  pNextGC;
     /** Start Virtual address. */
     RTGCUINTPTR                     GCPtr;
     /** Last Virtual address (inclusive). */
