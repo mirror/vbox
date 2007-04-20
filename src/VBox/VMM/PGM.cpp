@@ -1167,8 +1167,8 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         for (RTHCUINT i = 0; i < pCur->cPTs; i++)
         {
-            pCur->aPTs[i].pPTGC = MMHyperHC2GC(pVM, pCur->aPTs[i].pPTR3);
-            pCur->aPTs[i].paPaePTsGC = MMHyperHC2GC(pVM, pCur->aPTs[i].paPaePTsR3);
+            pCur->aPTs[i].pPTGC = MMHyperR3ToGC(pVM, pCur->aPTs[i].pPTR3);
+            pCur->aPTs[i].paPaePTsGC = MMHyperR3ToGC(pVM, pCur->aPTs[i].paPaePTsR3);
         }
     }
 
