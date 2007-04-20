@@ -1708,7 +1708,7 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
         cbSize = pCpu->opmode == CPUMODE_32BIT ? 4 : 2;
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
-    if (RT_UNLIKELY(VBOX_FAILURE(rc)))
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
     return IOMInterpretINSEx(pVM, pRegFrame, uPort, pCpu->prefix, cbSize);
@@ -1845,7 +1845,8 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
         cbSize = (pCpu->opmode == CPUMODE_32BIT) ? 4 : 2;
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
-    if (RT_UNLIKELY(VBOX_FAILURE(rc)))
+    Log(("IOMInterpretCheckPortIOAccess -> %Vrc\n", rc));
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
     return IOMInterpretOUTSEx(pVM, pRegFrame, uPort, pCpu->prefix, cbSize);
