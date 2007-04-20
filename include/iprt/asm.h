@@ -1785,7 +1785,11 @@ DECLINLINE(int8_t) ASMAtomicXchgS8(volatile int8_t *pi8, int8_t i8)
  */
 DECLINLINE(bool) ASMAtomicXchgBool(volatile bool *pf, bool f)
 {
+#ifdef _MSC_VER
+    return !!ASMAtomicXchgU8((volatile uint8_t *)pf, (uint8_t)f);
+#else
     return (bool)ASMAtomicXchgU8((volatile uint8_t *)pf, (uint8_t)f);
+#endif 
 }
 
 
