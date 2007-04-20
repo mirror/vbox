@@ -229,9 +229,9 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
  * @param   pfnInStrCallback    Pointer to function which is gonna handle IN operations in GC.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-IOMDECL(int)  IOMIOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
-                                  HCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, HCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                  HCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, HCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
+IOMDECL(int)  IOMIOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
+                                  R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                  R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
                                   const char *pszDesc);
 
 /**
@@ -253,9 +253,9 @@ IOMDECL(int)  IOMIOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStar
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                HCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, HCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                HCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc);
+IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+                                R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                                R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc);
 
 
 /**
