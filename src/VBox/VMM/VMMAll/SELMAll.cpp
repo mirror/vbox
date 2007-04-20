@@ -90,21 +90,28 @@ static RTGCPTR selmToFlat(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  */
 SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr)
 {
-    if (!CPUMAreHiddenSelRegsValid(pVM))
-    {
-        /*
-        * Deal with real & v86 mode first.
-        */
-        if (    CPUMIsGuestInRealMode(pVM)
-            ||  eflags.Bits.u1VM)
-        {
-            RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)Sel << 4);
-            return (RTGCPTR)uFlat;
-        }
+    Assert(pHiddenSel);
 
-        return selmToFlat(pVM, Sel, Addr);
+   /*
+    * Deal with real & v86 mode first.
+    */
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  eflags.Bits.u1VM)
+    {
+        RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
+
+        if (CPUMAreHiddenSelRegsValid(pVM))
+            uFlat += pHiddenSel->u32Base;
+        else
+            uFlat += ((RTGCUINTPTR)Sel << 4);
+        return (RTGCPTR)uFlat;
     }
-    return (RTGCPTR)(pHiddenSel->u32Base + (RTGCUINTPTR)Addr);
+
+    /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
+    if (!CPUMAreHiddenSelRegsValid(pVM))
+        return selmToFlat(pVM, Sel, Addr);
+    else
+        return (RTGCPTR)(pHiddenSel->u32Base + (RTGCUINTPTR)Addr);
 }
 
 
@@ -133,21 +140,17 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
     {
+        RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
         if (ppvGC)
         {
             if (    pHiddenSel
                 &&  CPUMAreHiddenSelRegsValid(pVM))
-            {
-                *ppvGC = (RTGCPTR)(pHiddenSel->u32Base + (RTGCUINTPTR)Addr);
-            }
+                *ppvGC = (RTGCPTR)(pHiddenSel->u32Base + uFlat);
             else
-            {
-                RTGCUINTPTR uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)Sel << 4);
-                *ppvGC = (RTGCPTR)uFlat;
-            }
+                *ppvGC = (RTGCPTR)(((RTGCUINTPTR)Sel << 4) + uFlat);
         }
         if (pcb)
-            *pcb = 0x10000 - ((RTGCUINTPTR)Addr & 0xffff);
+            *pcb = 0x10000 - uFlat;
         return VINF_SUCCESS;
     }
 
@@ -156,6 +159,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
     RTGCPTR     pvFlat;
     uint32_t    u1Present, u1DescType, u1Granularity, u4Type;
 
+    /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
     if (    pHiddenSel 
         &&  CPUMAreHiddenSelRegsValid(pVM))
     {
@@ -419,17 +423,19 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
     {
         if (ppvFlat)
         {
-            RTGCUINTPTR uFlat;
+            RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
 
             if (!CPUMAreHiddenSelRegsValid(pVM))
-                uFlat = ((RTGCUINTPTR)Addr & 0xffff) + ((RTGCUINTPTR)SelCS << 4);
+                uFlat += ((RTGCUINTPTR)SelCS << 4);
             else
-                uFlat = pHiddenCSSel->u32Base + (RTGCUINTPTR)Addr;
+                uFlat += pHiddenCSSel->u32Base;
 
             *ppvFlat = (RTGCPTR)uFlat;
         }
         return VINF_SUCCESS;
     }
+
+    /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
 
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmValidateAndConvertCSAddr(pVM, SelCPL, SelCS, Addr, ppvFlat);
