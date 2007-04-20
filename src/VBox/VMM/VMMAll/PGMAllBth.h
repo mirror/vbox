@@ -2402,7 +2402,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 {
     LogFlow(("VerifyAccessSyncPage: GCPtrPage=%VGv fPage=%#x uErr=%#x\n", GCPtrPage, fPage, uErr));
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+#if (PGM_GST_TYPE == PGM_TYPE_32BIT ||  PGM_GST_TYPE == PGM_TYPE_REAL ||  PGM_GST_TYPE == PGM_TYPE_PROT) && PGM_SHW_TYPE != PGM_TYPE_AMD64
 
 # if PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
 #  error "Invalid shadow mode for 32-bit guest mode!"
@@ -2426,28 +2426,47 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     PVBOXPD     pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
     int         rc = VINF_SUCCESS;
 
-# ifdef PGM_SYNC_DIRTY_BIT
     /*
-     * First check if the page fault was caused by dirty bit tracking
+     * First check if the shadow pd is present.
      */
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+# if PGM_SHW_TYPE == PGM_TYPE_32BIT
     PX86PDE     pPdeDst = &pVM->pgm.s.CTXMID(p,32BitPD)->a[GCPtrPage >> X86_PD_SHIFT];
-#  else
+# else
     PX86PDEPAE  pPdeDst = &pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[GCPtrPage >> X86_PD_PAE_SHIFT];
-#  endif
+# endif
+    if (!pPdeDst->n.u1Present)
+    {
+        rc = PGM_BTH_NAME(SyncPT)(pVM, iPDSrc, pPDSrc, GCPtrPage);
+        AssertRC(rc);
+        if (rc != VINF_SUCCESS)
+            return rc;
+    }
+
+# if PGM_WITH_PAGING(PGM_GST_TYPE)
+    /* Check for dirty bit fault */
     rc = PGM_BTH_NAME(CheckPageFault)(pVM, uErr, pPdeDst, &pPDSrc->a[iPDSrc], GCPtrPage);
     if (rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT)
         Log(("PGMVerifyAccess: success (dirty)\n"));
     else
-# endif /* PGM_SYNC_DIRTY_BIT */
     {
+        VBOXPDE PdeSrc = pPDSrc->a[iPDSrc];
+#else
+    {
+        VBOXPDE PdeSrc;
+        PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
+        PdeSrc.n.u1Present  = 1;
+        PdeSrc.n.u1Write    = 1;
+        PdeSrc.n.u1Accessed = 1;
+        PdeSrc.n.u1User     = 1;
+
+#endif /* PGM_WITH_PAGING(PGM_GST_TYPE) */
         Assert(rc != VINF_EM_RAW_GUEST_TRAP);
         if (uErr & X86_TRAP_PF_US)
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncUser);
         else /* supervisor */
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncSupervisor);
 
-        rc = PGM_BTH_NAME(SyncPage)(pVM, pPDSrc->a[iPDSrc], GCPtrPage, 1, 0);
+        rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
         if (VBOX_SUCCESS(rc))
         {
             /* Page was successfully synced */
@@ -2460,21 +2479,6 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
             return VINF_EM_RAW_GUEST_TRAP;
         }
     }
-    return rc;
-
-#elif PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT
-
-    VBOXPDE PdeSrc;
-    PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
-    PdeSrc.n.u1Present  = 1;
-    PdeSrc.n.u1Write    = 1;
-    PdeSrc.n.u1Accessed = 1;
-    PdeSrc.n.u1User     = 1;
-
-    int rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
-    AssertRC(rc);
-
-    /* Everything is allowed */
     return rc;
 
 #else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
