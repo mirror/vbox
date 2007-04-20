@@ -823,6 +823,11 @@ void tstASMMath(void)
     CHECKVAL(u64, UINT64_C(0x128b9c3d43184763), "%#018RX64");
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0x3415934810359583), UINT32_C(0xf8694045), UINT32_C(0x58734981));
     CHECKVAL(u64, UINT64_C(0x924719355cd35a27), "%#018RX64");
+
+#if 0 /* question is whether this should trap or not */
+    u64 = ASMMultU64ByU32DivByU32(UINT64_C(0xfffffff8c65d6731), UINT32_C(0x77d7daf8), UINT32_C(0x3b9aca00));
+    CHECKVAL(u64, UINT64_C(0x02b8f9a2aa74e3dc), "%#018RX64");
+#endif
 }
 
 
