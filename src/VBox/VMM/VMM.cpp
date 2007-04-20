@@ -869,11 +869,11 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
     {
         if (!pR0Logger->fCreated)
         {
-            RTHCPTR pfnLoggerWrapper = NULL;
+            RTR0PTR pfnLoggerWrapper = NIL_RTR0PTR;
             rc = PDMR3GetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerWrapper", &pfnLoggerWrapper);
             AssertReleaseMsgRCReturn(rc, ("VMMLoggerWrapper not found! rc=%Vra\n", rc), rc);
 
-            RTHCPTR pfnLoggerFlush = NULL;
+            RTR0PTR pfnLoggerFlush = NIL_RTR0PTR;
             rc = PDMR3GetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
             AssertReleaseMsgRCReturn(rc, ("VMMLoggerFlush not found! rc=%Vra\n", rc), rc);
 

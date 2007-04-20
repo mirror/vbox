@@ -470,7 +470,7 @@
 #ifdef IN_RING3
 # define DECLR3CALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
 #else
-# define DECLR3CALLBACKMEMBER(type, name, args)  RTHCPTR name
+# define DECLR3CALLBACKMEMBER(type, name, args)  RTR3PTR name
 #endif
 
 /** @def DECLGCCALLBACKMEMBER
@@ -494,7 +494,7 @@
 #ifdef IN_RING0
 # define DECLR0CALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
 #else
-# define DECLR0CALLBACKMEMBER(type, name, args)  RTHCPTR name
+# define DECLR0CALLBACKMEMBER(type, name, args)  RTR0PTR name
 #endif
 
 /** @def DECLINLINE

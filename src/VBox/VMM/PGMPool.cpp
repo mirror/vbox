@@ -376,7 +376,7 @@ void pgmR3PoolRelocate(PVM pVM)
     /* init order hack. */
     if (!pVM->pgm.s.pPoolHC->pfnAccessHandlerR0)
     {
-        rc = PDMR3GetSymbolR0(pVM, NULL, "pgmPoolAccessHandler", (void **)&pVM->pgm.s.pPoolHC->pfnAccessHandlerR0);
+        rc = PDMR3GetSymbolR0(pVM, NULL, "pgmPoolAccessHandler", &pVM->pgm.s.pPoolHC->pfnAccessHandlerR0);
         AssertReleaseRC(rc);
     }
 #endif

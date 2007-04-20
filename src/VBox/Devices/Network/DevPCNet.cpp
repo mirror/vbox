@@ -4171,7 +4171,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return rc;
 
 #ifdef PCNET_NO_POLLING
-    rc = PDMR3GetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (void **)&pData->pfnEMInterpretInstructionR0);
+    rc = PDMR3GetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", &pData->pfnEMInterpretInstructionR0);
     if (VBOX_SUCCESS(rc))
     {
         /*

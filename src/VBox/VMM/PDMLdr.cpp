@@ -645,10 +645,10 @@ PDMR3DECL(int) PDMR3GetSymbolR3(PVM pVM, const char *pszModule, const char *pszS
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue)
+PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue)
 {
 #ifdef PDMLDR_FAKE_MODE
-    *ppvValue = (void *)0xdeadbeef;
+    *ppvValue = 0xdeadbeef;
     return VINF_SUCCESS;
 
 #else
@@ -667,7 +667,7 @@ PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszS
         if (    pModule->eType == PDMMOD_TYPE_R0
             &&  !strcmp(pModule->szName, pszModule))
         {
-            int rc = SUPGetSymbolR0((void *)(uintptr_t)pModule->ImageBase, pszSymbol, ppvValue);
+            int rc = SUPGetSymbolR0((void *)(uintptr_t)pModule->ImageBase, pszSymbol, (void **)ppvValue);
             if (VBOX_FAILURE(rc))
             {
                 AssertMsgRC(rc, ("Couldn't find symbol '%s' in module '%s'\n", pszSymbol, pszModule));
@@ -693,10 +693,10 @@ PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszS
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3GetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue)
+PDMR3DECL(int) PDMR3GetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue)
 {
 #ifdef PDMLDR_FAKE_MODE
-    *ppvValue = (void *)0xdeadbeef;
+    *ppvValue = 0xdeadbeef;
     return VINF_SUCCESS;
 
 #else

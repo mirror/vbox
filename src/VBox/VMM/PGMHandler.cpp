@@ -113,7 +113,7 @@ PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
     R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0 = NIL_RTR0PTR;
     int rc = VINF_SUCCESS;
     if (HWACCMR3IsAllowed(pVM))
-        rc = PDMR3GetSymbolR0Lazy(pVM, pszModR0, pszHandlerR0, (void **)&pfnHandlerR0);
+        rc = PDMR3GetSymbolR0Lazy(pVM, pszModR0, pszHandlerR0, &pfnHandlerR0);
     if (VBOX_SUCCESS(rc))
     {
         /*

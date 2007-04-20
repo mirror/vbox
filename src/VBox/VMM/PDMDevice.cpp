@@ -539,7 +539,7 @@ int pdmR3DevInit(PVM pVM)
     AssertReleaseRCReturn(rc, rc);
 
     R0PTRTYPE(PCPDMDEVHLPR0) pDevHlpR0;
-    rc = PDMR3GetSymbolR0(pVM, NULL, "g_pdmR0DevHlp", (void **)&pDevHlpR0);
+    rc = PDMR3GetSymbolR0(pVM, NULL, "g_pdmR0DevHlp", &pDevHlpR0);
     AssertReleaseRCReturn(rc, rc);
 
     rc = PDMR3QueueCreateInternal(pVM, sizeof(PDMDEVHLPTASK), 8, 0, pdmR3DevHlpQueueConsumer, true, &pVM->pdm.s.pDevHlpQueueHC);
@@ -1229,25 +1229,25 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
         R0PTRTYPE(PFNIOMIOPORTIN) pfnR0PtrIn = 0;
         if (pszIn)
         {
-            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszIn, (void **)&pfnR0PtrIn);
+            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszIn, &pfnR0PtrIn);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pDevReg->szR0Mod, pszIn));
         }
         R0PTRTYPE(PFNIOMIOPORTOUT) pfnR0PtrOut = 0;
         if (pszOut && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszOut, (void **)&pfnR0PtrOut);
+            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszOut, &pfnR0PtrOut);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pDevReg->szR0Mod, pszOut));
         }
         R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnR0PtrInStr = 0;
         if (pszInStr && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszInStr, (void **)&pfnR0PtrInStr);
+            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszInStr, &pfnR0PtrInStr);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pDevReg->szR0Mod, pszInStr));
         }
         R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnR0PtrOutStr = 0;
         if (pszOutStr && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszOutStr, (void **)&pfnR0PtrOutStr);
+            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszOutStr, &pfnR0PtrOutStr);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pDevReg->szR0Mod, pszOutStr));
         }
 
@@ -1372,15 +1372,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
     {
         R0PTRTYPE(PFNIOMMMIOWRITE) pfnR0PtrWrite = 0;
         if (pszWrite)
-            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszWrite, (void **)&pfnR0PtrWrite);
+            rc = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszWrite, &pfnR0PtrWrite);
         R0PTRTYPE(PFNIOMMMIOREAD) pfnR0PtrRead = 0;
         int rc2 = VINF_SUCCESS;
         if (pszRead)
-            rc2 = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszRead, (void **)&pfnR0PtrRead);
+            rc2 = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszRead, &pfnR0PtrRead);
         R0PTRTYPE(PFNIOMMMIOFILL) pfnR0PtrFill = 0;
         int rc3 = VINF_SUCCESS;
         if (pszFill)
-            rc3 = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszFill, (void **)&pfnR0PtrFill);
+            rc3 = PDMR3GetSymbolR0Lazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szR0Mod, pszFill, &pfnR0PtrFill);
         if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(rc2) && VBOX_SUCCESS(rc3))
             rc = IOMMMIORegisterR0(pDevIns->Internal.s.pVMHC, pDevIns, GCPhysStart, cbRange, pvUser, pfnR0PtrWrite, pfnR0PtrRead, pfnR0PtrFill, pszDesc);
         else
@@ -2380,7 +2380,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     if (    HWACCMR3IsAllowed(pVM)
         &&  pPciBusReg->pszSetIrqR0)
     {
-        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, (void **)&pPciBus->pfnSetIrqR0);
+        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, &pPciBus->pfnSetIrqR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, rc));
         if (VBOX_FAILURE(rc))
         {
@@ -2517,11 +2517,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     if (    HWACCMR3IsAllowed(pVM)
         &&  pPicReg->pszSetIrqR0)
     {
-        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, (void **)&pVM->pdm.s.Pic.pfnSetIrqR0);
+        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, &pVM->pdm.s.Pic.pfnSetIrqR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, rc));
         if (VBOX_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPicReg->pszGetInterruptR0, (void **)&pVM->pdm.s.Pic.pfnGetInterruptR0);
+            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPicReg->pszGetInterruptR0, &pVM->pdm.s.Pic.pfnGetInterruptR0);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPicReg->pszGetInterruptR0, rc));
         }
         if (VBOX_FAILURE(rc))
@@ -2713,31 +2713,31 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     if (    HWACCMR3IsAllowed(pVM)
         &&  pApicReg->pszGetInterruptR0)
     {
-        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, (void **)&pVM->pdm.s.Apic.pfnGetInterruptR0);
+        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, &pVM->pdm.s.Apic.pfnGetInterruptR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, rc));
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszSetBaseR0, (void **)&pVM->pdm.s.Apic.pfnSetBaseR0);
+            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszSetBaseR0, &pVM->pdm.s.Apic.pfnSetBaseR0);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszSetBaseR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetBaseR0, (void **)&pVM->pdm.s.Apic.pfnGetBaseR0);
+            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetBaseR0, &pVM->pdm.s.Apic.pfnGetBaseR0);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetBaseR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszSetTPRR0, (void **)&pVM->pdm.s.Apic.pfnSetTPRR0);
+            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszSetTPRR0, &pVM->pdm.s.Apic.pfnSetTPRR0);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszSetTPRR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetTPRR0, (void **)&pVM->pdm.s.Apic.pfnGetTPRR0);
+            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetTPRR0, &pVM->pdm.s.Apic.pfnGetTPRR0);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetTPRR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, (void **)&pVM->pdm.s.Apic.pfnBusDeliverR0);
+            rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, &pVM->pdm.s.Apic.pfnBusDeliverR0);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, rc));
         }
         if (VBOX_FAILURE(rc))
@@ -2878,7 +2878,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (    HWACCMR3IsAllowed(pVM)
         &&  pIoApicReg->pszSetIrqR0)
     {
-        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, (void **)&pVM->pdm.s.IoApic.pfnSetIrqR0);
+        int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, &pVM->pdm.s.IoApic.pfnSetIrqR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, rc));
         if (VBOX_FAILURE(rc))
         {
@@ -3782,7 +3782,7 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
     PCPDMPICHLPR0 pR0Helpers = 0;
-    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0PicHlp", (void **)&pR0Helpers);
+    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0PicHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
     LogFlow(("pdmR3PicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
@@ -3869,7 +3869,7 @@ static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
     PCPDMAPICHLPR0 pR0Helpers = 0;
-    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0ApicHlp", (void **)&pR0Helpers);
+    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0ApicHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
     LogFlow(("pdmR3ApicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
@@ -3933,7 +3933,7 @@ static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDe
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
     PCPDMIOAPICHLPR0 pR0Helpers = 0;
-    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0IoApicHlp", (void **)&pR0Helpers);
+    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0IoApicHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
     LogFlow(("pdmR3IoApicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
@@ -4005,7 +4005,7 @@ static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
     PCPDMPCIHLPR0 pR0Helpers = 0;
-    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0PciHlp", (void **)&pR0Helpers);
+    int rc = PDMR3GetSymbolR0(pDevIns->Internal.s.pVMHC, NULL, "g_pdmR0PciHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
     LogFlow(("pdmR3IoApicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
