@@ -1828,7 +1828,8 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
         char *pszDevice = pThis->pszDevice;
 #ifndef __DARWIN__
         char szPathReal[256];
-        if (RT_SUCCESS(RTPathReal(pszDevice, szPathReal, sizeof(szPathReal))))
+        if (   RTPathExists(pszDevice)
+            && RT_SUCCESS(RTPathReal(pszDevice, szPathReal, sizeof(szPathReal))))
             pszDevice = szPathReal;
         pThis->FileDevice = NIL_RTFILE;
 #endif
