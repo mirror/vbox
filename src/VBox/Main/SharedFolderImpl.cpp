@@ -237,7 +237,8 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     // check whether the host path exists
     Utf8Str hostPath = Utf8Str (mHostPath);
     char hostPathFull [RTPATH_MAX];
-    int vrc = RTPathReal (hostPath, hostPathFull, sizeof (hostPathFull));
+    int vrc = RTPathExists(hostPath) ? RTPathReal (hostPath, hostPathFull, sizeof (hostPathFull))
+                                     : VERR_PATH_NOT_FOUND;
     if (VBOX_SUCCESS (vrc))
     {
         *aAccessible = TRUE;
