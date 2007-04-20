@@ -292,13 +292,13 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
         {
             pDevIns->pDevHlpGC = pDevHlpGC;
-            pDevIns->pvInstanceDataGC = MMHyperHC2GC(pVM, pDevIns->pvInstanceDataR3);
+            pDevIns->pvInstanceDataGC = MMHyperR3ToGC(pVM, pDevIns->pvInstanceDataR3);
             pDevIns->pvInstanceDataR0 = MMHyperR3ToR0(pVM, pDevIns->pvInstanceDataR3);
             pDevIns->Internal.s.pVMGC = pVM->pVMGC;
             if (pDevIns->Internal.s.pPciBusHC)
-                pDevIns->Internal.s.pPciBusGC = MMHyperHC2GC(pVM, pDevIns->Internal.s.pPciBusHC);
+                pDevIns->Internal.s.pPciBusGC = MMHyperR3ToGC(pVM, pDevIns->Internal.s.pPciBusHC);
             if (pDevIns->Internal.s.pPciDeviceHC)
-                pDevIns->Internal.s.pPciDeviceGC = MMHyperHC2GC(pVM, pDevIns->Internal.s.pPciDeviceHC);
+                pDevIns->Internal.s.pPciDeviceGC = MMHyperR3ToGC(pVM, pDevIns->Internal.s.pPciDeviceHC);
             if (pDevIns->pDevReg->pfnRelocate)
             {
                 LogFlow(("PDMR3Relocate: Relocating device '%s'/%d\n",
