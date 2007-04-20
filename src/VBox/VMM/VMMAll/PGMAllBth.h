@@ -2463,6 +2463,17 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     return rc;
 
 #elif PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT
+
+    VBOXPDE PdeSrc;
+    PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
+    PdeSrc.n.u1Present  = 1;
+    PdeSrc.n.u1Write    = 1;
+    PdeSrc.n.u1Accessed = 1;
+    PdeSrc.n.u1User     = 1;
+
+    int rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
+    AssertRC(rc);
+
     /* Everything is allowed */
     return VINF_SUCCESS;
 
