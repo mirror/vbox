@@ -825,6 +825,18 @@ void tstASMMath(void)
     CHECKVAL(u64, UINT64_C(0x924719355cd35a27), "%#018RX64");
 
 #if 0 /* question is whether this should trap or not */
+      /*
+       * r=frank: Of course it must trap:
+       *
+       *   0xfffffff8 * 0x77d7daf8 = 0x77d7daf441412840
+       *
+       * During the following division, the quotient must fit into a 32-bit register.
+       * Therefore the smallest valid divisor is
+       *
+       *  (0x77d7daf441412840 >> 32) + 1 = 0x77d7daf5
+       *
+       * which is definitely greater than  0x3b9aca00.
+       */
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0xfffffff8c65d6731), UINT32_C(0x77d7daf8), UINT32_C(0x3b9aca00));
     CHECKVAL(u64, UINT64_C(0x02b8f9a2aa74e3dc), "%#018RX64");
 #endif
