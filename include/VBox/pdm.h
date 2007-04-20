@@ -3416,9 +3416,9 @@ typedef struct PDMPCIHLPR0
     uint32_t                    u32TheEnd;
 } PDMPCIHLPR0;
 /** Pointer to PCI helpers. */
-typedef HCPTRTYPE(PDMPCIHLPR0 *) PPDMPCIHLPR0;
+typedef R0PTRTYPE(PDMPCIHLPR0 *) PPDMPCIHLPR0;
 /** Pointer to const PCI helpers. */
-typedef HCPTRTYPE(const PDMPCIHLPR0 *) PCPDMPCIHLPR0;
+typedef R0PTRTYPE(const PDMPCIHLPR0 *) PCPDMPCIHLPR0;
 
 /** Current PDMPCIHLPR0 version number. */
 #define PDM_PCIHLPR0_VERSION  0xe1010000
@@ -3646,9 +3646,9 @@ typedef struct PDMPICHLPR0
 } PDMPICHLPR0;
 
 /** Pointer to PIC R0 helpers. */
-typedef HCPTRTYPE(PDMPICHLPR0 *) PPDMPICHLPR0;
+typedef R0PTRTYPE(PDMPICHLPR0 *) PPDMPICHLPR0;
 /** Pointer to const PIC R0 helpers. */
-typedef HCPTRTYPE(const PDMPICHLPR0 *) PCPDMPICHLPR0;
+typedef R0PTRTYPE(const PDMPICHLPR0 *) PCPDMPICHLPR0;
 
 /** Current PDMPICHLPR0 version number. */
 #define PDM_PICHLPR0_VERSION  0xfc010000
@@ -3948,7 +3948,7 @@ typedef struct PDMAPICHLPR0
 /** Pointer to APIC GC helpers. */
 typedef GCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 /** Pointer to const APIC helpers. */
-typedef HCPTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
+typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
 /** Current PDMAPICHLPR0 version number. */
 #define PDM_APICHLPR0_VERSION   0x60010000
@@ -4170,9 +4170,9 @@ typedef struct PDMIOAPICHLPR0
     uint32_t                u32TheEnd;
 } PDMIOAPICHLPR0;
 /** Pointer to IOAPIC R0 helpers. */
-typedef HCPTRTYPE(PDMAPICHLPGC *)PPDMIOAPICHLPR0;
+typedef R0PTRTYPE(PDMAPICHLPGC *) PPDMIOAPICHLPR0;
 /** Pointer to const IOAPIC helpers. */
-typedef HCPTRTYPE(const PDMIOAPICHLPR0 *) PCPDMIOAPICHLPR0;
+typedef R0PTRTYPE(const PDMIOAPICHLPR0 *) PCPDMIOAPICHLPR0;
 
 /** Current PDMIOAPICHLPR0 version number. */
 #define PDM_IOAPICHLPR0_VERSION   0xfe010000
@@ -6596,7 +6596,7 @@ PDMR3DECL(int) PDMR3GetSymbolR3(PVM pVM, const char *pszModule, const char *pszS
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
+PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
 
 /**
  * Same as PDMR3GetSymbolR0 except that the module will be attempted loaded if not found.
@@ -6608,7 +6608,7 @@ PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszS
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3GetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
+PDMR3DECL(int) PDMR3GetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
 
 /**
  * Loads a module into the guest context (i.e. into the Hypervisor memory region).

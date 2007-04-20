@@ -164,23 +164,23 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 #endif
 
         /* Ring-0 */
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(GetPage),          (void **)&pModeData->pfnR0GstGetPage);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(GetPage),          &pModeData->pfnR0GstGetPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(GetPage),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(ModifyPage),       (void **)&pModeData->pfnR0GstModifyPage);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(ModifyPage),       &pModeData->pfnR0GstModifyPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(ModifyPage),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(GetPDE),           (void **)&pModeData->pfnR0GstGetPDE);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(GetPDE),           &pModeData->pfnR0GstGetPDE);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(GetPDE), rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(MonitorCR3),       (void **)&pModeData->pfnR0GstMonitorCR3);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(MonitorCR3),       &pModeData->pfnR0GstMonitorCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(MonitorCR3), rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(UnmonitorCR3),     (void **)&pModeData->pfnR0GstUnmonitorCR3);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(UnmonitorCR3),     &pModeData->pfnR0GstUnmonitorCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(UnmonitorCR3), rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(MapCR3),           (void **)&pModeData->pfnR0GstMapCR3);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(MapCR3),           &pModeData->pfnR0GstMapCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(MapCR3), rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(UnmapCR3),         (void **)&pModeData->pfnR0GstUnmapCR3);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(UnmapCR3),         &pModeData->pfnR0GstUnmapCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(UnmapCR3), rc), rc);
 #if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
 # if 0/** @todo ring-0. */
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(WriteHandlerCR3),  (void **)&pModeData->pfnR0GstWriteHandlerCR3);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_GST_NAME_R0_STR(WriteHandlerCR3),  &pModeData->pfnR0GstWriteHandlerCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_R0_STR(WriteHandlerCR3), rc), rc);
 # endif
 #endif

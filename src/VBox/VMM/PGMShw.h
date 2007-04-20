@@ -131,15 +131,15 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_GC_STR(ModifyPDEByIndex),  rc), rc);
 
         /* Ring-0 */
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(GetPage),  (void **)&pModeData->pfnR0ShwGetPage);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(GetPage),  &pModeData->pfnR0ShwGetPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(GetPage),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(ModifyPage),  (void **)&pModeData->pfnR0ShwModifyPage);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(ModifyPage),  &pModeData->pfnR0ShwModifyPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(ModifyPage),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(GetPDEByIndex),  (void **)&pModeData->pfnR0ShwGetPDEByIndex);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(GetPDEByIndex),  &pModeData->pfnR0ShwGetPDEByIndex);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(GetPDEByIndex),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(SetPDEByIndex),  (void **)&pModeData->pfnR0ShwSetPDEByIndex);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(SetPDEByIndex),  &pModeData->pfnR0ShwSetPDEByIndex);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(SetPDEByIndex),  rc), rc);
-        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(ModifyPDEByIndex),  (void **)&pModeData->pfnR0ShwModifyPDEByIndex);
+        rc = PDMR3GetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(ModifyPDEByIndex),  &pModeData->pfnR0ShwModifyPDEByIndex);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(ModifyPDEByIndex),  rc), rc);
     }
     return VINF_SUCCESS;
