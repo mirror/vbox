@@ -30,6 +30,7 @@
  */
 
 #ifdef _MSC_VER
+# pragma intrinsic(_ReadWriteBarrier)
 # if _MSC_VER >= 1400
 #  define RT_INLINE_ASM_USES_INTRIN 1
 #  include <intrin.h>
@@ -1505,33 +1506,24 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
 
 
 /**
- * Ensure that gcc does not use any register value before this instruction. This function is used
- * for assembler instructions with side-effects, e.g. port writes to magical guest ports causing
- * guest memory changes by the host
- *
- * @todo r=bird: There are two things I don't like there, 1) the name and 2) what about msc?
- *
- *      Unless I'm not much mistaken this construct is what is 'barrier' or 'mb' in the linux 
- *      kernel. The ASMMem is used as prefix elsewhere in this file, so ASMMemory* is a confusing
- *      way to name a new function. I think a more fitting name would be ASMCompilerBarrier, 
- *      ASMCompilerMemoryBarrier, or perhaps ASMMemBarrier.
- *
- *      For MSC I guess _ReadWriteBarrier is what we're looking for. 
- *      See http://msdn2.microsoft.com/en-us/library/f20w0x5e(VS.80).aspx
- *
- *      We should also add a little note about considering using 'volatile' similar to the one found 
- *      with the _ReadWriteBarrier docs.
+ * Compiler memory barrier.
+ * 
+ * Ensure that the compiler does not use any cached (register/tmp stack) memory 
+ * values or any outstanding writes when returning from this function.
+ * 
+ * This function must be used if non-volatile data is modified by a 
+ * device or the VMM. Typical cases are port access, MMIO access, 
+ * trapping instruction, etc.
  */
+DECLINLINE(void) ASMCompilerBarrier(void)
+{
 #if RT_INLINE_ASM_GNU_STYLE
-DECLINLINE(void) ASMMemoryClobber(void)
-{
     __asm__ __volatile__ ("" : : : "memory");
-}
 #else
-DECLINLINE(void) ASMMemoryClobber(void)
-{
+    _ReadWriteBarrier();
+#endif 
 }
-#endif
+
 
 /**
  * Writes a 8-bit unsigned integer to an I/O port.
