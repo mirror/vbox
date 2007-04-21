@@ -274,10 +274,9 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         SelInfo.Raw.Gen.u4Type      = pHiddenSel->Attr.n.u4Type;
         fRealModeAddress            = SelInfo.fRealMode;
     }
-    else
-    if (    !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
-        &&  (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
-             ||  enmMode == PGMMODE_REAL) )
+    else if (   !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
+             && (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
+                 || enmMode == PGMMODE_REAL) )
     {   /* V86 mode or real mode - real mode addressing */
         SelInfo.GCPtrBase           = Sel * 16;
         SelInfo.cbLimit             = ~0;
