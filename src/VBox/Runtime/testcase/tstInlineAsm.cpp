@@ -824,9 +824,9 @@ void tstASMMath(void)
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0x3415934810359583), UINT32_C(0xf8694045), UINT32_C(0x58734981));
     CHECKVAL(u64, UINT64_C(0x924719355cd35a27), "%#018RX64");
 
-#if 0 /* question is whether this should trap or not */
-      /*
-       * r=frank: Of course it must trap:
+#if 0 /* bird: question is whether this should trap or not:
+       *
+       * frank: Of course it must trap:
        *
        *   0xfffffff8 * 0x77d7daf8 = 0x77d7daf441412840
        *
@@ -836,13 +836,21 @@ void tstASMMath(void)
        *  (0x77d7daf441412840 >> 32) + 1 = 0x77d7daf5
        *
        * which is definitely greater than  0x3b9aca00.
-       */
-      /* 
+       *
        * bird: No, the C version does *not* crash. So, the question is whether there any
        * code depending on it not crashing.
        *
        * Of course the assembly versions of the code crash right now for the reasons you've
        * given, but the the 32-bit MSC version does not crash.
+       *
+       * frank: The C version does not crash but delivers incorrect results for this case.
+       * The reason is
+       *
+       *   u.s.Hi = (unsigned long)(u64Hi / u32C);
+       *
+       * Here the division is actually 64-bit by 64-bit but the 64-bit result is truncated
+       * to 32 bit. If using this (optimized and fast) function we should just be sure that
+       * the operands are in a valid range.
        */
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0xfffffff8c65d6731), UINT32_C(0x77d7daf8), UINT32_C(0x3b9aca00));
     CHECKVAL(u64, UINT64_C(0x02b8f9a2aa74e3dc), "%#018RX64");
