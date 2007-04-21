@@ -30,11 +30,11 @@
  */
 
 #ifdef _MSC_VER
-# pragma intrinsic(_ReadWriteBarrier)
 # if _MSC_VER >= 1400
 #  define RT_INLINE_ASM_USES_INTRIN 1
 #  include <intrin.h>
    /* Emit the intrinsics at all optimization levels. */
+#  pragma intrinsic(_ReadWriteBarrier)
 #  pragma intrinsic(__cpuid)
 #  pragma intrinsic(_enable)
 #  pragma intrinsic(_disable)
@@ -1515,14 +1515,18 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
  * device or the VMM. Typical cases are port access, MMIO access, 
  * trapping instruction, etc.
  */
+#if RT_INLINE_ASM_GNU_STYLE
+# define ASMCompilerBarrier()   do { __asm__ __volatile__ ("" : : : "memory"); } while (0)
+#elif RT_INLINE_ASM_USES_INTRIN
+# define ASMCompilerBarrier()   do { _ReadWriteBarrier(); } while (0)
+#else /* 2003 should have _ReadWriteBarrier() but I guess we're at 2002 level then... */
 DECLINLINE(void) ASMCompilerBarrier(void)
 {
-#if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("" : : : "memory");
-#else
-    _ReadWriteBarrier();
-#endif 
+    __asm 
+    {
+    }
 }
+#endif 
 
 
 /**
