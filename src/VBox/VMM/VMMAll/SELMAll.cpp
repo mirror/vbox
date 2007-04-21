@@ -110,8 +110,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmToFlat(pVM, Sel, Addr);
-    else
-        return (RTGCPTR)(pHiddenSel->u32Base + (RTGCUINTPTR)Addr);
+    return (RTGCPTR)(pHiddenSel->u32Base + (RTGCUINTPTR)Addr);
 }
 
 
@@ -188,11 +187,11 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
                 return VERR_INVALID_SELECTOR;
 
             /** @todo handle LDT page(s) not present! */
-            #ifdef IN_GC
+#ifdef IN_GC
             PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-            #else
+#else
             PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-            #endif
+#endif
             Desc = paLDT[Sel >> X86_SEL_SHIFT];
         }
 
@@ -222,7 +221,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
         /*
          * Type check.
          */
-        #define BOTH(a, b) ((a << 16) | b)
+#define BOTH(a, b) ((a << 16) | b)
         switch (BOTH(u1DescType, u4Type))
         {
 
@@ -318,7 +317,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
                 return VERR_INVALID_SELECTOR;
 
         }
-        #undef BOTH
+#undef BOTH
     }
     return VERR_SELECTOR_NOT_PRESENT;
 }
@@ -346,11 +345,11 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
     else
     {
         /** @todo handle LDT page(s) not present! */
-        #ifdef IN_GC
+#ifdef IN_GC
         PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-        #else
+#else
         PVBOXDESC    paLDT = (PVBOXDESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-        #endif
+#endif
         Desc = paLDT[SelCS >> X86_SEL_SHIFT];
     }
 
