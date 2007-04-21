@@ -837,6 +837,13 @@ void tstASMMath(void)
        *
        * which is definitely greater than  0x3b9aca00.
        */
+      /* 
+       * bird: No, the C version does *not* crash. So, the question is whether there any
+       * code depending on it not crashing.
+       *
+       * Of course the assembly versions of the code crash right now for the reasons you've
+       * given, but the the 32-bit MSC version does not crash.
+       */
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0xfffffff8c65d6731), UINT32_C(0x77d7daf8), UINT32_C(0x3b9aca00));
     CHECKVAL(u64, UINT64_C(0x02b8f9a2aa74e3dc), "%#018RX64");
 #endif
