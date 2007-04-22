@@ -953,7 +953,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Type du système d&apos;exploitation</translation>
+        <translation>OS type</translation>
     </message>
     <message>
         <source>Base Memory</source>
@@ -988,7 +988,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation>ACOI</translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
@@ -1028,7 +1028,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation>Non intallée</translation>
+        <translation>Non installée</translation>
     </message>
     <message>
         <source>Image</source>
@@ -1048,7 +1048,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>Non intallée</translation>
+        <translation>Non installée</translation>
     </message>
     <message>
         <source>Image</source>
@@ -1944,7 +1944,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>Système d&apos;exploitation et &amp;type</translation>
+        <translation>OS type</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -3171,7 +3171,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Pas de description. Activé le bouton Editer pour ajouter une description.</translation>
+        <translation>Pas de description. Activer le bouton Editer pour ajouter une description.</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -3572,7 +3572,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>Système d&apos;exploitation et type</translation>
+        <translation>OS type</translation>
     </message>
     <message>
         <source>Displays the operating system type that you
@@ -3657,7 +3657,7 @@ this feature after having installed a Windows guest operating system!</source>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation>Activer l&apos; IO AC&amp;PIC</translation>
+        <translation>Activer l&apos; IO A&amp;PIC</translation>
     </message>
     <message>
         <source>Alt+P</source>

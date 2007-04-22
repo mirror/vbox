@@ -3327,7 +3327,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Basic</source>
-        <translation>&amp;Grundlegend</translation>
+        <translation>&amp;Basis</translation>
     </message>
     <message>
         <source>Select</source>
