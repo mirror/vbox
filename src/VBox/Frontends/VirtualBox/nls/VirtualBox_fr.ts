@@ -1720,7 +1720,7 @@ Toutes les frappes sur le clavier (ainsi que les combinaisons telles que Alt-Tab
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation> (incorporer)</translation>
+        <translation> (incorporé)</translation>
     </message>
     <message>
         <source>&lt;unavailabie&gt;</source>
