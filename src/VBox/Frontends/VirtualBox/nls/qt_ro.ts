@@ -15,7 +15,7 @@
     </message>
     <message>
         <source>Backtab</source>
-        <translation type="unfinished"></translation>
+        <translation>Backtab</translation>
     </message>
     <message>
         <source>Backspace</source>
@@ -151,7 +151,7 @@
     </message>
     <message>
         <source>Bass Boost</source>
-        <translation type="unfinished"></translation>
+        <translation>Super Bas</translation>
     </message>
     <message>
         <source>Bass Up</source>
@@ -313,7 +313,7 @@
     <name>QColorDialog</name>
     <message>
         <source>Hu&amp;e:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nua&amp;nţă:</translation>
     </message>
     <message>
         <source>&amp;Sat:</source>
@@ -321,35 +321,35 @@
     </message>
     <message>
         <source>&amp;Val:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Val:</translation>
     </message>
     <message>
         <source>&amp;Red:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Roşu:</translation>
     </message>
     <message>
         <source>&amp;Green:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verde:</translation>
     </message>
     <message>
         <source>Bl&amp;ue:</source>
-        <translation type="unfinished"></translation>
+        <translation>Albastr&amp;u:</translation>
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation type="unfinished"></translation>
+        <translation>Canal a&amp;lpha:</translation>
     </message>
     <message>
         <source>&amp;Basic colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Culori de &amp;bază</translation>
     </message>
     <message>
         <source>&amp;Custom colors</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Culori personalizate</translation>
     </message>
     <message>
         <source>&amp;Define Custom Colors &gt;&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Definire culori personalizate &gt;&gt;</translation>
     </message>
     <message>
         <source>OK</source>
@@ -832,7 +832,7 @@ Verificaţi calea şi numele de fişier.</translation>
     </message>
     <message>
         <source>Letterlike Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Simboluri literă</translation>
     </message>
     <message>
         <source>Number Forms</source>
@@ -856,11 +856,11 @@ Verificaţi calea şi numele de fişier.</translation>
     </message>
     <message>
         <source>Enclosed and Square</source>
-        <translation type="unfinished"></translation>
+        <translation>Perimetru şi arie</translation>
     </message>
     <message>
         <source>Braille</source>
-        <translation type="unfinished"></translation>
+        <translation>Braille</translation>
     </message>
     <message>
         <source>Unicode</source>
@@ -887,7 +887,7 @@ Verificaţi calea şi numele de fişier.</translation>
     </message>
     <message>
         <source>Stri&amp;keout</source>
-        <translation type="unfinished"></translation>
+        <translation>Rete&amp;zat</translation>
     </message>
     <message>
         <source>&amp;Underline</source>
@@ -930,92 +930,92 @@ Verificaţi calea şi numele de fişier.</translation>
     <name>QFtp</name>
     <message>
         <source>Host %1 found</source>
-        <translation type="unfinished"></translation>
+        <translation>Găsit host %1</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation type="unfinished"></translation>
+        <translation>Găsit host</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectat la host %1</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectat la host</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexiunea %1 închisă</translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexiune închisă</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am găsit host %1</translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexiune refuzată la host %1</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare necunoscută</translation>
     </message>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectare la host eşuată: %1</translation>
     </message>
     <message>
         <source>Login failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Login eşuat: %1</translation>
     </message>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Listarea directorului eşuată: %1</translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Schimbarea directorului eşuată: %1</translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Descărcarea fişierului eşuată: %1</translation>
     </message>
     <message>
         <source>Uploading file failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Trimiterea fişierului eşuată: %1</translation>
     </message>
     <message>
         <source>Removing file failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ştergerea fişierului eşuată: %1</translation>
     </message>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Crearea directorului eşuată: %1</translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ştergerea directorului eşuată: %1</translation>
     </message>
     <message>
         <source>Not connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Neconectat</translation>
     </message>
     <message>
         <source>Connection refused for data connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexiune refuzată pentru transmisie de date</translation>
     </message>
 </context>
 <context>
@@ -1029,67 +1029,67 @@ Verificaţi calea şi numele de fişier.</translation>
     <name>QHttp</name>
     <message>
         <source>Connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexiune refuzată</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am găsit host %1</translation>
     </message>
     <message>
         <source>Wrong content length</source>
-        <translation type="unfinished"></translation>
+        <translation>Lungime conţinut incorectă</translation>
     </message>
     <message>
         <source>HTTP request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerere HTTP eşuată</translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation type="unfinished"></translation>
+        <translation>Găsit host %1</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation type="unfinished"></translation>
+        <translation>Găsit host</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectat la host %1</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectat la host</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexiunea %1 închisă</translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexiune închisă</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare necunoscută</translation>
     </message>
     <message>
         <source>Request aborted</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerere întreruptă</translation>
     </message>
     <message>
         <source>No server set to connect to</source>
-        <translation type="unfinished"></translation>
+        <translation>Lipsă server pentru conectare la</translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>Serverul a închis conexiunea neaşteptat</translation>
     </message>
     <message>
         <source>Invalid HTTP response header</source>
-        <translation type="unfinished"></translation>
+        <translation>Antet răspuns HTTP invalid</translation>
     </message>
     <message>
         <source>Invalid HTTP chunked body</source>
-        <translation type="unfinished"></translation>
+        <translation>Corp HTTP invalid</translation>
     </message>
 </context>
 <context>
@@ -1107,11 +1107,11 @@ Verificaţi calea şi numele de fişier.</translation>
     <name>QLineEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;estabilire</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Anulare re&amp;stabilire</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
@@ -1377,123 +1377,123 @@ la
     </message>
     <message>
         <source>A0 (841 x 1189 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A0 (841 x 1189 mm)</translation>
     </message>
     <message>
         <source>A1 (594 x 841 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A1 (594 x 841 mm)</translation>
     </message>
     <message>
         <source>A2 (420 x 594 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A2 (420 x 594 mm)</translation>
     </message>
     <message>
         <source>A3 (297 x 420 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A3 (297 x 420 mm)</translation>
     </message>
     <message>
         <source>A4 (210x297 mm, 8.26x11.7 inches)</source>
-        <translation type="unfinished"></translation>
+        <translation>A4 (210x297 mm)</translation>
     </message>
     <message>
         <source>A5 (148 x 210 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A5 (148 x 210 mm)</translation>
     </message>
     <message>
         <source>A6 (105 x 148 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A6 (105 x 148 mm)</translation>
     </message>
     <message>
         <source>A7 (74 x 105 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A7 (74 x 105 mm)</translation>
     </message>
     <message>
         <source>A8 (52 x 74 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A8 (52 x 74 mm)</translation>
     </message>
     <message>
         <source>A9 (37 x 52 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>A9 (37 x 52 mm)</translation>
     </message>
     <message>
         <source>B0 (1000 x 1414 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B0 (1000 x 1414 mm)</translation>
     </message>
     <message>
         <source>B1 (707 x 1000 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B1 (707 x 1000 mm)</translation>
     </message>
     <message>
         <source>B2 (500 x 707 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B2 (500 x 707 mm)</translation>
     </message>
     <message>
         <source>B3 (353 x 500 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B3 (353 x 500 mm)</translation>
     </message>
     <message>
         <source>B4 (250 x 353 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B4 (250 x 353 mm)</translation>
     </message>
     <message>
         <source>B5 (176 x 250 mm, 6.93x9.84 inches)</source>
-        <translation type="unfinished"></translation>
+        <translation>B5 (176 x 250 mm)</translation>
     </message>
     <message>
         <source>B6 (125 x 176 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B6 (125 x 176 mm)</translation>
     </message>
     <message>
         <source>B7 (88 x 125 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B7 (88 x 125 mm)</translation>
     </message>
     <message>
         <source>B8 (62 x 88 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B8 (62 x 88 mm)</translation>
     </message>
     <message>
         <source>B9 (44 x 62 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B9 (44 x 62 mm)</translation>
     </message>
     <message>
         <source>B10 (31 x 44 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>B10 (31 x 44 mm)</translation>
     </message>
     <message>
         <source>C5E (163 x 229 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>C5E (163 x 229 mm)</translation>
     </message>
     <message>
         <source>DLE (110 x 220 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>DLE (110 x 220 mm)</translation>
     </message>
     <message>
         <source>Executive (7.5x10 inches, 191x254 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Executiv (191x254 mm)</translation>
     </message>
     <message>
         <source>Folio (210 x 330 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Folio (210 x 330 mm)</translation>
     </message>
     <message>
         <source>Ledger (432 x 279 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ledger (432 x 279 mm)</translation>
     </message>
     <message>
         <source>Legal (8.5x14 inches, 216x356 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Legal (216x356 mm)</translation>
     </message>
     <message>
         <source>Letter (8.5x11 inches, 216x279 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Letter (216x279 mm)</translation>
     </message>
     <message>
         <source>Tabloid (279 x 432 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabloid (279 x 432 mm)</translation>
     </message>
     <message>
         <source>US Common #10 Envelope (105 x 241 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>US Common #10 Envelope (105 x 241 mm)</translation>
     </message>
     <message>
         <source>Setup Printer</source>
@@ -1523,31 +1523,31 @@ la
     </message>
     <message>
         <source>bad char class syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>sintaxă clasă caracter greşită</translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>sintaxă ciclare greşită</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>sintaxă repetiţie greşită</translation>
     </message>
     <message>
         <source>invalid octal value</source>
-        <translation type="unfinished"></translation>
+        <translation>valoare octală invalidă</translation>
     </message>
     <message>
         <source>missing left delim</source>
-        <translation type="unfinished"></translation>
+        <translation>lipsă delimitator stânga</translation>
     </message>
     <message>
         <source>unexpected end</source>
-        <translation type="unfinished"></translation>
+        <translation>sfârşit neaşteptat</translation>
     </message>
     <message>
         <source>met internal limit</source>
-        <translation type="unfinished"></translation>
+        <translation>limită interval atinsă</translation>
     </message>
 </context>
 <context>
@@ -1620,11 +1620,11 @@ la
     <name>QTextEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;estabilire</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Anulare re&amp;stabilire</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
@@ -1655,15 +1655,15 @@ la
     </message>
     <message>
         <source>Shade</source>
-        <translation type="unfinished"></translation>
+        <translation>Ascunde</translation>
     </message>
     <message>
         <source>Unshade</source>
-        <translation type="unfinished"></translation>
+        <translation>Arată</translation>
     </message>
     <message>
         <source>Normalize</source>
-        <translation type="unfinished"></translation>
+        <translation>Normalizare</translation>
     </message>
     <message>
         <source>Minimize</source>
@@ -1837,11 +1837,11 @@ la
     </message>
     <message>
         <source>Sh&amp;ade</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ascunde</translation>
     </message>
     <message>
         <source>%1 - [%2]</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <source>Minimize</source>
@@ -1857,113 +1857,113 @@ la
     </message>
     <message>
         <source>&amp;Unshade</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;rată</translation>
     </message>
 </context>
 <context>
     <name>QXml</name>
     <message>
         <source>no error occurred</source>
-        <translation type="unfinished"></translation>
+        <translation>fără erori</translation>
     </message>
     <message>
         <source>error triggered by consumer</source>
-        <translation type="unfinished"></translation>
+        <translation>eroare cauzată de consumator</translation>
     </message>
     <message>
         <source>unexpected end of file</source>
-        <translation type="unfinished"></translation>
+        <translation>sfârşit de fişier neaşteptat</translation>
     </message>
     <message>
         <source>more than one document type definition</source>
-        <translation type="unfinished"></translation>
+        <translation>definiţie a mai mult de un document</translation>
     </message>
     <message>
         <source>error occurred while parsing element</source>
-        <translation type="unfinished"></translation>
+        <translation>s-a produs eroare la interpretarea elementului</translation>
     </message>
     <message>
         <source>tag mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>nepotrivire tag</translation>
     </message>
     <message>
         <source>error occurred while parsing content</source>
-        <translation type="unfinished"></translation>
+        <translation>s-a produs eroare la interpretarea conţinutului</translation>
     </message>
     <message>
         <source>unexpected character</source>
-        <translation type="unfinished"></translation>
+        <translation>caracter enaşteptat</translation>
     </message>
     <message>
         <source>invalid name for processing instruction</source>
-        <translation type="unfinished"></translation>
+        <translation>nume invalid pentru procesarea instrucţiunii</translation>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>versiune aşteptată la citirea declaraţiei XML</translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>valoare greşită pentru declaraţie de sine stătătoare</translation>
     </message>
     <message>
         <source>encoding declaration or standalone declaration expected while reading the XML declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>declaraţie codare sau de sine stătătoare aşteptată la citirea declaraţiei XML</translation>
     </message>
     <message>
         <source>standalone declaration expected while reading the XML declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>declaraţie de sine stătătoare aşteptată la citirea declaraţiei XML</translation>
     </message>
     <message>
         <source>error occurred while parsing document type definition</source>
-        <translation type="unfinished"></translation>
+        <translation>s-a produs eroare la interpretarea definiţiei tipului de document</translation>
     </message>
     <message>
         <source>letter is expected</source>
-        <translation type="unfinished"></translation>
+        <translation>literă este aşteptată</translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
-        <translation type="unfinished"></translation>
+        <translation>s-a produs eroare la interpretarea comentariului</translation>
     </message>
     <message>
         <source>error occurred while parsing reference</source>
-        <translation type="unfinished"></translation>
+        <translation>s-a produs eroare la interpretarea referinţei</translation>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation type="unfinished"></translation>
+        <translation>referinţă generală entitate internă nepermisă de DTD</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation type="unfinished"></translation>
+        <translation>referinţă externă generală nepermisă ca valoare de atribut</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation type="unfinished"></translation>
+        <translation>referinţă generală entitate externă nepermisă de DTD</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation type="unfinished"></translation>
+        <translation>referinţă entitate neinterpretată în context greşit</translation>
     </message>
     <message>
         <source>recursive entities</source>
-        <translation type="unfinished"></translation>
+        <translation>entităţi recursive</translation>
     </message>
     <message>
         <source>error in the text declaration of an external entity</source>
-        <translation type="unfinished"></translation>
+        <translation>eroare în declaraţia entităţii externe</translation>
     </message>
 </context>
 <context>
     <name>QtMultiLineEdit</name>
     <message>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Restabilire</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Anulare restabilire</translation>
     </message>
     <message>
         <source>Cut</source>

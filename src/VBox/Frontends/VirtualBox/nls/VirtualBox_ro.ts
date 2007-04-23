@@ -514,7 +514,7 @@
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica dacă funcţia de autoredimnsionare a ecranului musafir este Activă (&lt;img src=auto_resize_on_16px.png/&gt;) sau Inactivă (&lt;Img src=auto_resize_off_16px.png/&gt;). Notă: această funcţie necesită Guest Addition instalat pe SO musafir.</translation>
+        <translation>Indică dacă funcţia de autoredimnsionare a ecranului musafir este Activă (&lt;img src=auto_resize_on_16px.png/&gt;) sau Inactivă (&lt;Img src=auto_resize_off_16px.png/&gt;). Notă: această funcţie necesită Guest Addition instalat pe SO musafir.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
@@ -1166,7 +1166,7 @@
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>întreruptă</translation>
+        <translation>Întreruptă</translation>
     </message>
     <message>
         <source>Running</source>
@@ -1845,7 +1845,7 @@ Căsuţa de selecţie din stânga defineşte dacă filtrele particulare sunt act
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>Crează disc hard virtual nou</translation>
+        <translation>Creează disc hard virtual nou</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
@@ -1853,11 +1853,11 @@ Căsuţa de selecţie din stânga defineşte dacă filtrele particulare sunt act
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Acest vrăjitor vă va ajuta să creaţi o nouă imagine virtuală de disc hard pentru maşina dvs virtuală.&lt;/p&gt;
 &lt;p&gt;Folosiţi butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare 
-şi butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a vă intoarce la precedenta.&lt;/p&gt;</translation>
+şi butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a vă intoarce la pagina precedentă.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Bun venit la Vrăjitorul creează disc virtual nou!</translation>
+        <translation>Bun venit la Vrăjitorul Creează disc virtual nou!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -1933,8 +1933,8 @@ ca dimensiunea discului hard virtual.&lt;/p&gt;</translation>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation>Dacă setările următoare sunt corecte, apăsaţi butonul &lt;b&gt;Finish&lt;/b&gt;
-                                                            O dată apăsat, o nouă imagine de disc hard va fi creată.
+        <translation>Dacă setările următoare sunt corecte, apăsaţi butonul &lt;b&gt;Finish&lt;/b&gt;.
+O dată apăsat, o nouă imagine de disc hard va fi creată.
                                                             </translation>
     </message>
     <message>
@@ -1976,7 +1976,7 @@ unei noi maşini virtuale pentru VirtualBox.&lt;/p&gt;
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Bun venit la vrăjitorul maşină virtuală nouă!</translation>
+        <translation>Bun venit la Vrăjitorul Maşină virtuală nouă!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
@@ -2329,11 +2329,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut obţine starea de accesibilitate a mediului &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Unele dintre mediile înregistrate pot deveni inaccesibile.</translation>
     </message>
     <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
         <translation>Nu am putut crea interfaţa de reţea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
         <translation>Nu am putut şterge interfaţa de reţea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -4243,7 +4243,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Dispozitiv %1</translation>
+        <translation>Dispozitiv %1</translation>
     </message>
 </context>
 <context>
