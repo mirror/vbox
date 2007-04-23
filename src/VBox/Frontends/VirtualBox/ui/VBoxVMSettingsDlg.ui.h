@@ -803,6 +803,8 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
 
     polished = true;
 
+    layout()->activate();
+
     /* resize to the miminum possible size */
     resize (minimumSize());
 
