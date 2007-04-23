@@ -953,7 +953,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>OS type</translation>
+        <translation>Type OS</translation>
     </message>
     <message>
         <source>Base Memory</source>
@@ -1944,7 +1944,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>OS type</translation>
+        <translation>Type OS</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -3572,7 +3572,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>OS type</translation>
+        <translation>Type OS</translation>
     </message>
     <message>
         <source>Displays the operating system type that you
