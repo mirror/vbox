@@ -486,7 +486,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmDiscardAction->addTo (vmTools);
 #ifdef Q_WS_MAC
     vmTools->setMacStyle();
-#endif 
+#endif
 
     /* add actions to menubar */
 
@@ -1008,8 +1008,6 @@ void VBoxSelectorWnd::languageChange()
 #else
     setCaption (tr ("InnoTek VirtualBox"));
 #endif
-
-    vboxGlobal().languageChange();
 
     vmTabWidget->changeTab (vmDetailsView, tr ("&Details"));
     /* note: Snapshots and Details tabs are changed dynamically by
