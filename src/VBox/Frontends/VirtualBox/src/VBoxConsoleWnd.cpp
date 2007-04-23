@@ -1134,8 +1134,6 @@ void VBoxConsoleWnd::languageChange()
     caption_prefix = tr ("InnoTek VirtualBox");
 #endif
 
-    vboxGlobal().languageChange();
-
     /*
      *  Note: All action shortcuts should be added to the menu text in the
      *  form of "\tHost+<Key>" where <Key> is the shortcut key according

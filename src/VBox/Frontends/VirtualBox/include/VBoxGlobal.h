@@ -469,6 +469,7 @@ signals:
 protected:
 
     bool event (QEvent *e);
+    bool eventFilter (QObject *, QEvent *);
 
 private:
 

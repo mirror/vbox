@@ -2802,6 +2802,14 @@ bool VBoxGlobal::event (QEvent *e)
     return QObject::event (e);
 }
 
+bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
+{
+    if (aObject == QApplication::desktop() &&
+        aEvent->type() == QEvent::LanguageChange)
+        languageChange();
+    return QObject::eventFilter (aObject, aEvent);
+}
+
 // Private members
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2917,7 +2925,7 @@ void VBoxGlobal::init()
     vm_state_color.insert (CEnums::Restoring,           &Qt::green);
     vm_state_color.insert (CEnums::Discarding,          &Qt::green);
 
-    languageChange();
+    QApplication::desktop()->installEventFilter (this);
 
     // create default non-null global settings
     gset = VMGlobalSettings (false);
@@ -2934,6 +2942,8 @@ void VBoxGlobal::init()
     QString languageId = gset.languageId();
     if (!languageId.isNull())
         loadLanguage (languageId);
+
+    languageChange();
 
     // process command line
 
