@@ -90,6 +90,9 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
 
 static void QtMessageOutput (QtMsgType type, const char *msg)
 {
+#ifndef Q_WS_X11
+    NOREF(msg);
+#endif
     switch (type)
     {
         case QtDebugMsg:

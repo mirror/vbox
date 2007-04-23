@@ -110,19 +110,21 @@ void VBoxVMNetworkSettings::init()
 
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NoNetworkAttachment));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NATNetworkAttachment));
+#ifndef Q_WS_MAC /* not yet on the Mac */
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::HostInterfaceNetworkAttachment));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::InternalNetworkAttachment));
+#endif
 
 #if defined Q_WS_X11
     leTAPDescriptor->setValidator (new QIntValidator (-1, std::numeric_limits <LONG>::max(), this));
 #else
     /* hide unavailable settings (TAP setup and terminate apps) */
     frmTAPSetupTerminate->setHidden (true);
+    /* disable unused interface name UI */
+    frmHostInterface_X11->setHidden (true);
 #endif
 
 #if defined Q_WS_WIN
-    /* disable unused interface name UI */
-    frmHostInterface_X11->setHidden (true);
     /* setup iconsets */
     pbHostAdd->setIconSet (VBoxGlobal::iconSet ("add_host_iface_16px.png",
                                                 "add_host_iface_disabled_16px.png"));
@@ -147,6 +149,11 @@ void VBoxVMNetworkSettings::init()
     /* the TAP file descriptor setting is always invisible -- currently not used
      * (remove the relative code at all? -- just leave for some time...) */
     frmTAPDescriptor->setHidden (true);
+
+#if defined Q_WS_MAC
+    /* no Host Interface Networking on the Mac yet */	
+    grbTAP->setHidden (true);
+#endif
 }
 
 bool VBoxVMNetworkSettings::isPageValid (const QStringList &aList)
