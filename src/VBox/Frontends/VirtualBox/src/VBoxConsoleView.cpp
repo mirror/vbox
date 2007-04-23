@@ -786,7 +786,6 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::ResizeEventType:
             {
                 ignore_mainwnd_resize = true;
-                resize_hint_timer->stop();
 
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
                 LogFlow (("VBoxDefs::ResizeEventType: %d,%d\n",
@@ -817,7 +816,8 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* automatically normalize geometry unless maximized or
                  * full screen */
                 if (!mainwnd->isTrueFullscreen() &&
-                    !topLevelWidget()->isMaximized())
+                    !topLevelWidget()->isMaximized() &&
+                    !resize_hint_timer->isActive())
                     normalizeGeometry (true /* adjustPosition */);
 
                 /* report to the VM thread that we finished resizing */
@@ -2296,7 +2296,7 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
         ::DarwinGrabKeyboard (true);
 # else
         ::DarwinDisableGlobalHotKeys (true);
-# endif 
+# endif
         grabKeyboard();
     }
     else
@@ -2306,7 +2306,7 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
         ::DarwinGrabKeyboard (false);
 # else
         ::DarwinDisableGlobalHotKeys (false);
-# endif 
+# endif
         releaseKeyboard();
     }
 #else
