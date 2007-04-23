@@ -27,6 +27,9 @@
 #include <qtoolbutton.h>
 #include <qmainwindow.h>
 #include <qobjectlist.h>
+#ifdef Q_WS_MAC
+# include "VBoxAquaStyle.h"
+#endif
 
 /**
  *  The VBoxToolBar class is a simple QToolBar reimplementation to disable
@@ -87,6 +90,32 @@ public:
             delete list;
         }
     }
+
+#ifdef Q_WS_MAC
+    /** 
+     * This is a temporary hack, we'll set the style globally later. 
+     */
+    void setMacStyle() 
+    {
+        /* self */
+        QStyle *qs = &VBoxAquaStyle::instance();
+        setStyle(qs);
+
+        /* the buttons */
+        QObjectList *list = queryList ("QToolButton");
+        QObjectListIt it (*list);
+        QObject *obj;
+        while ((obj = it.current()) != 0)
+        {
+            QToolButton *btn = ::qt_cast <QToolButton *> (obj);
+            btn->setStyle (&VBoxAquaStyle::instance());
+            ++ it;
+        }
+        delete list;
+
+        /** @todo the separator */
+    }
+#endif 
 };
 
 #endif // __VBoxToolBar_h__

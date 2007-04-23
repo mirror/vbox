@@ -350,6 +350,9 @@ void VBoxDiskImageManagerDlg::init()
     imReleaseAction->addTo (toolBar);
     toolBar->addSeparator();
     imRefreshAction->addTo (toolBar);
+#ifdef Q_WS_MAC
+    toolBar->setMacStyle();
+#endif 
 
 
     /* menu bar */
