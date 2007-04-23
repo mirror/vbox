@@ -792,6 +792,9 @@ else
  VBOX_LIBPATH_X11 ?= /usr/X11R6/lib
 endif
 
+# 32bit X11 LIBPATH for building 32bit guest additions
+VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
+
 #
 # Mac OS X SDK paths.
 #
