@@ -78,7 +78,13 @@ void QIStateIndicator::setStateIcon (int s, const QPixmap &pm)
     QPixmap *icon;
     if (testWFlags (WNoAutoErase)) {
         icon = new QPixmap (pm.size());
-        icon->fill (paletteBackgroundColor());
+#ifdef Q_WS_MAC /* the background color isn't the pattern used for the console window frame */
+        const QPixmap *back = backgroundPixmap();
+        if (back) /* Is ClearROP right? I've no clue about raster operations... */
+            bitBlt (icon, 0, 0, back, 0, 0, pm.width(), pm.height(), ClearROP, false); 
+        else
+#endif 
+            icon->fill (paletteBackgroundColor());
         bitBlt (icon, 0, 0, &pm, 0, 0, pm.width(), pm.height(), CopyROP, false);
     } else {
         icon = new QPixmap (pm);
