@@ -47,11 +47,11 @@
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplace le périphérique vers le haut.</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplace le périphérique vers le bas.</translation>
     </message>
 </context>
 <context>
@@ -729,7 +729,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>Ajoutet</translation>
+        <translation>Ajouter</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -1749,43 +1749,43 @@ Choisir &lt;i&gt;par defaut&lt;/i&gt; pour réactiver la langue par défaut du s
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le chemin par défaut du répertoire VDI. Ce répertoire est utilisé. s&apos;il n&apos;a pas été spécifié explicitement, lors de la création de nouveaux disques durs virtuels.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Remet le chemin pour le répertoire des machines virtuelles à la valeur par défaut. Le chemin par défaut sera affiché après la validation des changements et la réouverture de la boite de dialogue.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Remet le chemin par défaut du répertoire VDI à la valeur initiale. Le chemin par defaut sera affiché après la validation des modifications et la réouverture de cette boite de dialogue.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le chemin par defaut du répertoire des machines virtuelles. Ce répertire est utilisé, lors de la création d&apos;une nouvelle machine virtuelle, a moins qu&apos;il soit spécifié de façon explicite.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la boite de dialogue pour le choix du répertoire par défaut des fichiers VDI.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la boite de dialogue pour le choix du répertoire par défaut des machines virtuelles.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si la case est cochée, le clavier est capturé  automatiquement à chaque fois que la fenêtre VM est active. Toutes les frappes sur le clavier (ainsi que les combinaisons telles que Alt-Tab) sont dirigés vers la VM.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste globale de tous les filtres USB. La case a cocher située à gauche définit si un filtre paticulier est activé ou désactivé.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vides. Notez quavec &apos;un telle filtre tous les périphériques USB raccordés sont reconnus.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs correspondants à la valeur du périphérique raccordé à l&apos;ordinateur principal.</translation>
     </message>
 </context>
 <context>
@@ -1944,7 +1944,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>Type OS</translation>
+        <translation>&amp;Type OS</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -2029,8 +2029,8 @@ Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b
                             &lt;/p&gt;
                             </source>
         <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Terminer&lt;/b&gt; si la configuration si dessus est correcte.&lt;/p&gt;
-&lt;p&gt;Notez que vous pouvez modifier ces paramètres et ainsi que d&apos;autres en tout temps. Utiliseu pour ce faite la
-boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessibles sut le menu de la boite de dialogue principale.&lt;/p&gt;l</translation>
+&lt;p&gt;Notez que vous pouvez modifier ces paramètres et ainsi que d&apos;autres en tout temps. Utilisez pour ce faire la
+boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la boite de dialogue principale.&lt;/p&gt;Etre</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -2188,8 +2188,7 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessibles sut le menu de la
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Etes-vous sûr vous voulez-vous supprimer de manière permanente la machine virtuelle &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;
-&lt;p&gt;Cette opération ne peut pas être annulée.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez vous vraiment supprimer la machine virtuelle &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;&lt;p&gt;Cette opération ne peut pas être annulée.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
@@ -2273,11 +2272,11 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessibles sut le menu de la
     </message>
     <message>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Echec de création de l&apos;adaptateur réseau &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Echec de création de l&apos;adaptateur réseau &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Echec de suppression de l&apos;adaptateur réseau &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Echec de suppression de l&apos;adaptateur réseau &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -2723,7 +2722,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifie la définiion du répertoire partagés sélectionné.</translation>
     </message>
 </context>
 <context>
@@ -2871,7 +2870,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>L&apos;état actuelest identique à  l&apos;ètat mémorisé dans l&apos;instantané actuel</translation>
+        <translation>L&apos;état actuel est identique à  l&apos;ètat mémorisé dans l&apos;instantané actuel</translation>
     </message>
     <message>
         <source> (current, </source>
@@ -3097,47 +3096,50 @@ Définit si le filtre du port-USB comme filtre &lt;i&gt;Exact&lt;/i&gt;. Une cha
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit le fabricant comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge correspond à tous les fabricants.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit le nom du produit comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge correspond à tous les produits.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit le numéro de série comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge correspond à toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit si le fitre est appliqué sur les périphériques attachés à l&apos;ordinateur (&lt;i&gt;Non&lt;/i&gt;), à un client a distance VRDP (&lt;i&gt;Oui&lt;/i&gt;), ou auy deux (&lt;i&gt;Tous&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit l&apos;action exécutée par l&apos;ordinateur quand un périphérique reconnu par le filtre est attaché à l&apos;ordinateur principal:
+le réserver à l&apos;ordinateur principal (&lt;i&gt;Ignorer&lt;/i&gt;) ou le réserver pour une utilisation ultérieure par une machine virtuelle (&lt;i&gt;Retenir&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID frabricant&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID produit&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the revision number filter. The
@@ -3145,13 +3147,14 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID révision&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Définit si le filtre du port-USB comme filtre &lt;i&gt;Exact&lt;/i&gt;. Une chaine de charactère vierge correspond à tous les ports-USB.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -3377,51 +3380,51 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si la case est cochée, insère l&apos;adaptateur de réseau virtuel dans la machine virtuelle.</translation>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Contrôle le mode de fonctionnement de l&apos;adaptateur virtuel dans le réseau de l&apos;ordinaterur principal. </translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche l&apos;adresse MAC de cet adaptateur. L&apos;adresse est représentée par 12 charactères (0-9,A-F).</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indique si le cable de l&apos;adaptaterur virtuel de réseau relié lors du lancement de la machine virtuelle.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afiche le nom de l&apos;interface chosie por cet adaptateur.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste des interfaces hôtes disponibles.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enlève l&apos;interface sélectionnée.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le nom de &apos;linterface TAP.</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>ffiche la commande lancée pour l&apos;installation de l&apos;interface TAP.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisissez L&apos;application d&apos;installation.</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche la commande lancée pour la désinstallation de l&apos;interface TAP.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisi l&apos;application de désinstallation.</translation>
     </message>
 </context>
 <context>
@@ -3572,7 +3575,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>Type OS</translation>
+        <translation>&amp;Type OS</translation>
     </message>
     <message>
         <source>Displays the operating system type that you
@@ -3768,7 +3771,7 @@ the virtual machine.</source>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation>Fichier imane &amp;ISO</translation>
+        <translation>Fichier image &amp;ISO</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
@@ -4059,81 +4062,81 @@ that this feature requires Guest Additions to be installed in the guest OS.
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appeller Système d&apos;exploitation client).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installattation d&apos;un système d&apos;exploitation Windows !&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performace de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows !&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définis le mode de fonctionnement du presse-papier pour la communication entre l&apos;ordinateur principal et le système d&apos;exploitation client.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le chemin sous lequel les instantanés de cette machine virtuelle seront sauvegardés. Noter que les instantanés peuvent utiliser beaucoup d&apos;espace sur le disque dur.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Remet à zéro le chemin des répertoire d&apos;instantané à la valeur par défaut. Le chemin de défaut paramétré sera affiché après avoir validé les changements et avoir ouvert ce dialogue à nouveau. </translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le descriptif de la machine virtuelle. Le champ de description est utile pour commenté les détails de configuration du système d&apos;exploitation installé.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>Appelle le gestionnaire de disques virtuels pour créer ou attacher un disque dur virtuel existant.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listes les lecteurs de disquette disponibles pouvant être installé sur la machine virtuelle.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Appelle l&apos; assistant de disque virtuel permettant le choix d&apos;e l&apos;image de disquette à installé. </translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listes les lecteurs CD/DVD disponibles pouvants être installés sur la machine virtuelle. </translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Appelle l&apos; assistant de disque virtuel permettant le choix d&apos;une image de CD/DVD. </translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Contrôle le pilote de sortie audio. Le &lt;b&gt;Pilote Null&lt;/b&gt; audio simule une carte audio, toutefois les accès à celle ci sont ignorés.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si la case est cochée, le contrôleur USB de cette machine est activé.</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste tous les filtres USB de cette machine. La boite à cocher indique si le filtre est activé.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vierges. Notez qu&apos;un telle filtre correspond à  toutes les périphériques USB raccordées.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs mis à la valeur du périphérique raccordé à l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Adaptateur %1</translation>
+        <translation>Adaptateur %1</translation>
     </message>
 </context>
 <context>
@@ -4144,7 +4147,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>Lavaleur &apos;%1&apos; de la clef &apos;%2&apos; ne correpond pas à l&apos;expression régulière &apos;%3&apos;.</translation>
+        <translation>La valeur &apos;%1&apos; de la clef &apos;%2&apos; ne correpond pas à l&apos;expression régulière &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
