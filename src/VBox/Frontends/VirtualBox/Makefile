@@ -153,7 +153,8 @@ endif
 
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
-	src/darwin/DarwinCursor.cpp
+	src/darwin/DarwinCursor.cpp \
+	src/darwin/VBoxAquaStyle.cpp
 
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
@@ -255,6 +256,22 @@ VirtualBox.nls_INST = $(INST_BIN)nls/
 VirtualBox.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS)))
 VirtualBox.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS_QT)))
 VirtualBox.nls_MODE = 644
+
+
+#
+# Testcase for the darwin keyboard routines.
+#
+ifdef VBOX_WITH_TESTCASES
+PROGRAMS.darwin += tstDarwinKeyboard
+tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
+tstDarwinKeyboard_INCS = include
+tstDarwinKeyboard_SOURCES = \
+	src/darwin/tstDarwinKeyboard.cpp \
+	src/darwin/DarwinKeyboard.cpp
+tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon
+tstDarwinKeyboard_LIBS = \
+	$(LIB_RUNTIME)
+endif
 
 
 

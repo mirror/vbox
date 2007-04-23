@@ -303,6 +303,9 @@ void VBoxSnapshotsWgt::init()
     toolBar->setUsesBigPixmaps (true);
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
     VBoxSnapshotsWgtLayout->insertWidget (0, toolBar);
+#ifdef Q_WS_MAC
+    toolBar->setMacStyle();
+#endif 
 
     /* context menu */
     mContextMenu = new QPopupMenu (this);

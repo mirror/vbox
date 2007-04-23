@@ -484,6 +484,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmTools->addSeparator();
     vmStartAction->addTo (vmTools);
     vmDiscardAction->addTo (vmTools);
+#ifdef Q_WS_MAC
+    vmTools->setMacStyle();
+#endif 
 
     /* add actions to menubar */
 
