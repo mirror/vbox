@@ -2177,7 +2177,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie haben den Modus &lt;b&gt;Tastatur fangen&lt;/b&gt; eingeschaltet. Wird das VM-Fenster aktiviert, wird die Tastatur automatisch &lt;b&gt;gefangen&lt;/b&gt; und damit für andere Anwendungen temporär nicht mehr verfügbar: Alle Tasteneingaben (inclusive Alt-Tab) werden in die VM umgeleitet.&lt;/p&gt;&lt;/p&gt;Sie können die &lt;b&gt;Host-Taste&lt;/b&gt; jederzeit betätigen, um diesen Modus für Tastatus (und Maus, falls ebenfalls gefangen) zu beenden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Ende des VM-Fensters neben dem&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;Icongezeigt. Zusammen mit dem Icon für die Maus daneben zeigt es den aktuellen Status für Maus und Tastatur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -3096,51 +3096,51 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert den virtuellen Netzwerk-Adapter für die virtuelle Maschine.</translation>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt fest, wie dieser virtuelle Netzwerk-Adapter an das physische Netzwerk des Host-BS angeschlossen ist.</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus exakt 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt an, ob das virtuelle Netzwerkkabel an die virtuelle Maschine angeschlossen ist oder nicht.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Namen des Host-Interfaces für diesen Adapter.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle verfügbaren Host-Interfaces.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entfernt das ausgewählte Host-Interface.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Namen des TAP-Interfaces.</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt das Kommando, das für die Einrichtung des TAP-Interfaces ausgeführt wird.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt die Anwendung zum Einrichten des Interfaces aus.</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt das Kommando, das für die Beendigung des TAP-Interfaces ausgeführt wird.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt die Anwendung zum Beenden des Interfaces aus.</translation>
     </message>
 </context>
 <context>
@@ -3367,7 +3367,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Advanced</source>
-        <translation type="unfinished">Erweitert</translation>
+        <translation>&amp;Erweitert</translation>
     </message>
     <message>
         <source>&amp;Description</source>
@@ -3575,23 +3575,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließt die angegebene virtuelle Festplatte an den Master-Slot des primären IDE-Controllers an.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließt die angegebene virtuelle Festplatte an den Slave-Slot des primären IDE-Controllers an.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließt die angegebene virtuelle Festplatte an den Slave-Slot des sekundären IDE-Controllers an.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die virtuellen Festplatten, die an diesen IDE-Slot angeschlossen werden können und erlaubt die schnelle Auswahl von anderen Platten.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bindet das angegebene Medium an das CD/DVD-Laufwerk der virtuellen Maschine. Beachten Sie, dass das CD/DVD-Laufwerk immer an den zweiten Master-Slot des IDE-Controllers angeschlossen wird.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
@@ -3624,19 +3624,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Primäre Master-Festplatte nicht ausgewählt.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Primäre Slave-Festplatte nicht ausgewählt.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Primäre Slave-Festplatte ist bereits an einen anderen  Slot angeschlossen.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zweite Slave-Festplatte ist nicht ausgewählt.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
@@ -3701,61 +3701,61 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Setzt den Pfad für Sicherungspunkte zurück auf den voreingestellten Wert. Der momentane Pfad wird erst angezeigt, wenn dieser Dialog verlassen und erneut geöffnet wird.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Beschreibung für diese virtuelle Maschine. Das Beschreibungsfeld kann für Kommentare über die Konfiguration des installierten Gastsystems verwendet werden.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruft den Manager für virtuelle Medien auf um eine neue virtuelle Festplatte zu erzeugen oder um ein bereits vorhandenes Abbild auszuwählen.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Diskettenabbilder, die an die virtuelle Maschine gebunden werden können.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruft den Manager für virtuelle Medien auf, um ein Diskettenabbild für die Einbindung auszuwählen.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die CD/DVD-Geräte am Host, die für die Einbindung in die virtuelle Maschine verfügbar sind.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruft den Manager für virtuelle Medien auf, um ein CD/DVD-Abbild für die Einbindung auszuwählen.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Richtet den Treiber für Audioausgabe ein. Wird der &lt;b&gt;Null-Audiotreiber&lt;/b&gt; ausgewählt, sieht der Gast eine Audio-Karte, Ein- und Ausgabe werden aber ignoriert.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert den virtuellen USB-Kontroller für diese Maschine.</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle USB-Filter dieser Maschine. Die Checkbox auf der linken Seite legt fest, ob ein bestimmter Filter aktiviert ist oder nicht.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
+        <translation>Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
+        <translation>Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Adapter %1</translation>
+        <translation>Adapter %1</translation>
     </message>
 </context>
 <context>
