@@ -1389,7 +1389,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
     {
         /* convert keycode to set 1 scan code. */
         UInt32 keyCode = ~0U;
-        ::GetEventParameter (inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof(keyCode), NULL, &keyCode);
+        ::GetEventParameter (inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof (keyCode), NULL, &keyCode);
         unsigned scanCode = ::DarwinKeycodeToSet1Scancode (keyCode);
         if (scanCode)
         {
@@ -1414,8 +1414,8 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
             UInt32 keyCode = ~0;
             ::GetEventParameter (inEvent, kEventParamKeyCode, typeUInt32, NULL,
                                  sizeof (keyCode), NULL, &keyCode);
-            AssertCompileSize(wchar_t, 2);
-            AssertCompileSize(UniChar, 2);
+            AssertCompileSize (wchar_t, 2);
+            AssertCompileSize (UniChar, 2);
             wchar_t ucs[32];
             if (::GetEventParameter (inEvent, kEventParamKeyUnicodes, typeUnicodeText, NULL,
                                      sizeof (ucs), NULL, &ucs[0]) != 0)
@@ -2291,14 +2291,22 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
 #elif defined (Q_WS_MAC)
     if (capture)
     {
+# if 0
         ::DarwinReleaseKeyboard ();
         ::DarwinGrabKeyboard (true);
+# else
+        ::DarwinDisableGlobalHotKeys (true);
+# endif 
         grabKeyboard();
     }
     else
     {
+# if 0
         ::DarwinReleaseKeyboard ();
         ::DarwinGrabKeyboard (false);
+# else
+        ::DarwinDisableGlobalHotKeys (false);
+# endif 
         releaseKeyboard();
     }
 #else
