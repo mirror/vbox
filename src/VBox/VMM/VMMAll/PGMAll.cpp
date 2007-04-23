@@ -506,7 +506,7 @@ PGMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
     {
         Addr += PAGE_SIZE;
         if (cbSize > PAGE_SIZE)
-            cbSize =- PAGE_SIZE;
+            cbSize -= PAGE_SIZE;
         else
             cbSize = 0;
 
@@ -519,7 +519,7 @@ PGMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
 
             if (cbSize <= PAGE_SIZE)
                 break;
-            cbSize =- PAGE_SIZE;
+            cbSize -= PAGE_SIZE;
             Addr += PAGE_SIZE;
         }
     }
