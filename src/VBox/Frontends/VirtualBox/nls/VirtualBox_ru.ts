@@ -1264,7 +1264,7 @@
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Нулевой звуковой драйвер</translation>
+        <translation>Пустой аудиодрайвер</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
@@ -2005,11 +2005,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось инициализировать COM или найти COM-сервер программы VirtualBox. Скорее всего, сервер VirtualBox не был запущен или ему не удалось стартовать без ошибок.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось инициализировать подсистему COM или найти COM-сервер программы VirtualBox. Скорее всего, сервер VirtualBox не был запущен или ему не удалось стартовать без ошибок.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось создать COM-объект программы VirtualBox.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось создать COM-объект VirtualBox.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2021,7 +2021,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Не удалось установить глобальные настройки VirtualBox.</translation>
+        <translation>Не удалось задать глобальные настройки VirtualBox.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -3496,7 +3496,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Audio &amp;Driver</source>
-        <translation>&amp;Аудио-драйвер</translation>
+        <translation>&amp;Аудиодрайвер</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
@@ -3788,7 +3788,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Управляет драйвером основного ПК, используемым для вывода аудио. Пункт &lt;b&gt;Пустой аудиодрайвер&lt;/b&gt;
-позволяет гостевой ОС видеть аудиокарту, однако доступ к ней будет проигнорирован.&lt;/qt&gt;</translation>
+позволяет гостевой ОС обнаружить звуковую карту, однако любой доступ к ней будет проигнорирован.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
