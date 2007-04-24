@@ -58,7 +58,7 @@
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation> Définis l&apos;ordre des périphérique d&apos;amorçage. Utiliser la  case à cocher située a gauche pour activé ou désactivé une périphérique. Déplacer les  périphérique vers le haut ou le bas pour changer leurs ordre.</translation>
+        <translation> Définis l&apos;ordre des périphérique d&apos;amorçage. Utiliser la case à cocher située à gauche pour activé ou désactivé une périphérique. Déplacer les périphérique vers le haut ou le bas pour changer leurs ordre.</translation>
     </message>
 </context>
 <context>
@@ -69,7 +69,7 @@
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Erreur: librairies QT incompatible</translation>
+        <translation>Erreur: librairies QT incompatibles</translation>
     </message>
 </context>
 <context>
@@ -182,7 +182,7 @@
     </message>
     <message>
         <source>Click to invoke &lt;open folder&gt; dialog</source>
-        <translation type="obsolete">Cliquer pour appeller la boite de dialogue &lt;ouverture répertoire&gt;</translation>
+        <translation type="obsolete">Cliquer pour appeler la boite de dialogue &lt;Ouverture répertoire&gt;</translation>
     </message>
     <message>
         <source>Select a folder to share</source>
@@ -198,7 +198,7 @@
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation>Affiche le chemin d&apos;ub répertoite existant sur l&apos;ordinateur.</translation>
+        <translation>Affiche le chemin d&apos;ub répertoire existant sur l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
@@ -297,7 +297,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;USB Controller is disabled&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;nobr&gt;[&lt;b&gt;Controlleur USB désactivé&lt;/b&gt;]&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;[&lt;b&gt;Contrôleur USB désactivé&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>VirtualBox OSE</source>
@@ -323,15 +323,15 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Redimensionnement automatique de l&apos;écran du client</translation>
+        <translation>Ajustement automatique de la taille de l&apos;écran du client</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Redimensionnement automatique de l&apos;écran du &amp;client</translation>
+        <translation>Ajustement automatique de la taille de l&apos;écran du &amp;client</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Redimensionne automatiquement l&apos;écran du client si la taile de la fenêtre modifiée (exige les additions client)</translation>
+        <translation>Ajustement automatique de la taille de l&apos;écran du client si la taille de la fenêtre modifiée (exige les additions client)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -339,23 +339,23 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Ajuster la taille et la position afin de contenir  l&apos;écran su client de façon optimale  </translation>
+        <translation>Ajuster la taille et la position afin de contenir l&apos;écran du client de façon optimale</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>&amp;Insèrer Ctrl-Alt-SUPPR</translation>
+        <translation>&amp;Insérer Ctrl-Alt-SUPPR</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Envoie la séquende Ctrl-Alt-SUPPR à la machine virtuelle</translation>
+        <translation>Envoie la séquence Ctrl-Alt-SUPPR à la machine virtuelle</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>&amp;Insèrer Ctrl-Alt-Retour</translation>
+        <translation>&amp;Insérer Ctrl-Alt-Retour</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Envoie la séquende Ctrl-Alt-Retour à la machine virtuelle</translation>
+        <translation>Envoie la séquence Ctrl-Alt-Retour à la machine virtuelle</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -363,7 +363,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Redémarre  la machine virtuelle</translation>
+        <translation>Redémarre la machine virtuelle</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -399,11 +399,11 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>&amp;Déinstaller la disquette</translation>
+        <translation>&amp;Désinstaller la disquette</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Déinstaller la disquette actuellement installée</translation>
+        <translation>Désinstaller la disquette actuellement installée</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
@@ -415,11 +415,11 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>Déinstaller C&amp;D/DVD-ROM</translation>
+        <translation>Désinstaller C&amp;D/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Déinstaller le médium CD/DVD-ROM actuellement installé</translation>
+        <translation>Désinstaller le médium CD/DVD-ROM actuellement installé</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -444,7 +444,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>
-        <translation>Ouvrir la boite de dialogue poot opérer sur les répertoires partagés</translation>
+        <translation>Ouvrir la boite de dialogue pour opérer sur les répertoires partagés</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -476,7 +476,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation>Affiche une boite contenant des insformations sur ce produit</translation>
+        <translation>Affiche une boite contenant des informations sur ce produit</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
@@ -488,11 +488,11 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>Installer &amp;disquette</translation>
+        <translation>Installer une &amp;disquette</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>Installer &amp;CD/DVD-ROM</translation>
+        <translation>Installer un &amp;CD/DVD-ROM</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -508,7 +508,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>D&amp;ebugger</translation>
+        <translation>D&amp;éboguer</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -516,23 +516,23 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indique si la function d&apos;auto-ajustement de la taiile de l&apos;écran du client est en service (&lt;img src=auto_resize_on_16px.png/&gt;) où hors service (&lt;img src=auto_resize_off_16px.png/&gt;). Noter que cette fonction nécessite l&apos;installation des addition pour le système d&apos;exploitation client.</translation>
+        <translation>Indique si la fonction d&apos;auto-ajustement de la taille de l&apos;écran du client est en service (&lt;img src=auto_resize_on_16px.png/&gt;) où hors service (&lt;img src=auto_resize_off_16px.png/&gt;). Noter que cette fonction nécessite l&apos;installation des addition pour le système d&apos;exploitation client.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Inique si le curseur de la souriaest capturé pat le système d&apos;exploitation client:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des additions client sur le système d&apos;exploitation client. </translation>
+        <translation>Indique si le curseur de la souris est capturé pat le système d&apos;exploitation client:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des additions client sur le système d&apos;exploitation client. </translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
-        <translation>Indiqueque le clavier su système d&apos;exploitation client est capturé (&lt;img src=hostkey_captured_16px.png/&gt;) ou ne l&apos;est pas (&lt;img src=hostkey_16px.png/&gt;)</translation>
+        <translation>Indique que le clavier du système d&apos;exploitation client est capturé (&lt;img src=hostkey_captured_16px.png/&gt;) ou ne l&apos;est pas (&lt;img src=hostkey_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Indique la touche actuellement assignée au client.&lt;br&gt;Cette touche. pressée toute seule, commute l&apos;état de capture. Elle peu également être utilisée en combinaison avec d&apos;autres touches pour accéder rapidememt aux actions du menu principal.</translation>
+        <translation>Indique la touche actuellement assignée au client. &lt;br&gt;Cette touche. pressée toute seule, commute l&apos;état de capture. Elle peu également être utilisée en combinaison avec d&apos;autres touches pour accéder rapidement aux actions du menu principal.</translation>
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Permet l&apos;accès rapide aux répertoires partagés (clic avec le bouton droit de la souris).&lt;br&gt;Noter que l&apos;accès aux répertoires partagés nécéssite l&apos;installation des additions pour le système d&apos;explotation client. </translation>
+        <translation>Permet l&apos;accès rapide aux répertoires partagés (clic avec le bouton droit de la souris).&lt;br&gt;Noter que l&apos;accès aux répertoires partagés nécessite l&apos;installation des additions pour le système d&apos;exploitation client. </translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
@@ -550,7 +550,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;acrtivité&amp;nbsp;des lecteurs&amp;nbsp;CD/DSVD-ROM[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;des lecteurs&amp;nbsp;CD/DSVD-ROM[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
@@ -564,7 +564,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;virtual&amp;nbsp;hard&amp;nbsp;disks</source>
-        <translation>&lt;qt&gt;indicateu&amp;nbsp;d&apos;activité&amp;nbsp;sur&amp;nbsp;le&amp;nbsp;disque&amp;nbsp;dur;&amp;nbsp;virtuel</translation>
+        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;sur&amp;nbsp;le&amp;nbsp;disque&amp;nbsp;dur;&amp;nbsp;virtuel</translation>
     </message>
     <message>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
@@ -573,7 +573,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;acrtivité&amp;nbsp;sur l&apos;interface&amp;nbsp;d&apos;accés&amp;nbsp;au&amp;nbsp;réseau[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;sur l&apos;interface&amp;nbsp;d&apos;accés&amp;nbsp;au&amp;nbsp;réseau[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
@@ -589,7 +589,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Suspend l&apos;execution de la machine virtuelle</translation>
+        <translation>Suspend l&apos;exécution de la machine virtuelle</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -644,7 +644,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation>Taiile actuelle</translation>
+        <translation>Taille actuelle</translation>
     </message>
     <message>
         <source>Size</source>
@@ -676,7 +676,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Invoke dialog&apos;s help</source>
-        <translation>INvoque la boite d&apos;aide</translation>
+        <translation>Invoque la boite d&apos;aide</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -833,7 +833,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erreur lors du test d&apos;accés </translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erreur lors du test d&apos;accès </translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
@@ -858,7 +858,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erreur lors du test d&apos;accés </translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erreur lors du test d&apos;accès </translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
@@ -887,7 +887,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Chosir un fichier image  CD/DVD-ROM </translation>
+        <translation>Choisir un fichier image  CD/DVD-ROM </translation>
     </message>
     <message>
         <source>Floppy images (*.img)</source>
@@ -895,7 +895,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation>Choisir un fichier image de disqeutte</translation>
+        <translation>Choisir un fichier image de disquette</translation>
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
@@ -923,7 +923,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>
-        <translation>Traîtement des différences</translation>
+        <translation>Traitement des différences</translation>
     </message>
     <message>
         <source>Unknown device %04hX:%04hX</source>
@@ -938,7 +938,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;No. de serie %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;No. de série %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
@@ -953,7 +953,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Type OS</translation>
+        <translation>Système</translation>
     </message>
     <message>
         <source>Base Memory</source>
@@ -1048,7 +1048,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>Non installée</translation>
+        <translation>Non installé</translation>
     </message>
     <message>
         <source>Image</source>
@@ -1113,7 +1113,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>USB Controller</source>
         <comment>details report</comment>
-        <translation>Controlleur USB</translation>
+        <translation>Contrôleur USB</translation>
     </message>
     <message>
         <source>VRDP Server Port</source>
@@ -1441,15 +1441,15 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation>[id]</translation>
+        <translation></translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation>[lien]</translation>
+        <translation></translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation>[nom]</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -1461,11 +1461,11 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>0</source>
-        <translation>0</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#general</source>
-        <translation>#géneral</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Input </source>
@@ -1473,11 +1473,11 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>1</source>
-        <translation>1</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#input</source>
-        <translation>#entrée</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -1485,11 +1485,11 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>2</source>
-        <translation>2</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -1570,44 +1570,44 @@ La case a cocher située à gauche définit si un filtre paticulier est activé 
     </message>
     <message>
         <source>Ins</source>
-        <translation>INS</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Ajouter un filtre vide (INS)</translation>
+        <translation>Ajouter un filtre vide (Ins)</translation>
     </message>
     <message>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation type="obsolete">Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vides.
+        <translation type="obsolete">Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de caractères vides.
 Notre qu&apos;un telle filtre cadrent tous les périphériques USB raccordés.</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation>ALT+INS</translation>
+        <translation>Alt+INS</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation>Ajoute à partir de (ALT+INS)</translation>
+        <translation>Ajouter à partir de (ALT+INS)</translation>
     </message>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Ajoute un nouveau filtre USB
-Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;ordinateur.</translation>
+Tous les champs correspondent à la valeur du périphérique raccordé `a l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation>SUPP</translation>
+        <translation>Supp</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation>Supprimmer (SUPP)</translation>
+        <translation>Supprimer (Supp)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Supprimer le filtre USB sélectionné.</translation>
+        <translation>Supprime le filtre USB sélectionné.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
@@ -1615,7 +1615,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Déplace vers le haut /Ctrl+Haut)</translation>
+        <translation>Déplace vers le haut (Ctrl+Haut)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
@@ -1667,7 +1667,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation>Annulle les modifications et ferme la boite de dialogue.</translation>
+        <translation>Annule les modifications et ferme la boite de dialogue.</translation>
     </message>
     <message>
         <source>VirtualBox Global Settings</source>
@@ -1686,7 +1686,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
         <source>When checked, the keyboard is automatically
 captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">Si la case est cochée, le clavier estcapturé  automatiquement à chaque foix que la fenêtre VM est active.
+        <translation type="obsolete">Si la case est cochée, le clavier est capturé  automatiquement à chaque fois que la fenêtre VM est active.
 Toutes les frappes sur le clavier (ainsi que les combinaisons telles que Alt-Tab) sont dirigés vers la VM.</translation>
     </message>
     <message>
@@ -1699,11 +1699,11 @@ Toutes les frappes sur le clavier (ainsi que les combinaisons telles que Alt-Tab
     </message>
     <message>
         <source>3</source>
-        <translation>3</translation>
+        <translation></translation>
     </message>
     <message>
         <source>#language</source>
-        <translation>#langue</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -1740,12 +1740,12 @@ to the system default language.&lt;/qt&gt;
                                     </source>
         <translation>&lt;qt&gt;Liste de toutes les langues disponibles pour l&apos;interface graphique utilisateur.
 La langue actuelle est imprimée en &lt;b&gt;gras&lt;/b&gt;.
-Choisir &lt;i&gt;par defaut&lt;/i&gt; pour réactiver la langue par défaut du système.&lt;/qt&gt;</translation>
+Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du système.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation>Par defaut</translation>
+        <translation>Par défaut</translation>
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
@@ -1757,11 +1757,11 @@ Choisir &lt;i&gt;par defaut&lt;/i&gt; pour réactiver la langue par défaut du s
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Remet le chemin par défaut du répertoire VDI à la valeur initiale. Le chemin par defaut sera affiché après la validation des modifications et la réouverture de cette boite de dialogue.</translation>
+        <translation>Remet le chemin par défaut du répertoire VDI à la valeur initiale. Le chemin par défaut sera affiché après la validation des modifications et la réouverture de cette boite de dialogue.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Affiche le chemin par defaut du répertoire des machines virtuelles. Ce répertire est utilisé, lors de la création d&apos;une nouvelle machine virtuelle, a moins qu&apos;il soit spécifié de façon explicite.</translation>
+        <translation>Affiche le chemin par défaut du répertoire des machines virtuelles. Ce répertoire est utilisé, lors de la création d&apos;une nouvelle machine virtuelle, à moins qu&apos;il soit spécifié de façon explicite.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
@@ -1777,11 +1777,11 @@ Choisir &lt;i&gt;par defaut&lt;/i&gt; pour réactiver la langue par défaut du s
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>Liste globale de tous les filtres USB. La case a cocher située à gauche définit si un filtre paticulier est activé ou désactivé.</translation>
+        <translation>Liste globale de tous les filtres USB. La case à cocher située à gauche définit si un filtre particulier est activé ou désactivé.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vides. Notez quavec &apos;un telle filtre tous les périphériques USB raccordés sont reconnus.</translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaînes de caractères vides. Notez quavec un telle filtre tous les périphériques USB raccordées sont reconnues.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
@@ -1811,7 +1811,7 @@ Choisir &lt;i&gt;par defaut&lt;/i&gt; pour réactiver la langue par défaut du s
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Cet assistant vous permet de créer une nouvelle image  de disque dur pour votre machine virtuelle.&lt;/p&gt;
 &lt;p&gt;Utilisez le boution &lt;b&gt;Suivant&lt;/b&gt; pour accédé à la page suivante de l&apos;assistant
-et le bouuton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
+et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
@@ -1826,7 +1826,7 @@ the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisissez le type d&apos;image de disque dur que vous désiré créer.&lt;/p&gt;
 &lt;p&gt;Une &lt;b&gt;image à taille dynamique&lt;/b&gt; est de taille initiale réduite et est agrandie en fonction des besoins (jusqu&apos;à la taille spécifiée) en fonction des besoins du système d&apos;exploitation client.&lt;/p&gt;
-&lt;p&gt;Une &lt;b&gt;image à taiile fixe&lt;/b&gt; est de taille constante et est gérée dans un fichier dont la taille correspond approximativement à la taille du disque dur virtuel.&lt;/p&gt;</translation>
+&lt;p&gt;Une &lt;b&gt;image à taille fixe&lt;/b&gt; est de taille constante et est gérée dans un fichier dont la taille correspond approximativement à la taille du disque dur virtuel.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image Type</source>
@@ -1842,7 +1842,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation>Image à taiile &amp;Fixe</translation>
+        <translation>Image à taille &amp;Fixe</translation>
     </message>
     <message>
         <source>Alt+F</source>
@@ -1881,13 +1881,13 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation>Vous êtent en train der créer und disque dur avec les paramètres suivants:</translation>
+        <translation>Vous êtes en train der créer un disque dur avec les paramètres suivants:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation>Si les paramètres ci dessus sont correct, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;.
+        <translation>Si les paramètres ci dessus sont corrects, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;.
 Le nouveau disque dur sera créer.</translation>
     </message>
     <message>
@@ -1908,7 +1908,7 @@ Le nouveau disque dur sera créer.</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Choisissez un fichier pour la novelle image de disque dur </translation>
+        <translation>Choisissez un fichier pour la nouvelle image de disque dur</translation>
     </message>
 </context>
 <context>
@@ -1922,7 +1922,7 @@ Le nouveau disque dur sera créer.</translation>
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Cet assistant vous guideras pas à pas a travers les étappes nécessaires à la création d&apos;une nouvelle machine virtuelle pour VirtualBox.&lt;/p&gt;
+        <translation>&lt;p&gt;Cet assistant vous guideras pas à pas a travers les étapes nécessaires à la création d&apos;une nouvelle machine virtuelle pour VirtualBox.&lt;/p&gt;
 &lt;p&gt;Utilisez le bouton &lt;b&gt;Suivant&lt;/b&gt; aller à la page suivante et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précédente.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -1934,7 +1934,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
 system you plan to install in the machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Entrez un nom pour la nouvelle machine virtuelle er chosissez le type du système d&apos;exploitation que vous désiré installer sur cette machine&lt;/p&gt;
+        <translation>&lt;p&gt;Entrez un nom pour la nouvelle machine virtuelle et choisissez le type du système d&apos;exploitation que vous désiré installer sur cette machine&lt;/p&gt;
 &lt;p&gt;Le nom de la machine virtuelle inddique normalement la configuration matériel et logiciel.
 Il est utilisé par tous les produits de VirtualBox pour l&apos;identification de la machine virtuelle.&lt;/p&gt;</translation>
     </message>
@@ -1944,7 +1944,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>&amp;Type OS</translation>
+        <translation>Sya&amp;tème</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -1952,7 +1952,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez la taille, en méga octets, de la mèmoire vive (RAM) réservée à la machine virtuelle.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez la taille, en méga octets, de la mémoire vive (RAM) réservée à la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
@@ -1987,8 +1987,8 @@ button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisi l&apos;image de disque dur utilisé comme disque dur d&apos;ammorçage de la machine virtuelle.
-Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou chosir une image de disque dur existante sur le menu déroulant, ou encore activer le bouton &lt;b&gt;Existant&lt;/b&gt; afin de lancer l&apos;assistant de création de disque dur.&lt;/p&gt;
-&lt;p&gt;Si vôtre configuarzon est plus compliquée, vous pouvez sauter ce aps et attaché le disque dur plus tard, en utilisant la boite de dialogue Préférences VM .&lt;/p&gt;
+Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou choisir une image de disque dur existante sur le menu déroulant, ou encore activer le bouton &lt;b&gt;Existant&lt;/b&gt; afin de lancer l&apos;assistant de création de disque dur.&lt;/p&gt;
+&lt;p&gt;Si vôtre configuration est plus compliquée, vous pouvez sauter ce pas et attaché le disque dur plus tard, en utilisant la boite de dialogue Préférences VM .&lt;/p&gt;
 </translation>
     </message>
     <message>
@@ -2030,7 +2030,7 @@ Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b
                             </source>
         <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Terminer&lt;/b&gt; si la configuration si dessus est correcte.&lt;/p&gt;
 &lt;p&gt;Notez que vous pouvez modifier ces paramètres et ainsi que d&apos;autres en tout temps. Utilisez pour ce faire la
-boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la boite de dialogue principale.&lt;/p&gt;Etre</translation>
+boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la boite de dialogue principale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -2042,11 +2042,11 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Type du systéme d&apos;exploitation:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mémoire vive de base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Type du système d&apos;exploitation:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mémoire vive de base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;Disque dur s&apos;ammorçage:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Disque dur s&apos;amorçage:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
@@ -2054,7 +2054,7 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>La taille recommandée pour le disque dur d&apos;ammorçage est &lt;b&gt;%1&lt;/b&gt; MO.</translation>
+        <translation>La taille recommandée pour le disque dur d&apos;amorçage est &lt;b&gt;%1&lt;/b&gt; MO.</translation>
     </message>
 </context>
 <context>
@@ -2116,7 +2116,7 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
-        <translation>Erreur d&apos;accès au soussystème USB.</translation>
+        <translation>Erreur d&apos;accès au sous système USB.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
@@ -2152,7 +2152,7 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Echec de la sauvegarde de l&apos;etat de la machine virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Echec de la sauvegarde de l&apos;état de la machine virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2201,11 +2201,11 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Libérerer cette image détachera celle-ci des machines virtuelle suivantes:: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuer ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Libérer cette image détachera celle-ci des machines virtuelle suivantes:: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuer ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Le fichier image  &lt;b&gt;%1&lt;/b&gt; existe. Vous ne pouvez pas créer un nouveau disque virtuel utilsant de fichier car il est déjà utilisé pour un autre disque dur virtuel.&lt;/p&gt;&lt;p&gt;Chosissez un autre nom pour le fichier.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Le fichier image  &lt;b&gt;%1&lt;/b&gt; existe. Vous ne pouvez pas créer un nouveau disque virtuel utilisant de fichier car il est déjà utilisé pour un autre disque dur virtuel.&lt;/p&gt;&lt;p&gt;Choisissez un autre nom pour le fichier.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
@@ -2228,11 +2228,11 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation>Echec d&apos;affectattion de l&apos;image de disque dur avec UUID %1, slot %2 du contrôleur %3 de la machine &lt;b&gt;%4&lt;/b&gt;.</translation>
+        <translation>Echec d&apos;affectation de l&apos;image de disque dur avec UUID %1, emplacement %2 du contrôleur %3 de la machine &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Echec: Image de disque dur, slot %2 du contrôleur %3 de la machine &lt;b&gt;%4&lt;/b&gt; non détaché.</translation>
+        <translation>Echec: Image de disque dur, emplacement %2 du contrôleur %3 de la machine &lt;b&gt;%4&lt;/b&gt; non détaché.</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -2252,7 +2252,7 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Echec de désenregisterment: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Echec de désenregistrement: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -2268,7 +2268,7 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
     </message>
     <message>
         <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation>Echec de test d&apos;accessabilité pour le media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Certains des médias enregistrés peuvent devenir inaccessibles.</translation>
+        <translation>Echec de test d&apos;accessabilité pour le média &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Certains des médias enregistrés peuvent devenir inaccessibles.</translation>
     </message>
     <message>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2332,7 +2332,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox ne peut pas être lancer en mode &lt;i&gt;Sélecteur de VM&lt;/i&gt; 
-&lt;p&gt;L&apos;application terminera maintenat&lt;/p&gt;</translation>
+&lt;p&gt;L&apos;application terminera maintenant&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
@@ -2369,7 +2369,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation>Le lancement de la machine virtuelle peu entrainer l&apos;erreur décrite plus bas. Vous pouvez ignorer ce message, mais ils es recommandé d&apos;effectuer les actions appropriées pour que ce défaut n&apos;apparaisse pas.&lt;/p&gt;</translation>
+        <translation>Le lancement de la machine virtuelle peu entraîner l&apos;erreur décrite plus bas. Vous pouvez ignorer ce message, mais ils es recommandé d&apos;effectuer les actions appropriées pour que ce défaut n&apos;apparaisse pas.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
@@ -2399,12 +2399,12 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Aucun fichier pour la langue &lt;b&gt;%1&lt;/b&gt; a été trouvé dans le répertoire &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;
-&lt;p&gt;La langue utilisée est la langue par defaut du système. Vous pouvez chosir une autre langue sur la boite de dialogue des &lt;b&gt;Préférences globales&lt;/b&gt;.&lt;/p&gt;</translation>
+&lt;p&gt;La langue utilisée est la langue par défaut du système. Vous pouvez choisir une autre langue sur la boite de dialogue des &lt;b&gt;Préférences globales&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Le fichier langue  &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; n&apos;a pas été chargé.&lt;/p&gt;
-&lt;p&gt;La langue est remise de façon temporaire à l&apos;anglais (incorporé). Choisissez une langue existante par l&apos;intermédiare de la boite de dialogue des &lt;b&gt;Préférences globales&lt;/b&gt; accessible par le menu de laboite de dialogue principale de VirtualBox.&lt;/P&gt;</translation>
+&lt;p&gt;La langue est remise de façon temporaire à l&apos;anglais (incorporé). Choisissez une langue existante par l&apos;intermédiaire de la boite de dialogue des &lt;b&gt;Préférences globales&lt;/b&gt; accessible par le menu de la boite de dialogue principale de VirtualBox.&lt;/P&gt;</translation>
     </message>
 </context>
 <context>
@@ -2706,7 +2706,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Remove the selected shared folder</source>
-        <translation>Supprimele répertoire partagé sélectionné</translation>
+        <translation>Supprime le répertoire partagé sélectionné</translation>
     </message>
     <message>
         <source> Machine Folders</source>
@@ -2722,7 +2722,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation>Modifie la définiion du répertoire partagés sélectionné.</translation>
+        <translation>Modifie la définition du répertoire partagés sélectionné.</translation>
     </message>
 </context>
 <context>
@@ -2745,7 +2745,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>&amp;Machine Details</source>
-        <translation> Details &amp;machine</translation>
+        <translation>Détails &amp;machine</translation>
     </message>
     <message>
         <source>Help</source>
@@ -2773,7 +2773,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Details of %1 (%2)</source>
-        <translation>Details de %1 (%2)</translation>
+        <translation>Détails de %1 (%2)</translation>
     </message>
 </context>
 <context>
@@ -2870,7 +2870,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>L&apos;état actuel est identique à  l&apos;ètat mémorisé dans l&apos;instantané actuel</translation>
+        <translation>L&apos;état actuel est identique à  l&apos;état mémorisé dans l&apos;instantané actuel</translation>
     </message>
     <message>
         <source> (current, </source>
@@ -2992,19 +2992,19 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <source>Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="obsolete">Définit le fabricant comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge concorde avec tous les fabricants.</translation>
+        <translation type="obsolete">Définit le fabricant comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de caractère vierge concorde avec tous les fabricants.</translation>
     </message>
     <message>
         <source>Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="obsolete">Définit le nom du produit comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge concorde avec tous les produits.</translation>
+        <translation type="obsolete">Définit le nom du produit comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de caractère vierge concorde avec tous les produits.</translation>
     </message>
     <message>
         <source>Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="obsolete">Définit le numéro de série comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge concorde avec toutes les valeurs.</translation>
+        <translation type="obsolete">Définit le numéro de série comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de caractère vierge concorde avec toutes les valeurs.</translation>
     </message>
     <message>
         <source>Defines whether this filter applies
@@ -3050,16 +3050,16 @@ le donner à &apos;ordinateur principal (&lt;i&gt;Ignorer&lt;/i&gt;) ou le rése
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.</source>
-        <translation type="obsolete">Définit le filtre &lt;i&gt;ID frabricant&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
-&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.</translation>
+        <translation type="obsolete">Définit le filtre &lt;i&gt;ID frabricant&lt;/i&gt;. Le format de la chaîne de caractères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <source>Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.</source>
-        <translation type="obsolete">Définit le filtre &lt;i&gt;ID produit&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
-&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.</translation>
+        <translation type="obsolete">Définit le filtre &lt;i&gt;ID produit&lt;/i&gt;. Le format de la chaîne de caractères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <source>Defines the revision number filter. The
@@ -3067,15 +3067,14 @@ value.</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.</source>
-        <translation type="obsolete">Définit le filtre &lt;i&gt;ID révision&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
-&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.</translation>
+        <translation type="obsolete">Définit le filtre &lt;i&gt;ID révision&lt;/i&gt;. Le format de la chaîne de caractères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <source>Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.</source>
-        <translation type="obsolete">Legt den USB-Port für den Filter fest mit &lt;i&gt;genauer&lt;/i&gt; Übereinstimmung fest. Eine leere Zeichenfolge passt auf beliebig Ports.
-Définit si le filtre du port-USB comme filtre &lt;i&gt;Exact&lt;/i&gt;. Une chaine de charactère vierge correspond à tous les ports-USB.</translation>
+        <translation type="obsolete">Définit si le filtre du port-USB comme filtre &lt;i&gt;Exact&lt;/i&gt;. Une chaîne de caractère vierge correspond à tous les ports-USB.</translation>
     </message>
     <message>
         <source>Any</source>
@@ -3096,26 +3095,26 @@ Définit si le filtre du port-USB comme filtre &lt;i&gt;Exact&lt;/i&gt;. Une cha
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit le fabricant comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge correspond à tous les fabricants.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit le fabricant comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de caractère vierge correspond à tous les fabricants.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit le nom du produit comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge correspond à tous les produits.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit le nom du produit comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de caractère vierge correspond à tous les produits.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit le numéro de série comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de charactère vierge correspond à toutes les valeurs.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit le numéro de série comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne de caractère vierge correspond à toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit si le fitre est appliqué sur les périphériques attachés à l&apos;ordinateur (&lt;i&gt;Non&lt;/i&gt;), à un client a distance VRDP (&lt;i&gt;Oui&lt;/i&gt;), ou auy deux (&lt;i&gt;Tous&lt;/i&gt;).&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit si le filtre est appliqué sur les périphériques attachés à l&apos;ordinateur (&lt;i&gt;Non&lt;/i&gt;), à un client à distance VRDP (&lt;i&gt;Oui&lt;/i&gt;), ou aux deux (&lt;i&gt;Tous&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines an action performed by the host
@@ -3130,16 +3129,16 @@ le réserver à l&apos;ordinateur principal (&lt;i&gt;Ignorer&lt;/i&gt;) ou le r
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID frabricant&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
-&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID fabricant&lt;/i&gt;. Le format de la chaîne de caractères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID produit&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
-&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID produit&lt;/i&gt;. Le format de la chaîne de caractères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the revision number filter. The
@@ -3147,14 +3146,14 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID révision&lt;/i&gt;. Le format de la chaîne de charactères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
-&lt;tt&gt;X&lt;/tt&gt; est un charactère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit le filtre &lt;i&gt;ID révision&lt;/i&gt;. Le format de la chaîne de caractères pour une &lt;i&gt;concordante exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;.
+&lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide  signifie une concordance pour toutes les valeurs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit si le filtre du port-USB comme filtre &lt;i&gt;Exact&lt;/i&gt;. Une chaine de charactère vierge correspond à tous les ports-USB.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Définit si le filtre du port-USB comme filtre &lt;i&gt;Exact&lt;/i&gt;. Une chaine de caractère vierge correspond à tous les ports-USB.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -3193,7 +3192,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>La machine virtuelle est &lt;i&gt;inaccessible&lt;/i&gt;. Veuillez inspecter le message d&apos;erreur ci dessous et actionnez la touche &lt;b&gt;Actualiser&lt;/b&gt; si vous désirez reprendre le test d&apos;accés:</translation>
+        <translation>La machine virtuelle est &lt;i&gt;inaccessible&lt;/i&gt;. Veuillez inspecter le message d&apos;erreur ci dessous et actionnez la touche &lt;b&gt;Actualiser&lt;/b&gt; si vous désirez reprendre le test d&apos;accès:</translation>
     </message>
 </context>
 <context>
@@ -3247,7 +3246,7 @@ value.&lt;/qt&gt;</source>
                                         this adapter. It contains exactly 12
                                         characters chosen from
                                         {0-9,A-F}.</source>
-        <translation type="obsolete">Affiche l&apos;adresse MAC de cet adaptateur. L&apos;adresse est représentée par 12 charactères (0-9,A-F).</translation>
+        <translation type="obsolete">Affiche l&apos;adresse MAC de cet adaptateur. L&apos;adresse est représentée par 12 caractères (0-9,A-F).</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
@@ -3263,7 +3262,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
-        <translation>&amp;Cable relié</translation>
+        <translation>&amp;Câble relié</translation>
     </message>
     <message>
         <source>Alt+B</source>
@@ -3272,7 +3271,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Indicates whether the virtual network cable is plugged
                         in on machine startup or not.</source>
-        <translation type="obsolete">Indique si le cable de l&apos;adaptaterur virtuel de réseau relié lors du lancement de la machine virtuelle.</translation>
+        <translation type="obsolete">Indique si le cable de l&apos;adaptateur virtuel de réseau relié lors du lancement de la machine virtuelle.</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
@@ -3287,7 +3286,7 @@ value.&lt;/qt&gt;</source>
                                                         name of the host
                                                         interface selected for
                                                         this adapter.</source>
-        <translation type="obsolete">Afiche le nom de l&apos;interface chosie por cet adaptateur.</translation>
+        <translation type="obsolete">Afiche le nom de l&apos;interface choisie pour cet adaptateur.</translation>
     </message>
     <message>
         <source>Lists all available
@@ -3307,11 +3306,11 @@ value.&lt;/qt&gt;</source>
         <source>Displays the
                                                         TAP interface
                                                         name.</source>
-        <translation type="obsolete">Affiche le non de &apos;linterface TAP.</translation>
+        <translation type="obsolete">Affiche le non de l&apos;interface TAP.</translation>
     </message>
     <message>
         <source>&amp;File Descriptor</source>
-        <translation>Derscripteur de &amp;Fichier</translation>
+        <translation>Descripteur de &amp;Fichier</translation>
     </message>
     <message>
         <source>&amp;Setup Application</source>
@@ -3384,11 +3383,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Contrôle le mode de fonctionnement de l&apos;adaptateur virtuel dans le réseau de l&apos;ordinaterur principal. </translation>
+        <translation>Contrôle le mode de fonctionnement de l&apos;adaptateur virtuel dans le réseau de l&apos;ordinateur principal. </translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation>Affiche l&apos;adresse MAC de cet adaptateur. L&apos;adresse est représentée par 12 charactères (0-9,A-F).</translation>
+        <translation>Affiche l&apos;adresse MAC de cet adaptateur. L&apos;adresse est représentée par 12 caractères (0-9,A-F).</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
@@ -3396,7 +3395,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation>Afiche le nom de l&apos;interface chosie por cet adaptateur.</translation>
+        <translation>Affiche le nom de l&apos;interface choisie pour cet adaptateur.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
@@ -3408,11 +3407,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation>Affiche le nom de &apos;linterface TAP.</translation>
+        <translation>Affiche le nom de l&apos;&apos;interface TAP.</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation>ffiche la commande lancée pour l&apos;installation de l&apos;interface TAP.</translation>
+        <translation>Affiche la commande lancée pour l&apos;installation de l&apos;interface TAP.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
@@ -3575,7 +3574,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>&amp;Type OS</translation>
+        <translation>Sys&amp;tème</translation>
     </message>
     <message>
         <source>Displays the operating system type that you
@@ -3588,7 +3587,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Coontrole la quantité de mémoire fournie à la machine virtuelle. Si vous en assignez trop, la machine pourrait ne pas démarrer. </translation>
+        <translation>Contrôle la quantité de mémoire fournie à la machine virtuelle. Si vous en assignez trop, la machine pourrait ne pas démarrer.</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -3612,7 +3611,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Controle la quantité de mémoire video fournie à la machine virtuelle. </translation>
+        <translation>Contrôle la quantité de mémoire vidéo fournie à la machine virtuelle. </translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -3656,7 +3655,7 @@ The actual default path will be displayed after accepting the changes and openin
         <source>When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installattation d&apos;un système d&apos;exploitation Windows !</translation>
+        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows !</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -3728,12 +3727,12 @@ pour la créer ou pour attacher un disque dur virtuel.</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Installe le lecterur de disquette d l&apos;hôte sur la disquette vituelle du client.</translation>
+        <translation>Installe le lecteur de disquette d l&apos;hôte sur la disquette vituelle du client.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to
 the virtual machine.</source>
-        <translation type="obsolete">Listes les lecteurs de disquette disponibles pouvant être installé sur la machine virtuelle. </translation>
+        <translation type="obsolete">Listes les lecteurs de disquette disponibles pouvant être installé sur la machine virtuelle.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -3775,7 +3774,7 @@ the virtual machine.</source>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Attachee l&apos;image CD/DVD sur le lecteur virtuel DC/DVD.</translation>
+        <translation>Attache l&apos;image CD/DVD sur le lecteur virtuel DC/DVD.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select
@@ -3819,17 +3818,17 @@ The checkbox to the left defines whether the particular filter is enabled or not
     </message>
     <message>
         <source>Ins</source>
-        <translation>INS</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Ajouter un filtre vide (INS)</translation>
+        <translation>Ajouter un filtre vide (Ins)</translation>
     </message>
     <message>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
-        <translation type="obsolete">Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vides.
+        <translation type="obsolete">Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaînes de caractères vides.
 Notre qu&apos;un telle filtre cadrent tous les périphériques USB raccordés.</translation>
     </message>
     <message>
@@ -3838,21 +3837,21 @@ Notre qu&apos;un telle filtre cadrent tous les périphériques USB raccordés.</
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation>Ajoute à partir de (ALT+INS)</translation>
+        <translation>Ajouter à partir de (Alt+Ins)</translation>
     </message>
     <message>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Ajoute un nouveau filtre USB
-Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;ordinateur.</translation>
+Tous les champs correspondent à la valeur du périphérique raccordé `a l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation>SUPP</translation>
+        <translation>Supp</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation>Supprimmer (SUPP)</translation>
+        <translation>Supprimer (Supp)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
@@ -3864,7 +3863,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Déplace vers le haut /Ctrl+Haut)</translation>
+        <translation>Déplacer vers le haut (Ctrl+Haut)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
@@ -3876,7 +3875,7 @@ Tous les champs correspondent à lavaleur du périphérique raccordé `a l&apos;
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Déplace vers le bas (Ctlr+Bas)</translation>
+        <translation>Déplacer vers le bas (Ctlr+Bas)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
@@ -3905,11 +3904,11 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation>Défini la méthode d&apos;authentication de VRDP.</translation>
+        <translation>Défini la méthode d&apos;authentification de VRDP.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Definie le timeout (en mliisecondes) pour l&apos;authentifiacation du client.</translation>
+        <translation>Definie le timeout (en millisecondes) pour l&apos;authentification du client.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3949,19 +3948,19 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation>Indique si le disque dur spécifié est attaché sur l&apos;enplacement  maitre primaire du contôleur IDE. </translation>
+        <translation>Indique si le disque dur spécifié est attaché sur l&apos;emplacement  maître primaire du contrôleur IDE. </translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation>Si la case est cochée, lr disque dur virtuel sera attaché sur l&apos;enplacement esclave du contôleur IDE primaire.</translation>
+        <translation>Si la case est cochée, le disque dur virtuel sera attaché sur l&apos;emplacement esclave du contrôleur IDE primaire.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation>Si la case est cochée, lr disque dur virtuel sera attaché sur l&apos;enplacement esclave du contôleur IDE secondaire.</translation>
+        <translation>Si la case est cochée, le disque dur virtuel sera attaché sur l&apos;emplacement esclave du conrtôleur IDE secondaire.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation>Affiche le disque dur virtuel attaché au controlleur IDE er permet un choix rapide de dofférents disques.</translation>
+        <translation>Affiche le disque dur virtuel attaché au contrôleur IDE et permet un choix rapide de différents disques.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
@@ -3981,11 +3980,11 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>Si la case est cochée, la crate PCI audio virtuelle insérée dans la machine virtuelle sera utilisée pour la communication avec la carte audio de l&apos;ordinateur.</translation>
+        <translation>Si la case est cochée, la carte PCI audio virtuelle insérée dans la machine virtuelle sera utilisée pour la communication avec la carte audio de l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Si la case est cochée, la machine virtuelle agira comme un serveur de proocole de bureau à distance (RDP), ce qui permet aux clients distants de se raccorder à la machine virtuelle (si elle est en fonction) en utilisant un client RDP standard.</translation>
+        <translation>Si la case est cochée, la machine virtuelle agira comme un serveur de protocole de bureau à distance (RDP), ce qui permet aux clients distants de se raccorder à la machine virtuelle (si elle est en fonction) en utilisant un client RDP standard.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -4014,7 +4013,7 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation>Le disque dur esclave secondaireest attaché sur un autre emplacement.</translation>
+        <translation>Le disque dur esclave secondaire est attaché sur un autre emplacement.</translation>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
@@ -4068,7 +4067,7 @@ that this feature requires Guest Additions to be installed in the guest OS.
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installattation d&apos;un système d&apos;exploitation Windows !&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows !&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
@@ -4127,11 +4126,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de charactères vierges. Notez qu&apos;un telle filtre correspond à  toutes les périphériques USB raccordées.</translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisé avec des chaines de caractères vierges. Notez qu&apos;un telle filtre correspond à  toutes les périphériques USB raccordées.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Ajoute un nouveau filtre USB avec tous les champs mis à la valeur du périphérique raccordé à l&apos;ordinateur.</translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs mis à la valeur de la périphérique raccordée à l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -4143,11 +4142,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <name>VMGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; est un code de touche invalide .</translation>
+        <translation>&apos;%1 (0x%2)&apos; est une clef invalide .</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>La valeur &apos;%1&apos; de la clef &apos;%2&apos; ne correpond pas à l&apos;expression régulière &apos;%3&apos;.</translation>
+        <translation>La valeur &apos;%1&apos; de la clef &apos;%2&apos; ne correspond pas à l&apos;expression régulière &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>

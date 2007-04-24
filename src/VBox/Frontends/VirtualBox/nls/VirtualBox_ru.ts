@@ -479,7 +479,7 @@
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Справка</translation>
+        <translation>Справк&amp;а</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
@@ -885,7 +885,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Серийный No. %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Серийный № %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
@@ -2097,7 +2097,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите безвозвратно удалить виртуальную машину &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Эту операцию отменить нельзя.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите полностью удалить виртуальную машину &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Эту операцию отменить нельзя.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
@@ -2117,7 +2117,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы хотите удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Нет&lt;/b&gt;, то виртуальный жесткий диск будет удален из системы (дерегистрирован) и исчезнет из списка, но файл образа останется на вашем физическом диске.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Да&lt;/b&gt;, то файл образа будет безвозвратно удален после дерегистрации жесткого диска. Эту операцию отменить нельзя.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы хотите удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Нет&lt;/b&gt;, то виртуальный жесткий диск будет удален из системы (дерегистрирован) и исчезнет из списка, но файл образа останется на вашем физическом диске.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Да&lt;/b&gt;, то файл образа будет полностью удален после дерегистрации жесткого диска. Эту операцию отменить нельзя.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2481,7 +2481,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Справка</translation>
+        <translation>Справк&amp;а</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -2599,7 +2599,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation type="unfinished"> Временные папки</translation>
+        <translation> Временные папки</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -2618,159 +2618,159 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source> Snapshot Details </source>
-        <translation type="unfinished"></translation>
+        <translation> Сведения о снимке </translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation type="unfinished"></translation>
+        <translation>О&amp;писание</translation>
     </message>
     <message>
         <source>&amp;Machine Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Сведения о &amp;машине</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Справка</translation>
+        <translation>Справка</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;ОК</translation>
+        <translation>&amp;ОК</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+О</translation>
+        <translation>Alt+О</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">О&amp;тменить</translation>
+        <translation>О&amp;тменить</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished">Alt+т</translation>
+        <translation>Alt+т</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Сведения о %1 (%2)</translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotsWgt</name>
     <message>
         <source>[snapshot]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Discard Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменить снимок</translation>
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>От&amp;менить снимок</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>curStateActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Take Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Сделать снимок</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Сделать снимок</translation>
     </message>
     <message>
         <source>Ctrl+Alt+S</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Discard Current State</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменить текущее состояние</translation>
     </message>
     <message>
         <source>D&amp;iscard Current State</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Отменить текущее состояние</translation>
     </message>
     <message>
         <source>Ctrl+Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Discard Current Snapshot and State</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменить текущий снимок и состояние</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished"></translation>
+        <translation>О&amp;тменить текущий снимок и состояние</translation>
     </message>
     <message>
         <source>Ctrl+Alt+Shift+D</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Show Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать детали</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показать детали</translation>
     </message>
     <message>
         <source>Space</source>
-        <translation type="unfinished"></translation>
+        <translation>Space</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Текущее состояние (изменено)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Текущее состояние</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущее состояние отличается от состояния, сохраненного в текущем снимке</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущее состояние идентично состоянию, сохраненному в текущем снимке</translation>
     </message>
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation type="unfinished"></translation>
+        <translation> (текущий, </translation>
     </message>
     <message>
         <source>online)</source>
         <comment>Snapshot details</comment>
-        <translation type="unfinished"></translation>
+        <translation>с работаюшей машины)</translation>
     </message>
     <message>
         <source>offline)</source>
         <comment>Snapshot details</comment>
-        <translation type="unfinished"></translation>
+        <translation>с выключенной машины)</translation>
     </message>
     <message>
         <source>Taken at %1</source>
@@ -2796,15 +2796,15 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
-        <translation type="unfinished"></translation>
+        <translation>Отключить</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить</translation>
     </message>
     <message>
         <source>%1 %2</source>
-        <translation type="unfinished">%1 %2</translation>
+        <translation>%1 %2</translation>
     </message>
 </context>
 <context>
@@ -2851,112 +2851,130 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя</translation>
     </message>
     <message>
         <source>Displays the filter name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает название фильтра.</translation>
     </message>
     <message>
         <source>&amp;Manufacturer</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;роизводитель</translation>
     </message>
     <message>
         <source>Pro&amp;duct</source>
-        <translation type="unfinished"></translation>
+        <translation>Прод&amp;укт</translation>
     </message>
     <message>
         <source>&amp;Serial No.</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Серийный №</translation>
     </message>
     <message>
         <source>R&amp;emote</source>
-        <translation type="unfinished"></translation>
+        <translation>Уд&amp;аленное</translation>
     </message>
     <message>
         <source>&amp;Action</source>
-        <translation type="unfinished"></translation>
+        <translation>Де&amp;йствие</translation>
     </message>
     <message>
         <source>&amp;Vendor ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID &amp;поставщика</translation>
     </message>
     <message>
         <source>&amp;Product ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID про&amp;дукта</translation>
     </message>
     <message>
         <source>&amp;Revision</source>
-        <translation type="unfinished"></translation>
+        <translation>Р&amp;евизия</translation>
     </message>
     <message>
         <source>Por&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>Пор&amp;т</translation>
     </message>
     <message>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished"></translation>
+        <translation>Оба</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">Да</translation>
+        <translation>Да</translation>
     </message>
     <message>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">Нет</translation>
+        <translation>Нет</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает фильтр по производителю в виде
+строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому
+значению.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает фильтр по названию продукта в виде
+строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому
+значению.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает фильтр по серийному номеру в виде
+строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому
+значению.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Определяет, применяется ли этот фильтр
+к USB-устройствам, присоединенным локально к основному ПК (&lt;i&gt;Нет&lt;/i&gt;),
+к компьютеру VRDP-клиента (&lt;i&gt;Да&lt;/i&gt;),
+или к обоим (&lt;i&gt;Оба&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает действие, выполняемое основным
+ПК при подключении совпадающего устройства: передать его в основную ОС
+(&lt;i&gt;Игнорировать&lt;/i&gt;) или захватить его для дальнейшего использования виртуальными машинами
+(&lt;i&gt;Удержать&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает фильтр по ID поставщика. Формат
+строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где
+&lt;tt&gt;X&lt;/tt&gt; - шестнадцатиричная цифра. Пустая строка соответствует любому
+значению.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает фильтр по ID продукта. Формат
+строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где
+&lt;tt&gt;X&lt;/tt&gt; - шестнадцатиричная цифра. Пустая строка соответствует любому
+значению.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the revision number filter. The
@@ -2964,13 +2982,19 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает фильтр по номеру ревизии. Формат
+строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;IIFF&lt;/tt&gt;, где
+&lt;tt&gt;I&lt;/tt&gt; - десятичная цифра целой части, а &lt;tt&gt;F&lt;/tt&gt;
+- десятичная цифра дробной части. Пустая строка соответствует любому
+значению.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Задает фильтр по физическому порту USB в виде
+строки &lt;i&gt;точного соответствия&lt;/i&gt;. Пустая строка соответствует любому
+значению.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -2978,12 +3002,12 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;нет доступных устройств&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Нет поддерживаемых утройств, подключенных к основному ПК</translation>
     </message>
 </context>
 <context>
