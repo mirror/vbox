@@ -705,6 +705,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
 </connections>
 <tabstops>
     <tabstop>leName</tabstop>
+    <tabstop>tbNameSelect</tabstop>
     <tabstop>slSize</tabstop>
     <tabstop>leSize</tabstop>
 </tabstops>
