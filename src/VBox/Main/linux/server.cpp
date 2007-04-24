@@ -201,6 +201,67 @@ static bool gAutoShutdown = false;
 static nsIEventQueue* gEventQ = nsnull;
 static PRBool volatile gKeepRunning = PR_TRUE;
 
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Simple but smart PLEvent wrapper.
+ *
+ * @note Instances must be always created with <tt>operator new</tt>!
+ */
+class MyEvent
+{
+public:
+
+    MyEvent()
+    {
+        mEv.that = NULL;
+    };
+
+    /**
+     * Posts this event to the given message queue. This method may only be
+     * called once. @note On success, the event will be deleted automatically
+     * after it is delivered and handled. On failure, the event will delete
+     * itself before this method returns! The caller must not delete it in
+     * either case.
+     */
+    nsresult postTo (nsIEventQueue *aEventQ)
+    {
+        AssertReturn (mEv.that == NULL, NS_ERROR_FAILURE);
+        AssertReturn (aEventQ, NS_ERROR_FAILURE);
+        nsresult rv = aEventQ->InitEvent (&mEv.e, NULL,
+                                          eventHandler, eventDestructor);
+        if (NS_SUCCEEDED (rv))
+        {
+            mEv.that = this;
+            rv = aEventQ->PostEvent (&mEv.e);
+            if (NS_SUCCEEDED (rv))
+                return rv;
+        }
+        delete this;
+        return rv;
+    }
+
+    virtual void *handler() = 0;
+
+private:
+
+    struct Ev
+    {
+        PLEvent e;
+        MyEvent *that;
+    } mEv;
+
+    static void *PR_CALLBACK eventHandler (PLEvent *self)
+    {
+        return reinterpret_cast <Ev *> (self)->that->handler();
+    }
+
+    static void PR_CALLBACK eventDestructor (PLEvent *self)
+    {
+        delete reinterpret_cast <Ev *> (self)->that;
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -221,12 +282,6 @@ public:
 
         LogFlowFunc (("VirtualBox object deleted.\n"));
         printf ("Informational: VirtualBox object deleted.\n");
-
-        /* Instruct the main event loop to terminate. Note that it's enough
-         * to set gKeepRunning to false because we are on the main thread
-         * already (i.e. no need to post events there). */
-        if (gAutoShutdown)
-            gKeepRunning = PR_FALSE;
     }
 
     NS_IMETHOD_(nsrefcnt) Release()
@@ -251,9 +306,13 @@ public:
              * FactoryDestructor() */
             if (sTimer != NULL)
             {
-                LogFlowFunc (("Last VirtualBox instance was released, "
-                              "scheduling server shutdown in %d ms...\n",
+                LogFlowFunc (("Last VirtualBox instance was released.\n"));
+                LogFlowFunc (("Scheduling server shutdown in %d ms...\n",
                               VBoxSVC_ShutdownDelay));
+
+                /* make sure the previous timer (if any) is stopped;
+                 * otherwise RTTimerStart() will definitely fail. */
+                RTTimerStop (sTimer);
 
                 int vrc = RTTimerStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
                 AssertRC (vrc);
@@ -302,54 +361,52 @@ public:
         return count;
     }
 
-    /* Returns the current value of the reference counter. */
-    nsrefcnt GetRefCount()
+    class MaybeQuitEvent : public MyEvent
     {
-        /* we don't use our own Release() to avoid its "side effect" */
-        nsrefcnt count = VirtualBox::AddRef();
-        count = VirtualBox::Release();
-        return count;
-    }
-
-    /* called on the main thread */
-    static void *PR_CALLBACK DestructEventHandler (PLEvent* self)
-    {
-        Assert (RTCritSectIsInitialized (&sLock));
-
-        /* stop accepting GetInstance() requests during possible destruction */
-        RTCritSectEnter (&sLock);
-
-        Assert (sInstance);
-
-        nsrefcnt count = sInstance->GetRefCount();
-        AssertMsg (count >= 1, ("count=%d\n", count));
-
-        if (count > 1)
+        /* called on the main thread */
+        void *handler()
         {
-            /* This case is very unlikely because we stop the timer when a new
-             * client connects after the instance was scheduled for
-             * destruction, but it's still possible. This is the only reason
-             * for the above GetRefCount() btw.  */
-            LogFlowFunc (("Destruction is canceled (refcnt=%d).\n", count));
+            LogFlowFunc (("\n"));
+
+            Assert (RTCritSectIsInitialized (&sLock));
+
+            /* stop accepting GetInstance() requests on other threads during
+             * possible destruction */
+            RTCritSectEnter (&sLock);
+
+            nsrefcnt count = 0;
+
+            /* sInstance is NULL here if it was deleted immediately after
+             * creation due to initialization error. See GetInstance(). */
+            if (sInstance != NULL)
+            {
+                /* Release the guard reference added in GetInstance() */
+                count = sInstance->Release();
+            }
+
+            if (count == 0)
+            {
+                if (gAutoShutdown)
+                {
+                    Assert (sInstance == NULL);
+                    LogFlowFunc (("Terminating the server process...\n"));
+                    /* make it leave the event loop */
+                    gKeepRunning = PR_FALSE;
+                }
+            }
+            else
+            {
+                /* This condition is quite rare: a new client will have to
+                 * connect after this event has been posted to the main queue
+                 * but before it started to process it. */
+                LogFlowFunc (("Destruction is canceled (refcnt=%d).\n", count));
+            }
+
+            RTCritSectLeave (&sLock);
+
+            return NULL;
         }
-        else
-        {
-            /* release the last (first) reference we added in GetInstance()
-             * (this must call the destructor) */
-            nsrefcnt count = sInstance->Release();
-            AssertMsg (count == 0, ("count=%d\n", count));
-            NOREF(count);
-        }
-
-        RTCritSectLeave (&sLock);
-
-        return 0;
-    }
-
-    static void PR_CALLBACK DestructEventDestructor (PLEvent* self)
-    {
-        delete self;
-    }
+    };
 
     static void ShutdownTimer (PRTTIMER pTimer, void *pvUser)
     {
@@ -362,22 +419,14 @@ public:
          * the timer was killed. */
         AssertReturnVoid (gEventQ);
 
-        /* post a destruction event to the main thread to safely release the
-         * extra reference added in VirtualBoxClassFactory::GetInstance() */
+        /* post a quit event to the main queue */
+        MaybeQuitEvent *ev = new MaybeQuitEvent();
+        nsresult rv = ev->postTo (gEventQ);
+        NOREF (rv);
 
-        LogFlowFunc (("Posting VirtualBox destruction & shtutdown event...\n"));
-
-        PLEvent *ev = new PLEvent;
-        gEventQ->InitEvent (ev, NULL, DestructEventHandler,
-                            DestructEventDestructor);
-        nsresult rv = gEventQ->PostEvent (ev);
-        if (NS_FAILED (rv))
-        {
-            /* this means we've been already stopped (for example
-             * by Ctrl-C). FactoryDestructor() (NS_ShutdownXPCOM())
-             * will do the job. */
-            PL_DestroyEvent (ev);
-        }
+        /* A failure above means we've been already stopped (for example
+         * by Ctrl-C). FactoryDestructor() (NS_ShutdownXPCOM())
+         * will do the job. Nothing to do. */
     }
 
     static NS_IMETHODIMP FactoryConstructor()
@@ -413,7 +462,7 @@ public:
              * likely, the quit event has been received before the last release),
              * or the client has terminated abnormally w/o releasing its
              * VirtualBox instance (so NS_ShutdownXPCOM() is doing a cleanup).
-             * Release the extra reference we added in GetInstance(). */
+             * Release the guard reference we added in GetInstance(). */
             sInstance->Release();
         }
 
@@ -443,15 +492,24 @@ public:
                 printf ("Informational: VirtualBox object created (rc=%08X).\n", rv);
                 if (NS_FAILED (rv))
                 {
-                    /* on failure diring VirtualBox initialization, delete it
-                     * immediately on the current thread, ignoring the reference
-                     * count (VirtualBox should be aware of that meaning that it
-                     * has already completely unintialized itself in this
-                     * case) */
-                    LogFlowFunc (("VirtualBox creation failed "
-                                  "(rc=%08X), deleting immediately...\n", rv));
-                    delete sInstance;
-                    sInstance = 0;
+                    /* On failure diring VirtualBox initialization, delete it
+                     * immediately on the current thread by releasing all
+                     * references in order to properly schedule the server
+                     * shutdown. Since the object is fully deleted here, there
+                     * is a chance to fix the error and request a new
+                     * instantiation before the server terminates. However,
+                     * the main reason to maintain the shoutdown delay on
+                     * failure is to let the front-end completely fetch error
+                     * info from a server-side IVirtualBoxErrorInfo object. */
+                    sInstance->Release();
+                    sInstance->Release();
+                    Assert (sInstance == 0);
+                }
+                else
+                {
+                    /* On success, make sure the previous timer is stopped to
+                     * cancel a scheduled server termination (if any). */
+                    RTTimerStop (sTimer);
                 }
             }
             else
@@ -467,8 +525,7 @@ public:
 
             if (count == 2)
             {
-                LogFlowFunc (("Another client has requested "
-                              "a reference of VirtualBox scheduled for destruction, "
+                LogFlowFunc (("Another client has requested a reference to VirtualBox, "
                               "canceling detruction...\n"));
                 
                 /* make sure the previous timer is stopped */
@@ -820,23 +877,30 @@ RegisterSelfComponents (nsIComponentRegistrar *registrar,
 static ipcIService *gIpcServ = nsnull;
 static char *pszPidFile = NULL;
 
-void* PR_CALLBACK quitEventHandler (PLEvent* self) { gKeepRunning = PR_FALSE; return 0; }
-void PR_CALLBACK quitEventDestructor (PLEvent* self) { delete self; }
+class ForceQuitEvent : public MyEvent
+{
+    void *handler()
+    {
+        LogFlowFunc (("\n"));
+
+        gKeepRunning = PR_FALSE;
+
+        if (pszPidFile)
+            RTFileDelete(pszPidFile);
+
+        return NULL;
+    }
+};
 
 static void signal_handler (int sig)
 {
     if (gEventQ && gKeepRunning)
     {
         /* post a quit event to the queue */
-        PLEvent *ev = new PLEvent;
-        gEventQ->InitEvent (ev, NULL, quitEventHandler, quitEventDestructor);
-        gEventQ->PostEvent (ev);
+        ForceQuitEvent *ev = new ForceQuitEvent();
+        ev->postTo (gEventQ);
     }
-    if (pszPidFile)
-    {
-        RTFileDelete(pszPidFile);
-    }
-};
+}
 
 #if defined(USE_BACKTRACE)
 /**
