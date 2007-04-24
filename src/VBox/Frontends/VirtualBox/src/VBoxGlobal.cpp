@@ -2816,9 +2816,23 @@ bool VBoxGlobal::event (QEvent *e)
 
 bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
 {
-    if (aObject == QApplication::desktop() &&
-        aEvent->type() == QEvent::LanguageChange)
-        languageChange();
+    if (aEvent->type() == QEvent::LanguageChange &&
+        aObject->isWidgetType() &&
+        static_cast <QWidget *> (aObject)->isTopLevel())
+    {
+        /* Catch the language change event before any other widget gets it in
+         * order to invalidate cached string resources (like the details view
+         * templates) that may be used by other widgets. */
+        QWidgetList *list = QApplication::topLevelWidgets();
+        if (list->first() == aObject)
+        {
+            /* call this only once per every language change (see
+             * QApplication::installTranslator() for details) */
+            languageChange();
+        }
+        delete list;
+    }
+
     return QObject::eventFilter (aObject, aEvent);
 }
 
@@ -2937,7 +2951,7 @@ void VBoxGlobal::init()
     vm_state_color.insert (CEnums::Restoring,           &Qt::green);
     vm_state_color.insert (CEnums::Discarding,          &Qt::green);
 
-    QApplication::desktop()->installEventFilter (this);
+    qApp->installEventFilter (this);
 
     // create default non-null global settings
     gset = VMGlobalSettings (false);
