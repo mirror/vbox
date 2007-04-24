@@ -969,9 +969,9 @@ int ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDIS
 // 7 - 6  5 - 3  2-0
 // Scale  Index  Base
 //*****************************************************************************
-char *szSIBBaseReg[8]  = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
-char *szSIBIndexReg[8] = {"EAX", "ECX", "EDX", "EBX", NULL,  "EBP", "ESI", "EDI"};
-char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
+const char *szSIBBaseReg[8]  = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
+const char *szSIBIndexReg[8] = {"EAX", "ECX", "EDX", "EBX", NULL,  "EBP", "ESI", "EDI"};
+const char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
 
 //*****************************************************************************
 int UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
@@ -2342,9 +2342,9 @@ int ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDIS
     return size;
 }
 //*****************************************************************************
-char *szModRMReg8[]   = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"};
-char *szModRMReg16[]  = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"};
-char *szModRMReg32[]  = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
+const char *szModRMReg8[]   = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"};
+const char *szModRMReg16[]  = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"};
+const char *szModRMReg32[]  = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
 //*****************************************************************************
 void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam, int fRegAddr)
 {
@@ -2395,7 +2395,7 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     }
 }
 //*****************************************************************************
-char *szModRMReg1616[8]  = {"BX+SI", "BX+DI", "BP+SI", "BP+DI", "SI", "DI", "BP", "BX"};
+const char *szModRMReg1616[8]  = {"BX+SI", "BX+DI", "BP+SI", "BP+DI", "SI", "DI", "BP", "BX"};
 int   BaseModRMReg16[8]  = { USE_REG_BX, USE_REG_BX, USE_REG_BP, USE_REG_BP, USE_REG_SI, USE_REG_DI, USE_REG_BP, USE_REG_BX};
 int   IndexModRMReg16[4] = { USE_REG_SI, USE_REG_DI, USE_REG_SI, USE_REG_DI};
 //*****************************************************************************
@@ -2411,7 +2411,7 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pP
     }
 }
 //*****************************************************************************
-char *szModRMSegReg[6] = {"ES", "CS", "SS", "DS", "FS", "GS"};
+const char *szModRMSegReg[6] = {"ES", "CS", "SS", "DS", "FS", "GS"};
 //*****************************************************************************
 void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam)
 {

@@ -5371,7 +5371,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
         CFGLDRCreateChildNode (aNode, "CPU", &cpuNode);
         CFGNODE hwVirtExNode = 0;
         CFGLDRCreateChildNode (cpuNode, "HardwareVirtEx", &hwVirtExNode);
-        char *value = NULL;
+        const char *value = NULL;
         switch (mHWData->mHWVirtExEnabled)
         {
             case TriStateBool_False:
@@ -5841,7 +5841,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
         CFGNODE clipNode = 0;
         CFGLDRCreateChildNode (aNode, "Clipboard", &clipNode);
 
-        char *mode = "Disabled";
+        const char *mode = "Disabled";
         switch (mHWData->mClipboardMode)
         {
             case ClipboardMode_ClipDisabled:

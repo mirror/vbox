@@ -284,7 +284,7 @@ char *DbgBytesToString(PDISCPUSTATE pCpu, RTUINTPTR pBytes, int size, char *pszO
 //*****************************************************************************
 void disasmSprintf(char *pszOutput, RTUINTPTR pu8Instruction, PDISCPUSTATE pCpu, OP_PARAMETER *pParam1, OP_PARAMETER *pParam2, OP_PARAMETER *pParam3)
 {
-    char *lpszFormat = pCpu->pszOpcode;
+    const char *lpszFormat = pCpu->pszOpcode;
     int   param = 1;
 
     RTStrPrintf(pszOutput, 64, "%08X:  ", (unsigned)pCpu->opaddr);

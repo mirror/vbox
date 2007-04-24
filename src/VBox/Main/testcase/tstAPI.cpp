@@ -459,7 +459,7 @@ int main(int argc, char *argv[])
     do
     {
         ComPtr <IHardDisk> hd;
-        static wchar_t *Names[] =
+        static const wchar_t *Names[] =
         {
 #ifndef __LINUX__
             L"E:/Develop/innotek/images/thinker/freedos.vdi",

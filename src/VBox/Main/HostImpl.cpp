@@ -1432,7 +1432,7 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive>
 /**
  * Helper function to check whether the given device node is a valid drive
  */
-bool Host::validateDevice(char *deviceNode, bool isCDROM)
+bool Host::validateDevice(const char *deviceNode, bool isCDROM)
 {
     struct stat statInfo;
     bool retValue = false;

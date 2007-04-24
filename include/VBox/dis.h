@@ -360,7 +360,7 @@ typedef struct _DISCPUSTATE
     uint32_t        opsize;
 #ifndef DIS_CORE_ONLY
     /** Opcode format string for current instruction. */
-    char           *pszOpcode;
+    const char      *pszOpcode;
 #endif
 
     /** Internal: pointer to disassembly function table */
@@ -385,7 +385,7 @@ typedef struct _DISCPUSTATE
 typedef struct _OPCODE
 {
 #ifndef DIS_CORE_ONLY
-    char       *pszOpcode;
+    const char  *pszOpcode;
 #endif
     uint8_t     idxParse1;
     uint8_t     idxParse2;
