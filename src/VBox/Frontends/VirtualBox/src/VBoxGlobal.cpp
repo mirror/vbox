@@ -1922,12 +1922,16 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         }
     }
 
-    /* load the language file */
+    /* delete the old translator if there is one */
     if (sTranslator)
     {
-        qApp->removeTranslator (sTranslator);
+        /* QTranslator destructor will call qApp->removeTranslator() for
+         * us. It will also delete all its child translations we attach to it
+         * below, so we don't have to care about them specially. */
         delete sTranslator;
     }
+
+    /* load new language files */
     sTranslator = new VBoxTranslator (qApp);
     Assert (sTranslator);
     bool loadOk = true;
@@ -1955,8 +1959,6 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     }
 
     /* Try to load the corresponding Qt translation */
-    QTranslator *qtTr = new QTranslator (sTranslator);
-    Assert (qtTr);
     if (sLoadedLangId != gVBoxBuiltInLangName)
     {
 #ifdef Q_OS_UNIX
@@ -1964,16 +1966,26 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
          * to load the Qt translation from the system location. */
         languageFileName = QString (qInstallPathTranslations()) + "/qt_" +
                            sLoadedLangId + gVBoxLangFileExt;
-        loadOk = qtTr->load (languageFileName);
-        if (!loadOk)
+        QTranslator *qtSysTr = new QTranslator (sTranslator);
+        Assert (qtSysTr);
+        if (qtSysTr && qtSysTr->load (languageFileName))
+            qApp->installTranslator (qtSysTr);
+        /* Note that the Qt translation supplied by InnoTek is always loaded
+         * afterwards to make sure it will take precedence over the system
+         * translation (it may contain more decent variants of translation
+         * that better correspond to VirtualBox UI). We need to load both
+         * because a newer version of Qt may be installed on the user computer
+         * and the InnoTek version may not fully support it. We don't do it on
+         * Win32 because we supply a Qt library there and therefore the
+         * InnoTek translation is always the best one. */
 #endif
-        {
-            languageFileName =  nlsDir.absFilePath (QString ("qt_") +
-                                                    sLoadedLangId +
-                                                    gVBoxLangFileExt);
-            loadOk = qtTr->load (languageFileName);
-        }
-        qApp->installTranslator (qtTr);
+        languageFileName =  nlsDir.absFilePath (QString ("qt_") +
+                                                sLoadedLangId +
+                                                gVBoxLangFileExt);
+        QTranslator *qtTr = new QTranslator (sTranslator);
+        Assert (qtTr);
+        if (qtTr && (loadOk = qtTr->load (languageFileName)))
+            qApp->installTranslator (qtTr);
         /* The below message doesn't fit 100% (because it's an additonal
          * language and the main one won't be reset to built-in on failure)
          * but the load failure is so rare here that it's not worth a separate
