@@ -1013,6 +1013,11 @@ else ifeq ($(BUILD_TARGET),darwin)
   QTDIR := $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/v*))
   QTDIR := $(call lastword,$(QTDIR))
  endif
+else
+ ifndef QTDIR
+  # This is a pretty safe shot.
+  export QTDIR := $(wildcard /usr/share/qt3)
+ endif
 endif
 ifndef VBOX_PATH_QT
  VBOX_PATH_QT ?= $(QTDIR)
