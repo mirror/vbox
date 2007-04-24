@@ -793,7 +793,7 @@ VRDPSERVERCALLBACK Console::sVrdpServerCallback =
 };
 
 //static
-char *Console::sSSMConsoleUnit = "ConsoleData";
+const char *Console::sSSMConsoleUnit = "ConsoleData";
 //static
 uint32_t Console::sSSMConsoleVer = 0x00010000;
 

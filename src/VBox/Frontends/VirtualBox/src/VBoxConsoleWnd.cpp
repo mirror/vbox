@@ -1374,8 +1374,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     {
         QString info =
             tr ("<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;virtual&nbsp;hard&nbsp;disks");
-        char *ctlNames[] = { "IDE0", "IDE1", "Controller%1" };
-        char *devNames[] = { "Master", "Slave", "Device%1" };
+        const char *ctlNames[] = { "IDE0", "IDE1", "Controller%1" };
+        const char *devNames[] = { "Master", "Slave", "Device%1" };
         bool hasDisks = false;
         CHardDiskAttachmentEnumerator aen = cmachine.GetHardDiskAttachments().Enumerate();
         while (aen.HasMore()) {

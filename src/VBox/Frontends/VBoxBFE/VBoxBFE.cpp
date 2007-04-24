@@ -168,7 +168,7 @@ static bool fUSB = false;
 static char *hdaFile   = NULL;
 static char *cdromFile = NULL;
 static char *fdaFile   = NULL;
-static char *pszBootDevice = "IDE";
+static const char *pszBootDevice = "IDE";
 static uint32_t memorySize = 128;
 static uint32_t vramSize = 4;
 #ifdef VBOXSDL_ADVANCED_OPTIONS

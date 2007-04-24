@@ -805,7 +805,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 
             struct SymbolEntry
             {
-                char *name;
+                const char *name;
                 void **ppfn;
             };
 

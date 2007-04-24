@@ -418,7 +418,7 @@ private:
 
     static VRDPSERVERCALLBACK   sVrdpServerCallback;
 
-    static char *sSSMConsoleUnit;
+    static const char *sSSMConsoleUnit;
     static uint32_t sSSMConsoleVer;
 
     HRESULT loadDataFromSavedState();

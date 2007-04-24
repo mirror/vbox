@@ -77,7 +77,7 @@ static int testLdrOne(const char *pszFilename)
         RTLDRMOD    hLdrMod;
         void       *pvBits;
         RTUINTPTR   Addr;
-        char       *pszName;
+        const char *pszName;
     }   aLoads[6] =
     {
         { NULL, NULL, 0xefefef00, "foo" },

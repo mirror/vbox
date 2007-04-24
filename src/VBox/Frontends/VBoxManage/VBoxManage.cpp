@@ -1059,7 +1059,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             ULONG port;
             vrdpServer->COMGETTER(Port)(&port);
             VRDPAuthType_T vrdpAuthType;
-            char *strAuthType;
+            const char *strAuthType;
             vrdpServer->COMGETTER(AuthType)(&vrdpAuthType);
             switch (vrdpAuthType)
             {
@@ -1663,7 +1663,7 @@ static int handleList(int argc, char *argv[],
             RTPrintf("UUID:         %s\n", uuid.toString().raw());
             HardDiskStorageType_T storageType;
             hdd->COMGETTER(StorageType)(&storageType);
-            char *storageTypeString = "unknown";
+            const char *storageTypeString = "unknown";
             switch (storageType)
             {
                 case HardDiskStorageType_VirtualDiskImage:
@@ -1820,7 +1820,7 @@ static int handleList(int argc, char *argv[],
             /* current state  */
             USBDeviceState_T state;
             CHECK_ERROR_RET (dev, COMGETTER(State)(&state), 1);
-            char *pszState = "?";
+            const char *pszState = "?";
             switch (state)
             {
                 case USBDeviceState_USBDeviceNotSupported:
@@ -1885,7 +1885,7 @@ static int handleList(int argc, char *argv[],
 
             USBDeviceFilterAction_T action;
             CHECK_ERROR_RET (flt, COMGETTER (Action) (&action), 1);
-            char *pszAction = "<invalid>";
+            const char *pszAction = "<invalid>";
             switch (action)
             {
                 case USBDeviceFilterAction_USBDeviceFilterIgnore:
@@ -2021,7 +2021,7 @@ static int handleCreateVDI(int argc, char *argv[],
     bool fStatic = false;
     Bstr comment;
     bool fRegister = false;
-    char *type = "normal";
+    const char *type = "normal";
 
     /* let's have a closer look at the arguments */
     for (int i = 0; i < argc; i++)
@@ -4753,7 +4753,7 @@ static int handleShowVDIInfo(int argc, char *argv[],
 
         HardDiskType_T type;
         hardDisk->COMGETTER(Type)(&type);
-        char *typeStr = "unknown";
+        const char *typeStr = "unknown";
         switch (type)
         {
             case HardDiskType_NormalHardDisk:
@@ -4769,7 +4769,7 @@ static int handleShowVDIInfo(int argc, char *argv[],
         RTPrintf("Type:                 %s\n", typeStr);
 
         HardDiskStorageType_T storageType;
-        char *storageTypeStr = "unknown";
+        const char *storageTypeStr = "unknown";
         hardDisk->COMGETTER(StorageType)(&storageType);
         switch (storageType)
         {
@@ -4820,7 +4820,7 @@ static int handleRegisterImage(int argc, char *argv[],
 
     if (strcmp(argv[0], "disk") == 0)
     {
-        char *type = "normal";
+        const char *type = "normal";
         /* there can be a type parameter */
         if ((argc > 2) && (argc != 4))
         {
@@ -6151,7 +6151,7 @@ int main(int argc, char *argv[])
      */
     struct
     {
-        char *command;
+        const char *command;
         PFNHANDLER handler;
     } commandHandlers[] =
     {

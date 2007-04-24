@@ -131,7 +131,7 @@ private:
 
 #ifdef __LINUX__
     void parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive> > &list);
-    bool validateDevice(char *deviceNode, bool isCDROM);
+    bool validateDevice(const char *deviceNode, bool isCDROM);
 #endif
 
     /** specialization for IHostUSBDeviceFilter */
