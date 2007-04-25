@@ -31,11 +31,11 @@
     <name>BootItemsList</name>
     <message>
         <source>Move the selected boot device up.</source>
-        <translation type="obsolete">Mueva el dispositivo seleccionado hacia arriba.</translation>
+        <translation type="obsolete">Mover el dispositivo seleccionado hacia arriba.</translation>
     </message>
     <message>
         <source>Move the selected boot device down.</source>
-        <translation type="obsolete">Mueva el dispositivo seleccionado hacia abajo.</translation>
+        <translation type="obsolete">Mover el dispositivo seleccionado hacia abajo.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
@@ -58,7 +58,7 @@
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Define el orden de arranque (booteo) de los dispositivos. Use las cajas de seleccion(checkbox) a la izquierada para habilitar o deshabilitar los dispositivos de arranque. Mueva los ítemes verticalmente para cambiar el orden de los dispositivos.</translation>
+        <translation>Define el orden de arranque (booteo) de los dispositivos. Use las cajas de selección (checkbox) a la izquierda para habilitar o inhabilitar los dispositivos de arranque. Mueva los ítemes verticalmente para cambiar el orden de los dispositivos.</translation>
     </message>
 </context>
 <context>
@@ -143,7 +143,7 @@
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Agregar Interface al Host</translation>
+        <translation>Agregar Interface del Anfitrión (Host)</translation>
     </message>
     <message>
         <source>Interface Name</source>
@@ -182,7 +182,7 @@
     </message>
     <message>
         <source>Click to invoke &lt;open folder&gt; dialog</source>
-        <translation type="obsolete">Haga click para llamar el dialogo &lt;abrir un directorio&gt;</translation>
+        <translation type="obsolete">Haga click para invocar el diálogo &lt;abrir directorio&gt;</translation>
     </message>
     <message>
         <source>Select a folder to share</source>
@@ -277,7 +277,7 @@
     </message>
     <message>
         <source>Alt+C</source>
-        <translation></translation>
+        <translation>Alt+C</translation>
     </message>
 </context>
 <context>
@@ -674,7 +674,7 @@
     </message>
     <message>
         <source>Invoke dialog&apos;s help</source>
-        <translation>Invoca ventana de Dialogo de Ayuda</translation>
+        <translation>Invocar ventana de Dialogo de Ayuda</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -767,7 +767,7 @@
     </message>
     <message>
         <source>Add existing media image file to media list</source>
-        <translation type="obsolete">Agregar una imanen existente a la lista de medios</translation>
+        <translation type="obsolete">Agregar una imagen existente a la lista de medios</translation>
     </message>
     <message>
         <source>Remove selected media image file from media list</source>
@@ -803,7 +803,7 @@
     </message>
     <message>
         <source>Snapshot</source>
-        <translation>Instantanea</translation>
+        <translation>Instantánea</translation>
     </message>
     <message>
         <source>Checking accessibility</source>
@@ -877,7 +877,7 @@
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>Seleccione un archivo de imagen de disco rigido</translation>
+        <translation>Seleccione un archivo de imagen de disco rígido</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso)</source>
@@ -926,761 +926,829 @@
     <message>
         <source>Unknown device %04hX:%04hX</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo desconocido %04hX:%04hX</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;nobr&gt;ID Fabricante: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Producto ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revisión: %04hX&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;No. Serial %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Estado: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation type="unfinished">Nombre</translation>
+        <translation>Nombre</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tipo OS(Sis. Op.)</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Memoria Base</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>General</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Memoria Video</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Orden de Arranque</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>IO APIC</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation type="unfinished"></translation>
+        <translation>No conectado</translation>
     </message>
     <message>
         <source>Hard Disks</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Discos Duros</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inhabilitado</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inhabilitado</translation>
     </message>
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation type="unfinished"></translation>
+        <translation>No montado</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (floppy)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Imagen</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Unidad Real</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Disquet</translation>
     </message>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation type="unfinished"></translation>
+        <translation>No montado</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (DVD)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Imagen</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Unidad Real</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inhabilitado</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inhabilitado</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Red</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Filtros Dispositivos</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2 activo)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inhabilitado</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador USB</translation>
     </message>
     <message>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Puerto Servidor VRDP</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inhabilitado</translation>
     </message>
     <message>
         <source>Remote Display</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pantalla Remota</translation>
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Abrir URLs no está todavía implementado.</translation>
     </message>
     <message>
         <source>Powered Off</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Apagada</translation>
     </message>
     <message>
         <source>Saved</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Guardada</translation>
     </message>
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abortada</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Corriendo</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Detenida</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Iniciando</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Terminando</translation>
     </message>
     <message>
         <source>Saving</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Guardando</translation>
     </message>
     <message>
         <source>Restoring</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Restaurando</translation>
     </message>
     <message>
         <source>Discarding</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Descartando</translation>
     </message>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cerrada</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation type="unfinished">Abrir</translation>
+        <translation>Abierta</translation>
     </message>
     <message>
         <source>Spawning</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Engendrando</translation>
     </message>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cerrando</translation>
     </message>
     <message>
         <source>None</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>No</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disquet</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disco Duro</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Red</translation>
     </message>
     <message>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Primario</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Secundario</translation>
     </message>
     <message>
         <source>Normal</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inmutable</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Escritura Directa</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Imagen de Disco Virtual</translation>
     </message>
     <message>
         <source>iSCSI</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>iSCSI</translation>
     </message>
     <message>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Imagen VMDK</translation>
     </message>
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Null</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Externo</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Huésped</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
-        <translation type="unfinished">Ignorar</translation>
+        <translation>Ingnorar</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Retener</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
-        <translation type="unfinished"></translation>
+        <translation>Maestro</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
-        <translation type="unfinished"></translation>
+        <translation>Esclavo</translation>
     </message>
     <message>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo&amp;nbsp;%1</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador de Audio &quot;Null&quot;</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Windows Multimedia</translation>
     </message>
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador Audio OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlador Audio ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Windows DirectSound</translation>
     </message>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>CoreAudio</translation>
     </message>
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>No conectado</translation>
     </message>
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>NAT</translation>
     </message>
     <message>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Interface Anfitrión</translation>
     </message>
     <message>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Red Interna</translation>
     </message>
     <message>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>No soportado</translation>
     </message>
     <message>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>No disponible</translation>
     </message>
     <message>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ocupado</translation>
     </message>
     <message>
         <source>Available</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disponible</translation>
     </message>
     <message>
         <source>Held</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Retenido</translation>
     </message>
     <message>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Capturado</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Comprobando...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Inaccesible&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inhabilitado</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Anfitrión a Huésped</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Huésped a Anfitrión</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bidireccional</translation>
     </message>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecccione un directorio</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccione un archivo</translation>
     </message>
 </context>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation type="unfinished"></translation>
+        <translation>Categoría</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished"></translation>
+        <translation>[id]</translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished"></translation>
+        <translation>[enlace]</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished"></translation>
+        <translation>[nombre]</translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Seleccione de la lista a su izquierda una categoría de configuración y luego mueva el mouse sobre los ítemes para obtener más información&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
-        <translation type="unfinished"></translation>
+        <translation> General </translation>
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <source>#general</source>
-        <translation type="unfinished"></translation>
+        <translation>#general</translation>
     </message>
     <message>
         <source> Input </source>
-        <translation type="unfinished"></translation>
+        <translation> Entrada </translation>
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished"></translation>
+        <translation>1</translation>
     </message>
     <message>
         <source>#input</source>
-        <translation type="unfinished"></translation>
+        <translation>#entrada</translation>
     </message>
     <message>
         <source> USB </source>
-        <translation type="unfinished"></translation>
+        <translation> USB </translation>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished"></translation>
+        <translation>2</translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation type="unfinished"></translation>
+        <translation>#usb</translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Directorios por Omisión</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default VDI folder. This folder is
+used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">Muestra la ruta a el directorio VDI por omisión. Si no se ha explicitado, 
+este directorio es utilizado cuando se crean nuevos discos virtuales o se agregan ya existentes.</translation>
     </message>
     <message>
         <source>Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Máquinas</translation>
     </message>
     <message>
         <source>VDI files</source>
-        <translation type="unfinished"></translation>
+        <translation>Archivos VDI</translation>
+    </message>
+    <message>
+        <source>Resets the virtual machine folder path to the default value.
+The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="obsolete">Reasigna el valor por omisión al directorio de la máquina virtual .
+Después que haya aceptado los cambios y abierto este diálogo nuevamente, el nuevo directorio será mostrado.</translation>
+    </message>
+    <message>
+        <source>Resets the VDI folder path to the default value.
+The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="obsolete">Reasigna el valor por omisión al directorio VDI .
+Después que haya aceptado los cambios y abierto este diálogo nuevamente, el nuevo directorio será mostrado.strada.</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default virtual machine
+folder. This folder is used, if not explicitly specified otherwise, when creating new
+virtual machines.</source>
+        <translation type="obsolete">Muestra</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccionar</translation>
+    </message>
+    <message>
+        <source>Opens a dialog to select the
+default VDI folder.</source>
+        <translation type="obsolete">Abre un diálogo para seleccionar
+el directorio VDI por omisión.</translation>
+    </message>
+    <message>
+        <source>Opens a dialog to select the
+default virtual machine folder.</source>
+        <translation type="obsolete">Abre un diálogo para seleccionar
+el directorio de Máquina Virtual por omisión.</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Teclado</translation>
     </message>
     <message>
         <source>&amp;Host Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Tecla &amp;Anfitrión</translation>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Auto-capturar teclado</translation>
     </message>
     <message>
         <source>Alt+A</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtros Dispositivos &amp;USB</translation>
+    </message>
+    <message>
+        <source>Lists all global USB filters.
+The checkbox to the left defines whether the particular filter is enabled or not.</source>
+        <translation type="obsolete">Listar todos los filtros USB globales.
+Las cajas de selección (checkbox) a la izquierda define si un filtro particular está habilitado o no.</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Agregar Vacío (Ins)</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with
+all fields initially set to empty strings. Note that such a filter will match any attached
+USB device.</source>
+        <translation type="obsolete">Agrega un filtro USB con
+todos los campos vacíos. Tenga en cuenta que tal filtro filtrará cualquier dispositivo
+USB conectado.</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation>Agregar desde (Alt+Ins)</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter
+with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation type="obsolete">Agrega un filtro USB nuevo
+para todos los dispositivos USB seleccionados, conectados a la PC Anfitriona.</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation>Supr</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminar (Supr)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminar el dispositivo USB seleccionado.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Arriba</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover Arriba (Ctrl+Arriba)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover el filtro USB seleccionado hacia arriba.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Abajo</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover Abajo (Ctrl+Abajo)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mover el filtro USB seleccionado hacia abajo.</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Ayuda</translation>
+        <translation>Ayuda</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra el diálogo de ayuda.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Detectada Configuración Inválida</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Acepta (guarda) los cambios y cierra el diálogo.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancela los cambios y cierra el diálogo.</translation>
     </message>
     <message>
         <source>VirtualBox Global Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuración Global de VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra en la ventana de la Máquina Virtual (VM) la tecla usada como &quot;Tecla Anfitrión&quot;. Active el campo de entrada y presione la nueva &quot;Tecla Anfitrión&quot;. Tenga en cuenta que la teclas alfanuméricas, de movimiento del cursor y las de edición no pueden ser utilizadas.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nuevo Filtro %1</translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically
+captured every time the VM window is activated. When the keyboard is captured,
+all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="obsolete">Cuando está activado, el teclado es capturado
+automaticamente si la ventana de la Máquina Virtual está activa. Si el teclado
+es capturado todas las combinaciones de teclas (incluyendo Alt+Tab) son envíadas a la Máquina Virtual.</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Idioma</translation>
     </message>
     <message>
         <source> Language </source>
-        <translation type="unfinished"></translation>
+        <translation> Idioma </translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation>3</translation>
     </message>
     <message>
         <source>#language</source>
-        <translation type="unfinished"></translation>
+        <translation>#idioma</translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Idioma de Interface</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>Autor(es):</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>Idioma:</translation>
     </message>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation> (incorporado)</translation>
     </message>
     <message>
         <source>&lt;unavailabie&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;no disponible&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;desconocido&gt;</translation>
     </message>
     <message>
         <source>
-&lt;qt&gt;Lists all available user interface languages. The effective language is
+Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.&lt;/qt&gt;
+to the system default language.
                                     </source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">
+Listar todos los idiomas disponibles. El idioma actual está 
+en escrito en &lt;b&gt;negrita&lt;/b&gt;. Seleccionar &lt;i&gt;Por Omisión&lt;/i&gt; si se quiere 
+volver al idioma por omisión del sistema.
+                                    </translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>Por Omisión</translation>
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
@@ -1722,29 +1790,39 @@ to the system default language.&lt;/qt&gt;
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>
+&lt;qt&gt;Lists all available user interface languages. The effective language is
+written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
+to the system default language.&lt;/qt&gt;
+                                    </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;no hay disco duro&gt;</translation>
     </message>
     <message>
         <source>No hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>No hay disco duro</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Crear Disco Virtual nuevo</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
@@ -1794,7 +1872,7 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Seleccionar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
@@ -2187,14 +2265,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2310,6 +2380,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2660,7 +2738,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+C</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -2810,7 +2888,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>%1 %2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 %2</translation>
     </message>
 </context>
 <context>
@@ -2849,7 +2927,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+C</translation>
     </message>
 </context>
 <context>
@@ -3095,7 +3173,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Seleccionar</translation>
     </message>
     <message>
         <source>&amp;Terminate Application</source>
@@ -3182,19 +3260,19 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Categoría</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">[id]</translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">[enlace]</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">[nombre]</translation>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
@@ -3202,19 +3280,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;i&gt;Seleccione de la lista a su izquierda una categoría de configuración y luego mueva el mouse sobre los ítemes para obtener más información&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished"> General </translation>
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">0</translation>
     </message>
     <message>
         <source>#general</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">#general</translation>
     </message>
     <message>
         <source> Hard Disks </source>
@@ -3222,7 +3300,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">1</translation>
     </message>
     <message>
         <source>#hdds</source>
@@ -3234,7 +3312,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">2</translation>
     </message>
     <message>
         <source>#floppy</source>
@@ -3246,7 +3324,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">3</translation>
     </message>
     <message>
         <source>#dvd</source>
@@ -3258,7 +3336,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">4</translation>
     </message>
     <message>
         <source>#audio</source>
@@ -3270,7 +3348,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>5</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">5</translation>
     </message>
     <message>
         <source>#network</source>
@@ -3278,15 +3356,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source> USB </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished"> USB </translation>
     </message>
     <message>
         <source>6</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">6</translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">#usb</translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -3294,7 +3372,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>7</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">7</translation>
     </message>
     <message>
         <source>#vrdp</source>
@@ -3306,7 +3384,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>8</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">8</translation>
     </message>
     <message>
         <source>#sfolders</source>
@@ -3366,7 +3444,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Seleccionar</translation>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
@@ -3386,7 +3464,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+C</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -3494,7 +3572,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
@@ -3502,47 +3580,47 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Agregar desde (Alt+Ins)</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Supr</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Eliminar (Supr)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Eliminar el dispositivo USB seleccionado.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+Arriba</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mover Arriba (Ctrl+Arriba)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mover el filtro USB seleccionado hacia arriba.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+Abajo</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mover Abajo (Ctrl+Abajo)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mover el filtro USB seleccionado hacia abajo.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
@@ -3582,11 +3660,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Muestra el diálogo de ayuda.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Detectada Configuración Inválida</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -3598,7 +3676,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Acepta (guarda) los cambios y cierra el diálogo.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3606,7 +3684,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cancela los cambios y cierra el diálogo.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
@@ -3704,7 +3782,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nuevo Filtro %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
@@ -3790,7 +3868,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Adaptador %1</translation>
     </message>
 </context>
 <context>
