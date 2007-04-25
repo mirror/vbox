@@ -21,8 +21,12 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-SYSMODS = vboxmouse_drv
-DLLS = vboxmouse_drv_70 vboxmouse_drv_71
+SYSMODS  = vboxmouse_drv
+DLLS     = vboxmouse_drv_70 vboxmouse_drv_71
+
+# for BUILD_TARGET=l4
+SUFF_DLL = .so
+
 #LIBRARIES   = vboxmouse vboxmouse_so_70 vboxmouse_so_71
 #OTHERS      = \
 #	$(PATH_BIN)/additions/vboxmouse_drv.o \

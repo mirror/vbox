@@ -21,9 +21,11 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-SYSMODS = vboxvideo_drv
-DLLS = vboxvideo_drv_70 vboxvideo_drv_71
+SYSMODS  = vboxvideo_drv
+DLLS     = vboxvideo_drv_70 vboxvideo_drv_71
 
+# for BUILD_TARGET=l4
+SUFF_DLL = .so
 
 vboxvideo_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxvideo_drv_SYSSUFF = .o
