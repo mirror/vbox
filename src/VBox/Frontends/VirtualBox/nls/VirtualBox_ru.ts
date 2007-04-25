@@ -1274,12 +1274,12 @@
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Звуковой драйвер OSS</translation>
+        <translation>Аудиодрайвер OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Звуковой драйвер ALSA</translation>
+        <translation>Аудиодрайвер ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
@@ -1625,7 +1625,7 @@
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Добавляет новый USB-фильтр, в котором все поля первоначально пустые. Обратите внимание, что такой фильтр будет соответствовать любому присоединенному USB-устройству.</translation>
+        <translation>Добавляет новый USB-фильтр, в котором все поля первоначально пустые. Имейте ввиду, что пустой фильтр будет соответствовать любому присоединенному USB-устройству.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
@@ -3007,7 +3007,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">Нет поддерживаемых утройств, подключенных к основному ПК</translation>
+        <translation>Нет поддерживаемых устройств, подключенных к основному ПК</translation>
     </message>
 </context>
 <context>
@@ -3033,7 +3033,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбранная виртуальная машина &lt;i&gt;недоступна&lt;/i&gt;. Внимательно просмотрите приведенное ниже сообщение об ошибке и нажмите кнопку &lt;b&gt;Обновить&lt;/b&gt;, если Вы хотите повторить проверку доступности:</translation>
     </message>
 </context>
 <context>
@@ -3057,143 +3057,143 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMNetworkSettings</name>
     <message>
         <source>VBoxVMNetworkSettings</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Attached to</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Присоединен к</translation>
     </message>
     <message>
         <source>&amp;MAC Address</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC-&amp;адрес</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
-        <translation type="unfinished"></translation>
+        <translation>С&amp;генерировать</translation>
     </message>
     <message>
         <source>Alt+G</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+г</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Кабель подключен</translation>
     </message>
     <message>
         <source>Alt+B</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+К</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation type="unfinished"></translation>
+        <translation> Настройки хост-интерфейса </translation>
     </message>
     <message>
         <source>&amp;Interface Name</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя интерфейса</translation>
     </message>
     <message>
         <source>&amp;File Descriptor</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Дескриптор файла</translation>
     </message>
     <message>
         <source>&amp;Setup Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Программа &amp;настройки</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Выбрать</translation>
+        <translation>Выбрать</translation>
     </message>
     <message>
         <source>&amp;Terminate Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Программа &amp;удаления</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить сетевой адаптер</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Генерирует новый случайный MAC-адрес.</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый хост-интерфейс.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Нет подходящих интерфейсов&gt;</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Добавить</translation>
+        <translation>Добавить</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">Удалить</translation>
+        <translation>Удалить</translation>
     </message>
     <message>
         <source>Select TAP setup application</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите программу настройки TAP-интерфейса</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите программу удаления TAP-интерфейса</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост-интерфейс VirtualBox %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a differnet interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы хотите удалить выбранный хост-интерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Этот интерфейс может использоваться другими сетевыми адаптерами этой или другой ВМ. После его удаления такие адаптеры не будут работать, пока Вы не исправите их настройки выбором другого хост-интерфейса или изменением типа присоединения адаптера.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, то этот виртуальный сетевой адаптер будет подключен к виртуальной машине.</translation>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет способ, которым этот виртуальный сетевой адаптер присоединяется к настоящей сети основной ОС.</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает MAC-адрес этого адаптера. Он состоит ровно из 12 символов из диапазона {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет, подключен виртуальный сетевой кабель при запуске машины или нет.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает имя хост-интерфейса, выбранного для этого адаптера.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перечисляет все имеющиеся хост-интерфейсы.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаляет выбранный хост-интерфейс.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает имя TAP-интерфейса.</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает команду (приложение или скрипт), выполяемую для создания и настройки TAP-интерфейса.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбирает программу для настройки.</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает команду (приложение или скрипт), выполняемую для удаления TAP-интерфейса.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбирает программу для удаления.</translation>
     </message>
 </context>
 <context>
@@ -3388,7 +3388,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбирает путь к папке снимков.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3508,7 +3508,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished"></translation>
+        <translation>Фильтры &amp;устройств USB</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -3568,15 +3568,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Server port </source>
-        <translation type="unfinished">По&amp;рт сервера</translation>
+        <translation>По&amp;рт сервера</translation>
     </message>
     <message>
         <source>Authentication Method </source>
-        <translation type="unfinished">&amp;Способ авторизации</translation>
+        <translation>&amp;Способ авторизации </translation>
     </message>
     <message>
         <source>Authentication Timeout </source>
-        <translation type="unfinished">Вр&amp;емя ожидания авторизации</translation>
+        <translation>Вр&amp;емя ожидания авторизации</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port.</source>
@@ -3588,7 +3588,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задает максимальное время ожидания авторизации подключения к гостевой ОС в миллисекундах.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3628,15 +3628,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Крогда стоит галочка, присоединяет указанный виртуальный жесткий диск к мастер-разъему первичного IDE-контроллера.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, присоединяет указанный виртуальный жесткий диск к слейв-разъему первичного IDE-контроллера.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, присоединяет указанный виртуальный жесткий диск к слейв-разъему вторичного IDE-контроллера.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
@@ -3644,7 +3644,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, подключает указанный носитель к приводу CD/DVD виртуальной машины. Обратите внимание, что привод CD/DVD всегда присоединен к мастер-раззему вторичного IDE-контроллера машины.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
@@ -3652,7 +3652,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, подключает указанный носитель к приводу гибких дисков виртуальной машины.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
@@ -3660,11 +3660,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, к виртуальной машине подключается виртуальная звуковая PCI-карта, которая использует указанный аудиодрайвер для связи со звуковой картой основного компьютера.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, то виртуальная машина будет работать как сервер удаленного рабочего стола (RDP), позволяя удаленным клиентам соединяться и использовать ВМ (когда она работает) с помощью стандартного RDP-клиента.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -3787,7 +3787,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Управляет драйвером основного ПК, используемым для вывода аудио. Пункт &lt;b&gt;Пустой аудиодрайвер&lt;/b&gt;
+        <translation>&lt;qt&gt;Управляет драйвером основного ПК, используемым для вывода звука. Пункт &lt;b&gt;Пустой аудиодрайвер&lt;/b&gt;
 позволяет гостевой ОС обнаружить звуковую карту, однако любой доступ к ней будет проигнорирован.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -3800,11 +3800,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый USB-фильтр, в котором все поля первоначально пустые. Имейте ввиду, что пустой фильтр будет соответствовать любому присоединенному USB-устройству.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый USB-фильтр, в котором все поля заполнены значениями одного из USB-устройств, подключенных к ПК.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
