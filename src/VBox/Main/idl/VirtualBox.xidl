@@ -4363,7 +4363,7 @@
     <interface
         name="IHardDisk" extends="$unknown"
         uuid="FD443EC1-000F-4F5B-9282-D72760A66916"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
             The IHardDisk interface represents a virtual hard disk drive
@@ -5398,7 +5398,7 @@
     <interface
         name="IDVDDrive" extends="$unknown"
         uuid="d9bd101a-8079-4fb9-bad1-31bf32482b75"
-        wsmap="suppress"
+        wsmap="managedObjectRef"
     >
         <attribute name="state" type="DriveState" readonly="yes">
             <desc>Current drive state.</desc>
@@ -5546,7 +5546,7 @@
     <interface
         name="IFloppyDrive" extends="$unknown"
         uuid="E9318F71-78D2-4b00-863C-B7CB0030A2D9"
-        wsmap="suppress"
+        wsmap="managedObjectRef"
     >
         <attribute name="enabled" type="boolean">
             <desc>
@@ -5594,7 +5594,7 @@
     <interface
         name="IKeyboard" extends="$unknown"
         uuid="FD443EC1-000A-4F5B-9282-D72760A66916"
-        wsmap="suppress"
+        wsmap="managedObjectRef"
     >
         <method name="putScancode">
             <desc>Sends a scancode to the keyboard.</desc>
@@ -5635,7 +5635,7 @@
     <interface
         name="IMouse" extends="$unknown"
         uuid="FD443EC1-0006-4F5B-9282-D72760A66916"
-        wsmap="suppress"
+        wsmap="managedObjectRef"
     >
         <desc>
             The IMouse interface represents a virtual mouse device.
@@ -6140,7 +6140,7 @@
     <interface
         name="INetworkAdapter" extends="$unknown"
         uuid="78dfc978-ecb0-44ee-8b20-54549dd4539e"
-        wsmap="suppress"
+        wsmap="managedObjectRef"
     >
         <attribute name="adapterType" type="NetworkAdapterType">
             <desc>
@@ -6347,7 +6347,7 @@
     <interface
         name="IUSBController" extends="$unknown"
         uuid="9a110c34-93c2-46b0-8ac2-b09d1067be56"
-        wsmap="suppress"
+        wsmap="managedObjectRef"
     >
         <attribute name="enabled" type="boolean">
             <desc>
@@ -6603,7 +6603,7 @@
     <interface
         name="IUSBDeviceFilter" extends="$unknown"
         uuid="d6831fb4-1a94-4c2c-96ef-8d0d6192066d"
-        wsmap="suppress"
+        wsmap="managedObjectRef"
     >
         <desc>
             The IUSBDeviceFilter interface represents an USB device filter used
