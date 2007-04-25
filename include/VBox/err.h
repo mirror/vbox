@@ -36,7 +36,7 @@
  */
 /** Failed to allocate VM memory. */
 #define VERR_NO_VM_MEMORY                   (-1000)
-/** GC is toased the VMM should be terminated at once, but no need to panic about it :-) */
+/** GC is toasted and the VMM should be terminated at once, but no need to panic about it :-) */
 #define VERR_DONT_PANIC                     (-1001)
 /** Unsupported CPU. */
 #define VERR_UNSUPPORTED_CPU                (-1002)
@@ -955,35 +955,39 @@
  * @{
  */
 /** Invalid image file header. */
-#define VERR_VDI_INVALID_HEADER                    (-3200)
+#define VERR_VDI_INVALID_HEADER                     (-3200)
 /** Invalid image file header: invalid signature. */
-#define VERR_VDI_INVALID_SIGNATURE                 (-3201)
+#define VERR_VDI_INVALID_SIGNATURE                  (-3201)
 /** Invalid image file header: invalid version. */
-#define VERR_VDI_UNSUPPORTED_VERSION               (-3202)
+#define VERR_VDI_UNSUPPORTED_VERSION                (-3202)
 /** Invalid image type. */
-#define VERR_VDI_INVALID_TYPE                      (-3203)
+#define VERR_VDI_INVALID_TYPE                       (-3203)
 /** Invalid image flags. */
-#define VERR_VDI_INVALID_FLAGS                     (-3204)
+#define VERR_VDI_INVALID_FLAGS                      (-3204)
 /** Operation can't be done in current HDD container state. */
-#define VERR_VDI_INVALID_STATE                     (-3205)
+#define VERR_VDI_INVALID_STATE                      (-3205)
 /** Differencing image can't be used with current base image. */
-#define VERR_VDI_WRONG_DIFF_IMAGE                  (-3206)
+#define VERR_VDI_WRONG_DIFF_IMAGE                   (-3206)
 /** Two or more images of one HDD has different versions. */
-#define VERR_VDI_IMAGES_VERSION_MISMATCH           (-3207)
+#define VERR_VDI_IMAGES_VERSION_MISMATCH            (-3207)
 /** Differencing and parent images can't be used together due to UUID. */
-#define VERR_VDI_IMAGES_UUID_MISMATCH              (-3208)
+#define VERR_VDI_IMAGES_UUID_MISMATCH               (-3208)
 /** No differencing images to commit. */
-#define VERR_VDI_NO_DIFF_IMAGES                    (-3209)
+#define VERR_VDI_NO_DIFF_IMAGES                     (-3209)
 /** Virtual HDD is not opened. */
-#define VERR_VDI_NOT_OPENED                        (-3210)
+#define VERR_VDI_NOT_OPENED                         (-3210)
 /** Requested image is not opened. */
-#define VERR_VDI_IMAGE_NOT_FOUND                   (-3211)
+#define VERR_VDI_IMAGE_NOT_FOUND                    (-3211)
 /** Image is read-only. */
-#define VERR_VDI_IMAGE_READ_ONLY                   (-3212)
+#define VERR_VDI_IMAGE_READ_ONLY                    (-3212)
 /** Comment string is too long. */
-#define VERR_VDI_COMMENT_TOO_LONG                  (-3213)
+#define VERR_VDI_COMMENT_TOO_LONG                   (-3213)
 /** Geometry hasn't been set. */
-#define VERR_VDI_GEOMETRY_NOT_SET                  (-3214)
+#define VERR_VDI_GEOMETRY_NOT_SET                   (-3214)
+/** No data for this block in image. */
+#define VINF_VDI_BLOCK_FREE                         3215
+/** Configuration value not found. */
+#define VERR_VDI_VALUE_NOT_FOUND                    (-3216)
 /** @} */
 
 

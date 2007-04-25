@@ -158,6 +158,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_USBPROXY,
     /** VBoxHDD media driver group. */
     LOG_GROUP_DRV_VBOXHDD,
+    /** VBox HDD container media driver group. */
+    LOG_GROUP_DRV_VD,
     /** Virtual Switch transport driver group */
     LOG_GROUP_DRV_VSWITCH,
     /** VUSB driver group */
@@ -246,6 +248,10 @@ typedef enum LOGGROUP
     LOG_GROUP_TM,
     /** TRPM group. */
     LOG_GROUP_TRPM,
+    /** Generic virtual disk layer. */
+    LOG_GROUP_VD,
+    /** VMDK virtual disk backend. */
+    LOG_GROUP_VD_VMDK,
     /** VM group. */
     LOG_GROUP_VM,
     /** VMM group. */
@@ -325,6 +331,7 @@ typedef enum LOGGROUP
     "DRV_TUN",      \
     "DRV_USBPROXY", \
     "DRV_VBOXHDD",  \
+    "DRV_VD",       \
     "DRV_VSWITCH",  \
     "DRV_VUSB",     \
     "EM",           \
@@ -369,6 +376,8 @@ typedef enum LOGGROUP
     "SUP",          \
     "TM",           \
     "TRPM",         \
+    "VD",           \
+    "VD_VMDK",      \
     "VM",           \
     "VMM",          \
     "VRDP",         \
