@@ -5574,7 +5574,7 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
     case 0x0d: /* alternate disk reset */
     case 0x11: /* recalibrate */
     case 0x14: /* controller internal diagnostic */
-      BX_INFO("int13h_harddisk function %02xh unimplemented, returns success\n", GET_AH());
+      BX_INFO("int13_harddisk: function %02xh unimplemented, returns success\n", GET_AH());
       goto int13_success;
       break;
 
@@ -5583,7 +5583,7 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
     case 0x18: // set media type for format
     case 0x50: // IBM/MS send packet command
     default:
-      BX_INFO("int13_harddisk function %02xh unsupported, returns fail\n", GET_AH());
+      BX_INFO("int13_harddisk: function %02xh unsupported, returns fail\n", GET_AH());
       goto int13_fail;
       break;
     }
@@ -6397,7 +6397,7 @@ BX_DEBUG_INT13_HD("int13_f01\n");
         }
 
       if ( (num_sectors > 128) || (num_sectors == 0) )
-        BX_PANIC("int13_harddisk(): num_sectors out of range!\n");
+        BX_PANIC("int13_harddisk: num_sectors out of range!\n");
 
       if (head > 15)
         BX_PANIC("hard drive BIOS:(read/verify) head > 15\n");
@@ -6543,7 +6543,7 @@ BX_DEBUG_INT13_HD("int13_f03\n");
         }
 
       if ( (num_sectors > 128) || (num_sectors == 0) )
-        BX_PANIC("int13_harddisk(): num_sectors out of range!\n");
+        BX_PANIC("int13_harddisk: num_sectors out of range!\n");
 
       if (head > 15)
         BX_PANIC("hard drive BIOS:(read) head > 15\n");
