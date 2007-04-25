@@ -128,7 +128,7 @@
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Добавить host-интерфейс</translation>
+        <translation>Добавить хост-интерфейс</translation>
     </message>
     <message>
         <source>Interface Name</source>
@@ -302,7 +302,7 @@
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Автоматически изменять размер экрана гостевой ОС при изменении размеров окна (требуются Guest Additions)</translation>
+        <translation>Автоматически изменять размер экрана гостевой ОС при изменении размеров окна (требуются Дополнения гостевой ОС)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -419,11 +419,11 @@
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>Установить &amp;пакет Guest Additions...</translation>
+        <translation>У&amp;становить Дополнения гостевой ОС...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Подключить установочный образ CD c расширениями гостевой ОС</translation>
+        <translation>Подключить установочный образ CD c пакетом Дополнений гостевой ОС</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -483,11 +483,11 @@
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показывает, что функция авто-изменения размера экрана гостевой ОС включена (&lt;img src=auto_resize_on_16px.png/&gt;) или выключена (&lt;img src=auto_resize_off_16px.png/&gt;). Обратите внимание, что для этой функции требуется установка расширений гостевой ОС.</translation>
+        <translation>Показывает, что функция авто-изменения размера экрана гостевой ОС включена (&lt;img src=auto_resize_on_16px.png/&gt;) или выключена (&lt;img src=auto_resize_off_16px.png/&gt;). Обратите внимание, что для этой функции требуется установка Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показывает, захвачен ли указатель мыши основного ПК в гостевой ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель не захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграция мыши (ИМ) включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель не захвачен&lt;/nobr&gt;&lt;br&gt;Обратите внимание, что для интеграции мыши требуется установка расширений гостевой ОС.</translation>
+        <translation>Показывает, захвачен ли указатель мыши основного ПК в гостевой ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель не захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграция мыши (ИМ) включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель не захвачен&lt;/nobr&gt;&lt;br&gt;Обратите внимание, что для интеграции мыши требуется установка Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
@@ -495,11 +495,11 @@
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Показывает назначенную Host-клавишу.&lt;br&gt;Эта клавиша, если ее нажимать отдельно, переключает состояние захвата клавиатуры и мыши. Ее можно также использовать в сочетании с другими клавишами для быстрого выполнения действий из главного меню.</translation>
+        <translation>Показывает назначенную хост-клавишу.&lt;br&gt;Эта клавиша, если ее нажимать отдельно, переключает состояние захвата клавиатуры и мыши. Ее можно также использовать в сочетании с другими клавишами для быстрого выполнения действий из главного меню.</translation>
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Обеспечивает быстрый доступ к общим папкам (по нажатию правой кнопки мыши).&lt;br&gt;Обратите внимание, что для функционирования общих папок требуется установка расширений гостевой ОС.</translation>
+        <translation>Обеспечивает быстрый доступ к общим папкам (по нажатию правой кнопки мыши).&lt;br&gt;Обратите внимание, что для функционирования общих папок требуется установка Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
@@ -588,7 +588,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось найти образ CD с расширениями гостевой ОС &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; или &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось найти образ CD с Дополнениями гостевой ОС &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; или &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -1304,7 +1304,7 @@
     <message>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Host-интерфейс</translation>
+        <translation>Хост-интерфейс</translation>
     </message>
     <message>
         <source>Internal Network</source>
@@ -1460,7 +1460,7 @@
     </message>
     <message>
         <source>&amp;Host Key</source>
-        <translation>&amp;Host-клавиша</translation>
+        <translation>&amp;Хост-клавиша</translation>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
@@ -1568,7 +1568,7 @@
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Показывает клавишу, используемую в качестве host-клавиши в окне ВМ. Активируйте поле ввода и нажмите новую host-клавишу. Обратите внимание, что в качестве host-клавиши нельзя использовать буквенные, цифровые клавиши, клавиши управления курсором и редактирования.</translation>
+        <translation>Показывает клавишу, используемую в качестве хост-клавиши в окне ВМ. Активируйте поле ввода и нажмите новую хост-клавишу. Обратите внимание, что в качестве хост-клавиши нельзя использовать буквенные, цифровые клавиши, клавиши управления курсором и редактирования.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -2177,11 +2177,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось создать сетевой host-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось создать сетевой хост-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось удалить сетевой host-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось удалить сетевой хост-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -2201,11 +2201,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы &lt;b&gt;щелкнули кнопкой мыши&lt;/b&gt; внутри экрана виртуальной машины или нажали &lt;b&gt;host-клавишу&lt;/b&gt;. Это приведет к тому, что виртуальная машина &lt;b&gt;захватит&lt;/b&gt; указатель мыши (только в случае, если интеграция указателя мыши не поддерживается гостевой ОС) и клавиатуру основного ПК, что сделает их недоступными для других приложений, работающих на компьютере.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;host-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая host-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы &lt;b&gt;щелкнули кнопкой мыши&lt;/b&gt; внутри экрана виртуальной машины или нажали &lt;b&gt;хост-клавишу&lt;/b&gt;. Это приведет к тому, что виртуальная машина &lt;b&gt;захватит&lt;/b&gt; указатель мыши (только в случае, если интеграция указателя мыши не поддерживается гостевой ОС) и клавиатуру основного ПК, что сделает их недоступными для других приложений, работающих на компьютере.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;У Вас включена настройка &lt;b&gt;Автозахват клавиатуры&lt;/b&gt;. Это приведет к тому, что виртуальная машина будет автоматически &lt;b&gt;захватывать&lt;/b&gt; клавиатуру каждый раз при переключении в окно ВМ, что сделает ее недоступной для других приложений, работающих на компьютере: когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab) будут направлены в виртуальную машину.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;host-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая host-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;У Вас включена настройка &lt;b&gt;Автозахват клавиатуры&lt;/b&gt;. Это приведет к тому, что виртуальная машина будет автоматически &lt;b&gt;захватывать&lt;/b&gt; клавиатуру каждый раз при переключении в окно ВМ, что сделает ее недоступной для других приложений, работающих на компьютере: когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab) будут направлены в виртуальную машину.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -2213,7 +2213,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виртуальная машина сообщает, гостевая ОС не поддерживает &lt;b&gt;интеграцию указателя мыши&lt;/b&gt; в текущем видеорежиме. Чтобы использовать мышь в гостевой ОС, нужно захватить мышь (щелкнув кнопкой мыши в пределах экрана ВМ или нажав host-клавишу).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виртуальная машина сообщает, гостевая ОС не поддерживает &lt;b&gt;интеграцию указателя мыши&lt;/b&gt; в текущем видеорежиме. Чтобы использовать мышь в гостевой ОС, нужно захватить мышь (щелкнув кнопкой мыши в пределах экрана ВМ или нажав хост-клавишу).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -2225,7 +2225,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Сейчас окно виртуальной машины будет переключено в &lt;b&gt;полноэкранный&lt;/b&gt; режим. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;. Обратите внимание, что в данный момент &lt;i&gt;host-клавиша&lt;/i&gt; определена как &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Сейчас окно виртуальной машины будет переключено в &lt;b&gt;полноэкранный&lt;/b&gt; режим. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;. Обратите внимание, что в данный момент &lt;i&gt;хост-клавиша&lt;/i&gt; определена как &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2559,7 +2559,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
 для доступа к общей папке с именем &lt;i&gt;share&lt;/i&gt; в DOS-подобной ОС, или
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
-для доступа к ней из Линукс-подобной ОС. Эта возможность требует устанвки Guest Additions.&lt;/qt&gt;</translation>
+для доступа к ней из Линукс-подобной ОС. Эта возможность требует устанвки Дополнений гостевой ОС.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add</source>
@@ -3705,7 +3705,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation>Выбран неверный сетевой host-интерфейс для адаптера %1.</translation>
+        <translation>Выбран неверный сетевой хост-интерфейс для адаптера %1.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
@@ -3750,7 +3750,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Задает режим работы буфера обмена между гостевой и основной ОС. Заметьте, что использование этой функции требует установки пакета Guest Additions в гостевой ОС.</translation>
+        <translation>Задает режим работы буфера обмена между гостевой и основной ОС. Заметьте, что использование этой функции требует установки пакета Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
@@ -3816,7 +3816,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <name>VMGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>Hеправильный код host-клавиши: &apos;%1 (0x%2)&apos;.</translation>
+        <translation>Hеправильный код хост-клавиши: &apos;%1 (0x%2)&apos;.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
