@@ -2329,11 +2329,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut obţine starea de accesibilitate a mediului &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Unele dintre mediile înregistrate pot deveni inaccesibile.</translation>
     </message>
     <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut crea interfaţa de reţea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;&apos;.</source>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut şterge interfaţa de reţea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
