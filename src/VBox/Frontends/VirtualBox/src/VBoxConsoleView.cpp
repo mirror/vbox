@@ -1395,25 +1395,14 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
         {
             /* calc flags. */
             int flags = 0;
-            UInt32 EventKind = ::GetEventKind (inEvent);
             if (EventKind != kEventRawKeyUp)
                 flags |= KeyPressed;
-            if (scanCode & 0x8000) /* modifiers (just in case) */
-            {
-                flags |= KeyPressed;
-                scanCode &= ~0x8000;
-            }
-            if (scanCode & 0x80)
-            {
+            if (scanCode & VBOXKEY_EXTENDED)
                 flags |= KeyExtended;
-                scanCode &= ~0x80;
-            }
             /** @todo KeyPause, KeyPrint. */
+            scanCode &= VBOXKEY_SCANCODE_MASK;
 
-            /* get the keycode and unicode string (if present). */
-            UInt32 keyCode = ~0;
-            ::GetEventParameter (inEvent, kEventParamKeyCode, typeUInt32, NULL,
-                                 sizeof (keyCode), NULL, &keyCode);
+            /* get the unicode string (if present). */
             AssertCompileSize (wchar_t, 2);
             AssertCompileSize (UniChar, 2);
             wchar_t ucs[32];
@@ -1445,13 +1434,23 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
                 unsigned keyCode = ::DarwinModifierMaskToDarwinKeycode (1 << bit);
                 Assert (keyCode);
 
-                unsigned flags = (newMask & (1 << bit)) ? KeyPressed : 0;
-                if (scanCode & 0x80)
+                if (!(scanCode & VBOXKEY_LOCK))
                 {
-                    flags |= KeyExtended;
-                    scanCode &= ~0x80;
+                    unsigned flags = (newMask & (1 << bit)) ? KeyPressed : 0;
+                    if (scanCode & VBOXKEY_EXTENDED)
+                        flags |= KeyExtended;
+                    scanCode &= VBOXKEY_SCANCODE_MASK;
+                    ret |= keyEvent (keyCode, scanCode & 0xff, flags);
                 }
-                ret |= keyEvent (keyCode, scanCode, flags);
+                else
+                {
+                    unsigned flags = 0;
+                    if (scanCode & VBOXKEY_EXTENDED)
+                        flags |= KeyExtended;
+                    scanCode &= VBOXKEY_SCANCODE_MASK;
+                    ret |= keyEvent (keyCode, scanCode, flags | KeyPressed);
+                    ret |= keyEvent (keyCode, scanCode, flags);
+                }
             }
         }
 
@@ -1626,18 +1625,7 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 
 #elif defined(Q_WS_MAC)
 
-    if (muNumLockAdaptionCnt)
-    {
-        /* Numlock isn't in the modifier mask. */
-        KeyMap keys = {{0},{0},{0},{0}};
-        GetKeys(keys);
-        if (mfNumLock ^ ASMBitTest(keys, 0x47 /* QZ_NUMLOCK */))
-        {
-            muNumLockAdaptionCnt--;
-            codes[(*count)++] = 0x45;
-            codes[(*count)++] = 0x45 | 0x80;
-        }
-    }
+    /* if (muNumLockAdaptionCnt) ... - NumLock isn't implemented by Mac OS X so ignore it. */
     if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
     {
         muCapsLockAdaptionCnt--;
