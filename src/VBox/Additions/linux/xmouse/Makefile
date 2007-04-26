@@ -27,14 +27,6 @@ DLLS     = vboxmouse_drv_70 vboxmouse_drv_71
 # for BUILD_TARGET=l4
 SUFF_DLL = .so
 
-#LIBRARIES   = vboxmouse vboxmouse_so_70 vboxmouse_so_71
-#OTHERS      = \
-#	$(PATH_BIN)/additions/vboxmouse_drv.o \
-#	$(PATH_BIN)/additions/vboxmouse_drv_70.so \
-#	$(PATH_BIN)/additions/vboxmouse_drv_71.so
-#OTHER_CLEAN = $(OTHERS)
-
-
 vboxmouse_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxmouse_drv_DEFS = \
 	linux __i386__ _POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
@@ -94,20 +86,3 @@ vboxmouse_drv_71_SOURCES  = \
 
 
 include	$(PATH_KBUILD)/footer.kmk
-
-#$(PATH_BIN)/additions/vboxmouse_drv.o: mouse.c pnp.c VBoxUtils.c
-#	$(call MSG_L1,Linking $@)
-#	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-#	$(QUIET)ld -r -o $@ $(PATH_vboxmouse)/mouse.o $(PATH_vboxmouse)/pnp.o $(PATH_vboxmouse)/VBoxUtils.o
-#
-# This is a DLL...
-#$(PATH_BIN)/additions/vboxmouse_drv_70.so: xorg70/mouse.c xorg70/pnp.c VBoxUtils.c
-#	$(call MSG_L1,Linking $@)
-#	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-#	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -shared -s -o $@ $(PATH_vboxmouse_drv_70)/xorg70/mouse.o $(PATH_vboxmouse_drv_70)/xorg70/pnp.o $(PATH_vboxmouse_drv_70)/VBoxUtils.o
-#
-#$(PATH_BIN)/additions/vboxmouse_drv_71.so: xorg71/mouse.c xorg71/pnp.c VBoxUtils.c
-#	$(call MSG_L1,Linking $@)
-#	$(QUIET)$(MKDIR) -p $(PATH_BIN)/additions
-#	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -shared -s -o $@ $(PATH_vboxmouse_drv_71)/xorg71/mouse.o $(PATH_vboxmouse_drv_71)/xorg71/pnp.o $(PATH_vboxmouse_drv_71)/VBoxUtils.o
-

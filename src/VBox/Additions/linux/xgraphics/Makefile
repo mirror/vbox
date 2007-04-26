@@ -134,4 +134,3 @@ vboxvideo_drv_71_SOURCES  = \
 
 
 include	$(PATH_KBUILD)/footer.kmk
-
