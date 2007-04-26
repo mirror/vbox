@@ -168,6 +168,12 @@ void VBoxNewHDWzd::init()
     /* setup connections and set validation for pages
      * ---------------------------------------------------------------------- */
 
+    /* setup the pictures background color */
+    VBoxGlobal::fillPixmapBackGrd (pmWelcome);
+    VBoxGlobal::fillPixmapBackGrd (pmType);
+    VBoxGlobal::fillPixmapBackGrd (pmNameAndSize);
+    VBoxGlobal::fillPixmapBackGrd (pmSummary);
+
     /* Image type page */
 
     /* Name and Size page */
@@ -208,6 +214,12 @@ void VBoxNewHDWzd::init()
              wvalNameAndSize, SLOT (revalidate()));
 
     /* Summary page */
+
+    teSummary = new VBoxTextView (pageSummary);
+    teSummary->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
+    teSummary->setFrameShape (QTextEdit::NoFrame);
+    teSummary->setReadOnly (TRUE);
+    summaryLayout->insertWidget (1, teSummary);
 
     /* filter out Enter keys in order to direct them to the default dlg button */
     QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
@@ -250,6 +262,34 @@ void VBoxNewHDWzd::init()
 
     /* the finish button on the Summary page is always enabled */
     setFinishEnabled (pageSummary, true);
+
+    /* setup minimum width for the sizeHint to be calculated correctly */
+    int wid = widthSpacer->minimumSize().width();
+    txWelcome->setMinimumWidth (wid);
+    textLabel1_2->setMinimumWidth (wid);
+    txNameComment->setMinimumWidth (wid);
+    txSizeComment->setMinimumWidth (wid);
+    txSummaryHdr->setMinimumWidth (wid);
+    txSummaryFtr->setMinimumWidth (wid);
+}
+
+
+void VBoxNewHDWzd::showEvent (QShowEvent *e)
+{
+    QDialog::showEvent (e);
+
+    /* one may think that QWidget::polish() is the right place to do things
+     * below, but apparently, by the time when QWidget::polish() is called,
+     * the widget style & layout are not fully done, at least the minimum
+     * size hint is not properly calculated. Since this is sometimes necessary,
+     * we provide our own "polish" implementation. */
+
+    layout()->activate();
+
+    /* resize to the miminum possible size */
+    resize (minimumSize());
+
+    VBoxGlobal::centerWidget (this, parentWidget());
 }
 
 
@@ -397,6 +437,8 @@ void VBoxNewHDWzd::showPage( QWidget *page )
     {
         teSummary->setFocus();
     }
+
+    page->layout()->activate();
 }
 
 

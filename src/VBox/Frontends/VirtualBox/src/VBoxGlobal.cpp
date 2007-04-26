@@ -33,6 +33,8 @@
 #include <qiconset.h>
 #include <qwidgetlist.h>
 #include <qfiledialog.h>
+#include <qimage.h>
+#include <qlabel.h>
 
 #include <qfileinfo.h>
 #include <qdir.h>
@@ -469,6 +471,28 @@ private:
 };
 
 #endif /* Q_WS_WIN */
+
+VBoxTextView::VBoxTextView (QWidget *aParent)
+    : QTextEdit (aParent)
+{
+}
+
+QSize VBoxTextView::sizeHint() const
+{
+    return minimumSizeHint();
+}
+
+QSize VBoxTextView::minimumSizeHint() const
+{
+    int wid = 0;
+    int hei = heightForWidth (wid);
+    return QSize (wid, hei);
+}
+
+void VBoxTextView::setText (const QString &aText)
+{
+    QTextEdit::setText (aText);
+}
 
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
@@ -1849,6 +1873,25 @@ private:
 
     QByteArray mData;
 };
+
+/**
+ *  Fills the QLabel picture background with the color of last
+ *  pixel in the pixmap.
+ */
+/* static */
+void VBoxGlobal::fillPixmapBackGrd (QLabel *aLabel)
+{
+    QPixmap *pix = aLabel->pixmap();
+    QImage img = pix->convertToImage();
+    QRgb rgbPixel = img.pixel (img.width() - 1, img.height() - 1);
+    int cRed = qRed (rgbPixel);
+    int cGreen = qGreen (rgbPixel);
+    int cBlue = qBlue (rgbPixel);
+    aLabel->setBackgroundColor (QColor (cRed, cGreen, cBlue));
+    aLabel->setFrameShadow (QFrame::Plain);
+    aLabel->setFrameShape (QFrame::Box);
+    aLabel->setPaletteForegroundColor (QColor (89,121,150));
+}
 
 static VBoxTranslator *sTranslator = 0;
 static QString sLoadedLangId = gVBoxBuiltInLangName;
