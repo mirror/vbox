@@ -1230,9 +1230,6 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
         /** @todo dump guest call stack. */
 #if 1 // temporary while debugging #1589
         RTLogRelPrintf("***\n");
-        DBGFR3Info(pVM, "pit", NULL, DBGFR3InfoLogRelHlp());
-        //RTLogRelPrintf("***\n");
-        //DBGFR3Info(pVM, "handlers", NULL, DBGFR3InfoLogRelHlp());
         uint32_t esp = CPUMGetGuestESP(pVM);
         if (    CPUMGetGuestSS(pVM) == 0
             &&  esp < _64K)
