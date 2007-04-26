@@ -1273,12 +1273,23 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
             SUPGLOBALINFOPAGE GipCopy = *g_pSUPGlobalInfoPage;
             for (unsigned i = 0; i < RT_ELEMENTS(GipCopy.aCPUs); i++)
                 if (GipCopy.aCPUs[i].u64CpuHz != 0 && GipCopy.aCPUs[i].u64CpuHz < _4G)
-                    RTLogRelPrintf("%#d: u64CpuHz=%RU64Hz u32TransactionId=%#x u64TSC=%RX64 u64NanoTS=%RX64\n", 
+                    RTLogRelPrintf("%d: u64CpuHz=%RU64Hz u32TransactionId=%#x u64TSC=%RX64 u64NanoTS=%RX64 cErrors=%RU32\n"
+                                   "   au32TSCHistory={%RX32,%RX32,%RX32,%RX32, %RX32,%RX32,%RX32,%RX32} iTSCHistoryHead=%d\n",
                                    i, 
                                    GipCopy.aCPUs[i].u64CpuHz,
                                    GipCopy.aCPUs[i].u32TransactionId,
                                    GipCopy.aCPUs[i].u64TSC,
-                                   GipCopy.aCPUs[i].u64NanoTS);
+                                   GipCopy.aCPUs[i].u64NanoTS, 
+                                   GipCopy.aCPUs[i].cErrors,
+                                   GipCopy.aCPUs[i].au32TSCHistory[0],
+                                   GipCopy.aCPUs[i].au32TSCHistory[1],
+                                   GipCopy.aCPUs[i].au32TSCHistory[2],
+                                   GipCopy.aCPUs[i].au32TSCHistory[3],
+                                   GipCopy.aCPUs[i].au32TSCHistory[4],
+                                   GipCopy.aCPUs[i].au32TSCHistory[5],
+                                   GipCopy.aCPUs[i].au32TSCHistory[6],
+                                   GipCopy.aCPUs[i].au32TSCHistory[7],
+                                   GipCopy.aCPUs[i].iTSCHistoryHead);
         }
 #endif 
         RTLogRelPrintf("************** End of Guest state at power off ***************\n");
