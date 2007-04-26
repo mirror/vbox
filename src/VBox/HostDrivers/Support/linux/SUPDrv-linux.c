@@ -1403,18 +1403,36 @@ static void     VBoxSupGipTimer(unsigned long ulUser)
     pDevExt = (PSUPDRVDEVEXT)ulUser;
     pGip    = pDevExt->pGip;
     ulNow   = jiffies;
-    ulDiff  = ulNow - pDevExt->ulLastJiffies;
 
-    pDevExt->ulLastJiffies = ulNow;
+#ifdef CONFIG_SMP
+    if (pGip && pGip->u32Mode == SUPGIPMODE_ASYNC_TSC) 
+    {
+        uint8_t iCPU = ASMGetApicId();
+        ulDiff = ulNow - pDevExt->aCPUs[iCPU].ulLastJiffies;
+        pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
 #ifdef TICK_NSEC
-    u64Monotime = pDevExt->u64LastMonotime + ulDiff * TICK_NSEC;
+        u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
 #else
-    u64Monotime = pDevExt->u64LastMonotime + ulDiff * (1000000 / HZ);
+        u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * (1000000 / HZ);
 #endif
-    ASMAtomicXchgU64(&pDevExt->u64LastMonotime, u64Monotime);
+        pDevExt->aCPUs[iCPU].u64LastMonotime = u64Monotime;
+    }
+    else
+#endif /* CONFIG_SMP */
+    {
+        ulDiff = ulNow - pDevExt->ulLastJiffies;
+        pDevExt->ulLastJiffies = ulNow;
+#ifdef TICK_NSEC
+        u64Monotime = pDevExt->u64LastMonotime + ulDiff * TICK_NSEC;
+#else
+        u64Monotime = pDevExt->u64LastMonotime + ulDiff * (1000000 / HZ);
+#endif
+        pDevExt->u64LastMonotime = u64Monotime;
+    }
     if (RT_LIKELY(pGip))
         supdrvGipUpdate(pDevExt->pGip, u64Monotime);
-    mod_timer(&g_GipTimer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
+    if (RT_LIKELY(!pDevExt->fGIPSuspended))
+        mod_timer(&g_GipTimer, ulNow + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
 
     local_irq_restore(SavedFlags);
 }
@@ -1424,9 +1442,9 @@ static void     VBoxSupGipTimer(unsigned long ulUser)
 /**
  * Timer callback function for the other CPUs.
  * 
- * @param   iLnxCPU     The APIC ID of this timer.
+ * @param   iTimerCPU     The APIC ID of this timer.
  */
-static void VBoxSupGipTimerPerCpu(unsigned long iLnxCPU)
+static void VBoxSupGipTimerPerCpu(unsigned long iTimerCPU)
 {
     PSUPDRVDEVEXT       pDevExt;
     PSUPGLOBALINFOPAGE  pGip;
@@ -1442,25 +1460,25 @@ static void VBoxSupGipTimerPerCpu(unsigned long iLnxCPU)
     
     if (RT_LIKELY(iCPU < RT_ELEMENTS(pGip->aCPUs)))
     {
-        if (RT_LIKELY(iCPU == iLnxCPU)) 
+        if (RT_LIKELY(iTimerCPU == iCPU)) 
         {
             unsigned long   ulNow  = jiffies;
-            unsigned long   ulDiff = ulNow - pDevExt->aCPUs[iLnxCPU].ulLastJiffies;
-
-            pDevExt->aCPUs[iLnxCPU].ulLastJiffies = ulNow;
+            unsigned long   ulDiff = ulNow - pDevExt->aCPUs[iCPU].ulLastJiffies;
+            pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
 #ifdef TICK_NSEC
             u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
 #else
             u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * (1000000 / HZ);
 #endif
-            ASMAtomicXchgU64(&pDevExt->aCPUs[iCPU].u64LastMonotime, u64Monotime);
+            pDevExt->aCPUs[iCPU].u64LastMonotime = u64Monotime;
             if (RT_LIKELY(pGip))
                 supdrvGipUpdatePerCpu(pGip, u64Monotime, iCPU);
-            mod_timer(&pDevExt->aCPUs[iCPU].Timer, jiffies + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
+            if (RT_LIKELY(!pDevExt->fGIPSuspended))
+                mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
         }
         else
-            printk("vboxdrv: error: GIP CPU update timer executing on the wrong CPU: apicid=%d != timer-apicid=%ld (cpuid=%d != timer-cpuid=%d)\n",
-                   iCPU, iLnxCPU, smp_processor_id(), pDevExt->aCPUs[iLnxCPU].iSmpProcessorId);
+            printk("vboxdrv: error: GIP CPU update timer executing on the wrong CPU: apicid=%d != timer-apicid=%ld (cpuid=%d !=? timer-cpuid=%d)\n",
+                   iCPU, iTimerCPU, smp_processor_id(), pDevExt->aCPUs[iTimerCPU].iSmpProcessorId);
     }
     else
         printk("vboxdrv: error: APIC ID is bogus (GIP CPU update): apicid=%d max=%d cpuid=%d\n", 
@@ -1576,6 +1594,7 @@ int VBOXCALL supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE pGip)
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
 {
     dprintf2(("supdrvOSGipResume:\n"));
+    ASMAtomicXchgU8(&pDevExt->fGIPSuspended, false);
 #ifdef CONFIG_SMP
     if (pDevExt->pGip->u32Mode != SUPGIPMODE_ASYNC_TSC) 
 #endif
@@ -1627,6 +1646,7 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
     unsigned i;
 #endif 
     dprintf2(("supdrvOSGipSuspend:\n"));
+    ASMAtomicXchgU8(&pDevExt->fGIPSuspended, true);
 
     if (timer_pending(&g_GipTimer))
         del_timer_sync(&g_GipTimer);

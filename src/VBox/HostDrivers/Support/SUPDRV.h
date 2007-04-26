@@ -648,6 +648,8 @@ typedef struct SUPDRVDEVEXT
     unsigned long           ulLastJiffies;
     /** The last mono time stamp. */
     uint64_t volatile       u64LastMonotime;
+    /** Set when GIP is suspended to prevent the timers from re-registering themselves). */
+    uint8_t volatile        fGIPSuspended;            
 # ifdef CONFIG_SMP
     /** Array of per CPU data for SUPGIPMODE_ASYNC_TSC. */
     struct LINUXCPU
