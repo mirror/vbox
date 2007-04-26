@@ -1562,10 +1562,19 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         resize (scrGeo.size());
         setMinimumSize (size());
         setMaximumSize (size());
+#ifdef Q_WS_MAC
+        /* make the apple menu bar go away. */
+        OSStatus orc = SetSystemUIMode (kUIModeAllHidden, kUIOptionDisableAppleMenu);
+        if (orc)
+            LogRel (("Error: Failed to change UI mode (rc=%#x) when changing to fullscreen mode. (=> menu bar trouble)\n", orc));
+#endif
     }
     else
     {
         /* hide early to avoid extra flicker */
+#ifdef Q_WS_MAC
+        SetSystemUIMode (kUIModeNormal, 0);
+#endif
         hide();
         /* reparet to restore normal flags */
         reparent (parentWidget(), normal_wflags, QPoint (0, 0), false);
