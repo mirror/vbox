@@ -1,3 +1,4 @@
+/** $Id$ */
 /** @file
  *
  * VBox storage devices:
@@ -35,7 +36,6 @@
 #include <iprt/uuid.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
-#include <iprt/asm.h>
 
 #include "VDICore.h"
 #include "Builtins.h"

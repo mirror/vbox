@@ -75,8 +75,9 @@ else
  VBoxDDU_SDKS.win         = WINPSDK
 endif
 VBoxDDU_SOURCES          = \
-	Storage/VDICore.cpp
-#	Storage/VmdkHDDCore.cpp
+	Storage/VBoxHDD-new.cpp \
+	Storage/VDICore.cpp \
+	Storage/VmdkHDDCore.cpp
 VBoxDDU_LIBS             = \
 	$(LIB_RUNTIME)
 ifeq ($(BUILD_TARGET),l4)
@@ -379,8 +380,8 @@ Drivers_SOURCES    = \
 	Storage/DrvHostRawDisk.cpp \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
-	Storage/VBoxHDD.cpp \
-	Storage/VmdkHDD.cpp
+	Storage/DrvVD.cpp \
+	Storage/VBoxHDD.cpp
 
 # -- OS specific --
 
@@ -407,11 +408,11 @@ Drivers_SOURCES       = \
 	Input/DrvKeyboardQueue.cpp \
 	Storage/VBoxHDD.cpp \
 	Storage/DrvBlock.cpp \
-	Storage/VmdkHDD.cpp \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp \
+	Storage/DrvVD.cpp \
 	PC/DrvACPI.cpp \
 	Network/DrvIntNet.cpp \
 	Network/DrvNetSniffer.cpp \

@@ -4948,7 +4948,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             AssertBreak (!vmdkDisk.isNull(), hrc = E_FAIL);
 
             rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",         "VmdkHDD");               RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");               RC_CHECK();
             rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
             hrc = vmdkDisk->COMGETTER(FilePath)(&str);                                  H();
             STR_CONV();
