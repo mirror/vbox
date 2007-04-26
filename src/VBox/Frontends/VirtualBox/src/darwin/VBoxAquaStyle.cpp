@@ -23,12 +23,12 @@
 #include "VBoxAquaStyle.h"
 #include <qapplication.h>
 #include <qtoolbutton.h>
+#include <qpushbutton.h>
+#include <qpainter.h>
 #include <qpixmap.h>
 
 
-#ifdef Q_WS_MAC /* move this! */
 VBoxAquaStyle *VBoxAquaStyle::sInstance;
-#endif 
 
 /**
  * Create a VBoxAquaStyle wrapper overloading the specified QAquaStyle instance.
@@ -82,6 +82,10 @@ void VBoxAquaStyle::drawComplexControl( ComplexControl control, QPainter *p, con
     //fprintf(stderr, "drawComplexControl %p %x", widget, control);
     if ( control == CC_ToolButton )
     {
+        /*
+         * This is for the ugly tool bar buttons.
+         * We just drop the frame unless they are pressed down.
+         */
         QToolButton *toolbutton = (QToolButton *)widget;
         //if (toolbutton->isDown()) fprintf(stderr, " down");
         if (!toolbutton->isDown())
@@ -96,6 +100,8 @@ void VBoxAquaStyle::drawComplexControl( ComplexControl control, QPainter *p, con
             return;
         }
     }
+
+    /* fallback */
     mparent->drawComplexControl( control, p, widget, r, cg, how, sub, subActive, foo );
     //fprintf(stderr, "\n");
 }
