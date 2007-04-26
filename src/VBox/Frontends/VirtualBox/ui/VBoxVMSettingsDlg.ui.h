@@ -417,6 +417,7 @@ void VBoxVMSettingsDlg::init()
     whatsThisLabel->setTextFormat (Qt::RichText);
 #endif
 
+    whatsThisLabel->setMaxHeightMode (true);
     whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
     whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
     whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
