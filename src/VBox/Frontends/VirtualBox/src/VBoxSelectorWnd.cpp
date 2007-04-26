@@ -1022,7 +1022,7 @@ void VBoxSelectorWnd::languageChange()
 
 #ifdef Q_WS_MAC
     /* 
-     * Macification: Getting the right menu as application Preference menu item.
+     * Macification: Getting the right menu as application preference menu item.
      *
      * QMenuBar::isCommand() in qmenubar_mac.cpp doesn't recognize "Setting"(s)
      * unless it's in the first position. So, we use the Mac term here to make
