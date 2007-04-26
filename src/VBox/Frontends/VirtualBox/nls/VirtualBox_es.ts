@@ -127,16 +127,10 @@
         <translation>VirtualBox - Acerca de</translation>
     </message>
     <message>
-        <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation>Alt+O</translation>
-    </message>
-    <message>
-        <source>VirtualBox Graphical User Interface Version %1</source>
-        <translation>Interfaz Gráfica de VirtualBox Versión %1</translation>
+        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
+%2&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;Interfaz Gráfica de VirtualBox Versión %1&lt;br&gt;
+%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -1670,8 +1664,8 @@ para todos los dispositivos USB seleccionados, conectados a la PC Anfitriona.</t
         <translation>Cancela los cambios y cierra el diálogo.</translation>
     </message>
     <message>
-        <source>VirtualBox Global Settings</source>
-        <translation>Configuración Global de VirtualBox</translation>
+        <source>VirtualBox Preferences</source>
+        <translation type="unfinished">Configuración Global de VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -1820,13 +1814,13 @@ to the system default language.&lt;/qt&gt;
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Este asistente lo guiará para crear una Imagen de Disco Virtualpara su Máquina Virtual.&lt;/p&gt;
+&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del assitente 
+y &lt;b&gt;Atrás&lt;/b&gt; para regresar a la anterior.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>¡Bienvenido al  Asistente para la creación de un Nuevo Disco Virtual!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -1835,152 +1829,164 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccione el tipo de Imagen de Disco Virtual que desea crear.&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;Imagen de expansión dinámica&lt;/b&gt; ocupa inicialmente poco espacio. 
+Luego irá creciendo a medida que el OS (sistema operativo) Huésped utiliza 
+su espacio (hasta el tamaño máximo espeficicado).&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;Imagen de tamaño fijo&lt;/b&gt; no crece. Es almacenada en una imagen
+apenas mayor del tamaño del disco virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo de Imagen</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
-        <translation type="unfinished"></translation>
+        <translation>Imagen de expansión &amp;Dinámica</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+D</translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation type="unfinished"></translation>
+        <translation>Imagen de tamaño &amp;Fijo</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+F</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo de Imagen de Disco Virtual</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Presione &lt;b&gt;Seleccionar&lt;/b&gt; para elegir la ubicación y nombre del archivo para almacenar la Imagen de Disco Virtual. Alternativamente puede ingresar el nombre del archivo en el campo de entrada.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Image File Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombre del Archivo de &amp;Imagen</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Seleccionar</translation>
+        <translation>Seleccionar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccione el tamaño de la imagen de disco virtual en megabytes. Este será el tamaño de disco que será
+ reportado al OS (Sist. Op.) Huésped.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image &amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tamaño de Image</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamaño y Ubicación del Disco Virtual</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Se creará una nueva Imagen de Disco Virtual en con los siguientes parámetros:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation type="unfinished"></translation>
+        <translation>Si la siguiente configuración es correcta presione el botón &lt;b&gt;Finalizar&lt;/b&gt;.
+                            Una vez presionado una nueva Imagen de Disco Virtual será creada.
+                            </translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation>Resumen</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tipo:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Ubicación:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tamaño:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished"></translation>
+        <translation>Imagenes de Disco (*.vdi)</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccione un archivo para la nuevo Archivo de Imagen de Disco</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Crear una Nueva Máquin Virtual</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Este asistente lo guiará en los pasos necesario para crear una nueva
+ Máquina Virtual para VirtualBox.&lt;/p&gt;
+&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del assitente 
+y &lt;b&gt;Atrás&lt;/b&gt; para regresar a la anterior.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>¡Bienvenido al Asistente para la creación de una Nueva Máquina Virtual!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
 system you plan to install in the machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ingrese el Nombre de la nueva Máquina Virtual y seleccione el tipo de sistema operativo Huésped que usted planea instalar en la máquina.&lt;/p&gt;
+&lt;p&gt;El nombre de la Máquina Virtual usualmente indica su configuración de Software y Hardware. Será usado para identificar la máquina virtual creada en todos los productos de VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished"></translation>
+        <translation>N&amp;ombre</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipo de OS (sist. op.)</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombre de VM (maq. virt.) y Tipo de OS (sist. op.)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccione la cantidad en Megabytes de memoria base (RAM) que será asignada a la Máquina Virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamaño de &amp;Memoria Base</translation>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;</translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation>=</translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&gt;</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Memoria</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
@@ -2033,7 +2039,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Resumen</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -2375,11 +2381,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2433,7 +2439,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Global Settings...</source>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3404,11 +3411,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Tipo de OS (sist. op.)</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tamaño de &amp;Memoria Base</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -3416,19 +3423,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;</translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">=</translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&gt;</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
@@ -3512,7 +3519,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+D</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
