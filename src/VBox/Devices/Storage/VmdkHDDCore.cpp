@@ -1353,7 +1353,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number from file '%s'"), pszFilename);
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number from file '%s'"), pszFilename);
         goto out;
     }
 
@@ -1928,7 +1928,7 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
 
 static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     PVMDKIMAGE pImage;
 
     /* Check open flags. Just readonly flag is supported. */
@@ -2017,12 +2017,12 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cb
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            /* Clip read range to at most the rest of the grain. */
-            cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - (uSectorOffset % pExtent->cSectorsPerGrain)));
             rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorInExtent,
                                &uSectorOffset);
             if (VBOX_FAILURE(rc))
                 goto out;
+            /* Clip read range to at most the rest of the grain. */
+            cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - (uSectorOffset % pExtent->cSectorsPerGrain)));
             if (uSectorOffset == 0)
                 rc = VINF_VDI_BLOCK_FREE;
             else
@@ -2087,12 +2087,12 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, si
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            /* Clip write range to at most the rest of the grain. */
-            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - (uSectorOffset % pExtent->cSectorsPerGrain)));
             rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorInExtent,
                                &uSectorOffset);
             if (VBOX_FAILURE(rc))
                 goto out;
+            /* Clip write range to at most the rest of the grain. */
+            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - (uSectorOffset % pExtent->cSectorsPerGrain)));
             if (uSectorOffset == 0)
             {
                 if (cbWrite == VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain))
