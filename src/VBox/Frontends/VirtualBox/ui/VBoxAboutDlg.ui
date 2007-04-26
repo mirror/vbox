@@ -63,11 +63,6 @@
         <property name="backgroundOrigin">
             <enum>ParentOrigin</enum>
         </property>
-        <property name="font">
-            <font>
-                <pointsize>7</pointsize>
-            </font>
-        </property>
         <property name="lineWidth">
             <number>0</number>
         </property>
