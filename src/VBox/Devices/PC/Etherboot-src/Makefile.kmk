@@ -191,43 +191,42 @@ PCNET32_PART2_Z = $(PATH_TARGET)/pcnet32.rom.rt2.zo
 
 # Build the core (card-independent part) of Etherboot.
 $(BLIB): $(BOBJS) $(MAKEDEPS)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,NetBiosBin,$@)
 	$(QUIET)$(EB_AR) r $@ $(BOBJS)
 	$(QUIET)$(EB_RANLIB) $@
 
 # General rules for compiling/assembling source files.
 $(PATH_TARGET)/%.o: core/%.c $(MAKEDEPS)
-	$(call MSG_COMPILE,$@,$<,$@,CC)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,CC)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
 
 $(PATH_TARGET)/%.o: drivers/net/%.c $(MAKEDEPS)
-	$(call MSG_COMPILE,$@,$<,$@,CC)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,CC)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
 
 $(PATH_TARGET)/%.o: arch/$(ARCH)/core/%.c $(MAKEDEPS)
-	$(call MSG_COMPILE,$@,$<,$@,CC)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,CC)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
 
 $(PATH_TARGET)/%.o: arch/$(ARCH)/firmware/pcbios/%.c $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,C)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -o $@ -c $<
 
 $(PATH_TARGET)/%.o: arch/$(ARCH)/core/%.S $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,AS)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -Ui386 -DASSEMBLY -o $@ -c $<
 
 $(PATH_TARGET)/%.o: arch/$(ARCH)/prefix/%.S $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,AS)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -Ui386 -DASSEMBLY -o $@ -c $<
 
 $(PATH_TARGET)/%.o: arch/$(ARCH)/firmware/pcbios/%.S $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,AS)
 	$(QUIET)$(EB_CC) $(EB_CFLAGS) -Ui386 -DASSEMBLY -o $@ -c $<
 
 # General rules for generating runtime (rt) files.
 $(PATH_TARGET)/%.rt.o: $(PATH_TARGET)/%.o $(START) $(PATH_TARGET)/config.o $(BLIB) $(MAKEDEPS)
-	$(call MSG_LINK,$@,$@)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,NetBiosBin,$@)
 	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -r $(START) $(PATH_TARGET)/config.o $< $(BLIB) -o $@
 
 # General rule for creating binary code.
@@ -242,16 +241,16 @@ $(PATH_TARGET)/%.zbin: $(PATH_TARGET)/%.bin $(TARGET_nrv2b) $(MAKEDEPS)
 
 # Creating the binary code in compressed and uncompressed form.
 $(PATH_TARGET)/%.zo: $(PATH_TARGET)/%.zbin $(PREFZLDSCRIPT) $(MAKEDEPS)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,NetBiosBin,$@)
 	$(QUIET)$(EB_LD) -T $(PREFZLDSCRIPT) -b binary $< -o $@
 
 $(PATH_TARGET)/%.uo: $(PATH_TARGET)/%.bin $(PREFULDSCRIPT) $(MAKEDEPS)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,NetBiosBin,$@)
 	$(QUIET)$(EB_LD) -T $(PREFULDSCRIPT) -b binary $< -o $@
 
 # Build the PCI prefix.
 $(PCIPREFIX):	arch/i386/prefix/romprefix.S $(MAKEDEPS)
-	$(call MSG_L1,Compiling $<)
+	$(call MSG_COMPILE,NetBiosBin,$<,$@,AS)
 	$(QUIET)$(EB_CC) -DPCI_PNP_HEADER -DBBS_BUT_NOT_PNP_COMPLIANT $(EB_CFLAGS) $(LCONFIG) -Ui386 -DASSEMBLY -c $< -o $@
 
 # Build binary code, split out the various sections.
@@ -278,16 +277,16 @@ $(PATH_TARGET)/%prefix.exit.o: $(PATH_TARGET)/%prefix.o $(MAKEDEPS)
 
 # Build the runtime.
 $(PCNET32_RUNTIME): $(PCNET32_RUNTIME_OBJ) $(PCIENTRY) $(PCIEXIT) $(LDSCRIPT) $(MAKEDEPS)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,NetBiosBin,$@)
 	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -T $(LDSCRIPT) -o $@ $(PCIEXIT) $<
 
 # Build the ELF executable containing the complete ROM.
 $(PATH_TARGET)/pcnet32.rom.zprf: $(PCIENTRY) $(PCNET32_RUNTIME) $(ZPREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_Z) $(MAKEDEPS)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,NetBiosBin,$@)
 	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -T $(PLDSCRIPT) $(PCIENTRY) -R $(PCNET32_RUNTIME) $(ZPREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_Z) -o $@
 
 $(PATH_TARGET)/pcnet32.rom.prf: $(PCIENTRY) $(PCNET32_RUNTIME) $(PREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_U) $(MAKEDEPS)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,NetBiosBin,$@)
 	$(QUIET)$(EB_LD) $(EB_LDFLAGS) -T $(PLDSCRIPT) $(PCIENTRY) -R $(PCNET32_RUNTIME) $(PREFIXOBJS) $(PCNET32_PART1_U) $(PCNET32_PART2_U) -o $@
 
 # Build the actual ROM image, phew.

@@ -172,7 +172,7 @@ $(PATH_TARGET)/tstAsmStructsAsm.mac: tstAsmStructsAsm.asm tstAsmStructsAsm-lst.s
 		../VMMInternal.mac \
 		Makefile \
 		| $(call DIRDEP,$(PATH_TARGET))
-	$(call MSG_L1,Compiling $<)
+	$(call MSG_COMPILE,tstAsmStructsAsm,$<,$@,AS)
 ifndef DONT_USE_YASM
 	$(QUIET)$(TOOL_YASM_AS) \
 		$(addprefix -D, \
@@ -211,7 +211,7 @@ endif
 $(PATH_TARGET)/tstAsmStructsAsm.o: tstAsmStructsAsm.asm $(PATH_TARGET)/tstAsmStructsAsm.mac \
 		Makefile \
 		| $(call DIRDEP,$(PATH_TARGET))
-	$(call MSG_L1,Compiling $<)
+	$(call MSG_COMPILE,tstAsmStructsasm,$<,$@,AS)
 ifndef DONT_USE_YASM
 	$(QUIET)$(TOOL_YASM_AS) \
 		$(addprefix -D, \
