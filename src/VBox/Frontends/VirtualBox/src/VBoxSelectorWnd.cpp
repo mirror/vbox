@@ -1020,7 +1020,21 @@ void VBoxSelectorWnd::languageChange()
     fileDiskMgrAction->setAccel (tr ("Ctrl+D"));
     fileDiskMgrAction->setStatusTip (tr ("Display the Virtual Disk Manager dialog"));
 
+#ifdef Q_WS_MAC
+    /* 
+     * Macification: Getting the right menu as application Preference menu item.
+     *
+     * QMenuBar::isCommand() in qmenubar_mac.cpp doesn't recognize "Setting"(s)
+     * unless it's in the first position. So, we use the Mac term here to make
+     * sure we get picked instead of the VM settings. 
+     *
+     * Now, since both QMenuBar and we translate these strings, it's going to
+     * be really interesting to see how this plays on non-english systems...
+     */
+    fileSettingsAction->setMenuText (tr ("Preference..."));
+#else
     fileSettingsAction->setMenuText (tr ("&Global Settings..."));
+#endif 
     fileSettingsAction->setAccel (tr ("Ctrl+G"));
     fileSettingsAction->setStatusTip (tr ("Display the global settings dialog"));
 
