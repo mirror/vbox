@@ -31,7 +31,7 @@
         </rect>
     </property>
     <property name="caption">
-        <string>VirtualBox Global Settings</string>
+        <string>VirtualBox Preferences</string>
     </property>
     <property name="sizeGripEnabled">
         <bool>true</bool>
