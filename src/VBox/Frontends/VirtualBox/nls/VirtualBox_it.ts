@@ -127,16 +127,10 @@
         <translation>Riguardo VirtualBox</translation>
     </message>
     <message>
-        <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation>Alt+O</translation>
-    </message>
-    <message>
-        <source>VirtualBox Graphical User Interface Version %1</source>
-        <translation>VirtualBox Graphical User Interface, versione %1</translation>
+        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
+%2&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;VirtualBox Graphical User Interface, versione %1&lt;br&gt;
+%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -1676,8 +1670,8 @@ con tutti i campi impostati ai valori del dispositivo USB connesso alla macchina
         <translation>Annulla le modifiche e chiude la finestra.</translation>
     </message>
     <message>
-        <source>VirtualBox Global Settings</source>
-        <translation>Impostazioni Globali di VirtualBox</translation>
+        <source>VirtualBox Preferences</source>
+        <translation type="unfinished">Impostazioni Globali di VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -2419,12 +2413,12 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
         <translation>RC&amp;nbsp;Chiamante: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non è stato possibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Non è stato possibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non è stato possibile caricare il file della lingua &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;La lingua sarà temporaneamente reimpostata a Inglese (built-in). Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Non è stato possibile caricare il file della lingua &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;La lingua sarà temporaneamente reimpostata a Inglese (built-in). Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2469,8 +2463,9 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
         <translation>Mostra la finestra del Gestore Dischi Virtuali</translation>
     </message>
     <message>
-        <source>&amp;Global Settings...</source>
-        <translation>Impostazioni &amp;globali...</translation>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation type="unfinished">Impostazioni &amp;globali...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
@@ -2478,7 +2473,7 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation>Mostra la finestra delle impostazioni globali</translation>
+        <translation type="unfinished">Mostra la finestra delle impostazioni globali</translation>
     </message>
     <message>
         <source>E&amp;xit</source>

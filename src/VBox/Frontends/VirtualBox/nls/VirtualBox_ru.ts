@@ -112,16 +112,10 @@
         <translation>VirtualBox - О программе</translation>
     </message>
     <message>
-        <source>&amp;OK</source>
-        <translation>&amp;ОК</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation>Alt+О</translation>
-    </message>
-    <message>
-        <source>VirtualBox Graphical User Interface Version %1</source>
-        <translation>Графический интерфейс VirtualBox версии %1</translation>
+        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
+%2&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;Графический интерфейс VirtualBox версии %1&lt;br&gt;
+%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -1359,12 +1353,12 @@
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation>От основной в гостевую ОС</translation>
+        <translation>Из основной в гостевую ОС</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation>От гостевой в основную ОС</translation>
+        <translation>Из гостевой в основную ОС</translation>
     </message>
     <message>
         <source>Bidirectional</source>
@@ -1563,8 +1557,8 @@
         <translation>Отменяет изменения и закрывает диалог.</translation>
     </message>
     <message>
-        <source>VirtualBox Global Settings</source>
-        <translation>Глобальные настройки VirtualBox </translation>
+        <source>VirtualBox Preferences</source>
+        <translation>Настройки VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -2294,12 +2288,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Код&amp;nbsp;ошибки&amp;nbsp;вызванного&amp;nbsp;объекта: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось найти файл локализации для языка &lt;b&gt;%1&lt;/b&gt; в каталоге &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будет временно установлен системный язык по умолчанию. Перейдите в диалог &lt;b&gt;Глобальные настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Не удалось найти файл локализации для языка &lt;b&gt;%1&lt;/b&gt; в каталоге &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будет временно установлен системный язык по умолчанию. Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось загрузить файл локализации &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Будет временно установлен английский язык (встроенный). Перейдите в диалог &lt;b&gt;Глобальные настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Не удалось загрузить файл локализации &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Будет временно установлен английский язык (встроенный). Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2344,8 +2338,9 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Открыть диалог Менеджера виртуальных дисков</translation>
     </message>
     <message>
-        <source>&amp;Global Settings...</source>
-        <translation>&amp;Глобальные настройки...</translation>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Настройки...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
@@ -3388,7 +3383,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
-        <translation>Выбирает путь к папке снимков.</translation>
+        <translation>Выбирает путь к папке для снимков.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3628,7 +3623,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation>Крогда стоит галочка, присоединяет указанный виртуальный жесткий диск к мастер-разъему первичного IDE-контроллера.</translation>
+        <translation>Когда стоит галочка, присоединяет указанный виртуальный жесткий диск к мастер-разъему первичного IDE-контроллера.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
@@ -3677,23 +3672,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран жесткий диск для разъема "Первичный Мастер".</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран жесткий диск для разъема "Первичный Слейв".</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Жесткий диск "Первичный Слейв" уже присоединен к другому разъему.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран жесткий диск для разъема "Вторичный Слейв".</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Жесткий диск "Вторичный Слейв" уже присоединен к другому разъему.</translation>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
@@ -3709,15 +3704,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан порт VRDP.</translation>
     </message>
     <message>
         <source>VRDP Timeout is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не установлен таймаут для VRDP.</translation>
     </message>
     <message>
         <source> - Settings</source>
-        <translation type="unfinished"></translation>
+        <translation> - Свойства</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -3726,11 +3721,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Общий буфер обмена</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Папка для снимков</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
@@ -3740,13 +3735,17 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Если стоит галочка, то виртуальная машина будет поддерживать
+улучшенный интерфейс для конфигурации и управления электропитанием (ACPI). &lt;b&gt;Примечание:&lt;/b&gt; не
+выключайте это свойство после установки Windows в качестве гостевой ОС!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Если стоит галочка, то виртуальная машина будет поддерживать
+операции ввода/ввывода контроллера прерываний (IO APIC), что может слегка снизить производительность ВМ. &lt;b&gt;Примечание:&lt;/b&gt; не выключайте
+это свойство после установки Windows в качестве гостевой ОС!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
@@ -3754,11 +3753,11 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation>Показывает путь к папке для сохранения снимков этой виртуальной машины. Заметьте, что снимки могут занимать достаточно много места на жестком диске.</translation>
+        <translation>Показывает путь к папке для сохранения снимков этой виртуальной машины. Имейте ввиду, что снимки могут занимать достаточно много места на жестком диске.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задает значение по умолчанию для папки снимков. Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
@@ -3766,7 +3765,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вызывает Менеджер виртуальных дисков для создания нового или выбора существующего виртуальнрого жесткого диска.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
@@ -3792,7 +3791,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, включается виртуальный USB-контроллер этой машины.</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
@@ -3809,7 +3808,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
 </context>
 <context>

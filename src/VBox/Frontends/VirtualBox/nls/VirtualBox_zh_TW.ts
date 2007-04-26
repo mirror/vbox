@@ -253,22 +253,10 @@
         <translation>VirtualBox - 關於</translation>
     </message>
     <message>
-        <source>VirtualBox Graphical User Interface Version %1&lt;br&gt;
-Using VirtualBox COM Library Version %2</source>
-        <translation type="obsolete">VirtualBox 圖形化使用者介面版本 %1&lt;br&gt;
-使用 VirtualBox COM 函式庫版本 %2</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation>確定(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation>Alt+O</translation>
-    </message>
-    <message>
-        <source>VirtualBox Graphical User Interface Version %1</source>
-        <translation>VirtualBox 圖形使用者介面版本 %1</translation>
+        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
+%2&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;VirtualBox 圖形使用者介面版本 %1&lt;br&gt;
+%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -1991,8 +1979,8 @@ with all fields set to the values of the selected USB device attached to the hos
         <translation>取消變更並關閉對話框。</translation>
     </message>
     <message>
-        <source>VirtualBox Global Settings</source>
-        <translation>VirtualBox 全域設定值</translation>
+        <source>VirtualBox Preferences</source>
+        <translation type="unfinished">VirtualBox 全域設定值</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -2937,11 +2925,11 @@ with UUID %2!</source>
         <translation>被呼叫端 RC：</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Global Settings&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2996,7 +2984,7 @@ with UUID %2!</source>
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation>顯示全域設定對話框</translation>
+        <translation type="unfinished">顯示全域設定對話框</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -3131,8 +3119,9 @@ with UUID %2!</source>
         <translation>顯示虛擬磁碟管理器對話框</translation>
     </message>
     <message>
-        <source>&amp;Global Settings...</source>
-        <translation>全域設定值(&amp;G)…</translation>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation type="unfinished">全域設定值(&amp;G)…</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
