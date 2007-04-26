@@ -169,7 +169,7 @@ int main( int argc, char ** argv )
 
     if (vboxGlobal().isValid())
     {
-        VMGlobalSettings settings = vboxGlobal().settings();
+        VBoxGlobalSettings settings = vboxGlobal().settings();
         /* Process known keys */
         bool noSelector = settings.isFeatureActive ("noSelector");
 

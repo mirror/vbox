@@ -552,11 +552,11 @@ void VBoxGlobalSettingsDlg::revalidate (QIWidgetValidator * /*wval*/)
 }
 
 /**
- *  Reads global settings from the given VMGlobalSettings instance
+ *  Reads global settings from the given VBoxGlobalSettings instance
  *  and from the given CSystemProperties object.
  */
 void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
-                                     const VMGlobalSettings &gs)
+                                     const VBoxGlobalSettings &gs)
 {
     /* default folders */
 
@@ -628,11 +628,11 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
 }
 
 /**
- *  Writes global settings to the given VMGlobalSettings instance
+ *  Writes global settings to the given VBoxGlobalSettings instance
  *  and to the given CSystemProperties object.
  */
 void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
-                                       VMGlobalSettings &gs)
+                                       VBoxGlobalSettings &gs)
 {
     /* default folders */
 

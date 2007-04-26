@@ -1201,7 +1201,7 @@ to the system default language.&lt;/qt&gt;
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
     <include location="local" impldecl="in declaration">QIHotKeyEdit.h</include>
-    <include location="local" impldecl="in declaration">VMGlobalSettings.h</include>
+    <include location="local" impldecl="in declaration">VBoxGlobalSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
@@ -1250,8 +1250,8 @@ to the system default language.&lt;/qt&gt;
     <function access="private">init()</function>
     <function access="private" returnType="bool">event( QEvent * )</function>
     <function access="protected">showEvent( QShowEvent * )</function>
-    <function>getFrom( const CSystemProperties &amp; props, const VMGlobalSettings &amp; gs )</function>
-    <function>putBackTo( CSystemProperties &amp; props, VMGlobalSettings &amp; gs )</function>
+    <function>getFrom( const CSystemProperties &amp; props, const VBoxGlobalSettings &amp; gs )</function>
+    <function>putBackTo( CSystemProperties &amp; props, VBoxGlobalSettings &amp; gs )</function>
     <function access="protected">setWarning( const QString &amp; )</function>
     <function returnType="bool">eventFilter( QObject * watched, QEvent * e )</function>
 </functions>

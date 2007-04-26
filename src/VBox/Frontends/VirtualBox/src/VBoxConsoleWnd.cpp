@@ -713,7 +713,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
 void VBoxConsoleWnd::loadGuiCustomizations()
 {
-    VMGlobalSettings settings = vboxGlobal().settings();
+    VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Process known keys */
     menuBar()->setHidden (settings.isFeatureActive ("noMenuBar"));
     statusBar()->setHidden (settings.isFeatureActive ("noStatusBar"));
