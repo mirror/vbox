@@ -49,6 +49,7 @@
 #include <iprt/process.h>
 #include <VBox/param.h>
 #include <VBox/VBoxHDD.h>
+#include <VBox/VBoxHDD-new.h>
 #include <VBox/ostypes.h>
 #include <VBox/version.h>
 

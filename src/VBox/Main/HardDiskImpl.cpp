@@ -31,6 +31,7 @@
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <VBox/VBoxHDD.h>
+#include <VBox/VBoxHDD-new.h>
 #include <VBox/err.h>
 
 #include <algorithm>
@@ -553,7 +554,7 @@ HRESULT HardDisk::trySetRegistered (BOOL aRegistered)
             return setError (E_FAIL,
                 tr ("Hard disk '%ls' has %d differencing hard disks based on it"),
                 toString().raw(), children().size());
-            
+
         CHECK_BUSY_AND_READERS();
     }
 
@@ -1024,7 +1025,7 @@ void HardDisk::updatePaths (const char *aOldPath, const char *aNewPath)
     }
 }
 
-/** 
+/**
  *  Helper method that deduces a hard disk object type to create from
  *  the location string format and from the contents of the resource
  *  pointed to by the location string.
@@ -1032,12 +1033,12 @@ void HardDisk::updatePaths (const char *aOldPath, const char *aNewPath)
  *  Currently, the location string must be a file path which is
  *  passed to the HVirtualDiskImage or HVMDKImage initializer in
  *  attempt to create a hard disk object.
- * 
- *  @param  aVirtualBox 
- *  @param  aLocation 
- *  @param  hardDisk 
- * 
- *  @return 
+ *
+ *  @param  aVirtualBox
+ *  @param  aLocation
+ *  @param  hardDisk
+ *
+ *  @return
  */
 /* static */
 HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
@@ -1388,7 +1389,7 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         CheckComRCBreakRC (rc);
 
         Assert (mId.isEmpty());
-        
+
         if (aFilePath && *aFilePath)
         {
             mRegistered = aRegistered;
@@ -1668,7 +1669,7 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
         ComAssertRet (mStateCheckWaiters != (ULONG) ~0, E_FAIL);
         ++ mStateCheckWaiters;
         alock.leave();
-        
+
         int vrc = RTSemEventMultiWait (mStateCheckSem, RT_INDEFINITE_WAIT);
 
         alock.enter();
@@ -1679,7 +1680,7 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
             RTSemEventMultiDestroy (mStateCheckSem);
             mStateCheckSem = NIL_RTSEMEVENTMULTI;
         }
-        
+
         AssertRCReturn (vrc, E_FAIL);
 
         /* don't touch aAccessError, it has been already set */
@@ -2328,12 +2329,12 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
     ComAssertRCRet (vrc, E_FAIL);
 
     /* Reference the disk to prevent any concurrent modifications
-     * after releasing the lock below (to unblock getters before 
+     * after releasing the lock below (to unblock getters before
      * a lengthy operation). */
     addReader();
 
     alock.leave();
-    
+
     /* VBoxVHDD management interface needs to be optimized: we're opening a
      * file three times in a raw to get three bits of information. */
 
@@ -2431,10 +2432,10 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
 
     /* enter the lock again */
     alock.enter();
-    
+
     /* remove the reference */
     releaseReader();
-    
+
     if (FAILED (rc) || VBOX_FAILURE (vrc) || !errMsg.isNull())
     {
         LogWarningFunc (("'%ls' is not accessible "
@@ -2450,7 +2451,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
                     tr ("Could not access hard disk image '%ls' (%Vrc)"),
                         mFilePathFull.raw(), vrc);
         }
-        
+
         /* downgrade to not accessible */
         mState = Created;
     }
@@ -2461,7 +2462,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
 
         mState = Accessible;
     }
-    
+
     /* inform waiters if there are any */
     if (mStateCheckWaiters > 0)
     {
@@ -3418,7 +3419,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         mType = HardDiskType_WritethroughHardDisk;
 
         Assert (mId.isEmpty());
-        
+
         if (aFilePath && *aFilePath)
         {
             mRegistered = aRegistered;
@@ -3714,7 +3715,7 @@ HRESULT HVMDKImage::getAccessible (Bstr &aAccessError)
         ComAssertRet (mStateCheckWaiters != (ULONG) ~0, E_FAIL);
         ++ mStateCheckWaiters;
         alock.leave();
-        
+
         int vrc = RTSemEventMultiWait (mStateCheckSem, RT_INDEFINITE_WAIT);
 
         alock.enter();
@@ -3725,7 +3726,7 @@ HRESULT HVMDKImage::getAccessible (Bstr &aAccessError)
             RTSemEventMultiDestroy (mStateCheckSem);
             mStateCheckSem = NIL_RTSEMEVENTMULTI;
         }
-        
+
         AssertRCReturn (vrc, E_FAIL);
 
         /* don't touch aAccessError, it has been already set */
@@ -3927,12 +3928,12 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
     ComAssertRCRet (vrc, E_FAIL);
 
     /* Reference the disk to prevent any concurrent modifications
-     * after releasing the lock below (to unblock getters before 
+     * after releasing the lock below (to unblock getters before
      * a lengthy operation). */
     addReader();
 
     alock.leave();
-    
+
     /* VBoxVHDD management interface needs to be optimized: we're opening a
      * file three times in a raw to get three bits of information. */
 
@@ -4036,10 +4037,10 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
 
     /* enter the lock again */
     alock.enter();
-    
+
     /* remove the reference */
     releaseReader();
-    
+
     if (FAILED (rc) || VBOX_FAILURE (vrc) || !errMsg.isNull())
     {
         LogWarningFunc (("'%ls' is not accessible "
@@ -4055,7 +4056,7 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
                     tr ("Could not access hard disk image '%ls' (%Vrc)"),
                         mFilePathFull.raw(), vrc);
         }
-        
+
         /* downgrade to not accessible */
         mState = Created;
     }
@@ -4066,7 +4067,7 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
 
         mState = Accessible;
     }
-    
+
     /* inform waiters if there are any */
     if (mStateCheckWaiters > 0)
     {

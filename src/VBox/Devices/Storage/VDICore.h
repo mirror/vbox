@@ -42,6 +42,12 @@
 /*******************************************************************************
 *   Constants And Macros, Structures and Typedefs                              *
 *******************************************************************************/
+
+/** Image info, not handled anyhow.
+ *  Must be less than 64 bytes in length, including the trailing 0.
+ */
+#define VDI_IMAGE_FILE_INFO   "<<< InnoTek VirtualBox Disk Image >>>\n"
+
 /** The Sector size.
  * Currently we support only 512 bytes sectors.
  */
@@ -526,4 +532,4 @@ VBOXDDU_DECL(int)  vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly);
 
 __END_DECLS
 
-#endif 
+#endif

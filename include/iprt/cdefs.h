@@ -898,6 +898,10 @@
 #define RT_MAKE_U16(Lo, Hi) ( (uint16_t)((uint8_t)(Hi)) << 8 | (uint8_t)(Lo) )
 
 
+/** @def RT_H2LE_U64
+ * Converts uint64_t value from host to little endian byte order. */
+#define RT_H2LE_U64(u64) (u64)
+
 /** @def RT_H2LE_U32
  * Converts uint32_t value from host to little endian byte order. */
 #define RT_H2LE_U32(u32) (u32)
@@ -905,6 +909,10 @@
 /** @def RT_H2LE_U16
  * Converts uint16_t value from host to little endian byte order. */
 #define RT_H2LE_U16(u16) (u16)
+
+/** @def RT_LE2H_U64
+ * Converts uint64_t value from little endian to host byte order. */
+#define RT_LE2H_U64(u64) (u64)
 
 /** @def RT_LE2H_U32
  * Converts uint32_t value from little endian to host byte order. */
@@ -915,6 +923,10 @@
 #define RT_LE2H_U16(u16) (u16)
 
 
+/** @def RT_H2BE_U64
+ * Converts uint64_t value from host to big endian byte order. */
+#define RT_H2BE_U64(u64) RT_MAKE_U64_FROM_U32(RT_H2BE_U32((u64) >> 32), RT_H2BE_U32((u64) & 0xffffffff))
+
 /** @def RT_H2BE_U32
  * Converts uint32_t value from host to big endian byte order. */
 #define RT_H2BE_U32(u32) (RT_BYTE4(u32) | (RT_BYTE3(u32) << 8) | (RT_BYTE2(u32) << 16) | (RT_BYTE1(u32) << 24))
@@ -922,6 +934,10 @@
 /** @def RT_H2BE_U16
  * Converts uint16_t value from host to big endian byte order. */
 #define RT_H2BE_U16(u16) (RT_HIBYTE(u16) | (RT_LOBYTE(u16) << 8))
+
+/** @def RT_BE2H_U64
+ * Converts uint64_t value from big endian to host byte order. */
+#define RT_BE2H_U64(u64) RT_MAKE_U64_FROM_U32(RT_H2BE_U32((u64) >> 32), RT_H2BE_U32((u64) & 0xffffffff))
 
 /** @def RT_BE2H_U32
  * Converts uint32_t value from big endian to host byte order. */
