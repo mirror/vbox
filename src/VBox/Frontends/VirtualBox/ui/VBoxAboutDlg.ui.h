@@ -35,7 +35,7 @@
 void VBoxAboutDlg::setup (const QString &aVersion)
 {
     /* This is intentionally untranslatable (oly Latin-1 here!) */
-    const char *Copyright = "&copy; 2004&mdash;2007 InnoTek Systemberatung GmbH";
+    const char *Copyright = "&copy; 2004&mdash;2007 innotek GmbH";
 
     QString tpl = mAboutLabel->text();
     mAboutLabel->setText (tpl
