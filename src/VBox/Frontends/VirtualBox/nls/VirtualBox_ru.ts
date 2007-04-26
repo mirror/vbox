@@ -3672,23 +3672,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation>Не выбран жесткий диск для разъема "Первичный Мастер".</translation>
+        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Первичный Мастер&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation>Не выбран жесткий диск для разъема "Первичный Слейв".</translation>
+        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Первичный Слейв&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation>Жесткий диск "Первичный Слейв" уже присоединен к другому разъему.</translation>
+        <translation>Жесткий диск &lt;i&gt;Первичный Слейв&lt;/i&gt; уже присоединен к другому разъему.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation>Не выбран жесткий диск для разъема "Вторичный Слейв".</translation>
+        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Вторичный Слейв&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation>Жесткий диск "Вторичный Слейв" уже присоединен к другому разъему.</translation>
+        <translation>Жесткий диск &lt;i&gt;Вторичный Слейв&lt;/i&gt; уже присоединен к другому разъему.</translation>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
