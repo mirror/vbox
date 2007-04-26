@@ -2791,7 +2791,7 @@
     <interface
         name="IConsole" extends="$unknown"
         uuid="1DEA5C4B-0753-4193-B909-22330F64EC45"
-        wsmap="wstring"
+        wsmap="managedObjectRef"
     >
         <attribute name="machine" type="IMachine" readonly="yes">
             <desc>
@@ -3902,7 +3902,7 @@
     <interface
         name="IProgress" extends="$unknown"
         uuid="10CC03A1-717E-429b-992D-C67B56175A51"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
             The IProgress interface represents a task progress object that allows
@@ -4891,7 +4891,7 @@
     <interface
         name="IVirtualDiskImage" extends="$unknown"
         uuid="a8265b5a-0d20-4a46-a02f-65693a4e8239"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
 
         <desc>
@@ -7253,7 +7253,7 @@
     <interface
         name="ISession" extends="$dispatched"
         uuid="12F4DCDB-12B2-4ec1-B7CD-DDD9F6C5BF4D"
-        wsmap="wstring"
+        wsmap="managedObjectRef"
     >
         <attribute name="state" type="SessionState" readonly="yes">
             <desc>Current state of this session.</desc>
