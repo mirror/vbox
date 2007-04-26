@@ -61,7 +61,7 @@ include	$(PATH_KBUILD)/footer.kmk
 
 
 $(PATH_VBoxMouseNT)/i8042log.rc: i8042log.mc | $(call DIRDEP,$(PATH_VBoxMouseNT))
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,VBoxMouseNT,$<,$@,RC)
 	$(QUIET)$(WIN32_MC) \
 		-r $(PATH_VBoxMouseNT)/ \
 		-x $(PATH_VBoxMouseNT)/ \

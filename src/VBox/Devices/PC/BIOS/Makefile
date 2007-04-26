@@ -78,7 +78,7 @@ $(PATH_TARGET)/_rombios_.c: rombios.c logo.c apmbios.S | $(call DIRDEP,$(TARGET_
 
 # 2. compile to intermediate asm file.
 $(PATH_TARGET)/rombios0.s: $(PATH_TARGET)/_rombios_.c
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,PcBiosBin,$<,$@,C)
 	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $^
 
 # 3. post process intermediate asm file.
@@ -88,7 +88,7 @@ $(PATH_TARGET)/rombios1.s: $(PATH_TARGET)/rombios0.s
 
 # 4. assemble the intermediate asm file. (also creates a listing rombios.lst)
 $(PATH_TARGET)/bios.tmp $(PATH_TARGET)/bios.lst: $(PATH_TARGET)/rombios1.s
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,PcBiosBin,$<,$@,AS)
 	$(QUIET)$(VBOX_AS86) -b $(PATH_TARGET)/bios.tmp -u- -w- -g -0 -j -O -l $(PATH_TARGET)/bios.lst - < $^
 
 # 5. calculate checksums for the final BIOS image.

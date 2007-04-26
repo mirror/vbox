@@ -1300,7 +1300,7 @@ OTHER_CLEAN += \
 
 # combined typelib library
 $(XPCOM_TYPELIB): $(XPTFILES) | $(TARGET_xp_link)
-	$(call MSG_L1,Linking $@)
+	$(call MSG_LINK,XPCOM_TYPELIB,$@)
 	$(QUIET)$(TARGET_xpt_link) $@ $^
 
 # generate build stamps

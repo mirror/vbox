@@ -377,7 +377,7 @@ $(PATH_$(REM_MOD))/op.S: \
 		| $(call DIRDEP,$(PATH_$(REM_MOD)))
 	$(RM) -f $@ $@.tmp $@.tmp2 $@.dep
 ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),yes)
-	$(call MSG_L1,Compiling $< => $@)
+	$(call MSG_COMPILE,VBoxREM,$<,$@,AS)
 	$(addsuffix $(SP)\$(NL)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp
 else ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),dunno) # (permit 3.x.x and 4.1.x+ for now)
 	major_ver=`$(VBOX_RECOMPILER_OP_GCC) -dumpversion | $(SED) -e 's/^\([2-9]\)\..*$$/\1/'`; \

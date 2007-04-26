@@ -252,12 +252,12 @@ define def_export_rule
 $(eval dst := $(word 1,$(subst =, ,$(pair))))
 $(eval src := $(word 2,$(subst =, ,$(pair))))
 $(PATH_BIN)/src/$(dst): $(src)
-	$$(call MSG_L1,Installing $$@)
+	$$(call MSG_INST_TRG,VBOXDRV,$$<,$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
 	$$(QUIET)$$(CP) $$< $$@
 
 symlinked/$(dst):
-	$$(call MSG_L1,Symlink $$@)
+	$$(call MSG_INST_SYM,$$<,$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
 	$$(QUIET)ln -sfn $(abspath $(src)) $$@
 

@@ -406,7 +406,7 @@ $(foreach tsfile,$($(target)_QT_TRANSLATIONS_QT),$(eval $(def_qt_gen_nls)))
 $$(call DIRDEP,$(PATH_$(target))/ui/) \
 $$(call DIRDEP,$(PATH_$(target))/moc/) \
 $$(call DIRDEP,$(PATH_$(target))/nls/):
-	$$(call MSG_L2,Creating directory $$@)
+	$$(call MSG_MKDIR,$$@)
 	$$(QUIET)$$(MKDIR) -p $$@
 
 endef
@@ -425,7 +425,7 @@ $(WRAPPERSFILE): $(XIDLFILE) $(WRAPPERSTEMPLATE) | $(call DIRDEP,$(PATH_VirtualB
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(WRAPPERSTEMPLATE) $<
 
 $(call DIRDEP,$(PATH_VirtualBox)/include/):
-	$(call MSG_L2,Creating directory $@)
+	$(call MSG_MKDIR,$@)
 	$(QUIET)$(MKDIR) -p $@
 
 # this is actually necessary only for Win32 target with disabled dependencies

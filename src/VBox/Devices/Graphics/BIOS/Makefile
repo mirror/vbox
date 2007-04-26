@@ -70,7 +70,7 @@ $(PATH_TARGET)/_vgabios_.c: vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe
 
 # 2. compile
 $(PATH_TARGET)/vgabios0.s: $(PATH_TARGET)/_vgabios_.c
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,VgaBiosBin,$<,$@,C)
 	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $^
 
 # 3. preprocess intermediate assembly.
@@ -80,7 +80,7 @@ $(PATH_TARGET)/vgabios1.s: $(PATH_TARGET)/vgabios0.s
 
 # 4. assemble
 $(PATH_TARGET)/vgabios.tmp $(PATH_TARGET)/vgabios.lst: $(PATH_TARGET)/vgabios1.s
-	$(call MSG_L1,Compiling $<,=> $@)
+	$(call MSG_COMPILE,VgaBiosBin,$<,$@,AS)
 	$(QUIET)$(VBOX_AS86) -b $(PATH_TARGET)/vgabios.tmp -u- -w- -g -0 -j -O -l $(PATH_TARGET)/vgabios.lst < $^
 
 # 5. checksums
