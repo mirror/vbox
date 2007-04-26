@@ -25,7 +25,7 @@
 
 #include "COMDefs.h"
 
-#include "VMGlobalSettings.h"
+#include "VBoxGlobalSettings.h"
 
 #include <qapplication.h>
 #include <qpixmap.h>
@@ -153,8 +153,8 @@ public:
 
     CVirtualBox virtualBox() const { return vbox; }
 
-    const VMGlobalSettings &settings() const { return gset; }
-    bool setSettings (const VMGlobalSettings &gs);
+    const VBoxGlobalSettings &settings() const { return gset; }
+    bool setSettings (const VBoxGlobalSettings &gs);
 
     VBoxSelectorWnd &selectorWnd();
     VBoxConsoleWnd &consoleWnd();
@@ -482,7 +482,7 @@ private:
 
     CVirtualBox vbox;
 
-    VMGlobalSettings gset;
+    VBoxGlobalSettings gset;
 
     VBoxSelectorWnd *selector_wnd;
     VBoxConsoleWnd *console_wnd;

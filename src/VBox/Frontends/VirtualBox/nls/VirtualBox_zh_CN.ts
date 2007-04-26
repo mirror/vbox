@@ -4037,7 +4037,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VMGlobalSettings</name>
+    <name>VBoxGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
         <translation>&apos;%1 (0x%2)&apos; 是一个不可用的热键编码.</translation>

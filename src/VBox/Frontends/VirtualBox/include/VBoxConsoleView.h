@@ -26,7 +26,7 @@
 #include "COMDefs.h"
 
 #include "VBoxDefs.h"
-#include "VMGlobalSettings.h"
+#include "VBoxGlobalSettings.h"
 
 #include <qdatetime.h>
 #include <qscrollview.h>
@@ -179,7 +179,7 @@ private:
 
     CConsole cconsole;
 
-    const VMGlobalSettings &gs;
+    const VBoxGlobalSettings &gs;
 
     CEnums::MachineState last_state;
 

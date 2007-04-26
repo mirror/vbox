@@ -66,7 +66,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIStateIndicator.h \
 	include/QIMessageBox.h \
 	include/QIRichLabel.h \
-	include/VMGlobalSettings.h \
+	include/VBoxGlobalSettings.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobal.h \
 	include/VBoxVMListBox.h \
@@ -126,7 +126,7 @@ VirtualBox_SOURCES = \
 	src/QIStatusBar.cpp \
 	src/QIMessageBox.cpp \
 	src/QIRichLabel.cpp \
-	src/VMGlobalSettings.cpp \
+	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \
 	src/VBoxMediaComboBox.cpp \
 	src/VBoxProblemReporter.cpp \

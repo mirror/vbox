@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VMGlobalSettingsData, VMGlobalSettings class implementation
+ * VBoxGlobalSettingsData, VBoxGlobalSettings class implementation
  */
 
 /*
@@ -24,19 +24,19 @@
 #include <qstring.h>
 #include <qregexp.h>
 
-#include "VMGlobalSettings.h"
+#include "VBoxGlobalSettings.h"
 #include "QIHotKeyEdit.h"
 #include "COMDefs.h"
 
 #include <qvariant.h>
 
-/** @class VMGlobalSettingsData
+/** @class VBoxGlobalSettingsData
  *
- *  The VMGlobalSettingsData class incapsulates the global settings
+ *  The VBoxGlobalSettingsData class incapsulates the global settings
  *  of the VirtualBox.
  */
 
-VMGlobalSettingsData::VMGlobalSettingsData()
+VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
 #if defined (Q_WS_WIN32)
@@ -58,18 +58,18 @@ VMGlobalSettingsData::VMGlobalSettingsData()
     languageId  = QString::null;
 }
 
-VMGlobalSettingsData::VMGlobalSettingsData( const VMGlobalSettingsData &that ) {
+VBoxGlobalSettingsData::VBoxGlobalSettingsData( const VBoxGlobalSettingsData &that ) {
     hostkey = that.hostkey;
     autoCapture = that.autoCapture;
     guiFeatures = that.guiFeatures;
     languageId  = that.languageId;
 }
 
-VMGlobalSettingsData::~VMGlobalSettingsData()
+VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 {
 }
 
-bool VMGlobalSettingsData::operator==( const VMGlobalSettingsData &that ) const
+bool VBoxGlobalSettingsData::operator==( const VBoxGlobalSettingsData &that ) const
 {
     return this == &that || (
         hostkey == that.hostkey &&
@@ -79,9 +79,9 @@ bool VMGlobalSettingsData::operator==( const VMGlobalSettingsData &that ) const
     );
 }
 
-/** @class VMGlobalSettings
+/** @class VBoxGlobalSettings
  *
- *  The VMGlobalSettings class is a wrapper class for VMGlobalSettingsData
+ *  The VBoxGlobalSettings class is a wrapper class for VBoxGlobalSettingsData
  *  to implement implicit sharing of VirtualBox global data.
  */
 
@@ -103,7 +103,7 @@ gPropertyMap[] =
     { "GUI/LanguageID",         "languageId",   gVBoxLangIDRegExp, true },
 };
 
-void VMGlobalSettings::setHostKey (int key)
+void VBoxGlobalSettings::setHostKey (int key)
 {
     if (!QIHotKeyEdit::isValidKey (key))
     {
@@ -116,7 +116,7 @@ void VMGlobalSettings::setHostKey (int key)
     resetError();
 }
 
-bool VMGlobalSettings::isFeatureActive (const char *aFeature) const
+bool VBoxGlobalSettings::isFeatureActive (const char *aFeature) const
 {
     QStringList featureList = QStringList::split (',', data()->guiFeatures);
     return featureList.contains (aFeature);
@@ -135,7 +135,7 @@ bool VMGlobalSettings::isFeatureActive (const char *aFeature) const
  *
  *  @note   This method emits the #propertyChanged() signal.
  */
-void VMGlobalSettings::load (CVirtualBox &vbox)
+void VBoxGlobalSettings::load (CVirtualBox &vbox)
 {
     for (size_t i = 0; i < SIZEOF_ARRAY (gPropertyMap); i++)
     {
@@ -159,7 +159,7 @@ void VMGlobalSettings::load (CVirtualBox &vbox)
  *  returns and the vbox argument will hold all error info (and therefore
  *  vbox.isOk() will be false to indicate this).
  */
-void VMGlobalSettings::save (CVirtualBox &vbox) const
+void VBoxGlobalSettings::save (CVirtualBox &vbox) const
 {
     for (size_t i = 0; i < SIZEOF_ARRAY (gPropertyMap); i++)
     {
@@ -176,7 +176,7 @@ void VMGlobalSettings::save (CVirtualBox &vbox) const
  *  Returns a value of the property with the given public name
  *  or QString::null if there is no such public property.
  */
-QString VMGlobalSettings::publicProperty (const QString &publicName) const
+QString VBoxGlobalSettings::publicProperty (const QString &publicName) const
 {
     for (size_t i = 0; i < SIZEOF_ARRAY (gPropertyMap); i++)
     {
@@ -208,7 +208,7 @@ QString VMGlobalSettings::publicProperty (const QString &publicName) const
  *
  *  @note   This method emits the #propertyChanged() signal.
  */
-bool VMGlobalSettings::setPublicProperty (const QString &publicName, const QString &value)
+bool VBoxGlobalSettings::setPublicProperty (const QString &publicName, const QString &value)
 {
     for (size_t i = 0; i < SIZEOF_ARRAY (gPropertyMap); i++)
     {
@@ -222,7 +222,7 @@ bool VMGlobalSettings::setPublicProperty (const QString &publicName, const QStri
     return false;
 }
 
-void VMGlobalSettings::setPropertyPrivate (int index, const QString &value)
+void VBoxGlobalSettings::setPropertyPrivate (int index, const QString &value)
 {
     if (value.isNull())
     {

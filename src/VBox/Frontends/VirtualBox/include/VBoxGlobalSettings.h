@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VMGlobalSettingsData, VMGlobalSettings class declarations
+ * VBoxGlobalSettingsData, VBoxGlobalSettings class declarations
  */
 
 /*
@@ -20,8 +20,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VMGlobalSettings_h__
-#define __VMGlobalSettings_h__
+#ifndef __VBoxGlobalSettings_h__
+#define __VBoxGlobalSettings_h__
 
 #include "CIShared.h"
 
@@ -29,14 +29,14 @@
 
 class CVirtualBox;
 
-class VMGlobalSettingsData
+class VBoxGlobalSettingsData
 {
 public:
 
-    VMGlobalSettingsData();
-    VMGlobalSettingsData( const VMGlobalSettingsData &that );
-    virtual ~VMGlobalSettingsData();
-    bool operator==( const VMGlobalSettingsData &that ) const;
+    VBoxGlobalSettingsData();
+    VBoxGlobalSettingsData( const VBoxGlobalSettingsData &that );
+    virtual ~VBoxGlobalSettingsData();
+    bool operator==( const VBoxGlobalSettingsData &that ) const;
 
 private:
 
@@ -45,12 +45,12 @@ private:
     QString guiFeatures;
     QString languageId;
 
-    friend class VMGlobalSettings;
+    friend class VBoxGlobalSettings;
 };
 
 /////////////////////////////////////////////////////////////////////////////
 
-class VMGlobalSettings : public QObject, public CIShared <VMGlobalSettingsData>
+class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsData>
 {
     Q_OBJECT
     Q_PROPERTY (int hostKey READ hostKey WRITE setHostKey)
@@ -60,12 +60,12 @@ class VMGlobalSettings : public QObject, public CIShared <VMGlobalSettingsData>
 
 public:
 
-    VMGlobalSettings (bool null = true)
-        : CIShared <VMGlobalSettingsData> (null) {}
-    VMGlobalSettings (const VMGlobalSettings &that)
-        : QObject(), CIShared <VMGlobalSettingsData> (that) {}
-    VMGlobalSettings &operator= (const VMGlobalSettings &that) {
-        CIShared <VMGlobalSettingsData>::operator= (that);
+    VBoxGlobalSettings (bool null = true)
+        : CIShared <VBoxGlobalSettingsData> (null) {}
+    VBoxGlobalSettings (const VBoxGlobalSettings &that)
+        : QObject(), CIShared <VBoxGlobalSettingsData> (that) {}
+    VBoxGlobalSettings &operator= (const VBoxGlobalSettings &that) {
+        CIShared <VBoxGlobalSettingsData>::operator= (that);
         return *this;
     }
 
@@ -131,4 +131,4 @@ private:
     QString last_err;
 };
 
-#endif // __VMGlobalSettings_h__
+#endif // __VBoxGlobalSettings_h__

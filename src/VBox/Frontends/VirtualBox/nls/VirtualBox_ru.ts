@@ -3812,7 +3812,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VMGlobalSettings</name>
+    <name>VBoxGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
         <translation>Hеправильный код хост-клавиши: &apos;%1 (0x%2)&apos;.</translation>

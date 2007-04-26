@@ -634,7 +634,7 @@ void VBoxSelectorWnd::fileDiskMgr()
 
 void VBoxSelectorWnd::fileSettings()
 {
-    VMGlobalSettings settings = vboxGlobal().settings();
+    VBoxGlobalSettings settings = vboxGlobal().settings();
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
     VBoxGlobalSettingsDlg dlg (this, "VBoxGlobalSettingsDlg");
@@ -642,7 +642,7 @@ void VBoxSelectorWnd::fileSettings()
 
     if (dlg.exec() == QDialog::Accepted)
     {
-        VMGlobalSettings s = settings;
+        VBoxGlobalSettings s = settings;
         dlg.putBackTo (props, s);
         if (!props.isOk())
             vboxProblem().cannotSetSystemProperties (props);

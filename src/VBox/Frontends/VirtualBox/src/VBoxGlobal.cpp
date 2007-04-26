@@ -184,7 +184,7 @@ public:
             if (sKey.startsWith ("GUI/"))
             {
                 // try to set the global setting to check its syntax
-                VMGlobalSettings gs (false /* non-null */);
+                VBoxGlobalSettings gs (false /* non-null */);
                 if (gs.setPublicProperty (sKey, sVal))
                 {
                     /// @todo (dmik)
@@ -608,7 +608,7 @@ VBoxGlobal &VBoxGlobal::instance()
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.
  */
-bool VBoxGlobal::setSettings (const VMGlobalSettings &gs)
+bool VBoxGlobal::setSettings (const VBoxGlobalSettings &gs)
 {
     gs.save (vbox);
 
@@ -1855,7 +1855,7 @@ static QString sLoadedLangId = gVBoxBuiltInLangName;
 
 /**
  *  Returns the loaded (active) language ID.
- *  Note that it may not match with VMGlobalSettings::languageId() if the
+ *  Note that it may not match with VBoxGlobalSettings::languageId() if the
  *  specified language cannot be loaded.
  *  If the built-in language is active, this method returns "C".
  *
@@ -2954,7 +2954,7 @@ void VBoxGlobal::init()
     qApp->installEventFilter (this);
 
     // create default non-null global settings
-    gset = VMGlobalSettings (false);
+    gset = VBoxGlobalSettings (false);
 
     // try to load global settings
     gset.load (vbox);
