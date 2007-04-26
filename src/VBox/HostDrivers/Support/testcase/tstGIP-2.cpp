@@ -60,8 +60,8 @@ int main(void)
             for (int i = 0; i < 80; i++)
             {
                 for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_pSUPGlobalInfoPage->aCPUs); i++)
-                    if (    g_pSUPGlobalInfoPage->aCPUs[i].u64CpuHz > 0 
-                        &&  g_pSUPGlobalInfoPage->aCPUs[i].u64CpuHz != _4G)
+                    if (    g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz > 0 
+                        &&  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz != _4G)
                         RTPrintf("tstGIP-2: %2d/%d: %016llx %016llx %08x %d %08x %15llu %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n",
                                  i, iCpu,
                                  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64NanoTS,
