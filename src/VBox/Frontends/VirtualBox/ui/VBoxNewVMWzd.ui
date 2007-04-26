@@ -124,7 +124,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
                     </spacer>
                     <spacer>
                         <property name="name">
-                            <cstring>spacer67</cstring>
+                            <cstring>widthSpacer</cstring>
                         </property>
                         <property name="orientation">
                             <enum>Horizontal</enum>
@@ -908,7 +908,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
             </widget>
             <widget class="QLayoutWidget">
                 <property name="name">
-                    <cstring>layout37</cstring>
+                    <cstring>summaryLayout</cstring>
                 </property>
                 <vbox>
                     <property name="name">
@@ -939,25 +939,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
                         </property>
                         <property name="alignment">
                             <set>WordBreak|AlignTop</set>
-                        </property>
-                    </widget>
-                    <widget class="QTextEdit">
-                        <property name="name">
-                            <cstring>teSummary</cstring>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>7</hsizetype>
-                                <vsizetype>5</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="frameShape">
-                            <enum>NoFrame</enum>
-                        </property>
-                        <property name="readOnly">
-                            <bool>true</bool>
                         </property>
                     </widget>
                     <widget class="QLabel">
@@ -1064,6 +1045,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
 </includes>
 <forwards>
     <forward>class VBoxMediaComboBox</forward>
+    <forward>class VBoxTextView</forward>
 </forwards>
 <variables>
     <variable access="private">QIWidgetValidator *wvalNameAndOS;</variable>
@@ -1073,6 +1055,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
     <variable access="private">CHardDisk chd;</variable>
     <variable access="private">CMachine cmachine;</variable>
     <variable access="private">VBoxMediaComboBox *mediaCombo;</variable>
+    <variable access="private">VBoxTextView *teSummary;</variable>
 </variables>
 <slots>
     <slot>enableNext( const QIWidgetValidator * wval )</slot>
@@ -1087,6 +1070,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
 <functions>
     <function access="private">init()</function>
     <function access="private">destroy()</function>
+    <function access="private">showEvent( QShowEvent * )</function>
     <function>showPage( QWidget * page )</function>
     <function>accept()</function>
     <function access="private" returnType="bool">constructMachine()</function>

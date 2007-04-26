@@ -70,6 +70,13 @@ void VBoxNewVMWzd::init()
      *  ----------------------------------------------------------------------
      */
 
+    /* setup the pictures colors */
+    VBoxGlobal::fillPixmapBackGrd (pmWelcome);
+    VBoxGlobal::fillPixmapBackGrd (pmNameAndOS);
+    VBoxGlobal::fillPixmapBackGrd (pmMemory);
+    VBoxGlobal::fillPixmapBackGrd (pmHDD);
+    VBoxGlobal::fillPixmapBackGrd (pmSummary);
+
     /* Name and OS page */
 
     leName->setValidator (new QRegExpValidator (QRegExp (".+" ), this));
@@ -88,10 +95,6 @@ void VBoxNewVMWzd::init()
     const uint MaxRAM = sysProps.GetMaxGuestRAM();
 
     leRAM->setValidator (new QIntValidator (MinRAM, MaxRAM, this));
-
-    /* filter out Enter keys in order to direct them to the default dlg button */
-    QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
-    ef->watchOn (teSummary);
 
     wvalMemory = new QIWidgetValidator (pageMemory, this);
     connect (wvalMemory, SIGNAL (validityChanged (const QIWidgetValidator *)),
@@ -115,6 +118,18 @@ void VBoxNewVMWzd::init()
              this, SLOT (enableNext (const QIWidgetValidator *)));
     connect (wvalHDD, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
+
+    /* Summary page */
+
+    teSummary = new VBoxTextView (pageSummary);
+    teSummary->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
+    teSummary->setFrameShape (QTextEdit::NoFrame);
+    teSummary->setReadOnly (TRUE);
+    summaryLayout->insertWidget (1, teSummary);
+
+    /* filter out Enter keys in order to direct them to the default dlg button */
+    QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
+    ef->watchOn (teSummary);
 
     /*
      *  set initial values
@@ -163,14 +178,41 @@ void VBoxNewVMWzd::init()
 
     /* the finish button on the Summary page is always enabled */
     setFinishEnabled (pageSummary, true);
-  
-    resize (sizeHint());
+
+    /* setup minimum width for the sizeHint to be calculated correctly */
+    int wid = widthSpacer->minimumSize().width();
+    txWelcome->setMinimumWidth (wid);
+    txNameAndOS->setMinimumWidth (wid);
+    textLabel1->setMinimumWidth (wid);
+    txRAMBest2->setMinimumWidth (wid);
+    textLabel1_3->setMinimumWidth (wid);
+    txVDIBest->setMinimumWidth (wid);
+    txSummaryHdr->setMinimumWidth (wid);
+    txSummaryFtr->setMinimumWidth (wid);
 }
 
 
 void VBoxNewVMWzd::destroy()
 {
     ensureNewHardDiskDeleted();
+}
+
+void VBoxNewVMWzd::showEvent (QShowEvent *e)
+{
+    QDialog::showEvent (e);
+
+    /* one may think that QWidget::polish() is the right place to do things
+     * below, but apparently, by the time when QWidget::polish() is called,
+     * the widget style & layout are not fully done, at least the minimum
+     * size hint is not properly calculated. Since this is sometimes necessary,
+     * we provide our own "polish" implementation. */
+
+    layout()->activate();
+
+    /* resize to the miminum possible size */
+    resize (minimumSize());
+
+    VBoxGlobal::centerWidget (this, parentWidget());
 }
 
 void VBoxNewVMWzd::enableNext (const QIWidgetValidator *wval)
@@ -243,6 +285,8 @@ void VBoxNewVMWzd::showPage (QWidget *page)
         mediaCombo->setFocus();
     else if (page == pageSummary)
         teSummary->setFocus();
+
+    page->layout()->activate();
 }
 
 void VBoxNewVMWzd::accept()
