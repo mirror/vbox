@@ -462,7 +462,7 @@ void VBoxProblemReporter::cannotFindLanguage (const QString &aLangID,
          tr ("<p>Could not find a language file for the language "
              "<b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
              "<p>The language will be temporarily reset to the system "
-             "default language. Please go to the <b>Global Settings</b> "
+             "default language. Please go to the <b>Preferences</b> "
              "dialog which you can open from the <b>File</b> menu of the "
              "main VirtualBox window, and select one of the existing "
              "languages on the <b>Language</b> page.</p>")
@@ -475,7 +475,7 @@ void VBoxProblemReporter::cannotLoadLanguage (const QString &aLangFile)
         (0, VBoxProblemReporter::Error,
          tr ("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
              "<p>The language will be temporarily reset to English (built-in). "
-             "Please go to the <b>Global Settings</b> "
+             "Please go to the <b>Preferences</b> "
              "dialog which you can open from the <b>File</b> menu of the "
              "main VirtualBox window, and select one of the existing "
              "languages on the <b>Language</b> page.</p>")
@@ -1614,18 +1614,7 @@ void VBoxProblemReporter::showHelpAboutDialog()
     AssertWrapperOk (vbox);
 
     VBoxAboutDlg dlg (mainWindowShown(), "VBoxAboutDlg");
-    QString versions = dlg.txVersions->text();
-    dlg.txVersions->setText (versions
-                             .arg (COMVersion));
-#ifdef Q_WS_MAC
-    /*
-     * Get rid of the exceedingly ugly pushbutton background.
-     * (We should probably consider doing this on all platforms.)
-     */
-    dlg.buttonOK->setBackgroundOrigin (QWidget::ParentOrigin);
-    dlg.buttonOK->setPaletteBackgroundPixmap (*dlg.paletteBackgroundPixmap());
-#endif
-
+    dlg.setup (COMVersion);
     dlg.exec();
 }
 

@@ -38,35 +38,16 @@
     <property name="caption">
         <string>VirtualBox - About</string>
     </property>
-    <widget class="QPushButton">
-        <property name="name">
-            <cstring>buttonOK</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>14</x>
-                <y>416</y>
-                <width>82</width>
-                <height>26</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>&amp;OK</string>
-        </property>
-        <property name="accel">
-            <string>Alt+O</string>
-        </property>
-    </widget>
     <widget class="QLabel">
         <property name="name">
-            <cstring>txVersions</cstring>
+            <cstring>mAboutLabel</cstring>
         </property>
         <property name="geometry">
             <rect>
-                <x>14</x>
-                <y>10</y>
-                <width>566</width>
-                <height>20</height>
+                <x>10</x>
+                <y>389</y>
+                <width>580</width>
+                <height>56</height>
             </rect>
         </property>
         <property name="backgroundMode">
@@ -82,25 +63,30 @@
         <property name="backgroundOrigin">
             <enum>ParentOrigin</enum>
         </property>
+        <property name="font">
+            <font>
+                <pointsize>7</pointsize>
+            </font>
+        </property>
         <property name="lineWidth">
             <number>0</number>
         </property>
         <property name="text">
-            <string>VirtualBox Graphical User Interface Version %1</string>
+            <string>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
+%2&lt;/qt&gt;</string>
         </property>
         <property name="alignment">
-            <set>WordBreak|AlignBottom|AlignLeft</set>
+            <set>WordBreak|AlignBottom|AlignHCenter</set>
         </property>
     </widget>
 </widget>
-<connections>
-    <connection>
-        <sender>buttonOK</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxAboutDlg</receiver>
-        <slot>accept()</slot>
-    </connection>
-</connections>
+<includes>
+    <include location="local" impldecl="in implementation">VBoxAboutDlg.ui.h</include>
+</includes>
+<functions>
+    <function>setup( const QString &amp; aVersion )</function>
+    <function>mouseReleaseEvent( QMouseEvent *aEv )</function>
+</functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

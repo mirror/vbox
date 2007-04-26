@@ -1031,9 +1031,14 @@ void VBoxSelectorWnd::languageChange()
      * Now, since both QMenuBar and we translate these strings, it's going to
      * be really interesting to see how this plays on non-english systems...
      */
-    fileSettingsAction->setMenuText (tr ("Preference..."));
+    fileSettingsAction->setMenuText (tr ("&Preferences...", "global settings"));
 #else
-    fileSettingsAction->setMenuText (tr ("&Global Settings..."));
+    /*
+     * ...and on other platforms we use "Preferences" as well. The #ifdef is
+     * left because of the possible localization problems on Mac we first need
+     * to figure out.
+     */
+    fileSettingsAction->setMenuText (tr ("&Preferences...", "global settings"));
 #endif 
     fileSettingsAction->setAccel (tr ("Ctrl+G"));
     fileSettingsAction->setStatusTip (tr ("Display the global settings dialog"));
