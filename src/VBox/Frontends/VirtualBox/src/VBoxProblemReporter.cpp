@@ -34,6 +34,9 @@
 #include <qprocess.h>
 #include <qeventloop.h>
 #include <qregexp.h>
+#ifdef Q_WS_MAC
+# include <qpushbutton.h>
+#endif 
 
 #include <iprt/err.h>
 
@@ -1614,6 +1617,15 @@ void VBoxProblemReporter::showHelpAboutDialog()
     QString versions = dlg.txVersions->text();
     dlg.txVersions->setText (versions
                              .arg (COMVersion));
+#ifdef Q_WS_MAC
+    /*
+     * Get rid of the exceedingly ugly pushbutton background.
+     * (We should probably consider doing this on all platforms.)
+     */
+    dlg.buttonOK->setBackgroundOrigin (QWidget::ParentOrigin);
+    dlg.buttonOK->setPaletteBackgroundPixmap (*dlg.paletteBackgroundPixmap());
+#endif
+
     dlg.exec();
 }
 
