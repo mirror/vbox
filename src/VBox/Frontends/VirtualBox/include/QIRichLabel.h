@@ -79,6 +79,8 @@ public:
    void setFont( const QFont &f );
    void setFixedHeight (int);
 
+   void setMaxHeightMode (bool);
+
 public slots:
    virtual void setText( const QString &);
    virtual void setPixmap( const QPixmap & );
@@ -102,7 +104,6 @@ protected:
    void         contextMenuEvent (QContextMenuEvent*);
 
 signals:
-   void         textChanged();
    void         clickedOnLink (const QString&);
 
 private slots:
@@ -133,6 +134,7 @@ private:
    QAccel     *accel;
    QLabelPrivate *d;
    QSimpleRichText *doc;
+   bool        mMaxHeightMode;
 
    friend class QTipLabel;
 

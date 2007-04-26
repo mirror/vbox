@@ -92,6 +92,7 @@ QIRichLabel::~QIRichLabel()
 
 void QIRichLabel::init()
 {
+   mMaxHeightMode = false;
    baseheight = 0;
    lpixmap = 0;
    lmovie = 0;
@@ -168,12 +169,11 @@ void QIRichLabel::setText (const QString &text)
 
    updateLabel (osh);
 
-   if ((int)baseheight < heightForWidth (width()))
+   if (mMaxHeightMode && (int)baseheight < heightForWidth (width()))
    {
        baseheight = heightForWidth (width());
        QFrame::setFixedHeight (baseheight);
    }
-   emit textChanged();
 }
 
 
@@ -260,6 +260,12 @@ void QIRichLabel::setAutoResize (bool enable)
       if (autoresize)
          adjustSize();           // calls resize which repaints
    }
+}
+
+
+void QIRichLabel::setMaxHeightMode (bool aEnabled)
+{
+    mMaxHeightMode = aEnabled;
 }
 
 
