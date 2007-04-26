@@ -542,7 +542,7 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 {
     char *pszTmp;
     size_t cbKey = strlen(pszKey);
-    unsigned uLast = NULL;
+    unsigned uLast = 0;
 
     while (uStart != 0)
     {
