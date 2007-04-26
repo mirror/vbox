@@ -1426,6 +1426,21 @@
     </message>
 </context>
 <context>
+    <name>VBoxGlobalSettings</name>
+    <message>
+        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
+        <translation>&apos;%1 (0x%2)&apos; non è un codice host key valido.</translation>
+    </message>
+    <message>
+        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
+        <translation>Il valore &apos;%1&apos; della chiave &apos;%2&apos; non valida l&apos;espressione regolare &apos;%3&apos;.</translation>
+    </message>
+    <message>
+        <source>Cannot delete the key &apos;%1&apos;.</source>
+        <translation>Non posso cancellare la chiave &apos;%1&apos;.</translation>
+    </message>
+</context>
+<context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
@@ -4205,21 +4220,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="unfinished">Driver %1</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxGlobalSettings</name>
-    <message>
-        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; non è un codice host key valido.</translation>
-    </message>
-    <message>
-        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>Il valore &apos;%1&apos; della chiave &apos;%2&apos; non valida l&apos;espressione regolare &apos;%3&apos;.</translation>
-    </message>
-    <message>
-        <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation>Non posso cancellare la chiave &apos;%1&apos;.</translation>
     </message>
 </context>
 </TS>

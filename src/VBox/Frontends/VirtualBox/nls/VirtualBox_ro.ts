@@ -1457,6 +1457,21 @@
     </message>
 </context>
 <context>
+    <name>VBoxGlobalSettings</name>
+    <message>
+        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
+        <translation>&apos;%1 (0x%2)&apos; este un cod cheie gazdă invalid.</translation>
+    </message>
+    <message>
+        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
+        <translation>Valoarea &apos;%1&apos; a cheii &apos;%2&apos; nu se potriveşte constrângerii expresiei regulare &apos;%3&apos;.</translation>
+    </message>
+    <message>
+        <source>Cannot delete the key &apos;%1&apos;.</source>
+        <translation>Nu pot şterge cheia &apos;%1&apos;.</translation>
+    </message>
+</context>
+<context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
@@ -4239,21 +4254,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>Dispozitiv %1</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxGlobalSettings</name>
-    <message>
-        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; este un cod cheie gazdă invalid.</translation>
-    </message>
-    <message>
-        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>Valoarea &apos;%1&apos; a cheii &apos;%2&apos; nu se potriveşte constrângerii expresiei regulare &apos;%3&apos;.</translation>
-    </message>
-    <message>
-        <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation>Nu pot şterge cheia &apos;%1&apos;.</translation>
     </message>
 </context>
 </TS>

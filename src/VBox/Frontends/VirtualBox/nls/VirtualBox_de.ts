@@ -1375,6 +1375,21 @@
     </message>
 </context>
 <context>
+    <name>VBoxGlobalSettings</name>
+    <message>
+        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
+        <translation>&apos;%1 (0x%2)&apos; ist kein gültiger Tastencode.</translation>
+    </message>
+    <message>
+        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
+        <translation>Der Wert &apos;%1&apos; des Schlüssels &apos;%2&apos; stimmt nicht mit dem regulären Ausdruck &apos;%3&apos; überein.</translation>
+    </message>
+    <message>
+        <source>Cannot delete the key &apos;%1&apos;.</source>
+        <translation>Der Schlüssel &apos;%1&apos; konnte nicht gelöscht werden.</translation>
+    </message>
+</context>
+<context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
@@ -3751,21 +3766,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>Adapter %1</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxGlobalSettings</name>
-    <message>
-        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; ist kein gültiger Tastencode.</translation>
-    </message>
-    <message>
-        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>Der Wert &apos;%1&apos; des Schlüssels &apos;%2&apos; stimmt nicht mit dem regulären Ausdruck &apos;%3&apos; überein.</translation>
-    </message>
-    <message>
-        <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation>Der Schlüssel &apos;%1&apos; konnte nicht gelöscht werden.</translation>
     </message>
 </context>
 </TS>
