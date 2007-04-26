@@ -1426,6 +1426,21 @@
     </message>
 </context>
 <context>
+    <name>VBoxGlobalSettings</name>
+    <message>
+        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
+        <translation>&apos;%1 (0x%2)&apos; 是一个不可用的热键编码.</translation>
+    </message>
+    <message>
+        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
+        <translation>关键字 &apos;%2&apos; 的值 &apos;%1&apos; 不能通过正则表达式 &apos;%3&apos; 的强制性检查.</translation>
+    </message>
+    <message>
+        <source>Cannot delete the key &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
@@ -4034,21 +4049,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="unfinished">网络类型 %1</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxGlobalSettings</name>
-    <message>
-        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; 是一个不可用的热键编码.</translation>
-    </message>
-    <message>
-        <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>关键字 &apos;%2&apos; 的值 &apos;%1&apos; 不能通过正则表达式 &apos;%3&apos; 的强制性检查.</translation>
-    </message>
-    <message>
-        <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
