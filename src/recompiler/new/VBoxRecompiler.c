@@ -3391,20 +3391,12 @@ void remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb)
      * Calc the physical address ('off') and check that it's within the RAM.
      * ROM is accessed this way, even if it's not part of the RAM.
      */
-    /** @todo This is rather ugly, but there's no other way when we don't wish to touch *many* other files. */
 #ifdef PGM_DYNAMIC_RAM_ALLOC
     uintptr_t off = remR3HCVirt2GCPhysInlined(cpu_single_env->pVM, pbSrcPhys);
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        PGMPhysRead(cpu_single_env->pVM, (RTGCPHYS)off, pvDst, cb);
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysRead ROM: %p\n", pbSrcPhys));
-        memcpy(pvDst, pbSrcPhys, cb);
-    }
+    PGMPhysRead(cpu_single_env->pVM, (RTGCPHYS)off, pvDst, cb);
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
 }
 
@@ -3429,14 +3421,7 @@ uint8_t remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys)
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        val = PGMR3PhysReadByte(cpu_single_env->pVM, (RTGCPHYS)off);
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysReadU8 ROM: %p\n", pbSrcPhys));
-        val = *pbSrcPhys;
-    }
+    val = PGMR3PhysReadByte(cpu_single_env->pVM, (RTGCPHYS)off);
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
@@ -3462,14 +3447,7 @@ int8_t remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys)
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        val = PGMR3PhysReadByte(cpu_single_env->pVM, (RTGCPHYS)off);
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysReadS8 ROM: %p\n", pbSrcPhys));
-        val = *(int8_t *)pbSrcPhys;
-    }
+    val = PGMR3PhysReadByte(cpu_single_env->pVM, (RTGCPHYS)off);
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
@@ -3495,14 +3473,7 @@ uint16_t remR3PhysReadHCPtrU16(uint8_t *pbSrcPhys)
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        val = PGMR3PhysReadWord(cpu_single_env->pVM, (RTGCPHYS)off);
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysReadU16 ROM: %p\n", pbSrcPhys));
-        val = *(uint16_t *)pbSrcPhys;
-    }
+    val = PGMR3PhysReadWord(cpu_single_env->pVM, (RTGCPHYS)off);
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
@@ -3529,14 +3500,7 @@ int16_t remR3PhysReadHCPtrS16(uint8_t *pbSrcPhys)
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        val = PGMR3PhysReadWord(cpu_single_env->pVM, (RTGCPHYS)off);
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysReadS16 ROM: %p\n", pbSrcPhys));
-        val = *(int16_t *)pbSrcPhys;
-    }
+    val = PGMR3PhysReadWord(cpu_single_env->pVM, (RTGCPHYS)off);
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
@@ -3562,14 +3526,7 @@ uint32_t remR3PhysReadHCPtrU32(uint8_t *pbSrcPhys)
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        val = PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off);
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysReadU32 ROM: %p\n", pbSrcPhys));
-        val = *(uint32_t *)pbSrcPhys;
-    }
+    val = PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off);
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
@@ -3595,14 +3552,7 @@ int32_t remR3PhysReadHCPtrS32(uint8_t *pbSrcPhys)
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        val = PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off);
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysReadS32 ROM: %p\n", pbSrcPhys));
-        val = *(int32_t *)pbSrcPhys;
-    }
+    val = PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off);
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
@@ -3628,15 +3578,8 @@ uint64_t remR3PhysReadHCPtrU64(uint8_t *pbSrcPhys)
 #else
     uintptr_t off = pbSrcPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        val =            PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off)
-            | ((uint64_t)PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off + 4) << 32); /** @todo fix me! */
-    else
-    {
-        /* ROM range outside physical RAM, HC address passed directly */
-        Log4(("remR3PhysReadU64 ROM: %p\n", pbSrcPhys));
-        val = *(uint32_t *)pbSrcPhys;
-    }
+    val =            PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off)
+        | ((uint64_t)PGMR3PhysReadDword(cpu_single_env->pVM, (RTGCPHYS)off + 4) << 32); /** @todo fix me! */
     STAM_PROFILE_ADV_STOP(&gStatMemReadHCPtr, a);
     return val;
 }
@@ -3660,10 +3603,7 @@ void remR3PhysWriteHCPtr(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb)
 #else
     uintptr_t off = pbDstPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        PGMPhysWrite(cpu_single_env->pVM, (RTGCPHYS)off, pvSrc, cb);
-    else
-        AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, cb));
+    PGMPhysWrite(cpu_single_env->pVM, (RTGCPHYS)off, pvSrc, cb);
     STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
@@ -3685,10 +3625,7 @@ void remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val)
 #else
     uintptr_t off = pbDstPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        PGMR3PhysWriteByte(cpu_single_env->pVM, (RTGCPHYS)off, val);
-    else
-        AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 1));
+    PGMR3PhysWriteByte(cpu_single_env->pVM, (RTGCPHYS)off, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
@@ -3710,10 +3647,7 @@ void remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val)
 #else
     uintptr_t off = pbDstPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        PGMR3PhysWriteWord(cpu_single_env->pVM, (RTGCPHYS)off, val);
-    else
-        AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 2));
+    PGMR3PhysWriteWord(cpu_single_env->pVM, (RTGCPHYS)off, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
@@ -3735,10 +3669,7 @@ void remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val)
 #else
     uintptr_t off = pbDstPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-        PGMR3PhysWriteDword(cpu_single_env->pVM, (RTGCPHYS)off, val);
-    else
-        AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 4));
+    PGMR3PhysWriteDword(cpu_single_env->pVM, (RTGCPHYS)off, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
@@ -3760,13 +3691,8 @@ void remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val)
 #else
     uintptr_t off = pbDstPhys - phys_ram_base;
 #endif
-    if (off < (uintptr_t)phys_ram_size)
-    {
-        PGMR3PhysWriteDword(cpu_single_env->pVM, (RTGCPHYS)off, (uint32_t)val); /** @todo add U64 interface. */
-        PGMR3PhysWriteDword(cpu_single_env->pVM, (RTGCPHYS)off + 4, val >> 32);
-    }
-    else
-        AssertMsgFailed(("pbDstPhys=%p off=%p cb=%d\n", pbDstPhys, off, 4));
+    PGMR3PhysWriteDword(cpu_single_env->pVM, (RTGCPHYS)off, (uint32_t)val); /** @todo add U64 interface. */
+    PGMR3PhysWriteDword(cpu_single_env->pVM, (RTGCPHYS)off + 4, val >> 32);
     STAM_PROFILE_ADV_STOP(&gStatMemWriteHCPtr, a);
 }
 
