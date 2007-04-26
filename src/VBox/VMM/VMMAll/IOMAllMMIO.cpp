@@ -513,6 +513,7 @@ inline int iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
  * @param   pCpu        Disassembler CPU state.
  * @param   pRange      Pointer MMIO range.
  */
+#ifdef IOMGC_MOVS_SUPPORT
 static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, CTXALLSUFF(PIOMMMIORANGE) pRange)
 {
     STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovs, a);
@@ -734,6 +735,7 @@ static int iomGCInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFra
     }
     return rc;
 }
+#endif
 
 
 
