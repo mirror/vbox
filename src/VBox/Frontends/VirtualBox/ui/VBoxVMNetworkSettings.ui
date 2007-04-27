@@ -787,7 +787,7 @@
 </slots>
 <functions>
     <function access="private" specifier="non virtual">init()</function>
-    <function>loadList( const QStringList &amp; )</function>
+    <function>loadList( const QStringList &amp;, int )</function>
     <function>getFromAdapter( const CNetworkAdapter &amp; )</function>
     <function>putBackToAdapter()</function>
     <function>setValidator( QIWidgetValidator* )</function>
