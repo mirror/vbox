@@ -381,6 +381,7 @@ Drivers_SOURCES    = \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvVD.cpp \
+	Storage/DrvVmdk.cpp \
 	Storage/VBoxHDD.cpp
 
 # -- OS specific --

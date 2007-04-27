@@ -60,6 +60,7 @@ extern const PDMDRVREG g_DrvKeyboardQueue;
 extern const PDMDRVREG g_DrvBlock;
 extern const PDMDRVREG g_DrvVBoxHDD;
 extern const PDMDRVREG g_DrvVD;
+extern const PDMDRVREG g_DrvVmdkHDD;
 extern const PDMDRVREG g_DrvHostDVD;
 extern const PDMDRVREG g_DrvHostFloppy;
 extern const PDMDRVREG g_DrvMediaISO;
