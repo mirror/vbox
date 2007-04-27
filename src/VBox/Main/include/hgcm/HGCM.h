@@ -32,6 +32,10 @@
 /* HGCM saved state version */
 #define HGCM_SSM_VERSION    2
 
+/* Handle of a HGCM service extension. */
+struct _HGCMSVCEXTHANDLEDATA;
+typedef struct _HGCMSVCEXTHANDLEDATA *HGCMSVCEXTHANDLE;
+
 __BEGIN_DECLS
 int HGCMHostInit (void);
 int HGCMHostShutdown (void);
@@ -39,6 +43,9 @@ int HGCMHostShutdown (void);
 int HGCMHostReset (void);
 
 int HGCMHostLoad (const char *pszServiceName, const char *pszServiceLibrary);
+
+int HGCMHostRegisterServiceExtension (HGCMSVCEXTHANDLE *pHandle, const char *pszServiceName, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
+void HGCMHostUnregisterServiceExtension (HGCMSVCEXTHANDLE handle);
 
 int HGCMGuestConnect (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, const char *pszServiceName, uint32_t *pClientID);
 int HGCMGuestDisconnect (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID);

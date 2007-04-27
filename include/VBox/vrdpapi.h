@@ -541,11 +541,32 @@ typedef struct _VRDPUSBREQNEGOTIATERET
 #pragma pack()
 
 
-#define VRDP_CLIPBOARD_FORMAT_INVALID      (0xFFFFFFFF)
-#define VRDP_CLIPBOARD_FORMAT_UNICODE_TEXT (0)
-#define VRDP_CLIPBOARD_FORMAT_BITMAP       (1)
+#define VRDP_CLIPBOARD_FORMAT_NULL         (0x0)
+#define VRDP_CLIPBOARD_FORMAT_UNICODE_TEXT (0x1)
+#define VRDP_CLIPBOARD_FORMAT_BITMAP       (0x2)
 
-VRDPR3DECL(void) VRDPSendClipboardData (HVRDPSERVER hserver, uint32_t u32Format, void *pvData, uint32_t cbData);
+#define VRDP_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE (0)
+#define VRDP_CLIPBOARD_FUNCTION_DATA_READ       (1)
+#define VRDP_CLIPBOARD_FUNCTION_DATA_WRITE      (2)
+
+/**
+ * Called by the host when (VRDP_CLIPBOARD_FUNCTION_*):
+ *   - (0) guest announces available clipboard formats;
+ *   - (1) guest requests clipboard data;
+ *   - (2) host responds to the client's request for clipboard data.
+ *
+ * @param hserver     The VRDP server handle.
+ * @param u32Function The cause of the call.
+ * @param u32Format   Bitmask of announced formats or the format of data.
+ * @param pvData      Points to data from the host, as reply to (2).
+ * @param cbData      Size of the data in bytes.
+ *
+ */
+VRDPR3DECL(void) VRDPClipboard (HVRDPSERVER hserver,
+                                uint32_t u32Function,
+                                uint32_t u32Format,
+                                const void *pvData,
+                                uint32_t cbData);
 
 #ifdef VRDP_MC
 /**
@@ -585,11 +606,18 @@ typedef DECLCALLBACK(int) FNVRDPUSBCALLBACK (void *pvCallback,
 typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
 
 /**
- * Called by the server when a clipboard data is received from a client.
+ * Called by the server when (VRDP_CLIPBOARD_FUNCTION_*):
+ *   - (0) client announces available clipboard formats;
+ *   - (1) client requests clipboard data;
+ *   - (2) client responds to the guest's request for clipboard data.
+ *
+ *   - client announces available clipboard formats;
+ *   - clipboard data is received from the client.
  *
  * @param pvCallback  Callback specific value returned by VRDPSERVERCALLBACK::pfnInterceptClipboard.
- * @param u32ClientId Identifies the client that sent the reply.
- * @param u32Format   The format of data.
+ * @param u32ClientId Identifies the RDP client that sent the reply.
+ * @param u32Function The cause if the callback.
+ * @param u32Format   Bitmask of reported formats or the format of received data.
  * @param pvData      Points to data received from the client.
  * @param cbData      Size of the data in bytes.
  *
@@ -597,6 +625,7 @@ typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
  */
 typedef DECLCALLBACK(int) FNVRDPCLIPBOARDCALLBACK (void *pvCallback,
                                                    uint32_t u32ClientId,
+                                                   uint32_t u32Function,
                                                    uint32_t u32Format,
                                                    const void *pvData,
                                                    uint32_t cbData);

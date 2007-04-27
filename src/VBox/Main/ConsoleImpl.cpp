@@ -665,6 +665,11 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
     {
         console->mConsoleVRDPServer->USBBackendDelete (u32ClientId);
     }
+
+    if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_CLIPBOARD)
+    {
+        console->mConsoleVRDPServer->ClipboardDelete (u32ClientId);
+    }
 #else
     console->mConsoleVRDPServer->DeleteUSBBackend ();
 #endif /* VRDP_MC */
@@ -787,6 +792,38 @@ DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser, PFNVRDPUSBCALLBACK 
     return;
 }
 
+#ifdef VRDP_MC
+DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
+                                                     uint32_t u32ClientId,
+                                                     PFNVRDPCLIPBOARDCALLBACK *ppfn,
+                                                     void **ppv)
+{
+    LogFlowFuncEnter();
+
+    Console *console = static_cast <Console *> (pvUser);
+    AssertReturnVoid (console);
+
+    AutoCaller autoCaller (console);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AssertReturnVoid (console->mConsoleVRDPServer);
+
+    console->mConsoleVRDPServer->ClipboardCreate (u32ClientId, ppfn, ppv);
+
+    LogFlowFuncLeave();
+    return;
+}
+#else
+DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
+                                                     PFNVRDPCLIPBOARDCALLBACK *ppfn,
+                                                     void **ppv)
+{
+    /* Obsolete. */
+    return;
+}
+#endif /* VRDP_MC */
+
+
 // static
 VRDPSERVERCALLBACK Console::sVrdpServerCallback =
 {
@@ -794,7 +831,8 @@ VRDPSERVERCALLBACK Console::sVrdpServerCallback =
     vrdp_ClientConnect,
     vrdp_ClientDisconnect,
     vrdp_InterceptAudio,
-    vrdp_InterceptUSB
+    vrdp_InterceptUSB,
+    vrdp_InterceptClipboard
 };
 
 //static

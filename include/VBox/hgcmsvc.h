@@ -45,9 +45,10 @@
  * 1.1->2.1 Because the pfnConnect now also has the pvClient parameter.
  * 2.1->2.2 Because pfnSaveState and pfnLoadState were added
  * 2.2->3.1 Because pfnHostCall is now synchronous, returns rc, and parameters were changed
+ * 3.1->3.2 Because pfnRegisterExtension was added
  */
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0003)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0002)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -91,6 +92,17 @@ typedef struct VBOXHGCMSVCPARM
 
 typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
 
+/** Service specific extension callback.
+ *  This callback is called by the service to perform service specific operation.
+ *  
+ * @param pvExtension The extension pointer.
+ * @param u32Function What the callback is supposed to do.
+ * @param pvParm      The function parameters.
+ * @param cbParm      The size of the function parameters.
+ */
+typedef DECLCALLBACK(int) FNHGCMSVCEXT(void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms);
+typedef FNHGCMSVCEXT *PFNHGCMSVCEXT;
+
 /** The Service DLL entry points.
  *
  *  HGCM will call the DLL "VBoxHGCMSvcLoad"
@@ -117,9 +129,8 @@ typedef struct _VBOXHGCMSVCFNTABLE
     /** Size of client information the service want to have. */
     uint32_t                 cbClient;
 #if ARCH_BITS == 64
-    /** Ensure that the following pointers are properly aligned on 64-bit system.
-     * To counter harm done by the paranoid #pragma pack(1). */
-    uint32_t                u32Alignment0;
+    /** Ensure that the following pointers are properly aligned on 64-bit system. */
+    uint32_t                 u32Alignment0;
 #endif
 
     /** Uninitialize service */
@@ -146,6 +157,9 @@ typedef struct _VBOXHGCMSVCFNTABLE
 
     /** Inform the service about a VM load operation. */
     DECLCALLBACKMEMBER(int, pfnLoadState) (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM);
+
+    /** Manage the service extension. */
+    DECLCALLBACKMEMBER(int, pfnRegisterExtension) (PFNHGCMSVCEXT pfnExtension, void *pvExtension);
 
 } VBOXHGCMSVCFNTABLE;
 #pragma pack()

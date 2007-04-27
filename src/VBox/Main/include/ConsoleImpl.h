@@ -409,12 +409,14 @@ private:
     static DECLCALLBACK(void)   vrdp_ClientDisconnect (void *pvUser, uint32_t u32ClientId, uint32_t fu32Intercepted);
     static DECLCALLBACK(void)   vrdp_InterceptAudio (void *pvUser, uint32_t u32ClientId);
     static DECLCALLBACK(void)   vrdp_InterceptUSB (void *pvUser, uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
+    static DECLCALLBACK(void)   vrdp_InterceptClipboard (void *pvUser, uint32_t u32ClientId, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
 #else
     static DECLCALLBACK(int)    vrdp_ClientLogon (void *pvUser, const char *pszUser, const char *pszPassword, const char *pszDomain);
     static DECLCALLBACK(void)   vrdp_ClientConnect (void *pvUser, uint32_t fu32SupportedOrders);
     static DECLCALLBACK(void)   vrdp_ClientDisconnect (void *pvUser);
     static DECLCALLBACK(void)   vrdp_InterceptAudio (void *pvUser, bool keepHostAudio);
     static DECLCALLBACK(void)   vrdp_InterceptUSB (void *pvUser, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
+    static DECLCALLBACK(void)   vrdp_InterceptClipboard (void *pvUser, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
 #endif /* VRDP_MC */
 
     static VRDPSERVERCALLBACK   sVrdpServerCallback;
