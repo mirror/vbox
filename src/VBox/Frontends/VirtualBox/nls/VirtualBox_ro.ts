@@ -1503,7 +1503,7 @@
     </message>
     <message>
         <source>#general</source>
-        <translation>#general</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Input </source>
@@ -1515,7 +1515,7 @@
     </message>
     <message>
         <source>#input</source>
-        <translation>#input</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -1527,7 +1527,7 @@
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -1746,7 +1746,7 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
     </message>
     <message>
         <source>#language</source>
-        <translation>#limbă</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -3550,7 +3550,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#general</source>
-        <translation>#general</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
@@ -3562,7 +3562,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#hdds</source>
-        <translation>#hdduri</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Floppy </source>
@@ -3573,8 +3573,8 @@ value.&lt;/qt&gt;</source>
         <translation>2</translation>
     </message>
     <message>
-        <source>#dischet?</source>
-        <translation type="obsolete">#dischetă</translation>
+        <source>#floppy</source>
+        <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
@@ -3586,7 +3586,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#dvd</source>
-        <translation>#dvd</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Audio </source>
@@ -3598,7 +3598,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#audio</source>
-        <translation>#audio</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Network </source>
@@ -3610,7 +3610,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#network</source>
-        <translation>#network</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -3622,7 +3622,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -3634,7 +3634,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation>#vrdp</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -3646,7 +3646,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation>#directoarep</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Identification</source>
@@ -4166,10 +4166,6 @@ aceasta funcţie necesită instalarea Guest Additions pe SO musafir.
     <message>
         <source>S&amp;napshot Folder</source>
         <translation>Director I&amp;nstantanee</translation>
-    </message>
-    <message>
-        <source>#floppy</source>
-        <translation>#dischetă</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
