@@ -524,6 +524,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
     
     int rc = VINF_SUCCESS;
     
+#ifdef VBOX_VRDP
     ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvExtension);
     
     VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
@@ -608,7 +609,8 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
         default: 
             rc = VERR_NOT_SUPPORTED;
     }
-    
+#endif /* VBOX_VRDP */
+
     return rc;
 }
 
