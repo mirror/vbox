@@ -5646,7 +5646,7 @@ HRESULT Console::callTapSetupApplication(Bstr &tapDevice, Bstr &tapSetupApplicat
         Log(("Failed to start the TAP interface setup script %s, error text: %s\n",
               pszArgs, strerror(iErr)));
         LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, "Failed to start the TAP interface setup script %s, error text: %s\n",
+        return setError(E_FAIL, tr ("Failed to run the host networking set up command %s: %s"),
                         pszArgs, strerror(iErr));
     }
     fgets(acBuffer, sizeof(acBuffer), pfScriptHandle);
@@ -5658,7 +5658,7 @@ HRESULT Console::callTapSetupApplication(Bstr &tapDevice, Bstr &tapSetupApplicat
         pclose(pfScriptHandle);
         Log(("The TAP interface setup script did not return the name of a TAP device.\n"));
         LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, "The TAP interface setup script did not return the name of a TAP device.\n");
+        return setError(E_FAIL, tr ("The host networking set up command did not supply an interface name"));
     }
     acBuffer[cBufSize - 1] = 0;
     tapDevice = acBuffer;
@@ -5667,13 +5667,13 @@ HRESULT Console::callTapSetupApplication(Bstr &tapDevice, Bstr &tapSetupApplicat
     {
         Log(("The TAP interface setup script terminated abnormally.\n"));
         LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, "The TAP interface setup script terminated abnormally.\n");
+        return setError(E_FAIL, tr ("The host networking set up command did not run correctly"));
     }
     if (WEXITSTATUS(rc) != 0)
     {
         Log(("The TAP interface setup script returned a non-zero exit code.\n"));
         LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, "The TAP interface setup script returned a non-zero exit code.\n");
+        return setError(E_FAIL, tr ("The host networking set up command returned a non-zero exit code"));
     }
     LogFlowThisFunc(("rc=S_OK\n"));
     return S_OK;
@@ -5759,7 +5759,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                 if (tapSetupApplication.isEmpty())
                 {
                     Log(("No setup application was supplied for the TAP interface.\n"));
-                    rc = setError(E_FAIL, "No setup application was supplied for the TAP interface.\n");
+                    rc = setError(E_FAIL, tr ("No setup application was supplied for the host networking interface"));
                 }
                 else
                 {
@@ -5803,14 +5803,16 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                     {
                         AssertMsgFailed(("Configuration error: Failed to configure /dev/net/tun non blocking. errno=%d\n", errno));
                         rcVBox = VERR_HOSTIF_BLOCKING;
-                        rc = setError(E_FAIL, "Failed to set /dev/net/tun to non blocking. errno=%d\n", errno);
+                        rc = setError(E_FAIL, tr ("could not set up the host networking device for non blocking access: %s"),
+                                              strerror(errno));
                     }
                 }
                 else
                 {
                     AssertMsgFailed(("Configuration error: Failed to configure /dev/net/tun. errno=%d\n", errno));
                     rcVBox = VERR_HOSTIF_IOCTL;
-                    rc = setError(E_FAIL, "Failed to configure /dev/net/tun. errno = %d\n", errno);
+                    rc = setError(E_FAIL, tr ("Could not set up the host networking device: %s"),
+                                          strerror(errno));
                 }
             }
         }
@@ -5824,7 +5826,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                     rc = rcVBox;
                     break;
                 default:
-                    rc = setError(E_FAIL, "Failed to open /dev/net/tun rc = %Vrc\n", rcVBox);
+                    rc = setError(E_FAIL, tr ("Could not set up the host networking device: %Vrc"), rcVBox);
                     break;
             }
         }
@@ -5845,89 +5847,6 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
     LogFlowThisFunc(("rc=%d\n", rc));
     return rc;
 }
-
-#if 0
-/* Old code for this function. */
-HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
-{
-    /* sanity check */
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
-
-    HRESULT rc = S_OK;
-#ifdef DEBUG
-    /* paranoia */
-    NetworkAttachmentType_T attachment;
-    networkAdapter->COMGETTER(AttachmentType)(&attachment);
-    Assert(attachment == NetworkAttachmentType_HostInterfaceNetworkAttachment);
-#endif /* DEBUG */
-
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-
-    ULONG slot = 0;
-    rc = networkAdapter->COMGETTER(Slot)(&slot);
-    AssertComRC(rc);
-
-    /* is there an open TAP device? */
-    if (maTapFD[slot] != NIL_RTFILE)
-    {
-        /*
-         * Execute term command and close the file handle.
-         */
-        Bstr tapTerminateApplication;
-        networkAdapter->COMGETTER(TAPTerminateApplication)(tapTerminateApplication.asOutParam());
-        if (tapTerminateApplication)
-        {
-            /*
-             * Create the argument list
-             */
-            const char *apszArgs[4];
-            /* 0. The program name. */
-            Utf8Str tapTermAppUtf8(tapTerminateApplication);
-            apszArgs[0] = tapTermAppUtf8.raw();
-
-            /* 1. The file descriptor. */
-            char szFD[32];
-            RTStrPrintf(szFD, sizeof(szFD), "%RTfile", maTapFD[slot]);
-            apszArgs[1] = szFD;
-
-            /* 2. Device name (optional). */
-            apszArgs[2] = maTAPDeviceName[slot].isEmpty() ? NULL : maTAPDeviceName[slot].raw();
-
-            /* 3. The end. */
-            apszArgs[3] = NULL;
-
-            /*
-             * Create the process and wait for it to complete.
-             */
-            RTPROCESS Process;
-            int rcVBox = RTProcCreate(apszArgs[0], &apszArgs[0], NULL, 0, &Process);
-            if (VBOX_SUCCESS(rcVBox))
-            {
-                /* wait for the process to exit */
-                RTPROCSTATUS ProcStatus;
-                rcVBox = RTProcWait(Process, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus);
-                AssertRC(rcVBox);
-                /* ignore return code? */
-            }
-            else
-                AssertMsgFailed(("Configuration error: Failed to start terminate program \"%s\", rc=%Vra\n", apszArgs[0], rcVBox)); /** @todo last error candidate. */
-            if (VBOX_FAILURE(rcVBox))
-                rc = E_FAIL;
-        }
-
-        /*
-         * Now we can close the file handle.
-         */
-        int rcVBox = RTFileClose(maTapFD[slot]);
-        AssertRC(rcVBox);
-        /* the TAP device name and handle are no longer valid */
-        maTapFD[slot] = NIL_RTFILE;
-        maTAPDeviceName[slot] = "";
-    }
-#endif
-    return rc;
-}
-#endif
 
 /**
  *  Helper function to handle detachment from a host interface
@@ -5977,8 +5896,7 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
 
             /* Build the command line. */
             char szCommand[4096];
-            RTStrPrintf(szCommand, sizeof(szCommand), "%s %RTfile %s", tapTermAppUtf8.raw(),
-                        maTapFD[slot],
+            RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", tapTermAppUtf8.raw(),
                         maTAPDeviceName[slot].isEmpty() ? "" : maTAPDeviceName[slot].raw());
 
             /*
@@ -5994,12 +5912,12 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
             if (!WIFEXITED(rc))
             {
                 Log(("The TAP interface clean up script terminated abnormally.\n"));
-                rc = setError(E_FAIL, "The TAP interface clean up script terminated abnormally.\n");
+                rc = setError(E_FAIL, tr ("The TAP interface clean up script terminated abnormally"));
             }
             if (WEXITSTATUS(rc) != 0)
             {
                 Log(("The TAP interface clean up script returned a non-zero exit code.\n"));
-                rc = setError(E_FAIL, "The TAP interface clean up script returned a non-zero exit code.\n");
+                rc = setError(E_FAIL, tr ("The TAP interface clean up script returned a non-zero exit code"));
             }
         }
 
