@@ -2242,8 +2242,8 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut renunţa la starea salvată a maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nu am putut renunţa la instantaneul &lt;b&gt;%1&lt;/b&gt; maşinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nu am putut renunţa la instantaneul &lt;b&gt;%1&lt;/b&gt; maşinii virtuale &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>

@@ -2213,8 +2213,8 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
         <translation>Fallimento nello scarto dello stato salvato per la macchina virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Fallimento nello scarto dello snapshot &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Fallimento nello scarto dello snapshot &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
