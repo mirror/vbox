@@ -472,28 +472,6 @@ private:
 
 #endif /* Q_WS_WIN */
 
-VBoxTextView::VBoxTextView (QWidget *aParent)
-    : QTextEdit (aParent)
-{
-}
-
-QSize VBoxTextView::sizeHint() const
-{
-    return minimumSizeHint();
-}
-
-QSize VBoxTextView::minimumSizeHint() const
-{
-    int wid = 0;
-    int hei = heightForWidth (wid);
-    return QSize (wid, hei);
-}
-
-void VBoxTextView::setText (const QString &aText)
-{
-    QTextEdit::setText (aText);
-}
-
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1847,6 +1825,39 @@ void VBoxGlobal::languageChange()
 // public static stuff
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ *  Sets the QLabel background and frame colors according tho the pixmap
+ *  contents. The bottom right pixel of the label pixmap defines the
+ *  background color of the label, the top right pixel defines the color of
+ *  the one-pixel frame around it. This function also sets the alignment of
+ *  the pixmap to AlignVTop (to correspond to the color choosing logic).
+ *
+ *  This method is useful to provide nice scaling of pixmal labels without
+ *  scaling pixmaps themselves. To see th eeffect, the size policy of the
+ *  label in the corresponding direction (vertical, for now) should be set to
+ *  something like MinimumExpanding.
+ *
+ *  @todo Parametrize corners to select pixels from and set the alignment
+ *  accordingly.
+ */
+/* static */
+void VBoxGlobal::adoptLabelPixmap (QLabel *aLabel)
+{
+    AssertReturnVoid (aLabel);
+
+    QPixmap *pix = aLabel->pixmap();
+    QImage img = pix->convertToImage();
+    QRgb rgbBack = img.pixel (img.width() - 1, img.height() - 1);
+    QRgb rgbFrame = img.pixel (img.width() - 1, 0);
+
+    aLabel->setAlignment (AlignTop);
+
+    aLabel->setPaletteBackgroundColor (QColor (rgbBack));
+    aLabel->setFrameShadow (QFrame::Plain);
+    aLabel->setFrameShape (QFrame::Box);
+    aLabel->setPaletteForegroundColor (QColor (rgbFrame));
+}
+
 extern const char *gVBoxLangSubDir = "/nls";
 extern const char *gVBoxLangFileBase = "VirtualBox_";
 extern const char *gVBoxLangFileExt = ".qm";
@@ -1873,25 +1884,6 @@ private:
 
     QByteArray mData;
 };
-
-/**
- *  Fills the QLabel picture background with the color of last
- *  pixel in the pixmap.
- */
-/* static */
-void VBoxGlobal::fillPixmapBackGrd (QLabel *aLabel)
-{
-    QPixmap *pix = aLabel->pixmap();
-    QImage img = pix->convertToImage();
-    QRgb rgbPixel = img.pixel (img.width() - 1, img.height() - 1);
-    int cRed = qRed (rgbPixel);
-    int cGreen = qGreen (rgbPixel);
-    int cBlue = qBlue (rgbPixel);
-    aLabel->setBackgroundColor (QColor (cRed, cGreen, cBlue));
-    aLabel->setFrameShadow (QFrame::Plain);
-    aLabel->setFrameShape (QFrame::Box);
-    aLabel->setPaletteForegroundColor (QColor (89,121,150));
-}
 
 static VBoxTranslator *sTranslator = 0;
 static QString sLoadedLangId = gVBoxBuiltInLangName;

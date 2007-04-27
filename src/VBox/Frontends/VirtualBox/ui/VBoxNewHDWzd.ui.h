@@ -168,11 +168,11 @@ void VBoxNewHDWzd::init()
     /* setup connections and set validation for pages
      * ---------------------------------------------------------------------- */
 
-    /* setup the pictures background color */
-    VBoxGlobal::fillPixmapBackGrd (pmWelcome);
-    VBoxGlobal::fillPixmapBackGrd (pmType);
-    VBoxGlobal::fillPixmapBackGrd (pmNameAndSize);
-    VBoxGlobal::fillPixmapBackGrd (pmSummary);
+    /* setup the label clolors for nice scaling */
+    VBoxGlobal::adoptLabelPixmap (pmWelcome);
+    VBoxGlobal::adoptLabelPixmap (pmType);
+    VBoxGlobal::adoptLabelPixmap (pmNameAndSize);
+    VBoxGlobal::adoptLabelPixmap (pmSummary);
 
     /* Image type page */
 
@@ -215,7 +215,7 @@ void VBoxNewHDWzd::init()
 
     /* Summary page */
 
-    teSummary = new VBoxTextView (pageSummary);
+    teSummary = new QITextEdit (pageSummary);
     teSummary->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
     teSummary->setFrameShape (QTextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);

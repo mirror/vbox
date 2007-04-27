@@ -70,12 +70,12 @@ void VBoxNewVMWzd::init()
      *  ----------------------------------------------------------------------
      */
 
-    /* setup the pictures colors */
-    VBoxGlobal::fillPixmapBackGrd (pmWelcome);
-    VBoxGlobal::fillPixmapBackGrd (pmNameAndOS);
-    VBoxGlobal::fillPixmapBackGrd (pmMemory);
-    VBoxGlobal::fillPixmapBackGrd (pmHDD);
-    VBoxGlobal::fillPixmapBackGrd (pmSummary);
+    /* setup the label colors for nice scaling */
+    VBoxGlobal::adoptLabelPixmap (pmWelcome);
+    VBoxGlobal::adoptLabelPixmap (pmNameAndOS);
+    VBoxGlobal::adoptLabelPixmap (pmMemory);
+    VBoxGlobal::adoptLabelPixmap (pmHDD);
+    VBoxGlobal::adoptLabelPixmap (pmSummary);
 
     /* Name and OS page */
 
@@ -121,7 +121,7 @@ void VBoxNewVMWzd::init()
 
     /* Summary page */
 
-    teSummary = new VBoxTextView (pageSummary);
+    teSummary = new QITextEdit (pageSummary);
     teSummary->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
     teSummary->setFrameShape (QTextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);
