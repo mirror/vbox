@@ -698,10 +698,6 @@ bool VBoxConsoleView::pause (bool on)
         else
             vboxProblem().cannotResumeMachine (cconsole);
     }
-#ifdef Q_WS_MAC /* A quick hack to prevent getting the typing-while-paused on Host-Q. */
-    else if (on)
-        darwinGrabKeyboardEvents (false);
-#endif
 
     return ok;
 }
@@ -1405,10 +1401,12 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
             /* get the unicode string (if present). */
             AssertCompileSize (wchar_t, 2);
             AssertCompileSize (UniChar, 2);
-            wchar_t ucs[32];
+            UInt32 cbWritten = 0;
+            wchar_t ucs[8];
             if (::GetEventParameter (inEvent, kEventParamKeyUnicodes, typeUnicodeText, NULL,
-                                     sizeof (ucs), NULL, &ucs[0]) != 0)
-                ucs[0] = 0;
+                                     sizeof (ucs), &cbWritten, &ucs[0]) != 0)
+                cbWritten = 0;
+            ucs[cbWritten / sizeof(wchar_t)] = 0; /* The api doesn't terminate it. */
 
             ret = keyEvent (keyCode, scanCode, flags, ucs[0] ? ucs : NULL);
         }
@@ -1421,7 +1419,6 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
                              sizeof (newMask), NULL, &newMask);
         newMask = ::DarwinAdjustModifierMask (newMask);
         UInt32 changed = newMask ^ m_darwinKeyModifiers;
-        ret = kbd_captured;
         if (changed)
         {
             for (UInt32 bit = 0; bit < 32; bit++)
@@ -1448,13 +1445,17 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
                     if (scanCode & VBOXKEY_EXTENDED)
                         flags |= KeyExtended;
                     scanCode &= VBOXKEY_SCANCODE_MASK;
-                    ret |= keyEvent (keyCode, scanCode, flags | KeyPressed);
-                    ret |= keyEvent (keyCode, scanCode, flags);
+                    keyEvent (keyCode, scanCode, flags | KeyPressed);
+                    keyEvent (keyCode, scanCode, flags);
                 }
             }
         }
 
         m_darwinKeyModifiers = newMask;
+
+        /* Always return true here because we'll otherwise getting a Qt event 
+           we don't want and that will only cause the Pause warning to pop up. */
+        ret = true;
     }
 
     return ret;
@@ -1665,6 +1666,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
     LONG buf [16];
     LONG *codes = buf;
     uint count = 0;
+    uint8_t what_pressed = 0;
 
     if (!is_hostkey)
     {
@@ -1700,7 +1702,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
             }
 
             // process the scancode and update the table of pressed keys
-            uint8_t what_pressed = IsKeyPressed;
+            what_pressed = IsKeyPressed;
 
             if (flags & KeyExtended)
             {
@@ -1845,11 +1847,15 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
             }
         }
 #elif defined (Q_WS_MAC)
-        if (aUniKey && aUniKey[0] && !aUniKey[1])
+        if (aUniKey && aUniKey [0] && !aUniKey [1])
             processed = processHotKey (QKeySequence (UNICODE_ACCEL +
-                                            QChar (aUniKey [0]).upper().unicode()),
+                                                     QChar (aUniKey [0]).upper().unicode()),
                                        mainwnd->menuBar());
+
+        /* Don't consider the hot key as pressed since the guest never saw it. (probably a generic thing) */
+        keys_pressed [scan] &= ~what_pressed;
 #endif
+
         // grab the key from Qt if processed, or pass it to Qt otherwise
         // in order to process non-alphanumeric keys in event(), after they are
         // converted to Qt virtual keys.
@@ -1873,7 +1879,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
 #endif
 
 //    LogFlow (("*** Putting scan codes: "));
-//    for (int i = 0; i < count; i++)
+//    for (unsigned i = 0; i < count; i++)
 //        LogFlow (("%02x ", codes [i]));
 //    LogFlow (("\n"));
 
@@ -2279,22 +2285,12 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
 #elif defined (Q_WS_MAC)
     if (capture)
     {
-# if 0
-        ::DarwinReleaseKeyboard ();
-        ::DarwinGrabKeyboard (true);
-# else
         ::DarwinDisableGlobalHotKeys (true);
-# endif
         grabKeyboard();
     }
     else
     {
-# if 0
-        ::DarwinReleaseKeyboard ();
-        ::DarwinGrabKeyboard (false);
-# else
         ::DarwinDisableGlobalHotKeys (false);
-# endif
         releaseKeyboard();
     }
 #else
@@ -2426,6 +2422,8 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
     // (for ex., activating the menu) when we release all pressed keys below.
     // Note, that it's just a guess that sending RESEND will give the desired
     // effect :), but at least it works with NT and W2k guests.
+    /** @todo This seems to causes linux guests (in console mode) to cough a bit. 
+     * We need to check if this is the cause of #1944 and/or #1949. --bird */
     codes [0] = 0xFE;
     keyboard.PutScancodes (codes, 1);
 
@@ -2444,6 +2442,12 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
 
     if (release_hostkey)
         hostkey_pressed = false;
+
+#ifdef Q_WS_MAC
+    /* clear most of the modifiers. */
+    m_darwinKeyModifiers &= alphaLock | kEventKeyModifierNumLockMask
+                          | (release_hostkey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
+#endif 
 
     emitKeyboardStateChanged ();
 }
