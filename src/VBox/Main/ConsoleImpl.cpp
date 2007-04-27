@@ -4991,7 +4991,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             AssertBreak (!vmdkDisk.isNull(), hrc = E_FAIL);
 
             rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+#if 0 /* Disabled new virtual hdd containder code for now, causes trouble with vmdks. */
             rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");               RC_CHECK();
+#else
+            rc = CFGMR3InsertString(pLunL1, "Driver",         "VmdkHDD");               RC_CHECK();
+#endif
             rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
             hrc = vmdkDisk->COMGETTER(FilePath)(&str);                                  H();
             STR_CONV();
@@ -5780,7 +5784,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                         if (tapDeviceName)
                         {
                             Log(("attachToHostInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
-    
+
                             /*
                             * Here is the right place to communicate the TAP file descriptor and
                             * the host interface name to the server if/when it becomes really
