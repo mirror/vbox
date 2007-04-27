@@ -385,7 +385,6 @@ void VBoxGlobalSettingsDlg::init()
     /* create menu of existing usb-devices */
     usbDevicesMenu = new VBoxUSBMenu (this);
     connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
-    mLastUSBFilterNum = 0;
     mUSBFilterListModified = false;
 
     /*
@@ -862,10 +861,25 @@ void VBoxGlobalSettingsDlg::lvUSBFilters_setCurrentText (const QString &aText)
 
 void VBoxGlobalSettingsDlg::tbAddUSBFilter_clicked()
 {
-    CHost host = vboxGlobal().virtualBox().GetHost();
+    /* search for the max available filter index */
+    int maxFilterIndex = 0;
+    QString usbFilterName = tr ("New Filter %1", "usb");
+    QRegExp regExp (QString ("^") + usbFilterName.arg ("([0-9]+)") + QString ("$"));
+    QListViewItemIterator iterator (lvUSBFilters);
+    while (*iterator)
+    {
+        QString filterName = (*iterator)->text (lvUSBFilters_Name);
+        int pos = regExp.search (filterName);
+        if (pos != -1)
+            maxFilterIndex = regExp.cap (1).toInt() > maxFilterIndex ?
+                             regExp.cap (1).toInt() : maxFilterIndex;
+        ++ iterator;
+    }
+
+    /* creating new usb filter */
     CHostUSBDeviceFilter hostFilter;
-    host.CreateUSBDeviceFilter (tr ("New Filter %1", "usb")
-                                    .arg (++ mLastUSBFilterNum), hostFilter);
+    vboxGlobal().virtualBox().GetHost().CreateUSBDeviceFilter (
+        usbFilterName.arg (maxFilterIndex + 1), hostFilter);
     hostFilter.SetAction (CEnums::USBDeviceFilterHold);
 
     CUSBDeviceFilter filter = CUnknown (hostFilter);

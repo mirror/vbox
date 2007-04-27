@@ -2770,11 +2770,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QValueVector &lt; CHostFloppyDrive &gt; hostFloppies;</variable>
     <variable access="private">CMachine cmachine;</variable>
     <variable access="private">QStringList mInterfaceList;</variable>
-    <variable access="private">int mInterfaceNumber;</variable>
     <variable access="private">QWidgetStack *wstUSBFilters;</variable>
-    <variable access="private">ulong mLastUSBFilterNum;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
-    <variable access="private">QString mUSBFilterNamePrefix;</variable>
     <variable access="private">QTabWidget* tbwNetwork;</variable>
     <variable access="private">VBoxSharedFoldersSettings* mSharedFolders;</variable>
     <variable access="private">QString warningString;</variable>
