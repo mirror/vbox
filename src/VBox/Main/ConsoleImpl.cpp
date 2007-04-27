@@ -665,17 +665,17 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
     {
         console->mConsoleVRDPServer->USBBackendDelete (u32ClientId);
     }
-
-    if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_CLIPBOARD)
-    {
-        console->mConsoleVRDPServer->ClipboardDelete (u32ClientId);
-    }
 #else
     console->mConsoleVRDPServer->DeleteUSBBackend ();
 #endif /* VRDP_MC */
 
 #ifdef VBOX_VRDP
 #ifdef VRDP_MC
+    if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_CLIPBOARD)
+    {
+        console->mConsoleVRDPServer->ClipboardDelete (u32ClientId);
+    }
+
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_AUDIO)
     {
         console->m_cAudioRefs--;
@@ -808,7 +808,9 @@ DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
 
     AssertReturnVoid (console->mConsoleVRDPServer);
 
+#ifdef VBOX_VRDP
     console->mConsoleVRDPServer->ClipboardCreate (u32ClientId, ppfn, ppv);
+#endif /* VBOX_VRDP */
 
     LogFlowFuncLeave();
     return;
