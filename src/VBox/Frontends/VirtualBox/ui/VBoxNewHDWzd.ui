@@ -715,7 +715,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
     <include location="global" impldecl="in implementation">qlocale.h</include>
 </includes>
 <forwards>
-    <forward>class VBoxTextView</forward>
+    <forward>class QITextEdit</forward>
 </forwards>
 <variables>
     <variable access="private">QIWidgetValidator *wvalNameAndSize;</variable>
@@ -723,7 +723,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
     <variable access="private">int sliderScale;</variable>
     <variable access="private">Q_UINT64 maxVDISize;</variable>
     <variable access="private">Q_UINT64 currentSize;</variable>
-    <variable access="private">VBoxTextView *teSummary;</variable>
+    <variable access="private">QITextEdit *teSummary;</variable>
 </variables>
 <slots>
     <slot>enableNext( const QIWidgetValidator * wval )</slot>

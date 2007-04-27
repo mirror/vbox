@@ -1045,7 +1045,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
 </includes>
 <forwards>
     <forward>class VBoxMediaComboBox</forward>
-    <forward>class VBoxTextView</forward>
+    <forward>class QITextEdit</forward>
 </forwards>
 <variables>
     <variable access="private">QIWidgetValidator *wvalNameAndOS;</variable>
@@ -1055,7 +1055,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
     <variable access="private">CHardDisk chd;</variable>
     <variable access="private">CMachine cmachine;</variable>
     <variable access="private">VBoxMediaComboBox *mediaCombo;</variable>
-    <variable access="private">VBoxTextView *teSummary;</variable>
+    <variable access="private">QITextEdit *teSummary;</variable>
 </variables>
 <slots>
     <slot>enableNext( const QIWidgetValidator * wval )</slot>

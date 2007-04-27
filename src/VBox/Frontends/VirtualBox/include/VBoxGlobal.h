@@ -35,7 +35,6 @@
 #include <qthread.h>
 #include <qpopupmenu.h>
 #include <qtooltip.h>
-#include <qtextedit.h>
 
 #include <qptrvector.h>
 #include <qvaluevector.h>
@@ -133,22 +132,6 @@ public:
 
     const QUuid machineId;
     const QUuid snapshotId;
-};
-
-class VBoxTextView : public QTextEdit
-{
-Q_OBJECT
-
-public:
-
-    VBoxTextView (QWidget*);
-
-    QSize sizeHint() const;
-    QSize minimumSizeHint() const;
-
-public slots:
-
-    void setText (const QString &);
 };
 
 // VBoxGlobal
@@ -405,7 +388,7 @@ public:
 
     /* public static stuff */
 
-    static void fillPixmapBackGrd (QLabel *);
+    static void adoptLabelPixmap (QLabel *);
 
     static QString languageId();
     static void loadLanguage (const QString &aLangId = QString::null);

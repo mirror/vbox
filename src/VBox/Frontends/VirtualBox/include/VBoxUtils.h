@@ -26,6 +26,7 @@
 #include <qobject.h>
 #include <qevent.h>
 #include <qlistview.h>
+#include <qtextedit.h>
 
 /**
  *  Simple ListView filter to disable unselecting all items by clicking in the
@@ -163,6 +164,32 @@ private:
                 ((QWidget*)parent())->setMinimumSize (maxWidth, maxHeight);
         }
         return QObject::eventFilter (aObject, aEvent);
+    }
+};
+
+
+/** 
+ *  Simple QTextEdit subclass to return its minimumSizeHint() as sizeHint()
+ *  for getting more compact layout.
+ */
+class QITextEdit : public QTextEdit
+{
+public:
+
+    QITextEdit (QWidget *aParent)
+        : QTextEdit (aParent) {}
+
+    QSize sizeHint() const
+    {
+        return minimumSizeHint();
+    }
+
+    QSize minimumSizeHint() const
+    {
+        /// @todo (r=dmik) this looks a bit meanignless. any comment?
+        int w = 0;
+        int h = heightForWidth (w);
+        return QSize (w, h);
     }
 };
 
