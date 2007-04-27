@@ -93,7 +93,7 @@ PR_IMPLEMENT(PRStatus) PR_SetEnv(const char *string)
     if ( !strchr(string, '=')) return(PR_FAILURE);
 
     _PR_LOCK_ENV();
-    result = _PR_MD_PUT_ENV(string);
+    result = _PR_MD_PUT_ENV((char*)string);
     _PR_UNLOCK_ENV();
     return (result)? PR_FAILURE : PR_SUCCESS;
 }

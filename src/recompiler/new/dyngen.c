@@ -228,8 +228,8 @@ struct nlist_extended
     unsigned char n_type;
     char n_other;
     short n_desc;
-    unsigned long st_value; // n_value -> st_value
-    unsigned long st_size;  // added
+    unsigned long st_value; /* n_value -> st_value */
+    unsigned long st_size;  /* added */
 };
 
 #define EXE_RELOC struct relocation_info
@@ -1109,8 +1109,10 @@ static const char *get_rel_sym_name_and_addend(EXE_RELOC *rel, int *addend)
 		*addend = *(int32_t *)(text + sca_rel->r_address) - sca_rel->r_value;
 
 		/* todo: do we need to ignore internal relocations? */
-		//if (sca_rel->r_pcrel ...) */
-		//	return NULL;
+#if 0
+		if (sca_rel->r_pcrel ...)
+			return NULL;
+#endif
 
 		/* find_reloc_name_given_its_address doesn't do the right thing here, so 
 		   we locate the section and use find_sym_with_value_and_sec_number  */
@@ -1887,8 +1889,8 @@ void gen_code(const char *name, host_ulong offset, host_ulong size,
 #define INSN_RESTORE    0x81e80000
 #define INSN_RETURN     0x81cfe008
 #define INSN_NOP        0x01000000
-#define INSN_ADD_SP     0x9c03a000 // add %sp, nn, %sp
-#define INSN_SUB_SP     0x9c23a000 // sub %sp, nn, %sp
+#define INSN_ADD_SP     0x9c03a000 /* add %sp, nn, %sp */
+#define INSN_SUB_SP     0x9c23a000 /* sub %sp, nn, %sp */
 
         uint32_t start_insn, end_insn1, end_insn2;
         uint8_t *p;
@@ -1934,8 +1936,8 @@ void gen_code(const char *name, host_ulong offset, host_ulong size,
 #define INSN_RESTORE    0x81e80000
 #define INSN_RETURN     0x81cfe008
 #define INSN_NOP        0x01000000
-#define INSN_ADD_SP     0x9c03a000 // add %sp, nn, %sp
-#define INSN_SUB_SP     0x9c23a000 // sub %sp, nn, %sp
+#define INSN_ADD_SP     0x9c03a000 /* add %sp, nn, %sp */
+#define INSN_SUB_SP     0x9c23a000 /* sub %sp, nn, %sp */
 
         uint32_t start_insn, end_insn1, end_insn2, skip_insn;
         uint8_t *p;
@@ -2003,7 +2005,7 @@ void gen_code(const char *name, host_ulong offset, host_ulong size,
         p = (void *)(p_end - 2);
         if (p == p_start)
             error("empty code for %s", name);
-        // remove NOP's, probably added for alignment
+        /* remove NOP's, probably added for alignment */
         while ((get16((uint16_t *)p) == 0x4e71) &&
                (p>p_start)) 
             p -= 2;
