@@ -238,8 +238,6 @@ static const uint16_t g_aDarwinToSet1[] =
 };
 
 
-/** Keeping track of whether we disabled the hotkeys or not. */
-static bool g_fHotKeysDisabled = false;
 /** Whether we've connected or not. */
 static bool g_fConnectedToCGS = false;
 /** Cached connection. */
@@ -448,8 +446,7 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
     }
     else
     {
-        if (    enmMode != kCGSGlobalHotKeyDisable
-            /*||  !g_fHotKeysDisabled*/)
+        if (enmMode != kCGSGlobalHotKeyDisable)
             return;
         enmMode = kCGSGlobalHotKeyEnable;
     }
@@ -460,11 +457,10 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
     CGSSetGlobalHotKeyOperatingMode(g_CGSConnection, enmMode);
     CGSGlobalHotKeyOperatingMode enmNewMode = kCGSGlobalHotKeyInvalid;
     CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmNewMode);
-    if (enmNewMode == enmMode)
-        g_fHotKeysDisabled = enmMode == kCGSGlobalHotKeyDisable;
-    else 
+    if (enmNewMode != enmMode)
     {
-        AssertMsgFailed(("enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
+        /* If the screensaver kicks in we should ignore failure here. */
+        AssertMsg(enmMode == kCGSGlobalHotKeyEnable, ("enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
         if (s_cComplaints++ < 32)
             LogRel(("DarwinDisableGlobalHotKeys: Failed to change mode; enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
     }
