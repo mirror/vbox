@@ -507,8 +507,8 @@ end:
             printf("Abnormal termination.\n");
             kill(getppid(), SIGINT);
         }
-#endif
     }
+#endif
 
     return 0;
 }

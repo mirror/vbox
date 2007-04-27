@@ -178,6 +178,15 @@ ConnCreate(PRFileDesc *fd)
     return NULL;
   }
 
+  // disable inheritance of the IPC socket by children started
+  // using non-NSPR process API
+  PRStatus status = PR_SetFDInheritable(fd, PR_FALSE);
+  if (status != PR_SUCCESS)
+  {
+    LOG(("coudn't make IPC socket non-inheritable [err=%d]\n", PR_GetError()));
+    return NULL;
+  }
+
   // store this only if we are going to succeed.
   s->fds[SOCK].fd = fd;
 
