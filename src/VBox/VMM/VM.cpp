@@ -1290,6 +1290,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
                                    GipCopy.aCPUs[i].au32TSCHistory[6],
                                    GipCopy.aCPUs[i].au32TSCHistory[7],
                                    GipCopy.aCPUs[i].iTSCHistoryHead);
+            RTLogRelPrintf("1ns steps: %RU32\n", RTTime1nsSteps());
         }
 #endif 
         RTLogRelPrintf("************** End of Guest state at power off ***************\n");
