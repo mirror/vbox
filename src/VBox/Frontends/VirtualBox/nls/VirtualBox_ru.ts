@@ -1787,7 +1787,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
                             Once you press it, a new hard disk image will be created.
                             </source>
         <translation>Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;.
-                            После этого будет создан образ нового виртуального диска.
+                            После этого будет создан образ нового жесткого диска.
                             </translation>
     </message>
     <message>
@@ -1922,7 +1922,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             </source>
         <translation>
                             &lt;p&gt;
-                            Вы собираетесь создать новую виртуальную машину
+                            Вы собираетесь создать виртуальную машину
                             со следующими параметрами:
                             &lt;/p&gt;
                             </translation>
@@ -2230,7 +2230,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;В настоящий момент, один (одна) или более зарегистрированных виртуальных жестких дисков, CD/DVD или дискет недоступны. В результате, Вы не сможете работать с виртуальными машинами, в которых используются эти носители, пока они не станут доступными.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;OK&lt;/b&gt;, чтобы открыть окно Менеджера виртуальных дисков и увидеть, какие именно носители недоступны, или нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы пропустить это сообщение.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;В настоящий момент, один или более зарегистрированных виртуальных жестких дисков, CD/DVD или дискет недоступны. В результате, Вы не сможете запускать виртуальные машины, использующие эти носители, до тех пор, пока они снова не станут доступны.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;OK&lt;/b&gt;, чтобы открыть окно Менеджера виртуальных дисков и увидеть, какие именно носители недоступны, или нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы пропустить это сообщение.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
