@@ -23,7 +23,7 @@
 
 // #include <iprt/crc64.h>
 
-#define LOG_ENABLED
+// #define LOG_ENABLED
 
 #ifdef LOG_ENABLED
 #include <stdio.h>
@@ -319,6 +319,7 @@ static void vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
 
         while ((format = EnumClipboardFormats (format)) != 0)
         {
+            dprintf (("vboxClipboardChanged: format 0x%08X\n", format));
             switch (format)
             {
                 case CF_UNICODETEXT:

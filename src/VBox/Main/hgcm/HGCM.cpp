@@ -65,6 +65,12 @@
 /* The maximum allowed size of a service name in bytes. */
 #define VBOX_HGCM_SVC_NAME_MAX_BYTES 1024
 
+struct _HGCMSVCEXTHANDLEDATA
+{
+    char *pszServiceName;
+    /* The service name follows. */
+};
+
 /** Internal helper service object. HGCM code would use it to
  *  hold information about services and communicate with services.
  *  The HGCMService is an (in future) abstract class that implements
@@ -102,6 +108,8 @@ class HGCMService
         int m_cClientsAllocated;
 
         uint32_t *m_paClientIds;
+        
+        HGCMSVCEXTHANDLE m_hExtension;
 
         int loadServiceDLL (void);
         void unloadServiceDLL (void);
@@ -126,7 +134,7 @@ class HGCMService
          * Main HGCM thread methods.
          */
         static int LoadService (const char *pszServiceLibrary, const char *pszServiceName);
-        void UnloadService ();
+        void UnloadService (void);
 
         static void UnloadAll (void);
 
@@ -145,6 +153,9 @@ class HGCMService
         int HostCall (uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
 
         uint32_t SizeOfClient (void) { return m_fntable.cbClient; };
+
+        int RegisterExtension (HGCMSVCEXTHANDLE handle, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
+        void UnregisterExtension (HGCMSVCEXTHANDLE handle);
 
         /*
          * The service thread methods.
@@ -212,7 +223,8 @@ HGCMService::HGCMService ()
     m_pfnLoad    (NULL),
     m_cClients   (0),
     m_cClientsAllocated (0),
-    m_paClientIds (NULL)
+    m_paClientIds (NULL),
+    m_hExtension (NULL)
 {
     memset (&m_fntable, 0, sizeof (m_fntable));
 }
@@ -229,7 +241,7 @@ static bool g_fSaveState = false;
  */
 int HGCMService::loadServiceDLL (void)
 {
-    LogFlow(("HGCMService::loadServiceDLL: m_pszSvcLibrary = %s\n", m_pszSvcLibrary));
+    LogFlowFunc(("m_pszSvcLibrary = %s\n", m_pszSvcLibrary));
 
     if (m_pszSvcLibrary == NULL)
     {
@@ -242,7 +254,7 @@ int HGCMService::loadServiceDLL (void)
 
     if (VBOX_SUCCESS(rc))
     {
-        LogFlow(("HGCMService::loadServiceDLL: successfully loaded the library.\n"));
+        LogFlowFunc(("successfully loaded the library.\n"));
 
         m_pfnLoad = NULL;
 
@@ -269,7 +281,7 @@ int HGCMService::loadServiceDLL (void)
 
             rc = m_pfnLoad (&m_fntable);
 
-            LogFlow(("HGCMService::loadServiceDLL: m_pfnLoad rc = %Vrc\n", rc));
+            LogFlowFunc(("m_pfnLoad rc = %Vrc\n", rc));
 
             if (VBOX_SUCCESS (rc))
             {
@@ -293,7 +305,7 @@ int HGCMService::loadServiceDLL (void)
     }
     else
     {
-        LogFlow(("HGCMService::loadServiceDLL: failed to load service library. The service is not available %Vrc\n", rc));
+        LogFlowFunc(("failed to load service library. The service is not available %Vrc\n", rc));
         m_hLdrMod = NIL_RTLDRMOD;
     }
 
@@ -334,6 +346,8 @@ void HGCMService::unloadServiceDLL (void)
 #define SVC_MSG_LOADSTATE  (6)  /* pfnLoadState. */
 #define SVC_MSG_SAVESTATE  (7)  /* pfnSaveState. */
 #define SVC_MSG_QUIT       (8)  /* Terminate the thread. */
+#define SVC_MSG_REGEXT     (9)  /* pfnRegisterExtension */
+#define SVC_MSG_UNREGEXT   (10) /* pfnRegisterExtension */
 
 class HGCMMsgSvcLoad: public HGCMMsgCore
 {
@@ -404,6 +418,24 @@ class HGCMMsgHostCallSvc: public HGCMMsgCore
         VBOXHGCMSVCPARM *paParms;
 };
 
+class HGCMMsgSvcRegisterExtension: public HGCMMsgCore
+{
+    public:
+        /* Handle of the extension to be registered. */
+        HGCMSVCEXTHANDLE handle;
+        /* The extension entry point. */
+        PFNHGCMSVCEXT pfnExtension;
+        /* The extension pointer. */
+        void *pvExtension;
+};
+
+class HGCMMsgSvcUnregisterExtension: public HGCMMsgCore
+{
+    public:
+        /* Handle of the registered extension. */
+        HGCMSVCEXTHANDLE handle;
+};
+
 static HGCMMsgCore *hgcmMessageAllocSvc (uint32_t u32MsgId)
 {
     switch (u32MsgId)
@@ -416,6 +448,8 @@ static HGCMMsgCore *hgcmMessageAllocSvc (uint32_t u32MsgId)
         case SVC_MSG_GUESTCALL:   return new HGCMMsgCall ();
         case SVC_MSG_LOADSTATE:      
         case SVC_MSG_SAVESTATE:   return new HGCMMsgLoadSaveStateClient ();
+        case SVC_MSG_REGEXT:      return new HGCMMsgSvcRegisterExtension ();
+        case SVC_MSG_UNREGEXT:    return new HGCMMsgSvcUnregisterExtension ();
         default:
             AssertReleaseMsgFailed(("Msg id = %08X\n", u32MsgId));
     }
@@ -580,6 +614,59 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 else
                 {
                     rc = VERR_HGCM_INVALID_CLIENT_ID;
+                }
+            } break;
+            
+            case SVC_MSG_REGEXT:
+            {
+                HGCMMsgSvcRegisterExtension *pMsg = (HGCMMsgSvcRegisterExtension *)pMsgCore;
+
+                LogFlowFunc(("SVC_MSG_REGEXT handle = %p, pfn = %p\n", pMsg->handle, pMsg->pfnExtension));
+                
+                if (pSvc->m_hExtension)
+                {
+                    rc = VERR_NOT_SUPPORTED;
+                }
+                else
+                {
+                    if (pSvc->m_fntable.pfnRegisterExtension)
+                    {
+                        rc = pSvc->m_fntable.pfnRegisterExtension (pMsg->pfnExtension, pMsg->pvExtension);
+                    }
+                    else
+                    {
+                        rc = VERR_NOT_SUPPORTED;
+                    }
+                    
+                    if (VBOX_SUCCESS (rc))
+                    {
+                        pSvc->m_hExtension = pMsg->handle;
+                    }
+                }
+            } break;
+
+            case SVC_MSG_UNREGEXT:
+            {
+                HGCMMsgSvcUnregisterExtension *pMsg = (HGCMMsgSvcUnregisterExtension *)pMsgCore;
+
+                LogFlowFunc(("SVC_MSG_UNREGEXT handle = %p\n", pMsg->handle));
+                
+                if (pSvc->m_hExtension != pMsg->handle)
+                {
+                    rc = VERR_NOT_SUPPORTED;
+                }
+                else
+                {
+                    if (pSvc->m_fntable.pfnRegisterExtension)
+                    {
+                        rc = pSvc->m_fntable.pfnRegisterExtension (NULL, NULL);
+                    }
+                    else
+                    {
+                        rc = VERR_NOT_SUPPORTED;
+                    }
+                    
+                    pSvc->m_hExtension = NULL;
                 }
             } break;
 
@@ -1277,7 +1364,56 @@ int HGCMService::DisconnectClient (uint32_t u32ClientId)
     return rc;
 }
 
-/* Perform a host call the service.
+int HGCMService::RegisterExtension (HGCMSVCEXTHANDLE handle,
+                                    PFNHGCMSVCEXT pfnExtension,
+                                    void *pvExtension)
+{
+    LogFlowFunc(("%s\n", handle->pszServiceName));
+
+    /* Forward the message to the service thread. */
+    HGCMMSGHANDLE hMsg = 0;
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, SVC_MSG_REGEXT, hgcmMessageAllocSvc);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        HGCMMsgSvcRegisterExtension *pMsg = (HGCMMsgSvcRegisterExtension *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
+        AssertRelease(pMsg);
+
+        pMsg->handle       = handle;
+        pMsg->pfnExtension = pfnExtension;
+        pMsg->pvExtension  = pvExtension;
+
+        hgcmObjDereference (pMsg);
+
+        rc = hgcmMsgSend (hMsg);
+    }
+
+    LogFlowFunc(("rc = %Vrc\n", rc));
+    return rc;
+}
+
+void HGCMService::UnregisterExtension (HGCMSVCEXTHANDLE handle)
+{
+    /* Forward the message to the service thread. */
+    HGCMMSGHANDLE hMsg = 0;
+    int rc = hgcmMsgAlloc (m_thread, &hMsg, SVC_MSG_UNREGEXT, hgcmMessageAllocSvc);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        HGCMMsgSvcUnregisterExtension *pMsg = (HGCMMsgSvcUnregisterExtension *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
+        AssertRelease(pMsg);
+
+        pMsg->handle = handle;
+
+        hgcmObjDereference (pMsg);
+
+        rc = hgcmMsgSend (hMsg);
+    }
+
+    LogFlowFunc(("rc = %Vrc\n", rc));
+}
+
+/* Perform a guest call to the service.
  *
  * @param pHGCMPort      The port to be used for completion confirmation.
  * @param pCmd           The VBox HGCM context.
@@ -1318,6 +1454,7 @@ int HGCMService::GuestCall (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t
         Log(("MAIN::HGCMService::Call: Message allocation failed: %Vrc\n", rc));
     }
 
+    LogFlowFunc(("rc = %Vrc\n", rc));
     return rc;
 }
 
@@ -1368,6 +1505,8 @@ int HGCMService::HostCall (uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPAR
 #define HGCM_MSG_SAVESTATE  (15)  /* Save state for the specified service. */
 #define HGCM_MSG_RESET      (16)  /* Disconnect all clients from the specified service. */
 #define HGCM_MSG_QUIT       (17)  /* Unload all services and terminate the thread. */
+#define HGCM_MSG_REGEXT     (18)  /* Register a service extension. */
+#define HGCM_MSG_UNREGEXT   (19)  /* Unregister a service extension. */
 
 class HGCMMsgMainConnect: public HGCMMsgHeader
 {
@@ -1422,6 +1561,26 @@ class HGCMMsgMainQuit: public HGCMMsgCore
 {
 };
 
+class HGCMMsgMainRegisterExtension: public HGCMMsgCore
+{
+    public:
+        /* Returned handle to be used in HGCMMsgMainUnregisterExtension. */
+        HGCMSVCEXTHANDLE *pHandle;
+        /* Name of the service. */
+        const char *pszServiceName;
+        /* The extension entry point. */
+        PFNHGCMSVCEXT pfnExtension;
+        /* The extension pointer. */
+        void *pvExtension;
+};
+
+class HGCMMsgMainUnregisterExtension: public HGCMMsgCore
+{
+    public:
+        /* Handle of the registered extension. */
+        HGCMSVCEXTHANDLE handle;
+};
+
 static HGCMMsgCore *hgcmMainMessageAlloc (uint32_t u32MsgId)
 {
     switch (u32MsgId)
@@ -1434,6 +1593,8 @@ static HGCMMsgCore *hgcmMainMessageAlloc (uint32_t u32MsgId)
         case HGCM_MSG_SAVESTATE:  return new HGCMMsgMainLoadSaveState ();
         case HGCM_MSG_RESET:      return new HGCMMsgMainReset ();
         case HGCM_MSG_QUIT:       return new HGCMMsgMainQuit ();
+        case HGCM_MSG_REGEXT:     return new HGCMMsgMainRegisterExtension ();
+        case HGCM_MSG_UNREGEXT:   return new HGCMMsgMainUnregisterExtension ();
         default:
             AssertReleaseMsgFailed(("Msg id = %08X\n", u32MsgId));
     }
@@ -1577,6 +1738,66 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 fQuit = true;
             } break;
 
+            case HGCM_MSG_REGEXT:
+            {
+                HGCMMsgMainRegisterExtension *pMsg = (HGCMMsgMainRegisterExtension *)pMsgCore;
+                
+                LogFlowFunc(("HGCM_MSG_REGEXT\n"));
+                
+                /* Allocate the handle data. */
+                HGCMSVCEXTHANDLE handle = (HGCMSVCEXTHANDLE)RTMemAllocZ (sizeof (struct _HGCMSVCEXTHANDLEDATA)
+                                                                         + strlen (pMsg->pszServiceName)
+                                                                         + sizeof (char));
+                
+                if (handle == NULL)
+                {
+                    rc = VERR_NO_MEMORY;
+                }
+                else
+                {
+                    handle->pszServiceName = (char *)((uint8_t *)handle + sizeof (struct _HGCMSVCEXTHANDLEDATA));
+                    strcpy (handle->pszServiceName, pMsg->pszServiceName);
+                    
+                    HGCMService *pService;
+                    rc = HGCMService::ResolveService (&pService, handle->pszServiceName);
+
+                    if (VBOX_SUCCESS (rc))
+                    {
+                        pService->RegisterExtension (handle, pMsg->pfnExtension, pMsg->pvExtension);
+
+                        pService->ReleaseService ();
+                    }
+                    
+                    if (VBOX_FAILURE (rc))
+                    {
+                        RTMemFree (handle);
+                    }
+                    else
+                    {
+                        *pMsg->pHandle = handle;
+                    }
+                }
+            } break;
+
+            case HGCM_MSG_UNREGEXT:
+            {
+                HGCMMsgMainUnregisterExtension *pMsg = (HGCMMsgMainUnregisterExtension *)pMsgCore;
+
+                LogFlowFunc(("HGCM_MSG_UNREGEXT\n"));
+
+                HGCMService *pService;
+                rc = HGCMService::ResolveService (&pService, pMsg->handle->pszServiceName);
+
+                if (VBOX_SUCCESS (rc))
+                {
+                    pService->UnregisterExtension (pMsg->handle);
+
+                    pService->ReleaseService ();
+                }
+                
+                RTMemFree (pMsg->handle);
+            } break;
+
             default:
             {
                 AssertMsgFailed(("hgcmThread: Unsupported message number %08X!!!\n", u32MsgId));
@@ -1646,6 +1867,75 @@ int HGCMHostLoad (const char *pszServiceName,
     return rc;
 }
 
+/* Register a HGCM service extension.
+ *
+ * @param pHandle            Returned handle for the registered extension.
+ * @param pszServiceName     The name of the service.
+ * @param pfnExtension       The extension callback.
+ * @return VBox rc.
+ */
+int HGCMHostRegisterServiceExtension (HGCMSVCEXTHANDLE *pHandle,
+                                      const char *pszServiceName,
+                                      PFNHGCMSVCEXT pfnExtension,
+                                      void *pvExtension)
+{
+    LogFlowFunc(("pHandle = %p, name = %s, pfn = %p, rv = %p\n", pHandle, pszServiceName, pfnExtension, pvExtension));
+
+    if (!pHandle || !pszServiceName || !pfnExtension)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Forward the request to the main hgcm thread. */
+    HGCMMSGHANDLE hMsg = 0;
+
+    int rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCM_MSG_REGEXT, hgcmMainMessageAlloc);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        /* Initialize the message. Since the message is synchronous, use the supplied pointers. */
+        HGCMMsgMainRegisterExtension *pMsg = (HGCMMsgMainRegisterExtension *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
+        AssertRelease(pMsg);
+
+        pMsg->pHandle        = pHandle;
+        pMsg->pszServiceName = pszServiceName;
+        pMsg->pfnExtension   = pfnExtension;
+        pMsg->pvExtension    = pvExtension;
+
+        hgcmObjDereference (pMsg);
+
+        rc = hgcmMsgSend (hMsg);
+    }
+
+    LogFlowFunc(("*pHandle = %p, rc = %Vrc\n", *pHandle, rc));
+    return rc;
+}
+
+void HGCMHostUnregisterServiceExtension (HGCMSVCEXTHANDLE handle)
+{
+    LogFlowFunc(("handle = %p\n", handle));
+
+    /* Forward the request to the main hgcm thread. */
+    HGCMMSGHANDLE hMsg = 0;
+
+    int rc = hgcmMsgAlloc (g_hgcmThread, &hMsg, HGCM_MSG_UNREGEXT, hgcmMainMessageAlloc);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        /* Initialize the message. */
+        HGCMMsgMainUnregisterExtension *pMsg = (HGCMMsgMainUnregisterExtension *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
+        AssertRelease(pMsg);
+
+        pMsg->handle = handle;
+
+        hgcmObjDereference (pMsg);
+
+        rc = hgcmMsgSend (hMsg);
+    }
+
+    LogFlowFunc(("rc = %Vrc\n", rc));
+    return;
+}
 
 /* Find a service and inform it about a client connection, create a client handle.
  *
