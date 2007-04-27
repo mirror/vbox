@@ -1376,7 +1376,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
          * be a descriptor embedded in the image file. */
         if (!pExtent->uDescriptorSector || !pExtent->cDescriptorSectors)
         {
-            rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image without descriptor in file '%s'"), pszFilename);
+            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image without descriptor in file '%s'"), pszFilename);
             goto out;
         }
         /* Read the descriptor from the extent. */
@@ -1393,7 +1393,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
         AssertRC(rc);
         if (VBOX_FAILURE(rc))
         {
-            rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in file '%s'"), pExtent->pszFullname);
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in file '%s'"), pExtent->pszFullname);
             goto out;
         }
 
@@ -1424,14 +1424,14 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
                           pImage->cbDescAlloc, &cbRead);
         if (VBOX_FAILURE(rc))
         {
-            rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in file '%s'"), pExtent->pszFullname);
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in file '%s'"), pszFilename);
             goto out;
         }
         if (cbRead == pImage->cbDescAlloc)
         {
             /* Likely the read is truncated. Better fail a bit too early
              * (normally the descriptor is much smaller than our buffer). */
-            rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot read descriptor in file '%s'"), pExtent->pszFullname);
+            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot read descriptor in file '%s'"), pszFilename);
             goto out;
         }
 
