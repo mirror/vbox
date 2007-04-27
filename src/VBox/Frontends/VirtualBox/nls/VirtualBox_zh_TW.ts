@@ -1803,7 +1803,7 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     </message>
     <message>
         <source>#general</source>
-        <translation>#general</translation>
+        <translation></translation>
     </message>
     <message>
         <source>1</source>
@@ -1811,7 +1811,7 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     </message>
     <message>
         <source>#input</source>
-        <translation>#input</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -1823,7 +1823,7 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -2020,7 +2020,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>#language</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -4232,7 +4232,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#general</source>
-        <translation>#general</translation>
+        <translation></translation>
     </message>
     <message>
         <source>1</source>
@@ -4240,7 +4240,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#hdds</source>
-        <translation>#hdds</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Floppy </source>
@@ -4252,7 +4252,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#floppy</source>
-        <translation>#floppy</translation>
+        <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
@@ -4264,7 +4264,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#dvd</source>
-        <translation>#dvd</translation>
+        <translation></translation>
     </message>
     <message>
         <source>4</source>
@@ -4272,7 +4272,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#audio</source>
-        <translation>#audio</translation>
+        <translation></translation>
     </message>
     <message>
         <source>5</source>
@@ -4280,7 +4280,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#network</source>
-        <translation>#network</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -4292,7 +4292,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -4304,7 +4304,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation>#vrdp</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -4316,7 +4316,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation>#sfolders</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Identification</source>

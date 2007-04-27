@@ -1472,7 +1472,7 @@
     </message>
     <message>
         <source>#general</source>
-        <translation>#general</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Input </source>
@@ -1484,7 +1484,7 @@
     </message>
     <message>
         <source>#input</source>
-        <translation>#entrada</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -1496,7 +1496,7 @@
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -1713,7 +1713,7 @@ es capturado todas las combinaciones de teclas (incluyendo Alt+Tab) son envíada
     </message>
     <message>
         <source>#language</source>
-        <translation>#idioma</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -3314,7 +3314,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#general</source>
-        <translation type="unfinished">#general</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
@@ -3326,7 +3326,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#hdds</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Floppy </source>
@@ -3338,7 +3338,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#floppy</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
@@ -3350,7 +3350,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#dvd</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Audio </source>
@@ -3362,7 +3362,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#audio</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Network </source>
@@ -3374,7 +3374,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#network</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -3386,7 +3386,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#usb</source>
-        <translation type="unfinished">#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -3398,7 +3398,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -3410,7 +3410,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Identification</source>

@@ -1472,7 +1472,7 @@
     </message>
     <message>
         <source>#general</source>
-        <translation>#一般</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Input </source>
@@ -1484,7 +1484,7 @@
     </message>
     <message>
         <source>#input</source>
-        <translation>#输入</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -1496,7 +1496,7 @@
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -1704,7 +1704,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>#language</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -3378,7 +3378,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#general</source>
-        <translation>#一般</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
@@ -3390,7 +3390,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#hdds</source>
-        <translation>#硬盘</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Floppy </source>
@@ -3402,7 +3402,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#floppy</source>
-        <translation>#软驱</translation>
+        <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
@@ -3414,7 +3414,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#dvd</source>
-        <translation>#光驱</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Audio </source>
@@ -3426,7 +3426,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#audio</source>
-        <translation>#声音</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Network </source>
@@ -3438,7 +3438,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#network</source>
-        <translation>#网络</translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -3450,7 +3450,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#usb</source>
-        <translation>#usb</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -3462,7 +3462,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation>#vrdp</translation>
+        <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -3474,7 +3474,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation>共享</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Identification</source>
