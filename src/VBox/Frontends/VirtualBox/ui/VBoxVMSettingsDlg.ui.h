@@ -629,6 +629,7 @@ void VBoxVMSettingsDlg::init()
     connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
     mLastUSBFilterNum = 0;
     mUSBFilterListModified = false;
+    mUSBFilterNamePrefix = tr ("New Filter ", "usb");
 
     /* VRDP Page */
 
@@ -849,6 +850,18 @@ void VBoxVMSettingsDlg::updateInterfaces (QWidget *aWidget)
         VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
         set->revalidate();
     }
+    /* searching for max interface index */
+    QString interfacePrefix = tr ("VirtualBox Host Interface ");
+    QRegExp regExp (QString ("%1(\\d+)").arg (interfacePrefix));
+    QStringList list = mInterfaceList.grep (regExp);
+    int max = 0;
+    for (QStringList::Iterator it = list.begin(); it != list.end(); ++ it)
+    {
+        int pos = regExp.search (*it);
+        if (pos != -1)
+            max = regExp.cap (1).toInt() > max ? regExp.cap (1).toInt() : max;
+    }
+    mInterfaceNumber = ++ max;
 #else
     NOREF (aWidget);
 #endif
@@ -860,7 +873,7 @@ void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 #if defined Q_WS_WIN
     updateInterfaces (0);
     VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
-    set->loadList (mInterfaceList);
+    set->loadList (mInterfaceList, mInterfaceNumber);
     set->revalidate();
 #endif
 }
@@ -1463,8 +1476,19 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             cbEnableUSBController->setChecked (ctl.GetEnabled());
 
             CUSBDeviceFilterEnumerator en = ctl.GetDeviceFilters().Enumerate();
+            /* loading filters & searching for max filter index */
+            int max = 0;
             while (en.HasMore())
-                addUSBFilter (en.GetNext(), false /* isNew */);
+            {
+                const CUSBDeviceFilter &filter = en.GetNext();
+                QRegExp regExp (QString ("%1(\\d+)").arg (mUSBFilterNamePrefix));
+                int pos = regExp.search (filter.GetName());
+                if (pos != -1)
+                    max = regExp.cap (1).toInt() > max ?
+                          regExp.cap (1).toInt() : max;
+                addUSBFilter (filter, false /* isNew */);
+            }
+            mLastUSBFilterNum = max;
 
             lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
             /* silly Qt -- doesn't emit currentChanged after adding the
@@ -1782,7 +1806,7 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
 void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
 {
     VBoxVMNetworkSettings *page = new VBoxVMNetworkSettings();
-    page->loadList (mInterfaceList);
+    page->loadList (mInterfaceList, mInterfaceNumber);
     page->getFromAdapter (aAdapter);
     tbwNetwork->addTab (page, QString (tr ("Adapter %1", "network"))
                                        .arg (aAdapter.GetSlot()));
@@ -1957,8 +1981,8 @@ void VBoxVMSettingsDlg::lvUSBFilters_setCurrentText (const QString &aText)
 void VBoxVMSettingsDlg::tbAddUSBFilter_clicked()
 {
     CUSBDeviceFilter filter = cmachine.GetUSBController()
-        .CreateDeviceFilter (tr ("New Filter %1", "usb")
-                                 .arg (++ mLastUSBFilterNum));
+        .CreateDeviceFilter (QString ("%1%2")
+        .arg (mUSBFilterNamePrefix).arg (++ mLastUSBFilterNum));
 
     filter.SetActive (true);
     addUSBFilter (filter, true /* isNew */);

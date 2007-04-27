@@ -151,7 +151,7 @@ void VBoxVMNetworkSettings::init()
     frmTAPDescriptor->setHidden (true);
 
 #if defined Q_WS_MAC
-    /* no Host Interface Networking on the Mac yet */	
+    /* no Host Interface Networking on the Mac yet */
     grbTAP->setHidden (true);
 #endif
 }
@@ -170,9 +170,11 @@ bool VBoxVMNetworkSettings::isPageValid (const QStringList &aList)
 #endif
 }
 
-void VBoxVMNetworkSettings::loadList (const QStringList &aList)
+void VBoxVMNetworkSettings::loadList (const QStringList &aList,
+                                      int aInterfaceNumber)
 {
 #if defined Q_WS_WIN
+    mInterfaceNumber = aInterfaceNumber;
     /* save current list item name */
     QString currentListItemName = leHostInterfaceName->text();
     /* load current list items */
@@ -187,6 +189,7 @@ void VBoxVMNetworkSettings::loadList (const QStringList &aList)
     pbHostRemove->setEnabled (!aList.isEmpty());
 #else
     NOREF (aList);
+    NOREF (aInterfaceNumber);
 #endif
 }
 
@@ -392,7 +395,7 @@ void VBoxVMNetworkSettings::hostInterfaceAdd()
 
     /* creating add host interface dialog */
     VBoxAddNIDialog dlg (this, lbHostInterface->currentItem() != -1 ?
-                         tr ("VirtualBox Host Interface %1").arg (++mInterfaceNumber) :
+                         tr ("VirtualBox Host Interface %1").arg (mInterfaceNumber) :
                          leHostInterfaceName->text());
     if (dlg.exec() != QDialog::Accepted)
         return;
@@ -407,6 +410,7 @@ void VBoxVMNetworkSettings::hostInterfaceAdd()
         vboxProblem().showModalProgressDialog (progress, iName, this);
         if (progress.GetResultCode() == 0)
         {
+            ++ mInterfaceNumber;
             /* add&select newly created created interface */
             delete lbHostInterface->findItem (mNoInterfaces);
             lbHostInterface->insertItem (iName);
