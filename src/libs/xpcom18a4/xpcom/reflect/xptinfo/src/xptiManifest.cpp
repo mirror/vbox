@@ -383,7 +383,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
     int i;
     char* whole = nsnull;
     PRBool succeeded = PR_FALSE;
-    PRUint32 flen;
+    PRUint32 flen = 0;
     nsManifestLineReader reader;
     xptiHashEntry* hashEntry;
     int headerCount = 0;
