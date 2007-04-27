@@ -774,7 +774,7 @@ void VBoxProblemReporter::cannotDiscardSnapshot (const CProgress &progress,
         mainWindowShown(),
         Error,
         tr ("Failed to discard the snapshot <b>%1</b> of the virtual "
-            "machine <b>%1</b>.")
+            "machine <b>%2</b>.")
             .arg (snapshot.GetName())
             .arg (console.GetMachine().GetName()),
         formatErrorInfo (progress.GetErrorInfo()));
