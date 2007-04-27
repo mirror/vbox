@@ -103,7 +103,6 @@ private:
  */
 void VBoxVMNetworkSettings::init()
 {
-    mInterfaceNumber = 0;
     mNoInterfaces = tr ("<No suitable interfaces>");
 
     leMACAddress->setValidator (new QRegExpValidator (QRegExp ("[0-9,A-F]{12,12}"), this));
@@ -170,11 +169,9 @@ bool VBoxVMNetworkSettings::isPageValid (const QStringList &aList)
 #endif
 }
 
-void VBoxVMNetworkSettings::loadList (const QStringList &aList,
-                                      int aInterfaceNumber)
+void VBoxVMNetworkSettings::loadList (const QStringList &aList)
 {
 #if defined Q_WS_WIN
-    mInterfaceNumber = aInterfaceNumber;
     /* save current list item name */
     QString currentListItemName = leHostInterfaceName->text();
     /* load current list items */
@@ -189,7 +186,6 @@ void VBoxVMNetworkSettings::loadList (const QStringList &aList,
     pbHostRemove->setEnabled (!aList.isEmpty());
 #else
     NOREF (aList);
-    NOREF (aInterfaceNumber);
 #endif
 }
 
@@ -393,10 +389,21 @@ void VBoxVMNetworkSettings::hostInterfaceAdd()
     /* allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
 
+    /* search for the max available interface index */
+    int ifaceNumber = 0;
+    QString ifaceName = tr ("VirtualBox Host Interface %1");
+    QRegExp regExp (QString ("^") + ifaceName.arg ("([0-9]+)") + QString ("$"));
+    for (uint index = 0; index < lbHostInterface->count(); ++ index)
+    {
+        QString iface = lbHostInterface->text (index);
+        int pos = regExp.search (iface);
+        if (pos != -1)
+            ifaceNumber = regExp.cap (1).toInt() > ifaceNumber ?
+                          regExp.cap (1).toInt() : ifaceNumber;
+    }
+
     /* creating add host interface dialog */
-    VBoxAddNIDialog dlg (this, lbHostInterface->currentItem() != -1 ?
-                         tr ("VirtualBox Host Interface %1").arg (mInterfaceNumber) :
-                         leHostInterfaceName->text());
+    VBoxAddNIDialog dlg (this, ifaceName.arg (ifaceNumber + 1));
     if (dlg.exec() != QDialog::Accepted)
         return;
     QString iName = dlg.getName();
@@ -410,11 +417,11 @@ void VBoxVMNetworkSettings::hostInterfaceAdd()
         vboxProblem().showModalProgressDialog (progress, iName, this);
         if (progress.GetResultCode() == 0)
         {
-            ++ mInterfaceNumber;
             /* add&select newly created created interface */
             delete lbHostInterface->findItem (mNoInterfaces);
             lbHostInterface->insertItem (iName);
             selectListItem (iName);
+            pbHostRemove->setEnabled (true);
             emit listChanged (this);
         }
         else
@@ -468,7 +475,10 @@ void VBoxVMNetworkSettings::hostInterfaceRemove()
             if (progress.GetResultCode() == 0)
             {
                 if (lbHostInterface->count() == 1)
+                {
                     lbHostInterface->insertItem (mNoInterfaces);
+                    pbHostRemove->setEnabled (false);
+                }
                 delete lbHostInterface->findItem (iName);
                 emit listChanged (this);
             }

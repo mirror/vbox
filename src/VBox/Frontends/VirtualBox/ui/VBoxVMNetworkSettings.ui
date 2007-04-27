@@ -768,7 +768,6 @@
 </includes>
 <variables>
     <variable access="private">CNetworkAdapter cadapter;</variable>
-    <variable access="private">int mInterfaceNumber;</variable>
     <variable access="private">QIWidgetValidator *mWalidator;</variable>
     <variable access="private">QString mNoInterfaces;</variable>
 </variables>
@@ -787,7 +786,7 @@
 </slots>
 <functions>
     <function access="private" specifier="non virtual">init()</function>
-    <function>loadList( const QStringList &amp;, int )</function>
+    <function>loadList( const QStringList &amp; )</function>
     <function>getFromAdapter( const CNetworkAdapter &amp; )</function>
     <function>putBackToAdapter()</function>
     <function>setValidator( QIWidgetValidator* )</function>

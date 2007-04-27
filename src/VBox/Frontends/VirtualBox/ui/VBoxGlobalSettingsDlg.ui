@@ -1222,7 +1222,6 @@ to the system default language.&lt;/qt&gt;
     <variable access="private">QIWidgetValidator *wvalKeyboard;</variable>
     <variable access="private">QString warningString;</variable>
     <variable access="private">QWidgetStack *wstUSBFilters;</variable>
-    <variable access="private">ulong mLastUSBFilterNum;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">bool mLanguageChanged;</variable>
