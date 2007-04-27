@@ -2170,8 +2170,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的保存 状态失败.</translation>
     </message>
     <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished">清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%2&lt;/b&gt; 失败.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>

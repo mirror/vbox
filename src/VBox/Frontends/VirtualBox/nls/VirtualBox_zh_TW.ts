@@ -2738,8 +2738,8 @@ with UUID %2!</source>
         <translation>捨棄已儲存的虛擬機器 &lt;b&gt;%1&lt;/b&gt; 狀態時失敗。</translation>
     </message>
     <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>捨棄虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 時失敗。</translation>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished">捨棄虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%2&lt;/b&gt; 時失敗。</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>

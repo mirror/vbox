@@ -2180,8 +2180,8 @@ boite de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la 
         <translation>Echec du rejet de l&apos;état sauvegardé de la machine virtuelle &lt;b&gt;%1&lt;/b&gt;. </translation>
     </message>
     <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Echec du rejet de l&apos;instantané &lt;b&gt;%1&lt;/b&gt;  de la machine virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Echec du rejet de l&apos;instantané &lt;b&gt;%1&lt;/b&gt; de la machine virtuelle &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
