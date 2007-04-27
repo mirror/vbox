@@ -23,7 +23,7 @@
 #define ____H_CONSOLEVRDPSERVER
 
 #include "RemoteUSBBackend.h"
-#include "hgcm/hgcm.h"
+#include <hgcm/hgcm.h>
 
 #include <VBox/VRDPAuth.h>
 
