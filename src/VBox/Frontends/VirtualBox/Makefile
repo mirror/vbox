@@ -50,6 +50,11 @@ VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
 
+ifeq ($(BUILD_TARGET),darwin) 
+# For the launch trick we need different inode numbers.
+VirtualBox_INST = VirtualBox VirtualBoxVM
+endif
+
 # Each nls/VirtualBox_xx_YY.ts file must have a qt_xx_YY.ts counterpart
 VirtualBox_QT_TRANSLATIONS_QT := \
 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts,\
