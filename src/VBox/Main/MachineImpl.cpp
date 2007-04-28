@@ -2668,7 +2668,11 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     Bstr type (aType);
     if (type == "gui")
     {
+#ifdef __DARWIN__ /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
+        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBox" HOSTSUFF_EXE;
+#else
         const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+#endif
         Assert (sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
 
