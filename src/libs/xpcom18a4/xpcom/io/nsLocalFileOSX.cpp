@@ -1350,6 +1350,10 @@ NS_IMETHODIMP nsLocalFile::InitWithNativePath(const nsACString& filePath)
       break;
     fixedPath = StringHead(fixedPath, len - choplen);
   }
+  // bird: another hack for the issue with VirtualBoxVM and symlinks...
+  char tmpBuf[PATH_MAX];
+  if (realpath(fixedPath.get(), tmpBuf))
+    fixedPath = tmpBuf;
 #endif
 
   // On 10.2, huge paths also crash CFURLGetFSRef()
