@@ -160,6 +160,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dockImgStatePaused (NULL)
     , dockImgStateSaving (NULL)
     , dockImgStateRestoring (NULL)
+    , dockImgBack75x75 (NULL)
+    , dockImgBack100x75 (NULL)
+    , dockImgOS (NULL)
 #endif 
 {
     if (aSelf)
@@ -529,6 +532,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     dockImgStatePaused    = ::DarwinCreateDockBadge ("state_paused_16px.png");
     dockImgStateSaving    = ::DarwinCreateDockBadge ("state_saving_16px.png");
     dockImgStateRestoring = ::DarwinCreateDockBadge ("state_restoring_16px.png");
+    dockImgBack75x75      = ::DarwinCreateDockBadge ("dock_0.png");
+    dockImgBack100x75     = ::DarwinCreateDockBadge ("dock_1.png");
+    SetApplicationDockTileImage (dockImgOS);
     OverlayApplicationDockTileImage (dockImgStateRunning);
 #endif 
 }
@@ -547,6 +553,12 @@ VBoxConsoleWnd::~VBoxConsoleWnd()
         CGImageRelease (dockImgStateSaving);
     if (dockImgStateRestoring)
         CGImageRelease (dockImgStateRestoring);
+    if (dockImgBack75x75)
+        CGImageRelease (dockImgBack75x75);
+    if (dockImgBack100x75)
+        CGImageRelease (dockImgBack100x75);
+    if (dockImgOS)
+        CGImageRelease (dockImgOS);
 #endif 
 }
 
@@ -713,6 +725,26 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              hostkey_state, SLOT (setState (int)));
     connect (console, SIGNAL (machineStateChanged (CEnums::MachineState)),
              this, SLOT (updateMachineState (CEnums::MachineState)));
+
+#ifdef Q_WS_MAC
+    QString osType = cmachine.GetOSType().GetId();
+# if 0
+    QImage osImg75x75 = vboxGlobal().vmGuestOSTypeIcon (osType).convertToImage().smoothScale (75, 75);
+    QImage osImg = QImage::fromMimeSource ("dock_0.png");
+    bitBlt (&osImg, 25, 22, 
+            &osImg75x75, 0, 0,
+            75, 75, /* conversion_flags */ 0);
+# else
+    QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osType).convertToImage().smoothScale (100, 75);
+    QImage osImg = QImage::fromMimeSource ("dock_1.png");
+    bitBlt (&osImg, 14, 22, 
+            &osImg100x75, 0, 0,
+            100, 75, /* conversion_flags */ 0);
+# endif 
+    if (dockImgOS)
+        CGImageRelease (dockImgOS);
+    dockImgOS = ::DarwinQImageToCGImage (&osImg);
+#endif
 
     /* set the correct initial machine_state value */
     machine_state = cconsole.GetState();
@@ -1536,7 +1568,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             img = dockImgStateSaving;
         else
             img = NULL;
-        RestoreApplicationDockTileImage();
+        SetApplicationDockTileImage (dockImgOS);
         if (img)
             OverlayApplicationDockTileImage (img);
     }
