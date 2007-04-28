@@ -52,7 +52,7 @@ VirtualBox_SDKS.linux = LIBSDL
 
 ifeq ($(BUILD_TARGET),darwin) 
 # For the launch trick we need different inode numbers.
-VirtualBox_INST = VirtualBox VirtualBoxVM
+VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
 
 # Each nls/VirtualBox_xx_YY.ts file must have a qt_xx_YY.ts counterpart
