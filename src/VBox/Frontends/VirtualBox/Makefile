@@ -45,7 +45,6 @@ include $(PATH_KBUILD)/header.kmk
 PROGRAMS = VirtualBox
 
 INSTALLS = VirtualBox.nls
-INSTALLS.darwin = VirtualBox.app
 
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
@@ -231,6 +230,7 @@ OTHER_CLEAN           = \
 #
 # On Mac OS X (darwin) we need to install icon resources and compusory bundle contents.
 #
+INSTALLS.darwin += VirtualBox.app
 VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
 VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
@@ -239,6 +239,26 @@ VirtualBox.app_SOURCES = \
 	images/VirtualBox.icns=>Resources/virtualbox.icns
 
 $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
+	$(call MSG_L1,Generating $@)
+	$(xQUIET)$(RM) -f $@
+	$(xQUIET)$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		$< > $@
+
+INSTALLS.darwin += VirtualBoxVM.app
+VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
+VirtualBoxVM.app_MODE = 644
+VirtualBoxVM.app_SOURCES = \
+	src/darwin/VM-PkgInfo=>PkgInfo \
+	$(PATH_TARGET)/VM-Info.plist=>Info.plist \
+	images/VirtualBox.icns=>Resources/virtualbox.icns
+VirtualBoxVM.app_SYMLINKS = \
+	MacOS=>../../../MacOS/
+
+$(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_L1,Generating $@)
 	$(xQUIET)$(RM) -f $@
 	$(xQUIET)$(SED) \
