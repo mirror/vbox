@@ -276,6 +276,9 @@ private:
     CGImageRef dockImgStatePaused;
     CGImageRef dockImgStateSaving;
     CGImageRef dockImgStateRestoring;
+    CGImageRef dockImgBack75x75;
+    CGImageRef dockImgBack100x75;
+    CGImageRef dockImgOS;
 #endif 
 };
 
