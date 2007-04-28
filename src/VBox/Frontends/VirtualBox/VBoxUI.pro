@@ -240,7 +240,8 @@ IMAGES	= images/tpixel.png \
 	images/vdm_remove_22px.png \
 	images/vdm_remove_disabled_22px.png \
 	images/welcome.png \
-	images/about_600px.png
+	images/about_600px.png \
+    images/dock_128x128_transparent.png
 
 TRANSLATIONS = \
 	nls/VirtualBox_de.ts \

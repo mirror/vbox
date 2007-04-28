@@ -33,8 +33,13 @@
 #include <qdialog.h>
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-#include <VBox/dbggui.h>
+# include <VBox/dbggui.h>
 #endif
+#ifdef Q_WS_MAC
+# undef PAGE_SIZE
+# undef PAGE_SHIFT
+# include <Carbon/Carbon.h>
+#endif 
 
 class QAction;
 class QActionGroup;
@@ -264,6 +269,14 @@ private:
     // Debugger GUI
     PDBGGUI dbg_gui;
 #endif
+
+#ifdef Q_WS_MAC
+    // Dock images.
+    CGImageRef dockImgStateRunning;
+    CGImageRef dockImgStatePaused;
+    CGImageRef dockImgStateSaving;
+    CGImageRef dockImgStateRestoring;
+#endif 
 };
 
 

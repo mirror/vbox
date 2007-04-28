@@ -31,6 +31,7 @@
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxDiskImageManagerDlg.h"
 #include "VBoxSharedFoldersSettings.h"
+#include "VBoxUtils.h"
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
 #include "QIHotKeyEdit.h"
@@ -154,6 +155,12 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbg_gui (NULL)
 #endif
+#ifdef Q_WS_MAC
+    , dockImgStateRunning (NULL)
+    , dockImgStatePaused (NULL)
+    , dockImgStateSaving (NULL)
+    , dockImgStateRestoring (NULL)
+#endif 
 {
     if (aSelf)
         *aSelf = this;
@@ -515,12 +522,32 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
         connect (dbgCommandLineAction, SIGNAL (activated()),
                  this, SLOT (dbgShowCommandLine()));
 #endif
+
+#ifdef Q_WS_MAC
+    /* prepare the dock images */
+    dockImgStateRunning   = ::DarwinCreateDockBadge ("state_running_16px.png");
+    dockImgStatePaused    = ::DarwinCreateDockBadge ("state_paused_16px.png");
+    dockImgStateSaving    = ::DarwinCreateDockBadge ("state_saving_16px.png");
+    dockImgStateRestoring = ::DarwinCreateDockBadge ("state_restoring_16px.png");
+    OverlayApplicationDockTileImage (dockImgStateRunning);
+#endif 
 }
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
 {
     if (mUsbLedTip)
         delete mUsbLedTip;
+#ifdef Q_WS_MAC
+    /* release the dock images */
+    if (dockImgStateRunning)
+        CGImageRelease (dockImgStateRunning);
+    if (dockImgStatePaused)
+        CGImageRelease (dockImgStatePaused);
+    if (dockImgStateSaving)
+        CGImageRelease (dockImgStateSaving);
+    if (dockImgStateRestoring)
+        CGImageRelease (dockImgStateRestoring);
+#endif 
 }
 
 //
@@ -1492,6 +1519,28 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         else
             vmDisableMouseIntegrAction->setEnabled (false);
     }
+#ifdef Q_WS_MAC
+    if (1)//(element & DockTile)
+    {
+        //CGContextDrawImage
+        //HIViewDrawCGImage();
+        //CGImageAlphaInfo
+        CGImageRef img;
+        if (machine_state == CEnums::Running)
+            img = dockImgStateRunning;
+        else if (machine_state == CEnums::Paused)
+            img = dockImgStatePaused;
+        else if (machine_state == CEnums::Restoring)
+            img = dockImgStateRestoring;
+        else if (machine_state == CEnums::Saving)
+            img = dockImgStateSaving;
+        else
+            img = NULL;
+        RestoreApplicationDockTileImage();
+        if (img)
+            OverlayApplicationDockTileImage (img);
+    }
+#endif
 }
 
 //
