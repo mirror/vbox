@@ -158,7 +158,8 @@ endif
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
 	src/darwin/DarwinCursor.cpp \
-	src/darwin/VBoxAquaStyle.cpp
+	src/darwin/VBoxAquaStyle.cpp \
+	src/darwin/VBoxUtils-darwin.cpp
 
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
