@@ -207,8 +207,8 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
                             <string>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
-the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
