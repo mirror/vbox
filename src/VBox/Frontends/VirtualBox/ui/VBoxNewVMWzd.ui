@@ -200,10 +200,10 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
                             </sizepolicy>
                         </property>
                         <property name="text">
-                            <string>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
-system you plan to install in the machine.&lt;/p&gt;
+                            <string>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</string>
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>WordBreak|AlignTop</set>
@@ -760,7 +760,7 @@ It will be used by all VirtualBox products to identify the created virtual machi
                         </property>
                         <property name="text">
                             <string>&lt;p&gt;Select a hard disk image to be used
-as a boot hard disk of the virtual machine. You can either create a new hard
+as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
