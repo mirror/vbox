@@ -60,7 +60,7 @@
 #ifdef _WIN32
 #    define XPTC_EXPORT           __declspec(dllexport)
 #else
-#  if __GNUC__ >= 4
+#  ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 #    define XPTC_EXPORT           __attribute__((visibility("default")))
 #  else
 #    define XPTC_EXPORT 

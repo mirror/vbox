@@ -101,7 +101,7 @@
 
 #ifdef HAVE_VISIBILITY_ATTRIBUTE
 #define NS_VISIBILITY_HIDDEN   __attribute__ ((visibility ("hidden")))
-# if __GNUC__ >= 4
+# ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 #  define NS_VISIBILITY_DEFAULT  __attribute__ ((visibility ("default")))
 # else
 #  define NS_VISIBILITY_DEFAULT
@@ -182,7 +182,7 @@
 
 #else
 
-# if __GNUC__ >= 4
+# ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 #  define NS_IMPORT
 #  define NS_IMPORT_(type) type
 #  define NS_EXPORT __attribute__((visibility("default")))

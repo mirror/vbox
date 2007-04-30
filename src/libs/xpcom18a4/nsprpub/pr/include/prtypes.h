@@ -178,7 +178,7 @@
 
 #else /* Unix */
 
-# if __GNUC__ >= 4
+# ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 #  define PR_EXPORT(__type) __attribute__((visibility("default"))) extern __type
 #  define PR_EXPORT_DATA(__type) __attribute__((visibility("default"))) extern __type
 #  define PR_IMPORT(__type) extern __type
