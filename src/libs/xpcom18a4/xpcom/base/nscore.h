@@ -101,7 +101,11 @@
 
 #ifdef HAVE_VISIBILITY_ATTRIBUTE
 #define NS_VISIBILITY_HIDDEN   __attribute__ ((visibility ("hidden")))
-#define NS_VISIBILITY_DEFAULT  __attribute__ ((visibility ("default")))
+# if __GNUC__ >= 4
+#  define NS_VISIBILITY_DEFAULT  __attribute__ ((visibility ("default")))
+# else
+#  define NS_VISIBILITY_DEFAULT
+# endif
 
 #define NS_HIDDEN_(type)   NS_VISIBILITY_HIDDEN type
 #else
@@ -178,15 +182,27 @@
 
 #else
 
-#define NS_IMPORT
-#define NS_IMPORT_(type) type
-#define NS_EXPORT __attribute__((visibility("default")))
-#define NS_EXPORT_(type) __attribute__((visibility("default"))) type
-#define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type NS_DEFCALL
-#define NS_IMETHODIMP_(type) type
-#define NS_METHOD_(type) type
-#define NS_CALLBACK_(_type, _name) _type (* _name)
-#define NS_STDCALL
+# if __GNUC__ >= 4
+#  define NS_IMPORT
+#  define NS_IMPORT_(type) type
+#  define NS_EXPORT __attribute__((visibility("default")))
+#  define NS_EXPORT_(type) __attribute__((visibility("default"))) type
+#  define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type NS_DEFCALL
+#  define NS_IMETHODIMP_(type) type
+#  define NS_METHOD_(type) type
+#  define NS_CALLBACK_(_type, _name) _type (* _name)
+#  define NS_STDCALL
+# else
+#  define NS_IMPORT
+#  define NS_IMPORT_(type) type
+#  define NS_EXPORT
+#  define NS_EXPORT_(type) type
+#  define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type NS_DEFCALL
+#  define NS_IMETHODIMP_(type) type
+#  define NS_METHOD_(type) type
+#  define NS_CALLBACK_(_type, _name) _type (* _name)
+#  define NS_STDCALL
+# endif
 #endif
 
 /**
