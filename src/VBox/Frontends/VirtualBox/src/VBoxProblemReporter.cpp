@@ -1456,7 +1456,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                               "<tr><td>%1</td><td>%2</td></tr>"
                               "<tr><td>%3</td><td>%4</td></tr>"
                               "</table>")
-                              .arg (tr ("<nobrl>Error ID: </nobr>", "runtime error info"),
+                              .arg (tr ("<nobr>Error ID: </nobr>", "runtime error info"),
                                     errorID)
                               .arg (tr ("Severity: ", "runtime error info"),
                                     severity);
