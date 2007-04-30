@@ -401,9 +401,9 @@
 # define DECLEXPORT(type)       __declspec(dllexport) type
 #else
 # if __GNUC__ >= 4
-#  define DECLEXPORT(type)       __attribute__((visibility("default"))) type
+#  define DECLEXPORT(type)      __attribute__((visibility("default"))) type
 # else
-#  define DECLEXPORT(type)
+#  define DECLEXPORT(type)      type
 # endif
 #endif
 
