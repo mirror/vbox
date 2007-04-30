@@ -1933,7 +1933,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     else
     {
         vboxProblem().message (this, VBoxProblemReporter::Error,
-            tr ("<p>Failed to find the VirtulalBox Guest Additions CD image "
+            tr ("<p>Failed to find the VirtualBox Guest Additions CD image "
                 "<nobr><b>%1</b></nobr> or "
                 "<nobr><b>%2</b></nobr></p>")
             .arg (src1).arg (src2));
