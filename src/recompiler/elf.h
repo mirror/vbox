@@ -31,11 +31,29 @@ typedef int64_t  Elf64_Sxword;
 #define PT_LOPROC  0x70000000
 #define PT_HIPROC  0x7fffffff
 #define PT_MIPS_REGINFO		0x70000000
+#define PT_MIPS_OPTIONS		0x70000001
 
 /* Flags in the e_flags field of the header */
+/* MIPS architecture level. */
+#define EF_MIPS_ARCH_1		0x00000000	/* -mips1 code.  */
+#define EF_MIPS_ARCH_2		0x10000000	/* -mips2 code.  */
+#define EF_MIPS_ARCH_3		0x20000000	/* -mips3 code.  */
+#define EF_MIPS_ARCH_4		0x30000000	/* -mips4 code.  */
+#define EF_MIPS_ARCH_5		0x40000000	/* -mips5 code.  */
+#define EF_MIPS_ARCH_32		0x50000000	/* MIPS32 code.  */
+#define EF_MIPS_ARCH_64		0x60000000	/* MIPS64 code.  */
+
+/* The ABI of a file. */
+#define EF_MIPS_ABI_O32		0x00001000	/* O32 ABI.  */
+#define EF_MIPS_ABI_O64		0x00002000	/* O32 extended for 64 bit.  */
+
 #define EF_MIPS_NOREORDER 0x00000001
 #define EF_MIPS_PIC       0x00000002
 #define EF_MIPS_CPIC      0x00000004
+#define EF_MIPS_ABI2		0x00000020
+#define EF_MIPS_OPTIONS_FIRST	0x00000080
+#define EF_MIPS_32BITMODE	0x00000100
+#define EF_MIPS_ABI		0x0000f000
 #define EF_MIPS_ARCH      0xf0000000
 
 /* These constants define the different elf file types */
@@ -209,6 +227,7 @@ typedef struct {
 
 #define ELF64_R_SYM(i)			((i) >> 32)
 #define ELF64_R_TYPE(i)			((i) & 0xffffffff)
+#define ELF64_R_TYPE_DATA(i)            (((ELF64_R_TYPE(i) >> 8) ^ 0x00800000) - 0x00800000)
 
 #define R_386_NONE	0
 #define R_386_32	1
@@ -308,6 +327,7 @@ typedef struct {
 #define R_SPARC_10		30
 #define R_SPARC_11		31
 #define R_SPARC_64		32
+#define R_SPARC_OLO10           33
 #define R_SPARC_WDISP16		40
 #define R_SPARC_WDISP19		41
 #define R_SPARC_7		43
@@ -482,6 +502,8 @@ typedef struct {
 #define R_ARM_GOTPC		25	/* 32 bit PC relative offset to GOT */
 #define R_ARM_GOT32		26	/* 32 bit GOT entry */
 #define R_ARM_PLT32		27	/* 32 bit PLT address */
+#define R_ARM_CALL              28
+#define R_ARM_JUMP24            29
 #define R_ARM_GNU_VTENTRY	100
 #define R_ARM_GNU_VTINHERIT	101
 #define R_ARM_THM_PC11		102	/* thumb unconditional branch */

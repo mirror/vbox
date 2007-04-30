@@ -1,5 +1,5 @@
 /*
- *  i386 execution defines 
+ *  i386 execution defines
  *
  *  Copyright (c) 2003 Fabrice Bellard
  *
@@ -21,77 +21,74 @@
 #include "dyngen-exec.h"
 
 /* XXX: factorize this mess */
-#if defined(__alpha__) || defined (__ia64__) || defined(__x86_64__)
-#define HOST_LONG_BITS 64
-#else
-#define HOST_LONG_BITS 32
-#endif
-
 #ifdef TARGET_X86_64
 #define TARGET_LONG_BITS 64
 #else
 #define TARGET_LONG_BITS 32
 #endif
 
+#include "cpu-defs.h"
+
 /* at least 4 register variables are defined */
 register struct CPUX86State *env asm(AREG0);
 
-/* XXX: use 64 bit regs if HOST_LONG_BITS == 64 */
-#if TARGET_LONG_BITS == 32
-
-register uint32_t T0 asm(AREG1);
-register uint32_t T1 asm(AREG2);
-register uint32_t T2 asm(AREG3);
-
-/* if more registers are available, we define some registers too */
-#ifdef AREG4
-register uint32_t EAX asm(AREG4);
-#define reg_EAX
-#endif
-
-#ifdef AREG5
-register uint32_t ESP asm(AREG5);
-#define reg_ESP
-#endif
-
-#ifdef AREG6
-register uint32_t EBP asm(AREG6);
-#define reg_EBP
-#endif
-
-#ifdef AREG7
-register uint32_t ECX asm(AREG7);
-#define reg_ECX
-#endif
-
-#ifdef AREG8
-register uint32_t EDX asm(AREG8);
-#define reg_EDX
-#endif
-
-#ifdef AREG9
-register uint32_t EBX asm(AREG9);
-#define reg_EBX
-#endif
-
-#ifdef AREG10
-register uint32_t ESI asm(AREG10);
-#define reg_ESI
-#endif
-
-#ifdef AREG11
-register uint32_t EDI asm(AREG11);
-#define reg_EDI
-#endif
-
-#else
+#if TARGET_LONG_BITS > HOST_LONG_BITS
 
 /* no registers can be used */
 #define T0 (env->t0)
 #define T1 (env->t1)
 #define T2 (env->t2)
 
+#else
+
+/* XXX: use unsigned long instead of target_ulong - better code will
+   be generated for 64 bit CPUs */
+register target_ulong T0 asm(AREG1);
+register target_ulong T1 asm(AREG2);
+register target_ulong T2 asm(AREG3);
+
+/* if more registers are available, we define some registers too */
+#ifdef AREG4
+register target_ulong EAX asm(AREG4);
+#define reg_EAX
 #endif
+
+#ifdef AREG5
+register target_ulong ESP asm(AREG5);
+#define reg_ESP
+#endif
+
+#ifdef AREG6
+register target_ulong EBP asm(AREG6);
+#define reg_EBP
+#endif
+
+#ifdef AREG7
+register target_ulong ECX asm(AREG7);
+#define reg_ECX
+#endif
+
+#ifdef AREG8
+register target_ulong EDX asm(AREG8);
+#define reg_EDX
+#endif
+
+#ifdef AREG9
+register target_ulong EBX asm(AREG9);
+#define reg_EBX
+#endif
+
+#ifdef AREG10
+register target_ulong ESI asm(AREG10);
+#define reg_ESI
+#endif
+
+#ifdef AREG11
+register target_ulong EDI asm(AREG11);
+#define reg_EDI
+#endif
+
+#endif /* ! (TARGET_LONG_BITS > HOST_LONG_BITS) */
 
 #define A0 T2
 
@@ -139,62 +136,8 @@ extern int loglevel;
 #define FP_CONVERT  (env->fp_convert)
 #endif
 
-#if defined(VBOX) && !defined(REMR3PHYSREADWRITE_DEFINED)
-#define REMR3PHYSREADWRITE_DEFINED
-/* Header sharing between vbox & qemu is rather ugly. */
-void     remR3PhysReadBytes(uint8_t *pbSrcPhys, void *pvDst, unsigned cb);
-uint8_t  remR3PhysReadUByte(uint8_t *pbSrcPhys);
-uint8_t  remR3PhysReadSByte(uint8_t *pbSrcPhys);
-uint16_t remR3PhysReadUWord(uint8_t *pbSrcPhys);
-int16_t  remR3PhysReadSWord(uint8_t *pbSrcPhys);
-uint32_t remR3PhysReadULong(uint8_t *pbSrcPhys);
-uint32_t remR3PhysReadSLong(uint8_t *pbSrcPhys);
-void     remR3PhysWriteBytes(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb);
-void     remR3PhysWriteByte(uint8_t *pbDstPhys, uint8_t val);
-void     remR3PhysWriteWord(uint8_t *pbDstPhys, uint16_t val);
-void     remR3PhysWriteDword(uint8_t *pbDstPhys, uint32_t val);
-#endif
-
 #include "cpu.h"
 #include "exec-all.h"
-
-/* XXX: add a generic FPU library */
-
-static inline double float32_to_float64(float a)
-{
-    return a;
-}
-
-static inline float float64_to_float32(double a)
-{
-    return a;
-}
-
-#if defined(__powerpc__)
-/* better to call an helper on ppc */
-float int32_to_float32(int32_t a);
-double int32_to_float64(int32_t a);
-#else
-static inline float int32_to_float32(int32_t a)
-{
-    return (float)a;
-}
-
-static inline double int32_to_float64(int32_t a)
-{
-    return (double)a;
-}
-#endif
-
-static inline float int64_to_float32(int64_t a)
-{
-    return (float)a;
-}
-
-static inline double int64_to_float64(int64_t a)
-{
-    return (double)a;
-}
 
 typedef struct CCTable {
     int (*compute_all)(void); /* return all the flags */
@@ -214,11 +157,11 @@ void helper_lldt_T0(void);
 void helper_ltr_T0(void);
 void helper_movl_crN_T0(int reg);
 void helper_movl_drN_T0(int reg);
-void helper_invlpg(unsigned int addr);
+void helper_invlpg(target_ulong addr);
 void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
-void cpu_x86_flush_tlb(CPUX86State *env, uint32_t addr);
+void cpu_x86_flush_tlb(CPUX86State *env, target_ulong addr);
 int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr, 
                              int is_write, int is_user, int is_softmmu);
 void tlb_fill(target_ulong addr, int is_write, int is_user, 
@@ -233,6 +176,7 @@ void raise_interrupt(int intno, int is_int, int error_code,
                      int next_eip_addend);
 void raise_exception_err(int exception_index, int error_code);
 void raise_exception(int exception_index);
+void do_smm_enter(void);
 void __hidden cpu_loop_exit(void);
 
 void OPPROTO op_movl_eflags_T0(void);
@@ -250,9 +194,11 @@ void helper_imulq_EAX_T0(void);
 void helper_imulq_T0_T1(void);
 void helper_divq_EAX_T0(void);
 void helper_idivq_EAX_T0(void);
+void helper_bswapq_T0(void);
 void helper_cmpxchg8b(void);
 void helper_cpuid(void);
 void helper_enter_level(int level, int data32);
+void helper_enter64_level(int level, int data64);
 void helper_sysenter(void);
 void helper_sysexit(void);
 void helper_syscall(int next_eip_addend);
@@ -264,12 +210,10 @@ void helper_lsl(void);
 void helper_lar(void);
 void helper_verr(void);
 void helper_verw(void);
+void helper_rsm(void);
 
 #ifdef VBOX
 void helper_external_event(void);
-void helper_hlt(void);
-void helper_monitor(void);
-void helper_mwait(void);
 
 /* in helper.c */
 void sync_seg(CPUX86State *env1, int seg_reg, int selector);
@@ -285,72 +229,9 @@ void check_iob_DX(void);
 void check_iow_DX(void);
 void check_iol_DX(void);
 
-/* XXX: move that to a generic header */
 #if !defined(CONFIG_USER_ONLY)
 
-#define ldul_user ldl_user
-#define ldul_kernel ldl_kernel
-
-#define ACCESS_TYPE 0
-#define MEMSUFFIX _kernel
-#define DATA_SIZE 1
-#include "softmmu_header.h"
-
-#define DATA_SIZE 2
-#include "softmmu_header.h"
-
-#define DATA_SIZE 4
-#include "softmmu_header.h"
-
-#define DATA_SIZE 8
-#include "softmmu_header.h"
-#undef ACCESS_TYPE
-#undef MEMSUFFIX
-
-#define ACCESS_TYPE 1
-#define MEMSUFFIX _user
-#define DATA_SIZE 1
-#include "softmmu_header.h"
-
-#define DATA_SIZE 2
-#include "softmmu_header.h"
-
-#define DATA_SIZE 4
-#include "softmmu_header.h"
-
-#define DATA_SIZE 8
-#include "softmmu_header.h"
-#undef ACCESS_TYPE
-#undef MEMSUFFIX
-
-/* these access are slower, they must be as rare as possible */
-#define ACCESS_TYPE 2
-#define MEMSUFFIX _data
-#define DATA_SIZE 1
-#include "softmmu_header.h"
-
-#define DATA_SIZE 2
-#include "softmmu_header.h"
-
-#define DATA_SIZE 4
-#include "softmmu_header.h"
-
-#define DATA_SIZE 8
-#include "softmmu_header.h"
-#undef ACCESS_TYPE
-#undef MEMSUFFIX
-
-#define ldub(p) ldub_data(p)
-#define ldsb(p) ldsb_data(p)
-#define lduw(p) lduw_data(p)
-#define ldsw(p) ldsw_data(p)
-#define ldl(p) ldl_data(p)
-#define ldq(p) ldq_data(p)
-
-#define stb(p, v) stb_data(p, v)
-#define stw(p, v) stw_data(p, v)
-#define stl(p, v) stl_data(p, v)
-#define stq(p, v) stq_data(p, v)
+#include "softmmu_exec.h"
 
 static inline double ldfq(target_ulong ptr)
 {
@@ -396,9 +277,27 @@ static inline void stfl(target_ulong ptr, float v)
 
 #ifdef USE_X86LDOUBLE
 /* use long double functions */
-#define lrint lrintl
-#define llrint llrintl
-#define fabs fabsl
+#define floatx_to_int32 floatx80_to_int32
+#define floatx_to_int64 floatx80_to_int64
+#define floatx_to_int32_round_to_zero floatx80_to_int32_round_to_zero
+#define floatx_to_int64_round_to_zero floatx80_to_int64_round_to_zero
+#define floatx_abs floatx80_abs
+#define floatx_chs floatx80_chs
+#define floatx_round_to_int floatx80_round_to_int
+#define floatx_compare floatx80_compare
+#define floatx_compare_quiet floatx80_compare_quiet
+#ifdef VBOX
+#undef sin
+#undef cos
+#undef sqrt
+#undef pow
+#undef log
+#undef tan
+#undef atan2
+#undef floor
+#undef ceil
+#undef ldexp
+#endif /* !VBOX */
 #define sin sinl
 #define cos cosl
 #define sqrt sqrtl
@@ -408,17 +307,19 @@ static inline void stfl(target_ulong ptr, float v)
 #define atan2 atan2l
 #define floor floorl
 #define ceil ceill
-#define rint rintl
+#define ldexp ldexpl
+#else
+#define floatx_to_int32 float64_to_int32
+#define floatx_to_int64 float64_to_int64
+#define floatx_to_int32_round_to_zero float64_to_int32_round_to_zero
+#define floatx_to_int64_round_to_zero float64_to_int64_round_to_zero
+#define floatx_abs float64_abs
+#define floatx_chs float64_chs
+#define floatx_round_to_int float64_round_to_int
+#define floatx_compare float64_compare
+#define floatx_compare_quiet float64_compare_quiet
 #endif
 
-#if !defined(_BSD)
-extern int lrint(CPU86_LDouble x);
-extern int64_t llrint(CPU86_LDouble x);
-#else
-#define lrint(d)		((int)rint(d))
-#define llrint(d)		((int)rint(d))
-#endif
-extern CPU86_LDouble fabs(CPU86_LDouble x);
 extern CPU86_LDouble sin(CPU86_LDouble x);
 extern CPU86_LDouble cos(CPU86_LDouble x);
 extern CPU86_LDouble sqrt(CPU86_LDouble x);
@@ -428,7 +329,6 @@ extern CPU86_LDouble tan(CPU86_LDouble x);
 extern CPU86_LDouble atan2(CPU86_LDouble, CPU86_LDouble);
 extern CPU86_LDouble floor(CPU86_LDouble x);
 extern CPU86_LDouble ceil(CPU86_LDouble x);
-extern CPU86_LDouble rint(CPU86_LDouble x);
 
 #define RC_MASK         0xc00
 #define RC_NEAR		0x000
@@ -437,13 +337,6 @@ extern CPU86_LDouble rint(CPU86_LDouble x);
 #define RC_CHOP		0xc00
 
 #define MAXTAN 9223372036854775808.0
-
-#ifdef __arm__
-/* we have no way to do correct rounding - a FPU emulator is needed */
-#define FE_DOWNWARD   FE_TONEAREST
-#define FE_UPWARD     FE_TONEAREST
-#define FE_TOWARDZERO FE_TONEAREST
-#endif
 
 #ifdef USE_X86LDOUBLE
 
@@ -632,8 +525,10 @@ void restore_native_fp_state(CPUState *env);
 void save_native_fp_state(CPUState *env);
 float approx_rsqrt(float a);
 float approx_rcp(float a);
-double helper_sqrt(double a);
-int fpu_isnan(double a);
+void update_fp_status(void);
+void helper_hlt(void);
+void helper_monitor(void);
+void helper_mwait(void);
 
 extern const uint8_t parity_table[256];
 extern const uint8_t rclw_table[32];

@@ -151,9 +151,7 @@ struct external_lineno {
 #define E_FILNMLEN	14	/* # characters in a file name		*/
 #define E_DIMNUM	4	/* # array dimensions in auxiliary entry */
 
-#pragma pack(1)
-
-struct external_syment
+struct __attribute__((packed)) external_syment
 {
   union {
     char e_name[E_SYMNMLEN];
@@ -168,8 +166,6 @@ struct external_syment
   char e_sclass[1];
   char e_numaux[1];
 };
-
-#pragma pack()
 
 #define N_BTMASK	(0xf)
 #define N_TMASK		(0x30)

@@ -22,8 +22,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#ifndef VBOX
 #include <signal.h>
 #include <assert.h>
+#endif /* !VBOX */
 
 #include "cpu.h"
 #include "exec-all.h"
@@ -633,7 +635,7 @@ static GenOpFunc *gen_op_shift_mem_T0_T1_cc[3 * 4][8] = {
     {\
         gen_op_shldw ## SUFFIX ## _T0_T1_ ## op ## _cc,\
         gen_op_shrdw ## SUFFIX ## _T0_T1_ ## op ## _cc,\
-    },\
+     },\
     {\
         gen_op_shldl ## SUFFIX ## _T0_T1_ ## op ## _cc,\
         gen_op_shrdl ## SUFFIX ## _T0_T1_ ## op ## _cc,\
@@ -854,7 +856,7 @@ static inline void gen_jmp_im(target_ulong pc)
 {
 #ifdef VBOX
     gen_check_external_event();
-#endif
+#endif /* VBOX */
 #ifdef TARGET_X86_64
     if (pc == (uint32_t)pc) {
         gen_op_movl_eip_im(pc);
@@ -1671,6 +1673,56 @@ static void gen_lea_modrm(DisasContext *s, int modrm, int *reg_ptr, int *offset_
     disp = 0;
     *reg_ptr = opreg;
     *offset_ptr = disp;
+}
+
+static void gen_nop_modrm(DisasContext *s, int modrm)
+{
+    int mod, rm, base, code;
+
+    mod = (modrm >> 6) & 3;
+    if (mod == 3)
+        return;
+    rm = modrm & 7;
+
+    if (s->aflag) {
+
+        base = rm;
+        
+        if (base == 4) {
+            code = ldub_code(s->pc++);
+            base = (code & 7);
+        }
+        
+        switch (mod) {
+        case 0:
+            if (base == 5) {
+                s->pc += 4;
+            }
+            break;
+        case 1:
+            s->pc++;
+            break;
+        default:
+        case 2:
+            s->pc += 4;
+            break;
+        }
+    } else {
+        switch (mod) {
+        case 0:
+            if (rm == 6) {
+                s->pc += 2;
+            }
+            break;
+        case 1:
+            s->pc++;
+            break;
+        default:
+        case 2:
+            s->pc += 2;
+            break;
+        }
+    }
 }
 
 /* used for LEA and MOV AX, mem */
@@ -2629,18 +2681,34 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
         case 0x02b: /* movntps */
         case 0x12b: /* movntps */
         case 0x3f0: /* lddqu */
-            if (mod == 3) 
+            if (mod == 3)
                 goto illegal_op;
             gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
             gen_sto_env_A0[s->mem_index >> 2](offsetof(CPUX86State,xmm_regs[reg]));
             break;
         case 0x6e: /* movd mm, ea */
-            gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 0);
-            gen_op_movl_mm_T0_mmx(offsetof(CPUX86State,fpregs[reg].mmx));
+#ifdef TARGET_X86_64
+            if (s->dflag == 2) {
+                gen_ldst_modrm(s, modrm, OT_QUAD, OR_TMP0, 0);
+                gen_op_movq_mm_T0_mmx(offsetof(CPUX86State,fpregs[reg].mmx));
+            } else 
+#endif
+            {
+                gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 0);
+                gen_op_movl_mm_T0_mmx(offsetof(CPUX86State,fpregs[reg].mmx));
+            }
             break;
         case 0x16e: /* movd xmm, ea */
-            gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 0);
-            gen_op_movl_mm_T0_xmm(offsetof(CPUX86State,xmm_regs[reg]));
+#ifdef TARGET_X86_64
+            if (s->dflag == 2) {
+                gen_ldst_modrm(s, modrm, OT_QUAD, OR_TMP0, 0);
+                gen_op_movq_mm_T0_xmm(offsetof(CPUX86State,xmm_regs[reg]));
+            } else 
+#endif
+            {
+                gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 0);
+                gen_op_movl_mm_T0_xmm(offsetof(CPUX86State,xmm_regs[reg]));
+            }
             break;
         case 0x6f: /* movq mm, ea */
             if (mod != 3) {
@@ -2764,12 +2832,28 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
                         offsetof(CPUX86State,xmm_regs[reg].XMM_L(3)));
             break;
         case 0x7e: /* movd ea, mm */
-            gen_op_movl_T0_mm_mmx(offsetof(CPUX86State,fpregs[reg].mmx));
-            gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 1);
+#ifdef TARGET_X86_64
+            if (s->dflag == 2) {
+                gen_op_movq_T0_mm_mmx(offsetof(CPUX86State,fpregs[reg].mmx));
+                gen_ldst_modrm(s, modrm, OT_QUAD, OR_TMP0, 1);
+            } else 
+#endif
+            {
+                gen_op_movl_T0_mm_mmx(offsetof(CPUX86State,fpregs[reg].mmx));
+                gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 1);
+            }
             break;
         case 0x17e: /* movd ea, xmm */
-            gen_op_movl_T0_mm_xmm(offsetof(CPUX86State,xmm_regs[reg]));
-            gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 1);
+#ifdef TARGET_X86_64
+            if (s->dflag == 2) {
+                gen_op_movq_T0_mm_xmm(offsetof(CPUX86State,xmm_regs[reg]));
+                gen_ldst_modrm(s, modrm, OT_QUAD, OR_TMP0, 1);
+            } else 
+#endif
+            {
+                gen_op_movl_T0_mm_xmm(offsetof(CPUX86State,xmm_regs[reg]));
+                gen_ldst_modrm(s, modrm, OT_LONG, OR_TMP0, 1);
+            }
             break;
         case 0x27e: /* movq xmm, ea */
             if (mod != 3) {
@@ -3011,16 +3095,16 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
             break;
         case 0x2d6: /* movq2dq */
             gen_op_enter_mmx();
-            rm = (modrm & 7) | REX_B(s);
-            gen_op_movq(offsetof(CPUX86State,xmm_regs[rm].XMM_Q(0)),
-                        offsetof(CPUX86State,fpregs[reg & 7].mmx));
-            gen_op_movq_env_0(offsetof(CPUX86State,xmm_regs[rm].XMM_Q(1)));
+            rm = (modrm & 7);
+            gen_op_movq(offsetof(CPUX86State,xmm_regs[reg].XMM_Q(0)),
+                        offsetof(CPUX86State,fpregs[rm].mmx));
+            gen_op_movq_env_0(offsetof(CPUX86State,xmm_regs[reg].XMM_Q(1)));
             break;
         case 0x3d6: /* movdq2q */
             gen_op_enter_mmx();
-            rm = (modrm & 7);
-            gen_op_movq(offsetof(CPUX86State,fpregs[rm].mmx),
-                        offsetof(CPUX86State,xmm_regs[reg].XMM_Q(0)));
+            rm = (modrm & 7) | REX_B(s);
+            gen_op_movq(offsetof(CPUX86State,fpregs[reg & 7].mmx),
+                        offsetof(CPUX86State,xmm_regs[rm].XMM_Q(0)));
             break;
         case 0xd7: /* pmovmskb */
         case 0x1d7:
@@ -3071,7 +3155,7 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
             if (mod != 3) {
                 gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
                 op2_offset = offsetof(CPUX86State,xmm_t0);
-                if (b1 >= 2 && ((b >= 0x50 && b <= 0x5f) ||
+                if (b1 >= 2 && ((b >= 0x50 && b <= 0x5f && b != 0x5b) ||
                                 b == 0xc2)) {
                     /* specific case for SSE single instructions */
                     if (b1 == 2) {
@@ -4387,16 +4471,9 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             case 0x08: /* flds */
             case 0x0a: /* fsts */
             case 0x0b: /* fstps */
-            case 0x18: /* fildl */
-            case 0x1a: /* fistl */
-            case 0x1b: /* fistpl */
-            case 0x28: /* fldl */
-            case 0x2a: /* fstl */
-            case 0x2b: /* fstpl */
-            case 0x38: /* filds */
-            case 0x3a: /* fists */
-            case 0x3b: /* fistps */
-                
+            case 0x18 ... 0x1b: /* fildl, fisttpl, fistl, fistpl */
+            case 0x28 ... 0x2b: /* fldl, fisttpll, fstl, fstpl */
+            case 0x38 ... 0x3b: /* filds, fisttps, fists, fistps */
                 switch(op & 7) {
                 case 0:
                     switch(op >> 4) {
@@ -4414,6 +4491,20 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                         gen_op_fild_ST0_A0();
                         break;
                     }
+                    break;
+                case 1:
+                    switch(op >> 4) {
+                    case 1:
+                        gen_op_fisttl_ST0_A0();
+                        break;
+                    case 2:
+                        gen_op_fisttll_ST0_A0();
+                        break;
+                    case 3:
+                    default:
+                        gen_op_fistt_ST0_A0();
+                    }
+                    gen_op_fpop();
                     break;
                 default:
                     switch(op >> 4) {
@@ -5366,8 +5457,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 #ifdef VBOX
         if (s->vm86 && s->iopl != 3 && !s->vme) {
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base); 
-        } 
-        else 
+        } else 
 #endif
             gen_interrupt(s, EXCP03_INT3, pc_start - s->cs_base, s->pc - s->cs_base);
         break;
@@ -5392,7 +5482,13 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         gen_op_into(s->pc - pc_start);
         break;
     case 0xf1: /* icebp (undocumented, exits to external debugger) */
+#if 1
         gen_debug(s, pc_start - s->cs_base);
+#else
+        /* start debug */
+        tb_flush(cpu_single_env);
+        cpu_set_log(CPU_LOG_INT | CPU_LOG_TB_IN_ASM);
+#endif
         break;
     case 0xfa: /* cli */
         if (!s->vm86) {
@@ -5405,8 +5501,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             if (s->iopl == 3) {
                 gen_op_cli();
 #ifdef VBOX
-            } else 
-            if (s->iopl != 3 && s->vme) {
+            } else if (s->iopl != 3 && s->vme) {
                 gen_op_cli_vme();
 #endif
             } else {
@@ -5434,8 +5529,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             if (s->iopl == 3) {
                 goto gen_sti;
 #ifdef VBOX
-            } else 
-            if (s->iopl != 3 && s->vme) {
+            } else if (s->iopl != 3 && s->vme) {
                 gen_op_sti_vme();
                 /* give a chance to handle pending irqs */
                 gen_jmp_im(s->pc - s->cs_base);
@@ -5779,7 +5873,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             } else {
                 if (mod == 3) {
 #ifdef TARGET_X86_64
-                    if (CODE64(s) && (modrm & 7) == 0) {
+                    if (CODE64(s) && rm == 0) {
                         /* swapgs */
                         gen_op_movtl_T0_env(offsetof(CPUX86State,segs[R_GS].base));
                         gen_op_movtl_T1_env(offsetof(CPUX86State,kernelgsbase));
@@ -5897,9 +5991,14 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
             /* nothing more to do */
             break;
-        default:
-            goto illegal_op;
+        default: /* nop (multi byte) */
+            gen_nop_modrm(s, modrm);
+            break;
         }
+        break;
+    case 0x119 ... 0x11f: /* nop (multi byte) */
+        modrm = ldub_code(s->pc++);
+        gen_nop_modrm(s, modrm);
         break;
     case 0x120: /* mov reg, crN */
     case 0x122: /* mov crN, reg */
@@ -6062,6 +6161,17 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         modrm = ldub_code(s->pc++);
         gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
         /* ignore for now */
+        break;
+    case 0x1aa: /* rsm */
+        if (!(s->flags & HF_SMM_MASK))
+            goto illegal_op;
+        if (s->cc_op != CC_OP_DYNAMIC) {
+            gen_op_set_cc_op(s->cc_op);
+            s->cc_op = CC_OP_DYNAMIC;
+        }
+        gen_jmp_im(s->pc - s->cs_base);
+        gen_op_rsm();
+        gen_eob(s);
         break;
     case 0x110 ... 0x117:
     case 0x128 ... 0x12f:
@@ -6570,7 +6680,7 @@ static inline int gen_intermediate_code_internal(CPUState *env,
             gen_eob(dc);
             break;
         }
-#endif
+#endif /* VBOX */
 
         /* if single step mode, we generate only one instruction and
            generate an exception */

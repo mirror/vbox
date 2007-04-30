@@ -1,6 +1,9 @@
+# $Id: deftoimp.sed 18689 2007-02-16 09:08:04Z klaus $
 ## @file
-#
 # VBox Runtime - SED script for windows .def file stubs file.
+#
+
+#
 #
 # Copyright (C) 2006 InnoTek Systemberatung GmbH
 #
@@ -27,7 +30,7 @@ s/[[:space:]][[:space:]]*$//g
 s/^EXPORTS$//
 /^$/b end
 
-s/^\(.*\)$/void \1(void);  void \1(void){}/
+s/^\(.*\)$/void \1(void);\nvoid \1(void){}/
 b end
 }
 d
@@ -36,3 +39,4 @@ b end
 
 # next expression
 :end
+

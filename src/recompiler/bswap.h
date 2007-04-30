@@ -42,7 +42,7 @@ static _inline uint64_t bswap_64(register uint64_t x) \
 
 #else
 
-#define bswap_16(x) \
+#define bswap_16(x) __extension__ /* <- VBOX */ \
 ({ \
 	uint16_t __x = (x); \
 	((uint16_t)( \
@@ -50,7 +50,7 @@ static _inline uint64_t bswap_64(register uint64_t x) \
 		(((uint16_t)(__x) & (uint16_t)0xff00U) >> 8) )); \
 })
 
-#define bswap_32(x) \
+#define bswap_32(x) __extension__ /* <- VBOX */ \
 ({ \
 	uint32_t __x = (x); \
 	((uint32_t)( \
@@ -60,7 +60,7 @@ static _inline uint64_t bswap_64(register uint64_t x) \
 		(((uint32_t)(__x) & (uint32_t)0xff000000UL) >> 24) )); \
 })
 
-#define bswap_64(x) \
+#define bswap_64(x) __extension__ /* <- VBOX */ \
 ({ \
 	uint64_t __x = (x); \
 	((uint64_t)( \
