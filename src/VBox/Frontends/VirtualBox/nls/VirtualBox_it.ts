@@ -1739,7 +1739,7 @@ tutte le pressioni di tasti (incluse quelle di sistema come Alt-Tab) vengono dir
         <translation> (built-in)</translation>
     </message>
     <message>
-        <source>&lt;unavailabie&gt;</source>
+        <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation>&lt;non disponibile&gt;</translation>
     </message>
@@ -1839,10 +1839,10 @@ e il pulsante &lt;b&gt;Indietro&lt;/b&gt; per tornare a quella precedente.&lt;/p
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
-the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Scegli il tipo di immagine di disco virtuale che vuoi creare.&lt;/p&gt;
+        <translation type="unfinished">&lt;p&gt;Scegli il tipo di immagine di disco virtuale che vuoi creare.&lt;/p&gt;
 &lt;p&gt;Un&apos;immagine &lt;b&gt;ad espansione dinamica&lt;/b&gt; occupa inizialmente
 molto poco spazio nel disco fisico. Crescerà in maniera dinamica (fino alla
 dimensione specificata), con il suo utilizzo da parte del sistema Guest.&lt;/p&gt;
@@ -1956,11 +1956,11 @@ e il pulsante &lt;b&gt;Indietro&lt;/b&gt; per tornare a quella precedente.&lt;/p
         <translation>Benvenuto al wizard per la creazione di una nuova macchina virtuale!</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
-system you plan to install in the machine.&lt;/p&gt;
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Inserisci un nome per la nuova macchina virtuale e scegli un tipo di sistema
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Inserisci un nome per la nuova macchina virtuale e scegli un tipo di sistema
 operativo da installare nella macchina.&lt;/p&gt;
 &lt;p&gt;Il nome della macchina solitamente indica la propria configurazione hardware e software.
 Verrà utilizzato da tutti i prodotti VirtualBox per identificare la macchina virtuale creata.&lt;/p&gt;</translation>
@@ -2007,7 +2007,7 @@ Verrà utilizzato da tutti i prodotti VirtualBox per identificare la macchina vi
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
-as a boot hard disk of the virtual machine. You can either create a new hard
+as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
@@ -2391,11 +2391,11 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
         <translation>Severità: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;A fatal error has occured during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Un errore fatale è accaduto durante l&apos;esecuzione della macchina virtuale! La macchina virtuale sarà spenta. Ti suggeriamo di usare gli appunti per copiare i messaggi d&apos;errori seguenti per esaminarli più approfonditamente:&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An error has occured during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;È successo un errore durante l&apos;esecuzione della macchina virtuale! I dettagli dell&apos;errore sono mostrati sotto. Puoi provare a correggere l&apos;errore descritto e ripristinare l&apos;esecuzione della macchina virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3018,7 +3018,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Definisce il filtro sul &lt;i&gt;manufacturer&lt;/i&gt; come
 &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
@@ -3026,7 +3026,7 @@ qualsiasi valore.</translation>
     </message>
     <message>
         <source>Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Definisce il filtro sul &lt;i&gt;product&lt;/i&gt; come
 &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
@@ -3034,7 +3034,7 @@ qualsiasi valore.</translation>
     </message>
     <message>
         <source>Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Definisce il filtro sul &lt;i&gt;numero seriale&lt;/i&gt; come
 &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
@@ -3087,7 +3087,7 @@ Host quando un dispositivo corrispondente viene connesso: lasciarlo al sistema H
     <message>
         <source>Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">Definisce il filtro sull&apos;&lt;i&gt;ID vendor&lt;/i&gt;. Il
 formato della stringa per il &lt;i&gt;match esatto&lt;/i&gt; è &lt;tt&gt;XXXX&lt;/tt&gt; dove
@@ -3097,7 +3097,7 @@ qualsiasi valore.</translation>
     <message>
         <source>Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">Definisce il filtro sull&apos;&lt;i&gt;ID product&lt;/i&gt;. Il
 formato della stringa per il &lt;i&gt;match esatto&lt;/i&gt; è &lt;tt&gt;XXXX&lt;/tt&gt; dove
@@ -3108,7 +3108,7 @@ qualsiasi valore.</translation>
         <source>Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.</source>
         <translation type="obsolete">Definisce il filtro sulla &lt;i&gt;revisione&lt;/i&gt;. Il
 formato della stringa per il &lt;i&gt;match esatto&lt;/i&gt; è &lt;tt&gt;IIFF&lt;/tt&gt; dove
@@ -3117,7 +3117,7 @@ qualsiasi valore.</translation>
     </message>
     <message>
         <source>Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Definisce il filtro sulla porta USB dell&apos;Host come
 &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
@@ -3140,19 +3140,19 @@ qualsiasi valore.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3173,14 +3173,14 @@ computer when a matching device is attached: give it up to the host OS
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3188,13 +3188,13 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3437,7 +3437,7 @@ value.&lt;/qt&gt;</source>
         <translation>Interfaccia Host di VirtualBox %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a differnet interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vuoi rimuovere l&apos;interfaccia host selezionata &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; Questa interfaccia può essere utilizzata da una o più interfacce di rete di questa o altre VM. Una volta rimossa, tali interfacce non funzioneranno più fino a che non verranno corrette le impostazioni scegliendo un nome di interfaccia diverso o un diverso tipo di connessione.&lt;/p&gt;</translation>
     </message>
     <message>

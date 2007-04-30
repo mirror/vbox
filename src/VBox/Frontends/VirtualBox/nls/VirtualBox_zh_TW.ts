@@ -2048,7 +2048,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;unavailabie&gt;</source>
+        <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -2136,10 +2136,10 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
-the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選取您要建立的虛擬硬碟映像檔類型。&lt;/p&gt;
+        <translation type="unfinished">&lt;p&gt;選取您要建立的虛擬硬碟映像檔類型。&lt;/p&gt;
 &lt;p&gt;一個 &lt;b&gt;動態擴充的映像檔&lt;/b&gt; 在啟始時佔據您的實體硬碟上非常少量
 的空間。當客端作業系統使用磁碟空間時，它會動態地增大 (直到所指定的大小)。&lt;/p&gt;
 &lt;p&gt;一個 &lt;b&gt;固定大小的映像檔&lt;/b&gt; 不會增大。它被儲存於一個與虛擬硬碟
@@ -2396,11 +2396,11 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>歡迎使用「新增虛擬機器精靈」！</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
-system you plan to install in the machine.&lt;/p&gt;
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;輸入新的虛擬機器名稱，並且選取
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;輸入新的虛擬機器名稱，並且選取
 您計畫要安裝在虛擬機器之中的客端作業系統類型。&lt;/p&gt;
 &lt;p&gt;虛擬機器的名稱通常會指出它的軟硬體配置。它將會被所有 VirtualBox 產品用來識別被建立的虛擬機器。&lt;/p&gt;</translation>
     </message>
@@ -2438,7 +2438,7 @@ It will be used by all VirtualBox products to identify the created virtual machi
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
-as a boot hard disk of the virtual machine. You can either create a new hard
+as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
@@ -2611,11 +2611,11 @@ with UUID %2!</source>
         <translation type="obsolete">&lt;p&gt;您也要刪除此硬碟的映像檔案：&lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;如果您選取了 &lt;b&gt;否&lt;/b&gt;，那麼此檔將會留在您的實體磁碟上，但是虛擬硬碟則會從清單中移除。&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意：&lt;/b&gt; 此項操作將無法回復。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>An error has occured while deleting the virtual hard disk image&lt;b&gt;%s&lt;/b&gt;.</source>
+        <source>An error has occurred while deleting the virtual hard disk image&lt;b&gt;%s&lt;/b&gt;.</source>
         <translation type="obsolete">刪除虛擬硬碟映像檔&lt;b&gt;%s&lt;/b&gt;時發生錯誤。</translation>
     </message>
     <message>
-        <source>An error has occured while creating the virtual disk image
+        <source>An error has occurred while creating the virtual disk image
 `%1&apos;.</source>
         <translation type="obsolete">建立虛擬磁碟映像檔「%1」時發生錯誤。</translation>
     </message>
@@ -2903,11 +2903,11 @@ with UUID %2!</source>
         <translation>嚴重性：</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A fatal error has occured during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
         <translation>&lt;p&gt;虛擬機器執行期間發生嚴重錯誤！虛擬機器將會關機。建議使用剪貼簿來複製下列錯誤訊息，以便進一步的審查：&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An error has occured during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;虛擬機器執行期間發生錯誤！下面顯示錯誤的細節。您可以嘗試去更正所述的錯誤，並且重新執行虛擬機器。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3562,7 +3562,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義製造商篩選器為
 &lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
@@ -3570,7 +3570,7 @@ value.</source>
     </message>
     <message>
         <source>Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義產品篩選器為
 &lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
@@ -3578,7 +3578,7 @@ value.</source>
     </message>
     <message>
         <source>Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義序號篩選器為
 &lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
@@ -3631,7 +3631,7 @@ computer when a matching device is attached: give it up to the host OS
     <message>
         <source>Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">定義廠商 ID 篩選器。
 &lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
@@ -3641,7 +3641,7 @@ value.</source>
     <message>
         <source>Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">定義產品 ID 篩選器。
 &lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
@@ -3652,7 +3652,7 @@ value.</source>
         <source>Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.</source>
         <translation type="obsolete">定義版本編號篩選器。
 &lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;IIFF&lt;/tt&gt; 其中的
@@ -3662,7 +3662,7 @@ value.</source>
     </message>
     <message>
         <source>Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義主端 USB 埠號篩選器為
 完全符合的字串。空的字串將會符合任何
@@ -3685,19 +3685,19 @@ value.</source>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3718,14 +3718,14 @@ computer when a matching device is attached: give it up to the host OS
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3733,13 +3733,13 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3976,7 +3976,7 @@ value.&lt;/qt&gt;</source>
         <translation>VirtualBox 主端介面 %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a differnet interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;您想要移除所選的主端網路介面 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 嗎？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意：&lt;/b&gt; 這個介面可能正被一或多個此機器或其他虛擬機器的網路卡所使用。在移除它之後，這些網路卡將失去作用，直到您選擇了不同的介面卡名稱或不同的介面卡附掛類型，以改正它們的設定值。&lt;/p&gt;</translation>
     </message>
     <message>

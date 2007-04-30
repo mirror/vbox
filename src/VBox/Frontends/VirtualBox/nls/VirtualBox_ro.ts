@@ -1766,7 +1766,7 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
         <translation> (implicită)</translation>
     </message>
     <message>
-        <source>&lt;unavailabie&gt;</source>
+        <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation>&lt;indisponibil&gt;</translation>
     </message>
@@ -1872,10 +1872,10 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
-the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selectaţi tipul de imagine de disc hard virtual pe care doriţi să-l creaţi.&lt;/p&gt;
+        <translation type="unfinished">&lt;p&gt;Selectaţi tipul de imagine de disc hard virtual pe care doriţi să-l creaţi.&lt;/p&gt;
 &lt;p&gt;O &lt;b&gt;imagine expandabilă dinamic&lt;/b&gt; ocupă iniţial un spaţiu foarte mic
 pe discul hard fizic. Va creşte dinamic (până la dimensiunre specificată), 
 pe măsură ce SO Musafir face uz de spaţiul pe disc. &lt;/p&gt;
@@ -1988,11 +1988,11 @@ unei noi maşini virtuale pentru VirtualBox.&lt;/p&gt;
         <translation>Bun venit la Vrăjitorul Maşină virtuală nouă!</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
-system you plan to install in the machine.&lt;/p&gt;
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare
 musafir pe care plănuiţi să îl instalaţi în maşină.&lt;/p&gt;
 &lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware.
 Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina virtuală creată.&lt;/p&gt;</translation>
@@ -2039,7 +2039,7 @@ Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
-as a boot hard disk of the virtual machine. You can either create a new hard
+as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
@@ -2419,11 +2419,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Grad de importanţă: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;A fatal error has occured during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
         <translation>&lt;p&gt;O eroare fatală s-a produs în timpul execuţiei maşinii virtuale! Maşina virtuală va fi oprită. Este recomandat să folosiţi clipboard pentru a copia următorul mesaj de eroare pentru examinare ulterioară:&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An error has occured during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;O eroare s-a produs în timpul execuţiei maşinii virtuale! Detalii despre eroare sunt afişate în continuare. Puteţi încerca să corectaţi eroarea descrisă şi să restabiliţi execuţia maşinii virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3055,7 +3055,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions
     </message>
     <message>
         <source>Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul &apos;manufacturat de&apos; ca 
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
@@ -3063,7 +3063,7 @@ valori.</translation>
     </message>
     <message>
         <source>Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul &apos;produs de&apos; ca 
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
@@ -3071,7 +3071,7 @@ valori.</translation>
     </message>
     <message>
         <source>Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul &apos;număr serie&apos; ca 
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
@@ -3125,7 +3125,7 @@ ulterior în maşinile virtuale (&lt;i&gt;Menţine&lt;/i&gt;).
     <message>
         <source>Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul ID vânzător. Formatul
 şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde
@@ -3135,7 +3135,7 @@ oricărei valori.</translation>
     <message>
         <source>Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul ID produs. Formatul
 şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde
@@ -3146,7 +3146,7 @@ oricărei valori.</translation>
         <source>Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul număr revizie. Formatul
 şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;IIFF&lt;/tt&gt; unde
@@ -3156,7 +3156,7 @@ oricărei valori.</translation>
     </message>
     <message>
         <source>Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul port USB gazdă ca 
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
@@ -3179,19 +3179,19 @@ valori.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineşte filtrul &apos;manufacturat de&apos; ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineşte filtrul &apos;nume produs&apos; ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineşte filtrul &apos;număr serie&apos; ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
@@ -3212,14 +3212,14 @@ computer when a matching device is attached: give it up to the host OS
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineşte filtrul ID vânzător. Formatul şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde &lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineşte filtrul ID produs. Formatul şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde &lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
@@ -3227,13 +3227,13 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineşte filtrul număr revizie. Formatul şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;IIFF&lt;/tt&gt; unde &lt;tt&gt;I&lt;/tt&gt; este un caracter hexazecimal al părţii întregi, iar &lt;tt&gt;F&lt;/tt&gt; este un caracter zecimal al părţii fracţionale. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Defineşte filtrul port USB ca un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
@@ -3462,7 +3462,7 @@ value.&lt;/qt&gt;</source>
         <translation>Interfaţă gazdă VirtualBox %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a differnet interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation></translation>
     </message>
     <message>
