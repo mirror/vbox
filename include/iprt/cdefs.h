@@ -400,7 +400,7 @@
 #if defined(_MSC_VER) || defined(__OS2__)
 # define DECLEXPORT(type)       __declspec(dllexport) type
 #else
-# if __GNUC__ >= 4
+# ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 #  define DECLEXPORT(type)      __attribute__((visibility("default"))) type
 # else
 #  define DECLEXPORT(type)      type
