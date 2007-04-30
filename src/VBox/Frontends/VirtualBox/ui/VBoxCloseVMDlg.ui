@@ -173,7 +173,7 @@ All Rights Reserved
                                         <bool>false</bool>
                                     </property>
                                     <property name="text">
-                                        <string>&amp;Revert to the current shapshot</string>
+                                        <string>&amp;Revert to the current snapshot</string>
                                     </property>
                                     <property name="accel">
                                         <string>Alt+R</string>
