@@ -333,7 +333,21 @@ static void vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
                     break;
 
                 default:
-                     break;
+                    if (format >= 0xC000)
+                    {
+                        TCHAR szFormatName[256];
+
+                        int cActual = GetClipboardFormatName(format, szFormatName, sizeof(szFormatName)/sizeof (TCHAR));
+                        
+                        if (cActual)
+                        {
+                            if (strcmp (szFormatName, "HTML Format") == 0)
+                            {
+                                u32Formats |= VBOX_SHARED_CLIPBOARD_FMT_HTML;
+                            }
+                        }
+                    }
+                    break;
             }
         }
 
@@ -409,7 +423,21 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                     break;
 
                 default:
-                     break;
+                    if (format >= 0xC000)
+                    {
+                        TCHAR szFormatName[256];
+
+                        int cActual = GetClipboardFormatName(format, szFormatName, sizeof(szFormatName)/sizeof (TCHAR));
+                        
+                        if (cActual)
+                        {
+                            if (strcmp (szFormatName, "HTML Format") == 0)
+                            {
+                                u32Format |= VBOX_SHARED_CLIPBOARD_FMT_HTML;
+                            }
+                        }
+                    }
+                    break;
             }
             
             if (u32Format == 0)
@@ -567,6 +595,16 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                     hClip = SetClipboardData (CF_DIB, NULL);
                 }
 
+                if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+                {
+                    UINT format = RegisterClipboardFormat ("HTML Format");
+                    dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_HTML 0x%04X\n", format));
+                    if (format != 0)
+                    {
+                        hClip = SetClipboardData (format, NULL);
+                    }
+                }
+
                 CloseClipboard();
 
                 dprintf(("window proc WM_USER: hClip %p\n", hClip));
@@ -631,6 +669,34 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                         else
                         {
                             hClip = NULL;
+                        }
+                    }
+                }
+                else if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+                {
+                    UINT format = RegisterClipboardFormat ("HTML Format");
+                    
+                    if (format != 0)
+                    {
+                        hClip = GetClipboardData (format);
+
+                        if (hClip != NULL)
+                        {
+                            LPVOID lp = GlobalLock (hClip);
+
+                            if (lp != NULL)
+                            {
+                                dprintf(("CF_HTML\n"));
+
+                                vboxClipboardWriteData (pCtx, VBOX_SHARED_CLIPBOARD_FMT_HTML,
+                                                        lp, GlobalSize (hClip));
+
+                                GlobalUnlock(hClip);
+                            }
+                            else
+                            {
+                                hClip = NULL;
+                            }
                         }
                     }
                 }

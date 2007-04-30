@@ -40,6 +40,7 @@
  */
 #define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT 0x01
 #define VBOX_SHARED_CLIPBOARD_FMT_BITMAP      0x02
+#define VBOX_SHARED_CLIPBOARD_FMT_HTML        0x04
 
 /*
  * The service functions which are callable by host.
