@@ -3794,7 +3794,4 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
 </context>
-<context>
-    <name>VMGlobalSettings</name>
-</context>
 </TS>
