@@ -30,7 +30,7 @@ s/[[:space:]][[:space:]]*$//g
 s/^EXPORTS$//
 /^$/b end
 
-s/^\(.*\)$/__attribute__((visibility("default"))) void \1(void);\nvoid \1(void){}/
+s/^\(.*\)$/EXPORT\nvoid \1(void);\nvoid \1(void){}/
 b end
 }
 d
