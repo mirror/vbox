@@ -117,6 +117,8 @@ IPC_SendMsg(ipcClient *client, ipcMessage *msg)
 void
 IPC_NotifyClientUp(ipcClient *client)
 {
+    LOG(("IPC_NotifyClientUp: clientID=%d\n", client->ID()));
+
     // notify modules before other clients
     IPC_NotifyModulesClientUp(client);
 
@@ -130,6 +132,8 @@ IPC_NotifyClientUp(ipcClient *client)
 void
 IPC_NotifyClientDown(ipcClient *client)
 {
+    LOG(("IPC_NotifyClientDown: clientID=%d\n", client->ID()));
+
     // notify modules before other clients
     IPC_NotifyModulesClientDown(client);
 
