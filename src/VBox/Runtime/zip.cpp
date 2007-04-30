@@ -28,7 +28,6 @@
 //#define RTZIP_USE_BZLIB 1
 #define RTZIP_USE_LZF 1
 
-#error halt
 
 /*******************************************************************************
 *   Header Files                                                               *
