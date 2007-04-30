@@ -280,6 +280,10 @@ static void rtHeapSimpleFreeBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, PRTHEAPSIMPLEB
  */
 RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemory)
 {
+    PRTHEAPSIMPLEINTERNAL pHeapInt;
+    PRTHEAPSIMPLEFREE pFree;
+    unsigned i;
+
     /*
      * Validate input. The imposed minimum heap size is just a convenien value.
      */
@@ -291,7 +295,7 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
      * Place the heap anchor block at the start of the heap memory,
      * enforce 32 byte alignment of it. Also align the heap size correctly.
      */
-    PRTHEAPSIMPLEINTERNAL pHeapInt = (PRTHEAPSIMPLEINTERNAL)pvMemory;
+    pHeapInt = (PRTHEAPSIMPLEINTERNAL)pvMemory;
     if ((uintptr_t)pvMemory & 31)
     {
         const unsigned off = 32 - ((uintptr_t)pvMemory & 31);
@@ -309,12 +313,11 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
                      - sizeof(RTHEAPSIMPLEBLOCK)
                      - sizeof(RTHEAPSIMPLEINTERNAL);
     pHeapInt->pFreeTail = pHeapInt->pFreeHead = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
-    unsigned i;
     for (i = 0; i < ELEMENTS(pHeapInt->auAlignment); i++)
         pHeapInt->auAlignment[i] = ~(size_t)0;
 
     /* Init the single free block. */
-    PRTHEAPSIMPLEFREE pFree = pHeapInt->pFreeHead;
+    pFree = pHeapInt->pFreeHead;
     pFree->Core.pNext = NULL;
     pFree->Core.pPrev = NULL;
     pFree->Core.pHeap = pHeapInt;
@@ -347,6 +350,7 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
 RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignment)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt = Heap;
+    PRTHEAPSIMPLEBLOCK pBlock;
 
     /*
      * Validate and adjust the input.
@@ -369,7 +373,7 @@ RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignmen
     /*
      * Do the allocation.
      */
-    PRTHEAPSIMPLEBLOCK pBlock = rtHeapSimpleAllocBlock(pHeapInt, cb, cbAlignment);
+    pBlock = rtHeapSimpleAllocBlock(pHeapInt, cb, cbAlignment);
     if (RT_LIKELY(pBlock))
     {
         void *pv = pBlock + 1;
@@ -393,6 +397,7 @@ RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignmen
 RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignment)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt = Heap;
+    PRTHEAPSIMPLEBLOCK pBlock;
 
     /*
      * Validate and adjust the input.
@@ -415,7 +420,7 @@ RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignme
     /*
      * Do the allocation.
      */
-    PRTHEAPSIMPLEBLOCK pBlock = rtHeapSimpleAllocBlock(pHeapInt, cb, cbAlignment);
+    pBlock = rtHeapSimpleAllocBlock(pHeapInt, cb, cbAlignment);
     if (RT_LIKELY(pBlock))
     {
         void *pv = pBlock + 1;
@@ -452,6 +457,7 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
          pFree;
          pFree = pFree->pNext)
     {
+        uintptr_t offAlign;
         ASSERT_BLOCK_FREE(pHeapInt, pFree);
 
         /*
@@ -459,9 +465,12 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
          */
         if (pFree->cb < cb)
             continue;
-        uintptr_t offAlign = (uintptr_t)(&pFree->Core + 1) & (uAlignment - 1);
+        offAlign = (uintptr_t)(&pFree->Core + 1) & (uAlignment - 1);
         if (offAlign)
         {
+            RTHEAPSIMPLEFREE Free;
+            PRTHEAPSIMPLEBLOCK pPrev;
+
             offAlign = uAlignment - offAlign;
             if (pFree->cb - offAlign < cb)
                 continue;
@@ -469,7 +478,7 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
             /*
              * Make a stack copy of the free block header and adjust the pointer.
              */
-            RTHEAPSIMPLEFREE Free = *pFree;
+            Free = *pFree;
             pFree = (PRTHEAPSIMPLEFREE)((uintptr_t)pFree + offAlign);
 
             /*
@@ -481,7 +490,7 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
              * cause big 'leaks', we could create a new free node if there is room
              * for that.)
              */
-            PRTHEAPSIMPLEBLOCK  pPrev = Free.Core.pPrev;
+            pPrev = Free.Core.pPrev;
             if (pPrev)
             {
                 AssertMsg(!RTHEAPSIMPLEBLOCK_IS_FREE(pPrev), ("Impossible!\n"));
@@ -605,6 +614,9 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
  */
 RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv)
 {
+    PRTHEAPSIMPLEINTERNAL pHeapInt;
+    PRTHEAPSIMPLEBLOCK pBlock;
+
     /*
      * Validate input.
      */
@@ -616,8 +628,8 @@ RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv)
     /*
      * Get the block and heap. If in strict mode, validate these.
      */
-    PRTHEAPSIMPLEBLOCK pBlock = (PRTHEAPSIMPLEBLOCK)pv - 1;
-    PRTHEAPSIMPLEINTERNAL pHeapInt = pBlock->pHeap;
+    pBlock = (PRTHEAPSIMPLEBLOCK)pv - 1;
+    pHeapInt = pBlock->pHeap;
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
     Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)Heap || !Heap);
@@ -801,6 +813,10 @@ static void rtHeapSimpleAssertAll(PRTHEAPSIMPLEINTERNAL pHeapInt)
  */
 RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
 {
+    PRTHEAPSIMPLEINTERNAL pHeapInt;
+    PRTHEAPSIMPLEBLOCK pBlock;
+    size_t cbBlock;
+
     /*
      * Validate input.
      */
@@ -812,8 +828,8 @@ RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
     /*
      * Get the block and heap. If in strict mode, validate these.
      */
-    PRTHEAPSIMPLEBLOCK pBlock = (PRTHEAPSIMPLEBLOCK)pv - 1;
-    PRTHEAPSIMPLEINTERNAL pHeapInt = pBlock->pHeap;
+    pBlock = (PRTHEAPSIMPLEBLOCK)pv - 1;
+    pHeapInt = pBlock->pHeap;
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
     Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)Heap || !Heap);
@@ -821,8 +837,8 @@ RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
     /*
      * Calculate the block size.
      */
-    const size_t cbBlock = (pBlock->pNext ? (uintptr_t)pBlock->pNext : (uintptr_t)pHeapInt->pvEnd)
-                         - (uintptr_t)pBlock- sizeof(RTHEAPSIMPLEBLOCK);
+    cbBlock = (pBlock->pNext ? (uintptr_t)pBlock->pNext : (uintptr_t)pHeapInt->pvEnd)
+            - (uintptr_t)pBlock- sizeof(RTHEAPSIMPLEBLOCK);
     return cbBlock;
 }
 
@@ -840,9 +856,12 @@ RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
  */
 RTDECL(size_t) RTHeapSimpleGetHeapSize(RTHEAPSIMPLE Heap)
 {
+    PRTHEAPSIMPLEINTERNAL pHeapInt;
+
     if (Heap == NIL_RTHEAPSIMPLE)
         return 0;
-    PRTHEAPSIMPLEINTERNAL pHeapInt = Heap;
+
+    pHeapInt = Heap;
     AssertPtrReturn(pHeapInt, 0);
     ASSERT_ANCHOR(pHeapInt);
     return pHeapInt->cbHeap;
@@ -861,9 +880,12 @@ RTDECL(size_t) RTHeapSimpleGetHeapSize(RTHEAPSIMPLE Heap)
  */
 RTDECL(size_t) RTHeapSimpleGetFreeSize(RTHEAPSIMPLE Heap)
 {
+    PRTHEAPSIMPLEINTERNAL pHeapInt;
+
     if (Heap == NIL_RTHEAPSIMPLE)
         return 0;
-    PRTHEAPSIMPLEINTERNAL pHeapInt = Heap;
+
+    pHeapInt = Heap;
     AssertPtrReturn(pHeapInt, 0);
     ASSERT_ANCHOR(pHeapInt);
     return pHeapInt->cbFree;
@@ -879,10 +901,11 @@ RTDECL(size_t) RTHeapSimpleGetFreeSize(RTHEAPSIMPLE Heap)
 RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt = (PRTHEAPSIMPLEINTERNAL)Heap;
+    PRTHEAPSIMPLEFREE pBlock;
+
     pfnPrintf("**** Dumping Heap %p - cbHeap=%zx cbFree=%zx ****\n",
               Heap, pHeapInt->cbHeap, pHeapInt->cbFree);
 
-    PRTHEAPSIMPLEFREE pBlock;
     for (pBlock = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
          pBlock;
          pBlock = (PRTHEAPSIMPLEFREE)pBlock->Core.pNext)
