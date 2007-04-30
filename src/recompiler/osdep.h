@@ -1,13 +1,15 @@
 #ifndef QEMU_OSDEP_H
 #define QEMU_OSDEP_H
 
-#if defined(VBOX)
+#ifdef VBOX
 
 #include <iprt/alloc.h>
+#include <iprt/stdarg.h>
 #include <iprt/string.h>
 
-#define qemu_vsnprintf(pszBuf, cchBuf, pszFormat, args) \
-                            RTStrPrintfV((pszBuf), (cchBuf), (pszFormat), (args))
+#define qemu_snprintf(pszBuf, cbBuf, ...) RTStrPrintf((pszBuf), (cbBuf), __VA_ARGS__)
+#define qemu_vsnprintf(pszBuf, cbBuf, pszFormat, args) \
+                            RTStrPrintfV((pszBuf), (cbBuf), (pszFormat), (args))
 #define qemu_vprintf(pszFormat, args) \
                             RTLogPrintfV((pszFormat), (args))
 #define qemu_printf         RTLogPrintf
@@ -16,54 +18,32 @@
 #define qemu_free(pv)       RTMemFree(pv)
 #define qemu_strdup(psz)    RTStrDup(psz)
 
+#define qemu_vmalloc(cb)    RTMemPageAlloc(cb)
+#define qemu_vfree(pv)      RTMemPageFree(pv)
+
+#ifndef NULL
+# define NULL 0
+#endif
 
 #else /* !VBOX */
 
 #include <stdarg.h>
 
-int qemu_vsnprintf(char *buf, int buflen, const char *fmt, va_list args);
-void qemu_vprintf(const char *fmt, va_list ap);
-void qemu_printf(const char *fmt, ...);
+#define qemu_snprintf snprintf   /* bird */
+#define qemu_vsnprintf vsnprintf /* bird */
+#define qemu_vprintf vprintf     /* bird */
+
+#define qemu_printf printf
 
 void *qemu_malloc(size_t size);
 void *qemu_mallocz(size_t size);
 void qemu_free(void *ptr);
 char *qemu_strdup(const char *str);
 
+void *qemu_vmalloc(size_t size);
+void qemu_vfree(void *ptr);
+
 void *get_mmap_addr(unsigned long size);
-
-/* specific kludges for OS compatibility (should be moved elsewhere) */
-#if defined(__i386__) && !defined(CONFIG_SOFTMMU) && !defined(CONFIG_USER_ONLY)
-
-/* disabled pthread version of longjmp which prevent us from using an
-   alternative signal stack */
-extern void __longjmp(jmp_buf env, int val);
-#define longjmp __longjmp
-
-#include <signal.h>
-
-/* NOTE: it works only because the glibc sigset_t is >= kernel sigset_t */
-struct qemu_sigaction {
-    union {
-        void (*_sa_handler)(int);
-        void (*_sa_sigaction)(int, struct siginfo *, void *);
-    } _u;
-    unsigned long sa_flags;
-    void (*sa_restorer)(void);
-    sigset_t sa_mask;		/* mask last for extensibility */
-};
-
-int qemu_sigaction(int signum, const struct qemu_sigaction *act, 
-                   struct qemu_sigaction *oldact);
-
-#undef sigaction
-#undef sa_handler
-#undef sa_sigaction
-#define sigaction qemu_sigaction
-#define sa_handler	_u._sa_handler
-#define sa_sigaction	_u._sa_sigaction
-
-#endif
 
 #endif /* !VBOX */
 

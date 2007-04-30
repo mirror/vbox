@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Innotek Config - Maintained by hand
  */
@@ -23,3 +24,4 @@
 #define TARGET_ARCH "i386"
 #define TARGET_I386 1
 #define CONFIG_SOFTMMU 1
+

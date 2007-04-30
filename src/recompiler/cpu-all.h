@@ -20,6 +20,14 @@
 #ifndef CPU_ALL_H
 #define CPU_ALL_H
 
+#ifdef VBOX
+# ifndef LOG_GROUP
+#  include <VBox/log.h>
+#  define LOG_GROUP LOG_GROUP_REM
+# endif
+# include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
+#endif
+
 #if defined(__arm__) || defined(__sparc__)
 #define WORDS_ALIGNED
 #endif
@@ -109,16 +117,19 @@ static inline void tswap64s(uint64_t *s)
 #if TARGET_LONG_SIZE == 4
 #define tswapl(s) tswap32(s)
 #define tswapls(s) tswap32s((uint32_t *)(s))
+#define bswaptls(s) bswap32s(s)
 #else
 #define tswapl(s) tswap64(s)
 #define tswapls(s) tswap64s((uint64_t *)(s))
+#define bswaptls(s) bswap64s(s)
 #endif
 
 /* NOTE: arm FPA is horrible as double 32 bit words are stored in big
    endian ! */
 typedef union {
-    double d;
-#if defined(WORDS_BIGENDIAN) || (defined(__arm__) && !defined(__VFP_FP__))
+    float64 d;
+#if defined(WORDS_BIGENDIAN) \
+    || (defined(__arm__) && !defined(__VFP_FP__) && !defined(CONFIG_SOFTFLOAT))
     struct {
         uint32_t upper;
         uint32_t lower;
@@ -169,41 +180,193 @@ typedef union {
  */
 #ifdef VBOX
 
-#if !defined(REMR3PHYSREADWRITE_DEFINED)
-#define REMR3PHYSREADWRITE_DEFINED
-/* Header sharing between vbox & qemu is rather ugly. */
-void     remR3PhysReadBytes(uint8_t *pbSrcPhys, void *pvDst, unsigned cb);
-uint8_t  remR3PhysReadUByte(uint8_t *pbSrcPhys);
-int8_t   remR3PhysReadSByte(uint8_t *pbSrcPhys);
-uint16_t remR3PhysReadUWord(uint8_t *pbSrcPhys);
-int16_t  remR3PhysReadSWord(uint8_t *pbSrcPhys);
-uint32_t remR3PhysReadULong(uint8_t *pbSrcPhys);
-int32_t  remR3PhysReadSLong(uint8_t *pbSrcPhys);
-void     remR3PhysWriteBytes(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb);
-void     remR3PhysWriteByte(uint8_t *pbDstPhys, uint8_t val);
-void     remR3PhysWriteWord(uint8_t *pbDstPhys, uint16_t val);
-void     remR3PhysWriteDword(uint8_t *pbDstPhys, uint32_t val);
+void     remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb);
+uint8_t  remR3PhysReadU8(RTGCPHYS SrcGCPhys);
+int8_t   remR3PhysReadS8(RTGCPHYS SrcGCPhys);
+uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys);
+int16_t  remR3PhysReadS16(RTGCPHYS SrcGCPhys);
+uint32_t remR3PhysReadU32(RTGCPHYS SrcGCPhys);
+int32_t  remR3PhysReadS32(RTGCPHYS SrcGCPhys);
+uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys);
+int64_t  remR3PhysReadS64(RTGCPHYS SrcGCPhys);
+void     remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb);
+void     remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val);
+void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
+void     remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
+void     remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
+
+#ifndef REM_PHYS_ADDR_IN_TLB
+void     remR3PhysReadHCPtr(uint8_t *pbSrcPhys, void *pvDst, unsigned cb);
+uint8_t  remR3PhysReadHCPtrU8(uint8_t *pbSrcPhys);
+int8_t   remR3PhysReadHCPtrS8(uint8_t *pbSrcPhys);
+uint16_t remR3PhysReadHCPtrU16(uint8_t *pbSrcPhys);
+int16_t  remR3PhysReadHCPtrS16(uint8_t *pbSrcPhys);
+uint32_t remR3PhysReadHCPtrU32(uint8_t *pbSrcPhys);
+int32_t  remR3PhysReadHCPtrS32(uint8_t *pbSrcPhys);
+uint64_t remR3PhysReadHCPtrU64(uint8_t *pbSrcPhys);
+int64_t  remR3PhysReadHCPtrS64(uint8_t *pbSrcPhys);
+void     remR3PhysWriteHCPtr(uint8_t *pbDstPhys, const void *pvSrc, unsigned cb);
+void     remR3PhysWriteHCPtrU8(uint8_t *pbDstPhys, uint8_t val);
+void     remR3PhysWriteHCPtrU16(uint8_t *pbDstPhys, uint16_t val);
+void     remR3PhysWriteHCPtrU32(uint8_t *pbDstPhys, uint32_t val);
+void     remR3PhysWriteHCPtrU64(uint8_t *pbDstPhys, uint64_t val);
+#endif
+
+#ifdef PGM_DYNAMIC_RAM_ALLOC
+# ifndef REM_PHYS_ADDR_IN_TLB
 void    *remR3GCPhys2HCVirt(void *env, target_ulong addr);
 target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
+# endif 
 void     remR3GrowDynRange(unsigned long physaddr);
 #endif
+#if 0 /*defined(__AMD64__) && defined(VBOX_STRICT)*/
+# define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
+#else
+# define VBOX_CHECK_ADDR(ptr) do { } while (0)
+#endif 
 
 static inline int ldub_p(void *ptr)
 {
-    return remR3PhysReadUByte(ptr);
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU8((uintptr_t)ptr);
+#else
+    return remR3PhysReadHCPtrU8(ptr);
+#endif 
 }
 
 static inline int ldsb_p(void *ptr)
 {
-    return remR3PhysReadSByte(ptr);
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadS8((uintptr_t)ptr);
+#else
+    return remR3PhysReadHCPtrS8(ptr);
+#endif 
 }
 
 static inline void stb_p(void *ptr, int v)
 {
-    remR3PhysWriteByte(ptr, v);
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU8((uintptr_t)ptr, v);
+#else
+    remR3PhysWriteHCPtrU8(ptr, v);
+#endif 
 }
 
+static inline int lduw_le_p(void *ptr)
+{
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU16((uintptr_t)ptr);
 #else
+    return remR3PhysReadHCPtrU16(ptr);
+#endif 
+}
+
+static inline int ldsw_le_p(void *ptr)
+{
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadS16((uintptr_t)ptr);
+#else
+    return remR3PhysReadHCPtrS16(ptr);
+#endif 
+}
+
+static inline void stw_le_p(void *ptr, int v)
+{
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU16((uintptr_t)ptr, v);
+#else
+    remR3PhysWriteHCPtrU16(ptr, v);
+#endif 
+}
+
+static inline int ldl_le_p(void *ptr)
+{
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU32((uintptr_t)ptr);
+#else
+    return remR3PhysReadHCPtrU32(ptr);
+#endif 
+}
+
+static inline void stl_le_p(void *ptr, int v)
+{
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU32((uintptr_t)ptr, v);
+#else
+    remR3PhysWriteHCPtrU32(ptr, v);
+#endif 
+}
+
+static inline void stq_le_p(void *ptr, uint64_t v)
+{
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    remR3PhysWriteU64((uintptr_t)ptr, v);
+#else
+    remR3PhysWriteHCPtrU64(ptr, v);
+#endif 
+}
+
+static inline uint64_t ldq_le_p(void *ptr)
+{
+#ifdef REM_PHYS_ADDR_IN_TLB
+    VBOX_CHECK_ADDR(ptr);
+    return remR3PhysReadU64((uintptr_t)ptr);
+#else
+    return remR3PhysReadHCPtrU64(ptr);
+#endif 
+}
+
+#undef VBOX_CHECK_ADDR
+
+/* float access */
+
+static inline float32 ldfl_le_p(void *ptr)
+{
+    union {
+        float32 f;
+        uint32_t i;
+    } u;
+    u.i = ldl_le_p(ptr);
+    return u.f;
+}
+
+static inline void stfl_le_p(void *ptr, float32 v)
+{
+    union {
+        float32 f;
+        uint32_t i;
+    } u;
+    u.f = v;
+    stl_le_p(ptr, u.i);
+}
+
+static inline float64 ldfq_le_p(void *ptr)
+{
+    CPU_DoubleU u;
+    u.l.lower = ldl_le_p(ptr);
+    u.l.upper = ldl_le_p(ptr + 4);
+    return u.d;
+}
+
+static inline void stfq_le_p(void *ptr, float64 v)
+{
+    CPU_DoubleU u;
+    u.d = v;
+    stl_le_p(ptr, u.l.lower);
+    stl_le_p(ptr + 4, u.l.upper);
+}
+
+#else  /* !VBOX */
+
 static inline int ldub_p(void *ptr)
 {
     return *(uint8_t *)ptr;
@@ -218,14 +381,14 @@ static inline void stb_p(void *ptr, int v)
 {
     *(uint8_t *)ptr = v;
 }
-#endif
 
 /* NOTE: on arm, putting 2 in /proc/sys/debug/alignment so that the
    kernel handles unaligned load/stores may give better results, but
    it is a system wide setting : bad */
-#if !defined(TARGET_WORDS_BIGENDIAN) && (defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED))
+#if defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
+
 /* conservative code for little endian unaligned accesses */
-static inline int lduw_p(void *ptr)
+static inline int lduw_le_p(void *ptr)
 {
 #ifdef __powerpc__
     int val;
@@ -237,7 +400,7 @@ static inline int lduw_p(void *ptr)
 #endif
 }
 
-static inline int ldsw_p(void *ptr)
+static inline int ldsw_le_p(void *ptr)
 {
 #ifdef __powerpc__
     int val;
@@ -249,7 +412,7 @@ static inline int ldsw_p(void *ptr)
 #endif
 }
 
-static inline int ldl_p(void *ptr)
+static inline int ldl_le_p(void *ptr)
 {
 #ifdef __powerpc__
     int val;
@@ -261,16 +424,16 @@ static inline int ldl_p(void *ptr)
 #endif
 }
 
-static inline uint64_t ldq_p(void *ptr)
+static inline uint64_t ldq_le_p(void *ptr)
 {
     uint8_t *p = ptr;
     uint32_t v1, v2;
-    v1 = ldl_p(p);
-    v2 = ldl_p(p + 4);
+    v1 = ldl_le_p(p);
+    v2 = ldl_le_p(p + 4);
     return v1 | ((uint64_t)v2 << 32);
 }
 
-static inline void stw_p(void *ptr, int v)
+static inline void stw_le_p(void *ptr, int v)
 {
 #ifdef __powerpc__
     __asm__ __volatile__ ("sthbrx %1,0,%2" : "=m" (*(uint16_t *)ptr) : "r" (v), "r" (ptr));
@@ -281,7 +444,7 @@ static inline void stw_p(void *ptr, int v)
 #endif
 }
 
-static inline void stl_p(void *ptr, int v)
+static inline void stl_le_p(void *ptr, int v)
 {
 #ifdef __powerpc__
     __asm__ __volatile__ ("stwbrx %1,0,%2" : "=m" (*(uint32_t *)ptr) : "r" (v), "r" (ptr));
@@ -294,53 +457,115 @@ static inline void stl_p(void *ptr, int v)
 #endif
 }
 
-static inline void stq_p(void *ptr, uint64_t v)
+static inline void stq_le_p(void *ptr, uint64_t v)
 {
     uint8_t *p = ptr;
-    stl_p(p, (uint32_t)v);
-    stl_p(p + 4, v >> 32);
+    stl_le_p(p, (uint32_t)v);
+    stl_le_p(p + 4, v >> 32);
 }
 
 /* float access */
 
-static inline float ldfl_p(void *ptr)
+static inline float32 ldfl_le_p(void *ptr)
 {
     union {
-        float f;
+        float32 f;
         uint32_t i;
     } u;
-    u.i = ldl_p(ptr);
+    u.i = ldl_le_p(ptr);
     return u.f;
 }
 
-static inline void stfl_p(void *ptr, float v)
+static inline void stfl_le_p(void *ptr, float32 v)
 {
     union {
-        float f;
+        float32 f;
         uint32_t i;
     } u;
     u.f = v;
-    stl_p(ptr, u.i);
+    stl_le_p(ptr, u.i);
 }
 
-static inline double ldfq_p(void *ptr)
+static inline float64 ldfq_le_p(void *ptr)
 {
     CPU_DoubleU u;
-    u.l.lower = ldl_p(ptr);
-    u.l.upper = ldl_p(ptr + 4);
+    u.l.lower = ldl_le_p(ptr);
+    u.l.upper = ldl_le_p(ptr + 4);
     return u.d;
 }
 
-static inline void stfq_p(void *ptr, double v)
+static inline void stfq_le_p(void *ptr, float64 v)
 {
     CPU_DoubleU u;
     u.d = v;
-    stl_p(ptr, u.l.lower);
-    stl_p(ptr + 4, u.l.upper);
+    stl_le_p(ptr, u.l.lower);
+    stl_le_p(ptr + 4, u.l.upper);
 }
 
-#elif defined(TARGET_WORDS_BIGENDIAN) && (!defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED))
-static inline int lduw_p(void *ptr)
+#else
+
+static inline int lduw_le_p(void *ptr)
+{
+    return *(uint16_t *)ptr;
+}
+
+static inline int ldsw_le_p(void *ptr)
+{
+    return *(int16_t *)ptr;
+}
+
+static inline int ldl_le_p(void *ptr)
+{
+    return *(uint32_t *)ptr;
+}
+
+static inline uint64_t ldq_le_p(void *ptr)
+{
+    return *(uint64_t *)ptr;
+}
+
+static inline void stw_le_p(void *ptr, int v)
+{
+    *(uint16_t *)ptr = v;
+}
+
+static inline void stl_le_p(void *ptr, int v)
+{
+    *(uint32_t *)ptr = v;
+}
+
+static inline void stq_le_p(void *ptr, uint64_t v)
+{
+    *(uint64_t *)ptr = v;
+}
+
+/* float access */
+
+static inline float32 ldfl_le_p(void *ptr)
+{
+    return *(float32 *)ptr;
+}
+
+static inline float64 ldfq_le_p(void *ptr)
+{
+    return *(float64 *)ptr;
+}
+
+static inline void stfl_le_p(void *ptr, float32 v)
+{
+    *(float32 *)ptr = v;
+}
+
+static inline void stfq_le_p(void *ptr, float64 v)
+{
+    *(float64 *)ptr = v;
+}
+#endif
+#endif /* !VBOX */
+
+#if !defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
+
+static inline int lduw_be_p(void *ptr)
 {
 #if defined(__i386__)
     int val;
@@ -355,7 +580,7 @@ static inline int lduw_p(void *ptr)
 #endif
 }
 
-static inline int ldsw_p(void *ptr)
+static inline int ldsw_be_p(void *ptr)
 {
 #if defined(__i386__)
     int val;
@@ -370,7 +595,7 @@ static inline int ldsw_p(void *ptr)
 #endif
 }
 
-static inline int ldl_p(void *ptr)
+static inline int ldl_be_p(void *ptr)
 {
 #if defined(__i386__) || defined(__x86_64__)
     int val;
@@ -385,15 +610,15 @@ static inline int ldl_p(void *ptr)
 #endif
 }
 
-static inline uint64_t ldq_p(void *ptr)
+static inline uint64_t ldq_be_p(void *ptr)
 {
     uint32_t a,b;
-    a = ldl_p(ptr);
-    b = ldl_p(ptr+4);
+    a = ldl_be_p(ptr);
+    b = ldl_be_p(ptr+4);
     return (((uint64_t)a<<32)|b);
 }
 
-static inline void stw_p(void *ptr, int v)
+static inline void stw_be_p(void *ptr, int v)
 {
 #if defined(__i386__)
     asm volatile ("xchgb %b0, %h0\n"
@@ -407,7 +632,7 @@ static inline void stw_p(void *ptr, int v)
 #endif
 }
 
-static inline void stl_p(void *ptr, int v)
+static inline void stl_be_p(void *ptr, int v)
 {
 #if defined(__i386__) || defined(__x86_64__)
     asm volatile ("bswap %0\n"
@@ -423,197 +648,175 @@ static inline void stl_p(void *ptr, int v)
 #endif
 }
 
-static inline void stq_p(void *ptr, uint64_t v)
+static inline void stq_be_p(void *ptr, uint64_t v)
 {
-    stl_p(ptr, v >> 32);
-    stl_p(ptr + 4, v);
+    stl_be_p(ptr, v >> 32);
+    stl_be_p(ptr + 4, v);
 }
 
 /* float access */
 
-static inline float ldfl_p(void *ptr)
+static inline float32 ldfl_be_p(void *ptr)
 {
     union {
-        float f;
+        float32 f;
         uint32_t i;
     } u;
-    u.i = ldl_p(ptr);
+    u.i = ldl_be_p(ptr);
     return u.f;
 }
 
-static inline void stfl_p(void *ptr, float v)
+static inline void stfl_be_p(void *ptr, float32 v)
 {
     union {
-        float f;
+        float32 f;
         uint32_t i;
     } u;
     u.f = v;
-    stl_p(ptr, u.i);
+    stl_be_p(ptr, u.i);
 }
 
-static inline double ldfq_p(void *ptr)
+static inline float64 ldfq_be_p(void *ptr)
 {
     CPU_DoubleU u;
-    u.l.upper = ldl_p(ptr);
-    u.l.lower = ldl_p(ptr + 4);
+    u.l.upper = ldl_be_p(ptr);
+    u.l.lower = ldl_be_p(ptr + 4);
     return u.d;
 }
 
-static inline void stfq_p(void *ptr, double v)
+static inline void stfq_be_p(void *ptr, float64 v)
 {
     CPU_DoubleU u;
     u.d = v;
-    stl_p(ptr, u.l.upper);
-    stl_p(ptr + 4, u.l.lower);
+    stl_be_p(ptr, u.l.upper);
+    stl_be_p(ptr + 4, u.l.lower);
 }
 
 #else
 
-#ifdef VBOX
-static inline int lduw_p(void *ptr)
-{
-    return remR3PhysReadUWord(ptr);
-}
-
-static inline int ldsw_p(void *ptr)
-{
-    return remR3PhysReadSWord(ptr);
-}
-
-static inline int ldl_p(void *ptr)
-{
-    return remR3PhysReadULong(ptr);
-}
-
-static inline uint64_t ldq_p(void *ptr)
-{
-    uint64_t val;
-
-    remR3PhysReadBytes(ptr, &val, sizeof(val));
-    return val;
-}
-
-static inline void stw_p(void *ptr, int v)
-{
-    remR3PhysWriteWord(ptr, (uint16_t)v);
-}
-
-static inline void stl_p(void *ptr, int v)
-{
-    remR3PhysWriteDword(ptr, (uint32_t)v);
-}
-
-static inline void stq_p(void *ptr, uint64_t v)
-{
-    remR3PhysWriteBytes(ptr, &v, sizeof(v));
-}
-
-/* float access */
-
-static inline float ldfl_p(void *ptr)
-{
-    float val;
-
-    remR3PhysReadBytes(ptr, &val, sizeof(val));
-    return val;
-}
-
-static inline double ldfq_p(void *ptr)
-{
-    double val;
-
-    remR3PhysReadBytes(ptr, &val, sizeof(val));
-    return val;
-}
-
-static inline void stfl_p(void *ptr, float v)
-{
-    remR3PhysWriteBytes(ptr, &v, sizeof(v));
-}
-
-static inline void stfq_p(void *ptr, double v)
-{
-    remR3PhysWriteBytes(ptr, &v, sizeof(v));
-}
-#else
-static inline int lduw_p(void *ptr)
+static inline int lduw_be_p(void *ptr)
 {
     return *(uint16_t *)ptr;
 }
 
-static inline int ldsw_p(void *ptr)
+static inline int ldsw_be_p(void *ptr)
 {
     return *(int16_t *)ptr;
 }
 
-static inline int ldl_p(void *ptr)
+static inline int ldl_be_p(void *ptr)
 {
     return *(uint32_t *)ptr;
 }
 
-static inline uint64_t ldq_p(void *ptr)
+static inline uint64_t ldq_be_p(void *ptr)
 {
     return *(uint64_t *)ptr;
 }
 
-static inline void stw_p(void *ptr, int v)
+static inline void stw_be_p(void *ptr, int v)
 {
     *(uint16_t *)ptr = v;
 }
 
-static inline void stl_p(void *ptr, int v)
+static inline void stl_be_p(void *ptr, int v)
 {
     *(uint32_t *)ptr = v;
 }
 
-static inline void stq_p(void *ptr, uint64_t v)
+static inline void stq_be_p(void *ptr, uint64_t v)
 {
     *(uint64_t *)ptr = v;
 }
 
 /* float access */
 
-static inline float ldfl_p(void *ptr)
+static inline float32 ldfl_be_p(void *ptr)
 {
-    return *(float *)ptr;
+    return *(float32 *)ptr;
 }
 
-static inline double ldfq_p(void *ptr)
+static inline float64 ldfq_be_p(void *ptr)
 {
-    return *(double *)ptr;
+    return *(float64 *)ptr;
 }
 
-static inline void stfl_p(void *ptr, float v)
+static inline void stfl_be_p(void *ptr, float32 v)
 {
-    *(float *)ptr = v;
+    *(float32 *)ptr = v;
 }
 
-static inline void stfq_p(void *ptr, double v)
+static inline void stfq_be_p(void *ptr, float64 v)
 {
-    *(double *)ptr = v;
+    *(float64 *)ptr = v;
 }
-#endif /* VBOX */
 
+#endif
+
+/* target CPU memory access functions */
+#if defined(TARGET_WORDS_BIGENDIAN)
+#define lduw_p(p) lduw_be_p(p)
+#define ldsw_p(p) ldsw_be_p(p)
+#define ldl_p(p) ldl_be_p(p)
+#define ldq_p(p) ldq_be_p(p)
+#define ldfl_p(p) ldfl_be_p(p)
+#define ldfq_p(p) ldfq_be_p(p)
+#define stw_p(p, v) stw_be_p(p, v)
+#define stl_p(p, v) stl_be_p(p, v)
+#define stq_p(p, v) stq_be_p(p, v)
+#define stfl_p(p, v) stfl_be_p(p, v)
+#define stfq_p(p, v) stfq_be_p(p, v)
+#else
+#define lduw_p(p) lduw_le_p(p)
+#define ldsw_p(p) ldsw_le_p(p)
+#define ldl_p(p) ldl_le_p(p)
+#define ldq_p(p) ldq_le_p(p)
+#define ldfl_p(p) ldfl_le_p(p)
+#define ldfq_p(p) ldfq_le_p(p)
+#define stw_p(p, v) stw_le_p(p, v)
+#define stl_p(p, v) stl_le_p(p, v)
+#define stq_p(p, v) stq_le_p(p, v)
+#define stfl_p(p, v) stfl_le_p(p, v)
+#define stfq_p(p, v) stfq_le_p(p, v)
 #endif
 
 /* MMU memory access macros */
 
+#if defined(CONFIG_USER_ONLY)
+/* On some host systems the guest address space is reserved on the host.
+ * This allows the guest address space to be offset to a convenient location.
+ */
+//#define GUEST_BASE 0x20000000
+#define GUEST_BASE 0
+
+/* All direct uses of g2h and h2g need to go away for usermode softmmu.  */
+#define g2h(x) ((void *)((unsigned long)(x) + GUEST_BASE))
+#define h2g(x) ((target_ulong)(x - GUEST_BASE))
+
+#define saddr(x) g2h(x)
+#define laddr(x) g2h(x)
+
+#else /* !CONFIG_USER_ONLY */
 /* NOTE: we use double casts if pointers and target_ulong have
    different sizes */
-#define ldub_raw(p) ldub_p((uint8_t *)(long)(p))
-#define ldsb_raw(p) ldsb_p((uint8_t *)(long)(p))
-#define lduw_raw(p) lduw_p((uint8_t *)(long)(p))
-#define ldsw_raw(p) ldsw_p((uint8_t *)(long)(p))
-#define ldl_raw(p) ldl_p((uint8_t *)(long)(p))
-#define ldq_raw(p) ldq_p((uint8_t *)(long)(p))
-#define ldfl_raw(p) ldfl_p((uint8_t *)(long)(p))
-#define ldfq_raw(p) ldfq_p((uint8_t *)(long)(p))
-#define stb_raw(p, v) stb_p((uint8_t *)(long)(p), v)
-#define stw_raw(p, v) stw_p((uint8_t *)(long)(p), v)
-#define stl_raw(p, v) stl_p((uint8_t *)(long)(p), v)
-#define stq_raw(p, v) stq_p((uint8_t *)(long)(p), v)
-#define stfl_raw(p, v) stfl_p((uint8_t *)(long)(p), v)
-#define stfq_raw(p, v) stfq_p((uint8_t *)(long)(p), v)
+#define saddr(x) (uint8_t *)(long)(x)
+#define laddr(x) (uint8_t *)(long)(x)
+#endif
+
+#define ldub_raw(p) ldub_p(laddr((p)))
+#define ldsb_raw(p) ldsb_p(laddr((p)))
+#define lduw_raw(p) lduw_p(laddr((p)))
+#define ldsw_raw(p) ldsw_p(laddr((p)))
+#define ldl_raw(p) ldl_p(laddr((p)))
+#define ldq_raw(p) ldq_p(laddr((p)))
+#define ldfl_raw(p) ldfl_p(laddr((p)))
+#define ldfq_raw(p) ldfq_p(laddr((p)))
+#define stb_raw(p, v) stb_p(saddr((p)), v)
+#define stw_raw(p, v) stw_p(saddr((p)), v)
+#define stl_raw(p, v) stl_p(saddr((p)), v)
+#define stq_raw(p, v) stq_p(saddr((p)), v)
+#define stfl_raw(p, v) stfl_p(saddr((p)), v)
+#define stfq_raw(p, v) stfq_p(saddr((p)), v)
 
 
 #if defined(CONFIG_USER_ONLY) 
@@ -662,6 +865,7 @@ static inline void stfq_p(void *ptr, double v)
 #define TARGET_PAGE_MASK ~(TARGET_PAGE_SIZE - 1)
 #define TARGET_PAGE_ALIGN(addr) (((addr) + TARGET_PAGE_SIZE - 1) & TARGET_PAGE_MASK)
 
+/* ??? These should be the larger of unsigned long and target_ulong.  */
 extern unsigned long qemu_real_host_page_size;
 extern unsigned long qemu_host_page_bits;
 extern unsigned long qemu_host_page_size;
@@ -680,9 +884,9 @@ extern unsigned long qemu_host_page_mask;
 #define PAGE_WRITE_ORG 0x0010 
 
 void page_dump(FILE *f);
-int page_get_flags(unsigned long address);
-void page_set_flags(unsigned long start, unsigned long end, int flags);
-void page_unprotect_range(uint8_t *data, unsigned long data_size);
+int page_get_flags(target_ulong address);
+void page_set_flags(target_ulong start, target_ulong end, int flags);
+void page_unprotect_range(target_ulong data, target_ulong data_size);
 
 #define SINGLE_CPU_DEFINES
 #ifdef SINGLE_CPU_DEFINES
@@ -719,6 +923,27 @@ void page_unprotect_range(uint8_t *data, unsigned long data_size);
 #define cpu_gen_code cpu_ppc_gen_code
 #define cpu_signal_handler cpu_ppc_signal_handler
 
+#elif defined(TARGET_M68K)
+#define CPUState CPUM68KState
+#define cpu_init cpu_m68k_init
+#define cpu_exec cpu_m68k_exec
+#define cpu_gen_code cpu_m68k_gen_code
+#define cpu_signal_handler cpu_m68k_signal_handler
+
+#elif defined(TARGET_MIPS)
+#define CPUState CPUMIPSState
+#define cpu_init cpu_mips_init
+#define cpu_exec cpu_mips_exec
+#define cpu_gen_code cpu_mips_gen_code
+#define cpu_signal_handler cpu_mips_signal_handler
+
+#elif defined(TARGET_SH4)
+#define CPUState CPUSH4State
+#define cpu_init cpu_sh4_init
+#define cpu_exec cpu_sh4_exec
+#define cpu_gen_code cpu_sh4_gen_code
+#define cpu_signal_handler cpu_sh4_signal_handler
+
 #else
 
 #error unsupported target CPU
@@ -732,6 +957,7 @@ void cpu_dump_state(CPUState *env, FILE *f,
                     int flags);
 
 void cpu_abort(CPUState *env, const char *fmt, ...);
+extern CPUState *first_cpu;
 extern CPUState *cpu_single_env;
 extern int code_copy_enabled;
 
@@ -739,21 +965,25 @@ extern int code_copy_enabled;
 #define CPU_INTERRUPT_HARD   0x02 /* hardware interrupt pending */
 #define CPU_INTERRUPT_EXITTB 0x04 /* exit the current TB (use for x86 a20 case) */
 #define CPU_INTERRUPT_TIMER  0x08 /* internal timer exception pending */
+#define CPU_INTERRUPT_FIQ    0x10 /* Fast interrupt pending.  */
+#define CPU_INTERRUPT_HALT   0x20 /* CPU halt wanted */
+#define CPU_INTERRUPT_SMI    0x40 /* (x86 only) SMI interrupt pending */
+
 #ifdef VBOX
 /** Executes a single instruction. cpu_exec() will normally return EXCP_SINGLE_INSTR. */
-#define CPU_INTERRUPT_SINGLE_INSTR              0x0040 
+#define CPU_INTERRUPT_SINGLE_INSTR              0x0200
 /** Executing a CPU_INTERRUPT_SINGLE_INSTR request, quit the cpu_loop. (for exceptions and suchlike) */
-#define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT    0x0080 
+#define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT    0x0400
 /** VM execution was interrupted by VMR3Reset, VMR3Suspend or VMR3PowerOff. */
-#define CPU_INTERRUPT_RC                        0x0100
+#define CPU_INTERRUPT_RC                        0x0800
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_EXIT             0x0200
+#define CPU_INTERRUPT_EXTERNAL_EXIT             0x1000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_HARD             0x0400
+#define CPU_INTERRUPT_EXTERNAL_HARD             0x2000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_TIMER            0x0800
+#define CPU_INTERRUPT_EXTERNAL_TIMER            0x4000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_DMA              0x1000
+#define CPU_INTERRUPT_EXTERNAL_DMA              0x8000
 #endif /* VBOX */
 void cpu_interrupt(CPUState *s, int mask);
 void cpu_reset_interrupt(CPUState *env, int mask);
@@ -805,27 +1035,37 @@ int cpu_inl(CPUState *env, int addr);
 #endif
 
 /* memory API */
-extern uint32_t phys_ram_size;
+
 #ifndef VBOX
+extern int phys_ram_size;
 extern int phys_ram_fd;
 extern int phys_ram_size;
+#else /* VBOX */
+extern RTGCPHYS phys_ram_size;
+/** This is required for bounds checking the phys_ram_dirty accesses. */
+extern uint32_t phys_ram_dirty_size;
+#endif /* VBOX */
+#if !defined(VBOX) || !(defined(PGM_DYNAMIC_RAM_ALLOC) || defined(REM_PHYS_ADDR_IN_TLB))
 extern uint8_t *phys_ram_base;
 #endif
 extern uint8_t *phys_ram_dirty;
 
 /* physical memory access */
-#define IO_MEM_NB_ENTRIES  256
 #define TLB_INVALID_MASK   (1 << 3)
 #define IO_MEM_SHIFT       4
+#define IO_MEM_NB_ENTRIES  (1 << (TARGET_PAGE_BITS  - IO_MEM_SHIFT))
 
 #define IO_MEM_RAM         (0 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_ROM         (1 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_UNASSIGNED  (2 << IO_MEM_SHIFT)
-#define IO_MEM_CODE        (3 << IO_MEM_SHIFT) /* used internally, never use directly */
 #define IO_MEM_NOTDIRTY    (4 << IO_MEM_SHIFT) /* used internally, never use directly */
-#ifdef VBOX
+#if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
 #define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
 #endif
+/* acts like a ROM when read and like a device when written. As an
+   exception, the write memory callback gets the ram offset instead of
+   the physical address */
+#define IO_MEM_ROMD        (1)
 
 typedef void CPUWriteMemoryFunc(void *opaque, target_phys_addr_t addr, uint32_t value);
 typedef uint32_t CPUReadMemoryFunc(void *opaque, target_phys_addr_t addr);
@@ -833,6 +1073,7 @@ typedef uint32_t CPUReadMemoryFunc(void *opaque, target_phys_addr_t addr);
 void cpu_register_physical_memory(target_phys_addr_t start_addr, 
                                   unsigned long size,
                                   unsigned long phys_offset);
+uint32_t cpu_get_physical_page_desc(target_phys_addr_t addr);
 int cpu_register_io_memory(int io_index,
                            CPUReadMemoryFunc **mem_read,
                            CPUWriteMemoryFunc **mem_write,
@@ -852,32 +1093,195 @@ static inline void cpu_physical_memory_write(target_phys_addr_t addr,
 {
     cpu_physical_memory_rw(addr, (uint8_t *)buf, len, 1);
 }
+uint32_t ldub_phys(target_phys_addr_t addr);
+uint32_t lduw_phys(target_phys_addr_t addr);
 uint32_t ldl_phys(target_phys_addr_t addr);
+uint64_t ldq_phys(target_phys_addr_t addr);
 void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val);
+void stb_phys(target_phys_addr_t addr, uint32_t val);
+void stw_phys(target_phys_addr_t addr, uint32_t val);
 void stl_phys(target_phys_addr_t addr, uint32_t val);
+void stq_phys(target_phys_addr_t addr, uint64_t val);
 
+void cpu_physical_memory_write_rom(target_phys_addr_t addr, 
+                                   const uint8_t *buf, int len);
 int cpu_memory_rw_debug(CPUState *env, target_ulong addr, 
                         uint8_t *buf, int len, int is_write);
 
+#define VGA_DIRTY_FLAG  0x01
+#define CODE_DIRTY_FLAG 0x02
+
 /* read dirty bit (return 0 or 1) */
-static inline int cpu_physical_memory_is_dirty(target_ulong addr)
+static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
 {
-    return phys_ram_dirty[addr >> TARGET_PAGE_BITS];
+#ifdef VBOX
+    if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
+    {
+        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        return 0;
+    }
+#endif
+    return phys_ram_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
 }
 
-static inline void cpu_physical_memory_set_dirty(target_ulong addr)
+static inline int cpu_physical_memory_get_dirty(ram_addr_t addr, 
+                                                int dirty_flags)
 {
-    phys_ram_dirty[addr >> TARGET_PAGE_BITS] = 1;
+#ifdef VBOX
+    if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
+    {
+        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        return 0xff & dirty_flags; /** @todo I don't think this is the right thing to return, fix! */
+    }
+#endif
+    return phys_ram_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
 }
 
-void cpu_physical_memory_reset_dirty(target_ulong start, target_ulong end);
+static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
+{
+#ifdef VBOX
+    if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size)) 
+    {
+        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        return;
+    }
+#endif
+    phys_ram_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
+}
+
+void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
+                                     int dirty_flags);
+void cpu_tlb_update_dirty(CPUState *env);
 
 void dump_exec_info(FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...));
 
+/*******************************************/
+/* host CPU ticks (if available) */
+
+#if defined(__powerpc__)
+
+static inline uint32_t get_tbl(void) 
+{
+    uint32_t tbl;
+    asm volatile("mftb %0" : "=r" (tbl));
+    return tbl;
+}
+
+static inline uint32_t get_tbu(void) 
+{
+	uint32_t tbl;
+	asm volatile("mftbu %0" : "=r" (tbl));
+	return tbl;
+}
+
+static inline int64_t cpu_get_real_ticks(void)
+{
+    uint32_t l, h, h1;
+    /* NOTE: we test if wrapping has occurred */
+    do {
+        h = get_tbu();
+        l = get_tbl();
+        h1 = get_tbu();
+    } while (h != h1);
+    return ((int64_t)h << 32) | l;
+}
+
+#elif defined(__i386__)
+
+static inline int64_t cpu_get_real_ticks(void)
+{
+    int64_t val;
+    asm volatile ("rdtsc" : "=A" (val));
+    return val;
+}
+
+#elif defined(__x86_64__)
+
+static inline int64_t cpu_get_real_ticks(void)
+{
+    uint32_t low,high;
+    int64_t val;
+    asm volatile("rdtsc" : "=a" (low), "=d" (high));
+    val = high;
+    val <<= 32;
+    val |= low;
+    return val;
+}
+
+#elif defined(__ia64)
+
+static inline int64_t cpu_get_real_ticks(void)
+{
+	int64_t val;
+	asm volatile ("mov %0 = ar.itc" : "=r"(val) :: "memory");
+	return val;
+}
+
+#elif defined(__s390__)
+
+static inline int64_t cpu_get_real_ticks(void)
+{
+    int64_t val;
+    asm volatile("stck 0(%1)" : "=m" (val) : "a" (&val) : "cc");
+    return val;
+}
+
+#elif defined(__sparc_v9__)
+
+static inline int64_t cpu_get_real_ticks (void)
+{
+#if     defined(_LP64)
+        uint64_t        rval;
+        asm volatile("rd %%tick,%0" : "=r"(rval));
+        return rval;
+#else
+        union {
+                uint64_t i64;
+                struct {
+                        uint32_t high;
+                        uint32_t low;
+                }       i32;
+        } rval;
+        asm volatile("rd %%tick,%1; srlx %1,32,%0"
+                : "=r"(rval.i32.high), "=r"(rval.i32.low));
+        return rval.i64;
+#endif
+}
+#else
+/* The host CPU doesn't have an easily accessible cycle counter.
+   Just return a monotonically increasing vlue.  This will be totally wrong,
+   but hopefully better than nothing.  */
+static inline int64_t cpu_get_real_ticks (void)
+{
+    static int64_t ticks = 0;
+    return ticks++;
+}
+#endif
+
+/* profiling */
+#ifdef CONFIG_PROFILER
+static inline int64_t profile_getclock(void)
+{
+    return cpu_get_real_ticks();
+}
+
+extern int64_t kqemu_time, kqemu_time_start;
+extern int64_t qemu_time, qemu_time_start;
+extern int64_t tlb_flush_time;
+extern int64_t kqemu_exec_count;
+extern int64_t dev_time;
+extern int64_t kqemu_ret_int_count;
+extern int64_t kqemu_ret_excp_count;
+extern int64_t kqemu_ret_intr_count;
+
+#endif
 
 #ifdef VBOX
 void tb_invalidate_virt(CPUState *env, uint32_t eip);
-#endif
+#endif /* VBOX */
 
 #endif /* CPU_ALL_H */

@@ -20,33 +20,52 @@
 #if !defined(__DYNGEN_EXEC_H__)
 #define __DYNGEN_EXEC_H__
 
+/* prevent Solaris from trying to typedef FILE in gcc's
+   include/floatingpoint.h which will conflict with the
+   definition down below */
+#ifdef __sun__
+#define _FILEDEFED
+#endif
+
 /* NOTE: standard headers should be used with special care at this
    point because host CPU registers are used as global variables. Some
    host headers do not allow that. */
 #include <stddef.h>
 
-/* There are some conflicts with the uClibc headers. I'm _very_ amazed
-   that we don't get the same conflicts when compiling against glibc ... */
-#if !defined(__L4ENV__) && !defined(__MINGW32__) /* VBOX: mingw 3.4.x got into trouble here. */
+#ifndef VBOX
 
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
+// Linux/Sparc64 defines uint64_t
+#if !(defined (__sparc_v9__) && defined(__linux__))
 /* XXX may be done for all 64 bits targets ? */
-#if defined (__x86_64__)
+#if defined (__x86_64__) || defined(__ia64)
 typedef unsigned long uint64_t;
 #else
 typedef unsigned long long uint64_t;
 #endif
+#endif
 
+/* if Solaris/__sun__, don't typedef int8_t, as it will be typedef'd
+   prior to this and will cause an error in compliation, conflicting
+   with /usr/include/sys/int_types.h, line 75 */
+#ifndef __sun__
 typedef signed char int8_t;
+#endif
 typedef signed short int16_t;
 typedef signed int int32_t;
-#if defined (__x86_64__)
+// Linux/Sparc64 defines int64_t
+#if !(defined (__sparc_v9__) && defined(__linux__))
+#if defined (__x86_64__) || defined(__ia64)
 typedef signed long int64_t;
 #else
 typedef signed long long int64_t;
 #endif
+#endif
+
+/* XXX: This may be wrong for 64-bit ILP32 hosts.  */
+typedef void * host_reg_t;
 
 #define INT8_MIN		(-128)
 #define INT16_MIN		(-32767-1)
@@ -61,28 +80,21 @@ typedef signed long long int64_t;
 #define UINT32_MAX		(4294967295U)
 #define UINT64_MAX		((uint64_t)(18446744073709551615))
 
-#else /* __L4ENV__ */
-
-#include <stdint.h>
-
-#endif  /* __L4ENV__ */
-
 typedef struct FILE FILE;
 extern int fprintf(FILE *, const char *, ...);
 extern int printf(const char *, ...);
 #undef NULL
 #define NULL 0
-#if defined(_BSD) && !defined(__APPLE__)
-#include <ieeefp.h>
 
-#define FE_TONEAREST   FP_RN
-#define FE_DOWNWARD    FP_RM
-#define FE_UPWARD      FP_RP
-#define FE_TOWARDZERO  FP_RZ
-#define fesetround(x)  fpsetround(x)
-#else
-#include <fenv.h>
-#endif
+#else  /* VBOX */
+
+/* XXX: This may be wrong for 64-bit ILP32 hosts.  */
+typedef void * host_reg_t;
+
+#include <iprt/stdint.h>
+#include <stdio.h>
+
+#endif /* VBOX */
 
 #ifdef __i386__
 #define AREG0 "ebp"
@@ -95,8 +107,8 @@ extern int printf(const char *, ...);
 #define AREG1 "rbx"
 #define AREG2 "r12"
 #define AREG3 "r13"
-#define AREG4 "r14"
-#define AREG5 "r15"
+//#define AREG4 "r14"
+//#define AREG5 "r15"
 #endif
 #ifdef __powerpc__
 #define AREG0 "r27"
@@ -130,6 +142,19 @@ extern int printf(const char *, ...);
 #define AREG3 "s2"
 #endif
 #ifdef __sparc__
+#ifdef HOST_SOLARIS
+#define AREG0 "g2"
+#define AREG1 "g3"
+#define AREG2 "g4"
+#define AREG3 "g5"
+#define AREG4 "g6"
+#else
+#ifdef __sparc_v9__
+#define AREG0 "g1"
+#define AREG1 "g4"
+#define AREG2 "g5"
+#define AREG3 "g7"
+#else
 #define AREG0 "g6"
 #define AREG1 "g1"
 #define AREG2 "g2"
@@ -142,6 +167,8 @@ extern int printf(const char *, ...);
 #define AREG9 "l5"
 #define AREG10 "l6"
 #define AREG11 "l7"
+#endif
+#endif
 #define USE_FP_CONVERT
 #endif
 #ifdef __s390__
@@ -169,14 +196,14 @@ extern int printf(const char *, ...);
 #define AREG4 "%d5"
 #endif
 #ifdef __ia64__
-#define AREG0 "r27"
-#define AREG1 "r24"
-#define AREG2 "r25"
-#define AREG3 "r26"
+#define AREG0 "r7"
+#define AREG1 "r4"
+#define AREG2 "r5"
+#define AREG3 "r6"
 #endif
 
 /* force GCC to generate only one epilog at the end of the function */
-#define FORCE_RET() asm volatile ("");
+#define FORCE_RET() __asm__ __volatile__("" : : : "memory");
 
 #ifndef OPPROTO
 #define OPPROTO
@@ -191,7 +218,7 @@ extern int printf(const char *, ...);
 /* the symbols are considered non exported so a br immediate is generated */
 #define __hidden __attribute__((visibility("hidden")))
 #else
-#define __hidden
+#define __hidden 
 #endif
 
 #if defined(__alpha__)
@@ -231,6 +258,7 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #endif
 #ifdef __x86_64__
 #define EXIT_TB() asm volatile ("ret")
+#define GOTO_LABEL_PARAM(n) asm volatile ("jmp " ASM_NAME(__op_gen_label) #n)
 #endif
 #ifdef __powerpc__
 #define EXIT_TB() asm volatile ("blr")
@@ -238,19 +266,23 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #endif
 #ifdef __s390__
 #define EXIT_TB() asm volatile ("br %r14")
+#define GOTO_LABEL_PARAM(n) asm volatile ("b " ASM_NAME(__op_gen_label) #n)
 #endif
 #ifdef __alpha__
 #define EXIT_TB() asm volatile ("ret")
 #endif
 #ifdef __ia64__
 #define EXIT_TB() asm volatile ("br.ret.sptk.many b0;;")
+#define GOTO_LABEL_PARAM(n) asm volatile ("br.sptk.many " \
+					  ASM_NAME(__op_gen_label) #n)
 #endif
 #ifdef __sparc__
-#define EXIT_TB() asm volatile ("jmpl %i0 + 8, %g0\n" \
-                                "nop")
+#define EXIT_TB() asm volatile ("jmpl %i0 + 8, %g0; nop")
+#define GOTO_LABEL_PARAM(n) asm volatile ("ba " ASM_NAME(__op_gen_label) #n ";nop")
 #endif
 #ifdef __arm__
 #define EXIT_TB() asm volatile ("b exec_loop")
+#define GOTO_LABEL_PARAM(n) asm volatile ("b " ASM_NAME(__op_gen_label) #n)
 #endif
 #ifdef __mc68000
 #define EXIT_TB() asm volatile ("rts")

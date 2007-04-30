@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Innotek Host Config - Maintained by hand
  */
@@ -18,25 +19,28 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#define HOST_I386 1
-#ifdef __WIN32__
-# define CONFIG_WIN32 1
-#elif defined(__OS2__)
-# define CONFIG_OS2
-#elif defined(__DARWIN__)
-# define CONFIG_DARWIN
+
+#if defined(__amd64__) || defined(HOST_X86_64) /* latter, for dyngen on win64. */
+# define HOST_X86_64 1
+# define HOST_LONG_BITS 64
 #else
-# define HAVE_BYTESWAP_H 1
+# define HOST_I386 1
+# define HOST_LONG_BITS 32
+# ifdef __WIN32__
+#  define CONFIG_WIN32 1
+# elif defined(__OS2__)
+#  define CONFIG_OS2
+# elif defined(__DARWIN__)
+#  define CONFIG_DARWIN
+# elif defined(__FREEBSD__) || defined(__NETBSD__) || defined(__OPENBSD__)
+/*#  define CONFIG_BSD*/
+# elif defined(__SOLARIS__)
+/*#  define CONFIG_SUN*/
+# elif !defined(IPRT_NO_CRT)
+#  define HAVE_BYTESWAP_H 1
+# endif
 #endif
-#define CONFIG_SOFTMMU 1
-
-#define CONFIG_SDL 1
-#define CONFIG_SLIRP 1
-
-#ifdef __LINUX__
-#define CONFIG_GDBSTUB 1
-#endif
-/* #define HAVE_GPROF 1 */
-/* #define CONFIG_STATIC 1 */
-#define QEMU_VERSION "0.6.1"
+#define QEMU_VERSION "0.8.1"
+#define CONFIG_UNAME_RELEASE ""
 #define CONFIG_QEMU_SHAREDIR "."
+

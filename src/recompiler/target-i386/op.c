@@ -225,7 +225,7 @@ void OPPROTO op_bswapl_T0(void)
 #ifdef TARGET_X86_64
 void OPPROTO op_bswapq_T0(void)
 {
-    T0 = bswap64(T0);
+    helper_bswapq_T0();
 }
 #endif
 
@@ -491,23 +491,20 @@ void OPPROTO op_movl_A0_seg(void)
     /** @todo Pass segment register index as parameter in translate.c. */
     uint32_t idx = (PARAM1 - offsetof(CPUX86State,segs[0].base)) / sizeof(SegmentCache);
 
-    if (env->segs[idx].newselector && !(env->eflags & VM_MASK))
-    {
+    if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
     }
     /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
     if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
         &&  !(env->eflags & VM_MASK)
-        &&  env->segs[idx].selector == 0
-       )
-    {
+        &&  env->segs[idx].selector == 0) {
         raise_exception(EXCP0D_GPF);
     }
     A0 = (uint32_t)env->segs[idx].base;
     FORCE_RET();
-#else
+#else  /* !VBOX */
     A0 = (uint32_t)*(target_ulong *)((char *)env + PARAM1);
-#endif
+#endif /* !VBOX */
 }
 
 void OPPROTO op_addl_A0_seg(void)
@@ -515,23 +512,20 @@ void OPPROTO op_addl_A0_seg(void)
 #ifdef VBOX
     uint32_t idx = (PARAM1 - offsetof(CPUX86State,segs[0].base)) / sizeof(SegmentCache);
 
-    if (env->segs[idx].newselector && !(env->eflags & VM_MASK))
-    {
+    if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
     }
     /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
     if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
         &&  !(env->eflags & VM_MASK)
-        &&  env->segs[idx].selector == 0
-       )
-    {
+        &&  env->segs[idx].selector == 0) {
         raise_exception(EXCP0D_GPF);
     }
     A0 = (uint32_t)(A0 + env->segs[idx].base);
     FORCE_RET();
-#else
+#else  /* !VBOX */
     A0 = (uint32_t)(A0 + *(target_ulong *)((char *)env + PARAM1));
-#endif
+#endif /* !VBOX */
 }
 
 void OPPROTO op_addl_A0_AL(void)
@@ -599,13 +593,11 @@ void OPPROTO op_movq_A0_seg(void)
     uint32_t idx = (PARAM1 - offsetof(CPUX86State,segs[0].base)) / sizeof(SegmentCache);
 
     if (env->segs[idx].newselector && !(env->eflags & VM_MASK))
-    {
         sync_seg(env, idx, env->segs[idx].newselector);
-    }
     A0 = (target_ulong)env->segs[idx].base;
-#else
+#else  /* !VBOX */
     A0 = *(target_ulong *)((char *)env + PARAM1);
-#endif
+#endif /* !VBOX */
 }
 
 void OPPROTO op_addq_A0_seg(void)
@@ -614,13 +606,11 @@ void OPPROTO op_addq_A0_seg(void)
     uint32_t idx = (PARAM1 - offsetof(CPUX86State,segs[0].base)) / sizeof(SegmentCache);
 
     if (env->segs[idx].newselector && !(env->eflags & VM_MASK))
-    {
         sync_seg(env, idx, env->segs[idx].newselector);
-    }
     A0 += (target_ulong)env->segs[idx].base;
-#else
+#else  /* !VBOX */
     A0 += *(target_ulong *)((char *)env + PARAM1);
-#endif
+#endif /* !VBOX */
 }
 
 void OPPROTO op_addq_A0_AL(void)
@@ -738,8 +728,31 @@ void OPPROTO op_reset_inhibit_irq(void)
     env->hflags &= ~HF_INHIBIT_IRQ_MASK;
 }
 
-#ifdef VBOX
+void OPPROTO op_rsm(void)
+{
+    helper_rsm();
+}
+
+#ifndef VBOX 
+#if 0
 /* vm86plus instructions */
+void OPPROTO op_cli_vm(void)
+{
+    env->eflags &= ~VIF_MASK;
+}
+
+void OPPROTO op_sti_vm(void)
+{
+    env->eflags |= VIF_MASK;
+    if (env->eflags & VIP_MASK) {
+        EIP = PARAM1;
+        raise_exception(EXCP0D_GPF);
+    }
+    FORCE_RET();
+}
+#endif
+
+#else /* VBOX */
 void OPPROTO op_cli_vme(void)
 {
     env->eflags &= ~VIF_MASK;
@@ -754,7 +767,7 @@ void OPPROTO op_sti_vme(void)
     env->eflags |= VIF_MASK;
     FORCE_RET();
 }
-#endif
+#endif /* VBOX */
 
 void OPPROTO op_boundw(void)
 {
@@ -791,13 +804,6 @@ void OPPROTO op_movl_T0_0(void)
 }
 
 #ifdef VBOX
-
-/** @todo Ugly: Exit current TB to process an external interrupt request */
-#define CPU_INTERRUPT_EXTERNAL_EXIT  0x0200 /* also defined in cpu-all.h!! */
-#define CPU_INTERRUPT_EXTERNAL_HARD  0x0400 /* also defined in cpu-all.h!! */
-#define CPU_INTERRUPT_EXTERNAL_TIMER 0x0800 /* also defined in cpu-all.h!! */
-#define CPU_INTERRUPT_EXTERNAL_DMA   0x1000 /* also defined in cpu-all.h!! */
-
 void OPPROTO op_check_external_event(void)
 {
     if (    (env->interrupt_request & (  CPU_INTERRUPT_EXTERNAL_EXIT
@@ -865,7 +871,7 @@ void OPPROTO op_movzwl_T0_T0(void)
 
 void OPPROTO op_movswl_EAX_AX(void)
 {
-    EAX = (int16_t)EAX;
+    EAX = (uint32_t)((int16_t)EAX);
 }
 
 #ifdef TARGET_X86_64
@@ -887,7 +893,7 @@ void OPPROTO op_movsbw_AX_AL(void)
 
 void OPPROTO op_movslq_EDX_EAX(void)
 {
-    EDX = (int32_t)EAX >> 31;
+    EDX = (uint32_t)((int32_t)EAX >> 31);
 }
 
 void OPPROTO op_movswl_DX_AX(void)
@@ -955,7 +961,7 @@ void OPPROTO op_decq_ECX(void)
 
 void op_addl_A0_SS(void)
 {
-    A0 += (long)env->segs[R_SS].base;
+    A0 = (uint32_t)(A0 + env->segs[R_SS].base);
 }
 
 void op_subl_A0_2(void)
@@ -999,6 +1005,11 @@ void op_addw_ESP_im(void)
 }
 
 #ifdef TARGET_X86_64
+void op_subq_A0_2(void)
+{
+    A0 -= 2;
+}
+
 void op_subq_A0_8(void)
 {
     A0 -= 8;
@@ -1029,6 +1040,13 @@ void OPPROTO op_enter_level(void)
 {
     helper_enter_level(PARAM1, PARAM2);
 }
+
+#ifdef TARGET_X86_64
+void OPPROTO op_enter64_level(void)
+{
+    helper_enter64_level(PARAM1, PARAM2);
+}
+#endif
 
 void OPPROTO op_sysenter(void)
 {
@@ -1514,35 +1532,28 @@ void OPPROTO op_movw_eflags_T0_cpl0(void)
     load_eflags(T0, (TF_MASK | AC_MASK | ID_MASK | NT_MASK | IF_MASK | IOPL_MASK) & 0xffff);
 }
 
+#ifndef VBOX
+#if 0
 /* vm86plus version */
-#ifdef VBOX
-/* IOPL != 3, CR4.VME=1 */
-void OPPROTO op_movw_eflags_T0_vme(void)
+void OPPROTO op_movw_eflags_T0_vm(void)
 {
-    unsigned int new_eflags = T0;
-
-    /* if virtual interrupt pending and (virtual) interrupts will be enabled -> #GP */
-    /* if TF will be set -> #GP */
-    if (    ((new_eflags & IF_MASK) && (env->eflags & VIP_MASK)) 
-        ||  (new_eflags & TF_MASK)) 
-    {
-        raise_exception(EXCP0D_GPF);
+    int eflags;
+    eflags = T0;
+    CC_SRC = eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
+    DF = 1 - (2 * ((eflags >> 10) & 1));
+    /* we also update some system flags as in user mode */
+    env->eflags = (env->eflags & ~(FL_UPDATE_MASK16 | VIF_MASK)) |
+        (eflags & FL_UPDATE_MASK16);
+    if (eflags & IF_MASK) {
+        env->eflags |= VIF_MASK;
+        if (env->eflags & VIP_MASK) {
+            EIP = PARAM1;
+            raise_exception(EXCP0D_GPF);
+        }
     }
-    else
-    {
-        load_eflags(new_eflags, (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff);
-
-        if (new_eflags & IF_MASK)
-            env->eflags |= VIF_MASK;
-        else
-            env->eflags &= ~VIF_MASK;
-    }
-
     FORCE_RET();
 }
-#endif
 
-#if 0
 void OPPROTO op_movl_eflags_T0_vm(void)
 {
     int eflags;
@@ -1563,6 +1574,31 @@ void OPPROTO op_movl_eflags_T0_vm(void)
 }
 #endif
 
+#else /* VBOX */
+/* IOPL != 3, CR4.VME=1 */
+void OPPROTO op_movw_eflags_T0_vme(void)
+{
+    unsigned int new_eflags = T0;
+
+    /* if virtual interrupt pending and (virtual) interrupts will be enabled -> #GP */
+    /* if TF will be set -> #GP */
+    if (    ((new_eflags & IF_MASK) && (env->eflags & VIP_MASK)) 
+        ||  (new_eflags & TF_MASK)) {
+        raise_exception(EXCP0D_GPF);
+    } else {
+        load_eflags(new_eflags, (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff);
+
+        if (new_eflags & IF_MASK) {
+            env->eflags |= VIF_MASK;
+        } else {
+            env->eflags &= ~VIF_MASK;
+        }
+    }
+
+    FORCE_RET();
+}
+#endif /* VBOX */
+
 /* XXX: compute only O flag */
 void OPPROTO op_movb_eflags_T0(void)
 {
@@ -1581,7 +1617,7 @@ void OPPROTO op_movl_T0_eflags(void)
 }
 
 /* vm86plus version */
-#ifdef VBOX
+#ifdef VBOX /* #if 0 */
 void OPPROTO op_movl_T0_eflags_vme(void)
 {
     int eflags;
@@ -1592,7 +1628,7 @@ void OPPROTO op_movl_T0_eflags_vme(void)
         eflags |= IF_MASK;
     T0 = eflags;
 }
-#endif
+#endif /* VBOX / 0 */
 
 void OPPROTO op_cld(void)
 {
@@ -1965,7 +2001,7 @@ void OPPROTO op_fist_ST0_A0(void)
     int val;
 
     d = ST0;
-    val = lrint(d);
+    val = floatx_to_int32(d, &env->fp_status);
     if (val != (int16_t)val)
         val = -32768;
     stw(A0, val);
@@ -1982,7 +2018,7 @@ void OPPROTO op_fistl_ST0_A0(void)
     int val;
 
     d = ST0;
-    val = lrint(d);
+    val = floatx_to_int32(d, &env->fp_status);
     stl(A0, val);
     FORCE_RET();
 }
@@ -1997,7 +2033,54 @@ void OPPROTO op_fistll_ST0_A0(void)
     int64_t val;
 
     d = ST0;
-    val = llrint(d);
+    val = floatx_to_int64(d, &env->fp_status);
+    stq(A0, val);
+    FORCE_RET();
+}
+
+void OPPROTO op_fistt_ST0_A0(void)
+{
+#if defined(__sparc__) && !defined(__sparc_v9__)
+    register CPU86_LDouble d asm("o0");
+#else
+    CPU86_LDouble d;
+#endif
+    int val;
+
+    d = ST0;
+    val = floatx_to_int32_round_to_zero(d, &env->fp_status);
+    if (val != (int16_t)val)
+        val = -32768;
+    stw(A0, val);
+    FORCE_RET();
+}
+
+void OPPROTO op_fisttl_ST0_A0(void)
+{
+#if defined(__sparc__) && !defined(__sparc_v9__)
+    register CPU86_LDouble d asm("o0");
+#else
+    CPU86_LDouble d;
+#endif
+    int val;
+
+    d = ST0;
+    val = floatx_to_int32_round_to_zero(d, &env->fp_status);
+    stl(A0, val);
+    FORCE_RET();
+}
+
+void OPPROTO op_fisttll_ST0_A0(void)
+{
+#if defined(__sparc__) && !defined(__sparc_v9__)
+    register CPU86_LDouble d asm("o0");
+#else
+    CPU86_LDouble d;
+#endif
+    int64_t val;
+
+    d = ST0;
+    val = floatx_to_int64_round_to_zero(d, &env->fp_status);
     stq(A0, val);
     FORCE_RET();
 }
@@ -2071,52 +2154,48 @@ void OPPROTO op_fxchg_ST0_STN(void)
 
 /* FPU operations */
 
-/* XXX: handle nans */
+const int fcom_ccval[4] = {0x0100, 0x4000, 0x0000, 0x4500};
+
 void OPPROTO op_fcom_ST0_FT0(void)
 {
-    env->fpus &= (~0x4500);	/* (C3,C2,C0) <-- 000 */
-    if (ST0 < FT0)
-        env->fpus |= 0x100;	/* (C3,C2,C0) <-- 001 */
-    else if (ST0 == FT0)
-        env->fpus |= 0x4000; /* (C3,C2,C0) <-- 100 */
+    int ret;
+
+    ret = floatx_compare(ST0, FT0, &env->fp_status);
+    env->fpus = (env->fpus & ~0x4500) | fcom_ccval[ret + 1];
     FORCE_RET();
 }
 
-/* XXX: handle nans */
 void OPPROTO op_fucom_ST0_FT0(void)
 {
-    env->fpus &= (~0x4500);	/* (C3,C2,C0) <-- 000 */
-    if (ST0 < FT0)
-        env->fpus |= 0x100;	/* (C3,C2,C0) <-- 001 */
-    else if (ST0 == FT0)
-        env->fpus |= 0x4000; /* (C3,C2,C0) <-- 100 */
+    int ret;
+
+    ret = floatx_compare_quiet(ST0, FT0, &env->fp_status);
+    env->fpus = (env->fpus & ~0x4500) | fcom_ccval[ret+ 1];
     FORCE_RET();
 }
 
-/* XXX: handle nans */
+const int fcomi_ccval[4] = {CC_C, CC_Z, 0, CC_Z | CC_P | CC_C};
+
 void OPPROTO op_fcomi_ST0_FT0(void)
 {
     int eflags;
+    int ret;
+
+    ret = floatx_compare(ST0, FT0, &env->fp_status);
     eflags = cc_table[CC_OP].compute_all();
-    eflags &= ~(CC_Z | CC_P | CC_C);
-    if (ST0 < FT0)
-        eflags |= CC_C;
-    else if (ST0 == FT0)
-        eflags |= CC_Z;
+    eflags = (eflags & ~(CC_Z | CC_P | CC_C)) | fcomi_ccval[ret + 1];
     CC_SRC = eflags;
     FORCE_RET();
 }
 
-/* XXX: handle nans */
 void OPPROTO op_fucomi_ST0_FT0(void)
 {
     int eflags;
+    int ret;
+
+    ret = floatx_compare_quiet(ST0, FT0, &env->fp_status);
     eflags = cc_table[CC_OP].compute_all();
-    eflags &= ~(CC_Z | CC_P | CC_C);
-    if (ST0 < FT0)
-        eflags |= CC_C;
-    else if (ST0 == FT0)
-        eflags |= CC_Z;
+    eflags = (eflags & ~(CC_Z | CC_P | CC_C)) | fcomi_ccval[ret + 1];
     CC_SRC = eflags;
     FORCE_RET();
 }
@@ -2200,12 +2279,12 @@ void OPPROTO op_fdivr_STN_ST0(void)
 /* misc FPU operations */
 void OPPROTO op_fchs_ST0(void)
 {
-    ST0 = -ST0;
+    ST0 = floatx_chs(ST0);
 }
 
 void OPPROTO op_fabs_ST0(void)
 {
-    ST0 = fabs(ST0);
+    ST0 = floatx_abs(ST0);
 }
 
 void OPPROTO op_fxam_ST0(void)
@@ -2350,25 +2429,8 @@ void OPPROTO op_fnstcw_A0(void)
 
 void OPPROTO op_fldcw_A0(void)
 {
-    int rnd_type;
     env->fpuc = lduw(A0);
-    /* set rounding mode */
-    switch(env->fpuc & RC_MASK) {
-    default:
-    case RC_NEAR:
-        rnd_type = FE_TONEAREST;
-        break;
-    case RC_DOWN:
-        rnd_type = FE_DOWNWARD;
-        break;
-    case RC_UP:
-        rnd_type = FE_UPWARD;
-        break;
-    case RC_CHOP:
-        rnd_type = FE_TOWARDZERO;
-        break;
-    }
-    fesetround(rnd_type);
+    update_fp_status();
 }
 
 void OPPROTO op_fclex(void)
@@ -2500,3 +2562,10 @@ void OPPROTO op_emms(void)
 
 #define SHIFT 1
 #include "ops_sse.h"
+
+#ifdef VBOX
+/* Instantiate the structure signatures. */
+# define REM_STRUCT_OP 1
+# include "../InnoTek/structs.h"
+#endif
+

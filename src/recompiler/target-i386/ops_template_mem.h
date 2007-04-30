@@ -74,7 +74,7 @@ void OPPROTO glue(glue(op_rol, MEM_SUFFIX), _T0_T1_cc)(void)
     target_long src;
 
     if (T1 & SHIFT1_MASK) {
-        count = T1 & SHIFT_MASK;        
+        count = T1 & SHIFT_MASK;
         src = T0;
         T0 &= DATA_MASK;
         T0 = (T0 << count) | (T0 >> (DATA_BITS - count));

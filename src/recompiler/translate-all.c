@@ -30,15 +30,16 @@
 #include "exec-all.h"
 #include "disas.h"
 
+extern int dyngen_code(uint8_t *gen_code_buf,
+                       uint16_t *label_offsets, uint16_t *jmp_offsets,
+                       const uint16_t *opc_buf, const uint32_t *opparam_buf, const long *gen_labels);
+
 enum {
 #define DEF(s, n, copy_size) INDEX_op_ ## s,
 #include "opc.h"
 #undef DEF
     NB_OPS,
 };
-
-#include "dyngen.h"
-#include "op.h"
 
 uint16_t gen_opc_buf[OPC_BUF_SIZE];
 uint32_t gen_opparam_buf[OPPARAM_BUF_SIZE];
@@ -51,6 +52,9 @@ uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
 uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
 #elif defined(TARGET_SPARC)
 target_ulong gen_opc_npc[OPC_BUF_SIZE];
+target_ulong gen_opc_jump_pc[2];
+#elif defined(TARGET_MIPS)
+uint32_t gen_opc_hflags[OPC_BUF_SIZE];
 #endif
 
 int code_copy_enabled = 1;
@@ -156,10 +160,11 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
             RAWEx_ProfileStop(env, STATS_QEMU_COMPILATION);
             return -1;
         }
-#else
+#else /* !VBOX */
         if (gen_intermediate_code(env, tb) < 0)
             return -1;
-#endif
+#endif /* !VBOX */
+
         /* generate machine code */
         tb->tb_next_offset[0] = 0xffff;
         tb->tb_next_offset[1] = 0xffff;
@@ -178,7 +183,6 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
                                     NULL,
 #endif
                                     gen_opc_buf, gen_opparam_buf, gen_labels);
-
 #ifdef VBOX
         RAWEx_ProfileStop(env, STATS_QEMU_COMPILATION);
 #endif
@@ -257,9 +261,23 @@ int cpu_restore_state(TranslationBlock *tb,
 #elif defined(TARGET_ARM)
     env->regs[15] = gen_opc_pc[j];
 #elif defined(TARGET_SPARC)
-    /* XXX: restore npc too */
-    env->pc = gen_opc_pc[j];
-    env->npc = gen_opc_npc[j];
+    {
+        target_ulong npc;
+        env->pc = gen_opc_pc[j];
+        npc = gen_opc_npc[j];
+        if (npc == 1) {
+            /* dynamic NPC: already stored */
+        } else if (npc == 2) {
+            target_ulong t2 = (target_ulong)puc;
+            /* jump PC: use T2 and the jump targets of the translation */
+            if (t2) 
+                env->npc = gen_opc_jump_pc[0];
+            else
+                env->npc = gen_opc_jump_pc[1];
+        } else {
+            env->npc = npc;
+        }
+    }
 #elif defined(TARGET_PPC)
     {
         int type;
@@ -298,6 +316,12 @@ int cpu_restore_state(TranslationBlock *tb,
         }
         env->access_type = type;
     }
+#elif defined(TARGET_M68K)
+    env->pc = gen_opc_pc[j];
+#elif defined(TARGET_MIPS)
+    env->PC = gen_opc_pc[j];
+    env->hflags &= ~MIPS_HFLAG_BMASK;
+    env->hflags |= gen_opc_hflags[j];
 #endif
     return 0;
 }
