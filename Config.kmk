@@ -841,6 +841,16 @@ endif
 ifeq ($(origin VBOX_GCC_fno-stack-protector),undefined)
  export VBOX_GCC_fno-stack-protector := $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)
 endif
+# Set default attribute for ELF symbols to ``hidden'' to reduce the number
+# of relocation entries and PLT indirections in shared libraries.
+ifeq ($(origin VBOX_GCC_fvisibility-hidden),undefined)
+ export VBOX_GCC_fvisibility-hidden := $(call VBOX_GCC_CHECK_CC,-fvisibility=hidden,)
+endif
+# Set default attribute for inline functions to ``hidden'' to reduce the number
+# of relocation entries and PLT indirections in shared libraries.
+ifeq ($(origin VBOX_GCC_fvisibility-inlines-hidden),undefined)
+ export VBOX_GCC_fvisibility-inlines-hidden := $(call VBOX_GCC_CHECK_CXX,-fvisibility-inlines-hidden,)
+endif
 
 # 32-bit (GC) compiler switch detection.
 VBOX_GCC32_CHECK_CXX = $(shell \
@@ -1093,8 +1103,8 @@ endif
 
 ifeq ($(VBOX_LDR_FMT32),elf)
 TEMPLATE_VBOXGC_TOOL                = $(VBOX_GCC32_TOOL)
-TEMPLATE_VBOXGC_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector)
-TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector)
+TEMPLATE_VBOXGC_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
+TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXGC_LDFLAGS             = -nostdlib -Bsymbolic
 # temporarily, must fix the loader.
 TEMPLATE_VBOXGC_LDFLAGS            += -S
@@ -1188,8 +1198,8 @@ endif # pe
 
 ifeq ($(VBOX_LDR_FMT),elf)
 TEMPLATE_VBOXR0_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector)
-TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector)
+TEMPLATE_VBOXR0_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables -ffreestanding
 TEMPLATE_VBOXR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables
 TEMPLATE_VBOXR0_LDFLAGS             = -nostdlib -Bsymbolic
@@ -1377,7 +1387,7 @@ ifeq ($(BUILD_TARGET),win)
 
 else # the gcc guys
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 # L4 currently can't handle exception handling.
 TEMPLATE_VBOXR3EXE_CXXFLAGS.l4         = -fno-exceptions -nostdinc \
 	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR) $(FILE_TOOL_GPP3_INCDIR)) \
@@ -1385,7 +1395,7 @@ TEMPLATE_VBOXR3EXE_CXXFLAGS.l4         = -fno-exceptions -nostdinc \
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXR3EXE_CFLAGS.debug        = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.debug)
 TEMPLATE_VBOXR3EXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXR3EXE_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXR3EXE_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXR3EXE_CFLAGS.darwin       = -fno-common
 TEMPLATE_VBOXR3EXE_CFLAGS.l4           = -nostdinc \
 	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR)) $(DEBUG_L4)
@@ -1463,7 +1473,7 @@ ifneq ($(BUILD_TARGET),win)
  # (only gcc)
  TEMPLATE_VBOXR3NPEXE_TOOL                = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3NPEXE_CXXFLAGS            = $(filter-out -pedantic,$(TEMPLATE_VBOXR3EXE_CXXFLAGS))
- TEMPLATE_VBOXR3NPEXE_CFLAGS              = $(filter-out -pedantic -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations ,$(TEMPLATE_VBOXR3EXE_CXXFLAGS))
+ TEMPLATE_VBOXR3NPEXE_CFLAGS              = $(filter-out -pedantic -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS))
 endif
 
 #
@@ -1610,10 +1620,10 @@ else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_DEFS               += VBOX_WITH_XPCOM
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wno-non-virtual-dtor -fshort-wchar -fpermissive $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wno-non-virtual-dtor -fshort-wchar -fpermissive $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
-TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = -fno-inline
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
 TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_XPCOM_INCS)
@@ -1771,7 +1781,8 @@ else # the gcc guys:
  	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
  	-pipe -Wall -W -frtti -fno-exceptions -Wno-non-virtual-dtor \
- 	-Wno-long-long -fshort-wchar -fno-strict-aliasing
+ 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
+	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
  ## @todo no $(LIB_QTMAIN) here?
  TEMPLATE_VBOXQTGUIEXE_LIBS = \
