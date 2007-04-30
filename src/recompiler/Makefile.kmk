@@ -213,7 +213,7 @@ endif # !REM_USE_NOCRT
 # Extra flags for these source modules.
 target-i386/op.c_CFLAGS         = -O2 -fno-strict-aliasing -fomit-frame-pointer -falign-functions=0 -fno-reorder-blocks -fno-optimize-sibling-calls
 target-i386/op.c_CFLAGS.x86     = -fno-gcse -fno-instrument-functions -mpreferred-stack-boundary=2
-target-i386/op.c_CFLAGS.darwin.x86 = -m128bit-long-double -mpreferred-stack-boundary=4 ## @todo This means we can't use staged/op-elf-x86.s...
+target-i386/op.c_CFLAGS.darwin.x86 = -m128bit-long-double -mpreferred-stack-boundary=4
 target-i386/helper.c_CFLAGS.x86 = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
 cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
 
@@ -282,9 +282,9 @@ VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
 #VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
-$(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def deftoimp.sed | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def InnoTek/deftoimp.sed | $(call DIRDEP,$(PATH_TARGET))
 	$(MKDIR) -p $(PATH_TARGET)
-	$(SED) -f deftoimp.sed VBoxREM.def > $@.tmp
+	$(SED) -f InnoTek/deftoimp.sed VBoxREM.def > $@.tmp
 	$(MV) -f $@.tmp $@
 
 $(VBoxREMImp_SOURCES.os2): VBoxREM.def $(MAKEFILE) | $(call DIRDEP,$(PATH_TARGET))
@@ -368,10 +368,10 @@ endif
 # The rule.
 $(PATH_$(REM_MOD))/op.S: \
 		target-i386/op.c \
-		staged/op-elf-$(BUILD_TARGET_ARCH).S \
-		op-validate.sed \
-		op-darwin.sed \
-		op-undefined.lst \
+		InnoTek/staged-op-elf-$(BUILD_TARGET_ARCH).S \
+		InnoTek/op-validate.sed \
+		InnoTek/op-darwin.sed \
+		InnoTek/op-undefined.lst \
 		Makefile.kmk \
 		$(comp-cmds COMPILE_OP_CMDS,COMPILE_OP_CMDS_PREV,FORCE) \
 		| $(call DIRDEP,$(PATH_$(REM_MOD)))
@@ -388,15 +388,15 @@ else ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),dunno) # (permit 3.x.x and 4.1.x+ for no
 		$(addsuffix $(SP)\$(NL)$(TAB)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp; \
 	else \
 		$(ECHO_EXT) "Using staged op.S [gcc v$${major_ver}.$${minor_ver}.$${bugfix_ver}]" && \
-		$(CP_EXT) -f staged/op-elf-$(BUILD_TARGET_ARCH).S $@.tmp; \
+		$(CP_EXT) -f InnoTek/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp; \
 	fi
 else
-	$(CP) staged/op-elf-$(BUILD_TARGET_ARCH).S $@.tmp
+	$(CP) InnoTek/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp
 endif
-	$(SED) -f op-validate.sed $@.tmp
+	$(SED) -f InnoTek/op-validate.sed $@.tmp
 ifeq ($(BUILD_TARGET),darwin)
-	$(SED) -f op-darwin.sed $@.tmp > $@.tmp2
-	$(SED) -e 's/^\(.*\)$$/#define \1 _\1/' op-undefined.lst > $@.tmp
+	$(SED) -f InnoTek/op-darwin.sed $@.tmp > $@.tmp2
+	$(SED) -e 's/^\(.*\)$$/#define \1 _\1/' InnoTek/op-undefined.lst > $@.tmp
 	$(CAT_EXT) $@.tmp2 >> $@.tmp
 endif
 	$(MV) -f $@.tmp $@
