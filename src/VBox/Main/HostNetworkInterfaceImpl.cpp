@@ -43,7 +43,8 @@ HostNetworkInterface::~HostNetworkInterface()
  */
 HRESULT HostNetworkInterface::init (Bstr interfaceName, Guid guid)
 {
-    ComAssertRet (interfaceName && !guid.isEmpty(), E_INVALIDARG);
+    ComAssertRet (interfaceName, E_INVALIDARG);
+    ComAssertRet (!guid.isEmpty(), E_INVALIDARG);
 
     AutoLock lock(this);
     mInterfaceName = interfaceName;

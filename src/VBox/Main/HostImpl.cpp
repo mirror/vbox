@@ -418,58 +418,65 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
     std::list <ComObjPtr <HostNetworkInterface> > list;
 
+    static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"
+                                    "{4D36E972-E325-11CE-BFC1-08002BE10318}";
     HKEY hCtrlNet;
     LONG status;
     DWORD len;
-    int i = 0;
-    status = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
-                           "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}",
-                           0, KEY_READ, &hCtrlNet);
+    status = RegOpenKeyExA (HKEY_LOCAL_MACHINE, NetworkKey, 0, KEY_READ, &hCtrlNet);
     if (status != ERROR_SUCCESS)
-        return setError(E_FAIL, tr("Could not open registry key"));
+        return setError (E_FAIL, tr("Could not open registry key \"%s\""), NetworkKey);
 
-    while (true)
+    for (int i = 0;; ++ i)
     {
-        char szNetworkGUID[256];
+        char szNetworkGUID [256];
         HKEY hConnection;
-        char szNetworkConnection[256];
+        char szNetworkConnection [256];
 
         len = sizeof (szNetworkGUID);
-        status = RegEnumKeyExA(hCtrlNet, i, szNetworkGUID, &len, NULL, NULL, NULL, NULL);
+        status = RegEnumKeyExA (hCtrlNet, i, szNetworkGUID, &len, NULL, NULL, NULL, NULL);
         if (status != ERROR_SUCCESS)
             break;
 
-        RTStrPrintf(szNetworkConnection, sizeof(szNetworkConnection), "%s\\Connection", szNetworkGUID);
-        status = RegOpenKeyExA(hCtrlNet, szNetworkConnection, 0, KEY_READ,  &hConnection);
+        if (!IsTAPDevice(szNetworkGUID))
+            continue;
+
+        RTStrPrintf (szNetworkConnection, sizeof (szNetworkConnection),
+                     "%s\\Connection", szNetworkGUID);
+        status = RegOpenKeyExA (hCtrlNet, szNetworkConnection, 0, KEY_READ,  &hConnection);
         if (status == ERROR_SUCCESS)
         {
             DWORD dwKeyType;
-
-            len = sizeof (szNetworkConnection);
-            status = RegQueryValueExA(hConnection, "Name", NULL, &dwKeyType, (LPBYTE)szNetworkConnection, &len);
+            status = RegQueryValueExW (hConnection, TEXT("Name"), NULL,
+                                       &dwKeyType, NULL, &len);
             if (status == ERROR_SUCCESS && dwKeyType == REG_SZ)
             {
-                if (IsTAPDevice(szNetworkGUID))
+                size_t uniLen = (len + sizeof (OLECHAR) - 1) / sizeof (OLECHAR);
+                Bstr name (uniLen + 1 /* extra zero */);
+                status = RegQueryValueExW (hConnection, TEXT("Name"), NULL,
+                                           &dwKeyType, (LPBYTE) name.mutableRaw(), &len);
+                if (status == ERROR_SUCCESS)
                 {
+                    /* put a trailing zero, just in case (see MSDN) */
+                    name.mutableRaw() [uniLen] = 0;
                     /* create a new object and add it to the list */
-                    ComObjPtr<HostNetworkInterface> networkInterfaceObj;
-                    networkInterfaceObj.createObject();
+                    ComObjPtr <HostNetworkInterface> iface;
+                    iface.createObject();
                     /* remove the curly bracket at the end */
-                    szNetworkGUID[strlen(szNetworkGUID) - 1] = '\0';
-                    if (SUCCEEDED(networkInterfaceObj->init(Bstr(szNetworkConnection), Guid(szNetworkGUID + 1))))
-                        list.push_back(networkInterfaceObj);
+                    szNetworkGUID [strlen(szNetworkGUID) - 1] = '\0';
+                    if (SUCCEEDED (iface->init (name, Guid (szNetworkGUID + 1))))
+                        list.push_back (iface);
                 }
             }
             RegCloseKey (hConnection);
         }
-        ++i;
     }
     RegCloseKey (hCtrlNet);
 
-    ComObjPtr<HostNetworkInterfaceCollection> collection;
+    ComObjPtr <HostNetworkInterfaceCollection> collection;
     collection.createObject();
-    collection->init(list);
-    collection.queryInterfaceTo(networkInterfaces);
+    collection->init (list);
+    collection.queryInterfaceTo (networkInterfaces);
     return S_OK;
 }
 #endif /* __WIN__ */
