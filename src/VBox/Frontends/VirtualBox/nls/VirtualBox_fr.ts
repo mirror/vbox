@@ -238,7 +238,7 @@
         <translation>Alt+P</translation>
     </message>
     <message>
-        <source>&amp;Revert to the current shapshot</source>
+        <source>&amp;Revert to the current snapshot</source>
         <translation>&amp;Retour sur l&apos; instantané actuel.</translation>
     </message>
     <message>
@@ -614,7 +614,7 @@ Indicateur périphériques USB</translation>
         <translation>Instantané %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>L&apos;image CD &quot;VirtualBox  Guest Additions&quot; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; non trouvée&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2359,9 +2359,9 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>&lt;nobr&gt;Avertissement&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobrl&gt;ID Erreur: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID Erreur: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>

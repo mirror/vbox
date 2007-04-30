@@ -211,7 +211,7 @@
         <translation>Alt+A</translation>
     </message>
     <message>
-        <source>&amp;Revert to the current shapshot</source>
+        <source>&amp;Revert to the current snapshot</source>
         <translation>&amp;Zurückkehren zum letzen Sicherungspunkt</translation>
     </message>
     <message>
@@ -577,7 +577,7 @@
         <translation>Sicherungspunkt %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Kann die CD mit den VirtualBox-Gasterweiterungen nicht finden &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; oder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2228,7 +2228,7 @@ existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen
         <translation>&lt;nobr&gt;Warnung&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Fehler ID: &lt;/nobr&gt;</translation>
     </message>

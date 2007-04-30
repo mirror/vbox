@@ -238,7 +238,7 @@
         <translation>Alt+P</translation>
     </message>
     <message>
-        <source>&amp;Revert to the current shapshot</source>
+        <source>&amp;Revert to the current snapshot</source>
         <translation>&amp;Ripristina lo snapshot attuale</translation>
     </message>
     <message>
@@ -612,7 +612,7 @@
         <translation>Snapshot %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Non è stato possibile trovare l&apos;immagine CD di VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2381,7 +2381,7 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
         <translation>&lt;nobr&gt;Attenzione&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;ID Errore: &lt;/nobr&gt;</translation>
     </message>

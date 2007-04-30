@@ -249,7 +249,7 @@
         <translation>Alt+P</translation>
     </message>
     <message>
-        <source>&amp;Revert to the current shapshot</source>
+        <source>&amp;Revert to the current snapshot</source>
         <translation>&amp;عد إلى القطة الحالية</translation>
     </message>
     <message>
@@ -619,7 +619,7 @@
         <translation type="unfinished">لقطة  %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2242,7 +2242,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation type="unfinished"></translation>
     </message>
