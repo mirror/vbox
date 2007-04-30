@@ -67,9 +67,8 @@
 #endif
 
 // XXX TODO:
-//  1. add a client observer and prune mInstances when a peer disconnects
-//  2. add thread affinity field to SETUP messages
-//  3. support array parameters
+//  1. add thread affinity field to SETUP messages
+//  2. support array parameters
 
 //-----------------------------------------------------------------------------
 
@@ -212,6 +211,7 @@ public:
 
   nsISupports      *RealInstance()  { return mInstance; }
   nsIInterfaceInfo *InterfaceInfo() { return mIInfo; }
+  PRUint32          Peer()          { return mPeer; }
 
   DConnectInstanceKey::Key GetKey() {
     const nsID *iid;
@@ -2219,7 +2219,7 @@ EnumerateInstanceMapAndDelete (const DConnectInstanceKey::Key &aKey,
                                void *userArg)
 {
   // this method is to be called on ipcDConnectService shutdown only
-  // (after which no DConnectInstance's may exist), so forcedly delete them
+  // (after which no DConnectInstances may exist), so forcibly delete them
   // disregarding the reference counter
     
   delete aData;
@@ -2645,18 +2645,63 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
   return NS_OK;
 }
 
+struct PruneInstanceMapForPeerArgs
+{
+  PRUint32 clientID;
+  DConnectInstanceMap &instances;
+  DConnectInstanceSet &instanceSet;
+};
+
+PR_STATIC_CALLBACK(PLDHashOperator)
+PruneInstanceMapForPeer (const DConnectInstanceKey::Key &aKey,
+                         DConnectInstance *aData,
+                         void *userArg)
+{
+  PruneInstanceMapForPeerArgs *args = (PruneInstanceMapForPeerArgs *)userArg;
+  NS_ASSERTION(args, "PruneInstanceMapForPeerArgs is NULL");
+
+  if (args && args->clientID == aData->Peer())
+  {
+#ifdef IPC_LOGGING
+    const char *name;
+    aData->InterfaceInfo()->GetNameShared(&name);
+    LOG(("PruneInstanceMapForClient(): instance=%p iface=%p {%s} peer=%d\n",
+         aData, aData->RealInstance(), name, args->clientID));
+#endif
+    args->instances.Remove(aKey);
+    args->instanceSet.Remove(aData);
+    /* ignore the reference counter: the client is officially dead */
+    delete aData;
+  }
+  return PL_DHASH_NEXT;
+}
+
 NS_IMETHODIMP
 ipcDConnectService::OnClientStateChange(PRUint32 aClientID,
                                         PRUint32 aClientState)
 {
-  LOG (("ipcDConnectService::OnClientStateChange: aClientID=%d, aClientState=%d\n",
-        aClientID, aClientState));
+  LOG(("ipcDConnectService::OnClientStateChange: aClientID=%d, aClientState=%d\n",
+       aClientID, aClientState));
 
-  if (aClientID == IPC_SENDER_ANY)
+  if (aClientState == ipcIClientObserver::CLIENT_DOWN)
   {
+    if (aClientID == IPC_SENDER_ANY)
+    {
       // a special case: our IPC system is being shutdown, try to safely
       // uninitialize everything...
       Shutdown();
+    }
+    else
+    {
+      LOG(("ipcDConnectService::OnClientStateChange: "
+           "pruning all instances created for peer %d...\n", aClientID));
+
+      nsAutoLock lock (mLock);
+
+      // make sure we have released all instances
+      PruneInstanceMapForPeerArgs args = { aClientID, mInstances, mInstanceSet };
+      mInstances.EnumerateRead(PruneInstanceMapForPeer, (void *)&args);
+    }
   }
 
   return NS_OK;
