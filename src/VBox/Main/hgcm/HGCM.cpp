@@ -2243,6 +2243,7 @@ int HGCMHostShutdown (void)
             {
                 /* Wait for the thread termination. */
                 hgcmThreadWait (g_hgcmThread);
+                g_hgcmThread = 0;
 
                 hgcmThreadUninit ();
             }
