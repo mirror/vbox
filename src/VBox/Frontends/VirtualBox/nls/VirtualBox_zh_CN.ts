@@ -238,7 +238,7 @@
         <translation>Alt+P</translation>
     </message>
     <message>
-        <source>&amp;Revert to the current shapshot</source>
+        <source>&amp;Revert to the current snapshot</source>
         <translation>恢复到当前快照(&amp;R)</translation>
     </message>
     <message>
@@ -612,7 +612,7 @@
         <translation>快照 %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;不能发现虚拟电脑辅助工具包映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 或者 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2337,9 +2337,9 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;nobr&gt;警告&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobrl&gt;错误 ID: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;错误 ID: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
