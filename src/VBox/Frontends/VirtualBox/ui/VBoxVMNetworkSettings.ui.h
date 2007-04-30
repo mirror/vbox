@@ -455,7 +455,7 @@ void VBoxVMNetworkSettings::hostInterfaceRemove()
             "<p><b>Note:</b> This interface may be in use by one or more "
             "network adapters of this or another VM. After it is removed, these "
             "adapters will no longer work until you correct their settings by "
-            "either choosing a differnet interface name or a different adapter "
+            "either choosing a different interface name or a different adapter "
             "attachment type.</p>").arg (iName),
         0, /* autoConfirmId */
         QIMessageBox::Ok | QIMessageBox::Default,

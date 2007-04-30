@@ -148,7 +148,7 @@
                     </property>
                     <property name="whatsThis" stdset="0">
                         <string>&lt;qt&gt;Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</string>
                     </property>
                 </widget>
@@ -158,7 +158,7 @@ value.&lt;/qt&gt;</string>
                     </property>
                     <property name="whatsThis" stdset="0">
                         <string>&lt;qt&gt;Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</string>
                     </property>
                 </widget>
@@ -168,7 +168,7 @@ value.&lt;/qt&gt;</string>
                     </property>
                     <property name="whatsThis" stdset="0">
                         <string>&lt;qt&gt;Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</string>
                     </property>
                 </widget>
@@ -294,7 +294,7 @@ computer when a matching device is attached: give it up to the host OS
                     <property name="whatsThis" stdset="0">
                         <string>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</string>
                     </property>
                 </widget>
@@ -305,7 +305,7 @@ value.&lt;/qt&gt;</string>
                     <property name="whatsThis" stdset="0">
                         <string>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</string>
                     </property>
                 </widget>
@@ -317,7 +317,7 @@ value.&lt;/qt&gt;</string>
                         <string>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</string>
                     </property>
                 </widget>
@@ -327,7 +327,7 @@ value.&lt;/qt&gt;</string>
                     </property>
                     <property name="whatsThis" stdset="0">
                         <string>&lt;qt&gt;Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</string>
                     </property>
                 </widget>
