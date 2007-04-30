@@ -282,7 +282,7 @@ VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
 #VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
-$(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def InnoTek/deftoimp.sed Makefile | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def InnoTek/deftoimp.sed Makefile.kmk | $(call DIRDEP,$(PATH_TARGET))
 	$(MKDIR) -p $(PATH_TARGET)
 	$(APPEND) $@.tmp '#ifdef VBOX_HAVE_VISIBILITY_HIDDEN'
 	$(APPEND) $@.tmp '# define EXPORT __attribute__((visibility("default")))'
