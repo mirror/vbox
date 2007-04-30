@@ -178,19 +178,31 @@
 
 #else /* Unix */
 
-#define PR_EXPORT(__type) __attribute__((visibility("default"))) extern __type
-#define PR_EXPORT_DATA(__type) __attribute__((visibility("default"))) extern __type
-#define PR_IMPORT(__type) extern __type
-#define PR_IMPORT_DATA(__type) extern __type
-
-#define PR_EXTERN(__type) __attribute__((visibility("default"))) extern __type
-#define PR_IMPLEMENT(__type) __attribute__((visibility("default"))) __type
-#define PR_EXTERN_DATA(__type) __attribute__((visibility("default"))) extern __type
-#define PR_IMPLEMENT_DATA(__type) __attribute__((visibility("default"))) __type
-#define PR_CALLBACK
-#define PR_CALLBACK_DECL
-#define PR_STATIC_CALLBACK(__x) static __x
-
+# if __GNUC__ >= 4
+#  define PR_EXPORT(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_EXPORT_DATA(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_IMPORT(__type) extern __type
+#  define PR_IMPORT_DATA(__type) extern __type
+#  define PR_EXTERN(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_IMPLEMENT(__type) __attribute__((visibility("default"))) __type
+#  define PR_EXTERN_DATA(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_IMPLEMENT_DATA(__type) __attribute__((visibility("default"))) __type
+#  define PR_CALLBACK
+#  define PR_CALLBACK_DECL
+#  define PR_STATIC_CALLBACK(__x) static __x
+# else
+#  define PR_EXPORT(__type) extern __type
+#  define PR_EXPORT_DATA(__type) extern __type
+#  define PR_IMPORT(__type) extern __type
+#  define PR_IMPORT_DATA(__type) extern __type
+#  define PR_EXTERN(__type) extern __type
+#  define PR_IMPLEMENT(__type) __type
+#  define PR_EXTERN_DATA(__type) extern __type
+#  define PR_IMPLEMENT_DATA(__type) __type
+#  define PR_CALLBACK
+#  define PR_CALLBACK_DECL
+#  define PR_STATIC_CALLBACK(__x) static __x
+# endif
 #endif
 
 #if defined(_NSPR_BUILD_)

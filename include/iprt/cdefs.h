@@ -400,7 +400,11 @@
 #if defined(_MSC_VER) || defined(__OS2__)
 # define DECLEXPORT(type)       __declspec(dllexport) type
 #else
-# define DECLEXPORT(type)       __attribute__((visibility("default"))) type
+# if __GNUC__ >= 4
+#  define DECLEXPORT(type)       __attribute__((visibility("default"))) type
+# else
+#  define DECLEXPORT(type)
+# endif
 #endif
 
 /** @def DECLIMPORT
