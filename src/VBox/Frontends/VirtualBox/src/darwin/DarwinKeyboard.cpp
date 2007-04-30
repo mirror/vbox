@@ -200,8 +200,8 @@ static const uint16_t g_aDarwinToSet1[] =
        0,                       /*                      */
     0x48,                       /* QZ_KP8          0x5B */
     0x49,                       /* QZ_KP9          0x5C */
-       0,                       /*                      */
-       0,                       /*                      */
+    0x7d,                       /* yen, | (JIS)    0x5D */
+    0x73,                       /* _, ro (JIS)     0x5E */
        0,                       /*                      */
     0x3f,                       /* QZ_F5           0x60 */
     0x40,                       /* QZ_F6           0x61 */
@@ -209,9 +209,9 @@ static const uint16_t g_aDarwinToSet1[] =
     0x3d,                       /* QZ_F3           0x63 */
     0x42,                       /* QZ_F8           0x64 */
     0x43,                       /* QZ_F9           0x65 */
-       0,                       /*                      */
+    0x29,                       /* Zen/Han (JIS)   0x66 */
     0x57,                       /* QZ_F11          0x67 */
-       0,                       /*                      */
+    0x29,                       /* Zen/Han (JIS)   0x68 */
     0x37|K_EX,                  /* QZ_PRINT / F13  0x69 */
     0x63,                       /* QZ_F16          0x6A */
     0x46|K_LOCK,                /* QZ_SCROLLOCK    0x6B */
