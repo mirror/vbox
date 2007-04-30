@@ -1469,7 +1469,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     if (type == Critical)
     {
         rc = message (&vboxGlobal().consoleWnd(), type,
-            tr ("<p>A fatal error has occured during virtual machine execution! "
+            tr ("<p>A fatal error has occurred during virtual machine execution! "
                 "The virtual machine will be powered off. It is suggested to "
                 "use the clipboard to copy the following error message for "
                 "further examination:</p>"),
@@ -1481,7 +1481,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     else if (type == Error)
     {
         rc = message (&vboxGlobal().consoleWnd(), type,
-            tr ("<p>An error has occured during virtual machine execution! "
+            tr ("<p>An error has occurred during virtual machine execution! "
                 "The error details are shown below. You can try to correct "
                 "the described error and resume the virtual machine "
                 "execution.</p>"),

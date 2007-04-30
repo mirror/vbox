@@ -148,7 +148,7 @@ public:
 
         setText (0, QString ("<%1>").arg (aId));
         setText (1, aId);
-        setText (2, VBoxGlobalSettingsDlg::tr ("<unavailabie>", "Language"));
+        setText (2, VBoxGlobalSettingsDlg::tr ("<unavailable>", "Language"));
         setText (3, VBoxGlobalSettingsDlg::tr ("<unknown>", "Author(s)"));
     }
 
