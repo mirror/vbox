@@ -400,7 +400,7 @@
 #if defined(_MSC_VER) || defined(__OS2__)
 # define DECLEXPORT(type)       __declspec(dllexport) type
 #else
-# define DECLEXPORT(type)       type
+# define DECLEXPORT(type)       __attribute__((visibility("default"))) type
 #endif
 
 /** @def DECLIMPORT

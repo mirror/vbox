@@ -60,7 +60,7 @@
 #ifdef _WIN32
 #    define XPTC_EXPORT           __declspec(dllexport)
 #else
-#    define XPTC_EXPORT
+#    define XPTC_EXPORT           __attribute__((visibility("default")))
 #endif
 #else
 #ifdef _WIN32

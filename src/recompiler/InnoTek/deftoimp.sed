@@ -1,4 +1,4 @@
-# $Id: deftoimp.sed 18689 2007-02-16 09:08:04Z klaus $
+# $Id: deftoimp.sed 17147 2007-01-09 09:05:45Z bird $
 ## @file
 # VBox Runtime - SED script for windows .def file stubs file.
 #
@@ -30,7 +30,7 @@ s/[[:space:]][[:space:]]*$//g
 s/^EXPORTS$//
 /^$/b end
 
-s/^\(.*\)$/void \1(void);\nvoid \1(void){}/
+s/^\(.*\)$/__attribute__((visibility("default"))) void \1(void);\nvoid \1(void){}/
 b end
 }
 d

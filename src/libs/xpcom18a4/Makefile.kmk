@@ -31,7 +31,8 @@ TEMPLATE_XPCOM_ASTOOL              = $(TEMPLATE_VBOXR3NP_TOOL)
 TEMPLATE_XPCOM_ASFLAGS             = $(NO_SUCH_VARIABLE)
 TEMPLATE_XPCOM_ASDEFS              = $(NO_SUCH_VARIABLE)
 TEMPLATE_XPCOM_CXXFLAGS            = -pipe -ansi -Wall -Wno-unused -Wno-non-virtual-dtor \
-                                     $(VBOX_GCC_Wno-invalid-offsetof) -Wno-sign-compare -Wno-unused -Wno-ctor-dtor-privacy
+                                     $(VBOX_GCC_Wno-invalid-offsetof) -Wno-sign-compare -Wno-unused -Wno-ctor-dtor-privacy \
+				     $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 
 TEMPLATE_XPCOM_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_XPCOM_CXXFLAGS.release    = -O
@@ -39,18 +40,18 @@ TEMPLATE_XPCOM_CXXFLAGS.profile    = -O
 TEMPLATE_XPCOM_CXXFLAGS.darwin     = -fpascal-strings -fshort-wchar -fno-common -fno-rtti
 TEMPLATE_XPCOM_CXXFLAGS.l4         = -fno-exceptions -nostdinc
 TEMPLATE_XPCOM_CXXFLAGS.linux      = -pthread
-TEMPLATE_XPCOM_CFLAGS              = -pipe -Wall -Wno-unused -Wno-parentheses -Wno-uninitialized
+TEMPLATE_XPCOM_CFLAGS              = -pipe -Wall -Wno-unused -Wno-parentheses -Wno-uninitialized $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_XPCOM_CFLAGS.debug        = -fno-inline
 TEMPLATE_XPCOM_CFLAGS.release      = -O
 TEMPLATE_XPCOM_CFLAGS.profile      = -O
 TEMPLATE_XPCOM_CFLAGS.l4           = -nostdinc
 TEMPLATE_XPCOM_CFLAGS.linux        = -pthread -ansi
-TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1
+TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1 _IMPL_NS_COM
 TEMPLATE_XPCOM_DEFS.x86            = i386=1
 TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\(a\,b\)=__builtin_va_copy\(a\,b\)
-TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" MOZ_DLL_SUFFIX=\".dylib\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1
-TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  MOZ_DLL_SUFFIX=\".so\"    XP_UNIX=1 _GNU_SOURCE
-TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     MOZ_DLL_SUFFIX=\".s.so\"  XP_UNIX=1 L4ENV
+TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" MOZ_DLL_SUFFIX=\".dylib\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1
+TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  MOZ_DLL_SUFFIX=\".so\"    XP_UNIX=1 _GNU_SOURCE HAVE_VISIBILITY_ATTRIBUTE=1
+TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     MOZ_DLL_SUFFIX=\".s.so\"  XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2 4.5\"    OSARCH=\"OS/2\"   MOZ_DLL_SUFFIX=\".dll\"   XP_UNIX=1
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
@@ -553,7 +554,6 @@ VBox-xpcom-nspr_DEFS       = \
 	HAVE_STRERROR=1 \
 	FORCE_PR_LOG
 VBox-xpcom-nspr_DEFS.darwin = \
-	HAVE_VISIBILITY_HIDDEN_ATTRIBUTE=1 \
 	HAVE_BSD_FLOCK=1 \
 	_PR_PTHREADS
 VBox-xpcom-nspr_DEFS.freebsd = \
@@ -567,8 +567,6 @@ VBox-xpcom-nspr_DEFS.linux = \
 	_SVID_SOURCE=1 \
 	_REENTRANT=1 \
 	_LARGEFILE64_SOURCE=1 \
-	HAVE_VISIBILITY_HIDDEN_ATTRIBUTE=1 \
-	HAVE_VISIBILITY_PRAGMA=1 \
 	HAVE_FCNTL_FILE_LOCKING=1 \
 	HAVE_CVAR_BUILT_ON_SEM \
 	_PR_PTHREADS
@@ -580,8 +578,6 @@ VBox-xpcom-nspr_DEFS.l4 = \
 	_LARGEFILE64_SOURCE=1 \
 	_POSIX_SOURCE=1 \
 	_BSD_SOURCE=1 \
-	HAVE_VISIBILITY_HIDDEN_ATTRIBUTE=1 \
-	HAVE_VISIBILITY_PRAGMA=1 \
 	HAVE_FCNTL_FILE_LOCKING=1 \
 	HAVE_CVAR_BUILT_ON_SEM
 VBox-xpcom-nspr_DEFS.netbsd = \
@@ -724,7 +720,6 @@ VBox-xpcom-typelib_SOURCES = \
 
 VBox-xpcom-string_TEMPLATE = XPCOM
 VBox-xpcom-string_NOINST = 1
-VBox-xpcom-string_DEFS = _IMPL_NS_COM
 VBox-xpcom-string_SOURCES = \
 	xpcom/string/src/nsAString.cpp \
 	xpcom/string/src/nsDependentSubstring.cpp \
@@ -911,7 +906,7 @@ VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)/lib/
 # The VBoxXPCOM Shared Object, assembling all lib files.
 #
 VBoxXPCOM_TEMPLATE = XPCOM
-VBoxXPCOM_DEFS = BUILD_DCONNECT="1"
+VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
 VBoxXPCOM_SOURCES = \
 	xpcom/glue/nsCOMPtr.cpp \
 	xpcom/glue/nsComponentManagerUtils.cpp \
