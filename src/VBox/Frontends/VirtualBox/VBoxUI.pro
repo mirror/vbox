@@ -246,6 +246,7 @@ IMAGES	= images/tpixel.png \
     images/dock_128x128_transparent.png
 
 TRANSLATIONS = \
+	nls/VirtualBox_ja.ts \
 	nls/VirtualBox_pl.ts \
 	nls/VirtualBox_ar.ts \
 	nls/VirtualBox_de.ts \
