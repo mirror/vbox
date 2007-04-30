@@ -225,6 +225,11 @@ HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType)
 
     HGCMObject *pObject = NULL;
 
+    if ((handle & 0x7FFFFFFF) == 0)
+    {
+        return pObject;
+    }
+
     int rc = hgcmObjEnter ();
 
     if (VBOX_SUCCESS(rc))
