@@ -1079,23 +1079,26 @@ void Display::VideoAccelFlush (void)
                           cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
 #endif /* DEBUG_sunlover */
 
-            /* Handle the command.
-             *
-             * Guest is responsible for updating the guest video memory.
-             * The Windows guest does all drawing using Eng*.
-             *
-             * For local output, only dirty rectangle information is used
-             * to update changed areas.
-             *
-             * Dirty rectangles are accumulated to exclude overlapping updates and
-             * group small updates to a larger one.
-             */
+            if (mu32ResizeStatus == ResizeStatus_Void)
+            {
+                /* Handle the command.
+                 *
+                 * Guest is responsible for updating the guest video memory.
+                 * The Windows guest does all drawing using Eng*.
+                 *
+                 * For local output, only dirty rectangle information is used
+                 * to update changed areas.
+                 *
+                 * Dirty rectangles are accumulated to exclude overlapping updates and
+                 * group small updates to a larger one.
+                 */
 
-            /* Accumulate the update. */
-            vbvaRgnDirtyRect (&rgn, phdr);
+                /* Accumulate the update. */
+                vbvaRgnDirtyRect (&rgn, phdr);
 
-            /* Forward the command to VRDP server. */
-            mParent->consoleVRDPServer()->SendUpdate (phdr, cbCmd);
+                /* Forward the command to VRDP server. */
+                mParent->consoleVRDPServer()->SendUpdate (phdr, cbCmd);
+            }
         }
 
         vbvaReleaseCmd (phdr, cbCmd);
