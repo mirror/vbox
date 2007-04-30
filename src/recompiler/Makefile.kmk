@@ -284,7 +284,13 @@ VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
 $(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def InnoTek/deftoimp.sed | $(call DIRDEP,$(PATH_TARGET))
 	$(MKDIR) -p $(PATH_TARGET)
-	$(SED) -f InnoTek/deftoimp.sed VBoxREM.def > $@.tmp
+	$(APPEND) $@.tmp '#if __GNUC__ >= 4'
+	$(APPEND) $@.tmp '# define EXPORT __attribute__((visibility("default")))'
+	$(APPEND) $@.tmp '#else'
+	$(APPEND) $@.tmp '# define EXPORT'
+	$(APPEND) $@.tmp '#endif'
+	$(APPEND) $@.tmp ''
+	$(SED) -f InnoTek/deftoimp.sed VBoxREM.def >> $@.tmp
 	$(MV) -f $@.tmp $@
 
 $(VBoxREMImp_SOURCES.os2): VBoxREM.def $(MAKEFILE) | $(call DIRDEP,$(PATH_TARGET))
