@@ -682,57 +682,55 @@ int pdmR3DevInit(PVM pVM)
         PCFGMNODE   pNode;
         /** Pointer to device. */
         PPDMDEV     pDev;
-        /** VBox instance number. */
-        RTUINT      iInstance;
         /** Init order. */
         uint32_t    u32Order;
+        /** VBox instance number. */
+        uint32_t    iInstance;
     } *paDevs = (struct DEVORDER *)alloca(sizeof(paDevs[0]) * (cDevs + 1)); /* (One extra for swapping) */
     Assert(paDevs);
     unsigned i = 0;
     for (pCur = CFGMR3GetFirstChild(pDevicesNode); pCur; pCur = CFGMR3GetNextChild(pCur))
     {
-        RTUINT iInstance = 0;
+        /* Get the device name. */
+        char szName[sizeof(paDevs[0].pDev->pDevReg->szDeviceName)];
+        rc = CFGMR3GetName(pCur, szName, sizeof(szName));
+        AssertMsgRCReturn(rc, ("Configuration error: device name is too long (or something)! rc=%Vrc\n", rc), rc);
+
+        /* Find the device. */
+        PPDMDEV pDev = pdmR3DevLookup(pVM, szName);
+        AssertMsgReturn(pDev, ("Configuration error: device '%s' not found!\n", szName), VERR_PDM_DEVICE_NOT_FOUND);
+
+        /* Configured priority or use default based on device class? */
+        uint32_t u32Order;
+        rc = CFGMR3QueryU32(pCur, "Priority", &u32Order);
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        {
+            uint32_t u32 = pDev->pDevReg->fClass;
+            for (u32Order = 1; !(u32 & u32Order); u32Order <<= 1)
+                /* nop */;
+        }
+        else 
+            AssertMsgRCReturn(rc, ("Configuration error: reading \"Priority\" for the '%s' device failed rc=%Vrc!\n", szName, rc), rc);
+
+        /* Enumerate the device instances. */
         for (pInstanceNode = CFGMR3GetFirstChild(pCur); pInstanceNode; pInstanceNode = CFGMR3GetNextChild(pInstanceNode))
         {
-            /* basics */
             paDevs[i].pNode = pInstanceNode;
-            paDevs[i].iInstance = iInstance;
+            paDevs[i].pDev = pDev;
+            paDevs[i].u32Order = u32Order;
 
-            /* Get the device name. */
-            char szName[sizeof(paDevs[0].pDev->pDevReg->szDeviceName)];
-            rc = CFGMR3GetName(pCur, szName, sizeof(szName));
-            if (VBOX_FAILURE(rc))
-            {
-                AssertMsgFailed(("Configuration error: device name is too long (or something)! rc=%Vrc\n", rc));
-                return rc;
-            }
-
-            /* Get the device. */
-            paDevs[i].pDev = pdmR3DevLookup(pVM, szName);
-            if (!paDevs[i].pDev)
-            {
-                AssertMsgFailed(("Configuration error: device '%s' not found!\n", szName));
-                return VERR_PDM_DEVICE_NOT_FOUND;
-            }
-
-            /* Configured priority or use default based on device class? */
-            rc = CFGMR3QueryU32(pCur, "Priority", &paDevs[i].u32Order);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            {
-                uint32_t u32 = paDevs[i].pDev->pDevReg->fClass;
-                for (paDevs[i].u32Order = 1; !(u32 & paDevs[i].u32Order); paDevs[i].u32Order <<= 1)
-                    /* nop */;
-            }
-            else if (VBOX_FAILURE(rc))
-            {
-                AssertMsgFailed(("Configuration error: reading \"Priority\" for the '%s' device failed rc=%Vrc!\n", szName, rc));
-                return rc;
-            }
+            /* Get the instance number. */
+            char szInstance[32];
+            rc = CFGMR3GetName(pInstanceNode, szInstance, sizeof(szInstance));
+            AssertMsgRCReturn(rc, ("Configuration error: instance name is too long (or something)! rc=%Vrc\n", rc), rc);
+            char *pszNext = NULL;
+            rc = RTStrToUInt32Ex(szInstance, &pszNext, 0, &paDevs[i].iInstance);
+            AssertMsgRCReturn(rc, ("Configuration error: RTStrToInt32Ex failed on the instance name '%s'! rc=%Vrc\n", szInstance, rc), rc);
+            AssertMsgReturn(!*pszNext, ("Configuration error: the instance name '%s' isn't all digits. (%s)\n", szInstance, pszNext), VERR_INVALID_PARAMETER);
 
             /* next instance */
-            iInstance++;
             i++;
-        } /* instances */
+        }
     } /* devices */
     Assert(i == cDevs);
 
