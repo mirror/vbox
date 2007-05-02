@@ -339,7 +339,8 @@ private:
 
     HRESULT powerDown();
 
-    HRESULT callTapSetupApplication(Bstr &tapDevice, Bstr &tapSetupApplication);
+    HRESULT callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,
+                                    Bstr &tapSetupApplication);
     HRESULT attachToHostInterface(INetworkAdapter *networkAdapter);
     HRESULT detachFromHostInterface(INetworkAdapter *networkAdapter);
     HRESULT powerDownHostInterfaces();

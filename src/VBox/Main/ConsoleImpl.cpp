@@ -5618,50 +5618,61 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
   * @param   tapDevice           string to store the name of the tap device created to
   * @param   tapSetupApplication the name of the setup script
   */
-HRESULT Console::callTapSetupApplication(Bstr &tapDevice, Bstr &tapSetupApplication)
+HRESULT Console::callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,
+                                         Bstr &tapSetupApplication)
 {
     LogFlowThisFunc(("\n"));
 #ifdef __LINUX__
     /* Command line to start the script with. */
-    const char *pszArgs;
-    /* Buffer to read the script output to.  It doesn't have to be long, as we are only
-        interested in the first few (normally 5 or 6) bytes. */
-    char acBuffer[64];
-    /* The size of the string returned by the script.  We only accept strings of 63 characters
-       or less. */
-    size_t cBufSize;
+    char szCommand[4096];
     /* Result code */
     int rc;
 
     /* Get the script name. */
-    Utf8Str tapSetupApp(tapSetupApplication);
-    pszArgs = tapSetupApp.raw();
+    Utf8Str tapSetupAppUtf8(tapSetupApplication), tapDeviceUtf8(tapDevice);
+    RTStrPrintf(szCommand, sizeof(szCommand), "%s %d %s", tapSetupAppUtf8.raw(),
+                isStatic ? tapFD : 0, isStatic ? tapDeviceUtf8.raw() : "");
     /*
      * Create the process and read its output.
      */
-    FILE *pfScriptHandle = popen(pszArgs, "r");
+    Log2(("About to start the TAP setup script with the following command line: %s\n",
+          szCommand));
+    FILE *pfScriptHandle = popen(szCommand, "r");
     if (pfScriptHandle == 0)
     {
         int iErr = errno;
         Log(("Failed to start the TAP interface setup script %s, error text: %s\n",
-              pszArgs, strerror(iErr)));
+              szCommand, strerror(iErr)));
         LogFlowThisFunc(("rc=E_FAIL\n"));
         return setError(E_FAIL, tr ("Failed to run the host networking set up command %s: %s"),
-                        pszArgs, strerror(iErr));
+                        szCommand, strerror(iErr));
     }
-    fgets(acBuffer, sizeof(acBuffer), pfScriptHandle);
-    cBufSize = strlen(acBuffer);
-    /* The script must return the name of the interface followed by a carriage return as the
-       first line of its output.  We need a null-terminated string. */
-    if ((cBufSize < 2) || (acBuffer[cBufSize - 1] != '\n'))
+    /* If we are using a dynamic TAP interface, we need to get the interface name. */
+    if (!isStatic)
     {
-        pclose(pfScriptHandle);
-        Log(("The TAP interface setup script did not return the name of a TAP device.\n"));
-        LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, tr ("The host networking set up command did not supply an interface name"));
+        /* Buffer to read the application output to.  It doesn't have to be long, as we are only
+            interested in the first few (normally 5 or 6) bytes. */
+        char acBuffer[64];
+        /* The length of the string returned by the application.  We only accept strings of 63
+           characters or less. */
+        size_t cBufSize;
+
+        /* Read the name of the device from the application. */
+        fgets(acBuffer, sizeof(acBuffer), pfScriptHandle);
+        cBufSize = strlen(acBuffer);
+        /* The script must return the name of the interface followed by a carriage return as the
+          first line of its output.  We need a null-terminated string. */
+        if ((cBufSize < 2) || (acBuffer[cBufSize - 1] != '\n'))
+        {
+            pclose(pfScriptHandle);
+            Log(("The TAP interface setup script did not return the name of a TAP device.\n"));
+            LogFlowThisFunc(("rc=E_FAIL\n"));
+            return setError(E_FAIL, tr ("The host networking set up command did not supply an interface name"));
+        }
+        /* Overwrite the terminating newline character. */
+        acBuffer[cBufSize - 1] = 0;
+        tapDevice = acBuffer;
     }
-    acBuffer[cBufSize - 1] = 0;
-    tapDevice = acBuffer;
     rc = pclose(pfScriptHandle);
     if (!WIFEXITED(rc))
     {
@@ -5748,26 +5759,20 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
             /*
              * Set/obtain the tap interface.
              */
+            bool isStatic = false;
             struct ifreq IfReq;
             memset(&IfReq, 0, sizeof(IfReq));
             /* The name of the TAP interface we are using and the TAP setup script resp. */
             Bstr tapDeviceName, tapSetupApplication;
             rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
-            if (FAILED(rc) || tapDeviceName.isEmpty())
+            if (FAILED(rc))
             {
-                networkAdapter->COMGETTER(TAPSetupApplication)(tapSetupApplication.asOutParam());
-                if (tapSetupApplication.isEmpty())
-                {
-                    Log(("No setup application was supplied for the TAP interface.\n"));
-                    rc = setError(E_FAIL, tr ("No setup application was supplied for the host networking interface"));
-                }
-                else
-                {
-                    rc = callTapSetupApplication(tapDeviceName, tapSetupApplication);
-                }
+                tapDeviceName.setNull();  /* Is this necessary? */
             }
-            if (SUCCEEDED(rc))
+            else if (!tapDeviceName.isEmpty())
             {
+                isStatic = true;
+                /* If we are using a static TAP device then try to open it. */
                 Utf8Str str(tapDeviceName);
                 if (str.length() <= sizeof(IfReq.ifr_name))
                     strcpy(IfReq.ifr_name, str.raw());
@@ -5775,29 +5780,63 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                     memcpy(IfReq.ifr_name, str.raw(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
                 IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
                 rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
-                if (!rcVBox)
+                if (rcVBox != 0)
+                {
+                    Log(("Failed to open the host network interface %ls\n", tapDeviceName.raw()));
+                    rc = setError(E_FAIL, tr ("Failed to open the host network interface %ls"),
+                                          tapDeviceName.raw());
+                }
+            }
+            if (SUCCEEDED(rc))
+            {
+                networkAdapter->COMGETTER(TAPSetupApplication)(tapSetupApplication.asOutParam());
+                if (tapSetupApplication.isEmpty())
+                {
+                    if (tapDeviceName.isEmpty())
+                    {
+                        Log(("No setup application was supplied for the TAP interface.\n"));
+                        rc = setError(E_FAIL, tr ("No setup application was supplied for the host networking interface"));
+                    }
+                }
+                else
+                {
+                    rc = callTapSetupApplication(isStatic, maTapFD[slot], tapDeviceName,
+                                                 tapSetupApplication);
+                }
+            }
+            if (SUCCEEDED(rc))
+            {
+                if (!isStatic)
+                {
+                    Utf8Str str(tapDeviceName);
+                    if (str.length() <= sizeof(IfReq.ifr_name))
+                        strcpy(IfReq.ifr_name, str.raw());
+                    else
+                        memcpy(IfReq.ifr_name, str.raw(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
+                    IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
+                    rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
+                    if (rcVBox != 0)
+                    {
+                        Log(("Failed to open the host network interface %ls returned by the setup script", tapDeviceName.raw()));
+                        rc = setError(E_FAIL, tr ("Failed to open the host network interface %ls returned by the setup script"), tapDeviceName.raw());
+                    }
+                }
+                if (SUCCEEDED(rc))
                 {
                     /*
                     * Make it pollable.
                     */
                     if (fcntl(maTapFD[slot], F_SETFL, O_NONBLOCK) != -1)
                     {
-                        tapDeviceName = IfReq.ifr_name;
-                        if (tapDeviceName)
-                        {
-                            Log(("attachToHostInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
+                        Log(("attachToHostInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
 
-                            /*
-                            * Here is the right place to communicate the TAP file descriptor and
-                            * the host interface name to the server if/when it becomes really
-                            * necessary.
-                            */
-                            maTAPDeviceName[slot] = tapDeviceName;
-                            rcVBox = VINF_SUCCESS;
-                            rc = S_OK;
-                        }
-                        else
-                            rcVBox = VERR_NO_MEMORY;
+                        /*
+                        * Here is the right place to communicate the TAP file descriptor and
+                        * the host interface name to the server if/when it becomes really
+                        * necessary.
+                        */
+                        maTAPDeviceName[slot] = tapDeviceName;
+                        rcVBox = VINF_SUCCESS;
                     }
                     else
                     {
@@ -5806,13 +5845,6 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                         rc = setError(E_FAIL, tr ("could not set up the host networking device for non blocking access: %s"),
                                               strerror(errno));
                     }
-                }
-                else
-                {
-                    AssertMsgFailed(("Configuration error: Failed to configure /dev/net/tun. errno=%d\n", errno));
-                    rcVBox = VERR_HOSTIF_IOCTL;
-                    rc = setError(E_FAIL, tr ("Could not set up the host networking device: %s"),
-                                          strerror(errno));
                 }
             }
         }
@@ -5882,12 +5914,22 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
         /*
          * Close the file handle.
          */
-        int rcVBox = RTFileClose(maTapFD[slot]);
-        AssertRC(rcVBox);
+        Bstr tapDeviceName, tapTerminateApplication;
+        bool isStatic = true;
+        rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
+        if (FAILED(rc) || tapDeviceName.isEmpty())
+        {
+            /* If the name is not empty, this is a dynamic TAP device, so close it now,
+               so that the termination script can remove the interface.  Otherwise we still
+               need the FD to pass to the termination script. */
+            isStatic = false;
+            int rcVBox = RTFileClose(maTapFD[slot]);
+            AssertRC(rcVBox);
+            maTapFD[slot] = NIL_RTFILE;
+        }
         /*
          * Execute the termination command.
          */
-        Bstr tapTerminateApplication;
         networkAdapter->COMGETTER(TAPTerminateApplication)(tapTerminateApplication.asOutParam());
         if (tapTerminateApplication)
         {
@@ -5896,8 +5938,8 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
 
             /* Build the command line. */
             char szCommand[4096];
-            RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", tapTermAppUtf8.raw(),
-                        maTAPDeviceName[slot].isEmpty() ? "" : maTAPDeviceName[slot].raw());
+            RTStrPrintf(szCommand, sizeof(szCommand), "%s %d %s", tapTermAppUtf8.raw(),
+                        isStatic ? maTapFD[slot] : 0, maTAPDeviceName[slot].raw());
 
             /*
              * Create the process and wait for it to complete.
@@ -5921,6 +5963,13 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
             }
         }
 
+        if (isStatic)
+        {
+            /* If we are using a static TAP device, we close it now, after having called the
+               termination script. */
+            int rcVBox = RTFileClose(maTapFD[slot]);
+            AssertRC(rcVBox);
+        }
         /* the TAP device name and handle are no longer valid */
         maTapFD[slot] = NIL_RTFILE;
         maTAPDeviceName[slot] = "";
