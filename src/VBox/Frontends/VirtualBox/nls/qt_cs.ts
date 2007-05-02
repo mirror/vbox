@@ -1151,39 +1151,39 @@ překontrolujte cestu a jméno souboru.</translation>
 %1
 to
 %2</source>
-      <translation>Nelze přejmenovat(new line)
-%1(new line)
-na(new line)
+      <translation>Nelze přejmenovat
+%1
+na
 %2</translation>
     </message>
     <message>
       <source>Could not open
 %1</source>
-      <translation>Nelze otevřít(new line)
+      <translation>Nelze otevřít
 %1</translation>
     </message>
     <message>
       <source>Could not write
 %1</source>
-      <translation>Nelze zapsat(new line)
+      <translation>Nelze zapsat
 %1</translation>
     </message>
     <message>
       <source>Could not read directory
 %1</source>
-      <translation>Nelze číst z adresáře(new line)
+      <translation>Nelze číst z adresáře
 %1</translation>
     </message>
     <message>
       <source>Could not create directory
 %1</source>
-      <translation>Nelze vytvořit adresář(new line)
+      <translation>Nelze vytvořit adresář
 %1</translation>
     </message>
     <message>
       <source>Could not remove file or directory
 %1</source>
-      <translation>Nelze odstranit soubor nebo adresář(new line)
+      <translation>Nelze odstranit soubor nebo adresář
 %1</translation>
     </message>
   </context>
