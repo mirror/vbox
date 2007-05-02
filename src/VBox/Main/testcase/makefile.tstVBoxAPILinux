@@ -17,7 +17,8 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-PATH_XPCOM     = ..
+PATH_XPCOM     = ../..
+PATH_BIN       = ../../..
 
 PATH_XPCOM_IDL = $(PATH_XPCOM)/idl
 INCS_XPCOM     = $(PATH_XPCOM)/include \
@@ -30,12 +31,13 @@ INCS_XPCOM     = $(PATH_XPCOM)/include \
 # Link with the public XPCOM libraries
 #
 tstVBoxAPILinux: tstVBoxAPILinux.o
-	g++ -g -o $@ $(addprefix -L, $(LIBPATH_XPCOM)) $^ \
-		../lib/VBoxXPCOMGlue.a ../../VBoxXPCOM.so \
+	g++ -g -o $@ $^ \
+		$(PATH_XPCOM)/lib/VBoxXPCOMGlue.a \
+		$(PATH_BIN)/VBoxXPCOM.so \
 		-ldl -lpthread
 
 tstVBoxAPILinux.o: tstVBoxAPILinux.cpp
-	g++ -c -g $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
+	g++ -c -D__LINUX__ -g $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
 
 clean:
 	rm -f tstVBoxAPILinux tstVBoxAPILinux.o

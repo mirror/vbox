@@ -37,7 +37,7 @@ samples_MODE = a+r,u+w
 ifeq ($(BUILD_TARGET),win)
  samples_SOURCES = tstVBoxAPIWin.cpp
 else
- samples_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux
+ samples_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux=>Makefile
  ifdef VBOX_WITH_TESTCASES
  samples_SYMLINKS = tstVBoxAPILinux=>../../../tstVBoxAPILinux
  endif
