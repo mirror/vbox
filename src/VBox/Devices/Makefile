@@ -53,9 +53,9 @@ endif
 ifdef VBOX_WITH_INTERNAL_NETWORKING
  DEFS += VBOX_WITH_INTERNAL_NETWORKING
 endif
-ifeq ($(USERNAME),bird)
+#ifeq ($(USERNAME),bird)
  DEFS += VBOX_WITH_VIRTUAL_SYNC_TIMERS
-endif
+#endif
 
 # enable the pdm lock.
 #DEFS += VBOX_WITH_PDM_LOCK

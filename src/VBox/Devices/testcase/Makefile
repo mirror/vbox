@@ -26,10 +26,10 @@ include	$(PATH_KBUILD)/header.kmk
 #
 PROGRAMS = tstDeviceStructSize tstDeviceStructSizeGC
 
-# temp hack.
-ifeq ($(USERNAME),bird)
+## temp hack.
+#ifeq ($(USERNAME),bird)
  DEFS += VBOX_WITH_VIRTUAL_SYNC_TIMERS
-endif
+#endif
 
 
 #
