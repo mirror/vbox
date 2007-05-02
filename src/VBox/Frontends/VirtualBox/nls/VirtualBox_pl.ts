@@ -114,7 +114,7 @@
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;VirtualBox Graficzny Interfejs Użytkownika wersja %1&lt;br&gt;(new line)
+        <translation>&lt;qt&gt;VirtualBox Graficzny Interfejs Użytkownika wersja %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -1811,7 +1811,7 @@ a new virtual machine for VirtualBox.&lt;/p&gt;
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ten kreator przeprowadzi Cię przez kolejne czynności potrzebne, aby utworzyć
 nową maszynę wirtualną dla VirtualBox.
-&lt;p&gt;Użyj przycisku &lt;b&gt;Dalej&lt;/b&gt;, aby przejść do następnego kroku(new line)
+&lt;p&gt;Użyj przycisku &lt;b&gt;Dalej&lt;/b&gt;, aby przejść do następnego kroku
 a przycisku &lt;b&gt;Wstecz&lt;/b&gt;, aby powrócić do poprzedniego kroku.&lt;/p&gt;</translation>
     </message>
     <message>
