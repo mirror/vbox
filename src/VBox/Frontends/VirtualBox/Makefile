@@ -245,9 +245,9 @@ VirtualBox.app_SOURCES = \
 	images/VirtualBox.icns=>Resources/virtualbox.icns
 
 $(PATH_TARGET)/Info.plist: src/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
-	$(call MSG_L1,Generating $@)
-	$(xQUIET)$(RM) -f $@
-	$(xQUIET)$(SED) \
+	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
@@ -265,9 +265,9 @@ VirtualBoxVM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/
 
 $(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
-	$(call MSG_L1,Generating $@)
-	$(xQUIET)$(RM) -f $@
-	$(xQUIET)$(SED) \
+	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
@@ -323,7 +323,7 @@ $(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(mochdr))).cpp)
 $(target)_GENSRCS_REAL += $(mocsrc)
 
 $(mocsrc): $(mochdr)
-	$$(call MSG_L1,moc $(mochdr),=> $$@)
+	$$(call MSG_TOOL,moc,$(target),$(mochdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
 	$$(QUIET)$$(VBOX_MOC) $(mochdr) -o $$@
 
@@ -344,7 +344,7 @@ $(mocobj): $(mocinc)
 
 .NOTPARALLEL: $(mocinc)
 $(mocinc): $(mocsrc)
-	$$(call MSG_L1,moc $(mocsrc),=> $$@)
+	$$(call MSG_TOOL,moc,$(target),$(mocsrc),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
 	$$(QUIET)$$(VBOX_MOC) -i $(mocsrc) -o $$@
 
@@ -365,7 +365,7 @@ $(target)_GENHDRS_REAL += $(mocuiinc)
 .NOTPARALLEL: $(mocuiinc)
 $(uisrc): $(mocuiinc)
 $(mocuiinc): $(mocuihdr)
-	$$(call MSG_L1,moc $(mocuihdr),=> $$@)
+	$$(call MSG_TOOL,moc,$(target),$(mocuihdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
 	$$(QUIET)$$(VBOX_MOC) -i $(mocuihdr) -o $$@
 
@@ -385,15 +385,15 @@ $(target)_GENHDRS_REAL += $(uihdr)
 
 .NOTPARALLEL: $(uihdr)
 $(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
-	$$(call MSG_L1,uic $(uifile),=> $$@)
+	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
 	$$(QUIET)$$(VBOX_UIC) $(uifile) -o $$@
 
 $(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(uisrc)))
-	$$(call MSG_L1,uic $(uifile),=> $$@)
+	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
 	$$(QUIET)$$(VBOX_UIC) $(uifile) -i $(uihdr) -o $$@
 
 $(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
-	$$(call MSG_L1,moc $(uihdr),=> $$@)
+	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
 	$$(QUIET)$$(VBOX_MOC) $(uihdr) -o $$@
 
 endef
@@ -408,7 +408,7 @@ $(eval qmfile  := $(PATH_$(target))/nls/$(notdir $(basename $(tsfile))).qm)
 OTHER_CLEAN += $(qmfile)
 
 $(qmfile): $(tsfile) | $$(call DIRDEP,$(dir $(qmfile)))
-	$$(call MSG_L1,lrelease $(tsfile),=> $$@)
+	$$(call MSG_TOOLS,lrelease,$(target),$(tsfile),$$@)
 	$$(QUIET)$$(VBOX_LRELEASE) $(tsfile) -qm $$@
 
 endef
@@ -447,7 +447,7 @@ $(foreach target,VirtualBox,$(eval $(def_qt_gen_src)))
 $(WRAPPERSINCFILE): $(WRAPPERSFILE)
 
 $(WRAPPERSFILE): $(XIDLFILE) $(WRAPPERSTEMPLATE) | $(call DIRDEP,$(PATH_VirtualBox)/include/)
-	$(call MSG_L1,xsltproc $<,=> $@)
+	$(call MSG_TOOL,xsltproc,VirtualBox,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(WRAPPERSTEMPLATE) $<
 
 $(call DIRDEP,$(PATH_VirtualBox)/include/):
@@ -469,7 +469,7 @@ $(PATH_VirtualBox)/ui/vbox_image_collection.txt: VBoxUI.pro $(VirtualBox_QT_IMAG
     " > $@
 
 $(PATH_VirtualBox)/ui/vbox_image_collection.cpp: $(PATH_VirtualBox)/ui/vbox_image_collection.txt
-	$(call MSG_L1,uic $<,=> $@)
+	$(call MSG_TOOL,uic,VirtualBox,$<,$@)
 	$(QUIET)$(VBOX_UIC) -o $@ -embed VBoxGUI -f $<
 
 VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp

@@ -349,7 +349,7 @@ VBoxXML_LDFLAGS.darwin = -install_name @executable_path/VBoxXML.dylib -Wl,-x # n
 xml/cfgldr.cpp_DEPS = $(PATH_TARGET)/SettingsConverter_xsl.h
 OTHER_CLEAN += $(PATH_TARGET)/SettingsConverter_xsl.h
 $(PATH_TARGET)/SettingsConverter_xsl.h: xml/SettingsConverter.xsl $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_TARGET))
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,VBoxXML,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) SettingsConverter_xsl $< $@
 
 
@@ -437,11 +437,11 @@ VBOX_XML_SCHEMA.win    = xml/VirtualBox-settings-windows.xsd
 VirtualBoxXMLUtil.cpp_DEPS = $(VBOX_XML_ENTITIES) $(VBOX_XML_ENTITIES_COMMON)
 
 $(VBOX_XML_ENTITIES_COMMON): $(VBOX_XML_SCHEMA_COMMON) $(VBOX_BIN2C)
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,VBoxXML,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) VirtualBox_settings_common_xsd $< $@
 
 $(VBOX_XML_ENTITIES): $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_BIN2C)
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,VBoxXML,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) VirtualBox_settings_xsd $< $@
 
 OTHER_CLEAN     += $(VBOX_XML_ENTITIES) $(VBOX_XML_ENTITIES_COMMON)
@@ -459,7 +459,7 @@ VBoxSVC_DEPS    += $(VBOX_XML_SCHEMADEFS_H)
 VBoxSVC_INCS    += $(PATH_TARGET)
 
 $(VBOX_XML_SCHEMADEFS_H): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
-	$(call MSG_L1,xsltproc $@)
+	$(call MSG_TOOL,xsltproc,VBoxXML,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
 
 OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
@@ -497,16 +497,16 @@ ifneq ($(BUILD_TARGET),win)
 linux/helpers.cpp: $(IDLTYPELIB)
 
 $(IDLFILE): idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
-	$(call MSG_L1,xsltproc $<,=> $@)
+	$(call MSG_TOOL,xsltproc,VBoxXML,$<,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
 $(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLTYPELIB)))
-	$(call MSG_L1,xpidl $<,=> $@)
+	$(call MSG_TOOL,xpidl,VBoxXML,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
 $(IDLHEADER): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLHEADER)))
-	$(call MSG_L1,xpidl $<,=> $@)
+	$(call MSG_TOOL,xpidl,VBoxXML,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
 else
@@ -522,7 +522,7 @@ ifdef VBOX_WITH_VRDP
 endif
 
 $(IDLFILE): idl/midl.xsl $(XIDLFILE)
-	$(call MSG_L1,xsltproc $<,=> $@)
+	$(call MSG_TOOL,xsltproc,VBoxXML,$<,$@)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
