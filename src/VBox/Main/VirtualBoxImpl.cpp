@@ -1811,12 +1811,17 @@ STDMETHODIMP VirtualBox::SetExtraData(INPTR BSTR aKey, INPTR BSTR aValue)
         if (changed)
         {
             /* ask for permission from all listeners */
-            if (!onExtraDataCanChange (emptyGuid, aKey, aValue))
+            Bstr error;
+            if (!onExtraDataCanChange (emptyGuid, aKey, aValue, error))
             {
-                Log (("VirtualBox::SetExtraData(): Someone vetoed! Change refused\n"));
+                const char *sep = error.isEmpty() ? "" : ": ";
+                const BSTR err = error.isNull() ? (const BSTR) L"" : error.raw();
+                LogWarningFunc (("Someone vetoed! Change refused%s%ls\n",
+                                 sep, err));
                 rc = setError (E_ACCESSDENIED,
                     tr ("Could not set extra data because someone refused "
-                        "the requested change of '%ls' to '%ls'"), aKey, aValue);
+                        "the requested change of '%ls' to '%ls'%s%ls"),
+                    aKey, aValue, sep, err);
             }
             else
             {
@@ -2489,26 +2494,30 @@ struct MachineEvent : public VirtualBox::CallbackEvent
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onMachineStateChange (const Guid &id, MachineState_T state)
+void VirtualBox::onMachineStateChange (const Guid &aId, MachineState_T aState)
 {
-    postEvent (new MachineEvent (this, id, state));
+    postEvent (new MachineEvent (this, aId, aState));
 }
 
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onMachineDataChange (const Guid &id)
+void VirtualBox::onMachineDataChange (const Guid &aId)
 {
-    postEvent (new MachineEvent (this, id));
+    postEvent (new MachineEvent (this, aId));
 }
 
 /**
  *  @note Locks this object for reading.
  */
-BOOL VirtualBox::onExtraDataCanChange(const Guid &id, INPTR BSTR key, INPTR BSTR value)
+BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue,
+                                       Bstr &aError)
 {
-    LogFlowThisFunc(("machine={%s} key={%ls} val={%ls}\n",
-                     id.toString().raw(), key, value));
+    LogFlowThisFunc (("machine={%s} aKey={%ls} aValue={%ls}\n",
+                      aId.toString().raw(), aKey, aValue));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     CallbackList list;
     {
@@ -2516,24 +2525,24 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &id, INPTR BSTR key, INPTR BSTR
         list = mData.mCallbacks;
     }
 
-    BOOL allowChange = true;
+    BOOL allowChange = TRUE;
     CallbackList::iterator it = list.begin();
     while ((it != list.end()) && allowChange)
     {
-        HRESULT rc = (*it++)->OnExtraDataCanChange(id, key, value, &allowChange);
+        HRESULT rc = (*it++)->OnExtraDataCanChange (aId, aKey, aValue,
+                                                    aError.asOutParam(), &allowChange);
         if (FAILED (rc))
         {
-            /*
-             *  if a call to this method fails for some reason (for ex., because
-             *  the other side is dead), we ensure allowChange stays true
-             *  (MS COM RPC implementation seems to zero all output vars before
-             *  issuing an IPC call or after a failure, so it's essential there)
-             */
-            allowChange = true;
+            /* if a call to this method fails for some reason (for ex., because
+             * the other side is dead), we ensure allowChange stays true
+             * (MS COM RPC implementation seems to zero all output vars before
+             * issuing an IPC call or after a failure, so it's essential
+             * there) */
+            allowChange = TRUE;
         }
     }
 
-    LogFlowThisFunc (("allowChange=%d\n", allowChange));
+    LogFlowThisFunc (("allowChange=%RTbool\n", allowChange));
     return allowChange;
 }
 
@@ -2560,9 +2569,9 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onExtraDataChange (const Guid &id, INPTR BSTR key, INPTR BSTR value)
+void VirtualBox::onExtraDataChange (const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue)
 {
-    postEvent (new ExtraDataEvent (this, id, key, value));
+    postEvent (new ExtraDataEvent (this, aId, aKey, aValue));
 }
 
 /**
@@ -2594,9 +2603,9 @@ struct SessionEvent : public VirtualBox::CallbackEvent
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onSessionStateChange (const Guid &id, SessionState_T state)
+void VirtualBox::onSessionStateChange (const Guid &aId, SessionState_T aState)
 {
-    postEvent (new SessionEvent (this, id, state));
+    postEvent (new SessionEvent (this, aId, aState));
 }
 
 /** Event for onSnapshotTaken(), onSnapshotRemoved() and onSnapshotChange() */

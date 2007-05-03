@@ -354,17 +354,19 @@ public:
     STDMETHOD(GetHardDisk)(DiskControllerType_T aCtl, LONG aDev, IHardDisk **aHardDisk);
     STDMETHOD(DetachHardDisk) (DiskControllerType_T aCtl, LONG aDev);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
-    STDMETHOD(GetNextExtraDataKey)(INPTR BSTR key, BSTR *nextKey, BSTR *nextValue);
-    STDMETHOD(GetExtraData)(INPTR BSTR key, BSTR *value);
-    STDMETHOD(SetExtraData)(INPTR BSTR key, INPTR BSTR value);
+    STDMETHOD(GetNextExtraDataKey)(INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
+    STDMETHOD(GetExtraData)(INPTR BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetExtraData)(INPTR BSTR aKey, INPTR BSTR aValue);
     STDMETHOD(SaveSettings)();
     STDMETHOD(DiscardSettings)();
     STDMETHOD(DeleteSettings)();
     STDMETHOD(GetSnapshot) (INPTR GUIDPARAM aId, ISnapshot **aSnapshot);
     STDMETHOD(FindSnapshot) (INPTR BSTR aName, ISnapshot **aSnapshot);
     STDMETHOD(SetCurrentSnapshot) (INPTR GUIDPARAM aId);
-    STDMETHOD(CreateSharedFolder)(INPTR BSTR aName, INPTR BSTR aHostPath);
-    STDMETHOD(RemoveSharedFolder)(INPTR BSTR aName);
+    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath);
+    STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
+    STDMETHOD(CanShowConsoleWindow) (BOOL *aCanShow);
+    STDMETHOD(ShowConsoleWindow)();
 
     // public methods only for internal purposes
 

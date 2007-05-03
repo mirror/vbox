@@ -107,6 +107,18 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnCanShowWindow)(BOOL *canShow)
+    {
+        if (canShow)
+            *canShow = TRUE;
+        return S_OK;
+    }
+
+    STDMETHOD(OnShowWindow)()
+    {
+        return S_OK;
+    }
+
     // IDisplay properties
     STDMETHOD(COMGETTER(Width)) (ULONG *width);
     STDMETHOD(COMGETTER(Height)) (ULONG *height);

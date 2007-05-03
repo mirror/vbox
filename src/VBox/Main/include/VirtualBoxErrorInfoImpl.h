@@ -60,14 +60,16 @@ public:
     VirtualBoxErrorInfo() : mResultCode (S_OK) {}
 
     // public initializer/uninitializer for internal purposes only
-    void init (HRESULT resultCode, const GUID &iid,
-               const BSTR component, const BSTR text);
+    void init (HRESULT aResultCode, const GUID &aIID,
+               const BSTR aComponent, const BSTR aText,
+               IVirtualBoxErrorInfo *aNext = NULL);
 
     // IVirtualBoxErrorInfo properties
-    STDMETHOD(COMGETTER(ResultCode)) (HRESULT *resultCode);
-    STDMETHOD(COMGETTER(InterfaceID)) (GUIDPARAMOUT iid);
-    STDMETHOD(COMGETTER(Component)) (BSTR *component);
-    STDMETHOD(COMGETTER(Text)) (BSTR *text);
+    STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);
+    STDMETHOD(COMGETTER(InterfaceID)) (GUIDPARAMOUT aIID);
+    STDMETHOD(COMGETTER(Component)) (BSTR *aComponent);
+    STDMETHOD(COMGETTER(Text)) (BSTR *aText);
+    STDMETHOD(COMGETTER(Next)) (IVirtualBoxErrorInfo **aNext);
 
 private:
 
@@ -75,6 +77,7 @@ private:
     Bstr mText;
     Guid mIID;
     Bstr mComponent;
+    ComPtr <IVirtualBoxErrorInfo> mNext;
 };
 
 #endif // ____H_VIRTUALBOXERRORINFOIMPL

@@ -655,10 +655,9 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
      *  not only individual properties of filters)
      */
     CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostUSBDeviceFilter removedFilter;
     if (mUSBFilterListModified)
-        for (ulong count = host.GetUSBDeviceFilters().GetCount(); count; -- count)
-            host.RemoveUSBDeviceFilter (0, removedFilter);
+        for (ulong cnt = host.GetUSBDeviceFilters().GetCount(); cnt; -- cnt)
+            host.RemoveUSBDeviceFilter (0);
 
     /* then add all new filters */
     for (QListViewItem *item = lvUSBFilters->firstChild(); item;
@@ -876,10 +875,10 @@ void VBoxGlobalSettingsDlg::tbAddUSBFilter_clicked()
         ++ iterator;
     }
 
-    /* creating new usb filter */
-    CHostUSBDeviceFilter hostFilter;
-    vboxGlobal().virtualBox().GetHost().CreateUSBDeviceFilter (
-        usbFilterName.arg (maxFilterIndex + 1), hostFilter);
+    /* create a new usb filter */
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilter hostFilter = host
+        .CreateUSBDeviceFilter (usbFilterName.arg (maxFilterIndex + 1));
     hostFilter.SetAction (CEnums::USBDeviceFilterHold);
 
     CUSBDeviceFilter filter = CUnknown (hostFilter);
@@ -903,8 +902,8 @@ void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
         return;
 
     CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostUSBDeviceFilter hostFilter;
-    host.CreateUSBDeviceFilter (vboxGlobal().details (usb), hostFilter);
+    CHostUSBDeviceFilter hostFilter = host
+        .CreateUSBDeviceFilter (vboxGlobal().details (usb));
     hostFilter.SetAction (CEnums::USBDeviceFilterHold);
 
     CUSBDeviceFilter filter = CUnknown (hostFilter);

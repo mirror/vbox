@@ -196,14 +196,14 @@ QString VBoxGlobalSettings::publicProperty (const QString &publicName) const
 }
 
 /**
- *  Sets a value of the property with the given public name.
- *  Returns false if such property is not found, and true otherwise.
+ *  Sets a value of a property with the given public name.
+ *  Returns false if the specified property is not found, and true otherwise.
  *
  *  This method (as opposed to #setProperty (const char *name, const QVariant& value))
  *  validates the value against the property's regexp.
  *
  *  If an error occures while setting the value of the property, #operator !()
- *  will return false after this method returns, and #lastError() will contain
+ *  will return false after this method returns true, and #lastError() will contain
  *  the error message.
  *
  *  @note   This method emits the #propertyChanged() signal.

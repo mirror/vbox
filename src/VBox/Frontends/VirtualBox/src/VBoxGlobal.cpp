@@ -173,32 +173,38 @@ public:
 
     STDMETHOD(OnExtraDataCanChange)(IN_GUIDPARAM id,
                                     IN_BSTRPARAM key, IN_BSTRPARAM value,
-                                    BOOL *allowChange)
+                                    BSTR *error, BOOL *allowChange)
     {
-        if (!allowChange)
+        if (!error || !allowChange)
             return E_INVALIDARG;
 
         if (COMBase::toQUuid (id).isNull())
         {
-            // it's a global extra data key someone wants to change
+            /* it's a global extra data key someone wants to change */
             QString sKey = QString::fromUcs2 (key);
             QString sVal = QString::fromUcs2 (value);
             if (sKey.startsWith ("GUI/"))
             {
-                // try to set the global setting to check its syntax
+                /* try to set the global setting to check its syntax */
                 VBoxGlobalSettings gs (false /* non-null */);
                 if (gs.setPublicProperty (sKey, sVal))
                 {
-                    /// @todo (dmik)
-                    //  report the error message to the server using
-                    //  IVurtualBoxError
-                    *allowChange = !!gs; // allow only when no error
+                    /* this is a known GUI property key */
+                    if (!gs)
+                    {
+                        /* disallow the change when there is an error*/
+                        *error = SysAllocString ((const OLECHAR *)
+                                                 gs.lastError().ucs2());
+                        *allowChange = FALSE;
+                    }
+                    else
+                        *allowChange = TRUE;
                     return S_OK;
                 }
             }
         }
 
-        // not interested in this key -- never disagree
+        /* not interested in this key -- never disagree */
         *allowChange = TRUE;
         return S_OK;
     }

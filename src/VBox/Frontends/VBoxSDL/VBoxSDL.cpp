@@ -263,12 +263,12 @@ public:
     }
 
     STDMETHOD(OnExtraDataCanChange)(INPTR GUIDPARAM machineId, INPTR BSTR key, INPTR BSTR value,
-                                    BOOL *changeAllowed)
+                                    BSTR *error, BOOL *changeAllowed)
     {
         /* we never disagree */
         if (!changeAllowed)
             return E_INVALIDARG;
-        *changeAllowed = true;
+        *changeAllowed = TRUE;
         return S_OK;
     }
 
@@ -499,6 +499,21 @@ public:
         RTPrintf("\n%s: ** %lS **\n%lS\n%s\n", pszType, id, message,
                      fPaused ? "The VM was paused. Continue with HostKey + P after you solved the problem.\n" : "");
         return S_OK;
+    }
+
+    STDMETHOD(OnCanShowWindow)(BOOL *canShow)
+    {
+        if (!canShow)
+            return E_POINTER;
+        /* @todo return TRUE if gConsole is not NULL */
+        *canShow = FALSE;
+        return S_OK;
+    }
+
+    STDMETHOD(OnShowWindow)()
+    {
+        /* @todo implement */
+        return E_NOTIMPL;
     }
 
     static const char *GetStateName(MachineState_T machineState)

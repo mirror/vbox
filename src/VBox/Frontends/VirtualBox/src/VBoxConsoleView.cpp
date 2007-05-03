@@ -368,6 +368,21 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnCanShowWindow)(BOOL *canShow)
+    {
+        if (!canShow)
+            return E_POINTER;
+        /* @todo return TRUE... */
+        *canShow = FALSE;
+        return S_OK;
+    }
+
+    STDMETHOD(OnShowWindow)()
+    {
+        /* @todo implement */
+        return E_NOTIMPL;
+    }
+
 protected:
 
     VBoxConsoleView *view;
