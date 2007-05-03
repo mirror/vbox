@@ -1197,14 +1197,9 @@ void helper_sysret(int dflag)
 void helper_external_event(void)
 {
 #if defined(__DARWIN__) && defined(VBOX_STRICT)
-# if 0
-    //uintptr_t uFrameAddr = (uintptr_t)__builtin_frame_address(0); - this is broken (uses %ebp)
-    //AssertMsg(!( (uFrameAddr - sizeof(uintptr_t)) & 7 ), ("uFrameAddr=%#p\n", uFrameAddr));
-# else     
     uintptr_t uESP;
     __asm__ __volatile__("movl %%esp, %0" : "=r" (uESP));
     AssertMsg(!(uESP & 15), ("esp=%#p\n", uESP));
-# endif
 #endif 
     if (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD)
     {
