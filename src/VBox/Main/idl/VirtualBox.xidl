@@ -3,14 +3,14 @@
 <!--
  * Master declaration for VirtualBox's public COM/XPCOM API.
  * From this document, the build system generates several files
- * that are then used during the build process:
+ * via XSLT that are then used during the build process:
  *
  *   -  out/<platform>/bin/sdk/idl/VirtualBox[_XPCOM].idl, a
  *      pseudo-IDL file that represents the interfaces in IDL;
  *
  *   -  out/<platform>/bin/sdk/include/VirtualBox[_XPCOM].h, which
  *      gets included from the include/VBox/com/VirtualBox.h
- *      wrapper, to allow clients to access the API;
+ *      wrapper, to allow clients to access the COM/XPCOM API;
  *
  *   -  also, another intermediate file that is then used to
  *      produce the official Doxygen documentation of the API.
