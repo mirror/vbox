@@ -515,6 +515,6 @@ include $(PATH_KBUILD)/footer.kmk
 
 # ACPI DSL generation
 $(PATH_TARGET)/vboxaml.hex: PC/vbox.dsl
-	$(call MSG_L1,iasl $<,=> $@)
+	$(call MSG_TOOL,iasl,DevACPI,$<,$@)
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 

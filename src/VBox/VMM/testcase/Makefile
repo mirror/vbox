@@ -242,7 +242,7 @@ endif
 
 # 2. use nm and sed to transform this into the header we want.
 $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
-	$(call MSG_L1,Generating $@)
+	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(RM) -f $@ $@.dump $@.tmp
 	$(VBOX_NM) $< > $@.dump
 	$(QUIET)$(SED) -e '/STAMPROFILEADV/d' \
@@ -256,7 +256,7 @@ $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
 
 # 3. transform the HC header into a GC one by omitting some HC only structures.
 $(PATH_TARGET)/tstAsmStructsGC.h: $(PATH_TARGET)/tstAsmStructsHC.h
-	$(call MSG_L1,Generating $@)
+	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(SED) -e '/VMMSWITCHERDEF/d' \
 		$^ > $@
 
@@ -277,7 +277,7 @@ $(PATH_TARGET)/tstAsmStructs.run: $(INSTARGET_tstAsmStructs) $(INSTARGET_tstAsmS
 
 # 1&2. Manually dump selected structures and members.
 $(PATH_TARGET)/tstVMStructGC.h: $(INSTARGET_tstVMStructGC)
-	$(call MSG_L1,Generating $<)
+	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(INSTARGET_tstVMStructGC) > $@
 
 # 3. run it.

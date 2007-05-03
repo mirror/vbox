@@ -144,6 +144,6 @@ include $(PATH_KBUILD)/footer.kmk
 
 # Convert the pnm-file to a byte array.
 $(PATH_VBoxSDL)/Ico64x01.h: ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxSDL))
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,VBoxSDL,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 

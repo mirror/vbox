@@ -104,7 +104,7 @@ include $(PATH_KBUILD)/footer.kmk
 # Note: The BIOS image occupies 0xCB000...0xCFFFF, therefore its size is limited to 20KB.
 #
 $(PATH_TARGET)/NetBiosBin.c: $(PATH_TARGET)/pcnet32.zrom $(VBOX_BIN2C)
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,NetBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 16 -max 24 -mask 0xfff -export NetBiosBinary $< $@
 
 #
@@ -231,12 +231,12 @@ $(PATH_TARGET)/%.rt.o: $(PATH_TARGET)/%.o $(START) $(PATH_TARGET)/config.o $(BLI
 
 # General rule for creating binary code.
 $(PATH_TARGET)/%.bin: $(PATH_TARGET)/%.o $(MAKEDEPS)
-	$(call MSG_L1,objcopy $< => $@)
+	$(call MSG_TOOL,objcopy,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@
 
 # General rule for compressing binary code.
 $(PATH_TARGET)/%.zbin: $(PATH_TARGET)/%.bin $(TARGET_nrv2b) $(MAKEDEPS)
-	$(call MSG_L1,nrv2b $< => $@)
+	$(call MSG_TOOL,nrv2b,NetBiosBin,$<,$@)
 	$(QUIET)$(TARGET_nrv2b) e $< $@
 
 # Creating the binary code in compressed and uncompressed form.
@@ -255,24 +255,24 @@ $(PCIPREFIX):	arch/i386/prefix/romprefix.S $(MAKEDEPS)
 
 # Build binary code, split out the various sections.
 $(PATH_TARGET)/%.rt.bin: $(PATH_TARGET)/%.rt $(MAKEDEPS)
-	$(call MSG_L1,objcopy $< => $@)
+	$(call MSG_TOOL,objcopy,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary -R .prefix $< $@
 
 $(PATH_TARGET)/%.rt1.bin: $(PATH_TARGET)/%.rt $(MAKEDEPS)
-	$(call MSG_L1,objcopy $< => $@)
+	$(call MSG_TOOL,objcopy,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary -j .text.nocompress $< $@
 
 $(PATH_TARGET)/%.rt2.bin: $(PATH_TARGET)/%.rt $(MAKEDEPS)
-	$(call MSG_L1,objcopy $< => $@)
+	$(call MSG_TOOL,objcopy,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary -R .prefix -R .text.nocompress $< $@
 
 # Split the prefix.
 $(PATH_TARGET)/%prefix.entry.o: $(PATH_TARGET)/%prefix.o $(MAKEDEPS)
-	$(call MSG_L1,objcopy $< => $@)
+	$(call MSG_TOOL,objcopy,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -R .text16 $< $@
 
 $(PATH_TARGET)/%prefix.exit.o: $(PATH_TARGET)/%prefix.o $(MAKEDEPS)
-	$(call MSG_L1,objcopy $< => $@)
+	$(call MSG_TOOL,objcopy,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -R .prefix $< $@
 
 # Build the runtime.
@@ -299,7 +299,7 @@ $(PATH_TARGET)/pcnet32.zrom: pcnet32.zrom
 	$(CP) -f $< $@
 else
 $(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEDEPS)
-	$(call MSG_L1,makerom $@)
+	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
@@ -314,7 +314,7 @@ ifeq ($(USERNAME),klaus)
 endif
 
 $(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $(MAKEDEPS)
-	$(call MSG_L1,makerom $@)
+	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@

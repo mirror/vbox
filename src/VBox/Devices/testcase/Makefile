@@ -84,7 +84,7 @@ include	$(PATH_KBUILD)/footer.kmk
 
 # 1&2. Manually dump selected structures and members.
 $(PATH_TARGET)/tstDeviceStructSizeGC.h: $(INSTARGET_tstDeviceStructSizeGC)
-	$(call MSG_L1,Generating $<)
+	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(INSTARGET_tstDeviceStructSizeGC) > $@
 
 # 3. run it.

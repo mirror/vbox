@@ -57,14 +57,14 @@ include	$(PATH_KBUILD)/footer.kmk
 # Rule for making the bios.
 #
 $(PATH_TARGET)/PcBiosBin.c: $(PATH_TARGET)/bios.bin $(VBOX_BIN2C)
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $< $@
 
 #
 # Rule for making the bios logo.
 #
 $(PATH_TARGET)/PcDefBiosLogo.c: innotek_logo.bmp $(VBOX_BIN2C)
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -max 64 PcDefBiosLogo $< $@
 
 #
@@ -73,7 +73,7 @@ $(PATH_TARGET)/PcDefBiosLogo.c: innotek_logo.bmp $(VBOX_BIN2C)
 
 # 1. precompile rombios.c
 $(PATH_TARGET)/_rombios_.c: rombios.c logo.c apmbios.S | $(call DIRDEP,$(TARGET_PATH))
-	$(call MSG_L1,Precompiling $<,=> $@)
+	$(call MSG_TOOL,cpp,PcBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -I$(PATH_TARGET) -I$(PATH_CURRENT)/.. -I$(PATH_ROOT)/include -I$(PATH_OUT) -DBX_SMP_PROCESSORS=1 -DVBOX $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) -P $< > $@
 
 # 2. compile to intermediate asm file.
@@ -83,7 +83,7 @@ $(PATH_TARGET)/rombios0.s: $(PATH_TARGET)/_rombios_.c
 
 # 3. post process intermediate asm file.
 $(PATH_TARGET)/rombios1.s: $(PATH_TARGET)/rombios0.s
-	$(call MSG_L1,Adjusting BCC Assembly $<,=> $@)
+	$(call MSG_TOOL,Adjusting BCC Assembly,PcBiosBin,$<,$@)
 	$(QUIET)$(SED) -e 's/^\.text//' -e 's/^\.data//' $^ > $@
 
 # 4. assemble the intermediate asm file. (also creates a listing rombios.lst)
@@ -93,13 +93,13 @@ $(PATH_TARGET)/bios.tmp $(PATH_TARGET)/bios.lst: $(PATH_TARGET)/rombios1.s
 
 # 5. calculate checksums for the final BIOS image.
 $(PATH_TARGET)/bios.bin: $(PATH_TARGET)/bios.tmp $(TARGET_biossums)
-	$(call MSG_L1,biossums $@)
+	$(call MSG_TOOL,biossums,PcBiosBin,$<,$@)
 	$(QUIET)$(CP) -f $(PATH_TARGET)/bios.tmp $(PATH_TARGET)/bios.bin
 	$(QUIET)$(TARGET_biossums) $(PATH_TARGET)/bios.bin
 
 # 6. create the symbol table.
 $(PATH_TARGET)/bios-syms.h: $(PATH_TARGET)/bios.lst Makefile
-	$(call MSG_L1,symtable $<,=> $@)
+	$(call MSG_TOOL,symtable,PcBiosBin,$<,$@)
 	$(QUIET)$(SED) \
 		-e  '/^[0-9][0-9][0-9][0-9][0-9]                       000[0-9A-F]*            [[:space:]]*[a-zA-Z0-9_]*:/!d' \
 		-e 's/^[0-9][0-9][0-9][0-9][0-9]                       \(000[0-9A-F]*\)            [[:space:]]*\([a-zA-Z0-9_]*\):.*$$/    DEFSYM(0x\1, "\2"),/' \

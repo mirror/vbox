@@ -56,7 +56,7 @@ include	$(PATH_KBUILD)/footer.kmk
 # Rule for making the bios.
 #
 $(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
-	$(call MSG_L1,bin2c $< => $@)
+	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 32 -max 64 -mask 0x0fff -ascii -export VgaBiosBinary $< $@
 
 #
@@ -65,7 +65,7 @@ $(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
 
 # 1. precompile
 $(PATH_TARGET)/_vgabios_.c: vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c
-	$(call MSG_L1,Precompiling $<,=> $@)
+	$(call MSG_TOOL,cpp,VgaBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -DVBOX -DVBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" -E -P $< -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) > $@
 
 # 2. compile
@@ -75,7 +75,7 @@ $(PATH_TARGET)/vgabios0.s: $(PATH_TARGET)/_vgabios_.c
 
 # 3. preprocess intermediate assembly.
 $(PATH_TARGET)/vgabios1.s: $(PATH_TARGET)/vgabios0.s
-	$(call Adjusting BCC Assembly $<,=> $@)
+	$(call MSG_TOOL,Adjusting BCC Assembly,VgaBiosBin,$<,$@)
 	$(QUIET)$(SED) -e 's/^\.text//' -e 's/^\.data//' $^ > $@
 
 # 4. assemble
@@ -85,7 +85,7 @@ $(PATH_TARGET)/vgabios.tmp $(PATH_TARGET)/vgabios.lst: $(PATH_TARGET)/vgabios1.s
 
 # 5. checksums
 $(PATH_TARGET)/vgabios.bin: $(PATH_TARGET)/vgabios.tmp $(TARGET_biossums)
-	$(call MSG_L1,biossums $@)
+	$(call MSG_TOOL,biossums,VgaBiosBin,$<,$@)
 	$(QUIET)$(CP) -f $(PATH_TARGET)/vgabios.tmp $@
 	$(QUIET)$(TARGET_biossums) $@
 

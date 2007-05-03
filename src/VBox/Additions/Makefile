@@ -90,7 +90,7 @@ endif
 $(PATH_BIN)/additions/VBoxGuestAdditions.iso: \
 		$(GUESTADDITIONS_WIN32_DEPS) $(GUESTADDITIONS_LINUX_DEPS) \
 		Makefile
-	$(call MSG_L1,Creating $@)
+	$(call MSG_TOOL,mkisofs,,,$@)
 	$(QUIET)$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 -volid "VBOXADDITIONS" -l -graft-points -o $@ \
 		$(GUESTADDITIONS_WIN32_FILESPEC) $(GUESTADDITIONS_LINUX_FILESPEC)
 

@@ -1300,11 +1300,11 @@ $(XPCOM_TYPELIB): $(XPTFILES) | $(TARGET_xp_link)
 
 # generate build stamps
 $(PATH_VBox-xpcom-nspr)/_pr_bld.h:
-	$(call MSG_L1,Generating $@)
+	$(call MSG_GENERATE,,$@)
 	$(QUIET)echo '#define _BUILD_STRING "$(shell date "+%Y-%m-%d %T")"' > $@
 
 $(PATH_VBox-xpcom-nspr)/_pl_bld.h:
-	$(call MSG_L1,Generating $@)
+	$(call MSG_GENERATE,,$@)
 	$(QUIET)echo '#define _BUILD_STRING "$(shell date "+%Y-%m-%d %T")"' > $@
 
 #
@@ -1318,7 +1318,7 @@ XPIDL_INCS = -I xpcom/base/ -I xpcom/ds/ -I xpcom/components/ -I xpcom/io/ -I xp
 define def_IDL
 $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(idl)))) \
             $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): $(idl) | $(TARGET_xpidl)
-	$$(call MSG_L1,xpidl $$<)
+	$$(call MSG_TOOL,xpidl,XPCOM,$$<,$$@)
 	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/include $(VBOX_PATH_SDK)/idl
 	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
 	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<

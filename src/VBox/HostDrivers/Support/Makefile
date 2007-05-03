@@ -199,7 +199,7 @@ VBoxDrv.kext_SOURCES  = \
 	$(PATH_TARGET)/Info.plist
 
 $(PATH_TARGET)/Info.plist: $(VBOX_PATH_SUPPORT)/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
-	$(call MSG_L1,Generating $@)
+	$(call MSG_GENERATE,VBoxDrv,$@,$<)
 	$(xQUIET)$(RM) -f $@
 	$(xQUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
