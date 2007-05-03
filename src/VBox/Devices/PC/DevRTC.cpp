@@ -164,27 +164,8 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         cur_clock = ASMMultU64ByU32DivByU32(current_time, 32768, freq);
         next_irq_clock = (cur_clock & ~(uint64_t)(period - 1)) + period;
         s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
-#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
         TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
         
-#else
-        /* fiddly bits for dealing with running to keep up and losing interrupts. */
-        uint64_t quarter_period_time = ASMMultU64ByU32DivByU32(period, freq, 32768 * 4);
-        uint64_t now = TMTimerGet(s->CTXSUFF(pPeriodicTimer));
-        int64_t delta = s->next_periodic_time - now;
-        if (delta >= (int64_t)quarter_period_time)
-        {
-            TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
-            Log2(("period=%d current_time=%RU64 next=%RU64 delta=%-10RI64\n", period, current_time, s->next_periodic_time, delta));
-        }
-        else
-        {
-            uint64_t next = now + quarter_period_time; /* 4x speed */
-            TMTimerSet(s->CTXSUFF(pPeriodicTimer), next);
-            Log2(("period=%d current_time=%RU64 next=%RU64 delta=%-10RI64 now=%RU64 real_next=%RU64\n", period, current_time,
-                  s->next_periodic_time, delta, now, next));
-        }
-#endif
     } else {
         TMTimerStop(s->CTXSUFF(pPeriodicTimer));
     }
