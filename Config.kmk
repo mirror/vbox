@@ -99,7 +99,7 @@ VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call int-ge,$(KMK_REVISION),830),1)
+ifneq ($(call int-ge,$(KMK_REVISION),890),1)
  $(error You must update kBuild!)
 endif
 
