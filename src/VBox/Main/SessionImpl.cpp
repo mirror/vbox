@@ -589,6 +589,18 @@ STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId)
     return mConsole->onUSBDeviceDetach (aId);
 }
 
+STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoReaderLock alock (this);
+    AssertReturn (mState == SessionState_SessionOpen &&
+                  mType == SessionType_DirectSession, E_FAIL);
+
+    return mConsole->onShowWindow (aCheck, aCanShow);
+}
+
 // private methods
 ///////////////////////////////////////////////////////////////////////////////
 

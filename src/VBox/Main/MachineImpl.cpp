@@ -1790,19 +1790,9 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
     return S_OK;
 }
 
-/**
- * Returns the extra data key name following the given key. If the key
- * is not found, an error is returned. If NULL is supplied, the first
- * key will be returned. If key is the last item, NULL will be returned.
- *
- * @returns COM status code
- * @param key       extra data key name
- * @param nextKey   name of the key following "key". NULL if "key" is the last.
- * @param nextValue value of the key following "key". Optional parameter.
- */
-STDMETHODIMP Machine::GetNextExtraDataKey(INPTR BSTR key, BSTR *nextKey, BSTR *nextValue)
+STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
-    if (!nextKey)
+    if (!aNextKey)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -1811,7 +1801,7 @@ STDMETHODIMP Machine::GetNextExtraDataKey(INPTR BSTR key, BSTR *nextKey, BSTR *n
     AutoReaderLock alock (this);
 
     /* start with nothing found */
-    *nextKey = NULL;
+    *aNextKey = NULL;
 
     /*
      *  if we're ready and isConfigLocked() is FALSE then it means
@@ -1847,15 +1837,15 @@ STDMETHODIMP Machine::GetNextExtraDataKey(INPTR BSTR key, BSTR *nextKey, BSTR *n
             CFGLDRQueryBSTR(extraDataItemNode, "name", name.asOutParam());
 
             /* if we're supposed to return the first one */
-            if (key == NULL)
+            if (aKey == NULL)
             {
-                name.cloneTo(nextKey);
-                if (nextValue)
-                    CFGLDRQueryBSTR(extraDataItemNode, "value", nextValue);
+                name.cloneTo(aNextKey);
+                if (aNextValue)
+                    CFGLDRQueryBSTR(extraDataItemNode, "value", aNextValue);
                 found = true;
             }
             /* did we find the key we're looking for? */
-            else if (name == key)
+            else if (name == aKey)
             {
                 found = true;
                 /* is there another item? */
@@ -1863,15 +1853,15 @@ STDMETHODIMP Machine::GetNextExtraDataKey(INPTR BSTR key, BSTR *nextKey, BSTR *n
                 {
                     CFGLDRGetChildNode(extraDataNode, "ExtraDataItem", i + 1, &extraDataItemNode);
                     CFGLDRQueryBSTR(extraDataItemNode, "name", name.asOutParam());
-                    name.cloneTo(nextKey);
-                    if (nextValue)
-                        CFGLDRQueryBSTR(extraDataItemNode, "value", nextValue);
+                    name.cloneTo(aNextKey);
+                    if (aNextValue)
+                        CFGLDRQueryBSTR(extraDataItemNode, "value", aNextValue);
                     found = true;
                 }
                 else
                 {
                     /* it's the last one */
-                    *nextKey = NULL;
+                    *aNextKey = NULL;
                 }
             }
             CFGLDRReleaseNode(extraDataItemNode);
@@ -1890,19 +1880,11 @@ STDMETHODIMP Machine::GetNextExtraDataKey(INPTR BSTR key, BSTR *nextKey, BSTR *n
     return rc;
 }
 
-/**
- * Returns associated extra data from the configuration. If the key does
- * not exist, NULL will be stored in the output pointer.
- *
- * @returns COM status code
- * @param key    extra data key
- * @param value  address of result pointer
- */
-STDMETHODIMP Machine::GetExtraData(INPTR BSTR key, BSTR *value)
+STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 {
-    if (!key)
+    if (!aKey)
         return E_INVALIDARG;
-    if (!value)
+    if (!aValue)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -1911,7 +1893,7 @@ STDMETHODIMP Machine::GetExtraData(INPTR BSTR key, BSTR *value)
     AutoReaderLock alock (this);
 
     /* start with nothing found */
-    *value = NULL;
+    *aValue = NULL;
 
     /*
      *  if we're ready and isConfigLocked() is FALSE then it means
@@ -1945,10 +1927,10 @@ STDMETHODIMP Machine::GetExtraData(INPTR BSTR key, BSTR *value)
             Bstr name;
             CFGLDRGetChildNode(extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
             CFGLDRQueryBSTR(extraDataItemNode, "name", name.asOutParam());
-            if (name == key)
+            if (name == aKey)
             {
                 found = true;
-                CFGLDRQueryBSTR(extraDataItemNode, "value", value);
+                CFGLDRQueryBSTR(extraDataItemNode, "value", aValue);
             }
             CFGLDRReleaseNode(extraDataItemNode);
         }
@@ -1963,18 +1945,11 @@ STDMETHODIMP Machine::GetExtraData(INPTR BSTR key, BSTR *value)
 }
 
 /**
- *  Stores associated extra data in the configuration. If the data value is NULL
- *  then the corresponding extra data item is deleted. This method can be called
- *  outside a session and therefore belongs to the non protected machine data.
- *
- *  @param key    extra data key
- *  @param value  extra data value
- *
  *  @note Locks mParent for reading + this object for writing.
  */
-STDMETHODIMP Machine::SetExtraData (INPTR BSTR key, INPTR BSTR value)
+STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
 {
-    if (!key)
+    if (!aKey)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -2014,7 +1989,7 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR key, INPTR BSTR value)
         vrc = CFGLDRCreateNode (configLoader, "VirtualBox/Machine", &machineNode);
 
     vrc = CFGLDRGetChildNode (machineNode, "ExtraData", 0, &extraDataNode);
-    if (VBOX_FAILURE (vrc) && value)
+    if (VBOX_FAILURE (vrc) && aValue)
         vrc = CFGLDRCreateChildNode (machineNode, "ExtraData", &extraDataNode);
 
     if (extraDataNode)
@@ -2030,7 +2005,7 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR key, INPTR BSTR value)
             CFGLDRGetChildNode (extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
             Bstr name;
             CFGLDRQueryBSTR (extraDataItemNode, "name", name.asOutParam());
-            if (name == key)
+            if (name == aKey)
             {
                 CFGLDRQueryBSTR (extraDataItemNode, "value", oldVal.asOutParam());
                 break;
@@ -2043,33 +2018,38 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR key, INPTR BSTR value)
          *  When no key is found, oldVal is null
          *  Note:
          *  1. when oldVal is null, |oldVal == (BSTR) NULL| is true
-         *  2. we cannot do |oldVal != value| because it will compare
+         *  2. we cannot do |oldVal != aValue| because it will compare
          *  BSTR pointers instead of strings (due to type conversion ops)
          */
-        changed = !(oldVal == value);
+        changed = !(oldVal == aValue);
 
         if (changed)
         {
             /* ask for permission from all listeners */
-            if (!mParent->onExtraDataCanChange (mData->mUuid, key, value))
+            Bstr error;
+            if (!mParent->onExtraDataCanChange (mData->mUuid, aKey, aValue, error))
             {
-                LogWarningFunc (("Someone vetoed! Change refused!\n"));
+                const char *sep = error.isEmpty() ? "" : ": ";
+                const BSTR err = error.isNull() ? (const BSTR) L"" : error.raw();
+                LogWarningFunc (("Someone vetoed! Change refused%s%ls\n",
+                                 sep, err));
                 rc = setError (E_ACCESSDENIED,
                     tr ("Could not set extra data because someone refused "
-                        "the requested change of '%ls' to '%ls'"), key, value);
+                        "the requested change of '%ls' to '%ls'%s%ls"),
+                    aKey, aValue, sep, err);
             }
             else
             {
-                if (value)
+                if (aValue)
                 {
                     if (!extraDataItemNode)
                     {
                         /* create a new item */
                         CFGLDRAppendChildNode (extraDataNode, "ExtraDataItem",
                                                &extraDataItemNode);
-                        CFGLDRSetBSTR (extraDataItemNode, "name", key);
+                        CFGLDRSetBSTR (extraDataItemNode, "name", aKey);
                     }
-                    CFGLDRSetBSTR (extraDataItemNode, "value", value);
+                    CFGLDRSetBSTR (extraDataItemNode, "value", aValue);
                 }
                 else
                 {
@@ -2096,7 +2076,7 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR key, INPTR BSTR value)
     /* fire an event */
     if (SUCCEEDED (rc) && changed)
     {
-        mParent->onExtraDataChange (mData->mUuid, key, value);
+        mParent->onExtraDataChange (mData->mUuid, aKey, aValue);
     }
 
     return rc;
@@ -2312,6 +2292,61 @@ STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
     mHWData->mSharedFolders.remove (sharedFolder);
 
     return S_OK;
+}
+
+STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
+{
+    if (!aCanShow)
+        return E_POINTER;
+
+    /* start with No */
+    aCanShow = FALSE;
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr <IInternalSessionControl> directControl;
+    {
+        AutoReaderLock alock (this);
+
+        if (mData->mSession.mState != SessionState_SessionOpen)
+            return setError (E_FAIL,
+                tr ("Machine session is not open (session state: %d)"),
+                mData->mSession.mState);
+
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore calls made after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnShowWindow (TRUE /* aCheck */, aCanShow);
+}
+
+STDMETHODIMP Machine::ShowConsoleWindow()
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr <IInternalSessionControl> directControl;
+    {
+        AutoReaderLock alock (this);
+
+        if (mData->mSession.mState != SessionState_SessionOpen)
+            return setError (E_FAIL,
+                tr ("Machine session is not open (session state: %d)"),
+                mData->mSession.mState);
+
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore calls made after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    BOOL dummy;
+    return directControl->OnShowWindow (FALSE /* aCheck */, &dummy);
 }
 
 // public methods for internal purposes

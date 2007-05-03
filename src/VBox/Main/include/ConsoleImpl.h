@@ -198,6 +198,7 @@ public:
     void onAdditionsOutdated();
     void onKeyboardLedsChange (bool fNumLock, bool fCapsLock, bool fScrollLock);
     void onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMessage);
+    HRESULT onShowWindow (BOOL aCheck, BOOL *aCanShow);
 
     static const PDMDRVREG DrvStatusReg;
 

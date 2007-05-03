@@ -3503,6 +3503,48 @@ void Console::onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMess
         (*it++)->OnRuntimeError (aFatal, aErrorID, aMessage);
 }
 
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT Console::onShowWindow (BOOL aCheck, BOOL *aCanShow)
+{
+    AssertReturn (aCanShow, E_POINTER);
+
+    *aCanShow = FALSE;
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    HRESULT rc = S_OK;
+    CallbackList::iterator it = mCallbacks.begin();
+
+    if (aCheck)
+    {
+        while (it != mCallbacks.end())
+        {
+            BOOL canShow = FALSE;
+            rc = (*it++)->OnCanShowWindow (&canShow);
+            AssertComRC (rc);
+            if (FAILED (rc) || !canShow)
+                return rc;
+        }
+        *aCanShow = TRUE;
+    }
+    else
+    {
+        while (it != mCallbacks.end())
+        {
+            rc = (*it++)->OnShowWindow();
+            if (FAILED (rc))
+                return rc;
+        }
+    }
+
+    return S_OK;
+}
+
 // private mehtods
 ////////////////////////////////////////////////////////////////////////////////
 

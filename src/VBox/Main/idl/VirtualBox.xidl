@@ -348,7 +348,7 @@
 
     <interface
         name="IVirtualBoxErrorInfo" extends="$errorinfo"
-        uuid="37EDE76D-6E16-4CE4-9D48-2C5A87AFFEA2"
+        uuid="e98b5376-8eb4-4eea-812a-3964bf3bb26f"
         supportsErrorInfo="no"
         wsmap="struct"
     >
@@ -359,7 +359,18 @@
 
             In MS COM, this interface extends the IErrorInfo interface,
             in XPCOM, it extends the nsIException interface. In both cases,
-            it provides a set of common attributes to retrieve error information.
+            it provides a set of common attributes to retrieve error
+            information.
+
+            Sometimes invocation of some component's method may involve
+            methods of other components that may also fail (independently of
+            this method's failure), or a series of non-fatal errors may precede
+            a fatal error that causes method failure. In cases like that, it
+            may be desirable to preserve information about all errors happened
+            during method invocation and deliver it to the caller. The <link
+            to="#next"/> attribute is intended specifically for this purpose
+            and allows to represent a chain of errors through a single
+            IVirtualBoxErrorInfo instance set after method invocation.
         </desc>
 
         <attribute name="resultCode" type="result" readonly="yes">
@@ -373,7 +384,7 @@
                 returned.
                 <note>
                     In MS COM, there is no equivalent.
-                    In XPCOM, it is the same as to nsIException::result.
+                    In XPCOM, it is the same as nsIException::result.
                 </note>
             </desc>
         </attribute>
@@ -382,7 +393,7 @@
             <desc>
                 UUID of the interface that defined the error.
                 <note>
-                    In MS COM, it is the same as  to IErrorInfo::GetGUID.
+                    In MS COM, it is the same as IErrorInfo::GetGUID.
                     In XPCOM, there is no equivalent.
                 </note>
             </desc>
@@ -392,7 +403,7 @@
             <desc>
                 Name of the component that generated the error.
                 <note>
-                    In MS COM, it is the same as to IErrorInfo::GetSource.
+                    In MS COM, it is the same as IErrorInfo::GetSource.
                     In XPCOM, there is no eqiuvalent.
                 </note>
             </desc>
@@ -403,7 +414,17 @@
                 Text description of the error.
                 <note>
                     In MS COM, it is the same as IErrorInfo::GetDescription.
-                    In XPCOM, it is the same as to nsIException::message.
+                    In XPCOM, it is the same as nsIException::message.
+                </note>
+            </desc>
+        </attribute>
+
+        <attribute name="next" type="IVirtualBoxErrorInfo" readonly="yes">
+            <desc>
+                Next error object if there is any, or @c null otherwise.
+                <note>
+                    In MS COM, there is no equivalent.
+                    In XPCOM, it is the same as nsIException::inner.
                 </note>
             </desc>
         </attribute>
@@ -418,7 +439,7 @@
 
     <interface
         name="IVirtualBoxCallback" extends="$unknown"
-        uuid="1293842f-0380-47cf-80b5-e4f821861b26"
+        uuid="ee95ffc2-b6c6-4ce8-9e9e-ceadbb5019fe"
         wsmap="suppress"
     >
         <method name="onMachineStateChange">
@@ -451,8 +472,8 @@
             </desc>
             <param name="machineId" type="uuid" dir="in">
                 <desc>
-                    ID of the machine this event relates to.
-                    Nul for global extra data change requests.
+                    ID of the machine this event relates to
+                    (null ID for global extra data change requests).
                 </desc>
             </param>
             <param name="key" type="wstring" dir="in">
@@ -465,10 +486,16 @@
                     Extra data value for the given key.
                 </desc>
             </param>
+            <param name="error" type="wstring" dir="out">
+                <desc>
+                    Optional error message describing the reason of the
+                    veto (ignored if this notification returns @c true).
+                </desc>
+            </param>
             <param name="allowChange" type="boolean" dir="return">
                 <desc>
-                    Flag to indicate whether the callee agrees (true)
-                    or vetoes against the change (false).
+                    Flag to indicate whether the callee agrees (@ true)
+                    or vetoes against the change (@ false).
                 </desc>
             </param>
         </method>
@@ -971,7 +998,7 @@
                 The opened hard disk remains unregistered
                 until <link to="#registerHardDisk()"/> is called.
 
-                @deprecated Use <link to="#openHardDisk()"/> instead.
+                @deprecated Use <link to="IVirtualBox::openHardDisk()"/> instead.
 
                 <note>Opening differencing images is not supported.</note>
 
@@ -1055,7 +1082,7 @@
 
                 Returns a registered hard disk that uses the given image file.
 
-                @deprecated Use <link to="#findHardDisk()"/> instead.
+                @deprecated Use <link to="IVirtualBox::findHardDisk()"/> instead.
 
                 <note>The specified file path can be absolute (full path) or
                 relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
@@ -1361,26 +1388,54 @@
             <desc>
                 Returns the extra data key name following the supplied key.
                 An error is returned if the supplied key does not exist.
-                NULL is returned if the supplied key is the last key.
-                When supplying NULL for the key, the first item is returned.
-                NextValue is an optional parameter and if supplied, the next
-                key's value is returned as well.
+                @c NULL is returned if the supplied key is the last key.
+                When supplying @c NULL for the key, the first item is returned.
+                @a nextValue is an optional parameter and if supplied, the next
+                key's value is returned in it.
             </desc>
-            <param name="key" type="wstring" dir="in"/>
-            <param name="nextKey" type="wstring" dir="out"/>
-            <param name="nextValue" type="wstring" dir="out"/>
+            <param name="key" type="wstring" dir="in">
+                <desc>Name of the data key to follow.</desc>
+            </param>
+            <param name="nextKey" type="wstring" dir="out">
+                <desc>Name of the next data key.</desc>
+            </param>
+            <param name="nextValue" type="wstring" dir="out">
+                <desc>Value of the next data key.</desc>
+            </param>
         </method>
 
         <method name="getExtraData">
-            <desc>Returns associated extra data.</desc>
-            <param name="key" type="wstring" dir="in"/>
-            <param name="value" type="wstring" dir="return"/>
+            <desc>
+                Returns associated extra data.
+                If the reuqested key does not exist, this function will
+                succeed and return @c null in the @a value argument.
+            </desc>
+            <param name="key" type="wstring" dir="in">
+                <desc>Name of the data key to get.</desc>
+            </param>
+            <param name="value" type="wstring" dir="return">
+                <desc>Value of the requested data key.</desc>
+            </param>
         </method>
 
         <method name="setExtraData">
-            <desc>Sets associated extra data.</desc>
-            <param name="key" type="wstring" dir="in"/>
-            <param name="value" type="wstring" dir="in"/>
+            <desc>
+                Sets associated extra data.
+                If you pass @c NULL as a key @a vaule, the given key will be
+                deleted.
+                <note>
+                    This method can be called outside a machine session and
+                    therefore it's a caller's responsibility to handle race
+                    condition when several clients change the same key at the
+                    same time.
+                </note>
+            </desc>
+            <param name="key" type="wstring" dir="in">
+                <desc>Name of the data key to set.</desc>
+            </param>
+            <param name="value" type="wstring" dir="in">
+                <desc>Value to assign to the key.</desc>
+            </param>
         </method>
 
         <method name="openSession">
@@ -1824,7 +1879,7 @@
 
     <interface
         name="IMachine" extends="$unknown"
-        uuid="50fa9181-d2d4-45ca-bf0e-742677b9c707"
+        uuid="f0ad6688-2216-4654-a375-10afc5b88dcd"
         wsmap="uuid"
     >
         <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -2509,6 +2564,36 @@
             </param>
         </method>
 
+        <method name="canShowConsoleWindow">
+            <desc>
+                Returns @c true if the VM console process can activate the
+                console window and bring it to foreground on the desktop of
+                the host PC.
+                <note>
+                    This method will fail if a session for this machine is not
+                    currently open.
+                </note>
+            </desc>
+            <param name="canShow" type="boolean" dir="return">
+                <desc>
+                    @c true if the console window can be shown and @c
+                    false otherwise.
+                </desc>
+            </param>
+        </method>
+
+        <method name="showConsoleWindow">
+            <desc>
+                Returns @c true if the VM console process can activate the
+                console window and bring it to foreground on the desktop of
+                the host PC.
+                <note>
+                    This method will fail if a session for this machine is not
+                    currently open.
+                </note>
+            </desc>
+        </method>
+
     </interface>
 
     <!--
@@ -2518,7 +2603,7 @@
 
     <interface
         name="IConsoleCallback" extends="$unknown"
-        uuid="05D3DD3F-0550-4953-BB3C-4ECB3EBF7C2E"
+        uuid="a56eff10-6db9-4985-a12a-039b604b491b"
         wsmap="suppress"
     >
 
@@ -2672,12 +2757,12 @@
                 </ul>
 
                 <note>
-                    This notification is not designed to be implemented by more
-                    than one callback at a time. If you have multiple
+                    This notification is not designed to be implemented by
+                    more than one callback at a time. If you have multiple
                     IConsoleCallback instances registered on the given
-                    IConsole object, make sure you just return S_OK from all but
-                    one of them that does actual user notification and performs
-                    necessary actions.
+                    IConsole object, make sure you simply do nothing but
+                    return @c S_OK from all but one of them that does actual
+                    user notification and performs necessary actions.
                 </note>
 
             </desc>
@@ -2690,6 +2775,58 @@
             <param name="message" type="wstring" dir="in">
                 <desc>Optional error message</desc>
             </param>
+        </method>
+
+        <method name="onCanShowWindow">
+            <desc>
+                Notification when a call to
+                <link to="IMachine::canShowConsoleWindow()"/> is made by a
+                front-end to check if a subsequent call to
+                <link to="IMachine::showConsoleWindow()"/> can succeed.
+
+                The callee should give an answer appropriate to the current
+                machine state in the @a canShow argument. This answer must
+                remain valid at least until the next
+                <link to="IConsole::state">machine state</link> change.
+
+                <note>
+                    This notification is not designed to be implemented by
+                    more than one callback at a time. If you have multiple
+                    IConsoleCallback instances registered on the given
+                    IConsole object, make sure you simply do nothing but
+                    return @c true and @c S_OK from all but one of them that
+                    actually manages console window activation.
+                </note>
+            </desc>
+            <param name="canShow" type="boolean" dir="return">
+                <desc>
+                    @c true if the console window can be shown and @c
+                    false otherwise.
+                </desc>
+            </param>
+        </method>
+
+        <method name="onShowWindow">
+            <desc>
+                Notification when a call to
+                <link to="IMachine::showConsoleWindow()"/>
+                requests the console window to be activated and brought to
+                foreground on the desktop of the host PC.
+
+                This notification should cause the VM console process to
+                perform the requested action as described above. If it is
+                impossible to do it at a time of this notification, this
+                method should return a failure.
+
+                <note>
+                    This notification is not designed to be implemented by
+                    more than one callback at a time. If you have multiple
+                    IConsoleCallback instances registered on the given
+                    IConsole object, make sure you simply do nothing but
+                    return@c S_OK from all but one of them that actually
+                    manages console window activation.
+                </note>
+            </desc>
         </method>
 
     </interface>
@@ -3426,7 +3563,7 @@
 
     <interface
         name="IHost" extends="$unknown"
-        uuid="FD443EC1-000B-4F5B-9282-D72760A66916"
+        uuid="81729c26-1aec-46f5-b7c0-cc7364738fdb"
         wsmap="global"
     >
         <attribute name="DVDDrives" type="IHostDVDDriveCollection" readonly="yes">
@@ -3560,7 +3697,7 @@
                     for more info.
                 </desc>
             </param>
-            <param name="filter" type="IHostUSBDeviceFilter" dir="out">
+            <param name="filter" type="IHostUSBDeviceFilter" dir="return">
                 <desc>Created filter object.</desc>
             </param>
         </method>
@@ -3604,7 +3741,7 @@
             <param name="position" type="unsigned long" dir="in">
                 <desc>Position to remove the filter from.</desc>
             </param>
-            <param name="filter" type="IHostUSBDeviceFilter" dir="out">
+            <param name="filter" type="IHostUSBDeviceFilter" dir="return">
                 <desc>Removed USB device filter.</desc>
             </param>
         </method>
@@ -5877,8 +6014,8 @@
                 implementation must return the same address as it gets in
                 the @a vram parameter of this method.
 
-                For non linear modes (such as text and standard VGA), the
-                @vram parameter is NULL and must not be used. When it's not
+                For non linear modes (such as text and standard VGA), the @a
+                vram parameter is @c NULL and must not be used. When it's not
                 NULL, it is recommended to use it to access the guest video
                 memory instead of creating a separate buffer as it will at
                 least remove one copy operation.
@@ -5897,10 +6034,22 @@
             <param name="vram" type="octet" mod="ptr" dir="in">
                 <desc>Pointer to the guest VRAM (NULL for non linear modes)</desc>
             </param>
-            <param name="lineSize" type="unsigned long" dir="in"/>
-            <param name="width" type="unsigned long" dir="in"/>
-            <param name="height" type="unsigned long" dir="in"/>
-            <param name="finished" type="boolean" dir="return"/>
+            <param name="lineSize" type="unsigned long" dir="in">
+                <desc>Size of one scan line, in bytes.</desc>
+            </param>
+            <param name="width" type="unsigned long" dir="in">
+                <desc>Width of the guest display, in pixels.</desc>
+            </param>
+            <param name="height" type="unsigned long" dir="in">
+                <desc>Height of the guest display, in pixels.</desc>
+            </param>
+            <param name="finished" type="boolean" dir="return">
+                <desc>
+                    Can the VM start using the new framebuffer immediately
+                    after this method returns or it should wait for
+                    <link to="IDisplay::resizeCompleted()"/>.
+                </desc>
+            </param>
         </method>
 
         <method name="operationSupported">
@@ -7145,7 +7294,7 @@
 
     <interface
         name="IInternalSessionControl" extends="$unknown"
-        uuid="A99D5EB3-02DE-48e4-B059-91A8A41B4DA1"
+        uuid="9c6bec01-4135-40a0-b9d3-ab119a9c5412"
         internal="yes"
         wsmap="suppress"
     >
@@ -7246,6 +7395,18 @@
                 computer and needs to be detached from the machine.
             </desc>
             <param name="id" type="uuid" dir="in"/>
+        </method>
+
+        <method name="onShowWindow">
+            <desc>
+                Called by <link to="IMachine::canShowConsoleWindow()"/> and by
+                <link to="IMachine::showConsoleWindow()"/> in order to notify
+                console callbacks
+                <link to="IConsoleCallback::onCanShowWindow()"/>
+                and <link to="IConsoleCallback::onShowWindow()"/>.
+            </desc>
+            <param name="check" type="boolean" dir="in"/>
+            <param name="canShow" type="boolean" dir="out"/>
         </method>
 
     </interface>

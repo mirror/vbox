@@ -25,52 +25,63 @@
 // public initializer/uninitializer for internal purposes only
 ////////////////////////////////////////////////////////////////////////////////
 
-void VirtualBoxErrorInfo::init (HRESULT resultCode, const GUID &iid,
-                                const BSTR component, const BSTR text)
+void VirtualBoxErrorInfo::init (HRESULT aResultCode, const GUID &aIID,
+                                const BSTR aComponent, const BSTR aText,
+                                IVirtualBoxErrorInfo *aNext)
 {
-    mResultCode = resultCode;
-    mIID = iid;
-    mComponent = component;
-    mText = text;
+    mResultCode = aResultCode;
+    mIID = aIID;
+    mComponent = aComponent;
+    mText = aText;
+    mNext = aNext;
 }
 
 // IVirtualBoxErrorInfo properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (HRESULT *resultCode)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (HRESULT *aResultCode)
 {
-    if (!resultCode)
+    if (!aResultCode)
         return E_POINTER;
 
-    *resultCode = mResultCode;
+    *aResultCode = mResultCode;
     return S_OK;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (GUIDPARAMOUT iid)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (GUIDPARAMOUT aIID)
 {
-    if (!iid)
+    if (!aIID)
         return E_POINTER;
 
-    mIID.cloneTo (iid);
+    mIID.cloneTo (aIID);
     return S_OK;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Component) (BSTR *component)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Component) (BSTR *aComponent)
 {
-    if (!component)
+    if (!aComponent)
         return E_POINTER;
 
-    mComponent.cloneTo (component);
+    mComponent.cloneTo (aComponent);
     return S_OK;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Text) (BSTR *text)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Text) (BSTR *aText)
 {
-    if (!text)
+    if (!aText)
         return E_POINTER;
 
-    mText.cloneTo (text);
+    mText.cloneTo (aText);
     return S_OK;
+}
+
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Next) (IVirtualBoxErrorInfo **aNext)
+{
+    if (!aNext)
+        return E_POINTER;
+
+    /* this will set aNext to NULL if mNext is null */
+    return mNext.queryInterfaceTo (aNext);
 }
 
 #if defined (__WIN__)
@@ -157,7 +168,10 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetLocation (nsIStackFrame **aLocation)
 /* readonly attribute nsIException inner; */
 NS_IMETHODIMP VirtualBoxErrorInfo::GetInner (nsIException **aInner)
 {
-    return NS_ERROR_NOT_IMPLEMENTED;
+    ComPtr <IVirtualBoxErrorInfo> info;
+    nsresult rv = COMGETTER(Next) (info.asOutParam());
+    CheckComRCReturnRC (rv);
+    return info.queryInterfaceTo (aInner);
 }
 
 /* readonly attribute nsISupports data; */

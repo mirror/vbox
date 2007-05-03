@@ -196,12 +196,13 @@ public:
     void addProcessToReap (RTPROCESS pid);
     void updateClientWatcher();
 
-    void onMachineStateChange (const Guid &id, MachineState_T state);
-    void onMachineDataChange (const Guid &id);
-    BOOL onExtraDataCanChange(const Guid &id, INPTR BSTR key, INPTR BSTR value);
-    void onExtraDataChange(const Guid &id, INPTR BSTR key, INPTR BSTR value);
+    void onMachineStateChange (const Guid &aId, MachineState_T aState);
+    void onMachineDataChange (const Guid &aId);
+    BOOL onExtraDataCanChange(const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue,
+                              Bstr &aError);
+    void onExtraDataChange(const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue);
     void onMachineRegistered (const Guid &aId, BOOL aRegistered);
-    void onSessionStateChange (const Guid &id, SessionState_T state);
+    void onSessionStateChange (const Guid &aId, SessionState_T aState);
 
     void onSnapshotTaken (const Guid &aMachineId, const Guid &aSnapshotId);
     void onSnapshotDiscarded (const Guid &aMachineId, const Guid &aSnapshotId);
