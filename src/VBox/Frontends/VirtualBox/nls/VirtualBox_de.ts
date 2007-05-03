@@ -2859,7 +2859,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>&amp;Action</source>
-        <translation>&amp;Handlung</translation>
+        <translation>&amp;Aktion</translation>
     </message>
     <message>
         <source>&amp;Vendor ID</source>
