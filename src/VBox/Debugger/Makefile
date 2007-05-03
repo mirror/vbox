@@ -129,8 +129,9 @@ include $(PATH_KBUILD)/footer.kmk
 define def_qt_gen_src_moc
 $(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(mochdr))).cpp)
 $$(mocsrc): $(mochdr)
-	$(MKDIR) -p $(basename $(mocsrc))
-	$(VBOX_MOC) $(mochdr) -o $(mocsrc)
+	$(call MSG_TOOL,moc,$(target),$(mocsrc),$(mochdr))
+	$(QUIET)$(MKDIR) -p $(basename $(mocsrc))
+	$(QUIET)$(VBOX_MOC) $(mochdr) -o $(mocsrc)
 
 endef
 
@@ -143,8 +144,9 @@ $(eval mocobj := $(PATH_$(target)_$(mocsrc))/$(notdir $(basename $(mocsrc)))$(SU
 $(eval mocinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocsrc))).moc)
 $$(mocobj): $(mocinc)
 $$(mocinc): $(mocsrc)
-	$(MKDIR) -p $(basename $(mocinc))
-	$(VBOX_MOC) -i $(mocsrc) -o $(mocinc)
+	$(call MSG_TOOL,moc,$(target),$(mocsrc),$(mocinc))
+	$(QUIET)$(MKDIR) -p $(basename $(mocinc))
+	$(QUIET)$(VBOX_MOC) -i $(mocsrc) -o $(mocinc)
 
 endef
 
@@ -158,8 +160,9 @@ $(eval uiobj    := $(PATH_$(target)_$(uisrc))/$(notdir $(basename $(uisrc)))$(SU
 $(eval mocuiinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocuihdr))).moc)
 $$(uisrc): $(mocuiinc)
 $$(mocuiinc): $(mocuihdr)
-	$(MKDIR) -p $(basename $(mocuiinc))
-	$(VBOX_MOC) -i $(mocuihdr) -o $(mocuiinc)
+	$(call MSG_TOOL,moc,$(target),$(mocuihdr),$(mocuiinc))
+	$(QUIET)$(MKDIR) -p $(basename $(mocuiinc))
+	$(QUIET)$(VBOX_MOC) -i $(mocuihdr) -o $(mocuiinc)
 
 endef
 
@@ -169,13 +172,16 @@ $(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).h)
 $(eval mocsrc := $(PATH_$(target))/moc/moc_$(notdir $(basename $(uifile))).cpp)
 
 $$(uihdr): $(uifile) | $(call DIRDEP,$(dir $(uihdr)))
-	$(VBOX_UIC) $(uifile) -o $(uihdr)
+	$(call MSG_TOOL,uic,$(target),$(uifile),$(uihdr))
+	$(QUIET)$(VBOX_UIC) $(uifile) -o $(uihdr)
 
 $$(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $(call DIRDEP,$(dir $(uisrc)))
-	$(VBOX_UIC) $(uifile) -i $(uihdr) -o $(uisrc)
+	$(call MSG_TOOL,uic,$(target),$(uihdr),$(uisrc))
+	$(QUIET)$(VBOX_UIC) $(uifile) -i $(uihdr) -o $(uisrc)
 
 $$(mocsrc): $(uihdr) | $(call DIRDEP,$(dir $(mocsrc)))
-	$(VBOX_MOC) $(uihdr) -o $(mocsrc)
+	$(call MSG_TOOL,uic,$(target),$(uihdr),$(mocsrc))
+	$(QUIET)$(VBOX_MOC) $(uihdr) -o $(mocsrc)
 
 endef
 
@@ -192,7 +198,8 @@ $(foreach mocuihdr,$($(target)_QT_MOCUIHDRS),$(eval $(def_qt_gen_inc_mocuihdr)))
 $(foreach uifile,$($(target)_QT_UISRCS)  ,$(eval $(def_qt_gen_src_ui)))
 # dirs
 $(call DIRDEP,$(PATH_$(target))/ui/) $(call DIRDEP,$(PATH_$(target))/moc/):
-	$(MKDIR) -p $$@
+	$(call MSG_MKDIR,$$@)
+	$(QUIET)$(MKDIR) -p $$@
 
 endef
 
@@ -201,7 +208,8 @@ $(foreach target,VBoxDbg,$(eval $(def_qt_gen_src)))
 
 
 $(call DIRDEP,$(PATH_VBoxDbg)/include/):
-	$(MKDIR) -p $@
+	$(call MSG_MKDIR,$@)
+	$(QUIET)$(MKDIR) -p $@
 
 
 #
