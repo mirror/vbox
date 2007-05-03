@@ -4940,6 +4940,29 @@ typedef struct PDMDEVHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnCritSectInit,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName));
 
+    /**
+     * Get the real world UCT time adjusted for VM lag.
+     *
+     * @returns pTime.
+     * @param   pDevIns         Device instance.
+     * @param   pTime           Where to store the time.
+     */
+    DECLR3CALLBACKMEMBER(PRTTIMESPEC, pfnUCTNow,(PPDMDEVINS pDevIns, PRTTIMESPEC pTime));
+
+    /** Space reserved for future members.
+     * @{ */
+    DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved2,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved3,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved7,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved8,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved9,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));
+    /** @} */
+
 
     /** API available to trusted devices only.
      *
@@ -5262,7 +5285,7 @@ typedef HCPTRTYPE(struct PDMDEVHLP *) PPDMDEVHLP;
 typedef HCPTRTYPE(const struct PDMDEVHLP *) PCPDMDEVHLP;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2010000
+#define PDM_DEVHLP_VERSION  0xf2020000
 
 
 /**
@@ -5804,6 +5827,14 @@ DECLINLINE(int) PDMDevHlpPDMQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUIN
 DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName)
 {
     return pDevIns->pDevHlp->pfnCritSectInit(pDevIns, pCritSect, pszName);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnUCTNow
+ */
+DECLINLINE(PRTTIMESPEC) PDMDevHlpUCTNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
+{
+    return pDevIns->pDevHlp->pfnUCTNow(pDevIns, pTime);
 }
 
 /**
