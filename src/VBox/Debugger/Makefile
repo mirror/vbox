@@ -63,6 +63,7 @@ endif
 #
 VBoxDbg_TEMPLATE = VBOXQTGUI
 VBoxDbg_DEFS = IN_DBG_R3
+VBoxDbg_CXXFLAGS.linux = $((TEMPLATE_VBOXQTGUI_CXXFLAGS.linux) -O2
 VBoxDbg_INCS = \
 	. \
 	$(PATH_VBoxDbg)/ui \
