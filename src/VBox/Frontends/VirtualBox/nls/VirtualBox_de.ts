@@ -726,7 +726,7 @@
     </message>
     <message>
         <source>&amp;Actions</source>
-        <translation>Handlung</translation>
+        <translation>Aktionen</translation>
     </message>
     <message>
         <source>Location</source>
