@@ -1724,11 +1724,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create the APIC timer.
      */
-#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicTimer,
-#else
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, apicTimer,
-#endif
                                 "APIC Timer", &pData->CTXSUFF(pTimer));
     if (VBOX_FAILURE(rc))
         return rc;
