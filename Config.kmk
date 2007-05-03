@@ -833,6 +833,7 @@ VBOX_GCC32_CHECK_CXX = $(shell \
 $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	$(call MSG_GENERATE,,$@,)
 	$(QUIET)$(RM) -f "$@"
+	$(QUIET)$(MKDIR) -p $(@D)
 
 	@# HC compiler switch detction.
 	$(APPEND) "$@" "VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)"
