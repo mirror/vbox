@@ -79,6 +79,51 @@ int listVMs(IVirtualBox *virtualBox)
     return 0;
 }
 
+int testErrorInfo(IVirtualBox *virtualBox)
+{
+    HRESULT rc;
+
+    /* try to find a machine that doesn't exist */
+    IMachine *machine = NULL;
+    BSTR machineName = SysAllocString(L"Foobar");
+
+    rc = virtualBox->FindMachine(machineName, &machine);
+
+    if (FAILED(rc))
+    {
+        IErrorInfo *errorInfo;
+
+        rc = GetErrorInfo(0, &errorInfo);
+
+        if (FAILED(rc))
+            printf("Error getting error info! rc = 0x%x\n", rc);
+        else
+        {
+            BSTR errorDescription = NULL;
+
+            rc = errorInfo->GetDescription(&errorDescription);
+
+            if (FAILED(rc) || !errorDescription)
+                printf("Error getting error description! rc = 0x%x\n", rc);
+            else
+            {
+                printf("Successfully retrieved error description: %S\n", errorDescription);
+
+                SysFreeString(errorDescription);
+            }
+
+            errorInfo->Release();
+        }
+    }
+
+    if (machine)
+        machine->Release();
+
+    SysFreeString(machineName);
+
+    return 0;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -105,6 +150,7 @@ int main(int argc, char *argv[])
 
         listVMs(virtualBox);
 
+        testErrorInfo(virtualBox);
 
         /* release the VirtualBox object */
         virtualBox->Release();
