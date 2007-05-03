@@ -1614,6 +1614,21 @@ TMR3DECL(int) TMR3TimerLoad(PTMTIMERHC pTimer, PSSMHANDLE pSSM)
 
 
 /**
+ * Get the real world UCT time adjusted for VM lag.
+ *
+ * @returns pTime.
+ * @param   pVM             The VM instance.
+ * @param   pTime           Where to store the time.
+ */
+TMR3DECL(PRTTIMESPEC) TMR3UCTNow(PVM pVM, PRTTIMESPEC pTime)
+{
+    RTTimeNow(pTime);
+    RTTimeSpecSubNano(pTime, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp);
+    return pTime;
+}
+
+
+/**
  * Display all timers.
  *
  * @param   pVM         VM Handle.
