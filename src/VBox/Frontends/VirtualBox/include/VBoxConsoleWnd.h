@@ -39,7 +39,7 @@
 # undef PAGE_SIZE
 # undef PAGE_SHIFT
 # include <Carbon/Carbon.h>
-#endif 
+#endif
 
 class QAction;
 class QActionGroup;
@@ -52,6 +52,7 @@ class QIStateIndicator;
 class VBoxUSBMenu;
 class VBoxSwitchMenu;
 class VBoxUSBLedTip;
+class VBoxNetworkLedTip;
 
 class VBoxConsoleWnd : public QMainWindow
 {
@@ -139,6 +140,9 @@ private slots:
     void prepareFloppyMenu();
     void prepareDVDMenu();
 
+    void prepareNetworkMenu();
+    void activateNetworkMenu (int);
+
     void captureFloppy (int id);
     void captureDVD (int id);
     void switchUSB (int id);
@@ -206,6 +210,7 @@ private:
     QPopupMenu *devicesMountFloppyMenu;
     QPopupMenu *devicesMountDVDMenu;
     QPopupMenu *devicesSharedFolders;
+    QPopupMenu *devicesNetworkMenu;
     VBoxUSBMenu *devicesUSBMenu;
     VBoxSwitchMenu *devicesVRDPMenu;
 
@@ -225,6 +230,7 @@ private:
         devicesMountFloppyMenuId,
         devicesMountDVDMenuId,
         devicesUSBMenuId,
+        devicesNetworkMenuId,
 #ifdef VBOX_WITH_DEBUGGER_GUI
         dbgMenuId,
 #endif
@@ -244,6 +250,7 @@ private:
     QLabel *hostkey_name;
 
     VBoxUSBLedTip *mUsbLedTip;
+    VBoxNetworkLedTip *mNetworkLedTip;
 
     QTimer *idle_timer;
     CEnums::MachineState machine_state;
@@ -279,7 +286,7 @@ private:
     CGImageRef dockImgBack75x75;
     CGImageRef dockImgBack100x75;
     CGImageRef dockImgOS;
-#endif 
+#endif
 };
 
 
