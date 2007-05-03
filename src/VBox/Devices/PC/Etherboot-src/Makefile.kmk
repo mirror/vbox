@@ -1,5 +1,6 @@
-#
-# VBox Etherboot Network boot ROM makefile
+# $Id$
+## @file
+# VBox Etherboot Network boot ROM makefile.
 #
 
 #

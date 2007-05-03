@@ -1,3 +1,8 @@
+# $Id$
+## @file
+# Makefile for liblzf.
+#
+
 #
 # Copyright (C) 2006 InnoTek Systemberatung GmbH
 #
