@@ -118,6 +118,57 @@ private:
     bool mUSBEnabled;
 };
 
+/** class VBoxNetworkLedTip
+ *
+ *  The VBoxNetworkLedTip class is an auxiliary ToolTip class
+ *  for the Network LED indicator.
+ */
+class VBoxNetworkLedTip : public QToolTip
+{
+public:
+
+    VBoxNetworkLedTip (QWidget *aWidget, const CMachine &aMachine) :
+        QToolTip (aWidget), mMachine (aMachine) {}
+
+    ~VBoxNetworkLedTip() { remove (parentWidget()); }
+
+protected:
+
+    void maybeTip (const QPoint &/* aPoint */)
+    {
+        QString toolTip = VBoxConsoleWnd::tr (
+            "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;the&nbsp;network&nbsp;interfaces",
+            "Network adapters indicator"
+        );
+
+        QString devices;
+
+        ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+        for (ulong slot = 0; slot < count; ++ slot)
+        {
+            CNetworkAdapter adapter = mMachine.GetNetworkAdapter (slot);
+            if (adapter.GetEnabled())
+                devices += VBoxConsoleWnd::tr ("<br><nobr>[Adapter %1 (%2): cable %3]</nobr>",
+                                               "Network adapters indicator")
+                    .arg (slot)
+                    .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
+                    .arg (adapter.GetCableConnected() ?
+                          VBoxConsoleWnd::tr ("connected", "Network adapters indicator") :
+                          VBoxConsoleWnd::tr ("disconnected", "Network adapters indicator"));
+        }
+
+        if (devices.isNull())
+            devices = VBoxConsoleWnd::tr ("<br><nobr>[<b>All Network adapters are disabled</b>]</nobr>",
+                                          "Network adapters indicator");
+
+        tip (parentWidget()->rect(), toolTip + devices);
+    }
+
+private:
+
+    CMachine mMachine;
+};
+
 /** \class VBoxConsoleWnd
  *
  *  The VBoxConsoleWnd class is a VM console window, one of two main VBox
@@ -146,6 +197,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 #endif
     , console (0)
     , mUsbLedTip (0)
+    , mNetworkLedTip (0)
     , machine_state (CEnums::InvalidMachineState)
     , no_auto_close (false)
     , full_screen (false)
@@ -163,7 +215,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dockImgBack75x75 (NULL)
     , dockImgBack100x75 (NULL)
     , dockImgOS (NULL)
-#endif 
+#endif
 {
     if (aSelf)
         *aSelf = this;
@@ -324,6 +376,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
 
     devicesSharedFolders = new QPopupMenu (devicesMenu, "devicesSharedFolders");
+    devicesNetworkMenu = new QPopupMenu (devicesMenu, "devicesNetworkMenu");
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
 
@@ -340,6 +393,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
     devicesSFDialogAction->addTo (devicesMenu);
     devicesSFMenuSeparatorId = devicesMenu->insertSeparator();
+    devicesMenu->insertItem (VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"),
+        QString::null, devicesNetworkMenu, devicesNetworkMenuId);
+    devicesMenu->insertSeparator();
     devicesSwitchVrdpAction->addTo (devicesMenu);
     devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
     devicesInstallGuestToolsAction->addTo (devicesMenu);
@@ -482,11 +538,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     connect (devicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
     connect (devicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
+    connect (devicesNetworkMenu, SIGNAL(aboutToShow()), this, SLOT(prepareNetworkMenu()));
 
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
     connect (devicesSharedFolders, SIGNAL(activated(int)), this, SLOT(activateSFMenu()));
+    connect (devicesNetworkMenu, SIGNAL(activated(int)), this, SLOT(activateNetworkMenu(int)));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -502,6 +560,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (usb_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (sf_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
+    connect (net_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
 
 #if 0
@@ -536,13 +596,15 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     dockImgBack100x75     = ::DarwinCreateDockBadge ("dock_1.png");
     SetApplicationDockTileImage (dockImgOS);
     OverlayApplicationDockTileImage (dockImgStateRunning);
-#endif 
+#endif
 }
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
 {
     if (mUsbLedTip)
         delete mUsbLedTip;
+    if (mNetworkLedTip)
+        delete mNetworkLedTip;
 #ifdef Q_WS_MAC
     /* release the dock images */
     if (dockImgStateRunning)
@@ -559,7 +621,7 @@ VBoxConsoleWnd::~VBoxConsoleWnd()
         CGImageRelease (dockImgBack100x75);
     if (dockImgOS)
         CGImageRelease (dockImgOS);
-#endif 
+#endif
 }
 
 //
@@ -693,6 +755,9 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
     }
 
+    /* initialize network stuff */
+    mNetworkLedTip = new VBoxNetworkLedTip (net_light, cmachine);
+
     /* initialize vrdp stuff */
     CVRDPServer vrdpsrv = cmachine.GetVRDPServer();
     if (vrdpsrv.isNull())
@@ -731,16 +796,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 # if 0
     QImage osImg75x75 = vboxGlobal().vmGuestOSTypeIcon (osType).convertToImage().smoothScale (75, 75);
     QImage osImg = QImage::fromMimeSource ("dock_0.png");
-    bitBlt (&osImg, 25, 22, 
+    bitBlt (&osImg, 25, 22,
             &osImg75x75, 0, 0,
             75, 75, /* conversion_flags */ 0);
 # else
     QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osType).convertToImage().smoothScale (100, 75);
     QImage osImg = QImage::fromMimeSource ("dock_1.png");
-    bitBlt (&osImg, 14, 22, 
+    bitBlt (&osImg, 14, 22,
             &osImg100x75, 0, 0,
             100, 75, /* conversion_flags */ 0);
-# endif 
+# endif
     if (dockImgOS)
         CGImageRelease (dockImgOS);
     dockImgOS = ::DarwinQImageToCGImage (&osImg);
@@ -1306,6 +1371,7 @@ void VBoxConsoleWnd::languageChange()
 
     devicesMenu->changeItem (devicesMountFloppyMenuId, tr ("Mount &Floppy"));
     devicesMenu->changeItem (devicesMountDVDMenuId, tr ("Mount &CD/DVD-ROM"));
+    devicesMenu->changeItem (devicesNetworkMenuId, tr ("&Network Adapters"));
     devicesMenu->changeItem (devicesUSBMenuId, tr ("&USB Devices"));
 
     menuBar()->changeItem (vmMenuId, tr ("&Machine"));
@@ -1478,11 +1544,6 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                 count++;
         net_light->setState (count > 0 ? CEnums::DeviceIdle
                                          : CEnums::InvalidActivity);
-        QString tip = tr (
-            "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;the&nbsp;network&nbsp;interfaces"
-            "<br>[<b>%1 adapter(s)</b>]</qt>"
-        );
-        QToolTip::add (net_light, tip.arg (count));
     }
     if (element & USBStuff)
     {
@@ -2066,6 +2127,41 @@ void VBoxConsoleWnd::prepareDVDMenu()
 }
 
 /**
+ *  Prepares the "Network adapter" menu by populating the existent adaptors.
+ */
+void VBoxConsoleWnd::prepareNetworkMenu()
+{
+    devicesNetworkMenu->clear();
+    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+    for (ulong slot = 0; slot < count; ++ slot)
+    {
+        CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
+        int id = devicesNetworkMenu->insertItem (tr ("Adapter %1").arg (slot));
+        devicesNetworkMenu->setItemEnabled (id, adapter.GetEnabled());
+        devicesNetworkMenu->setItemChecked (id, adapter.GetEnabled() && adapter.GetCableConnected());
+    }
+}
+
+/**
+ *  Switch the cable connected/disconnected for the selected network adapter
+ */
+void VBoxConsoleWnd::activateNetworkMenu (int aId)
+{
+    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+    for (ulong slot = 0; slot < count; ++ slot)
+    {
+        if (aId == devicesNetworkMenu->idAt (slot))
+        {
+            CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
+            bool connected = adapter.GetCableConnected();
+            if (adapter.GetEnabled())
+                adapter.SetCableConnected (!connected);
+            break;
+        }
+    }
+}
+
+/**
  *  Captures a floppy device corresponding to a given menu id.
  */
 void VBoxConsoleWnd::captureFloppy (int id)
@@ -2206,6 +2302,11 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     if (ind == sf_state)
     {
         devicesSharedFolders->exec (e->globalPos());
+    }
+    else
+    if (ind == net_light)
+    {
+        devicesNetworkMenu->exec (e->globalPos());
     }
 }
 
