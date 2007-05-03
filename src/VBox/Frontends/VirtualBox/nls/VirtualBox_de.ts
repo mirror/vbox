@@ -534,7 +534,7 @@
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
-        <translation>Zeigt an, ob die entfernte Anzeige (VRDP-Server) aktiviert ist (&lt;img src=vrdp_16px.png/&gt;) oder nicht (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
+        <translation>Zeigt an, ob die Fernsteuerung (VRDP-Server) aktiviert ist (&lt;img src=vrdp_16px.png/&gt;) oder nicht (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
@@ -1074,7 +1074,7 @@
     <message>
         <source>Remote Display</source>
         <comment>details report</comment>
-        <translation>Entfernte Anzeige</translation>
+        <translation>Fernsteuerung</translation>
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
@@ -3264,7 +3264,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source> Remote Display </source>
-        <translation>Entfernte Anzeige</translation>
+        <translation>Fernsteuerung</translation>
     </message>
     <message>
         <source>7</source>
