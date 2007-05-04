@@ -2951,7 +2951,7 @@ with UUID %2!</source>
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;錯誤 ID： &lt;/nobr&gt;</translation>
+        <translation type="unfinished">&lt;nobr&gt;錯誤 ID： &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
@@ -2960,11 +2960,11 @@ with UUID %2!</source>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器執行期間發生嚴重錯誤！虛擬機器將會關機。建議使用剪貼簿來複製下列錯誤訊息，以便進一步的審查：&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;虛擬機器執行期間發生嚴重錯誤！虛擬機器將會關機。建議使用剪貼簿來複製下列錯誤訊息，以便進一步的審查：&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器執行期間發生錯誤！下面顯示錯誤的細節。您可以嘗試去更正所述的錯誤，並且重新執行虛擬機器。&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;虛擬機器執行期間發生錯誤！下面顯示錯誤的細節。您可以嘗試去更正所述的錯誤，並且重新執行虛擬機器。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
@@ -3002,23 +3002,6 @@ with UUID %2!</source>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;無法載入語言檔 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;。 &lt;p&gt;語言將會暫時重新設定為英文 (內建)。請前往位於主要 VirtualBox 視窗 &lt;b&gt;檔案&lt;/b&gt; 選單的 &lt;b&gt;偏好設定&lt;/b&gt; 對話框，並且在 &lt;b&gt;語言&lt;/b&gt; 頁面選取現有的語言之一。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">捨棄虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%2&lt;/b&gt; 時失敗。 {1 or 2?}</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3760,7 +3743,7 @@ value.</source>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;定義製造商篩選器為
+        <translation type="unfinished">&lt;qt&gt;定義製造商篩選器為
 &lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
 值。&lt;/qt&gt;</translation>
     </message>
@@ -3768,7 +3751,7 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;定義產品篩選器為
+        <translation type="unfinished">&lt;qt&gt;定義產品篩選器為
 &lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
 值。&lt;/qt&gt;</translation>
     </message>
@@ -3776,7 +3759,7 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;定義序號篩選器為
+        <translation type="unfinished">&lt;qt&gt;定義序號篩選器為
 &lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
 值。&lt;/qt&gt;</translation>
     </message>
@@ -3839,24 +3822,6 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;定義主端 USB 埠號篩選器為
 &lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
 值。&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
