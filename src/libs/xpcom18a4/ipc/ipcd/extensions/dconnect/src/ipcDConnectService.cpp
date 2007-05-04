@@ -238,9 +238,9 @@ public:
       // (DConnectInstance lifetime is bound to ipcDConnectService)
       nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
       if (dConnect)
-          dConnect->DeleteInstance(this);
+        dConnect->DeleteInstance(this);
       else
-          NS_NOTREACHED("ipcDConnectService has gone before DConnectInstance");
+        NS_NOTREACHED("ipcDConnectService has gone before DConnectInstance");
       delete this;
       return 0;
     }
@@ -2222,6 +2222,13 @@ EnumerateInstanceMapAndDelete (const DConnectInstanceKey::Key &aKey,
   // (after which no DConnectInstances may exist), so forcibly delete them
   // disregarding the reference counter
     
+#ifdef IPC_LOGGING
+  const char *name;
+  aData->InterfaceInfo()->GetNameShared(&name);
+  LOG(("ipcDConnectService: WARNING: deleting unreleased "
+       "instance=%p iface=%p {%s}\n", aData, aData->RealInstance(), name));
+#endif
+
   delete aData;
   return PL_DHASH_NEXT;
 }
@@ -2423,8 +2430,12 @@ ipcDConnectService::StoreInstance(DConnectInstance *wrapper)
 }
 
 void
-ipcDConnectService::DeleteInstance(DConnectInstance *wrapper)
+ipcDConnectService::DeleteInstance(DConnectInstance *wrapper,
+                                   PRBool locked /* = PR_FALSE */)
 {
+  if (!locked)
+    PR_Lock(mLock);
+
 #ifdef IPC_LOGGING
   const char *name;
   wrapper->InterfaceInfo()->GetNameShared(&name);
@@ -2432,12 +2443,11 @@ ipcDConnectService::DeleteInstance(DConnectInstance *wrapper)
        wrapper, wrapper->RealInstance(), name));
 #endif
 
-  {
-    nsAutoLock lock (mLock);
+  mInstances.Remove(wrapper->GetKey());
+  mInstanceSet.Remove(wrapper);
 
-    mInstances.Remove(wrapper->GetKey());
-    mInstanceSet.Remove(wrapper);
-  }
+  if (!locked)
+    PR_Unlock(mLock);
 }
 
 PRBool
@@ -2647,9 +2657,9 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
 
 struct PruneInstanceMapForPeerArgs
 {
+  ipcDConnectService *that;
   PRUint32 clientID;
-  DConnectInstanceMap &instances;
-  DConnectInstanceSet &instanceSet;
+  nsVoidArray &wrappers;
 };
 
 PR_STATIC_CALLBACK(PLDHashOperator)
@@ -2662,16 +2672,15 @@ PruneInstanceMapForPeer (const DConnectInstanceKey::Key &aKey,
 
   if (args && args->clientID == aData->Peer())
   {
-#ifdef IPC_LOGGING
-    const char *name;
-    aData->InterfaceInfo()->GetNameShared(&name);
-    LOG(("PruneInstanceMapForClient(): instance=%p iface=%p {%s} peer=%d\n",
-         aData, aData->RealInstance(), name, args->clientID));
-#endif
-    args->instances.Remove(aKey);
-    args->instanceSet.Remove(aData);
-    /* ignore the reference counter: the client is officially dead */
-    delete aData;
+    // ignore the reference counter: the client is officially dead
+    args->that->DeleteInstance(aData, PR_TRUE /* locked */);
+    // collect the instance for future destruction
+    if (!args->wrappers.AppendElement(aData))
+    {
+      NS_NOTREACHED("Not enough memory");
+      // bad but what to do
+      delete aData;
+    }
   }
   return PL_DHASH_NEXT;
 }
@@ -2696,11 +2705,20 @@ ipcDConnectService::OnClientStateChange(PRUint32 aClientID,
       LOG(("ipcDConnectService::OnClientStateChange: "
            "pruning all instances created for peer %d...\n", aClientID));
 
-      nsAutoLock lock (mLock);
+      nsVoidArray wrappers;
 
-      // make sure we have released all instances
-      PruneInstanceMapForPeerArgs args = { aClientID, mInstances, mInstanceSet };
-      mInstances.EnumerateRead(PruneInstanceMapForPeer, (void *)&args);
+      {
+        nsAutoLock lock (mLock);
+
+        // make sure we have removed all instances from instance maps
+        PruneInstanceMapForPeerArgs args = { this, aClientID, wrappers };
+        mInstances.EnumerateRead(PruneInstanceMapForPeer, (void *)&args);
+      }
+
+      // destruct all instances outside the lock because it will release
+      // the real objects which may need to make asynchronous use our service
+      for (PRInt32 i = 0; i < wrappers.Count(); ++i)
+        delete ((DConnectInstance *) wrappers[i]);
     }
   }
 
@@ -2920,18 +2938,32 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
   LOG(("ipcDConnectService::OnRelease [peer=%u instance=%p]\n", 
        peer, release->instance));
 
+  DConnectInstance *wrapper = release->instance;
+
+  nsAutoLock lock (mLock);
+
   // make sure we've been sent a valid wrapper
-  if (CheckInstanceAndAddRef(release->instance))
+  if (mInstanceSet.Contains(wrapper))
   {
-    // release twice: once to balance CheckInstanceAndAddRef() and once
-    // to satisfy the RELEASE request (the instance is no more needed by
-    // this peer)
-    release->instance->Release();
-    release->instance->Release();
+    nsrefcnt count = wrapper->AddRef();
+    count = wrapper->Release();
+    if (count == 1)
+    {
+      // we are the last one who holds a (fake) reference, remove the
+      // instace from instance maps while still under the lock
+      DeleteInstance(wrapper, PR_TRUE /* locked */);
+      // leave the lock before calling the destructor because it will release
+      // the real object which may need to make asynchronous use our service
+      lock.unlock();
+      delete wrapper;
+    }
   }
   else
   {
-    NS_NOTREACHED("instance wrapper not found");
+    // it is possible that the client disconnection event handler has released
+    // all client instances before the RELEASE message sent by the client gets
+    // processed here. Just give a warning
+    LOG(("ipcDConnectService::OnRelease: WARNING: instance wrapper not found"));
   }
 }
 
