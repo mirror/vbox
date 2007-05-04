@@ -24,7 +24,7 @@
     <message>
         <source>InnoTek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Wei-Lun Chao</translation>
+        <translation>OSSII (OSS Integral Institute Co. Ltd.)</translation>
     </message>
 </context>
 <context>
@@ -85,11 +85,11 @@
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
+        <translation>將所選開機裝置往上移動。</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
+        <translation>將所選開機裝置往下移動。</translation>
     </message>
 </context>
 <context>
@@ -255,7 +255,7 @@
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;VirtualBox 圖形使用者介面版本 %1&lt;br&gt;
+        <translation>&lt;qt&gt;VirtualBox 圖形使用者介面版本 %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -310,31 +310,31 @@
     </message>
     <message>
         <source>Folder Path</source>
-        <translation type="unfinished"></translation>
+        <translation>資料夾路徑</translation>
     </message>
     <message>
         <source>Folder Name</source>
-        <translation type="unfinished"></translation>
+        <translation>資料夾名稱</translation>
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示到主端 PC 上現有資料夾的路徑</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示分享資料夾的名稱 (就是它將被客端作業系統所看到的)</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟選取資料夾的對話框。</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">確定</translation>
+        <translation>確定</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -779,7 +779,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;指出網路介面&lt;br&gt;[&lt;b&gt;%1 配接卡&lt;/b&gt;]&lt;/qt&gt;的狀態</translation>
+        <translation type="obsolete">&lt;qt&gt;指出網路介面&lt;br&gt;[&lt;b&gt;%1 配接卡&lt;/b&gt;]&lt;/qt&gt;的狀態</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
@@ -815,6 +815,58 @@
     </message>
     <message>
         <source>&amp;Machine</source>
+        <translation>機器(&amp;M)</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation type="unfinished">配接卡 %1</translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>Floppy tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>CD/DVD tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect the cable from the selected virtual network adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect the cable to the selected virtual network adapter</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1085,23 +1137,23 @@
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>建立一顆新的虛擬硬碟</translation>
     </message>
     <message>
         <source>Add (register) an existing image file</source>
-        <translation type="unfinished"></translation>
+        <translation>加入(註冊)一個現有的映像檔</translation>
     </message>
     <message>
         <source>Remove (unregister) the selected media</source>
-        <translation type="unfinished"></translation>
+        <translation>移除(取消註冊)所選的媒體</translation>
     </message>
     <message>
         <source>Release the selected media by detaching it from the machine</source>
-        <translation type="unfinished"></translation>
+        <translation>藉由將它卸離機器來釋出所選媒體</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation type="unfinished"></translation>
+        <translation>重新顯示媒體清單</translation>
     </message>
 </context>
 <context>
@@ -1682,30 +1734,30 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished">停用</translation>
+        <translation>停用</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>主端到客端</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>客端到主端</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>雙向</translation>
     </message>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>選取一個目錄</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished"></translation>
+        <translation>選取一個檔案</translation>
     </message>
 </context>
 <context>
@@ -1720,7 +1772,7 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>無法刪除按鍵 &apos;%1&apos;。</translation>
     </message>
 </context>
 <context>
@@ -1751,7 +1803,7 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
     </message>
     <message>
         <source>If set, the keyboard is automatically captured every time the VM window is activated.</source>
-        <translation type="obsolete">如果設定了，每次啟用 VM 視窗時會自動捕捉鍵盤。</translation>
+        <translation type="obsolete">如果設定了，每次啟用虛擬機器視窗時會自動捕捉鍵盤。</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -1995,7 +2047,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>VirtualBox Preferences</source>
-        <translation type="unfinished">VirtualBox 全域設定值</translation>
+        <translation>VirtualBox 偏好設定</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -2008,15 +2060,15 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>語言</translation>
     </message>
     <message>
         <source> Language </source>
-        <translation type="unfinished"></translation>
+        <translation> 語言 </translation>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished">3</translation>
+        <translation>3</translation>
     </message>
     <message>
         <source>#language</source>
@@ -2024,7 +2076,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>&amp;Interface Language</source>
-        <translation type="unfinished"></translation>
+        <translation>介面語言(&amp;I)</translation>
     </message>
     <message>
         <source>
@@ -2032,75 +2084,79 @@ with all fields set to the values of the selected USB device attached to the hos
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.&lt;/qt&gt;
                                     </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt;列出所有可用的使用者介面語言。作用中的語言將
+以 &lt;b&gt;粗體&lt;/b&gt; 顯示。選取 &lt;i&gt;預設&lt;/i&gt; 以重新設定
+為系統的預設語言。&lt;/qt&gt;
+                                    </translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>作者：</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>語言：</translation>
     </message>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation> (內建)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;無法使用&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;不明&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>預設</translation>
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示到預設 VDI 資料夾的路徑。如果沒有另外特別指定，當加入現有或建立新的虛擬硬碟時，就會使用這個資料夾。</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>重新設定虛擬機器資料夾路徑為預設值。實際的預設路徑，將會在接受變更並再次開啟此對話框之後顯示。</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>重新設定 VDI 資料夾路徑為預設值。實際的預設路徑，將會在接受變更並再次開啟此對話框之後顯示。</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示到預設虛擬機器資料夾的路徑。如果沒有另外特別指定，當加入現有或建立新的虛擬機器時，就會使用這個資料夾。</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟對話框以選取預設的 VDI 資料夾。</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟對話框以選取預設的虛擬機器資料夾。</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果勾選，每次虛擬機器視窗啟動時，就會自動捕捉鍵盤。當鍵盤被捕捉，所有的按鍵動作 (包括系統的 Alt-Tab) 都會導向到虛擬機器。</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>列出所有全域的 USB 篩選器。左側的核取方塊定義了是否要啟用特定的篩選器。</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>以全部欄位設為空字串的方式，加入新的 USB 篩選器。請注意，此種篩選器將會符合任何附掛的 USB 裝置。</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>加入新的 USB 篩選器時，全部欄位都設為附掛到主端 PC 的所選 USB 裝置值。</translation>
     </message>
 </context>
 <context>
@@ -2941,10 +2997,27 @@ with UUID %2!</source>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;無法在目錄 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 中找到用於語言 &lt;b&gt;%1&lt;/b&gt; 的檔案。&lt;/p&gt;&lt;p&gt;語言將會暫時重新設定為系統的預設語言。請前往位於主要 VirtualBox 視窗 &lt;b&gt;檔案&lt;/b&gt; 選單的 &lt;b&gt;偏好設定&lt;/b&gt; 對話框，並且在 &lt;b&gt;語言&lt;/b&gt; 頁面選取現有的語言之一。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;無法載入語言檔 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;。 &lt;p&gt;語言將會暫時重新設定為英文 (內建)。請前往位於主要 VirtualBox 視窗 &lt;b&gt;檔案&lt;/b&gt; 選單的 &lt;b&gt;偏好設定&lt;/b&gt; 對話框，並且在 &lt;b&gt;語言&lt;/b&gt; 頁面選取現有的語言之一。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished">捨棄虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%2&lt;/b&gt; 時失敗。 {1 or 2?}</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2956,11 +3029,11 @@ with UUID %2!</source>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">確定</translation>
+        <translation>確定</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -2999,7 +3072,7 @@ with UUID %2!</source>
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished">顯示全域設定對話框</translation>
+        <translation>顯示全域設定對話框</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -3136,7 +3209,7 @@ with UUID %2!</source>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
-        <translation type="unfinished">全域設定值(&amp;G)…</translation>
+        <translation>偏好設定(&amp;P)…</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
@@ -3208,7 +3281,7 @@ with UUID %2!</source>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>機器(&amp;M)</translation>
     </message>
 </context>
 <context>
@@ -3294,7 +3367,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>編輯所選的分享資料夾定義。</translation>
     </message>
 </context>
 <context>
@@ -3565,7 +3638,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義製造商篩選器為
-&lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
+&lt;i&gt;精確符合&lt;/i&gt; 的字串。空的字串將會符合任何
 值。</translation>
     </message>
     <message>
@@ -3573,7 +3646,7 @@ value.</source>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義產品篩選器為
-&lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
+&lt;i&gt;精確符合&lt;/i&gt; 的字串。空的字串將會符合任何
 值。</translation>
     </message>
     <message>
@@ -3581,7 +3654,7 @@ value.</source>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義序號篩選器為
-&lt;i&gt;完全符合&lt;/i&gt; 的字串。空的字串將會符合任何
+&lt;i&gt;精確符合&lt;/i&gt; 的字串。空的字串將會符合任何
 值。</translation>
     </message>
     <message>
@@ -3634,7 +3707,7 @@ computer when a matching device is attached: give it up to the host OS
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">定義廠商 ID 篩選器。
-&lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
+&lt;i&gt;精確符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。空的字串將會符合任何
 值。</translation>
     </message>
@@ -3644,7 +3717,7 @@ value.</source>
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.</source>
         <translation type="obsolete">定義產品 ID 篩選器。
-&lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
+&lt;i&gt;精確符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中的
 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。空的字串將會符合任何
 值。</translation>
     </message>
@@ -3655,7 +3728,7 @@ value.</source>
 is a decimal digit of the fractional part. An empty string will match any
 value.</source>
         <translation type="obsolete">定義版本編號篩選器。
-&lt;i&gt;完全符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;IIFF&lt;/tt&gt; 其中的
+&lt;i&gt;精確符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;IIFF&lt;/tt&gt; 其中的
 &lt;tt&gt;I&lt;/tt&gt; 是整數部份的十進位數字，而 &lt;tt&gt;F&lt;/tt&gt;
 是小數部份的十進位數字。空的字串將會符合任何
 值。</translation>
@@ -3665,7 +3738,7 @@ value.</source>
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
         <translation type="obsolete">定義主端 USB 埠號篩選器為
-完全符合的字串。空的字串將會符合任何
+精確符合的字串。空的字串將會符合任何
 值。</translation>
     </message>
     <message>
@@ -3687,6 +3760,90 @@ value.</source>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;定義製造商篩選器為
+&lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
+值。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the product name filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;定義產品篩選器為
+&lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
+值。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the serial number filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;定義序號篩選器為
+&lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
+值。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines whether this filter applies
+to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
+to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
+or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;定義是否套用此篩選器
+至附掛到主端電腦的本地 USB 裝置 (&lt;i&gt;否&lt;/i&gt;)、
+至 VRDP 客戶端的電腦 (&lt;i&gt;是&lt;/i&gt;)、
+或是兩者都有 (&lt;i&gt;任何&lt;/i&gt;)。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines an action performed by the host
+computer when a matching device is attached: give it up to the host OS
+(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
+(&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;定義一個當符合的裝置附掛時，
+主端電腦所進行的動作：將它讓給主端作業系統
+(&lt;i&gt;忽略&lt;/i&gt;) 或是抓取它留待稍後虛擬機器使用
+(&lt;i&gt;保留&lt;/i&gt;).&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the vendor ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;定義供應商 ID 篩選器。
+&lt;i&gt;精確符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中
+&lt;tt&gt;X&lt;/tt&gt; 代表一個十六進位數字。空字串將會符合任何
+值。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the product ID filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;定義產品 ID 篩選器。
+&lt;i&gt;精確符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;XXXX&lt;/tt&gt; 其中
+&lt;tt&gt;X&lt;/tt&gt; 代表一個十六進位數字。空字串將會符合任何
+值。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the revision number filter. The
+&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
+&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
+is a decimal digit of the fractional part. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;定義版本編號篩選器。
+&lt;i&gt;精確符合&lt;/i&gt; 的字串格式是 &lt;tt&gt;IIFF&lt;/tt&gt; 其中
+&lt;tt&gt;I&lt;/tt&gt; 代表十進位數字的整數部份，而 &lt;tt&gt;F&lt;/tt&gt;
+代表十進位數字的小數部份。空字串將會符合任何
+值。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the host USB port filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;定義主端 USB 埠號篩選器為
+&lt;i&gt;精確符合&lt;/i&gt; 的字串。空字串將會符合任何
+值。&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the manufacturer filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
+value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3699,20 +3856,6 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines whether this filter applies
-to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
-to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
-or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Defines an action performed by the host
-computer when a matching device is attached: give it up to the host OS
-(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
-(&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3773,7 +3916,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ctrl+E</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+E</translation>
     </message>
 </context>
 <context>
@@ -3797,7 +3940,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">無法存取</translation>
+        <translation>無法存取</translation>
     </message>
 </context>
 <context>
@@ -3981,51 +4124,51 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果勾選，就將此虛擬網路卡插入虛擬機器之內。</translation>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>控制此虛擬配接卡附掛到主端作業系統真實網路的方式。</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示此配接卡的 MAC 位址。它包含剛好 12 個來自 {0-9,A-F} 的字元。</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>指出是否虛擬網路線已於機器啟動時插入。</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示為此配接卡所選的主端介面名稱。</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>列出所有可用的主端介面。</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>移除所選的主端介面。</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示 TAP 介面名稱。</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示為了設定 TAP 介面而執行的命令。</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
+        <translation>選取設定應用軟體。</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示為了終止 TAP 介面而執行的命令。</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
+        <translation>選取終止應用軟體。</translation>
     </message>
 </context>
 <context>
@@ -4755,7 +4898,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation>尚未選取第二從屬硬碟</translation>
+        <translation>尚未選取第二從屬硬碟。</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
@@ -4792,89 +4935,94 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>分享的剪貼簿(&amp;S)</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>快照資料夾(&amp;N)</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示您計畫要安裝於此虛擬機器的作業系統類型 (稱之為客端作業系統)。</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;如果勾選，虛擬機器將會支援
+進階配置與電源管理介面 (ACPI)。 &lt;b&gt;注意：&lt;/b&gt; 不要在安裝
+了 Windows 作業系統之後停用此功能！&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;如果勾選，虛擬機器將會支援
+輸入輸出 APIC (IO APIC)，它也許會稍微降低虛擬機器的效能。 &lt;b&gt;注意：&lt;/b&gt; 不要在安裝
+了 Windows 作業系統之後停用此功能！&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>定義在客端與主端作業系統之間分享剪貼簿的模式。請注意，此功能需要在客端作業系統中先安裝客端額外功能。</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示用來儲存此虛擬機器快照的路徑。請注意，快照可能會佔據相當大的磁碟空間。</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>重新設定快照資料夾路徑為預設值。實際的預設路徑，將會在接受變更並再次開啟此對話框之後顯示。</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示虛擬機器的描述。描述欄位可用來註解已安裝的客端作業系統配置細節。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>調用虛擬磁碟管理器，以建立一顆新的或選取一顆現有的虛擬硬碟來附掛。</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>列出可以掛載到虛擬機器的主端軟碟機。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>調用虛擬磁碟管理器，以選取要掛載的軟碟映像檔。</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>列出可掛載到虛擬機器的主端光碟機。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>調用虛擬磁碟管理器，以選取要掛載的光碟映像檔。</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;控制音效輸出驅動程式。 &lt;b&gt;空的音效驅動程式&lt;/b&gt;
+讓客端看得到音效介面卡，然而每次存取都會被忽略。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果勾選，就啟用此機器的虛擬 USB 控制器。</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>列出此機器所有的 USB 篩選器。左側的核取方塊定義是否啟用特定的篩選器。</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>以所有欄位設為空字串的方式，加入新的 USB 篩選器。請注意，此種篩選器將會符合任何附掛的 USB 裝置。</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>加入新的 USB 篩選器時，所有的欄位都設為已附掛到主端 PC 上所選 USB 裝置的值。</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">配接卡 %1</translation>
+        <translation>配接卡 %1</translation>
     </message>
 </context>
 </TS>

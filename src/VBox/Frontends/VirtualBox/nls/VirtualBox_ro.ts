@@ -129,7 +129,7 @@
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;VirtualBox Graphical User Interface Versiunea %1&lt;br&gt;
+        <translation>&lt;qt&gt;Interfaţa grafică VirtualBox versiunea %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -565,7 +565,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;interfeţelor&amp;nbsp;de&amp;nbsp;reţea&lt;br&gt;[&lt;b&gt;%1 dispozitiv(e)&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;interfeţelor&amp;nbsp;de&amp;nbsp;reţea&lt;br&gt;[&lt;b&gt;%1 dispozitiv(e)&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
@@ -634,6 +634,58 @@
     <message>
         <source>&amp;Machine</source>
         <translation>&amp;Maşină</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation type="unfinished">Dispozitiv %1</translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>Floppy tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>CD/DVD tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect the cable from the selected virtual network adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect the cable to the selected virtual network adapter</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1713,7 +1765,7 @@ toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC
     </message>
     <message>
         <source>VirtualBox Preferences</source>
-        <translation type="unfinished">Setări globale VirtualBox</translation>
+        <translation>Preferinţe VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -1875,12 +1927,8 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selectaţi tipul de imagine de disc hard virtual pe care doriţi să-l creaţi.&lt;/p&gt;
-&lt;p&gt;O &lt;b&gt;imagine expandabilă dinamic&lt;/b&gt; ocupă iniţial un spaţiu foarte mic
-pe discul hard fizic. Va creşte dinamic (până la dimensiunre specificată), 
-pe măsură ce SO Musafir face uz de spaţiul pe disc. &lt;/p&gt;
-&lt;p&gt;O &lt;b&gt;imagine de dimensiune fixă&lt;/b&gt; nu creşte. Este salvată într-un fişier de
-aproximativ aceeaşi dimensiune cu discul hard virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selectaţi tipul de imagine de disc hard virtual pe care doriţi să-l creaţi.&lt;/p&gt;
+&lt;p&gt;O &lt;b&gt;imagine expandabilă dinamic&lt;/b&gt; ocupă iniţial un spaţiu foarte mic pe discul hard fizic. Va creşte dinamic (până la dimensiunre specificată), pe măsură ce SO Musafir face uz de spaţiul pe disc. &lt;/p&gt;&lt;p&gt;O &lt;b&gt;imagine de dimensiune fixă&lt;/b&gt; nu creşte. Este salvată într-un fişier de aproximativ aceeaşi dimensiune cu discul hard virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image Type</source>
@@ -1992,10 +2040,8 @@ unei noi maşini virtuale pentru VirtualBox.&lt;/p&gt;
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare
-musafir pe care plănuiţi să îl instalaţi în maşină.&lt;/p&gt;
-&lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware.
-Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina virtuală creată.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare musafir pe care plănuiţi să îl instalaţi în maşină.&lt;/p&gt;
+&lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware.Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina virtuală creată.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -2457,12 +2503,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Nu am putut găsi un fişier de limbă pentru limba &lt;b&gt;%1&lt;/b&gt; în directorul &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;
+        <translation>&lt;p&gt;Nu am putut găsi un fişier de limbă pentru limba &lt;b&gt;%1&lt;/b&gt; în directorul &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;
 &lt;p&gt;Limbajul interfeţei va fi resetată temporar la cea implicită a sistemului. Mergeţi la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteţi deschide din meniul &lt;b&gt;Fişier&lt;/b&gt; al ferestrei principale VirtualBox, şi selectaţi o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Nu am putut încărca fişierul de limbă &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Limbajul interfeţei va fi resetată temporar la Engleză (implicit). Mergeţi la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteţi deschide din meniul &lt;b&gt;Fişier&lt;/b&gt; al ferestrei principale VirtualBox, şi selectaţi o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut încărca fişierul de limbă &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Limbajul interfeţei va fi resetată temporar la Engleză (implicit). Mergeţi la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteţi deschide din meniul &lt;b&gt;Fişier&lt;/b&gt; al ferestrei principale VirtualBox, şi selectaţi o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>floppy image</source>
@@ -2517,7 +2563,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
-        <translation type="unfinished">Setări &amp;globale...</translation>
+        <translation>&amp;Preferinţe...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
@@ -2525,7 +2571,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished">Afişează dialogul setări globale</translation>
+        <translation>Afişează dialogul preferinţe globale</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
