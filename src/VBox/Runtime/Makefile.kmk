@@ -909,7 +909,7 @@ include $(PATH_KBUILD)/footer.kmk
 # Generate the status code data.
 #
 $(PATH_TARGET)/errmsgdata.h: errmsg.sed $(DEPTH)/include/iprt/err.h $(DEPTH)/include/VBox/err.h
-	$(call MSG_L1,Generating $@)
+	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(SED) -f $< $(filter %.h,$^) > $@
 ## @todo r=bird: rename this to indicate that it's not only COM errors, but all win32/64 errors.
