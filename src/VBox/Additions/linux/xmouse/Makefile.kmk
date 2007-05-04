@@ -41,7 +41,7 @@ vboxmouse_drv_DEFS = \
 vboxmouse_drv_CFLAGS = -fno-merge-constants
 vboxmouse_drv_SYSSUFF = .o
 vboxmouse_drv_LDFLAGS.release = -S
-vboxmouse_drv_INCS = \
+vboxmouse_drv_INCS := \
 	../x11include/4.2/exports/include/X11 \
 	../x11include/4.2/include \
 	../x11include/4.2/include/extensions \
@@ -51,7 +51,7 @@ vboxmouse_drv_INCS = \
 	../x11include/4.2/programs/Xserver/hw/xfree86/os-support \
 	../x11include/4.2/programs/Xserver/hw/xfree86/os-support/bus \
 	../x11include/4.2/programs/Xserver/mi \
-	$(PATH_ROOT)/include
+	$(PATH_SUB_CURRENT)
 vboxmouse_drv_SOURCES  = \
 	mouse.c \
 	pnp.c \
@@ -63,10 +63,11 @@ vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
 	IN_RING3 VBOX XORG_7X PIC
 vboxmouse_drv_70_LDFLAGS = -s
-vboxmouse_drv_70_INCS = \
+vboxmouse_drv_70_INCS := \
 	../x11include/7.0 \
 	../x11include/7.0/X11 \
-	../x11include/7.0/xorg
+	../x11include/7.0/xorg \
+	$(PATH_SUB_CURRENT)
 vboxmouse_drv_70_SOURCES  = \
 	xorg70/mouse.c \
 	xorg70/pnp.c \
@@ -79,7 +80,8 @@ vboxmouse_drv_71_LDFLAGS = -s
 vboxmouse_drv_71_INCS = \
 	../x11include/7.1 \
 	../x11include/7.1/X11 \
-	../x11include/7.1/xorg
+	../x11include/7.1/xorg \
+	$(PATH_SUB_CURRENT)
 vboxmouse_drv_71_SOURCES  = \
 	xorg71/mouse.c \
 	xorg71/pnp.c \
@@ -87,3 +89,4 @@ vboxmouse_drv_71_SOURCES  = \
 
 
 include	$(PATH_KBUILD)/footer.kmk
+
