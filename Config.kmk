@@ -563,7 +563,7 @@ endif
 # Setup the global defines and includes.
 #
 ## @todo PATH_CURRENT has to go, fix the places where we rely on it.
-INCS += $(PATH_ROOT)/include $(PATH_CURRENT) $(PATH_OUT)
+INCS += $(PATH_ROOT)/include $(PATH_OUT)
 DEFS += VBOX
 DEFS.debug := DEBUG DEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) DEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME))
 DEFS.profile = VBOX_WITH_STATISTICS

@@ -653,6 +653,7 @@ endif
 #
 RuntimeR0Drv_TEMPLATE   = VBOXR0DRV
 RuntimeR0Drv_SDKS.win   = W2K3DDK WINPSDKINCS
+RuntimeR0Drv_INCS      := $(PATH_SUB_CURRENT)
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0 # why is IN_SUP_R0 here? because!
@@ -774,6 +775,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 #
 RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
 RuntimeW32GuestR0_SDKS          = W2K3DDKX86 WINPSDKINCS
+RuntimeW32GuestR0_INCS         := $(PATH_SUB_CURRENT)
 RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS  IN_SUP_R0
 RuntimeW32GuestR0_SOURCES       = \
 	$(filter-out generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
