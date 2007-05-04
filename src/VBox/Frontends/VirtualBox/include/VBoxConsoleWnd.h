@@ -149,6 +149,9 @@ private slots:
     void switchUSB (int aId);
     void activateSFMenu();
 
+    void statusTipChanged (const QString &);
+    void clearStatusBar();
+
     void showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e);
 
     void updateDeviceLights();
@@ -218,6 +221,9 @@ private:
     int devicesUSBMenuSeparatorId;
     int devicesVRDPMenuSeparatorId;
     int devicesSFMenuSeparatorId;
+
+    bool waitForStatusBarChange;
+    bool statusBarChangedInside;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
