@@ -216,20 +216,21 @@ endif
 #
 ifdef VBOX_WITH_XPCOM
 
-VBoxSVCM_TEMPLATE		= VBOXMAIN
+VBoxSVCM_TEMPLATE       = VBOXMAIN
 ifneq ($(BUILD_TARGET),linux)
-VBoxSVCM_INST                   = $(INST_BIN)components/
+VBoxSVCM_INST           = $(INST_BIN)components/
 endif
-VBoxSVCM_DEFS			= IN_RING3 IN_CFGLDR_R3
-VBoxSVCM_INCS			= \
+VBoxSVCM_DEFS           = IN_RING3 IN_CFGLDR_R3
+VBoxSVCM_INCS           = \
 	include \
 	$(PATH_VBoxC) \
-	$(PATH_VBoxCOM)
-VBoxSVCM_SOURCES		= \
+	$(PATH_VBoxCOM) \
+	$(PATH_CURRENT)
+VBoxSVCM_SOURCES        = \
 	linux/server_module.cpp
-VBoxSVCM_LIBS                   = \
+VBoxSVCM_LIBS           = \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
-VBoxSVCM_LDFLAGS.darwin         = -install_name @executable_path/components/VBoxSVCM.dylib
+VBoxSVCM_LDFLAGS.darwin = -install_name @executable_path/components/VBoxSVCM.dylib
 
 endif # VBOX_WITH_XPCOM
 
