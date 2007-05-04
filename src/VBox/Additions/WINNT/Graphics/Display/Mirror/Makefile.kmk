@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox Windows Guest Mirror Graphics driver.
+# Sub-Makefile for the VirtualBox Windows Guest Mirror Graphics driver.
 #
 
 #
@@ -19,11 +19,11 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../../../..
+SUB_DEPTH = ../../../..
+include	$(PATH_KBUILD)/subheader.kmk
 
-SYSMODS = vrdpdd
-
+SYSMODS += vrdpdd
 vrdpdd_TEMPLATE    = VBOXW32GUESTR0
 vrdpdd_SDKS        = W2K3DDKX86
 vrdpdd_SYSSUFF     = .dll
@@ -42,5 +42,5 @@ vrdpdd_LIBS        = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

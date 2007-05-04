@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox Windows guest mirror video driver.
+# Sub-Makefile for the VirtualBox Windows guest mirror video driver.
 #
 
 #
@@ -19,11 +19,11 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../../../..
+SUB_DEPTH = ../../../../
+include	$(PATH_KBUILD)/subheader.kmk
 
-SYSMODS = vrdpvd
-
+SYSMODS += vrdpvd
 vrdpvd_TEMPLATE    = VBOXW32GUESTR0
 vrdpvd_SDKS        = W2K3DDKX86
 vrdpvd_SYSSUFF     = .sys
@@ -40,5 +40,5 @@ vrdpvd_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/hal.lib \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

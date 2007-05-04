@@ -20,18 +20,20 @@
 #
 
 DEPTH = ../../..
-include	$(PATH_KBUILD)/header.kmk
+include	$(PATH_KBUILD)/subheader.kmk
 
-SUBDIRS       = common
+# Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 ifdef VBOX_WITH_WIN32_ADDITIONS
-SUBDIRS      += WINNT
+include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
 endif
+
 ifdef VBOX_WITH_LINUX_ADDITIONS
 SUBDIRS      += linux
 LINUXINSTALLER = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
 endif
 ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
-PACKING	     += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
+PACKING	+= $(PATH_BIN)/additions/VBoxGuestAdditions.iso
 endif
 
 LINUXINSTALLER_CROSS = $(PATH_ROOT)/out/linux.x86/$(BUILD_TYPE)/bin/additions/VBoxLinuxAdditions.run
@@ -48,7 +50,7 @@ LINUXINSTALLER = $(LINUXINSTALLER_CROSS)
 endif
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 
 
 ifdef VBOX_WITH_WIN32_ADDITIONS

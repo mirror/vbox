@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the common addition code.
+# Sub-Makefile for the common addition code.
 #
 
 #
@@ -19,8 +19,12 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-SUBDIRS = VBoxGuestLib
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include	$(PATH_KBUILD)/subheader.kmk
 
-DEPTH = ../../../..
-include	$(PATH_KBUILD)/rules.kmk
+# Include sub-makefile.
+include $(PATH_SUB_CURRENT)/VBoxGuestLib/Makefile.kmk
+
+include	$(PATH_KBUILD)/subfooter.kmk
 

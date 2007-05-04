@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox NT4 guest additions mouse driver.
+# Sub-Makefile for the VirtualBox NT4 guest additions mouse driver.
 #
 
 #
@@ -19,16 +19,12 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
-SYSMODS = VBoxMouseNT
-OTHER_CLEAN   = \
-	$(PATH_VBoxMouseNT)/i8042log.dbg \
-	$(PATH_VBoxMouseNT)/i8042log.h \
-	$(PATH_VBoxMouseNT)/i8042log.rc \
-	$(PATH_VBoxMouseNT)/MSG00001.bin
 
+SYSMODS += VBoxMouseNT
 VBoxMouseNT_TEMPLATE    = VBOXW32GUESTR0
 VBoxMouseNT_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxMouseNT_DEFS        = LOG_TO_BACKDOOR
@@ -56,12 +52,17 @@ VBoxMouseNT_LIBS        = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib
 VBoxMouseNT_DEPS        = \
 	$(PATH_VBoxMouseNT)/i8042log.rc
+VBoxMouseNT_CLEAN       = \
+	$(PATH_VBoxMouseNT)/i8042log.dbg \
+	$(PATH_VBoxMouseNT)/i8042log.h \
+	$(PATH_VBoxMouseNT)/i8042log.rc \
+	$(PATH_VBoxMouseNT)/MSG00001.bin
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 
 
-$(PATH_VBoxMouseNT)/i8042log.rc: i8042log.mc | $(call DIRDEP,$(PATH_VBoxMouseNT))
+$(PATH_VBoxMouseNT)/i8042log.rc: $(VBoxMouseNT_PATH)/i8042log.mc | $(call DIRDEP,$(PATH_VBoxMouseNT))
 	$(call MSG_COMPILE,VBoxMouseNT,$<,$@,RC)
 	$(QUIET)$(WIN32_MC) \
 		-r $(PATH_VBoxMouseNT)/ \
