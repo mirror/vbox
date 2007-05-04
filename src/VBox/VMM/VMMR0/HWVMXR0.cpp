@@ -1564,7 +1564,7 @@ ResumeExecution:
         /* paranoia */
         if (RT_UNLIKELY(uIOWidth == 2 || uIOWidth >= 4))
         {
-            rc = VINF_IOM_HC_IOPORT_READWRITE;
+            rc = fIOWrite ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
             break;
         }
 
@@ -1608,23 +1608,34 @@ ResumeExecution:
 
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIORead);
                 rc = IOMIOPortRead(pVM, uPort, &u32Val, cbSize);
-                if (rc == VINF_SUCCESS)
+                if (    rc == VINF_SUCCESS
+                    ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
                 {
                     /* Write back to the EAX register. */
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
                 }
             }
         }
-        if (rc == VINF_SUCCESS)
+        if (    rc == VINF_SUCCESS
+            ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
         {
             /* Update EIP and continue execution. */
             pCtx->eip += cbInstr;
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-            goto ResumeExecution;
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+            {
+                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                goto ResumeExecution;
+            }
+            break;
         }
-        Assert(rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE);
-        rc = (fIOWrite) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
-
+#ifdef VBOX_STRICT
+        if (rc == VINF_IOM_HC_IOPORT_READ)
+            Assert(!fIOWrite);
+        else if (rc == VINF_IOM_HC_IOPORT_WRITE)
+            Assert(fIOWrite);
+        else
+            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("%Vrc\n", rc));
+#endif
         break;
     }
 
@@ -1633,7 +1644,7 @@ ResumeExecution:
         break;
     }
 
-    /** Note: the guest state isn't entirely synced back at this stage. */
+    /* Note: the guest state isn't entirely synced back at this stage. */
 
     /* Investigate why there was a VM-exit. (part 2) */
     switch (exitReason)
@@ -1704,7 +1715,8 @@ ResumeExecution:
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */
         /* already handled above */
-        AssertMsg(rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_RAW_INTERRUPT || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PGM_SYNC_CR3 || rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE || rc == VINF_IOM_HC_IOPORT_READWRITE, ("rc = %d\n", rc));
+        AssertMsg(rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_RAW_INTERRUPT || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PGM_SYNC_CR3 || rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE
+                  || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("rc = %d\n", rc));
         break;
 
     case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
