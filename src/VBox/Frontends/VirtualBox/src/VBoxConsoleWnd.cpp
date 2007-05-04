@@ -558,6 +558,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
     connect (devicesNetworkMenu, SIGNAL(aboutToShow()), this, SLOT(prepareNetworkMenu()));
 
+    connect (statusBar(), SIGNAL(messageChanged (const QString &)), this, SLOT(statusTipChanged (const QString &)));
+
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
@@ -576,11 +578,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
      * for normal menus (because Qt will not do it on pressing ESC if the menu
      * is constructed of dynamic items only) */
     connect (devicesMountFloppyMenu, SIGNAL (aboutToHide()),
-             statusBar(), SLOT (clear()));
+             this, SLOT (clearStatusBar()));
     connect (devicesMountDVDMenu, SIGNAL (aboutToHide()),
-             statusBar(), SLOT (clear()));
+             this, SLOT (clearStatusBar()));
     connect (devicesNetworkMenu, SIGNAL (aboutToHide()),
-             statusBar(), SLOT (clear()));
+             this, SLOT (clearStatusBar()));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -1056,7 +1058,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         case StatusTipEvent::Type:
         {
             StatusTipEvent *ev = (StatusTipEvent*) e;
-            ((QMainWindow*)this)->statusBar()->message (ev->mTip);
+            statusBar()->message (ev->mTip);
             break;
         }
         default:
@@ -2211,7 +2213,20 @@ void VBoxConsoleWnd::setDynamicMenuItemStatusTip (int aId)
     {
         StatusTipEvent *ev = new StatusTipEvent (tip);
         QApplication::postEvent (this, ev);
+        waitForStatusBarChange = true;
     }
+}
+
+void VBoxConsoleWnd::statusTipChanged (const QString & /*aMes*/)
+{
+    statusBarChangedInside = waitForStatusBarChange;
+    waitForStatusBarChange = false;
+}
+
+void VBoxConsoleWnd::clearStatusBar()
+{
+    if (statusBarChangedInside)
+        statusBar()->clear();
 }
 
 /**
