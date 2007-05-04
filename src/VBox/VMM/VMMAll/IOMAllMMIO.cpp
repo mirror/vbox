@@ -459,7 +459,7 @@ static int iomGCInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
  */
 
 
-inline int iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
+DECLINLINE(int) iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 {
 #ifdef IN_GC
     return MMGCRamReadNoTrapHandler(pDest, GCSrc, cb);
@@ -478,7 +478,7 @@ inline int iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 #endif
 }
 
-inline int iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
+DECLINLINE(int) iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 {
 #ifdef IN_GC
     return MMGCRamWriteNoTrapHandler(GCDest, pSrc, cb);
@@ -1588,9 +1588,16 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  * [REP*] INSB/INSW/INSD
  * ES:EDI,DX[,ECX]
  *
- * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ * @remark Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM             The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
@@ -1600,8 +1607,6 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  */
 IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
-    int rc = VINF_SUCCESS;
-
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVM->iom.s.StatGCInstIns);
 #endif
@@ -1627,9 +1632,9 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid, 
-                      SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                      &GCPtrDst, NULL);
+    int rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid, 
+                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                          &GCPtrDst, NULL);
     if (VBOX_FAILURE(rc))
     {
         Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
@@ -1682,6 +1687,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
 
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_READ || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || VBOX_FAILURE(rc), ("%Vrc\n", rc));
     return rc;
 }
 
@@ -1690,7 +1696,14 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
  * [REP*] INSB/INSW/INSD
  * ES:EDI,DX[,ECX]
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
@@ -1711,18 +1724,29 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || VBOX_FAILURE(rc), ("%Vrc\n", rc));
         return rc;
+    }
 
     return IOMInterpretINSEx(pVM, pRegFrame, uPort, pCpu->prefix, cbSize);
 }
+
 
 /**
  * [REP*] OUTSB/OUTSW/OUTSD
  * DS:ESI,DX[,ECX]
  *
- * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ * @remark  Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM             The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
@@ -1732,8 +1756,6 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  */
 IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
-    int rc = VINF_SUCCESS;
-
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVM->iom.s.StatGCInstOuts);
 #endif
@@ -1759,12 +1781,12 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
 
     /* Convert source address ds:esi. */
     RTGCPTR GCPtrSrc;
-    rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
-                      SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                      &GCPtrSrc, NULL);
+    int rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->ds, (RTGCPTR)pRegFrame->esi, &pRegFrame->dsHid,
+                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                          &GCPtrSrc, NULL);
     if (VBOX_FAILURE(rc))
     {
-        Log(("OUTS source address conversion failed -> fallback, rc=%d\n", rc));
+        Log(("OUTS source address conversion failed -> fallback, rc=%Vrc\n", rc));
         return VINF_IOM_HC_IOPORT_WRITE;
     }
 
@@ -1774,7 +1796,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
                          (cpl == 3) ? X86_PTE_US : 0);
     if (rc != VINF_SUCCESS)
     {
-        Log(("OUTS will generate a trap -> fallback, rc=%d\n", rc));
+        Log(("OUTS will generate a trap -> fallback, rc=%Vrc\n", rc));
         return VINF_IOM_HC_IOPORT_WRITE;
     }
 
@@ -1782,9 +1804,9 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (cTransfers > 1)
     {
         /*
-        * If the device supports string transfers, ask it to do as
-        * much as it wants. The rest is done with single-word transfers.
-        */
+         * If the device supports string transfers, ask it to do as
+         * much as it wants. The rest is done with single-word transfers.
+         */
         const RTGCUINTREG cTransfersOrg = cTransfers;
         rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
         AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
@@ -1802,7 +1824,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
         if (rc != VINF_SUCCESS)
             break;
         rc = IOMIOPortWrite(pVM, uPort, u32Value, cbTransfer);
-        if (rc == VINF_IOM_HC_IOPORT_WRITE)
+        if (rc == VINF_IOM_HC_IOPORT_WRITE || VBOX_FAILURE(rc))
             break;
         GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbTransfer);
         pRegFrame->esi += cbTransfer;
@@ -1816,16 +1838,24 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     /* Update ecx on exit. */
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
+
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || VBOX_FAILURE(rc), ("%Vrc\n", rc));
     return rc;
 }
-
 
 
 /**
  * [REP*] OUTSB/OUTSW/OUTSD
  * DS:ESI,DX[,ECX]
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
@@ -1848,7 +1878,11 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
 
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || VBOX_FAILURE(rc), ("%Vrc\n", rc));
         return rc;
+    }
 
     return IOMInterpretOUTSEx(pVM, pRegFrame, uPort, pCpu->prefix, cbSize);
 }
+
