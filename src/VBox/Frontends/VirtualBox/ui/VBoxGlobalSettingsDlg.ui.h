@@ -475,6 +475,12 @@ bool VBoxGlobalSettingsDlg::eventFilter (QObject *object, QEvent *event)
             updateWhatsThis (true /* gotFocus */);
             break;
         }
+        case QEvent::Show:
+        {
+            if (widget == pageLanguage)
+                lvLanguages->updateGeometry();
+            break;
+        }
         default:
             break;
     }
