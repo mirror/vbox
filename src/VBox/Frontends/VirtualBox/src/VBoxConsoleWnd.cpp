@@ -564,13 +564,23 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesSharedFolders, SIGNAL(activated(int)), this, SLOT(activateSFMenu()));
     connect (devicesNetworkMenu, SIGNAL(activated(int)), this, SLOT(activateNetworkMenu(int)));
 
-    connect (devicesMountFloppyMenu, SIGNAL(highlighted(int)), this, SLOT(highlightFloppy(int)));
-    connect (devicesMountDVDMenu, SIGNAL(highlighted(int)), this, SLOT(highlightDVD(int)));
-    connect (devicesNetworkMenu, SIGNAL(highlighted(int)), this, SLOT(highlightNetworkMenu(int)));
+    connect (devicesMountFloppyMenu, SIGNAL (highlighted (int)),
+             this, SLOT (setDynamicMenuItemStatusTip (int)));
+    connect (devicesMountDVDMenu, SIGNAL (highlighted (int)),
+             this, SLOT (setDynamicMenuItemStatusTip (int)));
+    connect (devicesNetworkMenu, SIGNAL (highlighted (int)),
+             this, SLOT (setDynamicMenuItemStatusTip (int)));
 
-    connect (devicesMountFloppyMenu, SIGNAL(aboutToHide()), this, SLOT(hideFloppyMenu()));
-    connect (devicesMountDVDMenu, SIGNAL(aboutToHide()), this, SLOT(hideDVDMenu()));
-    connect (devicesNetworkMenu, SIGNAL(aboutToHide()), this, SLOT(hideNetworkMenu()));
+    /* Cleanup the status bar tip when a menu with dynamic items is
+     * hidden. This is necessary for context menus in the first place but also
+     * for normal menus (because Qt will not do it on pressing ESC if the menu
+     * is constructed of dynamic items only) */
+    connect (devicesMountFloppyMenu, SIGNAL (aboutToHide()),
+             statusBar(), SLOT (clear()));
+    connect (devicesMountDVDMenu, SIGNAL (aboutToHide()),
+             statusBar(), SLOT (clear()));
+    connect (devicesNetworkMenu, SIGNAL (aboutToHide()),
+             statusBar(), SLOT (clear()));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -2108,7 +2118,7 @@ void VBoxConsoleWnd::prepareFloppyMenu()
         devicesMountFloppyMenu->insertSeparator();
     devicesMountFloppyImageAction->addTo (devicesMountFloppyMenu);
 
-    // if shown as a context menu
+    /* if shown as a context menu */
     if (devicesMenu->itemParameter (devicesMountFloppyMenuId))
     {
         devicesMountFloppyMenu->insertSeparator();
@@ -2150,7 +2160,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
         devicesMountDVDMenu->insertSeparator();
     devicesMountDVDImageAction->addTo (devicesMountDVDMenu);
 
-    // if shown as a context menu
+    /* if shown as a context menu */
     if (devicesMenu->itemParameter (devicesMountDVDMenuId))
     {
         devicesMountDVDMenu->insertSeparator();
@@ -2159,7 +2169,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
 }
 
 /**
- *  Prepares the "Network adapter" menu by populating the existent adaptors.
+ *  Prepares the "Network adapter" menu by populating the existent adapters.
  */
 void VBoxConsoleWnd::prepareNetworkMenu()
 {
@@ -2168,9 +2178,85 @@ void VBoxConsoleWnd::prepareNetworkMenu()
     for (ulong slot = 0; slot < count; ++ slot)
     {
         CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
-        int id = devicesNetworkMenu->insertItem (tr ("Adapter %1").arg (slot));
+        int id = devicesNetworkMenu->insertItem (tr ("Adapter %1", "network").arg (slot));
         devicesNetworkMenu->setItemEnabled (id, adapter.GetEnabled());
         devicesNetworkMenu->setItemChecked (id, adapter.GetEnabled() && adapter.GetCableConnected());
+    }
+}
+
+void VBoxConsoleWnd::setDynamicMenuItemStatusTip (int aId)
+{
+    QString tip;
+
+    if (sender() == devicesMountFloppyMenu)
+    {
+        if (hostFloppyMap.find (aId) != hostFloppyMap.end())
+            tip = tr ("Mount the selected physical drive of the host PC",
+                      "Floppy tip");
+    }
+    else if (sender() == devicesMountDVDMenu)
+    {
+        if (hostDVDMap.find (aId) != hostDVDMap.end())
+            tip = tr ("Mount the selected physical drive of the host PC",
+                      "CD/DVD tip");
+    }
+    else if (sender() == devicesNetworkMenu)
+    {
+        tip = devicesNetworkMenu->isItemChecked (aId) ?
+            tr ("Disconnect the cable from the selected virtual network adapter") :
+            tr ("Connect the cable to the selected virtual network adapter");
+    }
+
+    if (!tip.isNull())
+    {
+        StatusTipEvent *ev = new StatusTipEvent (tip);
+        QApplication::postEvent (this, ev);
+    }
+}
+
+/**
+ *  Captures a floppy device corresponding to a given menu id.
+ */
+void VBoxConsoleWnd::captureFloppy (int aId)
+{
+    if (!console) return;
+
+    CHostFloppyDrive d = hostFloppyMap [aId];
+    /* if null then some other item but host drive is selected */
+    if (d.isNull()) return;
+
+    CFloppyDrive drv = csession.GetMachine().GetFloppyDrive();
+    drv.CaptureHostDrive (d);
+    AssertWrapperOk (drv);
+
+    if (drv.isOk())
+    {
+// @todo: save the settings only on power off if the appropriate flag is set
+//        console->machine().SaveSettings();
+        updateAppearanceOf (FloppyStuff);
+    }
+}
+
+/**
+ *  Captures a CD/DVD-ROM device corresponding to a given menu id.
+ */
+void VBoxConsoleWnd::captureDVD (int aId)
+{
+    if (!console) return;
+
+    CHostDVDDrive d = hostDVDMap [aId];
+    /* if null then some other item but host drive is selected */
+    if (d.isNull()) return;
+
+    CDVDDrive drv = csession.GetMachine().GetDVDDrive();
+    drv.CaptureHostDrive (d);
+    AssertWrapperOk (drv);
+
+    if (drv.isOk())
+    {
+// @todo: save the settings only on power off if the appropriate flag is set
+//        console->machine().SaveSettings();
+        updateAppearanceOf (DVDStuff);
     }
 }
 
@@ -2194,138 +2280,21 @@ void VBoxConsoleWnd::activateNetworkMenu (int aId)
 }
 
 /**
- *  Sets the statusTip text for the highlighted host floppy drive
- */
-void VBoxConsoleWnd::highlightFloppy (int aId)
-{
-    QString tip = hostFloppyMap.find (aId) != hostFloppyMap.end() ?
-        tr ("Mount the physical drive of the host PC") :
-        QString::null;
-    if (!tip.isNull())
-    {
-        StatusTipEvent *ev = new StatusTipEvent (tip);
-        QApplication::postEvent (this, ev);
-    }
-}
-
-/**
- *  Sets the statusTip text for the highlighted host cd/dvd drive
- */
-void VBoxConsoleWnd::highlightDVD (int aId)
-{
-    QString tip = hostDVDMap.find (aId) != hostDVDMap.end() ?
-        tr ("Mount the physical drive of the host PC") :
-        QString::null;
-    if (!tip.isNull())
-    {
-        StatusTipEvent *ev = new StatusTipEvent (tip);
-        QApplication::postEvent (this, ev);
-    }
-}
-
-/**
- *  Sets the statusTip text for the highlighted adaptor
- */
-void VBoxConsoleWnd::highlightNetworkMenu (int aId)
-{
-    QString tip = !devicesNetworkMenu->isItemEnabled (aId) ?
-                   tr ("This adaptor is not enabled") :
-                   devicesNetworkMenu->isItemChecked (aId) ?
-                   tr ("Disconnect the cable from the virtual network adapter") :
-                   tr ("Connect the cable to the virtual network adapter");
-    StatusTipEvent *ev = new StatusTipEvent (tip);
-    QApplication::postEvent (this, ev);
-}
-
-/**
- *  Clears the statusTip text for the led context floppy drive menu
- */
-void VBoxConsoleWnd::hideFloppyMenu()
-{
-    if (devicesMenu->itemParameter (devicesMountFloppyMenuId))
-        ((QMainWindow*)this)->statusBar()->clear();
-}
-
-/**
- *  Clears the statusTip text for the led context cd/dvd drive menu
- */
-void VBoxConsoleWnd::hideDVDMenu()
-{
-    if (devicesMenu->itemParameter (devicesMountDVDMenuId))
-        ((QMainWindow*)this)->statusBar()->clear();
-}
-
-/**
- *  Clears the statusTip text for the led context network adapters menu
- */
-void VBoxConsoleWnd::hideNetworkMenu()
-{
-    if (devicesMenu->itemParameter (devicesNetworkMenuId))
-        ((QMainWindow*)this)->statusBar()->clear();
-}
-
-/**
- *  Captures a floppy device corresponding to a given menu id.
- */
-void VBoxConsoleWnd::captureFloppy (int id)
-{
-    if (!console) return;
-
-    CHostFloppyDrive d = hostFloppyMap [id];
-    // if null then some other item but host drive is selected
-    if (d.isNull()) return;
-
-    CFloppyDrive drv = csession.GetMachine().GetFloppyDrive();
-    drv.CaptureHostDrive (d);
-    AssertWrapperOk (drv);
-
-    if (drv.isOk())
-    {
-// @todo: save the settings only on power off if the appropriate flag is set
-//        console->machine().SaveSettings();
-        updateAppearanceOf (FloppyStuff);
-    }
-}
-
-/**
- *  Captures a CD/DVD-ROM device corresponding to a given menu id.
- */
-void VBoxConsoleWnd::captureDVD (int id)
-{
-    if (!console) return;
-
-    CHostDVDDrive d = hostDVDMap [id];
-    // if null then some other item but host drive is selected
-    if (d.isNull()) return;
-
-    CDVDDrive drv = csession.GetMachine().GetDVDDrive();
-    drv.CaptureHostDrive (d);
-    AssertWrapperOk (drv);
-
-    if (drv.isOk())
-    {
-// @todo: save the settings only on power off if the appropriate flag is set
-//        console->machine().SaveSettings();
-        updateAppearanceOf (DVDStuff);
-    }
-}
-
-/**
  *  Attach/Detach selected USB Device.
  */
-void VBoxConsoleWnd::switchUSB (int id)
+void VBoxConsoleWnd::switchUSB (int aId)
 {
     if (!console) return;
 
     CConsole cconsole = csession.GetConsole();
     AssertWrapperOk (csession);
 
-    CUSBDevice usb = devicesUSBMenu->getUSB (id);
+    CUSBDevice usb = devicesUSBMenu->getUSB (aId);
     /* if null then some other item but a USB device is selected */
     if (usb.isNull())
         return;
 
-    if (devicesUSBMenu->isItemChecked (id))
+    if (devicesUSBMenu->isItemChecked (aId))
     {
         cconsole.DetachUSBDevice (usb.GetId());
         if (!cconsole.isOk())
@@ -2409,6 +2378,7 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     else
     if (ind == net_light)
     {
+        /* set "this is a context menu" flag */
         devicesMenu->setItemParameter (devicesNetworkMenuId, 1);
         devicesNetworkMenu->exec (e->globalPos());
         devicesMenu->setItemParameter (devicesNetworkMenuId, 0);

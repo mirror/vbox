@@ -141,18 +141,12 @@ private slots:
     void prepareDVDMenu();
     void prepareNetworkMenu();
 
-    void highlightFloppy (int);
-    void highlightDVD (int);
-    void highlightNetworkMenu (int);
+    void setDynamicMenuItemStatusTip (int aId);
 
-    void hideFloppyMenu();
-    void hideDVDMenu();
-    void hideNetworkMenu();
-
-    void captureFloppy (int id);
-    void captureDVD (int id);
-    void activateNetworkMenu (int);
-    void switchUSB (int id);
+    void captureFloppy (int aId);
+    void captureDVD (int aId);
+    void activateNetworkMenu (int aId);
+    void switchUSB (int aId);
     void activateSFMenu();
 
     void showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e);
