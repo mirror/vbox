@@ -232,7 +232,7 @@ public:
   NS_HIDDEN_(void)     DeleteStub(DConnectStub *);
 
   // public only for DConnectInstance::Release()
-  NS_HIDDEN_(void)     DeleteInstance(DConnectInstance *);
+  NS_HIDDEN_(void)     DeleteInstance(DConnectInstance *, PRBool locked = PR_FALSE);
   // public only for DConnectStub::CallMethod()
   NS_HIDDEN_(PRBool)   CheckInstanceAndAddRef(DConnectInstance *);
 
