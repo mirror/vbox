@@ -133,9 +133,8 @@ VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxSVC_INCS = \
 	include \
 	$(PATH_VBoxSVC) \
-	$(PATH_VBoxCOM)
-VBoxSVC_INCS.win := \
-	$(PATH_SUB_CURRENT)
+	$(PATH_VBoxCOM) \
+	$(PATH_CURRENT)
 ifdef VBOX_WITH_XPCOM
  VBoxSVC_LIBS += \
 	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
