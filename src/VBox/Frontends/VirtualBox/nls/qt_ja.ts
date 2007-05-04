@@ -295,7 +295,7 @@
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>B0 (1000 x 1414 mm)</translation>
+        <translation>互換性のないQtライブラリエラー</translation>
     </message>
 </context>
 <context>
@@ -333,7 +333,7 @@
     </message>
     <message>
         <source>Bl&amp;ue:</source>
-        <translation>青(&amp;B):</translation>
+        <translation>青(&amp;U):</translation>
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
@@ -1124,7 +1124,7 @@ Check path and filename.</source>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>切り取り(&amp;C)</translation>
+        <translation>切り取り(&amp;T)</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
@@ -1637,7 +1637,7 @@ to
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>切り取り(&amp;C)</translation>
+        <translation>切り取り(&amp;T)</translation>
     </message>
     <message>
         <source>&amp;Copy</source>

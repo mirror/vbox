@@ -571,10 +571,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -628,6 +624,58 @@
     </message>
     <message>
         <source>&amp;Machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>Floppy tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>CD/DVD tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect the cable from the selected virtual network adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect the cable to the selected virtual network adapter</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

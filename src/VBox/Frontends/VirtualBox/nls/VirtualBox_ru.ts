@@ -413,7 +413,7 @@
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>У&amp;становить Дополнения гостевой ОС...</translation>
+        <translation>Ус&amp;тановить Дополнения гостевой ОС...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
@@ -533,10 +533,6 @@
         <translation>&lt;br&gt;[&lt;b&gt;не присоединен&lt;/b&gt;]</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Показывает&amp;nbsp;активность&amp;nbsp;сетевых&amp;nbsp;интерфейсов&lt;br&gt;[&lt;b&gt;%1 адаптер(ов)&lt;/b&gt;]&lt;/qt&gt;</translation>
-    </message>
-    <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
         <translation>Показывает, включен удаленный дисплей (VRDP-сервер) (&lt;img src=vrdp_16px.png/&gt;) или нет (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
@@ -591,6 +587,58 @@
     <message>
         <source>&amp;Machine</source>
         <translation>&amp;Машина</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
+        <comment>Network adapters indicator</comment>
+        <translation>&lt;qt&gt;Показывает&amp;nbsp;активность&amp;nbsp;сетевых&amp;nbsp;интерфейсов</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Адаптер %1 (%2)&lt;/b&gt;: кабель %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters indicator</comment>
+        <translation>подключен</translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters indicator</comment>
+        <translation>отключен</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Все сетевые адапреты выключены&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters</source>
+        <translation>&amp;Сетевые адаптеры</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation>Адаптер %1</translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>Floppy tip</comment>
+        <translation>Подключить выбранный физический привод основного ПК</translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>CD/DVD tip</comment>
+        <translation>Подключить выбранный физический привод основного ПК</translation>
+    </message>
+    <message>
+        <source>Disconnect the cable from the selected virtual network adapter</source>
+        <translation>Отключить кабель от виртуального сетевого адаптера</translation>
+    </message>
+    <message>
+        <source>Connect the cable to the selected virtual network adapter</source>
+        <translation>Подключить кабель к виртуальному сетевому адаптеру</translation>
     </message>
 </context>
 <context>
@@ -1606,7 +1654,7 @@
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Задает значение по умолчанию для папки виртаульных машин. Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
+        <translation>Задает значение по умолчанию для папки виртуальных машин. Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
@@ -2391,7 +2439,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation>Создать новую вируальную машину</translation>
+        <translation>Создать новую виртуальную машину</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -2569,7 +2617,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
 для доступа к общей папке с именем &lt;i&gt;share&lt;/i&gt; в DOS-подобной ОС, или
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
-для доступа к ней из Линукс-подобной ОС. Эта возможность требует устанвки Дополнений гостевой ОС.&lt;/qt&gt;</translation>
+для доступа к ней из Линукс-подобной ОС. Эта возможность требует установки Дополнений гостевой ОС.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add</source>
@@ -3362,7 +3410,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Управляет количеством памяти, доступным для виртуальной машины. Если установить слишком большое значение, то машина может не запуститься.</translation>
+        <translation>Регулирует количество памяти, доступной для виртуальной машины. Если установить слишком большое значение, то машина может не запуститься.</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -3386,7 +3434,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Управляет количеством видеопамяти, доступным для виртуальной машины.</translation>
+        <translation>Регулирует количество видеопамяти, доступной для виртуальной машины.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
