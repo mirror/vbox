@@ -1189,7 +1189,7 @@ ResumeExecution:
         break;
     }
 
-    /** @note We'll get a #GP if the IO instruction isn't allowed (IOPL or TSS bitmap); no need to double check. */
+    /* Note: We'll get a #GP if the IO instruction isn't allowed (IOPL or TSS bitmap); no need to double check. */
     case SVM_EXIT_IOIO:              /* I/O instruction. */
     {
         SVM_IOIO_EXIT   IoExitInfo;
@@ -1259,7 +1259,8 @@ ResumeExecution:
 
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIORead);
                 rc = IOMIOPortRead(pVM, IoExitInfo.n.u16Port, &u32Val, uIOSize);
-                if (rc == VINF_SUCCESS)
+                if (    rc == VINF_SUCCESS
+                    ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
                 {
                     /* Write back to the EAX register. */
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
@@ -1267,15 +1268,27 @@ ResumeExecution:
                 }
             }
         }
-        if (rc == VINF_SUCCESS)
+        if (    rc == VINF_SUCCESS
+            ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
         {
             /* Update EIP and continue execution. */
             pCtx->eip = pVMCB->ctrl.u64ExitInfo2;      /* RIP/EIP of the next instruction is saved in EXITINFO2. */
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-            goto ResumeExecution;
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+            {
+                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                goto ResumeExecution;
+            }
+            Log2(("EM status from IO at %VGv %x size %d: %Vrc\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize, rc));
+            break;
         }
-        Assert(rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE);
-        rc = (IoExitInfo.n.u1Type == 0) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
+#ifdef VBOX_STRICT
+        if (rc == VINF_IOM_HC_IOPORT_READ)
+            Assert(IoExitInfo.n.u1Type != 0);
+        else if (rc == VINF_IOM_HC_IOPORT_WRITE)
+            Assert(IoExitInfo.n.u1Type == 0);
+        else
+            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("%Vrc\n", rc));
+#endif 
         Log2(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
         break;
     }
