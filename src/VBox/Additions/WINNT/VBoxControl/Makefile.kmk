@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for VBoxControl.
+# Sub-Makefile for VBoxControl.
 #
 
 #
@@ -20,15 +20,15 @@
 #
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
-PROGRAMS = VBoxControl
-
+PROGRAMS += VBoxControl
 VBoxControl_TEMPLATE = VBOXW32GUESTR3
 VBoxControl_SOURCES  = \
 	VBoxControl.cpp \
 	VBoxControl.rc
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

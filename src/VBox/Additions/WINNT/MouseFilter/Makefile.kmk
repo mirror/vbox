@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox Windows Guest mouse filter driver.
+# Sub-Makefile for the VirtualBox Windows Guest mouse filter driver.
 #
 
 #
@@ -20,15 +20,17 @@
 #
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
-SYSMODS = VBoxMouse
-
+SYSMODS += VBoxMouse
 VBoxMouse_TEMPLATE    = VBOXW32GUESTR0
 VBoxMouse_DEFS        = LOG_TO_BACKDOOR
 #VBoxMouse_DEFS       += LOG_ENABLED
 VBoxMouse_SDKS        = W2K3DDKX86 WINPSDKINCS
+VBoxMouse_CXXFLAGS    = -Od
+VBoxMouse_CFLAGS      = -Od
 VBoxMouse_LDFLAGS     = -Entry:DriverEntry@8
 VBoxMouse_SOURCES     = VBoxMouse.cpp
 VBoxMouse_LIBS        = \
@@ -39,8 +41,5 @@ VBoxMouse_LIBS        = \
 	$(PATH_LIB)/additions/VBoxGuestLib$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
-VBoxMouse_CXXFLAGS = -Od
-VBoxMouse_CFLAGS   = -Od
-
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

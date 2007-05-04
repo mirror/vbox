@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the Windows NT++ Guest Additions.
+# Sub-Makefile for the Windows NT++ Guest Additions.
 #
 
 # Copyright (C) 2006 InnoTek Systemberatung GmbH
@@ -19,26 +19,24 @@
 #
 #
 
-DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
 
-SUBDIRS = \
-	Graphics \
-	i8042prt \
-	MouseFilter \
-	VBoxGuest \
-	VBoxService \
-	VBoxGINA \
-	VBoxControl
+# Include Sub-Makefiles.
+include $(PATH_SUB_CURRENT)/Graphics/Makefile.kmk
+include $(PATH_SUB_CURRENT)/i8042prt/Makefile.kmk
+include $(PATH_SUB_CURRENT)/MouseFilter/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
 ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
-SUBDIRS += \
-	SharedFolders
+include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
+endif
+ifneq ($(wildcard $(PATH_SUB_CURRENT)/Installer),)
+include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
 endif
 
-ifneq ($(wildcard Installer),)
-SUBDIRS += \
-	Installer
-endif
-
-include $(PATH_KBUILD)/footer.kmk
+include $(PATH_KBUILD)/subfooter.kmk
 

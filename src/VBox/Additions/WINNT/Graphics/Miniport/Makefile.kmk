@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for VBoxVideo.
+# Sub-Makefile for VBoxVideo.
 #
 
 #
@@ -19,12 +19,13 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../../..
+SUB_DEPTH = ../../..
+include	$(PATH_KBUILD)/subheader.kmk
 
-SYSMODS = VBoxVideo
 
 # This has to run on NT4!
+SYSMODS += VBoxVideo
 VBoxVideo_TEMPLATE    = VBOXW32GUESTR0
 VBoxVideo_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxVideo_DEFS        = LOG_TO_BACKDOOR
@@ -43,5 +44,5 @@ VBoxVideo_LIBS        = \
 	$(PATH_LIB)/additions/VBoxGuestLib$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32NT4GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

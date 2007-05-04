@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the common guest addition code library.
+# Sub-Makefile for the common guest addition code library.
 #
 
 #
@@ -19,8 +19,9 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
 # As we build Windows Additions on Linux as well, we need a
 # separate Linux target for each library so that both platforms
@@ -64,7 +65,7 @@ VBoxGuestLib_SOURCES     = \
 VBoxGuestLib_INCS        = \
 	$(PATH_VBoxGuestLib)
 VBoxGuestLib_INCS.win    = \
-	../../WINNT/SharedFolders/include
+	$(PATH_SUB_ROOT)/WINNT/SharedFolders/include
 VBoxGuestLib_DEFS = IN_RING0 IN_RT_R0 VBOX_HGCM LOG_TO_BACKDOOR
 #VBoxGuestLib_DEFS += LOG_ENABLED
 
@@ -100,5 +101,5 @@ VBoxGuestLibBaseLinux_INCS     = $(VBoxGuestLib_INCS)
 VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for VBoxGuest (Windows Guest Additions Driver).
+# Sub-Makefile for VBoxGuest (Windows Guest Additions Driver).
 #
 
 #
@@ -19,15 +19,14 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
-
-SYSMODS = VBoxGuest VBoxGuestNT
-#PROGRAMS = VBoxGuestInst
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
 #
 # VBoxGuest
 #
+SYSMODS += VBoxGuest 
 VBoxGuest_TEMPLATE    = VBOXW32GUESTR0
 VBoxGuest_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_HGCM VBOX_REBOOT_ON_UNINSTALL
@@ -46,9 +45,11 @@ VBoxGuest_LIBS        = \
 	$(PATH_LIB)/additions/VBoxGuestLibBase$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
+
 #
 # VBoxGuestNT - NT version of the driver.
 #
+SYSMODS += VBoxGuestNT
 VBoxGuestNT_TEMPLATE  = VBOXW32GUESTR0
 VBoxGuestNT_SDKS      = W2K3DDKX86 WINPSDKINCS
 VBoxGuestNT_DEFS      = $(VBoxGuest_DEFS) TARGET_NT4
@@ -68,11 +69,13 @@ VBoxGuestNT_LIBS      = \
 	$(PATH_LIB)/additions/RuntimeW32NT4GuestR0$(VBOXW32GUEST_SUFF_LIB)
 #	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib  - not needed?
 
+
 #
 # VBoxGuestInst - The installer.
 #
+#PROGRAMS += VBoxGuestInst
 VBoxGuestInst_TEMPLATE= VBOXW32GUESTR3
 VBoxGuestInst_SOURCES = VBoxGuestInst.cpp
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 
