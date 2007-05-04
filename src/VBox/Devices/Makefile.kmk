@@ -144,6 +144,8 @@ endif
 #
 VBoxDD2_TEMPLATE        = VBOXR3
 VBoxDD2_DEFS            = IN_VBOXDD2
+VBoxDD2_INCS           := \
+	$(PATH_SUB_CURRENT)
 VBoxDD2_SOURCES         = \
 	Builtins2.cpp \
 	PC/DevAPIC.cpp
@@ -168,8 +170,8 @@ VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 #
 DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
-DevicesR3_INCS          = \
-	$(PATH_CURRENT)
+DevicesR3_INCS         := \
+	$(PATH_SUB_CURRENT)
 DevicesR3_SOURCES       = \
 	Input/DevPS2.cpp \
 	Bus/DevPCI.cpp \
@@ -217,8 +219,8 @@ Bus/DevPCI.cpp_INCS     = Bus
 VBoxDDGC_TEMPLATE       = VBOXGC
 VBoxDDGC_DEFS           =
 VBoxDDGC_SYSSUFF        = .gc
-VBoxDDGC_INCS           = \
-	$(PATH_CURRENT)
+VBoxDDGC_INCS          := \
+	$(PATH_SUB_CURRENT)
 VBoxDDGC_SOURCES        = \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
@@ -253,8 +255,8 @@ endif
 VBoxDDR0_TEMPLATE       = VBOXR0
 VBoxDDR0_SYSSUFF        = .r0
 VBoxDDR0_DEFS           = IN_RT_R0
-VBoxDDR0_INCS           = \
-	$(PATH_CURRENT)
+VBoxDDR0_INCS          := \
+	$(PATH_SUB_CURRENT)
 VBoxDDR0_SOURCES        = \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
@@ -291,8 +293,8 @@ endif
 VBoxDD2GC_TEMPLATE       = VBOXGC
 VBoxDD2GC_DEFS           =
 VBoxDD2GC_SYSSUFF        = .gc
-VBoxDD2GC_INCS           = \
-	$(PATH_CURRENT)
+VBoxDD2GC_INCS          := \
+	$(PATH_SUB_CURRENT)
 VBoxDD2GC_SOURCES        = \
 	PC/DevAPIC.cpp
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -311,8 +313,8 @@ endif
 VBoxDD2R0_TEMPLATE       = VBOXR0
 VBoxDD2R0_DEFS           = IN_RT_R0
 VBoxDD2R0_SYSSUFF        = .r0
-VBoxDD2R0_INCS           = \
-	$(PATH_CURRENT)
+VBoxDD2R0_INCS          := \
+	$(PATH_SUB_CURRENT)
 VBoxDD2R0_SOURCES        = \
         PC/DevAPIC.cpp
 ifeq ($(VBOX_LDR_FMT),pe)
@@ -338,7 +340,8 @@ endif
 Drivers_SDKS.win   = WINPSDK W2K3DDK
 Storage/DrvHostDVD.cpp_SDKS.win = W2K3DDK
 Drivers_DEFS       = IN_IDE_R3
-Drivers_INCS       = \
+Drivers_INCS      := \
+	$(PATH_SUB_CURRENT) \
 	Network/slirp
 Drivers_SOURCES    = \
 	Audio/audio.c \

@@ -87,10 +87,11 @@ else
  dyngen_TEMPLATE      = VBOXBLDPROG
 endif
 dyngen_CFLAGS        += -Wno-missing-prototypes -Wno-missing-declarations
-dyngen_INCS           = \
+dyngen_INCS          := \
 	InnoTek \
 	target-i386 \
-	fpu
+	fpu \
+	$(PATH_SUB_CURRENT)
 dyngen_SOURCES        = dyngen.c
 
 
@@ -106,7 +107,8 @@ $(REM_MOD)_INCS             = \
 	target-i386 \
 	fpu \
 	$(PATH_$(REM_MOD)) \
-	$(PATH_ROOT)/src/VBox/VMM
+	$(PATH_ROOT)/src/VBox/VMM \
+	$(PATH_CURRENT)
 
 $(REM_MOD)_SOURCES          = \
 	VBoxRecompiler.c \

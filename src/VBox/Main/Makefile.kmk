@@ -134,6 +134,8 @@ VBoxSVC_INCS = \
 	include \
 	$(PATH_VBoxSVC) \
 	$(PATH_VBoxCOM)
+VBoxSVC_INCS.win := \
+	$(PATH_SUB_CURRENT)
 ifdef VBOX_WITH_XPCOM
  VBoxSVC_LIBS += \
 	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
@@ -264,6 +266,8 @@ VBoxC_INCS          = \
 	include \
 	$(PATH_VBoxC) \
 	$(PATH_VBoxCOM)
+VBoxC_INCS.win     := \
+	$(PATH_SUB_CURRENT)
 VBoxC_LDFLAGS.darwin = -install_name @executable_path/components/VBoxC.dylib
 ifdef VBOX_USE_VCC80
 VBoxC_LDFLAGS.win = /MANIFEST
