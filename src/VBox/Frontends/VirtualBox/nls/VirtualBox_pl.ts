@@ -1951,13 +1951,13 @@ Będzie ona używana przez wszystkie produkty VirtualBox, aby zidentyfikować st
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
-as a boot hard disk of the virtual machine. You can either create a new hard
+as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wybierz obraz dysku, który ma zostać użyty,
+        <translation type="unfinished">&lt;p&gt;Wybierz obraz dysku, który ma zostać użyty,
 jako dysk bootowalny wirtualnej maszyny. Możesz także utwożyć nowy
 dysk, używając przycisku &lt;b&gt;Nowy&lt;/b&gt; lub wybrać istniejący obraz
 dysku z listy poniżej lub wciskając przycisk &lt;b&gt;Istniejący&lt;/b&gt;
