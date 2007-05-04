@@ -964,6 +964,9 @@ static int emR3RawStep(PVM pVM)
     return rc;
 }
 
+
+#ifdef DEBUG
+
 /**
  * Steps hardware accelerated mode.
  *
@@ -1018,11 +1021,10 @@ static int emR3HwAccStep(PVM pVM)
     return rc;
 }
 
-#ifdef DEBUG
+
 void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
-    PCPUMCTX pCtx        = pVM->em.s.pCtx;
 
     pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
 
@@ -1038,10 +1040,10 @@ void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
     pVM->em.s.enmState = enmOldState;
 }
 
+
 void emR3SingleStepExecHwAcc(PVM pVM, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
-    PCPUMCTX pCtx        = pVM->em.s.pCtx;
 
     pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_HWACC;
 
@@ -1057,10 +1059,10 @@ void emR3SingleStepExecHwAcc(PVM pVM, uint32_t cIterations)
     pVM->em.s.enmState = enmOldState;
 }
 
+
 void emR3SingleStepExecRem(PVM pVM, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
-    PCPUMCTX pCtx        = pVM->em.s.pCtx;
 
     pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
 
@@ -1075,7 +1077,9 @@ void emR3SingleStepExecRem(PVM pVM, uint32_t cIterations)
     CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
     pVM->em.s.enmState = enmOldState;
 }
-#endif
+
+#endif /* DEBUG */
+
 
 /**
  * Executes one (or perhaps a few more) instruction(s).
@@ -1269,6 +1273,8 @@ int emR3RawExecuteIOInstruction(PVM pVM)
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "IO EMU");
     if (VBOX_SUCCESS(rc))
     {
+        rc = VINF_EM_RESCHEDULE_REM;
+
         if (!(Cpu.prefix & (PREFIX_REP | PREFIX_REPNE)))
         {
             switch (Cpu.pCurInstr->opcode)
@@ -1276,51 +1282,18 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                 case OP_IN:
                 {
                     STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatIn);
-
                     rc = IOMInterpretIN(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
-                    {
-                        pCtx->eip += Cpu.opsize;
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        return VINF_SUCCESS;
-                    }
-                    else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
-                        return rc;
-                    }
-                    /* emulate in the recompiler */
                     break;
                 }
 
                 case OP_OUT:
                 {
                     STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatOut);
-
                     rc = IOMInterpretOUT(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
-                    {
-                        pCtx->eip += Cpu.opsize;
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        return VINF_SUCCESS;
-                    }
-                    else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
-                        return rc;
-                    }
-                    /* emulate in the recompiler */
                     break;
                 }
-
-                default:
-                    break;
             }
-        }//if(!(Cpu.prefix & (PREFIX_REP|PREFIX_REPNE))
+        }
         else if (Cpu.prefix & PREFIX_REP)
         {
             switch (Cpu.pCurInstr->opcode)
@@ -1330,45 +1303,43 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                 {
                     STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatIn);
                     rc = IOMInterpretINS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        pCtx->eip += Cpu.opsize;
-                        return rc;
-                    }
-                    else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
-                        return rc;
-                    }
-                    /* emulate in the recompiler */
                     break;
                 }
+
                 case OP_OUTSB:
                 case OP_OUTSWD:
                 {
                     STAM_COUNTER_INC(&pVM->em.s.CTXSUFF(pStats)->StatOut);
                     rc = IOMInterpretOUTS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
-                    if (rc == VINF_SUCCESS)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        pCtx->eip += Cpu.opsize;
-                        return rc;
-                    }
-                    else
-                    if (rc == VINF_EM_RAW_GUEST_TRAP)
-                    {
-                        STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-                        rc = emR3RawGuestTrap(pVM);
-                        return rc;
-                    }
-                    /* emulate in the recompiler */
                     break;
                 }
             }
-        }//if(Cpu.prefix & PREFIX_REP)
+        }
+
+        /* 
+         * Handled the I/O return codes.
+         * (The unhandled cases ends up with rc == VINF_EM_RESCHEDULE_REM.)
+         */
+        if (    rc == VINF_SUCCESS
+            ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+        {
+            pCtx->eip += Cpu.opsize;
+            STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+            return rc;
+        }
+        if (rc == VINF_EM_RAW_GUEST_TRAP)
+        {
+            STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+            rc = emR3RawGuestTrap(pVM);
+            return rc;
+        }
+        AssertMsg(rc != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
+        if (VBOX_FAILURE(rc))
+        {
+            STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+            return rc;
+        }
+        AssertMsg(rc == VINF_EM_RESCHEDULE_REM, ("rc=%Vrc\n", rc));
     }
 
     STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
@@ -2195,7 +2166,6 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_IOM_HC_IOPORT_READ:
         case VINF_IOM_HC_IOPORT_WRITE:
-        case VINF_IOM_HC_IOPORT_READWRITE:
             rc = emR3RawExecuteIOInstruction(pVM);
             break;
 
@@ -2524,7 +2494,6 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
             ||  rc == VINF_EM_RAW_GUEST_TRAP
             ||  rc == VINF_IOM_HC_IOPORT_READ
             ||  rc == VINF_IOM_HC_IOPORT_WRITE
-            ||  rc == VINF_IOM_HC_IOPORT_READWRITE
             //||  rc == VINF_PATM_PATCH_INT3
            )
             pgmCacheCheckPD(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4);
