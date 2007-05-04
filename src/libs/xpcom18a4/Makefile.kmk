@@ -83,7 +83,8 @@ TEMPLATE_XPCOM_INCS                = $(PATH_TARGET) \
                                      $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
                                      $(VBOX_PATH_SDK)/include/xpcom/string \
                                      $(VBOX_PATH_SDK)/include/xpcom/xpcom \
-                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd
+                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd \
+                                     $(PATH_CURRENT)
 TEMPLATE_XPCOM_INCS.darwin         = /Developer/SDKs/MacOSX10.4u.sdk/Developer/Headers/FlatCarbon
 TEMPLATE_XPCOM_INCS.l4             = $(L4_INCDIR) $(VBOX_L4_GCC3_INCS)
 TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
@@ -107,7 +108,8 @@ TEMPLATE_XPCOMEXE_INCS             = $(PATH_TARGET) \
                                      $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
                                      $(VBOX_PATH_SDK)/include/xpcom/string \
                                      $(VBOX_PATH_SDK)/include/xpcom/xpcom \
-                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd
+                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd \
+                                     $(PATH_CURRENT)
 TEMPLATE_XPCOMEXE_LIBS             = \
 	$(TARGET_VBox-xpcom-ipcshared) \
 	$(TARGET_VBoxXPCOM)
