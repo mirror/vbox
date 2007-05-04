@@ -261,7 +261,11 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
 /**
  * Reads an I/O port register.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
  * @param   pVM         VM handle.
  * @param   Port        The port to read.
@@ -273,7 +277,11 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
 /**
  * Writes to an I/O port register.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  *
  * @param   pVM         VM handle.
  * @param   Port        The port to write to.
@@ -285,7 +293,14 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
 /**
  * OUT <DX|imm16>, <AL|AX|EAX>
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
@@ -296,7 +311,14 @@ IOMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 /**
  * IN <AL|AX|EAX>, <DX|imm16>
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
@@ -308,7 +330,11 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
 /**
  * Reads the string buffer of an I/O port register.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
  * @param   pVM         VM handle.
  * @param   Port        The port to read.
@@ -321,8 +347,12 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
 /**
  * Writes the string buffer of an I/O port register.
  *
- * @returns VBox status code.
- *
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * 
  * @param   pVM         VM handle.
  * @param   Port        The port to write.
  * @param   pGCPtrSrc   Pointer to the source buffer (GC, incremented appropriately).
@@ -335,7 +365,14 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
  * [REP*] INSB/INSW/INSD
  * ES:EDI,DX[,ECX]
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
@@ -347,9 +384,16 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  * [REP*] INSB/INSW/INSD
  * ES:EDI,DX[,ECX]
  *
- * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ * @remark Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM             The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
@@ -363,7 +407,14 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
  * [REP*] OUTSB/OUTSW/OUTSD
  * DS:ESI,DX[,ECX]
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
@@ -375,9 +426,16 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
  * [REP*] OUTSB/OUTSW/OUTSD
  * DS:ESI,DX[,ECX]
  *
- * @note Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
+ * @remark  Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM             The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
@@ -423,8 +481,12 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  * Checks that the operation is allowed according to the IOPL
  * level and I/O bitmap.
  *
- * @returns VBox status code.
- *          If not VINF_SUCCESS a \#GP(0) was raised or an error occured.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         VM handle.
  * @param   pCtxCore    Pointer to register frame.
@@ -444,9 +506,16 @@ IOMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
  * Attempts to service an IN/OUT instruction.
  *
  * The \#GP trap handler in GC will call this function if the opcode causing the
- * trap is a in or out type instruction.
+ * trap is a in or out type instruction. (Call it indirectly via EM that is.)
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code. Informational status codes other than the one documented 
+ *          here are to be treated as internal failure.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
+ * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
+ * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine (GC pointer ofcourse).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
