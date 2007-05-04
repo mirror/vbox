@@ -1,4 +1,5 @@
-#
+# $Id$
+## @file
 # Some hacks to allow syntax and prerequisite include checking of headers.
 # This makefile doesn't and shouldn't build successfully.
 #
