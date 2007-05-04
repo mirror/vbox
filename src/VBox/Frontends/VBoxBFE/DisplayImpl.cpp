@@ -216,31 +216,23 @@ static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy
     if (*px < 0)
     {
         *px += *pw; /* Compute xRight which is also the new width. */
-
-        *pw = (*px < 0)? 0: *px;
-
+        *pw = (*px < 0) ? 0: *px;
         *px = 0;
     }
 
     if (*py < 0)
     {
         *py += *ph; /* Compute xBottom, which is also the new height. */
-
-        *ph = (*py < 0)? 0: *py;
-
+        *ph = (*py < 0) ? 0: *py;
         *py = 0;
     }
 
     /* Also check if coords are greater than the display resolution. */
     if (*px + *pw > cx)
-    {
-        *pw = cx > *px? cx - *px: 0;
-    }
+        *pw = cx > *px ? cx - *px: 0;
 
     if (*py + *ph > cy)
-    {
-        *ph = cy > *py? cy - *py: 0;
-    }
+        *ph = cy > *py ? cy - *py: 0;
 }
 
 /**
@@ -273,18 +265,15 @@ void VMDisplay::handleDisplayUpdate (int x, int y, int w, int h)
         RTSemEventMultiReset(mUpdateSem);
 
         mFramebuffer->NotifyUpdate(x, y, w, h, &finished);
+        mFramebuffer->Unlock();
+
         if (!finished)
         {
             // the Framebuffer needs more time to process
             // the event so we have to halt the VM until it's done
-            mFramebuffer->Unlock();
             RTSemEventMultiWait(mUpdateSem, RT_INDEFINITE_WAIT);
-        } else
-        {
-            mFramebuffer->Unlock();
         }
     }
-    return;
 }
 
 // IDisplay properties
@@ -645,24 +634,16 @@ void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, VBVACMDHDR *phdr)
     {
         /* Adjust region coordinates. */
         if (prgn->xLeft > phdr->x)
-        {
             prgn->xLeft = phdr->x;
-        }
 
         if (prgn->yTop > phdr->y)
-        {
             prgn->yTop = phdr->y;
-        }
 
         if (prgn->xRight < xRight)
-        {
             prgn->xRight = xRight;
-        }
 
         if (prgn->yBottom < yBottom)
-        {
             prgn->yBottom = yBottom;
-        }
     }
 }
 
@@ -728,9 +709,7 @@ int VMDisplay::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     Assert((fEnable && pVbvaMemory) || (!fEnable && pVbvaMemory == NULL));
 
     if (!VideoAccelAllowed ())
-    {
         return VERR_NOT_SUPPORTED;
-    }
 
     /*
      * Verify that the VM is in running state. If it is not,
@@ -753,9 +732,7 @@ int VMDisplay::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
 
     /* Check that current status is not being changed */
     if (mfVideoAccelEnabled == fEnable)
-    {
         return rc;
-    }
 
     if (mfVideoAccelEnabled)
     {
@@ -783,9 +760,7 @@ int VMDisplay::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     PPDMIVMMDEVPORT pVMMDevPort = gVMMDev->getVMMDevPort ();
 
     if (pVMMDevPort)
-    {
         pVMMDevPort->pfnVBVAChange (pVMMDevPort, fEnable);
-    }
 
     if (fEnable)
     {
