@@ -967,55 +967,55 @@ Check path and filename.</source>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation>ホストへの接続に失敗しました
+        <translation>ホストへの接続に失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Login failed:
 %1</source>
-        <translation>ログインに失敗しました
+        <translation>ログインに失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>ディレクトリのリストに失敗しました
+        <translation>ディレクトリのリストに失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>ディレクトリの変更に失敗しました
+        <translation>ディレクトリの変更に失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation>ファイルのダウンロードに失敗しました
+        <translation>ファイルのダウンロードに失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Uploading file failed:
 %1</source>
-        <translation>ファイルのアップロードに失敗しました
+        <translation>ファイルのアップロードに失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Removing file failed:
 %1</source>
-        <translation>ファイルの削除に失敗しました
+        <translation>ファイルの削除に失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>ディレクトリの作成に失敗しました
+        <translation>ディレクトリの作成に失敗しました:
 %1</translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>ディレクトリの削除に失敗しました
+        <translation>ディレクトリの削除に失敗しました:
 %1</translation>
     </message>
     <message>
@@ -1150,40 +1150,32 @@ Check path and filename.</source>
 %1
 to
 %2</source>
-        <translation>名前を変更できませんでした
-%1
-を
-%2</translation>
+        <translation>%1 の名前を %2 に変更できませんでした</translation>
     </message>
     <message>
         <source>Could not open
 %1</source>
-        <translation>開けませんでした
-%1</translation>
+        <translation>%1 を開けませんでした</translation>
     </message>
     <message>
         <source>Could not write
 %1</source>
-        <translation>書き込めませんでした
-%1</translation>
+        <translation>%1 に書き込めませんでした</translation>
     </message>
     <message>
         <source>Could not read directory
 %1</source>
-        <translation>ディレクトリを読み込めませんでした
-%1</translation>
+        <translation>%1 ディレクトリを読み込めませんでした</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation>ディレクトリを作成できませんでした
-%1</translation>
+        <translation>%1 ディレクトリを作成できませんでした</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation>ファイルまたはディレクトリを削除できませんでした
-%1</translation>
+        <translation>%1 ファイルまたはディレクトリを削除できませんでした</translation>
     </message>
 </context>
 <context>
