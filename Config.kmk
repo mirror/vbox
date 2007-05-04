@@ -841,8 +841,6 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	@# HC compiler switch detction.
 	$(APPEND) "$@" "VBOX_GCC_VERSION_CC            ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CC))"
 	$(APPEND) "$@" "VBOX_GCC_VERSION_CXX           ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))"
-	$(APPEND) "$@" "VBOX_GCC32_VERSION_CC          ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CC))"
-	$(APPEND) "$@" "VBOX_GCC32_VERSION_CXX         ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CXX))"
 	$(APPEND) "$@" "VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)"
 	$(APPEND) "$@" "VBOX_GCC_Wno-pointer-sign      ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-sign,)"
 	$(APPEND) "$@" "VBOX_GCC_Wno-variadic-macros   ?= $(call VBOX_GCC_CHECK_CXX,-Wno-variadic-macros,)"
@@ -863,6 +861,8 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	$(APPEND) "$@" "VBOX_PATH_GCC_INCS             ?= $(abspath $(dir $(shell LC_ALL=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)))/include"
 
 	@# 32-bit (GC) compiler switch detection.
+	$(APPEND) "$@" "VBOX_GCC32_VERSION_CC          ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CC))"
+	$(APPEND) "$@" "VBOX_GCC32_VERSION_CXX         ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CXX))"
 	$(APPEND) "$@" "VBOX_GCC32_LIBGCC              ?= $(shell $(TOOL_$(VBOX_GCC32_TOOL)_CC) -print-libgcc-file-name)"
 	$(APPEND) "$@" "VBOX_GCC32_Wno-variadic-macros ?= $(call VBOX_GCC32_CHECK_CXX,-Wno-variadic-macros,)"
 
