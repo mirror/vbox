@@ -139,12 +139,19 @@ private slots:
 
     void prepareFloppyMenu();
     void prepareDVDMenu();
-
     void prepareNetworkMenu();
-    void activateNetworkMenu (int);
+
+    void highlightFloppy (int);
+    void highlightDVD (int);
+    void highlightNetworkMenu (int);
+
+    void hideFloppyMenu();
+    void hideDVDMenu();
+    void hideNetworkMenu();
 
     void captureFloppy (int id);
     void captureDVD (int id);
+    void activateNetworkMenu (int);
     void switchUSB (int id);
     void activateSFMenu();
 

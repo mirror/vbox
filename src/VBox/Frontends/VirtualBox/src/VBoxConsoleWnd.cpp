@@ -169,6 +169,24 @@ private:
     CMachine mMachine;
 };
 
+/** class StatusTipEvent
+ *
+ *  The StatusTipEvent class is an auxiliary QEvent class
+ *  for carrying statusTip text of non-QAction menu item's.
+ *  This event is posted then the menu item is highlighted but
+ *  processed later in VBoxConsoleWnd::event() handler to
+ *  avoid statusBar messaging collisions.
+ */
+class StatusTipEvent : public QEvent
+{
+public:
+    enum { Type = QEvent::User + 10 };
+    StatusTipEvent (const QString &aTip)
+        : QEvent ((QEvent::Type) Type), mTip (aTip) {}
+
+    QString mTip;
+};
+
 /** \class VBoxConsoleWnd
  *
  *  The VBoxConsoleWnd class is a VM console window, one of two main VBox
@@ -545,6 +563,14 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
     connect (devicesSharedFolders, SIGNAL(activated(int)), this, SLOT(activateSFMenu()));
     connect (devicesNetworkMenu, SIGNAL(activated(int)), this, SLOT(activateNetworkMenu(int)));
+
+    connect (devicesMountFloppyMenu, SIGNAL(highlighted(int)), this, SLOT(highlightFloppy(int)));
+    connect (devicesMountDVDMenu, SIGNAL(highlighted(int)), this, SLOT(highlightDVD(int)));
+    connect (devicesNetworkMenu, SIGNAL(highlighted(int)), this, SLOT(highlightNetworkMenu(int)));
+
+    connect (devicesMountFloppyMenu, SIGNAL(aboutToHide()), this, SLOT(hideFloppyMenu()));
+    connect (devicesMountDVDMenu, SIGNAL(aboutToHide()), this, SLOT(hideDVDMenu()));
+    connect (devicesNetworkMenu, SIGNAL(aboutToHide()), this, SLOT(hideNetworkMenu()));
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
@@ -1015,6 +1041,12 @@ bool VBoxConsoleWnd::event (QEvent *e)
                 dbgAdjustRelativePos();
 #endif
             }
+            break;
+        }
+        case StatusTipEvent::Type:
+        {
+            StatusTipEvent *ev = (StatusTipEvent*) e;
+            ((QMainWindow*)this)->statusBar()->message (ev->mTip);
             break;
         }
         default:
@@ -2162,6 +2194,77 @@ void VBoxConsoleWnd::activateNetworkMenu (int aId)
 }
 
 /**
+ *  Sets the statusTip text for the highlighted host floppy drive
+ */
+void VBoxConsoleWnd::highlightFloppy (int aId)
+{
+    QString tip = hostFloppyMap.find (aId) != hostFloppyMap.end() ?
+        tr ("Mount the physical drive of the host PC") :
+        QString::null;
+    if (!tip.isNull())
+    {
+        StatusTipEvent *ev = new StatusTipEvent (tip);
+        QApplication::postEvent (this, ev);
+    }
+}
+
+/**
+ *  Sets the statusTip text for the highlighted host cd/dvd drive
+ */
+void VBoxConsoleWnd::highlightDVD (int aId)
+{
+    QString tip = hostDVDMap.find (aId) != hostDVDMap.end() ?
+        tr ("Mount the physical drive of the host PC") :
+        QString::null;
+    if (!tip.isNull())
+    {
+        StatusTipEvent *ev = new StatusTipEvent (tip);
+        QApplication::postEvent (this, ev);
+    }
+}
+
+/**
+ *  Sets the statusTip text for the highlighted adaptor
+ */
+void VBoxConsoleWnd::highlightNetworkMenu (int aId)
+{
+    QString tip = !devicesNetworkMenu->isItemEnabled (aId) ?
+                   tr ("This adaptor is not enabled") :
+                   devicesNetworkMenu->isItemChecked (aId) ?
+                   tr ("Disconnect the cable from the virtual network adapter") :
+                   tr ("Connect the cable to the virtual network adapter");
+    StatusTipEvent *ev = new StatusTipEvent (tip);
+    QApplication::postEvent (this, ev);
+}
+
+/**
+ *  Clears the statusTip text for the led context floppy drive menu
+ */
+void VBoxConsoleWnd::hideFloppyMenu()
+{
+    if (devicesMenu->itemParameter (devicesMountFloppyMenuId))
+        ((QMainWindow*)this)->statusBar()->clear();
+}
+
+/**
+ *  Clears the statusTip text for the led context cd/dvd drive menu
+ */
+void VBoxConsoleWnd::hideDVDMenu()
+{
+    if (devicesMenu->itemParameter (devicesMountDVDMenuId))
+        ((QMainWindow*)this)->statusBar()->clear();
+}
+
+/**
+ *  Clears the statusTip text for the led context network adapters menu
+ */
+void VBoxConsoleWnd::hideNetworkMenu()
+{
+    if (devicesMenu->itemParameter (devicesNetworkMenuId))
+        ((QMainWindow*)this)->statusBar()->clear();
+}
+
+/**
  *  Captures a floppy device corresponding to a given menu id.
  */
 void VBoxConsoleWnd::captureFloppy (int id)
@@ -2306,7 +2409,9 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     else
     if (ind == net_light)
     {
+        devicesMenu->setItemParameter (devicesNetworkMenuId, 1);
         devicesNetworkMenu->exec (e->globalPos());
+        devicesMenu->setItemParameter (devicesNetworkMenuId, 0);
     }
 }
 
