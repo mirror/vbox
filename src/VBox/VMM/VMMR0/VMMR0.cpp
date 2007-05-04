@@ -279,9 +279,6 @@ static void vmmR0RecordRC(PVM pVM, int rc)
         case VINF_IOM_HC_IOPORT_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIOWrite);
             break;
-        case VINF_IOM_HC_IOPORT_READWRITE:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIOReadWrite);
-            break;
         case VINF_IOM_HC_MMIO_READ:
             STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIORead);
             break;

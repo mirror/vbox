@@ -609,7 +609,7 @@ static int dbgfr3VMMWait(PVM pVM)
                 LogFlow(("dbgfr3VMMWait: Processes requests...\n"));
                 rc = VMR3ReqProcess(pVM);
                 LogFlow(("dbgfr3VMMWait: VMR3ReqProcess -> %Vrc rcRet=%Vrc\n", rc, rcRet));
-                if (rc >= VINF_EM_FIRST && rc < VINF_EM_LAST)
+                if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
                 {
                     switch (rc)
                     {
@@ -661,7 +661,7 @@ static int dbgfr3VMMWait(PVM pVM)
             if (VBOX_FAILURE(rc))
                 rcRet = rc;
             else if (    rc >= VINF_EM_FIRST
-                     &&  rc < VINF_EM_LAST
+                     &&  rc <= VINF_EM_LAST
                      &&  (rc < rcRet || rcRet == VINF_SUCCESS))
                 rcRet = rc;
             LogFlow(("dbgfr3VMMWait: returns %Vrc\n", rcRet));

@@ -269,7 +269,6 @@ typedef struct VMM
     STAMCOUNTER                 StatGCRetPatchEmulate;
     STAMCOUNTER                 StatGCRetIORead;
     STAMCOUNTER                 StatGCRetIOWrite;
-    STAMCOUNTER                 StatGCRetIOReadWrite;
     STAMCOUNTER                 StatGCRetMMIORead;
     STAMCOUNTER                 StatGCRetMMIOWrite;
     STAMCOUNTER                 StatGCRetMMIOPatchRead;
