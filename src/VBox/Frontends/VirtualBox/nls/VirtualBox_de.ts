@@ -43,7 +43,7 @@
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation>Bewegt das ausgewählte Gerät weiter nach unten und vermindet damit dessen Priorität in der Bootreihenfolge.</translation>
+        <translation>Bewegt das ausgewählte Gerät weiter nach unten und vermindert damit dessen Priorität in der Bootreihenfolge.</translation>
     </message>
 </context>
 <context>
@@ -200,7 +200,7 @@
     </message>
     <message>
         <source>Alt+S</source>
-        <translation></translation>
+        <translation>Alt+S</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
@@ -228,7 +228,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation></translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -278,7 +278,7 @@
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Schaltet auf Vollbild um</translation>
+        <translation>Schaltet in den Vollbildmodus</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
@@ -288,7 +288,7 @@
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Größe Gastfensters automatisch anpassen</translation>
+        <translation>Größe der Gastanzeige automatisch anpassen</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
@@ -296,7 +296,7 @@
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Passt die Größe des Gastes automatisch an, wenn die Fenstergröße verändert wird (erfordert Gasterweiterungen)</translation>
+        <translation>Passt die Größe der Gastanzeige automatisch an, wenn die Fenstergröße verändert wird (erfordert Gasterweiterungen)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -308,7 +308,7 @@
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Sendet die Sequenz Strg-Alt-Entf an die virtuelle Maschine</translation>
+        <translation>Sendet die Sequenz Strg-Alt-Entf (Affengriff) an die virtuelle Maschine</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
@@ -360,7 +360,7 @@
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation type="unfinished">Trennt das Diskettenlaufwerk</translation>
+        <translation>Trennt das &amp;Diskettenlaufwerk</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
@@ -368,7 +368,7 @@
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation type="unfinished">CD/DVD-ROM-Abbild</translation>
+        <translation>&amp;CD/DVD-ROM-Abbild</translation>
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
@@ -376,7 +376,7 @@
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation type="unfinished">CD/DVD-ROM trennen</translation>
+        <translation>&amp;CD/DVD-ROM trennen</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
@@ -385,15 +385,15 @@
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>RDP-Server (entfernte Arbeitsfläche)</translation>
+        <translation>RDP-Server (Fernsteuerung)</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
-        <translation type="unfinished">Entfernter Bildschirm</translation>
+        <translation>&amp;Entfernter Bildschirm</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Ein- oder Ausschalten der entfernten Arbeitsfläche (remote desktop protocol, RDP) für diese virtuelle Maschine</translation>
+        <translation>Ein- oder Ausschalten der Fernsteuerung (remote desktop protocol, RDP) für diese virtuelle Maschine</translation>
     </message>
     <message>
         <source>Open</source>
@@ -449,7 +449,7 @@
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation type="unfinished">Diskettenlaufwerk einbinden</translation>
+        <translation>&amp;Diskettenlaufwerk einbinden</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
@@ -497,7 +497,8 @@
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
-        <comment>Floppy tooltip</comment>
+        <comment>
+Floppy tooltip</comment>
         <translation type="unfinished">Host-Laufwerk</translation>
     </message>
     <message>
@@ -511,7 +512,8 @@
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
-        <comment>DVD-ROM tooltip</comment>
+        <comment>
+DVD-ROM tooltip</comment>
         <translation type="unfinished">Host-Laufwerk</translation>
     </message>
     <message>
@@ -529,10 +531,6 @@
         <translation>&lt;br&gt;[&lt;b&gt;nicht angeschlossen&lt;/b&gt;]</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Zeigt&amp;nbsp;die&amp;nbsp;Aktivität&amp;nbsp;der&amp;nbsp;Netzwerkinterfaces&lt;br&gt;[&lt;b&gt;%1 Adapter&lt;/b&gt;]&lt;/qt&gt;</translation>
-    </message>
-    <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
         <translation>Zeigt an, ob die Fernsteuerung (VRDP-Server) aktiviert ist (&lt;img src=vrdp_16px.png/&gt;) oder nicht (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
@@ -542,7 +540,7 @@
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Pause</translation>
+        <translation>&amp;Pause</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
@@ -558,7 +556,7 @@
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation type="unfinished">Mauszeigerintegration deaktivieren</translation>
+        <translation>Mauszeigerintegration deaktivieren</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
@@ -595,54 +593,55 @@
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Zeigt&amp;nbsp;die&amp;nbsp;Aktivität&amp;nbsp;der&amp;nbsp;Netzwerk-Interfaces</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: Kabel %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>verbunden</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>getrennt</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Alle Netzwerk-Adapter sind deaktiviert&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Netzwerk-Adapter</translation>
     </message>
     <message>
         <source>Adapter %1</source>
-        <comment>network</comment>
-        <translation type="unfinished">Adapter %1</translation>
+        <comment>
+network</comment>
+        <translation>Adapter %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bindet das ausgewählte physische Laufwerk des Host-PCs ein</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bindet das ausgewählte physische Laufwerk des Host-PCs ein</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Trennt das virtuelle Kabel vom ausgewählten Netzwerk-Adapter</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbindet das Kabel mit dem ausgewählten Netzwerk-Adapter</translation>
     </message>
 </context>
 <context>
@@ -685,7 +684,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invoke dialog&apos;s help</source>
@@ -697,7 +696,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Accept dialog</source>
@@ -714,7 +713,7 @@
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -778,7 +777,7 @@
     </message>
     <message>
         <source>&amp;Actions</source>
-        <translation>Aktionen</translation>
+        <translation>&amp;Aktionen</translation>
     </message>
     <message>
         <source>Location</source>
@@ -831,7 +830,7 @@
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
@@ -971,7 +970,7 @@
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Boot Order</source>
@@ -986,7 +985,7 @@
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -1116,7 +1115,7 @@
     <message>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1270,7 +1269,7 @@
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>External</source>
@@ -1330,12 +1329,12 @@
     <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Not attached</source>
@@ -1345,7 +1344,7 @@
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host Interface</source>
@@ -1449,15 +1448,15 @@
     </message>
     <message>
         <source>[id]</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -1469,11 +1468,11 @@
     </message>
     <message>
         <source>0</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#general</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Input </source>
@@ -1481,23 +1480,23 @@
     </message>
     <message>
         <source>1</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#input</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> USB </source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>2</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -1529,7 +1528,7 @@
     </message>
     <message>
         <source>Alt+A</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
@@ -1593,7 +1592,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
@@ -1609,7 +1608,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -1646,11 +1645,11 @@
     </message>
     <message>
         <source>3</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#language</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -1718,7 +1717,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschlie�~_lich Alt-Tab) in die VM umgeleitet.</translation>
+        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
@@ -1769,12 +1768,11 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Wählen Sie den Typ der virtuellen Festplatte.&lt;/p&gt;
+        <translation>&lt;p&gt;Wählen Sie den Typ der virtuellen Festplatte.&lt;/p&gt;
 &lt;p&gt;Ein &lt;b&gt;dynamisch expandierendes Medium&lt;/b&gt; belegt bei der Erzeugung nur sehr wenig Platz
 auf der physischen Festplatte. Es wächst in dem Maße dynamisch (bis zur festgelegten Größe), wie
 das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;
-&lt;p&gt;Ein &lt;b&gt;Medium fester Größe&lt;/b&gt; wächst nicht zur Laufzeit, sondern wird mit der endgültigen
-Größe erzeugt.&lt;/p&gt;</translation>
+&lt;p&gt;Ein &lt;b&gt;Medium fester Größe&lt;/b&gt; wächst nicht zur Laufzeit, sondern wird mit der endgültigen Größe erzeugt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image Type</source>
@@ -1786,7 +1784,7 @@ Größe erzeugt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
@@ -1794,7 +1792,7 @@ Größe erzeugt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -1905,19 +1903,19 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>&lt;</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>=</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>MB</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Memory</source>
@@ -1931,7 +1929,7 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, das Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte durch Drücken von &lt;b&gt;Neu&lt;/b&gt; erstellen oder ein existierendes Abbild durch Betätigen von &lt;b&gt;Existing&lt;/b&gt; auswählen (durch Aufruf des Managers virtueller Platten).&lt;/p&gt;
+        <translation>&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, das Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte durch Drücken von &lt;b&gt;Neu&lt;/b&gt; erstellen oder ein existierendes Abbild durch Betätigen von &lt;b&gt;Existierend&lt;/b&gt; auswählen (durch Aufruf des Managers virtueller Platten).&lt;/p&gt;
 &lt;p&gt;Falls Sie die virtuelle Platte zusätzliche Parameter benötigt, kann dieser Schritt auch übersprungen werden und ein Abbild später über den VM-Einstellungs-Dialog angeschlossen werden.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2004,7 +2002,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>VirtualBox - Question</source>
@@ -2041,7 +2039,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;COM-Objekt für VirtualBox konnte nicht erzeugt werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun beendet.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das COM-Objekt für VirtualBox konnte nicht erzeugt werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun beendet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2053,7 +2051,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Global Eigenschaften konnten nicht definiert werden.</translation>
+        <translation>Die globalen Eigenschaften konnten nicht definiert werden.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -2097,7 +2095,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Ein Sicherungspunkt der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht erstellt werden.</translation>
+        <translation>Es konnte kein Sicherungspunkt der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; erstellt werden.</translation>
     </message>
     <message>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2121,7 +2119,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Der aktuelle Sicherungspunkt sowie der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht freigegeben werden.</translation>
+        <translation>Der aktuelle Sicherungspunkt sowie der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2149,27 +2147,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie dieses Plattenabbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wirklich löschen?&lt;/p&gt;&lt;p&gt;Falls Sie &lt;b&gt;Nein&lt;/b&gt; antworten, dann wird die Registrierung der virtuellen Platte aufgehoben und aus der Sammlung entfernt, aber das Abbild verbleibt auf der physischen Festplatte.&lt;/p&gt;&lt;p&gt;Wenn Sie &lt;b&gt;Ja&lt;/b&gt; wählen, dann wird das Abbild unwiderruflich gelöscht. Diese Operation kann nicht rückgängig gemacht werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das virtuelle Plattenabbild &lt;b&gt;%1&lt;/b&gt; konnte nicht gelöscht werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie die virtuelle Platte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wirklich löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Das virtuelle Plattenabbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht erstellt werden.</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Plattenabbild mit der UUID %1 konnte nicht an den Slot %2 des Controllers %3 der Maschine &lt;b&gt;%4&lt;/b&gt; angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ein Plattenabbild konnte nicht von Slot %1 des Controllers %2 der Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -2185,7 +2183,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Konnte %1 nicht &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;/nobr&gt; registrieren.</translation>
+        <translation>Konnte %1 nicht &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; registrieren.</translation>
     </message>
     <message>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -2302,7 +2300,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
+        <comment>
+error info</comment>
         <translation type="unfinished">Fehlercode:</translation>
     </message>
     <message>
@@ -2377,7 +2376,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
+        <comment>
+global settings</comment>
         <translation type="unfinished">&amp;Globale Einstellungen...</translation>
     </message>
     <message>
@@ -2502,11 +2502,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">Alle Warnungen zurücksetzen.</translation>
+        <translation>Alle Warnungen &amp;zurücksetzen.</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">Alle ausgeblendeten Warnungen werden zurückgesetzt und beim nächsten Ereignis wieder angezeigt.</translation>
+        <translation>Alle ausgeblendeten Warnungen werden zurückgesetzt und beim nächsten Ereignis wieder angezeigt.</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -2522,7 +2522,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation type="unfinished">Beschreibung</translation>
+        <translation>&amp;Beschreibung</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
@@ -2574,7 +2574,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Shared &amp;Folders</source>
@@ -2646,7 +2646,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <source>VBoxSnapshotDetailsDlg</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Snapshot Details </source>
@@ -2836,7 +2836,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>%1 %2</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2859,7 +2859,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>F1</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -2883,7 +2883,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -2927,7 +2927,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Por&amp;t</source>
-        <translation>&amp;Por&amp;t</translation>
+        <translation>&amp;Port</translation>
     </message>
     <message>
         <source>Any</source>
@@ -3065,7 +3065,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMNetworkSettings</name>
     <message>
         <source>VBoxVMNetworkSettings</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Attached to</source>
@@ -3212,19 +3212,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>[id]</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -3236,11 +3236,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>0</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#general</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Hard Disks </source>
@@ -3248,11 +3248,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>1</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#hdds</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Floppy </source>
@@ -3260,11 +3260,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>2</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#floppy</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
@@ -3272,11 +3272,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>3</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#dvd</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Audio </source>
@@ -3284,11 +3284,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>4</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#audio</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Network </source>
@@ -3296,11 +3296,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>5</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#network</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> USB </source>
@@ -3308,11 +3308,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>6</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -3320,11 +3320,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>7</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -3332,11 +3332,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>8</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Identification</source>
@@ -3364,19 +3364,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>=</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>MB</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
@@ -3412,7 +3412,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -3420,7 +3420,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+P</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -3464,7 +3464,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bindet das angegebene Hostlaufwerk als virtuelles Floppylaufwerk ein.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -3512,7 +3512,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+U</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -3584,7 +3584,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Authentication Timeout </source>
-        <translation>Timeout für Authentisierung</translation>
+        <translation>Zeitüberschreitung für Authentisierung</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port.</source>
@@ -3620,7 +3620,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -3721,7 +3721,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>VRDP Timeout is not set.</source>
-        <translation>VRDP-Timeout ist nicht gesetzt.</translation>
+        <translation>VRDP-Zeitüberschreitung ist nicht gesetzt.</translation>
     </message>
     <message>
         <source> - Settings</source>
