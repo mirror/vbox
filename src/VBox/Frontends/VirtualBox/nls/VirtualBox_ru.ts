@@ -2014,15 +2014,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось инициализировать подсистему COM или найти COM-сервер программы VirtualBox. Скорее всего, сервер VirtualBox не был запущен или ему не удалось стартовать без ошибок.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось инициализировать подсистему COM или найти COM-сервер программы VirtualBox. Скорее всего, сервер VirtualBox не был запущен или ему не удалось стартовать без ошибок.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось создать COM-объект VirtualBox.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось создать COM-объект VirtualBox.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удадось загрузить глобальные настройки графического интерфейса.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удадось загрузить глобальные настройки графического интерфейса.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
@@ -2238,7 +2238,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удается запустить VirtualBox в режиме &lt;i&gt;Окно выбора ВМ&lt;/i&gt; из-за локальных ограничений.&lt;/p&gt;&lt;p&gt;Это приложение будет закрыто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удается запустить VirtualBox в режиме &lt;i&gt;Окно выбора ВМ&lt;/i&gt; из-за локальных ограничений.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
