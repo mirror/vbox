@@ -1,0 +1,104 @@
+# $Id$
+## @file
+# Makefile for the common guest addition code library.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+# As we build Windows Additions on Linux as well, we need a
+# separate Linux target for each library so that both platforms
+# are built.
+ifdef VBOX_WITH_WIN32_ADDITIONS
+ ifndef VBOX_ADDITIONS_LINUX_ONLY
+  LIBRARIES += \
+	VBoxGuestLib \
+	VBoxGuestLibBase
+ endif
+endif
+ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
+ LIBRARIES += \
+	VBoxGuestLibLinux \
+	VBoxGuestLibBaseLinux
+endif
+
+SOURCES_GUESTLIBBASE = \
+	GenericRequest.cpp \
+	PhysHeap.cpp \
+	Init.cpp \
+	VMMDev.cpp \
+	HGCMInternal.cpp
+
+SOURCES_GUESTLIB = \
+	GenericRequest.cpp \
+	SysHlp.cpp \
+	PhysHeap.cpp \
+	Init.cpp \
+	VMMDev.cpp \
+	HGCM.cpp \
+	VBoxCalls.c
+
+#
+# VBoxGuestLib
+#
+VBoxGuestLib_TEMPLATE    = VBOXW32GUESTR0LIB
+VBoxGuestLib_SDKS.win    = W2K3DDKX86 WIN32SDK
+VBoxGuestLib_SOURCES     = \
+	$(SOURCES_GUESTLIB)
+VBoxGuestLib_INCS        = \
+	$(PATH_VBoxGuestLib)
+VBoxGuestLib_INCS.win    = \
+	../../WINNT/SharedFolders/include
+VBoxGuestLib_DEFS = IN_RING0 IN_RT_R0 VBOX_HGCM LOG_TO_BACKDOOR
+#VBoxGuestLib_DEFS += LOG_ENABLED
+
+
+#
+# VBoxGuestLibBase
+#
+VBoxGuestLibBase_TEMPLATE   = VBOXW32GUESTR0LIB
+VBoxGuestLibBase_SDKS.win   = $(VBoxGuestLib_SDKS.win)
+VBoxGuestLibBase_SOURCES    = $(SOURCES_GUESTLIBBASE)
+VBoxGuestLibBase_INCS       = $(VBoxGuestLib_INCS)
+VBoxGuestLibBase_INCS.win   = $(VBoxGuestLib_INCS.win)
+VBoxGuestLibBase_DEFS       = $(VBoxGuestLib_DEFS) VBGL_VBOXGUEST
+VBoxGuestLibBase_DEFS.win   = $(VBoxGuestLib_DEFS.win)
+#VBoxGuestLibBase_DEFS      += LOG_ENABLED
+
+
+#
+# VBoxGuestLibLinux
+#
+VBoxGuestLibLinux_TEMPLATE  = VBOXLNX32GUESTR0
+VBoxGuestLibLinux_SOURCES   = $(SOURCES_GUESTLIB)
+VBoxGuestLibLinux_INCS      = $(VBoxGuestLib_INCS)
+VBoxGuestLibLinux_DEFS      = VBOX_HGCM LOG_TO_BACKDOOR
+
+
+#
+# VBoxGuestLibBaseLinux
+#
+VBoxGuestLibBaseLinux_TEMPLATE = VBOXLNX32GUESTR0
+VBoxGuestLibBaseLinux_SOURCES  = $(SOURCES_GUESTLIBBASE)
+VBoxGuestLibBaseLinux_INCS     = $(VBoxGuestLib_INCS)
+VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
+
+
+include	$(PATH_KBUILD)/footer.kmk
+

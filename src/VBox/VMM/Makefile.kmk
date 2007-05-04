@@ -1,0 +1,376 @@
+# $Id$
+## @file
+# Makefile for the VMM.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../..
+include	$(PATH_KBUILD)/header.kmk
+
+LIBRARIES       = VMMR3
+ifneq ($(BUILD_TARGET),darwin)
+LIBRARIES      += VMMGCBuiltin VMMGCImp VMMR0Imp
+endif
+SYSMODS         = VMMGC VMMR0
+DLLS            = VBoxVMM
+
+# Walk
+SUBDIRS_AFTER_BINARIES = testcase
+SUBDIRS_AFTER_OTHERS   = testcase
+SUBDIRS_AFTER_CLEAN    = testcase
+SUBDIRS_AFTER_NOTHING  = testcase
+
+# Enable the PDM lock.
+#DEFS += VBOX_WITH_PDM_LOCK
+ifdef VBOX_WITH_INTERNAL_NETWORKING
+DEFS += VBOX_WITH_INTERNAL_NETWORKING
+endif
+
+
+#
+# VMMR3.dll
+#
+VMMR3_TEMPLATE  = VBOXR3
+VMMR3_DEFS      = IN_VMM_R3  IN_PDM_R3  IN_CFGM_R3 IN_IOM_R3  IN_VM_R3   IN_CPUM_R3 IN_SELM_R3 IN_PGM_R3 IN_TRPM_R3 IN_MM_R3 IN_DBG_R3 \
+                  IN_DBGF_R3 IN_PATM_R3 IN_DIS_R3  IN_STAM_R3 IN_CSAM_R3 IN_EM_R3   IN_TM_R3   IN_SSM_R3 IN_HWACCM_R3
+ifdef VBOX_OSE
+ ifeq ($(BUILD_TARGET),darwin)
+  VMMR3_DEFS   += PDMLDR_FAKE_MODE
+ endif
+endif                
+VMMR3_INCS      = PATM
+
+VMMR3_SOURCES   = \
+	CFGM.cpp \
+	CPUM.cpp \
+	CPUMStack.cpp \
+	DBGF.cpp \
+	DBGFAddr.cpp \
+	DBGFBp.cpp \
+	DBGFDisas.cpp \
+	DBGFInfo.cpp \
+	DBGFLog.cpp \
+	DBGFStack.cpp \
+	DBGFSym.cpp \
+	EM.cpp \
+	IOM.cpp \
+	MM.cpp \
+	MMHeap.cpp \
+	MMHyper.cpp \
+	MMPagePool.cpp \
+	MMPhys.cpp \
+	PDM.cpp \
+	PDMDevice.cpp \
+	PDMDriver.cpp \
+	PDMLdr.cpp \
+	PDMCritSect.cpp \
+	PDMQueue.cpp \
+	PGM.cpp \
+	PGMHandler.cpp \
+	PGMMap.cpp \
+	PGMPhys.cpp \
+	PGMPool.cpp \
+	SELM.cpp \
+	SSM.cpp \
+	STAM.cpp \
+	TM.cpp \
+	TRPM.cpp \
+	VM.cpp \
+	VMEmt.cpp \
+	VMReq.cpp \
+	VMM.cpp \
+	VMMTests.cpp \
+	HWACCM.cpp \
+	VMMAll/CPUMAllRegs.cpp \
+	VMMAll/CPUMAllA.asm \
+	VMMAll/DBGFAll.cpp \
+	VMMAll/IOMAll.cpp \
+	VMMAll/IOMAllMMIO.cpp \
+	VMMAll/MMAll.cpp \
+	VMMAll/MMAllHyper.cpp \
+	VMMAll/MMAllPagePool.cpp \
+	VMMAll/MMAllPhys.cpp \
+	VMMAll/PDMAll.cpp \
+	VMMAll/PDMAllCritSect.cpp \
+	VMMAll/PDMAllQueue.cpp \
+	VMMAll/PGMAll.cpp \
+	VMMAll/PGMAllHandler.cpp \
+	VMMAll/PGMAllMap.cpp \
+	VMMAll/PGMAllPhys.cpp \
+	VMMAll/PGMAllPool.cpp \
+	VMMAll/SELMAll.cpp \
+	VMMAll/EMAll.cpp \
+	VMMAll/EMAllA.asm \
+	VMMAll/TMAll.cpp \
+	VMMAll/TMAllCpu.cpp \
+	VMMAll/TMAllReal.cpp \
+	VMMAll/TMAllVirtual.cpp \
+	VMMAll/TRPMAll.cpp \
+	VMMAll/VMAll.cpp \
+	VMMAll/VMMAll.cpp \
+	PATM/CSAM.cpp \
+	PATM/VMMAll/CSAMAll.cpp \
+	PATM/PATM.cpp \
+	PATM/PATMPatch.cpp \
+	PATM/PATMGuest.cpp \
+	PATM/PATMA.asm \
+	PATM/PATMSSM.cpp \
+	PATM/VMMAll/PATMAll.cpp
+VMMR3_SOURCES.x86 += \
+	VMMSwitcher/32BitTo32Bit.asm \
+	VMMSwitcher/32BitToPAE.asm \
+	VMMSwitcher/PAETo32Bit.asm \
+	VMMSwitcher/PAEToPAE.asm
+VMMR3_SOURCES.amd64 = \
+	VMMSwitcher/AMD64ToPAE.asm
+VMMR3_SOURCES.darwin.x86 += \
+	VMMSwitcher/AMD64ToPAE.asm
+
+
+#
+# VMMGCBuiltin.lib
+#
+VMMGCBuiltin_TEMPLATE = VBOXGC
+ifeq ($(VBOX_LDR_FMT32),pe)
+VMMGCBuiltin_SOURCES = VMMGC/VMMGCBuiltin.def
+endif
+ifeq ($(VBOX_LDR_FMT32),lx)
+VMMGCBuiltin_SOURCES = $(PATH_TARGET)/VMMGCBuiltin.def
+$(PATH_TARGET)/VMMGCBuiltin.def: VMMGC/VMMGCBuiltin.def | $(call DIRDEP,$(PATH_TARGET))
+	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
+	$(MV) -f $@.tmp $@
+endif
+
+#
+# VMMGCImp.lib
+#
+VMMGCImp_TEMPLATE = VBOXGC
+ifeq ($(VBOX_LDR_FMT32),pe)
+VMMGCImp_SOURCES = VMMGC/VMMGC.def
+endif
+ifeq ($(VBOX_LDR_FMT32),lx)
+VMMGCImp_SOURCES = $(PATH_TARGET)/VMMGC.def
+$(PATH_TARGET)/VMMGC.def: VMMGC/VMMGC.def | $(call DIRDEP,$(PATH_TARGET))
+	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
+	$(APPEND) "$@.tmp" ""
+	$(APPEND) "$@.tmp" "    ___ehInit"
+	$(MV) -f $@.tmp $@
+endif
+
+#
+# VMMR0Imp.lib
+#
+VMMR0Imp_TEMPLATE = VBOXR0
+ifeq ($(VBOX_LDR_FMT),pe)
+VMMR0Imp_SOURCES = VMMR0/VMMR0.def
+endif
+ifeq ($(VBOX_LDR_FMT),lx)
+VMMR0Imp_SOURCES = $(PATH_TARGET)/VMMR0.def
+$(PATH_TARGET)/VMMR0.def: VMMR0/VMMR0.def | $(call DIRDEP,$(PATH_TARGET))
+	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
+	$(APPEND) "$@.tmp" ""
+	$(APPEND) "$@.tmp" "    ___ehInit"
+	$(MV) -f $@.tmp $@
+endif
+
+#
+# VMMGC.gc
+#
+VMMGC_TEMPLATE  = VBOXGC
+VMMGC_INCS      = . VMMGC
+VMMGC_INCS     += PATM
+VMMGC_DEFS      = IN_VMM_GC IN_PDM_GC IN_CFGM_GC IN_IOM_GC IN_MM_GC IN_RT_GC IN_TRPM_GC IN_SELM_GC IN_VM_GC IN_IOM_GC IN_DIS_GC DIS_CORE_ONLY IN_PGM_GC IN_CPUM_GC IN_EM_GC IN_TM_GC IN_PATM_GC IN_CSAM_GC IN_REM_GC IN_DBGF_GC
+VMMGC_SYSSUFF   = .gc
+VMMGC_LIBS      = \
+	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
+ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
+VMMGC_LIBS     += \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+endif
+ifeq ($(VBOX_LDR_FMT32),pe)
+VMMGC_LDFLAGS   = -Entry:VMMGCEntry
+endif
+VMMGC_SOURCES   = \
+	VMMGC/VMMGC0.asm \
+	VMMGC/VMMGCDeps.cpp \
+	VMMGC/CPUMGC.cpp \
+	VMMGC/CPUMGCA.asm \
+	VMMGC/EMGCA.asm \
+	VMMGC/DBGFGC.cpp \
+	VMMGC/IOMGC.cpp \
+	VMMGC/MMRamGC.cpp \
+	VMMGC/MMRamGCA.asm \
+	VMMGC/PDMGCDevice.cpp \
+	VMMGC/PGMGC.cpp \
+	VMMGC/SELMGC.cpp \
+	VMMGC/TRPMGC.cpp \
+	VMMGC/TRPMGCHandlers.cpp \
+	VMMGC/TRPMGCHandlersA.asm \
+	VMMGC/VMMGC.cpp \
+	VMMGC/VMMGCA.asm \
+	VMMAll/CPUMAllRegs.cpp \
+	VMMAll/CPUMAllA.asm \
+	VMMAll/DBGFAll.cpp \
+	VMMAll/IOMAll.cpp \
+	VMMAll/IOMAllMMIO.cpp \
+	VMMAll/EMAll.cpp \
+	VMMAll/EMAllA.asm \
+	VMMAll/MMAll.cpp \
+	VMMAll/MMAllHyper.cpp \
+	VMMAll/PDMAll.cpp \
+	VMMAll/PDMAllCritSect.cpp \
+	VMMAll/PDMAllQueue.cpp \
+	VMMAll/PGMAll.cpp \
+	VMMAll/PGMAllHandler.cpp \
+	VMMAll/PGMAllMap.cpp \
+	VMMAll/PGMAllPhys.cpp \
+	VMMAll/PGMAllPool.cpp \
+	VMMAll/REMAll.cpp \
+	VMMAll/SELMAll.cpp \
+	VMMAll/TMAll.cpp \
+	VMMAll/TMAllCpu.cpp \
+	VMMAll/TMAllReal.cpp \
+	VMMAll/TMAllVirtual.cpp \
+	VMMAll/TRPMAll.cpp \
+	VMMAll/VMAll.cpp \
+	VMMAll/VMMAll.cpp \
+	PATM/VMMGC/CSAMGC.cpp \
+	PATM/VMMAll/CSAMAll.cpp \
+	PATM/VMMGC/PATMGC.cpp \
+	PATM/VMMAll/PATMAll.cpp
+
+ifeq ($(VBOX_LDR_FMT32),pe)
+VMMGC_SOURCES += VMMGC/VMMGC.def
+endif
+ifeq ($(VBOX_LDR_FMT32),lx)
+VMMGC_SOURCES += $(PATH_TARGET)/VMMGC.def
+endif
+
+# the very last one.
+VMMGC_SOURCES += VMMGC/VMMGC99.asm
+
+VMMGC/VMMGCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMGCDeps.cpp to .c
+
+
+#
+# VMMR0.r0
+#
+VMMR0_TEMPLATE  = VBOXR0
+VMMR0_INCS      = . PATM
+VMMR0_DEFS      = IN_VMM_R0 IN_RT_R0 IN_TRPM_R0 IN_CPUM_R0 IN_VM_R0 IN_TM_R0 IN_INTNET_R0 IN_HWACCM_R0 IN_EM_R0 IN_PDM_R0 IN_PGM_R0 IN_DIS_R0 IN_MM_R0 IN_SELM_R0 IN_CSAM_R0 IN_PATM_R0 IN_DBGF_R0 IN_REM_R0 IN_IOM_R0 DIS_CORE_ONLY
+ifeq ($(VBOX_LDR_FMT),pe)
+VMMR0_LDFLAGS   = -Entry:VMMR0Entry
+endif
+ifeq ($(VBOX_LDR_FMT),elf)
+VMMR0_LDFLAGS   = -entry=VMMR0Entry
+endif
+VMMR0_SYSSUFF   = .r0
+VMMR0_SOURCES   = \
+	VMMR0/VMMR0.cpp \
+	VMMR0/DBGFR0.cpp \
+	VMMAll/DBGFAll.cpp \
+	VMMAll/TRPMAll.cpp \
+	VMMAll/CPUMAllRegs.cpp \
+	VMMAll/CPUMAllA.asm \
+	VMMAll/MMAll.cpp \
+	VMMAll/MMAllHyper.cpp \
+	VMMAll/MMAllPagePool.cpp \
+	VMMAll/MMAllPhys.cpp \
+	VMMR0/VMMR0A.asm \
+	VMMR0/HWACCMR0.cpp \
+	VMMR0/HWACCMR0A.asm \
+	VMMR0/HWVMXR0.cpp \
+	VMMR0/HWSVMR0.cpp \
+	VMMR0/CPUMR0.cpp \
+	VMMR0/TRPMR0.cpp \
+	VMMR0/TRPMR0A.asm \
+	VMMR0/PDMR0Device.cpp \
+	VMMAll/EMAll.cpp \
+	VMMAll/EMAllA.asm \
+	VMMAll/PDMAll.cpp \
+	VMMAll/PDMAllCritSect.cpp \
+	VMMAll/PDMAllQueue.cpp \
+	VMMAll/PGMAll.cpp \
+	VMMAll/PGMAllHandler.cpp \
+	VMMAll/PGMAllMap.cpp \
+	VMMAll/PGMAllPhys.cpp \
+	VMMAll/PGMAllPool.cpp \
+	VMMAll/REMAll.cpp \
+	VMMAll/IOMAll.cpp \
+	VMMAll/IOMAllMMIO.cpp \
+	VMMAll/SELMAll.cpp \
+	VMMAll/TMAll.cpp \
+	VMMAll/TMAllCpu.cpp \
+	VMMAll/TMAllReal.cpp \
+	VMMAll/TMAllVirtual.cpp \
+	VMMAll/VMAll.cpp \
+	PATM/VMMAll/PATMAll.cpp
+
+ifeq ($(VBOX_LDR_FMT),pe)
+VMMR0_SOURCES += VMMR0/VMMR0.def
+endif
+ifeq ($(VBOX_LDR_FMT),lx)
+VMMR0_SOURCES += $(PATH_TARGET)/VMMR0.def
+endif
+
+VMMR0_LIBS = \
+	$(PATH_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB)
+ifneq ($(BUILD_TARGET),darwin)
+VMMR0_LIBS += \
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+ifeq ($(VBOX_LDR_FMT),elf)
+VMMR0_LIBS += \
+	$(VBOX_GCC_LIBGCC)
+endif
+
+
+#
+# The VMM DLL.
+#
+VBoxVMM_TEMPLATE = VBOXR3
+VBoxVMM_DEFS     = $(VMMR3_DEFS)
+VBoxVMM_SOURCES  = VBoxVMMDeps.cpp
+VBoxVMM_SONAME.linux = VBoxVMM.so
+
+VBoxVMM_LIBS     = \
+	$(PATH_LIB)/VMMR3$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/Debugger$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
+	$(LIB_REM) \
+	$(LIB_RUNTIME)
+
+VBoxVMM_LIBS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+VBoxVMM_LDFLAGS.win = /DELAYLOAD:dbghelp.dll
+VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined
+VBoxVMM_LDFLAGS.darwin = -install_name @executable_path/VBoxVMM.dylib
+
+include	$(PATH_KBUILD)/footer.kmk
+
+
+# Alias the PGM templates to the object in which they are defined.
+PGMBth.o   PGMGst.o   PGMShw.o \
+PGMBth.obj PGMGst.obj PGMShw.obj: PGM.o
+PGMAllBth.o   PGMAllGst.o   PGMAllShw.o \
+PGMAllBth.obj PGMAllGst.obj PGMAllShw.obj: PGMAll.o
+PGMGCBth.o   PGMGCGst.o   PGMGCShw.o \
+PGMGCBth.obj PGMGCGst.obj PGMGCShw.obj: PGMGC.o
+

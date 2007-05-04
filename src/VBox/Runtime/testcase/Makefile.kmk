@@ -1,0 +1,243 @@
+# $Id$
+## @file
+# Makefile for the IPRT testcases.
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+ifdef VBOX_WITH_TESTCASES
+PROGRAMS = \
+	tstCritSect \
+	tstPrfRT \
+	tstLdr \
+	tstLdr-2 \
+	tstLdr-3 \
+	tstLdr-4 \
+	tstLdrLoad \
+	tstAvl \
+	tstTSC \
+	tstTimer \
+	tstTime \
+	tstTime-2 \
+	tstTime-3 \
+	tstTimeSpec \
+	tstStrFormat \
+	tstPath \
+	tstLog \
+	tstFile \
+	tstFileLock \
+	tstBitOperations \
+	tstInlineAsm \
+	tstStrToNum \
+	tstDir \
+	tstDir-2 \
+	tstRTFsQueries \
+	tstMove \
+	tstUtf8 \
+	tstDeadlock \
+	tstUuid \
+	tstErrUnique \
+	tstHeapSimple
+PROGRAMS.win = \
+	tstRTProcWait \
+	tstCritSectW32 \
+	ntGetTimerResolution
+PROGRAMS.linux = \
+	tstRTProcWait \
+	tstBitOperationsPIC3 \
+	tstInlineAsmPIC \
+	tstInlineAsmPIC3
+PROGRAMS.l4 = \
+	tstIoCtl
+SYSMODS = \
+	tstLdrObj \
+	tstLdrObjR0
+ifeq ($(filter-out lx pe,$(VBOX_LDR_FMT)), )
+LIBRARIES += \
+	tstLdr-4Imp
+endif
+	
+# tstSems
+endif # VBOX_WITH_TESTCASES
+
+
+TEMPLATE = VBOXR3TSTEXE
+
+
+tstTimer_SOURCES = tstTimer.cpp
+
+tstTSC_SOURCES = tstTSC.cpp
+
+tstTime_SOURCES = tstTime.cpp
+
+tstTime-2_SOURCES = tstTime-2.cpp
+
+tstTime-3_SOURCES = tstTime-3.cpp
+
+tstTimeSpec_SOURCES = tstTimeSpec.cpp
+
+tstStrFormat_SOURCES = tstStrFormat.cpp
+
+tstLog_SOURCES  = tstLog.cpp
+
+tstPath_SOURCES = tstPath.cpp
+
+tstSems_SOURCES = tstSems.cpp
+
+tstAvl_SOURCES  = tstAvl.cpp
+
+tstFile_SOURCES = tstFile.cpp
+
+tstFileLock_SOURCES = tstFileLock.cpp
+
+tstBitOperations_SOURCES = tstBitOperations.cpp
+
+tstBitOperationsPIC3_SOURCES  = tstBitOperations.cpp
+tstBitOperationsPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
+tstBitOperationsPIC3_DEFS     = PIC
+
+tstInlineAsm_SOURCES     = tstInlineAsm.cpp
+
+tstInlineAsmPIC_SOURCES  = tstInlineAsm.cpp
+tstInlineAsmPIC_CXXFLAGS = -fPIC
+tstInlineAsmPIC_DEFS     = PIC
+
+tstInlineAsmPIC3_SOURCES  = tstInlineAsm.cpp
+tstInlineAsmPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
+tstInlineAsmPIC3_DEFS     = PIC
+
+tstCritSect_SOURCES     = tstCritSect.cpp
+
+tstCritSectW32_SOURCES  = tstCritSect.cpp
+tstCritSectW32_DEFS     = TRY_WIN32_CRIT
+
+tstLdr_SOURCES = tstLdr.cpp
+
+tstLdr-2_SOURCES = tstLdr-2.cpp
+tstLdr-2_DEFS    = IN_DIS_R3
+tstLdr-2_LIBS    = \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+
+tstLdrObj_TEMPLATE = VBOXGC
+tstLdrObj_INST     = $(INST_TESTCASE)
+tstLdrObj_SYSSUFF  = .gc
+tstLdrObj_SOURCES  = tstLdrObj.cpp
+tstLdrObj_DEFS     = IN_DIS_GC IN_RT_GC DIS_CORE_ONLY
+ifeq ($(VBOX_LDR_FMT32),elf)
+tstLdrObj_DEFS    += VBOX_SOME_IMPORT_FUNCTION
+endif
+tstLdrObj_LIBS     = \
+	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
+ifeq ($(VBOX_LDR_FMT32),pe)
+tstLdrObj_LDFLAGS  = -Entry:Entrypoint
+tstLdrObj_LIBS    += \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+endif # PE
+ifeq ($(VBOX_LDR_FMT32),elf)
+tstLdrObj_LDFLAGS  = -entry=Entrypoint
+tstLdrObj_LIBS    += \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+endif
+ifeq ($(VBOX_LDR_FMT32),lx)
+tstLdrObj_LIBS    += \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+endif
+
+
+tstLdr-3_SOURCES = tstLdr-3.cpp
+tstLdr-3_DEFS    = IN_DIS_R3
+tstLdr-3_LIBS    = \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+
+tstLdr-4Imp_TEMPLATE = VBOXR0
+ifeq ($(VBOX_LDR_FMT),lx)
+ tstLdr-4Imp_SOURCES = tstLdr-4Imp-os2.def
+else ifeq ($(VBOX_LDR_FMT),pe)
+ tstLdr-4Imp_SOURCES.win = tstLdr-4Imp-win.def
+endif
+
+tstLdrObjR0_TEMPLATE = VBOXR0
+tstLdrObjR0_INST     = $(INST_TESTCASE)
+tstLdrObjR0_SYSSUFF  = .r0
+tstLdrObjR0_SOURCES  = tstLdrObjR0.cpp tstLdrDisasmTest.cpp
+tstLdrObjR0_DEFS     = IN_DIS_R0 IN_RT_R0 DIS_CORE_ONLY
+ifeq ($(VBOX_LDR_FMT32),elf)
+ tstLdrObjR0_DEFS   += VBOX_SOME_IMPORT_FUNCTION
+endif
+tstLdrObjR0_LIBS     = \
+	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+ifeq ($(VBOX_LDR_FMT),pe)
+ tstLdrObjR0_LDFLAGS = -Entry:Entrypoint
+ tstLdrObjR0_LIBS   += \
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB) \
+	$(TARGET_tstLdr-4Imp)
+endif
+ifeq ($(VBOX_LDR_FMT),elf)
+ tstLdrObjR0_LDFLAGS = -entry=Entrypoint
+endif
+ifeq ($(VBOX_LDR_FMT),lx)
+ tstLdrObjR0_LIBS   += \
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB) \
+	$(TARGET_tstLdr-4Imp)
+endif
+
+tstLdr-4_SOURCES = tstLdr-4.cpp tstLdrDisasmTest.cpp
+tstLdr-4_DEFS    = IN_DIS_R3
+tstLdr-4_LIBS    = \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+
+tstLdrLoad_SOURCES = tstLdrLoad.cpp
+
+tstPrfRT_SOURCES = tstPrfRT.cpp
+
+tstRTProcWait_SOURCES = tstRTProcWait.cpp
+
+tstStrToNum_SOURCES = tstStrToNum.cpp
+
+tstUtf8_SOURCES     = tstUtf8.cpp
+
+tstDir_SOURCES      = tstDir.cpp
+
+tstDir-2_SOURCES    = tstDir-2.cpp
+
+tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
+
+tstMove_SOURCES     = tstMove.cpp
+
+ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
+ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK  VBOX_NTDLL
+
+tstIoCtl_SOURCES = tstIoCtl.cpp
+
+tstDeadlock_SOURCES = tstDeadlock.cpp
+
+tstUuid_SOURCES = tstUuid.cpp
+
+tstErrUnique_SOURCES = tstErrUnique.cpp
+tstErrUnique_INCS    = $(PATH_TARGET)/..
+## tstErrUnique.cpp depends on a generated header.
+tstErrUnique.cpp_DEPS = $(PATH_TARGET)/../errmsgdata.h
+
+tstHeapSimple_SOURCES = tstHeapSimple.cpp
+
+include	$(PATH_KBUILD)/footer.kmk
+
