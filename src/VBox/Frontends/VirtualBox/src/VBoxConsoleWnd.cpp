@@ -148,7 +148,7 @@ protected:
         {
             CNetworkAdapter adapter = mMachine.GetNetworkAdapter (slot);
             if (adapter.GetEnabled())
-                devices += VBoxConsoleWnd::tr ("<br><nobr>[Adapter %1 (%2): cable %3]</nobr>",
+                devices += VBoxConsoleWnd::tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
                                                "Network adapters indicator")
                     .arg (slot)
                     .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
@@ -158,7 +158,7 @@ protected:
         }
 
         if (devices.isNull())
-            devices = VBoxConsoleWnd::tr ("<br><nobr>[<b>All Network adapters are disabled</b>]</nobr>",
+            devices = VBoxConsoleWnd::tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
                                           "Network adapters indicator");
 
         tip (parentWidget()->rect(), toolTip + devices);
