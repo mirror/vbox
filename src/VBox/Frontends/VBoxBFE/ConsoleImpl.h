@@ -118,9 +118,9 @@ public:
 
     virtual void     mouseSendEvent(int dz) = 0;
     virtual void     onMousePointerShapeChange(bool fVisible,
-                                 bool fAlpha, uint32_t xHot,
-                                 uint32_t yHot, uint32_t width,
-                                 uint32_t height, void *pShape) = 0;
+                                               bool fAlpha, uint32_t xHot,
+                                               uint32_t yHot, uint32_t width,
+                                               uint32_t height, void *pShape) = 0;
 
     virtual CONEVENT eventWait() = 0;
     virtual void     eventQuit() = 0;
@@ -132,6 +132,5 @@ protected:
 };
 
 extern Console *gConsole;
-
 
 #endif // ____H_CONSOLEIMPL

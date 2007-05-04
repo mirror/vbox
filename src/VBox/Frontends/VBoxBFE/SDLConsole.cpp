@@ -1593,6 +1593,23 @@ int SDLConsole::handleHostKey(const SDL_KeyboardEvent *pEv)
             break;
         }
 
+        /*
+         * Send ACPI power button press event
+         */
+        case SDLK_h:
+        {
+            PPDMIBASE pBase;
+            int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
+            if (VBOX_SUCCESS (vrc))
+            {
+                Assert (pBase);
+                PPDMIACPIPORT pPort =
+                    (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+                vrc = pPort ? pPort->pfnPowerButtonPress(pPort) : VERR_INVALID_POINTER;
+            }
+            break;
+        }
+
 #if 0
         /*
          * Save the machine's state and exit
