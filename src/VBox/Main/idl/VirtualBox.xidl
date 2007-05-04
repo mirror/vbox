@@ -1880,7 +1880,7 @@
     <interface
         name="IMachine" extends="$unknown"
         uuid="f0ad6688-2216-4654-a375-10afc5b88dcd"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <attribute name="parent" type="IVirtualBox" readonly="yes">
             <desc>Associated parent obect.</desc>
@@ -3428,7 +3428,7 @@
     <interface
         name="IHostDVDDrive" extends="$unknown"
         uuid="c2308775-85f3-45ab-ade5-97f02d1e61e0"
-        wsmap="struct"
+        wsmap="managedObjectRef"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
@@ -3467,7 +3467,7 @@
     <interface
         name="IHostFloppyDrive" extends="$unknown"
         uuid="2b2ad1ab-2ea9-4cf8-be3c-2a76677d8725"
-        wsmap="struct"
+        wsmap="managedObjectRef"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
@@ -3506,7 +3506,7 @@
     <interface
         name="IHostNetworkInterface" extends="$unknown"
         uuid="F4512D7C-B074-4e97-99B8-6D2BD27C3F5A"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the host network interface name.</desc>
@@ -4188,7 +4188,7 @@
     <interface
         name="ISnapshot" extends="$unknown"
         uuid="9f1bbf79-13b0-4da2-abba-4a992c65c083"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
             The ISnapshot interface represents a snapshot of the virtual
@@ -5176,7 +5176,7 @@
     <interface
         name="IISCSIHardDisk" extends="$unknown"
         uuid="003f6ca9-3257-4ef9-99c9-c66ce44576cb"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
 
         <desc>
@@ -5273,7 +5273,7 @@
     <interface
         name="IVMDKImage" extends="$unknown"
         uuid="178398f5-8559-4fee-979e-420af5b53eef"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
 
@@ -5453,7 +5453,7 @@
     <interface
         name="IDVDImage" extends="$unknown"
         uuid="140FFF03-E479-4194-8562-ABC4F8171009"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
 
@@ -5611,7 +5611,7 @@
     <interface
         name="IFloppyImage" extends="$unknown"
         uuid="CC696755-EA98-4ffe-9DC5-C003047034AB"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
 
@@ -6668,7 +6668,7 @@
     <interface
         name="IUSBDevice" extends="$unknown"
         uuid="c5ab8d05-1999-4e48-ae34-cdeb235aacf0"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
             The IUSBDevice interface represents a USB device captured by
@@ -7037,7 +7037,7 @@
     <interface
         name="IHostUSBDevice" extends="IUSBDevice"
         uuid="173b4b44-d268-4334-a00d-b6521c9a740a"
-        wsmap="uuid"
+        wsmap="managedObjectRef"
     >
         <desc>
             The IHostUSBDevice interface represents a USB device attached to
