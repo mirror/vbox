@@ -135,7 +135,7 @@
 /** Indicating that a rescheduling now is required. Typically caused by
  * interrupts having changed the EIP. */
 #define VINF_EM_RESCHEDULE                  1117
-/** Last scheduling related status code. (exclusive) */
+/** Last scheduling related status code. (inclusive) */
 #define VINF_EM_LAST                        1118
 
 /** Reason for leaving GC: Guest trap which couldn't be handled in GC.
@@ -711,9 +711,6 @@
 #define VINF_IOM_HC_IOPORT_READ             2620
 /** Reason for leaving GC: I/O port write. */
 #define VINF_IOM_HC_IOPORT_WRITE            2621
-/** Reason for leaving GC: I/O read/write.
- * @deprecated Don't use this! */
-#define VINF_IOM_HC_IOPORT_READWRITE        2622
 /** Reason for leaving GC: MMIO write. */
 #define VINF_IOM_HC_MMIO_READ               2623
 /** Reason for leaving GC: MMIO read. */

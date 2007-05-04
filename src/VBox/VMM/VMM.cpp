@@ -495,7 +495,6 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchEmulate,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchEmulate",        STAMUNIT_OCCURENCES, "Number of VINF_PATCH_EMULATE_INSTR returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetIORead,              STAMTYPE_COUNTER, "/VMM/GCRet/IORead",              STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_READ returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetIOWrite,             STAMTYPE_COUNTER, "/VMM/GCRet/IOWrite",             STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_WRITE returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetIOReadWrite,         STAMTYPE_COUNTER, "/VMM/GCRet/IOReadWrite",         STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_READWRITE returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIORead,            STAMTYPE_COUNTER, "/VMM/GCRet/MMIORead",            STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_READ returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIOWrite,           STAMTYPE_COUNTER, "/VMM/GCRet/MMIOWrite",           STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_WRITE returns.");
                     STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIOReadWrite,       STAMTYPE_COUNTER, "/VMM/GCRet/MMIOReadWrite",       STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_READ_WRITE returns.");

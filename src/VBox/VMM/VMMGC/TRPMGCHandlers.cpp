@@ -834,7 +834,6 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
             Assert(TRPMHasTrap(pVM));
             /* no break; */
         case VINF_PGM_SYNC_CR3: /** @todo Check this with Sander. */
-        case VINF_IOM_HC_IOPORT_READWRITE:
         case VINF_IOM_HC_IOPORT_READ:
         case VINF_IOM_HC_IOPORT_WRITE:
         case VINF_IOM_HC_MMIO_WRITE:
