@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VMM.
+# Top-level makefile for the VMM.
 #
 
 #
@@ -20,31 +20,24 @@
 #
 
 DEPTH = ../../..
-include	$(PATH_KBUILD)/header.kmk
+include	$(PATH_KBUILD)/subheader.kmk
 
-LIBRARIES       = VMMR3
-ifneq ($(BUILD_TARGET),darwin)
-LIBRARIES      += VMMGCBuiltin VMMGCImp VMMR0Imp
-endif
-SYSMODS         = VMMGC VMMR0
-DLLS            = VBoxVMM
-
-# Walk
-SUBDIRS_AFTER_BINARIES = testcase
-SUBDIRS_AFTER_OTHERS   = testcase
-SUBDIRS_AFTER_CLEAN    = testcase
-SUBDIRS_AFTER_NOTHING  = testcase
-
+## @todo get rid of these.
 # Enable the PDM lock.
 #DEFS += VBOX_WITH_PDM_LOCK
 ifdef VBOX_WITH_INTERNAL_NETWORKING
 DEFS += VBOX_WITH_INTERNAL_NETWORKING
 endif
 
+# Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+
 
 #
 # VMMR3.dll
 #
+LIBRARIES += VMMR3
+
 VMMR3_TEMPLATE  = VBOXR3
 VMMR3_DEFS      = IN_VMM_R3  IN_PDM_R3  IN_CFGM_R3 IN_IOM_R3  IN_VM_R3   IN_CPUM_R3 IN_SELM_R3 IN_PGM_R3 IN_TRPM_R3 IN_MM_R3 IN_DBG_R3 \
                   IN_DBGF_R3 IN_PATM_R3 IN_DIS_R3  IN_STAM_R3 IN_CSAM_R3 IN_EM_R3   IN_TM_R3   IN_SSM_R3 IN_HWACCM_R3
@@ -53,7 +46,7 @@ ifdef VBOX_OSE
   VMMR3_DEFS   += PDMLDR_FAKE_MODE
  endif
 endif                
-VMMR3_INCS      := \
+VMMR3_INCS     := \
 	PATM \
 	$(PATH_SUB_CURRENT)
 
@@ -145,8 +138,32 @@ VMMR3_SOURCES.darwin.x86 += \
 
 
 #
+# The VMM DLL.
+#
+DLLS += VBoxVMM
+VBoxVMM_TEMPLATE = VBOXR3
+VBoxVMM_DEFS     = $(VMMR3_DEFS)
+VBoxVMM_SOURCES  = VBoxVMMDeps.cpp
+VBoxVMM_SONAME.linux = VBoxVMM.so
+
+VBoxVMM_LIBS     = \
+	$(PATH_LIB)/VMMR3$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/Debugger$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
+	$(LIB_REM) \
+	$(LIB_RUNTIME)
+
+VBoxVMM_LIBS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+VBoxVMM_LDFLAGS.win = /DELAYLOAD:dbghelp.dll
+VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined
+VBoxVMM_LDFLAGS.darwin = -install_name @executable_path/VBoxVMM.dylib
+
+
+#
 # VMMGCBuiltin.lib
 #
+ifneq ($(BUILD_TARGET),darwin)
+LIBRARIES += VMMGCBuiltin
 VMMGCBuiltin_TEMPLATE = VBOXGC
 ifeq ($(VBOX_LDR_FMT32),pe)
 VMMGCBuiltin_SOURCES = VMMGC/VMMGCBuiltin.def
@@ -157,10 +174,14 @@ $(PATH_TARGET)/VMMGCBuiltin.def: VMMGC/VMMGCBuiltin.def | $(call DIRDEP,$(PATH_T
 	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(MV) -f $@.tmp $@
 endif
+endif # !darwin
+
 
 #
 # VMMGCImp.lib
 #
+ifneq ($(BUILD_TARGET),darwin)
+LIBRARIES += VMMGCImp
 VMMGCImp_TEMPLATE = VBOXGC
 ifeq ($(VBOX_LDR_FMT32),pe)
 VMMGCImp_SOURCES = VMMGC/VMMGC.def
@@ -173,10 +194,14 @@ $(PATH_TARGET)/VMMGC.def: VMMGC/VMMGC.def | $(call DIRDEP,$(PATH_TARGET))
 	$(APPEND) "$@.tmp" "    ___ehInit"
 	$(MV) -f $@.tmp $@
 endif
+endif # !darwin
+
 
 #
 # VMMR0Imp.lib
 #
+ifneq ($(BUILD_TARGET),darwin)
+LIBRARIES += VMMR0Imp
 VMMR0Imp_TEMPLATE = VBOXR0
 ifeq ($(VBOX_LDR_FMT),pe)
 VMMR0Imp_SOURCES = VMMR0/VMMR0.def
@@ -189,10 +214,13 @@ $(PATH_TARGET)/VMMR0.def: VMMR0/VMMR0.def | $(call DIRDEP,$(PATH_TARGET))
 	$(APPEND) "$@.tmp" "    ___ehInit"
 	$(MV) -f $@.tmp $@
 endif
+endif # !darwin
+
 
 #
 # VMMGC.gc
 #
+SYSMODS += VMMGC
 VMMGC_TEMPLATE  = VBOXGC
 VMMGC_INCS     := \
 	 $(PATH_SUB_CURRENT) \
@@ -275,6 +303,7 @@ VMMGC/VMMGCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMGCDeps.cpp to .c
 #
 # VMMR0.r0
 #
+SYSMODS += VMMR0
 VMMR0_TEMPLATE  = VBOXR0
 VMMR0_INCS     := \
 	$(PATH_SUB_CURRENT) \
@@ -349,27 +378,7 @@ VMMR0_LIBS += \
 endif
 
 
-#
-# The VMM DLL.
-#
-VBoxVMM_TEMPLATE = VBOXR3
-VBoxVMM_DEFS     = $(VMMR3_DEFS)
-VBoxVMM_SOURCES  = VBoxVMMDeps.cpp
-VBoxVMM_SONAME.linux = VBoxVMM.so
-
-VBoxVMM_LIBS     = \
-	$(PATH_LIB)/VMMR3$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/Debugger$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
-	$(LIB_REM) \
-	$(LIB_RUNTIME)
-
-VBoxVMM_LIBS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
-VBoxVMM_LDFLAGS.win = /DELAYLOAD:dbghelp.dll
-VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined
-VBoxVMM_LDFLAGS.darwin = -install_name @executable_path/VBoxVMM.dylib
-
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 
 
 # Alias the PGM templates to the object in which they are defined.
