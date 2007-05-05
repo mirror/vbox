@@ -41,12 +41,12 @@ endif
 #
 # Include sub-makefile(s).
 #
-include $(VBOX_PATH_SUPPORT)/testcase/Makefile.kmk
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 
 ifeq ($(BUILD_TARGET),linux)
 ## @todo change this to use a INSTALLS target.
-EXPORT_FILE_PAIRS = \
+EXPORT_FILE_PAIRS := \
 	include/iprt/alloc.h=$(PATH_ROOT)/include/iprt/alloc.h \
 	include/iprt/asm.h=$(PATH_ROOT)/include/iprt/asm.h \
 	include/iprt/assert.h=$(PATH_ROOT)/include/iprt/assert.h \
@@ -73,9 +73,9 @@ EXPORT_FILE_PAIRS = \
 	include/internal/initterm.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/initterm.h \
 	include/internal/thread.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/thread.h \
 	include/internal/magics.h=$(PATH_ROOT)/src/VBox/Runtime/include/internal/magics.h \
-	linux/SUPDrv-linux.c=$(VBOX_PATH_SUPPORT)/linux/SUPDrv-linux.c \
-	Makefile=$(VBOX_PATH_SUPPORT)/linux/Makefile \
-	build_in_tmp=$(VBOX_PATH_SUPPORT)/linux/build_in_tmp \
+	linux/SUPDrv-linux.c=$(PATH_SUB_CURRENT)/linux/SUPDrv-linux.c \
+	Makefile=$(PATH_SUB_CURRENT)/linux/Makefile \
+	build_in_tmp=$(PATH_SUB_CURRENT)/linux/build_in_tmp \
 	alloc/heapsimple.c=$(PATH_ROOT)/src/VBox/Runtime/alloc/heapsimple.cpp \
 	r0drv/alloc-r0drv.c=$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.cpp \
 	r0drv/alloc-r0drv.h=$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.h \
@@ -89,9 +89,9 @@ EXPORT_FILE_PAIRS = \
 	r0drv/linux/thread-r0drv-linux.c=$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/thread-r0drv-linux.c \
 	r0drv/linux/the-linux-kernel.h=$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h \
 	version-generated.h=$(PATH_OUT)/version-generated.h \
-	SUPDRV.h=$(VBOX_PATH_SUPPORT)/SUPDRV.h \
-	SUPDRVIOC.h=$(VBOX_PATH_SUPPORT)/SUPDRVIOC.h \
-	SUPDRVShared.c=$(VBOX_PATH_SUPPORT)/SUPDRVShared.c
+	SUPDRV.h=$(PATH_SUB_CURRENT)/SUPDRV.h \
+	SUPDRVIOC.h=$(PATH_SUB_CURRENT)/SUPDRVIOC.h \
+	SUPDRVShared.c=$(PATH_SUB_CURRENT)/SUPDRVShared.c
 OTHERS       := $(foreach pair,$(EXPORT_FILE_PAIRS),$(PATH_BIN)/src/$(firstword $(subst =, ,$(pair))))
 OTHER_CLEAN   = $(OTHERS)
 endif # real linux
@@ -108,16 +108,16 @@ else
 SUPR3_TEMPLATE      = VBOXR3
 endif
 SUPR3_DEFS          = IN_SUP_R3 IN_RT_R3
-SUPR3_INCS          = $(VBOX_PATH_SUPPORT)
+SUPR3_INCS         := $(PATH_SUB_CURRENT)
 SUPR3_INCS.l4       = $(L4_INCDIR)
 ifneq ($(BUILD_TARGET),win) ## @todo rename win32 -> win!
 SUPR3_SOURCES       = \
-	$(VBOX_PATH_SUPPORT)/SUPLib.cpp \
-	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPLib-$(BUILD_TARGET).cpp
+	SUPLib.cpp \
+	$(BUILD_TARGET)/SUPLib-$(BUILD_TARGET).cpp
 else
 SUPR3_SOURCES       = \
-	$(VBOX_PATH_SUPPORT)/SUPLib.cpp \
-	$(VBOX_PATH_SUPPORT)/win32/SUPLib-win32.cpp
+	SUPLib.cpp \
+	win32/SUPLib-win32.cpp
 endif
 
 #
@@ -125,11 +125,11 @@ endif
 #
 SUPR0_TEMPLATE      = VBOXR0
 ifeq ($(VBOX_LDR_FMT),pe)
-SUPR0_SOURCES       += $(VBOX_PATH_SUPPORT)/SUPR0.def
+SUPR0_SOURCES       += SUPR0.def
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
 SUPR0_SOURCES       += $(PATH_TARGET)/SUPR0.def
-$(PATH_TARGET)/SUPR0.def: $(VBOX_PATH_SUPPORT)/SUPR0.def | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/SUPR0.def: $(PATH_SUB_CURRENT)/SUPR0.def | $(call DIRDEP,$(PATH_TARGET))
 	$(SED) -e 's/^[ \t][ \t]*\([gA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(MV) -f $@.tmp $@
 endif
@@ -142,15 +142,15 @@ ifeq ($(BUILD_TARGET),win)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
 VBoxDrv_SDKS          = W2K3DDK WINPSDKINCS
-VBoxDrv_INCS          = $(VBOX_PATH_SUPPORT)
+VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 VBoxDrv_SOURCES       = \
-	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c
+	SUPDRVShared.c
 VBoxDrv_SOURCES.x86   = \
-	$(VBOX_PATH_SUPPORT)/win32/SUPDrv-win32.cpp \
-	$(VBOX_PATH_SUPPORT)/win32/SUPDrvA-win32.asm
+	win32/SUPDrv-win32.cpp \
+	win32/SUPDrvA-win32.asm
 VBoxDrv_SOURCES.amd64 = \
-	$(VBOX_PATH_SUPPORT)/win64/SUPDrv-win64.cpp \
-	$(VBOX_PATH_SUPPORT)/win64/SUPDrvA-win64.asm
+	win64/SUPDrv-win64.cpp \
+	win64/SUPDrvA-win64.asm
 VBoxDrv_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxDrv_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxDrv_LIBS          = \
@@ -166,15 +166,15 @@ endif
 ifeq ($(BUILD_TARGET),linux)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
-vboxdrv_INCS          = $(VBOX_PATH_SUPPORT)
+vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(VBOX_GCC_LIBGCC)
 vboxdrv_SOURCES       = \
-	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c \
-	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c
+	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c \
+	SUPDRVShared.c
 ifndef VBOX_LINUX_VERSION_2_4
 vboxdrv_SOURCES      += \
-	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).mod.c
+	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).mod.c
 endif
 endif # real linux
 
@@ -186,20 +186,20 @@ ifeq ($(BUILD_TARGET),darwin)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
 VBoxDrv_DEFS         += DEBUG_DARWIN_GIP
-VBoxDrv_INCS          = $(VBOX_PATH_SUPPORT)
+VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 VBoxDrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxDrv_LDFLAGS       = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxDrv_INST          = $(INST_VBOXDRV)Contents/MacOS/
 VBoxDrv_SOURCES       = \
-	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c \
-	$(VBOX_PATH_SUPPORT)/$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).cpp
+	SUPDRVShared.c \
+	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).cpp
 
 INSTALLS += VBoxDrv.kext
 VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
 VBoxDrv.kext_SOURCES  = \
 	$(PATH_TARGET)/Info.plist
 
-$(PATH_TARGET)/Info.plist: $(VBOX_PATH_SUPPORT)/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_GENERATE,VBoxDrv,$@,$<)
 	$(xQUIET)$(RM) -f $@
 	$(xQUIET)$(SED) \
@@ -212,7 +212,7 @@ $(PATH_TARGET)/Info.plist: $(VBOX_PATH_SUPPORT)/darwin/Info.plist $(VBOX_VERSION
 INSTALLS += Scripts
 Scripts_INST     = $(INST_DIST)
 Scripts_SOURCES  = \
-	$(VBOX_PATH_SUPPORT)/darwin/load.sh
+	darwin/load.sh
 
 endif
 
@@ -223,11 +223,11 @@ endif
 ifeq ($(BUILD_TARGET),os2)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
-VBoxDrv_INCS          = $(VBOX_PATH_SUPPORT)
+VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 #VBoxDrv_LDFLAGS       = -s -t -v
 VBoxDrv_SOURCES       = \
-	$(VBOX_PATH_SUPPORT)/os2/SUPDrvA-os2.asm \
-	$(VBOX_PATH_SUPPORT)/os2/SUPDrv-os2.def
+	os2/SUPDrvA-os2.asm \
+	os2/SUPDrv-os2.def
 VBoxDrv_LIBS          = \
 	$(TARGET_VBoxDrvLib) \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
@@ -239,10 +239,13 @@ LIBRARIES += VBoxDrvLib
 VBoxDrvLib_TEMPLATE   = VBOXR0DRV
 VBoxDrvLib_NOINST     = 1
 VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
-VBoxDrvLib_INCS       = $(VBOX_PATH_SUPPORT) $(PATH_TARGET) $(PATH_ROOT)/src/VBox/Runtime/include
+VBoxDrvLib_INCS      := \
+	$(PATH_SUB_CURRENT) \
+	$(PATH_TARGET) \
+	$(PATH_ROOT)/src/VBox/Runtime/include
 VBoxDrvLib_SOURCES    = \
-	$(VBOX_PATH_SUPPORT)/os2/SUPDrv-os2.cpp \
-	$(VBOX_PATH_SUPPORT)/SUPDRVShared.c
+	os2/SUPDrv-os2.cpp \
+	SUPDRVShared.c
 endif
 
 

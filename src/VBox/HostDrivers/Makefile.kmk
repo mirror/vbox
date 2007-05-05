@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VBox Host drivers base directory.
+# Top-level makefile for the VBox Host drivers.
 #
 
 #
@@ -22,12 +22,12 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/subheader.kmk
 
-# Include sub-makefile.
-include $(VBOX_PATH_HOSTDRIVERS)/Support/Makefile.kmk
+# Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/Support/Makefile.kmk
 ifeq ($(BUILD_TARGET),win)
- include $(VBOX_PATH_HOSTDRIVERS)/VBoxTAP/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBoxTAP/Makefile.kmk
  ifdef VBOX_WITH_USB
-  include $(VBOX_PATH_HOSTDRIVERS)/VBoxUSB/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
  endif
 endif
 

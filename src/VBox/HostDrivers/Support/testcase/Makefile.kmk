@@ -20,7 +20,7 @@
 #
 
 DEPTH = ../../../../..
-SUB_DEPTH = ..
+SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
 PROGRAMS += \
@@ -39,37 +39,37 @@ PROGRAMS += \
 endif # VBOX_WITH_TESTCASES
 
 SUPInstall_TEMPLATE   = VBOXR3EXE
-SUPInstall_SOURCES    = $(VBOX_PATH_SUPPORT)/testcase/SUPInstall.cpp
+SUPInstall_SOURCES    = SUPInstall.cpp
 SUPInstall_LIBS       = $(LIB_RUNTIME)
 
 SUPUninstall_TEMPLATE = VBOXR3EXE
-SUPUninstall_SOURCES  = $(VBOX_PATH_SUPPORT)/testcase/SUPUninstall.cpp
+SUPUninstall_SOURCES  = SUPUninstall.cpp
 SUPUninstall_LIBS     = $(LIB_RUNTIME)
 
 tstInt_TEMPLATE       = VBOXR3EXE
-tstInt_SOURCES        = $(VBOX_PATH_SUPPORT)/testcase/tstInt.cpp
+tstInt_SOURCES        = tstInt.cpp
 tstInt_LIBS           = $(LIB_RUNTIME)
 
 tstContiguous_TEMPLATE= VBOXR3TSTEXE
-tstContiguous_SOURCES = $(VBOX_PATH_SUPPORT)/testcase/tstContiguous.cpp
+tstContiguous_SOURCES = tstContiguous.cpp
 
 tstInit_TEMPLATE      = VBOXR3TSTEXE
-tstInit_SOURCES       = $(VBOX_PATH_SUPPORT)/testcase/tstInit.cpp
+tstInit_SOURCES       = tstInit.cpp
 
 tstLow_TEMPLATE       = VBOXR3TSTEXE
-tstLow_SOURCES        = $(VBOX_PATH_SUPPORT)/testcase/tstLow.cpp
+tstLow_SOURCES        = tstLow.cpp
 
 tstPin_TEMPLATE       = VBOXR3TSTEXE
-tstPin_SOURCES        = $(VBOX_PATH_SUPPORT)/testcase/tstPin.cpp
+tstPin_SOURCES        = tstPin.cpp
 
 tstPage_TEMPLATE      = VBOXR3TSTEXE
-tstPage_SOURCES       = $(VBOX_PATH_SUPPORT)/testcase/tstPage.cpp
+tstPage_SOURCES       = tstPage.cpp
 
 tstGIP-2_TEMPLATE     = VBOXR3TSTEXE
-tstGIP-2_SOURCES      = $(VBOX_PATH_SUPPORT)/testcase/tstGIP-2.cpp
+tstGIP-2_SOURCES      = tstGIP-2.cpp
 
 tstGetPagingMode_TEMPLATE = VBOXR3TSTEXE
-tstGetPagingMode_SOURCES = $(VBOX_PATH_SUPPORT)/testcase/tstGetPagingMode.cpp
+tstGetPagingMode_SOURCES = tstGetPagingMode.cpp
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
