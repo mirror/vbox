@@ -276,8 +276,11 @@ $(PATH_TARGET)/tstAsmStructsGC.h: $(PATH_TARGET)/tstAsmStructsHC.h
 	$(QUIET)$(SED) -e '/VMMSWITCHERDEF/d' \
 		$^ > $@
 
+## @todo make this default kBuild behaviour.
+.SECONDEXPANSION:
+
 # 4. run it.
-$(PATH_TARGET)/tstAsmStructs.run: $(INSTARGET_tstAsmStructs) $(INSTARGET_tstAsmStructsGC)
+$(PATH_TARGET)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(INSTARGET_tstAsmStructsGC)
 	$(QUIET)$(RM) -f $@
 	$(INSTARGET_tstAsmStructs)
 	$(INSTARGET_tstAsmStructsGC)
@@ -290,12 +293,12 @@ $(PATH_TARGET)/tstAsmStructs.run: $(INSTARGET_tstAsmStructs) $(INSTARGET_tstAsmS
 #
 
 # 1. Manually dump selected structures and members.
-$(PATH_TARGET)/tstVMStructGC.h: $(INSTARGET_tstVMStructGC)
+$(PATH_TARGET)/tstVMStructGC.h: $$(INSTARGET_tstVMStructGC)
 	$(call MSG_GENERATE,tstVMStructSize,$@)
 	$(QUIET)$(INSTARGET_tstVMStructGC) > $@
 
 # 2. run it.
-$(PATH_TARGET)/tstVMStructSize.run: $(INSTARGET_tstVMStructSize)
+$(PATH_TARGET)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize)
 	$(QUIET)$(RM) -f $@
 	$^
 	$(QUIET)$(APPEND) "$@" "done"
