@@ -36,6 +36,7 @@
 #include <iprt/log.h>
 #ifdef VBOX_WITHOUT_IDT_PATCHING
 # include <VBox/vmm.h>
+# include <VBox/err.h>
 #endif
 
 

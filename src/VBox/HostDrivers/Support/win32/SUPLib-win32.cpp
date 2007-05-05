@@ -616,13 +616,28 @@ int     suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, 
 {
     AssertMsg(g_hDevice != INVALID_HANDLE_VALUE, ("SUPLIB not initiated successfully!\n"));
     /*
-     * Issue device iocontrol.
+     * Issue device I/O control.
      */
     DWORD cbReturned = (ULONG)cbOut;
     if (DeviceIoControl(g_hDevice, uFunction, pvIn, (ULONG)cbIn, pvOut, (ULONG)cbOut, &cbReturned, NULL))
         return 0;
     return suplibConvertWin32Err(GetLastError());
 }
+
+
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+int suplibOSIOCtlFast(unsigned uFunction)
+{
+    /*
+     * Issue device I/O control.
+     */
+    int rc = VERR_INTERNAL_ERROR;
+    DWORD cbReturned = (ULONG)sizeof(rc);
+    if (DeviceIoControl(g_hDevice, uFunction, NULL, 0, &rc, (DWORD)sizeof(rc), &cbReturned, NULL))
+        return rc;
+    return suplibConvertWin32Err(GetLastError());
+}
+#endif
 
 
 /**

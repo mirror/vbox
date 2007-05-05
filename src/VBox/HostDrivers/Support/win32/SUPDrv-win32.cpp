@@ -64,6 +64,7 @@ static void     _stdcall   VBoxSupDrvUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS _stdcall   VBoxSupDrvCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxSupDrvClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxSupDrvDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static int                 VBoxSupDrvDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
 static NTSTATUS _stdcall   VBoxSupDrvNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS            VBoxSupDrvErr2NtStatus(int rc);
 static NTSTATUS            VBoxSupDrvGipInit(PSUPDRVDEVEXT pDevExt);
@@ -135,8 +136,8 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     dprintf(("VBoxDrv::DriverEntry   returning STATUS_SUCCESS\n"));
                     return STATUS_SUCCESS;
                 }
-                else
-                    dprintf(("VBoxSupDrvGipInit failed with rc=%#x!\n", rc));
+                dprintf(("VBoxSupDrvGipInit failed with rc=%#x!\n", rc));
+
                 supdrvDeleteDevExt(pDevExt);
             }
             else
@@ -271,43 +272,101 @@ NTSTATUS _stdcall VBoxSupDrvDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
     PSUPDRVSESSION      pSession = (PSUPDRVSESSION)pStack->FileObject->FsContext;
-    char               *pBuf = (char *)pIrp->AssociatedIrp.SystemBuffer; /* all requests are buffered. */
-    unsigned            cbOut = 0;
-    dprintf2(("VBoxSupDrvDeviceControl(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
+
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+    /*
+     * Deal with the two high-speed IOCtl that takes it's arguments from
+     * the session and iCmd, and only returns a VBox status code.
+     */
+    ULONG ulCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
+    if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+        ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+        ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
+    {
+        int rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
+
+        /* Complete the I/O request. */
+        NTSTATUS rcNt = pIrp->IoStatus.Status = STATUS_SUCCESS;
+        pIrp->IoStatus.Information = sizeof(rc);
+        __try
+        {
+            *(int *)pIrp->UserBuffer = rc;
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            rcNt = pIrp->IoStatus.Status = GetExceptionCode();
+            dprintf(("VBoxSupDrvDeviceContorl: Exception Code %#x\n", rcNt));
+        }
+        IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+        return rcNt;
+    }
+#endif /* VBOX_WITHOUT_IDT_PATCHING */
+
+    return VBoxSupDrvDeviceControlSlow(pDevExt, pSession, pIrp, pStack);
+}
+
+
+/**
+ * Worker for VBoxSupDrvDeviceControl that takes the slow IOCtl functions.
+ *
+ * @returns NT status code.
+ *
+ * @param   pDevObj     Device object.
+ * @param   pSession    The session.
+ * @param   pIrp        Request packet.
+ * @param   pStack      The stack location containing the DeviceControl parameters.
+ */
+static int VBoxSupDrvDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack)
+{
+    NTSTATUS    rcNt = STATUS_NOT_SUPPORTED;
+    unsigned    cbOut = 0;
+    int         rc = 0;
+    dprintf2(("VBoxSupDrvDeviceControlSlow(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
              pDevObj, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
              pBuf, pStack->Parameters.DeviceIoControl.InputBufferLength,
              pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
 
-#ifdef __WIN64__
-    /*
-     * Don't allow 32-bit processes to do any I/O controls.
-     */
-    if (IoIs32bitProcess(pIrp))
+#ifdef __AMD64__
+    /* Don't allow 32-bit processes to do any I/O controls. */
+    if (!IoIs32bitProcess(pIrp))
+#endif
     {
-        dprintf(("VBoxSupDrvDeviceControl: returns STATUS_NOT_SUPPORTED - WOW64 req\n"));
-        return STATUS_NOT_SUPPORTED;
+        /* Verify that it's a buffered CTL. */
+        if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
+        {
+            char *pBuf = (char *)pIrp->AssociatedIrp.SystemBuffer;
+
+            /* 
+             * Do the job. 
+             */
+            rc = supdrvIOCtl(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession,
+                             pBuf, pStack->Parameters.DeviceIoControl.InputBufferLength,
+                             pBuf, pStack->Parameters.DeviceIoControl.OutputBufferLength,
+                             &cbOut);
+            rcNt = VBoxSupDrvErr2NtStatus(rc);
+
+            /* sanity check. */
+            AssertMsg(cbOut <= pStack->Parameters.DeviceIoControl.OutputBufferLength,
+                      ("cbOut is too large! cbOut=%d max=%d! ioctl=%#x\n",
+                       cbOut, pStack->Parameters.DeviceIoControl.OutputBufferLength,
+                       pStack->Parameters.DeviceIoControl.IoControlCode));
+            if (cbOut > pStack->Parameters.DeviceIoControl.OutputBufferLength)
+                cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
+            dprintf2(("VBoxSupDrvDeviceControlSlow: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
+        }
+        else
+            dprintf(("VBoxSupDrvDeviceControlSlow: not buffered request (%#x) - not supported\n", 
+                     pStack->Parameters.DeviceIoControl.IoControlCode));
     }
+#ifdef __AMD64__
+    else
+        dprintf(("VBoxSupDrvDeviceControlSlow: WOW64 req - not supported\n"));
 #endif
 
-    int rc = supdrvIOCtl(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession,
-                         pBuf, pStack->Parameters.DeviceIoControl.InputBufferLength,
-                         pBuf, pStack->Parameters.DeviceIoControl.OutputBufferLength,
-                         &cbOut);
-
-    /* sanity check. */
-    AssertMsg(cbOut <= pStack->Parameters.DeviceIoControl.OutputBufferLength,
-              ("cbOut is too large! cbOut=%d max=%d! ioctl=%#x\n",
-               cbOut, pStack->Parameters.DeviceIoControl.OutputBufferLength,
-               pStack->Parameters.DeviceIoControl.IoControlCode));
-    if (cbOut > pStack->Parameters.DeviceIoControl.OutputBufferLength)
-        cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
-
     /* complete the request. */
-    NTSTATUS    rcNt = pIrp->IoStatus.Status = VBoxSupDrvErr2NtStatus(rc);
-    pIrp->IoStatus.Information = NT_SUCCESS(rcNt) ? cbOut : rc;
+    pIrp->IoStatus.Status = rcNt;
+    pIrp->IoStatus.Information = NT_SUCCESS(rcNt) ? cbOut : rc; /* does this rc passing actually work?!? */
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-
-    dprintf2(("VBoxSupDrvDeviceControl: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
     return rcNt;
 }
 
