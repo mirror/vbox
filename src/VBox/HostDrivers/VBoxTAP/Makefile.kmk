@@ -23,20 +23,19 @@ DEPTH ?= ../../../..
 SUB_DEPTH = ..
 include	$(PATH_KBUILD)/subheader.kmk
 
-SYSMODS.win += VBoxTAP
-INSTALLS.win += VBoxTAP-inf
 
 
 #
 # VBoxTap
 #
+SYSMODS.win += VBoxTAP
 VBoxTAP_TEMPLATE    = VBOXR0DRV
 VBoxTAP_SDKS        = W2K3DDK WINPSDKINCS
 VBoxTAP_LDFLAGS.x86 = -Entry:DriverEntry@8
 VBoxTAP_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxTAP_SOURCES     = \
-	$(VBOX_PATH_VBOXTAP)/tapdrvr.c \
-	$(VBOX_PATH_VBOXTAP)/VBoxTAP.rc
+	tapdrvr.c \
+	VBoxTAP.rc
 VBoxTAP_LIBS        = \
 	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
@@ -48,9 +47,10 @@ VBoxTAP_LIBS        = \
 #
 # Install the .inf.
 #
+INSTALLS.win += VBoxTAP-inf
 VBoxTAP-inf_INST = bin/
 VBoxTAP-inf_MODE = a+r,u+w
-VBoxTAP-inf_SOURCES = $(VBOX_PATH_VBOXTAP)/VBoxTAP.inf
+VBoxTAP-inf_SOURCES = VBoxTAP.inf
 
 
 # generate rules
