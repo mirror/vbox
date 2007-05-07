@@ -46,7 +46,8 @@ public:
                     mVRDPPort == that.mVRDPPort &&
                     mVRDPAddress == that.mVRDPAddress &&
                     mAuthType == that.mAuthType &&
-                    mAuthTimeout == that.mAuthTimeout);
+                    mAuthTimeout == that.mAuthTimeout &&
+                    mAllowMultiConnection == that.mAllowMultiConnection);
         }
 
         BOOL mEnabled;
@@ -54,6 +55,7 @@ public:
         Bstr mVRDPAddress;
         VRDPAuthType_T mAuthType;
         ULONG mAuthTimeout;
+        BOOL mAllowMultiConnection;
     };
 
     DECLARE_NOT_AGGREGATABLE(VRDPServer)
@@ -87,6 +89,8 @@ public:
     STDMETHOD(COMSETTER(AuthType))(VRDPAuthType_T type);
     STDMETHOD(COMGETTER(AuthTimeout))(ULONG *timeout);
     STDMETHOD(COMSETTER(AuthTimeout))(ULONG timeout);
+    STDMETHOD(COMGETTER(AllowMultiConnection))(BOOL *enabled);
+    STDMETHOD(COMSETTER(AllowMultiConnection))(BOOL enable);
 
     // IVRDPServer methods
 

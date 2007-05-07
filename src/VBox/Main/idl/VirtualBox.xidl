@@ -6,7 +6,7 @@
  * via XSLT that are then used during the build process:
  *
  *   -  out/<platform>/bin/sdk/idl/VirtualBox[_XPCOM].idl, a
- *      pseudo-IDL file that represents the interfaces in IDL;
+ *      COM/XPCOM interface definition file (IDL)
  *
  *   -  out/<platform>/bin/sdk/include/VirtualBox[_XPCOM].h, which
  *      gets included from the include/VBox/com/VirtualBox.h
@@ -7181,7 +7181,7 @@
 
     <interface
         name="IVRDPServer" extends="$unknown"
-        uuid="2e88bf9e-2085-421f-9aa2-32088b0378b3"
+        uuid="ed9d31ae-867f-45fc-b727-6740084d1883"
         wsmap="struct"
     >
         <attribute name="enabled" type="boolean">
@@ -7202,6 +7202,13 @@
 
         <attribute name="authTimeout" type="unsigned long">
             <desc>Timeout for guest authentication. Milliseconds.</desc>
+        </attribute>
+
+        <attribute name="allowMultiConnection" type="boolean">
+            <desc>
+                Flag whether multiple simultaneous connections to the VM are permitted.
+                Note that this will be replaced by a more powerful mechanism in the future.
+            </desc>
         </attribute>
 
     </interface>
