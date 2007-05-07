@@ -169,7 +169,7 @@
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Pokazuj nazwę współdzielonego folseru (tak, jak będzie widziana na systemie-gościu).</translation>
+        <translation>Pokazuj nazwę współdzielonego folseru (tak, jak będzie widziana na systemie gościu).</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
@@ -916,7 +916,7 @@
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Róznice</translation>
     </message>
     <message>
         <source>Unknown device %04hX:%04hX</source>
@@ -1629,7 +1629,7 @@
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje klawisz, używany, jako Klawisz Gospodarza w oknie wirtualnej maszyny. Aktywuj pole i wciśnij nowy Klawisz Gospodarza. Zauważ, że klawisze alfanumeryczn, ruch kursora i klawisze edycji nie mogą być używane, jako Klawisz Gospodarza.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -1734,12 +1734,12 @@ powrócić do systemowego języka.&lt;/qt&gt;
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaje nowy filtr USB ze wszystkimi polami wypełnionymi przez wartości wybranego urządzenia podłączonego do komputera gospodarza.</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;niedostępny&gt;</translation>
     </message>
 </context>
 <context>
@@ -1826,7 +1826,7 @@ do zapisania obrazu wirtualnego dysku lub wprowadzenia jego nazwy w odpowiedznim
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wybierz rozmiar wirtualnego dysku w megabajtach. Ten rozmiar będzie podany systemowi-gościowi,
+        <translation>&lt;p&gt;Wybierz rozmiar wirtualnego dysku w megabajtach. Ten rozmiar będzie podany systemowi gościowi,
 jako rozmiar wirtualnego dysku.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -1876,7 +1876,12 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wybierz typ obrazu wirtualnego dysku, jaki chcesz utworzyć.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Dynamicznie rozszerzany obraz&lt;/b&gt; początkowo zajmuje bardzo małą ilość
+miejsca na fizycznym dysku. Będzie on rósł dynamicznie (aż do
+podanego rozmiaru), kiedy system gość będzie używał przestrzeni dysku.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Obraz o ustalonym rozmiarze&lt;/b&gt; nie rośnie. Jest zapisany w pliku o mniej-więcej
+takim samym rozmiarze, jak rozmiar wirtualnego dysku.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1957,7 +1962,7 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Wybierz obraz dysku, który ma zostać użyty,
+        <translation>&lt;p&gt;Wybierz obraz dysku, który ma zostać użyty,
 jako dysk bootowalny wirtualnej maszyny. Możesz także utwożyć nowy
 dysk, używając przycisku &lt;b&gt;Nowy&lt;/b&gt; lub wybrać istniejący obraz
 dysku z listy poniżej lub wciskając przycisk &lt;b&gt;Istniejący&lt;/b&gt;
@@ -2012,7 +2017,7 @@ opuścić ten krok i dołączyć dysk puźniej, używając opcji maszyny wirtual
                             &lt;/p&gt;&lt;p&gt;
                             W każdym razie ustawienia utworzonej maszyny wirtualnej
                             możesz edytować w każdej chwili, używając przycisku
-                            &lt;p&gt;Ustawienia&lt;/b&gt; z menu w głównym oknie.
+                            &lt;b&gt;Ustawienia&lt;/b&gt; z menu w głównym oknie.
                             &lt;/p&gt;
                              </translation>
     </message>
@@ -2022,7 +2027,7 @@ opuścić ten krok i dołączyć dysk puźniej, używając opcji maszyny wirtual
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
@@ -2045,7 +2050,10 @@ opuścić ten krok i dołączyć dysk puźniej, używając opcji maszyny wirtual
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wprowadź nazwę dla nowej maszyny wirtualne, oraz wybierz typ systemu gościa,
+którego planujesz zainstalować na tej maszynie.&lt;/p&gt;
+&lt;p&gt;Nazwa maszyny wirtualnej zwykle przypomina jej konfigurację zprzętu i oprogramowanie.
+Będzie ona używana przez wszystkie produkty VirtualBox, aby zidentyfikować stworzoną maszynę.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2414,7 +2422,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation type="unfinished">Menedżer dysków wirtualnych...</translation>
+        <translation>Menedżer &amp;dysków wirtualnych...</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
@@ -2435,7 +2443,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż okno ustawień globalnych</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -2451,7 +2459,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation>&amp;Nowy...</translation>
+        <translation>&amp;Nowa...</translation>
     </message>
     <message>
         <source>New</source>
@@ -2479,7 +2487,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation>Konfiguru wybraną maszynę wirtualną</translation>
+        <translation>Konfiguruj wybraną maszynę wirtualną</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
@@ -2503,7 +2511,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Odrzuć zapisany stan wybranej maszyny wirtualnej</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
@@ -2519,7 +2527,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Odświerz stan dostępności wybranej maszyny wirtualnej</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -2531,7 +2539,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż pomoc online</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -2539,7 +2547,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz przeglądarkę i przejdź do strony VirtualBox</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
@@ -2555,7 +2563,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished"></translation>
+        <translation>Powoduje, że wszystkie zaznaczone ostrzeżenia i wiadomości, nie będą pokazywane ponownie</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -2567,7 +2575,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zrzuty</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
@@ -2575,7 +2583,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation type="unfinished">Opis *</translation>
+        <translation>O&amp;pis *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -2603,11 +2611,11 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Witamy w VirtualBox!&lt;/h3&gt;&lt;p&gt;Lewa część okna przeznaczona jest do wyświetlania listy wirtualnych maszyn na twoim komputerze. Lista jest teraz pusta, ponieważ nie utworzyłeś jeszcze żadnej maszyny.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Jeżeli chcesz utworzyć wirtualną maszynę, wciśnij przycisk &lt;b&gt;Nowa&lt;/b&gt; w głównym pasku narzędziowym, umieszczonym na górze okna.&lt;/p&gt;&lt;p&gt;Możesz wcisnąć klawisz &lt;b&gt;F1&lt;/b&gt; uzyskać natychmiastową pomoc, lub odwiedzić stronę &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;, aby uzyskać więcej informacji i newsów.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished">&amp;Maszyna</translation>
+        <translation>&amp;Maszyna</translation>
     </message>
 </context>
 <context>
@@ -2623,7 +2631,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Shared &amp;Folders</source>
@@ -2636,7 +2644,8 @@ Use
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;qt&gt;Lista wszystkich współdzielonych folderów dostępnych dla tej maszyny.
+Użycie</translation>
     </message>
     <message>
         <source>Add</source>
@@ -2691,7 +2700,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Snapshot Details </source>
@@ -2746,11 +2755,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Discard Snapshot</source>
@@ -2766,7 +2775,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>curStateActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Take Snapshot</source>
@@ -2928,7 +2937,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3094,23 +3103,23 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 od %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sesja %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Niedostępna od %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished"></translation>
+        <translation>Niedostępna</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
         <source>VBoxVMNetworkSettings</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
@@ -3158,7 +3167,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;File Descriptor</source>
-        <translation type="unfinished"></translation>
+        <translation>Op&amp;is pliku</translation>
     </message>
     <message>
         <source>&amp;Setup Application</source>
@@ -3717,11 +3726,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiedy zaznaczone, wirtualna maszyna będzie odkrywać serwer Remote Desktop Protocol (RDP), zezwalając zdalnym klientom na podłączenie się i kierownie wirtualną maszyną (gdy jest uruchomiona), używając standardowego klienta RDP.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
@@ -3758,105 +3767,109 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybrano nieprawidłowy interfejs sieciowy gospodarza dla Adaptera %1.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>Port VRDP nie został ustawiony.</translation>
     </message>
     <message>
         <source>VRDP Timeout is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>Czas wyjściowy VRDP nie został ustawiony.</translation>
     </message>
     <message>
         <source> - Settings</source>
-        <translation type="unfinished"></translation>
+        <translation> - Ustawienia</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Nowy filtr %1</translation>
+        <translation>Nowy filtr %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>W&amp;spółdzielony schowek</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder z&amp;rzutu</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje typ systemu operacyjnego, jaki zamierzasz zainstalować na tej maszynie wirtualnej (nazywanym systemem gościem).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Kiedy zaznaczone,, wirtualna maszyna wspiera
+zaawansowaną konfigurację i zarządzanie energią (ACPI). &lt;b&gt;Uwaga:&lt;/b&gt; nie blokuj
+tej opcji po zainstalowaniu na maszynie systemu Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Kiedy zaznaczone, wirtualna maszyna wspiera
+Input Output APIC (IO APIC), które może delikatnie zmniejszyć wydajność wirtualnej maszyny. &lt;b&gt;Uwaga:&lt;/b&gt; nie blokuj
+tej opcji po zainstalowaniu na maszynie systemu Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definiuje matodę współdzielenia schowka, pomiędzy systemem gościem a gospodarzem. Zauważ, że ta opcja wymaga zainstalowanych dodatków &quot;Guest Additions&quot; na systemie gościu.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje ścieżkę, gdzie będą zapisane zrzuty maszyny wirtualnej. Zauważ, że zrzuty mogą zająć sporo miejsca na dysku.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywraca ścieżkę folderu zrzutów do domyślnej wartości. Aktualna domyślna ścieżka będzie pokazana po zaakceptowaniu zmian i ponownym otwarciu tego okna.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuje opis maszyny wirtualnej. Pole opisu jest przydatne do zapisania komentarza detali konfiguracji zainstalowanego systemu gościa.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wywołuje menedżer dysków wirtualnych, aby utworzyć nowy, lub wybrać istniejący dysk wirtualny do dołączenia.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista napędów dyskietek systemu gospodarza, dostępnych do zamontowania w wirtualnej maszynie.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wywołuje menedżer dysków wirtualnych, aby wybrać obraz dyskietki do zamontowania.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista dostępnych napędów CD/DVD systemu gospodarzam dostępnych do zamontowania w wirtualnej maszynie.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wywołuje menedżer dysków wirtualnych, aby wybrać obraz CD/DVD do zamontowania.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Kontroluje sterownik wyjścia dźwięku. &lt;b&gt;Brak sterownika dźwięku&lt;/b&gt; sprawia, że system gość widzi kartę dźwiękową, jednakże dostęp do niej będzie zignorowany.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiedy zaznaczone, odblokowuje wirtualny kontroler USB tej maszyny.</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista wszystkich  filtrów USB tej maszyny. Checkbox po lewej dewiniuje czy szczególny filtr jest odblokowany, czy nie.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">Dodaje nowy filtr USB ze wstępnymi wartościami ustawionymi na puste. Zauważ, że taki filtr będzie pasował do załączonego urządzenia USB.</translation>
+        <translation>Dodaje nowy filtr USB ze wstępnymi wartościami ustawionymi na puste. Zauważ, że taki filtr będzie pasował do załączonego urządzenia USB.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaje nowy filtr USB wstawiając we wszystkie pola wartości wybranego urządzenia podłączonego do komputera gospodarza.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
