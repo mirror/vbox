@@ -404,7 +404,8 @@ private:
     static DECLCALLBACK(int)    drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
 
 #ifdef VRDP_MC
-    int m_cAudioRefs;
+    int mcAudioRefs;
+    volatile uint32_t mcVRDPClients;
 
     static DECLCALLBACK(int)    vrdp_ClientLogon (void *pvUser, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     static DECLCALLBACK(void)   vrdp_ClientConnect (void *pvUser, uint32_t u32ClientId);

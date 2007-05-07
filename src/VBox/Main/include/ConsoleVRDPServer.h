@@ -44,7 +44,10 @@ public:
     void Stop (void);
 
     VRDPAuthResult Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
-                                 const char *pszUser, const char *pszPassword, const char *pszDomain);
+                                 const char *pszUser, const char *pszPassword, const char *pszDomain,
+                                 uint32_t u32ClientId);
+
+    void AuthDisconnect (const Guid &uuid, uint32_t u32ClientId);
 
 #ifdef VRDP_MC
     void USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
@@ -168,10 +171,11 @@ private:
 #endif /* VRDP_MC */
 
     /* External authentication library handle. The library is loaded in the
-     * Authenticate  method and unloaded at the object destructor.
+     * Authenticate method and unloaded at the object destructor.
      */
     RTLDRMOD mAuthLibrary;
     PVRDPAUTHENTRY mpfnAuthEntry;
+    PVRDPAUTHENTRY2 mpfnAuthEntry2;
 };
 
 

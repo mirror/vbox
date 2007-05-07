@@ -301,7 +301,8 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     AssertReturn (mConsoleVRDPServer, E_FAIL);
 
 #ifdef VRDP_MC
-    m_cAudioRefs = 0;
+    mcAudioRefs = 0;
+    mcVRDPClients = 0;
 #endif /* VRDP_MC */
 
     unconst (mVMMDev) = new VMMDev(this);
@@ -456,6 +457,7 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser, const char *pszUser,
 #ifdef VRDP_MC
     LogFlowFunc (("%d, %s, %s, %s\n", u32ClientId, pszUser, pszPassword, pszDomain));
 #else
+    uint32_t u32ClientId = 0;
     LogFlowFunc (("%s, %s, %s\n", pszUser, pszPassword, pszDomain));
 #endif /* VRDP_MC */
 
@@ -501,6 +503,27 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser, const char *pszUser,
                     )
             ));
 
+    /* Multiconnection check. */
+    BOOL allowMultiConnection = FALSE;
+    hrc = console->mVRDPServer->COMGETTER(AllowMultiConnection) (&allowMultiConnection);
+    AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
+
+    LogFlowFunc(("allowMultiConnection %d, console->mcVRDPClients = %d\n", allowMultiConnection, console->mcVRDPClients));
+
+    if (allowMultiConnection == FALSE)
+    {
+        /* Note: the variable is incremented in ClientConnect callback, which is called when the client
+         * is successfully connected, that is after the ClientLogon callback. Therefore the mcVRDPClients
+         * value is 0 for first client.
+         */
+        if (console->mcVRDPClients > 0)
+        {
+            /* Reject. */
+            LogRel(("VRDPAUTH: Multiple connections are not enabled. Access denied.\n"));
+            return VERR_ACCESS_DENIED;
+        }
+    }
+
     switch (authType)
     {
         case VRDPAuthType_VRDPAuthNull:
@@ -512,7 +535,7 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser, const char *pszUser,
         case VRDPAuthType_VRDPAuthExternal:
         {
             /* Call the external library. */
-            result = console->mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain);
+            result = console->mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
 
             if (result != VRDPAuthDelegateToGuest)
             {
@@ -571,7 +594,7 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser, const char *pszUser,
             {
                 LogRel(("VRDPAUTH: Guest judgement %d.\n", guestJudgement));
                 LogFlowFunc (("External auth called again with guest judgement = %d\n", guestJudgement));
-                result = console->mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain);
+                result = console->mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
             }
             else
             {
@@ -623,6 +646,8 @@ DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
 
 #ifdef VBOX_VRDP
 #ifdef VRDP_MC
+    ASMAtomicIncU32(&console->mcVRDPClients);
+
     NOREF(u32ClientId);
     console->mDisplay->VideoAccelVRDP (true);
 #else
@@ -654,8 +679,11 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
 
 #ifdef VBOX_VRDP
 #ifdef VRDP_MC
+    ASMAtomicDecU32(&console->mcVRDPClients);
+
     console->mDisplay->VideoAccelVRDP (false);
 #else
+    u32ClientId = 0;
     console->mDisplay->VideoAccelVRDP (false, 0);
 #endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
@@ -678,9 +706,9 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
 
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_AUDIO)
     {
-        console->m_cAudioRefs--;
+        console->mcAudioRefs--;
 
-        if (console->m_cAudioRefs <= 0)
+        if (console->mcAudioRefs <= 0)
         {
             if (console->mAudioSniffer)
             {
@@ -703,6 +731,17 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
     }
 #endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
+
+    Guid uuid;
+    HRESULT hrc = console->mMachine->COMGETTER (Id) (uuid.asOutParam());
+    AssertComRC (hrc);
+
+    VRDPAuthType_T authType = VRDPAuthType_VRDPAuthNull;
+    hrc = console->mVRDPServer->COMGETTER(AuthType) (&authType);
+    AssertComRC (hrc);
+
+    if (authType == VRDPAuthType_VRDPAuthExternal)
+        console->mConsoleVRDPServer->AuthDisconnect (uuid, u32ClientId);
 
     LogFlowFuncLeave();
     return;
@@ -734,9 +773,9 @@ DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser, bool fKeepHostAud
 
 #ifdef VBOX_VRDP
 #ifdef VRDP_MC
-    console->m_cAudioRefs++;
+    console->mcAudioRefs++;
 
-    if (console->m_cAudioRefs == 1)
+    if (console->mcAudioRefs == 1)
     {
         if (console->mAudioSniffer)
         {

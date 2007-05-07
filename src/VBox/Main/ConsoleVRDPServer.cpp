@@ -192,6 +192,7 @@ void ConsoleVRDPServer::Stop (void)
 #endif /* VBOX_WITH_USB */
 
     mpfnAuthEntry = NULL;
+    mpfnAuthEntry2 = NULL;
 
     if (mAuthLibrary)
     {
@@ -321,14 +322,15 @@ void ConsoleVRDPServer::remoteUSBThreadStop (void)
 #endif /* VRDP_MC */
 
 VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
-                                                const char *pszUser, const char *pszPassword, const char *pszDomain)
+                                                const char *pszUser, const char *pszPassword, const char *pszDomain,
+                                                uint32_t u32ClientId)
 {
     VRDPAUTHUUID rawuuid;
 
     memcpy (rawuuid, ((Guid &)uuid).ptr (), sizeof (rawuuid));
 
-    LogFlow(("ConsoleVRDPServer::Authenticate: uuid = %Vuuid, guestJudgement = %d, pszUser = %s, pszPassword = %s, pszDomain = %s\n",
-             rawuuid, guestJudgement, pszUser, pszPassword, pszDomain));
+    LogFlow(("ConsoleVRDPServer::Authenticate: uuid = %Vuuid, guestJudgement = %d, pszUser = %s, pszPassword = %s, pszDomain = %s, u32ClientId = %d\n",
+             rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId));
 
     /*
      * Called only from VRDP input thread. So thread safety is not required.
@@ -361,9 +363,28 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
         if (VBOX_SUCCESS (rc))
         {
             /* Get the entry point. */
-            rc = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
-            if (VBOX_FAILURE (rc))
-                LogRel(("VRDPAUTH: Failed to resolve import 'VRDPAuth'. Error code: %Vrc\n", rc));
+            mpfnAuthEntry2 = NULL;
+            int rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth2", (void**)&mpfnAuthEntry2);
+            if (VBOX_FAILURE (rc2))
+            {
+                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Vrc\n", "VRDPAuth2", rc2));
+                rc = rc2;
+            }
+
+            /* Get the entry point. */
+            mpfnAuthEntry = NULL;
+            rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
+            if (VBOX_FAILURE (rc2))
+            {
+                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Vrc\n", "VRDPAuth", rc2));
+                rc = rc2;
+            }
+
+            if (mpfnAuthEntry2 || mpfnAuthEntry)
+            {
+                LogRel(("VRDPAUTH: Using entry point '%s'.\n", mpfnAuthEntry2? "VRDPAuth2": "VRDPAuth"));
+                rc = VINF_SUCCESS;
+            }
         }
 
         if (VBOX_FAILURE (rc))
@@ -371,6 +392,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             mConsole->reportAuthLibraryError (filename.raw(), rc);
 
             mpfnAuthEntry = NULL;
+            mpfnAuthEntry2 = NULL;
 
             if (mAuthLibrary)
             {
@@ -382,9 +404,11 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
         }
     }
 
-    Assert (mAuthLibrary && mpfnAuthEntry);
+    Assert (mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2));
 
-    VRDPAuthResult result = mpfnAuthEntry (&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain);
+    VRDPAuthResult result = mpfnAuthEntry?
+                                mpfnAuthEntry (&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain):
+                                mpfnAuthEntry2 (&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId);
 
     switch (result)
     {
@@ -407,6 +431,20 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
     return result;
 }
 
+void ConsoleVRDPServer::AuthDisconnect (const Guid &uuid, uint32_t u32ClientId)
+{
+    VRDPAUTHUUID rawuuid;
+
+    memcpy (rawuuid, ((Guid &)uuid).ptr (), sizeof (rawuuid));
+
+    LogFlow(("ConsoleVRDPServer::AuthDisconnect: uuid = %Vuuid, u32ClientId = %d\n",
+             rawuuid, u32ClientId));
+
+    Assert (mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2));
+
+    if (mpfnAuthEntry2)
+        mpfnAuthEntry2 (&rawuuid, VRDPAuthGuestNotAsked, NULL, NULL, NULL, false, u32ClientId);
+}
 
 #ifdef VRDP_MC
 int ConsoleVRDPServer::lockConsoleVRDPServer (void)
