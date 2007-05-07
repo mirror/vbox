@@ -34,10 +34,6 @@
 // ConsoleVRDPServer
 ////////////////////////////////////////////////////////////////////////////////
 
-#define VBOX_CLIPBOARD_NO_DATA      0
-#define VBOX_CLIPBOARD_DATA_WAITING 1
-#define VBOX_CLIPBOARD_DATA_ARRIVED 2
-
 #ifdef VBOX_VRDP
 RTLDRMOD ConsoleVRDPServer::mVRDPLibrary;
 int  (VBOXCALL *ConsoleVRDPServer::mpfnVRDPStartServer)     (IConsole *pConsole, IVRDPServer *pVRDPServer, HVRDPSERVER *phServer);
@@ -55,8 +51,8 @@ void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver
 #endif /* VRDP_MC */
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, void *pvUpdate, uint32_t cbUpdate);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
-#endif
+void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
+#endif /* VBOX_VRDP */
 
 ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 {
@@ -69,12 +65,6 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     mcClipboardRefs = 0;
     mpfnClipboardCallback = NULL;
 
-    rc = RTSemEventMultiCreate(&mEventClipboardData);
-    AssertRC (rc);
-    mpvClipboardData = NULL;
-    mcbClipboardData = 0;
-    mfu32ClipboardWaitData = VBOX_CLIPBOARD_NO_DATA;
-    
 #ifdef VBOX_WITH_USB
     mUSBBackends.pHead = NULL;
     mUSBBackends.pTail = NULL;
@@ -100,8 +90,6 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
 {
 #ifdef VRDP_MC
     Stop ();
-    
-    RTSemEventMultiDestroy (mEventClipboardData);
 
     if (RTCritSectIsInitialized (&mCritSect))
     {
@@ -460,9 +448,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback (void *pvCallback,
                                                 (void *)pvData,
                                                 cbData);
             }
-            
-            /* Discard current data. */
-            ASMAtomicCmpXchgU32(&pServer->mfu32ClipboardWaitData, VBOX_CLIPBOARD_NO_DATA, VBOX_CLIPBOARD_DATA_ARRIVED);
         } break; 
         
         case VRDP_CLIPBOARD_FUNCTION_DATA_READ:
@@ -473,37 +458,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback (void *pvCallback,
                                                 u32Format,
                                                 (void *)pvData,
                                                 cbData);
-            }
-        } break; 
-
-        case VRDP_CLIPBOARD_FUNCTION_DATA_WRITE:
-        {
-            if (ASMAtomicCmpXchgU32(&pServer->mfu32ClipboardWaitData, VBOX_CLIPBOARD_DATA_ARRIVED, VBOX_CLIPBOARD_DATA_WAITING))
-            {
-                LogFlowFunc(("Got clipboard data\n"));
-                
-                if (pServer->mpvClipboardData)
-                {
-                    RTMemFree (pServer->mpvClipboardData);
-                    pServer->mpvClipboardData = NULL;
-                }
-                
-                if (cbData)
-                {
-                    void *pv = RTMemAlloc (cbData);
-            
-                    memcpy (pv, pvData, cbData);
-            
-                    pServer->mpvClipboardData = pv;
-                    pServer->mcbClipboardData = cbData;
-                }
-                else
-                {
-                    pServer->mpvClipboardData = NULL;
-                    pServer->mcbClipboardData = 0;
-                }
-            
-                RTSemEventMultiSignal (pServer->mEventClipboardData);
             }
         } break; 
 
@@ -538,59 +492,32 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 
         case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
         {
+            /* The guest announces clipboard formats. This must be delivered to all clients. */
             if (mpfnVRDPClipboard)
             {
                 mpfnVRDPClipboard (pServer->mhServer, 
                                    VRDP_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
                                    pParms->u32Format,
                                    NULL,
-                                   0);
+                                   0,
+                                   NULL);
             }
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
         {
+            /* The clipboard service expects that the pvData buffer will be filled
+             * with clipboard data. The server returns the data from the client that
+             * announced the requested format most recently.
+             */
             if (mpfnVRDPClipboard)
             {
-                if (ASMAtomicCmpXchgU32(&pServer->mfu32ClipboardWaitData, VBOX_CLIPBOARD_DATA_WAITING, VBOX_CLIPBOARD_NO_DATA))
-                {
-                    LogFlowFunc(("Wait for clipboard data\n"));
-                    RTSemEventMultiReset(pServer->mEventClipboardData);
-                    
-                    mpfnVRDPClipboard (pServer->mhServer, 
-                                       VRDP_CLIPBOARD_FUNCTION_DATA_READ,
-                                       pParms->u32Format,
-                                       NULL,
-                                       0);
-                    
-                    /* Wait for the client. 10 seconds should be enough. */
-                    int rc = RTSemEventMultiWait(pServer->mEventClipboardData, 10*1000);
-                    LogFlowFunc (("Wait completed rc = %d.\n", rc)); NOREF(rc);
-                }
-                
-                if (pServer->mfu32ClipboardWaitData == VBOX_CLIPBOARD_DATA_ARRIVED)
-                {
-                    LogFlowFunc(("Return clipboard data: pParms->cbData = %d, mcbClipboardData = %d\n", pParms->cbData, pServer->mcbClipboardData));
-                    if (pParms->cbData >= pServer->mcbClipboardData)
-                    {
-                        if (pServer->mcbClipboardData)
-                        {
-                            memcpy (pParms->pvData, pServer->mpvClipboardData, pServer->mcbClipboardData);
-                        }
-                    
-                        RTMemFree (pServer->mpvClipboardData);
-                        pServer->mpvClipboardData = NULL;
-                        
-                        pServer->mfu32ClipboardWaitData = VBOX_CLIPBOARD_NO_DATA;
-                    }
-                
-                    pParms->cbData = pServer->mcbClipboardData;
-                }
-                else
-                {
-                    pParms->pvData = NULL;
-                    pParms->cbData = 0;
-                }
+                mpfnVRDPClipboard (pServer->mhServer, 
+                                   VRDP_CLIPBOARD_FUNCTION_DATA_READ,
+                                   pParms->u32Format,
+                                   pParms->pvData,
+                                   pParms->cbData,
+                                   &pParms->cbData);
             }
         } break;
 
@@ -602,7 +529,8 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
                                    VRDP_CLIPBOARD_FUNCTION_DATA_WRITE,
                                    pParms->u32Format,
                                    pParms->pvData,
-                                   pParms->cbData);
+                                   pParms->cbData,
+                                   NULL);
             }
         } break;
         
