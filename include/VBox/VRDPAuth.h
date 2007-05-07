@@ -103,7 +103,7 @@ typedef VRDPAUTHENTRY *PVRDPAUTHENTRY;
  *   szDomain         Domain passed in by the client (UTF8).
  *   fLogon           Boolean flag. Indicates whether the entry point is called
  *                    for a client logon or the client disconnect.
- *   u32ClientId      Server side unique identifier of the client.
+ *   clientId         Server side unique identifier of the client.
  *
  * Return code:
  *
@@ -116,7 +116,7 @@ typedef VRDPAUTHENTRY *PVRDPAUTHENTRY;
  *                           the result of the guest
  *                           authentication.
  *
- * Note: When 'fLogon' is false, only pUuid and u32ClientId are valid and the return
+ * Note: When 'fLogon' is false, only pUuid and clientId are valid and the return
  *       code is ignored.
  */
 typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
@@ -125,7 +125,7 @@ typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
                                                    const char *szPassword,
                                                    const char *szDomain,
                                                    bool fLogon,
-                                                   uint32_t u32ClientId);
+                                                   unsigned clientId);
 
 
 typedef VRDPAUTHENTRY2 *PVRDPAUTHENTRY2;
