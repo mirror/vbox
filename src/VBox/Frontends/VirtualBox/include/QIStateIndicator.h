@@ -34,41 +34,55 @@ class QIStateIndicator : public QFrame
 
 public:
 
-    QIStateIndicator (
-        int state,
-        QWidget *parent, const char *name = 0, WFlags f = 0
-    );
+    QIStateIndicator (int aState,
+                      QWidget *aParent, const char *aName = 0,
+                      WFlags aFlags = 0);
 
     virtual QSize sizeHint() const;
 
-    int state () const { return st; }
+    int state () const { return mState; }
 
-    QPixmap stateIcon (int st) const;
-    void setStateIcon (int st, const QPixmap &pm);
+    QPixmap stateIcon (int aState) const;
+    void setStateIcon (int aState, const QPixmap &aPixmap);
 
 public slots:
 
-    void setState (int s);
-    void setState (bool s) { setState ((int) s); }
+    void setState (int aState);
+    void setState (bool aState) { setState ((int) aState); }
 
 signals:
 
-    void mouseDoubleClicked (QIStateIndicator *indicator, QMouseEvent *e);
-    void contextMenuRequested (QIStateIndicator *indicator, QContextMenuEvent *e);
+    void mouseDoubleClicked (QIStateIndicator *aIndicator,
+                             QMouseEvent *aEv);
+    void contextMenuRequested (QIStateIndicator *aIndicator,
+                               QContextMenuEvent *aEv);
 
 protected:
 
-    virtual void drawContents (QPainter *p);
+    virtual void drawContents (QPainter *aPainter);
 
-    virtual void mouseDoubleClickEvent (QMouseEvent * e);
-    virtual void contextMenuEvent (QContextMenuEvent * e);
+    virtual void mouseDoubleClickEvent (QMouseEvent *aEv);
+    virtual void contextMenuEvent (QContextMenuEvent *aEv);
 
 private:
 
-    int st;
-    QSize sz;
+    int mState;
+    QSize mSize;
 
-    QIntDict <QPixmap> state_icons;
+    struct Icon
+    {
+        Icon (const QPixmap &aPixmap)
+            : pixmap (aPixmap)
+            , bgPixmap (NULL) {}
+
+        QPixmap pixmap;
+        QPixmap cached;
+        QColor bgColor;
+        const QPixmap *bgPixmap;
+        QPoint bgOff;
+    };
+
+    QIntDict <Icon> mStateIcons;
 };
 
 #endif // __QIStateIndicator_h__
