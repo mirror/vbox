@@ -89,4 +89,45 @@ typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY(PVRDPAUTHUUID pUuid,
 
 typedef VRDPAUTHENTRY *PVRDPAUTHENTRY;
 
+/**
+ * Authentication library entry point version 2. Decides whether to allow
+ * a client connection.
+ *
+ * Parameters:
+ *
+ *   pUuid            Pointer to the UUID of the virtual machine
+ *                    which the client connected to.
+ *   guestJudgement   Result of the guest authentication.
+ *   szUser           User name passed in by the client (UTF8).
+ *   szPassword       Password passed in by the client (UTF8).
+ *   szDomain         Domain passed in by the client (UTF8).
+ *   fLogon           Boolean flag. Indicates whether the entry point is called
+ *                    for a client logon or the client disconnect.
+ *   u32ClientId      Server side unique identifier of the client.
+ *
+ * Return code:
+ *
+ *   VRDPAuthAccessDenied    Client access has been denied.
+ *   VRDPAuthAccessGranted   Client has the right to use the
+ *                           virtual machine.
+ *   VRDPAuthDelegateToGuest Guest operating system must
+ *                           authenticate the client and the
+ *                           library must be called again with
+ *                           the result of the guest
+ *                           authentication.
+ *
+ * Note: When 'fLogon' is false, only pUuid and u32ClientId are valid and the return
+ *       code is ignored.
+ */
+typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
+                                                   VRDPAuthGuestJudgement guestJudgement,
+                                                   const char *szUser,
+                                                   const char *szPassword,
+                                                   const char *szDomain,
+                                                   bool fLogon,
+                                                   uint32_t u32ClientId);
+
+
+typedef VRDPAUTHENTRY2 *PVRDPAUTHENTRY2;
+
 #endif /* __VBox_vrdpauth_h__ */
