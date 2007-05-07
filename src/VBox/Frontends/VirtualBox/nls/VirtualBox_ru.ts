@@ -493,11 +493,11 @@
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Обеспечивает быстрый доступ к общим папкам (по нажатию правой кнопки мыши).&lt;br&gt;Обратите внимание, что для функционирования общих папок требуется установка Дополнений гостевой ОС.</translation>
+        <translation>Обеспечивает быстрый доступ к общим папкам (по нажатии правой кнопки мыши).&lt;br&gt;Примечание: для работы с общими папками требуется установка Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Показывает&amp;nbsp;the&amp;nbsp;активность&amp;nbsp;дисковода гибких дисков&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Показывает&amp;nbsp;активность&amp;nbsp;дисковода&amp;nbsp;гибких&amp;nbsp;дисков&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
