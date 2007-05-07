@@ -554,20 +554,23 @@ typedef struct _VRDPUSBREQNEGOTIATERET
  * Called by the host when (VRDP_CLIPBOARD_FUNCTION_*):
  *   - (0) guest announces available clipboard formats;
  *   - (1) guest requests clipboard data;
- *   - (2) host responds to the client's request for clipboard data.
+ *   - (2) guest responds to the client's request for clipboard data.
  *
  * @param hserver     The VRDP server handle.
  * @param u32Function The cause of the call.
  * @param u32Format   Bitmask of announced formats or the format of data.
- * @param pvData      Points to data from the host, as reply to (2).
- * @param cbData      Size of the data in bytes.
+ * @param pvData      Points to: (1) buffer to be filled with clients data;
+ *                               (2) data from the host.
+ * @param cbData      Size of 'pvData' buffer in bytes.
+ * @param pcbActualRead Size of the copied data in bytes.
  *
  */
 VRDPR3DECL(void) VRDPClipboard (HVRDPSERVER hserver,
                                 uint32_t u32Function,
                                 uint32_t u32Format,
-                                const void *pvData,
-                                uint32_t cbData);
+                                void *pvData,
+                                uint32_t cbData,
+                                uint32_t *pcbActualRead);
 
 #ifdef VRDP_MC
 /**
@@ -609,18 +612,14 @@ typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
 /**
  * Called by the server when (VRDP_CLIPBOARD_FUNCTION_*):
  *   - (0) client announces available clipboard formats;
- *   - (1) client requests clipboard data;
- *   - (2) client responds to the guest's request for clipboard data.
- *
- *   - client announces available clipboard formats;
- *   - clipboard data is received from the client.
+ *   - (1) client requests clipboard data.
  *
  * @param pvCallback  Callback specific value returned by VRDPSERVERCALLBACK::pfnInterceptClipboard.
  * @param u32ClientId Identifies the RDP client that sent the reply.
- * @param u32Function The cause if the callback.
+ * @param u32Function The cause of the callback.
  * @param u32Format   Bitmask of reported formats or the format of received data.
- * @param pvData      Points to data received from the client.
- * @param cbData      Size of the data in bytes.
+ * @param pvData      Reserved.
+ * @param cbData      Reserved.
  *
  * @return VBox error code.
  */

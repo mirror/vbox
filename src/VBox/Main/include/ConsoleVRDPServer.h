@@ -120,8 +120,8 @@ private:
 #endif /* VRDP_MC */
     static void (VBOXCALL *mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, void *pvUpdate, uint32_t cbUpdate);
     static void (VBOXCALL *mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
-    static void (VBOXCALL *mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
-#endif
+    static void (VBOXCALL *mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
+#endif /* VBOX_VRDP */
 
 #ifdef VRDP_MC
     RTCRITSECT mCritSect;
@@ -132,11 +132,6 @@ private:
     int mcClipboardRefs;
     HGCMSVCEXTHANDLE mhClipboard;
     PFNVRDPCLIPBOARDEXTCALLBACK mpfnClipboardCallback;
-
-    RTSEMEVENTMULTI   mEventClipboardData;
-    void             *mpvClipboardData;
-    uint32_t          mcbClipboardData;
-    volatile uint32_t mfu32ClipboardWaitData;
 
     static DECLCALLBACK(int) ClipboardCallback (void *pvCallback, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
     static DECLCALLBACK(int) ClipboardServiceExtension (void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms);
