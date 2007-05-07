@@ -343,7 +343,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
             RTPrintf("                            [-vrdp on|off]\n"
                      "                            [-vrdpport default|<port>]\n"
                      "                            [-vrdpaddress <host>]\n"
-                     "                            [-vrdpauthtype null|external|guest]\n");
+                     "                            [-vrdpauthtype null|external|guest]\n"
+                     "                            [-vrdpmulticon on|off]\n");
         }
         RTPrintf("                            [-usb on|off]\n"
                  "                            [-snapshotfolder default|<path>]\n"
@@ -2704,6 +2705,7 @@ static int handleModifyVM(int argc, char *argv[],
     uint16_t vrdpport = UINT16_MAX;
     char *vrdpaddress = NULL;
     char *vrdpauthtype = NULL;
+    char *vrdpmulticon = NULL;
 #endif
     int   fUsbEnabled = -1;
     char *snapshotFolder = NULL;
@@ -3121,6 +3123,15 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
             vrdpauthtype = argv[i];
+        }
+        else if (strcmp(argv[i], "-vrdpmulticon") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            vrdpmulticon = argv[i];
         }
 #endif /* VBOX_VRDP */
         else if (strcmp(argv[i], "-usb") == 0)
@@ -3865,7 +3876,7 @@ static int handleModifyVM(int argc, char *argv[],
         if (FAILED(rc))
             break;
 #ifdef VBOX_VRDP
-        if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype)
+        if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype || vrdpmulticon)
         {
             ComPtr<IVRDPServer> vrdpServer;
             machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
@@ -3914,6 +3925,23 @@ static int handleModifyVM(int argc, char *argv[],
                     else
                     {
                         errorArgument("Invalid -vrdpauthtype argument '%s'", vrdpauthtype);
+                        rc = E_FAIL;
+                        break;
+                    }
+                }
+                if (vrdpmulticon)
+                {
+                    if (strcmp(vrdpmulticon, "on") == 0)
+                    {
+                        CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(true));
+                    }
+                    else if (strcmp(vrdpmulticon, "off") == 0)
+                    {
+                        CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(false));
+                    }
+                    else
+                    {
+                        errorArgument("Invalid -vrdpmulticon argument '%s'", vrdpmulticon);
                         rc = E_FAIL;
                         break;
                     }
