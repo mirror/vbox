@@ -392,6 +392,7 @@
   <xsd:attribute name="netAddress" type="xsd:token" default=""/>
   <xsd:attribute name="authType" type="TVRDPAuthType" default="null"/>
   <xsd:attribute name="authTimeout" type="xsd:unsignedInt" default="5000"/>
+  <xsd:attribute name="allowMultiConnection" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TBIOS">
