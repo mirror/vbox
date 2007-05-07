@@ -34,31 +34,36 @@
  *  Constructs a new QIStateIndicator instance. This instance is useless
  *  until icons are specified for necessary states.
  *
- *  @param state
+ *  @param aState
  *      the initial indicator state
  */
-QIStateIndicator::QIStateIndicator (
-    int state,
-    QWidget *parent, const char *name, WFlags f
-) :
-    QFrame (parent, name, f | WStaticContents | WMouseNoMask)
+QIStateIndicator::QIStateIndicator (int aState,
+                                    QWidget *aParent, const char *aName,
+                                    WFlags aFlags)
+    : QFrame (aParent, aName, aFlags | WStaticContents | WMouseNoMask)
 {
-    st = state;
-    sz = QSize (0, 0);
-    state_icons.setAutoDelete (true);
+    mState = aState;
+    mSize = QSize (0, 0);
+    mStateIcons.setAutoDelete (true);
 
     setSizePolicy (QSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed));
+
+    /* we will precompose the pixmap background using the widget bacground in
+     * drawContents(), so try to set the correct bacground origin for the
+     * case when a pixmap is used as a widget background. */
+    if (aParent)
+        setBackgroundOrigin (aParent->backgroundOrigin());
 }
 
 QSize QIStateIndicator::sizeHint() const
 {
-    return sz;
+    return mSize;
 }
 
-QPixmap QIStateIndicator::stateIcon (int s) const
+QPixmap QIStateIndicator::stateIcon (int aState) const
 {
-    QPixmap *pm = state_icons [s];
-    return pm ? QPixmap (*pm) : QPixmap();
+    Icon *icon = mStateIcons [aState];
+    return icon ? icon->pixmap : QPixmap();
 }
 
 /**
@@ -66,49 +71,83 @@ QPixmap QIStateIndicator::stateIcon (int s) const
  *  defines the preferred size of this indicator. All other icons will be
  *  scaled to fit this size.
  *
- *  @note
- *      If this widget was constructed with the WNoAutoErase flag, then all
- *      transparent areas of the new state icon are filled with the widget
- *      background color (taken from its palette) to provide flicker free
- *      state redraws (which is useful for indicators that frequently
- *      change their state).
+ *  @note If this widget is constructed with the WNoAutoErase flag, then all
+ *  transparent areas of the new state icon are filled with the widget
+ *  background color or pixmap (as taken from the widget palette), to provide
+ *  flicker free state redraws in one single operation (which is useful for
+ *  indicators that frequently change their state).
  */
-void QIStateIndicator::setStateIcon (int s, const QPixmap &pm)
+void QIStateIndicator::setStateIcon (int aState, const QPixmap &aPixmap)
 {
-    QPixmap *icon;
-    if (testWFlags (WNoAutoErase)) {
-        icon = new QPixmap (pm.size());
-#ifdef Q_WS_MAC /* the background color isn't the pattern used for the console window frame */
-        const QPixmap *back = backgroundPixmap();
-        if (back) /* Is ClearROP right? I've no clue about raster operations... */
-            bitBlt (icon, 0, 0, back, 0, 0, pm.width(), pm.height(), ClearROP, false); 
-        else
-#endif 
-            icon->fill (paletteBackgroundColor());
-        bitBlt (icon, 0, 0, &pm, 0, 0, pm.width(), pm.height(), CopyROP, false);
-    } else {
-        icon = new QPixmap (pm);
-    }
+    /* Here we just set the original pixmap. All actual work from the @note
+     * above takes place in #drawContents(). */
+    mStateIcons.insert (aState, new Icon (aPixmap));
 
-    state_icons.insert (s, icon);
-    if (sz.isNull()) {
-        sz = pm.size();
-    }
+    if (mSize.isNull())
+        mSize = aPixmap.size();
 }
 
-void QIStateIndicator::setState (int s)
+void QIStateIndicator::setState (int aState)
 {
-    st = s;
+    mState = aState;
     repaint (false);
 }
 
-void QIStateIndicator::drawContents (QPainter *p)
+void QIStateIndicator::drawContents (QPainter *aPainter)
 {
-    QPixmap *pm = state_icons [st];
-    if (!pm)
+    Icon *icon = mStateIcons [mState];
+    if (!icon)
+    {
         erase();
+    }
     else
-        p->drawPixmap (contentsRect(), *pm);
+    {
+        if (testWFlags (WNoAutoErase))
+        {
+            QColor bgColor = paletteBackgroundColor();
+            const QPixmap *bgPixmap = paletteBackgroundPixmap();
+            QPoint bgOff = backgroundOffset();
+
+            bool bgOffChanged = icon->bgOff != bgOff;
+            bool bgPixmapChanged = icon->bgPixmap != bgPixmap ||
+                (icon->bgPixmap != NULL &&
+                 icon->bgPixmap->serialNumber() != bgPixmap->serialNumber());
+            bool bgColorChanged = icon->bgColor != bgColor;
+
+            /* re-precompose the pixmap if any of these have changed */
+            if (icon->cached.isNull() ||
+                bgOffChanged || bgPixmapChanged || bgColorChanged)
+            {
+                int w = icon->pixmap.width();
+                int h = icon->pixmap.height();
+                if (icon->cached.isNull())
+                    icon->cached = QPixmap (w, h);
+
+                if (bgPixmap || bgOffChanged || bgPixmapChanged)
+                {
+                    QPainter p (&icon->cached);
+                    p.drawTiledPixmap (QRect (0, 0, w, h), *bgPixmap, bgOff);
+                }
+                else
+                {
+                    icon->cached.fill (bgColor);
+                }
+                /* paint the icon on top of the widget background sample */
+                bitBlt (&icon->cached, 0, 0, &icon->pixmap,
+                        0, 0, w, h, CopyROP, false);
+                /* store the new values */
+                icon->bgColor = bgColor;
+                icon->bgPixmap = bgPixmap;
+                icon->bgOff = bgOff;
+            }
+            /* draw the precomposed pixmap */
+            aPainter->drawPixmap (contentsRect(), icon->cached);
+        }
+        else
+        {
+            aPainter->drawPixmap (contentsRect(), icon->pixmap);
+        }
+    }
 }
 
 void QIStateIndicator::mouseDoubleClickEvent (QMouseEvent * e)
