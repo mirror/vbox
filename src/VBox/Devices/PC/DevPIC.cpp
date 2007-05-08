@@ -352,8 +352,13 @@ PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
     DumpPICState(&pData->aPics[0], "picSetIrq");
     DumpPICState(&pData->aPics[1], "picSetIrq");
     STAM_COUNTER_INC(&pData->CTXSUFF(StatSetIrq));
-    pic_set_irq1(&pData->aPics[iIrq >> 3], iIrq & 7, iLevel);
+    pic_set_irq1(&pData->aPics[iIrq >> 3], iIrq & 7, iLevel & PDM_IRQ_LEVEL_HIGH);
     pic_update_irq(pData);
+    if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
+    {
+        pic_set_irq1(&pData->aPics[iIrq >> 3], iIrq & 7, 0);
+        pic_update_irq(pData);
+    }
 }
 
 

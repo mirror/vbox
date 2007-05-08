@@ -3218,6 +3218,18 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 /** @} */
 
 
+/** @name IRQ Level for use with the *SetIrq APIs.
+ * @{
+ */
+/** Assert the IRQ (can assume value 1). */
+#define PDM_IRQ_LEVEL_HIGH          BIT(0)
+/** Deassert the IRQ (can assume value 0). */
+#define PDM_IRQ_LEVEL_LOW           0
+/** flip-flop - assert and then deassert it again immediately. */
+#define PDM_IRQ_LEVEL_FLIP_FLOP     (BIT(1) | PDM_IRQ_LEVEL_HIGH)
+/** @} */
+
+
 /**
  * PCI Bus registaration structure.
  * All the callbacks, except the PCIBIOS hack, are working on PCI devices.
@@ -3260,7 +3272,7 @@ typedef struct PDMPCIBUSREG
      * @param   pDevIns         Device instance of the PCI Bus.
      * @param   pPciDev         The PCI device structure.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
 
@@ -3320,7 +3332,7 @@ typedef struct PDMPCIHLPGC
      *
      * @param   pDevIns         PCI device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
     DECLGCCALLBACKMEMBER(void,  pfnIsaSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -3330,7 +3342,7 @@ typedef struct PDMPCIHLPGC
      *
      * @param   pDevIns         PCI device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
     DECLGCCALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -3378,7 +3390,7 @@ typedef struct PDMPCIHLPR0
      *
      * @param   pDevIns         PCI device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
     DECLR0CALLBACKMEMBER(void,  pfnIsaSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -3388,7 +3400,7 @@ typedef struct PDMPCIHLPR0
      *
      * @param   pDevIns         PCI device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
     DECLR0CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -3436,7 +3448,7 @@ typedef struct PDMPCIHLPR3
      *
      * @param   pDevIns         The PCI device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
     DECLR3CALLBACKMEMBER(void,  pfnIsaSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -3446,7 +3458,7 @@ typedef struct PDMPCIHLPR3
      *
      * @param   pDevIns         The PCI device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  EMT only.
      */
     DECLR3CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -3519,7 +3531,7 @@ typedef struct PDMPICREG
      *
      * @param   pDevIns         Device instance of the PIC.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqHC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
@@ -4049,7 +4061,7 @@ typedef struct PDMIOAPICREG
      *
      * @param   pDevIns         Device instance of the I/O APIC.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqHC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
@@ -4692,7 +4704,7 @@ typedef struct PDMDEVHLP
      *
      * @param   pDevIns         Device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnPCISetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -4713,7 +4725,7 @@ typedef struct PDMDEVHLP
      *
      * @param   pDevIns         Device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnISASetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -4724,7 +4736,7 @@ typedef struct PDMDEVHLP
      *
      * @param   pDevIns         Device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnISASetIrqNoWait,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -5301,7 +5313,7 @@ typedef struct PDMDEVHLPGC
      *
      * @param   pDevIns         Device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLGCCALLBACKMEMBER(void, pfnPCISetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -5311,7 +5323,7 @@ typedef struct PDMDEVHLPGC
      *
      * @param   pDevIns         Device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLGCCALLBACKMEMBER(void, pfnISASetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -5405,7 +5417,7 @@ typedef struct PDMDEVHLPR0
      *
      * @param   pDevIns         Device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLR0CALLBACKMEMBER(void, pfnPCISetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -5415,7 +5427,7 @@ typedef struct PDMDEVHLPR0
      *
      * @param   pDevIns         Device instance.
      * @param   iIrq            IRQ number to set.
-     * @param   iLevel          IRQ level.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLR0CALLBACKMEMBER(void, pfnISASetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
@@ -6466,7 +6478,7 @@ PDMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt);
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   u8Irq           The IRQ line.
- * @param   u8Level         The new level.
+ * @param   u8Level         The new level. See the PDM_IRQ_LEVEL_* \#defines.
  */
 PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 
@@ -6476,7 +6488,7 @@ PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   u8Irq           The IRQ line.
- * @param   u8Level         The new level.
+ * @param   u8Level         The new level. See the PDM_IRQ_LEVEL_* \#defines.
  */
 PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 
