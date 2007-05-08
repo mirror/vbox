@@ -283,15 +283,14 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0ReadOnly\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS, N_("RawHDD#%d: configuration keys other than \"Path\" and \"ReadOnly\" present"));
 
     /*
      * Init instance data.
      */
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pThis->pszPath);
     if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawHDD#%d: configuration query for \"Path\" string returned %Vra.\n"), rc);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawHDD#%d: configuration query for \"Path\" string returned %Vra"), rc);
 
     rc = CFGMR3QueryBool(pCfgHandle, "ReadOnly", &pThis->fReadOnly);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -300,7 +299,7 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         rc = VINF_SUCCESS;
     }
     else if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawHDD#%d: configuration query for \"ReadOnly\" boolean returned %Vra.\n"), rc);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawHDD#%d: configuration query for \"ReadOnly\" boolean returned %Vra"), rc);
 
     pDrvIns->IBase.pfnQueryInterface = drvHostHDDQueryInterface;
     pThis->IMedia.pfnRead = drvHostHDDRead;
