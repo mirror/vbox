@@ -3545,11 +3545,13 @@ void Console::onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMess
 /**
  *  @note Locks this object for reading.
  */
-HRESULT Console::onShowWindow (BOOL aCheck, BOOL *aCanShow)
+HRESULT Console::onShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
 {
     AssertReturn (aCanShow, E_POINTER);
+    AssertReturn (aWinId, E_POINTER);
 
     *aCanShow = FALSE;
+    *aWinId = 0;
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -3575,9 +3577,15 @@ HRESULT Console::onShowWindow (BOOL aCheck, BOOL *aCanShow)
     {
         while (it != mCallbacks.end())
         {
-            rc = (*it++)->OnShowWindow();
+            ULONG64 winId = 0;
+            rc = (*it++)->OnShowWindow (&winId);
+            AssertComRC (rc);
             if (FAILED (rc))
                 return rc;
+            /* only one callback may return non-null winId */
+            Assert (*aWinId == 0 || winId == 0);
+            if (*aWinId == 0)
+                *aWinId = winId;
         }
     }
 

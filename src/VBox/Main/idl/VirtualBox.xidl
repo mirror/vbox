@@ -2584,14 +2584,30 @@
 
         <method name="showConsoleWindow">
             <desc>
-                Returns @c true if the VM console process can activate the
-                console window and bring it to foreground on the desktop of
-                the host PC.
+                Activates the console window and brings it to foreground on
+                the desktop of the host PC. Many modern window managers on
+                many platforms implement some sort of focus stealing
+                prevention logic, so that it may be impossible to activate
+                a window without the help of the currently active
+                application. In this case, this method will return a non-zero
+                identifier that represents the top-level window of the VM
+                console process. The caller, if it represents a currently
+                active process, is responsible to use this identifier (in a
+                platform-dependent manner) to perform actual window
+                activation.
                 <note>
                     This method will fail if a session for this machine is not
                     currently open.
                 </note>
             </desc>
+            <param name="winId" type="unsigned long long" dir="return">
+                <desc>
+                  Platform-dependent identifier of the top-level VM console
+                  window, or zero if this method has performed all actions
+                  necessary to implement the <i>show window</i> semantics for
+                  the given platform and/or VirtualBox front-end.
+                </desc>
+            </param>
         </method>
 
     </interface>
@@ -2818,6 +2834,22 @@
                 impossible to do it at a time of this notification, this
                 method should return a failure.
 
+                Note that many modern window managers on many platforms
+                implement some sort of focus stealing prevention logic, so
+                that it may be impossible to activate a window without the
+                help of the currently active application (which is supposedly
+                an initiator of this notification). In this case, this method
+                must return a non-zero identifier that represents the
+                top-level window of the VM console process. The caller, if it
+                represents a currently active process, is responsible to use
+                this identifier (in a platform-dependent manner) to perform
+                actual window activation.
+
+                This method must set @a winId to zero if it has performed all
+                actions necessary to complete the request and the console
+                window is now active and in foreground, to indicate that no
+                further action is required on the caller's side.
+
                 <note>
                     This notification is not designed to be implemented by
                     more than one callback at a time. If you have multiple
@@ -2827,6 +2859,14 @@
                     manages console window activation.
                 </note>
             </desc>
+            <param name="winId" type="unsigned long long" dir="return">
+                <desc>
+                    Platform-dependent identifier of the top-level VM console
+                    window, or zero if this method has performed all actions
+                    necessary to implement the <i>show window</i> semantics for
+                    the given platform and/or this VirtualBox front-end.
+                </desc>
+            </param>
         </method>
 
     </interface>
@@ -7414,6 +7454,7 @@
             </desc>
             <param name="check" type="boolean" dir="in"/>
             <param name="canShow" type="boolean" dir="out"/>
+            <param name="winId" type="unsigned long long" dir="out"/>
         </method>
 
     </interface>

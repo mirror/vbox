@@ -33,7 +33,9 @@
 
 #include <qfileinfo.h>
 
-#if defined (Q_WS_MAC)
+#if defined (Q_WS_X11)
+# include <X11/Xlib.h>
+#elif defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
 #endif
 
@@ -41,6 +43,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
 ////////////////////////////////////////////////////////////////////////////////
+
+/// @todo Remove. See @c todo in #switchTo() below.
+#if 0
 
 #if defined (Q_WS_WIN32)
 
@@ -134,6 +139,8 @@ static WId FindWindowIdFromPid (ULONG aPid)
 
 #endif
 }
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxVMListBoxItem class
@@ -366,12 +373,18 @@ void VBoxVMListBoxItem::recache()
         if (mState >= CEnums::Running)
         {
             mPid = mMachine.GetSessionPid();
+    /// @todo Remove. See @c todo in #switchTo() below.
+#if 0
             mWinId = FindWindowIdFromPid (mPid);
+#endif
         }
         else
         {
             mPid = (ULONG) ~0;
+    /// @todo Remove. See @c todo in #switchTo() below.
+#if 0
             mWinId = (WId) ~0;
+#endif
         }
     }
     else
@@ -392,7 +405,10 @@ void VBoxVMListBoxItem::recache()
         mSnapshotCount = 0;
 
         mPid = (ULONG) ~0;
+    /// @todo Remove. See @c todo in #switchTo() below.
+#if 0
         mWinId = (WId) ~0;
+#endif
     }
 
     if (needsResort)
@@ -506,12 +522,87 @@ int VBoxVMListBoxItem::height (const QListBox *) const
 }
 
 /** 
+ * Returns @a true if we can activate and bring the VM console window to
+ * foreground, and @a false otherwise.
+ */
+bool VBoxVMListBoxItem::canSwitchTo() const
+{
+    return const_cast <CMachine &> (mMachine).CanShowConsoleWindow();
+
+    /// @todo Remove. See @c todo in #switchTo() below.
+#if 0
+    return mWinId != (WId) ~0;
+#endif
+}
+
+/** 
  * Tries to switch to the main window of the VM process.
  * 
  * @return true if successfully switched and false otherwise.
  */
 bool VBoxVMListBoxItem::switchTo()
 {
+    WId id = (WId) mMachine.ShowConsoleWindow();
+    AssertWrapperOk (mMachine);
+    if (!mMachine.isOk())
+        return false;
+
+    /* winId = 0 it means the console window has already done everything
+     * necessary to implement the "show window" semantics. */
+    if (id == 0)
+        return true;
+
+#if defined (Q_WS_WIN32)
+
+    if (IsIconic (id))
+        ShowWindow (id, SW_RESTORE);
+    else if (!IsWindowVisible (id))
+        ShowWindow (id, SW_SHOW);
+
+    return SetForegroundWindow (id);
+
+#elif defined (Q_WS_X11)
+
+    /// @todo I've tried XRaiseWindow, XConfigureWindow, XRestackWindows and
+    /// XSetInputFocus here but couldn't get a useless result under
+    /// metacity/Ubuntu-7.04.  XSetInputFocus works, but XRaiseWindow and
+    /// friends don't -- when it comes to bringing the window represented by
+    /// the given id (or its parent) to front, on top of all other top-level
+    /// windows. As a result, we would get input focus to a possibly invisible
+    /// (obscured by others) window!.. I've found one way to steal raise
+    /// window events from Metacity and prevent it from applying focus
+    /// stealing prevention (by settings override_redirect to True on the id's
+    /// parent using using XChangeWindowAttributes), but the result didn't
+    /// satisfy me: the raised console window started to behave like an
+    /// always-on-top window until moved or minimized which is wrong. Also,
+    /// there is little hope that this approach will work for other window
+    /// managers with "strong" focus stealing prevention algorithms, so I
+    /// decided to completely disable this feature on X11 -- Until someone has
+    /// enough time to find an acceptable solution that will work constantly
+    /// well under at least selected window managers, and will be simply
+    /// disabled on those where it doesn't work.
+
+    return false;
+
+#elif defined (Q_WS_MAC)
+
+    /// @todo (r=dmik) Knut, everything you have to do here is to raise the
+    /// given window over all other top-level windows and give it focus. Ah,
+    /// and deiconify/show it first if it is minimized/hidden. I really hope
+    /// it's better on Mac than on X11. If not, feel free to revert to the
+    /// previous pid-based behavior.
+
+    return false;
+
+#endif
+
+    return false;
+
+    /// @todo Below is the old method of switching to the console window
+    //  based on the process ID of the console process. It should go away
+    //  after the new (callback-based) method is fully tested.
+#if 0
+
     if (!canSwitchTo())
         return false;
 
@@ -574,6 +665,8 @@ bool VBoxVMListBoxItem::switchTo()
 #else
 
     return false;
+
+#endif
 
 #endif
 }

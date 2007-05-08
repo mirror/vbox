@@ -279,9 +279,9 @@ public:
 
     VBoxConsoleCallback (VBoxConsoleView *v) {
 #if defined (Q_WS_WIN)
-        refcnt = 0;
+        mRefCnt = 0;
 #endif
-        view = v;
+        mView = v;
     }
 
     virtual ~VBoxConsoleCallback() {}
@@ -290,11 +290,11 @@ public:
 
 #if defined (Q_WS_WIN)
     STDMETHOD_(ULONG, AddRef)() {
-        return ::InterlockedIncrement (&refcnt);
+        return ::InterlockedIncrement (&mRefCnt);
     }
     STDMETHOD_(ULONG, Release)()
     {
-        long cnt = ::InterlockedDecrement (&refcnt);
+        long cnt = ::InterlockedDecrement (&mRefCnt);
         if (cnt == 0)
             delete this;
         return cnt;
@@ -321,31 +321,33 @@ public:
                                           ULONG width, ULONG height,
                                           BYTE *shape)
     {
-        QApplication::postEvent (
-            view, new MousePointerChangeEvent (visible, alpha, xhot, yhot,
-                                               width, height,
-                                               shape)
-        );
+        QApplication::postEvent (mView,
+                                 new MousePointerChangeEvent (visible, alpha,
+                                                              xhot, yhot,
+                                                              width, height, shape));
         return S_OK;
     }
 
     STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL needsHostCursor)
     {
-        QApplication::postEvent (view, new MouseCapabilityEvent (supportsAbsolute, needsHostCursor));
+        QApplication::postEvent (mView,
+                                 new MouseCapabilityEvent (supportsAbsolute,
+                                                           needsHostCursor));
         return S_OK;
     }
 
     STDMETHOD(OnStateChange)(MachineState_T machineState)
     {
         LogFlowFunc (("machineState=%d\n", machineState));
-        QApplication::postEvent (
-            view, new StateChangeEvent ((CEnums::MachineState) machineState));
+        QApplication::postEvent (mView,
+                                 new StateChangeEvent (
+                                     (CEnums::MachineState) machineState));
         return S_OK;
     }
 
     STDMETHOD(OnAdditionsStateChange)()
     {
-        CGuest guest = view->console().GetGuest();
+        CGuest guest = mView->console().GetGuest();
         LogFlowFunc (("ver=%s, active=%d\n",
                       guest.GetAdditionsVersion().latin1(),
                       guest.GetAdditionsActive()));
@@ -355,41 +357,53 @@ public:
 
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
-        QApplication::postEvent (
-            view, new ModifierKeyChangeEvent (fNumLock, fCapsLock, fScrollLock));
+        QApplication::postEvent (mView,
+                                 new ModifierKeyChangeEvent (fNumLock, fCapsLock,
+                                                             fScrollLock));
         return S_OK;
     }
 
     STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTRPARAM id, IN_BSTRPARAM message)
     {
-        QApplication::postEvent (
-            view, new RuntimeErrorEvent (!!fatal, QString::fromUcs2 (id),
-                                         QString::fromUcs2 (message)));
+        QApplication::postEvent (mView,
+                                 new RuntimeErrorEvent (!!fatal,
+                                                        QString::fromUcs2 (id),
+                                                        QString::fromUcs2 (message)));
         return S_OK;
     }
 
-    STDMETHOD(OnCanShowWindow)(BOOL *canShow)
+    STDMETHOD(OnCanShowWindow) (BOOL *canShow)
     {
         if (!canShow)
             return E_POINTER;
-        /* @todo return TRUE... */
+
+#if defined (Q_WS_X11)
+        /// @todo see the big comment in VBoxVMListBoxItem::switchTo()
         *canShow = FALSE;
+#else
+        *canShow = TRUE;
+#endif
         return S_OK;
     }
 
-    STDMETHOD(OnShowWindow)()
+    STDMETHOD(OnShowWindow) (ULONG64 *winId)
     {
-        /* @todo implement */
-        return E_NOTIMPL;
+        if (!winId)
+            return E_POINTER;
+
+        /* Return the ID of the top-level console window. */
+        *winId = (ULONG64) mView->topLevelWidget()->winId();
+
+        return S_OK;
     }
 
 protected:
 
-    VBoxConsoleView *view;
+    VBoxConsoleView *mView;
 
 #if defined (Q_WS_WIN)
 private:
-    long refcnt;
+    long mRefCnt;
 #endif
 };
 
