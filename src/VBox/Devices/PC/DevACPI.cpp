@@ -612,7 +612,7 @@ static void acpiSetupRSDP (ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_
 
     /* ACPI 1.0 part (RSDT */
     memcpy(rsdp->au8Signature, "RSD PTR ", 8);
-    memcpy(rsdp->au8OemId, "VBox  ", 6);
+    memcpy(rsdp->au8OemId, "VBOX  ", 6);
     rsdp->u8Revision    = ACPI_REVISION;
     rsdp->u32RSDT       = cpu_to_le32(rsdt_addr);
     rsdp->u8Checksum    = acpiChecksum((uint8_t*)rsdp, RT_OFFSETOF(ACPITBLRSDP, u32Length));

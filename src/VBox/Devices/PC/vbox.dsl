@@ -17,7 +17,7 @@
 // license agreement apply instead of the previous paragraph.
 //
 
-DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOXB", "VBOXBIOS", 2)
+DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 {
     // Declare debugging ports withing SystemIO
     OperationRegion(DBG0, SystemIO, 0x3000, 4)
