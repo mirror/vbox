@@ -598,13 +598,6 @@ static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     AssertRC(rc);
     rc = RTSemEventSignal(pCtl->AsyncIOSem);
     AssertRC(rc);
-#ifdef __LINUX__
-    /* For some reason the lower-priority EMT can starve the async I/O
-     * thread. We're holding the CritSect currently, so the async I/O
-     * thread cannot immediately start processing, but it avoids the
-     * starvation. */
-    RTThreadYield();
-#endif /* __LINUX__ */
 }
 
 
