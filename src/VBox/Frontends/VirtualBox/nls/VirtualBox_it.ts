@@ -47,11 +47,11 @@
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta il dispositivo di boot selezionato in alto.</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta il dispositivo di boot selezionato in basso.</translation>
     </message>
 </context>
 <context>
@@ -129,7 +129,7 @@
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;VirtualBox Graphical User Interface, versione %1&lt;br&gt;
+        <translation>&lt;qt&gt;VirtualBox Graphical User Interface, versione %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -184,31 +184,31 @@
     </message>
     <message>
         <source>Folder Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorso cartella</translation>
     </message>
     <message>
         <source>Folder Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome cartella</translation>
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il percorso di una cartella esistente nel PC Host.</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il nome della cartella condivisa (come verrà vista dal sistema Guest).</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la finestra di selezione cartella.</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annulla</translation>
+        <translation>Annulla</translation>
     </message>
 </context>
 <context>
@@ -621,59 +621,59 @@
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Macchina</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indica&amp;nbsp;l&apos;attività&amp;nbsp;delle&amp;nbsp;interfacce&amp;nbsp;di&amp;nbsp;rete</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Driver%1 (%2)&lt;/b&gt;: cavo %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>connesso</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>non connesso</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tutte i driver di rete sono disabilitati&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>D&amp;river di rete</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Driver %1</translation>
+        <translation>Driver %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Monta il driver fisico selezionato del PC Host</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Monta il driver fisico selezionato del PC Host</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Disconnetti il cavo dal driver di rete virtuale selezionato</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Connetti il cavo al driver di rete virtuale selezionato</translation>
     </message>
 </context>
 <context>
@@ -943,23 +943,23 @@
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un nuovo hard disk virtuale</translation>
     </message>
     <message>
         <source>Add (register) an existing image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi (registra) un file immagine esistente</translation>
     </message>
     <message>
         <source>Remove (unregister) the selected media</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi (deregistra) il media selezionato</translation>
     </message>
     <message>
         <source>Release the selected media by detaching it from the machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilascia il media selezionato sconnettendolo dalla macchina</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna la lista dei media</translation>
     </message>
 </context>
 <context>
@@ -1738,7 +1738,7 @@ con tutti i campi impostati ai valori del dispositivo USB connesso alla macchina
     </message>
     <message>
         <source>VirtualBox Preferences</source>
-        <translation type="unfinished">Impostazioni Globali di VirtualBox</translation>
+        <translation>Impostazioni di VirtualBox</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -1819,43 +1819,43 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il percorso della cartella predefinita per le VDI. Questa cartella viene utilizzata, se non diversamente specificato, quando vengono aggiunti o creati hard disk virtuali.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reimposta il percorso della cartella predefinita per le macchine virtuali al valore di default. Il valore di default effettivo verrà visualizzato dopo aver accettato le modifiche ed aperto nuovamente questa finestra.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reimposta il percorso della cartella predefinita per le VDI al valore di default. Il valore di default effettivo verrà visualizzato dopo aver accettato le modifiche ed aperto nuovamente questa finestra.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il percorso della cartella predefinita per le macchine virtuali. Questa cartella viene utilizzata, se non diversamente specificato, quando vengono aggiunti o creati hard disk virtuali.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre una finestra per la selezione della cartella di default per le VDI.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre una finestra per la selezione della cartella di default per le macchine virtuali.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando selezionato, la tastiera viene catturata automaticamente ogni volta che la finestra della VM è attivata. Quando la tastiera è catturata, tutte le combinazioni di tasti (incluse quelle di sistema come Alt-Tab) sono dirette alla VM.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenca tutti i filtri USB globali. La checkbox sulla sinistra indica se un particolare filtro è attivo o meno.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo filtro USB con tutti i campi impostati inizialmente a stringa vuota. Nota che un tale filtro farà match con qualsiasi dispositivo USB collegato.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo filtro USB con tutti i campi impostati ai valori del dispositivo USB selezionato, collegato al PC Host.</translation>
     </message>
 </context>
 <context>
@@ -1894,7 +1894,7 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Scegli il tipo di immagine di disco virtuale che vuoi creare.&lt;/p&gt;
+        <translation>&lt;p&gt;Scegli il tipo di immagine di disco virtuale che vuoi creare.&lt;/p&gt;
 &lt;p&gt;Un&apos;immagine &lt;b&gt;ad espansione dinamica&lt;/b&gt; occupa inizialmente
 molto poco spazio nel disco fisico. Crescerà in maniera dinamica (fino alla
 dimensione specificata), con il suo utilizzo da parte del sistema Guest.&lt;/p&gt;
@@ -2012,10 +2012,10 @@ e il pulsante &lt;b&gt;Indietro&lt;/b&gt; per tornare a quella precedente.&lt;/p
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Inserisci un nome per la nuova macchina virtuale e scegli un tipo di sistema
+        <translation>&lt;p&gt;Inserisci un nome per la nuova macchina virtuale e scegli un tipo di sistema
 operativo da installare nella macchina.&lt;/p&gt;
 &lt;p&gt;Il nome della macchina solitamente indica la propria configurazione hardware e software.
-Verrà utilizzato da tutti i prodotti VirtualBox per identificare la macchina virtuale creata.&lt;/p&gt;</translation>
+Verrà utilizzato da tutti i componenti di VirtualBox per identificare la macchina virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -2481,11 +2481,11 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Non è stato possibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Non è stato possibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Non è stato possibile caricare il file della lingua &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;La lingua sarà temporaneamente reimpostata a Inglese (built-in). Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Non è stato possibile caricare il file della lingua &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;La lingua sarà temporaneamente reimpostata a Inglese (built-in). Per favore apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2496,11 +2496,11 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annulla</translation>
+        <translation>Annulla</translation>
     </message>
 </context>
 <context>
@@ -2532,7 +2532,7 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
     <message>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
-        <translation type="unfinished">Impostazioni &amp;globali...</translation>
+        <translation>Im&amp;postazioni...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
@@ -2540,7 +2540,7 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished">Mostra la finestra delle impostazioni globali</translation>
+        <translation>Mostra la finestra delle impostazioni</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -2716,7 +2716,7 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Macchina</translation>
     </message>
 </context>
 <context>
@@ -2802,7 +2802,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica la definizione della cartella condivisa selezionata.</translation>
     </message>
 </context>
 <context>
@@ -3194,47 +3194,65 @@ qualsiasi valore.</translation>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce il filtro sul manufacturer come stringa
+di &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
+qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce il filtro sul product name come stringa
+di &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
+qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce il filtro sul serial number come stringa
+di &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
+qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce se questo filtro si applica ai
+dispositivi USB connessi localmente al computer Host (&lt;i&gt;No&lt;/i&gt;),
+a un computer client VRDP (&lt;i&gt;Sì&lt;/i&gt;),
+o entrambi (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce un&apos;azione effettuata dal computer host
+quando un dispositivo corrispondente viene connesso: lasciarlo al sistema Host
+(&lt;i&gt;Ignora&lt;/i&gt;) o catturarlo per utilizzo futuro dalle macchine virtuali
+(&lt;i&gt;Tieni&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce il filtro sul vendor ID. Il
+formato della stringa per il &lt;i&gt;match esatto&lt;/i&gt; è &lt;tt&gt;XXXX&lt;/tt&gt; dove
+&lt;tt&gt;X&lt;/tt&gt; è una cifra esadecimale. Una stringa vuota farà match con
+qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce il filtro sul product ID. Il
+formato della stringa per il &lt;i&gt;match esatto&lt;/i&gt; è &lt;tt&gt;XXXX&lt;/tt&gt; dove
+&lt;tt&gt;X&lt;/tt&gt; è una cifra esadecimale. Una stringa vuota farà match con
+qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the revision number filter. The
@@ -3242,13 +3260,19 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce il filtro sul revision number. Il
+formato della stringa per il &lt;i&gt;match esatto&lt;/i&gt; è &lt;tt&gt;IIFF&lt;/tt&gt; dove
+&lt;tt&gt;I&lt;/tt&gt; è una cifra decimale della parte intera e &lt;tt&gt;F&lt;/tt&gt;
+è una cifra decimale della parte frazionaria. Una stringa vuota farà match con
+qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Definisce il filtro sulla porta USB come stringa
+di &lt;i&gt;match esatto&lt;/i&gt;. Una stringa vuota farà match con
+qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -3304,7 +3328,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">Non accessibile</translation>
+        <translation>Non accessibile</translation>
     </message>
 </context>
 <context>
@@ -3494,51 +3518,51 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando selezionato, connette questo driver di rete virtuale alla macchina virtuale.</translation>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlla la modalita secondo la quale questo driver di rete virtuale è connesso alla rete reale del sistema Host.</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il MAC address di questo driver. Contiene esattamente 12 caratteri scelti da {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indica se il cavo di rete virtuale è collegato all&apos;avvio della macchina o meno.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il nome dell&apos;interfaccia host selezionata per questo driver.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenca tutte le interfacce host disponibili.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove l&apos;interfaccia host selezionata.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il nome dell&apos;interfaccia TAP.</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il comando lanciato per impostare l&apos;interfaccia TAP.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona l&apos;applicazione di setup.</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il comando lanciato per deimpostare l&apos;interfaccia TAP.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona l&apos;applicazione di terminazione.</translation>
     </message>
 </context>
 <context>
@@ -4197,81 +4221,86 @@ che questa funzionalità richiede le Guest Additions installate sul sistema Gues
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il tipo di sistema operativo che progetti di installare in questa macchina virtuale (chiamato sistema operativo Guest).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Quando selezionato, la macchina virtuale supporterà
+l&apos;Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Nota:&lt;/b&gt; non disabilitare
+questa caratteristica dopo aver installato un sistema operativo guest Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Quando selezionato, la macchina virtuale supporterà
+l&apos;Input Output (IO APIC), che potrebbe peggiorare leggermente le performance della VM. &lt;b&gt;Nota:&lt;/b&gt; non disabilitare
+questa caratteristica dopo aver installato un sistema operativo guest Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce la modalità di condivisione degli Appunti tra il sistema Guest e quello Host. Nota che questa caratteristica richiede le Guest Additions installate nel sistema Guest.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza il percorso dove verranno archiviati gli snapshot di questa macchina virtuale. Nota che gli snapshot possono occupare diverso spazio.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reimposta il percorso alla cartella per gli snapshot al valore di default. Il valore di default effettivo verra visualizzato dopo aver accettato la modifica e aperto nuovamente questa finestra.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la descrizione della macchina virtuale. Il campo descrizione è utile per commentare dettagli di configurazione del sistema Guest installato.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invoca il Gestore di Dischi Virtuali per creare un nuovo disco o scegliere un disco esistente da connettere.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenca i drive Floppy disponibili per essere montati in una macchina virtuale.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invoca il Gestore di Dischi Virtuali per scegliere un&apos;immagine Floppy da montare.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenca i drive CD/DVD disponibili per essere montati nella macchina virtuale.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invoca il Gestore di Dischi Virtuali per scegliere un&apos;immagine CD/DVD da montare.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Controlla il driver di output audio. Il &lt;b&gt;Null Audio Driver&lt;/b&gt;
+fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad essa.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando selezionato, abilita il controller USB di questa macchina.</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenca tutti i filtri USB di questa macchina. La checkbox sulla sinistra definisce se un particolare filtro è abilitato o meno.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo filtro USB con tutti i campi impostati inizialmente a stringa vuota. Nota che un tale filtro farà match con qualsiasi dispositivo USB collegato.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo filtro USB con tutti i campi impostati ai valori del dispositivo USB selezionato, collegato al PC Host.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Driver %1</translation>
+        <translation>Driver %1</translation>
     </message>
 </context>
 </TS>
