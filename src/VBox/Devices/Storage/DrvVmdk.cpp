@@ -308,8 +308,8 @@ static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
         /// @todo we should read these properties from the DDB section
         //  of the Disk DescriptorFile. So, the below values are just a
         //  quick hack.
-        pDisk->Geometry.cCylinders = (le64_to_cpu(header.capacity) /
-                                      (16 * 63));
+        pDisk->Geometry.cCylinders = RT_MIN((le64_to_cpu(header.capacity) /
+                                      (16 * 63)), 16383);
         pDisk->Geometry.cHeads = 16;
         pDisk->Geometry.cSectors = 63;
         pDisk->Geometry.cbSector = VMDK_GEOMETRY_SECTOR_SIZE;
