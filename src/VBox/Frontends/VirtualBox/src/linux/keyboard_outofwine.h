@@ -23,6 +23,7 @@
 typedef unsigned char BYTE, *LPBYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
+typedef unsigned int UINT;
 typedef long BOOL;
 typedef DWORD LCID;
 typedef void *HWND;
@@ -88,10 +89,23 @@ typedef void *HWND;
 #define VK_MENU             0x12
 #define VK_PAUSE            0x13
 #define VK_CAPITAL          0x14
-/*                          0x15-0x19  Reserved for Kanji systems */
+
+#define VK_KANA             0x15
+#define VK_HANGEUL          0x15
+#define VK_HANGUL           0x15
+#define VK_JUNJA            0x17
+#define VK_FINAL            0x18
+#define VK_HANJA            0x19
+#define VK_KANJI            0x19
+
 /*                          0x1A       Undefined */
 #define VK_ESCAPE           0x1B
-/*                          0x1C-0x1F  Reserved for Kanji systems */
+
+#define VK_CONVERT          0x1C
+#define VK_NONCONVERT       0x1D
+#define VK_ACCEPT           0x1E
+#define VK_MODECHANGE       0x1F
+
 #define VK_SPACE            0x20
 #define VK_PRIOR            0x21
 #define VK_NEXT             0x22
@@ -108,48 +122,14 @@ typedef void *HWND;
 #define VK_INSERT           0x2D
 #define VK_DELETE           0x2E
 #define VK_HELP             0x2F
-#define VK_0                0x30
-#define VK_1                0x31
-#define VK_2                0x32
-#define VK_3                0x33
-#define VK_4                0x34
-#define VK_5                0x35
-#define VK_6                0x36
-#define VK_7                0x37
-#define VK_8                0x38
-#define VK_9                0x39
+/* VK_0 - VK-9              0x30-0x39  Use ASCII instead */
 /*                          0x3A-0x40  Undefined */
-#define VK_A                0x41
-#define VK_B                0x42
-#define VK_C                0x43
-#define VK_D                0x44
-#define VK_E                0x45
-#define VK_F                0x46
-#define VK_G                0x47
-#define VK_H                0x48
-#define VK_I                0x49
-#define VK_J                0x4A
-#define VK_K                0x4B
-#define VK_L                0x4C
-#define VK_M                0x4D
-#define VK_N                0x4E
-#define VK_O                0x4F
-#define VK_P                0x50
-#define VK_Q                0x51
-#define VK_R                0x52
-#define VK_S                0x53
-#define VK_T                0x54
-#define VK_U                0x55
-#define VK_V                0x56
-#define VK_W                0x57
-#define VK_X                0x58
-#define VK_Y                0x59
-#define VK_Z                0x5A
-
+/* VK_A - VK_Z              0x41-0x5A  Use ASCII instead */
 #define VK_LWIN             0x5B
 #define VK_RWIN             0x5C
 #define VK_APPS             0x5D
-/*                          0x5E-0x5F Unassigned */
+/*                          0x5E Unassigned */
+#define VK_SLEEP            0x5F
 #define VK_NUMPAD0          0x60
 #define VK_NUMPAD1          0x61
 #define VK_NUMPAD2          0x62
@@ -193,7 +173,13 @@ typedef void *HWND;
 /*                          0x88-0x8F  Unassigned */
 #define VK_NUMLOCK          0x90
 #define VK_SCROLL           0x91
-/*                          0x92-0x9F  Unassigned */
+#define VK_OEM_NEC_EQUAL    0x92
+#define VK_OEM_FJ_JISHO     0x92
+#define VK_OEM_FJ_MASSHOU   0x93
+#define VK_OEM_FJ_TOUROKU   0x94
+#define VK_OEM_FJ_LOYA      0x95
+#define VK_OEM_FJ_ROYA      0x96
+/*                          0x97-0x9F  Unassigned */
 /*
  * differencing between right and left shift/control/alt key.
  * Used only by GetAsyncKeyState() and GetKeyState().
@@ -204,7 +190,27 @@ typedef void *HWND;
 #define VK_RCONTROL         0xA3
 #define VK_LMENU            0xA4
 #define VK_RMENU            0xA5
-/*                          0xA6-0xB9  Unassigned */
+
+#define VK_BROWSER_BACK        0xA6
+#define VK_BROWSER_FORWARD     0xA7
+#define VK_BROWSER_REFRESH     0xA8
+#define VK_BROWSER_STOP        0xA9
+#define VK_BROWSER_SEARCH      0xAA
+#define VK_BROWSER_FAVORITES   0xAB
+#define VK_BROWSER_HOME        0xAC
+#define VK_VOLUME_MUTE         0xAD
+#define VK_VOLUME_DOWN         0xAE
+#define VK_VOLUME_UP           0xAF
+#define VK_MEDIA_NEXT_TRACK    0xB0
+#define VK_MEDIA_PREV_TRACK    0xB1
+#define VK_MEDIA_STOP          0xB2
+#define VK_MEDIA_PLAY_PAUSE    0xB3
+#define VK_LAUNCH_MAIL         0xB4
+#define VK_LAUNCH_MEDIA_SELECT 0xB5
+#define VK_LAUNCH_APP1         0xB6
+#define VK_LAUNCH_APP2         0xB7
+
+/*                          0xB8-0xB9  Unassigned */
 #define VK_OEM_1            0xBA
 #define VK_OEM_PLUS         0xBB
 #define VK_OEM_COMMA        0xBC

@@ -147,14 +147,10 @@ VirtualBox_SOURCES.win += \
 VirtualBox_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp
 
-ifdef XKEYBOARD_NEW
-VirtualBox_SOURCES.linux = \
-	src/linux/XKeyboardNew.cpp
-else
 VirtualBox_SOURCES.linux = \
 	src/linux/XKeyboard.cpp \
-	src/linux/keyboard.c
-endif
+	src/linux/keyboard.c \
+	src/linux/XKeyboardNew.cpp
 
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
