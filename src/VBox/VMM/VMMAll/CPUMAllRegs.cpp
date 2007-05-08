@@ -899,7 +899,19 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * Set the APIC bit in both feature masks.
          */
         case CPUMCPUIDFEATURE_APIC:
-            if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
+            /* Don't enable the Local APIC for non-{Intel,AMD} CPUs. Linux (checked with 2.4.26
+             * and 2.6.21, see apic.c, detect_init_APIC()) gets confused otherwiese. Of course
+             * this is a bug in the Linux code (it should trust the CPUID instruction) but Windows
+             * is also known for such assumptions.
+             * On the other hand we could depend on the APIC set in the host's CPUID but this APIC
+             * might be (soft) disabled and we want to provide an APIC to the guest if possible. */
+            if (  (   (   pVM->cpum.s.aGuestCpuIdStd[0].ebx == 0x756e6547 /* Genu */
+                       && pVM->cpum.s.aGuestCpuIdStd[0].ecx == 0x6c65746e /* ineI */
+                       && pVM->cpum.s.aGuestCpuIdStd[0].edx == 0x49656e69 /* ntel */)
+                   || (   pVM->cpum.s.aGuestCpuIdStd[0].ebx == 0x68747541 /* Auth */
+                       && pVM->cpum.s.aGuestCpuIdStd[0].ebx == 0x69746e65 /* enti */
+                       && pVM->cpum.s.aGuestCpuIdStd[0].ebx == 0x444d4163 /* cAMD */))
+                && pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_APIC;
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
                 &&  pVM->cpum.s.aGuestCpuIdExt[1].edx)
