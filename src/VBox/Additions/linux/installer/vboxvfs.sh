@@ -22,19 +22,14 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
-system=unknown
 if [ -f /etc/redhat-release ]; then
     system=redhat
 elif [ -f /etc/SuSE-release ]; then
     system=suse
-elif [ -f /etc/debian_version ]; then
-    system=debian
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
-elif [ -f /etc/slackware-version ]; then
-    system=slackware
 else
-    echo "$0: Unknown system" 1>&2
+    system=other
 fi
 
 if [ "$system" = "redhat" ]; then
@@ -71,20 +66,6 @@ if [ "$system" = "suse" ]; then
     }
 fi
 
-if [ "$system" = "debian" ]; then
-    fail_msg() {
-        echo " ...fail!"
-    }
-
-    succ_msg() {
-        echo " ...done."
-    }
-
-    begin() {
-        echo -n $1
-    }
-fi
-
 if [ "$system" = "gentoo" ]; then
     . /sbin/functions.sh
     fail_msg() {
@@ -104,7 +85,7 @@ if [ "$system" = "gentoo" ]; then
     fi
 fi
 
-if [ "$system" = "slackware" ]; then
+if [ "$system" = "other" ]; then
     fail_msg() {
         echo " ...fail!"
     }

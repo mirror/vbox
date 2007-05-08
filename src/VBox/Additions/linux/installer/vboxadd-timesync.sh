@@ -36,10 +36,11 @@ elif [ -f /etc/debian_version ]; then
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
     PIDFILE="/var/run/vboxadd-timesync"
-elif [ -f /etc/slackware-version ]; then
-    system=slackware
 else
-    echo "$0: Unknown system" 1>&2
+    system=other
+    if [ -d /var/run -a -w /var/run ]; then
+        PIDFILE="/var/run/vboxadd-timesync"
+    fi
 fi
 
 if [ "$system" = "redhat" ]; then
@@ -113,7 +114,7 @@ if [ "$system" = "gentoo" ]; then
     fi
 fi
 
-if [ "$system" = "slackware" ]; then
+if [ "$system" = "other" ]; then
     fail_msg() {
         echo " ...fail!"
     }
