@@ -43,5 +43,13 @@ void handleXKeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
 // returns the number of keysyms per keycode (only valid after initXKeyboard())
 int getKeysymsPerKeycode();
 
+// initialize the X keyboard subsystem, safe for use on remote X servers
+bool initXKeyboardSafe(Display *dpy);
+// our custom keyboard handler, safe for use on remote X servers
+void handleXKeyEventSafe(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo);
+// returns the number of keysyms per keycode (only valid after initXKeyboard()), safe
+// for use on remote X servers
+int getKeysymsPerKeycodeSafe();
+
 
 #endif // __XKeyboard_h__

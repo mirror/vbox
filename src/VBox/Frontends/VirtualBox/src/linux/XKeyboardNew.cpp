@@ -23,6 +23,7 @@
 #include <X11/Xlib.h>
 #include <XKeyboard.h>
 #include <cstring>
+#include <cstdlib>
 
 #define LOG_GROUP LOG_GROUP_GUI
 #include <VBox/log.h>
@@ -52,15 +53,26 @@ static int ExtKeySymToScanCode[38] =
 };
 
 static int keysyms_per_keycode;  /** Number of keyboard language layouts the host has */
+static bool remote_display = false;  /** Are we displaying on a remote X server? */
 
 /**
- * Find out how many different language mappings there are for this keyboard.  This is needed
+ * Check whether we are running on a local or on a remote X server, and find out how many
+ * different language mappings there are for this keyboard.  This last is needed
  * so that Dmitry can press <hostkey>+Q while using his Cyrillic keyboard layout :)
  */
 bool initXKeyboard(Display *dpy)
 {
     int min, max;
     KeySym *syms;
+
+    /* If we are displaying on a remote display then fall back to old Wine-based code. */
+    if (DisplayString(dpy)[0] != ':')
+    {
+        remote_display = true;
+        Log(("initXKeyboard: remote display detected\n"));
+        return initXKeyboardSafe(dpy);
+    }
+    Log(("initXKeyboard: remote display not detected\n"));
     /* Find out how approximately how many keys there are on the keyboard, needed for the next
        call */
     XDisplayKeycodes(dpy, &min, &max);
@@ -75,9 +87,15 @@ bool initXKeyboard(Display *dpy)
 /**
  * Convert X11 keycodes back to scancodes.
  */
-void handleXKeyEvent(Display * /* dpy */, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
+void handleXKeyEvent(Display * dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
 {
     unsigned int uKeyCode = event->xkey.keycode;
+
+    if (remote_display == true)
+    {
+        handleXKeyEventSafe(dpy, event, wineKbdInfo);
+        return;
+    }
     memset(reinterpret_cast<void *>(wineKbdInfo), 0, sizeof(WINEKEYBOARDINFO));
     /* Basic scancodes are translated to keycodes by adding 8, so we just subtract again. */
     if ((uKeyCode >= 9) && (uKeyCode <= 96))
@@ -106,5 +124,7 @@ void handleXKeyEvent(Display * /* dpy */, XEvent *event, WINEKEYBOARDINFO *wineK
  */
 int getKeysymsPerKeycode()
 {
+    if (remote_display == true)
+        return getKeysymsPerKeycodeSafe();
     return keysyms_per_keycode;
 }

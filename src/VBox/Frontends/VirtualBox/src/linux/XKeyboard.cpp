@@ -50,7 +50,7 @@ extern "C"
  * This needs to be called to initialize the WINE keyboard subsystem
  * within our environment.
  */
-bool initXKeyboard(Display *dpy)
+bool initXKeyboardSafe(Display *dpy)
 {
     // update the global display pointer
     dpy_global = dpy;
@@ -62,7 +62,7 @@ bool initXKeyboard(Display *dpy)
  * our custom X keyboard event handler with the goal to try everything
  * possible to undo the dreaded scancode to X11 conversion. Sigh!
  */
-void handleXKeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
+void handleXKeyEventSafe(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
 {
     // update the global display pointer
     dpy_global = dpy;
@@ -70,7 +70,7 @@ void handleXKeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
     X11DRV_KeyEvent((XKeyEvent*)event, wineKbdInfo);
 }
 
-int getKeysymsPerKeycode()
+int getKeysymsPerKeycodeSafe()
 {
     return X11DRV_GetKeysymsPerKeycode();
 }
