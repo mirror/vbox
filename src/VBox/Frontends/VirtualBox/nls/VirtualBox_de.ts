@@ -1832,7 +1832,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
-        <translation>Drücken Sie &lt;b&gt;Fertigstellen&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Danach wird eine neue virtuelle Festplatte erstellt.</translation>
+        <translation>Drücken Sie &lt;b&gt;Abschließen&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Infolgedessen wird eine neue virtuelle Festplatte erstellt.</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -1969,8 +1969,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             the menu of the main window.
                             &lt;/p&gt;
                             </source>
-        <translation>&lt;p&gt;Falls die oben gezeigten Einstellungen richtig sind, drücken Sie &lt;b&gt;Fertigstellen&lt;/b&gt;. Danach wird eine neue virtuelle Maschine erzeugt.&lt;/p&gt;
-&lt;p&gt;Sie können diese und alle anderen Einstellungen jederzeit mittels der &lt;b&gt;Einstellungen&lt;/b&gt;, wählbar durch das Menü im Hauptfenster, ändern.&lt;/b&gt;</translation>
+        <translation>&lt;p&gt;Falls die oben gezeigten Einstellungen richtig sind, drücken Sie &lt;b&gt;Abschließen&lt;/b&gt;. Infolgedessen wird eine neue virtuelle Maschine erzeugt.&lt;/p&gt;
+&lt;p&gt;Sie können diese und alle anderen Einstellungen jederzeit durch Auswahl von &lt;b&gt;Einstellungen&lt;/b&gt; im Menü des Hauptfensters ändern.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
