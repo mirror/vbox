@@ -114,8 +114,10 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnShowWindow)()
+    STDMETHOD(OnShowWindow)(ULONG64 *winId)
     {
+        if (winId)
+            *winId = 0;
         return S_OK;
     }
 

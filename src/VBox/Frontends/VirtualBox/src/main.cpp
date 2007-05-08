@@ -135,6 +135,16 @@ int main( int argc, char ** argv )
 
     QIApplication a (argc, argv);
 
+    /* weird palette test */
+#if 0
+    QPalette pal = a.palette();
+    pal.setColor (QColorGroup::Background, Qt::red);
+    pal.setBrush (QColorGroup::Background,
+                  QBrush (QColor(),
+                          QPixmap::fromMimeSource ("about_16px.png")));
+    a.setPalette (pal);
+#endif
+
 #ifdef Q_WS_X11
     /* version check (major.minor are sensitive, fix number is ignored) */
     QString ver_str = QString::fromLatin1 (QT_VERSION_STR);

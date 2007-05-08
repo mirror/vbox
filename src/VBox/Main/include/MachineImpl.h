@@ -366,7 +366,7 @@ public:
     STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath);
     STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
     STDMETHOD(CanShowConsoleWindow) (BOOL *aCanShow);
-    STDMETHOD(ShowConsoleWindow)();
+    STDMETHOD(ShowConsoleWindow) (ULONG64 *aWinId);
 
     // public methods only for internal purposes
 

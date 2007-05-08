@@ -132,7 +132,11 @@ public:
     CEnums::SessionState sessionState() const { return mSessionState; }
     ULONG snapshotCount() const { return mSnapshotCount; }
 
+    /// @todo see comments in #switchTo() in VBoxVMListBox.cpp
+#if 0
     bool canSwitchTo() const { return mWinId != (WId) ~0; }
+#endif
+    bool canSwitchTo() const;
     bool switchTo();
 
 protected:
@@ -160,7 +164,10 @@ private:
     ULONG mSnapshotCount;
 
     ULONG mPid;
+    /// @todo see comments in #switchTo() in VBoxVMListBox.cpp
+#if 0
     WId mWinId;
+#endif
 };
 
 #endif // __VBoxVMListItem_h__

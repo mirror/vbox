@@ -2300,7 +2300,7 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
         return E_POINTER;
 
     /* start with No */
-    aCanShow = FALSE;
+    *aCanShow = FALSE;
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -2321,11 +2321,15 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnShowWindow (TRUE /* aCheck */, aCanShow);
+    ULONG64 dummy;
+    return directControl->OnShowWindow (TRUE /* aCheck */, aCanShow, &dummy);
 }
 
-STDMETHODIMP Machine::ShowConsoleWindow()
+STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 {
+    if (!aWinId)
+        return E_POINTER;
+
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -2346,7 +2350,7 @@ STDMETHODIMP Machine::ShowConsoleWindow()
         return S_OK;
 
     BOOL dummy;
-    return directControl->OnShowWindow (FALSE /* aCheck */, &dummy);
+    return directControl->OnShowWindow (FALSE /* aCheck */, &dummy, aWinId);
 }
 
 // public methods for internal purposes

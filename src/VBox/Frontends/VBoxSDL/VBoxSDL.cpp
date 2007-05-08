@@ -37,8 +37,9 @@ using namespace com;
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>      /* for XC_left_ptr */
 #include <X11/Xcursor/Xcursor.h>
-#include <SDL_syswm.h>           /* for SDL_GetWMInfo() */
 #endif
+
+#include <SDL_syswm.h>           /* for SDL_GetWMInfo() */
 
 #include "VBoxSDL.h"
 #include "Framebuffer.h"
@@ -505,15 +506,35 @@ public:
     {
         if (!canShow)
             return E_POINTER;
-        /* @todo return TRUE if gConsole is not NULL */
+#if defined (__LINUX__)
+        /// @todo see the big comment in Frontends/VirtualBox/src/VBoxVMListBoxItem::switchTo()
         *canShow = FALSE;
+#else
+        SDL_SysWMinfo info;
+        SDL_VERSION(&info.version);
+        *canShow = !!SDL_GetWMInfo(&info);
+#endif
         return S_OK;
     }
 
-    STDMETHOD(OnShowWindow)()
+    STDMETHOD(OnShowWindow) (ULONG64 *winId)
     {
-        /* @todo implement */
-        return E_NOTIMPL;
+        SDL_SysWMinfo info;
+        SDL_VERSION(&info.version);
+        if (SDL_GetWMInfo(&info))
+        {
+#if defined (__LINUX__)
+            *winId = (ULONG64) info.info.x11.window;
+#elif defined (__WIN__)
+            *winId = (ULONG64) info.window;
+#else
+            AssertFailed();
+            return E_FAIL;
+#endif
+            return S_OK;
+        }
+        AssertFailed();
+        return E_FAIL;
     }
 
     static const char *GetStateName(MachineState_T machineState)
