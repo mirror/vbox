@@ -513,28 +513,34 @@ static inline int get_pci_irq_apic_level(PPCIGLOBALS pGlobals, int irq_num)
 
 static void apic_set_irq(PPCIBUS pBus, PCIDevice *pci_dev, int irq_num1, int level, int acpi_irq)
 {
-    PPCIGLOBALS pGlobals = PCIBUS2PCIGLOBALS(pBus);
-    int shift, apic_irq, apic_level;
-    uint32_t *p;
-
     if (acpi_irq == -1) {
+        int shift, apic_irq, apic_level;
+        uint32_t *p;
+        PPCIGLOBALS pGlobals = PCIBUS2PCIGLOBALS(pBus);
         int uIrqIndex = pci_dev->Int.s.iIrq;
         int irq_num = pci_slot_get_apic_pirq(pci_dev, irq_num1);
+
         p = &pGlobals->pci_apic_irq_levels[irq_num][uIrqIndex >> 5];
         shift = (uIrqIndex & 0x1f);
-        *p = (*p & ~(1 << shift)) | (level << shift);
+        *p = (*p & ~(1 << shift)) | ((level & PDM_IRQ_LEVEL_HIGH) << shift);
         apic_irq = irq_num + 0x10;
         apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
         Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d\n",
               HCSTRING(pci_dev->name), irq_num1, level, apic_irq, apic_level, irq_num));
-    } else {
-        apic_irq = acpi_irq;
-        apic_level = level;
-        Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d\n",
-              HCSTRING(pci_dev->name), irq_num1, level, apic_irq, apic_level));
-    }
+        pBus->CTXALLSUFF(pPciHlp)->pfnIoApicSetIrq(CTXSUFF(pBus->pDevIns), apic_irq, apic_level);
 
-    pBus->CTXALLSUFF(pPciHlp)->pfnIoApicSetIrq(CTXSUFF(pBus->pDevIns), apic_irq, apic_level);
+        if ((level & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
+            *p = (*p & ~(1 << shift));
+            apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
+            Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d (flop)\n",
+                  HCSTRING(pci_dev->name), irq_num1, level, apic_irq, apic_level, irq_num));
+            pBus->CTXALLSUFF(pPciHlp)->pfnIoApicSetIrq(CTXSUFF(pBus->pDevIns), apic_irq, apic_level);
+        }
+    } else {
+        Log3(("apic_set_irq: %s: irq_num1=%d level=%d acpi_irq=%d\n",
+              HCSTRING(pci_dev->name), irq_num1, level, acpi_irq));
+        pBus->CTXALLSUFF(pPciHlp)->pfnIoApicSetIrq(CTXSUFF(pBus->pDevIns), acpi_irq, level);
+    }
 }
 
 static inline int get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
@@ -598,7 +604,7 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
         /* As per above treat ACPI in a special way */
         pic_irq = pPciDev->config[0x3c];
         pGlobals->acpi_irq = pic_irq;
-        pGlobals->acpi_irq_level = iLevel;
+        pGlobals->acpi_irq_level = iLevel & PDM_IRQ_LEVEL_HIGH;
     }
     else
     {
@@ -607,12 +613,16 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
         uIrqIndex = pPciDev->Int.s.iIrq;
         p = &pGlobals->pci_irq_levels[irq_num][uIrqIndex >> 5];
         shift = (uIrqIndex & 0x1f);
-        *p = (*p & ~(1 << shift)) | (iLevel << shift);
+        *p = (*p & ~(1 << shift)) | ((iLevel & PDM_IRQ_LEVEL_HIGH) << shift);
 
         /* now we change the pic irq level according to the piix irq mappings */
         pic_irq = pbCfg[0x60 + irq_num];
         if (pic_irq >= 16)
+        {
+            if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
+                *p = (*p & ~(1 << shift));
             return;
+        }
     }
 
     /* the pic level is the logical OR of all the PCI irqs mapped to it */
@@ -631,6 +641,10 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
     Log3(("piix3_set_irq: %s: iLevel=%d iIrq=%d pic_irq=%d pic_level=%d\n",
           HCSTRING(pPciDev->name), iLevel, iIrq, pic_irq, pic_level));
     pBus->CTXALLSUFF(pPciHlp)->pfnIsaSetIrq(CTXSUFF(pBus->pDevIns), pic_irq, pic_level);
+
+    /** @todo optimize pci irq flip-flop some rainy day. */
+    if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
+        pciSetIrq(pDevIns, pPciDev, iIrq, PDM_IRQ_LEVEL_LOW);
 }
 
 #ifdef IN_RING3

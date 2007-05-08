@@ -1287,6 +1287,11 @@ void ioapic_set_irq(void *opaque, int vector, int level)
             if (level) {
                 s->irr |= mask;
                 ioapic_service(s);
+#ifdef VBOX
+                if ((level & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
+                    s->irr &= ~mask;
+                }
+#endif
             } else {
                 s->irr &= ~mask;
             }
