@@ -542,13 +542,9 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
             pData->iShutdown++;
             if (pData->iShutdown == 8)
             {
-#if 0
-                PVM pVM = PDMDevHlpGetVM(pDevIns);
-                AssertRelease(pVM);
-                VM_FF_SET(pVM, VM_FF_TERMINATE);
-#endif
                 pData->iShutdown = 0;
-                return VINF_EM_TERMINATE;
+                LogRel(("8900h shutdown request.\n"));
+                return PDMDevHlpVMPowerOff(pDevIns);
             }
         }
         else
