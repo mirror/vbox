@@ -533,7 +533,7 @@ ifdef L4_DIR
   	$(L4LINUX26_DIR)/include \
 	$(L4LINUX26_DIR)/include/asm-l4/i386-arch
   # support splitted Linux kernels (make O=<build directory>)
-  kernelsrc := $(shell sed -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(L4LINUX26_DIR)/Makefile)
+  kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(L4LINUX26_DIR)/Makefile)
   ifneq ($(kernelsrc),)
    kernelpath := $(realpath $(kernelsrc))
    L4LINUX26_INCDIR += \
@@ -832,7 +832,7 @@ VBOX_GCC32_CHECK_CXX = $(shell \
 # This is kind of bad, the returned string needs to be re-evaluated before use.
 # The reason for this hack is that the windows kmk_ash cannot deal with $((1+1)). 
 VBOX_GCC_VERSION = $(shell \
-  $(1) -dumpversion | sed 's|\([0-9]\)\.\([0-9]\)\.\([0-9]\)|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, \2), \3)|' )
+  $(1) -dumpversion | $(SED_EXT) 's|\([0-9]\)\.\([0-9]\)\.\([0-9]\)|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, \2), \3)|' )
 
 # No $(QUIET) here as it's interesting to see what goes into the file.
 $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
@@ -874,7 +874,7 @@ endif
 
 ifeq ($(BUILD_TARGET),l4)
 	@# L4
-	$(APPEND) "$@" "VBOX_PATH_L4_GCC3_INSTALL      ?= $(shell LANG=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-search-dirs|sed -ne 's+^install: \(.*[^/][^/]*\)/\?+\1+p')"
+	$(APPEND) "$@" "VBOX_PATH_L4_GCC3_INSTALL      ?= $(shell LANG=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-search-dirs|$(SED_EXT) -ne 's+^install: \(.*[^/][^/]*\)/\?+\1+p')"
 endif
 
 include $(PATH_OUT)/GCCConfig.kmk
@@ -1057,7 +1057,7 @@ ifneq ($(filter linux l4,$(BUILD_TARGET)),)
  ifeq ($(origin VBOX_LINUX_INCS),undefined)
   export VBOX_LINUX_INCS           := $(VBOX_LINUX_SRC)/include
   # support splitted Linux kernels (make O=<build directory>)
-  kernelsrc := $(shell sed -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
+  kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
   ifneq ($(kernelsrc),)
    kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelsrc))
    VBOX_LINUX_INCS                 += $(VBOX_LINUX_SRC)/include2 $(kernelpath)/include
