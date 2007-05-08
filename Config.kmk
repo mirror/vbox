@@ -67,6 +67,7 @@ ifeq ($(BUILD_TARGET),darwin)
  INST_ADDITIONS       = $(INST_BIN)additions/
 
  # other paths
+ INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(PATH_LIB)/additions/
 
@@ -82,6 +83,7 @@ else
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
 
+ INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
 endif
@@ -93,6 +95,7 @@ PATH_LIB              = $(patsubst %/,%,$(PATH_INS)/$(INST_LIB))
 PATH_DOC              = $(PATH_OUT)/doc
 VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
+VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 
 
 # Delete targets on failure.
