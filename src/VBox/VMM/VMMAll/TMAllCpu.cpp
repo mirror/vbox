@@ -41,7 +41,7 @@
  */
 DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
 {
-    uint64_t u64 = TMVirtualSyncGet(pVM/** @todo fCheckTimers */);
+    uint64_t u64 = TMVirtualSyncGetEx(pVM, fCheckTimers);
     if (u64 != TMCLOCK_FREQ_VIRTUAL)
         u64 = ASMMultU64ByU32DivByU32(u64, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
     return u64;

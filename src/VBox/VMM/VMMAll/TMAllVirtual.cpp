@@ -166,9 +166,10 @@ TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
  *
  * @returns The timestamp.
  * @param   pVM     VM handle.
+ * @param   fCheckTimers    Check timers or not
  * @thread  EMT.
  */
-TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
+TMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
 {
     VM_ASSERT_EMT(pVM);
 
@@ -182,7 +183,8 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
          */
         Assert(pVM->tm.s.fVirtualTicking);
         u64 = tmVirtualGetRaw(pVM);
-        if (    !VM_FF_ISSET(pVM, VM_FF_TIMER)
+        if (    fCheckTimers
+            &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
             &&  pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
         {
             VM_FF_SET(pVM, VM_FF_TIMER);
@@ -261,7 +263,8 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
             u64 = u64Expire;
             ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64);
             ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
-            if (!VM_FF_ISSET(pVM, VM_FF_TIMER))
+            if (    fCheckTimers
+                &&  !VM_FF_ISSET(pVM, VM_FF_TIMER))
             {
                 VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
@@ -278,6 +281,19 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
     else
         u64 = pVM->tm.s.u64VirtualSync;
     return u64;
+}
+
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL_SYNC time.
+ *
+ * @returns The timestamp.
+ * @param   pVM             VM handle.
+ * @thread  EMT.
+ */
+TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
+{
+    return TMVirtualSyncGetEx(pVM, true /* check timers */);
 }
 
 
