@@ -189,25 +189,25 @@ typedef struct VMDKDISK
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int)  vmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
-static DECLCALLBACK(void) vmdkDestruct(PPDMDRVINS pDrvIns);
-static DECLCALLBACK(int)  vmdkRead(PPDMIMEDIA pInterface,
+static DECLCALLBACK(int)  drvVmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
+static DECLCALLBACK(void) drvVmdkDestruct(PPDMDRVINS pDrvIns);
+static DECLCALLBACK(int)  drvVmdkRead(PPDMIMEDIA pInterface,
                                   uint64_t off, void *pvBuf, size_t cbRead);
-static DECLCALLBACK(int)  vmdkWrite(PPDMIMEDIA pInterface,
+static DECLCALLBACK(int)  drvVmdkWrite(PPDMIMEDIA pInterface,
                                    uint64_t off, const void *pvBuf, size_t cbWrite);
-static DECLCALLBACK(int)  vmdkFlush(PPDMIMEDIA pInterface);
-static DECLCALLBACK(uint64_t) vmdkGetSize(PPDMIMEDIA pInterface);
-static DECLCALLBACK(int)  vmdkBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pcCylinders,
+static DECLCALLBACK(int)  drvVmdkFlush(PPDMIMEDIA pInterface);
+static DECLCALLBACK(uint64_t) drvVmdkGetSize(PPDMIMEDIA pInterface);
+static DECLCALLBACK(int)  drvVmdkBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pcCylinders,
                                              uint32_t *pcHeads, uint32_t *pcSectors);
-static DECLCALLBACK(int)  vmdkBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCylinders,
+static DECLCALLBACK(int)  drvVmdkBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCylinders,
                                              uint32_t cHeads, uint32_t cSectors);
-static DECLCALLBACK(int)  vmdkGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid);
-static DECLCALLBACK(bool) vmdkIsReadOnly(PPDMIMEDIA pInterface);
-static DECLCALLBACK(int)  vmdkBiosGetTranslation(PPDMIMEDIA pInterface,
+static DECLCALLBACK(int)  drvVmdkGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid);
+static DECLCALLBACK(bool) drvVmdkIsReadOnly(PPDMIMEDIA pInterface);
+static DECLCALLBACK(int)  drvVmdkBiosGetTranslation(PPDMIMEDIA pInterface,
                                                 PPDMBIOSTRANSLATION penmTranslation);
-static DECLCALLBACK(int)  vmdkBiosSetTranslation(PPDMIMEDIA pInterface,
+static DECLCALLBACK(int)  drvVmdkBiosSetTranslation(PPDMIMEDIA pInterface,
                                                 PDMBIOSTRANSLATION enmTranslation);
-static DECLCALLBACK(void *) vmdkQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
+static DECLCALLBACK(void *) drvVmdkQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
 
 #if 0
 static int vmdk_probe(const uint8_t *buf, int buf_size, const char *filename)
@@ -708,15 +708,15 @@ IDER3DECL(int) VMDKDiskGetImagesCount(PVMDKDISK pDisk)
  *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
  *                      iInstance it's expected to be used a bit in this function.
  */
-static DECLCALLBACK(int) vmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvVmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    LogFlow(("vmdkConstruct:\n"));
+    LogFlow(("drvVmdkConstruct:\n"));
     PVMDKDISK pData = PDMINS2DATA(pDrvIns, PVMDKDISK);
 
     /*
      * Init the static parts.
      */
-    pDrvIns->IBase.pfnQueryInterface    = vmdkQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface    = drvVmdkQueryInterface;
     pData->pDrvIns = pDrvIns;
 
     pData->u32Signature = VMDKDISK_SIGNATURE;
@@ -727,16 +727,16 @@ static DECLCALLBACK(int) vmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->Geometry.cbSector = 0;
 
     /* IMedia */
-    pData->IMedia.pfnRead               = vmdkRead;
-    pData->IMedia.pfnWrite              = vmdkWrite;
-    pData->IMedia.pfnFlush              = vmdkFlush;
-    pData->IMedia.pfnGetSize            = vmdkGetSize;
-    pData->IMedia.pfnGetUuid            = vmdkGetUuid;
-    pData->IMedia.pfnIsReadOnly         = vmdkIsReadOnly;
-    pData->IMedia.pfnBiosGetGeometry    = vmdkBiosGetGeometry;
-    pData->IMedia.pfnBiosSetGeometry    = vmdkBiosSetGeometry;
-    pData->IMedia.pfnBiosGetTranslation = vmdkBiosGetTranslation;
-    pData->IMedia.pfnBiosSetTranslation = vmdkBiosSetTranslation;
+    pData->IMedia.pfnRead               = drvVmdkRead;
+    pData->IMedia.pfnWrite              = drvVmdkWrite;
+    pData->IMedia.pfnFlush              = drvVmdkFlush;
+    pData->IMedia.pfnGetSize            = drvVmdkGetSize;
+    pData->IMedia.pfnGetUuid            = drvVmdkGetUuid;
+    pData->IMedia.pfnIsReadOnly         = drvVmdkIsReadOnly;
+    pData->IMedia.pfnBiosGetGeometry    = drvVmdkBiosGetGeometry;
+    pData->IMedia.pfnBiosSetGeometry    = drvVmdkBiosSetGeometry;
+    pData->IMedia.pfnBiosGetTranslation = drvVmdkBiosGetTranslation;
+    pData->IMedia.pfnBiosSetTranslation = drvVmdkBiosSetTranslation;
 
     /*
      * Validate and read top level configuration.
@@ -764,7 +764,7 @@ static DECLCALLBACK(int) vmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
      */
     rc = vmdk_open(pData, pszName, fReadOnly);
     if (VBOX_SUCCESS(rc))
-        Log(("vmdkConstruct: Opened '%s' in %s mode\n", pszName, VMDKDiskIsReadOnly(pData) ? "read-only" : "read-write"));
+        Log(("drvVmdkConstruct: Opened '%s' in %s mode\n", pszName, VMDKDiskIsReadOnly(pData) ? "read-only" : "read-write"));
     else
         AssertMsgFailed(("Failed to open image '%s' rc=%Vrc\n", pszName, rc));
 
@@ -782,9 +782,9 @@ static DECLCALLBACK(int) vmdkConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) vmdkDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvVmdkDestruct(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("vmdkDestruct:\n"));
+    LogFlow(("drvVmdkDestruct:\n"));
     PVMDKDISK pData = PDMINS2DATA(pDrvIns, PVMDKDISK);
     vmdk_close(&pData->VmdkState);
 }
@@ -796,9 +796,9 @@ static DECLCALLBACK(void) vmdkDestruct(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) vmdkSuspend(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvVmdkSuspend(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("vmdkSuspend:\n"));
+    LogFlow(("drvVmdkSuspend:\n"));
     PVMDKDISK pData = PDMINS2DATA(pDrvIns, PVMDKDISK);
     if (!VMDKDiskIsReadOnly(pData))
     {
@@ -810,13 +810,13 @@ static DECLCALLBACK(void) vmdkSuspend(PPDMDRVINS pDrvIns)
 
 /**
  * Before the VM resumes we'll have to undo the read-only mode change
- * done in vmdkSuspend.
+ * done in drvVmdkSuspend.
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) vmdkResume(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvVmdkResume(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("vmdkSuspend:\n"));
+    LogFlow(("drvVmdkSuspend:\n"));
     PVMDKDISK pData = PDMINS2DATA(pDrvIns, PVMDKDISK);
     if (!VMDKDiskIsReadOnly(pData))
     {
@@ -828,11 +828,11 @@ static DECLCALLBACK(void) vmdkResume(PPDMDRVINS pDrvIns)
 
 
 /** @copydoc PDMIMEDIA::pfnGetSize */
-static DECLCALLBACK(uint64_t) vmdkGetSize(PPDMIMEDIA pInterface)
+static DECLCALLBACK(uint64_t) drvVmdkGetSize(PPDMIMEDIA pInterface)
 {
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     uint64_t cb = VMDKDiskGetSize(pData);
-    LogFlow(("vmdkGetSize: returns %#llx (%llu)\n", cb, cb));
+    LogFlow(("drvVmdkGetSize: returns %#llx (%llu)\n", cb, cb));
     return cb;
 }
 
@@ -841,16 +841,16 @@ static DECLCALLBACK(uint64_t) vmdkGetSize(PPDMIMEDIA pInterface)
  *
  * @see PDMIMEDIA::pfnBiosGetGeometry for details.
  */
-static DECLCALLBACK(int) vmdkBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors)
+static DECLCALLBACK(int) drvVmdkBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors)
 {
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     int rc = VMDKDiskGetGeometry(pData, pcCylinders, pcHeads, pcSectors);
     if (VBOX_SUCCESS(rc))
     {
-        LogFlow(("vmdkBiosGetGeometry: returns VINF_SUCCESS\n"));
+        LogFlow(("drvVmdkBiosGetGeometry: returns VINF_SUCCESS\n"));
         return VINF_SUCCESS;
     }
-    Log(("vmdkBiosGetGeometry: The Bios geometry data was not available.\n"));
+    Log(("drvVmdkBiosGetGeometry: The Bios geometry data was not available.\n"));
     return VERR_PDM_GEOMETRY_NOT_SET;
 }
 
@@ -859,11 +859,11 @@ static DECLCALLBACK(int) vmdkBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pc
  *
  * @see PDMIMEDIA::pfnBiosSetGeometry for details.
  */
-static DECLCALLBACK(int) vmdkBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
+static DECLCALLBACK(int) drvVmdkBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
 {
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     int rc = VMDKDiskSetGeometry(pData, cCylinders, cHeads, cSectors);
-    LogFlow(("vmdkBiosSetGeometry: returns %Vrc (%d,%d,%d)\n", rc, cCylinders, cHeads, cSectors));
+    LogFlow(("drvVmdkBiosSetGeometry: returns %Vrc (%d,%d,%d)\n", rc, cCylinders, cHeads, cSectors));
     return rc;
 }
 
@@ -872,16 +872,16 @@ static DECLCALLBACK(int) vmdkBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCy
  *
  * @see PDMIMEDIA::pfnRead for details.
  */
-static DECLCALLBACK(int) vmdkRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) drvVmdkRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    LogFlow(("vmdkRead: off=%#llx pvBuf=%p cbRead=%d\n", off, pvBuf, cbRead));
+    LogFlow(("drvVmdkRead: off=%#llx pvBuf=%p cbRead=%d\n", off, pvBuf, cbRead));
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     int rc = vmdk_read(&pData->VmdkState, off >> VMDK_GEOMETRY_SECTOR_SHIFT, (uint8_t *)pvBuf, cbRead >> VMDK_GEOMETRY_SECTOR_SHIFT);
     if (VBOX_SUCCESS(rc))
-        Log2(("vmdkRead: off=%#llx pvBuf=%p cbRead=%d\n"
+        Log2(("drvVmdkRead: off=%#llx pvBuf=%p cbRead=%d\n"
               "%.*Vhxd\n",
               off, pvBuf, cbRead, cbRead, pvBuf));
-    LogFlow(("vmdkRead: returns %Vrc\n", rc));
+    LogFlow(("drvVmdkRead: returns %Vrc\n", rc));
     return rc;
 }
 
@@ -890,15 +890,15 @@ static DECLCALLBACK(int) vmdkRead(PPDMIMEDIA pInterface, uint64_t off, void *pvB
  *
  * @see PDMIMEDIA::pfnWrite for details.
  */
-static DECLCALLBACK(int) vmdkWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) drvVmdkWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    LogFlow(("vmdkWrite: off=%#llx pvBuf=%p cbWrite=%d\n", off, pvBuf, cbWrite));
+    LogFlow(("drvVmdkWrite: off=%#llx pvBuf=%p cbWrite=%d\n", off, pvBuf, cbWrite));
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
-    Log2(("vmdkWrite: off=%#llx pvBuf=%p cbWrite=%d\n"
+    Log2(("drvVmdkWrite: off=%#llx pvBuf=%p cbWrite=%d\n"
           "%.*Vhxd\n",
           off, pvBuf, cbWrite, cbWrite, pvBuf));
     int rc = vmdk_write(&pData->VmdkState, off >> VMDK_GEOMETRY_SECTOR_SHIFT, (const uint8_t *)pvBuf, cbWrite >> VMDK_GEOMETRY_SECTOR_SHIFT);
-    LogFlow(("vmdkWrite: returns %Vrc\n", rc));
+    LogFlow(("drvVmdkWrite: returns %Vrc\n", rc));
     return rc;
 }
 
@@ -907,56 +907,56 @@ static DECLCALLBACK(int) vmdkWrite(PPDMIMEDIA pInterface, uint64_t off, const vo
  *
  * @see PDMIMEDIA::pfnFlush for details.
  */
-static DECLCALLBACK(int) vmdkFlush(PPDMIMEDIA pInterface)
+static DECLCALLBACK(int) drvVmdkFlush(PPDMIMEDIA pInterface)
 {
-    LogFlow(("vmdkFlush:\n"));
+    LogFlow(("drvVmdkFlush:\n"));
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     vmdk_flush(&pData->VmdkState);
     int rc = VINF_SUCCESS;
-    LogFlow(("vmdkFlush: returns %Vrc\n", rc));
+    LogFlow(("drvVmdkFlush: returns %Vrc\n", rc));
     return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnGetUuid */
-static DECLCALLBACK(int) vmdkGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
+static DECLCALLBACK(int) drvVmdkGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     /** @todo */
     int rc = VINF_SUCCESS;
     NOREF(pData);
-    LogFlow(("vmdkGetUuid: returns %Vrc ({%Vuuid})\n", rc, pUuid));
+    LogFlow(("drvVmdkGetUuid: returns %Vrc ({%Vuuid})\n", rc, pUuid));
     return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnIsReadOnly */
-static DECLCALLBACK(bool) vmdkIsReadOnly(PPDMIMEDIA pInterface)
+static DECLCALLBACK(bool) drvVmdkIsReadOnly(PPDMIMEDIA pInterface)
 {
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
-    LogFlow(("vmdkIsReadOnly: returns %d\n", VMDKDiskIsReadOnly(pData)));
+    LogFlow(("drvVmdkIsReadOnly: returns %d\n", VMDKDiskIsReadOnly(pData)));
     return VMDKDiskIsReadOnly(pData);
 }
 
 /** @copydoc PDMIMEDIA::pfnBiosGetTranslation */
-static DECLCALLBACK(int) vmdkBiosGetTranslation(PPDMIMEDIA pInterface,
+static DECLCALLBACK(int) drvVmdkBiosGetTranslation(PPDMIMEDIA pInterface,
                                                PPDMBIOSTRANSLATION penmTranslation)
 {
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     int rc = VINF_SUCCESS;
     NOREF(pData);
     *penmTranslation = PDMBIOSTRANSLATION_AUTO; /** @todo */
-    LogFlow(("vmdkBiosGetTranslation: returns %Vrc (%d)\n", rc, *penmTranslation));
+    LogFlow(("drvVmdkBiosGetTranslation: returns %Vrc (%d)\n", rc, *penmTranslation));
     return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnBiosSetTranslation */
-static DECLCALLBACK(int) vmdkBiosSetTranslation(PPDMIMEDIA pInterface,
+static DECLCALLBACK(int) drvVmdkBiosSetTranslation(PPDMIMEDIA pInterface,
                                                PDMBIOSTRANSLATION enmTranslation)
 {
     PVMDKDISK pData = PDMIMEDIA_2_VMDKDISK(pInterface);
     /** @todo */
     int rc = VINF_SUCCESS;
     NOREF(pData);
-    LogFlow(("vmdkBiosSetTranslation: returns %Vrc (%d)\n", rc, enmTranslation));
+    LogFlow(("drvVmdkBiosSetTranslation: returns %Vrc (%d)\n", rc, enmTranslation));
     return rc;
 }
 
@@ -970,7 +970,7 @@ static DECLCALLBACK(int) vmdkBiosSetTranslation(PPDMIMEDIA pInterface,
  * @param   enmInterface        The requested interface identification.
  * @thread  Any thread.
  */
-static DECLCALLBACK(void *) vmdkQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvVmdkQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
     PVMDKDISK pData = PDMINS2DATA(pDrvIns, PVMDKDISK);
@@ -1006,9 +1006,9 @@ const PDMDRVREG g_DrvVmdkHDD =
     /* cbInstance */
     sizeof(VMDKDISK),
     /* pfnConstruct */
-    vmdkConstruct,
+    drvVmdkConstruct,
     /* pfnDestruct */
-    vmdkDestruct,
+    drvVmdkDestruct,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -1016,9 +1016,9 @@ const PDMDRVREG g_DrvVmdkHDD =
     /* pfnReset */
     NULL,
     /* pfnSuspend */
-    vmdkSuspend,
+    drvVmdkSuspend,
     /* pfnResume */
-    vmdkResume,
+    drvVmdkResume,
     /* pfnDetach */
     NULL
 };
