@@ -144,6 +144,16 @@ TMDECL(uint64_t) TMVirtualGetFreq(PVM pVM);
  *
  * @returns The timestamp.
  * @param   pVM     VM handle.
+ * @param   fCheckTimers    Check timers or not
+ * @thread  EMT.
+ */
+TMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL_SYNC time.
+ *
+ * @returns The timestamp.
+ * @param   pVM     VM handle.
  * @thread  EMT.
  */
 TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM);
