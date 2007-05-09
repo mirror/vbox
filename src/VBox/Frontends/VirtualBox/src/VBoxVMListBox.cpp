@@ -367,7 +367,7 @@ void VBoxVMListBoxItem::recache()
         mState = mMachine.GetState();
         mLastStateChange.setTime_t (mMachine.GetLastStateChange() / 1000);
         mSessionState = mMachine.GetSessionState();
-        mOSType = mMachine.GetOSType().GetId();
+        mOSTypeId = mMachine.GetOSTypeId();
         mSnapshotCount = mMachine.GetSnapshotCount();
 
         if (mState >= CEnums::Running)
@@ -401,7 +401,7 @@ void VBoxVMListBoxItem::recache()
         mState = CEnums::InvalidMachineState;
         mSessionState = CEnums::InvalidSessionState;
         mLastStateChange = QDateTime::currentDateTime();
-        mOSType = QString::null;
+        mOSTypeId = QString::null;
         mSnapshotCount = 0;
 
         mPid = (ULONG) ~0;
@@ -468,7 +468,7 @@ int VBoxVMListBoxItem::width (const QListBox *) const
 
     if (mAccessible)
     {
-        pmOSType = vboxGlobal().vmGuestOSTypeIcon (mOSType);
+        pmOSType = vboxGlobal().vmGuestOSTypeIcon (mOSTypeId);
         pmState = vboxGlobal().toIcon (mState);
         strState = vboxGlobal().toString (mState);
     }
@@ -505,7 +505,7 @@ int VBoxVMListBoxItem::height (const QListBox *) const
 
     if (mAccessible)
     {
-        pmOSType = vboxGlobal().vmGuestOSTypeIcon (mOSType);
+        pmOSType = vboxGlobal().vmGuestOSTypeIcon (mOSTypeId);
         pmState = vboxGlobal().toIcon (mState);
     }
     else
@@ -705,7 +705,7 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
 
     if (mAccessible)
     {
-        pmOSType = vboxGlobal().vmGuestOSTypeIcon (mOSType);
+        pmOSType = vboxGlobal().vmGuestOSTypeIcon (mOSTypeId);
         pmState = vboxGlobal().toIcon (mState);
         strState = vboxGlobal().toString (mState);
     }

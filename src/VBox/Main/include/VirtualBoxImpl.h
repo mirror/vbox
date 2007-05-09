@@ -165,18 +165,18 @@ public:
                                     BSTR *aMachineIDs);
     STDMETHOD(UnregisterFloppyImage) (INPTR GUIDPARAM aId, IFloppyImage **aFloppyImage);
 
-    STDMETHOD(FindGuestOSType)(INPTR BSTR aId, IGuestOSType **aType);
-    STDMETHOD(CreateSharedFolder)(INPTR BSTR aName, INPTR BSTR aHostPath);
-    STDMETHOD(RemoveSharedFolder)(INPTR BSTR aName);
-    STDMETHOD(GetNextExtraDataKey)(INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
-    STDMETHOD(GetExtraData)(INPTR BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetExtraData)(INPTR BSTR aKey, INPTR BSTR aValue);
+    STDMETHOD(GetGuestOSType) (INPTR BSTR aId, IGuestOSType **aType);
+    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath);
+    STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
+    STDMETHOD(GetNextExtraDataKey) (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
+    STDMETHOD(GetExtraData) (INPTR BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetExtraData) (INPTR BSTR aKey, INPTR BSTR aValue);
     STDMETHOD(OpenSession) (ISession *aSession, INPTR GUIDPARAM aMachineId);
     STDMETHOD(OpenRemoteSession) (ISession *aSession, INPTR GUIDPARAM aMachineId,
                                   INPTR BSTR aType, IProgress **aProgress);
     STDMETHOD(OpenExistingSession) (ISession *aSession, INPTR GUIDPARAM aMachineId);
-    STDMETHOD(RegisterCallback)(IVirtualBoxCallback *callback);
-    STDMETHOD(UnregisterCallback)(IVirtualBoxCallback *callback);
+    STDMETHOD(RegisterCallback) (IVirtualBoxCallback *callback);
+    STDMETHOD(UnregisterCallback) (IVirtualBoxCallback *callback);
 
     /* public methods only for internal purposes */
 
@@ -208,7 +208,7 @@ public:
     void onSnapshotDiscarded (const Guid &aMachineId, const Guid &aSnapshotId);
     void onSnapshotChange (const Guid &aMachineId, const Guid &aSnapshotId);
 
-    ComPtr <IGuestOSType> getUnknownOSType();
+    ComObjPtr <GuestOSType> getUnknownOSType();
 
     typedef std::vector <ComObjPtr <SessionMachine> > SessionMachineVector;
     void getOpenedMachines (SessionMachineVector &aVector);

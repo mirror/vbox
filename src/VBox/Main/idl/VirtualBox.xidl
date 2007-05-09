@@ -645,7 +645,7 @@
 
     <interface
         name="IVirtualBox" extends="$dispatched"
-        uuid="ce54ff3d-0e46-41ae-a0de-202ed0c3c668"
+        uuid="d1a2295c-d257-4a4c-a9a6-843d87db6f45"
         wsmap="global"
     >
       <desc> The main interface exposed by the product that provides virtual
@@ -1352,7 +1352,7 @@
             </param>
         </method>
 
-        <method name="findGuestOSType">
+        <method name="getGuestOSType">
             <param name="id" type="wstring" dir="in"/>
             <param name="type" type="IGuestOSType" dir="return"/>
         </method>
@@ -1879,7 +1879,7 @@
 
     <interface
         name="IMachine" extends="$unknown"
-        uuid="f0ad6688-2216-4654-a375-10afc5b88dcd"
+        uuid="063ad473-992d-479f-ba7e-7a9ae294368c"
         wsmap="managedObjectRef"
     >
         <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -2011,12 +2011,15 @@
             <desc>UUID of the virtual machine.</desc>
         </attribute>
 
-        <attribute name="OSType" type="IGuestOSType">
+        <attribute name="OSTypeId" type="wstring">
             <desc>
-                Guest OS type configured by the user.
+                User-defined identifier of the Guest OS type.
+                You may use <link to="IVirtualBox::getGuestOSType"/> to obtain
+                an IGuestOSType object representing details about the given
+                Guest OS type.
                 <note>
                     This value may differ from the value returned by
-                    <link to="IGuest::OSType"/> if Guest Additions are
+                    <link to="IGuest::OSTypeId"/> if Guest Additions are
                     installed to the guest OS.
                 </note>
             </desc>
@@ -3992,7 +3995,7 @@
 
     <interface
         name="IGuest" extends="$unknown"
-        uuid="FD443EC1-000E-4F5B-9282-D72760A66916"
+        uuid="4b71ac5f-db5a-4b4f-af6e-a947d4b83dda"
         wsmap="suppress"
     >
         <desc>
@@ -4003,12 +4006,16 @@
             <see>IConsole::guest</see>
         </desc>
 
-        <attribute name="OSType" type="IGuestOSType" readonly="yes">
+        <attribute name="OSTypeId" type="wstring" readonly="yes">
             <desc>
-                Guest OS type as reported by the Guest Additions.
+                Identifier of the Guest OS type as reported by the Guest
+                Additions.
+                You may use <link to="IVirtualBox::getGuestOSType"/> to obtain
+                an IGuestOSType object representing details about the given
+                Guest OS type.
                 <note>
                     If Guest Additions are not installed, this value will be
-                    the same as <link to="IMachine::OSType"/>.
+                    the same as <link to="IMachine::OSTypeId"/>.
                 </note>
             </desc>
         </attribute>

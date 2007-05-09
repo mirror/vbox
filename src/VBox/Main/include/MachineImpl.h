@@ -213,14 +213,14 @@ public:
                    (mName == that.mName &&
                     mNameSync == that.mNameSync &&
                     mDescription == that.mDescription &&
-                    mOSType.equalsTo (that.mOSType) &&
+                    mOSTypeId == that.mOSTypeId &&
                     mSnapshotFolderFull == that.mSnapshotFolderFull);
         }
 
         Bstr    mName;
         BOOL    mNameSync;
         Bstr    mDescription;
-        ComPtr <IGuestOSType> mOSType;
+        Bstr    mOSTypeId;
         Bstr    mSnapshotFolder;
         Bstr    mSnapshotFolderFull;
     };
@@ -313,8 +313,8 @@ public:
     STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
     STDMETHOD(COMSETTER(Description))(INPTR BSTR aDescription);
     STDMETHOD(COMGETTER(Id))(GUIDPARAMOUT aId);
-    STDMETHOD(COMGETTER(OSType)) (IGuestOSType **aOSType);
-    STDMETHOD(COMSETTER(OSType)) (IGuestOSType *aOSType);
+    STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
+    STDMETHOD(COMSETTER(OSTypeId)) (INPTR BSTR aOSTypeId);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(MemorySize))(ULONG memorySize);
     STDMETHOD(COMGETTER(VRAMSize))(ULONG *memorySize);

@@ -561,7 +561,7 @@ int main(int argc, char *argv[])
 
         ComPtr <IGuestOSType> guestOSType;
         Bstr type = L"os2warp45";
-        CHECK_ERROR_BREAK (virtualBox, FindGuestOSType (type, guestOSType.asOutParam()));
+        CHECK_ERROR_BREAK (virtualBox, GetGuestOSType (type, guestOSType.asOutParam()));
 
         printf ("Saving new machine settings...\n");
         CHECK_ERROR_BREAK (machine, SaveSettings());

@@ -28,15 +28,14 @@
 #include <VBox/ostypes.h>
 
 class ATL_NO_VTABLE GuestOSType :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <GuestOSType, IGuestOSType>,
     public VirtualBoxSupportTranslation <GuestOSType>,
-    public VirtualBoxBase,
     public IGuestOSType
 {
 public:
 
-    GuestOSType();
-    virtual ~GuestOSType();
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (DVDImage)
 
     DECLARE_NOT_AGGREGATABLE(GuestOSType)
 
@@ -49,16 +48,22 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (GuestOSType)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (const char *id, const char *description, OSType osType,
-                  uint32_t ramSize, uint32_t vramSize, uint32_t hddSize);
+    HRESULT init (const char *aId, const char *aDescription, OSType aOSType,
+                  uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize);
+    void uninit();
 
     // IGuestOSType properties
-    STDMETHOD(COMGETTER(Id)) (BSTR *id);
-    STDMETHOD(COMGETTER(Description)) (BSTR *description);
-    STDMETHOD(COMGETTER(RecommendedRAM)) (ULONG *ramSize);
-    STDMETHOD(COMGETTER(RecommendedVRAM)) (ULONG *ramSize);
-    STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *hddSize);
+    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
+    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
+    STDMETHOD(COMGETTER(RecommendedRAM)) (ULONG *aRAMSize);
+    STDMETHOD(COMGETTER(RecommendedVRAM)) (ULONG *aVRAMSize);
+    STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *aHDDSize);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
@@ -68,13 +73,13 @@ public:
 
 private:
 
-    Bstr mID;
-    Bstr mDescription;
-    OSType mOSType;
-    uint32_t mRAMSize;
-    uint32_t mVRAMSize;
-    uint32_t mHDDSize;
-    uint32_t mMonitorCount;
+    const Bstr mID;
+    const Bstr mDescription;
+    const OSType mOSType;
+    const uint32_t mRAMSize;
+    const uint32_t mVRAMSize;
+    const uint32_t mHDDSize;
+    const uint32_t mMonitorCount;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION (GuestOSType)

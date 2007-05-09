@@ -25,18 +25,19 @@
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 
+#include <iprt/path.h>
+
 class VirtualBox;
 
 class ATL_NO_VTABLE DVDImage :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <DVDImage, IDVDImage>,
     public VirtualBoxSupportTranslation <DVDImage>,
-    public VirtualBoxBase,
     public IDVDImage
 {
 public:
 
-    // to satisfy the ComObjPtr template (we have const members)
-    DVDImage() {}
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (DVDImage)
 
     DECLARE_NOT_AGGREGATABLE(DVDImage)
 
@@ -49,21 +50,24 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (DVDImage)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *parent, const BSTR filePath,
-                  BOOL isRegistered, const Guid &id);
+    HRESULT init (VirtualBox *aParent, const BSTR aFilePath,
+                  BOOL aRegistered, const Guid &aId);
     void uninit();
 
     // IDVDImage properties
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT id);
-    STDMETHOD(COMGETTER(FilePath)) (BSTR *filePath);
-    STDMETHOD(COMGETTER(Accessible)) (BOOL *accessible);
-    STDMETHOD(COMGETTER(Size)) (ULONG64 *size);
+    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aId);
+    STDMETHOD(COMGETTER(FilePath)) (BSTR *aFilePath);
+    STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
+    STDMETHOD(COMGETTER(Size)) (ULONG64 *sSize);
 
     // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
 
     const Bstr &filePath() { return mImageFile; }
     const Bstr &filePathFull() { return mImageFileFull; }
@@ -77,7 +81,7 @@ public:
 private:
 
     /** weak parent */
-    ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    const ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
     BOOL mAccessible;
 
@@ -88,30 +92,31 @@ private:
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (DVDImage)
 
-    STDMETHOD(FindByPath) (INPTR BSTR path, IDVDImage **dvdImage)
+    STDMETHOD(FindByPath) (INPTR BSTR aPath, IDVDImage **aDVDImage)
     {
-        if (!path)
+        if (!aPath)
             return E_INVALIDARG;
-        if (!dvdImage)
+        if (!aDVDImage)
             return E_POINTER;
 
-        *dvdImage = NULL;
+        Utf8Str path = aPath;
+        *aDVDImage = NULL;
         Vector::value_type found;
         Vector::iterator it = vec.begin();
         while (it != vec.end() && !found)
         {
             Bstr filePath;
             (*it)->COMGETTER(FilePath) (filePath.asOutParam());
-            if (filePath == path)
+            if (RTPathCompare (Utf8Str (filePath), path) == 0)
                 found = *it;
             ++ it;
         }
 
         if (!found)
             return setError (E_INVALIDARG, DVDImageCollection::tr (
-                "The DVD image named '%ls' could not be found"), path);
+                "The DVD image named '%ls' could not be found"), aPath);
 
-        return found.queryInterfaceTo (dvdImage);
+        return found.queryInterfaceTo (aDVDImage);
     }
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_END (DVDImage)
