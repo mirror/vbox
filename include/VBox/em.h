@@ -198,6 +198,16 @@ EMDECL(int) EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE p
 EMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /**
+ * Interpret RDTSC
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+EMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame);
+
+/**
  * Interpret INVLPG
  *
  * @returns VBox status code.
