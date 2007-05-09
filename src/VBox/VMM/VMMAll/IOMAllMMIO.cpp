@@ -1617,7 +1617,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
      */
     if (   (uPrefix & PREFIX_REPNE)
         || pRegFrame->eflags.Bits.u1DF)
-        return VINF_IOM_HC_IOPORT_READ;
+        return VINF_EM_RESCHEDULE_REM;
 
     /*
      * Get bytes/words/dwords count to transfer.
@@ -1638,7 +1638,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (VBOX_FAILURE(rc))
     {
         Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
-        return VINF_IOM_HC_IOPORT_READ;
+        return VINF_EM_RESCHEDULE_REM;
     }
 
     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
@@ -1649,7 +1649,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (rc != VINF_SUCCESS)
     {
         Log(("INS will generate a trap -> fallback, rc=%d\n", rc));
-        return VINF_IOM_HC_IOPORT_READ;
+        return VINF_EM_RESCHEDULE_REM;
     }
 
     Log(("IOM: rep ins%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
@@ -1766,7 +1766,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
      */
     if (   (uPrefix & (PREFIX_SEG | PREFIX_REPNE))
         || pRegFrame->eflags.Bits.u1DF)
-        return VINF_IOM_HC_IOPORT_WRITE;
+        return VINF_EM_RESCHEDULE_REM;
 
     /*
      * Get bytes/words/dwords count to transfer.
@@ -1787,7 +1787,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (VBOX_FAILURE(rc))
     {
         Log(("OUTS source address conversion failed -> fallback, rc=%Vrc\n", rc));
-        return VINF_IOM_HC_IOPORT_WRITE;
+        return VINF_EM_RESCHEDULE_REM;
     }
 
     /* Access verification first; we currently can't recover properly from traps inside this instruction */
@@ -1797,7 +1797,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (rc != VINF_SUCCESS)
     {
         Log(("OUTS will generate a trap -> fallback, rc=%Vrc\n", rc));
-        return VINF_IOM_HC_IOPORT_WRITE;
+        return VINF_EM_RESCHEDULE_REM;
     }
 
     Log(("IOM: rep outs%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
