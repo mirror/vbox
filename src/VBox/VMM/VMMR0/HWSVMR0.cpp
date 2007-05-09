@@ -468,6 +468,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     pVMCB->ctrl.TLBCtrl.n.u32ASID = 1;
 
     /** TSC offset. */
+    /** @todo use host tsc if safe, other intercept rdtsc */
     pVMCB->ctrl.u64TSCOffset = TMCpuTickGetOffset(pVM);
 
     /** @todo 64 bits stuff (?):
