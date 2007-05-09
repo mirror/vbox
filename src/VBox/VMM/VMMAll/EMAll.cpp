@@ -1647,7 +1647,16 @@ static int emInterpretHlt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 /**
  * RDTSC Emulation.
  */
-static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+
+/**
+ * Interpret RDTSC
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+EMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     unsigned uCR4 = CPUMGetGuestCR4(pVM);
 
@@ -1660,6 +1669,11 @@ static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     pRegFrame->edx = (uTicks >> 32ULL);
 
     return VINF_SUCCESS;
+}
+
+static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretRdtsc(pVM, pRegFrame);
 }
 
 /**
