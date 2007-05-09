@@ -650,6 +650,10 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         arp_input(pData, pkt, pkt_len);
         break;
     case ETH_P_IP:
+	/* Update time. Important if the network is very quiet, as otherwise
+         * the first outgoing connection gets an incorrect timestamp. */
+	updtime(pData);
+
         m = m_get(pData);
         if (!m)
             return;
