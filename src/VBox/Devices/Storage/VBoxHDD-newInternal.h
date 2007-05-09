@@ -44,6 +44,25 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnOpen, (const char *pszFilename, unsigned uOpenFlags, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
 
     /**
+     * Create a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pszFilename     Name of the image file to create. Guaranteed to be available and
+     *                          unchanged during the lifetime of this image.
+     * @param   penmType        Image type. Both base and diff image types are valid.
+     * @param   cbSize          Image size in bytes.
+     * @param   uImageFlags     Flags specifying special image features.
+     * @param   pszComment      Pointer to image comment. NULL is ok.
+     * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+     * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
+     * @param   pvUser          User argument for the progress callback.
+     * @param   pfnError        Callback for setting extended error information.
+     * @param   pvErrorUser     Opaque parameter for pfnError.
+     * @param   ppvBackendData  Opaque state data for this image.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE penmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
+
+    /**
      * Close a disk image.
      *
      * @returns VBox status code.
@@ -106,9 +125,9 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @param   pvBackendData   Opaque state data for this image.
-     * @param   penmImageType   Image type of this image.
+     * @param   penmType        Image type of this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetImageType, (void *pvBackendData, PVDIMAGETYPE penmImageType));
+    DECLR3CALLBACKMEMBER(int, pfnGetImageType, (void *pvBackendData, PVDIMAGETYPE penmType));
 
     /**
      * Get the size of a disk image.
