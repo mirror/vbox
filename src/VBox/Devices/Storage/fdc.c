@@ -146,15 +146,6 @@ typedef enum fdisk_flags_t {
     FDISK_DBL_SIDES  = 0x01
 } fdisk_flags_t;
 
-#ifdef VBOX
-typedef enum fdrive_drate_t {
-    FDRIVE_RATE_500K  = 0x00, /* 500 Kbps               */
-    FDRIVE_RATE_300K  = 0x01, /* 300 Kbps               */
-    FDRIVE_RATE_250K  = 0x02, /* 250 Kbps               */
-    FDRIVE_RATE_1M    = 0x03  /* 1 Mbps                 */
-} fdrive_drate_t;
-#endif
-
 typedef struct fdrive_t {
 #ifndef VBOX
     BlockDriverState *bs;
@@ -180,8 +171,6 @@ typedef struct fdrive_t {
     PDMLED                          Led;
     /** The Diskette present/missing flag. */
     bool                            fMediaPresent;
-    /** Data rate required by media. */
-    fdrive_drate_t                  media_rate;
 #endif
     /* Drive status */
     fdrive_type_t drive;
@@ -284,7 +273,6 @@ static void fd_recalibrate (fdrive_t *drv)
 typedef struct fd_format_t {
     fdrive_type_t drive;
     fdisk_type_t  disk;
-    fdrive_drate_t rate;
     uint8_t last_sect;
     uint8_t max_track;
     uint8_t max_head;
@@ -294,48 +282,48 @@ typedef struct fd_format_t {
 static fd_format_t fd_formats[] = {
     /* First entry is default format */
     /* 1.44 MB 3"1/2 floppy disks */
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 18, 80, 1, "1.44 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 20, 80, 1,  "1.6 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 21, 80, 1, "1.68 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 21, 82, 1, "1.72 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 21, 83, 1, "1.74 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 22, 80, 1, "1.76 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 23, 80, 1, "1.84 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, FDRIVE_RATE_500K, 24, 80, 1, "1.92 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 18, 80, 1, "1.44 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 20, 80, 1,  "1.6 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 80, 1, "1.68 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 82, 1, "1.72 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 83, 1, "1.74 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 22, 80, 1, "1.76 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 23, 80, 1, "1.84 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 24, 80, 1, "1.92 MB 3\"1/2", },
     /* 2.88 MB 3"1/2 floppy disks */
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, FDRIVE_RATE_500K, 36, 80, 1, "2.88 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, FDRIVE_RATE_500K, 39, 80, 1, "3.12 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, FDRIVE_RATE_500K, 40, 80, 1,  "3.2 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, FDRIVE_RATE_500K, 44, 80, 1, "3.52 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, FDRIVE_RATE_500K, 48, 80, 1, "3.84 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 36, 80, 1, "2.88 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 39, 80, 1, "3.12 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 40, 80, 1,  "3.2 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 44, 80, 1, "3.52 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 48, 80, 1, "3.84 MB 3\"1/2", },
     /* 720 kB 3"1/2 floppy disks */
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, FDRIVE_RATE_250K,  9, 80, 1,  "720 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, FDRIVE_RATE_250K, 10, 80, 1,  "800 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, FDRIVE_RATE_250K, 10, 82, 1,  "820 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, FDRIVE_RATE_250K, 10, 83, 1,  "830 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, FDRIVE_RATE_250K, 13, 80, 1, "1.04 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, FDRIVE_RATE_250K, 14, 80, 1, "1.12 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 1,  "720 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 80, 1,  "800 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 82, 1,  "820 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 83, 1,  "830 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 13, 80, 1, "1.04 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 14, 80, 1, "1.12 MB 3\"1/2", },
     /* 1.2 MB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_500K, 15, 80, 1,  "1.2 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_500K, 18, 80, 1, "1.44 MB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_500K, 18, 82, 1, "1.48 MB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_500K, 18, 83, 1, "1.49 MB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_500K, 20, 80, 1,  "1.6 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 15, 80, 1,  "1.2 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 80, 1, "1.44 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 82, 1, "1.48 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 83, 1, "1.49 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 20, 80, 1,  "1.6 MB 5\"1/4", },
     /* 720 kB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_250K,  9, 80, 1,  "720 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_250K, 11, 80, 1,  "880 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 80, 1,  "720 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 11, 80, 1,  "880 kB 5\"1/4", },
     /* 360 kB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_300K,  9, 40, 1,  "360 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_300K,  9, 40, 0,  "180 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_300K, 10, 41, 1,  "410 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_300K, 10, 42, 1,  "420 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 1,  "360 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 0,  "180 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 41, 1,  "410 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 42, 1,  "420 kB 5\"1/4", },
     /* 320 kB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_250K,  8, 40, 1,  "320 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, FDRIVE_RATE_250K,  8, 40, 0,  "160 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 1,  "320 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 0,  "160 kB 5\"1/4", },
     /* 360 kB must match 5"1/4 better than 3"1/2... */
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, FDRIVE_RATE_250K,  9, 80, 0,  "360 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 0,  "360 kB 3\"1/2", },
     /* end */
-    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, FDRIVE_RATE_1M, -1, -1, 0, NULL, },
+    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, -1, -1, 0, NULL, },
 };
 
 /* Revalidate a disk drive after a disk change */
@@ -416,7 +404,6 @@ static void fd_revalidate (fdrive_t *drv)
         drv->last_sect = last_sect;
         drv->ro = ro;
 #ifdef VBOX
-        drv->media_rate = parse->rate;
         drv->fMediaPresent = true;
 #endif
     } else {
@@ -477,9 +464,6 @@ static void fdctrl_write_rate (fdctrl_t *fdctrl, uint32_t value);
 static uint32_t fdctrl_read_data (fdctrl_t *fdctrl);
 static void fdctrl_write_data (fdctrl_t *fdctrl, uint32_t value);
 static uint32_t fdctrl_read_dir (fdctrl_t *fdctrl);
-#ifdef VBOX
-static void fdctrl_write_ccr (fdctrl_t *fdctrl, uint32_t value);
-#endif
 
 enum {
     FD_CTRL_ACTIVE = 0x01, /* XXX: suppress that */
@@ -549,10 +533,6 @@ struct fdctrl_t {
     uint8_t timer1;
     /* precompensation */
     uint8_t precomp_trk;
-#ifdef VBOX
-    /* data rate */
-    uint8_t drate;
-#endif
     uint8_t config;
     uint8_t lock;
     /* Power down config (also with status regB access mode */
@@ -624,11 +604,6 @@ static void fdctrl_write (void *opaque, uint32_t reg, uint32_t value)
     case 0x05:
         fdctrl_write_data(fdctrl, value);
         break;
-#ifdef VBOX
-    case 0x07:
-        fdctrl_write_ccr(fdctrl, value);
-        break;
-#endif
     default:
         break;
     }
@@ -773,9 +748,6 @@ static void fdctrl_reset (fdctrl_t *fdctrl, int do_irq)
     fdctrl_reset_irq(fdctrl);
     /* Initialise controller */
     fdctrl->cur_drv = 0;
-#ifdef VBOX
-    fdctrl->drate = 2;  /* Default to 250 Kbps*/
-#endif
     /* FIFO state */
     fdctrl->data_pos = 0;
     fdctrl->data_len = 0;
@@ -950,9 +922,6 @@ static void fdctrl_write_rate (fdctrl_t *fdctrl, uint32_t value)
         fdctrl_reset(fdctrl, 1);
     }
 /* //        fdctrl.precomp = (value >> 2) & 0x07; */
-#ifdef VBOX
-    fdctrl->drate = value & 0x03;
-#endif
 }
 
 /* Digital input register : 0x07 (read-only) */
@@ -977,15 +946,6 @@ static uint32_t fdctrl_read_dir (fdctrl_t *fdctrl)
 
     return retval;
 }
-
-#ifdef VBOX
-/* Configuration control register : 0x07 (write) */
-static void fdctrl_write_ccr (fdctrl_t *fdctrl, uint32_t value)
-{
-    FLOPPY_DPRINTF("configuration control register set to 0x%02x\n", value);
-    fdctrl->drate = value & 0x03;
-}
-#endif
 
 /* FIFO state control */
 static void fdctrl_reset_fifo (fdctrl_t *fdctrl)
@@ -1099,20 +1059,6 @@ static void fdctrl_start_transfer (fdctrl_t *fdctrl, int direction)
     default:
         break;
     }
-#ifdef VBOX
-    /* Check that selected data rate is correct.
-     * NB: Software may deduce media type from selected data rate, eg. 250Kbps
-     * in a 3.5" drive implies 720KB media, while 500Kbps implies 1.44MB.
-     */
-    if (fdctrl->drate != cur_drv->media_rate) {
-        FLOPPY_DPRINTF("Data rate mismatch (controller 0x%02x, media 0x%02x)\n", fdctrl->drate, cur_drv->media_rate);
-        fdctrl_stop_transfer(fdctrl, 0x40, 0x04, 0x00);
-        fdctrl->fifo[3] = kt;
-        fdctrl->fifo[4] = kh;
-        fdctrl->fifo[5] = ks;
-        return;
-    }
-#endif
     /* Set the FIFO state */
     fdctrl->data_dir = direction;
     fdctrl->data_pos = 0;
@@ -2492,7 +2438,6 @@ static DECLCALLBACK(int) SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     qemu_put_8s (f, &s->timer0);
     qemu_put_8s (f, &s->timer1);
     qemu_put_8s (f, &s->precomp_trk);
-    qemu_put_8s (f, &s->drate);
     qemu_put_8s (f, &s->config);
     qemu_put_8s (f, &s->lock);
     qemu_put_8s (f, &s->pwrd);
@@ -2549,7 +2494,6 @@ static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns,
     qemu_get_8s (f, &s->timer0);
     qemu_get_8s (f, &s->timer1);
     qemu_get_8s (f, &s->precomp_trk);
-    qemu_get_8s (f, &s->drate);
     qemu_get_8s (f, &s->config);
     qemu_get_8s (f, &s->lock);
     qemu_get_8s (f, &s->pwrd);
