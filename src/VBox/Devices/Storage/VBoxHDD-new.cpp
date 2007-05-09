@@ -216,6 +216,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage, uint64_t uOffs
 {
     int rc;
     size_t cbThisRead;
+    PVBOXHDDIMAGEDESC pCurrImage;
 
     /* Loop until all read. */
     do
@@ -225,9 +226,9 @@ static int vdReadHelper(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage, uint64_t uOffs
          * stale data when different block sizes are used for the images. */
         cbThisRead = cbRead;
         rc = VINF_VDI_BLOCK_FREE;
-        for (; pImage != NULL && rc == VINF_VDI_BLOCK_FREE; pImage = pImage->pPrev)
+        for (pCurrImage = pImage; pCurrImage != NULL && rc == VINF_VDI_BLOCK_FREE; pCurrImage = pCurrImage->pPrev)
         {
-            rc = pDisk->Backend->pfnRead(pImage->pvBackendData, uOffset, pvBuf, cbThisRead, &cbThisRead);
+            rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData, uOffset, pvBuf, cbThisRead, &cbThisRead);
         }
 
         /* No image in the chain contains the data for the block. */
@@ -427,6 +428,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpen
             &&  enmImageType != VD_IMAGE_TYPE_NORMAL)
             rc = VERR_VDI_INVALID_TYPE;
 
+        /** @todo optionally check UUIDs */
+
         if (VBOX_SUCCESS(rc))
         {
             uint64_t cbSize = pDisk->Backend->pfnGetSize(pImage->pvBackendData);
@@ -530,7 +533,52 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
                                unsigned uOpenFlags,
                                PFNVMPROGRESS pfnProgress, void *pvUser)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    LogFlow(("%s: pszFilename=\"%s\" uOpenFlags=%#x\n", __FUNCTION__, pszFilename, uOpenFlags));
+    /* sanity check */
+    Assert(pDisk);
+    AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    if (    !pszFilename
+        ||  *pszFilename == '\0'
+        ||  (enmType != VD_IMAGE_TYPE_NORMAL && enmType != VD_IMAGE_TYPE_FIXED)
+        ||  !cbSize
+        ||  (uOpenFlags & ~VD_OPEN_FLAGS_MASK))
+    {
+        AssertMsgFailed(("Invalid arguments: pszFilename=%#p uOpenFlags=%#x\n", pszFilename, uOpenFlags));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Check state. */
+    if (pDisk->cImages != 0)
+    {
+        AssertMsgFailed(("Create base image cannot be done with other images open\n"));
+        return VERR_VDI_INVALID_STATE;
+    }
+
+    /* Set up image descriptor. */
+    PVBOXHDDIMAGEDESC pImage = (PVBOXHDDIMAGEDESC)RTMemAllocZ(sizeof(VBOXHDDIMAGEDESC));
+    if (!pImage)
+        return VERR_NO_MEMORY;
+    pImage->pszFilename = RTStrDup(pszFilename);
+    if (!pImage->pszFilename)
+        rc = VERR_NO_MEMORY;
+
+    if (VBOX_SUCCESS(rc))
+        rc = pDisk->Backend->pfnCreate(pImage->pszFilename, enmType, cbSize,
+                                       uImageFlags, pszComment, uOpenFlags,
+                                       pfnProgress, pvUser,
+                                       pDisk->pfnError, pDisk->pvErrorUser,
+                                       &pImage->pvBackendData);
+
+    if (VBOX_FAILURE(rc))
+    {
+        RTStrFree(pImage->pszFilename);
+        RTMemFree(pImage);
+    }
+
+    return rc;
 }
 
 /**

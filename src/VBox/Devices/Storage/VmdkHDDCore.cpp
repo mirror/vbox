@@ -1964,6 +1964,16 @@ out:
     return rc;
 }
 
+static int vmdkCreate(const char *pszFilename, VDIMAGETYPE penmType,
+                      uint64_t cbSize, unsigned uImageFlags,
+                      const char *pszComment, unsigned uOpenFlags,
+                      PFNVMPROGRESS pfnProgress, void *pvUser,
+                      PFNVDERROR pfnError, void *pvErrorUser,
+                      void **ppvBackendData)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 static int vmdkClose(void *pBackendData)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
@@ -1982,8 +1992,8 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cb
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKEXTENT pExtent;
-    uint64_t uSectorInExtent;
-    uint64_t uSectorOffset;
+    uint64_t uSectorExtentRel;
+    uint64_t uSectorExtentAbs;
     int rc;
 
     Assert(uOffset % 512 == 0);
@@ -1996,7 +2006,7 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cb
     }
 
     rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
-                        &pExtent, &uSectorInExtent);
+                        &pExtent, &uSectorExtentRel);
     if (VBOX_FAILURE(rc))
         goto out;
 
@@ -2008,7 +2018,7 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cb
     }
 
     /* Clip read range to remain in this extent. */
-    cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorInExtent));
+    cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorExtentRel));
 
     /* Handle the read according to the current extent type. */
     switch (pExtent->enmType)
@@ -2017,21 +2027,22 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cb
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorInExtent,
-                               &uSectorOffset);
+            rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorExtentRel,
+                               &uSectorExtentAbs);
             if (VBOX_FAILURE(rc))
                 goto out;
             /* Clip read range to at most the rest of the grain. */
-            cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - (uSectorOffset % pExtent->cSectorsPerGrain)));
-            if (uSectorOffset == 0)
+            cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - uSectorExtentRel % pExtent->cSectorsPerGrain));
+            Assert(!(cbRead % 512));
+            if (uSectorExtentAbs == 0)
                 rc = VINF_VDI_BLOCK_FREE;
             else
                 rc = RTFileReadAt(pExtent->File,
-                                  VMDK_SECTOR2BYTE(uSectorOffset),
+                                  VMDK_SECTOR2BYTE(uSectorExtentAbs),
                                   pvBuf, cbRead, NULL);
             break;
         case VMDKETYPE_FLAT:
-            rc = RTFileReadAt(pExtent->File, VMDK_SECTOR2BYTE(uSectorInExtent),
+            rc = RTFileReadAt(pExtent->File, VMDK_SECTOR2BYTE(uSectorExtentRel),
                               pvBuf, cbRead, NULL);
             break;
         case VMDKETYPE_ZERO:
@@ -2048,8 +2059,8 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, si
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKEXTENT pExtent;
-    uint64_t uSectorInExtent;
-    uint64_t uSectorOffset;
+    uint64_t uSectorExtentRel;
+    uint64_t uSectorExtentAbs;
     int rc;
 
     Assert(uOffset % 512 == 0);
@@ -2069,7 +2080,7 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, si
      * grain size), this would prevent writing to the last grain. */
 
     rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
-                        &pExtent, &uSectorInExtent);
+                        &pExtent, &uSectorExtentRel);
     if (VBOX_FAILURE(rc))
         goto out;
 
@@ -2080,6 +2091,12 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, si
         goto out;
     }
 
+    /** @todo implement suppressing of zero data writes (a bit tricky in this
+     * case, as VMDK has no marker for zero blocks). We somehow need to get the
+     * information whether the information in this area is all zeroes as of the
+     * parent image. Then (based on the assumption that parent images are
+     * immutable) the write can be ignored. */
+
     /* Handle the write according to the current extent type. */
     switch (pExtent->enmType)
     {
@@ -2087,43 +2104,43 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, si
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorInExtent,
-                               &uSectorOffset);
+            rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorExtentRel,
+                               &uSectorExtentAbs);
             if (VBOX_FAILURE(rc))
                 goto out;
             /* Clip write range to at most the rest of the grain. */
-            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - (uSectorOffset % pExtent->cSectorsPerGrain)));
-            if (uSectorOffset == 0)
+            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - uSectorExtentRel % pExtent->cSectorsPerGrain));
+            if (uSectorExtentAbs == 0)
             {
                 if (cbWrite == VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain))
                 {
                     /* Full block write to a previously unallocated block.
                      * Allocate GT and find out where to store the grain. */
                     rc = vmdkAllocGrain(pImage->pGTCache, pExtent,
-                                        uSectorInExtent, pvBuf, cbWrite);
+                                        uSectorExtentRel, pvBuf, cbWrite);
                 }
                 else
                 {
                     /* Clip write range to remain in this extent. */
-                    cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorInExtent));
-                    *pcbPreRead = VMDK_SECTOR2BYTE(uSectorInExtent % pExtent->cSectorsPerGrain);
+                    cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorExtentRel));
+                    *pcbPreRead = VMDK_SECTOR2BYTE(uSectorExtentRel % pExtent->cSectorsPerGrain);
                     *pcbPostRead = VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain) - cbWrite - *pcbPreRead;
                     rc = VINF_VDI_BLOCK_FREE;
                 }
             }
             else
                 rc = RTFileWriteAt(pExtent->File,
-                                   VMDK_SECTOR2BYTE(uSectorOffset),
+                                   VMDK_SECTOR2BYTE(uSectorExtentAbs),
                                    pvBuf, cbWrite, NULL);
             break;
         case VMDKETYPE_FLAT:
             /* Clip write range to remain in this extent. */
-            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorInExtent));
-            rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(uSectorInExtent), pvBuf, cbWrite, NULL);
+            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorExtentRel));
+            rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(uSectorExtentRel), pvBuf, cbWrite, NULL);
             break;
         case VMDKETYPE_ZERO:
             /* Clip write range to remain in this extent. */
-            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorInExtent));
+            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cNominalSectors - uSectorExtentRel));
             break;
     }
     if (pcbWriteProcess)
@@ -2447,6 +2464,8 @@ VBOXHDDBACKEND g_VmdkBackend =
 {
     /* pfnOpen */
     vmdkOpen,
+    /* pfnCreate */
+    vmdkCreate,
     /* pfnClose */
     vmdkClose,
     /* pfnRead */
