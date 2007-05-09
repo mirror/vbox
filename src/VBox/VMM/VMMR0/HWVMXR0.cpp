@@ -746,6 +746,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     AssertRC(rc);
 
     /** TSC offset. */
+    /** @todo use host tsc if safe, other intercept rdtsc */
     uint64_t u64TSCOffset = TMCpuTickGetOffset(pVM);
 
 #if HC_ARCH_BITS == 64
