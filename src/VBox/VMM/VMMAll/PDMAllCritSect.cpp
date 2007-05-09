@@ -33,6 +33,9 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#ifdef IN_RING3
+# include <iprt/semaphore.h>
+#endif 
 
 
 /**
@@ -106,10 +109,23 @@ PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     if (pCritSect->s.Core.cNestings == 1)
         STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
 # endif
-    int rc = RTCritSectLeave(&pCritSect->s.Core);
-    AssertRC(rc);
+    RTSEMEVENT EventToSignal = pCritSect->s.EventToSignal;
+    if (RT_LIKELY(EventToSignal == NIL_RTSEMEVENT))
+    {
+        int rc = RTCritSectLeave(&pCritSect->s.Core);
+        AssertRC(rc);
+    }
+    else
+    {
+        pCritSect->s.EventToSignal = NIL_RTSEMEVENT;
+        int rc = RTCritSectLeave(&pCritSect->s.Core);
+        AssertRC(rc);
+        LogBird(("signalling %#x\n", EventToSignal));
+        rc = RTSemEventSignal(EventToSignal);
+        AssertRC(rc);
+    }
 
-#else
+#else /* !IN_RING3 */
     Assert(VALID_PTR(pCritSect));
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
     Assert(pCritSect->s.Core.cNestings > 0);

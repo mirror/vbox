@@ -316,7 +316,7 @@ PDMDECL(GCPTRTYPE(PPDMQUEUE)) PDMQueueGCPtr(PPDMQUEUE pQueue);
 typedef union PDMCRITSECT
 {
     /** Padding. */
-    uint8_t padding[HC_ARCH_BITS == 64 ? 0xa8 : 0x80];
+    uint8_t padding[HC_ARCH_BITS == 64 ? 0xb8 : 0x80];
 #ifdef PDMCRITSECTINT_DECLARED
     /** The internal structure (not normally visible). */
     struct PDMCRITSECTINT s;
@@ -380,6 +380,17 @@ PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
  * @param   pCritSect   The critical section.
  */
 PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
+
+/**
+ * Schedule a event semaphore for signalling upon critsect exit.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_TOO_MANY_SEMAPHORES if the critsect was owned.
+ * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
+ * @param   pCritSect       The critical section.
+ * @param   EventToSignal     The semapore that should be signalled.
+ */
+PDMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
 
 /**
  * Deletes the critical section.
