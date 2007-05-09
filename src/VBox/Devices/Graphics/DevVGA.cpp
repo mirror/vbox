@@ -4473,7 +4473,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "CustomVideoMode13\0"
                                           "CustomVideoMode14\0"
                                           "CustomVideoMode15\0"
-                                          "CustomVideoMode16"))
+                                          "CustomVideoMode16\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for vga device"));
 
