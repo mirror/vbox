@@ -194,11 +194,14 @@ function check_environment()
   case "$CPU" in
     i[3456789]86|x86)
       MACHINE='x86'
+      LIB='lib'
       ;;
     x86_64|amd64)
       MACHINE='amd64'
       CPU='k8'
-
+      # on AMD64 systems, 64bit libs are usually located in /usr/lib64
+      # see http://www.pathname.com/fhs/pub/fhs-2.3.html#LIB64
+      LIB='lib64'
       echo ""
       echo ""
       echo "Warning! Support for AMD64 host systems is work in progress."
@@ -500,7 +503,7 @@ check_libidl()
     else
       log_success "found version $libidl_ver"
       cnf_append "VBOX_LIBIDL_CONFIG" \
-        "PKG_CONFIG_PATH=`libIDL-config-2 --prefix`/lib/pkgconfig `which_wrapper libIDL-config-2`"
+        "PKG_CONFIG_PATH=`libIDL-config-2 --prefix`/$LIB/pkgconfig `which_wrapper libIDL-config-2`"
     fi
   elif check_avail "libIDL-config" libIDL-config; then
     libidl_ver=`libIDL-config --version`
@@ -862,15 +865,9 @@ extern "C" int main(void)
     echo "compiling the following source file:" >> $LOG
     cat .tmp_src.cc >> $LOG
     echo "using the following command line:" >> $LOG
-    if [ "$MACHINE" = "amd64" ]; then
-      echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/lib64 -L$q/lib -lqt-mt" >> $LOG
+    echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$LIB -lqt-mt" >> $LOG
     
-      $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/lib64 -L$q/lib -lqt-mt >> $LOG 2>&1
-    else
-      echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/lib -lqt-mt" >> $LOG
-    
-      $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/lib -lqt-mt >> $LOG 2>&1
-    fi
+    $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$LIB -lqt-mt >> $LOG 2>&1
     if (($?==0)); then
       if test_execute; then
         cnf_append "QTDIR" `cd $q ; pwd`
