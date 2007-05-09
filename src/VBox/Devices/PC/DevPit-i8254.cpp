@@ -888,7 +888,7 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Irq\0Base\0Speaker\0GCEnabled\0R0Enabled"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Irq\0Base\0Speaker\0GCEnabled\0R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /*
