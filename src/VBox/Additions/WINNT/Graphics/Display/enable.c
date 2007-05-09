@@ -25,7 +25,6 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvEnableSurface,         (PFN) DrvEnableSurface      },	//  3
     {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },	//  4
     {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5
-    {   INDEX_DrvOffset,                (PFN) DrvOffset             },  //  6
     {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8
     {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12
     {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13
@@ -66,19 +65,6 @@ VOID APIENTRY DrvDestroyFont(
     DISPDBG((0, "Experimental %s: %p\n", __FUNCTION__, pfo));
 }
 
-ULONG APIENTRY DrvEscape(
-    SURFOBJ *pso,
-    ULONG    iEsc,
-    ULONG    cjIn,
-    PVOID    pvIn,
-    ULONG    cjOut,
-    PVOID    pvOut
-    )
-{
-    DISPDBG((0, "Experimental %s: %p, %p, %p, %p, %p, %p\n", __FUNCTION__, pso, iEsc, cjIn, pvIn, cjOut, pvOut));
-    return 0;
-}
-    
 BOOL DrvConnect (PVOID x1, PVOID x2, PVOID x3, PVOID x4)
 {
     DISPDBG((0, "Experimental %s: %p, %p, %p, %p\n", __FUNCTION__, x1, x2, x3, x4));
@@ -139,6 +125,40 @@ BOOL APIENTRY DrvEnableDirectDraw(
     return FALSE;
 }
 
+/******************************Public*Routine******************************\
+* DrvEscape
+*
+* Called by GDI in response to user level ExtEscape() calls
+*
+* Currently unused, but could be useful if we needed to communicate with the
+* display driver and/or miniport from userspace apps.
+*
+\**************************************************************************/
+
+ULONG DrvEscape(
+SURFOBJ *pso,
+ULONG iEsc,
+ULONG cjIn,
+PVOID pvIn,
+ULONG cjOut,
+PVOID pvOut)
+{
+    ULONG ulResult = 0;
+
+    DISPDBG((0, "Experimental %s: %p, %p, %p, %p, %p, %p\n", __FUNCTION__, pso, iEsc, cjIn, pvIn, cjOut, pvOut));
+
+    switch(iEsc)
+    {
+        case VBOX_ESC_QUERY_SUPPORT:
+            DISPDBG((3, "VBOX_ESC_QUERY_SUPPORT (PSO = %p)\n", pso));
+            ulResult = 1;
+            break;
+        default:
+            DISPDBG((3, "unknown escape %d\n", iEsc));
+    }
+    return ulResult;
+}
+
 /* Experimental end */
 
 // W2K,XP functions
@@ -166,11 +186,12 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38 0x26
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40 0x28
     {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41 0x29
+    {   INDEX_DrvNotify,                (PFN) DrvNotify             },	// 87 0x57
 //     /* Experimental. */
+//     {   INDEX_DrvEscape,                (PFN) DrvEscape             },	// 24 0x18
 //     {   0x7,                            (PFN) DrvResetPDEV          },	// 0x7
 //     {   0x5b,                           (PFN) DrvNineGrid           },	// 0x5b
 //     {   0x2b,                           (PFN) DrvDestroyFont        },	// 0x2b
-//     {   0x18,                           (PFN) DrvEscape             },	// 0x18
 //     {   0x4d,                           (PFN) DrvConnect            },	// 0x4d
 //     {   0x4e,                           (PFN) DrvDisconnect         },	// 0x4e
 //     {   0x4f,                           (PFN) DrvReconnect          },	// 0x4f
@@ -403,39 +424,6 @@ DHPDEV dhpdev)
     vboxVbvaDisable ((PPDEV) dhpdev);
 
     EngFreeMem(dhpdev);
-}
-
-/******************************Public*Routine******************************\
-* VOID DrvOffset
-*
-* DescriptionText
-*
-\**************************************************************************/
-
-BOOL DrvOffset(
-SURFOBJ*    pso,
-LONG        x,
-LONG        y,
-FLONG       flReserved)
-{
-    PDEV*   ppdev = (PDEV*) pso->dhpdev;
-
-    // Add back last offset that we subtracted.  I could combine the next
-    // two statements, but I thought this was more clear.  It's not
-    // performance critical anyway.
-
-    ppdev->pjScreen += ((ppdev->ptlOrg.y * ppdev->lDeltaScreen) +
-                        (ppdev->ptlOrg.x * ((ppdev->ulBitCount+1) >> 3)));
-
-    // Subtract out new offset
-
-    ppdev->pjScreen -= ((y * ppdev->lDeltaScreen) +
-                        (x * ((ppdev->ulBitCount+1) >> 3)));
-
-    ppdev->ptlOrg.x = x;
-    ppdev->ptlOrg.y = y;
-
-    return(TRUE);
 }
 
 /******************************Public*Routine******************************\
@@ -821,3 +809,34 @@ IN RECTL *prcl)
 {
 }
 
+/******************************Public*Routine******************************\
+* DrvNotify
+*
+* Called by GDI to notify us of certain "interesting" events
+*
+* DN_DEVICE_ORIGIN is used to communicate the X/Y offsets of individual monitors
+*                  when DualView is in effect.
+*
+\**************************************************************************/
+
+VOID DrvNotify(
+SURFOBJ *pso,
+ULONG iType,
+PVOID pvData)
+{
+    PDEV*   ppdev = (PDEV*) pso->dhpdev;
+
+    DISPDBG((0, "VBoxDisp::DrvNotify called.\n"));
+
+    switch(iType)
+    {
+        case DN_DEVICE_ORIGIN:
+            ppdev->ptlDevOrg = *(PPOINTL)pvData;
+            DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p)\n", ppdev->ptlDevOrg.x, 
+                     ppdev->ptlDevOrg.y, pso));
+            break;
+        case DN_DRAWING_BEGIN:
+            DISPDBG((3, "DN_DRAWING_BEGIN (PSO = %p)\n", pso));
+            break;
+    }
+}

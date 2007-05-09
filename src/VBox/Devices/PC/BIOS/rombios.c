@@ -889,8 +889,6 @@ static void           write_byte();
 static void           write_word();
 static void           bios_printf();
 
-static Bit8u          inhibit_mouse_int_and_events();
-static void           enable_mouse_int_and_events();
 static Bit8u          send_to_mouse_ctrl();
 static Bit8u          get_mouse_data();
 static void           set_kbd_command_byte();
@@ -1822,7 +1820,7 @@ keyboard_init()
     if (max==0x0) keyboard_panic(50);
 
     /* send cmd: scan code convert, disable mouse, enable IRQ 1 */
-    outb(0x60, 0x61);
+    outb(0x60, 0x65);
 
     /* Wait until buffer is empty */
     max=0xffff;
@@ -4070,7 +4068,7 @@ int15_function_mouse(regs, ES, DS, FLAGS)
   Bit8u  mouse_flags_1, mouse_flags_2;
   Bit16u mouse_driver_seg;
   Bit16u mouse_driver_offset;
-  Bit8u  comm_byte, prev_command_byte;
+  Bit8u  mouse_cmd;
   Bit8u  ret, mouse_data1, mouse_data2, mouse_data3;
 
 BX_DEBUG_INT15("int15 AX=%04x\n",regs.u.r16.ax);
@@ -4088,98 +4086,84 @@ BX_DEBUG_INT15("int15 AX=%04x\n",regs.u.r16.ax);
       // 05: cannot enable mouse, since no far call has been installed
       // 80/86: mouse service not implemented
 
+      if (regs.u.r8.al > 7) {
+BX_DEBUG_INT15("unsupported subfn\n");
+        // invalid function
+        SET_CF();
+        regs.u.r8.ah = 1; 
+        break;
+      }
+
+      // Valid subfn; disable AUX input and IRQ12, assume no error
+      set_kbd_command_byte(0x65);
+      CLEAR_CF();
+      regs.u.r8.ah = 0;
+
       switch (regs.u.r8.al) {
         case 0: // Disable/Enable Mouse
-BX_DEBUG_INT15("case 0:\n");
-          switch (regs.u.r8.bh) {
-            case 0: // Disable Mouse
-BX_DEBUG_INT15("case 0: disable mouse\n");
-              inhibit_mouse_int_and_events(); // disable IRQ12 and packets
-              ret = send_to_mouse_ctrl(0xF5); // disable mouse command
-              if (ret == 0) {
-                ret = get_mouse_data(&mouse_data1);
-                if ( (ret == 0) || (mouse_data1 == 0xFA) ) {
-                  CLEAR_CF();
-                  regs.u.r8.ah = 0;
-                  return;
-                  }
-                }
-
-              // error
-              SET_CF();
-              regs.u.r8.ah = ret;
-              return;
-              break;
-
-            case 1: // Enable Mouse
-BX_DEBUG_INT15("case 1: enable mouse\n");
-              mouse_flags_2 = read_byte(ebda_seg, 0x0027);
-              if ( (mouse_flags_2 & 0x80) == 0 ) {
-                BX_DEBUG_INT15("INT 15h C2 Enable Mouse, no far call handler\n");
-                SET_CF();  // error
-                regs.u.r8.ah = 5; // no far call installed
-                return;
-                }
-              inhibit_mouse_int_and_events(); // disable IRQ12 and packets
-              ret = send_to_mouse_ctrl(0xF4); // enable mouse command
-              if (ret == 0) {
-                ret = get_mouse_data(&mouse_data1);
-                if ( (ret == 0) && (mouse_data1 == 0xFA) ) {
-                  enable_mouse_int_and_events(); // turn IRQ12 and packet generation on
-                  CLEAR_CF();
-                  regs.u.r8.ah = 0;
-                  return;
-                  }
-                }
-              SET_CF();
-              regs.u.r8.ah = ret;
-              return;
-
-            default: // invalid subfunction
-              BX_DEBUG_INT15("INT 15h C2 AL=0, BH=%02x\n", (unsigned) regs.u.r8.bh);
-              SET_CF();  // error
-              regs.u.r8.ah = 1; // invalid subfunction
-              return;
+BX_DEBUG_INT15("case 0: ");
+          if (regs.u.r8.bh > 1) {
+            BX_DEBUG_INT15("INT 15h C2 AL=0, BH=%02x\n", (unsigned) regs.u.r8.bh);
+            // invalid subfunction
+            SET_CF();
+            regs.u.r8.ah = 1;
+            break;
+          }
+          mouse_flags_2 = read_byte(ebda_seg, 0x0027);
+          if ( (mouse_flags_2 & 0x80) == 0 ) {
+            BX_DEBUG_INT15("INT 15h C2 Enable/Disable Mouse, no far call handler\n");
+            SET_CF();
+            regs.u.r8.ah = 5; // no far call installed
+            break;
             }
-          break;
-
-        case 1: // Reset Mouse
-        case 5: // Initialize Mouse
-BX_DEBUG_INT15("case 1 or 5:\n");
-          if (regs.u.r8.al == 5) {
-            if (regs.u.r8.bh != 3) {
-              SET_CF();
-              regs.u.r8.ah = 0x02; // invalid input
-              return;
-            }
-#ifndef VBOX
-            mouse_flags_2 = read_byte(ebda_seg, 0x0027);
-            mouse_flags_2 = (mouse_flags_2 & 0x00) | regs.u.r8.bh;
-            mouse_flags_1 = 0x00;
-            write_byte(ebda_seg, 0x0026, mouse_flags_1);
-            write_byte(ebda_seg, 0x0027, mouse_flags_2);
-#endif /* !VBOX */
+          if (regs.u.r8.bh == 0) {
+BX_DEBUG_INT15("Disable Mouse\n");
+            mouse_cmd = 0xF5;   // disable mouse command
+          } else {
+BX_DEBUG_INT15("Enable Mouse\n");
+            mouse_cmd = 0xF4;   // enable mouse command
           }
 
-          inhibit_mouse_int_and_events(); // disable IRQ12 and packets
-#ifdef VBOX
-          /* Moved here to eliminate the race with the IRQ12 handler
-           * concurrently accessing the EBDA values. It also makes no
-           * sense to reset the mouse and leave the mouse flags as is. */
+          ret = send_to_mouse_ctrl(mouse_cmd);  // disable mouse command
+          if (ret == 0) {
+            ret = get_mouse_data(&mouse_data1);
+            if ( (ret == 0) || (mouse_data1 == 0xFA) ) {
+              // success
+              break;
+              }
+            }
+
+          // interface error
+          SET_CF();
+          regs.u.r8.ah = 3;
+          break;
+
+        case 5: // Initialize Mouse
+          // Valid package sizes are 1 to 8
+          if ( (regs.u.r8.bh < 1) || (regs.u.r8.bh > 8) ) {
+            SET_CF();
+            regs.u.r8.ah = 2; // invalid input
+            break;
+          }
           mouse_flags_2 = read_byte(ebda_seg, 0x0027);
-          if (regs.u.r8.al == 5)
-            mouse_flags_2 = (mouse_flags_2 & 0x00) | regs.u.r8.bh;
-          mouse_flags_1 = 0x00;
-          write_byte(ebda_seg, 0x0026, mouse_flags_1);
+          mouse_flags_2 = (mouse_flags_2 & 0xf8) | (regs.u.r8.bh - 1);
           write_byte(ebda_seg, 0x0027, mouse_flags_2);
-#endif /* VBOX */
+          // fall through!
+
+        case 1: // Reset Mouse
+BX_DEBUG_INT15("case 1 or 5:\n");
+          // clear current package byte index
+          mouse_flags_1 = read_byte(ebda_seg, 0x0026);
+          mouse_flags_1 = mouse_flags_1 & 0xf8;
+          write_byte(ebda_seg, 0x0026, mouse_flags_1);
           ret = send_to_mouse_ctrl(0xFF); // reset mouse command
           if (ret == 0) {
             ret = get_mouse_data(&mouse_data3);
             // if no mouse attached, it will return RESEND
             if (mouse_data3 == 0xfe) {
               SET_CF();
-              return;
+              regs.u.r8.ah = 4; // resend
+              break;
             }
             if (mouse_data3 != 0xfa)
               BX_PANIC("Mouse reset returned %02x (should be ack)\n", (unsigned)mouse_data3);
@@ -4188,22 +4172,19 @@ BX_DEBUG_INT15("case 1 or 5:\n");
               if ( ret == 0 ) {
                 ret = get_mouse_data(&mouse_data2);
                 if ( ret == 0 ) {
-                  // turn IRQ12 and packet generation on
-                  enable_mouse_int_and_events();
-                  CLEAR_CF();
-                  regs.u.r8.ah = 0;
+                  // success
                   regs.u.r8.bl = mouse_data1;
                   regs.u.r8.bh = mouse_data2;
-                  return;
+                  break;
                   }
                 }
               }
             }
 
-          // error
+          // interface error
           SET_CF();
-          regs.u.r8.ah = ret;
-          return;
+          regs.u.r8.ah = 3;
+          break;
 
         case 2: // Set Sample Rate
 BX_DEBUG_INT15("case 2:\n");
@@ -4217,30 +4198,23 @@ BX_DEBUG_INT15("case 2:\n");
             case 6: mouse_data1 = 200; break; // 200 reports/sec
             default: mouse_data1 = 0;
           }
-#ifdef VBOX
-          comm_byte = inhibit_mouse_int_and_events(); // disable IRQ12 and packets
-#endif /* VBOX */
           if (mouse_data1 > 0) {
             ret = send_to_mouse_ctrl(0xF3); // set sample rate command
             if (ret == 0) {
               ret = get_mouse_data(&mouse_data2);
               ret = send_to_mouse_ctrl(mouse_data1);
               ret = get_mouse_data(&mouse_data2);
-              CLEAR_CF();
-              regs.u.r8.ah = 0;
+              // success
             } else {
-              // error
+              // interface error
               SET_CF();
-              regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+              regs.u.r8.ah = 3;
             }
           } else {
-            // error
+            // invalid input
             SET_CF();
-            regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+            regs.u.r8.ah = 2;
           }
-#ifdef VBOX
-          set_kbd_command_byte(comm_byte); // restore IRQ12 and serial enable
-#endif /* VBOX */
           break;
 
         case 3: // Set Resolution
@@ -4250,8 +4224,6 @@ BX_DEBUG_INT15("case 3:\n");
           //      1 =  50 dpi, 2 counts per millimeter
           //      2 = 100 dpi, 4 counts per millimeter
           //      3 = 200 dpi, 8 counts per millimeter
-#ifdef VBOX
-          comm_byte = inhibit_mouse_int_and_events(); // disable IRQ12 and packets
           if (regs.u.r8.bh < 4) {
             ret = send_to_mouse_ctrl(0xE8); // set resolution command
             if (ret == 0) {
@@ -4262,54 +4234,38 @@ BX_DEBUG_INT15("case 3:\n");
               ret = get_mouse_data(&mouse_data1);
               if (mouse_data1 != 0xfa)
                 BX_PANIC("Mouse status returned %02x (should be ack)\n", (unsigned)mouse_data1);
-              CLEAR_CF();
-              regs.u.r8.ah = 0;
+              // success
             } else {
-              // error
+              // interface error
               SET_CF();
-              regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+              regs.u.r8.ah = 3;
             }
           } else {
-            // error
+            // invalid input
             SET_CF();
-            regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+            regs.u.r8.ah = 2;
           }
-          set_kbd_command_byte(comm_byte); // restore IRQ12 and serial enable
-#else
-          CLEAR_CF();
-          regs.u.r8.ah = 0;
-#endif /* VBOX */
           break;
 
         case 4: // Get Device ID
 BX_DEBUG_INT15("case 4:\n");
-#ifdef VBOX
-          comm_byte = inhibit_mouse_int_and_events(); // disable IRQ12 and packets
-#else /* !VBOX */
-          inhibit_mouse_int_and_events(); // disable IRQ12 and packets
-#endif /* !VBOX */
           ret = send_to_mouse_ctrl(0xF2); // get mouse ID command
           if (ret == 0) {
             ret = get_mouse_data(&mouse_data1);
             ret = get_mouse_data(&mouse_data2);
-            CLEAR_CF();
-            regs.u.r8.ah = 0;
             regs.u.r8.bh = mouse_data2;
+            // success
           } else {
-            // error
+            // interface error
             SET_CF();
-            regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+            regs.u.r8.ah = 3;
           }
-#ifdef VBOX
-          set_kbd_command_byte(comm_byte); // restore IRQ12 and serial enable
-#endif /* VBOX */
           break;
 
         case 6: // Return Status & Set Scaling Factor...
 BX_DEBUG_INT15("case 6:\n");
           switch (regs.u.r8.bh) {
             case 0: // Return Status
-              comm_byte = inhibit_mouse_int_and_events(); // disable IRQ12 and packets
               ret = send_to_mouse_ctrl(0xE9); // get mouse info command
               if (ret == 0) {
                 ret = get_mouse_data(&mouse_data1);
@@ -4322,28 +4278,24 @@ BX_DEBUG_INT15("case 6:\n");
                     if ( ret == 0 ) {
                       ret = get_mouse_data(&mouse_data3);
                       if ( ret == 0 ) {
-                        CLEAR_CF();
-                        regs.u.r8.ah = 0;
                         regs.u.r8.bl = mouse_data1;
                         regs.u.r8.cl = mouse_data2;
                         regs.u.r8.dl = mouse_data3;
-                        set_kbd_command_byte(comm_byte); // restore IRQ12 and serial enable
-                        return;
+                        // success
+                        break;
                         }
                       }
                     }
                   }
                 }
 
-              // error
+              // interface error
               SET_CF();
-              regs.u.r8.ah = ret;
-              set_kbd_command_byte(comm_byte); // restore IRQ12 and serial enable
-              return;
+              regs.u.r8.ah = 3;
+              break;
 
             case 1: // Set Scaling Factor to 1:1
             case 2: // Set Scaling Factor to 2:1
-              comm_byte = inhibit_mouse_int_and_events(); // disable IRQ12 and packets
               if (regs.u.r8.bh == 1) {
                 ret = send_to_mouse_ctrl(0xE6);
               } else {
@@ -4353,19 +4305,18 @@ BX_DEBUG_INT15("case 6:\n");
                 get_mouse_data(&mouse_data1);
                 ret = (mouse_data1 != 0xFA);
               }
-              if (ret == 0) {
-                CLEAR_CF();
-                regs.u.r8.ah = 0;
-              } else {
-                // error
+              if (ret != 0) {
+                // interface error
                 SET_CF();
-                regs.u.r8.ah = UNSUPPORTED_FUNCTION;
+                regs.u.r8.ah = 3;
               }
-              set_kbd_command_byte(comm_byte); // restore IRQ12 and serial enable
               break;
 
             default:
               BX_PANIC("INT 15h C2 AL=6, BH=%02x\n", (unsigned) regs.u.r8.bh);
+              // invalid subfunction
+              SET_CF();
+              regs.u.r8.ah = 1;
             }
           break;
 
@@ -4380,7 +4331,6 @@ BX_DEBUG_INT15("case 7:\n");
             /* remove handler */
             if ( (mouse_flags_2 & 0x80) != 0 ) {
               mouse_flags_2 &= ~0x80;
-              inhibit_mouse_int_and_events(); // disable IRQ12 and packets
               }
             }
           else {
@@ -4388,15 +4338,17 @@ BX_DEBUG_INT15("case 7:\n");
             mouse_flags_2 |= 0x80;
             }
           write_byte(ebda_seg, 0x0027, mouse_flags_2);
-          CLEAR_CF();
-          regs.u.r8.ah = 0;
           break;
 
         default:
-BX_DEBUG_INT15("case default:\n");
-          regs.u.r8.ah = 1; // invalid function
+          BX_PANIC("INT 15h C2 default case entered\n");
+          // invalid subfunction
           SET_CF();
+          regs.u.r8.ah = 1;
         }
+BX_DEBUG_INT15("returning cf = %u, ah = %02x\n", (unsigned)GET_CF(), (unsigned)regs.u.r8.ah);
+      // Re-enable AUX input and IRQ12
+      set_kbd_command_byte(0x47);
       break;
 
     default:
@@ -4834,48 +4786,6 @@ dequeue_key(scan_code, ascii_code, incr)
 static char panic_msg_keyb_buffer_full[] = "%s: keyboard input buffer full\n";
 
   Bit8u
-inhibit_mouse_int_and_events()
-{
-  Bit8u command_byte, prev_command_byte;
-
-  // Turn off IRQ generation and aux data line
-  if ( inb(0x64) & 0x02 )
-    BX_PANIC(panic_msg_keyb_buffer_full,"inhibmouse");
-  outb(0x64, 0x20); // get command byte
-  while ( (inb(0x64) & 0x01) != 0x01 );
-  prev_command_byte = inb(0x60);
-  command_byte = prev_command_byte;
-  //while ( (inb(0x64) & 0x02) );
-  if ( inb(0x64) & 0x02 )
-    BX_PANIC(panic_msg_keyb_buffer_full,"inhibmouse");
-  command_byte &= 0xfd; // turn off IRQ 12 generation
-  command_byte |= 0x20; // disable mouse serial clock line
-  outb(0x64, 0x60); // write command byte
-  outb(0x60, command_byte);
-  return(prev_command_byte);
-}
-
-  void
-enable_mouse_int_and_events()
-{
-  Bit8u command_byte;
-
-  // Turn on IRQ generation and aux data line
-  if ( inb(0x64) & 0x02 )
-    BX_PANIC(panic_msg_keyb_buffer_full,"enabmouse");
-  outb(0x64, 0x20); // get command byte
-  while ( (inb(0x64) & 0x01) != 0x01 );
-  command_byte = inb(0x60);
-  //while ( (inb(0x64) & 0x02) );
-  if ( inb(0x64) & 0x02 )
-    BX_PANIC(panic_msg_keyb_buffer_full,"enabmouse");
-  command_byte |= 0x02; // turn on IRQ 12 generation
-  command_byte &= 0xdf; // enable mouse serial clock line
-  outb(0x64, 0x60); // write command byte
-  outb(0x60, command_byte);
-}
-
-  Bit8u
 send_to_mouse_ctrl(sendbyte)
   Bit8u sendbyte;
 {
@@ -4913,7 +4823,6 @@ set_kbd_command_byte(command_byte)
 {
   if ( inb(0x64) & 0x02 )
     BX_PANIC(panic_msg_keyb_buffer_full,"setkbdcomm");
-  outb(0x64, 0xD4);
 
   outb(0x64, 0x60); // write command byte
   outb(0x60, command_byte);
@@ -5165,7 +5074,7 @@ BX_DEBUG_INT74("int74: read byte %02x\n", in_byte);
   index = mouse_flags_1 & 0x07;
   write_byte(ebda_seg, 0x28 + index, in_byte);
 
-  if ( (index+1) >= package_count ) {
+  if ( index >= package_count ) {
 BX_DEBUG_INT74("int74_function: make_farcall=1\n");
     status = read_byte(ebda_seg, 0x0028 + 0);
     X      = read_byte(ebda_seg, 0x0028 + 1);

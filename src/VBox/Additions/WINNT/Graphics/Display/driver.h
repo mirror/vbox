@@ -51,6 +51,7 @@ struct  _PDEV
     ULONG   cyScreen;                   // Visible screen height
     POINTL  ptlOrg;                     // Where this display is anchored in
                                         //   the virtual desktop.
+    POINTL  ptlDevOrg;                  // Device origin for DualView (0,0 for primary view).
     ULONG   ulMode;                     // Mode the mini-port driver is in.
     LONG    lDeltaScreen;               // Distance from one scan to the next.
     ULONG   cScreenSize;                // size of video memory, including
@@ -114,6 +115,10 @@ typedef struct _CLIPRECTS {
     RECTL  arcl[64];
 } CLIPRECTS;
 
+/** Escape codes used to communicate with the VBox display
+ *  driver from userland.
+ */
+#define VBOX_ESC_QUERY_SUPPORT          1110
 
 BOOL vboxVbvaEnable (PPDEV ppdev);
 void vboxVbvaDisable (PPDEV ppdev);
