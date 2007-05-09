@@ -202,12 +202,6 @@ function check_environment()
       # on AMD64 systems, 64bit libs are usually located in /usr/lib64
       # see http://www.pathname.com/fhs/pub/fhs-2.3.html#LIB64
       LIB='lib64'
-      echo ""
-      echo ""
-      echo "Warning! Support for AMD64 host systems is work in progress."
-      echo "         Don't expect it to work or even to build at the moment."
-      echo ""
-      echo ""
       ;;
     *)
       log_failure "Cannot determine system"
