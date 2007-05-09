@@ -1204,12 +1204,13 @@ static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, vo
 {
     PPGMPHYSHANDLER pHandler = (PPGMPHYSHANDLER)pNode;
     RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
-    Assert(pHandler->pfnHandlerGC);
-    pHandler->pfnHandlerGC  += offDelta;
-    if (pHandler->pvUserGC)
-        pHandler->pvUserGC  += offDelta;
+    if (pHandler->pfnHandlerGC)
+        pHandler->pfnHandlerGC += offDelta;
+    if ((RTGCUINTPTR)pHandler->pvUserGC >= 0x10000)
+        pHandler->pvUserGC += offDelta;
     return 0;
 }
+
 
 /**
  * Callback function for relocating a virtual access handler.

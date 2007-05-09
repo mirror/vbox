@@ -100,27 +100,21 @@ PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
     if (!pszModR0)
         pszModR0 = VMMR0_MAIN_MODULE_NAME;
 
-    if (    !pszModGC || !*pszModGC || !pszHandlerGC || !*pszHandlerGC
-        ||  !pszModR0 || !*pszModR0 || !pszHandlerR0 || !*pszHandlerR0)
-    {
-        AssertMsgFailed(("pfnHandlerGC or/and pszModGC is missing\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
     /*
      * Resolve the R0 handler.
      */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0 = NIL_RTR0PTR;
     int rc = VINF_SUCCESS;
-    if (HWACCMR3IsAllowed(pVM))
+    if (pszHandlerR0 && HWACCMR3IsAllowed(pVM))
         rc = PDMR3GetSymbolR0Lazy(pVM, pszModR0, pszHandlerR0, &pfnHandlerR0);
     if (VBOX_SUCCESS(rc))
     {
         /*
          * Resolve the GC handler.
          */
-        RTGCPTR pfnHandlerGC;
-        rc = PDMR3GetSymbolGCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
+        RTGCPTR pfnHandlerGC = NIL_RTGCPTR;
+        if (pszHandlerGC)
+            rc = PDMR3GetSymbolGCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
 
         if (VBOX_SUCCESS(rc))
             return PGMHandlerPhysicalRegisterEx(pVM, enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3,

@@ -350,12 +350,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                       || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
                                       ("Unexpected trap for physical handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, HCPhys, uErr, pCur->enmType));
 
-#ifdef IN_GC
-                            Assert(CTXSUFF(pCur->pfnHandler));
-                            STAM_PROFILE_START(&pCur->Stat, h);
-                            rc = pCur->CTXSUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, GCPhysFault, CTXSUFF(pCur->pvUser));
-                            STAM_PROFILE_STOP(&pCur->Stat, h);
-#elif IN_RING0
+#if defined(IN_GC) || defined(ING_RING0)
                             if (CTXALLSUFF(pCur->pfnHandler))
                             {
                                 STAM_PROFILE_START(&pCur->Stat, h);
@@ -363,10 +358,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 STAM_PROFILE_STOP(&pCur->Stat, h);
                             }
                             else
-                                rc = VINF_EM_RAW_EMULATE_INSTR;
-#else
-                            rc = VINF_EM_RAW_EMULATE_INSTR;
 #endif
+                                rc = VINF_EM_RAW_EMULATE_INSTR;
                             STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersPhysical);
                             STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
                             STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndPhys; });
