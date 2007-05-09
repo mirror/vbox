@@ -460,7 +460,8 @@ PGMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
      * Next step is to verify if we protected this page for dirty bit tracking or for CSAM scanning
      */
     rc = PGMShwGetPage(pVM, (RTGCPTR)Addr, NULL, NULL);
-    if (rc == VERR_PAGE_NOT_PRESENT)
+    if (    rc == VERR_PAGE_NOT_PRESENT
+        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
         /*
          * Page is not present in our page tables.
@@ -471,14 +472,6 @@ PGMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
         rc = PGM_BTH_PFN(VerifyAccessSyncPage, pVM)(pVM, Addr, fPageGst, uErr);
         if (rc != VINF_SUCCESS)
             return rc;
-    }
-    else if (rc == VERR_PAGE_TABLE_NOT_PRESENT)
-    {
-        /*
-         * Page table is not present; can't do much here (?)
-         * We could of course try sync the page table.... (?)
-         */
-        return VINF_EM_RAW_EMULATE_INSTR;
     }
     else
         AssertMsg(rc == VINF_SUCCESS, ("PGMShwGetPage %VGv failed with %Vrc\n", Addr, rc));
