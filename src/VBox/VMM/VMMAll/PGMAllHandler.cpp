@@ -107,17 +107,13 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
             AssertMsgFailed(("Invalid input enmType=%d!\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
-    if (!pfnHandlerGC)
-    {
-        AssertMsgFailed(("!pfnHandlerGC\n"));
-        return VERR_INVALID_PARAMETER;
-    }
     if (    (RTGCUINTPTR)pvUserGC >= 0x10000
         &&  MMHyperHC2GC(pVM, MMHyperGC2HC(pVM, pvUserGC)) != pvUserGC)
     {
         AssertMsgFailed(("Not GC pointer! pvUserGC=%VGv\n", pvUserGC));
         return VERR_INVALID_PARAMETER;
     }
+    AssertReturn(pfnHandlerR3 || pfnHandlerR0 || pfnHandlerGC, VERR_INVALID_PARAMETER);
 
     /*
      * We require the range to be within registered ram.
