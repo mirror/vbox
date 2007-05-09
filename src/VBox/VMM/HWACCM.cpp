@@ -183,6 +183,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->hwaccm.s.StatExitInvpg,     STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Invlpg",      STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatExitInvd,      STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Invd",        STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatExitCpuid,     STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Cpuid",       STAMUNIT_OCCURENCES,    "Nr of occurances");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatExitRdtsc,     STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Rdtsc",       STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatExitCRxWrite,  STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/CRx/Write",   STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatExitCRxRead,   STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/CRx/Read",    STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatExitDRxWrite,  STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/DRx/Write",   STAMUNIT_OCCURENCES,    "Nr of occurances");

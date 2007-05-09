@@ -1410,11 +1410,30 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
+            Assert(cbInstr == 2);
             pCtx->eip += cbInstr;
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
         AssertMsgFailed(("EMU: cpuid failed with %Vrc\n", rc));
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+        break;
+    }
+
+    case VMX_EXIT_RDTSC:                /* 16 Guest software attempted to execute RDTSC. */
+    {
+        Log2(("VMX: Rdtsc\n"));
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitRdtsc);
+        rc = EMInterpretRdtsc(pVM, CPUMCTX2CORE(pCtx));
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            Assert(cbInstr == 2);
+            pCtx->eip += cbInstr;
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+        AssertMsgFailed(("EMU: rdtsc failed with %Vrc\n", rc));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
@@ -1685,11 +1704,6 @@ ResumeExecution:
         rc = VINF_EM_RAW_EMULATE_INSTR_HLT;
         break;
 
-    case VMX_EXIT_RDTSC:                /* 16 Guest software attempted to execute RDTSC. */
-        rc = VERR_EM_INTERNAL_ERROR;
-        AssertFailed(); /* we don't let it fault. */
-        break;
-
     case VMX_EXIT_RSM:                  /* 17 Guest software attempted to execute RSM in SMM. */
         AssertFailed(); /* can't happen. */
         rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
@@ -1710,6 +1724,7 @@ ResumeExecution:
         break;
 
     case VMX_EXIT_CPUID:                /* 10 Guest software attempted to execute CPUID. */
+    case VMX_EXIT_RDTSC:                /* 16 Guest software attempted to execute RDTSC. */
     case VMX_EXIT_INVPG:                /* 14 Guest software attempted to execute INVPG. */
     case VMX_EXIT_CRX_MOVE:             /* 28 Control-register accesses. */
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
