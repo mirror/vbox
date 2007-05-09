@@ -160,7 +160,7 @@ private:
     CEnums::MachineState mState;
     QDateTime mLastStateChange;
     CEnums::SessionState mSessionState;
-    QString mOSType;
+    QString mOSTypeId;
     ULONG mSnapshotCount;
 
     ULONG mPid;

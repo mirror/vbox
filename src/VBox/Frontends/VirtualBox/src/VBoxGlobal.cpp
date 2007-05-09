@@ -711,46 +711,58 @@ QStringList VBoxGlobal::vmGuestOSTypeDescriptions() const
 }
 
 /**
- *  Returns the guest OS type object corresponding to a given index.
+ *  Returns the guest OS type object corresponding to the given index.
  *  The index argument corresponds to the index in the list of OS type
  *  descriptions as returnded by #vmGuestOSTypeDescriptions().
  *
  *  If the index is invalid a null object is returned.
  */
-CGuestOSType VBoxGlobal::vmGuestOSType (int index) const
+CGuestOSType VBoxGlobal::vmGuestOSType (int aIndex) const
 {
     CGuestOSType type;
-    if (index >= 0 && index < (int) vm_os_types.count())
-        type = vm_os_types [index];
-    AssertMsg (!type.isNull(), ("Index for OS type must be valid: %d", index));
+    if (aIndex >= 0 && aIndex < (int) vm_os_types.count())
+        type = vm_os_types [aIndex];
+    AssertMsg (!type.isNull(), ("Index for OS type must be valid: %d", aIndex));
     return type;
 }
 
 /**
- *  Returns the index corresponding to a given guest OS type object.
+ *  Returns the index corresponding to the given guest OS type ID.
  *  The returned index corresponds to the index in the list of OS type
  *  descriptions as returnded by #vmGuestOSTypeDescriptions().
  *
- *  If the guest OS type is invalid, -1 is returned.
+ *  If the guest OS type ID is invalid, -1 is returned.
  */
-int VBoxGlobal::vmGuestOSTypeIndex (const CGuestOSType &type) const
+int VBoxGlobal::vmGuestOSTypeIndex (const QString &aId) const
 {
     for (int i = 0; i < (int) vm_os_types.count(); i++) {
-        if (!vm_os_types [i].GetId().compare (type.GetId()))
+        if (!vm_os_types [i].GetId().compare (aId))
             return i;
     }
     return -1;
 }
 
 /**
- *  Returns the icon corresponding to a given guest OS type.
+ *  Returns the icon corresponding to the given guest OS type ID.
  */
-QPixmap VBoxGlobal::vmGuestOSTypeIcon (const QString &type) const
+QPixmap VBoxGlobal::vmGuestOSTypeIcon (const QString &aId) const
 {
     static const QPixmap none;
-    QPixmap *p = vm_os_type_icons [type];
-    AssertMsg (p, ("Icon for type `%s' must be defined", type.latin1()));
+    QPixmap *p = vm_os_type_icons [aId];
+    AssertMsg (p, ("Icon for type `%s' must be defined", aId.latin1()));
     return p ? *p : none;
+}
+
+/**
+ *  Returns the description corresponding to the given guest OS type ID.
+ */
+QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
+{
+    for (int i = 0; i < (int) vm_os_types.count(); i++) {
+        if (!vm_os_types [i].GetId().compare (aId))
+            return vm_os_types [i].GetDescription();
+    }
+    return QString::null;
 }
 
 QString VBoxGlobal::toString (CEnums::DiskControllerType t, LONG d) const
@@ -1050,7 +1062,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         detailsReport
             = generalBasicTpl
                 .arg (m.GetName())
-                .arg (m.GetOSType().GetDescription())
+                .arg (vmGuestOSTypeDescription (m.GetOSTypeId()))
                 .arg (m.GetMemorySize())
             + hardDisks;
     }
@@ -1086,7 +1098,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         detailsReport
             = generalFullTpl
                 .arg (m.GetName())
-                .arg (m.GetOSType().GetDescription())
+                .arg (vmGuestOSTypeDescription (m.GetOSTypeId()))
                 .arg (m.GetMemorySize())
                 .arg (m.GetVRAMSize())
                 .arg (bootOrder)

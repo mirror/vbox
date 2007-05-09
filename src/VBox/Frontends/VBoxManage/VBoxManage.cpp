@@ -703,9 +703,11 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     rc = machine->COMGETTER(Name)(machineName.asOutParam());
     RTPrintf("Name:            %lS\n", machineName.raw());
 
+    Bstr osTypeId;
+    rc = machine->COMGETTER(OSTypeId)(osTypeId.asOutParam());
     ComPtr<IGuestOSType> osType;
+    rc = virtualBox->GetGuestOSType (osTypeId, osType.asOutParam());
     Bstr osName;
-    rc = machine->COMGETTER(OSType)(osType.asOutParam());
     rc = osType->COMGETTER(Description)(osName.asOutParam());
     RTPrintf("Guest OS:        %lS\n", osName.raw());
 
@@ -3195,10 +3197,10 @@ static int handleModifyVM(int argc, char *argv[],
         if (ostype)
         {
             ComPtr<IGuestOSType> guestOSType;
-            CHECK_ERROR(virtualBox, FindGuestOSType(ostype, guestOSType.asOutParam()));
+            CHECK_ERROR(virtualBox, GetGuestOSType(ostype, guestOSType.asOutParam()));
             if (SUCCEEDED(rc) && guestOSType)
             {
-                CHECK_ERROR(machine, COMSETTER(OSType)(guestOSType));
+                CHECK_ERROR(machine, COMSETTER(OSTypeId)(ostype));
             }
             else
             {

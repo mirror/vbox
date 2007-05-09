@@ -33,6 +33,8 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
+DEFINE_EMPTY_CTOR_DTOR (Guest)
+
 HRESULT Guest::FinalConstruct()
 {
     return S_OK;
@@ -40,8 +42,7 @@ HRESULT Guest::FinalConstruct()
 
 void Guest::FinalRelease()
 {
-    if (isReady())
-        uninit ();
+    uninit ();
 }
 
 // public methods only for internal purposes
@@ -52,19 +53,21 @@ void Guest::FinalRelease()
  */
 HRESULT Guest::init (Console *aParent)
 {
-    LogFlowMember (("Guest::init (%p)\n", aParent));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
+    unconst (mParent) = aParent;
 
-    mData.allocate();
-    // mData.mAdditionsActive is FALSE
+    /* mData.mAdditionsActive is FALSE */
 
-    setReady (true);
+    /* Confirm a successful initialization when it's the case */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -74,94 +77,76 @@ HRESULT Guest::init (Console *aParent)
  */
 void Guest::uninit()
 {
-    LogFlowMember (("Guest::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
-    mData.free();
-
-    mParent.setNull();
-
-    setReady (false);
+    unconst (mParent).setNull();
 }
 
 // IGuest properties
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Returns the assigned guest OS type
- *
- * @returns COM status code
- * @param guestOSType address of result variable
- */
-STDMETHODIMP Guest::COMGETTER(OSType) (IGuestOSType **aOSType)
+STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 {
-    if (!aOSType)
+    if (!aOSTypeId)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     // redirect the call to IMachine if no additions are installed
-    if (mData->mAdditionsVersion.isNull())
-        return mParent->machine()->COMGETTER(OSType) (aOSType);
+    if (mData.mAdditionsVersion.isNull())
+        return mParent->machine()->COMGETTER(OSTypeId) (aOSTypeId);
 
-    mData->mGuestOSType.queryInterfaceTo (aOSType);
+    mData.mOSTypeId.cloneTo (aOSTypeId);
+
     return S_OK;
 }
 
-/**
- * Returns whether the Guest Additions are currently active.
- *
- * @returns COM status code
- * @param   active address of result variable
- */
 STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
 {
     if (!aAdditionsActive)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *aAdditionsActive = mData->mAdditionsActive;
+    AutoReaderLock alock (this);
+
+    *aAdditionsActive = mData.mAdditionsActive;
+
     return S_OK;
 }
 
-/**
- * Returns the reported Guest Additions version. Empty
- * string if they are not installed.
- *
- * @returns COM status code
- * @param   version address of result variable
- */
 STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
 {
     if (!aAdditionsVersion)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mData->mAdditionsVersion.cloneTo (aAdditionsVersion);
+    AutoReaderLock alock (this);
+
+    mData.mAdditionsVersion.cloneTo (aAdditionsVersion);
+
     return S_OK;
 }
 
-/**
- * Set guest logon credentials. They can be retrieved by the
- * guest Additions. It's up to the guest what it does with them.
- * Note that this has been placed here to make it transient
- * information.
- */
 STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
                                    INPTR BSTR aDomain, BOOL aAllowInteractiveLogon)
 {
     if (!aUserName || !aPassword || !aDomain)
         return E_INVALIDARG;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
     /* forward the information to the VMM device */
     VMMDev *vmmDev = mParent->getVMMDev();
@@ -176,19 +161,25 @@ STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
                                                    Utf8Str(aDomain).raw(), u32Flags);
         return S_OK;
     }
-    return setError(E_FAIL, tr("VMM device not available, VM not running"));
+
+    return setError (E_FAIL,
+        tr ("VMM device is not available (is the VM running?)"));
 }
 
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-void Guest::setAdditionsVersion(Bstr version)
+void Guest::setAdditionsVersion (Bstr aVersion)
 {
-    if (!version)
-        return;
-    AutoLock alock(this);
-    mData->mAdditionsVersion = version;
-    // this implies that Additions are active
-    mData->mAdditionsActive = true;
+    AssertReturnVoid (!aVersion.isEmpty());
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    mData.mAdditionsVersion = aVersion;
+    /* this implies that Additions are active */
+    mData.mAdditionsActive = TRUE;
 }

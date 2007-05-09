@@ -144,7 +144,7 @@ Machine::UserData::UserData()
 
     mNameSync = TRUE;
 
-    /* mName, mOSType, mSnapshotFolder, mSnapshotFolderFull are initialized in
+    /* mName, mOSTypeId, mSnapshotFolder, mSnapshotFolderFull are initialized in
      * Machine::init() */
 }
 
@@ -427,8 +427,8 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
 
     CheckComRCReturnRC (rc);
 
-    /* initialize mOSType */
-    mUserData->mOSType = mParent->getUnknownOSType();
+    /* initialize mOSTypeId */
+    mUserData->mOSTypeId = mParent->getUnknownOSType()->id();
 
     /* create associated BIOS settings object */
     unconst (mBIOSSettings).createObject();
@@ -842,9 +842,9 @@ STDMETHODIMP Machine::COMGETTER(Id) (GUIDPARAMOUT aId)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(OSType) (IGuestOSType **aOSType)
+STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 {
-    if (!aOSType)
+    if (!aOSTypeId)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -852,25 +852,31 @@ STDMETHODIMP Machine::COMGETTER(OSType) (IGuestOSType **aOSType)
 
     AutoReaderLock alock (this);
 
-    mUserData->mOSType.queryInterfaceTo (aOSType);
+    mUserData->mOSTypeId.cloneTo (aOSTypeId);
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(OSType) (IGuestOSType *aOSType)
+STDMETHODIMP Machine::COMSETTER(OSTypeId) (INPTR BSTR aOSTypeId)
 {
-    if (!aOSType)
+    if (!aOSTypeId)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
+
+    /* look up the object by Id to check it is valid */
+    ComPtr <IGuestOSType> guestOSType;
+    HRESULT rc = mParent->GetGuestOSType (aOSTypeId,
+                                          guestOSType.asOutParam());
+    CheckComRCReturnRC (rc);
 
     AutoLock alock (this);
 
     CHECK_SETTER();
 
     mUserData.backup();
-    mUserData->mOSType = aOSType;
+    mUserData->mOSTypeId = aOSTypeId;
 
     return S_OK;
 }
@@ -3238,16 +3244,15 @@ HRESULT Machine::loadSettings (bool aRegistered)
 
         /* OSType (required) */
         {
-            Bstr osTypeId;
-            CFGLDRQueryBSTR (machineNode, "OSType", osTypeId.asOutParam());
+            CFGLDRQueryBSTR (machineNode, "OSType",
+                             mUserData->mOSTypeId.asOutParam());
 
-            /* look up the object in our list */
+            /* look up the object by Id to check it is valid */
             ComPtr <IGuestOSType> guestOSType;
-            rc = mParent->FindGuestOSType (osTypeId, guestOSType.asOutParam());
+            rc = mParent->GetGuestOSType (mUserData->mOSTypeId,
+                                          guestOSType.asOutParam());
             if (FAILED (rc))
                 break;
-
-            mUserData->mOSType = guestOSType;
         }
 
         /* stateFile (optional) */
@@ -4892,11 +4897,7 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
 
         /* OSType (required) */
         {
-            Bstr osTypeID;
-            rc = mUserData->mOSType->COMGETTER(Id) (osTypeID.asOutParam());
-            ComAssertComRCBreak (rc, rc = rc);
-            Assert (!osTypeID.isNull());
-            CFGLDRSetBSTR (machineNode, "OSType", osTypeID);
+            CFGLDRSetBSTR (machineNode, "OSType", mUserData->mOSTypeId);
         }
 
         /* stateFile (optional) */

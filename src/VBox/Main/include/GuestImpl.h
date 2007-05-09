@@ -45,6 +45,8 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (Guest)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
@@ -53,7 +55,7 @@ public:
     void uninit();
 
     // IGuest properties
-    STDMETHOD(COMGETTER(OSType)) (IGuestOSType **aOSType);
+    STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
 
@@ -62,7 +64,7 @@ public:
                               INPTR BSTR aDomain, BOOL aAllowInteractiveLogon);
 
     // public methods that are not in IDL
-    void setAdditionsVersion(Bstr version);
+    void setAdditionsVersion (Bstr aVersion);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }
@@ -73,13 +75,13 @@ private:
     {
         Data() : mAdditionsActive (FALSE) {}
 
-        ComPtr <IGuestOSType> mGuestOSType;
+        Bstr mOSTypeId;
         BOOL mAdditionsActive;
         Bstr mAdditionsVersion;
     };
 
     ComObjPtr <Console, ComWeakRef> mParent;
-    Shareable <Data> mData;
+    Data mData;
 };
 
 #endif // ____H_GUESTIMPL

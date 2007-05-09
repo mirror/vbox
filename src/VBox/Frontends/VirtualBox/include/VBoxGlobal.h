@@ -174,9 +174,10 @@ public:
     /* VBox enum to/from string/icon/color convertors */
 
     QStringList vmGuestOSTypeDescriptions() const;
-    CGuestOSType vmGuestOSType (int index) const;
-    int vmGuestOSTypeIndex (const CGuestOSType &type) const;
-    QPixmap vmGuestOSTypeIcon (const QString &type) const;
+    CGuestOSType vmGuestOSType (int aIndex) const;
+    int vmGuestOSTypeIndex (const QString &aId) const;
+    QPixmap vmGuestOSTypeIcon (const QString &aId) const;
+    QString vmGuestOSTypeDescription (const QString &aId) const;
 
     QPixmap toIcon (CEnums::MachineState s) const
     {

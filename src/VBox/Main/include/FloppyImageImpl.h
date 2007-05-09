@@ -25,18 +25,19 @@
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 
+#include <iprt/path.h>
+
 class VirtualBox;
 
 class ATL_NO_VTABLE FloppyImage :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <FloppyImage, IFloppyImage>,
     public VirtualBoxSupportTranslation <FloppyImage>,
-    public VirtualBoxBase,
     public IFloppyImage
 {
 public:
 
-    // to satisfy the ComObjPtr template (we have const members)
-    FloppyImage() {}
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (FloppyImage)
 
     DECLARE_NOT_AGGREGATABLE(FloppyImage)
 
@@ -49,21 +50,24 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (FloppyImage)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *parent, const BSTR filePath,
-                  BOOL isRegistered, const Guid &id);
+    HRESULT init (VirtualBox *aParent, const BSTR aFilePath,
+                  BOOL aRegistered, const Guid &aId);
     void uninit();
 
     // IFloppyImage properties
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT id);
-    STDMETHOD(COMGETTER(FilePath)) (BSTR *filePath);
-    STDMETHOD(COMGETTER(Accessible)) (BOOL *accessible);
-    STDMETHOD(COMGETTER(Size)) (ULONG *size);
+    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aId);
+    STDMETHOD(COMGETTER(FilePath)) (BSTR *aFilePath);
+    STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
+    STDMETHOD(COMGETTER(Size)) (ULONG *aSize);
 
     // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
 
     const Bstr &filePath() { return mImageFile; }
     const Bstr &filePathFull() { return mImageFileFull; }
@@ -77,7 +81,7 @@ public:
 private:
 
     /** weak parent */
-    ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    const ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
     BOOL mAccessible;
 
@@ -88,30 +92,31 @@ private:
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (FloppyImage)
 
-    STDMETHOD(FindByPath) (INPTR BSTR path, IFloppyImage **floppyImage)
+    STDMETHOD(FindByPath) (INPTR BSTR aPath, IFloppyImage **aFloppyImage)
     {
-        if (!path)
+        if (!aPath)
             return E_INVALIDARG;
-        if (!floppyImage)
+        if (!aFloppyImage)
             return E_POINTER;
 
-        *floppyImage = NULL;
+        Utf8Str path = aPath;
+        *aFloppyImage = NULL;
         Vector::value_type found;
         Vector::iterator it = vec.begin();
         while (it != vec.end() && !found)
         {
             Bstr filePath;
             (*it)->COMGETTER(FilePath) (filePath.asOutParam());
-            if (filePath == path)
+            if (RTPathCompare (Utf8Str (filePath), path) == 0)
                 found = *it;
             ++ it;
         }
 
         if (!found)
             return setError (E_INVALIDARG, FloppyImageCollection::tr (
-                "The floppy image named '%ls' could not be found"), path);
+                "The floppy image named '%ls' could not be found"), aPath);
 
-        return found.queryInterfaceTo (floppyImage);
+        return found.queryInterfaceTo (aFloppyImage);
     }
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_END (FloppyImage)

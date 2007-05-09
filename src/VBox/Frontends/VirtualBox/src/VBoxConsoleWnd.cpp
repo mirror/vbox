@@ -1125,8 +1125,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
             CMachine cmachine = csession.GetMachine();
             VBoxCloseVMDlg dlg (this, "VBoxCloseVMDlg");
-            QString osType = cmachine.GetOSType().GetId();
-            dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (osType));
+            QString typeId = cmachine.GetOSTypeId();
+            dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
             /* read the last user's choice for the given VM */
             QStringList lastAction = QStringList::split (',',
@@ -1901,8 +1901,8 @@ void VBoxConsoleWnd::vmTakeSnapshot()
 
     VBoxTakeSnapshotDlg dlg (this, "VBoxTakeSnapshotDlg");
 
-    QString osType = cmachine.GetOSType().GetId();
-    dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (osType));
+    QString typeId = cmachine.GetOSTypeId();
+    dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
     dlg.leName->setText (tr ("Snapshot %1").arg (cmachine.GetSnapshotCount() + 1));
 

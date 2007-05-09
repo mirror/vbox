@@ -1545,7 +1545,7 @@ STDMETHODIMP VirtualBox::UnregisterFloppyImage (INPTR GUIDPARAM aId,
 }
 
 /** @note Locks this object for reading. */
-STDMETHODIMP VirtualBox::FindGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
+STDMETHODIMP VirtualBox::GetGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
 {
     if (!aType)
         return E_INVALIDARG;
@@ -1570,7 +1570,10 @@ STDMETHODIMP VirtualBox::FindGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
         }
     }
 
-    return (*aType) ? S_OK : E_INVALIDARG;
+    return (*aType) ? S_OK :
+        setError (E_INVALIDARG,
+            tr ("'%ls' is not a valid Guest OS type"),
+            aId);
 }
 
 STDMETHODIMP
@@ -2677,14 +2680,16 @@ void VirtualBox::onSnapshotChange (const Guid &aMachineId, const Guid &aSnapshot
 /**
  *  @note Locks this object for reading.
  */
-ComPtr <IGuestOSType> VirtualBox::getUnknownOSType()
+ComObjPtr <GuestOSType> VirtualBox::getUnknownOSType()
 {
-    ComPtr <IGuestOSType> type;
+    ComObjPtr <GuestOSType> type;
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), type);
 
     AutoReaderLock alock (this);
+
+    /* unknown type must always be the first */
     ComAssertRet (mData.mGuestOSTypes.size() > 0, type);
 
     type = mData.mGuestOSTypes.front();
@@ -4243,8 +4248,8 @@ HRESULT VirtualBox::registerGuestOSTypes()
     } OSTypes[] =
     {
         /// @todo (dmik) get the list of OS types from the XML schema
-        // NOTE: we assume that unknown is always the first entry!
-        { "unknown",    "Other/Unknown",       OSTypeUnknown,     64,   4,  2000 },
+        /* NOTE: we assume that unknown is always the first entry! */
+        { "unknown",    tr ("Other/Unknown"),  OSTypeUnknown,     64,   4,  2000 },
         { "dos",        "DOS",                 OSTypeDOS,         32,   4,   500 },
         { "win31",      "Windows 3.1",         OSTypeWin31,       32,   4,  1000 },
         { "win95",      "Windows 95",          OSTypeWin95,       64,   4,  2000 },

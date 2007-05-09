@@ -319,7 +319,7 @@ bool VBoxNewVMWzd::constructMachine()
     /* OS type */
     CGuestOSType type = vboxGlobal().vmGuestOSType (cbOS->currentItem());
     AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
-    cmachine.SetOSType (type);
+    cmachine.SetOSTypeId (type.GetId());
 
     /* RAM size */
     cmachine.SetMemorySize (slRAM->value());

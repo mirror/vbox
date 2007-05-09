@@ -26,12 +26,24 @@
 /////////////////////////////////////////////////////////////////////////////
 
 GuestOSType::GuestOSType()
+    : mOSType (OSTypeUnknown)
+    , mRAMSize (0), mVRAMSize (0)
+    , mHDDSize (0), mMonitorCount (0)
 {
-    mOSType = OSTypeUnknown;
 }
 
 GuestOSType::~GuestOSType()
 {
+}
+
+HRESULT GuestOSType::FinalConstruct()
+{
+    return S_OK;
+}
+
+void GuestOSType::FinalRelease()
+{
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -41,119 +53,121 @@ GuestOSType::~GuestOSType()
  * Initializes the guest OS type object.
  *
  * @returns COM result indicator
- * @param id          os short name string
- * @param description os name string
- * @param osType      global OS type ID
- * @param ramSize     recommended RAM size in megabytes
- * @param vramSize    recommended video memory size in megabytes
- * @param hddSize     recommended HDD size in megabytes
+ * @param aId          os short name string
+ * @param aDescription os name string
+ * @param aOSType      global OS type ID
+ * @param aRAMSize     recommended RAM size in megabytes
+ * @param aVRAMSize    recommended video memory size in megabytes
+ * @param aHDDSize     recommended HDD size in megabytes
  */
-HRESULT GuestOSType::init (const char *id, const char *description, OSType osType,
-                           uint32_t ramSize, uint32_t vramSize, uint32_t hddSize)
+HRESULT GuestOSType::init (const char *aId, const char *aDescription, OSType aOSType,
+                           uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize)
 {
-    ComAssertRet (id && description, E_INVALIDARG);
+    LogFlowThisFunc (("aId='%s', aDescription='%s', aType=%d, "
+                      "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%d\n",
+                      aId, aDescription, aOSType,
+                      aRAMSize, aVRAMSize, aHDDSize));
 
-    AutoLock lock(this);
-    mID = id;
-    mDescription = description;
-    mOSType = osType;
-    mRAMSize = ramSize;
-    mVRAMSize = vramSize;
-    mHDDSize = hddSize;
+    ComAssertRet (aId && aDescription, E_INVALIDARG);
 
-    LogFlowMember (("GuestOSType::init(): id='%ls', desc='%ls', type=%d, "
-                    "ram=%d, vram=%d, hdd=%d\n",
-                    mID.raw(), mDescription.raw(), mOSType,
-                    mRAMSize, mVRAMSize, mHDDSize));
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    setReady(true);
+    unconst (mID) = aId;
+    unconst (mDescription) = aDescription;
+    unconst (mOSType) = aOSType;
+    unconst (mRAMSize) = aRAMSize;
+    unconst (mVRAMSize) = aVRAMSize;
+    unconst (mHDDSize) = aHDDSize;
+
+    /* Confirm a successful initialization when it's the case */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
+}
+
+/**
+ *  Uninitializes the instance and sets the ready flag to FALSE.
+ *  Called either from FinalRelease() or by the parent when it gets destroyed.
+ */
+void GuestOSType::uninit()
+{
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 }
 
 // IGuestOSType properties
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Returns the ID string
- *
- * @returns COM status code
- * @param id address of result variable
- */
-STDMETHODIMP GuestOSType::COMGETTER(Id) (BSTR *id)
+STDMETHODIMP GuestOSType::COMGETTER(Id) (BSTR *aId)
 {
-    if (!id)
+    if (!aId)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
 
-    mID.cloneTo(id);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mID is constant during life time, no need to lock */
+    mID.cloneTo (aId);
+
     return S_OK;
 }
 
-/**
- * Returns the description string
- *
- * @returns COM status code
- * @param description address of result variable
- */
-STDMETHODIMP GuestOSType::COMGETTER(Description) (BSTR *description)
+STDMETHODIMP GuestOSType::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!description)
+    if (!aDescription)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
 
-    mDescription.cloneTo(description);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mDescription is constant during life time, no need to lock */
+    mDescription.cloneTo (aDescription);
+
     return S_OK;
 }
 
-/**
- * Returns the recommended RAM size in megabytes
- *
- * @returns COM status code
- * @param description address of result variable
- */
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedRAM) (ULONG *ramSize)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedRAM) (ULONG *aRAMSize)
 {
-    if (!ramSize)
+    if (!aRAMSize)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
 
-    *ramSize = mRAMSize;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mRAMSize is constant during life time, no need to lock */
+    *aRAMSize = mRAMSize;
+
     return S_OK;
 }
 
-/**
- * Returns the recommended video RAM size in megabytes
- *
- * @returns COM status code
- * @param description address of result variable
- */
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedVRAM) (ULONG *vramSize)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedVRAM) (ULONG *aVRAMSize)
 {
-    if (!vramSize)
+    if (!aVRAMSize)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
 
-    *vramSize = mVRAMSize;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mVRAMSize is constant during life time, no need to lock */
+    *aVRAMSize = mVRAMSize;
+
     return S_OK;
 }
 
-/**
- * Returns the recommended HDD size in megabytes
- *
- * @returns COM status code
- * @param description address of result variable
- */
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD) (ULONG *hddSize)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD) (ULONG *aHDDSize)
 {
-    if (!hddSize)
+    if (!aHDDSize)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
 
-    *hddSize = mHDDSize;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mHDDSize is constant during life time, no need to lock */
+    *aHDDSize = mHDDSize;
+
     return S_OK;
 }

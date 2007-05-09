@@ -570,8 +570,8 @@ void VBoxSnapshotsWgt::takeSnapshot()
 
     VBoxTakeSnapshotDlg dlg (this, "VBoxTakeSnapshotDlg");
 
-    QString osType = mMachine.GetOSType().GetId();
-    dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (osType));
+    QString typeId = mMachine.GetOSTypeId();
+    dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
     dlg.leName->setText (tr ("Snapshot %1").arg (mMachine.GetSnapshotCount() + 1));
 

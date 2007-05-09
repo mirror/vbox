@@ -121,8 +121,10 @@ void listVMs(IVirtualBox *virtualBox)
                 machine->GetMemorySize(&memorySize);
                 printf("\tMemory size: %uMB\n", memorySize);
 
+                nsXPIDLString typeId;
+                machine->GetOSTypeId(getter_Copies(typeId));
                 IGuestOSType *osType = nsnull;
-                machine->GetOSType(&osType);
+                virtualBox->GetGuestOSType (typeId.get(), &osType);
                 nsXPIDLString osName;
                 osType->GetDescription(getter_Copies(osName));
                 char *osNameAscii = ToNewCString(osName);
@@ -177,14 +179,14 @@ void createVM(IVirtualBox *virtualBox)
      */
     IGuestOSType *osType = nsnull;
     char win2k[] = "win2k";
-    rc = virtualBox->FindGuestOSType(NS_ConvertUTF8toUTF16((char*)win2k).get(), &osType);
+    rc = virtualBox->GetGuestOSType(NS_ConvertUTF8toUTF16((char*) win2k).get(), &osType);
     if (NS_FAILED(rc) || !osType)
     {
         printf("Error: could not find guest OS type! rc = 0x%x\n", rc);
     }
     else
     {
-        machine->SetOSType(osType);
+        machine->SetOSTypeId (NS_ConvertUTF8toUTF16((char*) win2k).get());
         osType->Release();
     }
 

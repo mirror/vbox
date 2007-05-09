@@ -31,6 +31,8 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
+DEFINE_EMPTY_CTOR_DTOR (FloppyImage)
+
 HRESULT FloppyImage::FinalConstruct()
 {
     mAccessible = FALSE;
@@ -39,7 +41,7 @@ HRESULT FloppyImage::FinalConstruct()
 
 void FloppyImage::FinalRelease()
 {
-    uninit ();
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -48,49 +50,55 @@ void FloppyImage::FinalRelease()
 /**
  *  Initializes the floppy image object.
  *
- *  @param parent
+ *  @param aParent
  *      parent object
- *  @param filePath
+ *  @param aFilePath
  *      local file system path to the image file
  *      (can be relative to the VirtualBox config dir)
- *  @param isRegistered
+ *  @param aRegistered
  *      whether this object is being initialized by the VirtualBox init code
  *      because it is present in the registry
- *  @param id
+ *  @param aId
  *      ID of the DVD image to assign
  *
  *  @return          COM result indicator
  */
-HRESULT FloppyImage::init (VirtualBox *parent, const BSTR filePath,
-                           BOOL isRegistered, const Guid &id)
+HRESULT FloppyImage::init (VirtualBox *aParent, const BSTR aFilePath,
+                           BOOL aRegistered, const Guid &aId)
 {
-    LogFlowMember (("FloppyImage::init(): filePath={%ls}, id={%s}\n",
-                    filePath, id.toString().raw()));
+    LogFlowThisFunc (("aFilePath={%ls}, aId={%s}\n",
+                      aFilePath, aId.toString().raw()));
 
-    ComAssertRet (parent && filePath && !!id, E_INVALIDARG);
+    ComAssertRet (aParent && aFilePath && !!aId, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
     HRESULT rc = S_OK;
 
-    mParent = parent;
+    /* share the parent weakly */
+    unconst (mParent) = aParent;
 
-    unconst (mImageFile) = filePath;
-    unconst (mUuid) = id;
+    /* register with parent early, since uninit() will unconditionally
+     * unregister on failure */
+    mParent->addDependentChild (this);
+
+    unconst (mImageFile) = aFilePath;
+    unconst (mUuid) = aId;
 
     /* get the full file name */
     char filePathFull [RTPATH_MAX];
-    int vrc = RTPathAbsEx (mParent->homeDir(), Utf8Str (filePath),
+    int vrc = RTPathAbsEx (mParent->homeDir(), Utf8Str (aFilePath),
                            filePathFull, sizeof (filePathFull));
     if (VBOX_FAILURE (vrc))
         return setError (E_FAIL, tr ("Invalid image file path: '%ls' (%Vrc)"),
-                                 filePath, vrc);
+                                 aFilePath, vrc);
 
     unconst (mImageFileFull) = filePathFull;
-    LogFlowMember (("                     filePathFull={%ls}\n", mImageFileFull.raw()));
+    LogFlowThisFunc (("...filePathFull={%ls}\n", mImageFileFull.raw()));
 
-    if (!isRegistered)
+    if (!aRegistered)
     {
         /* check whether the given file exists or not */
         RTFILE file;
@@ -108,12 +116,9 @@ HRESULT FloppyImage::init (VirtualBox *parent, const BSTR filePath,
             RTFileClose (file);
     }
 
+    /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
-    {
-        mParent->addDependentChild (this);
-    }
-
-    setReady (SUCCEEDED (rc));
+        autoInitSpan.setSucceeded();
 
     return rc;
 }
@@ -124,58 +129,59 @@ HRESULT FloppyImage::init (VirtualBox *parent, const BSTR filePath,
  */
 void FloppyImage::uninit()
 {
-    LogFlowMember (("FloppyImage::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-
-    LogFlowMember (("FloppyImage::uninit(): isReady=%d\n", isReady()));
-
-    if (!isReady())
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
         return;
 
-    setReady (false);
-
-    alock.leave();
     mParent->removeDependentChild (this);
-    alock.enter();
 
-    mParent.setNull();
+    unconst (mParent).setNull();
 }
 
 // IFloppyImage properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP FloppyImage::COMGETTER(Id) (GUIDPARAMOUT id)
+STDMETHODIMP FloppyImage::COMGETTER(Id) (GUIDPARAMOUT aId)
 {
-    if (!id)
+    if (!aId)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mUuid.cloneTo (id);
+    /* mUuid is constant during life time, no need to lock */
+    mUuid.cloneTo (aId);
+
     return S_OK;
 }
 
-STDMETHODIMP FloppyImage::COMGETTER(FilePath) (BSTR *filePath)
+STDMETHODIMP FloppyImage::COMGETTER(FilePath) (BSTR *aFilePath)
 {
-    if (!filePath)
+    if (!aFilePath)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mImageFileFull.cloneTo (filePath);
+    AutoReaderLock alock (this);
+
+    mImageFileFull.cloneTo (aFilePath);
+
     return S_OK;
 }
 
-STDMETHODIMP FloppyImage::COMGETTER(Accessible) (BOOL *accessible)
+STDMETHODIMP FloppyImage::COMGETTER(Accessible) (BOOL *aAccessible)
 {
-    if (!accessible)
+    if (!aAccessible)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     HRESULT rc = S_OK;
 
@@ -195,28 +201,31 @@ STDMETHODIMP FloppyImage::COMGETTER(Accessible) (BOOL *accessible)
         RTFileClose (file);
     }
 
-    *accessible = mAccessible;
+    *aAccessible = mAccessible;
 
     return rc;
 }
 
-STDMETHODIMP FloppyImage::COMGETTER(Size) (ULONG *size)
+STDMETHODIMP FloppyImage::COMGETTER(Size) (ULONG *aSize)
 {
-    if (!size)
+    if (!aSize)
         return E_POINTER;
 
     HRESULT rc = S_OK;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     RTFILE file;
     int vrc = RTFileOpen (&file, Utf8Str (mImageFileFull),
                           RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
 
     if (VBOX_FAILURE (vrc))
-        rc = setError (E_FAIL, tr("Failed to open floppy image '%ls' (%Vrc)\n"),
-                       mImageFileFull.raw(), vrc);
+        rc = setError (E_FAIL,
+            tr ("Failed to open floppy image '%ls' (%Vrc)\n"),
+                mImageFileFull.raw(), vrc);
     else
     {
         uint64_t u64Size = 0;
@@ -224,7 +233,7 @@ STDMETHODIMP FloppyImage::COMGETTER(Size) (ULONG *size)
         vrc = RTFileGetSize (file, &u64Size);
 
         if (VBOX_SUCCESS (vrc))
-            *size = (ULONG) u64Size;
+            *aSize = (ULONG) u64Size;
         else
             rc = setError (E_FAIL,
                 tr ("Failed to determine size of floppy image '%ls' (%Vrc)\n"),
@@ -255,8 +264,10 @@ void FloppyImage::updatePath (const char *aNewFullPath, const char *aNewPath)
     AssertReturnVoid (aNewFullPath);
     AssertReturnVoid (aNewPath);
 
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
     AutoLock alock (this);
-    AssertReturnVoid (isReady());
 
     unconst (mImageFileFull) = aNewFullPath;
     unconst (mImageFile) = aNewPath;

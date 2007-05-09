@@ -1215,8 +1215,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     leName->setText (machine.GetName());
 
     /* OS type */
-    CGuestOSType type = machine.GetOSType();
-    cbOS->setCurrentItem (vboxGlobal().vmGuestOSTypeIndex(type));
+    QString typeId = machine.GetOSTypeId();
+    cbOS->setCurrentItem (vboxGlobal().vmGuestOSTypeIndex (typeId));
     cbOS_activated (cbOS->currentItem());
 
     /* RAM size */
@@ -1531,7 +1531,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     /* OS type */
     CGuestOSType type = vboxGlobal().vmGuestOSType (cbOS->currentItem());
     AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
-    cmachine.SetOSType (type);
+    cmachine.SetOSTypeId (type.GetId());
 
     /* RAM size */
     cmachine.SetMemorySize (slRAM->value());
