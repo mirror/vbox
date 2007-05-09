@@ -338,7 +338,7 @@ typedef struct ATACONTROLLER
     uint8_t             AsyncIOReqHead;
     /** The position at which to get a new request for the AIO thread. */
     uint8_t             AsyncIOReqTail;
-    uint8_t             Alignment3[2]; /** Explicit padding of the 2 byte gap. */
+    uint8_t             Alignment3[2]; /**< Explicit padding of the 2 byte gap. */
     /** Magic delay before triggering interrupts in DMA mode. */
     uint32_t            DelayIRQMillies;
     /** The mutex protecting the request queue. */
@@ -596,8 +596,14 @@ static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     pCtl->AsyncIOReqHead %= RT_ELEMENTS(pCtl->aAsyncIORequests);
     rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
     AssertRC(rc);
-    rc = RTSemEventSignal(pCtl->AsyncIOSem);
-    AssertRC(rc);
+    LogBird(("ata: %x: signalling\n", pCtl->IOPortBase1));
+    rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem); 
+    if (VBOX_FAILURE(rc))
+    {
+        LogBird(("ata: %x: schedule failed, rc=%Vrc\n", pCtl->IOPortBase1, rc));
+        rc = RTSemEventSignal(pCtl->AsyncIOSem);
+        AssertRC(rc);
+    }
 }
 
 
@@ -3989,7 +3995,9 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         /* Wait for work.  */
         if (pReq == NULL)
         {
+            LogBird(("ata: %x: going to sleep...\n", pCtl->IOPortBase1));
             rc = RTSemEventWait(pCtl->AsyncIOSem, RT_INDEFINITE_WAIT);
+            LogBird(("ata: %x: waking up\n", pCtl->IOPortBase1));
             if (VBOX_FAILURE(rc) || pCtl->fShutdown)
                 break;
 
@@ -4019,7 +4027,9 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         /* Do our work.  */
         {
         STAM_PROFILE_START(&pCtl->StatLockWait, a);
+        LogBird(("ata: %x: entering critsect\n", pCtl->IOPortBase1));
         PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
+        LogBird(("ata: %x: entered\n", pCtl->IOPortBase1));
         STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
         }
 
@@ -4357,6 +4367,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
 #endif /* DEBUG || VBOX_WITH_STATISTICS */
         }
 
+        LogBird(("ata: %x: leaving critsect\n", pCtl->IOPortBase1));
         PDMCritSectLeave(&pCtl->lock);
     }
 
@@ -4739,7 +4750,9 @@ PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
     }
     else
         AssertMsgFailed(("ataIOPortWrite1: unsupported write to port %x val=%x size=%d\n", Port, u32, cb));
+    LogBird(("ata: leaving critsect\n"));
     PDMCritSectLeave(&pCtl->lock);
+    LogBird(("ata: left critsect\n"));
     return rc;
 }
 

@@ -145,9 +145,12 @@ typedef struct PDMCRITSECTINT
     R0PTRTYPE(PVM)      pVMR0;
     /** Pointer to the VM - GCPtr. */
     GCPTRTYPE(PVM)      pVMGC;
-#if GC_ARCH_BITS == 32
-    uint32_t            u32Padding;
-#endif
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+    uint32_t            padding;
+#endif 
+    /** Event semaphore that is scheduled to be signaled upon leaving the 
+     * critical section. This is Ring-3 only of course. */
+    RTSEMEVENT          EventToSignal;
     /** R0/GC lock contention. */
     STAMCOUNTER         StatContentionR0GCLock;
     /** R0/GC unlock contention. */

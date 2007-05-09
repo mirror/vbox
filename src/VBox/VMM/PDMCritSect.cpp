@@ -118,6 +118,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
         pCritSect->pVMR0 = (RTR0PTR)pVM;//pVM->pVMR0;
         pCritSect->pVMGC = pVM->pVMGC;
         pCritSect->pvKey = pvKey;
+        pCritSect->EventToSignal = NIL_RTSEMEVENT;
         pCritSect->pNext = pVM->pdm.s.pCritSects;
         pVM->pdm.s.pCritSects = pCritSect;
 #ifdef VBOX_WITH_STATISTICS
@@ -320,5 +321,30 @@ PDMR3DECL(void) PDMR3CritSectFF(PVM pVM)
 PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect)
 {
     return RTCritSectTryEnter(&pCritSect->s.Core);
+}
+
+
+/**
+ * Schedule a event semaphore for signalling upon critsect exit.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_TOO_MANY_SEMAPHORES if an event was already scheduled.
+ * @returns VERR_NOT_OWNER if we're not the critsect owner.
+ * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
+ * @param   pCritSect       The critical section.
+ * @param   EventToSignal     The semapore that should be signalled.
+ */
+PDMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal)
+{
+    Assert(EventToSignal != NIL_RTSEMEVENT);
+    if (RT_UNLIKELY(!RTCritSectIsOwner(&pCritSect->s.Core)))
+        return VERR_NOT_OWNER;
+    if (RT_LIKELY(   pCritSect->s.EventToSignal == NIL_RTSEMEVENT
+                  || pCritSect->s.EventToSignal == EventToSignal))
+    {
+        pCritSect->s.EventToSignal = EventToSignal;
+        return VINF_SUCCESS;
+    }
+    return VERR_TOO_MANY_SEMAPHORES;
 }
 
