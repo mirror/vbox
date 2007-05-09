@@ -252,12 +252,7 @@ function check_gcc()
         log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
         fail really
       elif (($cc_maj>3)); then
-        if [ "$MACHINE" = "x86" ]; then
-          log_success "found version $cc_ver, using precompiled objects for recompiler"
-          cnf_append "VBOX_USING_GCC4" "1"
-        else
-          log_success "found version $cc_ver"
-        fi
+        log_success "found version $cc_ver"
       elif (($cc_maj<3 || $cc_min<2)); then
         log_failure "gcc version $cc_ver found, expected at least gcc version 3.2"
         fail really
@@ -425,8 +420,9 @@ function check_mkisofs()
 #
 function check_xalan()
 {
-  test_header xalan
-  echo '
+  if [ -n "$LIBXALAN" ]; then
+    test_header xalan
+    echo '
 #include <cstdio>
 #include <xalanc/Include/XalanVersion.hpp>
 extern "C" int main(void)
@@ -442,11 +438,15 @@ extern "C" int main(void)
 #endif
 }
 ' > .tmp_src.cc
-  if test_compile "$LIBXALAN ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
-    if test_execute; then
-      cnf_append "SDK_VBOX_XALAN_LIBS" `echo $LIBXALAN|sed 's+-l++'`
-      cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
+    if test_compile "$LIBXALAN ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
+      if test_execute; then
+        cnf_append "SDK_VBOX_XALAN_LIBS" `echo $LIBXALAN|sed 's+-l++'`
+        cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
+      fi
     fi
+  else
+    echo "Building xalan from shipped sources."
+    echo -e "Building xalan from shipped sources.\n\n" >> $LOG
   fi
 }
 
@@ -455,8 +455,9 @@ extern "C" int main(void)
 #
 function check_xerces()
 {
-  test_header xerces
-  echo '
+  if [ -n "$LIBXERCES" ]; then
+    test_header xerces
+    echo '
 #include <cstdio>
 #include <xercesc/util/XercesVersion.hpp>
 extern "C" int main(void)
@@ -472,11 +473,15 @@ extern "C" int main(void)
 #endif
 }
 ' > .tmp_src.cc
-  if test_compile "$LIBXERCES ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
-    if test_execute; then
-      cnf_append "SDK_VBOX_XERCES_LIBS" `echo $LIBXERCES|sed 's+-l++'`
-      cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
+    if test_compile "$LIBXERCES ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
+      if test_execute; then
+        cnf_append "SDK_VBOX_XERCES_LIBS" `echo $LIBXERCES|sed 's+-l++'`
+        cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
+      fi
     fi
+  else
+    echo "Building xerces from shipped sources."
+    echo -e "Building xerces from shipped sources.\n\n" >> $LOG
   fi
 }
 
@@ -1000,6 +1005,7 @@ Configuration:
   --nofatal               don't abort on errors
   --disable-xpcom         disable XPCOM and related stuff
   --disable-sdl-ttf       disable SDL_ttf detection
+  --build-xalan           build xalan & xerces from shipped sources
 
 Paths:
   --with-gcc=PATH         position of the gcc compiler [$CC]
@@ -1074,6 +1080,10 @@ for option; do
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
+      ;;
+    --build-xalan)
+      LIBXERCES=``
+      LIBXALAN=``
       ;;
     --ose)
       OSE=2
