@@ -533,7 +533,7 @@
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>Floppy tooltip</comment>
-        <translation>Drive&amp;nbsp;Gazdă&amp;nbsp;</translation>
+        <translation>Unitate&amp;nbsp;Gazdă&amp;nbsp;</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
@@ -617,7 +617,7 @@
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>Drive Gazdă </translation>
+        <translation>Unitate Gazdă </translation>
     </message>
     <message>
         <source>Mount a floppy image file</source>
@@ -638,54 +638,54 @@
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indică activitatea plăcilor de reţea</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Placa de reţea %1 (%2)&lt;/b&gt;: cablu %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>conectat</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>deconectat</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Toate plăcile de reţea sunt dezactivate&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Plăci de reţea</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Dispozitiv %1</translation>
+        <translation>Placa de reţea %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Montează unitatea fizică selectată a PC gazdă</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Montează unitatea fizică selectată a PC gazdă</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Deconectează cablul de la placa de reţea virtuală selectată</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectează cablul la placa de reţea virtuală selectată</translation>
     </message>
 </context>
 <context>
@@ -935,7 +935,7 @@
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>Selectare un fişier imagine hard disk</translation>
+        <translation>Selectare un fişier imagine hard disc</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso)</source>
@@ -1118,7 +1118,7 @@
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation>Drive Gazdă</translation>
+        <translation>Unitate Gazdă</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
@@ -1138,7 +1138,7 @@
     <message>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation>Audio</translation>
+        <translation>Sunet</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -1495,7 +1495,7 @@
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation>Nu este montat</translation>
+        <translation>Nu este montată</translation>
     </message>
     <message>
         <source>Image</source>
@@ -1505,7 +1505,7 @@
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation>Drive Gazdă</translation>
+        <translation>Unitate Gazdă</translation>
     </message>
 </context>
 <context>
@@ -1516,7 +1516,7 @@
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>Valoarea &apos;%1&apos; a cheii &apos;%2&apos; nu se potriveşte constrângerii expresiei regulare &apos;%3&apos;.</translation>
+        <translation>Valoarea &apos;%1&apos; a cheii &apos;%2&apos; nu se potriveşte constrângerii expresiei regulate &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
@@ -1769,7 +1769,7 @@ toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Afişează tastele utilizate ca Tastă Gazdă în fereastra MV. Activează câmpul de intrare şi apasă noua Tastă Gazdă. Notează faptul că tastele alfanumerice, de mişcare a cursoului şi de editare nu pot fi utilizate ca Tastă Gazdă.</translation>
+        <translation>Afişează tastele utilizate ca Tastă Gazdă în fereastra MV. Activează câmpul de intrare şi apasă noua Tastă Gazdă. Tastele alfanumerice, de mişcare a cursoului şi de editare nu pot fi utilizate ca Tastă Gazdă.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -1855,7 +1855,7 @@ către limba implicită a sistemului.&lt;/qt&gt;
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation>Restează calea către directorul VDI la valoarea implicită.
-Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acet dialog din nou.</translation>
+Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acest dialog din nou.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
@@ -2040,8 +2040,10 @@ unei noi maşini virtuale pentru VirtualBox.&lt;/p&gt;
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare musafir pe care plănuiţi să îl instalaţi în maşină.&lt;/p&gt;
-&lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware.Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina virtuală creată.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare musafir 
+pe care plănuiţi să îl instalaţi în maşină.&lt;/p&gt;
+&lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware. 
+Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina virtuală creată.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -2257,7 +2259,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nu am putut porni maşina virtuală nouă &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nu am putut porni maşina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2305,15 +2307,15 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sunteţi sigur că doriţi sa ştergeţi pentru totdeauna maşina virtuală &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operaţie este definitivă.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sunteţi sigur că doriţi să ştergeţi pentru totdeauna maşina virtuală &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operaţie este definitivă.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sunteţi sigur că doriţi să dezînregistraţi maşina virtuală inaccesibilă &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Nu veţi mai fi capabil să o reînregistraţi din GUI.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sunteţi sigur că doriţi să deînregistraţi maşina virtuală inaccesibilă &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Nu veţi mai putea să o înregistraţi din nou din GUI.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sunteţi sigur că doriţi să renunţaţi la starea salvată a maşinii virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operaţie este echivalentă cu resetarea sau stingerea maşinii fără a face shutdown normal din punctul de vedere al SO musafir.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sunteţi sigur că doriţi să renunţaţi la starea salvată a maşinii virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operaţie este echivalentă cu resetarea sau stingerea maşinii fără a face închidere normală din punctul de vedere al SO musafir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
@@ -2587,11 +2589,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation>&amp;Nou...</translation>
+        <translation>&amp;Nouă...</translation>
     </message>
     <message>
         <source>New</source>
-        <translation>Nou</translation>
+        <translation>Nouă</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
@@ -2743,7 +2745,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor maşinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o maşină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o nouă maşină virtuală apăsaţi butonul &lt;b&gt;Nou&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteţi apăsa tasta &lt;b&gt;F1&lt;/b&gt; pentru a obţine ajutor instantaneu, sau puteţi vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele ştiri şi informaţii.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor maşinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o maşină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o maşină virtuală nouă apăsaţi butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteţi apăsa tasta &lt;b&gt;F1&lt;/b&gt; pentru a obţine ajutor instantaneu, sau puteţi vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele ştiri şi informaţii.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -2776,7 +2778,7 @@ Use
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Listează toate directoarele partajate accesibile acestei maşini
+        <translation>&lt;qt&gt;Listează toate directoarele partajate accesibile acestei maşini.
 Folosiţi comanda:
 &lt;tt&gt;net use x:\\vboxsvr\share&lt;/tt&gt;
 pentru a accesa un director partajat denumit &lt;i&gt;share&lt;/i&gt; dintr-un SO gen DOS, sau
@@ -3358,7 +3360,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Attached to</source>
-        <translation>Conect&amp;at la</translation>
+        <translation>Conect&amp;ată la</translation>
     </message>
     <message>
         <source>Controls the way how this
@@ -3395,7 +3397,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
-        <translation>Un ca&amp;blu de reţea este conectat</translation>
+        <translation>Ca&amp;blu de reţea conectat la pornire</translation>
     </message>
     <message>
         <source>Alt+B</source>
@@ -3469,7 +3471,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Terminate Application</source>
-        <translation>&amp;Închide aplicaţia</translation>
+        <translation>A&amp;plicaţie de închidere</translation>
     </message>
     <message>
         <source>Displays the
@@ -3636,7 +3638,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source> Audio </source>
-        <translation> Audio </translation>
+        <translation> Sunet </translation>
     </message>
     <message>
         <source>4</source>
@@ -3863,7 +3865,7 @@ sau a selecta un disc hard virtual existent.</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>&amp;Drive dischetă gazdă</translation>
+        <translation>Unitate &amp;dischetă gazdă</translation>
     </message>
     <message>
         <source>Alt+D</source>
@@ -3899,15 +3901,15 @@ o imagine de dischetă pentru montare.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>Montare drive &amp;CD/DVD</translation>
+        <translation>Montare unitate &amp;CD/DVD</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>&amp;Drive CD/DVD gazdă</translation>
+        <translation>&amp;Unitate CD/DVD gazdă</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Montează drive CD/DVD specificat al gazdei la drive virtual CD/DVD.</translation>
+        <translation>Montează unitatea CD/DVD specificată a gazdei la unitatea virtuală CD/DVD.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to
@@ -3931,11 +3933,11 @@ o imagine CD/DVD pentru montare.</translation>
     </message>
     <message>
         <source>&amp;Enable Audio</source>
-        <translation>Activ&amp;ează Audio</translation>
+        <translation>Activ&amp;ează sunet</translation>
     </message>
     <message>
         <source>Host Audio &amp;Driver</source>
-        <translation>&amp;Driver audio gazdă</translation>
+        <translation>&amp;Driver de sunet gazdă</translation>
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
@@ -4131,7 +4133,7 @@ toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>Când este selectat, placa audio PCI virtuală este conectată la maşina virtuală care foloseşte driverul specificat pentru a comunica cu placa audio a gazdei.</translation>
+        <translation>Când este selectat, placa de sunet PCI virtuală este conectată la maşina virtuală care foloseşte driverul specificat pentru a comunica cu placa de sunet a gazdei.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
@@ -4168,7 +4170,7 @@ toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
-        <translation>Fişierul imagine CD/DVD drive nu este selctat.</translation>
+        <translation>Fişierul imagine de CD/DVD nu este selectat.</translation>
     </message>
     <message>
         <source>Floppy drive image file is not selected.</source>
@@ -4243,7 +4245,7 @@ această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Restează calea către directorul de instantanee la valoarea implicită. Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acet dialog din nou.</translation>
+        <translation>Restează calea către directorul de instantanee la valoarea implicită. Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi deschideţi acest dialog din nou.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
@@ -4274,7 +4276,7 @@ la maşina virtuală.</translation>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Controlează driverul audio de ieşiere. &lt;b&gt;Driver Audio Null&lt;/b&gt; face ca musafirul să vadă o placă de sunet, dar orice acces la aceasta va fi ignorat.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Controlează driverul de sunet de ieşire. &lt;b&gt;Driver Audio Null&lt;/b&gt; face ca musafirul să vadă o placă de sunet, dar orice acces la aceasta va fi ignorat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
