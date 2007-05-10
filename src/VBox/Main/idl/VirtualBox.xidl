@@ -350,7 +350,7 @@
         name="IVirtualBoxErrorInfo" extends="$errorinfo"
         uuid="e98b5376-8eb4-4eea-812a-3964bf3bb26f"
         supportsErrorInfo="no"
-        wsmap="struct"
+        wsmap="suppress"
     >
         <desc>
             The IVirtualBoxErrorInfo interface represents extended error information
@@ -3607,7 +3607,7 @@
     <interface
         name="IHost" extends="$unknown"
         uuid="81729c26-1aec-46f5-b7c0-cc7364738fdb"
-        wsmap="global"
+        wsmap="managedObjectRef"
     >
         <attribute name="DVDDrives" type="IHostDVDDriveCollection" readonly="yes">
             <desc>List of DVD drives available on the host.</desc>
@@ -7146,7 +7146,7 @@
     <interface
         name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"
         uuid="4cc70246-d74a-400f-8222-3900489c0374"
-        wsmap="struct"
+        wsmap="managedObjectRef"
     >
         <desc>
             The IHostUSBDeviceFilter interface represents a USB device filter used
