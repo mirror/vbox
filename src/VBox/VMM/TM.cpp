@@ -132,7 +132,8 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static uint64_t             tmR3Calibrate(void);
+static bool                 tmR3HasFixedTSC(void);
+static uint64_t             tmR3CalibrateTSC(void);
 static DECLCALLBACK(int)    tmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser);
@@ -252,14 +253,27 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     if (!pVM->tm.s.fTSCUseRealTSC)
         pVM->tm.s.fTSCVirtualized = true;
 
+    /* TSC reliability */
+    rc = CFGMR3QueryBool(pCfgHandle, "MaybeUseOffsettedHostTSC", &pVM->tm.s.fMaybeUseOffsettedHostTSC);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        if (!pVM->tm.s.fTSCUseRealTSC)
+            pVM->tm.s.fMaybeUseOffsettedHostTSC = tmR3HasFixedTSC();
+        else
+            pVM->tm.s.fMaybeUseOffsettedHostTSC = true;
+    }
+
     /* frequency */
     rc = CFGMR3QueryU64(pCfgHandle, "TSCTicksPerSecond", &pVM->tm.s.cTSCTicksPerSecond);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pVM->tm.s.cTSCTicksPerSecond = tmR3Calibrate();
+        pVM->tm.s.cTSCTicksPerSecond = tmR3CalibrateTSC();
         if (    !pVM->tm.s.fTSCUseRealTSC
             &&  pVM->tm.s.cTSCTicksPerSecond >= _4G)
+        {
             pVM->tm.s.cTSCTicksPerSecond = _4G - 1; /* (A limitation of our math code) */
+            pVM->tm.s.fMaybeUseOffsettedHostTSC = false;
+        }
     }
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, 
@@ -271,17 +285,18 @@ TMR3DECL(int) TMR3Init(PVM pVM)
                           pVM->tm.s.cTSCTicksPerSecond);
     else
     {
-        pVM->tm.s.fTSCUseRealTSC = false;
+        pVM->tm.s.fTSCUseRealTSC = pVM->tm.s.fMaybeUseOffsettedHostTSC =  false;
         pVM->tm.s.fTSCVirtualized = true;
     }
 
     /* setup and report */
-    if (pVM->tm.s.fTSCUseRealTSC)
-        CPUMR3SetCR4Feature(pVM, 0, ~X86_CR4_TSD);
-    else
+    if (pVM->tm.s.fTSCVirtualized)
         CPUMR3SetCR4Feature(pVM, X86_CR4_TSD, ~X86_CR4_TSD);
-    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool\n", 
-            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC));
+    else
+        CPUMR3SetCR4Feature(pVM, 0, ~X86_CR4_TSD);
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool fMaybeUseOffsettedHostTSC=%RTbool\n", 
+            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, 
+            pVM->tm.s.fTSCUseRealTSC, pVM->tm.s.fMaybeUseOffsettedHostTSC));
 
     /*
      * Configure the timer synchronous virtual time.
@@ -463,11 +478,73 @@ TMR3DECL(int) TMR3Init(PVM pVM)
 
 
 /**
+ * Checks if the host CPU has a fixed TSC frequency.
+ * 
+ * @returns true if it has, false if it hasn't.
+ * 
+ * @remark  This test doesn't bother with very old CPUs that doesn't do power 
+ *          management or any other stuff that might influence the TSC rate.
+ *          This isn't currently relevant.
+ */
+static bool tmR3HasFixedTSC(void)
+{
+    if (ASMHasCpuId())
+    {
+        uint32_t uEAX, uEBX, uECX, uEDX;
+        ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+        if (    uEAX >= 1
+            &&  uEBX == 0x68747541 
+            &&  uECX == 0x444d4163 
+            &&  uEDX == 0x69746e65)
+        {
+            /* 
+             * AuthenticAMD - Check for APM support and that TscInvariant is set.
+             *
+             * This test isn't correct with respect to fixed/non-fixed TSC and 
+             * older models, but this isn't relevant since the result is currently
+             * only used for making a descision on AMD-V models.
+             */
+            ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
+            if (uEAX >= 0x80000007)
+            {
+                ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
+                if (uEDX & BIT(8) /* TscInvariant */)
+                    return true;
+            }
+        }
+        else if (    uEAX >= 1
+                 &&  uEBX == 0x756e6547
+                 &&  uECX == 0x6c65746e
+                 &&  uEDX == 0x49656e69)
+        {
+            /* 
+             * GenuineIntel - Check the model number.
+             * 
+             * This test is lacking in the same way and for the same reasons
+             * as the AMD test above.
+             */
+            ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
+            unsigned uModel  = (uEAX >> 4) & 0x0f;
+            unsigned uFamily = (uEAX >> 8) & 0x0f;
+            if (uFamily == 0x0f)
+                uFamily += (uEAX >> 20) & 0xff;
+            if (uFamily >= 0x06)
+                uModel += ((uEAX >> 16) & 0x0f) << 4;
+            if (    (uFamily == 0x0f /*P4*/     && uModel >= 0x03)
+                ||  (uFamily == 0x06 /*P2/P3*/  && uModel >= 0x0e))
+                return true;
+        }
+    }
+    return false;
+}
+
+
+/**
  * Calibrate the CPU tick.
  *
  * @returns Number of ticks per second.
  */
-static uint64_t tmR3Calibrate(void)
+static uint64_t tmR3CalibrateTSC(void)
 {
     /*
      * Use GIP when available present.
