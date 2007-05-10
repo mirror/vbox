@@ -35,6 +35,11 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #define USBFLT_NTDEVICE_NAME_STRING      L"\\Device\\VBoxUSBFlt"
 #define USBFLT_SYMBOLIC_NAME_STRING      L"\\DosDevices\\VBoxUSBFlt"
 
+#define USBMON_SERVICE_NAME              "VBoxUSBMon"
+#define USBMON_DEVICE_NAME               "\\\\.\\VBoxUSBMon"
+#define USBMON_DEVICE_NAME_NT            L"\\Device\\VBoxUSBMon"
+#define USBMON_DEVICE_NAME_DOS           L"\\DosDevices\\VBoxUSBMon"
+
 /*
  * IOCtl numbers.
  * We're using the Win32 type of numbers here, thus the macros below.
