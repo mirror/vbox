@@ -385,7 +385,8 @@ PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
  * Schedule a event semaphore for signalling upon critsect exit.
  *
  * @returns VINF_SUCCESS on success.
- * @returns VERR_TOO_MANY_SEMAPHORES if the critsect was owned.
+ * @returns VERR_TOO_MANY_SEMAPHORES if an event was already scheduled.
+ * @returns VERR_NOT_OWNER if we're not the critsect owner.
  * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
  * @param   pCritSect       The critical section.
  * @param   EventToSignal     The semapore that should be signalled.
