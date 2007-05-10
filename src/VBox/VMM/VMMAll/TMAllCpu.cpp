@@ -98,6 +98,7 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
  *
  * @returns TSC ofset
  * @param   pVM         The VM to operate on.
+ * @todo    Remove this when the code has been switched to TMCpuTickCanUseRealTSC.
  */
 TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM)
 {
@@ -119,6 +120,65 @@ TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM)
         u64 = pVM->tm.s.u64TSC;
 
     return u64 - ASMReadTSC();
+}
+
+
+/**
+ * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
+ * 
+ * @returns true/false accordingly.
+ * @param   pVM             The VM handle.
+ * @param   poffRealTSC     The offset against the TSC of the current CPU.
+ *                          Can be NULL.
+ * @thread EMT.
+ */
+TMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
+{
+    /*
+     * We require:
+     *     1. A fixed TSC, this is checked at init time.
+     *     2. That the TSC is ticking (we shouldn't be here if it isn't)
+     *     3. Either that we're using the real TSC as time source or
+     *          a) We don't have any lag to catch up.
+     *          b) The virtual sync clock hasn't been halted by an expired timer.
+     *          c) We're not using warp drive (accelerated virtual guest time).
+     */
+    if (    pVM->tm.s.fMaybeUseOffsettedHostTSC
+        &&  RT_LIKELY(pVM->tm.s.fTSCTicking)
+        &&  (   pVM->tm.s.fTSCUseRealTSC
+             || (   !pVM->tm.s.fVirtualSyncCatchUp
+                 && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
+                 && !pVM->tm.s.fVirtualWarpDrive))
+       )
+    {
+        if (!pVM->tm.s.fTSCUseRealTSC)
+        {
+            /* The source is the timer synchronous virtual clock. */
+            Assert(pVM->tm.s.fTSCVirtualized);
+
+            if (poffRealTSC)
+            {
+                uint64_t u64Now = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
+                                - pVM->tm.s.u64TSCOffset;
+                /** @todo When we start collecting statistics on how much time we spend executing 
+                 * guest code before exiting, we should check this against the next virtual sync 
+                 * timer timeout. If it's lower than the avg. length, we should trap rdtsc to increase 
+                 * the chance that we'll get interrupted right after the timer expired. */
+                *poffRealTSC = u64Now - ASMReadTSC();
+            }
+        }
+        else if (poffRealTSC)
+        {
+            /* The source is the real TSC. */
+            if (pVM->tm.s.fTSCVirtualized)
+                *poffRealTSC = pVM->tm.s.u64TSCOffset;
+            else
+                *poffRealTSC = 0;
+        }
+        return true;
+    }
+
+    return false;
 }
 
 

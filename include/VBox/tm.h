@@ -63,7 +63,6 @@ typedef enum TMCLOCK
 } TMCLOCK;
 
 
-
 /** @name Real Clock Methods
  * @{
  */
@@ -291,8 +290,20 @@ TMDECL(uint64_t) TMCpuTickGet(PVM pVM);
  *
  * @returns TSC ofset
  * @param   pVM         The VM to operate on.
+ * @todo    Remove this when the code has been switched to TMCpuTickCanUseRealTSC.
  */
 TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM);
+
+/**
+ * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
+ * 
+ * @returns true/false accordingly.
+ * @param   pVM             The VM handle.
+ * @param   poffRealTSC     The offset against the TSC of the current CPU.
+ *                          Can be NULL.
+ * @thread EMT.
+ */
+TMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC);
 
 /**
  * Sets the current CPU timestamp counter.
@@ -542,7 +553,6 @@ TMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS);
  * @remark  There could be rounding and overflow errors here.
  */
 TMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS);
-
 
 /**
  * Stop the timer.

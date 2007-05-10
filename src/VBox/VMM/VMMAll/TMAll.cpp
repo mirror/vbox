@@ -1335,4 +1335,3 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
 }
 #endif /* !VBOX_STRICT */
 
-
