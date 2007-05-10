@@ -1681,7 +1681,7 @@ static int vmdkFlushImage(PVMDKIMAGE pImage)
             case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
             case VMDKETYPE_FLAT:
-                if (pExtent->File != NIL_RTFILE)
+                if (pExtent->File != NIL_RTFILE && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
                     rc = RTFileFlush(pExtent->File);
                 break;
             case VMDKETYPE_ZERO:
