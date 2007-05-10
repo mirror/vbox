@@ -27,6 +27,7 @@
 #include <qevent.h>
 #include <qlistview.h>
 #include <qtextedit.h>
+#include <qlabel.h>
 
 /**
  *  Simple ListView filter to disable unselecting all items by clicking in the
@@ -126,13 +127,13 @@ protected:
     }
 };
 
-/** 
+/**
  *  Watches the given widget and makes sure the minimum widget size set by the layout
  *  manager does never get smaller than the previous minimum size set by the
  *  layout manager. This way, widgets with dynamic contents (i.e. text on some
  *  toggle buttons) will be able only to grow, never shrink, to avoid flicker
  *  during alternate contents updates (Pause -> Resume -> Pause -> ...).
- * 
+ *
  *  @todo not finished
  */
 class QIConstraintKeeper : public QObject
@@ -168,12 +169,14 @@ private:
 };
 
 
-/** 
+/**
  *  Simple QTextEdit subclass to return its minimumSizeHint() as sizeHint()
  *  for getting more compact layout.
  */
 class QITextEdit : public QTextEdit
 {
+    Q_OBJECT
+
 public:
 
     QITextEdit (QWidget *aParent)
@@ -186,11 +189,62 @@ public:
 
     QSize minimumSizeHint() const
     {
-        /// @todo (r=dmik) this looks a bit meanignless. any comment?
-        int w = 0;
-        int h = heightForWidth (w);
-        return QSize (w, h);
+        return QSize (width(), heightForWidth (width()));
     }
+};
+
+
+/**
+ *  Simple QLabel subclass to re-query and return its sizeHint()
+ *  before the widget to be shown for getting more compact layout.
+ */
+class QILabel : public QLabel
+{
+    Q_OBJECT
+
+public:
+
+    QILabel (QWidget *aParent, const char *aName)
+         : QLabel (aParent, aName), mSizeHint (-1, -1)
+    {
+        /* setup default size policy and alignment */
+        setSizePolicy (QSizePolicy ((QSizePolicy::SizeType)1,
+                                    (QSizePolicy::SizeType)0,
+                                    0, 0,
+                                    sizePolicy().hasHeightForWidth()));
+        setAlignment (int (QLabel::WordBreak | QLabel::AlignTop));
+        /* install show-parent-widget watcher */
+        aParent->installEventFilter (this);
+    }
+
+    QSize sizeHint() const
+    {
+        /* use cashed sizeHint if mSizeHint is valid */
+        if (!mSizeHint.isValid())
+            mSizeHint = QLabel::sizeHint();
+        return mSizeHint;
+    }
+
+private:
+
+    bool eventFilter (QObject *aObject, QEvent *aEvent)
+    {
+        switch (aEvent->type())
+        {
+            case QEvent::Show:
+            {
+                /* watch for parent's show-event to recalculate sizeHint */
+                mSizeHint = QSize (width(), heightForWidth (width()));
+                updateGeometry();
+                break;
+            }
+            default:
+                break;
+        }
+        return QLabel::eventFilter (aObject, aEvent);
+    }
+
+    mutable QSize mSizeHint;
 };
 
 

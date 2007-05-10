@@ -156,6 +156,57 @@ static inline Q_UINT64 sliderToSizeMB (int val, int sliderScale)
 
 void VBoxNewHDWzd::init()
 {
+    /* Wizard labels recreation */
+
+    QILabel *txWelcome = new QILabel (pageWelcome, "txWelcome");
+    txWelcome->setText (tr ("<p>This wizard will help you to create a new "
+                            "virtual hard disk image for your virtual "
+                            "machine.</p>\n""<p>Use the <b>Next</b> button to "
+                            "go to the next page of the wizard\n""and the "
+                            "<b>Back</b> button to return to the previous "
+                            "page.</p>"));
+    layout33->insertWidget (0, txWelcome);
+
+    QILabel *textLabel1_2 = new QILabel (pageType, "textLabel1_2");
+    textLabel1_2->setText (tr ("<p>Select the type of virtual hard disk image "
+                               "you want to create.</p>\n""<p>A "
+                               "<b>dynamically expanding image</b> initially "
+                               "occupies a very small amount\n""of space on "
+                               "your physical hard disk. It will grow "
+                               "dynamically (up to\n""the size specified) as "
+                               "the Guest OS claims disk space.</p>\n""<p>A "
+                               "<b>fixed-size image</b> does not grow. It is "
+                               "stored in a file of approximately\n""the same "
+                               "size as the size of the virtual hard "
+                               "disk.</p>"));
+    layout12->insertWidget (0, textLabel1_2);
+
+    QILabel *txNameComment = new QILabel (pageNameAndSize, "txNameComment");
+    txNameComment->setText (tr ("<p>Press the <b>Select</b> button to select "
+                                "the location and name of the file\n""to "
+                                "store the virtual hard disk image or type a "
+                                "file name in the entry field.</p>"));
+    layout36->insertWidget (0, txNameComment);
+
+    QILabel *txSizeComment = new QILabel (pageNameAndSize, "txSizeComment" );
+    txSizeComment->setText (tr ("<p>Select the size of the virtual hard disk "
+                                "image in megabytes. This size will be "
+                                "reported to the Guest OS\n""as the size of "
+                                "the virtual hard disk.</p>"));
+    layout36->insertWidget (2, txSizeComment);
+
+    QILabel *txSummaryHdr = new QILabel (pageSummary, "txSummaryHdr");
+    txSummaryHdr->setText (tr ("You are going to create a new virtual hard "
+                               "disk image with the following parameters:"));
+    summaryLayout->insertWidget (0, txSummaryHdr);
+
+    QILabel *txSummaryFtr = new QILabel (pageSummary, "txSummaryFtr");
+    txSummaryFtr->setText (tr ("If the above settings are correct, press the "
+                               "<b>Finish</b> button.\n"
+                               "                            Once you press "
+                               "it, a new hard disk image will be created.\n"
+                               "                            "));
+
     /* disable help buttons */
     helpButton()->setShown (false);
 
@@ -220,6 +271,7 @@ void VBoxNewHDWzd::init()
     teSummary->setFrameShape (QTextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);
     summaryLayout->insertWidget (1, teSummary);
+    summaryLayout->insertWidget (2, txSummaryFtr);
 
     /* filter out Enter keys in order to direct them to the default dlg button */
     QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
@@ -262,15 +314,6 @@ void VBoxNewHDWzd::init()
 
     /* the finish button on the Summary page is always enabled */
     setFinishEnabled (pageSummary, true);
-
-    /* setup minimum width for the sizeHint to be calculated correctly */
-    int wid = widthSpacer->minimumSize().width();
-    txWelcome->setMinimumWidth (wid);
-    textLabel1_2->setMinimumWidth (wid);
-    txNameComment->setMinimumWidth (wid);
-    txSizeComment->setMinimumWidth (wid);
-    txSummaryHdr->setMinimumWidth (wid);
-    txSummaryFtr->setMinimumWidth (wid);
 }
 
 
