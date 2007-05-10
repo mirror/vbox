@@ -5082,7 +5082,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             AssertBreak (!vmdkDisk.isNull(), hrc = E_FAIL);
 
             rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-#if 0 /* Disabled new virtual hdd containder code for now, causes trouble with vmdks. */
+#if 1 /* Enable new VD container code (and new VMDK), as the bugs are fixed. */
             rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");               RC_CHECK();
 #else
             rc = CFGMR3InsertString(pLunL1, "Driver",         "VmdkHDD");               RC_CHECK();
