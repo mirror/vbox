@@ -38,7 +38,7 @@ static void ascii2upper(char *psz)
 {
     for (;*psz; psz++)
         if (*psz >= 'a' && *psz <= 'z')
-            *psz += 'A' - 'z';
+            *psz += 'A' - 'a';
 }
 
 static int UsageExit()
