@@ -28,6 +28,7 @@
 #include <qlistview.h>
 #include <qtextedit.h>
 #include <qlabel.h>
+#include <qlayout.h>
 
 /**
  *  Simple ListView filter to disable unselecting all items by clicking in the
@@ -205,7 +206,7 @@ class QILabel : public QLabel
 public:
 
     QILabel (QWidget *aParent, const char *aName)
-         : QLabel (aParent, aName), mSizeHint (-1, -1)
+         : QLabel (aParent, aName), mShowed (false)
     {
         /* setup default size policy and alignment */
         setSizePolicy (QSizePolicy ((QSizePolicy::SizeType)1,
@@ -214,15 +215,13 @@ public:
                                     sizePolicy().hasHeightForWidth()));
         setAlignment (int (QLabel::WordBreak | QLabel::AlignTop));
         /* install show-parent-widget watcher */
-        aParent->installEventFilter (this);
+        aParent->topLevelWidget()->installEventFilter (this);
     }
 
     QSize sizeHint() const
     {
-        /* use cashed sizeHint if mSizeHint is valid */
-        if (!mSizeHint.isValid())
-            mSizeHint = QLabel::sizeHint();
-        return mSizeHint;
+        return mShowed ?
+            QSize (width(), heightForWidth (width())) : QLabel::sizeHint();
     }
 
 private:
@@ -233,9 +232,9 @@ private:
         {
             case QEvent::Show:
             {
-                /* watch for parent's show-event to recalculate sizeHint */
-                mSizeHint = QSize (width(), heightForWidth (width()));
-                updateGeometry();
+                mShowed = true;
+                if (parent() && ((QWidget*)parent())->layout())
+                    ((QWidget*)parent())->layout()->activate();
                 break;
             }
             default:
@@ -244,7 +243,7 @@ private:
         return QLabel::eventFilter (aObject, aEvent);
     }
 
-    mutable QSize mSizeHint;
+    bool mShowed;
 };
 
 
