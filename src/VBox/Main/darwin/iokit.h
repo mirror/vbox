@@ -24,6 +24,9 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#ifdef VBOX_WITH_USB
+# include <VBox/usb.h>
+#endif 
 
 /**
  * Darwin DVD descriptor as returned by DarwinGetDVDDrives().
@@ -36,11 +39,18 @@ typedef struct DARWINDVD
     char szName[1];
 } DARWINDVD, *PDARWINDVD;
 
+/** The run loop mode string used by iokit.cpp when it registers 
+ * notifications events. */
+#define VBOX_IOKIT_MODE_STRING "VBoxIOKitMode"
 
 __BEGIN_DECLS
-PDARWINDVD DarwinGetDVDDrives(void);
+PDARWINDVD  DarwinGetDVDDrives(void);
+#ifdef VBOX_WITH_USB
+void        DarwinSubscribeUSBNotifications(void);
+void        DarwinUnsubscribeUSBNotifications(void);
+PUSBDEVICE  DarwinGetUSBDevices(void);
+#endif
 __END_DECLS
-
 
 #endif
 

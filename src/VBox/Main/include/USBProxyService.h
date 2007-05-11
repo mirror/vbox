@@ -148,6 +148,18 @@ protected:
      */
     virtual PUSBDEVICE getDevices (void);
 
+    /**
+     * First call made on the service thread, use it to do 
+     * thread initialization.
+     */
+    virtual void serviceThreadInit (void);
+
+    /**
+     * First call made on the service thread, use it to do 
+     * thread termination.
+     */
+    virtual void serviceThreadTerm (void);
+
 public:
     /**
      * Free one USB device returned by getDevice().
@@ -188,6 +200,44 @@ protected:
 
 
 #ifdef VBOX_WITH_USB
+
+# ifdef __DARWIN__
+#  include <VBox/param.h>
+#  undef PAGE_SHIFT
+#  undef PAGE_SIZE
+#  define OSType Carbon_OSType
+#  include <Carbon/Carbon.h>
+#  undef OSType
+
+/**
+ * The Darwin hosted USB Proxy Service.
+ */
+class USBProxyServiceDarwin : public USBProxyService
+{
+public:
+    USBProxyServiceDarwin (Host *aHost);
+    ~USBProxyServiceDarwin();
+
+    virtual int captureDevice (HostUSBDevice *aDevice);
+    virtual int holdDevice (HostUSBDevice *aDevice);
+    virtual int releaseDevice (HostUSBDevice *aDevice);
+    virtual int resetDevice (HostUSBDevice *aDevice);
+
+protected:
+    virtual int wait (unsigned aMillies);
+    virtual int interruptWait (void);
+    virtual PUSBDEVICE getDevices (void);
+    virtual void serviceThreadInit (void);
+    virtual void serviceThreadTerm (void);
+
+private:
+    /** Reference to the runloop of the service thread. 
+     * This is NULL if the service thread isn't running. */
+    CFRunLoopRef mServiceRunLoopRef;
+
+};
+# endif /* __DARWIN__ */
+
 
 # ifdef __LINUX__
 #  include <stdio.h>

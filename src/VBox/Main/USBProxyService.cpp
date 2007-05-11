@@ -287,6 +287,7 @@ void USBProxyService::processChanges (void)
 {
     USBProxyService *pThis = (USBProxyService *)pvUser;
     LogFlow (("USBProxyService::serviceThread: pThis=%p\n", pThis));
+    pThis->serviceThreadInit();
 
     /*
      * Processing loop.
@@ -299,6 +300,7 @@ void USBProxyService::processChanges (void)
         pThis->processChanges();
     }
 
+    pThis->serviceThreadTerm();
     LogFlow (("USBProxyService::serviceThread: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
@@ -389,6 +391,17 @@ PUSBDEVICE USBProxyService::getDevices (void)
 {
     return NULL;
 }
+
+
+void USBProxyService::serviceThreadInit (void)
+{
+}
+
+
+void USBProxyService::serviceThreadTerm (void)
+{
+}
+
 
 /**
  *  The default implementation returns non-NULL to emulate successful insertions
