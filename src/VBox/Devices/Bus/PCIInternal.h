@@ -39,11 +39,6 @@ typedef struct PCIIOREGION
 /** Pointer to PCI I/O region. */
 typedef PCIIOREGION *PPCIIOREGION;
 
-/** Pointer to pci_default_read_config. */
-typedef uint32_t    (*PFNPCICONFIGREAD)(PPCIDEVICE pPciDev, uint32_t u32CfgAddress, int cb);
-/** Pointer to pci_default_write_config. */
-typedef void        (*PFNPCICONFIGWRITE)(PPCIDEVICE pPciDev, uint32_t u32CfgAddress, uint32_t u32Data, int cb);
-
 /**
  * PCI Device - Internal data.
  */

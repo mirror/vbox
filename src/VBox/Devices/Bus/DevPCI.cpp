@@ -308,8 +308,8 @@ static void pci_update_mappings(PCIDevice *d)
     }
 }
 
-static uint32_t pci_default_read_config(PCIDevice *d,
-                                        uint32_t address, int len)
+
+static DECLCALLBACK(uint32_t) pci_default_read_config(PCIDevice *d, uint32_t address, unsigned len)
 {
     uint32_t val;
     switch(len) {
@@ -327,10 +327,10 @@ static uint32_t pci_default_read_config(PCIDevice *d,
     return val;
 }
 
-static void pci_default_write_config(PCIDevice *d,
-                                     uint32_t address, uint32_t val, int len)
+static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t address, uint32_t val, unsigned len)
 {
-    int can_write, i;
+    int can_write;
+    unsigned i;
     uint32_t end, addr;
 
     if (len == 4 && ((address >= 0x10 && address < 0x10 + 4 * 6) ||
