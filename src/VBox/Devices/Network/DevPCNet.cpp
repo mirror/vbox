@@ -4123,10 +4123,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pData->ILeds.pfnQueryStatusLed          = pcnetQueryStatusLed;
 
     /* PCI Device */
-    pData->PciDev.config[0x00] = 0x22; /* vendor id */
-    pData->PciDev.config[0x01] = 0x10;
-    pData->PciDev.config[0x02] = 0x00; /* device id */
-    pData->PciDev.config[0x03] = 0x20;
+    PCIDevSetVendorId(&pData->PciDev, 0x1022);
+    PCIDevSetDeviceId(&pData->PciDev, 0x2000);
     pData->PciDev.config[0x04] = 0x07; /* command */
     pData->PciDev.config[0x05] = 0x00;
     pData->PciDev.config[0x06] = 0x80; /* status */
