@@ -2119,6 +2119,8 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, si
                      * Allocate GT and find out where to store the grain. */
                     rc = vmdkAllocGrain(pImage->pGTCache, pExtent,
                                         uSectorExtentRel, pvBuf, cbWrite);
+                    *pcbPreRead = 0;
+                    *pcbPostRead = 0;
                 }
                 else
                 {
