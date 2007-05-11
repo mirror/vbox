@@ -76,6 +76,35 @@ typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPCIDEVICE pPciDev, /*unsigned*/ int 
 /** Pointer to a FNPCIIOREGIONMAP() function. */
 typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 
+/** 
+ * Callback function for reading from the PCI configuration space.
+ *
+ * @returns The register value.
+ * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
+ * @param   Address         The configuration space register address. [0..255]
+ * @param   cb              The register size. [1,2,4]
+ */
+typedef DECLCALLBACK(uint32_t) FNPCICONFIGREAD(PPCIDEVICE pPciDev, uint32_t Address, unsigned cb);
+/** Pointer to a FNPCICONFIGREAD() function. */
+typedef FNPCICONFIGREAD *PFNPCICONFIGREAD;
+/** Pointer to a PFNPCICONFIGREAD. */
+typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
+
+/** 
+ * Callback function for writing to the PCI configuration space.
+ *
+ * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
+ * @param   Address         The configuration space register address. [0..255]
+ * @param   u32Value        The value that's being written. The number of bits actually used from 
+ *                          this value is determined by the cb parameter.
+ * @param   cb              The register size. [1,2,4]
+ */
+typedef DECLCALLBACK(void) FNPCICONFIGWRITE(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u32Value, unsigned cb);
+/** Pointer to a FNPCICONFIGWRITE() function. */
+typedef FNPCICONFIGWRITE *PFNPCICONFIGWRITE;
+/** Pointer to a PFNPCICONFIGWRITE. */
+typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
+
 /** Fixed I/O region number for ROM. */
 #define PCI_ROM_SLOT 6
 /** Max number of I/O regions. */
