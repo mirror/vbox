@@ -3279,6 +3279,24 @@ typedef struct PDMPCIBUSREG
     DECLR3CALLBACKMEMBER(int, pfnIORegionRegisterHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
 
     /**
+     * Register PCI configuration space read/write callbacks.
+     *
+     * @param   pDevIns         Device instance of the PCI Bus.
+     * @param   pPciDev         The PCI device structure.
+     * @param   pfnRead         Pointer to the user defined PCI config read function.
+     * @param   ppfnReadOld     Pointer to function pointer which will receive the old (default)
+     *                          PCI config read function. This way, user can decide when (and if)
+     *                          to call default PCI config read function. Can be NULL.
+     * @param   pfnWrite        Pointer to the user defined PCI config write function.
+     * @param   pfnWriteOld     Pointer to function pointer which will receive the old (default)
+     *                          PCI config write function. This way, user can decide when (and if)
+     *                          to call default PCI config write function. Can be NULL.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(void, pfnSetConfigCallbacksHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+                                                        PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
+
+    /**
      * Set the IRQ for a PCI device.
      *
      * @param   pDevIns         Device instance of the PCI Bus.
@@ -3329,7 +3347,7 @@ typedef struct PDMPCIBUSREG
 typedef PDMPCIBUSREG *PPDMPCIBUSREG;
 
 /** Current PDMPCIBUSREG version number. */
-#define PDM_PCIBUSREG_VERSION   0xd0010000
+#define PDM_PCIBUSREG_VERSION   0xd0020000
 
 /**
  * PCI Bus GC helpers.
@@ -4712,6 +4730,25 @@ typedef struct PDMDEVHLP
     DECLR3CALLBACKMEMBER(int, pfnPCIIORegionRegister,(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
 
     /**
+     * Register PCI configuration space read/write callbacks.
+     *
+     * @param   pDevIns         Device instance.
+     * @param   pPciDev         The PCI device structure. 
+     *                          If NULL the default PCI device for this device instance is used.
+     * @param   pfnRead         Pointer to the user defined PCI config read function.
+     * @param   ppfnReadOld     Pointer to function pointer which will receive the old (default)
+     *                          PCI config read function. This way, user can decide when (and if)
+     *                          to call default PCI config read function. Can be NULL.
+     * @param   pfnWrite        Pointer to the user defined PCI config write function.
+     * @param   pfnWriteOld     Pointer to function pointer which will receive the old (default)
+     *                          PCI config write function. This way, user can decide when (and if)
+     *                          to call default PCI config write function. Can be NULL.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(void, pfnPCISetConfigCallbacks,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+                                                         PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
+
+    /**
      * Set the IRQ for a PCI device.
      *
      * @param   pDevIns         Device instance.
@@ -5309,7 +5346,7 @@ typedef HCPTRTYPE(struct PDMDEVHLP *) PPDMDEVHLP;
 typedef HCPTRTYPE(const struct PDMDEVHLP *) PCPDMDEVHLP;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2020000
+#define PDM_DEVHLP_VERSION  0xf2030000
 
 
 /**
@@ -5774,6 +5811,15 @@ DECLINLINE(int) PDMDevHlpPCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
 DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     return pDevIns->pDevHlp->pfnPCIIORegionRegister(pDevIns, iRegion, cbRegion, enmType, pfnCallback);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnPCISetConfigCallbacks
+ */
+DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+                                                PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
+{
+    pDevIns->pDevHlp->pfnPCISetConfigCallbacks(pDevIns, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
 }
 
 /**

@@ -107,6 +107,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 static DECLCALLBACK(PTMTIMERHC) pdmR3DevHlp_TMTimerCreateExternal(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev);
 static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback);
+static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+                                                            PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld);
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
@@ -287,6 +289,7 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_TMTimerCreateExternal,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIIORegionRegister,
+    pdmR3DevHlp_PCISetConfigCallbacks,
     pdmR3DevHlp_PCISetIrq,
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
@@ -371,6 +374,7 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_TMTimerCreateExternal,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIIORegionRegister,
+    pdmR3DevHlp_PCISetConfigCallbacks,
     pdmR3DevHlp_PCISetIrq,
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
@@ -1618,7 +1622,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
 static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
+    PVM pVM = pDevIns->Internal.s.pVMHC;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: iRegion=%d cbRegion=%#x enmType=%d pfnCallback=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, cbRegion, enmType, pfnCallback));
 
@@ -1648,6 +1653,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
         LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Vrc (callback)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
+    AssertRelease(VMR3GetState(pVM) != VMSTATE_RUNNING);
 
     /*
      * Must have a PCI device registered!
@@ -1669,9 +1675,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
 
         PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusHC;
         Assert(pBus);
-        pdmLock(pDevIns->Internal.s.pVMHC);
+        pdmLock(pVM);
         rc = pBus->pfnIORegionRegisterR3(pBus->pDevInsR3, pPciDev, iRegion, cbRegion, enmType, pfnCallback);
-        pdmUnlock(pDevIns->Internal.s.pVMHC);
+        pdmUnlock(pVM);
     }
     else
     {
@@ -1681,6 +1687,43 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
 
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
+}
+
+
+/** @copydoc PDMDEVHLP::pfnPCISetConfigCallbacks */
+static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+                                                            PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMHC;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DevHlp_PCISetConfigCallbacks: caller='%s'/%d: pPciDev=%p pfnRead=%p ppfnReadOld=%p pfnWrite=%p ppfnWriteOld=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld));
+
+    /*
+     * Validate input and resolve defaults.
+     */
+    AssertPtr(pfnRead);
+    AssertPtr(pfnWrite);
+    AssertPtrNull(ppfnReadOld);
+    AssertPtrNull(ppfnWriteOld);
+    AssertPtrNull(pPciDev);
+
+    if (!pPciDev)
+        pPciDev = pDevIns->Internal.s.pPciDeviceHC;
+    AssertReleaseMsg(pPciDev, ("You must register your device first!\n"));
+    PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusHC;
+    AssertRelease(pBus);
+    AssertRelease(VMR3GetState(pVM) != VMSTATE_RUNNING);
+
+    /*
+     * Do the job.
+     */
+    pdmLock(pVM);
+    pBus->pfnSetConfigCallbacksR3(pBus->pDevInsR3, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
+    pdmUnlock(pVM);
+
+    LogFlow(("pdmR3DevHlp_PCISetConfigCallbacks: caller='%s'/%d: returns void\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
 }
 
 
@@ -2433,14 +2476,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     /*
      * Init the HC bits.
      */
-    pPciBus->iBus                   = iBus;
-    pPciBus->pDevInsR3              = pDevIns;
-    pPciBus->pfnRegisterR3          = pPciBusReg->pfnRegisterHC;
-    pPciBus->pfnIORegionRegisterR3  = pPciBusReg->pfnIORegionRegisterHC;
-    pPciBus->pfnSetIrqR3            = pPciBusReg->pfnSetIrqHC;
-    pPciBus->pfnSaveExecR3          = pPciBusReg->pfnSaveExecHC;
-    pPciBus->pfnLoadExecR3          = pPciBusReg->pfnLoadExecHC;
-    pPciBus->pfnFakePCIBIOSR3       = pPciBusReg->pfnFakePCIBIOSHC;
+    pPciBus->iBus                    = iBus;
+    pPciBus->pDevInsR3               = pDevIns;
+    pPciBus->pfnRegisterR3           = pPciBusReg->pfnRegisterHC;
+    pPciBus->pfnIORegionRegisterR3   = pPciBusReg->pfnIORegionRegisterHC;
+    pPciBus->pfnSetConfigCallbacksR3 = pPciBusReg->pfnSetConfigCallbacksHC;
+    pPciBus->pfnSetIrqR3             = pPciBusReg->pfnSetIrqHC;
+    pPciBus->pfnSaveExecR3           = pPciBusReg->pfnSaveExecHC;
+    pPciBus->pfnLoadExecR3           = pPciBusReg->pfnLoadExecHC;
+    pPciBus->pfnFakePCIBIOSR3        = pPciBusReg->pfnFakePCIBIOSHC;
 
     Log(("PDM: Registered PCI bus device '%s'/%d pDevIns=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pDevIns));
 

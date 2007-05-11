@@ -1320,6 +1320,22 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
 }
 
 
+/** 
+ * @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksHC
+ */
+static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+                                                PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
+{
+    if (ppfnReadOld)
+        *ppfnReadOld = pPciDev->Int.s.pfnConfigRead;
+    pPciDev->Int.s.pfnConfigRead  = pfnRead;
+
+    if (ppfnWriteOld)
+        *ppfnWriteOld = pPciDev->Int.s.pfnConfigWrite;
+    pPciDev->Int.s.pfnConfigWrite = pfnWrite;
+}
+
+
 /**
  * Called to perform the job of the bios.
  *
@@ -1460,15 +1476,16 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pBus->pDevInsHC = pDevIns;
     pBus->pDevInsGC = PDMDEVINS_2_GCPTR(pDevIns);
 
-    PciBusReg.u32Version            = PDM_PCIBUSREG_VERSION;
-    PciBusReg.pfnRegisterHC         = pciRegister;
-    PciBusReg.pfnIORegionRegisterHC = pciIORegionRegister;
-    PciBusReg.pfnSetIrqHC           = pciSetIrq;
-    PciBusReg.pfnSaveExecHC         = pciGenericSaveExec;
-    PciBusReg.pfnLoadExecHC         = pciGenericLoadExec;
-    PciBusReg.pfnFakePCIBIOSHC      = pciFakePCIBIOS;
-    PciBusReg.pszSetIrqGC           = fGCEnabled ? "pciSetIrq" : NULL;
-    PciBusReg.pszSetIrqR0           = fR0Enabled ? "pciSetIrq" : NULL;
+    PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
+    PciBusReg.pfnRegisterHC           = pciRegister;
+    PciBusReg.pfnIORegionRegisterHC   = pciIORegionRegister;
+    PciBusReg.pfnSetConfigCallbacksHC = pciSetConfigCallbacks;
+    PciBusReg.pfnSetIrqHC             = pciSetIrq;
+    PciBusReg.pfnSaveExecHC           = pciGenericSaveExec;
+    PciBusReg.pfnLoadExecHC           = pciGenericLoadExec;
+    PciBusReg.pfnFakePCIBIOSHC        = pciFakePCIBIOS;
+    PciBusReg.pszSetIrqGC             = fGCEnabled ? "pciSetIrq" : NULL;
+    PciBusReg.pszSetIrqR0             = fR0Enabled ? "pciSetIrq" : NULL;
     rc = pDevIns->pDevHlp->pfnPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
