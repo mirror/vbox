@@ -826,15 +826,15 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateMachineState (CEnums::MachineState)));
 
 #ifdef Q_WS_MAC
-    QString osType = cmachine.GetOSType().GetId();
+    QString osTypeId = cmachine.GetOSTypeId();
 # if 0
-    QImage osImg75x75 = vboxGlobal().vmGuestOSTypeIcon (osType).convertToImage().smoothScale (75, 75);
+    QImage osImg75x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).convertToImage().smoothScale (75, 75);
     QImage osImg = QImage::fromMimeSource ("dock_0.png");
     bitBlt (&osImg, 25, 22,
             &osImg75x75, 0, 0,
             75, 75, /* conversion_flags */ 0);
 # else
-    QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osType).convertToImage().smoothScale (100, 75);
+    QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).convertToImage().smoothScale (100, 75);
     QImage osImg = QImage::fromMimeSource ("dock_1.png");
     bitBlt (&osImg, 14, 22,
             &osImg100x75, 0, 0,
