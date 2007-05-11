@@ -31,6 +31,8 @@ __BEGIN_DECLS
  * New entries can be added, however other components might depend
  * on the values (e.g. the Qt GUI) so if possible, the values should
  * stay the same.
+ * 
+ * @todo This typedef crashes with a core Mac OS X typedef, please rename it.
  */
 typedef enum
 {
