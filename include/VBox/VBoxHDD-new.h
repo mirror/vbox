@@ -99,14 +99,18 @@ typedef VDIMAGETYPE *PVDIMAGETYPE;
  * @{
  */
 /** Try to open image in read/write exclusive access mode if possible, or in read-only elsewhere. */
-#define VD_OPEN_FLAGS_NORMAL        (0)
+#define VD_OPEN_FLAGS_NORMAL        0
 /** Open image in read-only mode with sharing access with others. */
-#define VD_OPEN_FLAGS_READONLY      (1)
+#define VD_OPEN_FLAGS_READONLY      RT_BIT(0)
 /** Honor zero block writes instead of ignoring them whenever possible.
  * This is not supported by all formats. It is silently ignored in this case. */
-#define VD_OPEN_FLAGS_HONOR_ZEROES  (2)
+#define VD_OPEN_FLAGS_HONOR_ZEROES  RT_BIT(1)
+/** Honor writes of the same data instead of ignoring whenever possible.
+ * This is handled generically, and is only meaningful for differential image
+ * formats. It is silently ignored otherwise. */
+#define VD_OPEN_FLAGS_HONOR_SAME    RT_BIT(2)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME)
 /** @}*/
 
 /**
