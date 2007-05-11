@@ -361,6 +361,9 @@ typedef struct PDMPCIBUS
     /** @copydoc PDMPCIBUSREG::pfnIORegionRegisterHC */
     DECLR3CALLBACKMEMBER(int,       pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion,
                                                            PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
+    /** @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksHC */
+    DECLR3CALLBACKMEMBER(void,      pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, 
+                                                             PPFNPCICONFIGREAD ppfnReadOld, PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
     /** @copydoc PDMPCIBUSREG::pfnSaveExecHC */
     DECLR3CALLBACKMEMBER(int,       pfnSaveExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
     /** @copydoc PDMPCIBUSREG::pfnLoadExecHC */
