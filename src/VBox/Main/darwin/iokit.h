@@ -46,8 +46,8 @@ typedef struct DARWINDVD
 __BEGIN_DECLS
 PDARWINDVD  DarwinGetDVDDrives(void);
 #ifdef VBOX_WITH_USB
-void        DarwinSubscribeUSBNotifications(void);
-void        DarwinUnsubscribeUSBNotifications(void);
+void *      DarwinSubscribeUSBNotifications(void);
+void        DarwinUnsubscribeUSBNotifications(void *pvOpaque);
 PUSBDEVICE  DarwinGetUSBDevices(void);
 #endif
 __END_DECLS

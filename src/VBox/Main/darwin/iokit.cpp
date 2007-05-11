@@ -118,6 +118,7 @@ static bool darwinDictGetU16(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
 }
 
 
+#if 0 /* unused */
 /**
  * Gets an unsigned 32-bit integer value.
  * 
@@ -137,6 +138,7 @@ static bool darwinDictGetU32(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
     *pu32 = 0;
     return false;
 }
+#endif
 
 
 /**
@@ -186,15 +188,158 @@ static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyS
 }
 
 
-
-void        DarwinSubscribeUSBNotifications(void)
+/**
+ * Notification data created by DarwinSubscribeUSBNotifications, used by
+ * the callbacks and finally freed by DarwinUnsubscribeUSBNotifications.
+ */
+typedef struct DARWINUSBNOTIFY
 {
+    /** The notification port. 
+     * It's shared between the notification callbacks. */
+    IONotificationPortRef NotifyPort;
+    /** The run loop source for NotifyPort. */
+    CFRunLoopSourceRef NotifyRLSrc;
+    /** The attach notification iterator. */
+    io_iterator_t AttachIterator;
+    /** The detach notificaiton iterator. */
+    io_iterator_t DetachIterator;
+    
+} DARWINUSBNOTIFY, *PDARWINUSBNOTIFY;
 
+
+/**
+ * Run thru an interrator.
+ * 
+ * The docs says this is necessary to start getting notifications,
+ * so this function is called in the callbacks and right after
+ * registering the notification.
+ *
+ * @param   pIterator   The iterator reference.
+ */
+static void darwinDrainIterator(io_iterator_t pIterator)
+{
+    io_object_t Object;
+    while ((Object = IOIteratorNext(pIterator)))
+        IOObjectRelease(Object);
 }
 
-void        DarwinUnsubscribeUSBNotifications(void)
-{
 
+/**
+ * Callback for the attach notifications.
+ * 
+ * @param   pvNotify        Our data.
+ * @param   NotifyIterator  The notification iterator.
+ */
+static void darwinUSBAttachNotification(void *pvNotify, io_iterator_t NotifyIterator)
+{
+    NOREF(pvNotify); //PDARWINUSBNOTIFY pNotify = (PDARWINUSBNOTIFY)pvNotify;
+    darwinDrainIterator(NotifyIterator);
+}
+
+
+/**
+ * Callback for the detach notifications.
+ * 
+ * @param   pvNotify        Our data.
+ * @param   NotifyIterator  The notification iterator.
+ */
+static void darwinUSBDetachNotification(void *pvNotify, io_iterator_t NotifyIterator)
+{
+    NOREF(pvNotify); //PDARWINUSBNOTIFY pNotify = (PDARWINUSBNOTIFY)pvNotify;
+    darwinDrainIterator(NotifyIterator);
+}
+
+
+/**
+ * Subscribes the run loop to USB notification events relevant to
+ * device attach/detach.
+ * 
+ * The source mode for these events is defined as VBOX_IOKIT_MODE_STRING 
+ * so that the caller can listen to events from this mode only and 
+ * re-evalutate the list of attached devices whenever an event arrives.
+ * 
+ * @returns opaque for passing to the unsubscribe function. If NULL
+ *          something unexpectedly failed during subscription.
+ */
+void *DarwinSubscribeUSBNotifications(void)
+{
+    AssertReturn(darwinOpenMasterPort(), NULL);
+
+    PDARWINUSBNOTIFY pNotify = (PDARWINUSBNOTIFY)RTMemAllocZ(sizeof(*pNotify));
+    AssertReturn(pNotify, NULL);
+
+    /*
+     * Create the notification port, bake it into a runloop source which we 
+     * then add to our run loop.
+     */
+    pNotify->NotifyPort = IONotificationPortCreate(g_MasterPort);
+    Assert(pNotify->NotifyPort);
+    if (pNotify->NotifyPort)
+    {
+        pNotify->NotifyRLSrc = IONotificationPortGetRunLoopSource(pNotify->NotifyPort);
+        Assert(pNotify->NotifyRLSrc);
+        if (pNotify->NotifyRLSrc)
+        {
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
+
+            /*
+             * Create the notifcation callback.
+             */
+            kern_return_t rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
+                                                                kIOPublishNotification,
+                                                                IOServiceMatching(kIOUSBDeviceClassName),
+                                                                darwinUSBAttachNotification,
+                                                                pNotify,
+                                                                &pNotify->AttachIterator);
+            if (rc == KERN_SUCCESS)
+            {
+                darwinDrainIterator(pNotify->AttachIterator);
+                rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
+                                                      kIOTerminatedNotification,
+                                                      IOServiceMatching(kIOUSBDeviceClassName),
+                                                      darwinUSBDetachNotification,
+                                                      pNotify,
+                                                      &pNotify->DetachIterator);
+                if (rc == KERN_SUCCESS)
+                {
+                    darwinDrainIterator(pNotify->DetachIterator);
+                    return pNotify;
+                }
+                IOObjectRelease(pNotify->AttachIterator);
+            }
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
+        }
+        IONotificationPortDestroy(pNotify->NotifyPort);
+    }
+
+    RTMemFree(pNotify);
+    return NULL;
+}
+
+
+/**
+ * Unsubscribe the run loop from USB notification subscribed to 
+ * by DarwinSubscribeUSBNotifications.
+ * 
+ * @param   pvOpaque    The return value from DarwinSubscribeUSBNotifications.
+ */
+void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
+{
+    PDARWINUSBNOTIFY pNotify = (PDARWINUSBNOTIFY)pvOpaque;
+    if (!pNotify)
+        return;
+
+    IOObjectRelease(pNotify->AttachIterator);
+    pNotify->AttachIterator = NULL;
+    IOObjectRelease(pNotify->DetachIterator);
+    pNotify->DetachIterator = NULL;
+
+    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
+    IONotificationPortDestroy(pNotify->NotifyPort);
+    pNotify->NotifyRLSrc = NULL;
+    pNotify->NotifyPort = NULL;
+
+    RTMemFree(pNotify);
 }
 
 

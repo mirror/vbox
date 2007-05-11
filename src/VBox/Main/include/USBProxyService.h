@@ -234,7 +234,8 @@ private:
     /** Reference to the runloop of the service thread. 
      * This is NULL if the service thread isn't running. */
     CFRunLoopRef mServiceRunLoopRef;
-
+    /** The opaque value returned by DarwinSubscribeUSBNotifications. */
+    void *mNotifyOpaque;
 };
 # endif /* __DARWIN__ */
 
