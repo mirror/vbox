@@ -1033,6 +1033,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, s
                                            cbPreRead, cbPostRead,
                                            pvBuf, pvTmp);
             }
+            RTMemTmpFree(pvTmp);
             if (VBOX_FAILURE(rc))
                 break;
         }
