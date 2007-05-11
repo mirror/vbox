@@ -201,6 +201,7 @@ VBoxSVC_SOURCES += \
 endif
 
 ifdef VBOX_WITH_USB
+VBoxSVC_SOURCES.darwin += darwin/USBProxyServiceDarwin.cpp
 VBoxSVC_SOURCES.linux += linux/USBProxyServiceLinux.cpp
 VBoxSVC_SOURCES.win   += win32/USBProxyServiceWin32.cpp
 endif
