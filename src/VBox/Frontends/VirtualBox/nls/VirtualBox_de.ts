@@ -2139,7 +2139,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Durch Freigeben dieses Medienabbildes wird die Bindung an folgende virtuelle Maschinen aufgehoben: &lt;b&gt;%1&gt;/b&gt;.&lt;p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Durch Freigeben dieses Medienabbildes wird die Bindung an folgende virtuelle Maschinen aufgehoben: &lt;b&gt;%1&lt;/b&gt;.&lt;p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
