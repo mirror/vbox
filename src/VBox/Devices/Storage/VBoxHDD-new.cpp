@@ -43,17 +43,20 @@
 /**
  * VBox HDD Container image descriptor.
  */
-typedef struct VBOXHDDIMAGEDESC
+typedef struct VDIMAGE
 {
     /** Link to parent image descriptor, if any. */
-    struct VBOXHDDIMAGEDESC *pPrev;
+    struct VDIMAGE  *pPrev;
     /** Link to child image descriptor, if any. */
-    struct VBOXHDDIMAGEDESC *pNext;
+    struct VDIMAGE  *pNext;
     /** Container base filename. (UTF-8) */
-    char                    *pszFilename;
+    char            *pszFilename;
     /** Data managed by the backend which keeps the actual info. */
-    void                    *pvBackendData;
-} VBOXHDDIMAGEDESC, *PVBOXHDDIMAGEDESC;
+    void            *pvBackendData;
+    /** Image open flags (only those handled generically in this code and which
+     * the backends will never ever see). */
+    unsigned        uOpenFlags;
+} VDIMAGE, *PVDIMAGE;
 
 /**
  * uModified bit flags.
@@ -75,11 +78,11 @@ struct VBOXHDD
     unsigned            cImages;
 
     /** Base image. */
-    PVBOXHDDIMAGEDESC   pBase;
+    PVDIMAGE            pBase;
 
     /** Last opened image in the chain.
-     * The same as pBase if only one image is used or the last opened diff image. */
-    PVBOXHDDIMAGEDESC   pLast;
+     * The same as pBase if only one image is used. */
+    PVDIMAGE            pLast;
 
     /** Flags representing the modification state. */
     unsigned            uModified;
@@ -125,7 +128,8 @@ static const VBOXHDDBACKENDENTRY aBackends[] =
 /**
  * internal: issue early error message.
  */
-static int vdEarlyError(PFNVDERROR pfnError, void *pvErrorUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+static int vdEarlyError(PFNVDERROR pfnError, void *pvErrorUser, int rc,
+                        RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -137,7 +141,8 @@ static int vdEarlyError(PFNVDERROR pfnError, void *pvErrorUser, int rc, RT_SRC_P
 /**
  * internal: issue error message.
  */
-static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
+                   const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -149,7 +154,7 @@ static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL, const char *pszForma
 /**
  * internal: add image structure to the end of images list.
  */
-static void vdAddImageToList(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage)
+static void vdAddImageToList(PVBOXHDD pDisk, PVDIMAGE pImage)
 {
     pImage->pPrev = NULL;
     pImage->pNext = NULL;
@@ -174,7 +179,7 @@ static void vdAddImageToList(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage)
 /**
  * internal: remove image structure from the images list.
  */
-static void vdRemoveImageFromList(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage)
+static void vdRemoveImageFromList(PVBOXHDD pDisk, PVDIMAGE pImage)
 {
     Assert(pDisk->cImages > 0);
 
@@ -197,9 +202,9 @@ static void vdRemoveImageFromList(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage)
 /**
  * internal: find image by index into the images list.
  */
-static PVBOXHDDIMAGEDESC vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
+static PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
 {
-    PVBOXHDDIMAGEDESC pImage = pDisk->pBase;
+    PVDIMAGE pImage = pDisk->pBase;
     while (pImage && nImage)
     {
         pImage = pImage->pNext;
@@ -212,11 +217,12 @@ static PVBOXHDDIMAGEDESC vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
  * internal: read the specified amount of data in whatever blocks the backend
  * will give us.
  */
-static int vdReadHelper(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage, uint64_t uOffset, void *pvBuf, size_t cbRead)
+static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
+                        void *pvBuf, size_t cbRead)
 {
     int rc;
     size_t cbThisRead;
-    PVBOXHDDIMAGEDESC pCurrImage;
+    PVDIMAGE pCurrImage;
 
     /* Loop until all read. */
     do
@@ -226,9 +232,12 @@ static int vdReadHelper(PVBOXHDD pDisk, PVBOXHDDIMAGEDESC pImage, uint64_t uOffs
          * stale data when different block sizes are used for the images. */
         cbThisRead = cbRead;
         rc = VINF_VDI_BLOCK_FREE;
-        for (pCurrImage = pImage; pCurrImage != NULL && rc == VINF_VDI_BLOCK_FREE; pCurrImage = pCurrImage->pPrev)
+        for (pCurrImage = pImage;
+             pCurrImage != NULL && rc == VINF_VDI_BLOCK_FREE;
+             pCurrImage = pCurrImage->pPrev)
         {
-            rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData, uOffset, pvBuf, cbThisRead, &cbThisRead);
+            rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData, uOffset,
+                                         pvBuf, cbThisRead, &cbThisRead);
         }
 
         /* No image in the chain contains the data for the block. */
@@ -259,7 +268,8 @@ static void vdResetModifiedFlag(PVBOXHDD pDisk)
             RTUUID Uuid;
 
             RTUuidCreate(&Uuid);
-            pDisk->Backend->pfnSetModificationUuid(pDisk->pLast->pvBackendData, &Uuid);
+            pDisk->Backend->pfnSetModificationUuid(pDisk->pLast->pvBackendData,
+                                                   &Uuid);
         }
 
         pDisk->uModified &= ~VD_IMAGE_MODIFIED_FLAG;
@@ -285,6 +295,164 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
 }
 
 /**
+ * internal: write a complete block (only used for diff images), taking the
+ * remaining data from parent images. This implementation does not optimize
+ * anything (except that it tries to read only that portions from parent
+ * images that are really needed).
+ */
+static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
+                                 uint64_t uOffset, size_t cbWrite,
+                                 size_t cbThisWrite, size_t cbPreRead,
+                                 size_t cbPostRead, const void *pvBuf,
+                                 void *pvTmp)
+{
+    int rc;
+
+    /* Read the data that goes before the write to fill the block. */
+    if (cbPreRead)
+    {
+        rc = vdReadHelper(pDisk, pImage->pPrev, uOffset - cbPreRead,
+                          pvTmp, cbPreRead);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+
+    /* Copy the data to the right place in the buffer. */
+    memcpy((char *)pvTmp + cbPreRead, pvBuf, cbThisWrite);
+
+    /* Read the data that goes after the write to fill the block. */
+    if (cbPostRead)
+    {
+        /* If we have data to be written, use that instead of reading
+         * data from the image. */
+        size_t cbWriteCopy;
+        if (cbWrite > cbThisWrite)
+            cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
+        else
+            cbWriteCopy = 0;
+        /* Figure out how much we cannnot read from the image, because
+         * the last block to write might exceed the nominal size of the
+         * image for technical reasons. */
+        size_t cbFill;
+        if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
+            cbFill = uOffset + cbThisWrite + cbPostRead - pDisk->cbSize;
+        else
+            cbFill = 0;
+        /* The rest must be read from the image. */
+        size_t cbReadImage = cbPostRead - cbWriteCopy - cbFill;
+
+        /* Now assemble the remaining data. */
+        if (cbWriteCopy)
+            memcpy((char *)pvTmp + cbPreRead + cbThisWrite,
+                   (char *)pvBuf + cbThisWrite, cbWriteCopy);
+        if (cbReadImage)
+            rc = vdReadHelper(pDisk, pImage->pPrev,
+                              uOffset + cbThisWrite + cbWriteCopy,
+                              (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
+                              cbReadImage);
+        if (VBOX_FAILURE(rc))
+            return rc;
+        /* Zero out the remainder of this block. Will never be visible, as this
+         * is beyond the limit of the image. */
+        if (cbFill)
+            memset((char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy + cbReadImage,
+                   '\0', cbFill);
+    }
+
+    /* Write the full block to the virtual disk. */
+    rc = pDisk->Backend->pfnWrite(pImage->pvBackendData,
+                                  uOffset - cbPreRead, pvTmp,
+                                  cbPreRead + cbThisWrite + cbPostRead,
+                                  NULL,
+                                  &cbPreRead, &cbPostRead);
+    Assert(rc != VINF_VDI_BLOCK_FREE);
+    Assert(cbPreRead == 0);
+    Assert(cbPostRead == 0);
+
+    return rc;
+}
+
+/**
+ * internal: write a complete block (only used for diff images), taking the
+ * remaining data from parent images. This implementation optimized out writes
+ * that do not change the data relative to the state as of the parent images.
+ * All backends which support differential/growing images support this.
+ */
+static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
+                                  uint64_t uOffset, size_t cbWrite,
+                                  size_t cbThisWrite, size_t cbPreRead,
+                                  size_t cbPostRead, const void *pvBuf,
+                                  void *pvTmp)
+{
+    size_t cbFill = 0;
+    size_t cbWriteCopy = 0;
+    size_t cbReadImage = 0;
+    int rc;
+
+    if (cbPostRead)
+    {
+        /* Figure out how much we cannnot read from the image, because
+         * the last block to write might exceed the nominal size of the
+         * image for technical reasons. */
+        if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
+            cbFill = uOffset + cbThisWrite + cbPostRead - pDisk->cbSize;
+
+        /* If we have data to be written, use that instead of reading
+         * data from the image. */
+        if (cbWrite > cbThisWrite)
+            cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
+
+        /* The rest must be read from the image. */
+        cbReadImage = cbPostRead - cbWriteCopy - cbFill;
+    }
+
+    /* Read the entire data of the block so that we can compare whether it will
+     * be modified by the write or not. */
+    rc = vdReadHelper(pDisk, pImage->pPrev, uOffset - cbPreRead,
+                      pvTmp, cbPreRead + cbThisWrite + cbPostRead - cbFill);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    /* Check if the write would modify anything in this block. */
+    if (   !memcmp((char *)pvTmp + cbPreRead, pvBuf, cbThisWrite)
+        && (!cbWriteCopy || !memcmp((char *)pvTmp + cbPreRead + cbThisWrite,
+                                    (char *)pvBuf + cbThisWrite, cbWriteCopy)))
+    {
+        /* Block is completely unchanged, so no need to write anything. */
+        return VINF_SUCCESS;
+    }
+
+    /* Copy the data to the right place in the buffer. */
+    memcpy((char *)pvTmp + cbPreRead, pvBuf, cbThisWrite);
+
+    /* Handle the data that goes after the write to fill the block. */
+    if (cbPostRead)
+    {
+        /* Now assemble the remaining data. */
+        if (cbWriteCopy)
+            memcpy((char *)pvTmp + cbPreRead + cbThisWrite,
+                   (char *)pvBuf + cbThisWrite, cbWriteCopy);
+        /* Zero out the remainder of this block. Will never be visible, as this
+         * is beyond the limit of the image. */
+        if (cbFill)
+            memset((char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy + cbReadImage,
+                   '\0', cbFill);
+    }
+
+    /* Write the full block to the virtual disk. */
+    rc = pDisk->Backend->pfnWrite(pImage->pvBackendData,
+                                  uOffset - cbPreRead, pvTmp,
+                                  cbPreRead + cbThisWrite + cbPostRead,
+                                  NULL,
+                                  &cbPreRead, &cbPostRead);
+    Assert(rc != VINF_VDI_BLOCK_FREE);
+    Assert(cbPreRead == 0);
+    Assert(cbPostRead == 0);
+
+    return rc;
+}
+
+/**
  * Allocates and initializes an empty VBox HDD container.
  * No image files are opened.
  *
@@ -294,7 +462,8 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
  * @param   pvErrorUser     Opaque parameter for pfnError.
  * @param   ppDisk          Where to store the reference to the VBox HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError, void *pvErrorUser, PVBOXHDD *ppDisk)
+VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
+                           void *pvErrorUser, PVBOXHDD *ppDisk)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDDBACKEND pBackend = NULL;
@@ -331,7 +500,9 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError, void *pv
             rc = VERR_NO_MEMORY;
     }
     else
-        rc = vdEarlyError(pfnError, pvErrorUser, VERR_INVALID_PARAMETER, RT_SRC_POS, "VD: unknown backend name '%s'", pszBackend);
+        rc = vdEarlyError(pfnError, pvErrorUser, VERR_INVALID_PARAMETER,
+                          RT_SRC_POS, "VD: unknown backend name '%s'",
+                          pszBackend);
 
     LogFlow(("%s: returns %vrc (pDisk=%#p)\n", __FUNCTION__, rc, pDisk));
     return rc;
@@ -375,10 +546,12 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
  * @param   pszFilename     Name of the image file to open.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  */
-VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpenFlags)
+VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
+                         unsigned uOpenFlags)
 {
     int rc = VINF_SUCCESS;
-    LogFlow(("%s: pszFilename=\"%s\" uOpenFlags=%#x\n", __FUNCTION__, pszFilename, uOpenFlags));
+    LogFlow(("%s: pszFilename=\"%s\" uOpenFlags=%#x\n", __FUNCTION__,
+             pszFilename, uOpenFlags));
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
@@ -393,7 +566,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpen
     }
 
     /* Set up image descriptor. */
-    PVBOXHDDIMAGEDESC pImage = (PVBOXHDDIMAGEDESC)RTMemAllocZ(sizeof(VBOXHDDIMAGEDESC));
+    PVDIMAGE pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
     if (!pImage)
         return VERR_NO_MEMORY;
     pImage->pszFilename = RTStrDup(pszFilename);
@@ -401,7 +574,13 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpen
         rc = VERR_NO_MEMORY;
 
     if (VBOX_SUCCESS(rc))
-        rc = pDisk->Backend->pfnOpen(pImage->pszFilename, uOpenFlags, pDisk->pfnError, pDisk->pvErrorUser, &pImage->pvBackendData);
+    {
+        pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
+        rc = pDisk->Backend->pfnOpen(pImage->pszFilename,
+                                     uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
+                                     pDisk->pfnError, pDisk->pvErrorUser,
+                                     &pImage->pvBackendData);
+    }
     /* If the open in read-write mode failed, retry in read-only mode. */
     if (VBOX_FAILURE(rc))
     {
@@ -411,15 +590,21 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpen
                  || rc == VERR_WRITE_PROTECT
                  || rc == VERR_SHARING_VIOLATION
                  || rc == VERR_FILE_LOCK_FAILED))
-            rc = pDisk->Backend->pfnOpen(pImage->pszFilename, uOpenFlags | VD_OPEN_FLAGS_READONLY, pDisk->pfnError, pDisk->pvErrorUser, &pImage->pvBackendData);
+            rc = pDisk->Backend->pfnOpen(pImage->pszFilename,
+                                           (uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME)
+                                         | VD_OPEN_FLAGS_READONLY,
+                                         pDisk->pfnError, pDisk->pvErrorUser,
+                                         &pImage->pvBackendData);
         if (VBOX_FAILURE(rc))
-            rc = vdError(pDisk, rc, RT_SRC_POS, N_("VD: error opening image file '%s'"), pszFilename);
+            rc = vdError(pDisk, rc, RT_SRC_POS,
+                         N_("VD: error opening image file '%s'"), pszFilename);
     }
 
     if (VBOX_SUCCESS(rc))
     {
         VDIMAGETYPE enmImageType;
-        rc = pDisk->Backend->pfnGetImageType(pImage->pvBackendData, &enmImageType);
+        rc = pDisk->Backend->pfnGetImageType(pImage->pvBackendData,
+                                             &enmImageType);
         /* Check image type. As the image itself has no idea whether it's a
          * base image or not, this info is derived here. Image 0 can be fixed
          * or normal, all others must be normal images. */
@@ -534,7 +719,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
                                PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     int rc = VINF_SUCCESS;
-    LogFlow(("%s: pszFilename=\"%s\" uOpenFlags=%#x\n", __FUNCTION__, pszFilename, uOpenFlags));
+    LogFlow(("%s: pszFilename=\"%s\" uOpenFlags=%#x\n", __FUNCTION__,
+             pszFilename, uOpenFlags));
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
@@ -558,7 +744,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
     }
 
     /* Set up image descriptor. */
-    PVBOXHDDIMAGEDESC pImage = (PVBOXHDDIMAGEDESC)RTMemAllocZ(sizeof(VBOXHDDIMAGEDESC));
+    PVDIMAGE pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
     if (!pImage)
         return VERR_NO_MEMORY;
     pImage->pszFilename = RTStrDup(pszFilename);
@@ -614,8 +800,9 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
-VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom, unsigned nImageTo,
-                          PFNVMPROGRESS pfnProgress, void *pvUser)
+VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
+                          unsigned nImageTo, PFNVMPROGRESS pfnProgress,
+                          void *pvUser)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -710,11 +897,11 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-    PVBOXHDDIMAGEDESC pImage = pDisk->pLast;
+    PVDIMAGE pImage = pDisk->pLast;
     int rc = VINF_SUCCESS;
     while (pImage)
     {
-        PVBOXHDDIMAGEDESC pPrev = pImage->pPrev;
+        PVDIMAGE pPrev = pImage->pPrev;
         /* Remove image from list of opened images. */
         vdRemoveImageFromList(pDisk, pImage);
         /* Close image. */
@@ -748,7 +935,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf, size_t c
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pLast;
+    PVDIMAGE pImage = pDisk->pLast;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -787,7 +974,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, s
     int rc = VINF_SUCCESS;
     size_t cbThisWrite;
     size_t cbPreRead, cbPostRead;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pLast;
+    PVDIMAGE pImage = pDisk->pLast;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -813,11 +1000,11 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, s
          * if it is a full-block write, which automatically allocates a new
          * block if needed. */
         cbThisWrite = cbWrite;
-        rc = pDisk->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf, cbThisWrite, &cbThisWrite, &cbPreRead, &cbPostRead);
+        rc = pDisk->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf,
+                                      cbThisWrite, &cbThisWrite,
+                                      &cbPreRead, &cbPostRead);
         if (rc == VINF_VDI_BLOCK_FREE)
         {
-            /* Partial block write to an unallocated block. Read the rest of
-             * this block and then do a full-block (allocating) write. */
             void *pvTmp = RTMemTmpAlloc(cbPreRead + cbThisWrite + cbPostRead);
             if (!pvBuf)
             {
@@ -826,59 +1013,28 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, s
                 break;
             }
 
-            /* Read the data that goes before the write to fill the block. */
-            if (cbPreRead)
+            if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME))
             {
-                rc = vdReadHelper(pDisk, pImage->pPrev, uOffset - cbPreRead,
-                                  pvTmp, cbPreRead);
-                if (VBOX_FAILURE(rc))
-                    break;
+                /* Optimized write, suppress writing to a so far unallocated
+                 * block when the data is identical than as of the parent. */
+                rc = vdWriteHelperOptimized(pDisk, pImage, uOffset,
+                                            cbWrite, cbThisWrite,
+                                            cbPreRead, cbPostRead,
+                                            pvBuf, pvTmp);
             }
-
-            /* Copy the data to the right place in the buffer. */
-            memcpy((char *)pvTmp + cbPreRead, pvBuf, cbThisWrite);
-
-            /* Read the data that goes after the write to fill the block. */
-            if (cbPostRead)
+            else
             {
-                /* If we have data to be written, use that instead of reading
-                 * data from the image. */
-                size_t cbWriteCopy;
-                if (cbWrite > cbThisWrite)
-                    cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
-                else
-                    cbWriteCopy = 0;
-                /* Figure out how much we cannnot read from the image, because
-                 * the last block to write might exceed the nominal size of the
-                 * image for technical reasons. */
-                size_t cbFill;
-                if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
-                    cbFill = uOffset + cbThisWrite + cbPostRead - pDisk->cbSize;
-                else
-                    cbFill = 0;
-                /* The rest must be read from the image. */
-                size_t cbReadImage = cbPostRead - cbWriteCopy - cbFill;
-
-                /* Now assemble the remaining data. */
-                if (cbWriteCopy)
-                    memcpy((char *)pvTmp + cbPreRead + cbThisWrite, (char *)pvBuf + cbThisWrite, cbWriteCopy);
-                if (cbReadImage)
-                    rc = vdReadHelper(pDisk, pImage->pPrev, uOffset + cbThisWrite + cbWriteCopy,
-                                      (void *)((char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy),
-                                      cbReadImage);
-                if (VBOX_FAILURE(rc))
-                    break;
-                if (cbFill)
-                    memset((char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy + cbReadImage, '\0', cbFill);
+                /* Normal write, not optimized in any way. The block will be
+                 * written no matter what. This will usually (unless the
+                 * backend has some further optimization enabled) cause the
+                 * block to be allocated. */
+                rc = vdWriteHelperStandard(pDisk, pImage, uOffset,
+                                           cbWrite, cbThisWrite,
+                                           cbPreRead, cbPostRead,
+                                           pvBuf, pvTmp);
             }
-
-            /* Write the full block to the virtual disk. */
-            rc = pDisk->Backend->pfnWrite(pImage->pvBackendData,
-                                          uOffset - cbPreRead, pvTmp,
-                                          cbPreRead + cbThisWrite + cbPostRead,
-                                          NULL,
-                                          &cbPreRead, &cbPostRead);
-            Assert(rc != VINF_VDI_BLOCK_FREE);
+            if (VBOX_FAILURE(rc))
+                break;
         }
 
         cbWrite -= cbThisWrite;
@@ -904,7 +1060,7 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pLast;
+    PVDIMAGE pImage = pDisk->pLast;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -996,15 +1152,15 @@ VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk)
  * @param   pcHeads         Where to store the number of heads. NULL is ok.
  * @param   pcSectors       Where to store the number of sectors. NULL is ok.
  */
-VBOXDDU_DECL(int) VDGetGeometry(PVBOXHDD pDisk,
-                                unsigned *pcCylinders, unsigned *pcHeads, unsigned *pcSectors)
+VBOXDDU_DECL(int) VDGetGeometry(PVBOXHDD pDisk, unsigned *pcCylinders,
+                                unsigned *pcHeads, unsigned *pcSectors)
 {
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pBase;
+    PVDIMAGE pImage = pDisk->pBase;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -1041,15 +1197,15 @@ VBOXDDU_DECL(int) VDGetGeometry(PVBOXHDD pDisk,
  * @param   cHeads          Number of heads.
  * @param   cSectors        Number of sectors.
  */
-VBOXDDU_DECL(int) VDSetGeometry(PVBOXHDD pDisk,
-                                unsigned cCylinders, unsigned cHeads, unsigned cSectors)
+VBOXDDU_DECL(int) VDSetGeometry(PVBOXHDD pDisk, unsigned cCylinders,
+                                unsigned cHeads, unsigned cSectors)
 {
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pBase;
+    PVDIMAGE pImage = pDisk->pBase;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -1103,14 +1259,15 @@ VBOXDDU_DECL(int) VDSetGeometry(PVBOXHDD pDisk,
  * @param   pDisk           Pointer to VBox HDD container.
  * @param   penmTranslation Where to store the translation mode (see pdm.h).
  */
-VBOXDDU_DECL(int) VDGetTranslation(PVBOXHDD pDisk, PPDMBIOSTRANSLATION penmTranslation)
+VBOXDDU_DECL(int) VDGetTranslation(PVBOXHDD pDisk,
+                                   PPDMBIOSTRANSLATION penmTranslation)
 {
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pBase;
+    PVDIMAGE pImage = pDisk->pBase;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -1138,14 +1295,15 @@ VBOXDDU_DECL(int) VDGetTranslation(PVBOXHDD pDisk, PPDMBIOSTRANSLATION penmTrans
  * @param   pDisk           Pointer to VBox HDD container.
  * @param   enmTranslation  Translation mode (see pdm.h).
  */
-VBOXDDU_DECL(int) VDSetTranslation(PVBOXHDD pDisk, PDMBIOSTRANSLATION enmTranslation)
+VBOXDDU_DECL(int) VDSetTranslation(PVBOXHDD pDisk,
+                                   PDMBIOSTRANSLATION enmTranslation)
 {
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pBase;
+    PVDIMAGE pImage = pDisk->pBase;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -1186,7 +1344,8 @@ VBOXDDU_DECL(int) VDSetTranslation(PVBOXHDD pDisk, PDMBIOSTRANSLATION enmTransla
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puVersion       Where to store the image version.
  */
-VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage, unsigned *puVersion)
+VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
+                               unsigned *puVersion)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1200,7 +1359,8 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage, unsigned *puVers
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   penmType        Where to store the image type.
  */
-VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage, PVDIMAGETYPE penmType)
+VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
+                                 PVDIMAGETYPE penmType)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1214,7 +1374,8 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage, PVDIMAGETYPE p
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puImageFlags    Where to store the image flags.
  */
-VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage, unsigned *puImageFlags)
+VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
+                                  unsigned *puImageFlags)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1235,7 +1396,7 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned *puOpenFlags)
 
     unsigned uOpenFlags = 0;
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pLast;
+    PVDIMAGE pImage = pDisk->pLast;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
@@ -1268,14 +1429,15 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned uOpenFlags)
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     int rc = VINF_SUCCESS;
-    PVBOXHDDIMAGEDESC pImage = pDisk->pLast;
+    PVDIMAGE pImage = pDisk->pLast;
     if (RT_UNLIKELY(!pImage))
     {
         Assert(pImage);
         rc = VERR_VDI_NOT_OPENED;
     }
     else
-        rc = pDisk->Backend->pfnSetOpenFlags(pDisk->pLast->pvBackendData, uOpenFlags);
+        rc = pDisk->Backend->pfnSetOpenFlags(pDisk->pLast->pvBackendData,
+                                             uOpenFlags);
     LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
     return rc;
 }
@@ -1293,7 +1455,8 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned uOpenFlags)
  * @param   pszFilename     Where to store the image file name.
  * @param   cbFilename      Size of buffer pszFilename points to.
  */
-VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage, char *pszFilename, unsigned cbFilename)
+VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
+                                char *pszFilename, unsigned cbFilename)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1309,21 +1472,23 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage, char *pszFilena
  * @param   pszComment      Where to store the comment string of image. NULL is ok.
  * @param   cbComment       The size of pszComment buffer. 0 is ok.
  */
-VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage, char *pszComment, unsigned cbComment)
+VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
+                               char *pszComment, unsigned cbComment)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 /**
- *  * Changes the comment line of image in HDD container.
- *   *
- *    * @returns VBox status code.
- *     * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- *      * @param   pDisk           Pointer to VBox HDD container.
- *       * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- *        * @param   pszComment      New comment string (UTF-8). NULL is allowed to reset the comment.
- *         */
-VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage, const char *pszComment)
+ * Changes the comment line of image in HDD container.
+ *
+ * @returns VBox status code.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to VBox HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pszComment      New comment string (UTF-8). NULL is allowed to reset the comment.
+ */
+VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
+                               const char *pszComment)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1345,7 +1510,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
     Assert(pUuid);
 
-    PVBOXHDDIMAGEDESC pImage = vdGetImageByNumber(pDisk, nImage);
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
         rc = pDisk->Backend->pfnGetUuid(pImage, pUuid);
@@ -1374,7 +1539,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
     Assert(pUuid);
 
-    PVBOXHDDIMAGEDESC pImage = vdGetImageByNumber(pDisk, nImage);
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
         rc = pDisk->Backend->pfnSetUuid(pImage, pUuid);
@@ -1401,7 +1566,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
     Assert(pUuid);
 
-    PVBOXHDDIMAGEDESC pImage = vdGetImageByNumber(pDisk, nImage);
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
         rc = pDisk->Backend->pfnGetModificationUuid(pImage, pUuid);
@@ -1430,7 +1595,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
     Assert(pUuid);
 
-    PVBOXHDDIMAGEDESC pImage = vdGetImageByNumber(pDisk, nImage);
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
         rc = pDisk->Backend->pfnSetModificationUuid(pImage, pUuid);
@@ -1450,14 +1615,15 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the parent image UUID.
  */
-VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
+VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
+                                  PRTUUID pUuid)
 {
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
     Assert(pUuid);
 
-    PVBOXHDDIMAGEDESC pImage = vdGetImageByNumber(pDisk, nImage);
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
         rc = pDisk->Backend->pfnGetParentUuid(pImage, pUuid);
@@ -1477,7 +1643,8 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Optional parameter, new parent UUID of the image.
  */
-VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
+VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
+                                  PCRTUUID pUuid)
 {
     LogFlow(("%s: uuid={%Vuuid} nImage=%u\n", __FUNCTION__, pUuid, nImage));
     /* sanity check */
@@ -1485,7 +1652,7 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUui
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
     Assert(pUuid);
 
-    PVBOXHDDIMAGEDESC pImage = vdGetImageByNumber(pDisk, nImage);
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
         rc = pDisk->Backend->pfnSetParentUuid(pImage, pUuid);
@@ -1509,7 +1676,7 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     RTLogPrintf("--- Dumping VDI Disk, Images=%u\n", pDisk->cImages);
-    for (PVBOXHDDIMAGEDESC pImage = pDisk->pBase; pImage; pImage = pImage->pNext)
+    for (PVDIMAGE pImage = pDisk->pBase; pImage; pImage = pImage->pNext)
     {
         RTLogPrintf("Dumping VDI image \"%s\" file=%#p\n", pImage->pszFilename);
         /** @todo call backend to print its part. */
