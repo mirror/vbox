@@ -79,12 +79,12 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 
 /** @name PCI Configuration Space Registers 
  * @{ */
-#define VBOX_PCI_VENDOR_ID              0x00    /**< 16-bit RO? */
-#define VBOX_PCI_DEVICE_ID              0x02    /**< 16-bit RO? */
-#define VBOX_PCI_COMMAND                0x04    /**< 16-bit ?? */
-#define VBOX_PCI_STATUS                 0x06    /**< 16-bit ?? */
-#define VBOX_PCI_REVISION_ID            0x08    /**<  8-bit ?? */
-#define VBOX_PCI_CLASS_PROG             0x09    /**<  8-bit ?? */
+#define VBOX_PCI_VENDOR_ID              0x00    /**< 16-bit RO */
+#define VBOX_PCI_DEVICE_ID              0x02    /**< 16-bit RO */
+#define VBOX_PCI_COMMAND                0x04    /**< 16-bit RW */
+#define VBOX_PCI_STATUS                 0x06    /**< 16-bit RW */
+#define VBOX_PCI_REVISION_ID            0x08    /**<  8-bit RO */
+#define VBOX_PCI_CLASS_PROG             0x09    /**<  8-bit RO */
 #define VBOX_PCI_CLASS_DEVICE           0x0a    /**<  8-bit ?? */
 #define VBOX_PCI_CACHE_LINE_SIZE        0x0c    /**<  8-bit ?? */
 #define VBOX_PCI_LATENCY_TIMER          0x0d    /**<  8-bit ?? */
