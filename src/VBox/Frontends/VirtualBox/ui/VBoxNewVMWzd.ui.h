@@ -54,82 +54,6 @@ static int calcPageStep (int aMax)
 
 void VBoxNewVMWzd::init()
 {
-    /* Wizard labels recreation */
-
-    QILabel *txWelcome = new QILabel (pageWelcome, "txWelcome");
-    txWelcome->setText (tr ("<p>This wizard will guide you through the steps "
-                            "that are necessary to create\n""a new virtual "
-                            "machine for VirtualBox.</p>\n""<p>Use the "
-                            "<b>Next</b> button to go the next page of the "
-                            "wizard\n""and the <b>Back</b> button to return "
-                            "to the previous page.</p>"));
-    layout74->insertWidget (0, txWelcome);
-
-    QILabel *txNameAndOS = new QILabel (pageNameAndOS, "txNameAndOS");
-    txNameAndOS->setText (tr ("<p>Enter a name for the new virtual machine "
-                              "and select the type of the guest operating\n"
-                              "system you plan to install onto the virtual "
-                              "machine.</p>\n""<p>The name of the virtual "
-                              "machine usually indicates its software and "
-                              "hardware configuration.\n""It will be used by "
-                              "all VirtualBox components to identify your "
-                              "virtual machine.</p>"));
-    layout23->insertWidget (0, txNameAndOS);
-
-    QILabel *textLabel1 = new QILabel (pageMemory, "textLabel1");
-    textLabel1->setText (tr ("<p>Select the amount of base memory (RAM) in "
-                             "megabytes to be allocated to the virtual "
-                             "machine.</p>"));
-    layout35->insertWidget (0, textLabel1);
-
-    txRAMBest2 = new QILabel (pageMemory, "txRAMBest2");
-    layout35->insertWidget (1, txRAMBest2);
-
-    QILabel *textLabel1_3 = new QILabel (pageHDD, "textLabel1_3");
-    textLabel1_3->setText (tr ("<p>Select a hard disk image to be used\n"
-                               "as the boot hard disk of the virtual machine. "
-                               "You can either create a new hard\n""disk "
-                               "using the <b>New</b> button or select an "
-                               "existing hard disk\n""image from the "
-                               "drop-down list or by pressing the "
-                               "<b>Existing</b>\n""button (to invoke the "
-                               "Virtual Disk Manager dialog).</p>\n""<p>If "
-                               "you need a more complicated hard disk setup, "
-                               "you can also skip this\n""step and attach "
-                               "hard disks later using the VM Settings "
-                               "dialog.</p>"));
-    layout76->insertWidget (0, textLabel1_3);
-
-    txVDIBest = new QILabel (pageHDD, "txVDIBest");
-    layout76->insertWidget (1, txVDIBest);
-
-    QILabel *txSummaryHdr = new QILabel (pageSummary, "txSummaryHdr");
-    txSummaryHdr->setText (tr ("\n""                            <p>\n"
-                               "                            You are going "
-                               "to create a new virtual machine\n"
-                               "                            with the "
-                               "following parameters:\n"
-                               "                            </p>\n"
-                               "                            "));
-    summaryLayout->insertWidget (0, txSummaryHdr);
-
-    QILabel *txSummaryFtr = new QILabel (pageSummary, "txSummaryFtr");
-    txSummaryFtr->setText (tr ("\n""                            <p>\n"
-                               "                            If the above is "
-                               "correct press the <b>Finish</b> button.\n"
-                               "                            Once you press "
-                               "it, a new virtual machine will be created.\n"
-                               "                            </p><p>\n"
-                               "                            Note that you can "
-                               "alter these and all other setting of the\n"
-                               "                            created virtual "
-                               "machine at any time using the\n"
-                               "                            <b>Settings</b> "
-                               "dialog accessible through\n"
-                               "                            the menu of the "
-                               "main window.\n""                            "
-                               "</p>\n""                            "));
-
     /* disable help buttons */
     helpButton()->setShown (false);
 
@@ -202,7 +126,6 @@ void VBoxNewVMWzd::init()
     teSummary->setFrameShape (QTextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);
     summaryLayout->insertWidget (1, teSummary);
-    summaryLayout->insertWidget (2, txSummaryFtr);
 
     /* filter out Enter keys in order to direct them to the default dlg button */
     QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
@@ -255,6 +178,17 @@ void VBoxNewVMWzd::init()
 
     /* the finish button on the Summary page is always enabled */
     setFinishEnabled (pageSummary, true);
+
+    /* setup minimum width for the sizeHint to be calculated correctly */
+    int wid = widthSpacer->minimumSize().width();
+    txWelcome->setMinimumWidth (wid);
+    txNameAndOS->setMinimumWidth (wid);
+    textLabel1->setMinimumWidth (wid);
+    txRAMBest2->setMinimumWidth (wid);
+    textLabel1_3->setMinimumWidth (wid);
+    txVDIBest->setMinimumWidth (wid);
+    txSummaryHdr->setMinimumWidth (wid);
+    txSummaryFtr->setMinimumWidth (wid);
 }
 
 
