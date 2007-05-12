@@ -804,7 +804,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             pszState = "unknown";
             break;
     }
-    RTPrintf("State:           %s\n", pszState);
+    LONG64 stateSince;
+    machine->COMGETTER(LastStateChange)(&stateSince);
+    RTTIMESPEC timeSpec;
+    RTTimeSpecSetMilli(&timeSpec, stateSince);
+    char pszTime[30] = {0};
+    RTTimeSpecToString(&timeSpec, pszTime, 30);
+    RTPrintf("State:           %s (since %s)\n", pszState, pszTime);
 
     ComPtr<IFloppyDrive> floppyDrive;
     rc = machine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
