@@ -169,6 +169,8 @@ class CfgNode
 
         int QueryInt32  (const char *pszName, int32_t *pint32Value);
         int SetInt32    (const char *pszName, int32_t int32Value);
+        int QueryInt64  (const char *pszName, int64_t *pint64Value);
+        int SetInt64    (const char *pszName, int64_t int64Value);
 
         int QueryUInt16 (const char *pszName, uint16_t *pu16Value);
         int SetUInt16   (const char *pszName, uint16_t u16Value);
@@ -1825,6 +1827,36 @@ int CfgNode::SetInt32 (const char *pszName, int32_t int32Value)
     return rc;
 }
 
+int CfgNode::QueryInt64 (const char *pszName, int64_t *pint64Value)
+{
+    PRTUTF16 pwszValue = NULL;
+
+    int rc = queryValueString (pszName, &pwszValue);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        rc = cfgldrhlp_ustr_to_integer<int64_t, uint64_t> (pwszValue, pint64Value);
+    }
+
+    return rc;
+}
+
+int CfgNode::SetInt64 (const char *pszName, int64_t int64Value)
+{
+    PRTUTF16 pwszValue = NULL;
+
+    int rc = cfgldrhlp_integer_to_ustr<int64_t, uint64_t> (int64Value, &pwszValue);
+
+    if (VBOX_SUCCESS(rc))
+    {
+        rc = setValueString (pszName, pwszValue);
+
+        cfgldrhlp_release_ustr (pwszValue);
+    }
+
+    return rc;
+}
+
 int CfgNode::QueryUInt16 (const char *pszName, uint16_t *pu16Value)
 {
     PRTUTF16 pwszValue = NULL;
@@ -2310,6 +2342,23 @@ CFGLDRR3DECL(int) CFGLDRSetInt32(CFGNODE hnode, const char *pszName, int32_t int
     return hnode->SetInt32 (pszName, int32Value);
 }
 
+CFGLDRR3DECL(int) CFGLDRQueryInt64(CFGNODE hnode, const char *pszName, int64_t *pint64Value)
+{
+    if (!hnode)
+    {
+        return VERR_INVALID_HANDLE;
+    }
+    return hnode->QueryInt64 (pszName, pint64Value);
+}
+
+CFGLDRR3DECL(int) CFGLDRSetInt64(CFGNODE hnode, const char *pszName, int64_t int64Value)
+{
+    if (!hnode)
+    {
+        return VERR_INVALID_HANDLE;
+    }
+    return hnode->SetInt64 (pszName, int64Value);
+}
 
 CFGLDRR3DECL(int) CFGLDRQueryUInt16(CFGNODE hnode, const char *pszName, uint16_t *pu16Value)
 {

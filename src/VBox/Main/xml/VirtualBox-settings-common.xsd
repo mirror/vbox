@@ -420,6 +420,11 @@
         <xsd:attribute name="mode" type="TBIOSBootMenuModeType" default="messageandmenu"/>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="TimeOffset" minOccurs="0">
+      <xsd:complexType>
+          <xsd:attribute name="value" type="xsd:integer" default="0"/>
+      </xsd:complexType>
+    </xsd:element>
   </xsd:all>
 </xsd:complexType>
 

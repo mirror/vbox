@@ -44,6 +44,7 @@ public:
             mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
             mACPIEnabled = true;
             mIOAPICEnabled = false;
+            mTimeOffset = 0;
         }
 
         bool operator== (const Data &that) const
@@ -55,7 +56,8 @@ public:
                     mLogoImagePath   == that.mLogoImagePath &&
                     mBootMenuMode    == that.mBootMenuMode &&
                     mACPIEnabled     == that.mACPIEnabled &&
-                    mIOAPICEnabled   == that.mIOAPICEnabled);
+                    mIOAPICEnabled   == that.mIOAPICEnabled &&
+                    mTimeOffset      == that.mTimeOffset);
         }
 
         BOOL               mLogoFadeIn;
@@ -65,6 +67,7 @@ public:
         BIOSBootMenuMode_T mBootMenuMode;
         BOOL               mACPIEnabled;
         BOOL               mIOAPICEnabled;
+        LONG64             mTimeOffset;
     };
 
     DECLARE_NOT_AGGREGATABLE(BIOSSettings)
@@ -101,6 +104,8 @@ public:
     STDMETHOD(COMSETTER(ACPIEnabled))(BOOL enable);
     STDMETHOD(COMGETTER(IOAPICEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(IOAPICEnabled))(BOOL enable);
+    STDMETHOD(COMGETTER)(TimeOffset)(LONG64 *offset);
+    STDMETHOD(COMSETTER)(TimeOffset)(LONG64 offset);
 
     // public methods only for internal purposes
 

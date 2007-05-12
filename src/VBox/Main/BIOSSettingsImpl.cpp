@@ -361,6 +361,37 @@ STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
     return S_OK;
 }
 
+STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
+{
+    if (!offset)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *offset = mData->mTimeOffset;
+
+    return S_OK;
+}
+
+STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    CHECK_MACHINE_MUTABILITY (mParent);
+
+    mData.backup();
+    mData->mTimeOffset = offset;
+
+    return S_OK;
+}
+
+
 // IBIOSSettings methods
 /////////////////////////////////////////////////////////////////////////////
 

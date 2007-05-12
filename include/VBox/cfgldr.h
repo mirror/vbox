@@ -406,7 +406,7 @@ CFGLDRR3DECL(int) CFGLDRSetUInt64(CFGNODE hnode, const char *pszName, uint64_t u
  * @return  VBox status code.
  * @param   hnode           Node which attribute will be queried.
  * @param   pszName         Name of the attribute (UTF-8), NULL for the node value.
- * @param   pint32Value    Pointer to 32 bit variable where to store the value.
+ * @param   pint32Value     Pointer to 32 bit variable where to store the value.
  */
 CFGLDRR3DECL(int) CFGLDRQueryInt32(CFGNODE hnode, const char *pszName, int32_t *pint32Value);
 
@@ -419,6 +419,26 @@ CFGLDRR3DECL(int) CFGLDRQueryInt32(CFGNODE hnode, const char *pszName, int32_t *
  * @param   int32Value      The value.
  */
 CFGLDRR3DECL(int) CFGLDRSetInt32(CFGNODE hnode, const char *pszName, int32_t int32Value);
+
+/**
+ * Query 64 bit signed integer value attribute.
+ *
+ * @return  VBox status code.
+ * @param   hnode           Node which attribute will be queried.
+ * @param   pszName         Name of the attribute (UTF-8), NULL for the node value.
+ * @param   pint64Value     Pointer to 64 bit variable where to store the value.
+ */
+CFGLDRR3DECL(int) CFGLDRQueryInt64(CFGNODE hnode, const char *pszName, int64_t *pint64Value);
+
+/**
+ * Set 64 bit signed integer value attribute.
+ *
+ * @return  VBox status code.
+ * @param   hnode           Node which attribute will be set.
+ * @param   pszName         Name of the attribute (UTF-8), NULL for the node value.
+ * @param   int64Value      The value.
+ */
+CFGLDRR3DECL(int) CFGLDRSetInt64(CFGNODE hnode, const char *pszName, int64_t int64Value);
 
 /**
  * Query 16 bit unsigned integer value attribute.
