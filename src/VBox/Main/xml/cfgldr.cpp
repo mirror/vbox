@@ -51,6 +51,9 @@
 #define VBOX_XML_XSLT
 #define _CRT_SECURE_NO_DEPRECATE
 
+#define LOG_GROUP LOG_GROUP_MAIN
+#include <VBox/log.h>
+
 #include <VBox/err.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -1474,9 +1477,7 @@ int CfgNode::resolve (DOMNode *root, const char *pszName, unsigned uIndex, unsig
 
                     catch (...)
                     {
-#ifdef DEBUG
                         Log(( "Error creating element [%ls]\n", uszName ));
-#endif
                         rc = VERR_CFG_NO_VALUE;
                         break;
                     }
