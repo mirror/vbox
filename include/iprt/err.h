@@ -665,6 +665,33 @@ __BEGIN_DECLS
 #define RT_FAILURE_NP(rc)   ( !RT_SUCCESS_NP(rc) )
 
 /**
+ * Converts a Darwin HRESULT error to an iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   iNativeCode    errno code.
+ * @remark  Darwin only.
+ */
+RTDECL(int)  RTErrConvertFromDarwinCOM(int32_t iNativeCode);
+
+/**
+ * Converts a Darwin IOReturn error to an iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   iNativeCode    errno code.
+ * @remark  Darwin only.
+ */
+RTDECL(int)  RTErrConvertFromDarwinIO(int iNativeCode);
+
+/**
+ * Converts a Darwin kern_return_t error to an iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   iNativeCode    errno code.
+ * @remark  Darwin only.
+ */
+RTDECL(int)  RTErrConvertFromDarwinKern(int iNativeCode);
+
+/**
  * Converts errno to iprt status code.
  *
  * @returns iprt status code.
@@ -673,14 +700,13 @@ __BEGIN_DECLS
 RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode);
 
 /**
- * Converts Win32 error code to iprt status code.
- *
- * Needless to say, this is only available on Win32 targets.
+ * Converts a L4 errno to a iprt status code.
  *
  * @returns iprt status code.
- * @param   uNativeCode    Win32 error code.
+ * @param   uNativeCode l4 errno.
+ * @remark  L4 only.
  */
-RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
+RTDECL(int)  RTErrConvertFromL4Errno(unsigned uNativeCode);
 
 /**
  * Converts NT status code to iprt status code.
@@ -689,26 +715,27 @@ RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
  *
  * @returns iprt status code.
  * @param   lNativeCode    NT status code.
+ * @remark  Windows only.
  */
 RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode);
 
 /**
  * Converts OS/2 error code to iprt status code.
  *
- * Needless to say, this is only available on OS/2 targets.
- *
  * @returns iprt status code.
  * @param   uNativeCode    OS/2 error code.
+ * @remark  OS/2 only.
  */
 RTDECL(int)  RTErrConvertFromOS2(unsigned uNativeCode);
 
 /**
- * Converts a L4 errno to a iprt status code.
+ * Converts Win32 error code to iprt status code.
  *
  * @returns iprt status code.
- * @param   uNativeCode l4 errno.
+ * @param   uNativeCode    Win32 error code.
+ * @remark  Windows only.
  */
-RTDECL(int)  RTErrConvertFromL4Errno(unsigned uNativeCode);
+RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
 
 
 #ifdef IN_RING3
