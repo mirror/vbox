@@ -22,6 +22,9 @@
 #ifndef __VBox_cfgldrhlp_h__
 #define __VBox_cfgldrhlp_h__
 
+#define LOG_GROUP LOG_GROUP_MAIN
+#include <VBox/log.h>
+
 #include <iprt/alloc.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
