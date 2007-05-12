@@ -323,6 +323,9 @@ RuntimeR3_SOURCES.os2   = \
 	timesup.cpp \
 
 RuntimeR3_SOURCES.darwin = \
+	darwin/RTErrConvertFromDarwinCOM.cpp \
+	darwin/RTErrConvertFromDarwinIO.cpp \
+	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -711,6 +714,8 @@ RuntimeR0Drv_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
 
 RuntimeR0Drv_SOURCES.darwin = \
+	darwin/RTErrConvertFromDarwinKern.cpp \
+	darwin/RTErrConvertFromDarwinIO.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	RTErrConvertFromErrno.cpp \
@@ -727,7 +732,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/thread2-r0drv-darwin.cpp \
 	r0drv/darwin/time-r0drv-darwin.cpp \
 	thread.cpp \
-	generic/timer-generic.cpp \
+	generic/timer-generic.cpp
 
 RuntimeR0Drv_DEFS.os2 += RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0Drv_SOURCES.os2 = \
