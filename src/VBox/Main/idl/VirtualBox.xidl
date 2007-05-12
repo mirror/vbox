@@ -785,7 +785,7 @@
 
                 As opposed to machines created by <link to="#createMachine()"/>,
                 the settings file of the machine created in "legacy" mode
-                is not authomatically renamed when the machine name is
+                is not automatically renamed when the machine name is
                 changed -- it will always remain the same as specified in this
                 method call.
 
@@ -1841,7 +1841,7 @@
 
     <interface
         name="IBIOSSettings" extends="$unknown"
-        uuid="00fff9d7-983e-462d-a1aa-4cc26de4f0d4"
+        uuid="946b83be-c5aa-4089-859d-db694f57d5ef"
         wsmap="struct"
     >
         <attribute name="LogoFadeIn" type="boolean">
@@ -1872,6 +1872,16 @@
             <desc>
                 IO APIC support flag. If set, VirtualBox will provide an IO APIC
                 and support IRQs above 15.
+            </desc>
+        </attribute>
+
+        <attribute name="TimeOffset" type="long long">
+            <desc>
+                Offset in milliseconds from the host system time. This allows for
+                guests running with a different system date/time than the host.
+                It is equivalent to setting the system date/time in the BIOS other
+                than it's not an absolute value but a relative one. Guest Additions
+                time synchronization also honors this offset.
             </desc>
         </attribute>
 

@@ -299,6 +299,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-bioslogodisplaytime <msec>]\n"
                  "                            [-bioslogoimagepath <imagepath>]\n"
                  "                            [-biosbootmenu disabled|menuonly|messageandmenu]\n"
+                 "                            [-biossystemtimeoffset <msec>]\n"
                  "                            [-boot<1-4> none|floppy|dvd|disk|net>]\n"
                  "                            [-hd<a|b|d> none|<uuid>|<filename>]\n"
                  "                            [-dvd none|<uuid>|<filename>|host:<drive>]\n"
@@ -752,6 +753,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     BOOL ioapicEnabled;
     biosSettings->COMGETTER(IOAPICEnabled)(&ioapicEnabled);
     RTPrintf("IOAPIC:          %s\n", ioapicEnabled ? "on" : "off");
+
+    LONG64 timeOffset;
+    biosSettings->COMGETTER(TimeOffset)(&timeOffset);
+    RTPrintf("Time offset:     %ld ms\n", timeOffset);
 
     TriStateBool_T hwVirtExEnabled;
     machine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);
@@ -2700,6 +2705,7 @@ static int handleModifyVM(int argc, char *argv[],
     uint32_t bioslogodisplaytime = ~0;
     char *bioslogoimagepath = NULL;
     char *biosbootmenumode = NULL;
+    char *biossystemtimeoffset = NULL;
     DeviceType_T bootDevice[4];
     int bootDeviceChanged[4] = { false };
     char *hdds[4] = {0};
@@ -2854,6 +2860,15 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
             biosbootmenumode = argv[i];
+        }
+        else if (strcmp(argv[i], "-biossystemtimeoffset") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            biossystemtimeoffset = argv[i];
         }
         else if (strncmp(argv[i], "-boot", 5) == 0)
         {
@@ -3331,6 +3346,11 @@ static int handleModifyVM(int argc, char *argv[],
                 break;
             }
 
+        }
+        if (biossystemtimeoffset)
+        {
+            LONG64 timeOffset = RTStrToInt64(biossystemtimeoffset);
+            CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(timeOffset));
         }
         for (int curBootDev = 0; curBootDev < 4; curBootDev++)
         {

@@ -3731,6 +3731,19 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                     CFGLDRReleaseNode (bootMenuNode);
                 }
             }
+
+            /* time offset (optional) */
+            {
+                CFGNODE timeOffsetNode = 0;
+                CFGLDRGetChildNode (biosNode, "TimeOffset", 0, &timeOffsetNode);
+                if (timeOffsetNode)
+                {
+                    LONG64 timeOffset;
+                    CFGLDRQueryInt64 (timeOffsetNode, "value", &timeOffset);
+                    mBIOSSettings->COMSETTER(TimeOffset)(timeOffset);
+                    CFGLDRReleaseNode (timeOffsetNode);
+                }
+            }
         }
         while (0);
 
@@ -5565,6 +5578,14 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
             }
             CFGLDRSetBSTR (bootMenuNode, "mode", bootMenuModeStr);
             CFGLDRReleaseNode (bootMenuNode);
+
+            /* time offset (optional) */
+            CFGNODE timeOffsetNode = 0;
+            CFGLDRCreateChildNode (biosNode, "TimeOffset", &timeOffsetNode);
+            LONG64 timeOffset;
+            mBIOSSettings->COMGETTER(TimeOffset)(&timeOffset);
+            CFGLDRSetInt64 (timeOffsetNode, "value", timeOffset);
+            CFGLDRReleaseNode (timeOffsetNode);
         }
         CFGLDRReleaseNode(biosNode);
     }
