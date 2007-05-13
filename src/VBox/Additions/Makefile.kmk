@@ -81,9 +81,9 @@ GUESTADDITIONS_WIN32_FILESPEC = driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/addit
 	driver/VBoxVideo/VBoxVideo.inf=./WINNT/Graphics/Miniport/VBoxVideo.inf \
 	driver/VBoxVideo/VBoxDisp.dll=$(PATH_BIN)/additions/VBoxDisp.dll \
 	gina/VBoxGINA.dll=$(PATH_BIN)/additions/VBoxGINA.dll \
-	AMD_PCNet/netamd.inf=./WINNT/Network/AMD/netamd.inf \
-	AMD_PCNet/pcntpci5.cat=./WINNT/Network/AMD/pcntpci5.cat \
-	AMD_PCNet/PCNTPCI5.sys=./WINNT/Network/AMD/PCNTPCI5.sys \
+	AMD_PCnet/netamd.inf=./WINNT/Network/AMD/netamd.inf \
+	AMD_PCnet/pcntpci5.cat=./WINNT/Network/AMD/pcntpci5.cat \
+	AMD_PCnet/PCNTPCI5.sys=./WINNT/Network/AMD/PCNTPCI5.sys \
 	VBoxGuestAdditions.exe=$(PATH_BIN)/additions/VBoxGuestAdditions.exe \
 	AUTORUN.INF=./WINNT/Installer/AUTORUN.INF
 endif
