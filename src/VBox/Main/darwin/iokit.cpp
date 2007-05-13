@@ -407,13 +407,13 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBVendorID),             &pCur->idVendor),);
                 AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBProductID),            &pCur->idProduct),);
                 AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBDeviceReleaseNumber),  &pCur->bcdDevice),);
-                uint32_t u32LocationID;
-                AssertBreak(darwinDictGetU32(PropsRef, CFSTR(kUSBDevicePropertyLocationID), &u32LocationID),);
-                uint64_t u64SessionID;
-                AssertBreak(darwinDictGetU64(PropsRef, CFSTR("sessionID"), &u64SessionID),);
+                uint32_t u32LocationId;
+                AssertBreak(darwinDictGetU32(PropsRef, CFSTR(kUSBDevicePropertyLocationID), &u32LocationId),);
+                uint64_t u64SessionId;
+                AssertBreak(darwinDictGetU64(PropsRef, CFSTR("sessionID"), &u64SessionId),);
                 char szAddress[64];
-                RTStrPrintf(szAddress, sizeof(szAddress), "s=0x%016RX32;l=0x%08RX32", u64SessionID, u32LocationID);
-
+                RTStrPrintf(szAddress, sizeof(szAddress), "p=0x%04RX16;v=0x%04RX16;s=0x%016RX64;l=0x%08RX32",
+                            pCur->idProduct, pCur->idVendor, u64SessionId, u32LocationId);
                 pCur->pszAddress = RTStrDup(szAddress);
                 AssertBreak(pCur->pszAddress,);
 
