@@ -51,7 +51,7 @@ DECLASM(void) MMGCRamWrite_Error(void);
 /**
  * Install MMGCRam Hypervisor page fault handler for normal working
  * of MMGCRamRead and MMGCRamWrite calls.
- * This handler will be authomatically removed at page fault.
+ * This handler will be automatically removed at page fault.
  * In other case it must be removed by MMGCRamDeregisterTrapHandler call.
  *
  * @param   pVM         VM handle.

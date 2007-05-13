@@ -2194,7 +2194,7 @@ struct StartSVCHelperClientData
  *  The user function is supposed to communicate to the helper process
  *  using the \a aClient argument to do the requested job and optionally expose
  *  the prgress through the \a aProgress object. The user function should never
- *  call notifyComplete() on it: this will be done authomatically using the
+ *  call notifyComplete() on it: this will be done automatically using the
  *  result code returned by the function.
  *
  *  Before the user function is stared, the communication channel passed to in
