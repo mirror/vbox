@@ -35,6 +35,7 @@
 #include <mach/mach_error.h>
 #ifdef VBOX_WITH_USB
 # include <IOKit/usb/IOUSBLib.h>
+# include <IOKit/IOCFPlugIn.h>
 #endif
 
 #include <iprt/mem.h>
@@ -60,7 +61,7 @@ static mach_port_t g_MasterPort = NULL;
 
 /**
  * Lazily opens the master port.
- * 
+ *
  * @returns true if the port is open, false on failure (very unlikely).
  */
 static bool darwinOpenMasterPort(void)
@@ -78,7 +79,7 @@ static bool darwinOpenMasterPort(void)
 
 /**
  * Gets an unsigned 8-bit integer value.
- * 
+ *
  * @returns Success indicator (true/false).
  * @param   DictRef     The dictionary.
  * @param   KeyStrRef   The key name.
@@ -99,7 +100,7 @@ static bool darwinDictGetU8(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRe
 
 /**
  * Gets an unsigned 16-bit integer value.
- * 
+ *
  * @returns Success indicator (true/false).
  * @param   DictRef     The dictionary.
  * @param   KeyStrRef   The key name.
@@ -118,10 +119,9 @@ static bool darwinDictGetU16(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
 }
 
 
-#if 0 /* unused */
 /**
  * Gets an unsigned 32-bit integer value.
- * 
+ *
  * @returns Success indicator (true/false).
  * @param   DictRef     The dictionary.
  * @param   KeyStrRef   The key name.
@@ -138,12 +138,11 @@ static bool darwinDictGetU32(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
     *pu32 = 0;
     return false;
 }
-#endif
 
 
 /**
  * Gets an unsigned 64-bit integer value.
- * 
+ *
  * @returns Success indicator (true/false).
  * @param   DictRef     The dictionary.
  * @param   KeyStrRef   The key name.
@@ -164,7 +163,7 @@ static bool darwinDictGetU64(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
 
 /**
  * Gets string value, converted to UTF-8 and put in a IPRT string buffer.
- * 
+ *
  * @returns Success indicator (true/false).
  * @param   DictRef     The dictionary.
  * @param   KeyStrRef   The key name.
@@ -194,7 +193,7 @@ static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyS
  */
 typedef struct DARWINUSBNOTIFY
 {
-    /** The notification port. 
+    /** The notification port.
      * It's shared between the notification callbacks. */
     IONotificationPortRef NotifyPort;
     /** The run loop source for NotifyPort. */
@@ -203,13 +202,13 @@ typedef struct DARWINUSBNOTIFY
     io_iterator_t AttachIterator;
     /** The detach notificaiton iterator. */
     io_iterator_t DetachIterator;
-    
+
 } DARWINUSBNOTIFY, *PDARWINUSBNOTIFY;
 
 
 /**
  * Run thru an interrator.
- * 
+ *
  * The docs says this is necessary to start getting notifications,
  * so this function is called in the callbacks and right after
  * registering the notification.
@@ -226,7 +225,7 @@ static void darwinDrainIterator(io_iterator_t pIterator)
 
 /**
  * Callback for the attach notifications.
- * 
+ *
  * @param   pvNotify        Our data.
  * @param   NotifyIterator  The notification iterator.
  */
@@ -239,7 +238,7 @@ static void darwinUSBAttachNotification(void *pvNotify, io_iterator_t NotifyIter
 
 /**
  * Callback for the detach notifications.
- * 
+ *
  * @param   pvNotify        Our data.
  * @param   NotifyIterator  The notification iterator.
  */
@@ -253,11 +252,11 @@ static void darwinUSBDetachNotification(void *pvNotify, io_iterator_t NotifyIter
 /**
  * Subscribes the run loop to USB notification events relevant to
  * device attach/detach.
- * 
- * The source mode for these events is defined as VBOX_IOKIT_MODE_STRING 
- * so that the caller can listen to events from this mode only and 
+ *
+ * The source mode for these events is defined as VBOX_IOKIT_MODE_STRING
+ * so that the caller can listen to events from this mode only and
  * re-evalutate the list of attached devices whenever an event arrives.
- * 
+ *
  * @returns opaque for passing to the unsubscribe function. If NULL
  *          something unexpectedly failed during subscription.
  */
@@ -269,7 +268,7 @@ void *DarwinSubscribeUSBNotifications(void)
     AssertReturn(pNotify, NULL);
 
     /*
-     * Create the notification port, bake it into a runloop source which we 
+     * Create the notification port, bake it into a runloop source which we
      * then add to our run loop.
      */
     pNotify->NotifyPort = IONotificationPortCreate(g_MasterPort);
@@ -318,9 +317,9 @@ void *DarwinSubscribeUSBNotifications(void)
 
 
 /**
- * Unsubscribe the run loop from USB notification subscribed to 
+ * Unsubscribe the run loop from USB notification subscribed to
  * by DarwinSubscribeUSBNotifications.
- * 
+ *
  * @param   pvOpaque    The return value from DarwinSubscribeUSBNotifications.
  */
 void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
@@ -379,7 +378,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
         /*
          * Query the device properties from the registry.
          *
-         * We could alternatively use the device and such, but that will be 
+         * We could alternatively use the device and such, but that will be
          * slower and we would have to resort to the registry for the three
          * string anyway.
          */
@@ -393,8 +392,8 @@ PUSBDEVICE DarwinGetUSBDevices(void)
             {
                 AssertBreak(pCur,);
 
-                /* 
-                 * Mandatory 
+                /*
+                 * Mandatory
                  */
                 pCur->bcdUSB = 0;                                           /* we've no idea. */
                 pCur->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;    /* ditto. */
@@ -408,25 +407,22 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBVendorID),             &pCur->idVendor),);
                 AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBProductID),            &pCur->idProduct),);
                 AssertBreak(darwinDictGetU16(PropsRef, CFSTR(kUSBDeviceReleaseNumber),  &pCur->bcdDevice),);
-                char szAddress[32];
-#if 0                            
                 uint32_t u32LocationID;
                 AssertBreak(darwinDictGetU32(PropsRef, CFSTR(kUSBDevicePropertyLocationID), &u32LocationID),);
-                RTStrPrintf(szAddress, sizeof(szAddress), "%08RX32", u32LocationID);
-#else
                 uint64_t u64SessionID;
-                AssertBreak(darwinDictGetU64(PropsRef, CFSTR(kUSBDevicePropertyLocationID), &u64SessionID),);
-                RTStrPrintf(szAddress, sizeof(szAddress), "%016RX32", u64SessionID);
-#endif 
-                pCur->pszAddress = RTStrDup(szAddress);  
+                AssertBreak(darwinDictGetU64(PropsRef, CFSTR("sessionID"), &u64SessionID),);
+                char szAddress[64];
+                RTStrPrintf(szAddress, sizeof(szAddress), "s=0x%016RX32;l=0x%08RX32", u64SessionID, u32LocationID);
+
+                pCur->pszAddress = RTStrDup(szAddress);
                 AssertBreak(pCur->pszAddress,);
 
-                /* 
+                /*
                  * Optional.
                  * There are some nameless device in the iMac, apply names to them.
                  */
                 darwinDictGetString(PropsRef, CFSTR("USB Vendor Name"),     (char **)&pCur->pszManufacturer);
-                if (    !pCur->pszManufacturer 
+                if (    !pCur->pszManufacturer
                     &&  pCur->idVendor == kIOUSBVendorIDAppleComputer)
                     pCur->pszManufacturer = RTStrDup("Apple Computer, Inc.");
                 darwinDictGetString(PropsRef, CFSTR("USB Product Name"),    (char **)&pCur->pszProduct);
@@ -462,7 +458,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                     }
                     long cReft = (*ppUSBDeviceInterface)->Release(ppUSBDeviceInterface); MY_CHECK_CREFS(cRefs);
                 }
-#endif 
+#endif
 
                 /*
                  * We're good. Link the device.
@@ -493,7 +489,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
     IOObjectRelease(USBDevices);
 
     /*
-     * Some post processing. There are a couple of things we have to 
+     * Some post processing. There are a couple of things we have to
      * make 100% sure about, and that is that the (Apple) keyboard
      * and mouse most likely to be in use by the user aren't available
      * for capturing. If there is no Apple mouse or keyboard we'll
@@ -505,10 +501,10 @@ PUSBDEVICE DarwinGetUSBDevices(void)
         if (pCur->idVendor == kIOUSBVendorIDAppleComputer)
         {
             /*
-             * This test is a bit rough, should check device class/protocol but 
-             * we don't have interface info yet so that might be a bit tricky. 
+             * This test is a bit rough, should check device class/protocol but
+             * we don't have interface info yet so that might be a bit tricky.
              */
-            if (    (   !pKeyboard 
+            if (    (   !pKeyboard
                      || pKeyboard->idVendor != kIOUSBVendorIDAppleComputer)
                 &&  pCur->pszProduct
                 &&  strstr(pCur->pszProduct, " Keyboard"))
