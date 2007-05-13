@@ -471,6 +471,11 @@ ifdef VBOX_WITH_USB
 	USB/vrdp/USBProxyDevice-vrdp.cpp
  endif
 
+ Drivers_DEFS.darwin  += VUSB_HAVE_USBPROXY_DEVICE
+ Drivers_SOURCES.darwin += \
+	USB/USBProxyDevice.cpp \
+	USB/darwin/USBProxyDevice-darwin.cpp
+
  Drivers_DEFS.linux   += VUSB_HAVE_USBPROXY_DEVICE
  ifdef VBOX_WITHOUT_LINUX_COMPILER_H
   Drivers_DEFS.linux  += VBOX_WITHOUT_LINUX_COMPILER_H
