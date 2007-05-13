@@ -323,7 +323,7 @@ void Machine::FinalRelease()
  *  @param aMode        Init_New, Init_Existing or Init_Registered
  *  @param aName        name for the machine when aMode is Init_New
  *                      (ignored otherwise)
- *  @param aNameSync    |TRUE| to authomatically sync settings dir and file
+ *  @param aNameSync    |TRUE| to automatically sync settings dir and file
  *                      name with the machine name. |FALSE| is used for legacy
  *                      machines where the file name is specified by the
  *                      user and should never change. Used only in Init_New
