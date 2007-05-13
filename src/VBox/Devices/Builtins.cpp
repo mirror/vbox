@@ -101,7 +101,7 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceAudioSniffer);
     if (VBOX_FAILURE(rc))
         return rc;
-#if defined(VBOX_WITH_USB) && (defined(__L4ENV__) || defined(__LINUX__) || defined(__WIN__))
+#ifdef VBOX_WITH_USB
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceOHCI);
     if (VBOX_FAILURE(rc))
         return rc;
@@ -209,7 +209,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (VBOX_FAILURE(rc))
         return rc;
 
-#if defined(VBOX_WITH_USB) && (defined(__L4ENV__) || defined(__LINUX__) || defined(__WIN__))
+#ifdef VBOX_WITH_USB
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVUSBRootHub);
     if (VBOX_FAILURE(rc))
         return rc;
