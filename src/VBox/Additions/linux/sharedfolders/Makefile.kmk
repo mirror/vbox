@@ -1,0 +1,130 @@
+# $Id$
+## @file
+# Makefile for the vboxvfs (linux shared folders module).
+#
+
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
+SYSMODS  = vboxvfs
+endif
+PROGRAMS = mountvboxsf
+INSTALLS = vboxvfs-bin vboxvfs-sh
+
+#
+# Install the source.
+#
+vboxvfs-bin_INST        = bin/additions/src/vboxvfs
+vboxvfs-bin_MODE        = a+r,u+w
+vboxvfs-bin_SOURCES     = \
+	$(PATH_ROOT)/include/iprt/alloc.h=>include/iprt/alloc.h \
+	$(PATH_ROOT)/include/iprt/asm.h=>include/iprt/asm.h \
+	$(PATH_ROOT)/include/iprt/assert.h=>include/iprt/assert.h \
+	$(PATH_ROOT)/include/iprt/cdefs.h=>include/iprt/cdefs.h \
+	$(PATH_ROOT)/include/iprt/err.h=>include/iprt/err.h \
+	$(PATH_ROOT)/include/iprt/fs.h=>include/iprt/fs.h \
+	$(PATH_ROOT)/include/iprt/log.h=>include/iprt/log.h \
+	$(PATH_ROOT)/include/iprt/mem.h=>include/iprt/mem.h \
+	$(PATH_ROOT)/include/iprt/param.h=>include/iprt/param.h \
+	$(PATH_ROOT)/include/iprt/path.h=>include/iprt/path.h \
+	$(PATH_ROOT)/include/iprt/semaphore.h=>include/iprt/semaphore.h \
+	$(PATH_ROOT)/include/iprt/stdarg.h=>include/iprt/stdarg.h \
+	$(PATH_ROOT)/include/iprt/stdint.h=>include/iprt/stdint.h \
+	$(PATH_ROOT)/include/iprt/string.h=>include/iprt/string.h \
+	$(PATH_ROOT)/include/iprt/time.h=>include/iprt/time.h \
+	$(PATH_ROOT)/include/iprt/types.h=>include/iprt/types.h \
+	$(PATH_ROOT)/include/VBox/cdefs.h=>include/VBox/cdefs.h \
+	$(PATH_ROOT)/include/VBox/err.h=>include/VBox/err.h \
+	$(PATH_ROOT)/include/VBox/hgcmsvc.h=>include/VBox/hgcmsvc.h \
+	$(PATH_ROOT)/include/VBox/log.h=>include/VBox/log.h \
+	$(PATH_ROOT)/include/VBox/ostypes.h=>include/VBox/ostypes.h \
+	$(PATH_ROOT)/include/VBox/shflsvc.h=>include/VBox/shflsvc.h \
+	$(PATH_ROOT)/include/VBox/types.h=>include/VBox/types.h \
+	$(PATH_ROOT)/include/VBox/VBoxGuest.h=>include/VBox/VBoxGuest.h \
+	$(PATH_ROOT)/include/VBox/VBoxGuestLib.h=>include/VBox/VBoxGuestLib.h \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/GenericRequest.cpp=>GenericRequest.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/HGCM.cpp=>HGCM.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/Init.cpp=>Init.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/PhysHeap.cpp=>PhysHeap.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/SysHlp.cpp=>SysHlp.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/SysHlp.h=>SysHlp.h \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBGLInternal.h=>VBGLInternal.h \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.c=>VBoxCalls.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.h=>VBoxCalls.h \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib/VMMDev.cpp=>VMMDev.c \
+	$(PATH_ROOT)/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.cpp=>r0drv/alloc-r0drv.c \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.h=>r0drv/alloc-r0drv.h \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/semaphore-r0drv-linux.c=>r0drv/linux/semaphore-r0drv-linux.c \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
+	$(PATH_OUT)/version-generated.h=>version-generated.h \
+	Makefile.module=>Makefile \
+	dirops.c=>dirops.c \
+	regops.c=>regops.c \
+	utils.c=>utils.c \
+	vfs-utils.c=>vfs-utils.c \
+	vbsfmount.h=>vbsfmount.h \
+	vfsmod.c=>vfsmod.c \
+	vfsmod.h=>vfsmod.h
+
+vboxvfs-sh_INST        = bin/additions/src/vboxvfs
+vboxvfs-sh_MODE        = a+rx,u+w
+vboxvfs-sh_SOURCES     = \
+	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp=>build_in_tmp
+
+#
+# The module (for syntax checking).
+#
+vboxvfs_TEMPLATE        = VBOXLNX32GUESTR0
+vboxvfs_DEFS           := KBUILD_MODNAME=KBUILD_STR\(vboxadd\) KBUILD_BASENAME=KBUILD_STR\(vboxadd\) MODULE IN_RING0 IN_RT_R0 VBOXGUEST VBOX_HGCM
+vboxvfs_LIBS            = $(PATH_LIB)/VBoxGuestLibLinux.a $(PATH_LIB)/RuntimeLnx32GuestR0.a
+vboxvfs_SOURCES         = vfsmod.c vfs-utils.c
+vboxvfs_NOINST          = 1
+vboxvfs_CFLAGS         += -fshort-wchar
+vboxvfs_INCS           += \
+	../../common/VBoxGuestLib \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+
+# detect fc6 2.6.18
+vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
+                            $(if $(wildcard $(inc)/linux/utsrelease.h),\
+                              $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
+                                then echo yes; fi),KERNEL_FC6,),))
+# detect rhel5 2.6.18
+vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
+                            $(if $(wildcard $(inc)/linux/utsrelease.h),\
+                              $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
+                                then echo yes; fi),KERNEL_FC6,),))
+
+
+#
+# The mount util.
+#
+mountvboxsf_TEMPLATE    = VBOXLNX32GUESTR3EXENOCPP
+mountvboxsf_SOURCES     = \
+	vbsfmount.h \
+	mount.vboxsf.c
+mountvboxsf_DEFS        = _GNU_SOURCE
+
+
+include	$(PATH_KBUILD)/footer.kmk

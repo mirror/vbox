@@ -29,12 +29,9 @@ SUBDIRS += \
 	module \
 	daemon \
 	xgraphics \
-	xmouse
-ifndef VBOX_OSE
-SUBDIRS += \
+	xmouse \
 	sharedfolders \
 	xclient
-endif
 endif
 
 PACKING      = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
@@ -68,7 +65,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_BIN)/additions/vboxvideo_drv.o \
 		$(PATH_BIN)/additions/vboxvideo_drv_70.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_71.so \
-		$(if VBOX_OSE,,installer/vboxvfs.sh $(PATH_BIN)/additions/mountvboxsf) \
+		installer/vboxvfs.sh $(PATH_BIN)/additions/mountvboxsf \
 		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Creating $@)
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)/install
@@ -95,10 +92,8 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)objcopy -g -R .comment $(PATH_BIN)/additions/vboxvideo_drv.o  $(PATH_TARGET)/install/vboxvideo_drv.o
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_70.so $(PATH_TARGET)/install/vboxvideo_drv_70.so
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_71.so $(PATH_TARGET)/install/vboxvideo_drv_71.so
-ifndef VBOX_OSE
 	$(QUIET)$(INSTALL) -m 0755 installer/vboxvfs.sh $(PATH_TARGET)/install
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/mountvboxsf $(PATH_TARGET)/install/mount.vboxsf
-endif
 	$(QUIET)$(VBOX_MAKESELF) $(PATH_TARGET)/install $@ \
 	"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
 

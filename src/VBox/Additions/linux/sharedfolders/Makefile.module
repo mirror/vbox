@@ -1,0 +1,165 @@
+#
+# VirtualBox Guest Additions Module Makefile.
+#
+# (For 2.6.x this file must be 'Makefile'!)
+#
+# Copyright (C) 2006 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+#
+MODULE = vboxvfs
+OBJS   = \
+	vfsmod.o \
+	vfs-utils.o \
+	GenericRequest.o \
+	SysHlp.o \
+	PhysHeap.o \
+	Init.o \
+	VMMDev.o \
+	HGCM.o \
+	VBoxCalls.o \
+	r0drv/alloc-r0drv.o \
+	r0drv/linux/alloc-r0drv-linux.o \
+	r0drv/linux/semaphore-r0drv-linux.o
+EXTRA_CFLAGS = -fshort-wchar
+
+ifneq ($(MAKECMDGOALS),clean)
+
+# kernel base directory
+ifndef KERN_DIR
+ KERN_DIR := /lib/modules/$(shell uname -r)/build
+ ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+  KERN_DIR := /usr/src/linux
+  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+   $(error Error: unable to find the sources of your current Linux kernel. Specify KERN_DIR=<directory> and run Make again.)
+  endif
+  $(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
+ endif
+else
+ ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+  $(error Error: KERN_DIR does not point to a directory.)
+ endif
+endif
+
+# includes
+ifndef KERN_INCL
+ KERN_INCL = $(KERN_DIR)/include
+endif
+ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
+ $(error Error: unable to find the include directory for your current Linux kernel. Specify KERN_INCL=<directory> and run Make again.)
+endif
+
+# module install dir.
+ifndef MODULE_DIR
+ MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+ ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+  MODULE_DIR := $(MODULE_DIR_TST)/misc
+ else
+  $(error Unable to find the folder to install the shared folders driver to)
+ endif
+endif # MODULE_DIR unspecified
+
+# guess kernel version (24 or 26)
+ifeq ($(shell if grep '"2.4.' $(KERN_INCL)/linux/version.h > /dev/null; then echo yes; fi),yes)
+KERN_VERSION := 24
+else
+KERN_VERSION := 26
+endif
+# KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
+
+# debug - show guesses.
+ifdef DEBUG
+$(warning dbg: KERN_DIR     = $(KERN_DIR))
+$(warning dbg: KERN_INCL    = $(KERN_INCL))
+$(warning dbg: MODULE_DIR   = $(MODULE_DIR))
+$(warning dbg: KERN_VERSION = $(KERN_VERSION))
+endif
+
+
+#
+# Compiler options
+#
+ifndef INCL
+ INCL    := -I$(KERN_INCL) $(addprefix -I, $(EXTRA_INCL))
+ ifndef KBUILD_EXTMOD
+  KBUILD_EXTMOD := $(shell pwd)
+ endif
+ INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
+ export INCL
+endif
+KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -D_X86_ -DIN_RT_R0 -DIN_SUP_R0 \
+	    -DVBOX_HGCM -DLOG_TO_BACKDOOR
+#ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
+#KFLAGS   += -DDEBUG
+#endif
+
+ifeq ($(KERN_VERSION), 24)
+#
+# 2.4
+#
+
+CFLAGS := -DVBOX_LINUX_2_4 $(INCL) $(KFLAGS) $(KDEBUG)
+MODULE_EXT := o
+
+# 2.4 Module linking
+$(MODULE).o: $(OBJS)
+	$(LD) -o $@ -r $(OBJS)
+
+.PHONY: $(MODULE)
+all: $(MODULE)
+$(MODULE): $(MODULE).o
+
+else
+#
+# 2.6 and later
+#
+
+MODULE_EXT := ko
+
+$(MODULE)-y  := $(OBJS)
+
+# detect FC6 2.6.18
+KFLAGS += $(foreach inc,$(KERN_INCL),\
+            $(if $(wildcard $(inc)/linux/utsrelease.h),\
+              $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
+                then echo yes; fi),-DKERNEL_FC6,),))
+# detect rhel5 2.6.18
+KFLAGS += $(foreach inc,$(KERN_INCL),\
+            $(if $(wildcard $(inc)/linux/utsrelease.h),\
+              $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
+                then echo yes; fi),-DKERNEL_FC6,),))
+
+# build defs
+EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+
+all: $(MODULE)
+
+obj-m += $(MODULE).o
+
+$(MODULE):
+	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+
+endif
+
+install: $(MODULE)
+	@mkdir -p $(MODULE_DIR); \
+	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
+	PATH="$(PATH):/bin:/sbin" depmod -ae;
+
+endif # eq($(MAKECMDGOALS),clean)
+
+clean:
+	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers
