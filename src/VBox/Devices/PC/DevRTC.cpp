@@ -133,8 +133,8 @@ struct RTCState {
     PPDMDEVINSHC    pDevInsHC;
     /** Pointer to the device instance - GC Ptr. */
     PPDMDEVINSGC    pDevInsGC;
-    /** Use UCT or local time initially. */
-    bool            fUCT;
+    /** Use UTC or local time initially. */
+    bool            fUTC;
     /** The RTC registration structure. */
     PDMRTCREG       RtcReg;
     /** The RTC device helpers. */
@@ -700,9 +700,9 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
      * Set the CMOS date/time.
      */
     RTTIMESPEC  Now;
-    PDMDevHlpUCTNow(pDevIns, &Now);
+    PDMDevHlpUTCNow(pDevIns, &Now);
     RTTIME Time;
-    if (pData->fUCT)
+    if (pData->fUTC)
         RTTimeExplode(&Time, &Now);
     else
         RTTimeLocalExplode(&Time, &Now);
