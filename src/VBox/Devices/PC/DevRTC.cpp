@@ -57,7 +57,7 @@
 
 #include "vl_vbox.h"
 
-/** @todo Implement time/localtime/gmtime  replacements in Runtime! */
+/** @todo Replace struct tm with RTTIME. */
 #include <time.h>
 
 struct RTCState;
@@ -165,7 +165,7 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         next_irq_clock = (cur_clock & ~(uint64_t)(period - 1)) + period;
         s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
         TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
-        
+
     } else {
         TMTimerStop(s->CTXSUFF(pPeriodicTimer));
     }
@@ -691,46 +691,37 @@ static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t 
 /** @copydoc FNPDMDEVINITCOMPLETE */
 static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
 {
+    /** @todo this should be (re)done at power on if we didn't load a state... */
     RTCState   *pData = PDMINS2DATA(pDevIns, RTCState *);
-    time_t      Ti;
     struct tm   Tm;
     struct tm  *pTm;
-    int         iYear;
 
     /*
      * Set the CMOS date/time.
      */
-#if 0 /* later */
     RTTIMESPEC  Now;
-    RTTIME      Time;
-    RTTimeNow(&Now);
+    PDMDevHlpUCTNow(pDevIns, &Now);
+    RTTIME Time;
     if (pData->fUCT)
         RTTimeExplode(&Time, &Now);
     else
         RTTimeLocalExplode(&Time, &Now);
-    pTm = RTTimeToPosixTm(&Tm, &Time);
-#else
-    time(&Ti);
-#ifndef __WIN__
-    if (pData->fUCT)
-        pTm = gmtime_r(&Ti, &Tm);
-    else
-        pTm = localtime_r(&Ti, &Tm);
-    Assert(pTm);
-#else
-    /* Win32 doesn't have thread safe stuff, let's just hope this works out fine :/ */
-    if (pData->fUCT)
-        pTm = gmtime(&Ti);
-    else
-        pTm = localtime(&Ti);
-    Assert(pTm);
-    Tm = *pTm;
+
+    memset(&Tm, 0, sizeof(Tm));
+    Tm.tm_year = Time.i32Year - 1900;
+    Tm.tm_mon  = Time.u8Month;
+    Tm.tm_mday = Time.u8MonthDay;
+    Tm.tm_wday = Time.u8WeekDay;
+    Tm.tm_yday = Time.u16YearDay;
+    Tm.tm_hour = Time.u8Hour;
+    Tm.tm_min  = Time.u8Minute;
+    Tm.tm_sec  = Time.u8Second;
+    Tm.tm_isdst = -1;
     pTm = &Tm;
-#endif
-#endif
+
     rtc_set_date(pData, pTm);
 
-    iYear = to_bcd(pData, (Tm.tm_year / 100) + 19); /* tm_year is 1900 based (stupid) */
+    int iYear = to_bcd(pData, (Tm.tm_year / 100) + 19); /* tm_year is 1900 based */
     rtc_set_memory(pData, 0x32, iYear);                                     /* 32h - Century Byte (BCD value for the century */
     rtc_set_memory(pData, 0x37, iYear);                                     /* 37h - (IBM PS/2) Date Century Byte */
 
@@ -850,7 +841,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond, "MC146818 RTC/CMOS - Second", &pData->pSecondTimerHC);
 #else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerSecond, "MC146818 RTC/CMOS - Second", &pData->pSecondTimerHC);
-#endif 
+#endif
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
@@ -860,7 +851,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2, "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2HC);
 #else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerSecond2, "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2HC);
-#endif 
+#endif
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
