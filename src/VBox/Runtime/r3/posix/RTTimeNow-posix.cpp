@@ -37,7 +37,7 @@
  * @returns pTime.
  * @param   pTime   Where to store the time.
  */
-RTR3DECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
+RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);

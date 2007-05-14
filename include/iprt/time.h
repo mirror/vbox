@@ -557,12 +557,12 @@ typedef const RTTIME *PCRTTIME;
 
 
 /**
- * Gets the current system time.
+ * Gets the current system time (UCT).
  *
  * @returns pTime.
  * @param   pTime   Where to store the time.
  */
-RTR3DECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime);
+RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime);
 
 /**
  * Explodes a time spec (UTC).
@@ -603,6 +603,14 @@ RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime);
 RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime);
 
 /**
+ * Gets the current local system time.
+ *
+ * @returns pTime.
+ * @param   pTime   Where to store the local time.
+ */
+RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime);
+
+/**
  * Gets the delta between UTC and local time.
  *
  * @code
@@ -612,16 +620,16 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime);
  *
  * @returns Returns the nanosecond delta between UTC and local time.
  */
-RTR3DECL(int64_t) RTTimeLocalDeltaNano(void);
+RTDECL(int64_t) RTTimeLocalDeltaNano(void);
 
 /**
  * Explodes a time spec to the localized timezone.
  *
  * @returns pTime.
  * @param   pTime       Where to store the exploded time.
- * @param   pTimeSpec   The time spec to exploded.
+ * @param   pTimeSpec   The time spec to exploded (UCT).
  */
-RTR3DECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec);
+RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec);
 
 /**
  * Converts a time spec to a ISO date string.
