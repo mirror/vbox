@@ -4676,7 +4676,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
      */
     BOOL fACPI;
     hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
-    if (fACPI)
+    if (fACPI || fIOAPIC)
     {
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
@@ -4834,6 +4834,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
 
     if (fIOAPIC)
     {
