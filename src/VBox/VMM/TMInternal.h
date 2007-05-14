@@ -290,12 +290,12 @@ typedef struct TM
     bool                        fMaybeUseOffsettedHostTSC;
     /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
     bool                        fTSCTicking;
-    /** Set if we fully virtualize the TSC, i.e. intercept all rdtsc instructions. 
+    /** Set if we fully virtualize the TSC, i.e. intercept all rdtsc instructions.
      * Config variable: TSCVirtualized (bool) */
     bool                        fTSCVirtualized;
     /** Set if we use the real TSC as time source or if we use the virtual clock.
-     * If fTSCVirtualized is set we maintain a offset to the TSC and pausing/resuming the 
-     * ticking. fTSCVirtualized = false implies fTSCUseRealTSC = true. 
+     * If fTSCVirtualized is set we maintain a offset to the TSC and pausing/resuming the
+     * ticking. fTSCVirtualized = false implies fTSCUseRealTSC = true.
      * Config variable: TSCUseRealTSC (bool) */
     bool                        fTSCUseRealTSC;
     /** The offset between the host TSC and the Guest TSC.
@@ -303,7 +303,7 @@ typedef struct TM
     uint64_t                    u64TSCOffset;
     /** The guest TSC when fTicking is cleared. */
     uint64_t                    u64TSC;
-    /** The number of CPU clock ticks per second (TMCLOCK_TSC). 
+    /** The number of CPU clock ticks per second (TMCLOCK_TSC).
      * Config variable: TSCTicksPerSecond (64-bit unsigned int)
      * The config variable implies fTSCVirtualized = true and fTSCUseRealTSC = false. */
     uint64_t                    cTSCTicksPerSecond;
@@ -316,9 +316,9 @@ typedef struct TM
     bool volatile               fVirtualSyncTicking;
     /** Virtual timer synchronous time catch-up active. */
     bool volatile               fVirtualSyncCatchUp;
-    /** WarpDrive percentage. 
-     * 100% is normal (fVirtualSyncNormal == true). When other than 100% we apply 
-     * this percentage to the raw time source for the period it's been valid in, 
+    /** WarpDrive percentage.
+     * 100% is normal (fVirtualSyncNormal == true). When other than 100% we apply
+     * this percentage to the raw time source for the period it's been valid in,
      * i.e. since u64VirtualWarpDriveStart. */
     uint32_t                    u32VirtualWarpDrivePercentage;
 
@@ -334,10 +334,10 @@ typedef struct TM
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
     uint64_t volatile           u64VirtualSync;
     /** The offset of the timer synchronous virtual clock (TMCLOCK_VIRTUAL_SYNC) relative
-     * to the virtual clock (TMCLOCK_VIRTUAL). 
+     * to the virtual clock (TMCLOCK_VIRTUAL).
      * (This is accessed by the timer thread and must be updated atomically.) */
     uint64_t volatile           offVirtualSync;
-    /** The offset into offVirtualSync that's been irrevocably given up by failed catch-up attempts. 
+    /** The offset into offVirtualSync that's been irrevocably given up by failed catch-up attempts.
      * Thus the current lag is offVirtualSync - offVirtualSyncGivenUp. */
     uint64_t                    offVirtualSyncGivenUp;
     /** The TMCLOCK_VIRTUAL at the previous TMVirtualGetSync call when catch-up is active. */
@@ -350,10 +350,10 @@ typedef struct TM
     uint64_t                    u64VirtualSyncCatchUpStopThreshold;
     /** When to give up catch-up. */
     uint64_t                    u64VirtualSyncCatchUpGiveUpThreshold;
-/** @def TM_MAX_CATCHUP_PERIODS 
+/** @def TM_MAX_CATCHUP_PERIODS
  * The number of catchup rates. */
 #define TM_MAX_CATCHUP_PERIODS  10
-    /** The agressivness of the catch-up relative to how far we've lagged behind. 
+    /** The agressivness of the catch-up relative to how far we've lagged behind.
      * The idea is to have increasing catch-up percentage as the lag increases. */
     struct TMCATCHUPPERIOD
     {
@@ -361,6 +361,13 @@ typedef struct TM
         uint32_t                u32Percentage;  /**< The catch-up percent to apply. */
         uint32_t                u32Alignment;   /**< Structure alignment */
     }                           aVirtualSyncCatchUpPeriods[TM_MAX_CATCHUP_PERIODS];
+
+    /** The UCT offset in ns.
+     * This is *NOT* for converting UTC to local time. It is for converting real
+     * world UCT time to VM UCT time. This feature is indented for doing date
+     * testing of software and similar.
+     * @todo Implement warpdrive on UCT. */
+    int64_t                     offUCT;
 
     /** Timer queues for the different clock types - R3 Ptr */
     R3PTRTYPE(PTMTIMERQUEUE)    paTimerQueuesR3;
@@ -411,7 +418,7 @@ typedef struct TM
     STAMCOUNTER                 StatPostponedR0;
     STAMCOUNTER                 StatPostponedGC;
     /** @} */
-    /** Read the time 
+    /** Read the time
      * @{ */
     STAMCOUNTER                 StatVirtualGet;
     STAMCOUNTER                 StatVirtualGetSetFF;
