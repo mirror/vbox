@@ -4663,6 +4663,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertInteger(pCfg, "ShowBootMenu", value);                          RC_CHECK();
 
     /*
+     * The time offset
+     */
+    LONG64 timeOffset;
+    hrc = biosSettings->COMGETTER(TimeOffset)(&timeOffset);                         H();
+    PCFGMNODE pTMNode;
+    rc = CFGMR3InsertNode(pRoot, "TM", &pTMNode);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pTMNode, "UCTOffset", timeOffset);                     RC_CHECK();
+
+    /*
      * ACPI
      */
     BOOL fACPI;
