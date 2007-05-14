@@ -557,7 +557,7 @@ typedef const RTTIME *PCRTTIME;
 
 
 /**
- * Gets the current system time (UCT).
+ * Gets the current system time (UTC).
  *
  * @returns pTime.
  * @param   pTime   Where to store the time.
@@ -627,7 +627,7 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void);
  *
  * @returns pTime.
  * @param   pTime       Where to store the exploded time.
- * @param   pTimeSpec   The time spec to exploded (UCT).
+ * @param   pTimeSpec   The time spec to exploded (UTC).
  */
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec);
 

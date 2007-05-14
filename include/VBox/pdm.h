@@ -5002,13 +5002,13 @@ typedef struct PDMDEVHLP
     DECLR3CALLBACKMEMBER(int, pfnCritSectInit,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName));
 
     /**
-     * Get the real world UCT time adjusted for VM lag.
+     * Get the real world UTC time adjusted for VM lag, user offset and warpdrive.
      *
      * @returns pTime.
      * @param   pDevIns         Device instance.
      * @param   pTime           Where to store the time.
      */
-    DECLR3CALLBACKMEMBER(PRTTIMESPEC, pfnUCTNow,(PPDMDEVINS pDevIns, PRTTIMESPEC pTime));
+    DECLR3CALLBACKMEMBER(PRTTIMESPEC, pfnUTCNow,(PPDMDEVINS pDevIns, PRTTIMESPEC pTime));
 
     /** Space reserved for future members.
      * @{ */
@@ -5900,11 +5900,11 @@ DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect
 }
 
 /**
- * @copydoc PDMDEVHLP::pfnUCTNow
+ * @copydoc PDMDEVHLP::pfnUTCNow
  */
-DECLINLINE(PRTTIMESPEC) PDMDevHlpUCTNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
+DECLINLINE(PRTTIMESPEC) PDMDevHlpUTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
-    return pDevIns->pDevHlp->pfnUCTNow(pDevIns, pTime);
+    return pDevIns->pDevHlp->pfnUTCNow(pDevIns, pTime);
 }
 
 /**

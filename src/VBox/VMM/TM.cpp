@@ -357,14 +357,14 @@ TMR3DECL(int) TMR3Init(PVM pVM)
 #undef TM_CFG_PERIOD
 
     /*
-     * Configure real world time (UCT).
+     * Configure real world time (UTC).
      */
-    rc = CFGMR3QueryS64(pCfgHandle, "UCTOffset", &pVM->tm.s.offUCT);
+    rc = CFGMR3QueryS64(pCfgHandle, "UTCOffset", &pVM->tm.s.offUTC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pVM->tm.s.offUCT = 0; /* ns */
+        pVM->tm.s.offUTC = 0; /* ns */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying 64-bit integer value \"UCTOffset\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying 64-bit integer value \"UTCOffset\". (%Vrc)"), rc);
 
     /*
      * Setup the warp drive.
@@ -1738,17 +1738,17 @@ TMR3DECL(int) TMR3TimerLoad(PTMTIMERHC pTimer, PSSMHANDLE pSSM)
 
 
 /**
- * Get the real world UCT time adjusted for VM lag.
+ * Get the real world UTC time adjusted for VM lag.
  *
  * @returns pTime.
  * @param   pVM             The VM instance.
  * @param   pTime           Where to store the time.
  */
-TMR3DECL(PRTTIMESPEC) TMR3UCTNow(PVM pVM, PRTTIMESPEC pTime)
+TMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime)
 {
     RTTimeNow(pTime);
     RTTimeSpecSubNano(pTime, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp);
-    RTTimeSpecAddNano(pTime, pVM->tm.s.offUCT);
+    RTTimeSpecAddNano(pTime, pVM->tm.s.offUTC);
     return pTime;
 }
 

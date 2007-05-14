@@ -746,13 +746,13 @@ TMR3DECL(int) TMR3TimerLoad(PTMTIMERHC pTimer, PSSMHANDLE pSSM);
 TMR3DECL(void) TMR3TimerQueuesDo(PVM pVM);
 
 /**
- * Get the real world UCT time adjusted for VM lag.
+ * Get the real world UTC time adjusted for VM lag.
  *
  * @returns pTime.
  * @param   pVM             The VM instance.
  * @param   pTime           Where to store the time.
  */
-TMR3DECL(PRTTIMESPEC) TMR3UCTNow(PVM pVM, PRTTIMESPEC pTime);
+TMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime);
 
 /** @} */
 #endif

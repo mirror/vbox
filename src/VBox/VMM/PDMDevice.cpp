@@ -127,7 +127,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvS
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...);
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args);
 static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName);
-static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UCTNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime);
+static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime);
 
 static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
@@ -310,7 +310,7 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_RTCRegister,
     pdmR3DevHlp_PDMQueueCreate,
     pdmR3DevHlp_CritSectInit,
-    pdmR3DevHlp_UCTNow,
+    pdmR3DevHlp_UTCNow,
     0,
     0,
     0,
@@ -395,7 +395,7 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_RTCRegister,
     pdmR3DevHlp_PDMQueueCreate,
     pdmR3DevHlp_CritSectInit,
-    pdmR3DevHlp_UCTNow,
+    pdmR3DevHlp_UTCNow,
     0,
     0,
     0,
@@ -2336,16 +2336,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSE
 }
 
 
-/** @copydoc PDMDEVHLP::pfnUCTNow */
-static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UCTNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
+/** @copydoc PDMDEVHLP::pfnUTCNow */
+static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_UCTNow: caller='%s'/%d: pTime=%p\n", 
+    LogFlow(("pdmR3DevHlp_UTCNow: caller='%s'/%d: pTime=%p\n", 
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pTime));
 
-    pTime = TMR3UCTNow(pDevIns->Internal.s.pVMHC, pTime);
+    pTime = TMR3UTCNow(pDevIns->Internal.s.pVMHC, pTime);
 
-    LogFlow(("pdmR3DevHlp_UCTNow: caller='%s'/%d: returns %RU64\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, RTTimeSpecGetNano(pTime)));
+    LogFlow(("pdmR3DevHlp_UTCNow: caller='%s'/%d: returns %RU64\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, RTTimeSpecGetNano(pTime)));
     return pTime;
 }
 
