@@ -160,6 +160,8 @@ static DECLCALLBACK(uint8_t) pdmR3DevHlp_DMAGetChannelMode(PPDMDEVINS pDevIns, u
 static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
 static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
+static DECLCALLBACK(void) pdmR3DevHlp_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                                 uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 
 static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
@@ -190,6 +192,8 @@ static DECLCALLBACK(uint8_t) pdmR3DevHlp_Untrusted_DMAGetChannelMode(PPDMDEVINS 
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_DMASchedule(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
+static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 
 /** @} */
 
@@ -350,6 +354,7 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_DMASchedule,
     pdmR3DevHlp_CMOSWrite,
     pdmR3DevHlp_CMOSRead,
+    pdmR3DevHlp_QueryCPUId,
     PDM_DEVHLP_VERSION /* the end */
 };
 
@@ -435,6 +440,7 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_DMASchedule,
     pdmR3DevHlp_Untrusted_CMOSWrite,
     pdmR3DevHlp_Untrusted_CMOSRead,
+    pdmR3DevHlp_Untrusted_QueryCPUId,
     PDM_DEVHLP_VERSION /* the end */
 };
 
@@ -3501,6 +3507,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg,
 }
 
 
+/** @copydoc PDMDEVHLP::pfnQueryCPUId */
+static DECLCALLBACK(void) pdmR3DevHlp_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                                 uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3GetCPUApicHlp_ClearInterruptFF: caller='%s'/%d: fEnabled=%RTbool\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, fEnabled));
+    CPUMGetGuestCpuId(pDevIns->Internal.s.pVMHC, iLeaf, pEax, pEbx, pEcx, pEdx);
+}
 
 
 /** @copydoc PDMDEVHLP::pfnGetVM */
@@ -3794,6 +3809,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsi
 }
 
 
+/** @copydoc PDMDEVHLP::pfnQueryCPUId */
+static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+}
 
 
 /** @copydoc PDMPICHLPR3::pfnSetInterruptFF */
@@ -3907,7 +3929,6 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fE
     else
         CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMHC, CPUMCPUIDFEATURE_APIC);
 }
-
 
 #ifdef VBOX_WITH_PDM_LOCK
 /** @copydoc PDMAPICHLPR3::pfnLock */
