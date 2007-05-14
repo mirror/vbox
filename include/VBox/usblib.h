@@ -67,6 +67,9 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #define USBFLT_MAJOR_VERSION              1
 #define USBFLT_MINOR_VERSION              1
 
+#define USBMON_MAJOR_VERSION              1
+#define USBMON_MINOR_VERSION              0
+
 #define USBDRV_MAJOR_VERSION              1
 #define USBDRV_MINOR_VERSION              2
 
