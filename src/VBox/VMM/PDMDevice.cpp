@@ -3512,8 +3512,8 @@ static DECLCALLBACK(void) pdmR3DevHlp_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iL
                                                  uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3GetCPUApicHlp_ClearInterruptFF: caller='%s'/%d: fEnabled=%RTbool\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, fEnabled));
+    LogFlow(("pdmR3DevHlp_QueryCPUId: caller='%s'/%d: iLeaf=%d\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iLeaf));
     CPUMGetGuestCpuId(pDevIns->Internal.s.pVMHC, iLeaf, pEax, pEbx, pEcx, pEdx);
 }
 
