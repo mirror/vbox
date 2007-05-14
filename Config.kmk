@@ -906,7 +906,7 @@ ifdef VBOX_SIGNING_MODE
   # There are two signing modes; 'self' and 'release'.
   ifeq ($(VBOX_SIGNING_MODE),self)
    ## @todo
-  else ifeq ($(strip $(VBOX_SIGNING_MODE),release))
+  else ifeq ($(strip $(VBOX_SIGNING_MODE)),release)
    VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/MSCV-GlobalSign.cer
    VBOX_CERTIFICATE_STORE ?= my
    VBOX_CERTIFICATE_SUBJECT_NAME ?= InnoTek Systemberatung GmbH
