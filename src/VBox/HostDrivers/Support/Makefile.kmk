@@ -44,59 +44,18 @@ INSTALLS.linux = vboxmod-bin vboxmod-sh
 #
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
+#
+# Populate FILES_VBOXDRV_NOBIN and FILES_VBOXDRV_BIN
+#
+include $(PATH_SUB_CURRENT)/linux/files_vboxdrv
 
 vboxmod-bin_INST    = bin/src/
 vboxmod-bin_MODE    = a+r,u+w
-vboxmod-bin_SOURCES = \
-	$(PATH_ROOT)/include/iprt/alloc.h=>include/iprt/alloc.h \
-	$(PATH_ROOT)/include/iprt/asm.h=>include/iprt/asm.h \
-	$(PATH_ROOT)/include/iprt/assert.h=>include/iprt/assert.h \
-	$(PATH_ROOT)/include/iprt/cdefs.h=>include/iprt/cdefs.h \
-	$(PATH_ROOT)/include/iprt/err.h=>include/iprt/err.h \
-	$(PATH_ROOT)/include/iprt/heap.h=>include/iprt/heap.h \
-	$(PATH_ROOT)/include/iprt/initterm.h=>include/iprt/initterm.h \
-	$(PATH_ROOT)/include/iprt/log.h=>include/iprt/log.h \
-	$(PATH_ROOT)/include/iprt/mem.h=>include/iprt/mem.h \
-	$(PATH_ROOT)/include/iprt/param.h=>include/iprt/param.h \
-	$(PATH_ROOT)/include/iprt/process.h=>include/iprt/process.h \
-	$(PATH_ROOT)/include/iprt/semaphore.h=>include/iprt/semaphore.h \
-	$(PATH_ROOT)/include/iprt/spinlock.h=>include/iprt/spinlock.h \
-	$(PATH_ROOT)/include/iprt/stdarg.h=>include/iprt/stdarg.h \
-	$(PATH_ROOT)/include/iprt/stdint.h=>include/iprt/stdint.h \
-	$(PATH_ROOT)/include/iprt/string.h=>include/iprt/string.h \
-	$(PATH_ROOT)/include/iprt/thread.h=>include/iprt/thread.h \
-	$(PATH_ROOT)/include/iprt/types.h=>include/iprt/types.h \
-	$(PATH_ROOT)/include/iprt/avl.h=>include/iprt/avl.h \
-	$(PATH_ROOT)/include/VBox/cdefs.h=>include/VBox/cdefs.h \
-	$(PATH_ROOT)/include/VBox/log.h=>include/VBox/log.h \
-	$(PATH_ROOT)/include/VBox/sup.h=>include/VBox/sup.h \
-	$(PATH_ROOT)/include/VBox/types.h=>include/VBox/types.h \
-	$(PATH_ROOT)/src/VBox/Runtime/include/internal/initterm.h=>include/internal/initterm.h \
-	$(PATH_ROOT)/src/VBox/Runtime/include/internal/thread.h=>include/internal/thread.h \
-	$(PATH_ROOT)/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
-	$(PATH_ROOT)/src/VBox/Runtime/alloc/heapsimple.cpp=>alloc/heapsimple.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.cpp=>r0drv/alloc-r0drv.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/alloc-r0drv.h=>r0drv/alloc-r0drv.h \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/initterm-r0drv.cpp=>r0drv/initterm-r0drv.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/initterm-r0drv-linux.c=>r0drv/linux/initterm-r0drv-linux.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/process-r0drv-linux.c=>r0drv/linux/process-r0drv-linux.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/semaphore-r0drv-linux.c=>r0drv/linux/semaphore-r0drv-linux.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/spinlock-r0drv-linux.c=>r0drv/linux/spinlock-r0drv-linux.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/thread-r0drv-linux.c=>r0drv/linux/thread-r0drv-linux.c \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
-	$(PATH_OUT)/version-generated.h=>version-generated.h \
-	linux/SUPDrv-linux.c=>linux/SUPDrv-linux.c \
-	linux/Makefile=>Makefile \
-	SUPDRV.h=>SUPDRV.h \
-	SUPDRVIOC.h=>SUPDRVIOC.h \
-	SUPDRVShared.c=>SUPDRVShared.c
+vboxmod-bin_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
 
 vboxmod-sh_INST     = bin/src/
 vboxmod-sh_MODE     = a+rx,u+w
-vboxmod-sh_SOURCES  = \
-	linux/build_in_tmp=>build_in_tmp
+vboxmod-sh_SOURCES  = $(subst ",,$(FILES_VBOXDRV_BIN)) #"
 
 #
 # The Ring-3 Support Library (this is linked into the IPRT dll, VBoxRT).
@@ -247,7 +206,5 @@ VBoxDrvLib_SOURCES    = \
 	os2/SUPDrv-os2.cpp \
 	SUPDRVShared.c
 endif
-
-# symlinked??
 
 include	$(PATH_KBUILD)/subfooter.kmk
