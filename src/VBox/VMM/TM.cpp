@@ -25,54 +25,54 @@
  * The Time Manager abstracts the CPU clocks and manages timers used by the VMM,
  * device and drivers.
  *
- * 
+ *
  * @section sec_tm_clocks   Clocks
- * 
+ *
  * There are currently 4 clocks:
  *   - Virtual (guest).
  *   - Synchronous virtual (guest).
- *   - CPU Tick (TSC) (guest). Only current use is rdtsc emulation. Usually a 
+ *   - CPU Tick (TSC) (guest). Only current use is rdtsc emulation. Usually a
  *     function of the virtual clock.
- *   - Real (host). The only current use is display updates for not real 
+ *   - Real (host). The only current use is display updates for not real
  *     good reason...
- * 
- * The interesting clocks are two first ones, the virtual and synchronous virtual 
- * clock. The synchronous virtual clock is tied to the virtual clock except that 
+ *
+ * The interesting clocks are two first ones, the virtual and synchronous virtual
+ * clock. The synchronous virtual clock is tied to the virtual clock except that
  * it will take into account timer delivery lag caused by host scheduling. It will
  * normally never advance beyond the header timer, and when lagging too far behind
  * it will gradually speed up to catch up with the virtual clock.
  *
- * The CPU tick (TSC) is normally virtualized as a function of the virtual time, 
+ * The CPU tick (TSC) is normally virtualized as a function of the virtual time,
  * where the frequency defaults to the host cpu frequency (as we measure it). It
  * can also use the host TSC as source and either present it with an offset or
- * unmodified. It is of course possible to configure the TSC frequency and mode 
+ * unmodified. It is of course possible to configure the TSC frequency and mode
  * of operation.
- * 
+ *
  * @subsection subsec_tm_timesync Guest Time Sync / UTC time
- * 
+ *
  * Guest time syncing is primarily taken care of by the VMM device. The principle
- * is very simple, the guest additions periodically asks the VMM device what the 
- * current UTC time is and makes adjustments accordingly. Now, because the 
+ * is very simple, the guest additions periodically asks the VMM device what the
+ * current UTC time is and makes adjustments accordingly. Now, because the
  * synchronous virtual clock might be doing catchups and we would therefore
  * deliver more than the normal rate for a little while, some adjusting of the
- * UTC time is required before passing it on to the guest. This is why TM provides 
+ * UTC time is required before passing it on to the guest. This is why TM provides
  * an API for query the current UTC time.
  *
- * 
+ *
  * @section sec_tm_timers   Timers
  *
  * The timers can use any of the TM clocks described in the previous section. Each
  * clock has its own scheduling facility, or timer queue if you like. There are
- * a few factors which makes it a bit complex. First there is the usual R0 vs R3 
+ * a few factors which makes it a bit complex. First there is the usual R0 vs R3
  * vs. GC thing. Then there is multiple threads, and then there is the timer thread
- * that periodically checks whether any timers has expired without EMT noticing. On 
+ * that periodically checks whether any timers has expired without EMT noticing. On
  * the API level, all but the create and save APIs must be mulithreaded. EMT will
  * always run the timers.
  *
  * The design is using a doubly linked list of active timers which is ordered
- * by expire date. This list is only modified by the EMT thread. Updates to the 
- * list are are batched in a singly linked list, which is then process by the EMT 
- * thread at the first opportunity (immediately, next time EMT modifies a timer 
+ * by expire date. This list is only modified by the EMT thread. Updates to the
+ * list are are batched in a singly linked list, which is then process by the EMT
+ * thread at the first opportunity (immediately, next time EMT modifies a timer
  * on that clock, or next timer timeout). Both lists are offset based and all
  * the elements therefore allocated from the hyper heap.
  *
@@ -82,14 +82,14 @@
  *    - Poll the virtual clocks from trap exit path.
  *    - Poll the virtual clocks and calculate first timeout from the halt loop.
  *    - Employ a thread which periodically (100Hz) polls all the timer queues.
- * 
- * 
+ *
+ *
  * @section sec_tm_timer    Logging
- * 
+ *
  * Level 2: Logs a most of the timer state transitions and queue servicing.
  * Level 3: Logs a few oddments.
  * Level 4: Logs TMCLOCK_VIRTUAL_SYNC catch-up events.
- * 
+ *
  */
 
 
@@ -240,16 +240,16 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.fTSCVirtualized = true; /* trap rdtsc */
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
-                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc); 
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc);
 
     /* source */
     rc = CFGMR3QueryBool(pCfgHandle, "UseRealTSC", &pVM->tm.s.fTSCTicking);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.fTSCUseRealTSC = false; /* use virtual time */
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
-                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc); 
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc);
     if (!pVM->tm.s.fTSCUseRealTSC)
         pVM->tm.s.fTSCVirtualized = true;
 
@@ -276,11 +276,11 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         }
     }
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
-                          N_("Configuration error: Failed to querying uint64_t value \"TSCTicksPerSecond\". (%Vrc)"), rc); 
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint64_t value \"TSCTicksPerSecond\". (%Vrc)"), rc);
     else if (   pVM->tm.s.cTSCTicksPerSecond < _1M
              || pVM->tm.s.cTSCTicksPerSecond >= _4G)
-        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, 
+        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
                           N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not in the range 1MHz..4GHz-1!"),
                           pVM->tm.s.cTSCTicksPerSecond);
     else
@@ -294,8 +294,8 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         CPUMR3SetCR4Feature(pVM, X86_CR4_TSD, ~X86_CR4_TSD);
     else
         CPUMR3SetCR4Feature(pVM, 0, ~X86_CR4_TSD);
-    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool fMaybeUseOffsettedHostTSC=%RTbool\n", 
-            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, 
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool fMaybeUseOffsettedHostTSC=%RTbool\n",
+            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized,
             pVM->tm.s.fTSCUseRealTSC, pVM->tm.s.fMaybeUseOffsettedHostTSC));
 
     /*
@@ -305,22 +305,22 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u32VirtualSyncScheduleSlack           =   100000; /* 0.100ms (ASSUMES virtual time is nanoseconds) */
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
-                          N_("Configuration error: Failed to querying 32-bit integer value \"ScheduleSlack\". (%Vrc)"), rc); 
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying 32-bit integer value \"ScheduleSlack\". (%Vrc)"), rc);
 
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpStopThreshold", &pVM->tm.s.u64VirtualSyncCatchUpStopThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpStopThreshold    =   500000; /* 0.5ms */
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
-                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpStopThreshold\". (%Vrc)"), rc); 
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpStopThreshold\". (%Vrc)"), rc);
 
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpGiveUpThreshold", &pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold  = UINT64_C(60000000000); /* 60 sec */
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
-                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpGiveUpThreshold\". (%Vrc)"), rc); 
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpGiveUpThreshold\". (%Vrc)"), rc);
 
 
 #define TM_CFG_PERIOD(iPeriod, DefStart, DefPct) \
@@ -357,6 +357,16 @@ TMR3DECL(int) TMR3Init(PVM pVM)
 #undef TM_CFG_PERIOD
 
     /*
+     * Configure real world time (UCT).
+     */
+    rc = CFGMR3QueryS64(pCfgHandle, "UCTOffset", &pVM->tm.s.offUCT);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pVM->tm.s.offUCT = 0; /* ns */
+    else if (VBOX_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying 64-bit integer value \"UCTOffset\". (%Vrc)"), rc);
+
+    /*
      * Setup the warp drive.
      */
     rc = CFGMR3QueryU32(pCfgHandle, "WarpDrivePercentage", &pVM->tm.s.u32VirtualWarpDrivePercentage);
@@ -365,11 +375,11 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u32VirtualWarpDrivePercentage = 100;
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
-                          N_("Configuration error: Failed to querying uint32_t value \"WarpDrivePercent\". (%Vrc)"), rc); 
-    else if (   pVM->tm.s.u32VirtualWarpDrivePercentage < 2 
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint32_t value \"WarpDrivePercent\". (%Vrc)"), rc);
+    else if (   pVM->tm.s.u32VirtualWarpDrivePercentage < 2
              || pVM->tm.s.u32VirtualWarpDrivePercentage > 20000)
-        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, 
+        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
                           N_("Configuration error: \"WarpDrivePercent\" = %RI32 is not in the range 2..20000!"),
                           pVM->tm.s.u32VirtualWarpDrivePercentage);
     pVM->tm.s.fVirtualWarpDrive = pVM->tm.s.u32VirtualWarpDrivePercentage != 100;
@@ -384,7 +394,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         u32Millies = 10;
     else if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, 
+        return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to query uint32_t value \"TimerMillies\", rc=%Vrc.\n"), rc);
     rc = RTTimerCreate(&pVM->tm.s.pTimer, u32Millies, tmR3TimerCallback, pVM);
     if (VBOX_FAILURE(rc))
@@ -479,10 +489,10 @@ TMR3DECL(int) TMR3Init(PVM pVM)
 
 /**
  * Checks if the host CPU has a fixed TSC frequency.
- * 
+ *
  * @returns true if it has, false if it hasn't.
- * 
- * @remark  This test doesn't bother with very old CPUs that doesn't do power 
+ *
+ * @remark  This test doesn't bother with very old CPUs that doesn't do power
  *          management or any other stuff that might influence the TSC rate.
  *          This isn't currently relevant.
  */
@@ -493,14 +503,14 @@ static bool tmR3HasFixedTSC(void)
         uint32_t uEAX, uEBX, uECX, uEDX;
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
         if (    uEAX >= 1
-            &&  uEBX == 0x68747541 
-            &&  uECX == 0x444d4163 
+            &&  uEBX == 0x68747541
+            &&  uECX == 0x444d4163
             &&  uEDX == 0x69746e65)
         {
-            /* 
+            /*
              * AuthenticAMD - Check for APM support and that TscInvariant is set.
              *
-             * This test isn't correct with respect to fixed/non-fixed TSC and 
+             * This test isn't correct with respect to fixed/non-fixed TSC and
              * older models, but this isn't relevant since the result is currently
              * only used for making a descision on AMD-V models.
              */
@@ -517,9 +527,9 @@ static bool tmR3HasFixedTSC(void)
                  &&  uECX == 0x6c65746e
                  &&  uEDX == 0x49656e69)
         {
-            /* 
+            /*
              * GenuineIntel - Check the model number.
-             * 
+             *
              * This test is lacking in the same way and for the same reasons
              * as the AMD test above.
              */
@@ -551,7 +561,7 @@ static uint64_t tmR3CalibrateTSC(void)
      */
     uint64_t    u64Hz;
     PCSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    if (    pGip 
+    if (    pGip
         &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
     {
         unsigned iCpu = pGip->u32Mode != SUPGIPMODE_ASYNC_TSC ? 0 : ASMGetApicId();
@@ -563,7 +573,7 @@ static uint64_t tmR3CalibrateTSC(void)
             pGip = g_pSUPGlobalInfoPage;
             if (    pGip
                 &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-                &&  (u64Hz = pGip->aCPUs[iCpu].u64CpuHz) 
+                &&  (u64Hz = pGip->aCPUs[iCpu].u64CpuHz)
                 &&  u64Hz != ~(uint64_t)0)
                 return u64Hz;
         }
@@ -837,7 +847,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         pVM->tm.s.u64TSCOffset = 0; /** @todo TSC restore stuff and HWACC. */
     else
         pVM->tm.s.cTSCTicksPerSecond = u64Hz;
-    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool (state load)\n", 
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool (state load)\n",
             pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC));
 
     /*
@@ -851,7 +861,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
 /**
  * Internal TMR3TimerCreate worker.
- * 
+ *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @param   enmClock    The timer clock.
@@ -1116,15 +1126,15 @@ DECLINLINE(bool) tmR3HasExpiredTimer(PVM pVM, TMCLOCK enmClock)
  */
 DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
 {
-    /* 
+    /*
      * Combine the time calculation for the first two since we're not on EMT
      * TMVirtualSyncGet only permits EMT.
      */
     uint64_t u64Now = TMVirtualGet(pVM);
     if (pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64Now)
         return true;
-    u64Now = pVM->tm.s.fVirtualSyncTicking 
-           ? u64Now - pVM->tm.s.offVirtualSync 
+    u64Now = pVM->tm.s.fVirtualSyncTicking
+           ? u64Now - pVM->tm.s.offVirtualSync
            : pVM->tm.s.u64VirtualSync;
     if (pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64Now)
         return true;
@@ -1146,7 +1156,7 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
  * @param   pTimer      Timer handle.
  * @param   pvUser      VM handle.
  * @thread  Timer thread.
- * 
+ *
  * @remark  We cannot do the scheduling and queues running from a timer handler
  *          since it's not executing in EMT, and even if it was it would be async
  *          and we wouldn't know the state of the affairs.
@@ -1219,7 +1229,7 @@ TMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesRun, r2);
     tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC]);
     STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesRun, r3);
-#endif 
+#endif
 
     /* TMCLOCK_REAL */
     STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesSchedule, s2);
@@ -1318,11 +1328,11 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
 
 
 /**
- * Schedules and runs any pending times in the timer queue for the 
+ * Schedules and runs any pending times in the timer queue for the
  * synchronous virtual clock.
- * 
+ *
  * This scheduling is a bit different from the other queues as it need
- * to implement the special requirements of the timer synchronous virtual 
+ * to implement the special requirements of the timer synchronous virtual
  * clock, thus this 2nd queue run funcion.
  *
  * @param   pVM             The VM to run the timers for.
@@ -1352,7 +1362,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
      * rate so frequent calls to this function won't accelerate the time too much, however
      * this will be implemented at a later point if neccessary.
      *
-     * Without this frame we would 1) having to run timers much more frequently 
+     * Without this frame we would 1) having to run timers much more frequently
      * and 2) lag behind at a steady rate.
      */
     const uint64_t u64VirtualNow = TMVirtualGetEx(pVM, false /* don't check timers */);
@@ -1416,7 +1426,7 @@ fWasInCatchup = pVM->tm.s.fVirtualSyncCatchUp; /* debugging - to be removed */
 if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
                 ||  !(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
                 ||  !(u64Now <= u64Max)))
-{                   
+{
     AssertMsg2("Add the following to defect #1414:\n"
                "                         u64Now=%016RX64\n"
                "                         u64Max=%016RX64\n"
@@ -1432,7 +1442,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
                "            fVirtualSyncTicking=%RTbool\n"
                "            fVirtualSyncCatchUp=%RTbool (prev=%RTbool)\n",
                u64Now,
-               u64Max, 
+               u64Max,
                pNext->u64Expire,
                u64VirtualNow,
                off,
@@ -1442,7 +1452,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
                pVM->tm.s.offVirtualSyncGivenUp,
                pVM->tm.s.u64VirtualSyncCatchUpPrev,
                pVM->tm.s.u32VirtualSyncCatchUpPercentage,
-               pVM->tm.s.fVirtualSyncTicking, 
+               pVM->tm.s.fVirtualSyncTicking,
                pVM->tm.s.fVirtualSyncCatchUp, fWasInCatchup);
     Assert(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
     Assert(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
@@ -1507,7 +1517,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
     } /* run loop */
 
     /*
-     * Restart the clock if it was stopped to serve any timers, 
+     * Restart the clock if it was stopped to serve any timers,
      * and start/adjust catch-up if necessary.
      */
     if (    !pVM->tm.s.fVirtualSyncTicking
@@ -1551,8 +1561,8 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
         uint64_t offLag = offNew - pVM->tm.s.offVirtualSyncGivenUp;
         Assert(!(offLag & RT_BIT_64(63)));
 
-        /* 
-         * Deal with starting, adjusting and stopping catchup. 
+        /*
+         * Deal with starting, adjusting and stopping catchup.
          */
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
@@ -1614,8 +1624,8 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
             }
         }
 
-        /* 
-         * Update the offset and restart the clock. 
+        /*
+         * Update the offset and restart the clock.
          */
         ASMAtomicXchgU64(&pVM->tm.s.offVirtualSync, offNew);
         ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, true);
@@ -1738,6 +1748,7 @@ TMR3DECL(PRTTIMESPEC) TMR3UCTNow(PVM pVM, PRTTIMESPEC pTime)
 {
     RTTimeNow(pTime);
     RTTimeSpecSubNano(pTime, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp);
+    RTTimeSpecAddNano(pTime, pVM->tm.s.offUCT);
     return pTime;
 }
 
@@ -1813,9 +1824,9 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                             pTimer->offNext,
                             pTimer->offPrev,
                             pTimer->offScheduleNext,
-                            pTimer->enmClock == TMCLOCK_REAL 
-                            ? "Real " 
-                            : pTimer->enmClock == TMCLOCK_VIRTUAL 
+                            pTimer->enmClock == TMCLOCK_REAL
+                            ? "Real "
+                            : pTimer->enmClock == TMCLOCK_VIRTUAL
                             ? "Virt "
                             : pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC
                             ? "VrSy "
@@ -1848,11 +1859,11 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
     const uint64_t u64VirtualSync = TMVirtualSyncGet(pVM);
     const uint64_t u64Real = TMRealGet(pVM);
 
-    /* 
-     * TSC 
+    /*
+     * TSC
      */
     pHlp->pfnPrintf(pHlp,
-                    "Cpu Tick: %18RU64 (%#016RX64) %RU64Hz %s%s", 
+                    "Cpu Tick: %18RU64 (%#016RX64) %RU64Hz %s%s",
                     u64TSC, u64TSC, TMCpuTicksPerSecond(pVM),
                     pVM->tm.s.fTSCTicking ? "ticking" : "paused",
                     pVM->tm.s.fTSCVirtualized ? " - virtualized" : "");
@@ -1866,8 +1877,8 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
         pHlp->pfnPrintf(pHlp, " - virtual clock");
     pHlp->pfnPrintf(pHlp, "\n");
 
-    /* 
-     * virtual 
+    /*
+     * virtual
      */
     pHlp->pfnPrintf(pHlp,
                     " Virtual: %18RU64 (%#016RX64) %RU64Hz %s",
@@ -1877,12 +1888,12 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
         pHlp->pfnPrintf(pHlp, " WarpDrive %RU32 %%", pVM->tm.s.u32VirtualWarpDrivePercentage);
     pHlp->pfnPrintf(pHlp, "\n");
 
-    /* 
-     * virtual sync 
+    /*
+     * virtual sync
      */
     pHlp->pfnPrintf(pHlp,
                     "VirtSync: %18RU64 (%#016RX64) %s%s",
-                    u64VirtualSync, u64VirtualSync, 
+                    u64VirtualSync, u64VirtualSync,
                     pVM->tm.s.fVirtualSyncTicking ? "ticking" : "paused",
                     pVM->tm.s.fVirtualSyncCatchUp ? " - catchup" : "");
     if (pVM->tm.s.offVirtualSync)
@@ -1893,8 +1904,8 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
     }
     pHlp->pfnPrintf(pHlp, "\n");
 
-    /* 
-     * real 
+    /*
+     * real
      */
     pHlp->pfnPrintf(pHlp,
                     "    Real: %18RU64 (%#016RX64) %RU64Hz\n",
