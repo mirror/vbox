@@ -160,7 +160,7 @@ RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
     uint64_t u64Local;
     if (!FileTimeToLocalFileTime((FILETIME const *)&u64, (LPFILETIME)&u64Local))
         u64Local = u64;
-    return RTTimeSpecSetNtTime(pTime, u64);
+    return RTTimeSpecSetNtTime(pTime, u64Local);
 }
 
 
@@ -177,7 +177,7 @@ RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
 RTDECL(int64_t) RTTimeLocalDeltaNano(void)
 {
     /*
-     * UCT = local + Tzi.Bias;
+     * UTC = local + Tzi.Bias;
      * The bias is given in minutes.
      */
     TIME_ZONE_INFORMATION Tzi;
@@ -193,7 +193,7 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void)
  *
  * @returns pTime.
  * @param   pTime       Where to store the exploded time.
- * @param   pTimeSpec   The time spec to exploded. (UCT)
+ * @param   pTimeSpec   The time spec to exploded. (UTC)
  */
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
@@ -214,7 +214,10 @@ RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
             if (SystemTimeToFileTime(&SystemTimeOut, &FileTime))
             {
                 RTTimeSpecSetNtFileTime(&LocalTime, &FileTime);
-                return RTTimeExplode(pTime, &LocalTime);
+                pTime = RTTimeExplode(pTime, &LocalTime);
+                if (pTime)
+                    pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
+                return pTime;
             }
         }
     }
@@ -225,6 +228,9 @@ RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
      */
     LocalTime = *pTimeSpec;
     RTTimeSpecAddNano(&LocalTime, RTTimeLocalDeltaNano());
-    return RTTimeExplode(pTime, &LocalTime);
+    pTime = RTTimeExplode(pTime, &LocalTime);
+    if (pTime)
+        pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
+    return pTime;
 }
 

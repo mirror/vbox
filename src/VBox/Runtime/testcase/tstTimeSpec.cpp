@@ -116,6 +116,19 @@ int main()
     }
 
     /*
+     * Simple test with current local time.
+     */
+    CHECK_NZ(RTTimeLocalNow(&Now));
+    CHECK_NZ(RTTimeExplode(&T1, &Now));
+    RTPrintf("tstTimeSpec: %RI64 ns - %s\n", RTTimeSpecGetNano(&Now), ToString(&T1));
+    CHECK_NZ(RTTimeImplode(&Ts1, &T1));
+    if (!RTTimeSpecIsEqual(&Ts1, &Now))
+    {
+        RTPrintf("tstTimeSpec: FAILURE - %RI64 != %RI64\n", RTTimeSpecGetNano(&Ts1), RTTimeSpecGetNano(&Now));
+        return 1;
+    }
+
+    /*
      * Some simple tests with fixed dates (just checking for smoke).
      */
     TEST_NS(INT64_C(0));
@@ -141,6 +154,9 @@ int main()
     CHECK_TIME(&T1, 2004, 9,17, 00,00,00,        0, 261, 4, RTTIME_FLAGS_TYPE_UTC | RTTIME_FLAGS_LEAP_YEAR);
     TEST_SEC(1095379201);
     CHECK_TIME(&T1, 2004, 9,17, 00,00,01,        0, 261, 4, RTTIME_FLAGS_TYPE_UTC | RTTIME_FLAGS_LEAP_YEAR);
+
+
+
     RTPrintf("tstTimeSpec: SUCCESS\n");
     return 0;
 }
