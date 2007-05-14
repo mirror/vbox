@@ -4669,7 +4669,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     hrc = biosSettings->COMGETTER(TimeOffset)(&timeOffset);                         H();
     PCFGMNODE pTMNode;
     rc = CFGMR3InsertNode(pRoot, "TM", &pTMNode);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pTMNode, "UCTOffset", timeOffset);                     RC_CHECK();
+    rc = CFGMR3InsertInteger(pTMNode, "UTCOffset", timeOffset);                     RC_CHECK();
 
     /*
      * ACPI
