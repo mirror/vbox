@@ -497,7 +497,7 @@ int main()
     GEN_CHECK_OFF(RTCState, pSecondTimer2GC);
     GEN_CHECK_OFF(RTCState, pDevInsHC);
     GEN_CHECK_OFF(RTCState, pDevInsGC);
-    GEN_CHECK_OFF(RTCState, fUCT);
+    GEN_CHECK_OFF(RTCState, fUTC);
     GEN_CHECK_OFF(RTCState, RtcReg);
     GEN_CHECK_OFF(RTCState, pRtcHlpHC);
 

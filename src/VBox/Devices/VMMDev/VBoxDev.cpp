@@ -363,7 +363,7 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pv
         }
         else
         {
-            pData->hostTime = RTTimeSpecGetMilli(PDMDevHlpUCTNow(pDevIns, &now));
+            pData->hostTime = RTTimeSpecGetMilli(PDMDevHlpUTCNow(pDevIns, &now));
             *pu32 = (uint32_t)(pData->hostTime >> 32);
         }
         rc = VINF_SUCCESS;
@@ -629,7 +629,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevReqHostTime *hostTimeReq = (VMMDevReqHostTime*)requestHeader;
                 RTTIMESPEC now;
-                hostTimeReq->time = RTTimeSpecGetMilli(PDMDevHlpUCTNow(pDevIns, &now));
+                hostTimeReq->time = RTTimeSpecGetMilli(PDMDevHlpUTCNow(pDevIns, &now));
                 requestHeader->rc = VINF_SUCCESS;
             }
             break;
