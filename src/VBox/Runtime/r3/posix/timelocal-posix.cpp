@@ -33,17 +33,17 @@
 
 
 /**
- * This tries to find the UCT offset for a given timespec.
+ * This tries to find the UTC offset for a given timespec.
  *
  * It does probably not take into account changes in daylight
  * saving over the years or similar stuff.
  *
- * @returns UCT offset in nanoseconds.
+ * @returns UTC offset in nanoseconds.
  * @param   pTime           The time.
  * @param   fCurrentTime    Whether the input is current time or not.
  *                          This is for avoid infinit recursion on errors in the fallback path.
  */
-static int64_t rtTimeLocalUCTOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
+static int64_t rtTimeLocalUTCOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
 {
     RTTIMESPEC Fallback;
 
@@ -53,7 +53,7 @@ static int64_t rtTimeLocalUCTOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
     int64_t i64UnixTime = RTTimeSpecGetSeconds(pTime);
     time_t UnixTime = i64UnixTime;
     if (UnixTime != i64UnixTime)
-        return fCurrentTime ? 0 : rtTimeLocalUCTOffset(RTTimeNow(&Fallback), true);
+        return fCurrentTime ? 0 : rtTimeLocalUTCOffset(RTTimeNow(&Fallback), true);
 
     /*
      * Explode it as both local and uct time.
@@ -61,10 +61,10 @@ static int64_t rtTimeLocalUCTOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
     struct tm TmLocal;
     if (    !localtime_r(&UnixTime, &TmLocal)
         ||  !TmLocal.tm_year)
-        return fCurrentTime ? 0 : rtTimeLocalUCTOffset(RTTimeNow(&Fallback), true);
+        return fCurrentTime ? 0 : rtTimeLocalUTCOffset(RTTimeNow(&Fallback), true);
     struct tm TmUct;
     if (!gmtime_r(&UnixTime, &TmUct))
-        return fCurrentTime ? 0 : rtTimeLocalUCTOffset(RTTimeNow(&Fallback), true);
+        return fCurrentTime ? 0 : rtTimeLocalUTCOffset(RTTimeNow(&Fallback), true);
 
     /*
      * Calc the difference (if any).
@@ -109,7 +109,7 @@ static int64_t rtTimeLocalUCTOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
 RTDECL(int64_t) RTTimeLocalDeltaNano(void)
 {
     RTTIMESPEC Time;
-    return rtTimeLocalUCTOffset(RTTimeNow(&Time), true /* current time, skip fallback */);
+    return rtTimeLocalUTCOffset(RTTimeNow(&Time), true /* current time, skip fallback */);
 }
 
 
@@ -118,12 +118,15 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void)
  *
  * @returns pTime.
  * @param   pTime       Where to store the exploded time.
- * @param   pTimeSpec   The time spec to exploded. (UCT)
+ * @param   pTimeSpec   The time spec to exploded. (UTC)
  */
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
     RTTIMESPEC LocalTime = *pTimeSpec;
-    RTTimeSpecAddNano(&LocalTime, rtTimeLocalUCTOffset(&LocalTime, true /* current time, skip fallback */));
-    return RTTimeExplode(pTime, &LocalTime);
+    RTTimeSpecAddNano(&LocalTime, rtTimeLocalUTCOffset(&LocalTime, true /* current time, skip fallback */));
+    pTime = RTTimeExplode(pTime, &LocalTime);
+    if (pTime)
+        pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
+    return pTime;
 }
 

@@ -28,6 +28,9 @@
 
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
-    return RTTimeExplode(pTime, pTimeSpec);
+    pTime = RTTimeExplode(pTime, pTimeSpec);
+    if (pTime)
+        pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
+    return pTime;
 }
 
