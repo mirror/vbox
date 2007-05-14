@@ -41,6 +41,7 @@
 
 #include <iprt/time.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include "internal/time.h"
 
 
@@ -136,10 +137,94 @@ RTDECL(uint64_t) RTTimeSystemMilliTS(void)
  * @returns pTime.
  * @param   pTime   Where to store the time.
  */
-RTR3DECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
+RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
-    uint64_t u64; /* manual say larger integer, should be safe to assume it's the same. */
+    uint64_t u64;
+    AssertCompile(sizeof(u64) == sizeof(FILETIME));
     GetSystemTimeAsFileTime((LPFILETIME)&u64);
     return RTTimeSpecSetNtTime(pTime, u64);
+}
+
+
+/**
+ * Gets the current local system time.
+ *
+ * @returns pTime.
+ * @param   pTime   Where to store the local time.
+ */
+RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
+{
+    uint64_t u64;
+    AssertCompile(sizeof(u64) == sizeof(FILETIME));
+    GetSystemTimeAsFileTime((LPFILETIME)&u64);
+    uint64_t u64Local;
+    if (!FileTimeToLocalFileTime((FILETIME const *)&u64, (LPFILETIME)&u64Local))
+        u64Local = u64;
+    return RTTimeSpecSetNtTime(pTime, u64);
+}
+
+
+/**
+ * Gets the delta between UTC and local time.
+ *
+ * @code
+ *      RTTIMESPEC LocalTime;
+ *      RTTimeSpecAddNano(RTTimeNow(&LocalTime), RTTimeLocalDeltaNano());
+ * @endcode
+ *
+ * @returns Returns the nanosecond delta between UTC and local time.
+ */
+RTDECL(int64_t) RTTimeLocalDeltaNano(void)
+{
+    /*
+     * UCT = local + Tzi.Bias;
+     * The bias is given in minutes.
+     */
+    TIME_ZONE_INFORMATION Tzi;
+    Tzi.Bias = 0;
+    if (GetTimeZoneInformation(&Tzi) != TIME_ZONE_ID_INVALID)
+        return -(int64_t)Tzi.Bias * 60*1000*1000*1000;
+    return 0;
+}
+
+
+/**
+ * Explodes a time spec to the localized timezone.
+ *
+ * @returns pTime.
+ * @param   pTime       Where to store the exploded time.
+ * @param   pTimeSpec   The time spec to exploded. (UCT)
+ */
+RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
+{
+    /*
+     * FileTimeToLocalFileTime does not do the right thing, so we'll have
+     * to convert to system time and SystemTimeToTzSpecificLocalTime instead.
+     */
+    RTTIMESPEC LocalTime;
+    SYSTEMTIME SystemTimeIn;
+    FILETIME FileTime;
+    if (FileTimeToSystemTime(RTTimeSpecGetNtFileTime(pTimeSpec, &FileTime), &SystemTimeIn))
+    {
+        SYSTEMTIME SystemTimeOut;
+        if (SystemTimeToTzSpecificLocalTime(NULL /* use current TZI */,
+                                            &SystemTimeIn,
+                                            &SystemTimeOut))
+        {
+            if (SystemTimeToFileTime(&SystemTimeOut, &FileTime))
+            {
+                RTTimeSpecSetNtFileTime(&LocalTime, &FileTime);
+                return RTTimeExplode(pTime, &LocalTime);
+            }
+        }
+    }
+
+    /*
+     * The fallback is to use the current offset.
+     * (A better fallback would be to use the offset of the same time of the year.)
+     */
+    LocalTime = *pTimeSpec;
+    RTTimeSpecAddNano(&LocalTime, RTTimeLocalDeltaNano());
+    return RTTimeExplode(pTime, &LocalTime);
 }
 

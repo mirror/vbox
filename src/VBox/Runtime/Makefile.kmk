@@ -172,7 +172,7 @@ RuntimeR3_SOURCES       = \
 	logformat.cpp \
 	md5.cpp \
 	path.cpp \
-        req.cpp \
+	req.cpp \
 	r3/alloc-ef.cpp \
 	r3/alloc.cpp \
 	r3/init.cpp \
@@ -262,6 +262,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/alloc-posix.cpp \
@@ -279,6 +280,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/sched-linux.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/linux/time-linux.cpp \
+	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
@@ -295,6 +297,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/os2/sems-os2.cpp \
@@ -315,6 +318,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/semnoint-generic.cpp \
 	generic/sched-generic.cpp \
 	r3/os2/time-os2.cpp \
+	r3/posix/timelocal-posix.cpp \
 	generic/timer-generic.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
@@ -330,6 +334,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
@@ -349,8 +354,9 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/sems-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
-	r3/posix/utf8-posix.cpp \
 	r3/darwin/time-darwin.cpp \
+	r3/posix/timelocal-posix.cpp \
+	r3/posix/utf8-posix.cpp \
 	timesup.cpp \
 
 ## @todo Make BSD sched.
@@ -377,6 +383,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
+	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
@@ -398,6 +405,7 @@ RuntimeR3L4_SOURCES = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
 	generic/fs-stubs-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
@@ -421,6 +429,7 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/path-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/time-posix.cpp \
+	r3/posix/timelocal-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	timesup.cpp
 
