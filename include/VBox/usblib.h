@@ -139,7 +139,7 @@ typedef struct
 typedef struct
 {
     uint8_t          fUSBChange;
-    uint32_t         cUSBNotification;
+    uint32_t         cUSBStateChange;
 } USBSUP_USB_CHANGE, *PUSBSUP_USB_CHANGE;
 
 typedef struct
