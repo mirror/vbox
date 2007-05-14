@@ -1611,6 +1611,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PDMAPICREG      ApicReg;
     int             rc;
     int             i;
+    bool            fIOAPIC;
     bool            fGCEnabled;
     bool            fR0Enabled;
     Assert(iInstance == 0);
@@ -1618,8 +1619,15 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0R0Enabled"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "0IOAPIC\0GCEnabled\0R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+
+    rc = CFGMR3QueryBool (pCfgHandle, "IOAPIC", &fIOAPIC);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fIOAPIC = true;
+    else if (VBOX_FAILURE (rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"IOAPIC\"."));
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1700,7 +1708,15 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * The the CPUID feature bit.
      */
-    pData->pApicHlpR3->pfnChangeFeature(pDevIns, true);
+    uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
+    PDMDevHlpQueryCPUId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
+    if (u32Eax >= 1)
+    {
+        if (   fIOAPIC                       /* If IOAPIC is enabled, enable Local APIC in any case */
+            || u32Ebx == 0x756e6547 && u32Ecx == 0x6c65746e && u32Edx == 0x49656e69 /* GenuineIntel */
+            || u32Ebx == 0x68747541 && u32Ecx == 0x69746e65 && u32Edx == 0x444d4163 /* AuthenticAMD */)
+            pData->pApicHlpR3->pfnChangeFeature(pDevIns, true);
+    }
 
     /*
      * Register the MMIO range.
@@ -1937,7 +1953,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0R0Enabled"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
