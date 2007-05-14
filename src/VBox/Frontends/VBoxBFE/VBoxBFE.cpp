@@ -159,10 +159,10 @@ int gHostKeySym = SDLK_RCTRL;
 bool gfAllowFullscreenToggle = true;
 
 static bool g_fIOAPIC = false;
-static bool fACPI = true;
-static bool fAudio = false;
+static bool g_fACPI = true;
+static bool g_fAudio = false;
 #ifdef VBOXBFE_WITH_USB
-static bool fUSB = false;
+static bool g_fUSB = false;
 #endif
 //static bool fPacketSniffer = false;
 static char *hdaFile   = NULL;
@@ -425,43 +425,27 @@ int main(int argc, char **argv)
                                    argv[curArg], rc);
         }
         else if (strcmp(pszArg, "-fullscreen") == 0)
-        {
             fFullscreen = true;
-        }
         else if (strcmp(pszArg, "-nofstoggle") == 0)
-        {
             gfAllowFullscreenToggle = false;
-        }
         else if (strcmp(pszArg, "-nohostkey") == 0)
         {
             gHostKey = 0;
             gHostKeySym = 0;
         }
         else if (strcmp(pszArg, "-acpi") == 0)
-        {
-            fACPI = true;
-        }
+            g_fACPI = true;
         else if (strcmp(pszArg, "-noacpi") == 0)
-        {
-            fACPI = false;
-        }
+            g_fACPI = false;
         else if (strcmp(pszArg, "-ioapic") == 0)
-        {
             g_fIOAPIC = true;
-        }
         else if (strcmp(pszArg, "-noioapic") == 0)
-        {
             g_fIOAPIC = false;
-        }
         else if (strcmp(pszArg, "-audio") == 0)
-        {
-            fAudio = true;
-        }
+            g_fAudio = true;
 #ifdef VBOXBFE_WITH_USB
         else if (strcmp(pszArg, "-usb") == 0)
-        {
-            fUSB = true;
-        }
+            g_fUSB = true;
 #endif
         else if (strcmp(pszArg, "-hda") == 0)
         {
@@ -599,46 +583,26 @@ int main(int argc, char **argv)
         }
 #endif
         else if (strcmp(pszArg, "-rellog") == 0)
-        {
             g_fReleaseLog = true;
-        }
         else if (strcmp(pszArg, "-norellog") == 0)
-        {
             g_fReleaseLog = false;
-        }
 #ifdef VBOXSDL_ADVANCED_OPTIONS
         else if (strcmp(pszArg, "-rawr0") == 0)
-        {
             fRawR0 = true;
-        }
         else if (strcmp(pszArg, "-norawr0") == 0)
-        {
             fRawR0 = false;
-        }
         else if (strcmp(pszArg, "-rawr3") == 0)
-        {
             fRawR3 = true;
-        }
         else if (strcmp(pszArg, "-norawr3") == 0)
-        {
             fRawR3 = false;
-        }
         else if (strcmp(pszArg, "-patm") == 0)
-        {
             fPATM = true;
-        }
         else if (strcmp(pszArg, "-nopatm") == 0)
-        {
             fPATM = false;
-        }
         else if (strcmp(pszArg, "-csam") == 0)
-        {
             fCSAM = true;
-        }
         else if (strcmp(pszArg, "-nocsam") == 0)
-        {
             fCSAM = false;
-        }
 #endif /* VBOXSDL_ADVANCED_OPTIONS */
 #ifdef __L4__
         else if (strcmp(pszArg, "-env") == 0)
@@ -651,6 +615,12 @@ int main(int argc, char **argv)
             show_usage();
             return 1;
         }
+    }
+
+    if (g_fIOAPIC && !g_fACPI)
+    {
+        RTPrintf("IOAPIC enabled, enabling ACPI as well!\n");
+        g_fACPI = true;
     }
 
     gMachineDebugger = new MachineDebugger();
@@ -963,7 +933,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     /*
      * Capture USB devices.
      */
-    if (fUSB)
+    if (g_fUSB)
     {
         gHostUSB = new HostUSB();
         gHostUSB->init(pVM);
@@ -1169,7 +1139,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     /*
      * ACPI
      */
-    if (fACPI)
+    if (g_fACPI || g_fIOAPIC)
     {
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             CHECK_RC();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               CHECK_RC();
@@ -1301,6 +1271,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   CHECK_RC();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   CHECK_RC();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               CHECK_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", g_fIOAPIC);                           CHECK_RC();
 
     /*
      * I/O Advanced Programmable Interrupt Controller.
@@ -1570,7 +1541,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     /*
      * AC'97 ICH audio
      */
-    if (fAudio)
+    if (g_fAudio)
     {
         rc = CFGMR3InsertNode(pDevices, "ichac97", &pDev);
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);
@@ -1598,7 +1569,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     /*
      * The USB Controller.
      */
-    if (fUSB)
+    if (g_fUSB)
     {
         rc = CFGMR3InsertNode(pDevices, "usb-ohci", &pDev);                         CHECK_RC();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               CHECK_RC();
