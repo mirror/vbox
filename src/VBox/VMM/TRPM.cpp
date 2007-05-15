@@ -1160,15 +1160,33 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
     if (EMIsRawRing0Enabled(pVM))
     {
         /*
-         * Only replace the 0x2E handler; others need to be called indirectly via a trampoline in our GC handlers
+         * Only replace handlers for which we are 100% certain there won't be 
+         * any host interrupts. 
+         *
+         * 0x2E is safe on Windows because it's the system service interrupt gate. Not
+         * quite certain if this is safe or not on 64-bit Vista, it probably is.
+         *
+         * 0x80 is safe on Linux because it's the syscall vector and is part of the
+         * 32-bit usermode ABI. 64-bit Linux (usually) supports 32-bit processes
+         * and will therefor never assign hardware interrupts to 0x80.
+         *
+         * Exactly why 0x80 is safe on 32-bit Windows is a bit hazy, but it seems 
+         * to work ok... However on 64-bit Vista (SMP?) is doesn't work reliably. 
+         * Booting Linux/BSD guest will cause system lockups on most of the computers.
+         *
+         * PORTME - Check if your host keeps any of these gates free from hw ints.
+         * 
+         * Note! SELMR3SyncTSS also has code related to this interrupt handler replacing.
          */
-        /** @note dependencies on trap gate numbers in SELMR3SyncTSS */
         /** @todo handle those dependencies better! */
-# ifdef _WIN32 /** @todo Solve this in a proper manner. see defect #1186 */
+        /** @todo Solve this in a proper manner. see defect #1186 */
+#if defined(__WIN__) && defined(__X86__)
         if (iTrap == 0x2E || iTrap == 0x80)
-# else
+#elif defined(__LINUX__)
         if (iTrap == 0x80)
-# endif
+#else
+        if (0)
+#endif
         {
             if (     GuestIdte.Gen.u1Present
                 &&  (   GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32
