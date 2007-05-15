@@ -94,6 +94,8 @@ typedef struct DEVPCBIOS
     uint8_t        au8DMIPage[0x1000];
     /** The boot countdown (in seconds). */
     uint8_t        uBootDelay;
+    /** I/O-APIC enabled? */
+    uint8_t        u8IOAPIC;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 
@@ -134,13 +136,16 @@ typedef struct LOGOHDR
 
 #pragma pack(1)
 
+/** DMI header */
 typedef struct DMIHDR
 {
     uint8_t         u8Type;
     uint8_t         u8Length;
     uint16_t        u16Handle;
 } *PDMIHDR;
+AssertCompileSize(DMIHDR, 4);
 
+/** DMI BIOS information */
 typedef struct DMIBIOSINF
 {
     DMIHDR          header;
@@ -153,7 +158,9 @@ typedef struct DMIBIOSINF
     uint8_t         u8CharacteristicsByte1;
     uint8_t         u8CharacteristicsByte2;
 } *PDMIBIOSINF;
+AssertCompileSize(DMIBIOSINF, 0x14);
 
+/** DMI system information */
 typedef struct DMISYSTEMINF
 {
     DMIHDR          header;
@@ -166,6 +173,84 @@ typedef struct DMISYSTEMINF
     uint8_t         u8SKUNumber;
     uint8_t         u8Family;
 } *PDMISYSTEMINF;
+AssertCompileSize(DMISYSTEMINF, 0x1b);
+
+/** MPS floating pointer structure */
+typedef struct MPSFLOATPTR
+{
+    uint8_t         au8Signature[4];
+    uint32_t        u32MPSAddr;
+    uint8_t         u8Length;
+    uint8_t         u8SpecRev;
+    uint8_t         u8Checksum;
+    uint8_t         au8Feature[5];
+} *PMPSFLOATPTR;
+AssertCompileSize(MPSFLOATPTR, 16);
+
+/** MPS config table header */
+typedef struct MPSCFGTBLHEADER
+{
+    uint8_t         au8Signature[4];
+    uint16_t        u16Length;
+    uint8_t         u8SpecRev;
+    uint8_t         u8Checksum;
+    uint8_t         au8OemId[8];
+    uint8_t         au8ProductId[12];
+    uint32_t        u32OemTablePtr;
+    uint16_t        u16OemTableSize;
+    uint16_t        u16EntryCount;
+    uint32_t        u32AddrLocalApic;
+    uint16_t        u16ExtTableLength;
+    uint8_t         u8ExtTableChecksxum;
+    uint8_t         u8Reserved;
+} *PMPSCFGTBLHEADER;
+AssertCompileSize(MPSCFGTBLHEADER, 0x2c);
+
+/** MPS processor entry */
+typedef struct MPSPROCENTRY
+{
+    uint8_t         u8EntryType;
+    uint8_t         u8LocalApicId;
+    uint8_t         u8LocalApicVersion;
+    uint8_t         u8CPUFlags;
+    uint32_t        u32CPUSignature;
+    uint32_t        u32CPUFeatureFlags;
+    uint32_t        u32Reserved[2];
+} *PMPSPROCENTRY;
+AssertCompileSize(MPSPROCENTRY, 20);
+
+/** MPS bus entry */
+typedef struct MPSBUSENTRY
+{
+    uint8_t         u8EntryType;
+    uint8_t         u8BusId;
+    uint8_t         au8BusTypeStr[6];
+} *PMPSBUSENTRY;
+AssertCompileSize(MPSBUSENTRY, 8);
+
+/** MPS I/O-APIC entry */
+typedef struct MPSIOAPICENTRY
+{
+    uint8_t         u8EntryType;
+    uint8_t         u8Id;
+    uint8_t         u8Version;
+    uint8_t         u8Flags;
+    uint32_t        u32Addr;
+} *PMPSIOAPICENTRY;
+AssertCompileSize(MPSIOAPICENTRY, 8);
+
+/** MPS I/O-Interrupt entry */
+typedef struct MPSIOINTERRUPTENTRY
+{
+    uint8_t         u8EntryType;
+    uint8_t         u8Type;
+    uint16_t        u16Flags;
+    uint8_t         u8SrcBusId;
+    uint8_t         u8SrcBusIrq;
+    uint8_t         u8DstIOAPICId;
+    uint8_t         u8DstIOAPICInt;
+} *PMPSIOIRQENTRY;
+AssertCompileSize(MPSIOINTERRUPTENTRY, 8);
 
 #pragma pack()
 
@@ -646,6 +731,194 @@ static DECLCALLBACK(int) logoMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHY
     return VINF_SUCCESS;
 }
 
+/**
+ * Construct the DMI table.
+ *
+ * @param   table           pointer to DMI table.
+ */
+#define STRCPY(p, s) do { memcpy (p, s, sizeof(s)); p += sizeof(s); } while (0)
+static void pcbiosPlantDMITable(uint8_t *pTable)
+{
+    char *pszStr = (char*)pTable;
+    int iStrNr;
+
+    PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
+    pszStr                       = (char*)(pBIOSInf+1);
+    iStrNr                       = 1;
+    pBIOSInf->header.u8Type      = 0; /* BIOS Information */
+    pBIOSInf->header.u8Length    = sizeof(*pBIOSInf);
+    pBIOSInf->header.u16Handle   = 0x0000;
+    pBIOSInf->u8Vendor           = iStrNr++;
+    STRCPY(pszStr, "InnoTek Systemberatung GmbH");
+    pBIOSInf->u8Version          = iStrNr++;
+    STRCPY(pszStr, "VirtualBox");
+    pBIOSInf->u16Start           = 0xE000;
+    pBIOSInf->u8Release          = iStrNr++;
+    STRCPY(pszStr, "12/01/2006");
+    pBIOSInf->u8ROMSize          = 1; /* 128K */
+    pBIOSInf->u64Characteristics = BIT(4)   /* ISA is supported */
+                                 | BIT(7)   /* PCI is supported */
+                                 | BIT(15)  /* Boot from CD is supported */
+                                 | BIT(16)  /* Selectable Boot is supported */
+                                 | BIT(27)  /* Int 9h, 8042 Keyboard services supported */
+                                 | BIT(30)  /* Int 10h, CGA/Mono Video Services supported */
+                                 /* any more?? */
+                                 ;
+    pBIOSInf->u8CharacteristicsByte1 = BIT(0)   /* ACPI is supported */
+                                     /* any more?? */
+                                     ;
+    pBIOSInf->u8CharacteristicsByte2 = 0
+                                     /* any more?? */
+                                     ;
+    *pszStr++                    = '\0';
+
+
+    PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
+    pszStr                       = (char*)(pSystemInf+1);
+    iStrNr                       = 1;
+    pSystemInf->header.u8Type    = 1; /* System Information */
+    pSystemInf->header.u8Length  = sizeof(*pSystemInf);
+    pSystemInf->header.u16Handle = 0x0001;
+    pSystemInf->u8Manufacturer   = iStrNr++;
+    STRCPY(pszStr, "InnoTek Systemberatung GmbH");
+    pSystemInf->u8ProductName    = iStrNr++;
+    STRCPY(pszStr, "VirtualBox");
+    pSystemInf->u8Version        = iStrNr++;
+    STRCPY(pszStr, "1.2");
+    pSystemInf->u8SerialNumber   = iStrNr++;
+    STRCPY(pszStr, "0");
+    pSystemInf->u8WakeupType     = 6; /* Power Switch */
+    pSystemInf->u8SKUNumber      = 0;
+    pSystemInf->u8Family         = iStrNr++;
+    STRCPY(pszStr, "Virtual Machine");
+    *pszStr++                    = '\0';
+
+    AssertMsg(pszStr - (char*)pTable == VBOX_DMI_TABLE_SIZE,
+              ("VBOX_DMI_TABLE_SIZE=%d, actual DMI table size is %d",
+              VBOX_DMI_TABLE_SIZE, pszStr - (char*)pTable));
+}
+AssertCompile(VBOX_DMI_TABLE_ENTR == 2);
+
+
+/**
+ * Calculate a simple checksum for the MPS table.
+ *
+ * @param   data            data
+ * @param   len             size of data
+ */
+static uint8_t pcbiosChecksum(const uint8_t * const au8Data, uint32_t u32Length)
+{
+    uint8_t u8Sum = 0;
+    for (size_t i = 0; i < u32Length; ++i)
+        u8Sum += au8Data[i];
+    return -u8Sum;
+}
+
+/**
+ * Construct the MPS table. Only applicable if IOAPIC is active.
+ *
+ * @param   pDevIns    The device instance data.
+ * @param   addr       physical address in guest memory.
+ */
+static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
+{
+    /* configuration table */
+    PMPSCFGTBLHEADER pCfgTab      = (MPSCFGTBLHEADER*)pTable;
+    memcpy(pCfgTab->au8Signature, "PCMP", 4);
+    pCfgTab->u8SpecRev             =  4;    /* 1.4 */
+    memcpy(pCfgTab->au8OemId, "VBOXCPU ", 8);
+    memcpy(pCfgTab->au8ProductId, "VirtualBox  ", 12);
+    pCfgTab->u32OemTablePtr        =  0;
+    pCfgTab->u16OemTableSize       =  0;
+    pCfgTab->u16EntryCount         =  1 /* Processor */
+                                   +  1 /* ISA Bus */
+                                   +  1 /* I/O-APIC */
+                                   + 16 /* Interrupts */;
+    pCfgTab->u32AddrLocalApic      = 0xfee00000;
+    pCfgTab->u16ExtTableLength     =  0;
+    pCfgTab->u8ExtTableChecksxum   =  0;
+    pCfgTab->u8Reserved            =  0;
+
+    uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
+    uint32_t u32CPUSignature = 0x0520; /* default: Pentium 100 */
+    uint32_t u32FeatureFlags = 0x0001; /* default: FPU */
+    PDMDevHlpQueryCPUId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
+    if (u32Eax >= 1)
+    {
+        PDMDevHlpQueryCPUId(pDevIns, 1, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
+        u32CPUSignature = u32Eax & 0xfff;
+        /* Local APIC will be enabled later so override it here. Since we provide
+         * an MP table we have an IOAPIC and therefore a Local APIC. */
+        u32FeatureFlags = u32Edx | X86_CPUID_FEATURE_EDX_APIC;
+    }
+
+    /* one processor so far */
+    PMPSPROCENTRY pProcEntry       = (PMPSPROCENTRY)(pCfgTab+1);
+    pProcEntry->u8EntryType        = 0; /* processor entry */
+    pProcEntry->u8LocalApicId      = 0;
+    pProcEntry->u8LocalApicVersion = 0x11;
+    pProcEntry->u8CPUFlags         = 2 /* bootstrap processor */ | 1 /* enabled */;
+    pProcEntry->u32CPUSignature    = u32CPUSignature;
+    pProcEntry->u32CPUFeatureFlags = u32FeatureFlags;
+    pProcEntry->u32Reserved[0]     =
+    pProcEntry->u32Reserved[1]     = 0;
+
+    /* ISA bus */
+    PMPSBUSENTRY pBusEntry         = (PMPSBUSENTRY)(pProcEntry+1);
+    pBusEntry->u8EntryType         = 1; /* bus entry */
+    pBusEntry->u8BusId             = 0; /* this ID is referenced by the interrupt entries */
+    memcpy(pBusEntry->au8BusTypeStr, "ISA   ", 6);
+
+    /* PCI bus? */
+
+    /* I/O-APIC.
+     * MP spec: "The configuration table contains one or more entries for I/O APICs. 
+     *           ... At least one I/O APIC must be enabled." */
+    PMPSIOAPICENTRY pIOAPICEntry   = (PMPSIOAPICENTRY)(pBusEntry+1);
+    pIOAPICEntry->u8EntryType      = 2; /* I/O-APIC entry */
+    pIOAPICEntry->u8Id             = 1; /* this ID is referenced by the interrupt entries */
+    pIOAPICEntry->u8Version        = 0x11;
+    pIOAPICEntry->u8Flags          = 1 /* enable */;
+    pIOAPICEntry->u32Addr          = 0xfec00000;
+
+    PMPSIOIRQENTRY pIrqEntry       = (PMPSIOIRQENTRY)(pIOAPICEntry+1);
+    for (int i=0; i<16; i++, pIrqEntry++)
+    {
+        pIrqEntry->u8EntryType     = 3; /* I/O interrupt entry */
+        pIrqEntry->u8Type          = 0; /* INT, vectored interrupt */
+        pIrqEntry->u16Flags        = 0; /* polarity of APIC I/O input signal = conforms to bus, 
+                                           trigger mode = conforms to bus */
+        pIrqEntry->u8SrcBusId      = 0; /* ISA bus */
+        pIrqEntry->u8SrcBusIrq     = i;
+        pIrqEntry->u8DstIOAPICId   = 1;
+        pIrqEntry->u8DstIOAPICInt  = i;
+    }
+
+    pCfgTab->u16Length             = (uint8_t*)pIrqEntry - pTable;
+    pCfgTab->u8Checksum            = pcbiosChecksum(pTable, pCfgTab->u16Length);
+
+    AssertMsg(pCfgTab->u16Length < 0x1000 - 0x100,
+              ("VBOX_MPS_TABLE_SIZE=%d, maximum allowed size is %d",
+              pCfgTab->u16Length, 0x1000-0x100));
+
+    MPSFLOATPTR floatPtr;
+    floatPtr.au8Signature[0]       = '_';
+    floatPtr.au8Signature[1]       = 'M';
+    floatPtr.au8Signature[2]       = 'P';
+    floatPtr.au8Signature[3]       = '_';
+    floatPtr.u32MPSAddr            = VBOX_MPS_TABLE_BASE;
+    floatPtr.u8Length              = 1; /* structure size in paragraphs */
+    floatPtr.u8SpecRev             = 4; /* MPS revision 1.4 */
+    floatPtr.u8Checksum            = 0;
+    floatPtr.au8Feature[0]         = 0;
+    floatPtr.au8Feature[1]         = 0;
+    floatPtr.au8Feature[2]         = 0;
+    floatPtr.au8Feature[3]         = 0;
+    floatPtr.au8Feature[4]         = 0;
+    floatPtr.u8Checksum            = pcbiosChecksum((uint8_t*)&floatPtr, 16);
+    PDMDevHlpPhysWrite (pDevIns, 0x9fff0, &floatPtr, 16);
+}
+
 
 /**
  * Reset notification.
@@ -693,6 +966,9 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
         AssertReleaseFailed();
     }
 #endif
+
+    if (pData->u8IOAPIC)
+        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
 }
 
 
@@ -777,71 +1053,6 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, const cha
     return rc;
 }
 
-#define STRCPY(p, s) do { memcpy (p, s, sizeof(s)); p += sizeof(s); } while (0)
-static void pcbiosPlantDMITable(uint8_t *table)
-{
-    char *pszStr = (char*)table;
-    int iStrNr;
-
-    PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
-    pszStr                       = (char*)(pBIOSInf+1);
-    iStrNr                       = 1;
-    pBIOSInf->header.u8Type      = 0; /* BIOS Information */
-    pBIOSInf->header.u8Length    = sizeof(*pBIOSInf);
-    pBIOSInf->header.u16Handle   = 0x0000;
-    pBIOSInf->u8Vendor           = iStrNr++;
-    STRCPY(pszStr, "InnoTek Systemberatung GmbH");
-    pBIOSInf->u8Version          = iStrNr++;
-    STRCPY(pszStr, "VirtualBox");
-    pBIOSInf->u16Start           = 0xE000;
-    pBIOSInf->u8Release          = iStrNr++;
-    STRCPY(pszStr, "12/01/2006");
-    pBIOSInf->u8ROMSize          = 1; /* 128K */
-    pBIOSInf->u64Characteristics = BIT(4)   /* ISA is supported */
-                                 | BIT(7)   /* PCI is supported */
-                                 | BIT(15)  /* Boot from CD is supported */
-                                 | BIT(16)  /* Selectable Boot is supported */
-                                 | BIT(27)  /* Int 9h, 8042 Keyboard services supported */
-                                 | BIT(30)  /* Int 10h, CGA/Mono Video Services supported */
-                                 /* any more?? */
-                                 ;
-    pBIOSInf->u8CharacteristicsByte1 = BIT(0)   /* ACPI is supported */
-                                     /* any more?? */
-                                     ;
-    pBIOSInf->u8CharacteristicsByte2 = 0
-                                     /* any more?? */
-                                     ;
-    *pszStr++                    = '\0';
-
-
-    PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
-    pszStr                       = (char*)(pSystemInf+1);
-    iStrNr                       = 1;
-    pSystemInf->header.u8Type    = 1; /* System Information */
-    pSystemInf->header.u8Length  = sizeof(*pSystemInf);
-    pSystemInf->header.u16Handle = 0x0001;
-    pSystemInf->u8Manufacturer   = iStrNr++;
-    STRCPY(pszStr, "InnoTek Systemberatung GmbH");
-    pSystemInf->u8ProductName    = iStrNr++;
-    STRCPY(pszStr, "VirtualBox");
-    pSystemInf->u8Version        = iStrNr++;
-    STRCPY(pszStr, "1.2");
-    pSystemInf->u8SerialNumber   = iStrNr++;
-    STRCPY(pszStr, "0");
-    pSystemInf->u8WakeupType     = 6; /* Power Switch */
-    pSystemInf->u8SKUNumber      = 0;
-    pSystemInf->u8Family         = iStrNr++;
-    STRCPY(pszStr, "Virtual Machine");
-    *pszStr++                    = '\0';
-
-    AssertMsg(pszStr - (char*)table == VBOX_DMI_TABLE_SIZE,
-              ("VBOX_DMI_TABLE_SIZE=%d, actual DMI table size is %d",
-              VBOX_DMI_TABLE_SIZE, pszStr - (char*)table));
-}
-
-AssertCompile(VBOX_DMI_TABLE_ENTR == 2);
-
-
 /**
  * Construct a device instance for a VM.
  *
@@ -861,7 +1072,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
     int         rc;
     int         cb;
-    // char       *psz;
 
     Assert(iInstance == 0);
 
@@ -882,7 +1092,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "LogoFile\0"
                               "ShowBootMenu\0"
                               "DelayBoot\0"
-                              "LanBootRom\0"))
+                              "LanBootRom\0"
+                              "IOAPIC\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
 
@@ -893,6 +1104,13 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"RamSize\" as integer failed"));
+
+    rc = CFGMR3QueryU8 (pCfgHandle, "IOAPIC", &pData->u8IOAPIC);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->u8IOAPIC = 1;
+    else if (VBOX_FAILURE (rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"IOAPIC\"."));
 
     static const char * const s_apszBootDevices[] = { "BootDevice0", "BootDevice1", "BootDevice2", "BootDevice3" };
     Assert(ELEMENTS(s_apszBootDevices) == ELEMENTS(pData->aenmBootDevice));
@@ -926,6 +1144,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     pcbiosPlantDMITable(pData->au8DMIPage);
+    if (pData->u8IOAPIC)
+        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
 
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, "DMI tables");
     if (VBOX_FAILURE(rc))

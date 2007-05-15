@@ -4586,6 +4586,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertInteger(pCfg,  "RamSize",              cRamMBs * _1M);         RC_CHECK();
     rc = CFGMR3InsertString(pCfg,   "HardDiskDevice",       "piix3ide");            RC_CHECK();
     rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "i82078");              RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",               fIOAPIC);               RC_CHECK();
 
     DeviceType_T bootDevice;
     if (SchemaDefs::MaxBootPosition > 9)
@@ -4676,7 +4677,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
      */
     BOOL fACPI;
     hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
-    if (fACPI || fIOAPIC)
+    if (fACPI)
     {
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
