@@ -768,6 +768,11 @@ typedef struct {
 
     } ebda_data_t;
 
+#ifdef VBOX
+  // the last 16 bytes of the EBDA segment are used for the MPS floating
+  // pointer structure (only if an IOAPIC is present)
+#endif
+
   #define EbdaData ((ebda_data_t *) 0)
 
   // for access to the int13ext structure
@@ -10382,12 +10387,13 @@ normal_post:
   mov cx, #0x7dc6 ;; 32198 words
   rep
     stosw
-  ;; zero out remaining base memory
+  ;; zero out remaining base memory except the last 16 bytes of the EBDA
+  ;; because we store the MP table there
   xor eax, eax
   xor bx, bx
 memory_zero_loop:
   add bx, #0x1000
-  cmp bx, #0xa000
+  cmp bx, #0x9000
   jae memory_cleared
   mov es, bx
   xor di, di
@@ -10396,6 +10402,11 @@ memory_zero_loop:
     stosd
   jmp memory_zero_loop
 memory_cleared:
+  mov es, bx
+  xor di, di
+  mov cx, #0x3f00
+  rep
+    stosd
   xor bx, bx
 #endif
 

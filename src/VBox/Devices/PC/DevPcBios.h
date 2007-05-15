@@ -28,6 +28,8 @@
 #define VBOX_DMI_TABLE_BASE          0xe1000
 #define VBOX_DMI_TABLE_VER           0x23
 
+#define VBOX_MPS_TABLE_BASE          0xe1100
+
 #define VBOX_LANBOOT_SEG             0xca00
 
 #endif
