@@ -63,5 +63,5 @@ FILES_VBOXADD_NOBIN=" \
 "
 
 FILES_VBOXADD_BIN=" \
-    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/build_in_tmp=>build_in_tmp \
 "
