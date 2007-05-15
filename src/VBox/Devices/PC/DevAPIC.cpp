@@ -1619,7 +1619,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "0IOAPIC\0GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IOAPIC\0GCEnabled\0R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBool (pCfgHandle, "IOAPIC", &fIOAPIC);
