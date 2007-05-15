@@ -1,0 +1,77 @@
+#!/bin/sh
+#
+# Shared file between Makefile.kmk and export_modules
+#
+# Copyright (C) 2007 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+FILES_VBOXVFS_NOBIN=" \
+    ${PATH_ROOT}/include/iprt/alloc.h=>include/iprt/alloc.h \
+    ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
+    ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
+    ${PATH_ROOT}/include/iprt/cdefs.h=>include/iprt/cdefs.h \
+    ${PATH_ROOT}/include/iprt/err.h=>include/iprt/err.h \
+    ${PATH_ROOT}/include/iprt/fs.h=>include/iprt/fs.h \
+    ${PATH_ROOT}/include/iprt/log.h=>include/iprt/log.h \
+    ${PATH_ROOT}/include/iprt/mem.h=>include/iprt/mem.h \
+    ${PATH_ROOT}/include/iprt/param.h=>include/iprt/param.h \
+    ${PATH_ROOT}/include/iprt/path.h=>include/iprt/path.h \
+    ${PATH_ROOT}/include/iprt/semaphore.h=>include/iprt/semaphore.h \
+    ${PATH_ROOT}/include/iprt/stdarg.h=>include/iprt/stdarg.h \
+    ${PATH_ROOT}/include/iprt/stdint.h=>include/iprt/stdint.h \
+    ${PATH_ROOT}/include/iprt/string.h=>include/iprt/string.h \
+    ${PATH_ROOT}/include/iprt/time.h=>include/iprt/time.h \
+    ${PATH_ROOT}/include/iprt/types.h=>include/iprt/types.h \
+    ${PATH_ROOT}/include/VBox/cdefs.h=>include/VBox/cdefs.h \
+    ${PATH_ROOT}/include/VBox/err.h=>include/VBox/err.h \
+    ${PATH_ROOT}/include/VBox/hgcmsvc.h=>include/VBox/hgcmsvc.h \
+    ${PATH_ROOT}/include/VBox/log.h=>include/VBox/log.h \
+    ${PATH_ROOT}/include/VBox/ostypes.h=>include/VBox/ostypes.h \
+    ${PATH_ROOT}/include/VBox/shflsvc.h=>include/VBox/shflsvc.h \
+    ${PATH_ROOT}/include/VBox/types.h=>include/VBox/types.h \
+    ${PATH_ROOT}/include/VBox/VBoxGuest.h=>include/VBox/VBoxGuest.h \
+    ${PATH_ROOT}/include/VBox/VBoxGuestLib.h=>include/VBox/VBoxGuestLib.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/GenericRequest.cpp=>GenericRequest.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/HGCM.cpp=>HGCM.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/Init.cpp=>Init.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/PhysHeap.cpp=>PhysHeap.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/SysHlp.cpp=>SysHlp.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/SysHlp.h=>SysHlp.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBGLInternal.h=>VBGLInternal.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.c=>VBoxCalls.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.h=>VBoxCalls.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VMMDev.cpp=>VMMDev.c \
+    ${PATH_ROOT}/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/alloc-r0drv.cpp=>r0drv/alloc-r0drv.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/alloc-r0drv.h=>r0drv/alloc-r0drv.h \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semaphore-r0drv-linux.c=>r0drv/linux/semaphore-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/Makefile.module=>Makefile \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/dirops.c=>dirops.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/regops.c=>regops.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/utils.c=>utils.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfs-utils.c=>vfs-utils.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vbsfmount.h=>vbsfmount.h \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfsmod.c=>vfsmod.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfsmod.h=>vfsmod.h \
+    ${PATH_OUT}/version-generated.h=>version-generated.h \
+"
+
+FILES_VBOXVFS_BIN=" \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+"
