@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# Shared file between Makefile.kmk and export_modules
+#
+# Copyright (C) 2007 InnoTek Systemberatung GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+FILES_VBOXDRV_NOBIN=" \
+    ${PATH_ROOT}/include/iprt/alloc.h=>include/iprt/alloc.h \
+    ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
+    ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
+    ${PATH_ROOT}/include/iprt/cdefs.h=>include/iprt/cdefs.h \
+    ${PATH_ROOT}/include/iprt/err.h=>include/iprt/err.h \
+    ${PATH_ROOT}/include/iprt/heap.h=>include/iprt/heap.h \
+    ${PATH_ROOT}/include/iprt/initterm.h=>include/iprt/initterm.h \
+    ${PATH_ROOT}/include/iprt/log.h=>include/iprt/log.h \
+    ${PATH_ROOT}/include/iprt/mem.h=>include/iprt/mem.h \
+    ${PATH_ROOT}/include/iprt/param.h=>include/iprt/param.h \
+    ${PATH_ROOT}/include/iprt/process.h=>include/iprt/process.h \
+    ${PATH_ROOT}/include/iprt/semaphore.h=>include/iprt/semaphore.h \
+    ${PATH_ROOT}/include/iprt/spinlock.h=>include/iprt/spinlock.h \
+    ${PATH_ROOT}/include/iprt/stdarg.h=>include/iprt/stdarg.h \
+    ${PATH_ROOT}/include/iprt/stdint.h=>include/iprt/stdint.h \
+    ${PATH_ROOT}/include/iprt/string.h=>include/iprt/string.h \
+    ${PATH_ROOT}/include/iprt/thread.h=>include/iprt/thread.h \
+    ${PATH_ROOT}/include/iprt/types.h=>include/iprt/types.h \
+    ${PATH_ROOT}/include/iprt/avl.h=>include/iprt/avl.h \
+    ${PATH_ROOT}/include/VBox/cdefs.h=>include/VBox/cdefs.h \
+    ${PATH_ROOT}/include/VBox/log.h=>include/VBox/log.h \
+    ${PATH_ROOT}/include/VBox/sup.h=>include/VBox/sup.h \
+    ${PATH_ROOT}/include/VBox/types.h=>include/VBox/types.h \
+    ${PATH_ROOT}/src/VBox/Runtime/include/internal/initterm.h=>include/internal/initterm.h \
+    ${PATH_ROOT}/src/VBox/Runtime/include/internal/thread.h=>include/internal/thread.h \
+    ${PATH_ROOT}/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
+    ${PATH_ROOT}/src/VBox/Runtime/alloc/heapsimple.cpp=>alloc/heapsimple.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/alloc-r0drv.cpp=>r0drv/alloc-r0drv.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/alloc-r0drv.h=>r0drv/alloc-r0drv.h \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/initterm-r0drv.cpp=>r0drv/initterm-r0drv.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/initterm-r0drv-linux.c=>r0drv/linux/initterm-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/process-r0drv-linux.c=>r0drv/linux/process-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semaphore-r0drv-linux.c=>r0drv/linux/semaphore-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/spinlock-r0drv-linux.c=>r0drv/linux/spinlock-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread-r0drv-linux.c=>r0drv/linux/thread-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/SUPDrv-linux.c=>linux/SUPDrv-linux.c \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/Makefile=>Makefile \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDRV.h=>SUPDRV.h \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDRVIOC.h=>SUPDRVIOC.h \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDRVShared.c=>SUPDRVShared.c \
+    ${PATH_OUT}/version-generated.h=>version-generated.h \
+"
+
+FILES_VBOXDRV_BIN=" \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+"
