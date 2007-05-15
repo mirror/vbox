@@ -173,7 +173,7 @@ template<class UT> int cfgldrhlp_uinteger_to_ustr (
     *(--p) = 0; // end of string
 
     do {
-        *(--p) = '0' + (value % 10);
+        *(--p) = (RTUCS2)('0' + (value % 10));
         value /= 10;
     }
     while (value);
