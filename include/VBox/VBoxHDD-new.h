@@ -80,7 +80,7 @@ typedef VDIMAGETYPE *PVDIMAGETYPE;
 #define VD_IMAGE_FLAGS_NONE                 (0)
 /** VMDK: Split image into 2GB extents. */
 #define VD_VMDK_IMAGE_FLAGS_SPLIT_2G        (0x0001)
-/** VMDK: Split image into 2GB extents. */
+/** VMDK: Raw disk image (giving access to a number of host partitions). */
 #define VD_VMDK_IMAGE_FLAGS_RAWDISK         (0x0002)
 /** VDI: Fill new blocks with zeroes while expanding image file. */
 #define VD_VDI_IMAGE_FLAGS_ZERO_EXPAND      (0x0100)
@@ -185,6 +185,9 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpen
  * @param   cbSize          Image size in bytes.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
+ * @param   cCylinders      Number of cylinders (must be <= 16383).
+ * @param   cHeads          Number of heads (must be <= 16).
+ * @param   cSectors        Number of sectors (must be <= 63);
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
@@ -192,7 +195,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpen
 VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
                                VDIMAGETYPE enmType, uint64_t cbSize,
                                unsigned uImageFlags, const char *pszComment,
-                               unsigned uOpenFlags,
+                               unsigned cCylinders, unsigned cHeads,
+                               unsigned cSectors, unsigned uOpenFlags,
                                PFNVMPROGRESS pfnProgress, void *pvUser);
 
 /**
