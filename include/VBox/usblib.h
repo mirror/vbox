@@ -267,7 +267,7 @@ VBOXDDU_DECL(int) usbLibEnableDeviceCapture();
  * Disables USB device capturing
  *
  */
-VBOXDDU_DECL(int) usbLibDisableDeviceCapture()
+VBOXDDU_DECL(int) usbLibDisableDeviceCapture();
 
 /** @} */
 #endif
