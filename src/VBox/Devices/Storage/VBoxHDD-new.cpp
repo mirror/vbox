@@ -673,12 +673,11 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
             /* Image successfully opened, make it the last image. */
             vdAddImageToList(pDisk, pImage);
         }
-
-        if (VBOX_FAILURE(rc))
+        else
         {
             /* Error detected, but image opened. Close image. */
             int rc2;
-            rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData);
+            rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData, false);
             AssertRC(rc2);
             pImage->pvBackendData = NULL;
         }
@@ -708,6 +707,9 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
  * @param   cbSize          Image size in bytes.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
+ * @param   cCylinders      Number of cylinders (must be <= 16383).
+ * @param   cHeads          Number of heads (must be <= 16).
+ * @param   cSectors        Number of sectors (must be <= 63);
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
@@ -715,7 +717,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
 VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
                                VDIMAGETYPE enmType, uint64_t cbSize,
                                unsigned uImageFlags, const char *pszComment,
-                               unsigned uOpenFlags,
+                               unsigned cCylinders, unsigned cHeads,
+                               unsigned cSectors, unsigned uOpenFlags,
                                PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     int rc = VINF_SUCCESS;
@@ -730,7 +733,13 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
         ||  *pszFilename == '\0'
         ||  (enmType != VD_IMAGE_TYPE_NORMAL && enmType != VD_IMAGE_TYPE_FIXED)
         ||  !cbSize
-        ||  (uOpenFlags & ~VD_OPEN_FLAGS_MASK))
+        ||  (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
+        ||  cCylinders == 0
+        ||  cCylinders > 16383
+        ||  cHeads == 0
+        ||  cHeads > 16
+        ||  cSectors == 0
+        ||  cSectors > 63)
     {
         AssertMsgFailed(("Invalid arguments: pszFilename=%#p uOpenFlags=%#x\n", pszFilename, uOpenFlags));
         return VERR_INVALID_PARAMETER;
@@ -753,17 +762,83 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
 
     if (VBOX_SUCCESS(rc))
         rc = pDisk->Backend->pfnCreate(pImage->pszFilename, enmType, cbSize,
-                                       uImageFlags, pszComment, uOpenFlags,
+                                       uImageFlags, pszComment, cCylinders,
+                                       cHeads, cSectors, uOpenFlags,
                                        pfnProgress, pvUser,
                                        pDisk->pfnError, pDisk->pvErrorUser,
                                        &pImage->pvBackendData);
 
-    if (VBOX_FAILURE(rc))
+    if (VBOX_SUCCESS(rc))
     {
-        RTStrFree(pImage->pszFilename);
-        RTMemFree(pImage);
+        /** @todo optionally check UUIDs */
+
+        if (VBOX_SUCCESS(rc))
+        {
+            uint64_t cbSize = pDisk->Backend->pfnGetSize(pImage->pvBackendData);
+            if (pDisk->cImages == 0)
+            {
+                /* Cache disk information. */
+                pDisk->cbSize = cbSize;
+
+                /* Cache CHS geometry. */
+                int rc2 = pDisk->Backend->pfnGetGeometry(pImage->pvBackendData,
+                                                         &pDisk->cCylinders,
+                                                         &pDisk->cHeads,
+                                                         &pDisk->cSectors);
+                if (VBOX_FAILURE(rc2))
+                {
+                    pDisk->cCylinders = 0;
+                    pDisk->cHeads = 0;
+                    pDisk->cSectors = 0;
+                }
+                else
+                {
+                    /* Make sure the CHS geometry is properly clipped. */
+                    pDisk->cCylinders = RT_MIN(pDisk->cCylinders, 16383);
+                    pDisk->cHeads = RT_MIN(pDisk->cHeads, 255);
+                    pDisk->cSectors = RT_MIN(pDisk->cSectors, 255);
+                }
+
+                /* Cache translation mode. */
+                rc2 = pDisk->Backend->pfnGetTranslation(pImage->pvBackendData,
+                                                        &pDisk->enmTranslation);
+                if (VBOX_FAILURE(rc2))
+                    pDisk->enmTranslation = (PDMBIOSTRANSLATION)0;
+            }
+            else
+            {
+                /* Check image size/block size for consistency. */
+                if (cbSize != pDisk->cbSize)
+                    rc = VERR_VDI_INVALID_TYPE;
+            }
+        }
+
+        if (VBOX_SUCCESS(rc))
+        {
+            /* Image successfully opened, make it the last image. */
+            vdAddImageToList(pDisk, pImage);
+        }
+        else
+        {
+            /* Error detected, but image opened. Close and delete image. */
+            int rc2;
+            rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData, true);
+            AssertRC(rc2);
+            pImage->pvBackendData = NULL;
+        }
     }
 
+    if (VBOX_FAILURE(rc))
+    {
+        if (pImage)
+        {
+            if (pImage->pszFilename)
+                RTStrFree(pImage->pszFilename);
+            RTMemFree(pImage);
+        }
+    }
+
+    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -882,7 +957,33 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, unsigned nImage, uint64_t cbSize,
  */
 VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
 {
-    return VERR_NOT_IMPLEMENTED;
+    LogFlow(("%s: fDelete=%d\n", __FUNCTION__, fDelete));
+    /* sanity check */
+    Assert(pDisk);
+    AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    PVDIMAGE pImage = pDisk->pLast;
+    unsigned uOpenFlags = pDisk->Backend->pfnGetOpenFlags(pImage->pvBackendData);
+    /* Remove image from list of opened images. */
+    vdRemoveImageFromList(pDisk, pImage);
+    /* Close (and optionally delete) image. */
+    int rc = pDisk->Backend->pfnClose(pImage->pvBackendData, fDelete);
+    /* Free remaining resources related to the image. */
+    RTStrFree(pImage->pszFilename);
+    RTMemFree(pImage);
+
+    /* If disk was previously in read/write mode, make sure it will stay like
+     * this after closing this image. Set the open flags accordingly. */
+    if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
+    {
+        uOpenFlags = pDisk->Backend->pfnGetOpenFlags(pDisk->pLast->pvBackendData);
+        uOpenFlags &= ~ VD_OPEN_FLAGS_READONLY;
+        rc = pDisk->Backend->pfnSetOpenFlags(pDisk->pLast->pvBackendData,
+                                                     uOpenFlags);
+    }
+
+    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    return rc;
 }
 
 /**
@@ -905,7 +1006,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
         /* Remove image from list of opened images. */
         vdRemoveImageFromList(pDisk, pImage);
         /* Close image. */
-        int rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData);
+        int rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData, false);
         if (VBOX_FAILURE(rc2) && VBOX_SUCCESS(rc))
             rc = rc2;
         /* Free remaining resources related to the image. */

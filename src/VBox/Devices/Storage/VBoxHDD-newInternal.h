@@ -49,10 +49,13 @@ typedef struct VBOXHDDBACKEND
      * @returns VBox status code.
      * @param   pszFilename     Name of the image file to create. Guaranteed to be available and
      *                          unchanged during the lifetime of this image.
-     * @param   penmType        Image type. Both base and diff image types are valid.
+     * @param   enmType         Image type. Both base and diff image types are valid.
      * @param   cbSize          Image size in bytes.
      * @param   uImageFlags     Flags specifying special image features.
      * @param   pszComment      Pointer to image comment. NULL is ok.
+     * @param   cCylinders      Number of cylinders (must be <= 16383).
+     * @param   cHeads          Number of heads (must be <= 16).
+     * @param   cSectors        Number of sectors (must be <= 63).
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
      * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
      * @param   pvUser          User argument for the progress callback.
@@ -60,15 +63,16 @@ typedef struct VBOXHDDBACKEND
      * @param   pvErrorUser     Opaque parameter for pfnError.
      * @param   ppvBackendData  Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE penmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
 
     /**
      * Close a disk image.
      *
      * @returns VBox status code.
      * @param   pvBackendData   Opaque state data for this image.
+     * @param   fDelete         If true, delete the image from the host disk.
      */
-    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvBackendData, bool fDelete));
 
     /**
      * Read data from a disk image. The area read never crosses a block

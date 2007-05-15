@@ -33,6 +33,7 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/rand.h>
 
 
 /*******************************************************************************
@@ -147,9 +148,9 @@ typedef struct VMDKEXTENT
     /** File handle. */
     RTFILE      File;
     /** Base name of the image extent. */
-    char        *pszBasename;
+    const char  *pszBasename;
     /** Full name of the image extent. */
-    char        *pszFullname;
+    const char  *pszFullname;
     /** Number of sectors in this extent. */
     uint64_t    cSectors;
     /** Number of sectors per block (grain in VMDK speak). */
@@ -163,7 +164,7 @@ typedef struct VMDKEXTENT
     /** Starting sector number of redundant grain directory. */
     uint64_t    uSectorRGD;
     /** Total number of metadata sectors. */
-    uint64_t    uOverheadSectors;
+    uint64_t    cOverheadSectors;
     /** Nominal size (i.e. as described by the descriptor) of this extent. */
     uint64_t    cNominalSectors;
     /** Sector offset (i.e. as described by the descriptor) of this extent. */
@@ -215,7 +216,7 @@ typedef struct VMDKEXTENT
  * Maximum number of lines in a descriptor file. Not worth the effort of
  * making it variable. Descriptor files are generally very short (~20 lines).
  */
-#define VMDK_DESCRIPTOR_LINES_MAX   100
+#define VMDK_DESCRIPTOR_LINES_MAX   100U
 
 /**
  * Parsed descriptor information. Allows easy access and update of the
@@ -233,7 +234,7 @@ typedef struct VMDKDESCRIPTOR
     unsigned    cLines;
     /** Total amount of memory available for the descriptor. */
     size_t      cbDescAlloc;
-    /** Set if descriptor has been changed and not yer written to disk. */
+    /** Set if descriptor has been changed and not yet written to disk. */
     bool        fDirty;
     /** Array of pointers to the data in the descriptor. */
     char        *aLines[VMDK_DESCRIPTOR_LINES_MAX];
@@ -334,15 +335,15 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent);
 #ifdef VBOX_WITH_VMDK_ESX
 static int vmdkReadMetaESXSparseExtent(PVMDKEXTENT pExtent);
 #endif /* VBOX_WITH_VMDK_ESX */
-static void vmdkFreeExtentData(PVMDKEXTENT pExtent);
+static void vmdkFreeExtentData(PVMDKEXTENT pExtent, bool fDelete);
 
 static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents);
 static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uOpenFlags);
 static int vmdkFlushImage(PVMDKIMAGE pImage);
-static void vmdkFreeImage(PVMDKIMAGE pImage);
+static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete);
 
 static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData);
-static int vmdkClose(void *pBackendData);
+static int vmdkClose(void *pBackendData, bool fDelete);
 
 
 DECLINLINE(int) vmdkError(PVMDKIMAGE pImage, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
@@ -373,7 +374,7 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read grain directory for file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read grain directory in '%s'"), pExtent->pszFullname);
         goto out;
     }
     for (i = 0, pGDTmp = pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
@@ -393,7 +394,7 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
         AssertRC(rc);
         if (VBOX_FAILURE(rc))
         {
-            rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read redundant grain directory for file '%s'"), pExtent->pszFullname);
+            rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read redundant grain directory in '%s'"), pExtent->pszFullname);
             goto out;
         }
         for (i = 0, pRGDTmp = pRGD; i < pExtent->cGDEntries; i++, pRGDTmp++)
@@ -428,14 +429,14 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
                  * grain table. Not allowed. */
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
-                rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent references to grain directory in file '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent references to grain directory in '%s'"), pExtent->pszFullname);
                 goto out;
             }
             rc = RTFileReadAt(pExtent->File, VMDK_SECTOR2BYTE(*pGDTmp),
                               pTmpGT1, cbGT, NULL);
             if (VBOX_FAILURE(rc))
             {
-                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading grain table in file '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading grain table in '%s'"), pExtent->pszFullname);
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
                 goto out;
@@ -444,7 +445,7 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
                               pTmpGT2, cbGT, NULL);
             if (VBOX_FAILURE(rc))
             {
-                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading backup grain table in file '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading backup grain table in '%s'"), pExtent->pszFullname);
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
                 goto out;
@@ -453,7 +454,7 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
             {
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
-                rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistency between grain table and backup grain table"));
+                rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistency between grain table and backup grain table in '%s'"), pExtent->pszFullname);
                 goto out;
             }
         }
@@ -467,11 +468,85 @@ out:
     return rc;
 }
 
+static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector, bool fPreAlloc)
+{
+    int rc = VINF_SUCCESS;
+    unsigned i;
+    uint32_t *pGD = NULL, *pRGD = NULL;
+    size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
+    size_t cbGDRounded = RT_ALIGN_64(pExtent->cGDEntries * sizeof(uint32_t), 512);
+    size_t cbGTRounded;
+    uint64_t cbOverhead;
+    
+    if (fPreAlloc)
+        cbGTRounded = RT_ALIGN_64(pExtent->cGDEntries * pExtent->cGTEntries * sizeof(uint32_t), 512);
+    else
+        cbGTRounded = 0;
+
+    pGD = (uint32_t *)RTMemAllocZ(cbGD);
+    if (!pGD)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+    pExtent->pGD = pGD;
+    pRGD = (uint32_t *)RTMemAllocZ(cbGD);
+    if (!pRGD)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+    pExtent->pRGD = pRGD;
+
+    cbOverhead = RT_ALIGN_64(VMDK_SECTOR2BYTE(uStartSector) + 2 * (cbGDRounded + cbGTRounded), VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
+    rc = RTFileSetSize(pExtent->File, cbOverhead);
+    if (VBOX_FAILURE(rc))
+        goto out;
+    pExtent->uSectorRGD = uStartSector;
+    pExtent->uSectorGD = uStartSector + VMDK_BYTE2SECTOR(cbGDRounded + cbGTRounded);
+
+    if (fPreAlloc)
+    {
+        uint32_t uGTSectorLE;
+        uint32_t uOffsetSectors;
+
+        uOffsetSectors = pExtent->uSectorRGD + VMDK_BYTE2SECTOR(cbGDRounded);
+        for (i = 0; i < pExtent->cGDEntries; i++)
+        {
+            pRGD[i] = uOffsetSectors;
+            uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
+            /* Write the redundant grain directory entry to disk. */
+            rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + i * sizeof(uGTSectorLE), &uGTSectorLE, sizeof(uGTSectorLE), NULL);
+            if (VBOX_FAILURE(rc))
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new redundant grain directory entry in '%s'"), pExtent->pszFullname);
+            uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
+        }
+
+        uOffsetSectors = pExtent->uSectorGD + VMDK_BYTE2SECTOR(cbGDRounded);
+        for (i = 0; i < pExtent->cGDEntries; i++)
+        {
+            pGD[i] = uOffsetSectors;
+            uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
+            /* Write the grain directory entry to disk. */
+            rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(pExtent->uSectorGD) + i * sizeof(uGTSectorLE), &uGTSectorLE, sizeof(uGTSectorLE), NULL);
+            if (VBOX_FAILURE(rc))
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new grain directory entry in '%s'"), pExtent->pszFullname);
+            uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
+        }
+    }
+    pExtent->cOverheadSectors = VMDK_BYTE2SECTOR(cbOverhead);
+
+out:
+    if (VBOX_FAILURE(rc))
+        vmdkFreeGrainDirectory(pExtent);
+    return rc;
+}
+
 static void vmdkFreeGrainDirectory(PVMDKEXTENT pExtent)
 {
     if (pExtent->pszBasename)
     {
-        RTMemTmpFree(pExtent->pszBasename);
+        RTMemTmpFree((void *)pExtent->pszBasename);
         pExtent->pszBasename = NULL;
     }
     if (pExtent->pGD)
@@ -495,11 +570,11 @@ static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr, char **ppszU
     while (*pszStr == ' ' || *pszStr == '\t')
         pszStr++;
     if (*pszStr++ != '"')
-        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor"));
+        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor in '%s'"), pImage->pszFilename);
 
     pszQ = (char*)strchr(pszStr, '"');
     if (pszQ == NULL)
-        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor"));
+        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor in '%s'"), pImage->pszFilename);
     pszUnquoted = (char *)RTMemTmpAlloc(pszQ - pszStr + 1);
     if (!pszUnquoted)
         return VERR_NO_MEMORY;
@@ -508,6 +583,24 @@ static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr, char **ppszU
     *ppszUnquoted = pszUnquoted;
     if (ppszNext)
         *ppszNext = pszQ + 1;
+    return VINF_SUCCESS;
+}
+
+static int vmdkDescInitStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor, 
+                           const char *pszLine)
+{
+    char *pEnd = pDescriptor->aLines[pDescriptor->cLines];
+    ssize_t cbDiff = strlen(pszLine) + 1;
+
+    if (    pDescriptor->cLines >= VMDK_DESCRIPTOR_LINES_MAX - 1
+        &&  pEnd - pDescriptor->aLines[0] > (ptrdiff_t)pDescriptor->cbDescAlloc - cbDiff)
+        return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too big in '%s'"), pImage->pszFilename);
+
+    memcpy(pEnd, pszLine, cbDiff);
+    pDescriptor->cLines++;
+    pDescriptor->aLines[pDescriptor->cLines] = pEnd + cbDiff;
+    pDescriptor->fDirty = true;
+
     return VINF_SUCCESS;
 }
 
@@ -572,7 +665,7 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
         /* Check for buffer overflow. */
         if (    pDescriptor->aLines[pDescriptor->cLines]
             -   pDescriptor->aLines[0] > (ptrdiff_t)pDescriptor->cbDescAlloc - cbDiff)
-            return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too big"));
+            return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too big in '%s'"), pImage->pszFilename);
 
         memmove(pszTmp + cbNewVal, pszTmp + cbOldVal,
                 pDescriptor->aLines[pDescriptor->cLines] - pszTmp - cbOldVal);
@@ -590,12 +683,14 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
         if (   (pDescriptor->cLines >= VMDK_DESCRIPTOR_LINES_MAX - 1)
             || (  pDescriptor->aLines[pDescriptor->cLines]
                 - pDescriptor->aLines[0] > (ptrdiff_t)pDescriptor->cbDescAlloc - cbDiff))
-            return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too big"));
+            return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too big in '%s'"), pImage->pszFilename);
         for (unsigned i = pDescriptor->cLines + 1; i > uLast + 1; i--)
         {
             pDescriptor->aLines[i] = pDescriptor->aLines[i - 1];
-            if (pDescriptor->aNextLines[i])
-                pDescriptor->aNextLines[i]++;
+            if (pDescriptor->aNextLines[i - 1])
+                pDescriptor->aNextLines[i] = pDescriptor->aNextLines[i - 1] + 1;
+            else
+                pDescriptor->aNextLines[i] = 0;
         }
         uStart = uLast + 1;
         pDescriptor->aNextLines[uLast] = uStart;
@@ -609,6 +704,12 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
         memcpy(pDescriptor->aLines[uStart] + cbKey + 1, pszValue, cbValue + 1);
         for (unsigned i = uStart + 1; i <= pDescriptor->cLines; i++)
             pDescriptor->aLines[i] += cbDiff;
+
+        /* Adjust starting line numbers of following descriptor sections. */
+        if (uStart <= pDescriptor->uFirstExtent)
+            pDescriptor->uFirstExtent++;
+        if (uStart <= pDescriptor->uFirstDDB)
+            pDescriptor->uFirstDDB++;
     }
     pDescriptor->fDirty = true;
     return VINF_SUCCESS;
@@ -622,6 +723,104 @@ static int vmdkDescBaseGetU32(PVMDKDESCRIPTOR pDescriptor, const char *pszKey,
     if (!vmdkDescGetStr(pDescriptor, pDescriptor->uFirstDesc, pszKey, &pszValue))
         return VERR_VDI_VALUE_NOT_FOUND;
     return RTStrToUInt32Ex(pszValue, NULL, 10, puValue);
+}
+
+static void vmdkDescExtRemoveDummy(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor)
+{
+    unsigned uEntry = pDescriptor->uFirstExtent;
+    ssize_t cbDiff;
+
+    if (!uEntry)
+        return;
+
+    cbDiff = strlen(pDescriptor->aLines[uEntry]) + 1;
+    /* Move everything including the \0 in the entry marking the end of buffer. */
+    memmove(pDescriptor->aLines[uEntry], pDescriptor->aLines[uEntry + 1],
+            pDescriptor->aLines[pDescriptor->cLines] - pDescriptor->aLines[uEntry + 1] + 1);
+    for (unsigned i = uEntry + 1; i <= pDescriptor->cLines; i++)
+    {
+        pDescriptor->aLines[i - 1] = pDescriptor->aLines[i] - cbDiff;
+        if (pDescriptor->aNextLines[i])
+            pDescriptor->aNextLines[i - 1] = pDescriptor->aNextLines[i] - 1;
+        else
+            pDescriptor->aNextLines[i - 1] = 0;
+    }
+    pDescriptor->cLines--;
+    if (pDescriptor->uFirstDDB)
+        pDescriptor->uFirstDDB--;
+
+    return;
+}
+
+static int vmdkDescExtInsert(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
+                             VMDKACCESS enmAccess, uint64_t cNominalSectors,
+                             VMDKETYPE enmType, const char *pszBasename,
+                             uint64_t uSectorOffset)
+{
+    static const char *apszAccess[] = { "NOACCESS", "RDONLY", "RW" };
+    static const char *apszType[] = { "", "SPARSE", "FLAT", "ZERO" };
+    char *pszTmp;
+    unsigned uStart = pDescriptor->uFirstExtent, uLast;
+    char szExt[1024];
+    ssize_t cbDiff;
+
+    /* Find last entry in extent description. */
+    while (uStart)
+    {
+        if (!pDescriptor->aNextLines[uStart])
+            uLast = uStart;
+        uStart = pDescriptor->aNextLines[uStart];
+    }
+
+    if (enmType == VMDKETYPE_ZERO)
+    {
+        RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s ", apszAccess[enmAccess],
+                    cNominalSectors, apszType[enmType]);
+    }
+    else
+    {
+        if (!uSectorOffset)
+            RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s \"%s\"",
+                        apszAccess[enmAccess], cNominalSectors,
+                        apszType[enmType], pszBasename);
+        else
+            RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s \"%s\" %llu",
+                        apszAccess[enmAccess], cNominalSectors,
+                        apszType[enmType], pszBasename, uSectorOffset);
+    }
+    cbDiff = strlen(szExt) + 1;
+
+    /* Check for buffer overflow. */
+    if (   (pDescriptor->cLines >= VMDK_DESCRIPTOR_LINES_MAX - 1)
+        || (  pDescriptor->aLines[pDescriptor->cLines]
+            - pDescriptor->aLines[0] > (ptrdiff_t)pDescriptor->cbDescAlloc - cbDiff))
+        return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too big in '%s'"), pImage->pszFilename);
+
+    for (unsigned i = pDescriptor->cLines + 1; i > uLast + 1; i--)
+    {
+        pDescriptor->aLines[i] = pDescriptor->aLines[i - 1];
+        if (pDescriptor->aNextLines[i - 1])
+            pDescriptor->aNextLines[i] = pDescriptor->aNextLines[i - 1] + 1;
+        else
+            pDescriptor->aNextLines[i] = 0;
+    }
+    uStart = uLast + 1;
+    pDescriptor->aNextLines[uLast] = uStart;
+    pDescriptor->aNextLines[uStart] = 0;
+    pDescriptor->cLines++;
+    pszTmp = pDescriptor->aLines[uStart];
+    memmove(pszTmp + cbDiff, pszTmp,
+            pDescriptor->aLines[pDescriptor->cLines] - pszTmp);
+    memcpy(pDescriptor->aLines[uStart], szExt, cbDiff);
+    for (unsigned i = uStart + 1; i <= pDescriptor->cLines; i++)
+        pDescriptor->aLines[i] += cbDiff;
+
+    /* Adjust starting line numbers of following descriptor sections. */
+    if (uStart <= pDescriptor->uFirstDDB)
+        pDescriptor->uFirstDDB++;
+
+    pDescriptor->fDirty = true;
+    return VINF_SUCCESS;
 }
 
 static int vmdkDescDDBGetU32(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
@@ -653,6 +852,18 @@ static int vmdkDescDDBGetUuid(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
         return rc;
     rc = RTUuidFromStr(pUuid, pszValueUnquoted);
     RTMemTmpFree(pszValueUnquoted);
+    return rc;
+}
+
+int vmdkDescDDBSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor, const char *pszKey, const char *pszVal)
+{
+    char *pszValQuoted;
+
+    int rc = RTStrAPrintf(&pszValQuoted, "\"%s\"", pszVal);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDDB, pszKey, pszValQuoted);
+    RTStrFree(pszValQuoted);
     return rc;
 }
 
@@ -692,7 +903,7 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t c
         pDescriptor->aLines[cLine++] = pTmp;
         if (cLine >= VMDK_DESCRIPTOR_LINES_MAX)
         {
-            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor too long"));
+            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor too big in '%s'"), pImage->pszFilename);
             goto out;
         }
 
@@ -702,7 +913,7 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t c
             {
                 if (*(pTmp + 1) != '\n')
                 {
-                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: unsupported end of line in descriptor"));
+                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: unsupported end of line in descriptor in '%s'"), pImage->pszFilename);
                     goto out;
                 }
                 else
@@ -726,7 +937,7 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t c
 
     if (strcmp(pDescriptor->aLines[0], "# Disk DescriptorFile"))
     {
-        rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor does not start as expected"));
+        rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor does not start as expected in '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -746,7 +957,7 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t c
                 if (!pDescriptor->uFirstDesc || pDescriptor->uFirstDDB)
                 {
                     /* Incorrect ordering of entries. */
-                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect ordering of entries in descriptor"));
+                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect ordering of entries in descriptor in '%s'"), pImage->pszFilename);
                     goto out;
                 }
                 if (!pDescriptor->uFirstExtent)
@@ -761,7 +972,7 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t c
                 if (!pDescriptor->uFirstDesc || !pDescriptor->uFirstExtent)
                 {
                     /* Incorrect ordering of entries. */
-                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect ordering of entries in descriptor"));
+                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect ordering of entries in descriptor in '%s'"), pImage->pszFilename);
                     goto out;
                 }
                 if (!pDescriptor->uFirstDDB)
@@ -776,7 +987,7 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t c
                 if (pDescriptor->uFirstExtent || pDescriptor->uFirstDDB)
                 {
                     /* Incorrect ordering of entries. */
-                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect ordering of entries in descriptor"));
+                    rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect ordering of entries in descriptor in '%s'"), pImage->pszFilename);
                     goto out;
                 }
                 if (!pDescriptor->uFirstDesc)
@@ -790,6 +1001,73 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t c
             uLastNonEmptyLine = i;
         }
     }
+
+out:
+    return rc;
+}
+
+static int vmdkCreateDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDescData, PVMDKDESCRIPTOR pDescriptor)
+{
+    int rc;
+
+    pDescriptor->uFirstDesc = 0;
+    pDescriptor->uFirstExtent = 0;
+    pDescriptor->uFirstDDB = 0;
+    pDescriptor->cLines = 0;
+    pDescriptor->cbDescAlloc = cbDescData;
+    pDescriptor->fDirty = false;
+    pDescriptor->aLines[pDescriptor->cLines] = pDescData;
+    memset(pDescriptor->aNextLines, '\0', sizeof(pDescriptor->aNextLines));
+
+    rc = vmdkDescInitStr(pImage, pDescriptor, "# Disk DescriptorFile");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "version=1");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    pDescriptor->uFirstDesc = pDescriptor->cLines - 1;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "# Extent description");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "NOACCESS 0 ZERO ");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    pDescriptor->uFirstExtent = pDescriptor->cLines - 1;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    /* The trailing space is created by VMware, too. */
+    rc = vmdkDescInitStr(pImage, pDescriptor, "# The disk Data Base ");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "# DDB");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescInitStr(pImage, pDescriptor, "ddb.virtualHWVersion = \"4\"");
+    if (VBOX_FAILURE(rc))
+        goto out;
+    pDescriptor->uFirstDDB = pDescriptor->cLines - 1;
+
+    /* Now that the framework is in place, use the normal functions to insert
+     * the remaining keys. */
+    char szBuf[9];
+    RTStrPrintf(szBuf, sizeof(szBuf), "%08x", RTRandU32());
+    rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDesc, "CID", szBuf);
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDesc, "parentCID", "ffffffff");
+    if (VBOX_FAILURE(rc))
+        goto out;
+
+    rc = vmdkDescDDBSetStr(pImage, pDescriptor, "ddb.adapterType", "ide");
+    if (VBOX_FAILURE(rc))
+        goto out;
 
 out:
     return rc;
@@ -809,9 +1087,9 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
     uint32_t uVersion;
     rc = vmdkDescBaseGetU32(&pImage->Descriptor, "version", &uVersion);
     if (VBOX_FAILURE(rc))
-        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error finding key 'version' in descriptor"));
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error finding key 'version' in descriptor in '%s'"), pImage->pszFilename);
     if (uVersion != 1)
-        return vmdkError(pImage, VERR_VDI_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: unsupported format version in descriptor"));
+        return vmdkError(pImage, VERR_VDI_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: unsupported format version in descriptor in '%s'"), pImage->pszFilename);
 
     /* Count the number of extent config entries. */
     for (uLine = pImage->Descriptor.uFirstExtent, cExtents = 0;
@@ -822,7 +1100,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
     if (!pImage->pDescData && cExtents != 1)
     {
         /* Monolithic image, must have only one extent (already opened). */
-        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image may only have one extent"));
+        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image may only have one extent in '%s'"), pImage->pszFilename);
     }
 
     if (pImage->pDescData)
@@ -855,17 +1133,17 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
             pszLine += 8;
         }
         else
-            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
         if (*pszLine++ != ' ')
-            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
 
         /* Nominal size of the extent. */
         rc = RTStrToUInt64Ex(pszLine, &pszLine, 10,
                              &pImage->pExtents[i].cNominalSectors);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
         if (*pszLine++ != ' ')
-            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
 
         /* Type of the extent. */
 #ifdef VBOX_WITH_VMDK_ESX
@@ -889,27 +1167,28 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
             pszLine += 4;
         }
         else
-            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+            return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
         if (pImage->pExtents[i].enmType == VMDKETYPE_ZERO)
         {
             /* This one has no basename or offset. */
             if (*pszLine == ' ')
                 pszLine++;
             if (*pszLine != '\0')
-                return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+                return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
             pImage->pExtents[i].pszBasename = NULL;
         }
         else
         {
             /* All other extent types have basename and optional offset. */
             if (*pszLine++ != ' ')
-                return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+                return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
 
             /* Basename of the image. Surrounded by quotes. */
-            rc = vmdkStringUnquote(pImage, pszLine,
-                                   &pImage->pExtents[i].pszBasename, &pszLine);
+            char *pszBasename;
+            rc = vmdkStringUnquote(pImage, pszLine, &pszBasename, &pszLine);
             if (VBOX_FAILURE(rc))
                 return rc;
+            pImage->pExtents[i].pszBasename = pszBasename;
             if (*pszLine == ' ')
             {
                 pszLine++;
@@ -919,27 +1198,27 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
                     rc = RTStrToUInt64Ex(pszLine, &pszLine, 10,
                                          &pImage->pExtents[i].uSectorOffset);
                     if (VBOX_FAILURE(rc))
-                        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+                        return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
                 }
             }
 
             if (*pszLine != '\0')
-                return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description"));
+                return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
         }
     }
 
     rc = vmdkDescDDBGetU32(pImage, &pImage->Descriptor,
                            "ddb.geometry.cylinders", &pImage->cCylinders);
     if (VBOX_FAILURE(rc))
-        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting CHS geometry from extent description"));
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting CHS geometry from extent description in '%s'"), pImage->pszFilename);
     rc = vmdkDescDDBGetU32(pImage, &pImage->Descriptor,
                            "ddb.geometry.heads", &pImage->cHeads);
     if (VBOX_FAILURE(rc))
-        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting CHS geometry from extent description"));
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting CHS geometry from extent description in '%s'"), pImage->pszFilename);
     rc = vmdkDescDDBGetU32(pImage, &pImage->Descriptor,
                            "ddb.geometry.sectors", &pImage->cSectors);
     if (VBOX_FAILURE(rc))
-        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting CHS geometry from extent description"));
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting CHS geometry from extent description in '%s'"), pImage->pszFilename);
     if (pImage->cCylinders >= 1024 || pImage->cHeads != 16)
         pImage->enmTranslation = PDMBIOSTRANSLATION_LBA;
     else
@@ -963,7 +1242,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
             rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
                                     "ddb.uuid.image", &pImage->ImageUuid);
             if (VBOX_FAILURE(rc))
-                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing image UUID in descriptor"));
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing image UUID in descriptor in '%s'"), pImage->pszFilename);
         }
     }
     else if (VBOX_FAILURE(rc))
@@ -987,7 +1266,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
             rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
                                     "ddb.uuid.modification", &pImage->ModificationUuid);
             if (VBOX_FAILURE(rc))
-                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing image modification UUID in descriptor"));
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing image modification UUID in descriptor in '%s'"), pImage->pszFilename);
         }
     }
     else if (VBOX_FAILURE(rc))
@@ -1011,7 +1290,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
             rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
                                     "ddb.uuid.parent", &pImage->ParentUuid);
             if (VBOX_FAILURE(rc))
-                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing parent UUID in descriptor"));
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing parent UUID in descriptor in '%s'"), pImage->pszFilename);
         }
     }
     else if (VBOX_FAILURE(rc))
@@ -1048,14 +1327,14 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
         size_t cb = strlen(psz);
 
         if (cbLimit && uOffset + cb + 1 > cbLimit)
-            return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too long"));
+            return vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too long in '%s'"), pImage->pszFilename);
         rc = RTFileWriteAt(DescFile, uOffset, psz, cb, NULL);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor for '%s'"), pImage->pszFilename);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
         uOffset += cb;
         rc = RTFileWriteAt(DescFile, uOffset, "\n", 1, NULL);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor for '%s'"), pImage->pszFilename);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
         uOffset++;
     }
     if (cbLimit)
@@ -1065,7 +1344,7 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
         {
             rc = RTFileWriteAt(DescFile, uOffset, "", 1, NULL);
             if (VBOX_FAILURE(rc))
-                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor for '%s'"), pImage->pszFilename);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
             uOffset++;
         }
     }
@@ -1073,7 +1352,7 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
     {
         rc = RTFileSetSize(DescFile, uOffset);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error truncating descriptor file '%s'"), pImage->pszFilename);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error truncating descriptor in '%s'"), pImage->pszFilename);
     }
     pImage->Descriptor.fDirty = false;
     return rc;
@@ -1088,13 +1367,13 @@ static int vmdkReadMetaSparseExtent(PVMDKEXTENT pExtent)
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent header of file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent header in '%s'"), pExtent->pszFullname);
         goto out;
     }
     if (    RT_LE2H_U32(Header.magicNumber) != VMDK_SPARSE_MAGICNUMBER
         ||  RT_LE2H_U32(Header.version) != 1)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect magic/version in extent header of file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect magic/version in extent header in '%s'"), pExtent->pszFullname);
         goto out;
     }
     /* The image must be a multiple of a sector in size. If not, it means the
@@ -1102,7 +1381,7 @@ static int vmdkReadMetaSparseExtent(PVMDKEXTENT pExtent)
     rc = RTFileGetSize(pExtent->File, &cbExtentSize);
     if (VBOX_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size of file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         goto out;
     }
     if (    (RT_LE2H_U32(Header.flags) & 1)
@@ -1111,7 +1390,7 @@ static int vmdkReadMetaSparseExtent(PVMDKEXTENT pExtent)
              || Header.doubleEndLineChar1 != '\r'
              || Header.doubleEndLineChar2 != '\n') )
     {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: file '%s' is corrupted by CR/LF translation"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: corrupted by CR/LF translation in '%s'"), pExtent->pszFullname);
         goto out;
     }
     pExtent->enmType = VMDKETYPE_HOSTED_SPARSE;
@@ -1122,14 +1401,14 @@ static int vmdkReadMetaSparseExtent(PVMDKEXTENT pExtent)
     if (    (pExtent->cSectorsPerGrain & (pExtent->cSectorsPerGrain - 1))
         ||  pExtent->cSectorsPerGrain < 8)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: invalid extent grain size %u for file '%s'"), pExtent->cSectorsPerGrain, pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: invalid extent grain size %u in '%s'"), pExtent->cSectorsPerGrain, pExtent->pszFullname);
         goto out;
     }
     pExtent->uDescriptorSector = RT_LE2H_U64(Header.descriptorOffset);
     pExtent->cDescriptorSectors = RT_LE2H_U64(Header.descriptorSize);
     if (pExtent->uDescriptorSector && !pExtent->cDescriptorSectors)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent embedded descriptor config for file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent embedded descriptor config in '%s'"), pExtent->pszFullname);
         goto out;
     }
     pExtent->cGTEntries = RT_LE2H_U32(Header.numGTEsPerGT);
@@ -1138,7 +1417,7 @@ static int vmdkReadMetaSparseExtent(PVMDKEXTENT pExtent)
     if (    (pExtent->cGTEntries & (pExtent->cGTEntries - 1))
         ||  pExtent->cGTEntries < VMDK_GT_CACHELINE_SIZE)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: grain table cache size problem for file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: grain table cache size problem in '%s'"), pExtent->pszFullname);
         goto out;
     }
     if (RT_LE2H_U32(Header.flags) & 2)
@@ -1153,12 +1432,12 @@ static int vmdkReadMetaSparseExtent(PVMDKEXTENT pExtent)
         pExtent->uSectorGD = RT_LE2H_U64(Header.rgdOffset);
         pExtent->uSectorRGD = 0;
     }
-    pExtent->uOverheadSectors = RT_LE2H_U64(Header.overHead);
+    pExtent->cOverheadSectors = RT_LE2H_U64(Header.overHead);
     pExtent->fUncleanShutdown = !!Header.uncleanShutdown;
     cSectorsPerGDE = pExtent->cGTEntries * pExtent->cSectorsPerGrain;
     if (!cSectorsPerGDE || cSectorsPerGDE > UINT32_MAX)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect grain directory size for file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect grain directory size in '%s'"), pExtent->pszFullname);
         goto out;
     }
     pExtent->cSectorsPerGDE = cSectorsPerGDE;
@@ -1168,9 +1447,7 @@ static int vmdkReadMetaSparseExtent(PVMDKEXTENT pExtent)
 
 out:
     if (VBOX_FAILURE(rc))
-    {
-        vmdkFreeExtentData(pExtent);
-    }
+        vmdkFreeExtentData(pExtent, false);
 
     return rc;
 }
@@ -1199,7 +1476,7 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
          * properly and I don't have a vmdk without RGD. */
         Header.rgdOffset = RT_H2LE_U64(pExtent->uSectorGD);
     }
-    Header.overHead = RT_H2LE_U64(pExtent->uOverheadSectors);
+    Header.overHead = RT_H2LE_U64(pExtent->cOverheadSectors);
     Header.uncleanShutdown = pExtent->fUncleanShutdown;
     Header.singleEndLineChar = '\n';
     Header.nonEndLineChar = ' ';
@@ -1209,7 +1486,7 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
     int rc = RTFileWriteAt(pExtent->File, 0, &Header, sizeof(Header), NULL);
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header to file '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header in '%s'"), pExtent->pszFullname);
     return rc;
 }
 
@@ -1246,7 +1523,7 @@ static int vmdkReadMetaESXSparseExtent(PVMDKEXTENT pExtent)
     pExtent->cDescriptorSectors = 0;
     pExtent->uSectorGD = RT_LE2H_U32(Header.gdOffset);
     pExtent->uSectorRGD = 0;
-    pExtent->uOverheadSectors = 0;
+    pExtent->cOverheadSectors = 0;
     pExtent->cGTEntries = 4096;
     cSectorsPerGDE = pExtent->cGTEntries * pExtent->cSectorsPerGrain;
     if (!cSectorsPerGDE || cSectorsPerGDE > UINT32_MAX)
@@ -1270,15 +1547,13 @@ static int vmdkReadMetaESXSparseExtent(PVMDKEXTENT pExtent)
 
 out:
     if (VBOX_FAILURE(rc))
-    {
-        vmdkFreeExtentData(pExtent);
-    }
+        vmdkFreeExtentData(pExtent, false);
 
     return rc;
 }
 #endif /* VBOX_WITH_VMDK_ESX */
 
-static void vmdkFreeExtentData(PVMDKEXTENT pExtent)
+static void vmdkFreeExtentData(PVMDKEXTENT pExtent, bool fDelete)
 {
     vmdkFreeGrainDirectory(pExtent);
     if (pExtent->pDescData)
@@ -1286,18 +1561,50 @@ static void vmdkFreeExtentData(PVMDKEXTENT pExtent)
         RTMemFree(pExtent->pDescData);
         pExtent->pDescData = NULL;
     }
-    if (pExtent->pszFullname)
-    {
-        RTStrFree(pExtent->pszFullname);
-        pExtent->pszFullname = NULL;
-    }
     if (pExtent->File != NIL_RTFILE)
     {
         RTFileClose(pExtent->File);
         pExtent->File = NIL_RTFILE;
+        if (fDelete && pExtent->pszFullname)
+            RTFileDelete(pExtent->pszFullname);
+    }
+    if (pExtent->pszFullname)
+    {
+        RTStrFree((char *)(void *)pExtent->pszFullname);
+        pExtent->pszFullname = NULL;
     }
 }
 
+static int vmdkAllocateGrainTableCache(PVMDKIMAGE pImage)
+{
+    PVMDKEXTENT pExtent;
+
+    /* Allocate grain table cache if any sparse extent is present. */
+    for (unsigned i = 0; i < pImage->cExtents; i++)
+    {
+        pExtent = &pImage->pExtents[i];
+        if (    pExtent->enmType == VMDKETYPE_HOSTED_SPARSE
+#ifdef VBOX_WITH_VMDK_ESX
+            ||  pExtent->enmType == VMDKETYPE_ESX_SPARSE
+#endif /* VBOX_WITH_VMDK_ESX */
+           )
+        {
+            /* Allocate grain table cache. */
+            pImage->pGTCache = (PVMDKGTCACHE)RTMemAllocZ(sizeof(VMDKGTCACHE));
+            if (!pImage->pGTCache)
+                return VERR_NO_MEMORY;
+            for (unsigned i = 0; i < VMDK_GT_CACHE_SIZE; i++)
+            {
+                PVMDKGTCACHEENTRY pGCE = &pImage->pGTCache->aGTCache[i];
+                pGCE->uExtent = UINT32_MAX;
+            }
+            pImage->pGTCache->cEntries = VMDK_GT_CACHE_SIZE;
+            break;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
 static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents)
 {
     int rc = VINF_SUCCESS;
@@ -1333,8 +1640,6 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
 
     pImage->uOpenFlags = uOpenFlags;
 
-    /** @todo check the image file name for invalid characters, especially double quotes. */
-
     /** @todo check whether the same file is used somewhere else. don't open any file twice, leads to locking problems and can cause trouble with file caching. */
 
     /*
@@ -1354,7 +1659,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
     {
-        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number from file '%s'"), pszFilename);
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number in '%s'"), pszFilename);
         goto out;
     }
 
@@ -1377,7 +1682,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
          * be a descriptor embedded in the image file. */
         if (!pExtent->uDescriptorSector || !pExtent->cDescriptorSectors)
         {
-            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image without descriptor in file '%s'"), pszFilename);
+            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image without descriptor in '%s'"), pszFilename);
             goto out;
         }
         /* Read the descriptor from the extent. */
@@ -1394,7 +1699,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
         AssertRC(rc);
         if (VBOX_FAILURE(rc))
         {
-            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in file '%s'"), pExtent->pszFullname);
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pExtent->pszFullname);
             goto out;
         }
 
@@ -1425,14 +1730,14 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
                           pImage->cbDescAlloc, &cbRead);
         if (VBOX_FAILURE(rc))
         {
-            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in file '%s'"), pszFilename);
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pszFilename);
             goto out;
         }
         if (cbRead == pImage->cbDescAlloc)
         {
             /* Likely the read is truncated. Better fail a bit too early
              * (normally the descriptor is much smaller than our buffer). */
-            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot read descriptor in file '%s'"), pszFilename);
+            rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot read descriptor in '%s'"), pszFilename);
             goto out;
         }
 
@@ -1568,63 +1873,217 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
         }
     }
 
-    /* Allocate grain table cache if any sparse extent is present. */
-    for (unsigned i = 0; i < pImage->cExtents; i++)
-    {
-        pExtent = &pImage->pExtents[i];
-        if (    pExtent->enmType == VMDKETYPE_HOSTED_SPARSE
-#ifdef VBOX_WITH_VMDK_ESX
-            ||  pExtent->enmType == VMDKETYPE_ESX_SPARSE
-#endif /* VBOX_WITH_VMDK_ESX */
-           )
-        {
-            /* Allocate grain table cache. */
-            pImage->pGTCache = (PVMDKGTCACHE)RTMemAllocZ(sizeof(VMDKGTCACHE));
-            if (!pImage->pGTCache)
-            {
-                rc = VERR_NO_MEMORY;
-                goto out;
-            }
-            for (unsigned i = 0; i < VMDK_GT_CACHE_SIZE; i++)
-            {
-                PVMDKGTCACHEENTRY pGCE = &pImage->pGTCache->aGTCache[i];
-                pGCE->uExtent = UINT32_MAX;
-            }
-            pImage->pGTCache->cEntries = VMDK_GT_CACHE_SIZE;
-            break;
-        }
-    }
+    rc = vmdkAllocateGrainTableCache(pImage);
+    if (VBOX_FAILURE(rc))
+        goto out;
 
 out:
     if (VBOX_FAILURE(rc))
-        vmdkFreeImage(pImage);
+        vmdkFreeImage(pImage, false);
     return rc;
 }
 
-static void vmdkFreeImage(PVMDKIMAGE pImage)
+static int vmdkCreateImage(PVMDKIMAGE pImage, const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
 {
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+    int rc;
+    uint64_t cSectorsPerGDE, cSectorsPerGD;
+    PVMDKEXTENT pExtent;
+
+    rc = vmdkCreateDescriptor(pImage, pImage->pDescData, pImage->cbDescAlloc, &pImage->Descriptor);
+    if (VBOX_FAILURE(rc))
     {
-        /* Mark all extents as clean. */
-        for (unsigned i = 0; i < pImage->cExtents; i++)
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new descriptor in '%s'"), pszFilename);
+        goto out;
+    }
+
+    if (    enmType == VD_IMAGE_TYPE_FIXED
+        ||  uImageFlags == VD_VMDK_IMAGE_FLAGS_SPLIT_2G)
+    {
+        /* Fixed images and split images in general have a separate descriptor
+         * file. This is the more complicated case, as it requires setting up
+         * potentially more than one extent, including filename generation. */
+        rc = VERR_NOT_IMPLEMENTED;
+        goto out;
+    }
+    else
+    {
+        /* Normal (growing) image which is not split into pieces. */
+        rc = vmdkCreateExtents(pImage, 1);
+        if (VBOX_FAILURE(rc))
         {
-            if ((   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
-#ifdef VBOX_WITH_VMDK_ESX
-                 || pImage->pExtents[i].enmType == VMDKETYPE_ESX_SPARSE
-#endif /* VBOX_WITH_VMDK_ESX */
-                )
-                &&  pImage->pExtents[i].fUncleanShutdown)
-            {
-                pImage->pExtents[i].fUncleanShutdown = false;
-                pImage->pExtents[i].fMetaDirty = true;
-            }
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new extent list in '%s'"), pszFilename);
+            goto out;
+        }
+        pExtent = &pImage->pExtents[0];
+        pImage->File = NIL_RTFILE;
+        rc = RTFileOpen(&pExtent->File, pszFilename, 
+                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
+        if (VBOX_FAILURE(rc))
+        {
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pszFilename);
+            goto out;
+        }
+
+        /* Set up basename for extent description. Cannot use StrDup, as it is
+         * not guaranteed that the memory can be freed with RTMemTmpFree, which
+         * must be used as in other code paths StrDup is not usable. */
+        char *pszBasenameSubstr = RTPathFilename(pszFilename);
+        Assert(pszBasenameSubstr);
+        size_t cbBasenameSubstr = strlen(pszBasenameSubstr) + 1;
+        char *pszBasename = (char *)RTMemTmpAlloc(cbBasenameSubstr);
+        if (!pszBasename)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+        memcpy(pszBasename, pszBasenameSubstr, cbBasenameSubstr);
+        pExtent->pszBasename = pszBasename;
+        pExtent->pszFullname = RTStrDup(pszFilename);
+        if (!pExtent->pszFullname)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+        pExtent->enmType = VMDKETYPE_HOSTED_SPARSE;
+        pExtent->cSectors = VMDK_BYTE2SECTOR(RT_ALIGN_64(cbSize, 65536));
+        pExtent->cSectorsPerGrain = VMDK_BYTE2SECTOR(65536);
+        pExtent->uDescriptorSector = 1;
+        pExtent->cDescriptorSectors = VMDK_BYTE2SECTOR(pImage->cbDescAlloc);
+        pExtent->cGTEntries = 512;
+        cSectorsPerGDE = pExtent->cGTEntries * pExtent->cSectorsPerGrain;
+        pExtent->cSectorsPerGDE = cSectorsPerGDE;
+        pExtent->cGDEntries = (pExtent->cSectors + cSectorsPerGDE - 1) / cSectorsPerGDE;
+        cSectorsPerGD = (pExtent->cGDEntries + (512 / sizeof(uint32_t) - 1)) / (512 / sizeof(uint32_t));
+        pExtent->enmAccess = VMDKACCESS_READWRITE;
+        pExtent->fUncleanShutdown = true;
+        pExtent->cNominalSectors = VMDK_BYTE2SECTOR(cbSize);
+        pExtent->uSectorOffset = 0;
+        pExtent->fMetaDirty = true;
+
+        rc = vmdkCreateGrainDirectory(pExtent, pExtent->uDescriptorSector + pExtent->cDescriptorSectors, true);
+        if (VBOX_FAILURE(rc))
+        {
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new grain directory in '%s'"), pszFilename);
+            goto out;
+        }
+
+        pImage->enmImageType = enmType;
+        rc = vmdkDescSetStr(pImage, &pImage->Descriptor, pImage->Descriptor.uFirstDesc, "createType", "\"monolithicSparse\"");
+        if (VBOX_FAILURE(rc))
+        {
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not set the image type in '%s'"), pszFilename);
+            goto out;
+        }
+
+        /* The descriptor is part of the extent, move info to extent. */
+        pExtent->pDescData = pImage->pDescData;
+        pImage->pDescData = NULL;
+    }
+
+    pImage->cbSize = cbSize;
+    if (pImage->cCylinders >= 1024 || pImage->cHeads != 16)
+        pImage->enmTranslation = PDMBIOSTRANSLATION_LBA;
+    else
+        pImage->enmTranslation = PDMBIOSTRANSLATION_NONE;
+
+    for (unsigned i = 0; i < pImage->cExtents; i++)
+    {
+        pExtent = &pImage->pExtents[i];
+
+        rc = vmdkDescExtInsert(pImage, &pImage->Descriptor, pExtent->enmAccess,
+                               pExtent->cNominalSectors, pExtent->enmType,
+                               pExtent->pszBasename, pExtent->uSectorOffset);
+        if (VBOX_FAILURE(rc))
+        {
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not insert the extent list into descriptor in '%s'"), pszFilename);
+            goto out;
         }
     }
-    (void)vmdkFlushImage(pImage);
+    vmdkDescExtRemoveDummy(pImage, &pImage->Descriptor);
+
+    rc = vmdkDescDDBSetU32(pImage, &pImage->Descriptor,
+                           "ddb.geometry.cylinders", cCylinders);
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescDDBSetU32(pImage, &pImage->Descriptor,
+                           "ddb.geometry.heads", cHeads);
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescDDBSetU32(pImage, &pImage->Descriptor,
+                           "ddb.geometry.sectors", cSectors);
+    if (VBOX_FAILURE(rc))
+        goto out;
+
+    pImage->cCylinders = cCylinders;
+    pImage->cHeads = cHeads;
+    pImage->cSectors = cSectors;
+
+    rc = RTUuidCreate(&pImage->ImageUuid);
+    if (VBOX_FAILURE(rc))
+        goto out;
+    rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
+                            "ddb.uuid.image", &pImage->ImageUuid);
+    if (VBOX_FAILURE(rc))
+    {
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing image UUID in new descriptor in '%s'"), pszFilename);
+        goto out;
+    }
+    RTUuidClear(&pImage->ParentUuid);
+    rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
+                            "ddb.uuid.parent", &pImage->ParentUuid);
+    if (VBOX_FAILURE(rc))
+    {
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing parent image UUID in new descriptor in '%s'"), pszFilename);
+        goto out;
+    }
+    RTUuidClear(&pImage->ModificationUuid);
+    rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
+                            "ddb.uuid.modification", &pImage->ModificationUuid);
+    if (VBOX_FAILURE(rc))
+    {
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing modification UUID in new descriptor in '%s'"), pszFilename);
+        goto out;
+    }
+
+    rc = vmdkAllocateGrainTableCache(pImage);
+    if (VBOX_FAILURE(rc))
+        goto out;
+
+    rc = vmdkFlushImage(pImage);
+
+out:
+    if (VBOX_FAILURE(rc))
+        vmdkFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
+    return rc;
+}
+
+static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
+{
+    if (pImage->enmImageType)
+    {
+        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        {
+            /* Mark all extents as clean. */
+            for (unsigned i = 0; i < pImage->cExtents; i++)
+            {
+                if ((   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
+#ifdef VBOX_WITH_VMDK_ESX
+                     || pImage->pExtents[i].enmType == VMDKETYPE_ESX_SPARSE
+#endif /* VBOX_WITH_VMDK_ESX */
+                    )
+                    &&  pImage->pExtents[i].fUncleanShutdown)
+                {
+                    pImage->pExtents[i].fUncleanShutdown = false;
+                    pImage->pExtents[i].fMetaDirty = true;
+                }
+            }
+        }
+        (void)vmdkFlushImage(pImage);
+    }
     if (pImage->pExtents != NULL)
     {
         for (unsigned i = 0 ; i < pImage->cExtents; i++)
-            vmdkFreeExtentData(&pImage->pExtents[i]);
+            vmdkFreeExtentData(&pImage->pExtents[i], fDelete);
         RTMemFree(pImage->pExtents);
         pImage->pExtents = NULL;
     }
@@ -1633,6 +2092,8 @@ static void vmdkFreeImage(PVMDKIMAGE pImage)
         RTFileClose(pImage->File);
         pImage->File = NIL_RTFILE;
     }
+    if (fDelete && pImage->pszFilename)
+        RTFileDelete(pImage->pszFilename);
 }
 
 static int vmdkFlushImage(PVMDKIMAGE pImage)
@@ -1761,7 +2222,7 @@ static int vmdkGetSector(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                           VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
                           aGTDataTmp, sizeof(aGTDataTmp), NULL);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read grain table entry in file '%s'"), pExtent->pszFullname);
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read grain table entry in '%s'"), pExtent->pszFullname);
         pGTCacheEntry->uExtent = pExtent->uExtent;
         pGTCacheEntry->uGTBlock = uGTBlock;
         for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
@@ -1804,7 +2265,7 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
          * a new grain table and put the reference to it in the GDs. */
         rc = RTFileGetSize(pExtent->File, &cbExtentSize);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size of file '%s'"), pExtent->pszFullname);
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         Assert(!(cbExtentSize % 512));
         uGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
         /* Normally the grain table is preallocated for hosted sparse extents
@@ -1821,13 +2282,13 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         {
             rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(uGTSector) + i * sizeof(aGTDataTmp), aGTDataTmp, sizeof(aGTDataTmp), NULL);
             if (VBOX_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in file '%s'"), pExtent->pszFullname);
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in '%s'"), pExtent->pszFullname);
         }
         if (pExtent->pRGD)
         {
             rc = RTFileGetSize(pExtent->File, &cbExtentSize);
             if (VBOX_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size of file '%s'"), pExtent->pszFullname);
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
             Assert(!(cbExtentSize % 512));
             uRGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
             /* Write backup grain table by writing the required number of grain
@@ -1838,7 +2299,7 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
             {
                 rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(uRGTSector) + i * sizeof(aGTDataTmp), aGTDataTmp, sizeof(aGTDataTmp), NULL);
                 if (VBOX_FAILURE(rc))
-                    return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain table allocation in file '%s'"), pExtent->pszFullname);
+                    return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain table allocation in '%s'"), pExtent->pszFullname);
             }
         }
 
@@ -1849,13 +2310,13 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         uint32_t uGTSectorLE = RT_H2LE_U64(uGTSector);
         rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(pExtent->uSectorGD) + uGDIndex * sizeof(uGTSectorLE), &uGTSectorLE, sizeof(uGTSectorLE), NULL);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain directory entry in file '%s'"), pExtent->pszFullname);
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain directory entry in '%s'"), pExtent->pszFullname);
         if (pExtent->pRGD)
         {
             uint32_t uRGTSectorLE = RT_H2LE_U64(uRGTSector);
             rc = RTFileWriteAt(pExtent->File, VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + uGDIndex * sizeof(uRGTSectorLE), &uRGTSectorLE, sizeof(uRGTSectorLE), NULL);
             if (VBOX_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain directory entry in file '%s'"), pExtent->pszFullname);
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain directory entry in '%s'"), pExtent->pszFullname);
         }
 
         /* As the final step update the in-memory copy of the GDs. */
@@ -1866,13 +2327,13 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
 
     rc = RTFileGetSize(pExtent->File, &cbExtentSize);
     if (VBOX_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size of file '%s'"), pExtent->pszFullname);
+        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
     Assert(!(cbExtentSize % 512));
 
     /* Write the data. */
     rc = RTFileWriteAt(pExtent->File, cbExtentSize, pvBuf, cbWrite, NULL);
     if (VBOX_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in file '%s'"), pExtent->pszFullname);
+        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in '%s'"), pExtent->pszFullname);
 
     /* Update the grain table (and the cache). */
     uGTBlock = uSector / (pExtent->cSectorsPerGrain * VMDK_GT_CACHELINE_SIZE);
@@ -1886,7 +2347,7 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                           VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
                           aGTDataTmp, sizeof(aGTDataTmp), NULL);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read allocated grain table entry in file '%s'"), pExtent->pszFullname);
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read allocated grain table entry in '%s'"), pExtent->pszFullname);
         pGTCacheEntry->uExtent = pExtent->uExtent;
         pGTCacheEntry->uGTBlock = uGTBlock;
         for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
@@ -1907,7 +2368,7 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                        VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
                        aGTDataTmp, sizeof(aGTDataTmp), NULL);
     if (VBOX_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated grain table in file '%s'"), pExtent->pszFullname);
+        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated grain table in '%s'"), pExtent->pszFullname);
     if (pExtent->pRGD)
     {
         /* Update backup grain table on disk. */
@@ -1915,7 +2376,7 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                            VMDK_SECTOR2BYTE(uRGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
                            aGTDataTmp, sizeof(aGTDataTmp), NULL);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in file '%s'"), pExtent->pszFullname);
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in '%s'"), pExtent->pszFullname);
     }
 #ifdef VBOX_WITH_VMDK_ESX
     if (VBOX_SUCCESS(rc) && pExtent->enmType == VMDKETYPE_ESX_SPARSE)
@@ -1929,11 +2390,13 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
 
 static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     PVMDKIMAGE pImage;
 
-    /* Check open flags. Just readonly flag is supported. */
-    if (uOpenFlags & ~VD_OPEN_FLAGS_READONLY)
+    /** @todo check the image file name for invalid characters, especially double quotes. */
+
+    /* Check open flags. All valid flags are supported. */
+    if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -1953,29 +2416,83 @@ static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags, PFNVDERROR pfn
     pImage->pfnError = pfnError;
     pImage->pvErrorUser = pvErrorUser;
 
+    rc = vmdkOpenImage(pImage, pszFilename, uOpenFlags);
     if (VBOX_SUCCESS(rc))
-    {
-        rc = vmdkOpenImage(pImage, pszFilename, uOpenFlags);
-        if (VBOX_SUCCESS(rc))
-            *ppvBackendData = pImage;
-    }
+        *ppvBackendData = pImage;
 
 out:
     LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
     return rc;
 }
 
-static int vmdkCreate(const char *pszFilename, VDIMAGETYPE penmType,
+static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
                       uint64_t cbSize, unsigned uImageFlags,
-                      const char *pszComment, unsigned uOpenFlags,
+                      const char *pszComment, uint32_t cCylinders,
+                      uint32_t cHeads, uint32_t cSectors, unsigned uOpenFlags,
                       PFNVMPROGRESS pfnProgress, void *pvUser,
                       PFNVDERROR pfnError, void *pvErrorUser,
                       void **ppvBackendData)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int rc;
+    PVMDKIMAGE pImage;
+
+    /** @todo check the image file name for invalid characters, especially double quotes. */
+
+    /* Check open flags. All valid flags are supported. */
+    if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    pImage = (PVMDKIMAGE)RTMemAllocZ(sizeof(VMDKIMAGE));
+    if (!pImage)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+    pImage->pszFilename = pszFilename;
+    pImage->File = NIL_RTFILE;
+    pImage->pExtents = NULL;
+    pImage->pGTCache = NULL;
+    pImage->pDescData = NULL;
+    pImage->pfnError = pfnError;
+    pImage->pvErrorUser = pvErrorUser;
+    pImage->cbDescAlloc = VMDK_SECTOR2BYTE(20);
+    pImage->pDescData = (char *)RTMemAllocZ(pImage->cbDescAlloc);
+    if (!pImage->pDescData)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+
+    rc = vmdkCreateImage(pImage, pszFilename, enmType, cbSize, uImageFlags,
+                         cCylinders, cHeads, cSectors);
+    if (VBOX_SUCCESS(rc))
+    {
+        /* So far the image is opened in read/write mode. Make sure the
+         * image is opened in read-only mode if the caller requested that. */
+        if (uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        {
+            vmdkFreeImage(pImage, false);
+            rc = vmdkOpenImage(pImage, pszFilename, uOpenFlags);
+            if (VBOX_FAILURE(rc))
+                goto out;
+        }
+        *ppvBackendData = pImage;
+    }
+
+out:
+    /** @todo implement meaningful progress stuff (especially for fixed images). */
+    if (    VBOX_SUCCESS(rc)
+        &&  pfnProgress)
+        pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
+
+    LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
+    return rc;
 }
 
-static int vmdkClose(void *pBackendData)
+static int vmdkClose(void *pBackendData, bool fDelete)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
@@ -1983,7 +2500,7 @@ static int vmdkClose(void *pBackendData)
     /* Freeing a never allocated image (e.g. because the open failed) is
      * not signalled as an error. After all nothing bad happens. */
     if (pImage)
-        vmdkFreeImage(pImage);
+        vmdkFreeImage(pImage, fDelete);
 
     LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
     return rc;
@@ -2331,7 +2848,7 @@ static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 
     /* Implement this operation via reopening the image. */
     pszFilename = pImage->pszFilename;
-    vmdkFreeImage(pImage);
+    vmdkFreeImage(pImage, false);
     rc = vmdkOpenImage(pImage, pszFilename, uOpenFlags);
 
 out:
@@ -2371,7 +2888,7 @@ static int vmdkSetUuid(void *pBackendData, PCRTUUID pUuid)
         rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
                                 "ddb.uuid.image", pUuid);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing image UUID in descriptor"));
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing image UUID in descriptor in '%s'"), pImage->pszFilename);
         rc = VINF_SUCCESS;
     }
     else
@@ -2412,7 +2929,7 @@ static int vmdkSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
         rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
                                 "ddb.uuid.modification", pUuid);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing modification UUID in descriptor"));
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing modification UUID in descriptor in '%s'"), pImage->pszFilename);
         rc = VINF_SUCCESS;
     }
     else
@@ -2453,7 +2970,7 @@ static int vmdkSetParentUuid(void *pBackendData, PCRTUUID pUuid)
         rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
                                 "ddb.uuid.parent", pUuid);
         if (VBOX_FAILURE(rc))
-            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing parent image UUID in descriptor"));
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing parent image UUID in descriptor in '%s'"), pImage->pszFilename);
         rc = VINF_SUCCESS;
     }
     else
