@@ -65,7 +65,7 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #endif
 
 #define USBFLT_MAJOR_VERSION              1
-#define USBFLT_MINOR_VERSION              1
+#define USBFLT_MINOR_VERSION              2
 
 #define USBMON_MAJOR_VERSION              1
 #define USBMON_MINOR_VERSION              0
@@ -255,6 +255,19 @@ VBOXDDU_DECL(int) usbLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevic
  * @returns boolean
  */
 VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
+
+
+/**
+ * Enables USB device capturing
+ *
+ */
+VBOXDDU_DECL(int) usbLibEnableDeviceCapture();
+
+/**
+ * Disables USB device capturing
+ *
+ */
+VBOXDDU_DECL(int) usbLibDisableDeviceCapture()
 
 /** @} */
 #endif
