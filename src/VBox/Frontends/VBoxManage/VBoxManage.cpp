@@ -756,7 +756,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
     LONG64 timeOffset;
     biosSettings->COMGETTER(TimeOffset)(&timeOffset);
-    RTPrintf("Time offset:     %ld ms\n", timeOffset);
+    RTPrintf("Time offset:     %lld ms\n", timeOffset);
 
     TriStateBool_T hwVirtExEnabled;
     machine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);
