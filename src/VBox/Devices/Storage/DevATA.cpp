@@ -597,7 +597,7 @@ static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
     AssertRC(rc);
     LogBird(("ata: %x: signalling\n", pCtl->IOPortBase1));
-    rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem); 
+    rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem);
     if (VBOX_FAILURE(rc))
     {
         LogBird(("ata: %x: schedule failed, rc=%Vrc\n", pCtl->IOPortBase1, rc));
@@ -1844,7 +1844,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     else
     {
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
-            LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d\n", s->iLUN, s->aATAPICmd[0], uATAPISenseKey));
+            LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d %Vrc\n", s->iLUN, s->aATAPICmd[0], uATAPISenseKey, rc));
         atapiCmdError(s, uATAPISenseKey, 0);
         /* This is a drive-reported error. atapiCmdError() sets both the error
          * error code in the ATA error register and in s->uATAPISenseKey. The
