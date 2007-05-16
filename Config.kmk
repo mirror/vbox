@@ -901,7 +901,8 @@ ifdef VBOX_SIGNING_MODE
     VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign/r1
    endif
   endif
-  VBOX_SIGNTOOL ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
+  VBOX_SIGNTOOL    ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
+  VBOX_SIGNABILITY ?= $(VBOX_PATH_SELFSIGN)/Signability.exe
 
   # There are two signing modes; 'self' and 'release'.
   ifeq ($(strip $(VBOX_SIGNING_MODE)),self)
@@ -922,6 +923,13 @@ ifdef VBOX_SIGNING_MODE
 		/s "$(VBOX_CERTIFICATE_STORE)" \
 		/n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" \
 		$(out))
+   VBOX_SIGN_MSI_FN      = $(VBOX_SIGNTOOL) sign \
+		/ac "$(VBOX_CROSS_CERTIFICATE_FILE)" \
+		/s "$(VBOX_CERTIFICATE_STORE)" \
+		/n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" \
+		$(1)
+	VBOX_MAKE_CAT64_FN   = $(VBOX_SIGNABILITY) /driver:$(2) /cat /auto /os:656
+	VBOX_MAKE_CAT32_FN   = $(VBOX_SIGNABILITY) /driver:$(2) /cat /auto /os:298
   else
    $(error Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
   endif
