@@ -132,7 +132,7 @@ typedef struct
     USHORT          usVendorId;
     USHORT          usProductId;
     USHORT          usRevision;
-} USBSUP_CAPTURE, *PUSB_CAPTURE;
+} USBSUP_CAPTURE, *PUSBSUP_CAPTURE;
 
 
 typedef struct
