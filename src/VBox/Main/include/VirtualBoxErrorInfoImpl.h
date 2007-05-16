@@ -48,21 +48,29 @@ public:
     NS_DECL_ISUPPORTS
 
 #if defined (__WIN__)
+
+    HRESULT init (IErrorInfo *aInfo);
+
     STDMETHOD(GetGUID) (GUID *guid);
     STDMETHOD(GetSource) (BSTR *source);
     STDMETHOD(GetDescription) (BSTR *description);
     STDMETHOD(GetHelpFile) (BSTR *pBstrHelpFile);
     STDMETHOD(GetHelpContext) (DWORD *pdwHelpContext);
+
 #else // !defined (__WIN__)
+
+    HRESULT init (nsIException *aInfo);
+
     NS_DECL_NSIEXCEPTION
+
 #endif
 
     VirtualBoxErrorInfo() : mResultCode (S_OK) {}
 
     // public initializer/uninitializer for internal purposes only
-    void init (HRESULT aResultCode, const GUID &aIID,
-               const BSTR aComponent, const BSTR aText,
-               IVirtualBoxErrorInfo *aNext = NULL);
+    HRESULT init (HRESULT aResultCode, const GUID &aIID,
+                  const BSTR aComponent, const BSTR aText,
+                  IVirtualBoxErrorInfo *aNext = NULL);
 
     // IVirtualBoxErrorInfo properties
     STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);

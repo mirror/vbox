@@ -1784,8 +1784,8 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
 
     if (FAILED (rc) && !taskCreationFailed)
     {
-        /* fetch any existing error info */
-        ErrorInfo ei;
+        /* preserve existing error info */
+        ErrorInfoKeeper eik;
 
         if (beganSavingState)
         {
@@ -1806,9 +1806,6 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         }
         else
             setMachineStateLocally (lastMachineState);
-
-        /* restore fetched error info */
-        setError (ei);
     }
 
     LogFlowThisFunc (("rc=%08X\n", rc));
@@ -2339,8 +2336,8 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
 
     if (FAILED (rc) && !taskCreationFailed)
     {
-        /* fetch any existing error info */
-        ErrorInfo ei;
+        /* preserve existing error info */
+        ErrorInfoKeeper eik;
 
         if (beganTakingSnapshot && takingSnapshotOnline)
         {
@@ -2362,9 +2359,6 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
         }
         else
             setMachineStateLocally (lastMachineState);
-
-        /* restore fetched error info */
-        setError (ei);
     }
 
     LogFlowThisFunc (("rc=%08X\n", rc));
@@ -6794,8 +6788,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             /*  On failure, destroy the VM */
             if (FAILED (hrc) || VBOX_FAILURE (vrc))
             {
-                /* preserve the current error info */
-                ErrorInfo ei;
+                /* preserve existing error info */
+                ErrorInfoKeeper eik;
 
                 /*
                  *  powerDown() will call VMR3Destroy() and do all necessary
@@ -6803,8 +6797,6 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                  */
                 HRESULT hrc2 = console->powerDown();
                 AssertComRC (hrc2);
-
-                setError (ei);
             }
         }
         else
@@ -6859,13 +6851,12 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
          *  vmstateChangeCallback() for that purpose.
          */
 
-        /* preserve the current error info */
-        ErrorInfo ei;
+        /* preserve existing error info */
+        ErrorInfoKeeper eik;
 
         Assert (console->mpVM == NULL);
         vmstateChangeCallback (NULL, VMSTATE_TERMINATED, VMSTATE_CREATING,
                                console);
-        setError (ei);
     }
 
     /*

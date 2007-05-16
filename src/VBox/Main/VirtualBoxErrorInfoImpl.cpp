@@ -25,15 +25,17 @@
 // public initializer/uninitializer for internal purposes only
 ////////////////////////////////////////////////////////////////////////////////
 
-void VirtualBoxErrorInfo::init (HRESULT aResultCode, const GUID &aIID,
-                                const BSTR aComponent, const BSTR aText,
-                                IVirtualBoxErrorInfo *aNext)
+HRESULT VirtualBoxErrorInfo::init (HRESULT aResultCode, const GUID &aIID,
+                                   const BSTR aComponent, const BSTR aText,
+                                   IVirtualBoxErrorInfo *aNext)
 {
     mResultCode = aResultCode;
     mIID = aIID;
     mComponent = aComponent;
     mText = aText;
     mNext = aNext;
+
+    return S_OK;
 }
 
 // IVirtualBoxErrorInfo properties
@@ -86,6 +88,31 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Next) (IVirtualBoxErrorInfo **aNext)
 
 #if defined (__WIN__)
 
+/**
+ *  Initializes itself by fetching error information from the given error info
+ *  object.
+ */
+HRESULT VirtualBoxErrorInfo::init (IErrorInfo *aInfo)
+{
+    AssertReturn (aInfo, E_FAIL);
+
+    HRESULT rc = S_OK;
+
+    /* We don't return a failure if talking to IErrorInfo fails below to
+     * protect ourselves from bad IErrorInfo implementations (the
+     * corresponding fields will simply remain null in this case). */
+
+    mResultCode = S_OK;
+    rc = aInfo->GetGUID (mIID.asOutParam());
+    AssertComRC (rc);
+    rc = aInfo->GetSource (mComponent.asOutParam());
+    AssertComRC (rc);
+    rc = aInfo->GetDescription (mText.asOutParam());
+    AssertComRC (rc);
+    
+    return S_OK;
+}
+
 // IErrorInfo methods
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -115,6 +142,30 @@ STDMETHODIMP VirtualBoxErrorInfo::GetSource (BSTR *source)
 }
 
 #else // !defined (__WIN__)
+
+/**
+ *  Initializes itself by fetching error information from the given error info
+ *  object.
+ */
+HRESULT VirtualBoxErrorInfo::init (nsIException *aInfo)
+{
+    AssertReturn (aInfo, E_FAIL);
+
+    HRESULT rc = S_OK;
+
+    /* We don't return a failure if talking to nsIException fails below to
+     * protect ourselves from bad nsIException implementations (the
+     * corresponding fields will simply remain null in this case). */
+
+    rc = aInfo->GetResult (&mResultCode);
+    AssertComRC (rc);
+    Utf8Str message;
+    rc = aInfo->GetMessage (message.asOutParam());
+    AssertComRC (rc);
+    mText = message;
+    
+    return S_OK;
+}
 
 // nsIException methods
 ////////////////////////////////////////////////////////////////////////////////

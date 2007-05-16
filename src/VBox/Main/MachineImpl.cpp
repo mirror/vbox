@@ -8950,8 +8950,8 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
             }
         }
 
-        /* fetch the current error info */
-        ErrorInfo mergeEi;
+        /* preserve existing error info */
+        ErrorInfoKeeper mergeEik;
         HRESULT mergeRc = rc;
 
         if (FAILED (rc))
@@ -9025,12 +9025,10 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
         }
         while (0);
 
-        /* restore the merge error if any */
+        /* restore the merge error if any (ErrorInfo will be restored
+         * automatically) */
         if (FAILED (mergeRc))
-        {
             rc = mergeRc;
-            setError (mergeEi);
-        }
     }
     while (0);
 
@@ -9038,8 +9036,8 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
     {
         if (!aTask.subTask)
         {
-            /* save current error info */
-            ErrorInfo ei;
+            /* preserve existing error info */
+            ErrorInfoKeeper eik;
 
             /* restore the machine state */
             setMachineState (aTask.state);
@@ -9054,9 +9052,6 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                 saveSettings (true /* aMarkCurStateAsModified */,
                               true /* aInformCallbacksAnyway */);
             }
-
-            /* restore current error info */
-            setError (ei);
         }
 
         /* set the result (this will try to fetch current error info on failure) */
@@ -9186,10 +9181,10 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             if (FAILED (rc))
             {
                 /* here we can still safely rollback, so do it */
-                ErrorInfo ei;
+                /* preserve existing error info */
+                ErrorInfoKeeper eik;
                 /* undo all changes */
                 rollback (false /* aNotify */);
-                setError (ei);
                 break;
             }
 
@@ -9305,7 +9300,8 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
 
     if (FAILED (rc))
     {
-        ErrorInfo ei;
+        /* preserve existing error info */
+        ErrorInfoKeeper eik;
 
         if (!stateRestored)
         {
@@ -9327,8 +9323,6 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             else
                 saveSettings();
         }
-
-        setError (ei);
     }
 
     if (!errorInSubtask)

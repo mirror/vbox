@@ -28,6 +28,8 @@
 #include "VBox/com/Guid.h"
 #include "VBox/com/assert.h"
 
+#include <iprt/memory> // for auto_copy_ptr
+
 struct IProgress;
 struct IVirtualBoxErrorInfo;
 
@@ -101,9 +103,10 @@ public:
      *  to instantiate (create) a component, so there is no any valid interface
      *  pointer available.
      */
-    explicit ErrorInfo() :
-        mIsBasicAvailable (false), mIsFullAvailable (false), mResultCode (S_OK)
-    { init(); }
+    explicit ErrorInfo()
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        { init(); }
 
     /**
      *  Constructs a new, "interfaceless" ErrorInfo instance that takes
@@ -117,9 +120,10 @@ public:
      *  @param aPtr pointer to the interface whose method returned an
      *              error
      */
-    template <class I> ErrorInfo (I *aPtr) :
-        mIsBasicAvailable (false), mIsFullAvailable (false), mResultCode (S_OK)
-    { init (aPtr, COM_IIDOF(I)); }
+    template <class I> ErrorInfo (I *aPtr)
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        { init (aPtr, COM_IIDOF(I)); }
 
     /**
      *  Constructs a new ErrorInfo instance from the smart interface pointer.
@@ -128,14 +132,16 @@ public:
      *  @param aPtr smart pointer to the interface whose method returned
      *              an error
      */
-    template <class I> ErrorInfo (const ComPtr <I> &aPtr) :
-        mIsBasicAvailable (false), mIsFullAvailable (false), mResultCode (S_OK)
-    { init (static_cast <I*> (aPtr), COM_IIDOF(I)); }
+    template <class I> ErrorInfo (const ComPtr <I> &aPtr)
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        { init (static_cast <I*> (aPtr), COM_IIDOF(I)); }
 
     /** Specialization for the IVirtualBoxErrorInfo smart pointer */
-    ErrorInfo (const ComPtr <IVirtualBoxErrorInfo> &aPtr) :
-        mIsBasicAvailable (false), mIsFullAvailable (false), mResultCode (S_OK)
-    { init (aPtr); }
+    ErrorInfo (const ComPtr <IVirtualBoxErrorInfo> &aPtr)
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        { init (aPtr); }
 
     /**
      *  Constructs a new ErrorInfo instance from the IVirtualBoxErrorInfo
@@ -145,11 +151,12 @@ public:
      *  @param aInfo    pointer to the IVirtualBoxErrorInfo interface that
      *                  holds error info to be fetched by this instance
      */
-    ErrorInfo (IVirtualBoxErrorInfo *aInfo) :
-        mIsBasicAvailable (false), mIsFullAvailable (false), mResultCode (S_OK)
-    { init (aInfo); }
+    ErrorInfo (IVirtualBoxErrorInfo *aInfo)
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        { init (aInfo); }
 
-    ~ErrorInfo();
+    virtual ~ErrorInfo();
 
     /**
      *  Returns whether basic error info is actually available for the current
@@ -200,6 +207,11 @@ public:
     const Bstr &getText() const { return mText; }
 
     /**
+     *  Returns the next error information object or @c NULL if there is none.
+     */
+    const ErrorInfo *getNext() const { return mNext.get(); }
+
+    /**
      *  Returns the name of the interface that defined the error
      */
     const Bstr &getInterfaceName() const { return mInterfaceName; }
@@ -232,31 +244,34 @@ public:
 
 protected:
 
-    ErrorInfo (bool dummy) :
-        mIsBasicAvailable (false), mIsFullAvailable (false), mResultCode (S_OK)
-    {}
+    ErrorInfo (bool aDummy)
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        {}
 
-    void init();
-    void init (IUnknown *i, const GUID &iid);
-    void init (IVirtualBoxErrorInfo *info);
+    void init (bool aKeepObj = false);
+    void init (IUnknown *aUnk, const GUID &aIID, bool aKeepObj = false);
+    void init (IVirtualBoxErrorInfo *aInfo);
 
-private:
-
-    bool mIsBasicAvailable;
-    bool mIsFullAvailable;
+    bool mIsBasicAvailable : 1;
+    bool mIsFullAvailable : 1;
 
     HRESULT mResultCode;
     Guid mInterfaceID;
     Bstr mComponent;
     Bstr mText;
 
+    cppx::auto_copy_ptr <ErrorInfo> mNext;
+
     Bstr mInterfaceName;
     Guid mCalleeIID;
     Bstr mCalleeName;
+
+    ComPtr <IUnknown> mErrorInfo;
 };
 
 /**
- *  A convenience subclass of ErrorInfo, that, given an IProgress interface
+ *  A convenience subclass of ErrorInfo that, given an IProgress interface
  *  pointer, reads its errorInfo attribute and uses the returned
  *  IVirtualBoxErrorInfo instance to construct itself.
  */
@@ -274,6 +289,66 @@ public:
      *  @param  progress    the progress object representing a failed operation
      */
     ProgressErrorInfo (IProgress *progress);
+};
+
+/**
+ *  A convenience subclass of ErrorInfo that allows to preserve the current
+ *  error info. Instances of this class fetch an error info object set on the
+ *  current thread and keep a reference to it, which allows to restore it
+ *  later using the #restore() method. This is useful to preserve error
+ *  information returned by some method for the duration of making another COM
+ *  call that may set its own error info and overwrite the existing
+ *  one. Preserving and restoring error information makes sense when some
+ *  method wants to return error information set by other call as its own
+ *  error information while it still needs to make another call before return.
+ *
+ *  The usage pattern is:
+ *  <code>
+ *      rc = foo->method();
+ *      if (FAILED (rc))
+ *      {
+ *           ErrorInfoKeeper eik;
+ *           ...
+ *           // bar may return error info as well
+ *           bar->method();
+ *           ...
+ *           // restore error info from foo to return it to the caller
+ *           eik.restore();
+ *           return rc;
+ *      }
+ *  </code>
+ */
+class ErrorInfoKeeper : public ErrorInfo
+{
+public:
+
+    /** Constructs a new instance that will fetch the current error info. */
+    ErrorInfoKeeper() : ErrorInfo (false), mForgot (false)
+        { init (true /* aKeepObj */); }
+
+    /**
+     *  Destroys this instance and automatically calls #restore() which will
+     *  either restorr error info fetched by the constructor or do nothing
+     *  if #forget() was called before destruction. */
+    ~ErrorInfoKeeper() { if (!mForgot) restore(); }
+
+    /**
+     *  Restores error info fetched by the constructor and forgets it
+     *  afterwards.
+     *
+     *  @return COM result of the restore operation.
+     */
+    HRESULT restore();
+
+    /**
+     *  Forgets error info fetched by the constructor which prevents it from
+     *  being restored by #restore() or by the destructor.
+     */
+    void forget() { mForgot = 0; }
+
+private:
+
+    bool mForgot : 1;
 };
 
 }; // namespace com
