@@ -497,8 +497,7 @@
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
-        <comment>
-Floppy tooltip</comment>
+        <comment>Floppy tooltip</comment>
         <translation type="unfinished">Host-Laufwerk</translation>
     </message>
     <message>
@@ -512,8 +511,7 @@ Floppy tooltip</comment>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
-        <comment>
-DVD-ROM tooltip</comment>
+        <comment>DVD-ROM tooltip</comment>
         <translation type="unfinished">Host-Laufwerk</translation>
     </message>
     <message>
@@ -621,8 +619,7 @@ DVD-ROM tooltip</comment>
     </message>
     <message>
         <source>Adapter %1</source>
-        <comment>
-network</comment>
+        <comment>network</comment>
         <translation>Adapter %1</translation>
     </message>
     <message>
@@ -684,7 +681,7 @@ network</comment>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F1</translation>
     </message>
     <message>
         <source>Invoke dialog&apos;s help</source>
@@ -696,7 +693,7 @@ network</comment>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+O</translation>
     </message>
     <message>
         <source>Accept dialog</source>
@@ -970,7 +967,7 @@ network</comment>
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
@@ -1488,7 +1485,7 @@ network</comment>
     </message>
     <message>
         <source> USB </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>2</source>
@@ -1592,7 +1589,7 @@ network</comment>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
@@ -1608,7 +1605,7 @@ network</comment>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -2300,8 +2297,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
-        <comment>
-error info</comment>
+        <comment>error info</comment>
         <translation type="unfinished">Fehlercode:</translation>
     </message>
     <message>
@@ -2376,8 +2372,7 @@ error info</comment>
     </message>
     <message>
         <source>&amp;Preferences...</source>
-        <comment>
-global settings</comment>
+        <comment>global settings</comment>
         <translation type="unfinished">&amp;Globale Einstellungen...</translation>
     </message>
     <message>
@@ -2859,7 +2854,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -3420,7 +3415,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+P</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+A</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -3620,7 +3615,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>

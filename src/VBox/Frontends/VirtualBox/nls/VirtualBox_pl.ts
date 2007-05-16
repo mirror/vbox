@@ -433,7 +433,7 @@
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Otwórz przeglądarkę i przejdź do strony VirtualBox</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
@@ -449,7 +449,7 @@
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Powoduje, że wszystkie zaznaczone ostrzeżenia i wiadomości, nie będą pokazywane ponownie</translation>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
