@@ -169,7 +169,7 @@ VBOX_WITH_VRDP_MC = 1
 VBOX_WITH_VRDP_AUTHMOD = 1
 # build enhanced version of rdesktop
 VBOX_WITH_VRDP_RDESKTOP = 1
-ifeq ($(filter-out darwin os2,$(BUILD_TARGET)),)
+ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 win.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
 # build the support driver & library without IDT patching.
 ## @todo invert this!
 VBOX_WITHOUT_IDT_PATCHING = 1
