@@ -873,6 +873,9 @@ extern "C" int main(void)
         fi
       fi
     done
+    if (($found_qt==1)); then
+      break
+    fi
   done
   if (($found_qt!=1)); then
     echo -e "\n  Qt not found at \"$QTDIR\" or Qt headers not found"
