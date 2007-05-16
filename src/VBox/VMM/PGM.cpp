@@ -157,6 +157,7 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
+static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static int               pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
@@ -446,20 +447,6 @@ static const DBGCCMD    g_aCmds[] =
 
 
 /**
- * The only purpose of this function is to clear the fNoMorePhysWrites flag
- * which prevents writing to physical memory once pgmR3Save() is called.
- */
-#ifdef VBOX_STRICT
-DECLCALLBACK(void)
-PGMR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE aState, VMSTATE aOldState, void *aUser)
-{
-    if (aState == VMSTATE_RUNNING)
-        pVM->pgm.s.fNoMorePhysWrites = false;
-}
-#endif
-
-
-/**
  * Initiates the paging of VM.
  *
  * @returns VBox status code.
@@ -494,7 +481,7 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     }
 
 #ifdef VBOX_STRICT
-    VMR3AtStateRegister (pVM, PGMR3ResetNoMorePhysWritesFlag, NULL);
+    VMR3AtStateRegister(pVM, pgmR3ResetNoMorePhysWritesFlag, NULL);
 #endif
 
     /*
@@ -798,14 +785,14 @@ static int pgmR3InitPaging(PVM pVM)
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
 LogRel(("Debug: HCPhys32BitPD=%VHp aHCPhysPaePDs={%VHp,%VHp,%VHp,%VHp} HCPhysPaePDPTR=%VHp HCPhysPaePML4=%VHp\n",
-        pVM->pgm.s.HCPhys32BitPD, pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3], 
+        pVM->pgm.s.HCPhys32BitPD, pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
         pVM->pgm.s.HCPhysPaePDPTR, pVM->pgm.s.HCPhysPaePML4));
 LogRel(("Debug: HCPhysInterPD=%VHp HCPhysInterPaePDPTR=%VHp HCPhysInterPaePML4=%VHp\n",
         pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPTR, pVM->pgm.s.HCPhysInterPaePML4));
 LogRel(("Debug: apInterPTs={%VHp,%VHp} apInterPaePTs={%VHp,%VHp} apInterPaePDs={%VHp,%VHp,%VHp,%VHp} pInterPaePDPTR64=%VHp\n",
         MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[1]),
         MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[1]),
-        MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[1]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[2]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[3]), 
+        MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[1]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[2]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[3]),
         MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPTR64)));
 #endif
 
@@ -1333,6 +1320,19 @@ PGMR3DECL(int) PGMR3Term(PVM pVM)
 }
 
 
+#ifdef VBOX_STRICT
+/**
+ * VM state change callback for clearing fNoMorePhysWrites after
+ * a snapshot has been created.
+ */
+static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser)
+{
+    if (enmState == VMSTATE_RUNNING)
+        pVM->pgm.s.fNoMorePhysWrites = false;
+}
+#endif
+
+
 /**
  * Execute state save operation.
  *
@@ -1344,10 +1344,8 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
     PPGM pPGM = &pVM->pgm.s;
 
-#ifdef VBOX_STRICT
     /* No more writes to physical memory after this point! */
     pVM->pgm.s.fNoMorePhysWrites = true;
-#endif
 
     /*
      * Save basic data (required / unaffected by relocation).

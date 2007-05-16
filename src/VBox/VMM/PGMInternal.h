@@ -719,7 +719,7 @@ typedef struct PGMPOOLPAGE
     bool                fCR3Mix;
 #if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
     bool                Alignment[4];   /**< Align the structure size on a 64-bit boundrary. */
-#endif 
+#endif
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 
 
@@ -1269,7 +1269,7 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,  pfnGCShwModifyPDEByIndex,(PVM pVM, uint32_t iPD, uint64_t fFlags, uint64_t fMask));
 #if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
     RTGCPTR                    alignment0; /**< structure size alignment. */
-#endif 
+#endif
 
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1342,7 +1342,7 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
     RTGCPTR                         alignment2; /**< structure size alignment. */
-#endif 
+#endif
     /** @} */
 
     /** Pointer to SHW+GST mode data (function pointers).
@@ -1457,6 +1457,10 @@ typedef struct PGM
     /** Shadow Page Pool - GC Ptr. */
     GCPTRTYPE(PPGMPOOL)             pPoolGC;
 
+    /** We're not in a state which permits writes to guest memory.
+     * (Only used in strict builds.) */
+    bool                            fNoMorePhysWrites;
+
     /** Flush the cache on the next access. */
     bool                            fPhysCacheFlushPending;
 /** @todo r=bird: Fix member names!*/
@@ -1464,12 +1468,6 @@ typedef struct PGM
     PGMPHYSCACHE                    pgmphysreadcache;
     /** PGMPhysWrite cache */
     PGMPHYSCACHE                    pgmphyswritecache;
-
-#ifdef VBOX_STRICT
-    /** Physical memory was already saved, no more writes which wouldn't be part of the
-     *  saved state! */
-    bool                            fNoMorePhysWrites;
-#endif
 
     /** @name Release Statistics
      * @{ */
