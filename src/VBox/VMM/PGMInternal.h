@@ -1465,6 +1465,12 @@ typedef struct PGM
     /** PGMPhysWrite cache */
     PGMPHYSCACHE                    pgmphyswritecache;
 
+#ifdef VBOX_STRICT
+    /** Physical memory was already saved, no more writes which wouldn't be part of the
+     *  saved state! */
+    bool                            fNoMorePhysWrites;
+#endif
+
     /** @name Release Statistics
      * @{ */
     /** The number of times the guest has switched mode since last reset or statistics reset. */
