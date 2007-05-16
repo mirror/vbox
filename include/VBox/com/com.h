@@ -37,11 +37,22 @@ namespace com
 HRESULT Initialize();
 
 /**
- *  Shutdowns the COM runtime.
+ *  Shuts down the COM runtime.
  *  Must be called on every thread before termination.
- *  No any COM calls may be made after this method returns.
+ *  No COM calls may be made after this method returns.
  */
 void Shutdown();
+
+/**
+ *  Resolves a given interface ID to a string containing the interface name.
+ *  If, for some reason, the given IID cannot be resolved to a name, a NULL
+ *  string is returned. A non-NULL string returned by this funciton must be
+ *  freed using SysFreeString().
+ *
+ *  @param aIID     ID of the interface to get a name for
+ *  @param aName    Resolved interface name or @c NULL on error
+ */
+void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName);
 
 }; // namespace com
 

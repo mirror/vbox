@@ -1031,25 +1031,44 @@ const char *VirtualBoxSupportTranslation <C>::className = NULL;
  */
 class VirtualBoxSupportErrorInfoImplBase
 {
+    static HRESULT setErrorInternal (HRESULT aResultCode, const GUID &aIID,
+                                     const Bstr &aComponent, const Bstr &aText,
+                                     bool aPreserve);
+
 protected:
 
-    static HRESULT setError (HRESULT resultCode, const GUID &iid,
-                             const Bstr &component,
-                             const Bstr &text);
-
-    static HRESULT setError (HRESULT resultCode, const GUID &iid,
-                             const Bstr &component,
-                             const char *text, va_list args);
-
-    inline static HRESULT setError (const com::ErrorInfo &ei)
+    inline static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
+                                    const Bstr &aComponent,
+                                    const Bstr &aText)
     {
-        if (!ei.isBasicAvailable())
-            return S_OK;
+        return setErrorInternal (aResultCode, aIID, aComponent, aText,
+                                 false /* aPreserve */);
+    }
 
-        Assert (FAILED (ei.getResultCode()));
-        Assert (!ei.getText().isEmpty());
-        return setError (ei.getResultCode(), ei.getInterfaceID(),
-                         ei.getComponent(), ei.getText());
+    inline static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
+                                    const Bstr &aComponent,
+                                    const Bstr &aText)
+    {
+        return setErrorInternal (aResultCode, aIID, aComponent, aText,
+                                 true /* aPreserve */);
+    }
+
+    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
+                             const Bstr &aComponent,
+                             const char *aText, va_list aArgs)
+    {
+        return setErrorInternal (aResultCode, aIID, aComponent,
+                                 Utf8StrFmt (aText, aArgs),
+                                 false /* aPreserve */);
+    }
+
+    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
+                             const Bstr &aComponent,
+                             const char *aText, va_list aArgs)
+    {
+        return setErrorInternal (aResultCode, aIID, aComponent,
+                                 Utf8StrFmt (aText, aArgs),
+                                 true /* aPreserve */);
     }
 };
 
@@ -1149,10 +1168,10 @@ protected:
      *  taking their values from the template parameters. See
      *  #setError (HRESULT, const char *, ...) for an example.
      *
-     *  @param  resultCode  result (error) code, must not be S_OK
-     *  @param  iid         IID of the intrface that defines the error
-     *  @param  component   name of the component that generates the error
-     *  @param  text        error message (must not be null), an RTStrPrintf-like
+     *  @param  aResultCode result (error) code, must not be S_OK
+     *  @param  aIID        IID of the intrface that defines the error
+     *  @param  aComponent  name of the component that generates the error
+     *  @param  aText       error message (must not be null), an RTStrPrintf-like
      *                      format string in UTF-8 encoding
      *  @param  ...         list of arguments for the format string
      *
@@ -1161,14 +1180,32 @@ protected:
      *      creating error info itself, that error is returned instead of the
      *      error argument.
      */
-    inline static HRESULT setError (HRESULT resultCode, const GUID &iid,
-                                    const wchar_t *component,
-                                    const char *text, ...)
+    inline static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
+                                    const wchar_t *aComponent,
+                                    const char *aText, ...)
     {
         va_list args;
-        va_start (args, text);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError (
-            resultCode, iid, component, text, args);
+        va_start (args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
+            (aResultCode, aIID, aComponent, aText, args);
+        va_end (args);
+        return rc;
+    }
+
+    /**
+     *  This method is the same as #setError() except that it preserves the
+     *  error info object (if any) set for the current thread before this
+     *  method is called by storing it in the IVirtualBoxErrorInfo::next
+     *  attribute of the new error info object.
+     */
+    inline static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
+                                    const wchar_t *aComponent,
+                                    const char *aText, ...)
+    {
+        va_list args;
+        va_start (args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+            (aResultCode, aIID, aComponent, aText, args);
         va_end (args);
         return rc;
     }
@@ -1196,12 +1233,28 @@ protected:
      *      return rc;
      *  </code>
      */
-    inline static HRESULT setError (HRESULT resultCode, const char *text, ...)
+    inline static HRESULT setError (HRESULT aResultCode, const char *aText, ...)
     {
         va_list args;
-        va_start (args, text);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError (
-            resultCode, COM_IIDOF(I), C::getComponentName(), text, args);
+        va_start (args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args);
+        va_end (args);
+        return rc;
+    }
+
+    /**
+     *  This method is the same as #setError() except that it preserves the
+     *  error info object (if any) set for the current thread before this
+     *  method is called by storing it in the IVirtualBoxErrorInfo::next
+     *  attribute of the new error info object.
+     */
+    inline static HRESULT addError (HRESULT aResultCode, const char *aText, ...)
+    {
+        va_list args;
+        va_start (args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args);
         va_end (args);
         return rc;
     }
@@ -1215,10 +1268,25 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  and #setError (HRESULT, const char *, ...)  for details.
      */
-    inline static HRESULT setErrorV (HRESULT resultCode, const char *text, va_list args)
+    inline static HRESULT setErrorV (HRESULT aResultCode, const char *aText,
+                                     va_list aArgs)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError (
-            resultCode, COM_IIDOF(I), C::getComponentName(), text, args);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
+        return rc;
+    }
+
+    /**
+     *  This method is the same as #setErrorV() except that it preserves the
+     *  error info object (if any) set for the current thread before this
+     *  method is called by storing it in the IVirtualBoxErrorInfo::next
+     *  attribute of the new error info object.
+     */
+    inline static HRESULT addErrorV (HRESULT aResultCode, const char *aText,
+                                     va_list aArgs)
+    {
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
         return rc;
     }
 
@@ -1234,10 +1302,23 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  and #setError (HRESULT, const char *, ...)  for details.
      */
-    inline static HRESULT setErrorBstr (HRESULT resultCode, const Bstr &text)
+    inline static HRESULT setErrorBstr (HRESULT aResultCode, const Bstr &aText)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError (
-            resultCode, COM_IIDOF(I), C::getComponentName(), text);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
+        return rc;
+    }
+
+    /**
+     *  This method is the same as #setErrorBstr() except that it preserves the
+     *  error info object (if any) set for the current thread before this
+     *  method is called by storing it in the IVirtualBoxErrorInfo::next
+     *  attribute of the new error info object.
+     */
+    inline static HRESULT addErrorBstr (HRESULT aResultCode, const Bstr &aText)
+    {
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
         return rc;
     }
 
@@ -1250,28 +1331,32 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  for details.
      */
-    inline static HRESULT setError (HRESULT resultCode, const GUID &iid,
-                                    const char *text, ...)
+    inline static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
+                                    const char *aText, ...)
     {
         va_list args;
-        va_start (args, text);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError (
-            resultCode, iid, C::getComponentName(), text, args);
+        va_start (args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
+            (aResultCode, aIID, C::getComponentName(), aText, args);
         va_end (args);
         return rc;
     }
 
     /**
-     *  Sets the error information for the current thread using the error
-     *  information previously fetched using an ErrorInfo instance.
-     *  This is useful, for instance, if you want to keep the error information
-     *  returned by some interface's method, but need to call another method
-     *  of some interface prior to returning from your method (calling
-     *  another method will normally reset the current error information).
+     *  This method is the same as #setError() except that it preserves the
+     *  error info object (if any) set for the current thread before this
+     *  method is called by storing it in the IVirtualBoxErrorInfo::next
+     *  attribute of the new error info object.
      */
-    inline static HRESULT setError (const com::ErrorInfo &ei)
+    inline static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
+                                    const char *aText, ...)
     {
-        return VirtualBoxSupportErrorInfoImplBase::setError (ei);
+        va_list args;
+        va_start (args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+            (aResultCode, aIID, C::getComponentName(), aText, args);
+        va_end (args);
+        return rc;
     }
 
 private:

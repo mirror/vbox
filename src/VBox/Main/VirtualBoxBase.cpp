@@ -640,28 +640,66 @@ bool VirtualBoxSupportTranslationBase::cutClassNameFrom__PRETTY_FUNCTION__ (char
 // VirtualBoxSupportErrorInfoImplBase methods
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ *  Sets error info for the current thread. This is an internal function that
+ *  gets eventually called by all public variants.  If @a aPreserve is
+ *  @c true, then the current error info object set on the thread before this
+ *  method is called will be preserved in the IVirtualBoxErrorInfo::next
+ *  attribute of the new error info object that will be then set as the
+ *  current error info object.
+ */
 // static
-HRESULT VirtualBoxSupportErrorInfoImplBase::setError (
-    HRESULT resultCode, const GUID &iid,
-    const Bstr &component,
-    const Bstr &text)
+HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
+    HRESULT aResultCode, const GUID &aIID,
+    const Bstr &aComponent, const Bstr &aText,
+    bool aPreserve)
 {
-    LogRel (("ERROR [COM]: rc=%#08x IID={%Vuuid} component={%ls} text={%ls}\n",
-              resultCode, &iid, component.raw(), text.raw()));
+    LogRel (("ERROR [COM]: aRC=%#08x aIID={%Vuuid} aComponent={%ls} aText={%ls} "
+             "aPreserve=%RTbool\n",
+             aResultCode, &aIID, aComponent.raw(), aText.raw(), aPreserve));
 
     /* these are mandatory, others -- not */
-    Assert (FAILED (resultCode));
-    Assert (!text.isEmpty());
-    if (SUCCEEDED (resultCode) || text.isEmpty())
-        return E_FAIL;
+    AssertReturn (FAILED (aResultCode), E_FAIL);
+    AssertReturn (!aText.isEmpty(), E_FAIL);
 
-    ComObjPtr <VirtualBoxErrorInfo> info;
-    HRESULT rc = info.createObject();
-    if (SUCCEEDED (rc))
+    HRESULT rc = S_OK;
+
+    do
     {
-        info->init (resultCode, iid, component, text);
+        ComObjPtr <VirtualBoxErrorInfo> info;
+        rc = info.createObject();
+        CheckComRCBreakRC (rc);
 
 #if defined (__WIN__)
+
+        ComPtr <IVirtualBoxErrorInfo> curInfo;
+        if (aPreserve)
+        {
+            /* get the current error info if any */
+            ComPtr <IErrorInfo> err;
+            rc = ::GetErrorInfo (0, err.asOutParam());
+            CheckComRCBreakRC (rc);
+            rc = err.queryInterfaceTo (curInfo.asOutParam());
+            if (FAILED (rc))
+            {
+                /* create a IVirtualBoxErrorInfo wrapper for the native
+                 * IErrorInfo object */
+                ComObjPtr <VirtualBoxErrorInfo> wrapper;
+                rc = wrapper.createObject();
+                if (SUCCEEDED (rc))
+                {
+                    rc = wrapper->init (err);
+                    if (SUCCEEDED (rc))
+                        curInfo = wrapper;
+                }
+            }
+        }
+        /* On failure, curInfo will stay null */
+        Assert (SUCCEEDED (rc) || curInfo.isNull());
+
+        /* set the current error info and preserve the previous one if any */
+        rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
+        CheckComRCBreakRC (rc);
 
         ComPtr <IErrorInfo> err;
         rc = info.queryInterfaceTo (err.asOutParam());
@@ -676,13 +714,41 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setError (
         {
             nsCOMPtr <nsIExceptionManager> em;
             rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
-            if (NS_SUCCEEDED (rc))
+            CheckComRCBreakRC (rc);
+
+            ComPtr <IVirtualBoxErrorInfo> curInfo;
+            if (aPreserve)
             {
+                /* get the current error info if any */
                 ComPtr <nsIException> ex;
-                rc = info.queryInterfaceTo (ex.asOutParam());
-                if (SUCCEEDED (rc))
-                    rc = em->SetCurrentException (ex);
+                rc = em->GetCurrentException (ex.asOutParam());
+                CheckComRCBreakRC (rc);
+                rc = ex.queryInterfaceTo (curInfo.asOutParam());
+                if (FAILED (rc))
+                {
+                    /* create a IVirtualBoxErrorInfo wrapper for the native
+                     * nsIException object */
+                    ComObjPtr <VirtualBoxErrorInfo> wrapper;
+                    rc = wrapper.createObject();
+                    if (SUCCEEDED (rc))
+                    {
+                        rc = wrapper->init (ex);
+                        if (SUCCEEDED (rc))
+                            curInfo = wrapper;
+                    }
+                }
             }
+            /* On failure, curInfo will stay null */
+            Assert (SUCCEEDED (rc) || curInfo.isNull());
+
+            /* set the current error info and preserve the previous one if any */
+            rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
+            CheckComRCBreakRC (rc);
+
+            ComPtr <nsIException> ex;
+            rc = info.queryInterfaceTo (ex.asOutParam());
+            if (SUCCEEDED (rc))
+                rc = em->SetCurrentException (ex);
         }
         else if (rc == NS_ERROR_UNEXPECTED)
         {
@@ -704,20 +770,11 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setError (
 
 #endif // !defined (__WIN__)
     }
+    while (0);
 
     AssertComRC (rc);
 
-    return SUCCEEDED (rc) ? resultCode : rc;
-}
-
-// static
-HRESULT VirtualBoxSupportErrorInfoImplBase::setError (
-    HRESULT resultCode, const GUID &iid,
-    const Bstr &component,
-    const char *text, va_list args)
-{
-    return VirtualBoxSupportErrorInfoImplBase::setError (
-        resultCode, iid, component, Utf8StrFmt (text, args));
+    return SUCCEEDED (rc) ? aResultCode : rc;
 }
 
 // VirtualBoxBaseWithChildren methods
