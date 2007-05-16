@@ -59,6 +59,13 @@
 #define USAGE_UNLOADSYMS            BIT64(30)
 #define USAGE_SETVDIUUID            BIT64(31)
 #define USAGE_CONVERTDD             BIT64(32)
+#ifdef VBOX_OSE
+#define USAGE_LISTPARTITIONS        (0)
+#define USAGE_CREATERAWVMDK         (0)
+#else /* !VBOX_OSE */
+#define USAGE_LISTPARTITIONS        BIT64(34)
+#define USAGE_CREATERAWVMDK         BIT64(34)
+#endif /* !VBOX_OSE */
 #define USAGE_ALL                   (~(uint64_t)0)
 
 typedef uint64_t USAGECATEGORY;

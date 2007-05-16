@@ -46,6 +46,11 @@
 
 #include "VBoxManage.h"
 
+#ifndef VBOX_OSE
+HRESULT CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+#endif /* !VBOX_OSE */
+
 using namespace com;
 
 /** flag whether we're in internal mode */
@@ -60,7 +65,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
              "\n"
              "Commands:\n"
              "\n"
-             "%s%s%s"
+             "%s%s%s%s%s"
              "WARNING: This is a development tool and shall only be used to analyse\n"
              "         problems. It is completely unsupported and will change in\n"
              "         incompatible ways without warning.\n",
@@ -80,6 +85,23 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "  setvdiuuid <filepath>\n"
                 "       Assigns a new UUID to the given VDI file. This way, multiple copies\n"
                 "       of VDI containers can be registered.\n"
+                "\n"
+                : "",
+            (u64Cmd & USAGE_LISTPARTITIONS) ?
+                "  listpartitions -rawdisk <diskname>\n"
+                "       Lists all partitions on <diskname>.\n"
+                "\n"
+                : "",
+            (u64Cmd & USAGE_CREATERAWVMDK) ?
+                "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
+                "                [-partitions <list of partition numbers>]\n"
+                "                [-register]\n"
+                "       Creates a new VMDK image which gives access to an entite host disk or\n"
+                "       some partitions of a host disk. The diskname is on Linux e.g. /dev/sda,\n"
+                "       and on Windows e.g. \\\\.\\PhysicalDisk0).\n"
+                "       Optionally the created image can be immediately registered.\n"
+                "       The necessary partition numbers can be queried with\n"
+                "         VBoxManage internalcommands listpartitions\n"
                 "\n"
                 : ""
              );
@@ -391,6 +413,12 @@ int handleInternalCommands(int argc, char *argv[],
     //    return CmdUnloadSyms(argc - 1 , &argv[1]);
     if (!strcmp(pszCmd, "setvdiuuid"))
         return handleSetVDIUUID(argc - 1, &argv[1], aVirtualBox, aSession);
+#ifndef VBOX_OSE
+    if (!strcmp(pszCmd, "listpartitions"))
+        return CmdListPartitions(argc - 1, &argv[1], aVirtualBox, aSession);
+    if (!strcmp(pszCmd, "createrawvmdk"))
+        return CmdCreateRawVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
+#endif /* !VBOX_OSE */
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[0]).raw());

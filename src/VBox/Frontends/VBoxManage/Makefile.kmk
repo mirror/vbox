@@ -29,6 +29,10 @@ VBoxManage_TEMPLATE   = VBOXMAINCLIENT
 VBoxManage_SOURCES    = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp
+ifndef VBOX_OSE
+VBoxManage_SOURCES   += \
+	VBoxInternalManageVmdk.cpp
+endif
 ifdef VBOX_WITH_VRDP
  VBoxManage_DEFS     += VBOX_VRDP
 endif
