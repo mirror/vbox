@@ -319,6 +319,17 @@ void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)
     gotSomething |= info.isOk();
     gotAll &= info.isOk();
 
+    CVirtualBoxErrorInfo next = info.GetNext();
+    if (info.isOk() && !next.isNull())
+    {
+        mNext.reset (new COMErrorInfo (next));
+        Assert (mNext.get());
+    }
+    else
+        mNext.reset();
+    gotSomething |= info.isOk();
+    gotAll &= info.isOk();
+
     mIsBasicAvailable = gotSomething;
     mIsFullAvailable = gotAll;
 

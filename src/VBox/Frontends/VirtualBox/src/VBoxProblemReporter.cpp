@@ -1502,33 +1502,41 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
 }
 
 /* static */
-QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &info,
-                                              HRESULT wrapperRC)
+QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &aInfo,
+                                              HRESULT aWrapperRC /* = S_OK */)
 {
-    QString formatted = "<qt>";
+    QString formatted = doFormatErrorInfo (aInfo, aWrapperRC);
+    return QString ("<qt>%1</qt>").arg (formatted);
+}
 
-    if (info.text())
+/* static */
+QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
+                                                HRESULT aWrapperRC /* = S_OK */)
+{
+    QString formatted;
+
+    if (aInfo.text())
         formatted += QString ("<table bgcolor=#FFFFFF border=0 cellspacing=0 "
                               "cellpadding=0 width=100%>"
                               "<tr><td><p>%1.</p></td></tr>"
                               "</table><p></p>")
-                              .arg (VBoxGlobal::highlight (info.text()));
+                              .arg (VBoxGlobal::highlight (aInfo.text()));
 
     formatted += "<table bgcolor=#EEEEEE border=0 cellspacing=0 "
                  "cellpadding=0 width=100%>";
 
     bool haveResultCode = false;
 
-    if (info.isBasicAvailable())
+    if (aInfo.isBasicAvailable())
     {
 #if defined (Q_WS_WIN)
-        haveResultCode = info.isFullAvailable();
+        haveResultCode = aInfo.isFullAvailable();
         bool haveComponent = true;
         bool haveInterfaceID = true;
 #else // !Q_WS_WIN
         haveResultCode = true;
-        bool haveComponent = info.isFullAvailable();
-        bool haveInterfaceID = info.isFullAvailable();
+        bool haveComponent = aInfo.isFullAvailable();
+        bool haveInterfaceID = aInfo.isFullAvailable();
 #endif
 
         if (haveResultCode)
@@ -1536,65 +1544,69 @@ QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &info,
 #if defined (Q_WS_WIN)
             /* format the error code, masking off the top 16 bits */
             PCRTWINERRMSG msg;
-            msg = RTErrWinGet(info.resultCode());
+            msg = RTErrWinGet(aInfo.resultCode());
             /* try again with masked off top 16bit if not found */
             if (!msg->iCode)
-                msg = RTErrWinGet(info.resultCode() & 0xFFFF);
+                msg = RTErrWinGet(aInfo.resultCode() & 0xFFFF);
             formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
                 .arg (tr ("Result&nbsp;Code: ", "error info"))
                 .arg (msg->pszDefine)
-                .arg (uint (info.resultCode()), 8, 16);
+                .arg (uint (aInfo.resultCode()), 8, 16);
 #else
             formatted += QString ("<tr><td>%1</td><td><tt>0x%2</tt></td></tr>")
                 .arg (tr ("Result&nbsp;Code: ", "error info"))
-                .arg (uint (info.resultCode()), 8, 16);
+                .arg (uint (aInfo.resultCode()), 8, 16);
 #endif
         }
 
         if (haveComponent)
             formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
-                .arg (tr ("Component: ", "error info"), info.component());
+                .arg (tr ("Component: ", "error info"), aInfo.component());
 
         if (haveInterfaceID)
         {
-            QString s = info.interfaceID();
-            if (info.interfaceName())
-                s = info.interfaceName() + ' ' + s;
+            QString s = aInfo.interfaceID();
+            if (aInfo.interfaceName())
+                s = aInfo.interfaceName() + ' ' + s;
             formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
                 .arg (tr ("Interface: ", "error info"), s);
         }
 
-        if (!info.calleeIID().isNull() && info.calleeIID() != info.interfaceID())
+        if (!aInfo.calleeIID().isNull() && aInfo.calleeIID() != aInfo.interfaceID())
         {
-            QString s = info.calleeIID();
-            if (info.calleeName())
-                s = info.calleeName() + ' ' + s;
+            QString s = aInfo.calleeIID();
+            if (aInfo.calleeName())
+                s = aInfo.calleeName() + ' ' + s;
             formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
                 .arg (tr ("Callee: ", "error info"), s);
         }
     }
 
-    if (FAILED (wrapperRC) &&
-        (!haveResultCode || wrapperRC != info.resultCode()))
+    if (FAILED (aWrapperRC) &&
+        (!haveResultCode || aWrapperRC != aInfo.resultCode()))
     {
 #if defined (Q_WS_WIN)
         /* format the error code */
         PCRTWINERRMSG msg;
-        msg = RTErrWinGet(wrapperRC);
+        msg = RTErrWinGet(aWrapperRC);
         /* try again with masked off top 16bit if not found */
         if (!msg->iCode)
-            msg = RTErrWinGet(wrapperRC & 0xFFFF);
+            msg = RTErrWinGet(aWrapperRC & 0xFFFF);
         formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
             .arg (tr ("Callee&nbsp;RC: ", "error info"))
             .arg (msg->pszDefine)
-            .arg (uint (wrapperRC), 8, 16);
+            .arg (uint (aWrapperRC), 8, 16);
 #else
         formatted += QString ("<tr><td>%1</td><td><tt>0x%2</tt></td></tr>")
             .arg (tr ("Callee&nbsp;RC: ", "error info"))
-            .arg (uint (wrapperRC), 8, 16);
+            .arg (uint (aWrapperRC), 8, 16);
 #endif
     }
-    formatted += "</table></qt>";
+    formatted += "</table>";
+
+    if (aInfo.next())
+        formatted = doFormatErrorInfo (*aInfo.next()) +  "<p></p>" +
+                    formatted;
 
     return formatted;
 }
