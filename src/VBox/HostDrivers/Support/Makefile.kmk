@@ -116,6 +116,45 @@ VBoxDrv_LIBS          = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+
+INSTALLS += VBoxDrvInf
+VBoxDrvInf_INST = $(INST_BIN)
+ ifndef VBOX_LATER_TODAY #ndef VBOX_SIGNING_MODE
+VBoxDrvInf_SOURCES = win32/VBoxDrv.inf
+ else
+VBoxDrvInf_SOURCES = \
+	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf \
+    $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
+
+VBoxDrvInf_CLEAN += \
+	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat \
+	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
+	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf
+
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: win32/VBoxDrv.inf Makefile.kmk
+	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+	$(SED) \
+		-e 's/^\;CatalogFile=/CatalogFile.NTamd64=/' \
+		-e 's/^\%INNOTEK%=INNOTEK *$$/%INNOTEK%=INNOTEK, NTamd64/' \
+		-e 's/^\[VBoxDrv_Service\] *$$/\[VBoxDrv_Service.NTamd64\]/' \
+		-e 's/^\;amd64 *//' \
+		 $< > $@
+else
+	$(SED) -e 's/^\;CatalogFile=/CatalogFile=/' $< > $@
+endif
+
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: $$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf $$(TARGET_VBoxDrv)
+	$(RM) -f $(@D)/VBoxDrv.cat 
+	$(INSTALL) -m 644 $(TARGET_VBoxDrv) $(@D)
+  ifeq ($(BUILD_TARGET_ARCH),amd64)
+	C:Inf2Cat.exe /driver:$(@D) /verbose /os:XP_X64,Server2003_X64,Vista_X64
+  else
+	C:Inf2Cat.exe /driver:$(@D) /verbose /os:2000,XP_X86,Server2003_X86,Vista_X86
+  endif
+	$(MV) $(@D)/vboxdrv.cat $@
+ endif
 endif
 
 

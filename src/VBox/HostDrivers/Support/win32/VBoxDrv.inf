@@ -23,7 +23,7 @@ Signature="$Windows NT$"
 Class=System
 ClassGuid={ce4a90b5-1d8c-435d-b349-232ce55cb17f}
 Provider=%INNOTEK%
-DriverVer=08/20/2005,8.1.0.0
+DriverVer=08/21/2006,8.1.0.0
 DriverPackageType=KernelService
 ;CatalogFile=VBoxDrv.cat
 
