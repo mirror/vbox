@@ -40,8 +40,10 @@
 #define DEVICE_NAME     "\\\\.\\VBoxDrv"
 /** NT Device name. */
 #define DEVICE_NAME_NT   L"\\Device\\VBoxDrv"
-/** Win32 Symlink name. */
+/** Win Symlink name. */
 #define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxDrv"
+/** The Pool tag (VBox). */
+#define SUPDRV_NT_POOL_TAG  'xoBV'
 
 
 /*******************************************************************************
@@ -336,8 +338,8 @@ static int VBoxSupDrvDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
         {
             char *pBuf = (char *)pIrp->AssociatedIrp.SystemBuffer;
 
-            /* 
-             * Do the job. 
+            /*
+             * Do the job.
              */
             rc = supdrvIOCtl(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession,
                              pBuf, pStack->Parameters.DeviceIoControl.InputBufferLength,
@@ -355,7 +357,7 @@ static int VBoxSupDrvDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
             dprintf2(("VBoxSupDrvDeviceControlSlow: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
         }
         else
-            dprintf(("VBoxSupDrvDeviceControlSlow: not buffered request (%#x) - not supported\n", 
+            dprintf(("VBoxSupDrvDeviceControlSlow: not buffered request (%#x) - not supported\n",
                      pStack->Parameters.DeviceIoControl.IoControlCode));
     }
 #ifdef __AMD64__
@@ -451,7 +453,7 @@ int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages)
     /*
      * Allocate memory for the MDL pointer array.
      */
-    pMem->u.locked.papMdl = (PMDL *)ExAllocatePoolWithTag(NonPagedPool, sizeof(*pMem->u.locked.papMdl) * cMdls, 'vbox');
+    pMem->u.locked.papMdl = (PMDL *)ExAllocatePoolWithTag(NonPagedPool, sizeof(*pMem->u.locked.papMdl) * cMdls, SUPDRV_NT_POOL_TAG);
     if (!pMem->u.locked.papMdl)
     {
         AssertMsgFailed(("shit, couldn't allocated %d bytes for the mdl pointer array!\n", sizeof(*pMem->u.locked.papMdl) * cMdls));
@@ -692,7 +694,7 @@ int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR
      * Try allocate the memory.
      */
     unsigned cbAligned = RT_ALIGN(RT_MAX(pMem->cb, PAGE_SIZE * 2), PAGE_SIZE);
-    pMem->pvR0 = ExAllocatePoolWithTag(NonPagedPool, cbAligned, 'vbox');
+    pMem->pvR0 = ExAllocatePoolWithTag(NonPagedPool, cbAligned, SUPDRV_NT_POOL_TAG);
     if (!pMem->pvR0)
         return SUPDRV_ERR_NO_MEMORY;
 
@@ -952,9 +954,9 @@ static void _stdcall VBoxSupDrvGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID
             RTCCUINTREG xFL = ASMGetFlags();
             ASMIntDisable();
 
-            /* 
-             * We cannot do other than assume a 1:1 relation ship between the 
-             * affinity mask and the process despite the warnings in the docs. 
+            /*
+             * We cannot do other than assume a 1:1 relation ship between the
+             * affinity mask and the process despite the warnings in the docs.
              * If someone knows a better way to get this done, please let bird know.
              */
             unsigned iSelf = KeGetCurrentProcessorNumber();
@@ -962,7 +964,7 @@ static void _stdcall VBoxSupDrvGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID
 
             for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->aGipCpuDpcs); i++)
             {
-                if (    i != iSelf 
+                if (    i != iSelf
                     &&  (Mask & RT_BIT_64(i)))
                     KeInsertQueueDpc(&pDevExt->aGipCpuDpcs[i], 0, 0);
             }
@@ -1084,7 +1086,7 @@ void *VBOXCALL  supdrvOSExecAlloc(size_t cb)
 {
 #if 0 //def __AMD64__
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
-    void *pv = ExAllocatePoolWithTag(NonPagedPool, cb, 'vbox');
+    void *pv = ExAllocatePoolWithTag(NonPagedPool, cb, SUPDRV_NT_POOL_TAG);
     if (pv)
     {
         /*
@@ -1127,7 +1129,7 @@ void *VBOXCALL  supdrvOSExecAlloc(size_t cb)
     dprintf2(("supdrvOSExecAlloc(%d): returns NULL\n", cb));
     return NULL;
 #else
-    void *pv = ExAllocatePoolWithTag(NonPagedPool, cb, 'vbox');
+    void *pv = ExAllocatePoolWithTag(NonPagedPool, cb, SUPDRV_NT_POOL_TAG);
     dprintf2(("supdrvOSExecAlloc(%d): returns %p\n", cb, pv));
     return pv;
 #endif
@@ -1147,7 +1149,7 @@ unsigned VBOXCALL supdrvOSGetCPUCount(void)
         if (Mask & RT_BIT_64(iBit))
             cCpus++;
     if (cCpus == 0) /* paranoia */
-        cCpus = 1; 
+        cCpus = 1;
     return cCpus;
 }
 
