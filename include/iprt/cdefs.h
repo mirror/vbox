@@ -1282,8 +1282,8 @@
  */
 
 #define DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(Cls) \
-    inline Cls (Cls &); \
-    inline Cls &operator= (Cls &);
+    inline Cls (const Cls &); \
+    inline Cls &operator= (const Cls &);
 
 
 /** @def DECLARE_CLS_NEW_DELETE_NOOP
