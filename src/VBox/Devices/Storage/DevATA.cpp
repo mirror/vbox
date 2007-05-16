@@ -90,7 +90,7 @@ typedef struct ATADevState {
     bool fIrqPending;
     /** Currently configured number of sectors in a multi-sector transfer. */
     uint8_t cMultSectors;
-    /** LCHS disk geometry. */
+    /** PCHS disk geometry. */
     uint32_t cCHSCylinders, cCHSHeads, cCHSSectors;
     /** Total number of sectors on this disk. */
     uint64_t cTotalSectors;
