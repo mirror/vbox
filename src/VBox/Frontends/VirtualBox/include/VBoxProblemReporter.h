@@ -215,18 +215,24 @@ public:
                            const QString &errorID,
                            const QString &errorMsg);
 
-    static QString formatErrorInfo (const COMErrorInfo &info,
-                                    HRESULT wrapperRC = S_OK);
-    static QString formatErrorInfo (const CVirtualBoxErrorInfo &info) {
-        return formatErrorInfo (COMErrorInfo (info));
+    static QString formatErrorInfo (const COMErrorInfo &aInfo,
+                                    HRESULT aWrapperRC = S_OK);
+
+    static QString formatErrorInfo (const CVirtualBoxErrorInfo &aInfo)
+    {
+        return formatErrorInfo (COMErrorInfo (aInfo));
     }
-    static QString formatErrorInfo (const COMBase &wrapper) {
-        Assert (FAILED (wrapper.lastRC()));
-        return formatErrorInfo (wrapper.errorInfo(), wrapper.lastRC());
+
+    static QString formatErrorInfo (const COMBase &aWrapper)
+    {
+        Assert (FAILED (aWrapper.lastRC()));
+        return formatErrorInfo (aWrapper.errorInfo(), aWrapper.lastRC());
     }
-    static QString formatErrorInfo (const COMResult &rc) {
-        Assert (FAILED (rc.rc()));
-        return formatErrorInfo (rc.errorInfo(), rc.rc());
+
+    static QString formatErrorInfo (const COMResult &aRC)
+    {
+        Assert (FAILED (aRC.rc()));
+        return formatErrorInfo (aRC.errorInfo(), aRC.rc());
     }
 
 public slots:
@@ -238,6 +244,9 @@ public slots:
 private:
 
     friend VBoxProblemReporter &vboxProblem();
+
+    static QString doFormatErrorInfo (const COMErrorInfo &aInfo,
+                                      HRESULT aWrapperRC = S_OK);
 };
 
 inline VBoxProblemReporter &vboxProblem() { return VBoxProblemReporter::instance(); }

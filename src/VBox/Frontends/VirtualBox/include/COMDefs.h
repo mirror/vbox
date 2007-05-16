@@ -31,6 +31,8 @@
 #include <qstring.h>
 #include <quuid.h>
 
+#include <iprt/memory> // for auto_copy_ptr
+
 /*
  * common COM / XPCOM includes and defines
  */
@@ -170,6 +172,8 @@ public:
     QString component() const { return mComponent; }
     QString text() const { return mText; }
 
+    const COMErrorInfo *next() const { return mNext.get(); }
+
     QString interfaceName() const { return mInterfaceName; }
     QUuid calleeIID() const { return mCalleeIID; }
     QString calleeName() const { return mCalleeName; }
@@ -189,6 +193,8 @@ private:
     QUuid mInterfaceID;
     QString mComponent;
     QString mText;
+
+    cppx::auto_copy_ptr <COMErrorInfo> mNext;
 
     QString mInterfaceName;
     QUuid mCalleeIID;
