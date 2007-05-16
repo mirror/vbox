@@ -1285,6 +1285,8 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                 rc = VERR_NO_TMP_MEMORY;
             }
         }
+        else if (VBOX_SUCCESS(rc) && fIsVMMR0) 
+            g_pvVMMR0 = OpenOut.pvImageBase;
     }
     RTLdrClose(hLdrMod);
     return rc;
