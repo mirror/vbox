@@ -74,10 +74,9 @@
 <xsl:template match="/idl">
     <xsl:text>
 /*
- *  DO NOT EDIT.
- *
- *  This IDL file was automatically generated from VirtualBox.xidl,
- *  VirtualBox's generic pseudo-IDL file with an XML syntax.
+# DO NOT EDIT! This is a generated file.
+# Generated from: src/VBox/Main/idl/VirtualBox.xidl (VirtualBox's interface definitions in XML)
+# Generator: src/VBox/Main/idl/xpidl.xsl
  */
 
 #include "nsISupports.idl"

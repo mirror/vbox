@@ -105,12 +105,13 @@
 
 <xsl:text>
 /*
- *  DO NOT EDIT.
+ * This contains Qt-based wrapper classes for [XP]COM interfaces.
  *
- *  This header is automatically generated from the generic interface definition
- *  and contains Qt-based wrapper classes for [XP]COM interfaces.
+ * DO NOT EDIT! This is a generated file.
+ * Generated from: src/VBox/Main/idl/VirtualBox.xidl (VirtualBox's interface definitions in XML)
+ * Generator: src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl
  *
- *  Note: this header must be included from COMDefs.h, never directly.
+ * Note: this header must be included from COMDefs.h, never directly.
  */
 </xsl:text>
 
@@ -157,10 +158,12 @@ public:
  *  specially.
 -->
 <xsl:template match="if" mode="define">
+  <xsl:if test="(@target='xpidl') or (@target='midl')">
     <xsl:apply-templates select="." mode="begin"/>
     <xsl:apply-templates mode="define"/>
     <xsl:apply-templates select="." mode="end"/>
     <xsl:text>&#x0A;</xsl:text>
+  </xsl:if>
 </xsl:template>
 
 
@@ -173,10 +176,12 @@ public:
  *  specially.
 -->
 <xsl:template match="if" mode="declare">
+  <xsl:if test="(@target='xpidl') or (@target='midl')">
     <xsl:apply-templates select="." mode="begin"/>
     <xsl:apply-templates mode="declare"/>
     <xsl:apply-templates select="." mode="end"/>
     <xsl:text>&#x0A;</xsl:text>
+  </xsl:if>
 </xsl:template>
 
 
@@ -192,7 +197,9 @@ public:
     </xsl:if>
 </xsl:template>
 <xsl:template match="if" mode="end">
+  <xsl:if test="(@target='xpidl') or (@target='midl')">
     <xsl:text>#endif&#x0A;</xsl:text>
+  </xsl:if>
 </xsl:template>
 
 
