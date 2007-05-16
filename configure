@@ -53,7 +53,7 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
-QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3"
+QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3"
 KBUILDDIR="`cd $(dirname $0); pwd`/kBuild"
 DEVDIR="`cd $(dirname $0); pwd`/tools"
 if [ -d /lib/modules/`uname -r`/build ]; then
@@ -855,20 +855,24 @@ extern "C" int main(void)
 }
 ' > .tmp_src.cc
   found_qt=0
+  libs="lib"
+  [ "$LIB" = "lib64" ] && libs="$libs lib64"
   for q in $QTDIR; do
-    echo "compiling the following source file:" >> $LOG
-    cat .tmp_src.cc >> $LOG
-    echo "using the following command line:" >> $LOG
-    echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$LIB -lqt-mt" >> $LOG
+    for l in $libs; do
+      echo "compiling the following source file:" >> $LOG
+      cat .tmp_src.cc >> $LOG
+      echo "using the following command line:" >> $LOG
+      echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt" >> $LOG
     
-    $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$LIB -lqt-mt >> $LOG 2>&1
-    if (($?==0)); then
-      if test_execute; then
-        cnf_append "QTDIR" `cd $q ; pwd`
-        found_qt=1
-        break
+      $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt >> $LOG 2>&1
+      if (($?==0)); then
+        if test_execute; then
+          cnf_append "QTDIR" `cd $q ; pwd`
+          found_qt=1
+          break
+        fi
       fi
-    fi
+    done
   done
   if (($found_qt!=1)); then
     echo -e "\n  Qt not found at \"$QTDIR\" or Qt headers not found"
