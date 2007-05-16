@@ -1,0 +1,90 @@
+/** @file
+ * InnoTek Portable Runtime - C++ Exetensions: memory.
+ */
+
+/*
+ * Copyright (C) 2007 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * If you received this file as part of a commercial VirtualBox
+ * distribution, then only the terms of your commercial VirtualBox
+ * license agreement apply instead of the previous paragraph.
+ */
+
+#ifndef __iprt_memory__
+#define __iprt_memory__
+
+/** @defgroup grp_rt_cppx_memory  InnoTek Portable Runtime C++ Exetensions: memory
+ * @ingroup grp_rt_cppx
+ * @{
+ */
+
+#ifdef __cplusplus
+
+#include <memory> /* for auto_ptr */
+
+namespace cppx
+{
+
+/**
+ *  A simple std::auto_ptr extension that adds CopyConstructible and
+ *  Assignable semantics.
+ *
+ *  Instances of this class, when constructed from or assigned with instances
+ *  of the same class, create a copy of the managed object using the new
+ *  operator and the managed object's copy constructor, as opposed to
+ *  std::auto_ptr which simply transfers ownership in these cases.
+ *
+ *  This template is useful for member variables of a class that store
+ *  dynamically allocated instances of some other class and these instances
+ *  need to be copied when the containing class instance is copied itself.
+ *
+ *  Be careful when returning instances of this class by value: it will call
+ *  cause to create a copy of the managed object which is probably is not what
+ *  you want, especially if its constructor is quite an expensive operation.
+ */
+template <typename T>
+class auto_copy_ptr : public std::auto_ptr <T>
+{
+public:
+
+    /** @see std::auto_ptr <T>::auto_ptr() */
+    auto_copy_ptr (T *p = 0) throw() : std::auto_ptr <T> (p) {}
+
+    /**
+     * Copy constructor.
+     * Takes a copy of the given instance by taking a copy of the managed
+     * object using its copy constructor. Both instances will continue to own
+     * their objects.
+     */
+    auto_copy_ptr (const auto_copy_ptr &that) throw()
+        : std::auto_ptr <T> (that.get() ? new T (*that.get()) : NULL) {}
+
+    /**
+     * Assignment operator.
+     * Takes a copy of the given instance by taking a copy of the managed
+     * object using its copy constructor. Both instances will continue to own
+     * their objects.
+     */
+    auto_copy_ptr &operator= (const auto_copy_ptr &that) throw()
+    {
+        std::auto_ptr <T>::reset (that.get() ? new T (*that.get()) : NULL);
+        return *this;
+    }
+};
+
+}; /* namespace cppx */
+
+
+#endif /* __cplusplus */
+
+/** @} */
+
+#endif /* __iprt_memory__ */
