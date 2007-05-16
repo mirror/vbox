@@ -95,6 +95,44 @@ typedef VDIMAGETYPE *PVDIMAGETYPE;
 #define VD_IMAGE_FLAGS_DEFAULT              (VD_IMAGE_FLAGS_NONE)
 /** @} */
 
+
+/**
+ * Auxiliary type for describing partitions on raw disks.
+ */
+typedef struct VBOXHDDRAWPART
+{
+    /** Device to use for this partition. Can be the disk device if the offset
+     * field is set appropriately. If this is NULL, then this partition will
+     * not be accessible to the guest. The size of the partition must still
+     * be set correctly. */
+    const char      *pszRawDevice;
+    /** Offset where the partition data starts in this device. */
+    uint64_t        uPartitionStartOffset;
+    /** Size of the partition. */
+    uint64_t        cbPartition;
+    /** Size of the partitioning info to prepend. */
+    uint64_t        cbPartitionData;
+    /** Pointer to the partitioning info to prepend. */
+    const void      *pvPartitionData;
+} VBOXHDDRAWPART, *PVBOXHDDRAWPART;
+
+/**
+ * Auxiliary data structure for creating raw disks.
+ */
+typedef struct VBOXHDDRAW
+{
+    /** Flag whether access to full disk should be given (ignoring the
+     * partition information below). */
+    bool            fRawDisk;
+    /** Filename for the raw disk. Ignored for partitioned raw disks.
+     * For Linux e.g. /dev/sda, and for Windows e.g. \\.\PhysicalDisk0. */
+    const char      *pszRawDisk;
+    /** Number of entries in the partitions array. */
+    unsigned        cPartitions;
+    /** Pointer to the partitions array. */
+    PVBOXHDDRAWPART pPartitions;
+} VBOXHDDRAW, *PVBOXHDDRAW;
+
 /** @name VBox HDD container image open mode flags
  * @{
  */
