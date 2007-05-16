@@ -1,7 +1,9 @@
 <?xml version="1.0" ?>
 
 <!--
- * Master declaration for VirtualBox's public COM/XPCOM API.
+ * Master declaration for VirtualBox's Main API, represented
+ * by COM/XPCOM and web service interfaces.
+ *
  * From this document, the build system generates several files
  * via XSLT that are then used during the build process:
  *
@@ -15,7 +17,12 @@
  *   -  also, another intermediate file that is then used to
  *      produce the official Doxygen documentation of the API.
  *
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ *   -  a lot of files for the web service by XSLT stylesheets
+ *      in the ../webservice directory; the targets include a
+ *      WSDL file that describes the web service and C++ method
+ *      mappers that map SOAP messages to COM calls.
+ *
+ * Copyright (C) 2006-2007 InnoTek Systemberatung GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -409,7 +416,7 @@
                 Name of the component that generated the error.
                 <note>
                     In MS COM, it is the same as IErrorInfo::GetSource.
-                    In XPCOM, there is no eqiuvalent.
+                    In XPCOM, there is no equivalent.
                 </note>
             </desc>
         </attribute>
@@ -1895,7 +1902,7 @@
     <interface
         name="IMachine" extends="$unknown"
         uuid="063ad473-992d-479f-ba7e-7a9ae294368c"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="parent" type="IVirtualBox" readonly="yes">
             <desc>Associated parent obect.</desc>
@@ -2986,7 +2993,7 @@
     <interface
         name="IConsole" extends="$unknown"
         uuid="1DEA5C4B-0753-4193-B909-22330F64EC45"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="machine" type="IMachine" readonly="yes">
             <desc>
@@ -3486,7 +3493,7 @@
     <interface
         name="IHostDVDDrive" extends="$unknown"
         uuid="c2308775-85f3-45ab-ade5-97f02d1e61e0"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
@@ -3525,7 +3532,7 @@
     <interface
         name="IHostFloppyDrive" extends="$unknown"
         uuid="2b2ad1ab-2ea9-4cf8-be3c-2a76677d8725"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
@@ -3564,7 +3571,7 @@
     <interface
         name="IHostNetworkInterface" extends="$unknown"
         uuid="F4512D7C-B074-4e97-99B8-6D2BD27C3F5A"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the host network interface name.</desc>
@@ -3622,7 +3629,7 @@
     <interface
         name="IHost" extends="$unknown"
         uuid="81729c26-1aec-46f5-b7c0-cc7364738fdb"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="DVDDrives" type="IHostDVDDriveCollection" readonly="yes">
             <desc>List of DVD drives available on the host.</desc>
@@ -4101,7 +4108,7 @@
     <interface
         name="IProgress" extends="$unknown"
         uuid="10CC03A1-717E-429b-992D-C67B56175A51"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The IProgress interface represents a task progress object that allows
@@ -4250,7 +4257,7 @@
     <interface
         name="ISnapshot" extends="$unknown"
         uuid="9f1bbf79-13b0-4da2-abba-4a992c65c083"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The ISnapshot interface represents a snapshot of the virtual
@@ -4562,7 +4569,7 @@
     <interface
         name="IHardDisk" extends="$unknown"
         uuid="FD443EC1-000F-4F5B-9282-D72760A66916"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The IHardDisk interface represents a virtual hard disk drive
@@ -5090,7 +5097,7 @@
     <interface
         name="IVirtualDiskImage" extends="$unknown"
         uuid="a8265b5a-0d20-4a46-a02f-65693a4e8239"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
 
         <desc>
@@ -5238,7 +5245,7 @@
     <interface
         name="IISCSIHardDisk" extends="$unknown"
         uuid="003f6ca9-3257-4ef9-99c9-c66ce44576cb"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
 
         <desc>
@@ -5335,7 +5342,7 @@
     <interface
         name="IVMDKImage" extends="$unknown"
         uuid="178398f5-8559-4fee-979e-420af5b53eef"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
 
@@ -5515,7 +5522,7 @@
     <interface
         name="IDVDImage" extends="$unknown"
         uuid="140FFF03-E479-4194-8562-ABC4F8171009"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
 
@@ -5597,7 +5604,7 @@
     <interface
         name="IDVDDrive" extends="$unknown"
         uuid="d9bd101a-8079-4fb9-bad1-31bf32482b75"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="state" type="DriveState" readonly="yes">
             <desc>Current drive state.</desc>
@@ -5673,7 +5680,7 @@
     <interface
         name="IFloppyImage" extends="$unknown"
         uuid="CC696755-EA98-4ffe-9DC5-C003047034AB"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
 
@@ -5745,7 +5752,7 @@
     <interface
         name="IFloppyDrive" extends="$unknown"
         uuid="E9318F71-78D2-4b00-863C-B7CB0030A2D9"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="enabled" type="boolean">
             <desc>
@@ -5793,7 +5800,7 @@
     <interface
         name="IKeyboard" extends="$unknown"
         uuid="FD443EC1-000A-4F5B-9282-D72760A66916"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <method name="putScancode">
             <desc>Sends a scancode to the keyboard.</desc>
@@ -5834,7 +5841,7 @@
     <interface
         name="IMouse" extends="$unknown"
         uuid="FD443EC1-0006-4F5B-9282-D72760A66916"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The IMouse interface represents a virtual mouse device.
@@ -6351,7 +6358,7 @@
     <interface
         name="INetworkAdapter" extends="$unknown"
         uuid="78dfc978-ecb0-44ee-8b20-54549dd4539e"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="adapterType" type="NetworkAdapterType">
             <desc>
@@ -6558,7 +6565,7 @@
     <interface
         name="IUSBController" extends="$unknown"
         uuid="9a110c34-93c2-46b0-8ac2-b09d1067be56"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="enabled" type="boolean">
             <desc>
@@ -6730,7 +6737,7 @@
     <interface
         name="IUSBDevice" extends="$unknown"
         uuid="c5ab8d05-1999-4e48-ae34-cdeb235aacf0"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The IUSBDevice interface represents a USB device captured by
@@ -6814,7 +6821,7 @@
     <interface
         name="IUSBDeviceFilter" extends="$unknown"
         uuid="d6831fb4-1a94-4c2c-96ef-8d0d6192066d"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The IUSBDeviceFilter interface represents an USB device filter used
@@ -7099,7 +7106,7 @@
     <interface
         name="IHostUSBDevice" extends="IUSBDevice"
         uuid="173b4b44-d268-4334-a00d-b6521c9a740a"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The IHostUSBDevice interface represents a USB device attached to
@@ -7161,7 +7168,7 @@
     <interface
         name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"
         uuid="4cc70246-d74a-400f-8222-3900489c0374"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <desc>
             The IHostUSBDeviceFilter interface represents a USB device filter used
@@ -7484,7 +7491,7 @@
     <interface
         name="ISession" extends="$dispatched"
         uuid="12F4DCDB-12B2-4ec1-B7CD-DDD9F6C5BF4D"
-        wsmap="managedObjectRef"
+        wsmap="managed"
     >
         <attribute name="state" type="SessionState" readonly="yes">
             <desc>Current state of this session.</desc>
@@ -7528,6 +7535,36 @@
         <interface name="ISession" default="yes"/>
     </class>
 
+<if target="wsdl">
+
+    <!--
+    // IManagedObjectRef
+    /////////////////////////////////////////////////////////////////////////
+    -->
+
+    <interface
+        name="IManagedObjectRef" extends="$unknown"
+        uuid="9474d09d-2313-46de-b568-a42b8718e8ed"
+        internal="yes"
+        wsmap="explicit"
+    >
+        <method name="getInterfaceName">
+            <desc>
+                Returns the name of the interface that this managed object represents,
+                for example, "IMachine", as a string.
+            </desc>
+        </method>
+
+        <method name="release">
+            <desc>
+                Releases this managed object reference and frees the resources that
+                were allocated for it in the web service server process. After calling
+                this method, the identifier of the reference can no longer be used.
+            </desc>
+        </method>
+
+    </interface>
+</if>
 
 </module>
 
