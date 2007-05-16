@@ -26,13 +26,10 @@
 
 __BEGIN_DECLS
 
-__BEGIN_DECLS
 /** The default BIOS logo data. */
 extern const unsigned char  g_abPcDefBiosLogo[];
 /** The size of the default BIOS logo data. */
 extern const unsigned       g_cbPcDefBiosLogo;
-__END_DECLS
-
 
 extern const PDMDEVREG g_DevicePCI;
 extern const PDMDEVREG g_DevicePcArch;
