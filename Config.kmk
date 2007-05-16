@@ -833,7 +833,7 @@ VBOX_GCC32_CHECK_CXX = $(shell \
    else echo "$(2)"; fi; )
 
 # This is kind of bad, the returned string needs to be re-evaluated before use.
-# The reason for this hack is that the windows kmk_ash cannot deal with $((1+1)). 
+# The reason for this hack is that the windows kmk_ash cannot deal with $((1+1)).
 VBOX_GCC_VERSION = $(shell \
   $(1) -dumpversion | $(SED_EXT) 's|\([0-9]\)\.\([0-9]\)\.\([0-9]\)|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, \2), \3)|' )
 
@@ -903,16 +903,16 @@ ifdef VBOX_SIGNING_MODE
     VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign/r1
    endif
   endif
-  VBOX_SIGNTOOL    ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
-  VBOX_SIGNABILITY ?= $(VBOX_PATH_SELFSIGN)/Signability.exe
+  VBOX_SIGNTOOL ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
+  VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/Inf2Cat.exe
 
   # There are two signing modes; 'self' and 'release'.
   ifeq ($(strip $(VBOX_SIGNING_MODE)),self)
    ## @todo
   else ifeq ($(strip $(VBOX_SIGNING_MODE)),release)
    VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/MSCV-GlobalSign.cer
-   VBOX_CERTIFICATE_STORE ?= my
    VBOX_CERTIFICATE_SUBJECT_NAME ?= InnoTek Systemberatung GmbH
+   VBOX_CERTIFICATE_STORE ?= my
    VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timestamp.dll
    VBOX_SIGN_DRIVER_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_SIGNTOOL) sign \
 		/ac "$(VBOX_CROSS_CERTIFICATE_FILE)" \
@@ -925,13 +925,28 @@ ifdef VBOX_SIGNING_MODE
 		/s "$(VBOX_CERTIFICATE_STORE)" \
 		/n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" \
 		$(out))
+   ## Sign an MSI.
+   # @param 1  The msi to sign.
    VBOX_SIGN_MSI_FN      = $(VBOX_SIGNTOOL) sign \
 		/ac "$(VBOX_CROSS_CERTIFICATE_FILE)" \
 		/s "$(VBOX_CERTIFICATE_STORE)" \
 		/n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" \
 		$(1)
-	VBOX_MAKE_CAT64_FN   = $(VBOX_SIGNABILITY) /driver:$(2) /cat /auto /os:656
-	VBOX_MAKE_CAT32_FN   = $(VBOX_SIGNABILITY) /driver:$(2) /cat /auto /os:298
+   ## Create a security catalog file.
+   # @param 1  The directory containing the stuff to sign.
+   # @param 2  The expected .cat name. (Inf2Cat lowercases it)
+   # @param 3  The list of OSes, separated by ';'.
+   VBOX_MAKE_CAT_HLP_FN     = \
+		$(RM) -f $(2)\
+		$(NL)$(TAB)$(VBOX_INF2CAT) /driver:$(strip $(1)) /os:$(strip $(subst ;,$(COMMA),$(3))) /verbose \
+		$(NL)$(TAB)$(MV) $(2) $(2)
+   VBOX_MAKE_CAT64_FN   = $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),XP_X64;Server2003_X64;Vista_X64)
+   VBOX_MAKE_CAT32_FN   = $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),2000;XP_X86;Server2003_X86;Vista_X86)
+   ifeq ($(BUILD_TARGET_ARCH),x86)
+    VBOX_MAKE_CAT_FN    = $(call VBOX_MAKE_CAT32_FN,$(1),$(2))
+   else
+    VBOX_MAKE_CAT_FN    = $(call VBOX_MAKE_CAT64_FN,$(1),$(2))
+   endif
   else
    $(error Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
   endif
