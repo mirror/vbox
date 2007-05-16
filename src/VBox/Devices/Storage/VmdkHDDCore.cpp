@@ -294,6 +294,8 @@ typedef struct VMDKIMAGE
     unsigned        uOpenFlags;
     /** Image type. */
     VDIMAGETYPE     enmImageType;
+    /** Image flags defined during creation or determined during open. */
+    unsigned        uImageFlags;
     /** Total size of the image. */
     uint64_t        cbSize;
     /** BIOS translation mode. */
@@ -477,7 +479,7 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector, 
     size_t cbGDRounded = RT_ALIGN_64(pExtent->cGDEntries * sizeof(uint32_t), 512);
     size_t cbGTRounded;
     uint64_t cbOverhead;
-    
+
     if (fPreAlloc)
         cbGTRounded = RT_ALIGN_64(pExtent->cGDEntries * pExtent->cGTEntries * sizeof(uint32_t), 512);
     else
@@ -586,7 +588,7 @@ static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr, char **ppszU
     return VINF_SUCCESS;
 }
 
-static int vmdkDescInitStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor, 
+static int vmdkDescInitStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
                            const char *pszLine)
 {
     char *pEnd = pDescriptor->aLines[pDescriptor->cLines];
@@ -1043,7 +1045,7 @@ static int vmdkCreateDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDes
     rc = vmdkDescInitStr(pImage, pDescriptor, "# The disk Data Base ");
     if (VBOX_FAILURE(rc))
         goto out;
-    rc = vmdkDescInitStr(pImage, pDescriptor, "# DDB");
+    rc = vmdkDescInitStr(pImage, pDescriptor, "#DDB");
     if (VBOX_FAILURE(rc))
         goto out;
     rc = vmdkDescInitStr(pImage, pDescriptor, "");
@@ -1565,7 +1567,9 @@ static void vmdkFreeExtentData(PVMDKEXTENT pExtent, bool fDelete)
     {
         RTFileClose(pExtent->File);
         pExtent->File = NIL_RTFILE;
-        if (fDelete && pExtent->pszFullname)
+        if (    fDelete
+            &&  strcmp(pExtent->pszFullname, pExtent->pszBasename) != 0
+            && pExtent->pszFullname)
             RTFileDelete(pExtent->pszFullname);
     }
     if (pExtent->pszFullname)
@@ -1662,6 +1666,8 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
         rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number in '%s'"), pszFilename);
         goto out;
     }
+
+    /** @todo set up pImage->uImageFlags accordingly somewhere during open. */
 
     /* Handle the file according to its magic number. */
     if (RT_LE2H_U32(u32Magic) == VMDK_SPARSE_MAGICNUMBER)
@@ -1883,12 +1889,13 @@ out:
     return rc;
 }
 
-static int vmdkCreateImage(PVMDKIMAGE pImage, const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
+static int vmdkCreateImage(PVMDKIMAGE pImage, const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
 {
     int rc;
     uint64_t cSectorsPerGDE, cSectorsPerGD;
     PVMDKEXTENT pExtent;
 
+    pImage->uImageFlags = uImageFlags;
     rc = vmdkCreateDescriptor(pImage, pImage->pDescData, pImage->cbDescAlloc, &pImage->Descriptor);
     if (VBOX_FAILURE(rc))
     {
@@ -1897,13 +1904,88 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, const char *pszFilename, VDIMAGETY
     }
 
     if (    enmType == VD_IMAGE_TYPE_FIXED
-        ||  uImageFlags == VD_VMDK_IMAGE_FLAGS_SPLIT_2G)
+        ||  (uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G)
+        ||  (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK))
     {
         /* Fixed images and split images in general have a separate descriptor
          * file. This is the more complicated case, as it requires setting up
          * potentially more than one extent, including filename generation. */
-        rc = VERR_NOT_IMPLEMENTED;
-        goto out;
+
+        if (    enmType == VD_IMAGE_TYPE_FIXED
+            &&  (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK))
+        {
+            PVBOXHDDRAW pRaw = (PVBOXHDDRAW)(void *)pszComment;
+            if (pRaw->fRawDisk)
+            {
+                /* Full raw disk access. This requires setting up a descriptor
+                 * file and open the (flat) raw disk. */
+                rc = vmdkCreateExtents(pImage, 1);
+                if (VBOX_FAILURE(rc))
+                {
+                    rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new extent list in '%s'"), pszFilename);
+                    goto out;
+                }
+                pExtent = &pImage->pExtents[0];
+                rc = RTFileOpen(&pImage->File, pszFilename,
+                                RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
+                if (VBOX_FAILURE(rc))
+                {
+                    rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pszFilename);
+                    goto out;
+                }
+
+                /* Set up basename for extent description. Cannot use StrDup. */
+                size_t cbBasename = strlen(pRaw->pszRawDisk) + 1;
+                char *pszBasename = (char *)RTMemTmpAlloc(cbBasename);
+                if (!pszBasename)
+                {
+                    rc = VERR_NO_MEMORY;
+                    goto out;
+                }
+                memcpy(pszBasename, pRaw->pszRawDisk, cbBasename);
+                pExtent->pszBasename = pszBasename;
+                /* For raw disks the full name is identical to the base name. */
+                pExtent->pszFullname = RTStrDup(pszBasename);
+                if (!pExtent->pszFullname)
+                {
+                    rc = VERR_NO_MEMORY;
+                    goto out;
+                }
+                pExtent->enmType = VMDKETYPE_FLAT;
+                pExtent->cNominalSectors = VMDK_BYTE2SECTOR(cbSize);
+                pExtent->uSectorOffset = 0;
+                pExtent->enmAccess = VMDKACCESS_READWRITE;
+                pExtent->fMetaDirty = true;
+
+                pImage->enmImageType = enmType;
+                rc = vmdkDescSetStr(pImage, &pImage->Descriptor, pImage->Descriptor.uFirstDesc, "createType", "\"fullDevice\"");
+                if (VBOX_FAILURE(rc))
+                {
+                    rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not set the image type in '%s'"), pszFilename);
+                    goto out;
+                }
+
+                /* Open flat image, the raw disk. */
+                rc = RTFileOpen(&pExtent->File, pExtent->pszFullname,
+                                RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+                if (VBOX_FAILURE(rc))
+                {
+                    rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not open raw disk file '%s'"), pExtent->pszFullname);
+                    goto out;
+                }
+            }
+            else
+            {
+                /******* fixme. */
+                rc = VERR_NOT_IMPLEMENTED;
+                goto out;
+            }
+        }
+        else
+        {
+            rc = VERR_NOT_IMPLEMENTED;
+            goto out;
+        }
     }
     else
     {
@@ -1916,7 +1998,7 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, const char *pszFilename, VDIMAGETY
         }
         pExtent = &pImage->pExtents[0];
         pImage->File = NIL_RTFILE;
-        rc = RTFileOpen(&pExtent->File, pszFilename, 
+        rc = RTFileOpen(&pExtent->File, pszFilename,
                         RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
         if (VBOX_FAILURE(rc))
         {
@@ -2467,7 +2549,7 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
     }
 
     rc = vmdkCreateImage(pImage, pszFilename, enmType, cbSize, uImageFlags,
-                         cCylinders, cHeads, cSectors);
+                         pszComment, cCylinders, cHeads, cSectors);
     if (VBOX_SUCCESS(rc))
     {
         /* So far the image is opened in read/write mode. Make sure the
