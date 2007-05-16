@@ -7509,6 +7509,8 @@ STDMETHODIMP SessionMachine::GetLogFolder (BSTR *aLogFolder)
 STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
                                                   BOOL *aMatched)
 {
+    LogFlowThisFunc (("\n"));
+
     if (!aUSBDevice)
         return E_INVALIDARG;
     if (!aMatched)
@@ -7528,6 +7530,8 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
 STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId,
                                                IUSBDevice **aHostDevice)
 {
+    LogFlowThisFunc (("\n"));
+
     if (!aHostDevice)
         return E_POINTER;
 
@@ -7543,6 +7547,8 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId,
  */
 STDMETHODIMP SessionMachine::ReleaseUSBDevice (INPTR GUIDPARAM aId)
 {
+    LogFlowThisFunc (("\n"));
+
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -7554,6 +7560,8 @@ STDMETHODIMP SessionMachine::ReleaseUSBDevice (INPTR GUIDPARAM aId)
  */
 STDMETHODIMP SessionMachine::AutoCaptureUSBDevices (IUSBDeviceCollection **aHostDevices)
 {
+    LogFlowThisFunc (("\n"));
+
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -7565,6 +7573,8 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices (IUSBDeviceCollection **aHost
  */
 STDMETHODIMP SessionMachine::ReleaseAllUSBDevices()
 {
+    LogFlowThisFunc (("\n"));
+
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
