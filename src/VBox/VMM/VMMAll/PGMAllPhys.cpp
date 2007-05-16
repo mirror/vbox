@@ -941,19 +941,12 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
     bool fGrabbedLock = false;
 #endif
 
+    AssertMsg(!pVM->pgm.s.fNoMorePhysWrites, ("Calling PGMPhysWrite after pgmR3Save()!\n"));
     AssertMsg(cbWrite > 0, ("don't even think about writing zero bytes!\n"));
     if (cbWrite == 0)
         return;
 
-#ifdef VBOX_STRICT
-    /*
-     * pgmR3Save() was already called, any bytes we write now will not be part of the
-     * saved state!
-     */
-    AssertMsg(pVM->pgm.s.fNoMorePhysWrites == false, ("Calling PGMPhysWrite after pgmR3Save()!\n"));
-
     LogFlow(("PGMPhysWrite: %VGp %d\n", GCPhys, cbWrite));
-#endif
 
 #ifdef IN_RING3
     if (!VM_IS_EMT(pVM))
