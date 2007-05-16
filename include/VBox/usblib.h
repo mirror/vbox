@@ -258,7 +258,7 @@ VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
 
 
 /**
- * Return all attached USB devices.
+ * Capture specified USB device
  *
  * @returns VBox status code
  * @param usVendorId        Vendor id
