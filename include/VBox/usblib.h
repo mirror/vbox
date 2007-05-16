@@ -258,16 +258,14 @@ VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
 
 
 /**
- * Enables USB device capturing
+ * Return all attached USB devices.
  *
+ * @returns VBox status code
+ * @param usVendorId        Vendor id
+ * @param usProductId       Product id
+ * @param usRevision        Revision
  */
-VBOXDDU_DECL(int) usbLibEnableDeviceCapture();
-
-/**
- * Disables USB device capturing
- *
- */
-VBOXDDU_DECL(int) usbLibDisableDeviceCapture();
+VBOXDDU_DECL(int) usbLibCaptureDevice(USHORT usVendorId, USHORT usProductId, USHORT usRevision);
 
 /** @} */
 #endif
