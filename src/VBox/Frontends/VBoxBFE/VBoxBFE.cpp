@@ -617,12 +617,6 @@ int main(int argc, char **argv)
         }
     }
 
-    if (g_fIOAPIC && !g_fACPI)
-    {
-        RTPrintf("IOAPIC enabled, enabling ACPI as well!\n");
-        g_fACPI = true;
-    }
-
     gMachineDebugger = new MachineDebugger();
     gStatus = new VMStatus();
     gKeyboard = new Keyboard();
@@ -1139,7 +1133,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     /*
      * ACPI
      */
-    if (g_fACPI || g_fIOAPIC)
+    if (g_fACPI)
     {
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             CHECK_RC();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               CHECK_RC();
