@@ -19,7 +19,7 @@
 
 [Version]
    Signature = "$Windows NT$"
-;;;;   CatalogFile = VBoxTAP.cat
+;cat   CatalogFile = VBoxTAP.cat
    ClassGUID = {4d36e972-e325-11ce-bfc1-08002be10318}
    Provider = %Provider%
    Class = Net
@@ -37,9 +37,11 @@
 ;                      Manufacturer + Product Section (Done)
 ;----------------------------------------------------------------
 [Manufacturer]
-   %Provider% = VBoxTAP
+;x86   %Provider% = VBoxTAP
+;amd64 %Provider% = VBoxTAP, NTamd64
 
-[VBoxTAP]
+;x86   [VBoxTAP]
+;amd64 [VBoxTAP.NTamd64]
    %DeviceDescription% = VBoxTAP.ndi, VBoxTAP
 
 ;---------------------------------------------------------------
