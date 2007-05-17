@@ -857,15 +857,19 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 ifneq ($(BUILD_TARGET),l4)
 	@# Set default attribute for ELF and MACH-O symbols to ``hidden'' to reduce the number
 	@# of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
-	$(APPEND) "$@" "ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40000),)"
-	$(APPEND) "$@" " VBOX_GCC_fvisibility-hidden   ?= $(call VBOX_GCC_CHECK_CC,-fvisibility=hidden -DVBOX_HAVE_VISIBILITY_HIDDEN,)"
+	$(APPEND) "$@" "ifneq ($$(VBOX_GCC_VERSION_CC),)"
+	$(APPEND) "$@" " ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40000),)"
+	$(APPEND) "$@" "  VBOX_GCC_fvisibility-hidden  ?= $(call VBOX_GCC_CHECK_CC,-fvisibility=hidden -DVBOX_HAVE_VISIBILITY_HIDDEN,)"
+	$(APPEND) "$@" " endif"
 	$(APPEND) "$@" "endif"
 endif
 ifneq ($(BUILD_TARGET),l4)
 	@# Set default attribute for inline functions to ``hidden'' to reduce the number
 	@# of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
-	$(APPEND) "$@" "ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40000),)"
-	$(APPEND) "$@" " VBOX_GCC_fvisibility-inlines-hidden ?= $(call VBOX_GCC_CHECK_CXX,-fvisibility-inlines-hidden,)"
+	$(APPEND) "$@" "ifneq ($$(VBOX_GCC_VERSION_CXX),)"
+	$(APPEND) "$@" " ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40000),)"
+	$(APPEND) "$@" "  VBOX_GCC_fvisibility-inlines-hidden ?= $(call VBOX_GCC_CHECK_CXX,-fvisibility-inlines-hidden,)"
+	$(APPEND) "$@" " endif"
 	$(APPEND) "$@" "endif"
 endif
 	@# Find the compiler includes for IPRT no-crt.
