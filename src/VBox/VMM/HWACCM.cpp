@@ -218,6 +218,8 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
             AssertRC(rc);
         }
     }
+    pVM->hwaccm.s.pStatExitReasonR0 = MMHyperR3ToR0(pVM, pVM->hwaccm.s.pStatExitReason);
+    Assert(pVM->hwaccm.s.pStatExitReasonR0);
 #endif
 
     /* Disabled by default. */

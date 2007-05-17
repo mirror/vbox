@@ -820,7 +820,7 @@ ResumeExecution:
         else
             pVM->hwaccm.s.Event.errCode  = 0;
     }
-    STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReason[exitCode & MASK_EXITREASON_STAT]);
+    STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReasonR0[exitCode & MASK_EXITREASON_STAT]);
 
     /* Deal with the reason of the VM-exit. */
     switch (exitCode)
