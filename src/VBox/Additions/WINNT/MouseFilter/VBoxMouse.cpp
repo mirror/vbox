@@ -88,6 +88,7 @@ Routine Description:
     return STATUS_SUCCESS;
 }
 
+// VBOX start
 void vboxInformHost (PDEVICE_EXTENSION devExt)
 {
     dprintf (("VBoxMouse::vboxInformHost: devExt->HostInformed = %d\n", devExt->HostInformed));
@@ -120,6 +121,7 @@ void vboxInformHost (PDEVICE_EXTENSION devExt)
         }
     }
 }
+// VBOX end
 
 NTSTATUS
 VBoxMouse_AddDevice(
@@ -585,6 +587,8 @@ Return Value:
         if (NT_SUCCESS(Irp->IoStatus.Status))
         {
 // VBOX start
+            devExt->reqSC = NULL;
+
             int vboxRC = VbglInit ();
 
             if (VBOX_SUCCESS(vboxRC))
