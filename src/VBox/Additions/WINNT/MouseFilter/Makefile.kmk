@@ -41,5 +41,11 @@ VBoxMouse_LIBS        = \
 	$(PATH_LIB)/additions/VBoxGuestLib$(VBOXW32GUEST_SUFF_LIB) \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 
+# Inf2Cat refuses to sign this one complaining that it isn't an installation INF
+INSTALLS += VBoxMouse-inf
+VBoxMouse-inf_INST = bin/
+VBoxMouse-inf_MODE = a+r,u+w
+VBoxMouse-inf_SOURCES = VBoxMouse.inf
+
 include	$(PATH_KBUILD)/subfooter.kmk
 
