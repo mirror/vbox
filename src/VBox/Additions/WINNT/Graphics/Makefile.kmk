@@ -36,7 +36,7 @@ INSTALLS += VBoxVideo-inf
 VBoxVideo-inf_INST = $(INST_ADDITIONS)
 VBoxVideo-inf_MODE = a+r,u+w
 #ifndef VBOX_SIGNING_MODE - I'm not going to mess with that install nor break any .inf-files.
-VBoxVideo-inf_SOURCES = VBoxVideo/VBoxVideo.inf
+VBoxVideo-inf_SOURCES = Miniport/VBoxVideo.inf
 #else
 #VBoxVideo-inf_SOURCES = \
 #	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf \
