@@ -159,6 +159,8 @@ private slots:
 
     void updateMouseState (int state);
 
+    void updateAdditionsState (const QString&, bool);
+
     void tryClose();
 
     void processGlobalSettingChange (const char *publicName, const char *name);
@@ -245,6 +247,8 @@ private:
     };
 
     CSession csession;
+
+    bool mIsAutoresizeEnabled;
 
     // widgets
     VBoxConsoleView *console;

@@ -56,6 +56,11 @@
 
 #include <qtimer.h>
 
+#include <VBox/VBoxGuest.h>
+#define VBOX_GUEST_ADDITIONS_VERSION_OK(additionsVersion) \
+        (RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) && \
+         RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION))
+
 #if defined(Q_WS_X11)
 #include <X11/Xlib.h>
 #endif
@@ -213,6 +218,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dbgCommandLineAction (NULL)
     , dbgMenu (NULL)
 #endif
+    , mIsAutoresizeEnabled (false)
     , console (0)
     , mUsbLedTip (0)
     , mNetworkLedTip (0)
@@ -267,6 +273,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmAutoresizeGuestAction->setIconSet (
         VBoxGlobal::iconSet ("auto_resize_on_16px.png", "auto_resize_on_disabled_16px.png"));
     vmAutoresizeGuestAction->setToggleAction (true);
+    vmAutoresizeGuestAction->setEnabled (false);
 
     vmAdjustWindowAction = new QAction (this, "vmAdjustWindowAction");
     vmAdjustWindowAction->setIconSet (
@@ -721,7 +728,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
         str = cmachine.GetExtraData (GUI_AutoresizeGuest);
         if (str != "off")
-            vmAutoresizeGuestAction->setOn (true);
+            mIsAutoresizeEnabled = true;
 
         str = cmachine.GetExtraData (GUI_LastWindowPosition);
 
@@ -824,6 +831,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              hostkey_state, SLOT (setState (int)));
     connect (console, SIGNAL (machineStateChanged (CEnums::MachineState)),
              this, SLOT (updateMachineState (CEnums::MachineState)));
+    connect (console, SIGNAL (additionsStateChanged (const QString&, bool)),
+             this, SLOT (updateAdditionsState (const QString &, bool)));
 
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
@@ -1781,6 +1790,7 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         /* restore the maximized state */
         if (was_max)
             setWindowState (windowState() | WindowMaximized);
+        QApplication::postEvent (console, new AutoResizeEvent());
     }
 
     /* VBoxConsoleView loses focus for some reason after reparenting,
@@ -2490,6 +2500,25 @@ void VBoxConsoleWnd::updateMouseState (int state)
         mouse_state->setState (state & (VBoxConsoleView::MouseAbsolute |
                                         VBoxConsoleView::MouseCaptured));
     }
+}
+
+
+void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion, bool aActive)
+{
+    /* mIsAutoresizeEnabled flag stores the auto-resize status loaded from the
+     * settings and used for the activation of the autoresize feature
+     * if the additions state told us here it is activated. */
+    vmAutoresizeGuestAction->setEnabled (aActive);
+    vmAutoresizeGuestAction->setOn (aActive && mIsAutoresizeEnabled);
+
+    /* Checking for the Guest Additions version to warn user about possible
+     * compatibility issues in case of installed version is outdated. */
+    uint version = aVersion.toUInt();
+    bool isVersionOk = VBOX_GUEST_ADDITIONS_VERSION_OK (version);
+    if (!isVersionOk)
+        vboxProblem().message (this, VBoxProblemReporter::Warning,
+            tr ("<p>Current Guest Additions version is outdated. Please install "
+                "the latest version to avoid compatibility issues.</p>"));
 }
 
 /**

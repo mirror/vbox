@@ -224,6 +224,24 @@ private:
     CEnums::MachineState s;
 };
 
+/** Guest Additions property changes. */
+class GuestAdditionsEvent : public QEvent
+{
+public:
+    GuestAdditionsEvent (const QString &aOsTypeId,
+                         const QString &aAddVersion,
+                         bool aAddActive) :
+        QEvent ((QEvent::Type) VBoxDefs::AdditionsStateChangeEventType),
+        mOsTypeId (aOsTypeId), mAddVersion (aAddVersion), mAddActive (aAddActive) {}
+    const QString &osTypeId() const { return mOsTypeId; }
+    const QString &additionVersion() const { return mAddVersion; }
+    bool additionActive() const { return mAddActive; }
+private:
+    QString mOsTypeId;
+    QString mAddVersion;
+    bool mAddActive;
+};
+
 /** Menu activation event */
 class ActivateMenuEvent : public QEvent
 {
@@ -351,7 +369,11 @@ public:
         LogFlowFunc (("ver=%s, active=%d\n",
                       guest.GetAdditionsVersion().latin1(),
                       guest.GetAdditionsActive()));
-        /** @todo */
+        QApplication::postEvent (mView,
+                                 new GuestAdditionsEvent (
+                                     guest.GetOSTypeId(),
+                                     guest.GetAdditionsVersion(),
+                                     guest.GetAdditionsActive()));
         return S_OK;
     }
 
@@ -810,6 +832,7 @@ bool VBoxConsoleView::event (QEvent *e)
 
             case VBoxDefs::ResizeEventType:
             {
+                bool old_ignore_mainwnd_resize = ignore_mainwnd_resize;
                 ignore_mainwnd_resize = true;
 
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
@@ -841,14 +864,13 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* automatically normalize geometry unless maximized or
                  * full screen */
                 if (!mainwnd->isTrueFullscreen() &&
-                    !topLevelWidget()->isMaximized() &&
-                    !resize_hint_timer->isActive())
+                    !topLevelWidget()->isMaximized())
                     normalizeGeometry (true /* adjustPosition */);
 
                 /* report to the VM thread that we finished resizing */
                 cconsole.GetDisplay().ResizeCompleted();
 
-                ignore_mainwnd_resize = false;
+                ignore_mainwnd_resize = old_ignore_mainwnd_resize;
 
                 return true;
             }
@@ -911,6 +933,14 @@ bool VBoxConsoleView::event (QEvent *e)
                                me->machineState()));
                 onStateChange (me->machineState());
                 emit machineStateChanged (me->machineState());
+                return true;
+            }
+
+            case VBoxDefs::AdditionsStateChangeEventType:
+            {
+                GuestAdditionsEvent *ge = (GuestAdditionsEvent *) e;
+                LogFlowFunc (("AdditionsStateChangeEventType\n"));
+                emit additionsStateChanged (ge->additionVersion(), ge->additionActive());
                 return true;
             }
 
@@ -1000,6 +1030,12 @@ bool VBoxConsoleView::event (QEvent *e)
                     }
                 }
                 ke->accept();
+                return true;
+            }
+
+            case VBoxDefs::AutoResizeEventType:
+            {
+                performAutoResize();
                 return true;
             }
 
@@ -1104,25 +1140,24 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 {
                     if (autoresize_guest)
                         resize_hint_timer->start (300, TRUE);
+                    /* During window maximization WindowStateChange event is
+                     * processed before Resize event, so the ignore_mainwnd_resize
+                     * variable should be set to true here in case of mainwnd is
+                     * maximized or in fullscreen state. */
+                    if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen())
+                        ignore_mainwnd_resize = true;
                 }
                 break;
             }
             case QEvent::WindowStateChange:
             {
-                if (!mainwnd->isMinimized())
-                {
-                    if (!mainwnd->isMaximized())
-                    {
-                        /* The guest screen size (and therefore the contents
-                         * size) could have been changed while we were maximized
-                         * or minimized, so normalize the main window size
-                         * unless we're in true fullscreen mode. Calling
-                         * normalizeGeometry() directly from here doesn't work
-                         * for some reason, so use a single shot timer. */
-                        if (!mainwnd->isTrueFullscreen())
-                            QTimer::singleShot (0, this, SLOT (normalizeGeo()));
-                    }
-                }
+                /* The guest screen size (and therefore the contents size)
+                 * could have been changed while we were maximized or minimized,
+                 * so posting event for auto-resize and normalization. */
+                if (!mainwnd->isMinimized() &&
+                    !mainwnd->isMaximized() &&
+                    !mainwnd->isTrueFullscreen())
+                    QApplication::postEvent (this, new AutoResizeEvent ());
             }
 
             default:
@@ -1482,7 +1517,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
 
         m_darwinKeyModifiers = newMask;
 
-        /* Always return true here because we'll otherwise getting a Qt event 
+        /* Always return true here because we'll otherwise getting a Qt event
            we don't want and that will only cause the Pause warning to pop up. */
         ret = true;
     }
@@ -1670,6 +1705,20 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 #endif
 
 
+}
+
+void VBoxConsoleView::performAutoResize()
+{
+    if (autoresize_guest)
+    {
+        doResizeHint();
+        QTimer::singleShot (200, this, SLOT (normalizeGeo()));
+    }
+    else
+    {
+        normalizeGeo();
+    }
+    ignore_mainwnd_resize = false;
 }
 
 /**
@@ -2451,7 +2500,7 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
     // (for ex., activating the menu) when we release all pressed keys below.
     // Note, that it's just a guess that sending RESEND will give the desired
     // effect :), but at least it works with NT and W2k guests.
-    /** @todo This seems to causes linux guests (in console mode) to cough a bit. 
+    /** @todo This seems to causes linux guests (in console mode) to cough a bit.
      * We need to check if this is the cause of #1944 and/or #1949. --bird */
     codes [0] = 0xFE;
     keyboard.PutScancodes (codes, 1);
@@ -2476,7 +2525,7 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
     /* clear most of the modifiers. */
     m_darwinKeyModifiers &= alphaLock | kEventKeyModifierNumLockMask
                           | (release_hostkey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
-#endif 
+#endif
 
     emitKeyboardStateChanged ();
 }
