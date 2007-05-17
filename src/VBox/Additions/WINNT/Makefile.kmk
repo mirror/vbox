@@ -38,5 +38,46 @@ ifneq ($(wildcard $(PATH_SUB_CURRENT)/Installer),)
 include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
 endif
 
+#
+# Inf2Cat requires all the files referenced in the .inf file
+# to be present in the directory, so we have to do this from here.
+#
+INSTALLS += VBoxGuest-inf
+VBoxGuest-inf_INST = $(INST_ADDITIONS)
+VBoxGuest-inf_MODE = a+r,u+w
+#ifndef VBOX_SIGNING_MODE - I'm not going to mess with that install nor break any .inf-files.
+VBoxGuest-inf_SOURCES = VBoxGuest/VBoxGuest.inf
+#else
+#VBoxGuest-inf_SOURCES = \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat
+#VBoxGuest-inf_CLEAN += \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll \
+#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf
+#VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
+#
+#$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/VBoxGuest/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+#	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
+#	$(QUIET2)$(RM) -f $@
+#	$(QUIET)$(SED) -e 's/^\;cat  *//' $< > $@
+#
+#$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
+#		$$(TARGET_VBoxGuest) \
+#		$$(TARGET_VBoxControl) \
+#		$$(TARGET_VBoxService) \
+#		$$(TARGET_VBCoInst)
+#	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
+#	$(INSTALL) -m 644 $(TARGET_VBoxGuest) $(@D)
+#	$(INSTALL) -m 644 $(TARGET_VBoxControl) $(@D)
+#	$(INSTALL) -m 644 $(TARGET_VBoxService) $(@D)
+#	$(INSTALL) -m 644 $(TARGET_VBCoInst) $(@D)
+#	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
+#
+#endif # signing
+
 include $(PATH_KBUILD)/subfooter.kmk
 

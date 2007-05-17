@@ -22,7 +22,20 @@ Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
 Provider=%INNOTEK%
 LayoutFile=layout.inf
-DriverVer=12/31/2004,5.00.2072
+DriverVer=08/21/2006,5.00.2072
+;cat CatalogFile=VBoxGuest.cat
+
+;cat [SourceDisksNames]
+;cat 1 = %VBoxGuest.MediaDesc%
+;cat 2 = %VBoxControl.MediaDesc%
+;cat 3 = %VBoxService.MediaDesc%
+;cat 4 = %vbcoinst.MediaDesc%
+;cat
+;cat [SourceDisksFiles]
+;cat VBoxGuest.sys = 1
+;cat VBoxControl.exe = 2
+;cat VBoxService.exe = 3
+;cat vbcoinst.dll = 4
 
 [DestinationDirs]
 DefaultDestDir = 12 ; drivers
@@ -76,3 +89,9 @@ INNOTEK = "InnoTek Systemberatung GmbH"
 VBoxGuest.DeviceDesc = "VirtualBox Device"
 VBoxGuest_svcdesc = "VirtualBox Guest Driver"
 VBoxService_svcdesc = "VirtualBox Guest Service"
+
+;cat VBoxGuest.MediaDesc   = "VirtualBox Guest Mouse Driver Installation Media"
+;cat VBoxControl.MediaDesc = "VirtualBox Guest Mouse Driver Installation Media"
+;cat VBoxService.MediaDesc = "VirtualBox Guest Mouse Driver Installation Media"
+;cat vbcoinst.MediaDesc    = "VirtualBox Guest Mouse Driver Installation Media"
+
