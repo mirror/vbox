@@ -171,10 +171,13 @@ DECLVBGL(int) VbglInit (void)
     if (VBOX_SUCCESS(rc))
     {
         /* Obtain VMMDev port via IOCTL to VBoxGuest main driver. */
-        vbglQueryVMMDevPort ();
+        rc = vbglQueryVMMDevPort ();
 
 #ifdef VBOX_HGCM
-        rc = vbglHGCMInit ();
+        if (VBOX_SUCCESS(rc))
+        {
+            rc = vbglHGCMInit ();
+        }
 #endif
 
         if (VBOX_FAILURE(rc))
