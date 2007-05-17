@@ -57,9 +57,6 @@
 #include <qtimer.h>
 
 #include <VBox/VBoxGuest.h>
-#define VBOX_GUEST_ADDITIONS_VERSION_OK(additionsVersion) \
-        (RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) && \
-         RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION))
 
 #if defined(Q_WS_X11)
 #include <X11/Xlib.h>
@@ -2514,11 +2511,21 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion, bool aActive
     /* Checking for the Guest Additions version to warn user about possible
      * compatibility issues in case of installed version is outdated. */
     uint version = aVersion.toUInt();
-    bool isVersionOk = VBOX_GUEST_ADDITIONS_VERSION_OK (version);
-    if (!isVersionOk)
+    QString fullVersion = QString ("%1.%2")
+        .arg (RT_HIWORD (version)).arg (RT_LOWORD (version));
+
+    if (RT_HIWORD (version) < RT_HIWORD (VMMDEV_VERSION))
         vboxProblem().message (this, VBoxProblemReporter::Warning,
-            tr ("<p>Current Guest Additions version is outdated. Please install "
-                "the latest version to avoid compatibility issues.</p>"));
+            tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
+                "<p>You must update to the latest version by choosing Devices "
+                "- Install Guest Additions.</p>").arg (fullVersion));
+    else if (RT_HIWORD (version) == RT_HIWORD (VMMDEV_VERSION) &&
+             RT_LOWORD (version) <  RT_LOWORD (VMMDEV_VERSION))
+        vboxProblem().message (this, VBoxProblemReporter::Warning,
+            tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
+                "<p>There is a newer Guest Additions version. You should update "
+                "to the latest version by choosing Devices "
+                "- Install Guest Additions.</p>").arg (fullVersion));
 }
 
 /**
