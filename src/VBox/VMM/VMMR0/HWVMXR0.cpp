@@ -1104,7 +1104,7 @@ ResumeExecution:
 
     /* Investigate why there was a VM-exit. */
     rc  = VMXReadVMCS(VMX_VMCS_RO_EXIT_REASON, &exitReason);
-    STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReason[exitReason & MASK_EXITREASON_STAT]);
+    STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReasonR0[exitReason & MASK_EXITREASON_STAT]);
 
     exitReason &= 0xffff;   /* bit 0-15 contain the exit code. */
     rc |= VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);

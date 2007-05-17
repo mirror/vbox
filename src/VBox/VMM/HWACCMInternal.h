@@ -285,7 +285,8 @@ typedef struct HWACCM
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;
 
-    PSTAMCOUNTER            pStatExitReason;
+    R3PTRTYPE(PSTAMCOUNTER) pStatExitReason;
+    R0PTRTYPE(PSTAMCOUNTER) pStatExitReasonR0;
 } HWACCM;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;
