@@ -49,8 +49,7 @@ VBoxVideo-inf_SOURCES = Miniport/VBoxVideo.inf
 #
 #$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/Miniport/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 #	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)
-#	$(QUIET2)$(RM) -f $@
-#	$(QUIET)$(SED) -e 's/^\;cat  *//' $< > $@
+#	$(call VBOX_EDIT_INF32_FN,$<,$@)
 #
 #$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf $$(TARGET_VBoxVideo) $$(TARGET_VBoxDisp)
 #	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
