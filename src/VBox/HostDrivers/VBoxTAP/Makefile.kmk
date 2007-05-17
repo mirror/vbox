@@ -74,7 +74,7 @@ $(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf: $(PATH_SUB_CURRENT)/VBoxTAP.inf $(MAK
 		$< > $@
  else
 	$(QUIET)$(SED) \
-		-e 's/^\;\;* *CatalogFile=/CatalogFile=/' \
+		-e 's/^\;\;* *CatalogFile *=/CatalogFile=/' \
 		$< > $@
  endif
 
