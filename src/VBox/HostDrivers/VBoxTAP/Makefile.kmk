@@ -50,7 +50,40 @@ VBoxTAP_LIBS        = \
 INSTALLS.win += VBoxTAP-inf
 VBoxTAP-inf_INST = bin/
 VBoxTAP-inf_MODE = a+r,u+w
+ifndef VBOX_SIGNING_MODE
 VBoxTAP-inf_SOURCES = VBoxTAP.inf
+else
+VBoxTAP-inf_SOURCES = \
+	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf \
+	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.cat
+VBoxTAP-inf_CLEAN += \
+	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.cat \
+	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.sys \
+	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf
+VBoxTAP-inf_BLDDIRS = $(PATH_TARGET)/VBoxTAPCat.dir
+
+$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf: $(PATH_SUB_CURRENT)/VBoxTAP.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+	$(call MSG_GENERATE,VBoxTAP-inf,$@,$<)
+	$(QUIET2)$(RM) -f $@
+ ifeq ($(BUILD_TARGET_ARCH),amd64)
+	$(QUIET)$(SED) \
+		-e 's/^\;\;* *CatalogFile *=/CatalogFile=/' \
+		-e 's/^ *\%Provider% *= *VBoxTAP *$$/%Provider% = VBoxTAP,NTamd64/' \
+		-e 's/^\[VBoxTAP\] *$$/\[VBoxTAP.NTamd64\]/' \
+		-e 's/^\;amd64 *//' \
+		$< > $@
+ else
+	$(QUIET)$(SED) \
+		-e 's/^\;\;* *CatalogFile=/CatalogFile=/' \
+		$< > $@
+ endif
+
+$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.cat: $(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf $$(TARGET_VBoxTAP)
+	$(call MSG_TOOL,Inf2Cat,VBoxTAP-inf,$@,$<)
+	$(INSTALL) -m 644 $(TARGET_VBoxTAP) $(@D)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+
+endif # signing
 
 
 # generate rules
