@@ -27,5 +27,38 @@ include	$(PATH_KBUILD)/subheader.kmk
 include $(PATH_SUB_CURRENT)/Miniport/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Display/Makefile.kmk
 
+#
+# Install the inf & cat.
+# This has to be done here since it depends on both the
+# miniport driver and the display dll.
+#
+INSTALLS += VBoxVideo-inf
+VBoxVideo-inf_INST = $(INST_ADDITIONS)
+VBoxVideo-inf_MODE = a+r,u+w
+#ifndef VBOX_SIGNING_MODE - I'm not going to mess with that install nor break any .inf-files.
+VBoxVideo-inf_SOURCES = VBoxVideo/VBoxVideo.inf
+#else
+#VBoxVideo-inf_SOURCES = \
+#	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf \
+#	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat
+#VBoxVideo-inf_CLEAN += \
+#	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat \
+#	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
+#	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf
+#VBoxVideo-inf_BLDDIRS = $(PATH_TARGET)/VBoxVideoCat.dir
+#
+#$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/Miniport/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+#	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)
+#	$(QUIET2)$(RM) -f $@
+#	$(QUIET)$(SED) -e 's/^\;cat  *//' $< > $@
+#
+#$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf $$(TARGET_VBoxVideo) $$(TARGET_VBoxDisp)
+#	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
+#	$(INSTALL) -m 644 $(TARGET_VBoxVideo) $(@D)
+#	$(INSTALL) -m 644 $(TARGET_VBoxDisp) $(@D)
+#	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
+#
+#endif # signing
+
 include	$(PATH_KBUILD)/subfooter.kmk
 
