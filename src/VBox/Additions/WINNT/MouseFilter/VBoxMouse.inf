@@ -19,7 +19,8 @@
 
 [Version]
 Signature="$Windows NT$"
- 
+;CatalogFile=VBoxMouse.cat
+
 [SourceDisksNames]
 1 = %VBoxMouse.MediaDesc%
 
@@ -36,7 +37,7 @@ DefaultDestDir = 12	; DIRID_DRIVERS
 ;
 CopyFiles = @VBoxMouse.sys
 AddReg = VBoxMouse_AddReg
- 
+
 [VBoxMouse_AddReg]
 HKLM, System\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}, UpperFilters, 0x00010000, "VBoxMouse", "mouclass"
 
