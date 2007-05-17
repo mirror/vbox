@@ -62,8 +62,7 @@ VBoxGuest-inf_SOURCES = VBoxGuest/VBoxGuest.inf
 #
 #$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/VBoxGuest/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 #	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
-#	$(QUIET2)$(RM) -f $@
-#	$(QUIET)$(SED) -e 's/^\;cat  *//' $< > $@
+#	$(call VBOX_EDIT_INF32_FN,$<,$@)
 #
 #$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
 #		$$(TARGET_VBoxGuest) \

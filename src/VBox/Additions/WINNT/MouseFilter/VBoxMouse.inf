@@ -19,7 +19,7 @@
 
 [Version]
 Signature="$Windows NT$"
-;CatalogFile=VBoxMouse.cat
+;cat CatalogFile=VBoxMouse.cat
 
 [SourceDisksNames]
 1 = %VBoxMouse.MediaDesc%
