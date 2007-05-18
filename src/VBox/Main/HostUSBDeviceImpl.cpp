@@ -559,8 +559,8 @@ int HostUSBDevice::compare (PCUSBDEVICE pDev2)
 /**
  * Updates the state of the device.
  *
- * @returns true if the state has actually changed.
- * @returns false if the stat didn't change, or the change might have been cause by VBox.
+ * @return true if the state has actually changed.
+ * @return false if the state didn't change, or the change might have been caused by VBox.
  *
  * @param   aDev    The current device state as seen by the proxy backend.
  */
@@ -663,5 +663,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             }
             break;
     }
+
+    return false;
 }
 
