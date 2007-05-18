@@ -33,14 +33,12 @@
 
 #include <qfileinfo.h>
 
-#if defined (Q_WS_X11)
-# include <X11/Xlib.h>
-#elif defined (Q_WS_MAC)
+/// @todo Remove? See @c todo in #switchTo() below.
+#if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
 #endif
 
 
-////////////////////////////////////////////////////////////////////////////////
 // Helpers
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -552,37 +550,9 @@ bool VBoxVMListBoxItem::switchTo()
     if (id == 0)
         return true;
 
-#if defined (Q_WS_WIN32)
+#if defined (Q_WS_WIN32) || defined (Q_WS_X11)
 
-    if (IsIconic (id))
-        ShowWindow (id, SW_RESTORE);
-    else if (!IsWindowVisible (id))
-        ShowWindow (id, SW_SHOW);
-
-    return SetForegroundWindow (id);
-
-#elif defined (Q_WS_X11)
-
-    /// @todo I've tried XRaiseWindow, XConfigureWindow, XRestackWindows and
-    /// XSetInputFocus here but couldn't get a useless result under
-    /// metacity/Ubuntu-7.04.  XSetInputFocus works, but XRaiseWindow and
-    /// friends don't -- when it comes to bringing the window represented by
-    /// the given id (or its parent) to front, on top of all other top-level
-    /// windows. As a result, we would get input focus to a possibly invisible
-    /// (obscured by others) window!.. I've found one way to steal raise
-    /// window events from Metacity and prevent it from applying focus
-    /// stealing prevention (by settings override_redirect to True on the id's
-    /// parent using using XChangeWindowAttributes), but the result didn't
-    /// satisfy me: the raised console window started to behave like an
-    /// always-on-top window until moved or minimized which is wrong. Also,
-    /// there is little hope that this approach will work for other window
-    /// managers with "strong" focus stealing prevention algorithms, so I
-    /// decided to completely disable this feature on X11 -- Until someone has
-    /// enough time to find an acceptable solution that will work constantly
-    /// well under at least selected window managers, and will be simply
-    /// disabled on those where it doesn't work.
-
-    return false;
+    return vboxGlobal().activateWindow (id, true);
 
 #elif defined (Q_WS_MAC)
 

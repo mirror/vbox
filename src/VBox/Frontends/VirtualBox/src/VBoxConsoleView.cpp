@@ -399,12 +399,9 @@ public:
         if (!canShow)
             return E_POINTER;
 
-#if defined (Q_WS_X11)
-        /// @todo see the big comment in VBoxVMListBoxItem::switchTo()
-        *canShow = FALSE;
-#else
+        /* as long as there is VBoxConsoleView (which creates/destroys us), it
+         * can be shown */
         *canShow = TRUE;
-#endif
         return S_OK;
     }
 
