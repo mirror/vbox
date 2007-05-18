@@ -2489,7 +2489,7 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
 {
     AssertMsg (attached, ("Console must be attached"));
 
-    LONG codes[2];
+    LONG codes [2];
     CKeyboard keyboard = cconsole.GetKeyboard();
 
     // send a dummy scan code (RESEND) to prevent the guest OS from recognizing
@@ -2504,15 +2504,17 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
 
     for (uint i = 0; i < SIZEOF_ARRAY (keys_pressed); i++)
     {
-        if ( keys_pressed[i] & IsKeyPressed )
+        if (keys_pressed [i] & IsKeyPressed)
+        {
             keyboard.PutScancode (i | 0x80);
-        if ( keys_pressed[i] & IsKeyPressed )
+        }
+        else if (keys_pressed [i] & IsExtKeyPressed)
         {
             codes[0] = 0xE0;
             codes[1] = i | 0x80;
             keyboard.PutScancodes (codes, 2);
         }
-        keys_pressed[i] = 0;
+        keys_pressed [i] = 0;
     }
 
     if (release_hostkey)
@@ -2520,8 +2522,9 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
 
 #ifdef Q_WS_MAC
     /* clear most of the modifiers. */
-    m_darwinKeyModifiers &= alphaLock | kEventKeyModifierNumLockMask
-                          | (release_hostkey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
+    m_darwinKeyModifiers &=
+        alphaLock | kEventKeyModifierNumLockMask |
+        (release_hostkey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
 #endif
 
     emitKeyboardStateChanged ();
@@ -2539,22 +2542,25 @@ void VBoxConsoleView::sendChangedKeyStates()
 {
     AssertMsg (attached, ("Console must be attached"));
 
-    LONG codes[2];
+    LONG codes [2];
     CKeyboard keyboard = cconsole.GetKeyboard();
-    for ( uint i = 0; i < SIZEOF_ARRAY( keys_pressed ); i++ ) {
-        uint8_t os = keys_pressed_copy[i];
-        uint8_t ns = keys_pressed[i];
-        if ( (os & IsKeyPressed) != (ns & IsKeyPressed) ) {
-            codes[0] = i;
-            if ( !(ns & IsKeyPressed) )
+    for (uint i = 0; i < SIZEOF_ARRAY (keys_pressed); ++ i)
+    {
+        uint8_t os = keys_pressed_copy [i];
+        uint8_t ns = keys_pressed [i];
+        if ((os & IsKeyPressed) != (ns & IsKeyPressed))
+        {
+            codes [0] = i;
+            if (!(ns & IsKeyPressed))
                 codes[0] |= 0x80;
             keyboard.PutScancode (codes[0]);
         }
-        if ( (os & IsExtKeyPressed) != (ns & IsExtKeyPressed) ) {
-            codes[0] = 0xE0;
-            codes[1] = i;
-            if ( !(ns & IsExtKeyPressed) )
-                codes[1] |= 0x80;
+        else if ((os & IsExtKeyPressed) != (ns & IsExtKeyPressed))
+        {
+            codes [0] = 0xE0;
+            codes [1] = i;
+            if (!(ns & IsExtKeyPressed))
+                codes [1] |= 0x80;
             keyboard.PutScancodes (codes, 2);
         }
     }
