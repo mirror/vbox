@@ -108,10 +108,14 @@ typedef struct VBOXHDDRAWPART
     const char      *pszRawDevice;
     /** Offset where the partition data starts in this device. */
     uint64_t        uPartitionStartOffset;
+    /** Offset where the partition data starts in the disk. */
+    uint64_t        uPartitionStart;
     /** Size of the partition. */
     uint64_t        cbPartition;
     /** Size of the partitioning info to prepend. */
     uint64_t        cbPartitionData;
+    /** Offset where the partitioning info starts in the disk. */
+    uint64_t        uPartitionDataStart;
     /** Pointer to the partitioning info to prepend. */
     const void      *pvPartitionData;
 } VBOXHDDRAWPART, *PVBOXHDDRAWPART;
