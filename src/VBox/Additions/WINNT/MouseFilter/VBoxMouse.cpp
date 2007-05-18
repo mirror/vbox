@@ -115,8 +115,26 @@ void vboxInformHost (PDEVICE_EXTENSION devExt)
             }
             else
             {
-                 devExt->HostInformed = TRUE;
+                devExt->HostInformed = TRUE;
+
+                if (!devExt->reqSC)
+                {
+                    /* Preallocate request for ServiceCallback */
+                    VMMDevReqMouseStatus *req = NULL;
+
+                    vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
+
+                    if (VBOX_SUCCESS(vboxRC))
+                    {
+                        devExt->reqSC = req;
+                    }
+                    else
+                    {
+                        dprintf(("VBoxMouse::vboxInformHost: request allocation for service callback failed\n"));
+                    }
+                }
             }
+
             VbglGRFree(&req->header);
         }
     }
@@ -591,29 +609,7 @@ Return Value:
 
             int vboxRC = VbglInit ();
 
-            if (VBOX_SUCCESS(vboxRC))
-            {
-                /* We will not fail the driver initialization even
-                 * if the following VBox initialization code will fail.
-                 * In that case we will just do not have mouse integration.
-                 */
-
-                /* Allocate request for ServiceCallback */
-                VMMDevReqMouseStatus *req = NULL;
-
-                vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
-
-                if (VBOX_SUCCESS(vboxRC))
-                {
-                    devExt->reqSC = req;
-                }
-                else
-                {
-                    dprintf(("VBoxMouse::VBoxMouse_PnP: request allocation failed\n"));
-                    VbglTerminate ();
-                }
-            }
-            else
+            if (VBOX_FAILURE(vboxRC))
             {
                 dprintf(("VBoxMouse::VBoxMouse_PnP: guest library initialization failed\n"));
 
