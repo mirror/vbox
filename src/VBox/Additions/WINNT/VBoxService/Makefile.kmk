@@ -25,9 +25,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 
 PROGRAMS += VBoxService
 VBoxService_TEMPLATE = VBOXW32GUESTR3
-#ifdef VBOX_SIGNING_MODE
-# VBoxService_NOINST  = true
-#endif
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxService_NOINST  = true
+endif
 VBoxService_DEFS     = VBOX_HGCM
 VBoxService_SOURCES  = \
 	VBoxService.cpp \

@@ -25,6 +25,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 
 SYSMODS += VBoxDisp
 VBoxDisp_TEMPLATE    = VBOXW32GUESTR0
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxDisp_NOINST     = true
+endif
 VBoxDisp_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxDisp_SYSSUFF     = .dll
 VBoxDisp_DEFS        = _WIN32_WINNT=0x0501 LOG_TO_BACKDOOR

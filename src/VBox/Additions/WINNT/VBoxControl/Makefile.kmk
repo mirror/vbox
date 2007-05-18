@@ -26,9 +26,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 
 PROGRAMS += VBoxControl
 VBoxControl_TEMPLATE = VBOXW32GUESTR3
-#ifdef VBOX_SIGNING_MODE
-# VBoxControl_NOINST  = true
-#endif
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxControl_NOINST  = true
+endif
 VBoxControl_SOURCES  = \
 	VBoxControl.cpp \
 	VBoxControl.rc

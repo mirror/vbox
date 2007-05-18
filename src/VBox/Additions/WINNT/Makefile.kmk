@@ -45,42 +45,45 @@ endif
 INSTALLS += VBoxGuest-inf
 VBoxGuest-inf_INST = $(INST_ADDITIONS)
 VBoxGuest-inf_MODE = a+r,u+w
-#ifndef VBOX_SIGNING_MODE - I'm not going to mess with that install nor break any .inf-files.
+ifndef VBOX_SIGN_ADDITIONS
 VBoxGuest-inf_SOURCES = VBoxGuest/VBoxGuest.inf
-#else
-#VBoxGuest-inf_SOURCES = \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
-#VBoxGuest-inf_CLEAN = \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe \
-#	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
-#VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
-#
-#$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/VBoxGuest/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
-#	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
-#	$(call VBOX_EDIT_INF32_FN,$<,$@)
-#
-#$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
-#		$$(TARGET_VBoxGuest) \
-#		$$(TARGET_VBoxControl) \
-#		$$(TARGET_VBoxService) \
-#		$$(TARGET_VBCoInst)
-#	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
-#	$(INSTALL) -m 644 $(TARGET_VBoxGuest) $(@D)
-#	$(INSTALL) -m 644 $(TARGET_VBoxControl) $(@D)
-#	$(INSTALL) -m 644 $(TARGET_VBoxService) $(@D)
-#	$(INSTALL) -m 644 $(TARGET_VBCoInst) $(@D)
-#	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
-#
-#endif # signing
+else
+VBoxGuest-inf_SOURCES = \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
+VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
+VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
+
+$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/VBoxGuest/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
+	$(call VBOX_EDIT_INF32_FN,$<,$@)
+
+$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys:   $$(TARGET_VBoxGuest) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+
+$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe: $$(TARGET_VBoxControl) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 755 $< $(@D)
+
+$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe: $$(TARGET_VBoxService) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 755 $< $(@D)
+
+$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll:    $$(TARGET_VBCoInst) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+
+$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxService.exe \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
+	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
+	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
+
+endif # signing
 
 include $(PATH_KBUILD)/subfooter.kmk
 
