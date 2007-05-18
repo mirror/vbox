@@ -504,7 +504,7 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
                           RT_SRC_POS, "VD: unknown backend name '%s'",
                           pszBackend);
 
-    LogFlow(("%s: returns %vrc (pDisk=%#p)\n", __FUNCTION__, rc, pDisk));
+    LogFlow(("%s: returns %Vrc (pDisk=%#p)\n", __FUNCTION__, rc, pDisk));
     return rc;
 }
 
@@ -1032,6 +1032,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
 VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf, size_t cbRead)
 {
     /* sanity check */
+    LogFlow(("%s: offset=%llu cbRead=%u\n", __FUNCTION__, uOffset, (unsigned)cbRead));
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
