@@ -1350,6 +1350,7 @@ TRPMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
 
             if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] != TRPM_INVALID_HANDLER)
             {
+                /* Must check pending forced actions as our IDT or GDT might be out of sync */
                 EMR3CheckRawForcedActions(pVM);
                 
                 /* There's a handler -> let's execute it in raw mode */
