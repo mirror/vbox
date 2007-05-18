@@ -957,6 +957,10 @@ ifdef VBOX_SIGNING_MODE
    else
     VBOX_MAKE_CAT_FN    = $(call VBOX_MAKE_CAT64_FN,$(1),$(2))
    endif
+
+  # Enable signing of the additions.
+  VBOX_SIGN_ADDITIONS   = 1
+
   else
    $(error Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
   endif
