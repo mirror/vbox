@@ -138,7 +138,7 @@ VBoxDrv-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
 
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(TARGET_VBoxDrv)
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(TARGET_VBoxDrv) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
