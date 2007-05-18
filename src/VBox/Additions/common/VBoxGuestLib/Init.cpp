@@ -32,7 +32,13 @@
 VBGLDATA g_vbgldata;
 
 #ifndef VBGL_VBOXGUEST
-static int vbglQueryVMMDevPort (void)
+/* The guest library uses lazy initialization for VMMDev port and memory,
+ * because these values are provided by the VBoxGuest driver and it might
+ * be loaded later than other drivers.
+ * The VbglEnter checks the current library status, tries to retrive these
+ * values and fails if they are unavailable.
+ */
+static void vbglQueryVMMDevPort (void)
 {
     int rc = VINF_SUCCESS;
 
@@ -60,8 +66,6 @@ static int vbglQueryVMMDevPort (void)
     }
 
     dprintf (("vbglQueryVMMDevPort rc = %d\n", rc));
-    
-    return rc;
 }
 #endif
 
@@ -76,7 +80,7 @@ int VbglEnter (void)
     }
 #endif
 
-    rc = g_vbgldata.status != VbglStatusNotInitialized? VINF_SUCCESS: VERR_VBGL_NOT_INITIALIZED;
+    rc = g_vbgldata.status == VbglStatusReady? VINF_SUCCESS: VERR_VBGL_NOT_INITIALIZED;
     
     // dprintf(("VbglEnter: rc = %d\n", rc));
     
@@ -170,15 +174,12 @@ DECLVBGL(int) VbglInit (void)
 
     if (VBOX_SUCCESS(rc))
     {
-        /* Obtain VMMDev port via IOCTL to VBoxGuest main driver. */
-        rc = vbglQueryVMMDevPort ();
+        /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
+        vbglQueryVMMDevPort ();
 
 #ifdef VBOX_HGCM
-        if (VBOX_SUCCESS(rc))
-        {
-            rc = vbglHGCMInit ();
-        }
-#endif
+        rc = vbglHGCMInit ();
+#endif /* VBOX_HGCM */
 
         if (VBOX_FAILURE(rc))
         {
