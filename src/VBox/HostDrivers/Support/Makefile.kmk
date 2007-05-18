@@ -126,8 +126,7 @@ VBoxDrv-inf_INST = $(INST_BIN)
 VBoxDrv-inf_MODE = a+r,u+w
 VBoxDrv-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf
-VBoxDrv-inf_CLEAN = \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf
+VBoxDrv-inf_CLEAN = $(VBoxDrv-inf_SOURCES)
 VBoxDrv-inf_BLDDIRS = $(PATH_TARGET)/VBoxDrvCat.dir
 
 $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win32/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
@@ -136,15 +135,16 @@ $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win32/VBoxDrv.inf
 
  ifdef VBOX_SIGNING_MODE
 VBoxDrv-inf_SOURCES += \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys
-VBoxDrv-inf_CLEAN += \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys
+	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
+	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
 
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf $$(TARGET_VBoxDrv)
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(TARGET_VBoxDrv)
+	$(INSTALL) -m 644 $< $(@D)
+
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
+		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf \
+		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
 	$(call MSG_TOOL,Inf2Cat,VBoxDrv-inf,$@,$<)
-	$(INSTALL) -m 644 $(TARGET_VBoxDrv) $(@D)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # signing
 endif # win
