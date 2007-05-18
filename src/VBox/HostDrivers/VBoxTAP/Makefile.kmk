@@ -55,8 +55,7 @@ VBoxTAP-inf_INST = $(INST_BIN)
 VBoxTAP-inf_MODE = a+r,u+w
 VBoxTAP-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf
-VBoxTAP-inf_CLEAN = \
-	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf
+VBoxTAP-inf_CLEAN = $(VBoxTAP-inf_SOURCES)
 VBoxTAP-inf_BLDDIRS = $(PATH_TARGET)/VBoxTAPCat.dir
 
 $(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf: $(PATH_SUB_CURRENT)/VBoxTAP.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
@@ -67,11 +66,13 @@ ifdef VBOX_SIGNING_MODE
 VBoxTAP-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.cat \
 	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.sys
-VBoxTAP-inf_CLEAN += \
-	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.cat \
-	$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.sys
 
-$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.cat: $(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf $$(TARGET_VBoxTAP)
+$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.sys: $$(TARGET_VBoxTAP) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+
+$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.cat: \
+		$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.inf \
+		$(PATH_TARGET)/VBoxTAPCat.dir/VBoxTAP.sys
 	$(call MSG_TOOL,Inf2Cat,VBoxTAP-inf,$@,$<)
 	$(INSTALL) -m 644 $(TARGET_VBoxTAP) $(@D)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
