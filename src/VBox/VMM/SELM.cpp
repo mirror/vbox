@@ -1732,37 +1732,37 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
                                  GCPtrTss, cbTss));
             }
         }
-    }
 
-    if (!pVM->selm.s.fSyncTSSRing0Stack)
-    {
-        RTGCPTR     pGuestTSS = pVM->selm.s.GCPtrGuestTss;
-        uint32_t    ESPR0;
-        int rc = PGMPhysReadGCPtr(pVM, &ESPR0, pGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
-        if (VBOX_SUCCESS(rc))
+        if (!pVM->selm.s.fSyncTSSRing0Stack)
         {
-            RTSEL SelSS0;
-            rc = PGMPhysReadGCPtr(pVM, &SelSS0, pGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
+            RTGCPTR     pGuestTSS = pVM->selm.s.GCPtrGuestTss;
+            uint32_t    ESPR0;
+            int rc = PGMPhysReadGCPtr(pVM, &ESPR0, pGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
             if (VBOX_SUCCESS(rc))
             {
-                if (    ESPR0 == pVM->selm.s.Tss.esp1
-                    &&  SelSS0 == (pVM->selm.s.Tss.ss1 & ~1))
-                    return true;
+                RTSEL SelSS0;
+                rc = PGMPhysReadGCPtr(pVM, &SelSS0, pGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
+                if (VBOX_SUCCESS(rc))
+                {
+                    if (    ESPR0 == pVM->selm.s.Tss.esp1
+                        &&  SelSS0 == (pVM->selm.s.Tss.ss1 & ~1))
+                        return true;
 
-                RTGCPHYS GCPhys;
-                uint64_t fFlags;
+                    RTGCPHYS GCPhys;
+                    uint64_t fFlags;
 
-                rc = PGMGstGetPage(pVM, pGuestTSS, &fFlags, &GCPhys);
-                AssertRC(rc);
-                AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%VGv Phys=%VGp\n",
-                                 (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, pGuestTSS, GCPhys));
+                    rc = PGMGstGetPage(pVM, pGuestTSS, &fFlags, &GCPhys);
+                    AssertRC(rc);
+                    AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%VGv Phys=%VGp\n",
+                                     (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, pGuestTSS, GCPhys));
+                }
+                else
+                    AssertRC(rc);
             }
             else
-                AssertRC(rc);
+                /* Happens during early Windows XP boot when it is switching page tables. */
+                Assert(rc == VINF_SUCCESS || ((rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT) && !(CPUMGetGuestEFlags(pVM) & X86_EFL_IF)));
         }
-        else
-            /* Happens during early Windows XP boot when it is switching page tables. */
-            Assert(rc == VINF_SUCCESS || ((rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT) && !(CPUMGetGuestEFlags(pVM) & X86_EFL_IF)));
     }
     return false;
 #else
