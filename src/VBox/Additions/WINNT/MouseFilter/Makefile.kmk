@@ -43,7 +43,7 @@ VBoxMouse_LIBS        = \
 
 # Inf2Cat refuses to sign this one complaining that it isn't an installation INF
 INSTALLS += VBoxMouse-inf
-VBoxMouse-inf_INST = bin/
+VBoxMouse-inf_INST = $(INST_ADDITIONS)
 VBoxMouse-inf_MODE = a+r,u+w
 VBoxMouse-inf_SOURCES = VBoxMouse.inf
 
