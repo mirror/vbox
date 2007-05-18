@@ -36,11 +36,11 @@ include files_vboxvfs
 #
 # Install the source.
 #
-vboxvfs-bin_INST        = bin/additions/src/vboxvfs
+vboxvfs-bin_INST        = $(INST_ADDITIONS)/src/vboxvfs
 vboxvfs-bin_MODE        = a+r,u+w
 vboxvfs-bin_SOURCES     = $(subst ",,$(FILES_VBOXVFS_NOBIN))
 
-vboxvfs-sh_INST         = bin/additions/src/vboxvfs
+vboxvfs-sh_INST         = $(INST_ADDITIONS)/src/vboxvfs
 vboxvfs-sh_MODE         = a+rx,u+w
 vboxvfs-sh_SOURCES      = $(subst ",,$(FILES_VBOXVFS_BIN))
 
