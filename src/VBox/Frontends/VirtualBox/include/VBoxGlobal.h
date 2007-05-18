@@ -430,6 +430,8 @@ public:
 
     static QString getFirstExistingDir (const QString &);
 
+    static bool activateWindow (WId aWId, bool aSwitchDesktop = true);
+
 signals:
 
     /**
