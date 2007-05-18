@@ -63,7 +63,7 @@
 #define USAGE_LISTPARTITIONS        (0)
 #define USAGE_CREATERAWVMDK         (0)
 #else /* !VBOX_OSE */
-#define USAGE_LISTPARTITIONS        BIT64(34)
+#define USAGE_LISTPARTITIONS        BIT64(33)
 #define USAGE_CREATERAWVMDK         BIT64(34)
 #endif /* !VBOX_OSE */
 #define USAGE_ALL                   (~(uint64_t)0)
