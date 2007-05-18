@@ -32,11 +32,11 @@ endif
 #
 include files_vboxadd
 
-vboxmod-bin_INST    = bin/additions/src/vboxadd/
+vboxmod-bin_INST    = $(INST_ADDITIONS)/src/vboxadd/
 vboxmod-bin_MODE    = a+r,u+w
 vboxmod-bin_SOURCES = $(subst ",,$(FILES_VBOXADD_NOBIN))
 
-vboxmod-sh_INST     = bin/additions/src/vboxadd/
+vboxmod-sh_INST     = $(INST_ADDITIONS)/src/vboxadd/
 vboxmod-sh_MODE     = a+rx,u+w
 vboxmod-sh_SOURCES  = $(subst ",,$(FILES_VBOXADD_BIN))
 
