@@ -27,6 +27,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 # This has to run on NT4!
 SYSMODS += VBoxVideo
 VBoxVideo_TEMPLATE    = VBOXW32GUESTR0
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxVideo_NOINST     = true
+endif
 VBoxVideo_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxVideo_DEFS        = LOG_TO_BACKDOOR
 #VBoxVideo_DEFS        += LOG_ENABLED
