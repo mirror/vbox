@@ -1,5 +1,5 @@
 /** @file
- * InnoTek Portable Runtime - C++ Exetensions: memory.
+ * InnoTek Portable Runtime - C++ Extensions: memory.
  */
 
 /*
@@ -21,7 +21,7 @@
 #ifndef __iprt_memory__
 #define __iprt_memory__
 
-/** @defgroup grp_rt_cppx_memory  InnoTek Portable Runtime C++ Exetensions: memory
+/** @defgroup grp_rt_cppx_memory  InnoTek Portable Runtime C++ Extensions: memory
  * @ingroup grp_rt_cppx
  * @{
  */
