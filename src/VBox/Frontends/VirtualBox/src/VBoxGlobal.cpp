@@ -165,7 +165,7 @@ public:
     // these callback methods are never called on the main GUI thread.
     // Another reason to handle events asynchronously is that internally
     // most callback interface methods are called from under the initiator
-    // object's lock, so accessing the initiator object (for examile, reading
+    // object's lock, so accessing the initiator object (for example, reading
     // some property) directly from the callback method will definitely cause
     // a deadlock.
 
@@ -2888,10 +2888,12 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 
     if (aSwitchDesktop)
     {
-        /* try to find a desktop ID */
+        /* try to find the desktop ID using the NetWM property */
         CARD32 *desktop = (CARD32 *) XXGetProperty (dpy, aWId, XA_CARDINAL,
                                                     "_NET_WM_DESKTOP");
         if (desktop == NULL)
+            /* if the NetWM propery is not supported try to find the desktop
+             * ID using the GNOME WM property */
             desktop = (CARD32 *) XXGetProperty (dpy, aWId, XA_CARDINAL,
                                                 "_WIN_WORKSPACE");
 
@@ -2902,7 +2904,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
                                            *desktop);
             if (!ok)
             {
-                LogWarningFunc (("Couldn't swith to desktop=%08X\n",
+                LogWarningFunc (("Couldn't switch to desktop=%08X\n",
                                  desktop));
                 result = false;
             }
