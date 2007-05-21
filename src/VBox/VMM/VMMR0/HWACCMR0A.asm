@@ -266,7 +266,7 @@ ALIGNCODE(16)
     pop     xAX         ; saved LDTR
     lldt    ax
 
-    add     xSP, 4      ; pCtx
+    add     xSP, xS      ; pCtx
 
     ; Restore segment registers
     MYPOPSEGS xAX, ax
