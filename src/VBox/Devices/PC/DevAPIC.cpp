@@ -1709,7 +1709,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * The the CPUID feature bit.
      */
     uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
-    PDMDevHlpQueryCPUId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
+    PDMDevHlpGetCpuId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
     if (u32Eax >= 1)
     {
         if (   fIOAPIC                       /* If IOAPIC is enabled, enable Local APIC in any case */

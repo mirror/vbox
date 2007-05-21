@@ -5344,7 +5344,7 @@ typedef struct PDMDEVHLP
      * @param   pEcx        Where to store the ECX value.
      * @param   pEdx        Where to store the EDX value.
      */
-    DECLR3CALLBACKMEMBER(void, pfnQueryCPUId,(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx));
+    DECLR3CALLBACKMEMBER(void, pfnGetCpuId,(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx));
 
     /** @} */
 
@@ -6064,11 +6064,11 @@ DECLINLINE(int) PDMDevHlpCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu
 }
 
 /**
- * @copydoc PDMDEVHLP::pfnQueryCPUId
+ * @copydoc PDMDEVHLP::pfnGetCpuId
  */
-DECLINLINE(void) PDMDevHlpQueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
-    pDevIns->pDevHlp->pfnQueryCPUId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
+    pDevIns->pDevHlp->pfnGetCpuId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
 }
 #endif /* IN_RING3 */
 
