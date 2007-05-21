@@ -308,7 +308,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
                                  size_t cbPostRead, const void *pvBuf,
                                  void *pvTmp)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /* Read the data that goes before the write to fill the block. */
     if (cbPreRead)
@@ -1590,7 +1590,22 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
                                char *pszComment, unsigned cbComment)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /* sanity check */
+    Assert(pDisk);
+    AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    Assert(pszComment);
+
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    int rc;
+    if (pImage)
+        rc = pDisk->Backend->pfnGetComment(pImage->pvBackendData, pszComment,
+                                           cbComment);
+    else
+        rc = VERR_VDI_IMAGE_NOT_FOUND;
+
+    LogFlow(("%s: returns %Vrc, comment='%s' nImage=%u\n", __FUNCTION__,
+             rc, pszComment, nImage));
+    return rc;
 }
 
 /**
@@ -1605,7 +1620,20 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
                                const char *pszComment)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /* sanity check */
+    Assert(pDisk);
+    AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    LogFlow(("%s: comment='%s' nImage=%u\n", __FUNCTION__, pszComment, nImage));
+
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    int rc;
+    if (pImage)
+        rc = pDisk->Backend->pfnSetComment(pImage->pvBackendData, pszComment);
+    else
+        rc = VERR_VDI_IMAGE_NOT_FOUND;
+
+    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    return rc;
 }
 
 

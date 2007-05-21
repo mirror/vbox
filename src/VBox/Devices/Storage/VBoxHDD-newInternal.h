@@ -204,6 +204,27 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnSetOpenFlags, (void *pvBackendData, unsigned uOpenFlags));
 
     /**
+     * Get comment of a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pszComment      Where to store the comment.
+     * @param   cbComment       Size of the comment buffer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetComment, (void *pvBackendData, char *pszComment, size_t cbComment));
+
+    /**
+     * Set comment of a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pszComment      Where to get the comment from. NULL resets comment.
+     *                          The comment is silently truncated if the image format
+     *                          limit is exceeded.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetComment, (void *pvBackendData, const char *pszComment));
+
+    /**
      * Get UUID of a disk image.
      *
      * @returns VBox status code.
