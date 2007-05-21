@@ -468,7 +468,7 @@ ENDPROC VMXWriteVMCS64
 ;DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
 BEGINPROC VMXReadVMCS64
     xor         rax, rax
-%ifd%ifdef ASM_CALL64_GCC
+%ifdef ASM_CALL64_GCC
     and         rdi, 0ffffffffh
     vmread      [rsi], rdi
 %else
