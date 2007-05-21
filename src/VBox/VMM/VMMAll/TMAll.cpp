@@ -177,7 +177,7 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
     }
 
     /* 
-     * TMCLOCK_VIRTUAL_SYNC 
+     * TMCLOCK_VIRTUAL_SYNC
      * This isn't quite as stright forward if in a catch-up, not only do 
      * we have to adjust the 'now' but when have to adjust the delta as well.
      */
@@ -225,6 +225,7 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
     return RT_MIN(i64Delta1, i64Delta2);
 }
 #endif
+
 
 /**
  * Gets the host context ring-3 pointer of the timer.
