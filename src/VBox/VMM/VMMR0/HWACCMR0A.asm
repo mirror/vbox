@@ -81,8 +81,8 @@
     push    rdi
   %endmacro
   %macro MYPOPAD 0
-    pop     rsi
     pop     rdi
+    pop     rsi
     pop     rbx
     pop     r12
     pop     r13
