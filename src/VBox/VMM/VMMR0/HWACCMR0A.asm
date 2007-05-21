@@ -142,7 +142,6 @@ BEGINCODE
 ; * @param   pCtx        Guest context
 ; */
 BEGINPROC VMXStartVM
-int3
     push    xBP
     mov     xBP, xSP
 
@@ -216,7 +215,6 @@ int3
 
 ALIGNCODE(16)
 .vmlaunch_done:
-int3
     jnc     .vmxstart_good
 
     pop     xAX         ; saved LDTR
