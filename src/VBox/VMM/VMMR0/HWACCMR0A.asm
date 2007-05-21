@@ -441,10 +441,8 @@ ENDPROC VMXResumeVM
 ; */
 BEGINPROC VMXWriteVMCS64
 %ifdef ASM_CALL64_GCC
-    and         edi, 0ffffffffh; serious paranoia
     vmwrite     rdi, rsi
 %else
-    and         ecx, 0ffffffffh; serious paranoia
     vmwrite     rcx, rdx
 %endif
     jnc         .valid_vmcs
@@ -467,10 +465,8 @@ ENDPROC VMXWriteVMCS64
 ;DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
 BEGINPROC VMXReadVMCS64
 %ifdef ASM_CALL64_GCC
-    and         edi, 0ffffffffh; serious paranoia
     vmread      [rsi], rdi
 %else
-    and         ecx, 0ffffffffh; serious paranoia
     vmread      [rdx], rcx
 %endif
     jnc         .valid_vmcs
