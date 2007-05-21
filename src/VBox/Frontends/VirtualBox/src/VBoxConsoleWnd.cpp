@@ -215,7 +215,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dbgCommandLineAction (NULL)
     , dbgMenu (NULL)
 #endif
-    , mIsAutoresizeEnabled (false)
     , console (0)
     , mUsbLedTip (0)
     , mNetworkLedTip (0)
@@ -725,7 +724,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
         str = cmachine.GetExtraData (GUI_AutoresizeGuest);
         if (str != "off")
-            mIsAutoresizeEnabled = true;
+            vmAutoresizeGuestAction->setOn (true);
 
         str = cmachine.GetExtraData (GUI_LastWindowPosition);
 
@@ -1710,8 +1709,15 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
 
     bool wasHidden = isHidden();
 
+    static QSize prevMinimumSize;
     if (on)
     {
+        /* Save previous scroll-view minimum size before entering fullscreen
+         * state to make return to this minimum size before the exiting
+         * fullscreen. Required for correct scroll-view update in SDL mode. */
+        prevMinimumSize = console->minimumSize();
+        console->setMinimumSize (0, 0);
+
         /* memorize the maximized state */
         was_max = isMaximized();
         /* set the correct flags to disable unnecessary frame controls */
@@ -1759,6 +1765,10 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
     }
     else
     {
+        /* Returns to previous scroll-view minimum size before the exiting
+         * fullscreen. Required for correct scroll-view update in SDL mode. */
+        console->setMinimumSize (prevMinimumSize);
+
         /* hide early to avoid extra flicker */
 #ifdef Q_WS_MAC
         SetSystemUIMode (kUIModeNormal, 0);
@@ -1787,7 +1797,7 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         /* restore the maximized state */
         if (was_max)
             setWindowState (windowState() | WindowMaximized);
-        QApplication::postEvent (console, new AutoResizeEvent());
+        QTimer::singleShot (0, console, SLOT (exitFullScreen()));
     }
 
     /* VBoxConsoleView loses focus for some reason after reparenting,
@@ -2502,11 +2512,7 @@ void VBoxConsoleWnd::updateMouseState (int state)
 
 void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion, bool aActive)
 {
-    /* mIsAutoresizeEnabled flag stores the auto-resize status loaded from the
-     * settings and used for the activation of the autoresize feature
-     * if the additions state told us here it is activated. */
     vmAutoresizeGuestAction->setEnabled (aActive);
-    vmAutoresizeGuestAction->setOn (aActive && mIsAutoresizeEnabled);
 
     /* Checking for the Guest Additions version to warn user about possible
      * compatibility issues in case of installed version is outdated. */
@@ -2515,17 +2521,10 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion, bool aActive
         .arg (RT_HIWORD (version)).arg (RT_LOWORD (version));
 
     if (RT_HIWORD (version) < RT_HIWORD (VMMDEV_VERSION))
-        vboxProblem().message (this, VBoxProblemReporter::Warning,
-            tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
-                "<p>You must update to the latest version by choosing Devices "
-                "- Install Guest Additions.</p>").arg (fullVersion));
+        vboxProblem().warnAboutOldAdditions (this, fullVersion);
     else if (RT_HIWORD (version) == RT_HIWORD (VMMDEV_VERSION) &&
              RT_LOWORD (version) <  RT_LOWORD (VMMDEV_VERSION))
-        vboxProblem().message (this, VBoxProblemReporter::Warning,
-            tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
-                "<p>There is a newer Guest Additions version. You should update "
-                "to the latest version by choosing Devices "
-                "- Install Guest Additions.</p>").arg (fullVersion));
+        vboxProblem().warnAboutNewAdditions (this, fullVersion);
 }
 
 /**

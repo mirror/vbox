@@ -128,7 +128,6 @@ struct VBoxDefs
         MousePointerChangeEventType,
         MachineStateChangeEventType,
         AdditionsStateChangeEventType,
-        AutoResizeEventType,
         MachineDataChangeEventType,
         MachineRegisteredEventType,
         SessionStateChangeEventType,
