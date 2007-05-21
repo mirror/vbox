@@ -82,7 +82,8 @@ typedef VDIMAGETYPE *PVDIMAGETYPE;
 #define VD_VMDK_IMAGE_FLAGS_SPLIT_2G        (0x0001)
 /** VMDK: Raw disk image (giving access to a number of host partitions). */
 #define VD_VMDK_IMAGE_FLAGS_RAWDISK         (0x0002)
-/** VDI: Fill new blocks with zeroes while expanding image file. */
+/** VDI: Fill new blocks with zeroes while expanding image file. Only valid
+ * for newly created images, never set for opened existing images. */
 #define VD_VDI_IMAGE_FLAGS_ZERO_EXPAND      (0x0100)
 
 /** Mask of valid image flags for VMDK. */
