@@ -570,9 +570,9 @@ BEGINPROC VMXActivateVMCS
  %else
     push    rcx
  %endif
-    vmclear [rsp]
+    vmptrld [rsp]
 %else
-    vmclear [esp + 4]
+    vmptrld [esp + 4]
 %endif
     jnc     .the_end
     mov     eax, VERR_VMX_INVALID_VMCS_PTR
