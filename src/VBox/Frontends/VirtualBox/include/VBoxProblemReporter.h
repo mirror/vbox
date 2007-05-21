@@ -199,6 +199,9 @@ public:
 
     bool confirmReleaseImage (QWidget*, QString);
 
+    void warnAboutOldAdditions (QWidget*, const QString &);
+    void warnAboutNewAdditions (QWidget*, const QString &);
+
     bool remindAboutInputCapture();
     bool remindAboutAutoCapture();
     bool remindAboutMouseIntegration (bool supportsAbsolute);

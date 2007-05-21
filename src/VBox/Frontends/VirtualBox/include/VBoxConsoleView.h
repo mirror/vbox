@@ -48,19 +48,6 @@ class QPainter;
 class QLabel;
 class QMenuData;
 
-/** Auto-resize event.
-  * Useful for posting into events queue to be processed just after all
-  * QEvent::Resize & QEvent::WindowStateChange events currently posted.
-  * This is necessary due to these two events - QEvent::Resize &
-  * QEvent::WindowStateChange are processed in different sequence
-  * under Win32 and X11. */
-class AutoResizeEvent : public QEvent
-{
-public:
-    AutoResizeEvent () :
-        QEvent ((QEvent::Type) VBoxDefs::AutoResizeEventType) {}
-};
-
 class VBoxConsoleView : public QScrollView
 {
     Q_OBJECT
@@ -182,9 +169,9 @@ private:
 
     static void dimImage (QImage &img);
 
-    void performAutoResize();
-
 private slots:
+
+    void exitFullScreen();
 
     void doResizeHint();
     void normalizeGeo() { normalizeGeometry (true); }
@@ -217,7 +204,9 @@ private:
     bool hostkey_in_capture : 1;
 
     bool ignore_mainwnd_resize : 1;
-    bool autoresize_guest : 1;
+    bool mAutoresizeGuest : 1;
+
+    bool mIsAdditionsActive;
 
     bool mfNumLock : 1;
     bool mfScrollLock : 1;

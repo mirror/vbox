@@ -248,8 +248,6 @@ private:
 
     CSession csession;
 
-    bool mIsAutoresizeEnabled;
-
     // widgets
     VBoxConsoleView *console;
     QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light;

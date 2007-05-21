@@ -457,7 +457,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , hostkey_pressed (false)
     , hostkey_alone (false)
     , ignore_mainwnd_resize (false)
-    , autoresize_guest (false)
+    , mAutoresizeGuest (false)
+    , mIsAdditionsActive (false)
     , mfNumLock (false)
     , mfScrollLock (false)
     , mfCapsLock (false)
@@ -768,24 +769,22 @@ void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
 
 void VBoxConsoleView::setAutoresizeGuest (bool on)
 {
-    if (autoresize_guest != on)
+    if (mAutoresizeGuest != on)
     {
-        autoresize_guest = on;
+        mAutoresizeGuest = on;
 
-        if (on)
+        if (mode == VBoxDefs::SDLMode)
         {
-            if (mode == VBoxDefs::SDLMode)
-                setMinimumSize (0, 0);
-
-            doResizeHint();
-        }
-        else
-        {
-            /* restrict minimum size because we cannot correctly draw in a
-             * scrolled window using SDL */
-            if (mode == VBoxDefs::SDLMode)
+            /* restrict minimum size because we cannot correctly draw
+             * in a scrolled window using SDL */
+            if (!mAutoresizeGuest)
                 setMinimumSize (sizeHint());
+            else
+                setMinimumSize (0, 0);
         }
+
+        if (mIsAdditionsActive && mAutoresizeGuest)
+            doResizeHint();
     }
 }
 
@@ -847,7 +846,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 {
                     /* restrict minimum size because we cannot correctly draw
                      * in a scrolled window using SDL */
-                    if (!autoresize_guest)
+                    if (!mAutoresizeGuest)
                         setMinimumSize (sizeHint());
                     else
                         setMinimumSize (0, 0);
@@ -937,6 +936,7 @@ bool VBoxConsoleView::event (QEvent *e)
             {
                 GuestAdditionsEvent *ge = (GuestAdditionsEvent *) e;
                 LogFlowFunc (("AdditionsStateChangeEventType\n"));
+                mIsAdditionsActive = ge->additionActive();
                 emit additionsStateChanged (ge->additionVersion(), ge->additionActive());
                 return true;
             }
@@ -1027,12 +1027,6 @@ bool VBoxConsoleView::event (QEvent *e)
                     }
                 }
                 ke->accept();
-                return true;
-            }
-
-            case VBoxDefs::AutoResizeEventType:
-            {
-                performAutoResize();
                 return true;
             }
 
@@ -1135,7 +1129,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 if (!ignore_mainwnd_resize)
                 {
-                    if (autoresize_guest)
+                    if (mIsAdditionsActive && mAutoresizeGuest)
                         resize_hint_timer->start (300, TRUE);
                     /* During window maximization WindowStateChange event is
                      * processed before Resize event, so the ignore_mainwnd_resize
@@ -1154,7 +1148,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 if (!mainwnd->isMinimized() &&
                     !mainwnd->isMaximized() &&
                     !mainwnd->isTrueFullscreen())
-                    QApplication::postEvent (this, new AutoResizeEvent ());
+                    QTimer::singleShot (0, this, SLOT (exitFullScreen()));
             }
 
             default:
@@ -1704,9 +1698,12 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 
 }
 
-void VBoxConsoleView::performAutoResize()
+/**
+ *  Called on every exit from fullscreen and maximized mode.
+ */
+void VBoxConsoleView::exitFullScreen()
 {
-    if (autoresize_guest)
+    if (mIsAdditionsActive && mAutoresizeGuest)
     {
         doResizeHint();
         QTimer::singleShot (200, this, SLOT (normalizeGeo()));
@@ -2877,7 +2874,7 @@ void VBoxConsoleView::dimImage (QImage &img)
 
 void VBoxConsoleView::doResizeHint()
 {
-    if (autoresize_guest)
+    if (mIsAdditionsActive && mAutoresizeGuest)
     {
         /* Get the available size for the guest display.
          * We assume here that the centralWidget() contains this view only

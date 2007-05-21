@@ -36,7 +36,7 @@
 #include <qregexp.h>
 #ifdef Q_WS_MAC
 # include <qpushbutton.h>
-#endif 
+#endif
 
 #include <iprt/err.h>
 
@@ -1094,6 +1094,25 @@ void VBoxProblemReporter::cannotGetMediaAccessibility (const CUnknown &unk)
             "become inaccessible.")
             .arg (src),
         formatErrorInfo (unk));
+}
+
+void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
+                                                 const QString &aVersion)
+{
+    message (aParent, VBoxProblemReporter::Warning,
+        tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
+            "<p>You must update to the latest version by choosing Devices "
+            "- Install Guest Additions.</p>").arg (aVersion));
+}
+
+void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
+                                                 const QString &aVersion)
+{
+    message (aParent, VBoxProblemReporter::Warning,
+        tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
+            "<p>There is a newer Guest Additions version. You should update "
+            "to the latest version by choosing Devices "
+            "- Install Guest Additions.</p>").arg (aVersion));
 }
 
 #if defined Q_WS_WIN
