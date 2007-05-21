@@ -731,6 +731,7 @@ static DECLCALLBACK(int) logoMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHY
     return VINF_SUCCESS;
 }
 
+
 /**
  * Construct the DMI table.
  *
@@ -814,6 +815,7 @@ static uint8_t pcbiosChecksum(const uint8_t * const au8Data, uint32_t u32Length)
     return -u8Sum;
 }
 
+
 /**
  * Construct the MPS table. Only applicable if IOAPIC is active.
  *
@@ -842,10 +844,10 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
     uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
     uint32_t u32CPUSignature = 0x0520; /* default: Pentium 100 */
     uint32_t u32FeatureFlags = 0x0001; /* default: FPU */
-    PDMDevHlpQueryCPUId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
+    PDMDevHlpGetCpuId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
     if (u32Eax >= 1)
     {
-        PDMDevHlpQueryCPUId(pDevIns, 1, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
+        PDMDevHlpGetCpuId(pDevIns, 1, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
         u32CPUSignature = u32Eax & 0xfff;
         /* Local APIC will be enabled later so override it here. Since we provide
          * an MP table we have an IOAPIC and therefore a Local APIC. */
@@ -882,7 +884,7 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
     pIOAPICEntry->u32Addr          = 0xfec00000;
 
     PMPSIOIRQENTRY pIrqEntry       = (PMPSIOIRQENTRY)(pIOAPICEntry+1);
-    for (int i=0; i<16; i++, pIrqEntry++)
+    for (int i = 0; i < 16; i++, pIrqEntry++)
     {
         pIrqEntry->u8EntryType     = 3; /* I/O interrupt entry */
         pIrqEntry->u8Type          = 0; /* INT, vectored interrupt */

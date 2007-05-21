@@ -160,8 +160,8 @@ static DECLCALLBACK(uint8_t) pdmR3DevHlp_DMAGetChannelMode(PPDMDEVINS pDevIns, u
 static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
 static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
-static DECLCALLBACK(void) pdmR3DevHlp_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
-                                                 uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
+static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                               uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 
 static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
@@ -354,7 +354,7 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_DMASchedule,
     pdmR3DevHlp_CMOSWrite,
     pdmR3DevHlp_CMOSRead,
-    pdmR3DevHlp_QueryCPUId,
+    pdmR3DevHlp_GetCpuId,
     PDM_DEVHLP_VERSION /* the end */
 };
 
@@ -3507,15 +3507,22 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg,
 }
 
 
-/** @copydoc PDMDEVHLP::pfnQueryCPUId */
-static DECLCALLBACK(void) pdmR3DevHlp_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
-                                                 uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+/** @copydoc PDMDEVHLP::pfnGetCpuId */
+static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                               uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_QueryCPUId: caller='%s'/%d: iLeaf=%d\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iLeaf));
+    LogFlow(("pdmR3DevHlp_GetCpuId: caller='%s'/%d: iLeaf=%d pEax=%p pEbx=%p pEcx=%p pEdx=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iLeaf, pEax, pEbx, pEcx, pEdx));
+    AssertPtr(pEax); AssertPtr(pEbx); AssertPtr(pEcx); AssertPtr(pEdx);
+
     CPUMGetGuestCpuId(pDevIns->Internal.s.pVMHC, iLeaf, pEax, pEbx, pEcx, pEdx);
+
+    LogFlow(("pdmR3DevHlp_GetCpuId: caller='%s'/%d: returns void - *pEax=%#x *pEbx=%#x *pEcx=%#x *pEdx=%#x\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, *pEax, *pEbx, *pEcx, *pEdx));
 }
+
+
 
 
 /** @copydoc PDMDEVHLP::pfnGetVM */
