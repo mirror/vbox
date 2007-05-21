@@ -277,26 +277,29 @@ public:
     {
 #ifdef VBOX_SECURELABEL
         Assert(key);
-        /*
-         * check if we're interested in the message
-         */
-        Guid ourGuid;
-        Guid messageGuid = machineId;
-        gMachine->COMGETTER(Id)(ourGuid.asOutParam());
-        if (ourGuid == messageGuid)
+        if (gMachine)
         {
-            Bstr keyString = key;
-            if (keyString && keyString == VBOXSDL_SECURELABEL_EXTRADATA)
+            /*
+             * check if we're interested in the message
+             */
+            Guid ourGuid;
+            Guid messageGuid = machineId;
+            gMachine->COMGETTER(Id)(ourGuid.asOutParam());
+            if (ourGuid == messageGuid)
             {
-                /*
-                 * Notify SDL thread of the string update
-                 */
-                SDL_Event event  = {0};
-                event.type       = SDL_USEREVENT;
-                event.user.type  = SDL_USER_EVENT_SECURELABEL_UPDATE;
-                int rc = SDL_PushEvent(&event);
-                NOREF(rc);
-                AssertMsg(!rc, ("SDL_PushEvent returned with SDL error '%s'\n", SDL_GetError()));
+                Bstr keyString = key;
+                if (keyString && keyString == VBOXSDL_SECURELABEL_EXTRADATA)
+                {
+                    /*
+                     * Notify SDL thread of the string update
+                     */
+                    SDL_Event event  = {0};
+                    event.type       = SDL_USEREVENT;
+                    event.user.type  = SDL_USER_EVENT_SECURELABEL_UPDATE;
+                    int rc = SDL_PushEvent(&event);
+                    NOREF(rc);
+                    AssertMsg(!rc, ("SDL_PushEvent returned with SDL error '%s'\n", SDL_GetError()));
+                }
             }
         }
 #endif /* VBOX_SECURELABEL */
@@ -2500,6 +2503,7 @@ leave:
     }
 
     LogFlow(("Releasing mouse, keyboard, vrdpserver, display, console...\n"));
+    gDisplay->SetupInternalFramebuffer(0);
     gMouse = NULL;
     gKeyboard = NULL;
     gVrdpServer = NULL;
