@@ -440,9 +440,12 @@ ENDPROC VMXResumeVM
 ; * @param   pData      x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value
 ; */
 BEGINPROC VMXWriteVMCS64
+    xor         rax, rax
 %ifdef ASM_CALL64_GCC
+    and         rdi, 0ffffffffh
     vmwrite     rdi, rsi
 %else
+    and         rcx, 0ffffffffh
     vmwrite     rcx, rdx
 %endif
     jnc         .valid_vmcs
@@ -464,9 +467,12 @@ ENDPROC VMXWriteVMCS64
 ; */
 ;DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
 BEGINPROC VMXReadVMCS64
-%ifdef ASM_CALL64_GCC
+    xor         rax, rax
+%ifd%ifdef ASM_CALL64_GCC
+    and         rdi, 0ffffffffh
     vmread      [rsi], rdi
 %else
+    and         rcx, 0ffffffffh
     vmread      [rdx], rcx
 %endif
     jnc         .valid_vmcs
@@ -489,6 +495,7 @@ ENDPROC VMXReadVMCS64
 ;DECLASM(int) VMXEnable(RTHCPHYS HCPhysVMXOn);
 BEGINPROC VMXEnable
 %ifdef __AMD64__
+    xor     rax, rax
  %ifdef ASM_CALL64_GCC
     push    rdi
  %else
@@ -496,6 +503,7 @@ BEGINPROC VMXEnable
  %endif
     vmxon   [rsp]
 %else
+    xor     eax, eax
     vmxon   [esp + 4]
 %endif
     jnc     .good
