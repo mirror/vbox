@@ -95,10 +95,12 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
             (u64Cmd & USAGE_CREATERAWVMDK) ?
                 "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
                 "                [-partitions <list of partition numbers>]\n"
-                "                [-register]\n"
+                "                [-register] [-relative]\n"
                 "       Creates a new VMDK image which gives access to an entite host disk or\n"
                 "       some partitions of a host disk. The diskname is on Linux e.g. /dev/sda,\n"
                 "       and on Windows e.g. \\\\.\\PhysicalDisk0).\n"
+                "       On Linux host the parameter -relative causes a VMDK file to be created\n"
+                "       which refers to individual partitions instead to the entire disk.\n"
                 "       Optionally the created image can be immediately registered.\n"
                 "       The necessary partition numbers can be queried with\n"
                 "         VBoxManage internalcommands listpartitions\n"
