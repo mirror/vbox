@@ -442,10 +442,14 @@ ENDPROC VMXResumeVM
 BEGINPROC VMXWriteVMCS64
     xor         rax, rax
 %ifdef ASM_CALL64_GCC
-    movzx       rdi, edi
+    push        edi
+    xor         rdi, rdi
+    pop         edi
     vmwrite     rdi, rsi
 %else
-    movzx       rcx, ecx
+    push        ecx
+    xor         rcx, rcx
+    pop         ecx
     vmwrite     rcx, rdx
 %endif
     jnc         .valid_vmcs
@@ -469,10 +473,14 @@ ENDPROC VMXWriteVMCS64
 BEGINPROC VMXReadVMCS64
     xor         rax, rax
 %ifdef ASM_CALL64_GCC
-    movzx       rdi, edi
+    push        edi
+    xor         rdi, rdi
+    pop         edi
     vmread      [rsi], rdi
 %else
-    movzx       rcx, ecx
+    push        ecx
+    xor         rcx, rcx
+    pop         ecx
     vmread      [rdx], rcx
 %endif
     jnc         .valid_vmcs
