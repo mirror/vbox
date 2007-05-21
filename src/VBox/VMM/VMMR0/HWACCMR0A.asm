@@ -537,6 +537,7 @@ ENDPROC VMXDisable
 ;DECLASM(int) VMXClearVMCS(RTHCPHYS HCPhysVMCS);
 BEGINPROC VMXClearVMCS
 %ifdef __AMD64__
+    xor     rax, rax
  %ifdef ASM_CALL64_GCC
     push    rdi
  %else
@@ -544,6 +545,7 @@ BEGINPROC VMXClearVMCS
  %endif
     vmclear [rsp]
 %else
+    xor     eax, eax
     vmclear [esp + 4]
 %endif
     jnc     .the_end
@@ -565,6 +567,7 @@ ENDPROC VMXClearVMCS
 ;DECLASM(int) VMXActivateVMCS(RTHCPHYS HCPhysVMCS);
 BEGINPROC VMXActivateVMCS
 %ifdef __AMD64__
+    xor     rax, rax
  %ifdef ASM_CALL64_GCC
     push    rdi
  %else
@@ -572,6 +575,7 @@ BEGINPROC VMXActivateVMCS
  %endif
     vmptrld [rsp]
 %else
+    xor     eax, eax
     vmptrld [esp + 4]
 %endif
     jnc     .the_end
