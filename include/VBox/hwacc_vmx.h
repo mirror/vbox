@@ -871,7 +871,7 @@ success:
  * @param   idxField        VMCS index
  * @param   u64Val          16, 32 or 64 bits value
  */
-DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
+DECLASM(int) VMXWriteVMCS64(uint64_t idxField, uint64_t u64Val);
 
 /**
  * Executes VMWRITE
@@ -939,7 +939,7 @@ the_end:
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
  */
-DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
+DECLASM(int) VMXReadVMCS64(uint64_t idxField, uint64_t *pData);
 
 /**
  * Executes VMREAD
