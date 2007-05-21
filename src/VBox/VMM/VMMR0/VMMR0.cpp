@@ -24,9 +24,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
-#ifdef __AMD64__ /** @todo fix logging on __AMD64__ (swapgs) - this has been fixed now. please remove. */
-# define LOG_DISABLED
-#endif
 #include <VBox/vmm.h>
 #include <VBox/sup.h>
 #include <VBox/trpm.h>
@@ -60,12 +57,14 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
+#ifndef __AMD64__  /* causes crashes in Vista here; disabling for now */
 #ifdef DEBUG
 #define DEBUG_NO_RING0_ASSERTIONS
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
 #endif
 #endif 
+#endif
 
 /*******************************************************************************
 *   Global Variables                                                           *
