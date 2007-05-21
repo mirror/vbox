@@ -133,7 +133,8 @@ static int vdEarlyError(PFNVDERROR pfnError, void *pvErrorUser, int rc,
 {
     va_list va;
     va_start(va, pszFormat);
-    pfnError(pvErrorUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    if (pfnError)
+        pfnError(pvErrorUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -146,7 +147,8 @@ static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
 {
     va_list va;
     va_start(va, pszFormat);
-    pDisk->pfnError(pDisk->pvErrorUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    if (pDisk->pfnError)
+        pDisk->pfnError(pDisk->pvErrorUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -468,6 +470,16 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
     int rc = VINF_SUCCESS;
     PVBOXHDDBACKEND pBackend = NULL;
     PVBOXHDD pDisk = NULL;
+
+    /* Passing an error callback is strictly not necessary any more. Any code
+     * calling the HDD container functions should provide one, as otherwise
+     * many detailed error messages will go unnoticed. If you find a situation
+     * where you get no sensible error message from this code but you think
+     * there should be one, shout loudly. There are no error messages for rare
+     * and obvious error codes such as VERR_NO_MEMORY, and for situations which
+     * the user cannot be made responsible for, such as program bugs causing
+     * parameter checks to fail etc. */
+    Assert(pfnError);
 
     /* Find backend. */
     for (unsigned i = 0; aBackends[i].pszBackendName != NULL; i++)
@@ -1616,7 +1628,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
     PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
-        rc = pDisk->Backend->pfnGetUuid(pImage, pUuid);
+        rc = pDisk->Backend->pfnGetUuid(pImage->pvBackendData, pUuid);
     else
         rc = VERR_VDI_IMAGE_NOT_FOUND;
 
@@ -1645,7 +1657,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
     PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
-        rc = pDisk->Backend->pfnSetUuid(pImage, pUuid);
+        rc = pDisk->Backend->pfnSetUuid(pImage->pvBackendData, pUuid);
     else
         rc = VERR_VDI_IMAGE_NOT_FOUND;
 
@@ -1672,7 +1684,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
     PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
-        rc = pDisk->Backend->pfnGetModificationUuid(pImage, pUuid);
+        rc = pDisk->Backend->pfnGetModificationUuid(pImage->pvBackendData, pUuid);
     else
         rc = VERR_VDI_IMAGE_NOT_FOUND;
 
@@ -1701,7 +1713,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
     PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
-        rc = pDisk->Backend->pfnSetModificationUuid(pImage, pUuid);
+        rc = pDisk->Backend->pfnSetModificationUuid(pImage->pvBackendData, pUuid);
     else
         rc = VERR_VDI_IMAGE_NOT_FOUND;
 
@@ -1729,7 +1741,7 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
     PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
-        rc = pDisk->Backend->pfnGetParentUuid(pImage, pUuid);
+        rc = pDisk->Backend->pfnGetParentUuid(pImage->pvBackendData, pUuid);
     else
         rc = VERR_VDI_IMAGE_NOT_FOUND;
 
@@ -1758,7 +1770,7 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
     PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
     int rc;
     if (pImage)
-        rc = pDisk->Backend->pfnSetParentUuid(pImage, pUuid);
+        rc = pDisk->Backend->pfnSetParentUuid(pImage->pvBackendData, pUuid);
     else
         rc = VERR_VDI_IMAGE_NOT_FOUND;
 
