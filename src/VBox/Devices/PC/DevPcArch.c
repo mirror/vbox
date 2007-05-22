@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * PC architechture device
+ * PC Architechture Device.
  */
 
 /*

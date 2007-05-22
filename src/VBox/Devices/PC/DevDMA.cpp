@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * DMA controller
+ * DMA Controller Device.
  */
 
 /*
@@ -957,7 +956,7 @@ const PDMDEVREG g_DeviceDMA =
     /* szR0Mod */
     "",
     /* pszDescription */
-    "DMA Controller.\n",
+    "DMA Controller Device",
     /* fFlags */
     PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
     /* fClass */

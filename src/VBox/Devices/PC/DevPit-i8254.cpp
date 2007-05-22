@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * Intel 8254 Programmable Interval Timer (PIT).
+ * Intel 8254 Programmable Interval Timer (PIT) And Dummy Speaker Device.
  */
 
 /*
@@ -300,11 +300,11 @@ static inline void pit_load_count(PITChannelState *s, int val)
     pit_irq_timer_update(s, s->count_load_time);
 
     /* log the new rate if it's high enough. */
-    if (    (   s->mode == 2 
+    if (    (   s->mode == 2
              || s->mode == 3)
         &&  s->count < 0x10000
         &&  s->cRelLogEntries++ < 32)
-        LogRel(("PIT: mode=%d count=%#x - %d.%02d Hz\n", s->mode, s->count, 
+        LogRel(("PIT: mode=%d count=%#x - %d.%02d Hz\n", s->mode, s->count,
                 PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
 }
 
@@ -1023,7 +1023,7 @@ const PDMDEVREG g_DeviceI8254 =
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
-    "i8254 Programmable Interval Timer And Dummy Speaker",
+    "Intel 8254 Programmable Interval Timer (PIT) And Dummy Speaker Device",
     /* fFlags */
     PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
