@@ -1245,9 +1245,9 @@ void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
         tr ("<p>VirtualBox Guest Additions installed in the Guest OS are too "
             "old: the installed version is %1, the expected version is %2. "
             "Some features that require Guest Additions (mouse integration, "
-            "guest dislpay auto-resize) will most likely stop "
+            "guest display auto-resize) will most likely stop "
             "working properly.</p>"
-            "<p>Please update Guest Additions to a newer version by choosing "
+            "<p>Please update Guest Additions to the current version by choosing "
             "<b>Install Guest Additions</b> from the <b>Devices</b> "
             "menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
@@ -1262,9 +1262,9 @@ void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
         tr ("<p>VirtualBox Guest Additions installed in the Guest OS are "
             "outdated: the installed version is %1, the expected version is %2. "
             "Some features that require Guest Additions (mouse integration, "
-            "guest dislpay auto-resize) may not work as expected.</p>"
-            "<p>It is recommended to update Guest Additions to a newer version by "
-            "choosing <b>Install Guest Additions</b> from the <b>Devices</b> "
+            "guest display auto-resize) may not work as expected.</p>"
+            "<p>It is recommended to update Guest Additions to the current version "
+            " by choosing <b>Install Guest Additions</b> from the <b>Devices</b> "
             "menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
         "warnAboutOldAdditions");
