@@ -312,6 +312,36 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath);
 RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath);
 
 /**
+ * Gets the directory for architecture-independent shared data. On Unix systems this is usually
+ * /usr/share/<application>
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathAppShared(char *pszPath, unsigned cchPath);
+
+/**
+ * Gets the directory for architecture-dependent shared data. On Unix systems this is usually
+ * /usr/lib/<application>.
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathAppSharedArch(char *pszPath, unsigned cchPath);
+
+/**
+ * Gets the directory for architecture-dependent shared data. On Unix systems this is usually
+ * /usr/share/doc/<application>.
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathAppDoc(char *pszPath, unsigned cchPath);
+
+/**
  * Query information about a file system object.
  *
  * This API will not resolve symbolic links in the last component (just
