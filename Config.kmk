@@ -263,7 +263,6 @@ ifeq ($(BUILD_TARGET),darwin)
   VBOX_WITH_QTGUI=
  endif
  # Later:
- VBOX_WITH_USB=
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
 endif
@@ -1714,10 +1713,10 @@ TEMPLATE_VBOXMAINEXE_LIBS                =
 endif # !win
 
 #
-# Template for building the Main (+GUI) components
+# Template for building the Main components.
 # This differ from VBOXMAINEXE only in PIC handling and similar DLL stuff.
 #
-TEMPLATE_VBOXMAIN  = VBox MAIN
+TEMPLATE_VBOXMAIN  = VBox Main Components
 TEMPLATE_VBOXMAIN_EXTENDS = VBOXMAINEXE
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  ifneq ($(BUILD_TARGET),win)
@@ -1728,14 +1727,6 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
  endif
 endif
 TEMPLATE_VBOXMAIN_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
-
-#
-# Template for building executables that is part of the VBox MAIN component.
-# This is (pretty much) identical to VBOXMAIN except for PIC handling (which will be fixed later).
-#
-TEMPLATE_VBOXMAIN         = VBox Main
-TEMPLATE_VBOXMAIN_EXTENDS = VBOXMAINEXE
-
 
 #
 # Template for building executables that use the VBox MAIN component (COM stuff etc.).
