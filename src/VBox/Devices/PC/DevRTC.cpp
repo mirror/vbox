@@ -1,6 +1,5 @@
+/* $Id$ */
 /** @file
- *
- * VBox basic PC devices:
  * Motorola MC146818 RTC/CMOS Device.
  */
 

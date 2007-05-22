@@ -1,7 +1,6 @@
+/** $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * ACPI host interface driver
+ * ACPI Host Driver.
  */
 
 /*
@@ -528,3 +527,4 @@ const PDMDRVREG g_DrvACPI =
     /* pfnPowerOff */
     NULL
 };
+

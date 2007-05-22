@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * PC BIOS device
+ * PC BIOS Device.
  */
 
 /*
@@ -874,7 +873,7 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
     /* PCI bus? */
 
     /* I/O-APIC.
-     * MP spec: "The configuration table contains one or more entries for I/O APICs. 
+     * MP spec: "The configuration table contains one or more entries for I/O APICs.
      *           ... At least one I/O APIC must be enabled." */
     PMPSIOAPICENTRY pIOAPICEntry   = (PMPSIOAPICENTRY)(pBusEntry+1);
     pIOAPICEntry->u8EntryType      = 2; /* I/O-APIC entry */
@@ -888,7 +887,7 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
     {
         pIrqEntry->u8EntryType     = 3; /* I/O interrupt entry */
         pIrqEntry->u8Type          = 0; /* INT, vectored interrupt */
-        pIrqEntry->u16Flags        = 0; /* polarity of APIC I/O input signal = conforms to bus, 
+        pIrqEntry->u16Flags        = 0; /* polarity of APIC I/O input signal = conforms to bus,
                                            trigger mode = conforms to bus */
         pIrqEntry->u8SrcBusId      = 0; /* ISA bus */
         pIrqEntry->u8SrcBusIrq     = i;
@@ -1438,7 +1437,7 @@ const PDMDEVREG g_DevicePcBios =
     /* szR0Mod */
     "",
     /* pszDescription */
-    "Bochs PC BIOS",
+    "PC BIOS Device",
     /* fFlags */
     PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64,
     /* fClass */

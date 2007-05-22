@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * Advanced Configuration and Power Interface (ACPI) device
+ * Advanced Configuration and Power Interface (ACPI) Device.
  */
 
 /*

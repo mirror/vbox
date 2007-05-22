@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * Intel 8259 Programmable Interrupt Controller.
+ * Intel 8259 Programmable Interrupt Controller (PIC) Device.
  */
 
 /*
@@ -1086,7 +1085,7 @@ const PDMDEVREG g_DeviceI8259 =
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
-    "i8259 Programmable Interrupt Controller",
+    "Intel 8259 Programmable Interrupt Controller (PIC) Device.",
     /* fFlags */
     PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
     /* fClass */

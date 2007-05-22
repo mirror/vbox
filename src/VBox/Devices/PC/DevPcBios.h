@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * PC BIOS device
+ * PC BIOS Device Header.
  */
 
 /*
@@ -33,3 +32,4 @@
 #define VBOX_LANBOOT_SEG             0xca00
 
 #endif
+
