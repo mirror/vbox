@@ -455,8 +455,10 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         /** @note VMX is (again) very picky about the RPL of the selectors here; we'll restore them manually. */
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_DS,          0);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_ES,          0);
+#if HC_ARCH_BITS == 32
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_FS,          0);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_GS,          0);
+#endif
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_SS,          ASMGetSS());
         SelTR = ASMGetTR();
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_TR,          SelTR);
@@ -492,10 +494,7 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         Log2(("VMX_VMCS_HOST_TR_BASE %VHv\n", trBase));
 
         /* FS and GS base. */
-#if HC_ARCH_BITS == 32
-        rc  = VMXWriteVMCS(VMX_VMCS_HOST_FS_BASE,           0);
-        rc |= VMXWriteVMCS(VMX_VMCS_HOST_GS_BASE,           0);
-#else
+#if HC_ARCH_BITS == 64
         Log2(("MSR_K8_FS_BASE = %VHv\n", ASMRdMsr(MSR_K8_FS_BASE)));
         Log2(("MSR_K8_GS_BASE = %VHv\n", ASMRdMsr(MSR_K8_GS_BASE)));
         rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,         ASMRdMsr(MSR_K8_FS_BASE));
@@ -1020,6 +1019,12 @@ ResumeExecution:
 
             Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
             Log(("Current stack %08x\n", &rc1));
+
+
+            VMXReadVMCS(VMX_VMCS_GUEST_RIP, &val);
+            Log(("Old eip %VGv new %VGv\n", pCtx->eip, (RTGCPTR)val));
+            VMXReadVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, &val);
+            Log(("VMX_VMCS_CTRL_EXIT_CONTROLS %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR0, &val);
             Log(("VMX_VMCS_HOST_CR0 %08x\n", val));
