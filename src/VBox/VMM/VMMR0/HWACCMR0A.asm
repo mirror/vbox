@@ -187,6 +187,13 @@ BEGINPROC VMXStartVM
 %endif
     push    xSI
 
+    ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+    sub     xSP, xS*2
+    sgdt    [xSP]
+
+    sub     xSP, xS*2
+    sidt    [xSP]
+
     ; Save LDTR
     xor     eax, eax
     sldt    ax
@@ -217,6 +224,12 @@ ALIGNCODE(16)
 .vmlaunch_done:
     jnc     .vmxstart_good
 
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
     pop     xAX         ; saved LDTR
     lldt    ax
 
@@ -232,6 +245,12 @@ ALIGNCODE(16)
 
 .vmxstart_good:
     jnz     .vmxstart_success
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
 
     pop     xAX         ; saved LDTR
     lldt    ax
@@ -262,6 +281,12 @@ ALIGNCODE(16)
 %else
     pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
 %endif
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
 
     pop     xAX         ; saved LDTR
     lldt    ax
@@ -336,6 +361,13 @@ BEGINPROC VMXResumeVM
 %endif
     push    xSI
 
+    ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+    sub     xSP, xS*2
+    sgdt    [xSP]
+
+    sub     xSP, xS*2
+    sidt    [xSP]
+
     ; Save LDTR
     xor     eax, eax
     sldt    ax
@@ -366,6 +398,12 @@ ALIGNCODE(16)
 vmresume_done:
     jnc     vmresume_good
 
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
     pop     xAX                         ; saved LDTR
     lldt    ax
 
@@ -381,6 +419,12 @@ vmresume_done:
 
 vmresume_good:
     jnz     vmresume_success
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
 
     pop     xAX                         ; saved LDTR
     lldt    ax
@@ -411,6 +455,12 @@ vmresume_success:
 %else
     pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
 %endif
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
 
     pop     xAX          ; saved LDTR
     lldt    ax
