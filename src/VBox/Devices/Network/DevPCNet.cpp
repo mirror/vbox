@@ -81,12 +81,6 @@
 /* Enable to handle frequent io reads in the guest context */
 #define PCNET_GC_ENABLED
 
-#ifdef __GNUC__
-#define PACKED __attribute__ ((packed))
-#else
-#define PACKED
-#endif
-
 #if 0
 #define LOG_REGISTER(a)                 LogRel(a)
 #else
@@ -414,18 +408,9 @@ struct PCNetState_st
 #define CSR_VERSION_LOW_79C970A 0x1003  /* the lower two bits must be 11b for AMD */
 #define CSR_VERSION_HIGH        0x0262
 
-/** @todo   All structs: big endian? */
+/** @todo All structs: big endian? */
 
-#pragma pack(1) /* bird: MSC paranoia */
-/** frank: From the gcc manual: ``This attribute, attached to `struct' or `union' type
- *         definition, specifies that each member (other than zero-width bitfields) of
- *         the structure or union is placed to minimize the memory required. ...
- *         Specifying this attribute for `struct' and `union' types is equivalent to
- *         specifying the `packed attribute' on each the structure or union members.''
- * @todo r=bird: #pragma pack(1) / __attribute__((packed)) isn't necessary here
- *               because of the way the alignment rules work.
- */
-struct PACKED INITBLK16
+struct INITBLK16
 {
     uint16_t mode;      /**< copied into csr15 */
     uint16_t padr1;     /**< MAC  0..15 */
@@ -446,7 +431,7 @@ AssertCompileSize(INITBLK16, 24);
 
 /** bird:  I've changed the type for the bitfields. They should only be 16-bit all together.
  *  frank: I've changed the bitfiled types to uint32_t to prevent compiler warnings. */
-struct PACKED INITBLK32
+struct INITBLK32
 {
     uint16_t mode;      /**< copied into csr15 */
     uint16_t res1:4;    /**< reserved */
@@ -473,7 +458,7 @@ typedef struct TMD
     {
         uint32_t tbadr;         /**< transmit buffer address */
     } tmd0;
-    struct PACKED
+    struct
     {
         uint32_t bcnt:12;       /**< buffer byte count (two's complement) */
         uint32_t ones:4;        /**< must be 1111b */
@@ -489,7 +474,7 @@ typedef struct TMD
         uint32_t err:1;         /**< error occured */
         uint32_t own:1;         /**< 0=owned by guest driver, 1=owned by controller */
     } tmd1;
-    struct PACKED
+    struct
     {
         uint32_t trc:4;         /**< transmit retry count */
         uint32_t res:12;        /**< reserved */
@@ -515,7 +500,7 @@ typedef struct RMD
     {
         uint32_t rbadr;         /**< receive buffer address */
     } rmd0;
-    struct PACKED
+    struct
     {
         uint32_t bcnt:12;       /**< buffer byte count (two's complement) */
         uint32_t ones:4;        /**< must be 1111b */
@@ -533,7 +518,7 @@ typedef struct RMD
         uint32_t err:1;         /**< error occured */
         uint32_t own:1;         /**< 0=owned by guest driver, 1=owned by controller */
     } rmd1;
-    struct PACKED
+    struct
     {
         uint32_t mcnt:12;       /**< message byte count */
         uint32_t zeros:4;       /**< 0000b */
@@ -546,7 +531,6 @@ typedef struct RMD
     } rmd3;
 } RMD;
 AssertCompileSize(RMD, 16);
-#pragma pack()
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
