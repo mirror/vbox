@@ -449,7 +449,7 @@ int main()
     GEN_CHECK_OFF(PITChannelState, count_load_time);
     GEN_CHECK_OFF(PITChannelState, next_transition_time);
     GEN_CHECK_OFF(PITChannelState, irq);
-    GEN_CHECK_OFF(PITChannelState, padding);
+    GEN_CHECK_OFF(PITChannelState, cRelLogEntries);
     GEN_CHECK_OFF(PITChannelState, count);
     GEN_CHECK_OFF(PITChannelState, latched_count);
     GEN_CHECK_OFF(PITChannelState, count_latched);
