@@ -1,6 +1,6 @@
+/* $Id $ */
 /** @file
- *
- * Built-in drivers & devices (part 2)
+ * Built-in drivers & devices (part 2).
  */
 
 /*

@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Built-in drivers & devices (part 2) headers
+ * Built-in drivers & devices (part 2) header.
  */
 
 /*

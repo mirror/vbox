@@ -1,6 +1,8 @@
+/** $Id$ */
 /** @file
+ * VBox vl.h Replacement.
  *
- * VBox vl.h replacement
+ * Avoid including this file whenever possible.
  */
 
 /*
