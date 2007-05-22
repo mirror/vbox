@@ -474,10 +474,11 @@ static int vmR3InitRing3(PVM pVM)
         STAM_REG(pVM, &pVM->StatTotalInGC,          STAMTYPE_PROFILE_ADV, "/PROF/VM/InGC",          STAMUNIT_TICKS_PER_CALL,    "Profiling the total time spent in GC.");
         STAM_REG(pVM, &pVM->StatSwitcherToGC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
         STAM_REG(pVM, &pVM->StatSwitcherToHC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToHC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to HC.");
-        STAM_REG(pVM, &pVM->vm.s.StatHaltYield,     STAMTYPE_PROFILE_ADV, "/PROF/VM/Halt/Yield",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state yielding.");
-        STAM_REG(pVM, &pVM->vm.s.StatHaltBlock,     STAMTYPE_PROFILE_ADV, "/PROF/VM/Halt/Block",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state blocking.");
-        STAM_REG(pVM, &pVM->vm.s.StatHaltTimers,    STAMTYPE_PROFILE_ADV, "/PROF/VM/Halt/Timers",   STAMUNIT_TICKS_PER_CALL,    "Profiling halted state timer tasks.");
-        STAM_REG(pVM, &pVM->vm.s.StatHaltPoll,      STAMTYPE_PROFILE_ADV, "/PROF/VM/Halt/Poll",     STAMUNIT_TICKS_PER_CALL,    "Profiling halted state poll tasks.");
+
+        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltYield, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Yield",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state yielding.");
+        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltBlock, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Block",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state blocking.");
+        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltTimers,STAMTYPE_PROFILE,     "/PROF/VM/Halt/Timers",   STAMUNIT_TICKS_PER_CALL,    "Profiling halted state timer tasks.");
+        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltPoll,  STAMTYPE_PROFILE,     "/PROF/VM/Halt/Poll",     STAMUNIT_TICKS_PER_CALL,    "Profiling halted state poll tasks.");
 
         STAM_REG(pVM, &pVM->StatSwitcherSaveRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SaveRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
         STAM_REG(pVM, &pVM->StatSwitcherSysEnter,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SysEnter", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
@@ -1428,7 +1429,9 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 #endif
 #ifdef VBOX_WITH_STATISTICS
     STAMR3Dump(pVM, "*");
-#endif /* VBOX_WITH_STATISTICS */
+#else
+    STAMR3DumpToReleaseLog(pVM, "*");
+#endif 
 
     /*
      * Destroy the VM components.

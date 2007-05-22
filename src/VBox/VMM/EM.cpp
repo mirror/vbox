@@ -307,7 +307,7 @@ EMR3DECL(int) EMR3Init(PVM pVM)
 
 /* these should be considered for release statistics. */
     STAM_REG(pVM, &pVM->em.s.StatForcedActions,         STAMTYPE_PROFILE, "/PROF/EM/ForcedActions",     STAMUNIT_TICKS_PER_CALL, "Profiling forced action execution.");
-    STAM_REG(pVM, &pVM->em.s.StatHalted,                STAMTYPE_PROFILE, "/PROF/EM/Halted",            STAMUNIT_TICKS_PER_CALL, "Profiling halted state (VMR3WaitHalted).");
+    STAM_REL_REG(pVM, &pVM->em.s.StatHalted,                STAMTYPE_PROFILE, "/PROF/EM/Halted",            STAMUNIT_TICKS_PER_CALL, "Profiling halted state (VMR3WaitHalted).");
     STAM_REG(pVM, &pVM->em.s.StatHwAccEntry,            STAMTYPE_PROFILE, "/PROF/EM/HwAccEnter",        STAMUNIT_TICKS_PER_CALL, "Profiling Hardware Accelerated Mode entry overhead.");
     STAM_REG(pVM, &pVM->em.s.StatHwAccExec,             STAMTYPE_PROFILE, "/PROF/EM/HwAccExec",         STAMUNIT_TICKS_PER_CALL, "Profiling Hardware Accelerated Mode execution.");
     STAM_REG(pVM, &pVM->em.s.StatIOEmu,                 STAMTYPE_PROFILE, "/PROF/EM/Emulation/IO",      STAMUNIT_TICKS_PER_CALL, "Profiling of emR3RawExecuteIOInstruction.");
@@ -321,7 +321,7 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->em.s.StatRAWExec,               STAMTYPE_PROFILE, "/PROF/EM/RAWExec",           STAMUNIT_TICKS_PER_CALL, "Profiling Raw Mode execution.");
     STAM_REG(pVM, &pVM->em.s.StatRAWTail,               STAMTYPE_PROFILE, "/PROF/EM/RAWTail",           STAMUNIT_TICKS_PER_CALL, "Profiling Raw Mode tail overhead.");
     STAM_REG(pVM, &pVM->em.s.StatRAWTotal,              STAMTYPE_PROFILE, "/PROF/EM/RAWTotal",          STAMUNIT_TICKS_PER_CALL, "Profiling emR3RawExecute (excluding FFs).");
-    STAM_REG(pVM, &pVM->em.s.StatTotal,                 STAMTYPE_PROFILE, "/PROF/EM/Total",             STAMUNIT_TICKS_PER_CALL, "Profiling EMR3ExecuteVM.");
+    STAM_REL_REG(pVM, &pVM->em.s.StatTotal,         STAMTYPE_PROFILE_ADV, "/PROF/EM/Total",             STAMUNIT_TICKS_PER_CALL, "Profiling EMR3ExecuteVM.");
 
 
     return VINF_SUCCESS;
@@ -3155,7 +3155,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
         bool fFFDone = false;
         rc = VINF_EM_RESCHEDULE;
         pVM->em.s.enmState = EMSTATE_REM;
-        STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
+        STAM_REL_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
         for (;;)
         {
             /*
@@ -3269,7 +3269,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
-                    STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return rc;
 
                 /*
@@ -3280,7 +3280,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     Log(("EMR3ExecuteVM returns VINF_EM_TERMINATE (%d -> %d)\n", pVM->em.s.enmState, EMSTATE_TERMINATING));
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
-                    STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return rc;
 
                 /*
@@ -3338,7 +3338,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
             VMMR3Unlock(pVM);
             VMMR3Lock(pVM);
 
-            STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+            STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x); /* (skip this in release) */
             STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
 
             /*
@@ -3373,9 +3373,9 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                  */
                 case EMSTATE_HALTED:
                 {
-                    STAM_PROFILE_START(&pVM->em.s.StatHalted, y);
+                    STAM_REL_PROFILE_START(&pVM->em.s.StatHalted, y);
                     rc = VMR3WaitHalted(pVM, !(CPUMGetGuestEFlags(pVM) & X86_EFL_IF));
-                    STAM_PROFILE_STOP(&pVM->em.s.StatHalted, y);
+                    STAM_REL_PROFILE_STOP(&pVM->em.s.StatHalted, y);
                     break;
                 }
 
@@ -3386,7 +3386,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
-                    STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return VINF_EM_SUSPEND;
 
                 /*
@@ -3409,7 +3409,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 {
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
-                    STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
 
                     rc = emR3Debug(pVM, rc);
                     Log2(("EMR3ExecuteVM: enmr3Debug -> %Vrc (state %d)\n", rc, pVM->em.s.enmState));
@@ -3421,7 +3421,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                         return rc;
                     }
 
-                    STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
                     TMVirtualResume(pVM);
                     TMCpuTickResume(pVM);
                     break;
@@ -3441,7 +3441,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     {
                         VMMR3Unlock(pVM);
                         /** @todo change the VM state! */
-                        STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                        STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                         return rc;
                     }
                     TMVirtualResume(pVM);
@@ -3463,7 +3463,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
-                    STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return VERR_EM_INTERNAL_ERROR;
             }
         } /* The Outer Main Loop */
@@ -3479,6 +3479,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
         VMMR3FatalDump(pVM, rc);
         emR3Debug(pVM, rc);
         VMMR3Unlock(pVM);
+        STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
         /** @todo change the VM state! */
         return rc;
     }

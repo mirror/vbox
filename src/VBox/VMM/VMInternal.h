@@ -274,10 +274,10 @@ typedef struct VMINT
     STAMCOUNTER                     StatReqFreeOverflow;
 
     /** Profiling the halted state; yielding vs blocking. */
-    STAMPROFILEADV                  StatHaltYield;
-    STAMPROFILEADV                  StatHaltBlock;
-    STAMPROFILEADV                  StatHaltTimers;
-    STAMPROFILEADV                  StatHaltPoll;
+    STAMPROFILE                     StatHaltYield;
+    STAMPROFILE                     StatHaltBlock;
+    STAMPROFILE                     StatHaltTimers;
+    STAMPROFILE                     StatHaltPoll;
 } VMINT, *PVMINT;
 
 

@@ -323,12 +323,12 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
          * The poll call gives us the ticks left to the next event in
          * addition to perhaps set an FF.
          */
-        STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltPoll, a);
+        STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltPoll, a);
         PDMR3Poll(pVM);
-        STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltPoll, a);
-        STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltTimers, b);
+        STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltPoll, a);
+        STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltTimers, b);
         TMR3TimerQueuesDo(pVM);
-        STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltTimers, b);
+        STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltTimers, b);
         if (VM_FF_ISPENDING(pVM, fMask))
             break;
         uint64_t u64NanoTS = TMVirtualToNano(pVM, TMTimerPoll(pVM));
@@ -351,23 +351,23 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
             if (u64NanoTS <  870000) /* this is a bit speculative... works fine on linux. */
             {
                 //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d yield", u64NanoTS, cLoops++);
-                STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltYield, a);
+                STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltYield, a);
                 RTThreadYield(); /* this is the best we can do here */
-                STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltYield, a);
+                STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltYield, a);
             }
             else if (u64NanoTS < 2000000)
             {
                 //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep 1ms", u64NanoTS, cLoops++);
-                STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltBlock, a);
+                STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltBlock, a);
                 rc = RTSemEventWait(pVM->vm.s.EventSemWait, 1);
-                STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltBlock, a);
+                STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltBlock, a);
             }
             else
             {
                 //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep %dms", u64NanoTS, cLoops++, (uint32_t)RT_MIN((u64NanoTS - 500000) / 1000000, 15));
-                STAM_PROFILE_ADV_START(&pVM->vm.s.StatHaltBlock, a);
+                STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltBlock, a);
                 rc = RTSemEventWait(pVM->vm.s.EventSemWait, RT_MIN((u64NanoTS - 1000000) / 1000000, 15));
-                STAM_PROFILE_ADV_STOP(&pVM->vm.s.StatHaltBlock, a);
+                STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltBlock, a);
             }
             //uint64_t u64Slept = RTTimeNanoTS() - u64Start;
             //RTLogPrintf(" -> rc=%Vrc in %RU64 ns / %RI64 ns delta\n", rc, u64Slept, u64NanoTS - u64Slept);
