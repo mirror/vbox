@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer
  */
 
@@ -48,79 +47,6 @@
 
 namespace com
 {
-
-HRESULT Initialize()
-{
-    HRESULT rc = E_FAIL;
-
-#if !defined (VBOX_WITH_XPCOM)
-
-    rc = CoInitializeEx (NULL, COINIT_MULTITHREADED |
-                               COINIT_DISABLE_OLE1DDE |
-                               COINIT_SPEED_OVER_MEMORY);
-
-#else
-
-    /* Set VBOX_XPCOM_HOME if not present */
-    if (!getenv("VBOX_XPCOM_HOME"))
-    {
-        /* get the executable path */
-        char szPathProgram[1024];
-        int rcVBox = RTPathProgram(szPathProgram, sizeof(szPathProgram));
-        if (VBOX_SUCCESS(rcVBox))
-        {
-            setenv("VBOX_XPCOM_HOME", szPathProgram, 1);
-        }
-    }
-
-    nsCOMPtr <nsIEventQueue> eventQ;
-    rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
-    if (rc == NS_ERROR_NOT_INITIALIZED)
-    {
-        XPCOMGlueStartup (nsnull);
-        nsCOMPtr <nsIServiceManager> serviceManager;
-        rc = NS_InitXPCOM2 (getter_AddRefs (serviceManager), nsnull, nsnull);
-        if (NS_SUCCEEDED (rc))
-        {
-            nsCOMPtr <nsIComponentRegistrar> registrar =
-                do_QueryInterface (serviceManager, &rc);
-            if (NS_SUCCEEDED (rc))
-                registrar->AutoRegister (nsnull);
-        }
-    }
-
-#endif
-
-    AssertComRC (rc);
-
-    return rc;
-}
-
-void Shutdown()
-{
-#if !defined (VBOX_WITH_XPCOM)
-
-    CoUninitialize();
-
-#else
-
-    nsCOMPtr <nsIEventQueue> eventQ;
-    nsresult rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
-    if (NS_SUCCEEDED (rc))
-    {
-        BOOL isOnMainThread = FALSE;
-        eventQ->IsOnCurrentThread (&isOnMainThread);
-        eventQ = nsnull; /* early release */
-        if (isOnMainThread)
-        {
-            /* only the main thread needs to uninitialize XPCOM */
-            NS_ShutdownXPCOM (nsnull);
-            XPCOMGlueShutdown();
-        }
-    }
-
-#endif
-}
 
 void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
 {

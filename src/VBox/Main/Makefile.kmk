@@ -230,7 +230,16 @@ VBoxSVCM_SOURCES        = \
 	linux/server_module.cpp
 VBoxSVCM_LIBS           = \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
-VBoxSVCM_LDFLAGS.darwin = -install_name @executable_path/components/VBoxSVCM.dylib
+VBoxSVCM_LDFLAGS.darwin = \
+	-install_name @executable_path/components/VBoxSVCM.dylib \
+	-exported_symbols_list $(PATH_TARGET)/VBoxSVCM.def
+ifeq ($(BUILD_TARGET),darwin)
+VBoxSVCM_ORDERDEPS     += $(PATH_TARGET)/VBoxSVCM.def
+VBoxSVCM_CLEAN         += $(PATH_TARGET)/VBoxSVCM.def
+$(PATH_TARGET)/VBoxSVCM.def:
+	$(RM) -f $@
+	$(APPEND) $@ _NSGetModule
+endif
 
 endif # VBOX_WITH_XPCOM
 
@@ -269,15 +278,19 @@ VBoxC_INCS          = \
 	$(PATH_VBoxCOM)
 VBoxC_INCS.win     := \
 	$(PATH_SUB_CURRENT)
-VBoxC_LDFLAGS.darwin = -install_name @executable_path/components/VBoxC.dylib
+VBoxC_LDFLAGS.darwin = \
+	-install_name @executable_path/components/VBoxSVCM.dylib \
+	-exported_symbols_list $(PATH_TARGET)/VBoxC.def
 ifdef VBOX_USE_VCC80
 VBoxC_LDFLAGS.win = /MANIFEST
 endif
 ifdef VBOX_WITH_XPCOM
 VBoxC_LIBS = \
 	$(TARGET_VBoxXPCOM) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+ ifneq ($(BUILD_TARGET),darwin) # Why is a XPCOM component linking with the glue? Because of the old com.cpp?
+VBoxC_LIBS += $(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
+ endif
 else
 VBoxC_LIBS = \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
@@ -327,6 +340,14 @@ VBoxC_SOURCES += \
 	RemoteUSBBackend.cpp
 endif
 
+ifeq ($(BUILD_TARGET),darwin)
+VBoxC_ORDERDEPS += $(PATH_TARGET)/VBoxC.def
+VBoxC_CLEAN += $(PATH_TARGET)/VBoxC.def
+$(PATH_TARGET)/VBoxC.def: $(MAKEFILE_CURRENT)
+	$(RM) -f $@
+	$(APPEND) $@ _NSGetModule
+	$(APPEND) $@ _VBoxDriversRegister
+endif
 
 #
 # VBoxXML
@@ -386,6 +407,7 @@ tstCFGLdr_LIBS    += \
 #
 VBoxCOM_COMMON_SOURCES = \
 	glue/com.cpp \
+	glue/initterm.cpp \
 	glue/string.cpp \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp
@@ -486,7 +508,6 @@ xpcom-components_SYMLINKS = \
 	VBoxSVCM$(SUFF_DLL)=>../VBoxSVCM$(SUFF_DLL) \
 	VBoxXPCOMIPCC$(SUFF_DLL)=>../VBoxXPCOMIPCC$(SUFF_DLL)
 endif
-
 
 # generate
 include $(PATH_KBUILD)/footer.kmk
