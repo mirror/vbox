@@ -883,7 +883,8 @@ bool VBoxProblemReporter::confirmDiscardSavedState (const CMachine &machine)
     );
 }
 
-bool VBoxProblemReporter::confirmReleaseImage (QWidget* parent, QString usage)
+bool VBoxProblemReporter::confirmReleaseImage (QWidget *parent,
+                                               const QString &usage)
 {
     return messageYesNo (
         parent,
@@ -1096,25 +1097,6 @@ void VBoxProblemReporter::cannotGetMediaAccessibility (const CUnknown &unk)
         formatErrorInfo (unk));
 }
 
-void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
-                                                 const QString &aVersion)
-{
-    message (aParent, VBoxProblemReporter::Warning,
-        tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
-            "<p>You must update to the latest version by choosing Devices "
-            "- Install Guest Additions.</p>").arg (aVersion));
-}
-
-void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
-                                                 const QString &aVersion)
-{
-    message (aParent, VBoxProblemReporter::Warning,
-        tr ("<p>Your Guest Additions are outdated (current version: %1).</p>"
-            "<p>There is a newer Guest Additions version. You should update "
-            "to the latest version by choosing Devices "
-            "- Install Guest Additions.</p>").arg (aVersion));
-}
-
 #if defined Q_WS_WIN
 
 void VBoxProblemReporter::cannotCreateHostInterface (
@@ -1253,6 +1235,54 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
                  .arg (aPath)
                  .arg (aConsole.GetMachine().GetName()),
              formatErrorInfo (res));
+}
+
+void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
+                                                    const QString &aInstalledVer,
+                                                    const QString &aExpectedVer)
+{
+    message (aParent, VBoxProblemReporter::Error,
+        tr ("<p>VirtualBox Guest Additions installed in the Guest OS are too "
+            "old: the installed version is %1, the expected version is %2. "
+            "Some features that require Guest Additions (mouse integration, "
+            "guest dislpay auto-resize) will most likely stop "
+            "working properly.</p>"
+            "<p>Please update Guest Additions to a newer version by choosing "
+            "<b>Devices</b> - <b>Install Guest Additions</b> from the "
+            "main menu.</p>")
+             .arg (aInstalledVer).arg (aExpectedVer),
+        "warnAboutTooOldAdditions");
+}
+
+void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
+                                                 const QString &aInstalledVer,
+                                                 const QString &aExpectedVer)
+{
+    message (aParent, VBoxProblemReporter::Warning,
+        tr ("<p>VirtualBox Guest Additions installed in the Guest OS are "
+            "outdated: the installed version is %1, the expected version is %2. "
+            "Some features that require Guest Additions (mouse integration, "
+            "guest dislpay auto-resize) may not work as expected.</p>"
+            "<p>It is recommended to update Guest Additions to a newer version by "
+            "choosing <b>Devices</b> - <b>Install Guest Additions</b> from the "
+            "main menu.</p>")
+             .arg (aInstalledVer).arg (aExpectedVer),
+        "warnAboutOldAdditions");
+}
+
+void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
+                                                 const QString &aInstalledVer,
+                                                 const QString &aExpectedVer)
+{
+    message (aParent, VBoxProblemReporter::Error,
+        tr ("<p>VirtualBox Guest Additions installed in the Guest OS are "
+            "too new: the installed version is %1, the expected version is %2.</p>"
+            "<p>Using a newer version of Additions with an older version of "
+            "VirtualBox is not supported. Please update Guest Additions to a suitable "
+            "version by choosing <b>Devices</b> - <b>Install Guest Additions</b> "
+            "from the main menu.</p>")
+             .arg (aInstalledVer).arg (aExpectedVer),
+        "warnAboutNewAdditions");
 }
 
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */

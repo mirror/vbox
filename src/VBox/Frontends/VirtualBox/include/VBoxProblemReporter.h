@@ -143,6 +143,8 @@ public:
     bool confirmMachineDeletion (const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);
 
+    bool confirmReleaseImage (QWidget *parent, const QString &usage);
+
     void sayCannotOverwriteHardDiskImage (QWidget *parent, const QString &src);
     int confirmHardDiskImageDeletion (QWidget *parent, const QString &src);
     void cannotDeleteHardDiskImage (QWidget *parent, const CVirtualDiskImage &vdi);
@@ -197,10 +199,9 @@ public:
     void cannotRemoveSharedFolder (QWidget *, const CConsole &,
                                    const QString &, const QString &);
 
-    bool confirmReleaseImage (QWidget*, QString);
-
-    void warnAboutOldAdditions (QWidget*, const QString &);
-    void warnAboutNewAdditions (QWidget*, const QString &);
+    void warnAboutTooOldAdditions (QWidget *, const QString &, const QString &);
+    void warnAboutOldAdditions (QWidget *, const QString &, const QString &);
+    void warnAboutNewAdditions (QWidget *, const QString &, const QString &);
 
     bool remindAboutInputCapture();
     bool remindAboutAutoCapture();
