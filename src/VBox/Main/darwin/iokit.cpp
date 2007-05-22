@@ -200,9 +200,10 @@ typedef struct DARWINUSBNOTIFY
     CFRunLoopSourceRef NotifyRLSrc;
     /** The attach notification iterator. */
     io_iterator_t AttachIterator;
+    /** The 2nd attach notification iterator. */
+    io_iterator_t AttachIterator2;
     /** The detach notificaiton iterator. */
     io_iterator_t DetachIterator;
-
 } DARWINUSBNOTIFY, *PDARWINUSBNOTIFY;
 
 
@@ -224,7 +225,7 @@ static void darwinDrainIterator(io_iterator_t pIterator)
 
 
 /**
- * Callback for the attach notifications.
+ * Callback for the two attach notifications.
  *
  * @param   pvNotify        Our data.
  * @param   NotifyIterator  The notification iterator.
@@ -282,7 +283,7 @@ void *DarwinSubscribeUSBNotifications(void)
             CFRunLoopAddSource(CFRunLoopGetCurrent(), pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
 
             /*
-             * Create the notifcation callback.
+             * Create the notifcation callbacks.
              */
             kern_return_t rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                                 kIOPublishNotification,
@@ -294,15 +295,25 @@ void *DarwinSubscribeUSBNotifications(void)
             {
                 darwinDrainIterator(pNotify->AttachIterator);
                 rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
-                                                      kIOTerminatedNotification,
+                                                      kIOMatchedNotification,
                                                       IOServiceMatching(kIOUSBDeviceClassName),
-                                                      darwinUSBDetachNotification,
+                                                      darwinUSBAttachNotification,
                                                       pNotify,
-                                                      &pNotify->DetachIterator);
+                                                      &pNotify->AttachIterator2);
                 if (rc == KERN_SUCCESS)
                 {
-                    darwinDrainIterator(pNotify->DetachIterator);
-                    return pNotify;
+                    darwinDrainIterator(pNotify->AttachIterator2);
+                    rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
+                                                          kIOTerminatedNotification,
+                                                          IOServiceMatching(kIOUSBDeviceClassName),
+                                                          darwinUSBDetachNotification,
+                                                          pNotify,
+                                                          &pNotify->DetachIterator);
+                    {
+                        darwinDrainIterator(pNotify->DetachIterator);
+                        return pNotify;
+                    }
+                    IOObjectRelease(pNotify->AttachIterator2);
                 }
                 IOObjectRelease(pNotify->AttachIterator);
             }
@@ -330,6 +341,8 @@ void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
 
     IOObjectRelease(pNotify->AttachIterator);
     pNotify->AttachIterator = NULL;
+    IOObjectRelease(pNotify->AttachIterator2);
+    pNotify->AttachIterator2 = NULL;
     IOObjectRelease(pNotify->DetachIterator);
     pNotify->DetachIterator = NULL;
 
