@@ -187,17 +187,17 @@ BEGINPROC VMXStartVM
 %endif
     push    xSI
 
+    ; Save LDTR
+    xor     eax, eax
+    sldt    ax
+    push    xAX
+
     ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
     sub     xSP, xS*2
     sgdt    [xSP]
 
     sub     xSP, xS*2
     sidt    [xSP]
-
-    ; Save LDTR
-    xor     eax, eax
-    sldt    ax
-    push    xAX
 
     ; Restore CR2
     mov     ebx, [xSI + CPUMCTX.cr2]
@@ -266,8 +266,15 @@ ALIGNCODE(16)
     jmp     .vmstart_end
 
 .vmxstart_success:
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
     push    xDI
-    mov     xDI, [xSP + xS * 6]          ;/* pCtx */
+    mov     xDI, [xSP + xS * 2]         ; pCtx 
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -281,12 +288,6 @@ ALIGNCODE(16)
 %else
     pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
 %endif
-
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [xSP]
-    add     xSP, xS*2
-    lgdt    [xSP]
-    add     xSP, xS*2
 
     pop     xAX         ; saved LDTR
     lldt    ax
@@ -361,17 +362,17 @@ BEGINPROC VMXResumeVM
 %endif
     push    xSI
 
+    ; Save LDTR
+    xor     eax, eax
+    sldt    ax
+    push    xAX
+
     ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
     sub     xSP, xS*2
     sgdt    [xSP]
 
     sub     xSP, xS*2
     sidt    [xSP]
-
-    ; Save LDTR
-    xor     eax, eax
-    sldt    ax
-    push    xAX
 
     ; Restore CR2
     mov     xBX, [xSI + CPUMCTX.cr2]
@@ -440,8 +441,15 @@ vmresume_good:
     jmp     vmresume_end
 
 vmresume_success:
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
     push    xDI
-    mov     xDI, [xSP + xS * 6]         ; pCtx 
+    mov     xDI, [xSP + xS * 2]         ; pCtx 
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -455,12 +463,6 @@ vmresume_success:
 %else
     pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
 %endif
-
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [xSP]
-    add     xSP, xS*2
-    lgdt    [xSP]
-    add     xSP, xS*2
 
     pop     xAX          ; saved LDTR
     lldt    ax
