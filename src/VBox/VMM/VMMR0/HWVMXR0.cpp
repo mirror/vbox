@@ -433,7 +433,7 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_CR4,               ASMGetCR4());
         AssertRC(rc);
         Log2(("VMX_VMCS_HOST_CR0 %08x\n", ASMGetCR0()));
-        Log2(("VMX_VMCS_HOST_CR3 %VHpx\n", ASMGetCR3()));
+        Log2(("VMX_VMCS_HOST_CR3 %VHp\n", ASMGetCR3()));
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
@@ -1011,7 +1011,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_CR0 %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR3, &val);
-            Log(("VMX_VMCS_HOST_CR3 %08x\n", val));
+            Log(("VMX_VMCS_HOST_CR3 %VHp\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR4, &val);
             Log(("VMX_VMCS_HOST_CR4 %08x\n", val));
