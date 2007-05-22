@@ -312,8 +312,9 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath);
 RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath);
 
 /**
- * Gets the directory for architecture-independent shared data. On Unix systems this is usually
- * /usr/share/<application>
+ * Gets the directory for architecture-independent shared data.
+ * Unix:    /usr/share/<application>
+ * Windows: <program files directory>/<application>
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -322,8 +323,9 @@ RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath);
 RTDECL(int) RTPathAppShared(char *pszPath, unsigned cchPath);
 
 /**
- * Gets the directory for architecture-dependent shared data. On Unix systems this is usually
- * /usr/lib/<application>.
+ * Gets the directory for architecture-dependent shared data.
+ * Unix:    /usr/lib/<application>.
+ * Windows: same as RTPathAppShared()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -332,8 +334,9 @@ RTDECL(int) RTPathAppShared(char *pszPath, unsigned cchPath);
 RTDECL(int) RTPathAppSharedArch(char *pszPath, unsigned cchPath);
 
 /**
- * Gets the directory for architecture-dependent shared data. On Unix systems this is usually
- * /usr/share/doc/<application>.
+ * Gets the directory for documentation.
+ * Unix:    /usr/share/doc/<application>.
+ * Windows: same as RTPathAppShared()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
