@@ -211,7 +211,7 @@
 /** Number of CR3 target values supported by the processor. (0-256) */
 #define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         ((a >> 16ULL) & 0x1FF)
 /** Maximum nr of MSRs in the VMCS. (N+1)*512. */
-#define MSR_IA32_VMX_MISC_MAX_MSR(a)                            (((a >> 25ULL) & 0x7) + 1) * 512)
+#define MSR_IA32_VMX_MISC_MAX_MSR(a)                            ((((a >> 25ULL) & 0x7) + 1) * 512)
 /** MSEG revision identifier used by the processor. */
 #define MSR_IA32_VMX_MISC_MSEG_ID(a)                            (a >> 32ULL)
 /** @} */
