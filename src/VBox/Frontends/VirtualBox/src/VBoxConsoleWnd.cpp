@@ -1709,13 +1709,13 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
 
     bool wasHidden = isHidden();
 
-    static QSize prevMinimumSize;
     if (on)
     {
-        /* Save previous scroll-view minimum size before entering fullscreen
-         * state to make return to this minimum size before the exiting
-         * fullscreen. Required for correct scroll-view update in SDL mode. */
-        prevMinimumSize = console->minimumSize();
+        /* Save the previous scroll-view minimum size before entering
+         * fullscreen state to restore this minimum size before the exiting
+         * fullscreen. Required for correct scroll-view and guest display
+         * update in SDL mode. */
+        prev_min_size = console->minimumSize();
         console->setMinimumSize (0, 0);
 
         /* memorize the maximized state */
@@ -1765,9 +1765,10 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
     }
     else
     {
-        /* Returns to previous scroll-view minimum size before the exiting
-         * fullscreen. Required for correct scroll-view update in SDL mode. */
-        console->setMinimumSize (prevMinimumSize);
+        /* Restore the previous scroll-view minimum size before the exiting
+         * fullscreen. Required for correct scroll-view and guest display
+         * update in SDL mode. */
+        console->setMinimumSize (prev_min_size);
 
         /* hide early to avoid extra flicker */
 #ifdef Q_WS_MAC
@@ -2514,17 +2515,27 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion, bool aActive
 {
     vmAutoresizeGuestAction->setEnabled (aActive);
 
-    /* Checking for the Guest Additions version to warn user about possible
-     * compatibility issues in case of installed version is outdated. */
+    /* Check the Guest Additions version and warn the user about possible
+     * compatibility issues in case if the installed version is outdated. */
     uint version = aVersion.toUInt();
-    QString fullVersion = QString ("%1.%2")
+    QString verisonStr = QString ("%1.%2")
         .arg (RT_HIWORD (version)).arg (RT_LOWORD (version));
+    QString expectedStr = QString ("%1.%2")
+        .arg (VMMDEV_VERSION_MAJOR).arg (VMMDEV_VERSION_MINOR);
 
-    if (RT_HIWORD (version) < RT_HIWORD (VMMDEV_VERSION))
-        vboxProblem().warnAboutOldAdditions (this, fullVersion);
-    else if (RT_HIWORD (version) == RT_HIWORD (VMMDEV_VERSION) &&
-             RT_LOWORD (version) <  RT_LOWORD (VMMDEV_VERSION))
-        vboxProblem().warnAboutNewAdditions (this, fullVersion);
+    if (RT_HIWORD (version) < VMMDEV_VERSION_MAJOR)
+    {
+        vboxProblem().warnAboutTooOldAdditions (this, verisonStr, expectedStr);
+    }
+    else if (RT_HIWORD (version) == VMMDEV_VERSION_MAJOR &&
+             RT_LOWORD (version) <  VMMDEV_VERSION_MINOR)
+    {
+        vboxProblem().warnAboutOldAdditions (this, verisonStr, expectedStr);
+    }
+    else if (version > VMMDEV_VERSION)
+    {
+        vboxProblem().warnAboutNewAdditions (this, verisonStr, expectedStr);
+    }
 }
 
 /**

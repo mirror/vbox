@@ -180,6 +180,8 @@ private slots:
 
 private:
 
+    void maybeRestrictMinimumSize();
+
     VBoxConsoleWnd *mainwnd;
 
     CConsole cconsole;
@@ -208,7 +210,7 @@ private:
     bool ignore_mainwnd_resize : 1;
     bool mAutoresizeGuest : 1;
 
-    bool mIsAdditionsActive;
+    bool mIsAdditionsActive : 1;
 
     bool mfNumLock : 1;
     bool mfScrollLock : 1;

@@ -773,15 +773,7 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
     {
         mAutoresizeGuest = on;
 
-        if (mode == VBoxDefs::SDLMode)
-        {
-            /* restrict minimum size because we cannot correctly draw
-             * in a scrolled window using SDL */
-            if (!mAutoresizeGuest)
-                setMinimumSize (sizeHint());
-            else
-                setMinimumSize (0, 0);
-        }
+        maybeRestrictMinimumSize();
 
         if (mIsAdditionsActive && mAutoresizeGuest)
             doResizeHint();
@@ -794,14 +786,7 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
  */
 void VBoxConsoleView::onFullscreenChange (bool /* on */)
 {
-    /// @todo (r=dmik) not currently sure is this method necessary to
-    //  fix fullscreen toggle problems (invalid areas) on Linux/SDL
-//    if (fb)
-//    {
-//        VBoxResizeEvent e (fb->pixelFormat(), fb->address(), fb->colorDepth(),
-//                           fb->width(), fb->height());
-//        fb->resizeEvent (&e);
-//    }
+    /* Nothing to do here so far */
 }
 
 //
@@ -842,15 +827,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* apply maximum size restriction */
                 setMaximumSize (sizeHint());
 
-                if (mode == VBoxDefs::SDLMode)
-                {
-                    /* restrict minimum size because we cannot correctly draw
-                     * in a scrolled window using SDL */
-                    if (!mAutoresizeGuest)
-                        setMinimumSize (sizeHint());
-                    else
-                        setMinimumSize (0, 0);
-                }
+                maybeRestrictMinimumSize();
 
                 /* resize the guest canvas */
                 resizeContents (re->width(), re->height());
@@ -936,7 +913,11 @@ bool VBoxConsoleView::event (QEvent *e)
             {
                 GuestAdditionsEvent *ge = (GuestAdditionsEvent *) e;
                 LogFlowFunc (("AdditionsStateChangeEventType\n"));
+
                 mIsAdditionsActive = ge->additionActive();
+
+                maybeRestrictMinimumSize();
+
                 emit additionsStateChanged (ge->additionVersion(), ge->additionActive());
                 return true;
             }
@@ -1699,19 +1680,23 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 }
 
 /**
- *  Called on every exit from fullscreen and maximized mode.
+ *  Called on exit from fullscreen or from maximized mode.
  */
 void VBoxConsoleView::exitFullScreen()
 {
     if (mIsAdditionsActive && mAutoresizeGuest)
     {
         doResizeHint();
+        /* Fire a normalize event with some delay to let the guest process the
+         * resize hint and send resize properly, instead of normalizing to the
+         * current guest size right now. */
         QTimer::singleShot (200, this, SLOT (normalizeGeo()));
     }
     else
     {
         normalizeGeo();
     }
+
     ignore_mainwnd_resize = false;
 }
 
@@ -2887,3 +2872,24 @@ void VBoxConsoleView::doResizeHint()
     }
 }
 
+/** 
+ *  Sets the the minimum size restriction depending on the auto-resize feature
+ *  state and the current rendering mode.
+ *
+ *  Currently, the restriction is set only in SDL mode and only when the
+ *  auto-resize feature is inactive. We need to do that because we cannot
+ *  correctly draw in a scrolled window in SDL mode.
+ *
+ *  In all other modes, or when auto-resize is in force, this function does
+ *  nothing.
+ */
+void VBoxConsoleView::maybeRestrictMinimumSize()
+{
+    if (mode == VBoxDefs::SDLMode)
+    {
+        if (!mIsAdditionsActive || !mAutoresizeGuest)
+            setMinimumSize (sizeHint());
+        else
+            setMinimumSize (0, 0);
+    }
+}

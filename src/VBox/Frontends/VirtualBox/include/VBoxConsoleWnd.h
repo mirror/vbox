@@ -272,6 +272,7 @@ private:
 
     QPoint normal_pos;
     QSize normal_size;
+    QSize prev_min_size;
 
     // variables for dealing with true fullscreen
     bool full_screen : 1;
