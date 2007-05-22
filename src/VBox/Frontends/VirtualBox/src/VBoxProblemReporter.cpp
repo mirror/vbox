@@ -1248,8 +1248,8 @@ void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
             "guest dislpay auto-resize) will most likely stop "
             "working properly.</p>"
             "<p>Please update Guest Additions to a newer version by choosing "
-            "<b>Devices</b> - <b>Install Guest Additions</b> from the "
-            "main menu.</p>")
+            "<b>Install Guest Additions</b> from the <b>Devices</b> "
+            "menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
         "warnAboutTooOldAdditions");
 }
@@ -1264,8 +1264,8 @@ void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
             "Some features that require Guest Additions (mouse integration, "
             "guest dislpay auto-resize) may not work as expected.</p>"
             "<p>It is recommended to update Guest Additions to a newer version by "
-            "choosing <b>Devices</b> - <b>Install Guest Additions</b> from the "
-            "main menu.</p>")
+            "choosing <b>Install Guest Additions</b> from the <b>Devices</b> "
+            "menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
         "warnAboutOldAdditions");
 }
@@ -1276,11 +1276,12 @@ void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
 {
     message (aParent, VBoxProblemReporter::Error,
         tr ("<p>VirtualBox Guest Additions installed in the Guest OS are "
-            "too new: the installed version is %1, the expected version is %2.</p>"
+            "too recent for this version of VirtualBox: the installed version "
+            "is %1, the expected version is %2.</p>"
             "<p>Using a newer version of Additions with an older version of "
-            "VirtualBox is not supported. Please update Guest Additions to a suitable "
-            "version by choosing <b>Devices</b> - <b>Install Guest Additions</b> "
-            "from the main menu.</p>")
+            "VirtualBox is not supported. Please install the current version "
+            "of Guest Additions by choosing <b>Install Guest Additions</b> "
+            "from the <b>Devices</b> menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
         "warnAboutNewAdditions");
 }
