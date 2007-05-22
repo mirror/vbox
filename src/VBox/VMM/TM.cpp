@@ -1427,7 +1427,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
                 ||  !(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
                 ||  !(u64Now <= u64Max)))
 {
-    LogRel(("Add the following to defect #1414:\n"
+    LogRel(("TM: Add the following to defect #1414:\n"
             "                         u64Now=%016RX64\n"
             "                         u64Max=%016RX64\n"
             "               pNext->u64Expire=%016RX64\n"
