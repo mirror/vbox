@@ -597,7 +597,7 @@ int  VBOXCALL   supdrvIOCtlFast(unsigned uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVS
                 rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_NOP, NULL);
                 break;
             case SUP_IOCTL_FAST_DO_HWACC_RUN:
-                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMGC_DO_TESTCASE_HWACCM_NOP, NULL);
+                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_TESTCASE_HWACCM_NOP, NULL);
                 break;
             default:
                 rc = VERR_INTERNAL_ERROR;
