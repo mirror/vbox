@@ -1,7 +1,6 @@
+/** $Id$ */
 /** @file
- *
- * VBox basic PC devices:
- * Intel 8254 programmable interval timer
+ * Intel 8254 Programmable Interval Timer (PIT).
  */
 
 /*
@@ -98,7 +97,8 @@ typedef struct PITChannelState
     /* irq handling */
     int64_t next_transition_time;
     int32_t irq;
-    uint32_t padding;
+    /** Number of release log entries. Used to prevent floading. */
+    uint32_t cRelLogEntries;
 
     uint32_t count; /* can be 65536 */
     uint16_t latched_count;
@@ -298,6 +298,14 @@ static inline void pit_load_count(PITChannelState *s, int val)
     s->count_load_time = s->u64ReloadTS = TMTimerGet(pTimer);
     s->count = val;
     pit_irq_timer_update(s, s->count_load_time);
+
+    /* log the new rate if it's high enough. */
+    if (    (   s->mode == 2 
+             || s->mode == 3)
+        &&  s->count < 0x10000
+        &&  s->cRelLogEntries++ < 32)
+        LogRel(("PIT: mode=%d count=%#x - %d.%02d Hz\n", s->mode, s->count, 
+                PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
 }
 
 /* return -1 if no transition will occur.  */
@@ -814,6 +822,7 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
         s->rw_mode = 0;
         s->bcd = 0;
 #endif
+        s->cRelLogEntries = 0;
         s->mode = 3;
         s->gate = (i != 2);
         pit_load_count(s, 0);
