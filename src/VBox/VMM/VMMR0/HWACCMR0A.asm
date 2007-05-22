@@ -92,8 +92,6 @@
  %endif
     ;; @todo check ds,es saving/restoring on AMD64
  %macro MYPUSHSEGS 2
-    push    gs
-    push    fs 
     mov     %2, es
     push    %1
     mov     %2, ds
@@ -104,8 +102,6 @@
     mov     ds, %2
     pop     %1
     mov     es, %2
-    pop     fs
-    pop     gs
  %endmacro
 
 %else ; __X86__
