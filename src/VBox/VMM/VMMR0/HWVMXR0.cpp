@@ -74,6 +74,7 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
 
     /* Enter VMX Root Mode */
+    Log(("pVMXONPhys = %VHp\n", pVM->hwaccm.s.vmx.pVMXONPhys));
     rc = VMXEnable(pVM->hwaccm.s.vmx.pVMXONPhys);
     if (VBOX_FAILURE(rc))
     {
@@ -81,6 +82,7 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     }
 
     /* Clear VM Control Structure. */
+    Log(("pVMCSPhys  = %VHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
     rc = VMXClearVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
     if (VBOX_FAILURE(rc))
         goto vmx_end;
@@ -193,11 +195,15 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     AssertRC(rc);
 
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_A_FULL, 0);
+#if HC_ARCH_BITS == 32
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_A_HIGH, 0);
+#endif
     AssertRC(rc);
 
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_B_FULL, 0);
+#if HC_ARCH_BITS == 32
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_B_HIGH, 0);
+#endif
     AssertRC(rc);
 
     /* Clear MSR controls. */
@@ -209,11 +215,13 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
         AssertRC(rc);
     }
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, 0);
-    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_HIGH, 0);
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL, 0);
-    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_HIGH, 0);
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, 0);
-    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_HIGH, 0);
+#if HC_ARCH_BITS == 32
+    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_HIGH, 0);
+    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_HIGH, 0);
+    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_HIGH, 0);
+#endif
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_STORE_COUNT, 0);
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_LOAD_COUNT, 0);
     AssertRC(rc);
@@ -223,13 +231,19 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
         /* Optional */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_TRESHOLD, 0);
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, 0);
+#if HC_ARCH_BITS == 32
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH, 0);
+#endif
         AssertRC(rc);
     }
 
     /* Set link pointer to -1. Not currently used. */
+#if HC_ARCH_BITS == 32
     rc  = VMXWriteVMCS(VMX_VMCS_GUEST_LINK_PTR_FULL, 0xFFFFFFFF);
     rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LINK_PTR_HIGH, 0xFFFFFFFF);
+#else
+    rc  = VMXWriteVMCS(VMX_VMCS_GUEST_LINK_PTR_FULL, 0xFFFFFFFFFFFFFFFF);
+#endif
     AssertRC(rc);
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
@@ -1093,6 +1107,14 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_RSP %VHv\n", val));
             VMXReadVMCS(VMX_VMCS_HOST_RIP, &val);
             Log(("VMX_VMCS_HOST_RIP %VHv\n", val));
+
+#if HC_ARCH_BITS == 64
+            Log(("MSR_K6_EFER       = %VX64\n", ASMRdMsr(MSR_K6_EFER)));
+            Log(("MSR_K6_STAR       = %VX64\n", ASMRdMsr(MSR_K6_STAR)));
+            Log(("MSR_K8_LSTAR      = %VX64\n", ASMRdMsr(MSR_K8_LSTAR)));
+            Log(("MSR_K8_CSTAR      = %VX64\n", ASMRdMsr(MSR_K8_CSTAR)));
+            Log(("MSR_K8_SF_MASK    = %VX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
+#endif
         }
 #endif /* VBOX_STRICT */
         goto end;
