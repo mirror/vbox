@@ -536,7 +536,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (VBOX_FAILURE(rc))
             {
-                Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
+                Log(("VMM: R0 returned fatal %Vrc in iteration %d\n", rc, i));
                 VMMR3FatalDump(pVM, rc);
                 return rc;
             }
