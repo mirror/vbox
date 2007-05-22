@@ -236,6 +236,9 @@ private:
     CFRunLoopRef mServiceRunLoopRef;
     /** The opaque value returned by DarwinSubscribeUSBNotifications. */
     void *mNotifyOpaque;
+    /** A hack to work around the problem with the usb device enumration 
+     * not including newly attached devices. */
+    bool mWaitABitNextTime;
 };
 # endif /* __DARWIN__ */
 
