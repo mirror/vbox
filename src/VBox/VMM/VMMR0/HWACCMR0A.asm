@@ -267,7 +267,7 @@ ALIGNCODE(16)
 
 .vmxstart_success:
     push    xDI
-    mov     xDI, [xSP + xS * 2]          ;/* pCtx */
+    mov     xDI, [xSP + xS * 6]          ;/* pCtx */
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -441,7 +441,7 @@ vmresume_good:
 
 vmresume_success:
     push    xDI
-    mov     xDI, [xSP + xS * 2]         ; pCtx 
+    mov     xDI, [xSP + xS * 6]         ; pCtx 
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
