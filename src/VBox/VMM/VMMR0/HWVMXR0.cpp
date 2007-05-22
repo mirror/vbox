@@ -433,7 +433,7 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_CR4,               ASMGetCR4());
         AssertRC(rc);
         Log2(("VMX_VMCS_HOST_CR0 %08x\n", ASMGetCR0()));
-        Log2(("VMX_VMCS_HOST_CR3 %08x\n", ASMGetCR3()));
+        Log2(("VMX_VMCS_HOST_CR3 %VHpx\n", ASMGetCR3()));
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
@@ -461,8 +461,8 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         ASMGetIDTR(&idtr);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_IDTR_BASE, idtr.pIdt);
         AssertRC(rc);
-        Log2(("VMX_VMCS_HOST_GDTR_BASE %VGv\n", gdtr.pGdt));
-        Log2(("VMX_VMCS_HOST_IDTR_BASE %VGv\n", idtr.pIdt));
+        Log2(("VMX_VMCS_HOST_GDTR_BASE %VHv\n", gdtr.pGdt));
+        Log2(("VMX_VMCS_HOST_IDTR_BASE %VHv\n", idtr.pIdt));
 
         /* Save the base address of the TR selector. */
         if (SelTR > gdtr.cbGdt)
@@ -475,13 +475,15 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | (pDesc->Gen.u8BaseHigh2 << 24);
         rc = VMXWriteVMCS(VMX_VMCS_HOST_TR_BASE, trBase);
         AssertRC(rc);
-        Log2(("VMX_VMCS_HOST_TR_BASE %VGv\n", trBase));
+        Log2(("VMX_VMCS_HOST_TR_BASE %VHv\n", trBase));
 
         /* FS and GS base. */
 #if HC_ARCH_BITS == 32
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_FS_BASE,           0);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_GS_BASE,           0);
 #else
+        Log2(("MSR_K8_FS_BASE = %VHv\n", ASMRdMsr(MSR_K8_FS_BASE)));
+        Log2(("MSR_K8_GS_BASE = %VHv\n", ASMRdMsr(MSR_K8_GS_BASE)));
         rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,         ASMRdMsr(MSR_K8_FS_BASE));
         rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,         ASMRdMsr(MSR_K8_GS_BASE));
 #endif
@@ -490,13 +492,15 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         /* Sysenter MSRs. */
         /** @todo expensive!! */
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_CS,       ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
+        Log2(("VMX_VMCS_HOST_SYSENTER_CS  %08x\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_CS)));
 #if HC_ARCH_BITS == 32
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_ESP,      ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_EIP,      ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
-        Log2(("VMX_VMCS_HOST_SYSENTER_CS  %08x\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_CS)));
-        Log2(("VMX_VMCS_HOST_SYSENTER_EIP %VGv\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP)));
-        Log2(("VMX_VMCS_HOST_SYSENTER_ESP %VGv\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP)));
+        Log2(("VMX_VMCS_HOST_SYSENTER_EIP %VHv\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP)));
+        Log2(("VMX_VMCS_HOST_SYSENTER_ESP %VHv\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP)));
 #else
+        Log2(("VMX_VMCS_HOST_SYSENTER_EIP %VHv\n", ASMRdMsr(MSR_IA32_SYSENTER_EIP)));
+        Log2(("VMX_VMCS_HOST_SYSENTER_ESP %VHv\n", ASMRdMsr(MSR_IA32_SYSENTER_ESP)));
         rc |= VMXWriteVMCS64(VMX_VMCS_HOST_SYSENTER_ESP,      ASMRdMsr(MSR_IA32_SYSENTER_ESP));
         rc |= VMXWriteVMCS64(VMX_VMCS_HOST_SYSENTER_EIP,      ASMRdMsr(MSR_IA32_SYSENTER_EIP));
 #endif
@@ -999,7 +1003,6 @@ ResumeExecution:
             PVBOXDESC pDesc;
 
             ASMGetGDTR(&gdtr);
-            VMXWriteVMCS(VMX_VMCS_HOST_GDTR_BASE, gdtr.pGdt);
 
             Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
             Log(("Current stack %08x\n", &rc1));
@@ -1070,26 +1073,26 @@ ResumeExecution:
             }
 
             VMXReadVMCS(VMX_VMCS_HOST_TR_BASE, &val);
-            Log(("VMX_VMCS_HOST_TR_BASE %VGv\n", val));
+            Log(("VMX_VMCS_HOST_TR_BASE %VHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_GDTR_BASE, &val);
-            Log(("VMX_VMCS_HOST_GDTR_BASE %VGv\n", val));
+            Log(("VMX_VMCS_HOST_GDTR_BASE %VHv\n", val));
             VMXReadVMCS(VMX_VMCS_HOST_IDTR_BASE, &val);
-            Log(("VMX_VMCS_HOST_IDTR_BASE %VGv\n", val));
+            Log(("VMX_VMCS_HOST_IDTR_BASE %VHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_CS, &val);
             Log(("VMX_VMCS_HOST_SYSENTER_CS  %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_EIP, &val);
-            Log(("VMX_VMCS_HOST_SYSENTER_EIP %VGv\n", val));
+            Log(("VMX_VMCS_HOST_SYSENTER_EIP %VHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_ESP, &val);
-            Log(("VMX_VMCS_HOST_SYSENTER_ESP %VGv\n", val));
+            Log(("VMX_VMCS_HOST_SYSENTER_ESP %VHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_RSP, &val);
-            Log(("VMX_VMCS_HOST_RSP %VGv\n", val));
+            Log(("VMX_VMCS_HOST_RSP %VHv\n", val));
             VMXReadVMCS(VMX_VMCS_HOST_RIP, &val);
-            Log(("VMX_VMCS_HOST_RIP %VGv\n", val));
+            Log(("VMX_VMCS_HOST_RIP %VHv\n", val));
         }
 #endif /* VBOX_STRICT */
         goto end;
