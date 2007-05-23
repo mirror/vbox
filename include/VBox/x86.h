@@ -1878,6 +1878,8 @@ typedef union X86DESC64
     uint16_t            au16[8];
     /** 32 bit unsigned interger view. */
     uint32_t            au32[4];
+    /** 64 bit unsigned interger view. */
+    uint64_t            au64[2];
 } X86DESC64;
 #pragma pack()
 /** Pointer to descriptor table entry. */
