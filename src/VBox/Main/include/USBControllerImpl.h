@@ -110,6 +110,8 @@ public:
     bool hasMatchingFilter (ComObjPtr <HostUSBDevice> &aDevice);
     bool hasMatchingFilter (IUSBDevice *aUSBDevice);
 
+    HRESULT notifyProxy (bool aInsertFilters);
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"USBController"; }
 
