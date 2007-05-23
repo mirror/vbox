@@ -312,7 +312,7 @@ ifeq ($(USERNAME),klaus)
 	$(CP) -p $@ pcnet32.zrom
 endif
 
-$(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $(MAKEDEPS)
+$(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $(MAKEDEPS) $$(TARGET_makerom)
 	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
