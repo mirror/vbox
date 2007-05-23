@@ -3798,7 +3798,14 @@ HRESULT Console::powerDown()
             alock.enter();
         }
 
-        releaseAllUSBDevices();
+        /* If the machine has an USB comtroller, release all USB devices
+         * (symmectric to the code in captureUSBDevices()) */
+        {
+            PPDMIBASE pBase;
+            int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
+            if (VBOX_SUCCESS (vrc))
+                releaseAllUSBDevices();
+        }
 
         /*
          *  Now we've got to destroy the VM as well. (mpVM is not valid
@@ -4287,7 +4294,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, bool aManual,
 }
 
 /**
- *  USB device attack callback used by AttachUSBDevice().
+ *  USB device attach callback used by AttachUSBDevice().
  *  Note that AttachUSBDevice() doesn't return until this callback is executed,
  *  so we don't use AutoCaller and don't care about reference counters of
  *  interface pointers passed in.
@@ -4348,8 +4355,8 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
 }
 
 /**
- *  USB device attack callback used by AttachUSBDevice().
- *  Note that AttachUSBDevice() doesn't return until this callback is executed,
+ *  USB device detach callback used by DetachUSBDevice().
+ *  Note that DetachUSBDevice() doesn't return until this callback is executed,
  *  so we don't use AutoCaller and don't care about reference counters of
  *  interface pointers passed in.
  *

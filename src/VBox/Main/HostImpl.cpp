@@ -1293,12 +1293,16 @@ HRESULT Host::releaseUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
  *  devices, marks those that match as captured and returns them as the colection
  *  of IUSBDevice instances.
  *
- *  Called by Console from the VM process (through IInternalMachineControl).
+ *  Called by Console from the VM process (through IInternalMachineControl)
+ *  upon VM startup.
+ *
+ *  @note Locks this object for reading (@todo for writing now, until switched
+ *  to the new locking scheme).
  */
 HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine,
                                      IUSBDeviceCollection **aHostDevices)
 {
-    LogFlowMember (("Host::autoCaptureUSBDevices: aMachine=%p\n", aMachine));
+    LogFlowThisFunc (("aMachine=%p\n", aMachine));
 
     AutoLock lock (this);
     CHECK_READY();
@@ -1320,7 +1324,7 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine,
 
             if (device->state() == USBDeviceState_USBDeviceCaptured)
             {
-                // put the device to the return list
+                /* put the device to the return list */
                 ComPtr <IUSBDevice> d;
                 device.queryInterfaceTo (d.asOutParam());
                 Assert (!d.isNull());
@@ -1342,7 +1346,12 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine,
  *  Replays all filters against all USB devices currently marked as captured
  *  by the given machine (excluding this machine's filters).
  *
- *  Called by Console from the VM process (throug IInternalMachineControl).
+ *  Called by Console from the VM process (throug IInternalMachineControl)
+ *  upon normal VM termination or by SessionMachine::uninit() upon abnormal
+ *  VM termination (from under the Machine/SessionMachine lock).
+ *
+ *  @note Locks this object for reading (@todo for writing now, until switched
+ *  to the new locking scheme).
  */
 HRESULT Host::releaseAllUSBDevices (SessionMachine *aMachine)
 {
@@ -1355,7 +1364,7 @@ HRESULT Host::releaseAllUSBDevices (SessionMachine *aMachine)
         ComObjPtr <HostUSBDevice> device = *it;
         if (device->machine() == aMachine)
         {
-            // reset the device and apply filters
+            /* reset the device and apply filters */
             device->reset();
             HRESULT rc = applyAllUSBFilters (device, aMachine);
             ComAssertComRC (rc);
@@ -1510,17 +1519,17 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
 {
     LogFlowMember (("Host::applyAllUSBFilters: \n"));
 
-    // ignore unsupported devices
+    /* ignore unsupported devices */
     if (aDevice->state() == USBDeviceState_USBDeviceNotSupported)
         return S_OK;
-    // ignore unavailable devices as well
+    /* ignore unavailable devices as well */
     if (aDevice->state() == USBDeviceState_USBDeviceUnavailable)
         return S_OK;
 
     VirtualBox::SessionMachineVector machines;
     mParent->getOpenedMachines (machines);
 
-    // apply global filters
+    /* apply global filters */
     USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
     while (it != mUSBDeviceFilters.end())
     {
@@ -1536,7 +1545,7 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
         ++ it;
     }
 
-    // apply machine filters
+    /* apply machine filters */
     for (size_t i = 0; i < machines.size(); i++)
     {
         if (aMachine && machines [i] == aMachine)
@@ -1558,9 +1567,9 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
         }
     }
 
-    // no machine filters were matched.
-    // if no global filters were matched as well, release the device
-    // to make it available on the host
+    /* no machine filters were matched.
+     * if no global filters were matched as well, release the device
+     * to make it available on the host */
     if (    it == mUSBDeviceFilters.end()
         &&  aDevice->state() == USBDeviceState_USBDeviceHeld)
         aDevice->setHostDriven();

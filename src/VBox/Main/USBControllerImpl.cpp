@@ -294,7 +294,9 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
     AutoLock lock (this);
     CHECK_READY();
 
-    CHECK_MACHINE_MUTABILITY (m_Parent);
+    /* the machine needs to be mutable */
+    Machine::AutoStateDependency <Machine::MutableStateDep> adep (m_Parent);
+    CheckComRCReturnRC (adep.rc());
 
     ComObjPtr <USBDeviceFilter> filter = getDependentChild (aFilter);
     if (!filter)
@@ -306,10 +308,10 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
         return setError (E_INVALIDARG,
             tr ("The given USB device filter is already in the list"));
 
-    // backup the list before modification
+    /* backup the list before modification */
     m_DeviceFilters.backup();
 
-    // iterate to the position...
+    /* iterate to the position... */
     DeviceFilterList::iterator it;
     if (aPosition < m_DeviceFilters->size())
     {
@@ -318,12 +320,19 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
     }
     else
         it = m_DeviceFilters->end();
-    // ...and insert
+    /* ...and insert */
     m_DeviceFilters->insert (it, filter);
     filter->mInList = true;
 
-    // notify the proxy (only when the filter is active)
+    /// @todo After rewriting Win32 USB support, no more necessary;
+    //  a candidate for removal.
+#if 0
+    /* notify the proxy (only when the filter is active) */
     if (filter->data().mActive)
+#else
+    /* notify the proxy (only when it makes sense) */
+    if (filter->data().mActive && adep.machineState() >= MachineState_Running)
+#endif
     {
         USBProxyService *service = m_Parent->virtualBox()->host()->usbProxyService();
         ComAssertRet (service, E_FAIL);
@@ -344,7 +353,9 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
     AutoLock lock (this);
     CHECK_READY();
 
-    CHECK_MACHINE_MUTABILITY (m_Parent);
+    /* the machine needs to be mutable */
+    Machine::AutoStateDependency <Machine::MutableStateDep> adep (m_Parent);
+    CheckComRCReturnRC (adep.rc());
 
     if (!m_DeviceFilters->size())
         return setError (E_INVALIDARG,
@@ -355,28 +366,35 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
             tr ("Invalid position: %lu (must be in range [0, %lu])"),
             aPosition, m_DeviceFilters->size() - 1);
 
-    // backup the list before modification
+    /* backup the list before modification */
     m_DeviceFilters.backup();
 
     ComObjPtr <USBDeviceFilter> filter;
     {
-        // iterate to the position...
+        /* iterate to the position... */
         DeviceFilterList::iterator it = m_DeviceFilters->begin();
         std::advance (it, aPosition);
-        // ...get an element from there...
+        /* ...get an element from there... */
         filter = *it;
-        // ...and remove
+        /* ...and remove */
         filter->mInList = false;
         m_DeviceFilters->erase (it);
     }
 
-    // cancel sharing (make an independent copy of data)
+    /* cancel sharing (make an independent copy of data) */
     filter->unshare();
 
     filter.queryInterfaceTo (aFilter);
 
-    // notify the proxy (only when the filter is active)
+    /// @todo After rewriting Win32 USB support, no more necessary;
+    //  a candidate for removal.
+#if 0
+    /* notify the proxy (only when the filter is active) */
     if (filter->data().mActive)
+#else
+    /* notify the proxy (only when it makes sense) */
+    if (filter->data().mActive && adep.machineState() >= MachineState_Running)
+#endif
     {
         USBProxyService *service = m_Parent->virtualBox()->host()->usbProxyService();
         ComAssertRet (service, E_FAIL);
@@ -606,14 +624,18 @@ bool USBController::isReallyModified()
 
 bool USBController::rollback()
 {
-    AutoLock alock(this);
+    AutoLock alock (this);
+
+    /* we need the machine state */
+    Machine::AutoStateDependency <Machine::MutableStateDep> adep (m_Parent);
+    AssertComRCReturn (adep.rc(), false);
 
     bool dataChanged = false;
 
     if (m_Data.isBackedUp())
     {
-        // we need to check all data to see whether anything will be changed
-        // after rollback
+        /* we need to check all data to see whether anything will be changed
+         * after rollback */
         dataChanged = m_Data.hasActualChanges();
         m_Data.rollback();
     }
@@ -623,7 +645,7 @@ bool USBController::rollback()
         USBProxyService *service = m_Parent->virtualBox()->host()->usbProxyService();
         ComAssertRet (service, false);
 
-        // uninitialize all new filters (absent in the backed up list)
+        /* uninitialize all new filters (absent in the backed up list) */
         DeviceFilterList::const_iterator it = m_DeviceFilters->begin();
         DeviceFilterList *backedList = m_DeviceFilters.backedUpData();
         while (it != m_DeviceFilters->end())
@@ -631,8 +653,16 @@ bool USBController::rollback()
             if (std::find (backedList->begin(), backedList->end(), *it) ==
                 backedList->end())
             {
-                // notify the proxy (only when the filter is active)
+    /// @todo After rewriting Win32 USB support, no more necessary;
+    //  a candidate for removal.
+#if 0
+                /* notify the proxy (only when the filter is active) */
                 if ((*it)->data().mActive)
+#else
+                /* notify the proxy (only when it makes sense) */
+                if ((*it)->data().mActive &&
+                    adep.machineState() >= MachineState_Running)
+#endif
                 {
                     USBDeviceFilter *filter = *it;
                     ComAssertRet (filter->id() != NULL, false);
@@ -645,37 +675,49 @@ bool USBController::rollback()
             ++ it;
         }
 
-        // find all removed old filters (absent in the new list)
-        // and insert them back to the USB proxy
-        it = backedList->begin();
-        while (it != backedList->end())
+    /// @todo After rewriting Win32 USB support, no more necessary;
+    //  a candidate for removal.
+#if 0
+#else
+        if (adep.machineState() >= MachineState_Running)
+#endif
         {
-            if (std::find (m_DeviceFilters->begin(), m_DeviceFilters->end(), *it) ==
-                m_DeviceFilters->end())
+            /* find all removed old filters (absent in the new list)
+             * and insert them back to the USB proxy */
+            it = backedList->begin();
+            while (it != backedList->end())
             {
-                // notify the proxy (only when the filter is active)
-                if ((*it)->data().mActive)
+                if (std::find (m_DeviceFilters->begin(), m_DeviceFilters->end(), *it) ==
+                    m_DeviceFilters->end())
                 {
-                    USBDeviceFilter *flt = *it; // resolve ambiguity
-                    ComAssertRet (flt->id() == NULL, false);
-                    flt->id() = service->insertFilter (ComPtr <IUSBDeviceFilter> (flt));
+                    /* notify the proxy (only when necessary) */
+                    if ((*it)->data().mActive)
+                    {
+                        USBDeviceFilter *flt = *it; /* resolve ambiguity */
+                        ComAssertRet (flt->id() == NULL, false);
+                        flt->id() = service->insertFilter
+                            (ComPtr <IUSBDeviceFilter> (flt));
+                    }
                 }
+                ++ it;
             }
-            ++ it;
         }
 
-        // restore the list
+        /* restore the list */
         m_DeviceFilters.rollback();
     }
 
-    // rollback any changes to filters after restoring the list
+    /* here we don't depend on the machine state any more */
+    adep.release();
+
+    /* rollback any changes to filters after restoring the list */
     DeviceFilterList::const_iterator it = m_DeviceFilters->begin();
     while (it != m_DeviceFilters->end())
     {
         if ((*it)->isModified())
         {
             (*it)->rollback();
-            // call this to notify the USB proxy about changes
+            /* call this to notify the USB proxy about changes */
             onDeviceFilterChange (*it);
         }
         ++ it;
@@ -820,33 +862,11 @@ HRESULT USBController::onMachineRegistered (BOOL aRegistered)
     AutoLock alock (this);
     CHECK_READY();
 
-    USBProxyService *service = m_Parent->virtualBox()->host()->usbProxyService();
-    ComAssertRet (service, E_FAIL);
-
-    // iterate over the filter list and notify the proxy accordingly
-
-    DeviceFilterList::const_iterator it = m_DeviceFilters->begin();
-    while (it != m_DeviceFilters->end())
-    {
-        USBDeviceFilter *flt = *it; // resolve ambiguity (for ComPtr below)
-
-        // notify the proxy (only if the filter is active)
-        if (flt->data().mActive)
-        {
-            if (aRegistered)
-            {
-                ComAssertRet (flt->id() == NULL, E_FAIL);
-                flt->id() = service->insertFilter (ComPtr <IUSBDeviceFilter> (flt));
-            }
-            else
-            {
-                ComAssertRet (flt->id() != NULL, E_FAIL);
-                service->removeFilter (flt->id());
-                flt->id() = NULL;
-            }
-        }
-        ++ it;
-    }
+    /// @todo After rewriting Win32 USB support, no more necessary;
+    //  a candidate for removal.
+#if 0
+    notifyProxy (!!aRegistered);
+#endif
 
     return S_OK;
 }
@@ -860,6 +880,19 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
     AutoLock alock (this);
     CHECK_READY();
 
+    /// @todo After rewriting Win32 USB support, no more necessary;
+    //  a candidate for removal.
+#if 0
+#else
+    /* we need the machine state */
+    Machine::AutoStateDependency <Machine::MutableStateDep> adep (m_Parent);
+    AssertComRCReturnRC (adep.rc());
+
+    /* nothing to do if the machine isn't running */
+    if (adep.machineState() < MachineState_Running)
+        return S_OK;
+#endif
+
     if (aFilter->mInList && m_Parent->isRegistered())
     {
         USBProxyService *service = m_Parent->virtualBox()->host()->usbProxyService();
@@ -867,12 +900,12 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
 
         if (aActiveChanged)
         {
-            // insert/remove the filter from the proxy
+            /* insert/remove the filter from the proxy */
             if (aFilter->data().mActive)
             {
                 ComAssertRet (aFilter->id() == NULL, E_FAIL);
-                aFilter->id() =
-                    service->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
+                aFilter->id() = service->insertFilter
+                    (ComPtr <IUSBDeviceFilter> (aFilter));
             }
             else
             {
@@ -885,11 +918,11 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
         {
             if (aFilter->data().mActive)
             {
-                // update the filter in the proxy
+                /* update the filter in the proxy */
                 ComAssertRet (aFilter->id() != NULL, E_FAIL);
                 service->removeFilter (aFilter->id());
-                aFilter->id() =
-                    service->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
+                aFilter->id() = service->insertFilter
+                    (ComPtr <IUSBDeviceFilter> (aFilter));
             }
         }
     }
@@ -935,7 +968,7 @@ bool USBController::hasMatchingFilter (ComObjPtr <HostUSBDevice> &aDevice)
  */
 bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
 {
-    LogFlowMember (("USBController::hasMatchingFilter()\n"));
+    LogFlowThisFunc (("\n"));
 
     AutoLock alock (this);
     if (!isReady())
@@ -1024,6 +1057,44 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
 
     LogFlowMember (("USBController::hasMatchingFilter() returns: %d\n", match));
     return match;
+}
+
+HRESULT USBController::notifyProxy (bool aInsertFilters)
+{
+    LogFlowThisFunc (("aInsertFilters=%RTbool\n", aInsertFilters));
+
+    AutoLock alock (this);
+    if (!isReady())
+        return false;
+
+    USBProxyService *service = m_Parent->virtualBox()->host()->usbProxyService();
+    AssertReturn (service, E_FAIL);
+
+    DeviceFilterList::const_iterator it = m_DeviceFilters->begin();
+    while (it != m_DeviceFilters->end())
+    {
+        USBDeviceFilter *flt = *it; /* resolve ambiguity (for ComPtr below) */
+
+        /* notify the proxy (only if the filter is active) */
+        if (flt->data().mActive)
+        {
+            if (aInsertFilters)
+            {
+                AssertReturn (flt->id() == NULL, E_FAIL);
+                flt->id() = service->insertFilter
+                    (ComPtr <IUSBDeviceFilter> (flt));
+            }
+            else
+            {
+                AssertReturn (flt->id() != NULL, E_FAIL);
+                service->removeFilter (flt->id());
+                flt->id() = NULL;
+            }
+        }
+        ++ it;
+    }
+
+    return S_OK; 
 }
 
 // private methods
