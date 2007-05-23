@@ -215,7 +215,9 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     {
         /* Optional */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_FULL, 0);
+#if HC_ARCH_BITS == 32
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_HIGH, 0);
+#endif
         AssertRC(rc);
     }
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, 0);
