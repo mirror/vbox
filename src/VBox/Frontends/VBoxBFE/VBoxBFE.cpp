@@ -172,11 +172,12 @@ static const char *pszBootDevice = "IDE";
 static uint32_t memorySize = 128;
 static uint32_t vramSize = 4;
 #ifdef VBOXSDL_ADVANCED_OPTIONS
-static unsigned fRawR0 = ~0U;
-static unsigned fRawR3 = ~0U;
-static unsigned fPATM  = ~0U;
-static unsigned fCSAM  = ~0U;
+static bool g_fRawR0 = true;
+static bool g_fRawR3 = true;
+static bool g_fPATM  = true;
+static bool g_fCSAM  = true;
 #endif
+static bool g_fPreAllocRam = false;
 static bool g_fReleaseLog = true; /**< Set if we should open the release. */
 
 
@@ -286,6 +287,7 @@ static void show_usage()
              "  -boot <a|c|d>      Set boot device (a = floppy, c = first hard disk, d = DVD)\n"
              "  -m <size>          Set memory size in megabytes (default 128MB)\n"
              "  -vram <size>       Set size of video memory in megabytes\n"
+             "  -prealloc          Force RAM pre-allocation\n"
              "  -fullscreen        Start VM in fullscreen mode\n"
              "  -nofstoggle        Forbid switching to/from fullscreen mode\n"
              "  -nohostkey         Disable hostkey\n"
@@ -586,23 +588,25 @@ int main(int argc, char **argv)
             g_fReleaseLog = true;
         else if (strcmp(pszArg, "-norellog") == 0)
             g_fReleaseLog = false;
+        else if (strcmp(pszArg, "-prealloc") == 0)
+            g_fPreAllocRam = true;
 #ifdef VBOXSDL_ADVANCED_OPTIONS
         else if (strcmp(pszArg, "-rawr0") == 0)
-            fRawR0 = true;
+            g_fRawR0 = true;
         else if (strcmp(pszArg, "-norawr0") == 0)
-            fRawR0 = false;
+            g_fRawR0 = false;
         else if (strcmp(pszArg, "-rawr3") == 0)
-            fRawR3 = true;
+            g_fRawR3 = true;
         else if (strcmp(pszArg, "-norawr3") == 0)
-            fRawR3 = false;
+            g_fRawR3 = false;
         else if (strcmp(pszArg, "-patm") == 0)
-            fPATM = true;
+            g_fPATM = true;
         else if (strcmp(pszArg, "-nopatm") == 0)
-            fPATM = false;
+            g_fPATM = false;
         else if (strcmp(pszArg, "-csam") == 0)
-            fCSAM = true;
+            g_fCSAM = true;
         else if (strcmp(pszArg, "-nocsam") == 0)
-            fCSAM = false;
+            g_fCSAM = false;
 #endif /* VBOXSDL_ADVANCED_OPTIONS */
 #ifdef __L4__
         else if (strcmp(pszArg, "-env") == 0)
@@ -1050,16 +1054,21 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     UPDATERC();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              memorySize * _1M);
     UPDATERC();
+    if (g_fPreAllocRam)
+    {
+        rc = CFGMR3InsertInteger(pRoot, "PreAllocRam",      1);
+        UPDATERC();
+    }
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);
     UPDATERC();
 #ifdef VBOXSDL_ADVANCED_OPTIONS
-    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         (fRawR3 != ~0U) ? fRawR3 : 1);
+    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         g_fRawR3);
     UPDATERC();
-    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         (fRawR0 != ~0U) ? fRawR0 : 1);
+    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         g_fRawR0);
     UPDATERC();
-    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          (fPATM != ~0U) ? fPATM : 1);
+    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          g_fPATM);
     UPDATERC();
-    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          (fCSAM != ~0U) ? fCSAM : 1);
+    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          g_fCSAM);
 #else
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);
     UPDATERC();
