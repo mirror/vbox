@@ -1835,6 +1835,13 @@ typedef X86DESC64 *PX86DESC64;
 /** Pointer to const descriptor table entry. */
 typedef const X86DESC64 *PCX86DESC64;
 
+#if HC_ARCH_BITS == 64
+typedef X86DESC64   X86DESCHC;
+typedef X86DESC64   *PX86DESCHC;
+#else
+typedef X86DESC     X86DESCHC;
+typedef X86DESC     *PX86DESCHC;
+#endif
 
 /** @name Selector Descriptor Types.
  * @{
