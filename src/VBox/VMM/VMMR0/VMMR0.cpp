@@ -57,13 +57,11 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
-#ifndef __AMD64__  /* causes crashes in Vista here; disabling for now */
 #ifdef DEBUG
 #define DEBUG_NO_RING0_ASSERTIONS
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
 #endif
-#endif 
 #endif
 
 /*******************************************************************************
