@@ -569,7 +569,17 @@ static uint64_t tmR3CalibrateTSC(void)
             AssertReleaseMsgFailed(("iCpu=%d - the ApicId is too high. send VBox.log and hardware specs!\n", iCpu));
         else
         {
-            RTThreadSleep(32);              /* To preserve old behaviour and to get a good CpuHz at startup. */
+            if (tmR3HasFixedTSC())
+                /* Sleep a bit to get a more reliable CpuHz value. */
+                RTThreadSleep(32);              
+            else
+            {
+                /* Spin for 40ms to try push up the CPU frequency and get a more reliable CpuHz value. */
+                const uint64_t u64 = RTTimeMilliTS();
+                while ((RTTimeMilliTS() - u64) < 40 /*ms*/)
+                    /* nothing */;
+            }
+
             pGip = g_pSUPGlobalInfoPage;
             if (    pGip
                 &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
