@@ -330,8 +330,8 @@ BEGINPROC vmmR0CallHostLongJmp
     ; Normalize the parameters.
     ;
  %ifdef ASM_CALL64_MSC
-                                        ; pJmpBuf already in rdx
-    mov     eax, ecx                    ; rc
+    mov     eax, rdx                    ; rc
+    mov     rdx, rcx                    ; pJmpBuf
  %else
     mov     rdx, rdi                    ; pJmpBuf
     mov     eax, esi                    ; rc
