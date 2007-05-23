@@ -1763,6 +1763,49 @@ typedef const X86DESC *PCX86DESC;
 
 
 /**
+ * 64 bits generic descriptor table entry
+ * Note: most of these bits have no meaning in long mode.
+ */
+#pragma pack(1)
+typedef struct X86DESC64GENERIC
+{
+    /** Limit - Low word - *IGNORED*. */
+    unsigned    u16LimitLow : 16;
+    /** Base address - lowe word. - *IGNORED*
+     * Don't try set this to 24 because MSC is doing studing things then. */
+    unsigned    u16BaseLow : 16;
+    /** Base address - first 8 bits of high word. - *IGNORED* */
+    unsigned    u8BaseHigh1 : 8;
+    /** Segment Type. */
+    unsigned    u4Type : 4;
+    /** Descriptor Type. System(=0) or code/data selector */
+    unsigned    u1DescType : 1;
+    /** Descriptor Privelege level. */
+    unsigned    u2Dpl : 2;
+    /** Flags selector present(=1) or not. */
+    unsigned    u1Present : 1;
+    /** Segment limit 16-19. - *IGNORED* */
+    unsigned    u4LimitHigh : 4;
+    /** Available for system software. - *IGNORED* */
+    unsigned    u1Available : 1;
+    /** Long mode flag. */
+    unsigned    u1Long : 1;
+    /** This flags meaning depends on the segment type. Try make sense out
+     * of the intel manual yourself.  */
+    unsigned    u1DefBig : 1;
+    /** Granularity of the limit. If set 4KB granularity is used, if
+     * clear byte. - *IGNORED* */
+    unsigned    u1Granularity : 1;
+    /** Base address - highest 8 bits. - *IGNORED* */
+    unsigned    u8BaseHigh2 : 8;
+} X86DESC64GENERIC;
+#pragma pack()
+/** Pointer to a generic descriptor entry. */
+typedef X86DESC64GENERIC *PX86DESC64GENERIC;
+/** Pointer to a const generic descriptor entry. */
+typedef const X86DESC64GENERIC *PCX86DESC64GENERIC;
+
+/**
  * System descriptor table entry (64 bits)
  */
 #pragma pack(1)
@@ -1817,17 +1860,19 @@ typedef const X86DESC64SYSTEM *PCX86DESC64SYSTEM;
 typedef union X86DESC64
 {
     /** Generic descriptor view. */
-    X86DESC64SYSTEM System;
+    X86DESC64GENERIC    Gen;
+    /** System descriptor view. */
+    X86DESC64SYSTEM     System;
 #if 0
-    X86DESC64GATE   Gate;
+    X86DESC64GATE       Gate;
 #endif
 
     /** 8 bit unsigned interger view. */
-    uint8_t         au8[16];
+    uint8_t             au8[16];
     /** 16 bit unsigned interger view. */
-    uint16_t        au16[8];
+    uint16_t            au16[8];
     /** 32 bit unsigned interger view. */
-    uint32_t        au32[4];
+    uint32_t            au32[4];
 } X86DESC64;
 #pragma pack()
 /** Pointer to descriptor table entry. */
