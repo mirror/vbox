@@ -493,8 +493,12 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
             return VERR_VMX_INVALID_HOST_STATE;
         }
 
-        pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT];
+        pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC];
+#if HC_ARCH_BITS == 64
+        trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16ULL) | (pDesc->Gen.u8BaseHigh2 << 24ULL) | pDesc->Gen.u32BaseHigh3 << 32ULL;
+#else
         trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | (pDesc->Gen.u8BaseHigh2 << 24);
+#endif
         rc = VMXWriteVMCS(VMX_VMCS_HOST_TR_BASE, trBase);
         AssertRC(rc);
         Log2(("VMX_VMCS_HOST_TR_BASE %VHv\n", trBase));
@@ -1047,7 +1051,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_FIELD_CS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT];
+                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
                 HWACCMR0DumpDescriptor(pDesc, val, "CS: ");
             }
 
@@ -1055,7 +1059,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_FIELD_DS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT];
+                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
                 HWACCMR0DumpDescriptor(pDesc, val, "DS: ");
             }
 
@@ -1063,7 +1067,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_FIELD_ES %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT];
+                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
                 HWACCMR0DumpDescriptor(pDesc, val, "ES: ");
             }
 
@@ -1071,7 +1075,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_FIELD_FS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT];
+                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
                 HWACCMR0DumpDescriptor(pDesc, val, "FS: ");
             }
 
@@ -1079,7 +1083,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_FIELD_GS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT];
+                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
                 HWACCMR0DumpDescriptor(pDesc, val, "GS: ");
             }
 
@@ -1087,7 +1091,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_FIELD_SS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT];
+                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
                 HWACCMR0DumpDescriptor(pDesc, val, "SS: ");
             }
 
@@ -1095,7 +1099,7 @@ ResumeExecution:
             Log(("VMX_VMCS_HOST_FIELD_TR %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT];
+                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
                 HWACCMR0DumpDescriptor(pDesc, val, "TR: ");
             }
 
