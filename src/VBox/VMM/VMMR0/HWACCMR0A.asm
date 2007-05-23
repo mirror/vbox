@@ -90,14 +90,54 @@
     pop     r15
   %endmacro
  %endif
-    ;; @todo check ds,es saving/restoring on AMD64
+
  %macro MYPUSHSEGS 2
     mov     %2, es
     push    %1
     mov     %2, ds
     push    %1
+    push    fs
+    ; Special case for GS; OSes typically use swapgs to reset the hidden base register for GS on entry into the kernel. The same happens on exit
+    ; Note: do not step through this code with a debugger!
+    push    rcx
+    mov     ecx, MSR_K8_KERNEL_GS_BASE
+    rdmsr
+    pop     rcx
+    push    rdx
+    push    rax
+    ; copy hidden base register into the MSR
+    swapgs
+    push    rcx
+    mov     ecx, MSR_K8_KERNEL_GS_BASE
+    rdmsr
+    pop     rcx
+    push    rdx
+    push    rax
+    swapgs                              ; redundant unless in debugging mode
+    ; Now it's safe to step again
+    push    gs
  %endmacro 
+
  %macro MYPOPSEGS 2
+    ; Note: do not step through this code with a debugger!
+    pop     gs
+    pop     rax
+    pop     rdx
+    push    rcx
+    mov     ecx, MSR_K8_KERNEL_GS_BASE
+    wrmsr
+    pop     rcx
+    ; copy MSR into hidden base register
+    swapgs
+    pop     rax
+    pop     rdx
+    push    rcx
+    mov     ecx, MSR_K8_KERNEL_GS_BASE
+    wrmsr
+    pop     rcx
+    ; Now it's safe to step again
+
+    pop     fs
     pop     %1
     mov     ds, %2
     pop     %1
@@ -218,50 +258,8 @@ BEGINPROC VMXStartVM
 
 ALIGNCODE(16)
 .vmlaunch_done:
-    jnc     .vmxstart_good
-
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [xSP]
-    add     xSP, xS*2
-    lgdt    [xSP]
-    add     xSP, xS*2
-
-    pop     xAX         ; saved LDTR
-    lldt    ax
-
-    add     xSP, xS     ; pCtx
-
-    ; Restore segment registers
-    MYPOPSEGS xAX, ax
-
-    ;/* Restore all general purpose host registers. */
-    MYPOPAD
-    mov     eax, VERR_VMX_INVALID_VMXON_PTR
-    jmp     .vmstart_end
-
-.vmxstart_good:
-    jnz     .vmxstart_success
-
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [xSP]
-    add     xSP, xS*2
-    lgdt    [xSP]
-    add     xSP, xS*2
-
-    pop     xAX         ; saved LDTR
-    lldt    ax
-
-    add     xSP, xS     ; pCtx
-
-    ; Restore segment registers
-    MYPOPSEGS xAX, ax
-
-    ; Restore all general purpose host registers.
-    MYPOPAD
-    mov     eax, VERR_VMX_UNABLE_TO_START_VM
-    jmp     .vmstart_end
-
-.vmxstart_success:
+    jc      .vmxstart_invalid_vmxon_ptr
+    jz      .vmxstart_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
     lidt    [xSP]
@@ -301,6 +299,48 @@ ALIGNCODE(16)
 .vmstart_end:
     pop     xBP
     ret
+
+
+.vmxstart_invalid_vmxon_ptr:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    jmp     .vmstart_end
+
+.vmxstart_start_failed:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_UNABLE_TO_START_VM
+    jmp     .vmstart_end
+
 ENDPROC VMXStartVM
 
 
@@ -318,10 +358,10 @@ BEGINPROC VMXResumeVM
 
     ;/* First we have to save some final CPU context registers. */
 %ifdef __AMD64__
-    mov     rax, qword vmresume_done
+    mov     rax, qword .vmresume_done
     push    rax
 %else
-    push    vmresume_done
+    push    .vmresume_done
 %endif
     mov     eax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
     vmwrite xAX, [xSP]
@@ -389,54 +429,12 @@ BEGINPROC VMXResumeVM
     mov     esi, [xSI + CPUMCTX.esi]
 
     vmresume
-    jmp     vmresume_done;      ;/* here if vmresume detected a failure. */
+    jmp     .vmresume_done;      ;/* here if vmresume detected a failure. */
 
 ALIGNCODE(16)
-vmresume_done:
-    jnc     vmresume_good
-
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [xSP]
-    add     xSP, xS*2
-    lgdt    [xSP]
-    add     xSP, xS*2
-
-    pop     xAX                         ; saved LDTR
-    lldt    ax
-
-    add     xSP, xS                     ; pCtx
-
-    ; Restore segment registers
-    MYPOPSEGS xAX, ax
-
-    ; Restore all general purpose host registers.
-    MYPOPAD
-    mov     eax, VERR_VMX_INVALID_VMXON_PTR
-    jmp     vmresume_end
-
-vmresume_good:
-    jnz     vmresume_success
-
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [xSP]
-    add     xSP, xS*2
-    lgdt    [xSP]
-    add     xSP, xS*2
-
-    pop     xAX                         ; saved LDTR
-    lldt    ax
-
-    add     xSP, xS                     ; pCtx
-
-    ; Restore segment registers
-    MYPOPSEGS xAX, ax
-
-    ; Restore all general purpose host registers.
-    MYPOPAD
-    mov     eax, VERR_VMX_UNABLE_TO_RESUME_VM
-    jmp     vmresume_end
-
-vmresume_success:
+.vmresume_done:
+    jc      .vmxresume_invalid_vmxon_ptr
+    jz      .vmxresume_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
     lidt    [xSP]
@@ -473,9 +471,50 @@ vmresume_success:
 
     mov     eax, VINF_SUCCESS
 
-vmresume_end:
+.vmresume_end:
     pop     xBP
     ret
+
+.vmxresume_invalid_vmxon_ptr:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    jmp     .vmresume_end
+
+.vmxresume_start_failed:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_UNABLE_TO_RESUME_VM
+    jmp     .vmresume_end
+
 ENDPROC VMXResumeVM
 
 
