@@ -59,6 +59,7 @@ const int XKeyRelease = KeyRelease;
 #undef FocusIn
 #endif
 #include "XKeyboard.h"
+QMap<QString, QString> QIHotKeyEdit::keyNames;
 #endif
 
 #ifdef Q_WS_MAC
@@ -224,6 +225,29 @@ QSize QIHotKeyEdit::minimumSizeHint() const
     return QSize( w + m, h + m );
 }
 
+#if defined(Q_WS_X11)
+/**
+ * Updates the associative array containing the translations of X11 key strings to human
+ * readable key names.
+ */
+// static
+void QIHotKeyEdit::languageChange(void)
+{
+    keyNames["Shift_L"]          = tr ("Left Shift");
+    keyNames["Shift_R"]          = tr ("Right Shift");
+    keyNames["Control_L"]        = tr ("Left Ctrl");
+    keyNames["Control_R"]        = tr ("Right Ctrl");
+    keyNames["Alt_L"]            = tr ("Left Alt");
+    keyNames["Alt_R"]            = tr ("Right Alt");
+    keyNames["Super_L"]          = tr ("Left WinKey");
+    keyNames["Super_R"]          = tr ("Right WinKey");
+    keyNames["Menu"]             = tr ("Menu key");
+    keyNames["ISO_Level3_Shift"] = tr ("Alt Gr");
+    keyNames["Caps_Lock"]        = tr ("Caps Lock");
+    keyNames["Scroll_Lock"]      = tr ("Scroll Lock");
+}
+#endif
+
 /**
  *  Returns the string representation of a given key.
  *
@@ -259,9 +283,14 @@ QString QIHotKeyEdit::keyName (int key)
 #elif defined(Q_WS_X11)
         char *sn = ::XKeysymToString( (KeySym) key );
         if ( sn )
-            name = sn;
+        {
+            if ( keyNames.contains(sn) )
+                name = keyNames[sn];
+            else
+                name = sn;
+        }
         else
-            name = QString( "<key_%1>" ).arg( key );
+            name = QString( tr ("<key_%1>") ).arg( key );
 #elif defined(Q_WS_MAC)
         UInt32 modMask = DarwinKeyCodeToDarwinModifierMask( key );
         switch ( modMask ) {
@@ -436,9 +465,14 @@ bool QIHotKeyEdit::x11Event( XEvent *event )
             // determine symbolic name
             char *name = ::XKeysymToString( ks );
             if ( name )
-                symbname = name;
+            {
+                if ( keyNames.contains(name) )
+                    symbname = keyNames[name];
+                else
+                    symbname = name;
+            }
             else
-                symbname = QString( "<key_%1>" ).arg( (int) ks );
+                symbname = QString( tr ("<key_%1>") ).arg( (int) ks );
             // update the display
             updateText();
 //V_DEBUG((
