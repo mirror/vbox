@@ -1898,7 +1898,6 @@ typedef struct PDMINETWORKCONNECTOR
      * This is called when the NIC frees up receive buffers.
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @remark  This function isn't called by pcnet nor yet.
      * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyCanReceive,(PPDMINETWORKCONNECTOR pInterface));
@@ -2232,8 +2231,8 @@ typedef struct PDMIHGCMCONNECTOR
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration 
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle as it's expected 
+ * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
+ *                      of the driver instance. It's also found in pDrvIns->pCfgHandle as it's expected
  *                      to be used frequently in this function.
  */
 typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
@@ -3293,7 +3292,7 @@ typedef struct PDMPCIBUSREG
      *                          to call default PCI config write function. Can be NULL.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetConfigCallbacksHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+    DECLR3CALLBACKMEMBER(void, pfnSetConfigCallbacksHC,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                         PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
 
     /**
@@ -4733,7 +4732,7 @@ typedef struct PDMDEVHLP
      * Register PCI configuration space read/write callbacks.
      *
      * @param   pDevIns         Device instance.
-     * @param   pPciDev         The PCI device structure. 
+     * @param   pPciDev         The PCI device structure.
      *                          If NULL the default PCI device for this device instance is used.
      * @param   pfnRead         Pointer to the user defined PCI config read function.
      * @param   ppfnReadOld     Pointer to function pointer which will receive the old (default)
@@ -4745,7 +4744,7 @@ typedef struct PDMDEVHLP
      *                          to call default PCI config write function. Can be NULL.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(void, pfnPCISetConfigCallbacks,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+    DECLR3CALLBACKMEMBER(void, pfnPCISetConfigCallbacks,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                          PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
 
     /**
@@ -5828,7 +5827,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, ui
 /**
  * @copydoc PDMDEVHLP::pfnPCISetConfigCallbacks
  */
-DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                 PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     pDevIns->pDevHlp->pfnPCISetConfigCallbacks(pDevIns, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
