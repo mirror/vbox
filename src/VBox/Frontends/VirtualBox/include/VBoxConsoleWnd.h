@@ -282,6 +282,8 @@ private:
     int console_style;
     QColor erase_color;
 
+    bool mIsFirstTimeStarted : 1;
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger GUI
     PDBGGUI dbg_gui;

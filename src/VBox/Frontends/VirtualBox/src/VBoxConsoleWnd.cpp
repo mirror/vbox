@@ -32,6 +32,7 @@
 #include "VBoxDiskImageManagerDlg.h"
 #include "VBoxSharedFoldersSettings.h"
 #include "VBoxUtils.h"
+#include "VBoxMediaComboBox.h"
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
 #include "QIHotKeyEdit.h"
@@ -48,6 +49,7 @@
 #include <qtooltip.h>
 #include <qdir.h>
 #include <qpushbutton.h>
+#include <qtoolbutton.h>
 
 #include <qeventloop.h>
 
@@ -189,6 +191,171 @@ public:
     QString mTip;
 };
 
+/**
+ *  Bootable CD/DVD ISO Selection Dialog class.
+ *  Allows user to select temporarily mounted image or host drive
+ *  to load the system from.
+ */
+class BootDVDDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+
+    BootDVDDialog (QWidget *aParent, CMachine &aMachine)
+        : QDialog (aParent, "BootDVDDialog", true /* modal */)
+        , mMachine (aMachine)
+        , mGrpBox (0)
+        , mRbHost (0), mRbImage (0)
+        , mCbHost (0), mCbImage (0)
+        , mTbVDM (0), mPbOk (0)
+    {
+        /* Setup Dialog's title */
+        setCaption (tr ("Select Boot Source"));
+        setIcon (QPixmap::fromMimeSource ("select_file_16px.png"));
+
+        /* Setup main group-box */
+        mGrpBox = new QButtonGroup (this, "mGrpBox");
+        mGrpBox->setCheckable (true);
+        mGrpBox->setChecked (false);
+        mGrpBox->setColumnLayout (0, Qt::Vertical);
+        mGrpBox->setTitle (tr ("&Mount CD/DVD Drive"));
+        mGrpBox->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
+        connect (mGrpBox, SIGNAL (toggled (bool)), this, SLOT (grpBoxToggled (bool)));
+
+        /* Setup group box widgets */
+        mRbHost = new QRadioButton (tr ("Host CD/DVD &Drive"), mGrpBox, "mRbHost");
+        connect (mRbHost,  SIGNAL (clicked()), this, SLOT (rbClicked()));
+        mCbHost = new QComboBox (mGrpBox, "mCbHost");
+        CHostDVDDriveCollection coll = vboxGlobal().virtualBox().GetHost().GetDVDDrives();
+        mHostDVDs.resize (coll.GetCount());
+        int id = 0;
+        CHostDVDDriveEnumerator en = coll.Enumerate();
+        while (en.HasMore())
+        {
+            CHostDVDDrive hostDVD = en.GetNext();
+            mCbHost->insertItem (hostDVD.GetName(), id);
+            mHostDVDs [id] = hostDVD;
+            ++ id;
+        }
+
+        mRbImage = new QRadioButton (tr ("&ISO Image File"), mGrpBox, "mRbImage");
+        connect (mRbImage, SIGNAL (clicked()), this, SLOT (rbClicked()));
+        mCbImage = new VBoxMediaComboBox (mGrpBox, "sel", VBoxDefs::CD);
+        if (!vboxGlobal().isMediaEnumerationStarted())
+            vboxGlobal().startEnumeratingMedia();
+        else
+            mCbImage->refresh();
+        mTbVDM = new QToolButton (mGrpBox, "mTbVDM");
+        mTbVDM->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
+                                                 "select_file_dis_16px.png"));
+        mTbVDM->setFocusPolicy (QWidget::TabFocus);
+        connect (mTbVDM, SIGNAL (clicked()), this, SLOT (vdmOpen()));
+
+        /* Setup group box layout */
+        QGridLayout *grbLayout = new QGridLayout (mGrpBox->layout(), 2, 3, 10, "grbLayout");
+        grbLayout->addWidget (mRbHost, 0, 0);
+        grbLayout->addWidget (mCbHost, 0, 1);
+        grbLayout->addWidget (mRbImage, 1, 0);
+        grbLayout->addWidget (mCbImage, 1, 1);
+        grbLayout->addWidget (mTbVDM, 1, 2);
+
+        /* Setup dialog buttons */
+        mPbOk = new QPushButton (tr ("OK"), this, "mPbOk");
+        QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        QPushButton *pbCancel = new QPushButton (tr ("Cancel"), this, "pbCancel");
+        connect (mPbOk, SIGNAL (clicked()), this, SLOT (accept()));
+        connect (pbCancel, SIGNAL (clicked()), this, SLOT (reject()));
+
+        /* Setup main layout */
+        QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+        mainLayout->addWidget (mGrpBox);
+        QSpacerItem *btSpacer =
+            new QSpacerItem (0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        mainLayout->addItem (btSpacer);
+
+        /* Setup buttons layout */
+        QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
+        buttonLayout->addWidget (mPbOk);
+        buttonLayout->addItem (spacer);
+        buttonLayout->addWidget (pbCancel);
+    }
+
+private slots:
+
+    void grpBoxToggled (bool aOn)
+    {
+        if (aOn)
+            mRbHost->animateClick();
+        else
+        {
+            mRbHost->setChecked (false);
+            mRbImage->setChecked (false);
+            validate();
+        }
+    }
+
+    void rbClicked()
+    {
+        mCbHost->setEnabled (sender() == mRbHost);
+        mCbImage->setEnabled (sender() == mRbImage);
+        mTbVDM->setEnabled (sender() == mRbImage);
+        validate();
+    }
+
+    void vdmOpen()
+    {
+        VBoxDiskImageManagerDlg vdm (this, "VBoxDiskImageManagerDlg",
+                                     WType_Dialog | WShowModal);
+		QUuid machineId = mMachine.GetId();
+        vdm.setup (VBoxDefs::CD, true, &machineId);
+        if (vdm.exec() == VBoxDiskImageManagerDlg::Accepted)
+            mCbImage->setCurrentItem (vdm.getSelectedUuid());
+    }
+
+    void accept()
+    {
+        if (mGrpBox->isChecked() && mRbHost->isChecked())
+        {
+            CHostDVDDrive hostDrive = mHostDVDs [mCbHost->currentItem()];
+            if (!hostDrive.isNull())
+            {
+                CDVDDrive virtualDrive = mMachine.GetDVDDrive();
+                virtualDrive.CaptureHostDrive (hostDrive);
+            }
+        }
+        else if (mGrpBox->isChecked() && mRbImage->isChecked())
+        {
+            CDVDDrive virtualDrive = mMachine.GetDVDDrive();
+            virtualDrive.MountImage (mCbImage->getId());
+        }
+
+        QDialog::accept();
+    }
+
+private:
+
+    void validate()
+    {
+        bool valid =
+            !mGrpBox->isChecked() ||
+            (mGrpBox->isChecked() && mRbHost->isChecked()
+             && !mCbHost->currentText().isEmpty()) ||
+            (mGrpBox->isChecked() && mRbImage->isChecked()
+             && !mCbImage->currentText().isEmpty());
+        mPbOk->setEnabled (valid);
+    }
+
+    CMachine mMachine;
+    QButtonGroup *mGrpBox;
+    QRadioButton *mRbHost, *mRbImage;
+    QComboBox *mCbHost;
+    VBoxMediaComboBox *mCbImage;
+    QToolButton *mTbVDM;
+    QPushButton *mPbOk;
+    QValueVector <CHostDVDDrive> mHostDVDs;
+};
+
 /** \class VBoxConsoleWnd
  *
  *  The VBoxConsoleWnd class is a VM console window, one of two main VBox
@@ -224,6 +391,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , normal_wflags (getWFlags())
     , was_max (false)
     , console_style (0)
+    , mIsFirstTimeStarted (true)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbg_gui (NULL)
 #endif
@@ -674,6 +842,7 @@ static const char *GUI_LastWindowPosition_Max = "max";
 
 static const char *GUI_Fullscreen = "GUI/Fullscreen";
 static const char *GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
+static const char *GUI_FirstRun = "GUI/FirstRun";
 
 /**
  *  Opens a new console view to interact with a given VM.
@@ -725,6 +894,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         str = cmachine.GetExtraData (GUI_AutoresizeGuest);
         if (str != "off")
             vmAutoresizeGuestAction->setOn (true);
+
+        str = cmachine.GetExtraData (GUI_FirstRun);
+        if (str == "no")
+            mIsFirstTimeStarted = false;
 
         str = cmachine.GetExtraData (GUI_LastWindowPosition);
 
@@ -891,6 +1064,12 @@ void VBoxConsoleWnd::finalizeOpenView()
     CMachine cmachine = csession.GetMachine();
     CConsole cconsole = console->console();
 
+    if (mIsFirstTimeStarted)
+    {
+        BootDVDDialog dlg (this, cmachine);
+        dlg.exec();
+    }
+
     /* start the VM */
     CProgress progress = cconsole.PowerUp();
 
@@ -992,6 +1171,7 @@ void VBoxConsoleWnd::closeView()
                               vmFullscreenAction->isOn() ? "on" : "off");
         machine.SetExtraData (GUI_AutoresizeGuest,
                               vmAutoresizeGuestAction->isOn() ? "on" : "off");
+        machine.SetExtraData (GUI_FirstRun, "no");
     }
 
     console->detach();
@@ -2716,3 +2896,4 @@ void VBoxSFDialog::showEvent (QShowEvent *aEvent)
     VBoxGlobal::centerWidget (this, parentWidget());
 }
 
+#include "VBoxConsoleWnd.moc"
