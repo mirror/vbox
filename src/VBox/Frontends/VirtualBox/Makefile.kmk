@@ -51,7 +51,7 @@ VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
 
-ifeq ($(BUILD_TARGET),darwin) 
+ifeq ($(BUILD_TARGET),darwin)
 # For the launch trick we need different inode numbers.
 VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
@@ -82,7 +82,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxProblemReporter.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
-VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
+VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp \
+						src/VBoxConsoleWnd.cpp
 ifneq ($(BUILD_TARGET),win)
 VirtualBox_QT_MOCSRCS += src/COMDefs.cpp
 endif
