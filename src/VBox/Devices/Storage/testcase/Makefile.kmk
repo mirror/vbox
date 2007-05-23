@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the storage device & driver testcases.
+# Sub-Makefile for the storage device & driver testcases.
 #
 
 #
@@ -19,10 +19,14 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
-PROGRAMS        += vditool
+#
+# vditool - useful too for manipulating VDIs.
+#
+PROGRAMS += vditool
 vditool_TEMPLATE = VBOXR3EXE
 vditool_SOURCES  = vditool.cpp
 ifeq ($(BUILD_TARGET),win)
@@ -33,13 +37,16 @@ endif
 vditool_LIBS    += $(LIB_RUNTIME)
 
 
+#
+# Basic testcase for the VDI code.
+#
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS       += tstVDI
+ PROGRAMS += tstVDI
  tstVDI_TEMPLATE = VBOXR3TSTEXE
  tstVDI_SOURCES  = tstVDI.cpp
  tstVDI_LIBS     = $(vditool_LIBS)
 endif
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

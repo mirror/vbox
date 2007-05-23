@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the devices, drivers and services.
+# Top-level makefile for the devices, drivers and services.
 #
 
 #
@@ -20,42 +20,28 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(PATH_KBUILD)/subheader.kmk
 
-ifdef VBOX_WITH_TESTCASES
- PROGRAMS = tstIntNetR0
-endif
-LIBRARIES = DevicesR3 Drivers ServicesR0
-DLLS      = VBoxDDU VBoxDD VBoxDD2
-SYSMODS   = VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
+# Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
+include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+include $(PATH_SUB_CURRENT)/Storage/testcase/Makefile.kmk
 
-OTHER_CLEAN = \
-	$(PATH_TARGET)/vboxaml.hex \
-	$(PATH_TARGET)/vboxaml.aml
-
-SUBDIRS   = \
-	testcase \
-	PC/BIOS \
-	PC/Etherboot-src \
-	Graphics/BIOS
-SUBDIRS_AFTER = \
-	Storage/testcase
-
+# Subdirs with complex makefiles.
+SUBDIRS_LIBRARIES = PC/Etherboot-src
 
 #
-# Check for VBOX_* stuff which governs defines.
+# Main targets.
 #
-ifdef VBOX_USE_IOAPIC
- DEFS += USE_IOAPIC
-endif
-ifdef VBOX_WITH_VRDP
- DEFS += VBOX_VRDP
-endif
-ifdef VBOX_WITH_INTERNAL_NETWORKING
- DEFS += VBOX_WITH_INTERNAL_NETWORKING
-endif
+LIBRARIES += DevicesR3 Drivers ServicesR0
+DLLS      += VBoxDDU VBoxDD VBoxDD2
+SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
-# enable the pdm lock.
+
+##
+## Enable the pdm lock (experimental).
+##
 #DEFS += VBOX_WITH_PDM_LOCK
 
 
@@ -206,11 +192,18 @@ DevicesR3_DEFS         += VBOX_HGCM
 DevicesR3_DEFS.linux   += _GNU_SOURCE
 DevicesR3_DEFS.l4      += _GNU_SOURCE
 
-
 # DevACPI.cpp needs vboxaml.hex which we generate from PC/vbox.dsl.
+DevicesR3_CLEAN        += $(PATH_TARGET)/vboxaml.hex $(PATH_TARGET)/vboxaml.aml
 PC/DevACPI.cpp_DEPS     = $(PATH_TARGET)/vboxaml.hex
 PC/DevACPI.cpp_INCS     = $(PATH_TARGET)
+
+$(PATH_TARGET)/vboxaml.hex: PC/vbox.dsl
+	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
+	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
+
+# For finding PCIInternal.h from VBox/pci.h.
 Bus/DevPCI.cpp_INCS     = Bus
+
 
 
 #
@@ -467,6 +460,7 @@ ifdef VBOX_WITH_USB
 	USB/VUSBDevice.cpp \
 	USB/VUSBUrb.cpp
  ifdef VBOX_WITH_VRDP
+  Drivers_DEFS        += VBOX_VRDP
   Drivers_SOURCES     += \
 	USB/vrdp/USBProxyDevice-vrdp.cpp
  endif
@@ -508,19 +502,16 @@ ServicesR0_SOURCES   = \
 #
 # Internal Networking - Ring-3 Testcase for the Ring-0 code (a bit hackish).
 #
-tstIntNetR0_TEMPLATE    = VBOXR3TSTEXE
-tstIntNetR0_DEFS        = IN_INTNET_R0
-tstIntNetR0_SOURCES     = \
+ifdef VBOX_WITH_TESTCASES
+ PROGRAMS += tstIntNetR0
+ tstIntNetR0_TEMPLATE    = VBOXR3TSTEXE
+ tstIntNetR0_DEFS        = IN_INTNET_R0
+ tstIntNetR0_SOURCES     = \
 	Network/testcase/tstIntNetR0.cpp
-tstIntNetR0_LIBS        = \
+ tstIntNetR0_LIBS        = \
 	$(LIB_RUNTIME)
+endif
 
 
-include $(PATH_KBUILD)/footer.kmk
-
-
-# ACPI DSL generation
-$(PATH_TARGET)/vboxaml.hex: PC/vbox.dsl
-	$(call MSG_TOOL,iasl,DevACPI,$<,$@)
-	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
+include $(PATH_KBUILD)/subfooter.kmk
 
