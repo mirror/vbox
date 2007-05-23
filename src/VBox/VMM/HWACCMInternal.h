@@ -296,7 +296,7 @@ typedef HWACCM *PHWACCM;
 
 #ifdef VBOX_STRICT
 HWACCMR0DECL(void) HWACCMDumpRegs(PCPUMCTX pCtx);
-HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PVBOXDESC  Desc, RTSEL Sel, const char *pszMsg);
+HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const char *pszMsg);
 #else
 #define HWACCMDumpRegs(a)                   do { } while (0)
 #define HWACCMR0DumpDescriptor(a, b, c)     do { } while (0)
