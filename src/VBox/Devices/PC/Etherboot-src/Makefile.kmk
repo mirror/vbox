@@ -136,8 +136,8 @@ EB_CFLAGS+=     -DVERSION_MAJOR=$(VERSION_MAJOR) \
 
 IDENT=          '$(@F) $(VERSION) (GPL) etherboot.org'
 
-# Rebuild everything whenever the Makefile etc. is changed.
-MAKEDEPS=       Makefile.kmk Config arch/$(ARCH)/Config
+# Rebuild everything whenever the Makefile etc. is changed. Must be LAST in the dependency list!
+MAKEDEPS=       Makefile.kmk Config arch/$(ARCH)/Config | $(call DIRDEP,$(PATH_TARGET))
 
 # The core (card-independent part) of Etherboot.
 BOBJS=          $(PATH_TARGET)/main.o $(PATH_TARGET)/osloader.o \
@@ -297,7 +297,7 @@ ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 solaris.x86 solaris.amd64 win
 $(PATH_TARGET)/pcnet32.zrom: pcnet32.zrom | $(call DIRDEP,$(PATH_TARGET))
 	$(CP) -f $< $@
 else
-$(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEDEPS) | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEDEPS)
 	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
@@ -312,7 +312,7 @@ ifeq ($(USERNAME),klaus)
 	$(CP) -p $@ pcnet32.zrom
 endif
 
-$(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $(MAKEDEPS) $$(TARGET_makerom)
+$(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $$(TARGET_makerom) $(MAKEDEPS)
 	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
