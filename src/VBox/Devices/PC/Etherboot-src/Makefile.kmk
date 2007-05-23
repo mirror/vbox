@@ -25,8 +25,6 @@ include $(PATH_KBUILD)/header.kmk
 BLDPROGS  = nrv2b makerom
 LIBRARIES = NetBiosBin
 
-OTHERS    = $(PATH_TARGET)/pcnet32.zrom
-
 OTHER_CLEAN = \
 	$(PATH_TARGET)/NetBiosBin.c \
 	$(PATH_TARGET)/pcnet32.zrom \
@@ -296,10 +294,10 @@ $(PATH_TARGET)/pcnet32.rom.prf: $(PCIENTRY) $(PCNET32_RUNTIME) $(PREFIXOBJS) $(P
 # the final binary to 0xffc00000 and filling out relocations incorrectly
 # (first occurrence is the call to prelocate in the pciprefix.o file).
 ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 solaris.x86 solaris.amd64 win.x86 win.amd64 linux.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
-$(PATH_TARGET)/pcnet32.zrom: pcnet32.zrom
+$(PATH_TARGET)/pcnet32.zrom: pcnet32.zrom | $(call DIRDEP,$(PATH_TARGET))
 	$(CP) -f $< $@
 else
-$(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEDEPS)
+$(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEDEPS) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
