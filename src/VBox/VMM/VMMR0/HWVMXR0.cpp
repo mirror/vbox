@@ -495,7 +495,7 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
 
         pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC];
 #if HC_ARCH_BITS == 64
-        trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16ULL) | (pDesc->Gen.u8BaseHigh2 << 24ULL) | pDesc->Gen.u32BaseHigh3 << 32ULL;
+        trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16ULL) | (pDesc->Gen.u8BaseHigh2 << 24ULL) | ((uintptr_t)pDesc->Gen.u32BaseHigh3 << 32ULL);
 #else
         trBase = pDesc->Gen.u16BaseLow | (pDesc->Gen.u8BaseHigh1 << 16) | (pDesc->Gen.u8BaseHigh2 << 24);
 #endif
