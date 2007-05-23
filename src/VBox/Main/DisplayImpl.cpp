@@ -432,6 +432,9 @@ typedef struct _VBVADIRTYREGION
     Display          *pDisplay;
     PPDMIDISPLAYPORT  pPort;
 
+    /* The Framebuffer has default format and must be updates immediately. */
+    bool fDefaultFormat;
+
     /* Merged rectangles. */
     int32_t xLeft;
     int32_t xRight;
@@ -447,6 +450,13 @@ static void vbvaRgnInit (VBVADIRTYREGION *prgn, IFramebuffer *pfb, Display *pd, 
     prgn->pFramebuffer = pfb;
     prgn->pDisplay = pd;
     prgn->pPort = pp;
+
+    if (pfb)
+    {
+        FramebufferPixelFormat_T pixelFormat;
+        pfb->COMGETTER(PixelFormat) (&pixelFormat);
+        prgn->fDefaultFormat = (pixelFormat == FramebufferPixelFormat_PixelFormatDefault);
+    }
 
     return;
 }
@@ -504,6 +514,12 @@ static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, VBVACMDHDR *phdr)
         }
     }
 
+    if (prgn->fDefaultFormat)
+    {
+        prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, phdr->x, phdr->y, phdr->w, phdr->h);
+        prgn->pDisplay->handleDisplayUpdate (phdr->x, phdr->y, phdr->w, phdr->h);
+    }
+
     return;
 }
 
@@ -512,7 +528,7 @@ static void vbvaRgnUpdateFramebuffer (VBVADIRTYREGION *prgn)
     uint32_t w = prgn->xRight - prgn->xLeft;
     uint32_t h = prgn->yBottom - prgn->yTop;
 
-    if (prgn->pFramebuffer && w != 0 && h != 0)
+    if (!prgn->fDefaultFormat && prgn->pFramebuffer && w != 0 && h != 0)
     {
         prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, prgn->xLeft, prgn->yTop, w, h);
         prgn->pDisplay->handleDisplayUpdate (prgn->xLeft, prgn->yTop, w, h);
