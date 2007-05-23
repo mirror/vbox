@@ -1762,6 +1762,80 @@ typedef X86DESC *PX86DESC;
 typedef const X86DESC *PCX86DESC;
 
 
+/**
+ * System descriptor table entry (64 bits)
+ */
+#pragma pack(1)
+typedef struct X86DESC64SYSTEM
+{
+    /** Limit - Low word. */
+    unsigned    u16LimitLow     : 16;
+    /** Base address - lowe word.
+     * Don't try set this to 24 because MSC is doing studing things then. */
+    unsigned    u16BaseLow      : 16;
+    /** Base address - first 8 bits of high word. */
+    unsigned    u8BaseHigh1     : 8;
+    /** Segment Type. */
+    unsigned    u4Type          : 4;
+    /** Descriptor Type. System(=0) or code/data selector */
+    unsigned    u1DescType      : 1;
+    /** Descriptor Privelege level. */
+    unsigned    u2Dpl :          2;
+    /** Flags selector present(=1) or not. */
+    unsigned    u1Present       : 1;
+    /** Segment limit 16-19. */
+    unsigned    u4LimitHigh     : 4;
+    /** Available for system software. */
+    unsigned    u1Available     : 1;
+    /** Reserved - 0. */
+    unsigned    u1Reserved      : 1;
+    /** This flags meaning depends on the segment type. Try make sense out
+     * of the intel manual yourself.  */
+    unsigned    u1DefBig        : 1;
+    /** Granularity of the limit. If set 4KB granularity is used, if
+     * clear byte. */
+    unsigned    u1Granularity   : 1;
+    /** Base address - bits 31-24. */
+    unsigned    u8BaseHigh2     : 8;
+    /** Base address - bits 63-32. */
+    unsigned    u32BaseHigh3    : 32;
+    unsigned    u8Reserved      : 8;
+    unsigned    u5Zeros         : 5;
+    unsigned    u19Reserved     : 19;
+} X86DESC64SYSTEM;
+#pragma pack()
+/** Pointer to a generic descriptor entry. */
+typedef X86DESC64SYSTEM *PX86DESC64SYSTEM;
+/** Pointer to a const generic descriptor entry. */
+typedef const X86DESC64SYSTEM *PCX86DESC64SYSTEM;
+
+
+/**
+ * Descriptor table entry.
+ */
+#pragma pack(1)
+typedef union X86DESC64
+{
+    /** Generic descriptor view. */
+    X86DESC64SYSTEM System;
+#if 0
+    X86DESC64GATE   Gate;
+#endif
+
+    /** 8 bit unsigned interger view. */
+    uint8_t         au8[16];
+    /** 16 bit unsigned interger view. */
+    uint16_t        au16[8];
+    /** 32 bit unsigned interger view. */
+    uint32_t        au32[4];
+} X86DESC64;
+#pragma pack()
+/** Pointer to descriptor table entry. */
+typedef X86DESC64 *PX86DESC64;
+/** Pointer to const descriptor table entry. */
+typedef const X86DESC64 *PCX86DESC64;
+
+
 /** @name Selector Descriptor Types.
  * @{
  */
@@ -1821,37 +1895,52 @@ typedef const X86DESC *PCX86DESC;
 /** @name System Selector Types.
  * @{ */
 /** Undefined system selector type. */
-#define X86_SEL_TYPE_SYS_UNDEFINED         0
+#define X86_SEL_TYPE_SYS_UNDEFINED          0
 /** 286 TSS selector. */
-#define X86_SEL_TYPE_SYS_286_TSS_AVAIL     1
+#define X86_SEL_TYPE_SYS_286_TSS_AVAIL      1
 /** LDT selector. */
-#define X86_SEL_TYPE_SYS_LDT               2
+#define X86_SEL_TYPE_SYS_LDT                2
 /** 286 TSS selector - Busy. */
-#define X86_SEL_TYPE_SYS_286_TSS_BUSY      3
+#define X86_SEL_TYPE_SYS_286_TSS_BUSY       3
 /** 286 Callgate selector. */
-#define X86_SEL_TYPE_SYS_286_CALL_GATE     4
+#define X86_SEL_TYPE_SYS_286_CALL_GATE      4
 /** Taskgate selector. */
-#define X86_SEL_TYPE_SYS_TASK_GATE         5
+#define X86_SEL_TYPE_SYS_TASK_GATE          5
 /** 286 Interrupt gate selector. */
-#define X86_SEL_TYPE_SYS_286_INT_GATE      6
+#define X86_SEL_TYPE_SYS_286_INT_GATE       6
 /** 286 Trapgate selector. */
-#define X86_SEL_TYPE_SYS_286_TRAP_GATE     7
+#define X86_SEL_TYPE_SYS_286_TRAP_GATE      7
 /** Undefined system selector. */
-#define X86_SEL_TYPE_SYS_UNDEFINED2        8
+#define X86_SEL_TYPE_SYS_UNDEFINED2         8
 /** 386 TSS selector. */
-#define X86_SEL_TYPE_SYS_386_TSS_AVAIL     9
+#define X86_SEL_TYPE_SYS_386_TSS_AVAIL      9
 /** Undefined system selector. */
-#define X86_SEL_TYPE_SYS_UNDEFINED3        0xA
+#define X86_SEL_TYPE_SYS_UNDEFINED3         0xA
 /** 386 TSS selector - Busy. */
-#define X86_SEL_TYPE_SYS_386_TSS_BUSY      0xB
+#define X86_SEL_TYPE_SYS_386_TSS_BUSY       0xB
 /** 386 Callgate selector. */
-#define X86_SEL_TYPE_SYS_386_CALL_GATE     0xC
+#define X86_SEL_TYPE_SYS_386_CALL_GATE      0xC
 /** Undefined system selector. */
-#define X86_SEL_TYPE_SYS_UNDEFINED4        0xD
+#define X86_SEL_TYPE_SYS_UNDEFINED4         0xD
 /** 386 Interruptgate selector. */
-#define X86_SEL_TYPE_SYS_386_INT_GATE      0xE
+#define X86_SEL_TYPE_SYS_386_INT_GATE       0xE
 /** 386 Trapgate selector. */
-#define X86_SEL_TYPE_SYS_386_TRAP_GATE     0xF
+#define X86_SEL_TYPE_SYS_386_TRAP_GATE      0xF
+/** @} */
+
+/** @name AMD64 System Selector Types.
+ * @{ */
+#define AMD64_SEL_TYPE_SYS_LDT              2
+/** 286 TSS selector - Busy. */
+#define AMD64_SEL_TYPE_SYS_TSS_AVAIL        9
+/** 386 TSS selector - Busy. */
+#define AMD64_SEL_TYPE_SYS_TSS_BUSY         0xB
+/** 386 Callgate selector. */
+#define AMD64_SEL_TYPE_SYS_CALL_GATE        0xC
+/** 386 Interruptgate selector. */
+#define AMD64_SEL_TYPE_SYS_INT_GATE         0xE
+/** 386 Trapgate selector. */
+#define AMD64_SEL_TYPE_SYS_TRAP_GATE        0xF
 /** @} */
 
 /** @} */
