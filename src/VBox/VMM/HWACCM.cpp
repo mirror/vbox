@@ -292,13 +292,14 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
         LogRel(("HWACCM: Dual monitor treatment        = %d\n", MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(pVM->hwaccm.s.vmx.msr.vmx_basic_info)));
 
         LogRel(("HWACCM: MSR_IA32_VMX_PINBASED_CTLS    = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_pin_ctls));
-        if (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT)
+        val = pVM->hwaccm.s.vmx.msr.vmx_pin_ctls >> 32ULL;
+        if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT)
             LogRel(("HWACCM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT\n"));
-        if (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT)
+        if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT)
             LogRel(("HWACCM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT\n"));
 
         LogRel(("HWACCM: MSR_IA32_VMX_PROCBASED_CTLS   = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_proc_ctls));
-        val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls >> 32UL;
+        val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls >> 32ULL;
         if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT)
             LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT\n"));
         if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET)
@@ -333,7 +334,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT\n"));
 
         LogRel(("HWACCM: MSR_IA32_VMX_ENTRY_CTLS       = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_entry));
-        val = pVM->hwaccm.s.vmx.msr.vmx_entry >> 32UL;
+        val = pVM->hwaccm.s.vmx.msr.vmx_entry >> 32ULL;
         if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE)
             LogRel(("HWACCM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE\n"));
         if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM)
@@ -342,7 +343,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             LogRel(("HWACCM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON\n"));
         
         LogRel(("HWACCM: MSR_IA32_VMX_EXIT_CTLS        = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_exit));
-        val = pVM->hwaccm.s.vmx.msr.vmx_exit >> 32UL;
+        val = pVM->hwaccm.s.vmx.msr.vmx_exit >> 32ULL;
         if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64)
             LogRel(("HWACCM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64\n"));
         if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ)
