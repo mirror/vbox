@@ -262,6 +262,86 @@ typedef struct VMINT
      * @todo r=bird: requires union with padding. See EMInternal.h. */
     jmp_buf                         emtJumpEnv;
 
+    /** @name Yield
+     * @{
+     */
+    /** The average time (ns) between two halts in the last second. (updated once per second) */
+    uint32_t                        HaltInterval;
+    /** The average halt frequency for the last second. (updated once per second) */
+    uint32_t                        HaltFrequency;
+    /** The number of halts in the current period. */
+    uint32_t                        cHalts;
+    uint32_t                        padding0;   /**< alignment padding. */
+    /** When we started counting halts in cHalts (RTTimeNanoTS). */
+    uint64_t                        u64HaltsStartTS;
+
+    /** Union containing data and config for the different halt algorithms. */
+    union 
+    {
+       /** 
+        * Method 1 & 2 - Block whenever possible, and when lagging behind 
+        * switch to spinning for 10-30ms with occational blocking until
+        * the lag has been eliminated.
+        * 
+        * The difference between 1 and 2 is that we use native absolute 
+        * time APIs for the blocking instead of the millisecond based IPRT
+        * interface.
+        */
+       struct
+       {
+           /** How many times we've blocked while cBlockedNS and cBlockedTooLongNS has been accumulating. */
+           uint32_t                 cBlocks;
+           /** Avg. time spend oversleeping when blocking. (Re-calculated every so often.) */
+           uint64_t                 cNSBlockedTooLongAvg;
+           /** Total time spend oversleeping when blocking. */
+           uint64_t                 cNSBlockedTooLong;
+           /** Total time spent blocking. */
+           uint64_t                 cNSBlocked;
+           /** The timestamp (RTTimeNanoTS) of the last block. */
+           uint64_t                 u64LastBlockTS;
+
+          /** When we started spinning relentlessly in order to catch up some of the oversleeping.
+           * This is 0 when we're not spinning. */
+           uint64_t                 u64StartSpinTS;
+       }                            Method12;
+
+#if 0
+       /** 
+        * Method 3 & 4 - Same as method 1 & 2 respectivly, except that we
+        * sprinkle it with yields.
+        */
+       struct
+       {
+           /** How many times we've blocked while cBlockedNS and cBlockedTooLongNS has been accumulating. */
+           uint32_t                 cBlocks;
+           /** Avg. time spend oversleeping when blocking. (Re-calculated every so often.) */
+           uint64_t                 cBlockedTooLongNSAvg;
+           /** Total time spend oversleeping when blocking. */
+           uint64_t                 cBlockedTooLongNS;
+           /** Total time spent blocking. */
+           uint64_t                 cBlockedNS;
+           /** The timestamp (RTTimeNanoTS) of the last block. */
+           uint64_t                 u64LastBlockTS;
+
+           /** How many times we've yielded while cBlockedNS and cBlockedTooLongNS has been accumulating. */
+           uint32_t                 cYields;
+           /** Avg. time spend oversleeping when yielding. */
+           uint32_t                 cYieldTooLongNSAvg;
+           /** Total time spend oversleeping when yielding. */
+           uint64_t                 cYieldTooLongNS;
+           /** Total time spent yielding. */
+           uint64_t                 cYieldedNS;
+           /** The timestamp (RTTimeNanoTS) of the last block. */
+           uint64_t                 u64LastYieldTS;
+
+           /** When we started spinning relentlessly in order to catch up some of the oversleeping. */
+           uint64_t                 u64StartSpinTS;
+       }                            Method34;
+#endif
+    }                               Halt;
+
+    /** @} */
+
     /** Number of VMR3ReqAlloc returning a new packet. */
     STAMCOUNTER                     StatReqAllocNew;
     /** Number of VMR3ReqAlloc causing races. */
