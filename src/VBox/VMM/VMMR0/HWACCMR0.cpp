@@ -314,7 +314,7 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PVBOXDESC  Desc, RTSEL Sel, const char *pszMsg)
+HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC Desc, RTSEL Sel, const char *pszMsg)
 {
     /*
      * Make variable description string.
@@ -326,7 +326,26 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PVBOXDESC  Desc, RTSEL Sel, const char
     } const aTypes[32] =
     {
         #define STRENTRY(str) { sizeof(str) - 1, str }
+
         /* system */
+#if HC_ARCH_BITS == 64
+        STRENTRY("Reserved0 "),                  /* 0x00 */
+        STRENTRY("Reserved1 "),                  /* 0x01 */
+        STRENTRY("LDT "),                        /* 0x02 */
+        STRENTRY("Reserved3 "),                  /* 0x03 */
+        STRENTRY("Reserved4 "),                  /* 0x04 */
+        STRENTRY("Reserved5 "),                  /* 0x05 */
+        STRENTRY("Reserved6 "),                  /* 0x06 */
+        STRENTRY("Reserved7 "),                  /* 0x07 */
+        STRENTRY("Reserved8 "),                  /* 0x08 */
+        STRENTRY("TSS64Avail "),                 /* 0x09 */
+        STRENTRY("ReservedA "),                  /* 0x0a */
+        STRENTRY("TSS64Busy "),                  /* 0x0b */
+        STRENTRY("Call64 "),                     /* 0x0c */
+        STRENTRY("ReservedD "),                  /* 0x0d */
+        STRENTRY("Int64 "),                      /* 0x0e */
+        STRENTRY("Trap64 "),                     /* 0x0f */
+#else
         STRENTRY("Reserved0 "),                  /* 0x00 */
         STRENTRY("TSS16Avail "),                 /* 0x01 */
         STRENTRY("LDT "),                        /* 0x02 */
@@ -343,6 +362,7 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PVBOXDESC  Desc, RTSEL Sel, const char
         STRENTRY("ReservedD "),                  /* 0x0d */
         STRENTRY("Int32 "),                      /* 0x0e */
         STRENTRY("Trap32 "),                     /* 0x0f */
+#endif
         /* non system */
         STRENTRY("DataRO "),                     /* 0x10 */
         STRENTRY("DataRO Accessed "),            /* 0x11 */
@@ -373,12 +393,19 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PVBOXDESC  Desc, RTSEL Sel, const char
         ADD_STR(psz, "Present ");
     else
         ADD_STR(psz, "Not-Present ");
+#if HC_ARCH_BITS == 64
+    if (Desc->Gen.u1Long)
+        ADD_STR(psz, "64-bit ");
+    else
+        ADD_STR(psz, "Comp   ");
+#else
     if (Desc->Gen.u1Granularity)
         ADD_STR(psz, "Page ");
     if (Desc->Gen.u1DefBig)
         ADD_STR(psz, "32-bit ");
     else
         ADD_STR(psz, "16-bit ");
+#endif
     #undef ADD_STR
     *psz = '\0';
 
@@ -388,10 +415,18 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PVBOXDESC  Desc, RTSEL Sel, const char
     uint32_t    u32Limit = Desc->Gen.u4LimitHigh << 16 | Desc->Gen.u16LimitLow;
     if (Desc->Gen.u1Granularity)
         u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
+
+#if HC_ARCH_BITS == 64
+    uint64_t    u32Base =  Desc->Gen.u32BaseHigh3 << 32 | Desc->Gen.u8BaseHigh2 << 24 | Desc->Gen.u8BaseHigh1 << 16 | Desc->Gen.u16BaseLow;
+
+    Log(("%s %04x - %08x %08x - base=%VX64 limit=%08x dpl=%d %s\n", pszMsg,
+         Sel, Desc->au32[0], Desc->au32[1], u32Base, u32Limit, Desc->Gen.u2Dpl, szMsg));
+#else
     uint32_t    u32Base =  Desc->Gen.u8BaseHigh2 << 24 | Desc->Gen.u8BaseHigh1 << 16 | Desc->Gen.u16BaseLow;
 
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
          Sel, Desc->au32[0], Desc->au32[1], u32Base, u32Limit, Desc->Gen.u2Dpl, szMsg));
+#endif
 }
 
 /**
