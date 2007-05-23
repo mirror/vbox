@@ -1823,7 +1823,7 @@ typedef struct X86DESC64SYSTEM
     /** Descriptor Type. System(=0) or code/data selector */
     unsigned    u1DescType      : 1;
     /** Descriptor Privelege level. */
-    unsigned    u2Dpl :          2;
+    unsigned    u2Dpl           : 2;
     /** Flags selector present(=1) or not. */
     unsigned    u1Present       : 1;
     /** Segment limit 16-19. */
