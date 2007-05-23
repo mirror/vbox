@@ -24,8 +24,6 @@
 TEMPLATE	= app
 LANGUAGE	= C++
 
-SOURCES	= src/QIHotKeyEdit.cpp
-
 FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxVMNetworkSettings.ui \
 	ui/VBoxUSBFilterSettings.ui \
