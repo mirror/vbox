@@ -24,7 +24,10 @@
 #define __QIHotKeyEdit_h__
 
 #include <qlabel.h>
-#ifdef Q_WS_MAC
+#if defined(Q_WS_X11)
+#include <qmap.h>
+#endif
+#if defined(Q_WS_MAC)
 #include <Carbon/Carbon.h>
 #endif
 
@@ -46,6 +49,9 @@ public:
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
 
+#if defined(Q_WS_X11)
+    static void languageChange(void);
+#endif
     static QString keyName (int key);
     static bool isValidKey (int k);
 
@@ -78,6 +84,10 @@ private:
     QString symbname;
 
     QColorGroup true_acg;
+
+#if defined(Q_WS_X11)
+    static QMap<QString, QString> keyNames;
+#endif
 
 #if defined(Q_WS_MAC)
     /** Event handler reference. NULL if the handler isn't installed. */
