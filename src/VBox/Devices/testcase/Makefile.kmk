@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the Devices testcases.
+# Sub-Makefile for the Devices testcases.
 #
 
 #
@@ -19,56 +19,60 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-DEPTH = ../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include	$(PATH_KBUILD)/subheader.kmk
 
 #
-# Target lists.
-#
-PROGRAMS = tstDeviceStructSize tstDeviceStructSizeGC
-
-
-#
-# We setup one 'other' targets for executing the structure & alignment
+# We setup one 'other' target for executing the structure & alignment
 # validation testcases. Perhaps a bit hackish, but extremely useful.
 #
 ifeq ($(BUILD_TARGET),$(BUILD_PLATFORM))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH)),)
-  OTHERS          += \
+  OTHERS += \
 	$(PATH_TARGET)/tstDeviceStructSize.run
  endif
 endif
-OTHER_CLEAN     += \
-	$(PATH_TARGET)/tstDeviceStructSizeGC.h \
-	$(PATH_TARGET)/tstDeviceStructSize.run \
+
+#
+# Globals
+#
+VBOX_PATH_DEVICES_SRC = $(PATH_SUB_ROOT)
 
 #
 # The testcase generator.
 #
+PROGRAMS += tstDeviceStructSizeGC
 tstDeviceStructSizeGC_TEMPLATE  = VBOXGCEXE
 tstDeviceStructSizeGC_DEFS      =
 ifdef VBOX_WITH_USB
 tstDeviceStructSizeGC_DEFS     += VBOX_WITH_USB IN_USB_GC
 endif
 tstDeviceStructSizeGC_SOURCES   = tstDeviceStructSizeGC.cpp
-tstDeviceStructSizeGC_INCS      = .. ../Bus
+tstDeviceStructSizeGC_INCS      = \
+	$(VBOX_PATH_DEVICES_SRC) \
+	$(VBOX_PATH_DEVICES_SRC)/Bus \
+	$(PATH_TARGET)
 
 #
 # The testcase it self.
 #
+PROGRAMS += tstDeviceStructSize
 tstDeviceStructSize_TEMPLATE = VBOXR3EXE
 tstDeviceStructSize_DEFS     =
 ifdef VBOX_WITH_USB
 tstDeviceStructSize_DEFS    += VBOX_WITH_USB IN_USB_GC
 endif
-tstDeviceStructSize_INCS     = .. ../Bus $(PATH_TARGET)
+tstDeviceStructSize_INCS     = \
+	$(VBOX_PATH_DEVICES_SRC) \
+	$(VBOX_PATH_DEVICES_SRC)/Bus \
+	$(PATH_TARGET)
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp
 tstDeviceStructSize_LIBS.l4  = $(LIB_RUNTIME)
+tstDeviceStructSize_CLEAN    = \
+	$(PATH_TARGET)/tstDeviceStructSizeGC.h \
+	$(PATH_TARGET)/tstDeviceStructSizeGC.run
 tstDeviceStructSize.cpp_DEPS = $(PATH_TARGET)/tstDeviceStructSizeGC.h
-
-
-include	$(PATH_KBUILD)/footer.kmk
-
 
 #
 # Run rule for tstDeviceStructSize.
@@ -91,4 +95,7 @@ $(PATH_TARGET)/tstDeviceStructSize.run: $(INSTARGET_tstDeviceStructSize)
 
 # alias for the struct test.
 run-struct-tests: $(PATH_TARGET)/tstDeviceStructSize.run
+
+
+include	$(PATH_KBUILD)/subfooter.kmk
 
