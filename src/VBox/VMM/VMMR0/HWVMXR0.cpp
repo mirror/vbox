@@ -1029,8 +1029,14 @@ ResumeExecution:
 
             VMXReadVMCS(VMX_VMCS_GUEST_RIP, &val);
             Log(("Old eip %VGv new %VGv\n", pCtx->eip, (RTGCPTR)val));
+            VMXReadVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
+            Log(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS   %08x\n", val));
+            VMXReadVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, &val);
+            Log(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS  %08x\n", val));
+            VMXReadVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, &val);
+            Log(("VMX_VMCS_CTRL_ENTRY_CONTROLS      %08x\n", val));
             VMXReadVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, &val);
-            Log(("VMX_VMCS_CTRL_EXIT_CONTROLS %08x\n", val));
+            Log(("VMX_VMCS_CTRL_EXIT_CONTROLS       %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR0, &val);
             Log(("VMX_VMCS_HOST_CR0 %08x\n", val));
