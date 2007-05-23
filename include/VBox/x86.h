@@ -1798,6 +1798,11 @@ typedef struct X86DESC64GENERIC
     unsigned    u1Granularity : 1;
     /** Base address - highest 8 bits. - *IGNORED* */
     unsigned    u8BaseHigh2 : 8;
+    /** Base address - bits 63-32. */
+    unsigned    u32BaseHigh3    : 32;
+    unsigned    u8Reserved      : 8;
+    unsigned    u5Zeros         : 5;
+    unsigned    u19Reserved     : 19;
 } X86DESC64GENERIC;
 #pragma pack()
 /** Pointer to a generic descriptor entry. */
