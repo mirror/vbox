@@ -297,7 +297,7 @@ ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 solaris.x86 solaris.amd64 win
 $(PATH_TARGET)/pcnet32.zrom: pcnet32.zrom | $(call DIRDEP,$(PATH_TARGET))
 	$(CP) -f $< $@
 else
-$(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEDEPS)
+$(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEROM) $(MAKEDEPS)
 	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
@@ -312,7 +312,7 @@ ifeq ($(USERNAME),klaus)
 	$(CP) -p $@ pcnet32.zrom
 endif
 
-$(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $$(TARGET_makerom) $(MAKEDEPS)
+$(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $(MAKEROM) $(MAKEDEPS)
 	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
