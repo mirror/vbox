@@ -378,7 +378,7 @@ BEGINPROC vmmR0CallHostLongJmp
     rep movsq
 
     ; store the last pieces of info.
-    mov     rcx, [edx + VMMR0JMPBUF.rsp]
+    mov     rcx, [rdx + VMMR0JMPBUF.rsp]
     mov     [rdx + VMMR0JMPBUF.SpCheck], rcx
     mov     byte [rdx + VMMR0JMPBUF.fInRing3Call], 1
 
