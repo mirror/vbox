@@ -411,6 +411,8 @@ void VMDisplay::updateDisplayData()
         mFramebuffer->getColorDepth ((ULONG*)&mpDrv->Connector.cBits);
         mFramebuffer->getWidth ((ULONG*)&mpDrv->Connector.cx);
         mFramebuffer->getHeight ((ULONG*)&mpDrv->Connector.cy);
+        mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort,
+                                          !!(mpDrv->Connector.pu8Data != (uint8_t*)~0UL));
     }
 }
 
@@ -424,6 +426,8 @@ void VMDisplay::resetFramebuffer()
     {
         mFramebuffer->getAddress ((uintptr_t *)&mpDrv->Connector.pu8Data);
         mFramebuffer->getColorDepth ((ULONG*)&mpDrv->Connector.cBits);
+        mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort,
+                                          !!(mpDrv->Connector.pu8Data != (uint8_t*)~0UL));
     }
 }
 
@@ -671,9 +675,7 @@ static void vbvaSetMemoryFlags (VBVAMEMORY *pVbvaMemory, bool fVideoAccelEnabled
             fu32Flags |= VBVA_F_MODE_ENABLED;
 
             if (fVideoAccelVRDP)
-            {
                 fu32Flags |= VBVA_F_MODE_VRDP;
-            }
         }
 
         pVbvaMemory->fu32ModeFlags = fu32Flags;
@@ -741,9 +743,7 @@ int VMDisplay::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     }
 
     if (!fEnable && mpVbvaMemory)
-    {
         mpVbvaMemory->fu32ModeFlags &= ~VBVA_F_MODE_ENABLED;
-    }
 
     /* Safety precaution. There is no more VBVA until everything is setup! */
     mpVbvaMemory = NULL;
@@ -856,9 +856,7 @@ static bool vbvaPartialRead (uint8_t **ppu8, uint32_t *pcb, uint32_t cbRecord, V
              cbRecord));
 
         if (*ppu8)
-        {
             RTMemFree (*ppu8);
-        }
 
         *ppu8 = NULL;
         *pcb = 0;
@@ -921,9 +919,7 @@ bool VMDisplay::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
         {
             /* New data has been added to the record. */
             if (!vbvaPartialRead (&mpu8VbvaPartial, &mcbVbvaPartial, cbRecord, mpVbvaMemory))
-            {
                 return false;
-            }
         }
 
         if (!(pRecord->cbRecord & VBVA_F_RECORD_PARTIAL))
@@ -955,9 +951,7 @@ bool VMDisplay::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
         {
             /* Partial read must be started. */
             if (!vbvaPartialRead (&mpu8VbvaPartial, &mcbVbvaPartial, cbRecord, mpVbvaMemory))
-            {
                 return false;
-            }
 
             LogFlow(("MAIN::DisplayImpl::vbvaFetchCmd: started partial record mcbVbvaPartial = 0x%08X cbRecord 0x%08X, first = %d, free = %d\n",
                      mcbVbvaPartial, pRecord->cbRecord, indexRecordFirst, indexRecordFree));
@@ -1086,18 +1080,14 @@ void VMDisplay::VideoAccelFlush (void)
 
     /* Quick check for "nothing to update" case. */
     if (mpVbvaMemory->indexRecordFirst == mpVbvaMemory->indexRecordFree)
-    {
         return;
-    }
 
     /* Process the ring buffer */
 
     bool fFramebufferIsNull = (mFramebuffer == NULL);
 
     if (!fFramebufferIsNull)
-    {
         mFramebuffer->Lock();
-    }
 
     /* Initialize dirty rectangles accumulator. */
     VBVADIRTYREGION rgn;
@@ -1155,9 +1145,7 @@ void VMDisplay::VideoAccelFlush (void)
     }
 
     if (!fFramebufferIsNull)
-    {
         mFramebuffer->Unlock ();
-    }
 
     /* Draw the framebuffer. */
     vbvaRgnUpdateFramebuffer (&rgn);
@@ -1254,9 +1242,7 @@ DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      * If there is a Framebuffer, we have to update our display information
      */
     if (pData->pDisplay->mFramebuffer)
-    {
         pData->pDisplay->updateDisplayData();
-    }
 
     /*
      * Start periodic screen refreshes
