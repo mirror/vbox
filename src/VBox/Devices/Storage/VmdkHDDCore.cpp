@@ -836,7 +836,7 @@ static int vmdkDescExtInsert(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
     static const char *apszAccess[] = { "NOACCESS", "RDONLY", "RW" };
     static const char *apszType[] = { "", "SPARSE", "FLAT", "ZERO" };
     char *pszTmp;
-    unsigned uStart = pDescriptor->uFirstExtent, uLast;
+    unsigned uStart = pDescriptor->uFirstExtent, uLast = 0;
     char szExt[1024];
     ssize_t cbDiff;
 
@@ -3312,7 +3312,7 @@ static int vmdkGetComment(void *pBackendData, char *pszComment, size_t cbComment
 
     if (pImage)
     {
-        const char *pszCommentEncoded;
+        const char *pszCommentEncoded = NULL;
         rc = vmdkDescDDBGetStr(pImage, &pImage->Descriptor,
                               "ddb.comment", &pszCommentEncoded);
         if (rc == VERR_VDI_VALUE_NOT_FOUND)
@@ -3353,7 +3353,6 @@ static int vmdkSetComment(void *pBackendData, const char *pszComment)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-out:
     LogFlow(("%s: returned %Vrc\n", __FUNCTION__, rc));
     return rc;
 }
