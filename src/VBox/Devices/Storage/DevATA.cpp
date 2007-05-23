@@ -3387,7 +3387,7 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 }
 
 
-static void ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
+static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
     uint32_t val;
@@ -3454,19 +3454,26 @@ static void ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
         default:
         case 7: /* primary status */
         {
+            /* Counter for number of busy status seen in GC in a row. */
+            static unsigned cBusy = 0;
+
             if (!s->pDrvBlock)
                 val = 0;
             else
                 val = s->uATARegStatus;
-            ataUnsetIRQ(s);
-#ifdef IN_RING3
+
             /* Give the async I/O thread an opportunity to make progress,
              * don't let it starve by guests polling frequently. EMT has a
              * lower priority than the async I/O thread, but sometimes the
              * host OS doesn't care. With some guests we are only allowed to
-             * be busy for about 5 milliseconds in some situations. */
+             * be busy for about 5 milliseconds in some situations. Note that
+             * this is no guarantee for any other VBox thread getting
+             * scheduled, so this just lowers the CPU load a bit when drives
+             * are busy. It cannot help with timing problems. */
             if (val & ATA_STAT_BUSY)
             {
+#ifdef IN_RING3
+                cBusy = 0;
                 PDMCritSectLeave(&pCtl->lock);
 
                 RTThreadYield();
@@ -3478,13 +3485,27 @@ static void ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                 }
 
                 val = s->uATARegStatus;
+#else /* !IN_RING3 */
+                /* Cannot yield CPU in guest context. And switching to host
+                 * context for each and every busy status is too costly,
+                 * especially on SMP systems where we don't gain much by
+                 * yielding the CPU to someone else. */
+                if (++cBusy >= 20)
+                {
+                    cBusy = 0;
+                    return VINF_IOM_HC_IOPORT_READ;
+                }
+#endif /* !IN_RING3 */
             }
-#endif
+            else
+                cBusy = 0;
+            ataUnsetIRQ(s);
             break;
         }
     }
     Log2(("%s: addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
     *pu32 = val;
+    return VINF_SUCCESS;
 }
 
 
@@ -4775,8 +4796,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         return rc;
     if (cb == 1)
     {
-        ataIOPortReadU8(pCtl, Port, pu32);
-        rc = VINF_SUCCESS;
+        rc = ataIOPortReadU8(pCtl, Port, pu32);
     }
     else if (Port == pCtl->IOPortBase1)
     {
