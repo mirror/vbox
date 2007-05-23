@@ -699,9 +699,9 @@ int main(int argc, char **argv)
 
 #ifdef __L4__
     /* The L4 console provides (currently) a fixed resolution. */
-    if (vramSize * 1024 * 1024 >=   gFramebuffer->getHostXres() 
-                                  * gFramebuffer->getHostYres()
-                                  * (gDisplay->getColorDepth() / 8))
+    if (vramSize * _1M >=   gFramebuffer->getHostXres() 
+                          * gFramebuffer->getHostYres()
+                          * (gDisplay->getColorDepth() / 8))
         gDisplay->SetVideoModeHint(gFramebuffer->getHostXres(), gFramebuffer->getHostYres(), 0);
 #endif
 
