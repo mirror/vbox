@@ -1104,7 +1104,7 @@ VBOX_LRELEASE ?= $(VBOX_PATH_QT_HOST)/bin/lrelease$(HOSTSUFF_EXE)
 #
 # The linux kernel headers(/sources).
 #
-ifneq ($(filter linux l4,$(BUILD_TARGET)),)
+ifneq ($(filter linux,$(BUILD_TARGET)),)
  ifeq ($(origin VBOX_LINUX_SRC),undefined)
   ifneq ($(wildcard /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h),)
    export VBOX_LINUX_SRC           := /lib/modules/$(shell uname -r)/build
