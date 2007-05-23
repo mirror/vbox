@@ -98,23 +98,12 @@
     push    %1
     push    fs
     ; Special case for GS; OSes typically use swapgs to reset the hidden base register for GS on entry into the kernel. The same happens on exit
-    ; Note: do not step through this code with a debugger!
     push    rcx
-    mov     ecx, MSR_K8_KERNEL_GS_BASE
+    mov     ecx, MSR_K8_GS_BASE
     rdmsr
     pop     rcx
     push    rdx
     push    rax
-    ; copy hidden base register into the MSR
-    swapgs
-    push    rcx
-    mov     ecx, MSR_K8_KERNEL_GS_BASE
-    rdmsr
-    pop     rcx
-    push    rdx
-    push    rax
-    swapgs                              ; redundant unless in debugging mode
-    ; Now it's safe to step again
     push    gs
  %endmacro 
 
@@ -124,15 +113,7 @@
     pop     rax
     pop     rdx
     push    rcx
-    mov     ecx, MSR_K8_KERNEL_GS_BASE
-    wrmsr
-    pop     rcx
-    ; copy MSR into hidden base register
-    swapgs
-    pop     rax
-    pop     rdx
-    push    rcx
-    mov     ecx, MSR_K8_KERNEL_GS_BASE
+    mov     ecx, MSR_K8_GS_BASE
     wrmsr
     pop     rcx
     ; Now it's safe to step again
