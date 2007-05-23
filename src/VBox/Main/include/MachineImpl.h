@@ -58,16 +58,20 @@
  *
  *  @param machine  the machine object (must cast to Machine *)
  */
+/// @todo replace with AutoStateDependency
 #define CHECK_MACHINE_MUTABILITY(machine) \
     do { \
         if (!machine->isMutable()) \
             return setError (E_ACCESSDENIED, tr ("The machine is not mutable")); \
     } while (0)
-/** like CHECK_MACHINE_MUTABILITY but a saved state is ok, too */
+
+/** Like CHECK_MACHINE_MUTABILITY but a saved state is OK, too. */
+/// @todo replace with AutoStateDependency
 #define CHECK_MACHINE_MUTABILITY_IGNORING_SAVED(machine) \
     do { \
         if (!machine->isMutableIgnoringSavedState()) \
-            return setError (E_ACCESSDENIED, tr ("The machine is not mutable or in saved state")); \
+            return setError (E_ACCESSDENIED, \
+                             tr ("The machine is not mutable or in saved state")); \
     } while (0)
 
 
@@ -165,6 +169,10 @@ public:
 
         MachineState_T mMachineState;
         LONG64 mLastStateChange;
+
+        uint32_t mMachineStateDeps;
+        RTSEMEVENT mZeroMachineStateDepsSem;
+        BOOL mWaitingStateDeps;
 
         BOOL mCurrentStateModified;
 
@@ -278,6 +286,93 @@ public:
         bool mHDAttachmentsChanged;
     };
 
+    enum StateDependency
+    {
+        AnyStateDep = 0, MutableStateDep, MutableOrSavedStateDep
+    };
+
+    /**
+     *  Helper class that safely manages the machine state dependency by
+     *  calling Machine::addStateDependency() on construction and
+     *  Machine::releaseStateDependency() on destruction. Intended for Machine
+     *  children. The usage pattern is:
+     *
+     *  @code
+     *      Machine::AutoStateDependency <MutableStateDep> adep (mParent);
+     *      CheckComRCReturnRC (stateDep.rc());
+     *      ...
+     *      // code that depends on the particular machine state
+     *      ...
+     *  @endcode
+     *
+     *  @param taDepType    Dependecy type to manage.
+     */
+    template <StateDependency taDepType = AnyStateDep>
+    class AutoStateDependency
+    {
+    public:
+
+        AutoStateDependency (Machine *aThat)
+            : mThat (aThat), mRC (S_OK)
+            , mMachineState (MachineState_InvalidMachineState)
+            , mRegistered (FALSE)
+        {
+            Assert (aThat);
+            mRC = aThat->addStateDependency (taDepType, &mMachineState,
+                                             &mRegistered);
+        }
+        ~AutoStateDependency()
+        {
+            if (SUCCEEDED (mRC))
+                mThat->releaseStateDependency();
+        }
+
+        /** Decreases the number of dependencies before the instance is
+         *  destroyed. Note that will reset #rc() to E_FAIL. */
+        void release()
+        {
+            AssertReturnVoid (SUCCEEDED (mRC));
+            mThat->releaseStateDependency();
+            mRC = E_FAIL;
+        }
+
+        /** Restores the number of callers after by #release(). #rc() will be
+         *  reset to the result of calling addStateDependency() and must be
+         *  rechecked to ensure the operation succeeded. */
+        void add()
+        {
+            AssertReturnVoid (!SUCCEEDED (mRC));
+            mRC = mThat->addStateDependency (taDepType, &mMachineState,
+                                             &mRegistered);
+        }
+
+        /** Returns the result of Machine::addStateDependency(). */
+        HRESULT rc() const { return mRC; }
+
+        /** Shortcut to SUCCEEDED (rc()). */
+        bool isOk() const { return SUCCEEDED (mRC); }
+
+        /** Returns the machine state value as returned by
+         *  Machine::addStateDependency(). */
+        MachineState_T machineState() const { return mMachineState; }
+
+        /** Returns the machine state value as returned by
+         *  Machine::addStateDependency(). */
+        BOOL machineRegistered() const { return mRegistered; }
+
+    protected:
+
+        Machine *mThat;
+        HRESULT mRC;
+        MachineState_T mMachineState;
+        BOOL mRegistered;
+
+    private:
+
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoStateDependency)
+        DECLARE_CLS_NEW_DELETE_NOOP (AutoStateDependency)
+    };
+
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Machine)
 
     DECLARE_NOT_AGGREGATABLE(Machine)
@@ -374,6 +469,7 @@ public:
     //  that use it (actually, the CHECK_MACHINE_MUTABILITY macro).
     //  Note: these classes should enter Machine lock to keep the returned
     //  information valid!
+    /// @todo replace with AutoStateDependency
     bool isMutable()
     {
         return ((!mData->mRegistered) ||
@@ -386,6 +482,7 @@ public:
     //  that use it (actually, the CHECK_MACHINE_MUTABILITY_IGNORING_SAVED macro).
     //  Note: these classes should enter Machine lock to keep the returned
     //  information valid!
+    /// @todo replace with AutoStateDependency
     bool isMutableIgnoringSavedState()
     {
         return ((!mData->mRegistered) ||
@@ -445,6 +542,11 @@ public:
         return findSharedFolder (aName, aSharedFolder, aSetError);
     }
 
+    HRESULT addStateDependency (StateDependency aDepType = AnyStateDep,
+                                MachineState_T *aState = NULL,
+                                BOOL *aRegistered = NULL);
+    void releaseStateDependency();
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Machine"; }
 
@@ -457,6 +559,8 @@ protected:
     inline Machine *machine();
 
     void uninitDataAndChildObjects();
+
+    void checkStateDependencies (AutoLock &aLock);
 
     virtual HRESULT setMachineState (MachineState_T aMachineState);
 

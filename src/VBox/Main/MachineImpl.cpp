@@ -123,6 +123,11 @@ Machine::Data::Data()
     mMachineState = MachineState_PoweredOff;
     RTTIMESPEC time;
     mLastStateChange = RTTimeSpecGetMilli (RTTimeNow (&time));
+
+    mMachineStateDeps = 0;
+    mZeroMachineStateDepsSem = NIL_RTSEMEVENT;
+    mWaitingStateDeps = FALSE;
+
     mCurrentStateModified = TRUE;
     mHandleCfgFile = NIL_RTFILE;
 
@@ -132,6 +137,11 @@ Machine::Data::Data()
 
 Machine::Data::~Data()
 {
+    if (mZeroMachineStateDepsSem != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy (mZeroMachineStateDepsSem);
+        mZeroMachineStateDepsSem = NIL_RTSEMEVENT;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2916,6 +2926,9 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
     AutoLock alock (this);
 
+    /* wait for state dependants to drop to zero */
+    checkStateDependencies (alock);
+
     ComAssertRet (mData->mRegistered != aRegistered, E_FAIL);
 
     if (!mData->mAccessible)
@@ -2993,6 +3006,109 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
     mUSBController->onMachineRegistered (aRegistered);
 
     return S_OK;
+}
+
+/** 
+ *  Increases the number of objects dependent on the machine state or on the
+ *  registered state.  Guarantees that these two states will not change at
+ *  least until #releaseStateDependency() is called.
+ *
+ *  Depending on the @a aDepType value, additional state checks may be
+ *  made. These checks will set extended error info on failure.
+ * 
+ *  If this method returns a failure, the dependency is not added and the
+ *  caller is not allowed to rely on any particular machine state or
+ *  registration state value and may return the failed result code to the
+ *  upper level.
+ *
+ *  @param aDepType     Dependency type to choose
+ *  @param aState       Current machine state (NULL if not interested).
+ *  @param aRegistered  Current registered state (NULL if not interested).
+ */
+HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep */,
+                                     MachineState_T *aState /* = NULL */,
+                                     BOOL *aRegistered /* = NULL */)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    if (mData->mWaitingStateDeps && mData->mMachineStateDeps == 0)
+    {
+        /* checkStateDependencies() is at the point after RTSemEventWait() but
+         * before entering the lock. Report an error. It would be better to
+         * leave the lock now and re-schedule ourselves, but we don't have a
+         * framework that can guarantee such a behavior in 100% cases. */
+
+        AssertFailed(); /* <-- this is just to see how often it can happen */
+
+        return setError (E_ACCESSDENIED,
+            tr ("The machine is busy: state transition is in progress. "
+                "Retry the operation (state is %d)"),
+            mData->mMachineState);
+    }
+
+    switch (aDepType)
+    {
+        case AnyStateDep:
+        {
+            break;
+        }
+        case MutableStateDep:
+        {
+            if (mData->mRegistered &&
+                (mType != IsSessionMachine ||
+                 mData->mMachineState > MachineState_Paused ||
+                 mData->mMachineState == MachineState_Saved))
+                return setError (E_ACCESSDENIED,
+                    tr ("The machine is not mutable (state is %d)"),
+                    mData->mMachineState);
+            break;
+        }
+        case MutableOrSavedStateDep:
+        {
+            if (mData->mRegistered &&
+                (mType != IsSessionMachine ||
+                 mData->mMachineState > MachineState_Paused))
+                return setError (E_ACCESSDENIED,
+                    tr ("The machine is not mutable (state is %d)"),
+                    mData->mMachineState);
+            break;
+        }
+    }
+
+    if (aState)
+        *aState = mData->mMachineState;
+    if (aRegistered)
+        *aRegistered = mData->mRegistered;
+
+    ++ mData->mMachineStateDeps;
+
+    return S_OK;
+}
+
+/**
+ *  Decreases the number of objects dependent on the machine state.
+ *  Must always complete the #addStateDependency() call after the state
+ *  dependency no more necessary.
+ */
+void Machine::releaseStateDependency()
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    AssertReturnVoid (mData->mMachineStateDeps > 0);
+    -- mData->mMachineStateDeps;
+
+    if (mData->mMachineStateDeps == 0 &&
+        mData->mZeroMachineStateDepsSem != NIL_RTSEMEVENT)
+    {
+        /* inform checkStateDependencies() that there are no more deps */
+        RTSemEventSignal (mData->mZeroMachineStateDepsSem);
+    }
 }
 
 // protected methods
@@ -3076,6 +3192,43 @@ void Machine::uninitDataAndChildObjects()
     mData.free();
 }
 
+
+/** 
+ *  Chhecks that there are no state dependants. If necessary, waits for the
+ *  number of dependants to drop to zero. Must be called from under
+ *  this object's lock.
+ *
+ *  @param aLock    This object's lock.
+ *
+ *  @note This method may leave the object lock during its execution!
+ */
+void Machine::checkStateDependencies (AutoLock &aLock)
+{
+    AssertReturnVoid (isLockedOnCurrentThread());
+    AssertReturnVoid (aLock.belongsTo (this));
+
+    /* Wait for all state dependants if necessary */
+    if (mData->mMachineStateDeps > 0)
+    {
+        /* lazy creation */
+        if (mData->mZeroMachineStateDepsSem == NIL_RTSEMEVENT)
+            RTSemEventCreate (&mData->mZeroMachineStateDepsSem);
+
+        LogFlowThisFunc (("Waiting for state deps (%d) to drop to zero...\n",
+                          mData->mMachineStateDeps));
+
+        mData->mWaitingStateDeps = TRUE;
+
+        aLock.leave();
+
+        RTSemEventWait (mData->mZeroMachineStateDepsSem, RT_INDEFINITE_WAIT);
+
+        aLock.enter();
+
+        mData->mWaitingStateDeps = FALSE;
+    }
+}
+
 /**
  *  Helper to change the machine state.
  *
@@ -3090,6 +3243,12 @@ HRESULT Machine::setMachineState (MachineState_T aMachineState)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoLock alock (this);
+
+    /* wait for state dependants to drop to zero */
+	/// @todo it may be potentially unsafe to leave the lock here as
+    //  the below method does. Needs some thinking. The easiest solution may
+    //  be to provide a separate mutex for mMachineState and mRegistered.
+    checkStateDependencies (alock);
 
     if (mData->mMachineState != aMachineState)
     {
@@ -3376,10 +3535,12 @@ HRESULT Machine::loadSettings (bool aRegistered)
             Assert (!mSSData->mStateFilePath);
             mSSData->mStateFilePath.setNull();
 
+            /* no need to use setMachineState() during init() */ 
             mData->mMachineState = MachineState_Aborted;
         }
         else if (mSSData->mStateFilePath)
         {
+            /* no need to use setMachineState() during init() */ 
             mData->mMachineState = MachineState_Saved;
         }
     }
@@ -7290,7 +7451,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
          *  necessary (nor it's safe) to perform the regular uninit sequence
          *  below, the following is enough.
          */
-        LogFlowThisFunc (("Initialization failed\n"));
+        LogFlowThisFunc (("Initialization failed.\n"));
 #if defined(__WIN__)
         if (mIPCSem)
             ::CloseHandle (mIPCSem);
@@ -7314,6 +7475,18 @@ void SessionMachine::uninit (Uninit::Reason aReason)
      */
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
+    MachineState_T lastState = mData->mMachineState;
+
+    if (aReason == Uninit::Abnormal)
+    {
+        LogWarningThisFunc (("ABNORMAL client termination! (wasRunning=%d)\n",
+                             lastState >= MachineState_Running));
+
+        /* reset the state to Aborted */
+        if (mData->mMachineState != MachineState_Aborted)
+            setMachineState (MachineState_Aborted);
+    }
+
     if (isModified())
     {
         LogWarningThisFunc (("Discarding unsaved settings changes!\n"));
@@ -7333,7 +7506,15 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     }
 
     /* release all captured USB devices */
-    mParent->host()->releaseAllUSBDevices (this);
+    if (aReason == Uninit::Abnormal && lastState >= MachineState_Running)
+    {
+        /* Console::captureUSBDevices() is called in the VM process only after
+         * setting the machine state to Starting or Restoring.
+         * Console::releaseAllUSBDevices() will be called upon successful
+         * termination. So, we need to release USB devices only if there was
+         * an abnormal termination of a running VM. */
+        ReleaseAllUSBDevices();
+    }
 
     if (!mData->mSession.mType.isNull())
     {
@@ -7556,7 +7737,12 @@ STDMETHODIMP SessionMachine::ReleaseUSBDevice (INPTR GUIDPARAM aId)
 }
 
 /**
- *  @note Locks the same as Host::autoCaptureUSBDevices() does.
+ *  Inserts all machine filters to the USB proxy service and then calls
+ *  Host::autoCaptureUSBDevices().
+ *
+ *  Called by Console from the VM process upon VM startup.
+ *
+ *  @note Locks what called methods lock.
  */
 STDMETHODIMP SessionMachine::AutoCaptureUSBDevices (IUSBDeviceCollection **aHostDevices)
 {
@@ -7565,11 +7751,22 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices (IUSBDeviceCollection **aHost
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
+    HRESULT rc = mUSBController->notifyProxy (true /* aInsertFilters */);
+    AssertComRC (rc);
+    NOREF (rc);
+
     return mParent->host()->autoCaptureUSBDevices (this, aHostDevices);
 }
 
 /**
- *  @note Locks the same as Host::releaseAllUSBDevices() does.
+ *  Removes all machine filters from the USB proxy service and then calls
+ *  Host::releaseAllUSBDevices().
+ *
+ *  Called by Console from the VM process upon normal VM termination or by
+ *  SessionMachine::uninit() upon abnormal VM termination (from under the
+ *  Machine/SessionMachine lock).
+ *
+ *  @note Locks what called methods lock.
  */
 STDMETHODIMP SessionMachine::ReleaseAllUSBDevices()
 {
@@ -7577,6 +7774,10 @@ STDMETHODIMP SessionMachine::ReleaseAllUSBDevices()
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    HRESULT rc = mUSBController->notifyProxy (false /* aInsertFilters */);
+    AssertComRC (rc);
+    NOREF (rc);
 
     return mParent->host()->releaseAllUSBDevices (this);
 }
@@ -8234,16 +8435,6 @@ bool SessionMachine::checkForDeath()
 
         AssertMsg (mIPCSem, ("semaphore must be created"));
 
-        if (reason == Uninit::Abnormal)
-        {
-            LogWarningThisFunc (("ABNORMAL client termination! (wasRunning=%d)\n",
-                                 mData->mMachineState >= MachineState_Running));
-
-            /* reset the state to Aborted */
-            if (mData->mMachineState != MachineState_Aborted)
-                setMachineState (MachineState_Aborted);
-        }
-
         /* release the IPC mutex */
         ::ReleaseMutex (mIPCSem);
 
@@ -8259,17 +8450,6 @@ bool SessionMachine::checkForDeath()
         if (val > 0)
         {
             /* the semaphore is signaled, meaning the session is terminated */
-
-            if (reason == Uninit::Abnormal)
-            {
-                LogWarningThisFunc (("ABNORMAL client termination! (wasRunning=%d)\n",
-                                     mData->mMachineState >= MachineState_Running));
-
-                /* reset the state to Aborted */
-                if (mData->mMachineState != MachineState_Aborted)
-                    setMachineState (MachineState_Aborted);
-            }
-
             doUninit = true;
         }
 
