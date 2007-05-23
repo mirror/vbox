@@ -1531,8 +1531,10 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
         /* calc the slack we've handed out. */
         const uint64_t u64VirtualNow2 = TMVirtualGetEx(pVM, false /* don't check timers */);
         Assert(u64VirtualNow2 >= u64VirtualNow);
+if (RT_UNLIKELY(u64VirtualNow2 < u64VirtualNow))  LogRel(("TM: u64VirtualNow2=%#RX64 < u64VirtualNow=%#RX64\n", u64VirtualNow2, u64VirtualNow)); /* debugging - to be removed. */
         AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%RU64 < %RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
         const uint64_t offSlack = pVM->tm.s.u64VirtualSync - u64Now;
+if (RT_UNLIKELY(offSlack & BIT64(63)))  LogRel(("TM: pVM->tm.s.u64VirtualSync=%#RX64 - u64Now=%#RX64 -> %#RX64\n", pVM->tm.s.u64VirtualSync, u64Now, offSlack)); /* debugging - to be removed. */
         STAM_STATS({
             if (offSlack)
             {
