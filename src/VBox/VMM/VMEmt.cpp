@@ -279,37 +279,10 @@ VMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM)
 
 
 /**
- * Halted VM Wait.
- * Any external event will unblock the thread.
- *
- * @returns VINF_SUCCESS unless a fatal error occured. In the latter
- *          case an appropriate status code is returned.
- * @param   pVM         VM handle.
- * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
- * @thread  The emulation thread.
+ * The old halt loop.
  */
-VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
+DECLCALLBACK(int) vmR3WaitHaltedOld(PVM pVM, const uint32_t fMask)
 {
-    LogFlow(("VMR3WaitHalted: fIgnoreInterrupts=%d\n", fIgnoreInterrupts));
-
-    /*
-     * Check Relevant FFs.
-     */
-    const uint32_t fMask = !fIgnoreInterrupts
-        ? VM_FF_EXTERNAL_HALTED_MASK
-        : VM_FF_EXTERNAL_HALTED_MASK & ~(VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC);
-    if (VM_FF_ISPENDING(pVM, fMask))
-    {
-        LogFlow(("VMR3WaitHalted: returns VINF_SUCCESS (FF %#x)\n", pVM->fForcedActions));
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * The CPU TSC is running while halted,
-     * and the yielder is suspended.
-     */
-    VMMR3YieldSuspend(pVM);
-
     /*
      * Halt loop.
      */
@@ -383,17 +356,204 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
             break;
         }
     }
-    ASMAtomicXchgU32(&pVM->vm.s.fWait, 0);
+
+    return rc;
+}
+
+
+/**
+ * Method 1 - Block whenever possible, and when lagging behind 
+ * switch to spinning for 10-30ms with occational blocking until
+ * the lag has been eliminated.
+ */
+DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t u64Now)
+{
+    /*
+     * To simplify things, we decide up-front whether we should switch
+     * to spinning or not. This makes some assumptions about the cause
+     * of the spinning (PIT/RTC/PCNet) and that it will generate interrupts
+     * or other events that means we should exit the halt loop.
+     */
+    bool fBlockOnce = false;
+    bool fSpinning = false;
+    if (TMVirtualSyncGetCatchUpPct(pVM) /* non-zero if catching up */)
+    {
+        const uint64_t u64Lag = TMVirtualSyncGetLag(pVM);
+        fSpinning = u64Lag > 25000000 /* 25ms */;
+        if (fSpinning) 
+        {
+            if (!pVM->vm.s.Halt.Method12.u64StartSpinTS)
+                pVM->vm.s.Halt.Method12.u64StartSpinTS = u64Now;
+            else if (u64Now - pVM->vm.s.Halt.Method12.u64LastBlockTS > 32000000 /* 32ms */)
+                fBlockOnce = true;
+        }
+        else if (pVM->vm.s.Halt.Method12.u64StartSpinTS)
+            pVM->vm.s.Halt.Method12.u64StartSpinTS = 0;
+    }
+    else if (pVM->vm.s.Halt.Method12.u64StartSpinTS)
+        pVM->vm.s.Halt.Method12.u64StartSpinTS = 0;
 
     /*
-     *
-     * Pause the TSC, it's restarted when we start executing,
-     * and resume the yielder.
+     * Halt loop.
      */
+    int rc = VINF_SUCCESS;
+    ASMAtomicXchgU32(&pVM->vm.s.fWait, 1);
+    unsigned cLoops = 0;
+    for (;; cLoops++)
+    {
+        /*
+         * Work the timers and check if we can exit. 
+         */
+        STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltPoll, a);
+        PDMR3Poll(pVM);
+        STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltPoll, a);
+        STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltTimers, b);
+        TMR3TimerQueuesDo(pVM);
+        STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltTimers, b);
+        if (VM_FF_ISPENDING(pVM, fMask))
+            break;
+
+        /*
+         * Estimate time left to the next event.
+         */
+        uint64_t u64NanoTS = TMVirtualToNano(pVM, TMTimerPoll(pVM));
+        if (VM_FF_ISPENDING(pVM, fMask))
+            break;
+
+        /*
+         * Block if we're not spinning and the interval isn't all that small.
+         */
+        if (    (   !fSpinning  
+                 || fBlockOnce)
+            &&  u64NanoTS >= 250000) /* 0.250 ms */
+        {
+            const uint64_t Start = pVM->vm.s.Halt.Method12.u64LastBlockTS = RTTimeNanoTS();
+            VMMR3YieldStop(pVM);
+
+            uint32_t cMilliSecs = RT_MIN(u64NanoTS / 1000000, 15);
+            if (cMilliSecs <= pVM->vm.s.Halt.Method12.cNSBlockedTooLongAvg)
+                cMilliSecs = 1;
+            else 
+                cMilliSecs -= pVM->vm.s.Halt.Method12.cNSBlockedTooLongAvg;
+//RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
+            STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltBlock, a);
+            rc = RTSemEventWait(pVM->vm.s.EventSemWait, cMilliSecs);
+            STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltBlock, a);
+            if (rc == VERR_TIMEOUT)
+                rc = VINF_SUCCESS;
+            else if (VBOX_FAILURE(rc))
+            {
+                AssertRC(rc != VERR_INTERRUPTED);
+                AssertMsgFailed(("RTSemEventWait->%Vrc\n", rc));
+                VM_FF_SET(pVM, VM_FF_TERMINATE);
+                rc = VERR_INTERNAL_ERROR;
+                break;
+            }
+
+            /* 
+             * Calc the statistics. 
+             * Update averages every 16th time, and flush parts of the history every 64th time.
+             */
+            const uint64_t Elapsed = RTTimeNanoTS() - Start;
+            pVM->vm.s.Halt.Method12.cNSBlocked += Elapsed;
+            if (Elapsed > u64NanoTS)
+                pVM->vm.s.Halt.Method12.cNSBlockedTooLong += Elapsed - u64NanoTS;
+            pVM->vm.s.Halt.Method12.cBlocks++;
+            if (!(pVM->vm.s.Halt.Method12.cBlocks & 0xf))
+            {
+                pVM->vm.s.Halt.Method12.cNSBlockedTooLongAvg = pVM->vm.s.Halt.Method12.cNSBlockedTooLong / pVM->vm.s.Halt.Method12.cBlocks;
+                if (!(pVM->vm.s.Halt.Method12.cBlocks & 0x3f))
+                {
+                    pVM->vm.s.Halt.Method12.cNSBlockedTooLong = pVM->vm.s.Halt.Method12.cNSBlockedTooLongAvg * 0x40;
+                    pVM->vm.s.Halt.Method12.cBlocks = 0x40;
+                }
+            }
+//RTLogRelPrintf(" -> %7RU64 ns / %7RI64 ns delta%s\n", Elapsed, Elapsed - u64NanoTS, fBlockOnce ? " (block once)" : "");
+
+            /*
+             * Clear the block once flag if we actually blocked.
+             */
+            if (    fBlockOnce
+                &&  Elapsed > 100000 /* 0.1 ms */)
+                fBlockOnce = false;
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Halted VM Wait.
+ * Any external event will unblock the thread.
+ *
+ * @returns VINF_SUCCESS unless a fatal error occured. In the latter
+ *          case an appropriate status code is returned.
+ * @param   pVM         VM handle.
+ * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
+ * @thread  The emulation thread.
+ */
+VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
+{
+    LogFlow(("VMR3WaitHalted: fIgnoreInterrupts=%d\n", fIgnoreInterrupts));
+
+    /*
+     * Check Relevant FFs.
+     */
+    const uint32_t fMask = !fIgnoreInterrupts
+        ? VM_FF_EXTERNAL_HALTED_MASK
+        : VM_FF_EXTERNAL_HALTED_MASK & ~(VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC);
+    if (VM_FF_ISPENDING(pVM, fMask))
+    {
+        LogFlow(("VMR3WaitHalted: returns VINF_SUCCESS (FF %#x)\n", pVM->fForcedActions));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * The yielder is suspended while we're halting.
+     */
+    VMMR3YieldSuspend(pVM);
+
+    /*
+     * Record halt averages for the last second.
+     */
+    uint64_t u64Now = RTTimeNanoTS();
+    int64_t off = u64Now - pVM->vm.s.u64HaltsStartTS;
+    if (off > 1000000000)
+    {
+        if (off > _4G || !pVM->vm.s.cHalts)
+        {
+            pVM->vm.s.HaltInterval = 1000000000 /* 1 sec */;
+            pVM->vm.s.HaltFrequency = 1;
+        }
+        else
+        {
+            pVM->vm.s.HaltInterval = (uint32_t)off / pVM->vm.s.cHalts;
+            pVM->vm.s.HaltFrequency = ASMMultU64ByU32DivByU32(pVM->vm.s.cHalts, 1000000000, (uint32_t)off);
+        }
+        pVM->vm.s.u64HaltsStartTS = u64Now;
+        pVM->vm.s.cHalts = 0;
+    }
+    pVM->vm.s.cHalts++;
+
+    /*
+     * Do the halt.
+     */
+#if 1
+    int rc = vmR3WaitHaltedOld(pVM, fMask);
+#elif 0 /* work in progress */
+    int rc = vmR3WaitHaltedMethod1(pVM, fMask, u64Now);
+#else
+# error "misconfigured halt"
+#endif 
+
+    /*
+     * Resume the yielder and tell the world we're not blocking.
+     */
+    ASMAtomicXchgU32(&pVM->vm.s.fWait, 0);
     VMMR3YieldResume(pVM);
 
-
-    LogFlow(("VMR3WaitHalted: returns %Vrc (FF %#x)\n", rc, pVM->fForcedActions ));
+    LogFlow(("VMR3WaitHalted: returns %Vrc (FF %#x)\n", rc, pVM->fForcedActions));
     return rc;
 }
 
