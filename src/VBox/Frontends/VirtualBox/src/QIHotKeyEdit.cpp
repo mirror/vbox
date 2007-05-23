@@ -179,10 +179,10 @@ QIHotKeyEdit::~QIHotKeyEdit()
  *      virtial key, on Linux it is the first (0) keysym corresponding
  *      to the keycode.
  */
-void QIHotKeyEdit::setKey( int k )
+void QIHotKeyEdit::setKey (int k)
 {
     keyval = k;
-    symbname = QIHotKeyEdit::keyName( k );
+    symbname = QIHotKeyEdit::keyName (k);
     updateText();
 }
 
@@ -203,13 +203,13 @@ void QIHotKeyEdit::setKey( int k )
 QSize QIHotKeyEdit::sizeHint() const
 {
     constPolish();
-    QFontMetrics fm( font() );
+    QFontMetrics fm (font());
     int h = QMAX(fm.lineSpacing(), 14) + 2;
     int w = fm.width( 'x' ) * 17; // "some"
     int m = frameWidth() * 2;
     return (style().sizeFromContents(QStyle::CT_LineEdit, this,
-				     QSize( w + m, h + m ).
-				     expandedTo(QApplication::globalStrut())));
+                                     QSize (w + m, h + m)
+                                     .expandedTo(QApplication::globalStrut())));
 }
 
 /**
@@ -219,10 +219,10 @@ QSize QIHotKeyEdit::minimumSizeHint() const
 {
     constPolish();
     QFontMetrics fm = fontMetrics();
-    int h = fm.height() + QMAX( 2, fm.leading() );
+    int h = fm.height() + QMAX (2, fm.leading());
     int w = fm.maxWidth();
     int m = frameWidth() * 2;
-    return QSize( w + m, h + m );
+    return QSize (w + m, h + m);
 }
 
 #if defined(Q_WS_X11)
@@ -233,18 +233,18 @@ QSize QIHotKeyEdit::minimumSizeHint() const
 // static
 void QIHotKeyEdit::languageChange(void)
 {
-    keyNames["Shift_L"]          = tr ("Left Shift");
-    keyNames["Shift_R"]          = tr ("Right Shift");
-    keyNames["Control_L"]        = tr ("Left Ctrl");
-    keyNames["Control_R"]        = tr ("Right Ctrl");
-    keyNames["Alt_L"]            = tr ("Left Alt");
-    keyNames["Alt_R"]            = tr ("Right Alt");
-    keyNames["Super_L"]          = tr ("Left WinKey");
-    keyNames["Super_R"]          = tr ("Right WinKey");
-    keyNames["Menu"]             = tr ("Menu key");
-    keyNames["ISO_Level3_Shift"] = tr ("Alt Gr");
-    keyNames["Caps_Lock"]        = tr ("Caps Lock");
-    keyNames["Scroll_Lock"]      = tr ("Scroll Lock");
+    keyNames ["Shift_L"]          = tr ("Left Shift");
+    keyNames ["Shift_R"]          = tr ("Right Shift");
+    keyNames ["Control_L"]        = tr ("Left Ctrl");
+    keyNames ["Control_R"]        = tr ("Right Ctrl");
+    keyNames ["Alt_L"]            = tr ("Left Alt");
+    keyNames ["Alt_R"]            = tr ("Right Alt");
+    keyNames ["Super_L"]          = tr ("Left WinKey");
+    keyNames ["Super_R"]          = tr ("Right WinKey");
+    keyNames ["Menu"]             = tr ("Menu key");
+    keyNames ["ISO_Level3_Shift"] = tr ("Alt Gr");
+    keyNames ["Caps_Lock"]        = tr ("Caps Lock");
+    keyNames ["Scroll_Lock"]      = tr ("Scroll Lock");
 }
 #endif
 
@@ -261,74 +261,80 @@ QString QIHotKeyEdit::keyName (int key)
 {
     QString name;
 
-    if ( !key ) {
+    if ( !key )
+    {
         name = tr (NoneSymbName);
-    } else {
-#if defined(Q_WS_WIN32)
-        // stupid MapVirtualKey doesn't distinguish between right and left
-        // vkeys, even under XP, despite that it stated in msdn. do it by hand.
+    }
+    else
+    {
+#if defined (Q_WS_WIN32)
+        /* stupid MapVirtualKey doesn't distinguish between right and left
+         * vkeys, even under XP, despite that it stated in msdn. do it by
+         * hand. */
         int scan;
-        switch( key ) {
+        switch (key)
+        {
             case VK_RSHIFT: scan = 0x36 << 16; break;
             case VK_RCONTROL: scan = (0x1D << 16) | (1 << 24); break;
             case VK_RMENU: scan = (0x38 << 16) | (1 << 24); break;
             default: scan = ::MapVirtualKey( key, 0 ) << 16;
         }
         TCHAR *str = new TCHAR[256];
-        if ( ::GetKeyNameText( scan, str, 256 ) )
-            name = QString::fromUcs2( str );
+        if (::GetKeyNameText (scan, str, 256))
+            name = QString::fromUcs2 (str);
         else
-            name = QString( "<key_%1>" ).arg( key );
+            name = QString (tr ("<key_%1>")).arg (key);
         delete[] str;
-#elif defined(Q_WS_X11)
+#elif defined (Q_WS_X11)
         char *sn = ::XKeysymToString( (KeySym) key );
-        if ( sn )
+        if (sn)
         {
-            if ( keyNames.contains(sn) )
-                name = keyNames[sn];
-            else
+            name = keyNames [sn];
+            if (name.isEmpty())
                 name = sn;
         }
         else
-            name = QString( tr ("<key_%1>") ).arg( key );
+            name = QString (tr ("<key_%1>")).arg (key);
 #elif defined(Q_WS_MAC)
-        UInt32 modMask = DarwinKeyCodeToDarwinModifierMask( key );
-        switch ( modMask ) {
+        UInt32 modMask = DarwinKeyCodeToDarwinModifierMask (key);
+        switch (modMask)
+        {
             case shiftKey:
             case optionKey:
             case controlKey:
             case cmdKey:
-                name = tr("Left ");
+                name = tr ("Left ");
                 break;
             case rightShiftKey:
             case rightOptionKey:
             case rightControlKey:
             case kEventKeyModifierRightCmdKeyMask:
-                name = tr("Right ");
+                name = tr ("Right ");
                 break;
             default:
-                AssertMsgFailedReturn(( "modMask=%#x\n", modMask ), QString());
+                AssertMsgFailedReturn (("modMask=%#x\n", modMask), QString());
         }
-        switch ( modMask ) {
+        switch (modMask)
+        {
             case shiftKey:
             case rightShiftKey:
-                name += QChar( kShiftUnicode );
+                name += QChar (kShiftUnicode);
                 break;
             case optionKey:
             case rightOptionKey:
-                name += QChar( kOptionUnicode );
+                name += QChar (kOptionUnicode);
                 break;
             case controlKey:
             case rightControlKey:
-                name += QChar( kControlUnicode );
+                name += QChar (kControlUnicode);
                 break;
             case cmdKey:
             case kEventKeyModifierRightCmdKeyMask:
-                name += QChar( kCommandUnicode );
+                name += QChar (kCommandUnicode);
                 break;
         }
 #else
-        name = QString( "<key_%1>" ).arg( key );
+        name = QString ("<key_%1>").arg (key);
 #endif
     }
 
