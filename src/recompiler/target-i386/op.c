@@ -494,12 +494,14 @@ void OPPROTO op_movl_A0_seg(void)
     if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
     }
+#if 0
     /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
     if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
         &&  !(env->eflags & VM_MASK)
         &&  env->segs[idx].selector == 0) {
         raise_exception(EXCP0D_GPF);
     }
+#endif
     A0 = (uint32_t)env->segs[idx].base;
     FORCE_RET();
 #else  /* !VBOX */
@@ -515,12 +517,14 @@ void OPPROTO op_addl_A0_seg(void)
     if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
     }
+#if 0
     /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
     if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
         &&  !(env->eflags & VM_MASK)
         &&  env->segs[idx].selector == 0) {
         raise_exception(EXCP0D_GPF);
     }
+#endif
     A0 = (uint32_t)(A0 + env->segs[idx].base);
     FORCE_RET();
 #else  /* !VBOX */
