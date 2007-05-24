@@ -299,13 +299,11 @@ static inline void pit_load_count(PITChannelState *s, int val)
     s->count = val;
     pit_irq_timer_update(s, s->count_load_time);
 
-    /* log the new rate if it's high enough. */
-    if (    (   s->mode == 2
-             || s->mode == 3)
-        &&  s->count < 0x10000
+    /* log the new rate (ch 0 only). */
+    if (    s->pTimerHC /* ch 0 */
         &&  s->cRelLogEntries++ < 32)
-        LogRel(("PIT: mode=%d count=%#x - %d.%02d Hz\n", s->mode, s->count,
-                PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
+        LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=0)\n", 
+                s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
 }
 
 /* return -1 if no transition will occur.  */
@@ -746,7 +744,12 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         SSMR3GetU64(pSSMHandle, &s->u64ReloadTS);
         SSMR3GetS64(pSSMHandle, &s->next_transition_time);
         if (s->CTXSUFF(pTimer))
+        {
             TMR3TimerLoad(s->CTXSUFF(pTimer), pSSMHandle);
+            LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n", 
+                    s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100, i));
+        }
+        pData->channels[0].cRelLogEntries = 0;
     }
 
     SSMR3GetS32(pSSMHandle, &pData->speaker_data_on);
