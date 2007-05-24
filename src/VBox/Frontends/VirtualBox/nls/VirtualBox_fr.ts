@@ -972,14 +972,14 @@ Indicateur périphériques USB</translation>
         <translation>Traitement des différences</translation>
     </message>
     <message>
-        <source>Unknown device %04hX:%04hX</source>
+        <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>Périphérique inconnu %04hX:%04hX</translation>
+        <translation>Périphérique inconnu %1:%2</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;ID Fabricant: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produit: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Révision: %04hX&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID Fabricant: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produit: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Révision: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>

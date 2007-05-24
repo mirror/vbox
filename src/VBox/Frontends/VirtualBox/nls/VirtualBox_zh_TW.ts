@@ -1278,14 +1278,14 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
         <translation>&lt;i&gt;無法存取&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Unknown device %04hX:%04hX</source>
+        <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>不明的裝置 %04hX:%04hX</translation>
+        <translation>不明的裝置 %1:%2</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;供應商 ID：%04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;產品 ID：%04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;版本：%04hX&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;供應商 ID：%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;產品 ID：%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;版本：%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
