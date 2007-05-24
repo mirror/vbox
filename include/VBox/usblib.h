@@ -292,14 +292,6 @@ VBOXDDU_DECL(int) usbLibCaptureDevice(USHORT usVendorId, USHORT usProductId, USH
 VBOXDDU_DECL(int) usbLibReleaseDevice(USHORT usVendorId, USHORT usProductId, USHORT usRevision, const char *pszAddress);
 
 
-/**
- * Validates and returns the device name used for CreateFile
- *
- * @returns device name pointer
- * @param pszAddress        Device address
- */
-VBOXDDU_DECL(const char *)usblibQueryDeviceAddress(const char *pszAddress);
-
 /** @} */
 #endif
 
