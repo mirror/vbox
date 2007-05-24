@@ -577,6 +577,10 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
         return VERR_INVALID_PARAMETER;
     }
 
+    /* Force readonly for images without base/diff consistency checking. */
+    if (uOpenFlags & VD_OPEN_FLAGS_INFO)
+        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+
     /* Set up image descriptor. */
     PVDIMAGE pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
     if (!pImage)
@@ -621,6 +625,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
          * base image or not, this info is derived here. Image 0 can be fixed
          * or normal, all others must be normal images. */
         if (    VBOX_SUCCESS(rc)
+            &&  !(uOpenFlags & VD_OPEN_FLAGS_INFO)
             &&  pDisk->cImages != 0
             &&  enmImageType != VD_IMAGE_TYPE_NORMAL)
             rc = VERR_VDI_INVALID_TYPE;
