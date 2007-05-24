@@ -830,8 +830,6 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
         s->gate = (i != 2);
         pit_load_count(s, 0);
     }
-/** @todo remove when #1589 is resolved. */
-pitInfo(pDevIns, DBGFR3InfoLogRelHlp(), NULL);
 }
 
 
