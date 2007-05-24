@@ -456,7 +456,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mouse_integration (true)
     , hostkey_pressed (false)
     , hostkey_alone (false)
-    , ignore_mainwnd_resize (false)
+    , ignore_mainwnd_resize (true)
     , mAutoresizeGuest (false)
     , mIsAdditionsActive (false)
     , mfNumLock (false)
@@ -787,6 +787,19 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
 void VBoxConsoleView::onFullscreenChange (bool /* on */)
 {
     /* Nothing to do here so far */
+}
+
+/**
+ *  Notify the console scroll-view about the console-window is opened.
+ */
+void VBoxConsoleView::onViewOpened()
+{
+    /* Variable <ignore_mainwnd_resize> is initially "true" to ignore QT
+     * initial resize event in case of auto-resize feature is on.
+     * Currently initial resize event is already processed, so switching
+     * the ignore_mainwnd_resize to "false" to process all further resize
+     * events as user resize events. */
+    ignore_mainwnd_resize = false;
 }
 
 //
@@ -2872,7 +2885,7 @@ void VBoxConsoleView::doResizeHint()
     }
 }
 
-/** 
+/**
  *  Sets the the minimum size restriction depending on the auto-resize feature
  *  state and the current rendering mode.
  *

@@ -90,6 +90,8 @@ public:
 
     void onFullscreenChange (bool on);
 
+    void onViewOpened();
+
     void fixModifierState (LONG *codes, uint *count);
 
 signals:
