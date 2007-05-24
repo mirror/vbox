@@ -32,10 +32,17 @@
 class Machine;
 class HostUSBDevice;
 
+/**
+ *  @note we cannot use VirtualBoxBaseWithTypedChildren <USBDeviceFilter> as a
+ *  base class, because we want a quick (map-based) way of validating
+ *  IUSBDeviceFilter pointers passed from outside as method parameters that
+ *  VirtualBoxBaseWithChildren::getDependentChild() gives us.
+ */
+
 class ATL_NO_VTABLE USBController :
-    public VirtualBoxBaseWithChildren,
-    public VirtualBoxSupportErrorInfoImpl<USBController, IUSBController>,
-    public VirtualBoxSupportTranslation<USBController>,
+    public VirtualBoxBaseWithChildrenNEXT,
+    public VirtualBoxSupportErrorInfoImpl <USBController, IUSBController>,
+    public VirtualBoxSupportTranslation <USBController>,
     public IUSBController
 {
 private:
@@ -43,44 +50,48 @@ private:
     struct Data
     {
         /* Constructor. */
-        Data() : m_fEnabled(FALSE) { }
+        Data() : mEnabled (FALSE) { }
 
         bool operator== (const Data &that) const
         {
-            return this == &that || m_fEnabled == that.m_fEnabled;
+            return this == &that || mEnabled == that.mEnabled;
         }
 
         /** Enabled indicator. */
-        BOOL                            m_fEnabled;
+        BOOL mEnabled;
     };
 
 public:
 
-    DECLARE_NOT_AGGREGATABLE(USBController)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (USBController)
+
+    DECLARE_NOT_AGGREGATABLE (USBController)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(USBController)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IUSBController)
+        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY (IUSBController)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (USBController)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *parent);
-    HRESULT init (Machine *parent, USBController *that);
-    HRESULT initCopy (Machine *parent, USBController *that);
+    HRESULT init (Machine *aParent);
+    HRESULT init (Machine *aParent, USBController *aThat);
+    HRESULT initCopy (Machine *aParent, USBController *aThat);
     void uninit();
 
     // IUSBController properties
-    STDMETHOD(COMGETTER(Enabled))(BOOL *a_pfEnabled);
-    STDMETHOD(COMSETTER(Enabled))(BOOL a_fEnabled);
-    STDMETHOD(COMGETTER(USBStandard))(USHORT *a_pusUSBStandard);
-    STDMETHOD(COMGETTER(DeviceFilters))(IUSBDeviceFilterCollection **aDevicesFilters);
+    STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(USBStandard)) (USHORT *aUSBStandard);
+    STDMETHOD(COMGETTER(DeviceFilters)) (IUSBDeviceFilterCollection **aDevicesFilters);
 
     // IUSBController methods
     STDMETHOD(CreateDeviceFilter) (INPTR BSTR aName, IUSBDeviceFilter **aFilter);
@@ -89,7 +100,7 @@ public:
 
     // public methods only for internal purposes
 
-    ComObjPtr <Machine, ComWeakRef> &parent() { return m_Parent; };
+    const ComObjPtr <Machine, ComWeakRef> &parent() { return mParent; };
 
     HRESULT loadSettings (CFGNODE aMachine);
     HRESULT saveSettings (CFGNODE aMachine);
@@ -100,7 +111,7 @@ public:
     void commit();
     void copyFrom (USBController *aThat);
 
-    const Backupable<Data> &data() { return m_Data; }
+    const Backupable<Data> &data() { return mData; }
 
     HRESULT onMachineRegistered (BOOL aRegistered);
 
@@ -129,17 +140,17 @@ private:
     void printList();
 
     /** Parent object. */
-    ComObjPtr<Machine, ComWeakRef>  m_Parent;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
     /** Peer object. */
-    ComObjPtr<USBController>        m_Peer;
+    const ComObjPtr <USBController> mPeer;
     /** Data. */
-    Backupable<Data>                m_Data;
+    Backupable <Data> mData;
 
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of Data
 
     typedef std::list <ComObjPtr <USBDeviceFilter> > DeviceFilterList;
-    Backupable <DeviceFilterList> m_DeviceFilters;
+    Backupable <DeviceFilterList> mDeviceFilters;
 };
 
 #endif //!____H_USBCONTROLLERIMPL
