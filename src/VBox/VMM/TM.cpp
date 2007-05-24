@@ -285,7 +285,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
                           pVM->tm.s.cTSCTicksPerSecond);
     else
     {
-        pVM->tm.s.fTSCUseRealTSC = pVM->tm.s.fMaybeUseOffsettedHostTSC =  false;
+        pVM->tm.s.fTSCUseRealTSC = pVM->tm.s.fMaybeUseOffsettedHostTSC = false;
         pVM->tm.s.fTSCVirtualized = true;
     }
 
