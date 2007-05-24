@@ -270,8 +270,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
         else
         {
             rc = VERR_NO_MEMORY;
-            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, 
-                              N_("Failed to allocate %d bytes of contiguous memory for the VM structure!\n"), 
+            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS,
+                              N_("Failed to allocate %d bytes of contiguous memory for the VM structure!\n"),
                               RT_ALIGN(sizeof(*pVM), PAGE_SIZE));
             AssertMsgFailed(("Failed to allocate %d bytes of contiguous memory for the VM structure!\n", RT_ALIGN(sizeof(*pVM), PAGE_SIZE)));
         }
@@ -1263,7 +1263,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
         }
 #endif
 #if 1 /* for debugging problems with the async GIP code on linux */
-        if (    g_pSUPGlobalInfoPage 
+        if (    g_pSUPGlobalInfoPage
             &&  g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_ASYNC_TSC)
         {
             RTLogRelPrintf("**** Async GIP (the values should be somewhat similar) ****\n");
@@ -1272,11 +1272,11 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
                 if (GipCopy.aCPUs[i].u64CpuHz != 0 && GipCopy.aCPUs[i].u64CpuHz < _4G)
                     RTLogRelPrintf("%d: u64CpuHz=%RU64Hz u32TransactionId=%#x u64TSC=%RX64 u64NanoTS=%RX64 cErrors=%RU32\n"
                                    "   au32TSCHistory={%RX32,%RX32,%RX32,%RX32, %RX32,%RX32,%RX32,%RX32} iTSCHistoryHead=%d\n",
-                                   i, 
+                                   i,
                                    GipCopy.aCPUs[i].u64CpuHz,
                                    GipCopy.aCPUs[i].u32TransactionId,
                                    GipCopy.aCPUs[i].u64TSC,
-                                   GipCopy.aCPUs[i].u64NanoTS, 
+                                   GipCopy.aCPUs[i].u64NanoTS,
                                    GipCopy.aCPUs[i].cErrors,
                                    GipCopy.aCPUs[i].au32TSCHistory[0],
                                    GipCopy.aCPUs[i].au32TSCHistory[1],
@@ -1289,7 +1289,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
                                    GipCopy.aCPUs[i].iTSCHistoryHead);
             RTLogRelPrintf("1ns steps: %RU32\n", RTTime1nsSteps());
         }
-#endif 
+#endif
         RTLogRelPrintf("************** End of Guest state at power off ***************\n");
     }
 
@@ -1430,8 +1430,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
     STAMR3Dump(pVM, "*");
 #else
+    LogRel(("************************* Statistics *************************\n"));
     STAMR3DumpToReleaseLog(pVM, "*");
-#endif 
+    LogRel(("********************* End of statistics **********************\n"));
+#endif
 
     /*
      * Destroy the VM components.
@@ -2577,7 +2579,7 @@ DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *p
     va_copy(va3, *pArgs);
     RTLogPrintfV(pszFormat, va3);
     va_end(va3);
-#endif 
+#endif
 
     /*
      * Make a copy of the message.
