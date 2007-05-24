@@ -197,12 +197,14 @@ typedef struct ATADevState {
     STAMPROFILE     StatFlushes;
 
     /** Enable passing through commands directly to the ATAPI drive. */
-    bool fATAPIPassthrough;
+    bool            fATAPIPassthrough;
     /** Number of errors we've reported to the release log.
      * This is to prevent flooding caused by something going horribly wrong.
      * this value against MAX_LOG_REL_ERRORS in places likely to cause floods
      * like the ones we currently seeing on the linux smoke tests (2006-11-10). */
-    uint32_t cErrors;
+    uint32_t        cErrors;
+    /** Timestamp of last started command. 0 if no command pending. */
+    uint64_t        u64CmdTS;
 
     /** Pointer to the attached driver's base interface. */
     HCPTRTYPE(PPDMIBASE)            pDrvBase;
@@ -3225,6 +3227,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             ataSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_IDLE_IMMEDIATE:
+            LogRel(("PIIX3 ATA: LUN#%d: aborting current command\n", s->iLUN));
             ataAbortCurrentCommand(s, false);
             break;
             /* ATAPI commands */
@@ -3243,6 +3246,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
         case ATA_DEVICE_RESET:
             if (!s->fATAPI)
                 goto abort_cmd;
+            LogRel(("PIIX3 ATA: LUN#%d: performing device RESET\n", s->iLUN));
             ataAbortCurrentCommand(s, true);
             break;
         case ATA_PACKET:
@@ -3537,9 +3541,16 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
     {
 #ifdef IN_RING3
         /* Software RESET low to high */
-        LogRel(("PIIX3 ATA: Ctl#%d: RESET, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",
+        uint32_t uCmdWait0 = -1, uCmdWait1 = -1;
+        uint64_t uNow = RTTimeNanoTS();
+        if (pCtl->aIfs[0].u64CmdTS)
+            uCmdWait0 = (pCtl->aIfs[0].u64CmdTS - uNow) / 1000;
+        if (pCtl->aIfs[1].u64CmdTS)
+            uCmdWait1 = (pCtl->aIfs[1].u64CmdTS - uNow) / 1000;
+        LogRel(("PIIX3 ATA: Ctl#%d: RESET, DevSel=%d AIOIf=%d CmdIf0=%#04x (%d usec ago) CmdIf1=%#04x (%d usec ago)\n",
                     ATACONTROLLER_IDX(pCtl), pCtl->iSelectedIf, pCtl->iAIOIf,
-                    pCtl->aIfs[0].uATARegCommand, pCtl->aIfs[1].uATARegCommand));
+                    pCtl->aIfs[0].uATARegCommand, uCmdWait0,
+                    pCtl->aIfs[1].uATARegCommand, uCmdWait1));
         pCtl->fReset = true;
         /* Everything must be done after the reset flag is set, otherwise
          * there are unavoidable races with the currently executing request
@@ -4073,6 +4084,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                 s->iBeginTransfer = pReq->u.t.iBeginTransfer;
                 s->iSourceSink = pReq->u.t.iSourceSink;
                 s->iIOBufferEnd = 0;
+                s->u64CmdTS = u64TS;
 
                 pCtl->fChainedTransfer = false;
 
@@ -4293,6 +4305,8 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
             case ATA_AIO_RESET_CLEARED:
                 pCtl->uAsyncIOState = ATA_AIO_NEW;
                 pCtl->fReset = false;
+                LogRel(("PIIX3 ATA: Ctl#%d: finished processing RESET\n",
+                        ATACONTROLLER_IDX(pCtl)));
                 for (uint32_t i = 0; i < RT_ELEMENTS(pCtl->aIfs); i++)
                 {
                     if (pCtl->aIfs[i].fATAPI)
@@ -4344,6 +4358,8 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
             u64TS = RTTimeNanoTS() - u64TS;
             uWait = u64TS / 1000;
             Log(("%s: Ctl#%d: LUN#%d finished I/O transaction in %d microseconds\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), pCtl->aIfs[pCtl->iAIOIf].iLUN, (uint32_t)(uWait)));
+            /* Mark command as finished. */
+            pCtl->aIfs[pCtl->iAIOIf].u64CmdTS = 0;
 
             /*
              * Release logging of command execution times depends on the
@@ -4352,10 +4368,10 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
              */
             if (pCtl->aIfs[pCtl->iAIOIf].uATARegCommand != ATA_PACKET)
             {
-                if (uWait > 10 * 1000 * 1000)
+                if (uWait > 8 * 1000 * 1000)
                 {
                     /*
-                     * Command took longer than 10 seconds. This is close
+                     * Command took longer than 8 seconds. This is close
                      * enough or over the guest's command timeout, so place
                      * an entry in the release log to allow tracking such
                      * timing errors (which are often caused by the host).
@@ -4993,6 +5009,7 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
     PCIATAState    *pData = PDMINS2DATA(pDevIns, PCIATAState *);
     bool            fVMLocked;
     uint64_t        u64Start;
+    PATACONTROLLER  pCtl;
     bool            fAllIdle = false;
 
     /* The only way to deal cleanly with the VM lock is to check whether
@@ -5015,7 +5032,8 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
         fAllIdle = true;
         for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts); i++)
         {
-            fAllIdle &= ataAsyncIOIsIdle(&pData->aCts[i], false);
+            pCtl = &pData->aCts[i];
+            fAllIdle &= ataAsyncIOIsIdle(pCtl, false);
             if (!fAllIdle)
                 break;
         }
@@ -5029,6 +5047,11 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
 
     if (fVMLocked)
         pDevIns->pDevHlp->pfnLockVM(pDevIns);
+
+    if (!fAllIdle)
+        LogRel(("PIIX3 ATA: Ctl#%d is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",
+                ATACONTROLLER_IDX(pCtl), pCtl->iSelectedIf, pCtl->iAIOIf,
+                pCtl->aIfs[0].uATARegCommand, pCtl->aIfs[1].uATARegCommand));
 
     return fAllIdle;
 }
