@@ -966,12 +966,12 @@
         <translation>快照部分</translation>
     </message>
     <message>
-        <source>Unknown device %04hX:%04hX</source>
+        <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>不可识别的设备 %04hX:%04hX</translation>
+        <translation>不可识别的设备 %1:%2</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation type="unfinished"></translation>
     </message>

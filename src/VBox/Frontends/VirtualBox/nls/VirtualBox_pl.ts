@@ -919,14 +919,14 @@
         <translation>Róznice</translation>
     </message>
     <message>
-        <source>Unknown device %04hX:%04hX</source>
+        <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>Nieznane urządzenie %04hX:%04hX</translation>
+        <translation>Nieznane urządzenie %1:%2</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;ID dostawcy: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID produktu: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Rewizja: %04hX&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID dostawcy: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID produktu: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Rewizja: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>

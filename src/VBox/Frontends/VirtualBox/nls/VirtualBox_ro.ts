@@ -986,14 +986,14 @@
         <translation>Diferenţiere</translation>
     </message>
     <message>
-        <source>Unknown device %04hX:%04hX</source>
+        <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>Dispozitiv necunoscut %04hX:%04hX</translation>
+        <translation>Dispozitiv necunoscut %1:%2</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;ID Vânzător: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produs: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revizie: %04hX&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID Vânzător: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produs: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revizie: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>

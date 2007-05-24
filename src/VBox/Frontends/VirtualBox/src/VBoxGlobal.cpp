@@ -880,9 +880,10 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
     QString m = aDevice.GetManufacturer();
     QString p = aDevice.GetProduct();
     if (m.isEmpty() && p.isEmpty())
-        details += QString().sprintf (
-            tr ("Unknown device %04hX:%04hX", "USB device details"),
-            aDevice.GetVendorId(), aDevice.GetProductId());
+        details +=
+            tr ("Unknown device %1:%2", "USB device details")
+            .arg (QString().sprintf ("%04hX", aDevice.GetVendorId()))
+            .arg (QString().sprintf ("%04hX", aDevice.GetProductId()));
     else
     {
         if (!m.isEmpty())
@@ -902,12 +903,13 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
  */
 QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
 {
-    QString tip = QString().sprintf (
-        tr ("<nobr>Vendor ID: %04hX</nobr><br>"
-            "<nobr>Product ID: %04hX</nobr><br>"
-            "<nobr>Revision: %04hX</nobr>", "USB device tooltip"),
-            aDevice.GetVendorId(), aDevice.GetProductId(),
-            aDevice.GetRevision());
+    QString tip =
+        tr ("<nobr>Vendor ID: %1</nobr><br>"
+            "<nobr>Product ID: %2</nobr><br>"
+            "<nobr>Revision: %3</nobr>", "USB device tooltip")
+        .arg (QString().sprintf ("%04hX", aDevice.GetVendorId()))
+        .arg (QString().sprintf ("%04hX", aDevice.GetProductId()))
+        .arg (QString().sprintf ("%04hX", aDevice.GetRevision()));
 
     QString ser = aDevice.GetSerialNumber();
     if (!ser.isEmpty())
