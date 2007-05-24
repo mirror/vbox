@@ -359,7 +359,7 @@ typedef struct VM
         char        padding[3584];                                  /* multiple of 32 */
 #else
         char        padding[HC_ARCH_BITS == 32 ? 3424 : 3552];      /* multiple of 32 */
-#endif 
+#endif
     } cpum;
 
     /** VMM part. */
@@ -512,7 +512,7 @@ typedef struct VM
 #ifdef __VMInternal_h__
         struct VMINT    s;
 #endif
-        char        padding[672];       /* multiple of 32 */
+        char        padding[768];       /* multiple of 32 */
     } vm;
 
     /** REM part. */
