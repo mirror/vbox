@@ -230,7 +230,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
 {
     PDRVNAT pData = (PDRVNAT)pvUser;
 
-    LogFlow(("slirp_output BEGING %x %d\n", pu8Buf, cb));
+    LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pData=%p)\n"
           "%.*Vhxd\n",
           pu8Buf, cb, pData,
