@@ -1450,7 +1450,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
             "                 offVirtualSync=%016RX64\n"
             "          offVirtualSyncGivenUp=%016RX64\n"
             "      u64VirtualSyncCatchUpPrev=%016RX64\n"
-            "        u64VirtualSyncStoppedTS=%016RX64\n"
+            "        u64VirtualSyncStoppedTS=%016RX64 %s by %#d (cur %#d)\n"
             "u32VirtualSyncCatchUpPercentage=%08RX32\n"
             "            fVirtualSyncTicking=%RTbool (prev=%RTbool)\n"
             "            fVirtualSyncCatchUp=%RTbool (prev=%RTbool)\n",
@@ -1465,7 +1465,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
             pVM->tm.s.offVirtualSync,
             pVM->tm.s.offVirtualSyncGivenUp,
             pVM->tm.s.u64VirtualSyncCatchUpPrev,
-            pVM->tm.s.u64VirtualSyncStoppedTS,
+            pVM->tm.s.u64VirtualSyncStoppedTS, pVM->tm.s.fVirtualSyncStoppedInGC ? "GC" : "R3", pVM->tm.s.u8VirtualSyncStoppedApicId, ASMGetApicId(),
             pVM->tm.s.u32VirtualSyncCatchUpPercentage,
             pVM->tm.s.fVirtualSyncTicking, fWasTicking, 
             pVM->tm.s.fVirtualSyncCatchUp, fWasInCatchup));
@@ -1633,9 +1633,36 @@ if (RT_UNLIKELY(offSlack & BIT64(63)))  LogRel(("TM: pVM->tm.s.u64VirtualSync=%#
             else
             {
                 /* don't bother */
-if (offLag & BIT64(63)) //debugging - remove.
-    LogRel(("TM: offLag is negative! offLag=%RI64 (%#RX64) offNew=%#RX64 u64Elapsed=%#RX64 offSlack=%#RX64 u64VirtualNow2=%#RX64 u64VirtualNow=%#RX64 u64VirtualSync=%#RX64 offVirtualSyncGivenUp=%#RX64 u64Now=%#RX64 u64Max=%#RX64\n", 
-            offLag, offLag, offNew, u64Elapsed, offSlack, u64VirtualNow2, u64VirtualNow, pVM->tm.s.u64VirtualSync, pVM->tm.s.offVirtualSyncGivenUp, u64Now, u64Max));
+//debugging - remove - start
+static unsigned s_cRelLogEntries = 0;
+if (offLag > _1P && s_cRelLogEntries++ < 128)
+    LogRel(("TM: offLag=%RI64 is way too large/negative! Please add this to #1414.\n"
+            "                 offLag=%016RX64\n"
+            "                 offNew=%016RX64\n"
+            "             u64Elapsed=%016RX64\n"
+            "               offSlack=%016RX64\n"
+            "         u64VirtualNow2=%016RX64\n"
+            "          u64VirtualNow=%016RX64\n"
+            "         u64VirtualSync=%016RX64\n"
+            "         offVirtualSync=%016RX64\n"
+            "  offVirtualSyncGivenUp=%016RX64\n"
+            "                 u64Now=%016RX64\n"
+            "                 u64Max=%016RX64\n" 
+            "u64VirtualSyncStoppedTS=%016RX64 %s by %#d (cur %#d)\n",
+            offLag,
+            offLag,
+            offNew,
+            u64Elapsed,
+            offSlack,
+            u64VirtualNow2,
+            u64VirtualNow,
+            pVM->tm.s.u64VirtualSync,
+            pVM->tm.s.offVirtualSync,
+            pVM->tm.s.offVirtualSyncGivenUp,
+            u64Now,
+            u64Max,
+            pVM->tm.s.u64VirtualSyncStoppedTS, pVM->tm.s.fVirtualSyncStoppedInGC ? "GC" : "R3", pVM->tm.s.u8VirtualSyncStoppedApicId, ASMGetApicId()));
+//debugging - remove - end
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting);
                 ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
                 Log4(("TM: %RU64/%RU64: give up\n", u64VirtualNow2 - offNew, offLag));

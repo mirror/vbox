@@ -264,7 +264,15 @@ const uint64_t u64VirtualNow = u64;
             u64 = u64Expire;
             ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64);
             ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
+//debugging - remove this later - start
 pVM->tm.s.u64VirtualSyncStoppedTS = u64VirtualNow;
+#ifdef IN_GC
+pVM->tm.s.fVirtualSyncStoppedInGC = true;
+#else
+pVM->tm.s.fVirtualSyncStoppedInGC = false;
+#endif 
+pVM->tm.s.u8VirtualSyncStoppedApicId = ASMGetApicId();
+//debugging - remove this later - end
             if (    fCheckTimers
                 &&  !VM_FF_ISSET(pVM, VM_FF_TIMER))
             {
