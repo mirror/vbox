@@ -826,31 +826,19 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create timers, arm them, register I/O Ports and save state.
      */
-#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pData->pPeriodicTimerHC);
-#else
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pData->pPeriodicTimerHC);
-#endif
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
-#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond, "MC146818 RTC/CMOS - Second", &pData->pSecondTimerHC);
-#else
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerSecond, "MC146818 RTC/CMOS - Second", &pData->pSecondTimerHC);
-#endif
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
         return rc;
     }
-#ifdef VBOX_WITH_VIRTUAL_SYNC_TIMERS
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2, "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2HC);
-#else
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, rtcTimerSecond2, "MC146818 RTC/CMOS - Second2", &pData->pSecondTimer2HC);
-#endif
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
