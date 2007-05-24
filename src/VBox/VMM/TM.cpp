@@ -222,6 +222,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     LogFlow(("TMR3Init: HCPhysGIP=%RHp at %VGv\n", HCPhysGIP, pVM->tm.s.pvGIPGC));
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
+
     /*
      * Get our CFGM node, create it if necessary.
      */
@@ -1632,6 +1633,9 @@ if (RT_UNLIKELY(offSlack & BIT64(63)))  LogRel(("TM: pVM->tm.s.u64VirtualSync=%#
             else
             {
                 /* don't bother */
+if (offLag & BIT64(63)) //debugging - remove.
+    LogRel(("TM: offLag is negative! offLag=%RI64 (%#RX64) offNew=%#RX64 u64Elapsed=%#RX64 offSlack=%#RX64 u64VirtualNow2=%#RX64 u64VirtualNow=%#RX64 u64VirtualSync=%#RX64 offVirtualSyncGivenUp=%#RX64 u64Now=%#RX64 u64Max=%#RX64\n", 
+            offLag, offLag, offNew, u64Elapsed, offSlack, u64VirtualNow2, u64VirtualNow, pVM->tm.s.u64VirtualSync, pVM->tm.s.offVirtualSyncGivenUp, u64Now, u64Max));
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting);
                 ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
                 Log4(("TM: %RU64/%RU64: give up\n", u64VirtualNow2 - offNew, offLag));
