@@ -456,9 +456,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     /* Check additions version */
                     pData->fu32AdditionsOk = VBOX_GUEST_ADDITIONS_VERSION_OK(pData->guestInfo.additionsVersion);
 
-                    LogRel(("Guest Additions information report:\t"
-                            "    additionsVersion = 0x%08X\t"
-                            "    osType = 0x%08X\n",
+                    LogRel(("Guest Additions information report: additionsVersion = 0x%08X  osType = 0x%08X\n",
                             pData->guestInfo.additionsVersion,
                             pData->guestInfo.osType));
                     pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
