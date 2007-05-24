@@ -3467,7 +3467,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
@@ -3651,23 +3651,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>Zeigt die Datei, die als Abbild für virtuelle CD/DVD-Laufwerke eingebunden werden soll und erlaubt die schnelle Auswahl eines anderen Abbilds.</translation>
+        <translation>Zeigt die Datei, die als Abbild für virtuelle CD/DVD-Laufwerke eingebunden werden soll und erlaubt die Auswahl eines anderen Abbilds.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bindet das angegebene Abbild als virtuelle Diskette ein.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Datei, die als Abbild f�r eine virtuelle Diskette eingebunden werden soll und erlaubt die Auswahl eines anderen Abbildes.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert den virtuellen PCI Audioadapter der den angegebenen Treiber verwendet, um mit dem Audioadapter des Hosts zu kommunizieren.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol) über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
