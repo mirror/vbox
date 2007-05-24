@@ -277,6 +277,16 @@ VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
  */
 VBOXDDU_DECL(int) usbLibCaptureDevice(USHORT usVendorId, USHORT usProductId, USHORT usRevision);
 
+/**
+ * Release specified USB device to the host.
+ *
+ * @returns VBox status code
+ * @param usVendorId        Vendor id
+ * @param usProductId       Product id
+ * @param usRevision        Revision
+ */
+VBOXDDU_DECL(int) usbLibReleaseDevice(USHORT usVendorId, USHORT usProductId, USHORT usRevision);
+
 /** @} */
 #endif
 
