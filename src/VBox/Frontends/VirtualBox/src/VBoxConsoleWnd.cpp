@@ -1059,6 +1059,9 @@ void VBoxConsoleWnd::finalizeOpenView()
 {
     LogFlowFuncEnter();
 
+    /* Notify the console scroll-view about the console-window is opened. */
+    console->onViewOpened();
+
     bool saved = machine_state == CEnums::Saved;
 
     CMachine cmachine = csession.GetMachine();
