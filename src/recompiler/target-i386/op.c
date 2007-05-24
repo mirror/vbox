@@ -494,7 +494,7 @@ void OPPROTO op_movl_A0_seg(void)
     if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
     }
-#if 0
+#if 0 /* breaks Solaris */
     /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
     if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
         &&  !(env->eflags & VM_MASK)
@@ -517,7 +517,7 @@ void OPPROTO op_addl_A0_seg(void)
     if (env->segs[idx].newselector && !(env->eflags & VM_MASK)) {
         sync_seg(env, idx, env->segs[idx].newselector);
     }
-#if 0
+#if 0 /* breaks Solaris */
     /* Loading a null selector into a segment register is valid, but using it is most definitely not! */
     if (    (env->cr[0] & (CR0_PE_MASK|CR0_PG_MASK)) == (CR0_PE_MASK|CR0_PG_MASK)
         &&  !(env->eflags & VM_MASK)
