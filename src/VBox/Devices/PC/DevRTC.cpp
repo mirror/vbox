@@ -138,6 +138,9 @@ struct RTCState {
     PDMRTCREG       RtcReg;
     /** The RTC device helpers. */
     HCPTRTYPE(PCPDMRTCHLP) pRtcHlpHC;
+    /** Number of release log entries. Used to prevent floading. */
+    uint32_t        cRelLogEntries;
+    uint32_t        alignment;
 };
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -165,8 +168,12 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
         TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
 
+        if (s->cRelLogEntries++ < 64)
+            LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
     } else {
         TMTimerStop(s->CTXSUFF(pPeriodicTimer));
+        if (s->cRelLogEntries++ < 64)
+            LogRel(("RTC: stopped the periodic timer\n"));
     }
 }
 
@@ -475,6 +482,7 @@ static void rtc_save(QEMUFile *f, void *opaque)
     qemu_put_be64s(f, &s->next_second_time);
     qemu_put_timer(f, s->CTXSUFF(pSecondTimer));
     qemu_put_timer(f, s->CTXSUFF(pSecondTimer2));
+
 }
 
 static int rtc_load(QEMUFile *f, void *opaque, int version_id)
@@ -502,6 +510,18 @@ static int rtc_load(QEMUFile *f, void *opaque, int version_id)
     qemu_get_be64s(f, (uint64_t *)&s->next_second_time);
     qemu_get_timer(f, s->CTXSUFF(pSecondTimer));
     qemu_get_timer(f, s->CTXSUFF(pSecondTimer2));
+
+    int period_code = s->cmos_data[RTC_REG_A] & 0x0f;
+    if (    period_code != 0 
+        &&  (s->cmos_data[RTC_REG_B] & REG_B_PIE)) {
+        if (period_code <= 2)
+            period_code += 7;
+        int period = 1 << (period_code - 1);
+        LogRel(("RTC: period=%#x (%d) %u Hz (restore)\n", period, period, _32K / period));
+    } else {
+        LogRel(("RTC: stopped the periodic timer (restore)\n"));
+    }
+    s->cRelLogEntries = 0;
     return 0;
 }
 #endif /* IN_RING3 */
