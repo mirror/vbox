@@ -6,8 +6,11 @@
 #define BMP_HEADER_OS22  64
 #define BMP_HEADER_WIN3  40
 
-#define F12_SCAN_CODE  0x86
-#define F12_WAIT_TIME  3 * 1000 /* Milliseconds, used only if logo disabled */
+#define WAIT_HZ         64
+#define WAIT_MS         16
+
+#define F12_SCAN_CODE   0x86
+#define F12_WAIT_TIME   (3 * WAIT_HZ)   /* 3 seconds. Used only if logo disabled. */
 
 typedef struct
 {
@@ -126,7 +129,7 @@ Bit8u F12BootText[] = {
 
 static unsigned char get_mode();
 static void          set_mode();
-static Bit8u         wait(ms);
+static Bit8u         wait(ticks, stop_on_key);
 static void          write_pixel();
 
 /**
@@ -230,13 +233,16 @@ Bit8u get_keystroke()
 void wait_init()
 {
     // The default is 18.2 ticks per second (~55ms tick interval).
-    // Set the timer to 1ms ticks (65536 / (Hz / 18.2)).
+    // Set the timer to 16ms ticks (64K / (Hz / (PIT_HZ / 64K)) = count).
+    // 0x10000 / (1000 / (1193182 / 0x10000)) = 1193 (0x04a9)
+    // 0x10000 / ( 128 / (1193182 / 0x10000)) = 9321 (0x2469)
+    // 0x10000 / (  64 / (1193182 / 0x10000)) = 18643 (0x48d3)
 ASM_START
     mov al, #0x34 ; timer0: binary count, 16bit count, mode 2
     out 0x43, al
-    mov al, #0xA9 ; Low byte
+    mov al, #0xd3 ; Low byte - 64Hz
     out 0x40, al
-    mov al, #0x04 ; High byte
+    mov al, #0x48 ; High byte - 64Hz
     out 0x40, al
 ASM_END
 }
@@ -256,7 +262,7 @@ ASM_START
 
     /*
      * Reinitialize the tick and rollover counts since we've
-     * screwed them up by running the timer at 1000HZ for a while.
+     * screwed them up by running the timer at WAIT_HZ for a while.
      */
     pushad
     push ds
@@ -270,14 +276,16 @@ ASM_END
 }
 
 /**
- * Waits (sleeps) for the given number of milliseconds.
+ * Waits (sleeps) for the given number of ticks.
  * Checks for keystroke.
  *
  * @returns BIOS scan code if available, 0 if not.
- * @param   ms  Number of milliseconds to sleep.
+ * @param   ticks       Number of ticks to sleep.
+ * @param   stop_on_key Whether to stop immediately upon keypress.
  */
-Bit8u wait(ms)
-  Bit16u ms;
+Bit8u wait(ticks, stop_on_key)
+  Bit16u ticks;
+  Bit8u stop_on_key;
 {
     long ticks_to_wait, delta;
     Bit32u prev_ticks, t;
@@ -291,7 +299,7 @@ ASM_START
     pushf
     sti
 ASM_END
-    ticks_to_wait = ms;
+    ticks_to_wait = ticks;
     prev_ticks = read_dword(0x0, 0x46c);
     do
     {
@@ -312,6 +320,8 @@ ASM_END
         {
             scan_code = get_keystroke();
             bios_printf(BIOS_PRINTF_INFO, "Key pressed: %x\n", scan_code);
+            if (stop_on_key)
+                return scan_code;
         }
     } while (ticks_to_wait > 0);
 ASM_START
@@ -470,7 +480,7 @@ Bit8u fade_in(palette_seg, palette_size)
 
             *palette++;
         }
-        scode = wait(15);
+        scode = wait(16 / WAIT_MS, 0);
         if (scode)
             scan_code = scode;
     }
@@ -515,7 +525,7 @@ Bit8u fade_out(palette_seg, palette_size)
 
             *palette++;
         }
-        scode = wait(15);
+        scode = wait(16 / WAIT_MS, 0);
         if (scode)
             scan_code = scode;
     }
@@ -972,7 +982,7 @@ show_bmp:
         }
 
         // Wait (interval in milliseconds)
-        scode = wait(logo_time);
+        scode = wait(logo_time / WAIT_MS, 0);
         if (scode && scan_code != F12_SCAN_CODE)
             scan_code = scode;
 
@@ -1030,12 +1040,7 @@ done:
             if ( scan_code != F12_SCAN_CODE )
             {
                 // Wait for timeout or keystroke
-                for (i = 0; i < F12_WAIT_TIME; i++)
-                {
-                    scan_code = wait(1);
-                    if (scan_code)
-                        break;
-                }
+                scan_code = wait(F12_WAIT_TIME, 1);
             }
         }
 
@@ -1079,12 +1084,10 @@ done:
             printf(" 0) Continue booting\n");
 
             // Wait for keystroke
-            for (;;)
+            do
             {
-                scan_code = wait(1);
-                if (scan_code)
-                    break;
-            }
+                scan_code = wait(WAIT_HZ, 1);
+            } while (scan_code == 0);
 
             // Change first boot device code to selected one
             if (scan_code > 0x02 && scan_code <= 0x05)
@@ -1119,7 +1122,7 @@ void delay_boot(secs)
     for (i = secs; i > 0; i--)
     {
         printf(" %d", i);
-        wait(1000);
+        wait(WAIT_HZ, 0);
     }
     printf("\n");
     // Restore PIT ticks
