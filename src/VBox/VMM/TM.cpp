@@ -201,11 +201,9 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].u64Expire           = INT64_MAX;
 
     /*
-     * We indirectly - thru RTTimeNanoTS and RTTimeMilliTS - use the global
-     * info page (GIP) for both the virtual and the real clock. By mapping
-     * the GIP into guest context we can get just as accurate time even there.
-     * All that's required is that the g_pSUPGlobalInfoPage symbol is available
-     * to the GC Runtime.
+     * We directly use the GIP to calculate the virtual time. We map the
+     * the GIP into the guest context so we can do this calculation there
+     * as well and save costly world switches.
      */
     pVM->tm.s.pvGIPR3 = (void *)g_pSUPGlobalInfoPage;
     AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_INTERNAL_ERROR);
@@ -222,6 +220,12 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     LogFlow(("TMR3Init: HCPhysGIP=%RHp at %VGv\n", HCPhysGIP, pVM->tm.s.pvGIPGC));
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
+    /* Check assumptions made in TMAllVirtual.cpp about the GIP update interval. */
+    if (    g_pSUPGlobalInfoPage->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+        &&  g_pSUPGlobalInfoPage->u32UpdateIntervalNS >= 250000000 /* 0.25s */)
+        return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                          N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)\n"),
+                          g_pSUPGlobalInfoPage->u32UpdateIntervalNS, g_pSUPGlobalInfoPage->u32UpdateHz);
 
     /*
      * Get our CFGM node, create it if necessary.
@@ -415,10 +419,13 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-#ifdef VBOX_WITH_STATISTICS
     /*
      * Register statistics.
      */
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.c1nsVirtualRawSteps,   STAMTYPE_U32, "/TM/1nsSteps",    STAMUNIT_OCCURENCES,      "Virtual time 1ns steps (due to TSC / GIP variations)");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.cVirtualRawBadRawPrev, STAMTYPE_U32, "/TM/BadPrevTime", STAMUNIT_OCCURENCES,      "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+
+#ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,          STAMTYPE_PROFILE,       "/TM/DoQueues",         STAMUNIT_TICKS_PER_CALL,    "Profiling timer TMR3TimerQueuesDo.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueuesSchedule,  STAMTYPE_PROFILE_ADV,   "/TM/DoQueues/Schedule",STAMUNIT_TICKS_PER_CALL,    "The scheduling part.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueuesRun,       STAMTYPE_PROFILE_ADV,   "/TM/DoQueues/Run",     STAMUNIT_TICKS_PER_CALL,    "The run part.");
@@ -572,7 +579,7 @@ static uint64_t tmR3CalibrateTSC(void)
         {
             if (tmR3HasFixedTSC())
                 /* Sleep a bit to get a more reliable CpuHz value. */
-                RTThreadSleep(32);              
+                RTThreadSleep(32);
             else
             {
                 /* Spin for 40ms to try push up the CPU frequency and get a more reliable CpuHz value. */
@@ -1455,7 +1462,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
             "            fVirtualSyncTicking=%RTbool (prev=%RTbool)\n"
             "            fVirtualSyncCatchUp=%RTbool (prev=%RTbool)\n",
             u64Now,
-            u64Max, 
+            u64Max,
             pNext->u64Expire,
             pVM->tm.s.u64VirtualSync,
             u64VirtualNow,
@@ -1467,7 +1474,7 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
             pVM->tm.s.u64VirtualSyncCatchUpPrev,
             pVM->tm.s.u64VirtualSyncStoppedTS,
             pVM->tm.s.u32VirtualSyncCatchUpPercentage,
-            pVM->tm.s.fVirtualSyncTicking, fWasTicking, 
+            pVM->tm.s.fVirtualSyncTicking, fWasTicking,
             pVM->tm.s.fVirtualSyncCatchUp, fWasInCatchup));
     Assert(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
     Assert(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
@@ -1634,7 +1641,7 @@ if (RT_UNLIKELY(offSlack & BIT64(63)))  LogRel(("TM: pVM->tm.s.u64VirtualSync=%#
             {
                 /* don't bother */
 if (offLag & BIT64(63)) //debugging - remove.
-    LogRel(("TM: offLag is negative! offLag=%RI64 (%#RX64) offNew=%#RX64 u64Elapsed=%#RX64 offSlack=%#RX64 u64VirtualNow2=%#RX64 u64VirtualNow=%#RX64 u64VirtualSync=%#RX64 offVirtualSyncGivenUp=%#RX64 u64Now=%#RX64 u64Max=%#RX64\n", 
+    LogRel(("TM: offLag is negative! offLag=%RI64 (%#RX64) offNew=%#RX64 u64Elapsed=%#RX64 offSlack=%#RX64 u64VirtualNow2=%#RX64 u64VirtualNow=%#RX64 u64VirtualSync=%#RX64 offVirtualSyncGivenUp=%#RX64 u64Now=%#RX64 u64Max=%#RX64\n",
             offLag, offLag, offNew, u64Elapsed, offSlack, u64VirtualNow2, u64VirtualNow, pVM->tm.s.u64VirtualSync, pVM->tm.s.offVirtualSyncGivenUp, u64Now, u64Max));
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting);
                 ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
