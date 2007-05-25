@@ -2823,7 +2823,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>online)</source>
         <comment>Snapshot details</comment>
-        <translation>с работаюшей машины)</translation>
+        <translation>с работающей машины)</translation>
     </message>
     <message>
         <source>offline)</source>
