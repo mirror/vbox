@@ -279,9 +279,7 @@
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;attached&amp;nbsp;USB&amp;nbsp;devices&lt;br&gt;%1&lt;/qt&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;qt&gt;Indique&amp;nbsp;l´activité&amp;nbsp;des&amp;nbsp;périphériques&amp;nbsp;USB&lt;br&gt;&lt;%1&gt;&lt;/qt&gt;
-
-Indicateur périphériques USB</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l´activité des périphériques USB&lt;br&gt;%1&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;not attached&lt;/b&gt;]&lt;/nobr&gt;</source>
@@ -369,7 +367,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>Fermer (&amp;C)...</translation>
+        <translation>&amp;Fermer...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
@@ -530,7 +528,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;indicateu&amp;nbsp;d&apos;activité&amp;nbsp;sur&amp;nbsp;la&amp;nbsp;disquette&lt;br&gt;&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;de&amp;nbsp;la&amp;nbsp;disquette&lt;br&gt;&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
@@ -571,7 +569,7 @@ Indicateur périphériques USB</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
-        <translation>Indique si l&apos;écran à distance (serveur VRDP) est activé (&lt;img src=vrdp_16px.png/&gt;)ou désactivé  (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
+        <translation>Indique si l&apos;écran à distance (serveur VRDP) est activé (&lt;img src=vrdp_16px.png/&gt;) ou désactivé  (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
@@ -628,54 +626,54 @@ Indicateur périphériques USB</translation>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indique&amp;nbsp;l&apos;&amp;nbsp;activité&amp;nbsp;sur&amp;nbsp;les&amp;nbsp;l&apos;interfaces&amp;nbsp;réseau</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptateur %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>connecté</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>déconnecté</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tous les adaptateurs réseau sont désactivés&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adaptateur réseau</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Adaptateur %1</translation>
+        <translation>Adaptateur %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Installer le lecteur de disquette choisi</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Installer le lecteur CD/DVD choisi</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Déconnecter le cable de l&apos;adaptateur réseau virtuel</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Connecter le cable de l&apos;adaptateur virtuel réseau sélectionné</translation>
     </message>
 </context>
 <context>
@@ -1238,7 +1236,7 @@ Indicateur périphériques USB</translation>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>Fermé</translation>
+        <translation>Fermée</translation>
     </message>
     <message>
         <source>Open</source>
@@ -2369,8 +2367,8 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation client  soutient  &lt;b&gt;l&apos;intégration du pointeur de souris&lt;/b&gt;. 
-Ceci signifie que vous n&apos;avez pas besoin de &lt;i&gt;capturer&lt;/i&gt; le pointeur de souris pour pouvoir l&apos;employer dans votre système d*exploitation client -- toutes les actions de la souris que vous effectuez quand le pointeur de la souris est au-dessus de l&apos;affichage de la machine virtuelle sont traités par le système d&apos;exploitation client. Si la souris est capturée, elle sera automatiquement libérée.&lt;/p&gt;
-&lt;p&gt;L&apos;icône de souris de la barre se statut predra l&apos;apparence suivante &lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;afin de vous signaler quel&apos;intégration est siutenue et active.&lt;/p&gt;
+Ceci signifie que vous n&apos;avez pas besoin de &lt;i&gt;capturer&lt;/i&gt; le pointeur de souris pour pouvoir l&apos;employer dans votre système d*exploitation client -- toutes les actions de la souris que vous effectuez quand le pointeur de la souris est au-dessus de l&apos;affichage de la machine virtuelle sont traitées par le système d&apos;exploitation client. Si la souris est capturée, elle sera automatiquement libérée.&lt;/p&gt;
+&lt;p&gt;L&apos;icône de souris de la barre se statut predra l&apos;apparence suivante &lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;afin de vous signaler quel&apos;intégration est soutenue et active.&lt;/p&gt;
 &lt;p&gt;Quelques applications peuvent fonctionner incorrectement  en mode d&apos;intégration de pointeur de souris. Vous pouvez toujours activer ou désactiver ce mode en  choisissant l&apos;action correspondante à partir de la barre de menu.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2384,7 +2382,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un ou plusieurs des disques durs virtuels, CD/DVD ou disquette affectés ne sonz pas accessiblea. En conséquence, vous ne pourrez pas utiliser les machines virtuelles qui emploient ces médias jusqu&apos;à ce qu&apos;ils soient accessibles.&lt;/p&gt;&lt;p&gt;Actionnez &lt;b&gt;OK&lt;/b&gt; pour ouvrir le dialogue de gestion des disques et pour voir quels sont les médias inaccessibles, ou la pressez &lt;b&gt;Ignorer&lt;/b&gt; pour ignorer ce message.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Un ou plusieurs des disques durs virtuels, CD/DVD ou disquette affectés ne sonz pas accessibles. En conséquence, vous ne pourrez pas utiliser les machines virtuelles qui emploient ces médias jusqu&apos;à ce qu&apos;ils soient accessibles.&lt;/p&gt;&lt;p&gt;Actionnez &lt;b&gt;OK&lt;/b&gt; pour ouvrir le dialogue de gestion des disques et pour voir quels sont les médias inaccessibles, ou la pressez &lt;b&gt;Ignorer&lt;/b&gt; pour ignorer ce message.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -3453,7 +3451,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>Indique si le cable de l&apos;adaptaterur virtuel de réseau relié lors du lancement de la machine virtuelle.</translation>
+        <translation>Indique si le cable de l&apos;adaptateur virtuel de réseau est relié lors du lancement de la machine virtuelle.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
@@ -3789,7 +3787,7 @@ pour la créer ou pour attacher un disque dur virtuel.</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Installe le lecteur de disquette d l&apos;hôte sur la disquette virtuelle du client.</translation>
+        <translation>Installe le lecteur de disquette de l&apos;hôte sur la disquette virtuelle du client.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to
@@ -3806,7 +3804,7 @@ the virtual machine.</source>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>Installe l&apos;image disquete sur la disquette virtuelle.</translation>
+        <translation>Installe l&apos;image disquette sur la disquette virtuelle.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select
@@ -3819,7 +3817,7 @@ a Floppy image to mount.</source>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>&amp;Lecteur Host CD/DVD</translation>
+        <translation>&amp;Lecteur  CD/DVD hôte</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>

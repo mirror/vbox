@@ -4,27 +4,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="unfinished">Chinese</translation>
+        <translation>简体中文</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="unfinished">China</translation>
+        <translation>中国</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="unfinished">Chinese</translation>
+        <translation>Chinese</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="unfinished">China</translation>
+        <translation>China</translation>
     </message>
     <message>
         <source>InnoTek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="unfinished">victor</translation>
+        <translation>Victor Wang</translation>
     </message>
 </context>
 <context>
@@ -47,11 +47,11 @@
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
+        <translation>向上移动所选启动设备.</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
+        <translation>向下移动所选启动设备.</translation>
     </message>
 </context>
 <context>
@@ -129,7 +129,7 @@
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
+        <translation>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -184,31 +184,31 @@
     </message>
     <message>
         <source>Folder Path</source>
-        <translation type="unfinished"></translation>
+        <translation>文件夹路径</translation>
     </message>
     <message>
         <source>Folder Name</source>
-        <translation type="unfinished"></translation>
+        <translation>文件夹名称</translation>
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示共享文件夹所在的系统路径.</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished"></translation>
+        <translation>显示共享文件夹的名称(虚拟电脑内的系统需要通过该名称来访问本文件夹).</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开用于选择文件夹的对话框.</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">确定</translation>
+        <translation>确定</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -617,7 +617,7 @@
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑(&amp;M)</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
@@ -632,44 +632,44 @@
     <message>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>连接</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>未连接</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;禁用所有网络适配器&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>网络适配器(&amp;N)</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">网络类型 %1</translation>
+        <translation>网络适配器 %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>加载所选中的主机上的软驱</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation type="unfinished"></translation>
+        <translation>加载所选中的主机上的光驱</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>断开所选网络适配器的连线</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>接上所选网络适配器的连线</translation>
     </message>
 </context>
 <context>
@@ -741,7 +741,7 @@
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -939,23 +939,23 @@
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>创建一个新的虚拟硬盘</translation>
     </message>
     <message>
         <source>Add (register) an existing image file</source>
-        <translation type="unfinished"></translation>
+        <translation>注册一个已经存在的映像文件</translation>
     </message>
     <message>
         <source>Remove (unregister) the selected media</source>
-        <translation type="unfinished"></translation>
+        <translation>删除(或释放)所选的虚拟存储介质</translation>
     </message>
     <message>
         <source>Release the selected media by detaching it from the machine</source>
-        <translation type="unfinished"></translation>
+        <translation>从虚拟电脑中释放所选的虚拟存储介质</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation type="unfinished"></translation>
+        <translation>刷新虚拟存储介质列表</translation>
     </message>
 </context>
 <context>
@@ -968,7 +968,7 @@
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>不可识别的设备 %1:%2</translation>
+        <translation>未知设备 %1:%2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
@@ -1023,7 +1023,7 @@
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>优先启动</translation>
+        <translation>启动顺序</translation>
     </message>
     <message>
         <source>ACPI</source>
@@ -1177,7 +1177,7 @@
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>尚未实现打开URL的功能.</translation>
     </message>
     <message>
         <source>Powered Off</source>
@@ -1312,7 +1312,7 @@
     <message>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VMDK 映像</translation>
     </message>
     <message>
         <source>Null</source>
@@ -1397,7 +1397,7 @@
     <message>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>主机网络界面</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Internal Network</source>
@@ -1437,40 +1437,40 @@
     <message>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;正在检测...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;无法访问&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished">禁用</translation>
+        <translation>禁用</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>主系统到子系统</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>子系统到母系统</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation type="unfinished"></translation>
+        <translation>双向</translation>
     </message>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>选择一个文件夹</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished"></translation>
+        <translation>选择一个文件</translation>
     </message>
 </context>
 <context>
@@ -1485,7 +1485,7 @@
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能删除热键 &apos;%1&apos;.</translation>
     </message>
 </context>
 <context>
@@ -1512,7 +1512,7 @@
     </message>
     <message>
         <source> General </source>
-        <translation>一般</translation>
+        <translation> 一般 </translation>
     </message>
     <message>
         <source>0</source>
@@ -1524,7 +1524,7 @@
     </message>
     <message>
         <source> Input </source>
-        <translation>输入</translation>
+        <translation> 输入 </translation>
     </message>
     <message>
         <source>1</source>
@@ -1655,11 +1655,11 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished">删除</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished">删除 (Del)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
@@ -1727,7 +1727,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>VirtualBox Preferences</source>
-        <translation type="unfinished">VirtualBox 全局设置</translation>
+        <translation>VirtualBox 全局设置</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -1740,11 +1740,11 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>语言</translation>
     </message>
     <message>
         <source> Language </source>
-        <translation type="unfinished"></translation>
+        <translation> 语言 </translation>
     </message>
     <message>
         <source>3</source>
@@ -1756,30 +1756,30 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>&amp;Interface Language</source>
-        <translation type="unfinished"></translation>
+        <translation>界面语言(&amp;I)</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>作者:</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>语言:</translation>
     </message>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation> (内嵌)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;无效&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;未知&gt;</translation>
     </message>
     <message>
         <source>
@@ -1787,52 +1787,56 @@ with all fields set to the values of the selected USB device attached to the hos
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
 to the system default language.&lt;/qt&gt;
                                     </source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;qt&gt; 显示所有可用的用户界面语言。
+&lt;b&gt;加黑&lt;/b&gt;的为当前正在使用的语言。
+选择&lt;i&gt;默认&lt;/i&gt;将使用系统默认的语言.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示存放虚拟硬盘文件的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟硬盘或注册已存在的虚拟硬盘时将默认使用此文件夹.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>重设存放虚拟电脑的文件夹为默认值。当改变被接受后，再次打开这个对话框时将显示默认路径.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>重设存放虚拟硬盘的文件夹为默认值。当改变被接受后，再次打开这个对话框时将显示默认路径.</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示存放虚拟电脑的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟电脑时将默认使用此文件夹.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开对话框选择用于存放虚拟硬盘的默认文件夹.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开对话框选择用于存放电脑的默认文件夹.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中后，当虚拟电脑窗口处于活动状态时将自动捕获键盘输入。当键盘被捕获时，所有的键盘输入(包括系统切换键如 Alt-Tab) 都将被发送到虚拟电脑.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示所有全局USB筛选器.左边的选择框决定该筛选器是否必启用.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个各个域的值都为空的USB筛选器。
+需要注意的是：这样的筛选器将会匹配所有连接到主机上的USB设备.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
     </message>
 </context>
 <context>
@@ -1871,7 +1875,7 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;选择你要建立的虚拟硬盘类型.&lt;/p&gt;
+        <translation>&lt;p&gt;选择你要建立的虚拟硬盘类型.&lt;/p&gt;
 &lt;p&gt;一个&lt;b&gt;动态扩展映像&lt;/b&gt;最初只需占用非常小的物理硬盘空间. 然后不断增加(最高
 到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配.&lt;/p&gt;
 &lt;p&gt;一个&lt;b&gt;固定大小映像&lt;/b&gt; 一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势.&lt;/p&gt;</translation>
@@ -1982,16 +1986,16 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;
+        <translation>&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;
 &lt;p&gt;每台虚拟电脑都要有一个唯一的名称来标识，用来区分该电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished">名称(&amp;a)</translation>
+        <translation>名称(&amp;a)</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished">系统类型(&amp;T)</translation>
+        <translation>系统类型(&amp;T)</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -2003,7 +2007,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">内存大小(&amp;M)</translation>
+        <translation>内存大小(&amp;M)</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -2040,15 +2044,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="unfinished">启动盘(第一IDE控制器主通道)(&amp;o)</translation>
+        <translation>启动盘(第一IDE控制器主通道)(&amp;o)</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
-        <translation type="unfinished">新建(&amp;e)...</translation>
+        <translation>新建(&amp;e)...</translation>
     </message>
     <message>
         <source>E&amp;xisting...</source>
-        <translation type="unfinished">现有(&amp;x)...</translation>
+        <translation>现有(&amp;x)...</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
@@ -2219,7 +2223,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">清除虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的快照 &lt;b&gt;%2&lt;/b&gt; 失败.</translation>
+        <translation>清除虚拟电脑 &lt;b&gt;%2&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2448,11 +2452,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">确定</translation>
+        <translation>确定</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -2484,7 +2488,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
-        <translation type="unfinished">全局设定(&amp;G)...</translation>
+        <translation>全局设定(&amp;P)...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
@@ -2492,7 +2496,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished">显示全局设置对话框</translation>
+        <translation>显示全局设置对话框</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -2668,7 +2672,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑(&amp;M)</translation>
     </message>
 </context>
 <context>
@@ -2754,14 +2758,14 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>编辑所选共享文件夹的设置.</translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>快照明细对话框</translation>
     </message>
     <message>
         <source> Snapshot Details </source>
@@ -3173,7 +3177,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">不可使用</translation>
+        <translation>无法访问</translation>
     </message>
 </context>
 <context>
@@ -3343,51 +3347,51 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，将虚拟网络适配器连接到当前虚拟电脑.</translation>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>设置虚拟网络适配器以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示虚拟网络适配器的MAC地址。它可包含处于{0-9,A-F}中的12位字符.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>指示虚拟网线在启动时是否与主机连接.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示为该适配器选择的主机网络界面名称.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示所有的可用主机网络界面名称.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>删除所选的主机网络界面.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示主机上的TAP网络界面名称.</translation>
     </message>
     <message>
         <source>Displays the command executed to setup the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示用于设置TAP主机网络界面的命令.</translation>
     </message>
     <message>
         <source>Selects the setup application.</source>
-        <translation type="unfinished"></translation>
+        <translation>选择设置程序.</translation>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示用于中断TAP主机网络界面的命令.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished"></translation>
+        <translation>选择中断程序.</translation>
     </message>
 </context>
 <context>
@@ -3410,7 +3414,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑设置对话框</translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -3973,7 +3977,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>第一IDE控制器从通道上使用的硬盘已经连接到其它接口.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
@@ -3981,7 +3985,7 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>第二IDE控制器从通道上使用的硬盘已经连接到其它接口.</translation>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
@@ -4014,89 +4018,90 @@ with all fields set to the values of the selected USB device attached to the hos
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>共享粘贴板(&amp;S)</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>快照文件夹(&amp;n)</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>显示你要安装到虚拟电脑的系统类型.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;选中，虚拟电脑将开启对高级电源管理界面(ACPI)的支持. &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再关闭本选项! &lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;选中，虚拟电脑将开启对输入输出 APIC (IO APIC)的支持. &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再关闭本选项! &lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>设定主系统和子系统间共享粘贴板的模式。注意，要使用该功能需要在子系统中安装辅助工具包.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>指定用于存放虚拟电脑快照的文件夹。需要注意的是快照会占用一定的磁盘空间.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>将存放快照的文件夹重新设定为默认值。改变被接受后，下次打开本对话框时将会显示默认路径.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示有关虚拟电脑的描述信息。这可用于对虚拟电脑上所装操作系统进行补充说明.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟存储管理器新建或选择一个已经存在的虚拟硬盘.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示可以加载到虚拟电脑上的主机上的软驱.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟存储管理器选择一个用于加载的软盘映像.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示可以加载到虚拟电脑上的主机上的光驱.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟存储管理器选择一个用于加载的ISO光盘映像.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt; 选择声卡驱动类型。选项  &lt;b&gt;Null Audio Driver&lt;/b&gt;
+让虚拟电脑拥有一张声卡，但其输出的声音将被忽略. &lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中后，将在这台虚拟电脑中启用USB控制器.</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示本台虚拟电脑上的所有USB筛选器.左边的选择框决定该筛选器是否必启用.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个各个域的值都为空的USB筛选器。需要注意的是：这样的筛选器将会匹配所有的连接到主机上的USB设备.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">网络类型 %1</translation>
+        <translation>网络适配器 %1</translation>
     </message>
 </context>
 </TS>
