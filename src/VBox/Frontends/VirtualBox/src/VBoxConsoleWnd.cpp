@@ -910,6 +910,10 @@ void VBoxConsoleWnd::finalizeOpenView()
         VBoxVMFirstRunWzd wzd (this, "VBoxVMFirstRunWzd");
         wzd.setup (cmachine);
         wzd.exec();
+
+        /* Remove GUI_FirstRun extra data key from the machine settings
+         * file after showing the wizard once. */
+        cmachine.SetExtraData (GUI_FirstRun, QString::null);
     }
 
     /* start the VM */

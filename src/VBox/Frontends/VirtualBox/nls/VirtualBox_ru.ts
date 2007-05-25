@@ -2174,7 +2174,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Хотите ли Вы удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Нет&lt;/b&gt;, то виртуальный жесткий диск будет удален из системы (дерегистрирован) и исчезнет из списка, но файл образа останется на вашем физическом диске.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Да&lt;/b&gt;, то файл образа будет полностью удален после дерегистрации жесткого диска. Эту операцию отменить нельзя.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Нет&lt;/b&gt;, то виртуальный жесткий диск будет удален из системы (дерегистрирован) и исчезнет из списка, но файл образа останется на физическом жестком диске.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Да&lt;/b&gt;, то файл образа будет физически удален после дерегистрации жесткого диска. Эту операцию отменить нельзя.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>

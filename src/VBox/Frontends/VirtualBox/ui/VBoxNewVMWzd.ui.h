@@ -32,6 +32,7 @@
 ** destructor.
 *****************************************************************************/
 
+/* defined in VBoxConsoleWnd.cpp */
 extern const char *GUI_FirstRun;
 
 /**
