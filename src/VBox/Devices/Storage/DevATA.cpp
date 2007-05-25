@@ -3616,25 +3616,11 @@ DECLINLINE(void) ataPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
         return;
     }
 
-    if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
-    {
-        /* Need to continue the transfer in the async I/O thread. This is
-         * the case for write operations or generally for not yet finished
-         * transfers (some data might need to be read). */
-        ataUnsetStatus(s, ATA_STAT_READY | ATA_STAT_DRQ);
-        ataSetStatus(s, ATA_STAT_BUSY);
+    ataUnsetStatus(s, ATA_STAT_READY | ATA_STAT_DRQ);
+    ataSetStatus(s, ATA_STAT_BUSY);
 
-        Log2(("%s: Ctl#%d: message to async I/O thread, continuing PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-        ataAsyncIOPutRequest(pCtl, &ataPIORequest);
-    }
-    else
-    {
-        /* Everything finished, mark device as ready. */
-        ataUnsetStatus(s, ATA_STAT_DRQ);
-
-        Log2(("%s: Ctl#%d: skipping message to async I/O thread, ending PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-        ataPIOTransferStop(s);
-    }
+    Log2(("%s: Ctl#%d: message to async I/O thread, continuing PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
+    ataAsyncIOPutRequest(pCtl, &ataPIORequest);
 }
 
 #endif /* IN_RING3 */
@@ -4181,24 +4167,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                         if (s->fATAPITransfer || s->uTxDir != PDMBLOCKTXDIR_TO_DEVICE)
                             ataSetIRQ(s);
 
-                        if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
-                        {
-                            /* Write operations and not yet finished transfers
-                             * must be completed in the async I/O thread. */
-                            pCtl->uAsyncIOState = ATA_AIO_PIO;
-                        }
-                        else
-                        {
-                            /* Finished read operation can be handled inline
-                             * in the end of PIO transfer handling code. Linux
-                             * depends on this, as it waits only briefly for
-                             * devices to become ready after incoming data
-                             * transfer. Cannot find anything in the ATA spec
-                             * that backs this assumption, but as all kernels
-                             * are affected (though most of the time it does
-                             * not cause any harm) this must work. */
-                            pCtl->uAsyncIOState = ATA_AIO_NEW;
-                        }
+                        pCtl->uAsyncIOState = ATA_AIO_PIO;
                     }
                     else
                     {
@@ -4309,24 +4278,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                     ataPIOTransfer(pCtl);
                     ataSetIRQ(s);
 
-                    if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
-                    {
-                        /* Write operations and not yet finished transfers
-                         * must be completed in the async I/O thread. */
-                        pCtl->uAsyncIOState = ATA_AIO_PIO;
-                    }
-                    else
-                    {
-                        /* Finished read operation can be handled inline
-                         * in the end of PIO transfer handling code. Linux
-                         * depends on this, as it waits only briefly for
-                         * devices to become ready after incoming data
-                         * transfer. Cannot find anything in the ATA spec
-                         * that backs this assumption, but as all kernels
-                         * are affected (though most of the time it does
-                         * not cause any harm) this must work. */
-                        pCtl->uAsyncIOState = ATA_AIO_NEW;
-                    }
+                    pCtl->uAsyncIOState = ATA_AIO_PIO;
                 }
                 else
                 {
