@@ -572,7 +572,7 @@ static uint64_t tmR3CalibrateTSC(void)
         {
             if (tmR3HasFixedTSC())
                 /* Sleep a bit to get a more reliable CpuHz value. */
-                RTThreadSleep(32);
+                RTThreadSleep(32);              
             else
             {
                 /* Spin for 40ms to try push up the CPU frequency and get a more reliable CpuHz value. */
@@ -1450,13 +1450,12 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
             "                 offVirtualSync=%016RX64\n"
             "          offVirtualSyncGivenUp=%016RX64\n"
             "      u64VirtualSyncCatchUpPrev=%016RX64\n"
-            "        u64VirtualSyncStoppedTS=%016RX64 %s by %#d (cur %#d)\n"
-            "     u32VirtualSyncStoppedCpuHz=%08RX32 (cur %08RX32)\n"
+            "        u64VirtualSyncStoppedTS=%016RX64\n"
             "u32VirtualSyncCatchUpPercentage=%08RX32\n"
             "            fVirtualSyncTicking=%RTbool (prev=%RTbool)\n"
             "            fVirtualSyncCatchUp=%RTbool (prev=%RTbool)\n",
             u64Now,
-            u64Max,
+            u64Max, 
             pNext->u64Expire,
             pVM->tm.s.u64VirtualSync,
             u64VirtualNow,
@@ -1466,10 +1465,9 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
             pVM->tm.s.offVirtualSync,
             pVM->tm.s.offVirtualSyncGivenUp,
             pVM->tm.s.u64VirtualSyncCatchUpPrev,
-            pVM->tm.s.u64VirtualSyncStoppedTS, pVM->tm.s.fVirtualSyncStoppedInGC ? "GC" : "R3", pVM->tm.s.u8VirtualSyncStoppedApicId, ASMGetApicId(),
-            pVM->tm.s.u32VirtualSyncStoppedCpuHz, (uint32_t)SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage),
+            pVM->tm.s.u64VirtualSyncStoppedTS,
             pVM->tm.s.u32VirtualSyncCatchUpPercentage,
-            pVM->tm.s.fVirtualSyncTicking, fWasTicking,
+            pVM->tm.s.fVirtualSyncTicking, fWasTicking, 
             pVM->tm.s.fVirtualSyncCatchUp, fWasInCatchup));
     Assert(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
     Assert(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
@@ -1635,40 +1633,9 @@ if (RT_UNLIKELY(offSlack & BIT64(63)))  LogRel(("TM: pVM->tm.s.u64VirtualSync=%#
             else
             {
                 /* don't bother */
-//debugging - remove - start
-static unsigned s_cRelLogEntries = 0;
-if (offLag > _1P && s_cRelLogEntries++ < 128)
-    LogRel(("TM: offLag=%RI64 is way too large/negative! Please add this to #1414.\n"
-            "                    offLag=%016RX64\n"
-            "                    offNew=%016RX64\n"
-            "                u64Elapsed=%016RX64\n"
-            "                  offSlack=%016RX64\n"
-            "            u64VirtualNow2=%016RX64\n"
-            "             u64VirtualNow=%016RX64\n"
-            "            u64VirtualSync=%016RX64\n"
-            "            offVirtualSync=%016RX64\n"
-            "     offVirtualSyncGivenUp=%016RX64\n"
-            "                    u64Now=%016RX64\n"
-            "                    u64Max=%016RX64\n"
-            "   u64VirtualSyncStoppedTS=%016RX64 %s by %#d (cur %#d)\n"
-            "u32VirtualSyncStoppedCpuHz=%08RX32 (cur %08RX32)\n"
-            ,
-            offLag,
-            offLag,
-            offNew,
-            u64Elapsed,
-            offSlack,
-            u64VirtualNow2,
-            u64VirtualNow,
-            pVM->tm.s.u64VirtualSync,
-            pVM->tm.s.offVirtualSync,
-            pVM->tm.s.offVirtualSyncGivenUp,
-            u64Now,
-            u64Max,
-            pVM->tm.s.u64VirtualSyncStoppedTS, pVM->tm.s.fVirtualSyncStoppedInGC ? "GC" : "R3", pVM->tm.s.u8VirtualSyncStoppedApicId, ASMGetApicId(),
-            pVM->tm.s.u32VirtualSyncStoppedCpuHz, (uint32_t)SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage)
-            ));
-//debugging - remove - end
+if (offLag & BIT64(63)) //debugging - remove.
+    LogRel(("TM: offLag is negative! offLag=%RI64 (%#RX64) offNew=%#RX64 u64Elapsed=%#RX64 offSlack=%#RX64 u64VirtualNow2=%#RX64 u64VirtualNow=%#RX64 u64VirtualSync=%#RX64 offVirtualSyncGivenUp=%#RX64 u64Now=%#RX64 u64Max=%#RX64\n", 
+            offLag, offLag, offNew, u64Elapsed, offSlack, u64VirtualNow2, u64VirtualNow, pVM->tm.s.u64VirtualSync, pVM->tm.s.offVirtualSyncGivenUp, u64Now, u64Max));
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting);
                 ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
                 Log4(("TM: %RU64/%RU64: give up\n", u64VirtualNow2 - offNew, offLag));
