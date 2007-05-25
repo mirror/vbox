@@ -3606,6 +3606,59 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 
 #ifdef IN_RING3
 
+static void ataPIOTransfer(PATACONTROLLER pCtl)
+{
+    ATADevState *s;
+
+    s = &pCtl->aIfs[pCtl->iAIOIf];
+    Log3(("%s: if=%p\n", __FUNCTION__, s));
+
+    if (s->cbTotalTransfer && s->iIOBufferCur > s->iIOBufferEnd)
+    {
+        LogRel(("PIIX3 ATA: LUN#%d: %s data in the middle of a PIO transfer - VERY SLOW\n", s->iLUN, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "storing" : "loading"));
+        /* Any guest OS that triggers this case has a pathetic ATA driver.
+         * In a real system it would block the CPU via IORDY, here we do it
+         * very similarly by not continuing with the current instruction
+         * until the transfer to/from the storage medium is completed. */
+        if (s->iSourceSink != ATAFN_SS_NULL)
+        {
+            bool fRedo;
+            uint8_t status = s->uATARegStatus;
+            ataSetStatusValue(s, ATA_STAT_BUSY);
+            Log2(("%s: calling source/sink function\n", __FUNCTION__));
+            fRedo = g_apfnSourceSinkFuncs[s->iSourceSink](s);
+            pCtl->fRedo = fRedo;
+            if (RT_UNLIKELY(fRedo))
+                return;
+            ataSetStatusValue(s, status);
+            s->iIOBufferCur = 0;
+            s->iIOBufferEnd = s->cbElementaryTransfer;
+        }
+    }
+    if (s->cbTotalTransfer)
+    {
+        if (s->fATAPITransfer)
+            ataPIOTransferLimitATAPI(s);
+
+        if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE && s->cbElementaryTransfer > s->cbTotalTransfer)
+            s->cbElementaryTransfer = s->cbTotalTransfer;
+
+        Log2(("%s: %s tx_size=%d elem_tx_size=%d index=%d end=%d\n",
+             __FUNCTION__, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "T2I" : "I2T",
+             s->cbTotalTransfer, s->cbElementaryTransfer,
+             s->iIOBufferCur, s->iIOBufferEnd));
+        ataPIOTransferStart(s, s->iIOBufferCur, s->cbElementaryTransfer);
+        s->cbTotalTransfer -= s->cbElementaryTransfer;
+        s->iIOBufferCur += s->cbElementaryTransfer;
+
+        if (s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE && s->cbElementaryTransfer > s->cbTotalTransfer)
+            s->cbElementaryTransfer = s->cbTotalTransfer;
+    }
+    else
+        ataPIOTransferStop(s);
+}
+
+
 DECLINLINE(void) ataPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
 {
     /* Do not interfere with RESET processing if the PIO transfer finishes
@@ -3616,11 +3669,28 @@ DECLINLINE(void) ataPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
         return;
     }
 
-    ataUnsetStatus(s, ATA_STAT_READY | ATA_STAT_DRQ);
-    ataSetStatus(s, ATA_STAT_BUSY);
+    if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
+    {
+        /* Need to continue the transfer in the async I/O thread. This is
+         * the case for write operations or generally for not yet finished
+         * transfers (some data might need to be read). */
+        ataUnsetStatus(s, ATA_STAT_READY | ATA_STAT_DRQ);
+        ataSetStatus(s, ATA_STAT_BUSY);
 
-    Log2(("%s: Ctl#%d: message to async I/O thread, continuing PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-    ataAsyncIOPutRequest(pCtl, &ataPIORequest);
+        Log2(("%s: Ctl#%d: message to async I/O thread, continuing PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
+        ataAsyncIOPutRequest(pCtl, &ataPIORequest);
+    }
+    else
+    {
+        /* Everything finished, mark device as ready. */
+        ataUnsetStatus(s, ATA_STAT_DRQ);
+
+        Log2(("%s: Ctl#%d: skipping message to async I/O thread, ending PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
+        ataPIOTransfer(pCtl);
+        Assert(!pCtl->fRedo);
+        if (!s->fATAPITransfer)
+            ataSetIRQ(s);
+    }
 }
 
 #endif /* IN_RING3 */
@@ -3923,59 +3993,6 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
 }
 
 
-static void ataPIOTransfer(PATACONTROLLER pCtl)
-{
-    ATADevState *s;
-
-    s = &pCtl->aIfs[pCtl->iAIOIf];
-    Log3(("%s: if=%p\n", __FUNCTION__, s));
-
-    if (s->cbTotalTransfer && s->iIOBufferCur > s->iIOBufferEnd)
-    {
-        LogRel(("PIIX3 ATA: LUN#%d: %s data in the middle of a PIO transfer - VERY SLOW\n", s->iLUN, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "storing" : "loading"));
-        /* Any guest OS that triggers this case has a pathetic ATA driver.
-         * In a real system it would block the CPU via IORDY, here we do it
-         * very similarly by not continuing with the current instruction
-         * until the transfer to/from the storage medium is completed. */
-        if (s->iSourceSink != ATAFN_SS_NULL)
-        {
-            bool fRedo;
-            uint8_t status = s->uATARegStatus;
-            ataSetStatusValue(s, ATA_STAT_BUSY);
-            Log2(("%s: calling source/sink function\n", __FUNCTION__));
-            fRedo = g_apfnSourceSinkFuncs[s->iSourceSink](s);
-            pCtl->fRedo = fRedo;
-            if (RT_UNLIKELY(fRedo))
-                return;
-            ataSetStatusValue(s, status);
-            s->iIOBufferCur = 0;
-            s->iIOBufferEnd = s->cbElementaryTransfer;
-        }
-    }
-    if (s->cbTotalTransfer)
-    {
-        if (s->fATAPITransfer)
-            ataPIOTransferLimitATAPI(s);
-
-        if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE && s->cbElementaryTransfer > s->cbTotalTransfer)
-            s->cbElementaryTransfer = s->cbTotalTransfer;
-
-        Log2(("%s: %s tx_size=%d elem_tx_size=%d index=%d end=%d\n",
-             __FUNCTION__, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "T2I" : "I2T",
-             s->cbTotalTransfer, s->cbElementaryTransfer,
-             s->iIOBufferCur, s->iIOBufferEnd));
-        ataPIOTransferStart(s, s->iIOBufferCur, s->cbElementaryTransfer);
-        s->cbTotalTransfer -= s->cbElementaryTransfer;
-        s->iIOBufferCur += s->cbElementaryTransfer;
-
-        if (s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE && s->cbElementaryTransfer > s->cbTotalTransfer)
-            s->cbElementaryTransfer = s->cbTotalTransfer;
-    }
-    else
-        ataPIOTransferStop(s);
-}
-
-
 /**
  * Suspend I/O operations on a controller. Also suspends EMT, because it's
  * waiting for I/O to make progress. The next attempt to perform an I/O
@@ -4167,7 +4184,24 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                         if (s->fATAPITransfer || s->uTxDir != PDMBLOCKTXDIR_TO_DEVICE)
                             ataSetIRQ(s);
 
-                        pCtl->uAsyncIOState = ATA_AIO_PIO;
+                        if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
+                        {
+                            /* Write operations and not yet finished transfers
+                             * must be completed in the async I/O thread. */
+                            pCtl->uAsyncIOState = ATA_AIO_PIO;
+                        }
+                        else
+                        {
+                            /* Finished read operation can be handled inline
+                             * in the end of PIO transfer handling code. Linux
+                             * depends on this, as it waits only briefly for
+                             * devices to become ready after incoming data
+                             * transfer. Cannot find anything in the ATA spec
+                             * that backs this assumption, but as all kernels
+                             * are affected (though most of the time it does
+                             * not cause any harm) this must work. */
+                            pCtl->uAsyncIOState = ATA_AIO_NEW;
+                        }
                     }
                     else
                     {
@@ -4278,18 +4312,36 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                     ataPIOTransfer(pCtl);
                     ataSetIRQ(s);
 
-                    pCtl->uAsyncIOState = ATA_AIO_PIO;
+                    if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
+                    {
+                        /* Write operations and not yet finished transfers
+                         * must be completed in the async I/O thread. */
+                        pCtl->uAsyncIOState = ATA_AIO_PIO;
+                    }
+                    else
+                    {
+                        /* Finished read operation can be handled inline
+                         * in the end of PIO transfer handling code. Linux
+                         * depends on this, as it waits only briefly for
+                         * devices to become ready after incoming data
+                         * transfer. Cannot find anything in the ATA spec
+                         * that backs this assumption, but as all kernels
+                         * are affected (though most of the time it does
+                         * not cause any harm) this must work. */
+                        pCtl->uAsyncIOState = ATA_AIO_NEW;
+                    }
                 }
                 else
                 {
                     /* Finish PIO transfer. */
                     ataPIOTransfer(pCtl);
-                    pCtl->uAsyncIOState = ATA_AIO_NEW;
-                    if (!pCtl->fChainedTransfer)
+                    if (    !pCtl->fChainedTransfer
+                        &&  !s->fATAPITransfer
+                        &&  s->uTxDir != PDMBLOCKTXDIR_FROM_DEVICE)
                     {
-                        if (!s->fATAPITransfer && s->uTxDir != PDMBLOCKTXDIR_FROM_DEVICE)
                             ataSetIRQ(s);
                     }
+                    pCtl->uAsyncIOState = ATA_AIO_NEW;
                 }
                 break;
 
