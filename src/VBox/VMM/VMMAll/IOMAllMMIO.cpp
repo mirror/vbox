@@ -1628,7 +1628,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         cTransfers = pRegFrame->ecx;
 
         if (    CPUMIsGuestInRealMode(pVM)
-            ||  eflags.Bits.u1VM)
+            ||  pRegFrame->eflags.Bits.u1VM)
             cTransfers &= 0xffff;
 
         if (!cTransfers)
@@ -1781,7 +1781,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     {
         cTransfers = pRegFrame->ecx;
         if (    CPUMIsGuestInRealMode(pVM)
-            ||  eflags.Bits.u1VM)
+            ||  pRegFrame->eflags.Bits.u1VM)
             cTransfers &= 0xffff;
 
         if (!cTransfers)
