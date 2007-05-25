@@ -1321,7 +1321,10 @@ int emR3RawExecuteIOInstruction(PVM pVM)
          * (The unhandled cases ends up with rc == VINF_EM_RESCHEDULE_REM.)
          */
         if (rc == VINF_EM_RESCHEDULE_REM)
-            break;  /* emulate this instruction only */
+        {
+            /* emulate this instruction only */
+            goto emulate_instr;
+        }
 
         if (    rc == VINF_SUCCESS
             ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
@@ -1345,7 +1348,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
         }
         AssertMsg(rc == VINF_EM_RESCHEDULE_REM, ("rc=%Vrc\n", rc));
     }
-
+emulate_instr:
     STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
     return emR3RawExecuteInstruction(pVM, "IO: ");
 }
