@@ -32,6 +32,8 @@
 ** destructor.
 *****************************************************************************/
 
+extern const char *GUI_FirstRun;
+
 /**
  *  Calculates a suitable page step size for the given max value.
  *  The returned size is so that there will be no more than 32 pages.
@@ -312,6 +314,7 @@ bool VBoxNewVMWzd::constructMachine()
             vboxProblem().cannotCreateMachine (vbox, this);
             return false;
         }
+        cmachine.SetExtraData (GUI_FirstRun, "yes");
     }
 
     /* name is set in CreateMachine() */

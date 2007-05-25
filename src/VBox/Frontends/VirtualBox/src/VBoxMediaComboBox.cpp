@@ -292,3 +292,8 @@ void VBoxMediaComboBox::setCurrentItem (const QUuid &aId)
         emit activated (index);
     }
 }
+
+void VBoxMediaComboBox::setType (int aType)
+{
+    mType = aType;
+}
