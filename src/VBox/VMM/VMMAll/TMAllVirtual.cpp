@@ -46,6 +46,167 @@
 static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
 
 
+/**
+ * This is (mostly) the same as rtTimeNanoTSInternal() except
+ * for the two globals which live in TM.
+ *
+ * @returns Nanosecond timestamp.
+ * @param   pVM     The VM handle.
+ */
+static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
+{
+    uint64_t    u64Delta;
+    uint32_t    u32NanoTSFactor0;
+    uint64_t    u64TSC;
+    uint64_t    u64NanoTS;
+    uint32_t    u32UpdateIntervalTSC;
+
+    /*
+     * Read the GIP data.
+     */
+    for (;;)
+    {
+        uint32_t u32TransactionId;
+        PCSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+#ifdef IN_RING3
+        if (RT_UNLIKELY(!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC))
+            return RTTimeSystemNanoTS();
+#endif
+
+        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+        {
+            u32TransactionId = pGip->aCPUs[0].u32TransactionId;
+#ifdef __L4__
+            Assert((u32TransactionId & 1) == 0);
+#endif
+            u32UpdateIntervalTSC = pGip->aCPUs[0].u32UpdateIntervalTSC;
+            u64NanoTS = pGip->aCPUs[0].u64NanoTS;
+            u64TSC = pGip->aCPUs[0].u64TSC;
+            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
+            u64Delta = ASMReadTSC();
+            if (RT_UNLIKELY(    pGip->aCPUs[0].u32TransactionId != u32TransactionId
+                            ||  (u32TransactionId & 1)))
+                continue;
+        }
+        else
+        {
+            /* SUPGIPMODE_ASYNC_TSC */
+            PCSUPGIPCPU pGipCpu;
+
+            uint8_t u8ApicId = ASMGetApicId();
+            if (RT_LIKELY(u8ApicId < RT_ELEMENTS(pGip->aCPUs)))
+                pGipCpu = &pGip->aCPUs[u8ApicId];
+            else
+            {
+                AssertMsgFailed(("%x\n", u8ApicId));
+                pGipCpu = &pGip->aCPUs[0];
+            }
+
+            u32TransactionId = pGipCpu->u32TransactionId;
+#ifdef __L4__
+            Assert((u32TransactionId & 1) == 0);
+#endif
+            u32UpdateIntervalTSC = pGipCpu->u32UpdateIntervalTSC;
+            u64NanoTS = pGipCpu->u64NanoTS;
+            u64TSC = pGipCpu->u64TSC;
+            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
+            u64Delta = ASMReadTSC();
+            if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))
+                continue;
+            if (RT_UNLIKELY(    pGipCpu->u32TransactionId != u32TransactionId
+                            ||  (u32TransactionId & 1)))
+                continue;
+        }
+        break;
+    }
+
+    /*
+     * Calc NanoTS delta.
+     */
+    u64Delta -= u64TSC;
+    if (u64Delta > u32UpdateIntervalTSC)
+    {
+        /*
+         * We've expired the interval, cap it. If we're here for the 2nd
+         * time without any GIP update inbetween, the checks against
+         * pVM->tm.s.u64VirtualRawPrev below will force 1ns stepping.
+         */
+        u64Delta = u32UpdateIntervalTSC;
+    }
+#if !defined(_MSC_VER) || defined(__AMD64__) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
+    u64Delta = ASMMult2xU32RetU64((uint32_t)u64Delta, u32NanoTSFactor0);
+    u64Delta = ASMDivU64ByU32RetU32(u64Delta, u32UpdateIntervalTSC);
+#else
+    __asm
+    {
+        mov     eax, dword ptr [u64Delta]
+        mul     dword ptr [u32NanoTSFactor0]
+        div     dword ptr [u32UpdateIntervalTSC]
+        mov     dword ptr [u64Delta], eax
+        xor     edx, edx
+        mov     dword ptr [u64Delta + 4], edx
+    }
+#endif
+
+    /*
+     * Calculate the time and compare it with the previously returned value.
+     *
+     * Since this function is called *very* frequently when the VM is running
+     * and then mostly on EMT, we can restrict the valid range of the delta
+     * (-1s to 2*GipUpdates) and simplify/optimize the default path.
+     */
+    u64NanoTS += u64Delta;
+    uint64_t u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
+    uint64_t u64DeltaPrev = u64NanoTS - u64PrevNanoTS;
+    if (RT_LIKELY(u64DeltaPrev < 1000000000 /* 1s */))
+        /* frequent - less than 1s since last call. */;
+    else if (   (int64_t)u64DeltaPrev < 0
+             && (int64_t)u64DeltaPrev + u32NanoTSFactor0 * 2 > 0)
+    {
+        /* occasional - u64NanoTS is in the 'past' relative to previous returns. */
+        ASMAtomicIncU32(&pVM->tm.s.c1nsVirtualRawSteps);
+        u64NanoTS = u64PrevNanoTS + 1;
+    }
+    else if (u64PrevNanoTS)
+    {
+        /* Something has gone bust, if negative offset it's real bad.*/
+        ASMAtomicIncU32(&pVM->tm.s.cVirtualRawBadRawPrev);
+        if ((int64_t)u64DeltaPrev < 0)
+            LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
+                    u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
+        else
+            Log(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64 (debugging?)\n",
+                 u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
+#ifdef DEBUG_bird
+        AssertMsgFailed(("u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
+                         u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
+#endif
+    }
+    /* else: We're resuming (see TMVirtualResume). */
+    if (RT_LIKELY(ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualRawPrev, u64NanoTS, u64PrevNanoTS)))
+        return u64NanoTS;
+
+    /*
+     * Attempt updating the previous value, provided we're still ahead of it.
+     *
+     * There is no point in recalculating u64NanoTS because we got preemted or if
+     * we raced somebody while the GIP was updated, since these are events
+     * that might occure at any point in the return path as well.
+     */
+    for (int cTries = 100;;)
+    {
+        u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
+        if (u64PrevNanoTS >= u64NanoTS)
+            break;
+        if (ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualRawPrev, u64NanoTS, u64PrevNanoTS))
+            break;
+        AssertBreak(--cTries <= 0, );
+    }
+
+    return u64NanoTS;
+}
+
+
 
 /**
  * Get the time when we're not running at 100%
@@ -59,7 +220,7 @@ static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
      * Recalculate the RTTimeNanoTS() value for the period where
      * warp drive has been enabled.
      */
-    uint64_t u64 = RTTimeNanoTS();
+    uint64_t u64 = tmVirtualGetRawNanoTS(pVM);
     u64 -= pVM->tm.s.u64VirtualWarpDriveStart;
     u64 *= pVM->tm.s.u32VirtualWarpDrivePercentage;
     u64 /= 100;
@@ -67,8 +228,8 @@ static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
 
     /*
      * Now we apply the virtual time offset.
-     * (Which is the negate RTTimeNanoTS() value for when the virtual machine
-     * started if it had been running continuously without any suspends.)
+     * (Which is the negated tmVirtualGetRawNanoTS() value for when the virtual
+     * machine started if it had been running continuously without any suspends.)
      */
     u64 -= pVM->tm.s.u64VirtualOffset;
     return u64;
@@ -84,7 +245,7 @@ static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
 DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
 {
     if (RT_LIKELY(!pVM->tm.s.fVirtualWarpDrive))
-        return RTTimeNanoTS() - pVM->tm.s.u64VirtualOffset;
+        return tmVirtualGetRawNanoTS(pVM) - pVM->tm.s.u64VirtualOffset;
     return tmVirtualGetRawNonNormal(pVM);
 }
 
@@ -208,8 +369,6 @@ const uint64_t u64VirtualNow = u64;
          *    debugging the process.
          *  - We might be on a different CPU which TSC isn't quite in sync with the
          *    other CPUs in the system.
-         *  - RTTimeNanoTS() is returning sligtly different values in GC, R0 and R3 because
-         *    of the static variable it uses with the previous read time.
          *  - Another thread is racing us and we might have been preemnted while inside
          *    this function.
          *
@@ -349,7 +508,8 @@ TMDECL(int) TMVirtualResume(PVM pVM)
     if (!pVM->tm.s.fVirtualTicking)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualResume);
-        pVM->tm.s.u64VirtualWarpDriveStart = RTTimeNanoTS();
+        pVM->tm.s.u64VirtualRawPrev = 0;
+        pVM->tm.s.u64VirtualWarpDriveStart = tmVirtualGetRawNanoTS(pVM);
         pVM->tm.s.u64VirtualOffset = pVM->tm.s.u64VirtualWarpDriveStart - pVM->tm.s.u64Virtual;
         pVM->tm.s.fVirtualTicking = true;
         pVM->tm.s.fVirtualSyncTicking = true;

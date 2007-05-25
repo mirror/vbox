@@ -330,6 +330,14 @@ typedef struct TM
     /** When the Warp drive was started or last adjusted.
      * Only valid when fVirtualWarpDrive is set. */
     uint64_t                    u64VirtualWarpDriveStart;
+    /** The previously returned nano TS.
+     * This handles TSC drift on SMP systems and expired interval.
+     * This is a valid range u64NanoTS to u64NanoTS + 1000000000 (ie. 1sec). */
+    uint64_t volatile           u64VirtualRawPrev;
+    /** The number of times we've had to resort to 1ns walking. */
+    uint32_t volatile           c1nsVirtualRawSteps;
+    /** Number of times u64VirtualRawPrev has been considered bad. */
+    uint32_t volatile           cVirtualRawBadRawPrev;
 
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
     uint64_t volatile           u64VirtualSync;

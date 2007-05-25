@@ -596,6 +596,9 @@ int main()
     GEN_CHECK_OFF(TM, u32VirtualWarpDrivePercentage);
     GEN_CHECK_OFF(TM, u64VirtualOffset);
     GEN_CHECK_OFF(TM, u64Virtual);
+    GEN_CHECK_OFF(TM, u64VirtualRawPrev);
+    GEN_CHECK_OFF(TM, c1nsVirtualRawSteps);
+    GEN_CHECK_OFF(TM, cVirtualRawBadRawPrev);
     GEN_CHECK_OFF(TM, u64VirtualWarpDriveStart);
     GEN_CHECK_OFF(TM, u64VirtualSync);
     GEN_CHECK_OFF(TM, offVirtualSync);
