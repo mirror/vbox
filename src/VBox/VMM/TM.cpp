@@ -718,6 +718,28 @@ TMR3DECL(void) TMR3Reset(PVM pVM)
     VM_ASSERT_EMT(pVM);
 
     /*
+     * Abort any pending catch up.
+     * This isn't perfect,
+     */
+    if (pVM->tm.s.fVirtualSyncCatchUp)
+    {
+        const uint64_t offVirtualNow = TMVirtualGetEx(pVM, false /* don't check timers */);
+        const uint64_t offVirtualSyncNow = TMVirtualSyncGetEx(pVM, false /* don't check timers */);
+        if (pVM->tm.s.fVirtualSyncCatchUp)
+        {
+            STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
+
+            const uint64_t offOld = pVM->tm.s.offVirtualSyncGivenUp;
+            const uint64_t offNew = offVirtualNow - offVirtualSyncNow;
+            Assert(offOld <= offNew);
+            ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
+            ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSync, offNew);
+            ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
+            LogRel(("TM: Aborting catch-up attempt on reset with a %RU64 ns lag on reset; new total: %RU64 ns\n", offOld - offNew, offNew));
+        }
+    }
+
+    /*
      * Process the queues.
      */
     for (int i = 0; i < TMCLOCK_MAX; i++)
@@ -1227,7 +1249,7 @@ TMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_ADV_START(&pVM->tm.s.StatDoQueuesSchedule, s1);
     tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC]);
     STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesSchedule, s1);
-    STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatDoQueuesRun, r1);
+    STAM_PROFILE_ADV_START(&pVM->tm.s.StatDoQueuesRun, r1);
     tmR3TimerQueueRunVirtualSync(pVM);
     STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesRun, r1);
 
