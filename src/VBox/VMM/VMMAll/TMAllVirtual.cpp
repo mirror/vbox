@@ -60,9 +60,10 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
     uint64_t    u64TSC;
     uint64_t    u64NanoTS;
     uint32_t    u32UpdateIntervalTSC;
+    uint64_t    u64PrevNanoTS;
 
     /*
-     * Read the GIP data.
+     * Read the GIP data and the previous value.
      */
     for (;;)
     {
@@ -84,6 +85,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
             u64TSC = pGip->aCPUs[0].u64TSC;
             u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
             u64Delta = ASMReadTSC();
+            u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
             if (RT_UNLIKELY(    pGip->aCPUs[0].u32TransactionId != u32TransactionId
                             ||  (u32TransactionId & 1)))
                 continue;
@@ -111,6 +113,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
             u64TSC = pGipCpu->u64TSC;
             u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
             u64Delta = ASMReadTSC();
+            u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
             if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))
                 continue;
             if (RT_UNLIKELY(    pGipCpu->u32TransactionId != u32TransactionId
@@ -156,7 +159,6 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
      * (-1s to 2*GipUpdates) and simplify/optimize the default path.
      */
     u64NanoTS += u64Delta;
-    uint64_t u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
     uint64_t u64DeltaPrev = u64NanoTS - u64PrevNanoTS;
     if (RT_LIKELY(u64DeltaPrev < 1000000000 /* 1s */))
         /* frequent - less than 1s since last call. */;
