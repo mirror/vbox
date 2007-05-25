@@ -33,12 +33,32 @@ while true; do
   fi
 done
 
+if [ "$1" = "--save-module-symvers" ]; then
+  shift
+  SAVE_MOD_SYMVERS="$1"
+  shift
+fi
+
+if [ "$1" = "--use-module-symvers" ]; then
+  shift
+  USE_MOD_SYMVERS="$1"
+  shift
+fi
+
 # copy
 cp -a ${0%/*}/* $tmpdir/
+cp $USE_MOD_SYMVERS $tmpdir/Module.symvers
 
 # make, cleanup if success
 cd "$tmpdir"
 if make "$@"; then
+  if [ -n "$SAVE_MOD_SYMVERS" ]; then
+    if [ -f Module.symvers ]; then
+      cp -f Module.symvers $SAVE_MOD_SYMVERS
+    else
+      cat /dev/null > $SAVE_MOD_SYMVERS
+    fi
+  fi
   rm -rf $tmpdir
   exit 0
 fi
