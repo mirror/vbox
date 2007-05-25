@@ -169,7 +169,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
     }
     else if (u64PrevNanoTS)
     {
-        /* Something has gone bust, if negative offset it's real bad.*/
+        /* Something has gone bust, if negative offset it's real bad. */
         ASMAtomicIncU32(&pVM->tm.s.cVirtualRawBadRawPrev);
         if ((int64_t)u64DeltaPrev < 0)
             LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
@@ -178,8 +178,10 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
             Log(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64 (debugging?)\n",
                  u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
 #ifdef DEBUG_bird
-        AssertMsgFailed(("u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
-                         u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
+        /** @todo there are some hickups during boot and reset that can cause 2-5 seconds delays. Investigate... */
+        AssertMsg(u64PrevNanoTS > UINT64_C(100000000000) /* 100s */,
+                  ("u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
+                  u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
 #endif
     }
     /* else: We're resuming (see TMVirtualResume). */
