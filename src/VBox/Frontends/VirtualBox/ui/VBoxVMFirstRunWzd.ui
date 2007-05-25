@@ -1,10 +1,11 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
 <class>VBoxVMFirstRunWzd</class>
 <comment>
+
 :mode=html:tabSize=4:indentSize=4:noTabs=true:
 :folding=explicit:collapseFolds=1:
 
-# Copyright (C) 2006 InnoTek Systemberatung GmbH
+# Copyright (C) 2007 InnoTek Systemberatung GmbH
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -98,7 +99,7 @@
                             </sizepolicy>
                         </property>
                         <property name="text">
-                            <string>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform steps necessary to install an operating system of your choice into the virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</string>
+                            <string>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>WordBreak|AlignTop</set>
@@ -202,7 +203,7 @@
                             </sizepolicy>
                         </property>
                         <property name="text">
-                            <string>&lt;p&gt;Select the type of media you want to use for installation purposes below.&lt;/p&gt;</string>
+                            <string>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>WordBreak|AlignTop</set>
@@ -268,7 +269,7 @@
                             </sizepolicy>
                         </property>
                         <property name="text">
-                            <string>&lt;p&gt;Select a media that contains the setup program of the operating system you want to install. This media must be bootable, otherwise nothing will happen.&lt;/p&gt;</string>
+                            <string>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>WordBreak|AlignTop</set>
@@ -506,7 +507,7 @@
                             </sizepolicy>
                         </property>
                         <property name="text">
-                            <string>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will temporarily be mounted to the virtual machine and it will continue its execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program and installation media, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent booting from it again. You can do it by selecting a corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</string>
+                            <string>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>WordBreak|AlignTop</set>

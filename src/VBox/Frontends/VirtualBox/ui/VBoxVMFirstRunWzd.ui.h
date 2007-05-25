@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2007 InnoTek Systemberatung GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,8 +31,6 @@
 ** These will automatically be called by the form's constructor and
 ** destructor.
 *****************************************************************************/
-
-extern const char *GUI_FirstRun;
 
 void VBoxVMFirstRunWzd::init()
 {
@@ -105,9 +103,6 @@ void VBoxVMFirstRunWzd::init()
 void VBoxVMFirstRunWzd::setup (CMachine &aMachine)
 {
     machine = aMachine;
-
-    /* clearing GUI_FirstRun extra data key from the machine settings file */
-    machine.SetExtraData (GUI_FirstRun, QString::null);
 }
 
 
