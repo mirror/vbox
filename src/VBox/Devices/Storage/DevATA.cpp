@@ -3544,9 +3544,9 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         uint32_t uCmdWait0 = -1, uCmdWait1 = -1;
         uint64_t uNow = RTTimeNanoTS();
         if (pCtl->aIfs[0].u64CmdTS)
-            uCmdWait0 = (pCtl->aIfs[0].u64CmdTS - uNow) / 1000;
+            uCmdWait0 = (uNow - pCtl->aIfs[0].u64CmdTS) / 1000;
         if (pCtl->aIfs[1].u64CmdTS)
-            uCmdWait1 = (pCtl->aIfs[1].u64CmdTS - uNow) / 1000;
+            uCmdWait1 = (uNow - pCtl->aIfs[1].u64CmdTS) / 1000;
         LogRel(("PIIX3 ATA: Ctl#%d: RESET, DevSel=%d AIOIf=%d CmdIf0=%#04x (%d usec ago) CmdIf1=%#04x (%d usec ago)\n",
                     ATACONTROLLER_IDX(pCtl), pCtl->iSelectedIf, pCtl->iAIOIf,
                     pCtl->aIfs[0].uATARegCommand, uCmdWait0,
