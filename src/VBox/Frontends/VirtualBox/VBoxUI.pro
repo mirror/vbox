@@ -36,7 +36,8 @@ FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxGlobalSettingsDlg.ui \
 	ui/VBoxNewHDWzd.ui \
 	ui/VBoxSnapshotsWgt.ui \
-	ui/VBoxAboutDlg.ui
+	ui/VBoxAboutDlg.ui \
+	ui/VBoxVMFirstRunWzd.ui
 
 IMAGES	= images/tpixel.png \
 	images/vm_new.png \

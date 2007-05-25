@@ -45,6 +45,7 @@ public:
     QUuid getId();
     QUuid getBelongsTo();
     void  setCurrentItem (const QUuid &);
+    void  setType (int);
 
 protected slots:
 
