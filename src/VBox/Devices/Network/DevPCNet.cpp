@@ -1628,6 +1628,8 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     int is_padr = 0, is_bcast = 0, is_ladr = 0;
+    unsigned i;
+    int pkt_size;
 
     if (RT_UNLIKELY(CSR_DRX(pData) || CSR_STOP(pData) || CSR_SPND(pData) || !size))
         return;
@@ -1655,7 +1657,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
             /* Dump the status of all RX descriptors */
             const unsigned  cb = 1 << pData->iLog2DescSize;
             RTGCPHYS        GCPhys = pData->GCRDRA;
-            unsigned        i = CSR_RCVRL(pData);
+            i = CSR_RCVRL(pData);
             while (i-- > 0)
             {
                 RMD rmd;
@@ -1687,6 +1689,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                 /* FCS at end of packet */
             }
             size += 4;
+            pkt_size = size;
 
 #ifdef PCNET_DEBUG_MATCH
             PRINT_PKTHDR(buf);
@@ -1701,47 +1704,31 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
             PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
             src  += count;
             size -= count;
-            rmd.rmd2.mcnt = count;
             pktcount++;
-            if (size > 0)
+
+            /* Read current receive descriptor index */
+            i = CSR_RCVRC(pData);
+
+            while (size > 0)
             {
-                if (HOST_IS_OWNER(CSR_NRST(pData)))
-                {
-                    /* From the manual: ``Regardless of ownership of the second receive
-                     * descriptor, the Am79C972 controller will continue to perform receive
-                     * data DMA transfers to the first buffer. If the frame length exceeds
-                     * the length of the first buffer, and the Am79C972 controller does not
-                     * own the second buffer, ownership of the current descriptor will be
-                     * passed back to the system by writing a 0 to the OWN bit of RMD1.
-                     * Status will be written indicating buffer (BUFF = 1) and possibly
-                     * overflow (OFLO = 1) errors.
-                     * If the frame length exceeds the length of the first (current) buffer,
-                     * and the Am79C972 controller does own the second (next) buffer,
-                     * ownership will be passed back to the system by writing a 0 to the OWN
-                     * bit of RMD1 when the first buffer is full. The OWN bit is the only bit
-                     * modified in the descriptor. Receive data transfers to the second buffer
-                     * may occur before the Am79C972 controller proceeds to look ahead to the
-                     * ownership of the third buffer. Such action will depend upon the state
-                     * of the FIFO when the OWN bit has been updated in the first descriptor.
-                     * In any case, lookahead will be performed to the third buffer and the
-                     * information gathered will be stored in the chip, regardless of the state
-                     * of the ownership bit.'' */
-                    pcnetRdtePoll(pData, true);
-                }
-                if (CARD_IS_OWNER(CSR_NRST(pData)))
-                {
-                    /* write back, clear the own bit */
-                    pcnetRmdStorePassHost(pData, &rmd, PHYSADDR(pData, crda));
-                    crda  = CSR_NRDA(pData);
-                    pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, crda));
-                    count = RT_MIN(4096 - (int)rmd.rmd1.bcnt, size);
-                    rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
-                    PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
-                    src  += count;
-                    size -= count;
-                    rmd.rmd2.mcnt = count;
-                    pktcount++;
-                }
+                /* write back, clear the own bit */
+                pcnetRmdStorePassHost(pData, &rmd, PHYSADDR(pData, crda));
+
+                /* Read the entire next descriptor as we're likely to need it. */
+                if (--i < 1)
+                    i = CSR_RCVRL(pData);
+                crda = pcnetRdraAddr(pData, i);
+                pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, crda));
+
+                if (!rmd.rmd1.own)
+                    break;      /* Error - not enough buffer space available. */
+                
+                count = RT_MIN(4096 - (int)rmd.rmd1.bcnt, size);
+                rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
+                PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
+                src  += count;
+                size -= count;
+                pktcount++;
             }
 
             if (RT_LIKELY(size == 0))
@@ -1750,6 +1737,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                 rmd.rmd1.pam  = !CSR_PROM(pData) && is_padr;
                 rmd.rmd1.lafm = !CSR_PROM(pData) && is_ladr;
                 rmd.rmd1.bam  = !CSR_PROM(pData) && is_bcast;
+                rmd.rmd2.mcnt = pkt_size;
             }
             else
             {
