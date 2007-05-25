@@ -1320,6 +1320,9 @@ int emR3RawExecuteIOInstruction(PVM pVM)
          * Handled the I/O return codes.
          * (The unhandled cases ends up with rc == VINF_EM_RESCHEDULE_REM.)
          */
+        if (rc == VINF_EM_RESCHEDULE_REM)
+            break;  /* emulate this instruction only */
+
         if (    rc == VINF_SUCCESS
             ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
         {
@@ -1327,6 +1330,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
             return rc;
         }
+
         if (rc == VINF_EM_RAW_GUEST_TRAP)
         {
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
