@@ -54,7 +54,10 @@ OTHER_CLEAN     += \
 	$(PATH_TARGET)/tstAsmStructsAsm.mac \
 	$(PATH_TARGET)/tstAsmStructsAsm.mac.o \
 	$(PATH_TARGET)/tstAsmStructsAsm.mac.lst \
-	$(PATH_TARGET)/tstAsmStructs.h.dump
+	$(PATH_TARGET)/tstAsmStructs.h.dump \
+	$(PATH_TARGET)/tstAsmStructsGC.h \
+	$(PATH_TARGET)/tstAsmStructsHC.h \
+	$(PATH_TARGET)/tstVMStructGC.h
 
 #
 # Globals
@@ -161,8 +164,10 @@ tstMicroGC_SOURCES.win = tstMicroGC.def
 include	$(PATH_KBUILD)/subfooter.kmk
 
 
+ifndef USE_MULTI_TARGET
 # temporary hack.
 .NOTPARALLEL: $(TARGET_tstMicroGC) $(LIB_VMMGC)
+endif
 
 
 #
