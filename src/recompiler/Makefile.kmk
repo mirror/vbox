@@ -79,7 +79,7 @@ ifeq ($(BUILD_PLATFORM),win)
  # On 64-bit Windows we pretend to be 32-bit.
  dyngen_BLD_TRG_ARCH  = x86
  dyngen_BLD_TRG_CPU   = i386
- dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing 
+ dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   dyngen_DEFS        += HOST_X86_64=1
  endif
@@ -164,7 +164,7 @@ ifdef REM_USE_NOCRT
 
 else # !REM_USE_NOCRT
 
- $(REM_MOD)_TOOL            = GCC3
+ $(REM_MOD)_TOOL            = GXX3
  $(REM_MOD)_TOOL.win.x86    = MINGW32
  $(REM_MOD)_TOOL.win.amd64  = XGCCAMD64LINUX
  $(REM_MOD)_SDKS.win.x86    = W32API  							## @todo do we really need this now?
@@ -225,7 +225,7 @@ cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing 
 #
 ## @todo This is a bit messy because of MINGW32.
 #BLDPROGS += testmath
-testmath_TOOL           = GCC3
+testmath_TOOL           = GXX3
 testmath_TOOL.win.x86   = MINGW32
 testmath_SDKS.win.x86   = W32API
 ifeq ($(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH),win.amd64)
