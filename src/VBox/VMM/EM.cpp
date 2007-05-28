@@ -1318,7 +1318,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
 
         /* 
          * Handled the I/O return codes.
-         * (The unhandled cases ends up with rc == VINF_EM_RESCHEDULE_REM.)
+         * (The unhandled cases end up with rc == VINF_EM_RESCHEDULE_REM.)
          */
         if (rc == VINF_EM_RESCHEDULE_REM)
         {
