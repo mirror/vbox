@@ -503,6 +503,11 @@ void VBoxGlobalSettingsDlg::showEvent (QShowEvent *e)
 
     polished = true;
 
+    /* update geometry for dynamically added usb-page to avoid qt-layout
+     * hints conflict. */
+    wstUSBFilters->updateGeometry();
+    qApp->eventLoop()->processEvents (QEventLoop::AllEvents, 1000);
+
     /* resize to the miminum possible size */
     resize (minimumSize());
 

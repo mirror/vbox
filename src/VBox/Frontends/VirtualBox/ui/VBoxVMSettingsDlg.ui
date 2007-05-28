@@ -2732,6 +2732,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <include location="global" impldecl="in implementation">qtimer.h</include>
     <include location="global" impldecl="in implementation">qpopupmenu.h</include>
     <include location="global" impldecl="in implementation">qlistview.h</include>
+    <include location="global" impldecl="in implementation">qeventloop.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
