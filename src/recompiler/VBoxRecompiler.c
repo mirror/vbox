@@ -1700,6 +1700,9 @@ REMR3DECL(int) REMR3State(PVM pVM)
      */
     pVM->rem.s.Env.hflags      &= ~HF_HALTED_MASK;
 
+    /* Set current CPL */
+    cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)));
+
     /*
      * Replay invlpg?
      */
@@ -1830,12 +1833,6 @@ REMR3DECL(int) REMR3State(PVM pVM)
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_ES, pCtx->es, pCtx->esHid.u32Base, pCtx->esHid.u32Limit, (pCtx->esHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs, pCtx->fsHid.u32Base, pCtx->fsHid.u32Limit, (pCtx->fsHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs, pCtx->gsHid.u32Base, pCtx->gsHid.u32Limit, (pCtx->gsHid.Attr.u << 8) & 0xFFFFFF);
-
-        /* Set current CPL. */
-        if (pCtx->eflags.Bits.u1VM == 1)
-            cpu_x86_set_cpl(&pVM->rem.s.Env, 3);
-        else
-            cpu_x86_set_cpl(&pVM->rem.s.Env, pCtx->ss & 3);
     }
     else
     {
@@ -1844,7 +1841,6 @@ REMR3DECL(int) REMR3State(PVM pVM)
         {
             Log2(("REMR3State: SS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_SS].selector, pCtx->ss));
 
-            cpu_x86_set_cpl(&pVM->rem.s.Env, (pCtx->eflags.Bits.u1VM) ? 3 : (pCtx->ss & 3));
             sync_seg(&pVM->rem.s.Env, R_SS, pCtx->ss);
 #ifdef VBOX_WITH_STATISTICS
             if (pVM->rem.s.Env.segs[R_SS].newselector)
