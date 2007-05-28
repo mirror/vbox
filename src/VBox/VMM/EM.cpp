@@ -724,12 +724,12 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
 {
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pVM->em.s.pCtx;
+    uint32_t cpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
+
     if (pCtx->eflags.Bits.u1VM)
         Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF));
-    else if ((pCtx->ss & X86_SEL_RPL) == 0)
-        Log(("EMR0: %08X ESP=%08X IF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (pCtx->ss & X86_SEL_RPL)));
-    else if ((pCtx->ss & X86_SEL_RPL) == 3)
-        Log(("EMR3: %08X ESP=%08X IF=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF));
+    else 
+        Log(("EMR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->cr0));
 #endif
     STAM_PROFILE_ADV_START(&pVM->em.s.StatREMTotal, a);
 
@@ -2658,12 +2658,12 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         /*
          * Log important stuff before entering GC.
          */
+        uint32_t cpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
+
         if (pCtx->eflags.Bits.u1VM)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
-        else if ((pCtx->ss & X86_SEL_RPL) == 0)
-            Log(("HWR0: %08X ESP=%08X IF=%d CPL=%d CR0=%x\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)), pCtx->cr0));
-        else if ((pCtx->ss & X86_SEL_RPL) == 3)
-            Log(("HWR3: %08X ESP=%08X IF=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF));
+        else
+            Log(("HWR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->cr0));
 #endif
 
         /*
