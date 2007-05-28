@@ -593,16 +593,21 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
     {
         rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         pCtx->tr);
+
+        /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
+        /* @todo use fake TSS here */
+        //if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u32Base);
         val = pCtx->trHid.Attr.u;
 
         /* The TSS selector must be busy. */
-        if ((val & 0xF) == X86_SEL_TYPE_SYS_386_TSS_AVAIL)
-            val = (val & ~0xF) | X86_SEL_TYPE_SYS_386_TSS_BUSY;
-        else
         if ((val & 0xF) == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
             val = (val & ~0xF) | X86_SEL_TYPE_SYS_286_TSS_BUSY;
+        else
+            /* Default even if no TR selector has been set (otherwise vmlaunch will fail!) */
+            val = (val & ~0xF) | X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_ACCESS_RIGHTS, val);
         AssertRC(rc);
@@ -663,14 +668,17 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
+        /* Note: protected mode & paging are always enabled; we use them for emulating real and protected mode without paging too. */
+        val |= X86_CR0_PE | X86_CR0_PG;
+
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_CR0,              val);
         Log2(("Guest CR0 %08x\n", val));
         /* CR0 flags owned by the host; if the guests attempts to change them, then
          * the VM will exit.
          */
-        val =   X86_CR0_PE
+        val =   X86_CR0_PE  /* Must monitor this bit (assumptions are made for real mode emulation) */
               | X86_CR0_WP  /** @todo do we care? (we do if we start patching the guest) */
-              | X86_CR0_PG
+              | X86_CR0_PG  /* Must monitor this bit (assumptions are made for real mode & protected mode without paging emulation) */
               | X86_CR0_TS
               | X86_CR0_ET
               | X86_CR0_NE
@@ -690,11 +698,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         val = pCtx->cr4 | (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0;
         switch(pVM->hwaccm.s.enmShadowMode)
         {
-        case PGMMODE_REAL:
-        case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
-            AssertFailed();
-            return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
-
+        case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
+        case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
         case PGMMODE_32_BIT:        /* 32-bit paging. */
             break;
 
@@ -713,6 +718,10 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             AssertFailed();
             return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
         }
+        /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
+        if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+            val |= X86_CR4_VME;
+
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_CR4,              val);
         Log2(("Guest CR4 %08x\n", val));
         /* CR4 flags owned by the host; if the guests attempts to change them, then
@@ -769,6 +778,17 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     val  = pCtx->eflags.u32;
     val &= VMX_EFLAGS_RESERVED_0;
     val |= VMX_EFLAGS_RESERVED_1;
+
+    /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
+    if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+    {
+        val |= X86_EFL_VM;
+        if (pCtx->eflags.Bits.u1IF)
+            val |= X86_EFL_VIF;
+        else
+            val &= ~X86_EFL_VIF;
+    }
+
     rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           val);
     AssertRC(rc);
 
@@ -1183,6 +1203,15 @@ ResumeExecution:
     rc = VMXReadVMCS(VMX_VMCS_GUEST_RFLAGS,           &val);
     AssertRC(rc);
     pCtx->eflags.u32        = val;
+
+    /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
+    if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+    {
+        /* Hide our emulation flags */
+        pCtx->eflags.Bits.u1VM  = 0;
+        pCtx->eflags.Bits.u1IF  = pCtx->eflags.Bits.u1VIF;
+        pCtx->eflags.Bits.u1VIF = 0;
+    }
 
     /* Control registers. */
     VMXReadVMCS(VMX_VMCS_CTRL_CR0_READ_SHADOW,   &valShadow);
