@@ -546,6 +546,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTGCUINTPTR val;
+    X86EFLAGS   eflags;
 
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
@@ -775,21 +776,19 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     AssertRC(rc);
 
     /* Bits 22-31, 15, 5 & 3 must be zero. Bit 1 must be 1. */
-    val  = pCtx->eflags.u32;
-    val &= VMX_EFLAGS_RESERVED_0;
-    val |= VMX_EFLAGS_RESERVED_1;
+    eflags      = pCtx->eflags;
+    eflags.u32 &= VMX_EFLAGS_RESERVED_0;
+    eflags.u32 |= VMX_EFLAGS_RESERVED_1;
 
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
     if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
     {
-        val |= X86_EFL_VM;
-        if (pCtx->eflags.Bits.u1IF)
-            val |= X86_EFL_VIF;
-        else
-            val &= ~X86_EFL_VIF;
+        eflags.Bits.u1VM   = 1;
+        eflags.Bits.u1VIF  = pCtx->eflags.Bits.u1IF;
+        eflags.Bits.u2IOPL = 3;
     }
 
-    rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           val);
+    rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           eflags.u32);
     AssertRC(rc);
 
     /** TSC offset. */
@@ -1208,9 +1207,10 @@ ResumeExecution:
     if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
     {
         /* Hide our emulation flags */
-        pCtx->eflags.Bits.u1VM  = 0;
-        pCtx->eflags.Bits.u1IF  = pCtx->eflags.Bits.u1VIF;
-        pCtx->eflags.Bits.u1VIF = 0;
+        pCtx->eflags.Bits.u1VM   = 0;
+        pCtx->eflags.Bits.u1IF   = pCtx->eflags.Bits.u1VIF;
+        pCtx->eflags.Bits.u1VIF  = 0;
+        pCtx->eflags.Bits.u2IOPL = 0;
     }
 
     /* Control registers. */
