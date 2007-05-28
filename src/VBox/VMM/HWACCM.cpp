@@ -114,20 +114,23 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     }
     memset(pVM->hwaccm.s.vmx.pVMCS, 0, PAGE_SIZE);
 
-    /* Reuse those two pages for AMD SVM. (one is active; never both) */
-    pVM->hwaccm.s.svm.pHState     = pVM->hwaccm.s.vmx.pVMXON;
-    pVM->hwaccm.s.svm.pHStatePhys = pVM->hwaccm.s.vmx.pVMXONPhys;
-    pVM->hwaccm.s.svm.pVMCB       = pVM->hwaccm.s.vmx.pVMCS;
-    pVM->hwaccm.s.svm.pVMCBPhys   = pVM->hwaccm.s.vmx.pVMCSPhys;
-
-    /* Allocate one page for the SVM host control structure (used for vmsave/vmload). */
-    pVM->hwaccm.s.svm.pVMCBHost = SUPContAlloc(1, &pVM->hwaccm.s.svm.pVMCBHostPhys);
-    if (pVM->hwaccm.s.svm.pVMCBHost == 0)
+    /* Allocate one page for the TSS we need for real mode emulation. */
+    pVM->hwaccm.s.vmx.pRealModeTSS = (PVBOXTSS)SUPContAlloc(1, &pVM->hwaccm.s.vmx.pRealModeTSSPhys);
+    if (pVM->hwaccm.s.vmx.pRealModeTSS == 0)
     {
         AssertMsgFailed(("SUPContAlloc failed!!\n"));
         return VERR_NO_MEMORY;
     }
-    memset(pVM->hwaccm.s.svm.pVMCBHost, 0, PAGE_SIZE);
+    /* We initialize it properly later as we can reuse it for SVM */
+    memset(pVM->hwaccm.s.vmx.pRealModeTSS, 0, PAGE_SIZE);
+
+    /* Reuse those three pages for AMD SVM. (one is active; never both) */
+    pVM->hwaccm.s.svm.pHState       = pVM->hwaccm.s.vmx.pVMXON;
+    pVM->hwaccm.s.svm.pHStatePhys   = pVM->hwaccm.s.vmx.pVMXONPhys;
+    pVM->hwaccm.s.svm.pVMCB         = pVM->hwaccm.s.vmx.pVMCS;
+    pVM->hwaccm.s.svm.pVMCBPhys     = pVM->hwaccm.s.vmx.pVMCSPhys;
+    pVM->hwaccm.s.svm.pVMCBHost     = pVM->hwaccm.s.vmx.pRealModeTSS;
+    pVM->hwaccm.s.svm.pVMCBHostPhys = pVM->hwaccm.s.vmx.pRealModeTSSPhys;
 
     /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
     pVM->hwaccm.s.svm.pIOBitmap = SUPContAlloc(3, &pVM->hwaccm.s.svm.pIOBitmapPhys);
@@ -418,6 +421,12 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
+            /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
+             * for I/O operations. */
+            pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
+            /* Bit set to 0 means redirection enabled. */
+            memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
+
             int rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
@@ -523,10 +532,10 @@ HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
         SUPContFree(pVM->hwaccm.s.vmx.pVMCS, 1);
         pVM->hwaccm.s.vmx.pVMCS = 0;
     }
-    if (pVM->hwaccm.s.svm.pVMCBHost)
+    if (pVM->hwaccm.s.vmx.pRealModeTSS)
     {
-        SUPContFree(pVM->hwaccm.s.svm.pVMCBHost, 1);
-        pVM->hwaccm.s.svm.pVMCBHost = 0;
+        SUPContFree(pVM->hwaccm.s.vmx.pRealModeTSS, 1);
+        pVM->hwaccm.s.vmx.pRealModeTSS = 0;
     }
     if (pVM->hwaccm.s.svm.pIOBitmap)
     {
@@ -594,6 +603,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     /** @note The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 
+#ifndef HWACCM_VMX_EMULATE_ALL
     /* Too early for VMX. */
     if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
         return false;
@@ -607,14 +617,18 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     /** @todo if we remove this check, then Windows XP install fails during the textmode phase */
     if (!(pCtx->cr0 & X86_CR0_WRITE_PROTECT))
         return false;
+#endif
 
     if (pVM->hwaccm.s.vmx.fEnabled)
     {
         /* if bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
         mask = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0;
-        /** @note We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
+        /* Note: We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
         mask &= ~X86_CR0_NE;
-
+#ifdef HWACCM_VMX_EMULATE_ALL
+        /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
+        mask &= ~(X86_CR0_PG|X86_CR0_PE);
+#endif
         if ((pCtx->cr0 & mask) != mask)
             return false;
 
@@ -637,14 +651,6 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         pVM->hwaccm.s.fActive = true;
         return true;
     }
-#if 0
-    else
-    if (pVM->hwaccm.s.svm.fEnabled)
-    {
-        pVM->hwaccm.s.fActive = true;
-        return true;
-    }
-#endif
 
     return false;
 }
