@@ -251,6 +251,14 @@ STDMETHODIMP HardDisk::COMSETTER(Type) (HardDiskType_T aType)
             tr ("You cannot change the type of the registered hard disk '%ls'"),
             toString().raw());
 
+    /* return silently if nothing to do */
+    if (mType == aType)
+        return S_OK;
+
+    if (mStorageType == HardDiskStorageType_VMDKImage)
+        return setError (E_FAIL,
+            tr ("Currently, changing the type of VMDK hard disks is not allowed"));
+
     if (mStorageType == HardDiskStorageType_ISCSIHardDisk)
         return setError (E_FAIL,
             tr ("Currently, changing the type of iSCSI hard disks is not allowed"));
