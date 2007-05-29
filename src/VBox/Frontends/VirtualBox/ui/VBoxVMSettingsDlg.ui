@@ -2784,9 +2784,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">QIRichLabel *whatsThisLabel;</variable>
     <variable access="private">BootItemsList *tblBootOrder;</variable>
-    <variable access="private">QStringList mHDList;</variable>
-    <variable access="private">QString mCDsettings;</variable>
-    <variable access="private">QString mFDsettings;</variable>
     <variable access="private">bool mIsBootSettingsChanged;</variable>
 </variables>
 <slots>
@@ -2824,6 +2821,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>fdMediaChanged()</slot>
     <slot>updateInterfaces( QWidget* )</slot>
     <slot>networkPageUpdate( QWidget* )</slot>
+    <slot>bootSequenceChanged()</slot>
 </slots>
 <functions>
     <function access="private">init()</function>
