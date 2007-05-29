@@ -339,7 +339,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
             return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpThreshold" #iPeriod "\". (%Vrc)"), rc); \
         if (    (iPeriod > 0 && u64 <= pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod - 1].u64Start) \
             ||  u64 >= pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold) \
-            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Configuration error: Invalid start of period #" #iPeriod ": %RU64\n"), u64); \
+            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Configuration error: Invalid start of period #" #iPeriod ": %RU64"), u64); \
         pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod].u64Start = u64; \
         rc = CFGMR3QueryU32(pCfgHandle, "CatchUpPrecentage" #iPeriod, &pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod].u32Percentage); \
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
