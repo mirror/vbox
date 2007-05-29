@@ -1136,6 +1136,8 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     UPDATERC();
     rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "i82078");
     UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",               g_fIOAPIC);
+    UPDATERC();
 
     /* Default: no bios logo. */
     rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               1);
