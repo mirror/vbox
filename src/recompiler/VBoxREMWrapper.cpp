@@ -162,7 +162,7 @@
 #endif
 
 /** @def USE_REM_IMPORT_JUMP_GLUE
- * Define USE_REM_IMPORT_JUMP_GLUE for platforms where we need to 
+ * Define USE_REM_IMPORT_JUMP_GLUE for platforms where we need to
  * emit some jump glue to deal with big addresses.
  */
 #if (defined(__AMD64__) && !defined(USE_REM_CALLING_CONVENTION_GLUE) && !defined(__DARWIN__)) || defined(__DOXYGEN__)
@@ -1076,7 +1076,7 @@ sqrtf               sqrtf
 };
 
 
-# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE)
 /** LIFO of read-write-executable memory chunks used for wrappers. */
 static PREMEXECMEM g_pExecMemHead;
 # endif
@@ -1114,7 +1114,7 @@ DECLASM(int) WrapMSC2GCC9Int(void);  DECLASM(int) WrapMSC2GCC9Int_EndProc(void);
 # endif
 
 
-# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE)
 /**
  * Allocates a block of memory for glue code.
  *
@@ -1397,7 +1397,7 @@ static int remGenerateExportGlue(PRTUINTPTR pValue, PCREMFNDESC pDesc)
  */
 static int remGenerateImportGlue(PRTUINTPTR pValue, PREMFNDESC pDesc)
 {
-# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE)
     if (!pDesc->pvWrapper)
     {
 #  ifdef USE_REM_CALLING_CONVENTION_GLUE
@@ -1549,10 +1549,10 @@ static int remLoadLinuxObj(void)
         {
 #ifdef DEBUG /* How to load the VBoxREM2.rel symbols into the GNU debugger. */
             RTPrintf("VBoxREMWrapper: (gdb) add-symbol-file %s 0x%p\n", szPath, g_pvREM2);
-#endif 
-            Log(("Loading %s at 0x%p (%d bytes)\n"
-                 "(gdb) add-symbol-file %s 0x%p\n", 
-                 szPath, g_pvREM2, RTLdrSize(g_ModREM2), szPath, g_pvREM2));
+#endif
+            LogRel(("REM: Loading %s at 0x%p (%d bytes)\n"
+                    "REM: (gdb) add-symbol-file %s 0x%p\n",
+                    szPath, g_pvREM2, RTLdrSize(g_ModREM2), szPath, g_pvREM2));
             rc = RTLdrGetBits(g_ModREM2, g_pvREM2, (RTUINTPTR)g_pvREM2, remGetImport, NULL);
             if (VBOX_SUCCESS(rc))
             {
@@ -1600,7 +1600,7 @@ static void remUnloadLinuxObj(void)
     /* clear the pointers. */
     for (i = 0; i < ELEMENTS(g_aExports); i++)
         *(void **)g_aExports[i].pv = NULL;
-# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE) 
+# if defined(USE_REM_CALLING_CONVENTION_GLUE) || defined(USE_REM_IMPORT_JUMP_GLUE)
     for (i = 0; i < ELEMENTS(g_aVMMImports); i++)
         g_aVMMImports[i].pvWrapper = NULL;
     for (i = 0; i < ELEMENTS(g_aRTImports); i++)
