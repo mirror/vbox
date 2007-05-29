@@ -4876,7 +4876,7 @@ static int handleRegisterImage(int argc, char *argv[],
 
     if (strcmp(argv[0], "disk") == 0)
     {
-        const char *type = "normal";
+        const char *type = NULL;
         /* there can be a type parameter */
         if ((argc > 2) && (argc != 4))
         {
@@ -4897,20 +4897,22 @@ static int handleRegisterImage(int argc, char *argv[],
             type = argv[3];
         }
 
-        ComPtr<IVirtualDiskImage> vdi;
-
-        CHECK_ERROR(virtualBox, OpenVirtualDiskImage(filepath, vdi.asOutParam()));
-        if (SUCCEEDED(rc) && vdi)
+        ComPtr<IHardDisk> hardDisk;
+        CHECK_ERROR(virtualBox, OpenHardDisk(filepath, hardDisk.asOutParam()));
+        if (SUCCEEDED(rc) && hardDisk)
         {
-            ComPtr<IHardDisk> hardDisk = vdi;
             /* change the type if requested */
-            if (strcmp(type, "normal") == 0)
-                CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_NormalHardDisk));
-            else if (strcmp(type, "immutable") == 0)
-                CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_ImmutableHardDisk));
-            else if (strcmp(type, "writethrough") == 0)
-                CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_WritethroughHardDisk));
-            CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
+            if (type)
+            {
+                if (strcmp(type, "normal") == 0)
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_NormalHardDisk));
+                else if (strcmp(type, "immutable") == 0)
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_ImmutableHardDisk));
+                else if (strcmp(type, "writethrough") == 0)
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_WritethroughHardDisk));
+            }
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
         }
     }
     else if (strcmp(argv[0], "dvd") == 0)
