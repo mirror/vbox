@@ -498,7 +498,7 @@
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>Floppy tooltip</comment>
-        <translation type="unfinished">Host-Laufwerk</translation>
+        <translation>Host-Laufwerk&amp;nbsp;</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
@@ -512,7 +512,7 @@
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="unfinished">Host-Laufwerk</translation>
+        <translation>Host-Laufwerk&amp;nbsp;</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
@@ -578,7 +578,7 @@
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>Host-Laufwerk</translation>
+        <translation>Host-Laufwerk </translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
