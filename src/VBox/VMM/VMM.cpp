@@ -2313,7 +2313,9 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
         pHlp->fLoggerFlags     = pHlp->pLogger->fFlags;
         pHlp->fLoggerDestFlags = pHlp->pLogger->fDestFlags;
         pHlp->pLogger->fFlags     &= ~(RTLOGFLAGS_BUFFERED | RTLOGFLAGS_DISABLED);
+#ifndef DEBUG_sandervl
         pHlp->pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+#endif
     }
 
     /*
