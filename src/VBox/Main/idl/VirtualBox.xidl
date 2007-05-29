@@ -3498,6 +3498,9 @@
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
         </attribute>
+        <attribute name="description" type="wstring" readonly="yes">
+            <desc>Returns a human readable description for the drive.</desc>
+        </attribute>
 
     </interface>
 

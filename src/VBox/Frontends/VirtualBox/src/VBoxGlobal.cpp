@@ -1172,8 +1172,17 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             case CEnums::HostDriveCaptured:
             {
                 CHostDVDDrive drv = dvd.GetHostDrive();
+                QString description = drv.GetDescription();
+                if (description.isEmpty())
+                {
                 item = item.arg (tr ("Host Drive", "details report (DVD)"),
                                  drv.GetName());
+                }
+                else
+                {
+                item = item.arg (tr ("Host Drive", "details report (DVD)"),
+                                 description);
+                }
                 break;
             }
             default:

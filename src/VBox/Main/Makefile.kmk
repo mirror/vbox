@@ -152,6 +152,15 @@ else
 	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
 endif
+ifdef VBOX_WITH_LIBHAL
+VBoxSVC_CXXFLAGS += \
+	$(LIB_HAL_CFLAGS)
+VBoxSVC_LIBS += \
+	$(LIB_HAL_LIBS)
+VBoxSVC_DEFS += \
+	VBOX_USE_LIBHAL
+endif
+
 VBoxSVC_SOURCES = \
 	Logging.cpp \
 	Matching.cpp \

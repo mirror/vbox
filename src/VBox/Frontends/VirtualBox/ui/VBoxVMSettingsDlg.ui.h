@@ -1425,7 +1425,15 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         {
             CHostDVDDrive hostDVD = en.GetNext();
             /// @todo (r=dmik) set icon?
-            cbHostDVD->insertItem (hostDVD.GetName(), id);
+            QString description = hostDVD.GetDescription();
+            if (description.isEmpty())
+            {
+                cbHostDVD->insertItem (hostDVD.GetName(), id);
+            }
+            else
+            {
+                cbHostDVD->insertItem (description, id);
+            }
             hostDVDs [id] = hostDVD;
             ++ id;
         }
@@ -1437,19 +1445,34 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             {
                 CHostDVDDrive drv = dvd.GetHostDrive();
                 QString name = drv.GetName();
+                QString description = drv.GetDescription();
                 if (coll.FindByName (name).isNull())
                 {
                     /*
                      *  if the DVD drive is not currently available,
                      *  add it to the end of the list with a special mark
                      */
-                    cbHostDVD->insertItem ("* " + name);
+                    if (description.isEmpty())
+                    {
+                        cbHostDVD->insertItem ("* " + name);
+                    }
+                    else
+                    {
+                        cbHostDVD->insertItem ("* " + description);
+                    }
                     cbHostDVD->setCurrentItem (cbHostDVD->count() - 1);
                 }
                 else
                 {
                     /* this will select the correct item from the prepared list */
-                    cbHostDVD->setCurrentText (name);
+                    if (description.isEmpty())
+                    {
+                        cbHostDVD->setCurrentText (name);
+                    }
+                    else
+                    {
+                        cbHostDVD->setCurrentText (description);
+                    }
                 }
                 rbHostDVD->setChecked (true);
                 break;

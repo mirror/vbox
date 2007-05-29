@@ -49,9 +49,11 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init (INPTR BSTR driveName);
+    HRESULT init (INPTR BSTR driveName, INPTR BSTR driveDescription);
 
     // IHostDVDDrive properties
     STDMETHOD(COMGETTER(Name)) (BSTR *driveName);
+    STDMETHOD(COMGETTER(Description)) (BSTR *driveDescription);
 
     // public methods for internal purposes only
 
@@ -63,6 +65,7 @@ public:
 private:
 
     Bstr mDriveName;
+    Bstr mDriveDescription;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostDVDDrive)
