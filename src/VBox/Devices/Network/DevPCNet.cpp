@@ -1671,7 +1671,8 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
         else
         {
             uint8_t *src = &pData->abRecvBuf[8];
-            RTGCPHYS next_crda, crda = CSR_CRDA(pData);
+            RTGCPHYS crda = CSR_CRDA(pData);
+            RTGCPHYS next_crda;
             RMD      rmd, next_rmd;
             int      pktcount = 0;
 
@@ -1722,7 +1723,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                  */
                 if (!next_rmd.rmd1.own)
                     break;
-                
+
                 /* Write back current descriptor, clear the own bit. */
                 pcnetRmdStorePassHost(pData, &rmd, PHYSADDR(pData, crda));
 
