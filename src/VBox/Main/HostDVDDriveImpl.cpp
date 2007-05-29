@@ -51,6 +51,25 @@ HRESULT HostDVDDrive::init (INPTR BSTR driveName)
     return S_OK;
 }
 
+/**
+ * Initializes the host object.
+ *
+ * @returns COM result indicator
+ * @param driveName        name of the drive
+ * @param driveDescription human readable description of the drive
+ */
+HRESULT HostDVDDrive::init (INPTR BSTR driveName, INPTR BSTR driveDescription)
+{
+    ComAssertRet (driveName, E_INVALIDARG);
+    ComAssertRet (driveDescription, E_INVALIDARG);
+
+    AutoLock lock(this);
+    mDriveName = driveName;
+    mDriveDescription = driveDescription;
+    setReady(true);
+    return S_OK;
+}
+
 // IHostDVDDrive properties
 /////////////////////////////////////////////////////////////////////////////
 
@@ -67,5 +86,21 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Name) (BSTR *driveName)
     AutoLock lock(this);
     CHECK_READY();
     mDriveName.cloneTo(driveName);
+    return S_OK;
+}
+
+/**
+ * Returns the description of the host drive
+ *
+ * @returns COM status code
+ * @param driveDescription address of result pointer
+ */
+STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *driveDescription)
+{
+    if (!driveDescription)
+        return E_POINTER;
+    AutoLock lock(this);
+    CHECK_READY();
+    mDriveDescription.cloneTo(driveDescription);
     return S_OK;
 }

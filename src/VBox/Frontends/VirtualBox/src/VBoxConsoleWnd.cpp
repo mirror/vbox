@@ -1551,9 +1551,20 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         switch (state)
         {
             case CEnums::HostDriveCaptured:
-                name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
-                    dvd.GetHostDrive().GetName();
+            {
+                QString description = dvd.GetHostDrive().GetDescription();
+                if (description.isEmpty())
+                {
+                    name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
+                        dvd.GetHostDrive().GetName();
+                }
+                else
+                {
+                    name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
+                        description;
+                }
                 break;
+            }
             case CEnums::ImageMounted:
                 name = dvd.GetImage().GetFilePath();
                 break;
@@ -2186,9 +2197,20 @@ void VBoxConsoleWnd::prepareDVDMenu()
     {
         CHostDVDDrive hostDVD = en.GetNext();
         /** @todo set icon */
-        int id = devicesMountDVDMenu->insertItem (
-            tr ("Host Drive ") + hostDVD.GetName()
-        );
+        QString description = hostDVD.GetDescription();
+        int id;
+        if (description.isEmpty())
+        {
+            id = devicesMountDVDMenu->insertItem (
+                tr ("Host Drive ") + hostDVD.GetName()
+                );
+        }
+        else
+        {
+            id = devicesMountDVDMenu->insertItem (
+                tr ("Host Drive ") + description
+                );
+        }
         hostDVDMap [id] = hostDVD;
         if (machine_state != CEnums::Running)
             devicesMountDVDMenu->setItemEnabled (id, false);

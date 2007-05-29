@@ -30,6 +30,12 @@
  *       standard byte order functions. */
 #define _LINUX_BYTEORDER_GENERIC_H
 #include <linux/cdrom.h>
+#ifdef VBOX_USE_LIBHAL
+# include <libhal.h>
+/* These are defined by libhal.h and by VBox header files. */
+# undef TRUE
+# undef FALSE
+#endif
 #include <errno.h>
 #endif /* __LINUX __ */
 
@@ -189,47 +195,51 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     while (*p);
     delete[] hostDrives;
 #elif defined(__LINUX__)
-    // On Linux, the situation is much more complex. There is no simple API so
-    // we will take a more creative approach. As there is only a heuristical
-    // approach on Linux, we'll allow the user to specify a list of host CDROMs
-    // using and an environment variable.
+#ifdef VBOX_USE_LIBHAL
+    if (!getDVDInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
+#endif /* USE_LIBHAL defined */
+    // On Linux without hal, the situation is much more complex. We will take a
+    // heuristical approach and also allow the user to specify a list of host
+    // CDROMs using an environment variable.
     // The general strategy is to try some known device names and see of they
     // exist. At last, we'll enumerate the /etc/fstab file (luckily there's an
     // API to parse it) for CDROM devices. Ok, let's start!
 
-    if (getenv("VBOX_CDROM"))
     {
-        char *cdromEnv = strdupa(getenv("VBOX_CDROM"));
-        char *cdromDrive;
-        cdromDrive = strtok(cdromEnv, ":");
-        while (cdromDrive)
+        if (getenv("VBOX_CDROM"))
         {
-            if (validateDevice(cdromDrive, true))
+            char *cdromEnv = strdupa(getenv("VBOX_CDROM"));
+            char *cdromDrive;
+            cdromDrive = strtok(cdromEnv, ":");
+            while (cdromDrive)
             {
-                ComObjPtr <HostDVDDrive> hostDVDDriveObj;
-                hostDVDDriveObj.createObject();
-                hostDVDDriveObj->init (Bstr (cdromDrive));
-                list.push_back (hostDVDDriveObj);
+                if (validateDevice(cdromDrive, true))
+                {
+                    ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                    hostDVDDriveObj.createObject();
+                    hostDVDDriveObj->init (Bstr (cdromDrive));
+                    list.push_back (hostDVDDriveObj);
+                }
+                cdromDrive = strtok(NULL, ":");
             }
-            cdromDrive = strtok(NULL, ":");
         }
-    }
-    else
-    {
-        // this is a good guess usually
-        if (validateDevice("/dev/cdrom", true))
+        else
         {
-                ComObjPtr <HostDVDDrive> hostDVDDriveObj;
-                hostDVDDriveObj.createObject();
-                hostDVDDriveObj->init (Bstr ("/dev/cdrom"));
-                list.push_back (hostDVDDriveObj);
+            // this is a good guess usually
+            if (validateDevice("/dev/cdrom", true))
+            {
+                    ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                    hostDVDDriveObj.createObject();
+                    hostDVDDriveObj->init (Bstr ("/dev/cdrom"));
+                    list.push_back (hostDVDDriveObj);
+            }
+
+            // check the mounted drives
+            parseMountTable((char*)"/etc/mtab", list);
+
+            // check the drives that can be mounted
+            parseMountTable((char*)"/etc/fstab", list);
         }
-
-        // check the mounted drives
-        parseMountTable((char*)"/etc/mtab", list);
-
-        // check the drives that can be mounted
-        parseMountTable((char*)"/etc/fstab", list);
     }
 #elif defined(__DARWIN__)
     PDARWINDVD cur = DarwinGetDVDDrives();
@@ -1379,6 +1389,128 @@ HRESULT Host::releaseAllUSBDevices (SessionMachine *aMachine)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef __LINUX__
+# ifdef VBOX_USE_LIBHAL
+/**
+ * Helper function to query the hal subsystem for information about DVD drives attached to the
+ * system.
+ *
+ * @returns true if at least one drive was found, false otherwise
+ * @retval  list drives found will be attached to this list
+ */
+bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
+{
+    bool halSuccess = false;
+    DBusError dbusError;
+    dbus_error_init (&dbusError);
+    DBusConnection *dbusConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
+    if (dbusConnection != 0)
+    {
+        LibHalContext *halContext = libhal_ctx_new();
+        if (halContext != 0)
+        {
+            if (libhal_ctx_set_dbus_connection (halContext, dbusConnection))
+            {
+                if (libhal_ctx_init(halContext, &dbusError))
+                {
+                    int numDevices;
+                    char **halDevices = libhal_find_device_by_capability(halContext,
+                                                "storage.cdrom", &numDevices, &dbusError);
+                    if (halDevices != 0)
+                    {
+                        for (int i = 0; i < numDevices; i++)
+                        {
+                            char *devNode = libhal_device_get_property_string(halContext,
+                                                    halDevices[i], "block.device", &dbusError);
+                            if (devNode != 0)
+                            {
+                                if (validateDevice(devNode, true))
+                                {
+                                    char description[256];
+                                    char *vendor, *product;
+                                    /* We have at least one hit, so operation successful :) */
+                                    halSuccess = true;
+                                    vendor = libhal_device_get_property_string(halContext,
+                                                    halDevices[i], "info.vendor", &dbusError);
+                                    product = libhal_device_get_property_string(halContext,
+                                                    halDevices[i], "info.product", &dbusError);
+                                    if ((product != 0))
+                                    {
+                                        if (vendor != 0 && vendor[0] != 0)
+                                        {
+                                            RTStrPrintf(description, sizeof(description),
+                                                        "%s %s (%s)", vendor, product, devNode);
+                                        }
+                                        else
+                                        {
+                                            RTStrPrintf(description, sizeof(description),
+                                                        "%s (%s)", product, devNode);
+                                        }
+                                        ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                                        hostDVDDriveObj.createObject();
+                                        hostDVDDriveObj->init (Bstr (devNode), Bstr (description));
+                                        list.push_back (hostDVDDriveObj);
+                                    }
+                                    else
+                                    {
+                                        ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                                        hostDVDDriveObj.createObject();
+                                        hostDVDDriveObj->init (Bstr (devNode));
+                                        list.push_back (hostDVDDriveObj);
+                                    }
+                                }
+                                else
+                                {
+                                    LogRel(("Host::COMGETTER(DVDDrives): failed to validate the block device %s as a DVD drive\n"));
+                                }
+                                libhal_free_string(devNode);
+                            }
+                            else
+                            {
+                                LogRel(("Host::COMGETTER(DVDDrives): failed to get property \"block.device\" for device %s.  dbus error: %s (%s)\n",
+                                        halDevices[i], dbusError.name, dbusError.message));
+                                dbus_error_free(&dbusError);
+                            }
+                        }
+                        libhal_free_string_array(halDevices);
+                    }
+                    else
+                    {
+                        LogRel(("Host::COMGETTER(DVDDrives): failed to get devices with capability \"storage.cdrom\".  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                        dbus_error_free(&dbusError);
+                    }
+                    if (!libhal_ctx_shutdown(halContext, &dbusError))  /* what now? */
+                    {
+                        LogRel(("Host::COMGETTER(DVDDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                        dbus_error_free(&dbusError);
+                    }
+                }
+                else
+                {
+                    LogRel(("Host::COMGETTER(DVDDrives): failed to initialise libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                    dbus_error_free(&dbusError);
+                }
+                libhal_ctx_free(halContext);
+            }
+            else
+            {
+                LogRel(("Host::COMGETTER(DVDDrives): failed to set libhal connection to dbus.\n"));
+            }
+        }
+        else
+        {
+            LogRel(("Host::COMGETTER(DVDDrives): failed to get a libhal context - out of memory?\n"));
+        }
+        dbus_connection_unref(dbusConnection);
+    }
+    else
+    {
+        LogRel(("Host::COMGETTER(DVDDrives): failed to connect to dbus.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+        dbus_error_free(&dbusError);
+    }
+    return halSuccess;
+}
+# endif  /* VBOX_USE_HAL defined */
+
 /**
  * Helper function to parse the given mount file and add found entries
  */
