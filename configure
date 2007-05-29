@@ -1013,6 +1013,7 @@ function check_libhal()
   test_header libhal
   pc_cflagshal=`pkg-config hal --cflags 2>/dev/null`
   pc_libhal=`pkg-config hal --libs 2>/dev/null`
+  pc_verhal=`pkg-config hal --modversion 2>/dev/null`
   if [ ! -z "$pc_cflagshal" ]
   then # is this acceptable?
       CFLAGSHAL=$pc_cflagshal
@@ -1034,7 +1035,7 @@ extern "C" int main(void)
 }
 ' > .tmp_src.cc
   if test_compile "$CFLAGSHAL $LIBHAL" libhal libhal; then
-    log_success "found"
+    log_success "found version $pc_verhal"
     cnf_append "LIB_HAL_CFLAGS" "$CFLAGSHAL"
     cnf_append "LIB_HAL_LIBS" `echo $LIBHAL | sed 's+-l++g'`
     cnf_append "VBOX_WITH_LIBHAL" "1"
