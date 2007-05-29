@@ -2795,11 +2795,13 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
         if (VBOX_FAILURE(rc))
             goto failure;
 
-        Assert(!(pPatch->flags & PATMFL_MUST_INSTALL_PATCHJMP));
+        /* normal patch can be turned into an int3 patch -> clear patch jump installation flag. */
+        pPatch->flags &= ~PATMFL_MUST_INSTALL_PATCHJMP;
+
         pPatch->flags &= ~PATMFL_INSTR_HINT;
         STAM_COUNTER_INC(&pVM->patm.s.StatInt3Callable);
     }
-
+    else
     if (pPatch->flags & PATMFL_MUST_INSTALL_PATCHJMP)
     {
         Assert(!(pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT|PATMFL_SYSENTER|PATMFL_INT3_REPLACEMENT_BLOCK)));
