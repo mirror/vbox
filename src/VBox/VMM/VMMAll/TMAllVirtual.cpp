@@ -211,7 +211,6 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
 }
 
 
-
 /**
  * Get the time when we're not running at 100%
  *
@@ -348,7 +347,6 @@ TMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
          */
         Assert(pVM->tm.s.fVirtualTicking);
         u64 = tmVirtualGetRaw(pVM);
-const uint64_t u64VirtualNow = u64;
         if (    fCheckTimers
             &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
             &&  pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
@@ -427,7 +425,6 @@ const uint64_t u64VirtualNow = u64;
             u64 = u64Expire;
             ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64);
             ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
-pVM->tm.s.u64VirtualSyncStoppedTS = u64VirtualNow;
             if (    fCheckTimers
                 &&  !VM_FF_ISSET(pVM, VM_FF_TIMER))
             {

@@ -1407,9 +1407,6 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
      */
     const uint64_t u64VirtualNow = TMVirtualGetEx(pVM, false /* don't check timers */);
     uint64_t u64Now;
-uint64_t off = 0, u64Delta = 0, u64Sub = 0;         /* debugging - to be removed */
-bool fWasInCatchup = false;                         /* debugging - to be removed */
-bool fWasTicking = pVM->tm.s.fVirtualSyncTicking;   /* debugging - to be removed*/
     if (!pVM->tm.s.fVirtualSyncTicking)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStoppedAlready);
@@ -1419,14 +1416,13 @@ bool fWasTicking = pVM->tm.s.fVirtualSyncTicking;   /* debugging - to be removed
     else
     {
         /* Calc 'now'. (update order doesn't really matter here) */
-        /*uint64_t*/ off = pVM->tm.s.offVirtualSync;
+        uint64_t off = pVM->tm.s.offVirtualSync;
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
-fWasInCatchup = pVM->tm.s.fVirtualSyncCatchUp; /* debugging - to be removed */
-            /*uint64_t*/ u64Delta = u64VirtualNow - pVM->tm.s.u64VirtualSyncCatchUpPrev;
+            uint64_t u64Delta = u64VirtualNow - pVM->tm.s.u64VirtualSyncCatchUpPrev;
             if (RT_LIKELY(!(u64Delta >> 32)))
             {
-                /*uint64_t*/ u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
+                uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
                 if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
                 {
                     off -= u64Sub;
@@ -1463,45 +1459,9 @@ fWasInCatchup = pVM->tm.s.fVirtualSyncCatchUp; /* debugging - to be removed */
         u64Max = u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp;
 
     /* assert sanity */
-if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
-                ||  !(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
-                ||  !(u64Now <= u64Max)))
-{
-    LogRel(("TM: Add the following to defect #1414:\n"
-            "                         u64Now=%016RX64\n"
-            "                         u64Max=%016RX64\n"
-            "               pNext->u64Expire=%016RX64\n"
-            "                 u64VirtualSync=%016RX64\n"
-            "                  u64VirtualNow=%016RX64\n"
-            "                            off=%016RX64\n"
-            "                       u64Delta=%016RX64\n"
-            "                         u64Sub=%016RX64\n"
-            "                 offVirtualSync=%016RX64\n"
-            "          offVirtualSyncGivenUp=%016RX64\n"
-            "      u64VirtualSyncCatchUpPrev=%016RX64\n"
-            "        u64VirtualSyncStoppedTS=%016RX64\n"
-            "u32VirtualSyncCatchUpPercentage=%08RX32\n"
-            "            fVirtualSyncTicking=%RTbool (prev=%RTbool)\n"
-            "            fVirtualSyncCatchUp=%RTbool (prev=%RTbool)\n",
-            u64Now,
-            u64Max,
-            pNext->u64Expire,
-            pVM->tm.s.u64VirtualSync,
-            u64VirtualNow,
-            off,
-            u64Delta,
-            u64Sub,
-            pVM->tm.s.offVirtualSync,
-            pVM->tm.s.offVirtualSyncGivenUp,
-            pVM->tm.s.u64VirtualSyncCatchUpPrev,
-            pVM->tm.s.u64VirtualSyncStoppedTS,
-            pVM->tm.s.u32VirtualSyncCatchUpPercentage,
-            pVM->tm.s.fVirtualSyncTicking, fWasTicking,
-            pVM->tm.s.fVirtualSyncCatchUp, fWasInCatchup));
     Assert(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
     Assert(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
     Assert(u64Now <= u64Max);
-}
 
     /*
      * Process the expired timers moving the clock along as we progress.
@@ -1571,10 +1531,8 @@ if (RT_UNLIKELY(    !(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
         /* calc the slack we've handed out. */
         const uint64_t u64VirtualNow2 = TMVirtualGetEx(pVM, false /* don't check timers */);
         Assert(u64VirtualNow2 >= u64VirtualNow);
-if (RT_UNLIKELY(u64VirtualNow2 < u64VirtualNow))  LogRel(("TM: u64VirtualNow2=%#RX64 < u64VirtualNow=%#RX64\n", u64VirtualNow2, u64VirtualNow)); /* debugging - to be removed. */
         AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%RU64 < %RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
         const uint64_t offSlack = pVM->tm.s.u64VirtualSync - u64Now;
-if (RT_UNLIKELY(offSlack & BIT64(63)))  LogRel(("TM: pVM->tm.s.u64VirtualSync=%#RX64 - u64Now=%#RX64 -> %#RX64\n", pVM->tm.s.u64VirtualSync, u64Now, offSlack)); /* debugging - to be removed. */
         STAM_STATS({
             if (offSlack)
             {
@@ -1662,9 +1620,6 @@ if (RT_UNLIKELY(offSlack & BIT64(63)))  LogRel(("TM: pVM->tm.s.u64VirtualSync=%#
             else
             {
                 /* don't bother */
-if (offLag & BIT64(63)) //debugging - remove.
-    LogRel(("TM: offLag is negative! offLag=%RI64 (%#RX64) offNew=%#RX64 u64Elapsed=%#RX64 offSlack=%#RX64 u64VirtualNow2=%#RX64 u64VirtualNow=%#RX64 u64VirtualSync=%#RX64 offVirtualSyncGivenUp=%#RX64 u64Now=%#RX64 u64Max=%#RX64\n",
-            offLag, offLag, offNew, u64Elapsed, offSlack, u64VirtualNow2, u64VirtualNow, pVM->tm.s.u64VirtualSync, pVM->tm.s.offVirtualSyncGivenUp, u64Now, u64Max));
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting);
                 ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
                 Log4(("TM: %RU64/%RU64: give up\n", u64VirtualNow2 - offNew, offLag));
