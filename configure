@@ -262,10 +262,14 @@ function check_gcc()
       if [ "$CC" != "gcc" ]; then
         cnf_append "TOOL_GCC3_CC" "$CC"
         cnf_append "TOOL_GCC3_AS" "$CC"
+        cnf_append "TOOL_GXX3_CC" "$CC"
+        cnf_append "TOOL_GXX3_AS" "$CC"
       fi
       if [ "$CXX" != "g++" ]; then
         cnf_append "TOOL_GCC3_CXX" "$CXX"
         cnf_append "TOOL_GCC3_LD"  "$CXX"
+        cnf_append "TOOL_GXX3_CXX" "$CXX"
+        cnf_append "TOOL_GXX3_LD"  "$CXX"
       fi
     fi
   fi
@@ -971,6 +975,7 @@ function check_kbuild()
     echo "export PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
     echo "export PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
     echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"" >> $ENV
+    echo "export PATH_KBUILD_BIN=\"\$path_kbuild_bin\"" >> $ENV
     echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
     echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
     echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
