@@ -86,10 +86,13 @@ public:
 
     ~BootItemsTable() {}
 
+    void emitItemToggled() { emit itemToggled(); }
+
 signals:
 
     void moveItemUp();
     void moveItemDown();
+    void itemToggled();
 
 private slots:
 
@@ -131,6 +134,23 @@ class BootItemsList : public QWidget
 {
     Q_OBJECT
 
+    class BootItem : public QCheckListItem
+    {
+        public:
+
+            BootItem (BootItemsTable *aParent, QListViewItem *aAfter,
+                      const QString &aName, Type aType)
+                : QCheckListItem (aParent, aAfter, aName, aType) {}
+
+        private:
+
+            void stateChange (bool)
+            {
+                BootItemsTable *table = static_cast<BootItemsTable*> (listView());
+                table->emitItemToggled();
+            }
+    };
+
 public:
 
     BootItemsList (QWidget *aParent, const char *aName)
@@ -167,6 +187,7 @@ public:
         connect (mBtnDown, SIGNAL (clicked()), this, SLOT (moveItemDown()));
         connect (mBootTable, SIGNAL (moveItemUp()), this, SLOT (moveItemUp()));
         connect (mBootTable, SIGNAL (moveItemDown()), this, SLOT (moveItemDown()));
+        connect (mBootTable, SIGNAL (itemToggled()), this, SLOT (onItemToggled()));
         buttonLayout->addWidget (mBtnUp);
         buttonLayout->addWidget (mBtnDown);
         buttonLayout->addItem (spacer);
@@ -189,15 +210,13 @@ public:
         /* Load boot-items of current VM */
         QStringList uniqueList;
         int minimumWidth = 0;
-        mSequence = QString::null;
         for (int i = 1; i <= 4; ++ i)
         {
             CEnums::DeviceType type = aMachine.GetBootOrder (i);
             if (type != CEnums::NoDevice)
             {
-                mSequence += type;
                 QString name = vboxGlobal().toString (type);
-                QCheckListItem *item = new QCheckListItem (mBootTable,
+                QCheckListItem *item = new BootItem (mBootTable,
                     mBootTable->lastItem(), name, QCheckListItem::CheckBox);
                 item->setOn (true);
                 uniqueList << name;
@@ -211,7 +230,7 @@ public:
             QString name = vboxGlobal().toString ((CEnums::DeviceType) i);
             if (!uniqueList.contains (name))
             {
-                QCheckListItem *item = new QCheckListItem (mBootTable,
+                QCheckListItem *item = new BootItem (mBootTable,
                     mBootTable->lastItem(), name, QCheckListItem::CheckBox);
                 uniqueList << name;
                 int width = item->width (mBootTable->fontMetrics(), mBootTable, 0);
@@ -232,7 +251,6 @@ public:
         /* Search for checked items */
         int index = 1;
         item = static_cast<QCheckListItem*> (mBootTable->firstChild());
-        QString sequence = QString::null;
         while (item)
         {
             if (item->isOn())
@@ -240,7 +258,6 @@ public:
                 CEnums::DeviceType type =
                     vboxGlobal().toDeviceType (item->text (0));
                 aMachine.SetBootOrder (index++, type);
-                sequence += type;
             }
             item = static_cast<QCheckListItem*> (item->nextSibling());
         }
@@ -251,12 +268,6 @@ public:
             if (!item->isOn())
                 aMachine.SetBootOrder (index++, CEnums::NoDevice);
             item = static_cast<QCheckListItem*> (item->nextSibling());
-        }
-        /* Check if the boot sequence was changed */
-        if (mSequence != sequence)
-        {
-            /* Clear the "GUI_FirstRun" extra data key */
-            aMachine.SetExtraData (GUI_FirstRun, QString::null);
         }
     }
 
@@ -274,6 +285,10 @@ public:
         }
     }
 
+signals:
+
+    void bootSequenceChanged();
+
 private slots:
 
     void moveItemUp()
@@ -284,6 +299,7 @@ private slots:
         if (!itemAbove) return;
         itemAbove->moveItem (item);
         processCurrentChanged (item);
+        emit bootSequenceChanged();
     }
 
     void moveItemDown()
@@ -294,6 +310,12 @@ private slots:
         if (!itemBelow) return;
         item->moveItem (itemBelow);
         processCurrentChanged (item);
+        emit bootSequenceChanged();
+    }
+
+    void onItemToggled()
+    {
+        emit bootSequenceChanged();
     }
 
     void processCurrentChanged (QListViewItem *aItem)
@@ -312,7 +334,6 @@ private:
     BootItemsTable *mBootTable;
     QToolButton *mBtnUp;
     QToolButton *mBtnDown;
-    QString mSequence;
 };
 
 
@@ -714,6 +735,8 @@ void VBoxVMSettingsDlg::init()
 
     /* Boot-order table */
     tblBootOrder = new BootItemsList (groupBox12, "tblBootOrder");
+    connect (tblBootOrder, SIGNAL (bootSequenceChanged()),
+             this, SLOT (bootSequenceChanged()));
     /* Fixing focus order for BootItemsList */
     setTabOrder (tbwGeneral, tblBootOrder);
     setTabOrder (tblBootOrder->focusProxy(), chbEnableACPI);
@@ -829,6 +852,8 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
     resize (minimumSize());
 
     VBoxGlobal::centerWidget (this, parentWidget());
+
+    mIsBootSettingsChanged = false;
 }
 
 void VBoxVMSettingsDlg::updateShortcuts()
@@ -885,8 +910,15 @@ void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 }
 
 
+void VBoxVMSettingsDlg::bootSequenceChanged()
+{
+    mIsBootSettingsChanged = true;
+}
+
+
 void VBoxVMSettingsDlg::hdaMediaChanged()
 {
+    bootSequenceChanged();
     uuidHDA = grbHDA->isChecked() ? cbHDA->getId() : QUuid();
     txHDA->setText (getHdInfo (grbHDA, uuidHDA));
     /* revailidate */
@@ -896,6 +928,7 @@ void VBoxVMSettingsDlg::hdaMediaChanged()
 
 void VBoxVMSettingsDlg::hdbMediaChanged()
 {
+    bootSequenceChanged();
     uuidHDB = grbHDB->isChecked() ? cbHDB->getId() : QUuid();
     txHDB->setText (getHdInfo (grbHDB, uuidHDB));
     /* revailidate */
@@ -905,6 +938,7 @@ void VBoxVMSettingsDlg::hdbMediaChanged()
 
 void VBoxVMSettingsDlg::hddMediaChanged()
 {
+    bootSequenceChanged();
     uuidHDD = grbHDD->isChecked() ? cbHDD->getId() : QUuid();
     txHDD->setText (getHdInfo (grbHDD, uuidHDD));
     /* revailidate */
@@ -914,6 +948,7 @@ void VBoxVMSettingsDlg::hddMediaChanged()
 
 void VBoxVMSettingsDlg::cdMediaChanged()
 {
+    bootSequenceChanged();
     uuidISODVD = bgDVD->isChecked() ? cbISODVD->getId() : QUuid();
     /* revailidate */
     wvalDVD->revalidate();
@@ -922,6 +957,7 @@ void VBoxVMSettingsDlg::cdMediaChanged()
 
 void VBoxVMSettingsDlg::fdMediaChanged()
 {
+    bootSequenceChanged();
     uuidISOFloppy = bgFloppy->isChecked() ? cbISOFloppy->getId() : QUuid();
     /* revailidate */
     wvalFloppy->revalidate();
@@ -1287,10 +1323,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         grbHDB->setChecked (false);
         grbHDD->setChecked (false);
 
-        /* Creating a clean hd array */
-        for (uint i = 0; i < SIZEOF_ARRAY (diskSet); ++ i)
-            mHDList << QUuid();
-
         CHardDiskAttachmentEnumerator en =
             machine.GetHardDiskAttachments().Enumerate();
         while (en.HasMore())
@@ -1313,7 +1345,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                     diskSet [i].data.grb->setChecked (true);
                     diskSet [i].data.tx->setText (vboxGlobal().details (hd));
                     *(diskSet [i].data.uuid) = QUuid (root.GetId());
-                    mHDList [i] = root.GetId();
                 }
             }
         }
@@ -1338,7 +1369,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
 
         CFloppyDrive floppy = machine.GetFloppyDrive();
-        mFDsettings = QString ("%1 %2").arg (floppy.GetState());
         switch (floppy.GetState())
         {
             case CEnums::HostDriveCaptured:
@@ -1360,7 +1390,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                     cbHostFloppy->setCurrentText (name);
                 }
                 rbHostFloppy->setChecked (true);
-                mFDsettings += name;
                 break;
             }
             case CEnums::ImageMounted:
@@ -1371,7 +1400,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 QFileInfo fi (src);
                 rbISOFloppy->setChecked (true);
                 uuidISOFloppy = QUuid (img.GetId());
-                mFDsettings += uuidISOFloppy;
                 break;
             }
             case CEnums::NotMounted:
@@ -1403,7 +1431,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
 
         CDVDDrive dvd = machine.GetDVDDrive();
-        mCDsettings = QString ("%1 %2").arg (dvd.GetState());
         switch (dvd.GetState())
         {
             case CEnums::HostDriveCaptured:
@@ -1425,7 +1452,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                     cbHostDVD->setCurrentText (name);
                 }
                 rbHostDVD->setChecked (true);
-                mCDsettings += name;
                 break;
             }
             case CEnums::ImageMounted:
@@ -1436,7 +1462,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 QFileInfo fi (src);
                 rbISODVD->setChecked (true);
                 uuidISODVD = QUuid (img.GetId());
-                mCDsettings += uuidISODVD;
                 break;
             }
             case CEnums::NotMounted:
@@ -1553,8 +1578,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
 
 COMResult VBoxVMSettingsDlg::putBackToMachine()
 {
-    mIsBootSettingsChanged = false;
-
     CVirtualBox vbox = vboxGlobal().virtualBox();
     CBIOSSettings biosSettings = cmachine.GetBIOSSettings();
 
@@ -1632,11 +1655,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
 
         /* now, attach new disks */
-        QStringList hdList;
         for (uint i = 0; i < SIZEOF_ARRAY (diskSet); i++)
         {
             QUuid *newId = diskSet [i].data.uuid;
-            hdList << *newId;
             if (diskSet [i].data.grb->isChecked() && !(*newId).isNull())
             {
                 cmachine.AttachHardDisk (*newId, diskSet [i].ctl, diskSet [i].dev);
@@ -1645,20 +1666,14 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
                         this, cmachine, *newId, diskSet [i].ctl, diskSet [i].dev);
             }
         }
-
-        /* Check if the hd sequence was changed */
-        if (mHDList != hdList)
-            mIsBootSettingsChanged = true;
     }
 
     /* floppy image */
     {
-        QString curFDsettings;
         CFloppyDrive floppy = cmachine.GetFloppyDrive();
         if (!bgFloppy->isChecked())
         {
             floppy.Unmount();
-            curFDsettings = QString ("%1 %2").arg (floppy.GetState());
         }
         else if (rbHostFloppy->isChecked())
         {
@@ -1670,30 +1685,20 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
              *  otherwise the selected drive is not yet available, leave it
              *  as is
              */
-            curFDsettings = QString ("%1 %2").arg (floppy.GetState())
-                .arg (floppy.GetHostDrive().GetName());
         }
         else if (rbISOFloppy->isChecked())
         {
             Assert (!uuidISOFloppy.isNull());
             floppy.MountImage (uuidISOFloppy);
-            curFDsettings = QString ("%1 %2").arg (floppy.GetState())
-                .arg (floppy.GetImage().GetId());
         }
-
-        /* Check if the fd settings was changed */
-        if (mFDsettings != curFDsettings)
-            mIsBootSettingsChanged = true;
     }
 
     /* CD/DVD-ROM image */
     {
-        QString curCDsettings;
         CDVDDrive dvd = cmachine.GetDVDDrive();
         if (!bgDVD->isChecked())
         {
             dvd.Unmount();
-            curCDsettings = QString ("%1 %2").arg (dvd.GetState());
         }
         else if (rbHostDVD->isChecked())
         {
@@ -1705,20 +1710,12 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
              *  otherwise the selected drive is not yet available, leave it
              *  as is
              */
-            curCDsettings = QString ("%1 %2").arg (dvd.GetState())
-                .arg (dvd.GetHostDrive().GetName());
         }
         else if (rbISODVD->isChecked())
         {
             Assert (!uuidISODVD.isNull());
             dvd.MountImage (uuidISODVD);
-            curCDsettings = QString ("%1 %2").arg (dvd.GetState())
-                .arg (dvd.GetImage().GetId());
         }
-
-        /* Check if the cd sequence was changed */
-        if (mCDsettings != curCDsettings)
-            mIsBootSettingsChanged = true;
     }
 
     /* Clear the "GUI_FirstRun" extra data key in case of one of the boot
@@ -1819,6 +1816,8 @@ void VBoxVMSettingsDlg::showImageManagerISOFloppy() { showVDImageManager(&uuidIS
 
 void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, QLabel*)
 {
+    bootSequenceChanged();
+
     VBoxDefs::DiskType type = VBoxDefs::InvalidType;
     if (cbb == cbISODVD)
         type = VBoxDefs::CD;
