@@ -2258,7 +2258,7 @@ static int handleModifyVDI(int argc, char *argv[],
         if (!hardDisk)
         {
             virtualBox->OpenVirtualDiskImage(Bstr(argv[0]), vdi.asOutParam());
-            if (!hardDisk)
+            if (!vdi)
             {
                 return errorArgument("Hard disk image not found");
             }
@@ -3372,11 +3372,9 @@ static int handleModifyVM(int argc, char *argv[],
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    ComPtr<IVirtualDiskImage> vdi;
-                    CHECK_ERROR(virtualBox, OpenVirtualDiskImage(Bstr(hdds[0]), vdi.asOutParam()));
-                    if (SUCCEEDED(rc) && vdi)
+                    CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[0]), hardDisk.asOutParam()));
+                    if (SUCCEEDED(rc) && hardDisk)
                     {
-                        hardDisk = vdi;
                         /* first check if it's already registered */
                         Guid hddUUID;
                         hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
@@ -3419,11 +3417,9 @@ static int handleModifyVM(int argc, char *argv[],
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    ComPtr<IVirtualDiskImage> vdi;
-                    CHECK_ERROR(virtualBox, OpenVirtualDiskImage(Bstr(hdds[1]), vdi.asOutParam()));
-                    if (SUCCEEDED(rc) && vdi)
+                    CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[1]), hardDisk.asOutParam()));
+                    if (SUCCEEDED(rc) && hardDisk)
                     {
-                        hardDisk = vdi;
                         /* first check if it's already registered */
                         Guid hddUUID;
                         hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
@@ -3466,11 +3462,9 @@ static int handleModifyVM(int argc, char *argv[],
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    ComPtr<IVirtualDiskImage> vdi;
-                    CHECK_ERROR(virtualBox, OpenVirtualDiskImage(Bstr(hdds[2]), vdi.asOutParam()));
-                    if (SUCCEEDED(rc) && vdi)
+                    CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[2]), hardDisk.asOutParam()));
+                    if (SUCCEEDED(rc) && hardDisk)
                     {
-                        hardDisk = vdi;
                         /* first check if it's already registered */
                         Guid hddUUID;
                         hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
@@ -4746,7 +4740,6 @@ static int handleShowVDIInfo(int argc, char *argv[],
     }
 
     ComPtr<IHardDisk> hardDisk;
-    ComPtr<IVirtualDiskImage> vdi;
     Bstr filepath;
 
     bool registered = true;
@@ -4758,22 +4751,19 @@ static int handleShowVDIInfo(int argc, char *argv[],
     if (FAILED (rc))
     {
         filepath = argv[0];
-        rc = virtualBox->FindVirtualDiskImage(filepath, vdi.asOutParam());
+        rc = virtualBox->FindHardDisk(filepath, hardDisk.asOutParam());
         /* no? well, then it's an unregistered image */
         if (FAILED (rc))
         {
             registered = false;
-            CHECK_ERROR(virtualBox, OpenVirtualDiskImage(filepath, vdi.asOutParam()));
+            CHECK_ERROR(virtualBox, OpenHardDisk(filepath, hardDisk.asOutParam()));
         }
-        if (SUCCEEDED (rc))
-            hardDisk = vdi;
-    }
-    else
-    {
-        vdi = hardDisk;
     }
     if (SUCCEEDED(rc) && hardDisk)
     {
+        /* query a VDI object (will remain null if it's not VDI) */
+        ComPtr<IVirtualDiskImage> vdi = hardDisk;
+
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         RTPrintf("UUID:                 %s\n", uuid.toString().raw());
 
@@ -4831,6 +4821,9 @@ static int handleShowVDIInfo(int argc, char *argv[],
         {
             case HardDiskStorageType_VirtualDiskImage:
                 storageTypeStr = "Virtual Disk Image (VDI)";
+                break;
+            case HardDiskStorageType_VMDKImage:
+                storageTypeStr = "VMDK Image";
                 break;
             case HardDiskStorageType_ISCSIHardDisk:
                 storageTypeStr = "iSCSI target";
