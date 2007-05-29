@@ -1117,9 +1117,7 @@
  * Pointer validation macro.
  * @param   ptr
  */
-#if defined(__WIN64__)
-# define VALID_PTR(ptr)     ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
-#elif defined(__AMD64__)
+#if defined(__AMD64__)
 # ifdef IN_RING3
 #  if defined(__DARWIN__) /* first 4GB is reserved for legacy kernel. */
 #   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) >= _4G \
