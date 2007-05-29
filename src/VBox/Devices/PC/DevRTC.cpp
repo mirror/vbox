@@ -171,9 +171,9 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         if (s->cRelLogEntries++ < 64)
             LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
     } else {
-        TMTimerStop(s->CTXSUFF(pPeriodicTimer));
-        if (s->cRelLogEntries++ < 64)
+        if (TMTimerIsActive(s->CTXSUFF(pPeriodicTimer)) && s->cRelLogEntries++ < 64)
             LogRel(("RTC: stopped the periodic timer\n"));
+        TMTimerStop(s->CTXSUFF(pPeriodicTimer));
     }
 }
 
@@ -512,7 +512,7 @@ static int rtc_load(QEMUFile *f, void *opaque, int version_id)
     qemu_get_timer(f, s->CTXSUFF(pSecondTimer2));
 
     int period_code = s->cmos_data[RTC_REG_A] & 0x0f;
-    if (    period_code != 0 
+    if (    period_code != 0
         &&  (s->cmos_data[RTC_REG_B] & REG_B_PIE)) {
         if (period_code <= 2)
             period_code += 7;
