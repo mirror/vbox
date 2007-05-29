@@ -891,6 +891,25 @@ DECLCALLBACK(void) setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_
 }
 
 
+/**
+ * VM Runtime error callback function. Called by the various VM components.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pvUser      The user argument.
+ * @param   fFata       Wheather it is a fatal error or not.
+ * @param   pszErrorId  Error ID string.
+ * @param   pszError    Error message format string.
+ * @param   args        Error message arguments.
+ * @thread EMT.
+ */
+DECLCALLBACK(void) setVMRuntimeErrorCallback(PVM pVM, void *pvUser, bool fFatal,
+                                             const char *pszErrorId,
+                                             const char *pszFormat, va_list args)
+{
+    RTPrintf("%s: %s!\n%N!\n", fFatal ? "Error" : "Warning", pszErrorId, pszFormat, &args);
+}
+
+
 /** VM asynchronous operations thread */
 DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
 {
@@ -1063,7 +1082,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
      */
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
     rc = CFGMR3InsertString(pRoot,  "Name",                 "Default VM");          UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "RamSize",              g_u32MemorySizeMB * _1M);      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "RamSize",            g_u32MemorySizeMB * _1M); UPDATE_RC();
     if (g_fPreAllocRam)
     {
         rc = CFGMR3InsertInteger(pRoot, "PreAllocRam",      1);                     UPDATE_RC();
@@ -1113,7 +1132,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              g_u32MemorySizeMB * _1M);      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "RamSize",            g_u32MemorySizeMB * _1M); UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice0",          pszBootDevice);         UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice1",          "NONE");                UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice2",          "NONE");                UPDATE_RC();
@@ -1130,7 +1149,6 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
     /* Boot menu */
     rc = CFGMR3InsertInteger(pCfg,  "ShowBootMenu",         g_iBootMenu);           UPDATE_RC();
-
 
     /*
      * ACPI
@@ -1581,6 +1599,8 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
 #undef UPDATE_RC
 #undef UPDATE_RC
+
+    VMR3AtRuntimeErrorRegister (pVM, setVMRuntimeErrorCallback, NULL);
 
     return rc;
 }
