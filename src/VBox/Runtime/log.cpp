@@ -116,7 +116,7 @@ static struct RTLOGGERPERTHREAD
     uintptr_t volatile      uKey;
     /** The logger instance.*/
     PRTLOGGER volatile      pLogger;
-} g_aPerThreadLoggers[8] = 
+} g_aPerThreadLoggers[8] =
 {   { NIL_RTNATIVETHREAD, 0, 0},
     { NIL_RTNATIVETHREAD, 0, 0},
     { NIL_RTNATIVETHREAD, 0, 0},
@@ -652,8 +652,8 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
      */
     AssertPtrReturn(pLogger, VERR_INVALID_PARAMETER);
     AssertReturn(cbLogger >= sizeof(*pLogger), VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pfnLogger, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pfnFlush, VERR_INVALID_PARAMETER);
+    AssertReturn(pfnLogger, VERR_INVALID_PARAMETER);
+    AssertReturn(pfnFlush, VERR_INVALID_PARAMETER);
 
     /*
      * Initialize the ring-0 instance.
