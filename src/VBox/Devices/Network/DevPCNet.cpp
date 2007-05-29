@@ -1671,8 +1671,8 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
         else
         {
             uint8_t *src = &pData->abRecvBuf[8];
-            RTGCPHYS crda = CSR_CRDA(pData);
-            RMD      rmd;
+            RTGCPHYS next_crda, crda = CSR_CRDA(pData);
+            RMD      rmd, next_rmd;
             int      pktcount = 0;
 
             memcpy(src, buf, size);
@@ -1711,18 +1711,25 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
 
             while (size > 0)
             {
-                /* write back, clear the own bit */
-                pcnetRmdStorePassHost(pData, &rmd, PHYSADDR(pData, crda));
-
                 /* Read the entire next descriptor as we're likely to need it. */
                 if (--i < 1)
                     i = CSR_RCVRL(pData);
-                crda = pcnetRdraAddr(pData, i);
-                pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, crda));
+                next_crda = pcnetRdraAddr(pData, i);
+                pcnetRmdLoad(pData, &next_rmd, PHYSADDR(pData, next_crda));
 
-                if (!rmd.rmd1.own)
-                    break;      /* Error - not enough buffer space available. */
+                /* Check next descriptor's own bit. If we don't own it, we have
+                 * to quit and write error status into the last descriptor we own.
+                 */
+                if (!next_rmd.rmd1.own)
+                    break;
                 
+                /* Write back current descriptor, clear the own bit. */
+                pcnetRmdStorePassHost(pData, &rmd, PHYSADDR(pData, crda));
+
+                /* Switch to the next descriptor */
+                crda = next_crda;
+                rmd  = next_rmd;
+
                 count = RT_MIN(4096 - (int)rmd.rmd1.bcnt, size);
                 rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
                 PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
