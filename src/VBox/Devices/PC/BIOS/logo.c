@@ -445,7 +445,7 @@ void set_bitmap_palette(palette_seg, palette_size)
 
 /**
  * Fade in and check for keystroke.
- * @returns    BIOS scan code if available, 0 if not.
+ * @returns   1 if F12 was pressed, 0 if not.
  */
 Bit8u fade_in(palette_seg, palette_size)
   Bit16u palette_seg;
@@ -453,7 +453,7 @@ Bit8u fade_in(palette_seg, palette_size)
   {
     RGBPAL *palette;
     Bit16u i, j;
-    Bit8u  scode, scan_code = 0;
+    Bit8u  scode;
 
     // Fade in
     for (i = 0; i < 0x3F; i++)
@@ -481,16 +481,16 @@ Bit8u fade_in(palette_seg, palette_size)
             *palette++;
         }
         scode = wait(16 / WAIT_MS, 0);
-        if (scode)
-            scan_code = scode;
+        if (scode == F12_SCAN_CODE)
+            return 1;
     }
 
-    return scan_code;
+    return 0; // F12 not pressed
 }
 
 /**
  * Fade out and check for keystroke.
- * @returns    BIOS scan code if available, 0 if not.
+ * @returns    1 if F12 was pressed, 0 if not.
  */
 Bit8u fade_out(palette_seg, palette_size)
   Bit16u palette_seg;
@@ -498,7 +498,7 @@ Bit8u fade_out(palette_seg, palette_size)
   {
     RGBPAL *palette;
     Bit16u i, j;
-    Bit8u  scode, scan_code = 0;
+    Bit8u  scode;
 
     // Fade out
     for (i = 0x3F; i > 0; i--)
@@ -526,11 +526,11 @@ Bit8u fade_out(palette_seg, palette_size)
             *palette++;
         }
         scode = wait(16 / WAIT_MS, 0);
-        if (scode)
-            scan_code = scode;
+        if (scode == F12_SCAN_CODE)
+            return 1;
     }
 
-    return scan_code;
+    return 0; // F12 not pressed
 }
 
 void vesa_set_bank(bank)
@@ -582,7 +582,7 @@ void show_logo()
     Bit8u       logo_bank = 0;
     Bit16u      address;
 
-    Bit8u       scode, scan_code = 0;
+    Bit8u       scode, f12_pressed = 0;
     Bit8u c;
 
     // Set PIT to 1ms ticks
@@ -976,22 +976,23 @@ show_bmp:
         // Fade in
         if (is_fade_in)
         {
-            scode = fade_in(pal_seg, palette_size);
-            if (scode && scan_code != F12_SCAN_CODE)
-                scan_code = scode;
+            if (fade_in(pal_seg, palette_size))
+                f12_pressed = 1;
         }
 
         // Wait (interval in milliseconds)
-        scode = wait(logo_time / WAIT_MS, 0);
-        if (scode && scan_code != F12_SCAN_CODE)
-            scan_code = scode;
-
-        // Fade out
-        if (is_fade_out)
+        if (!f12_pressed)
         {
-            scode = fade_out(pal_seg, palette_size);
-            if (scode && scan_code != F12_SCAN_CODE)
-                scan_code = scode;
+            scode = wait(logo_time / WAIT_MS, 0);
+            if (scode == F12_SCAN_CODE)
+                f12_pressed = 1;
+        }
+
+        // Fade out (only if F12 was not pressed)
+        if (is_fade_out && !f12_pressed)
+        {
+            if (fade_out(pal_seg, palette_size))
+                f12_pressed = 1;
         }
     }
 
@@ -1037,15 +1038,17 @@ done:
                 printf("Press F12 to select boot device.");
 
             // if the user has pressed F12 don't wait here
-            if ( scan_code != F12_SCAN_CODE )
+            if (!f12_pressed)
             {
                 // Wait for timeout or keystroke
-                scan_code = wait(F12_WAIT_TIME, 1);
+                scode = wait(F12_WAIT_TIME, 1);
+                if (scode == F12_SCAN_CODE)
+                    f12_pressed = 1;
             }
         }
 
         // If F12 pressed, show boot menu
-        if (scan_code == F12_SCAN_CODE)
+        if (f12_pressed)
         {
             // Hide cursor, clear screen and move cursor to starting position
             ASM_START
@@ -1074,25 +1077,34 @@ done:
             ASM_END
 
             // Show menu
-            printf("\n");
-            printf("VirtualBox temporary boot device selection\n");
-            printf("\n");
-            printf(" 1) Floppy\n");
-            printf(" 2) Hard Disk\n");
-            printf(" 3) CD-ROM\n");
-            printf(" 4) LAN\n\n");
-            printf(" 0) Continue booting\n");
+            printf("\n"
+                   "VirtualBox temporary boot device selection\n"
+                   "\n"
+                   " 1) Floppy\n"
+                   " 2) Hard Disk\n"
+                   " 3) CD-ROM\n"
+                   " 4) LAN\n"
+                   "\n"
+                   " 0) Continue booting\n");
 
             // Wait for keystroke
-            do
+            for (;;)
             {
-                scan_code = wait(WAIT_HZ, 1);
-            } while (scan_code == 0);
+                do
+                {
+                    scode = wait(WAIT_HZ, 1);
+                } while (scode == 0);
 
-            // Change first boot device code to selected one
-            if (scan_code > 0x02 && scan_code <= 0x05)
-            {
-                write_byte(ebda_seg,&EbdaData->uForceBootDrive, scan_code-1);
+                // Change first boot device code to selected one
+                if (scode > 0x02 && scode <= 0x05)
+                {
+                    write_byte(ebda_seg,&EbdaData->uForceBootDrive, scode-1);
+                    break;
+                }
+
+                // '0' ... continue
+                if (scode == 0x0b)
+                    break;
             }
 
             // Switch to text mode. Clears screen and enables cursor again.
