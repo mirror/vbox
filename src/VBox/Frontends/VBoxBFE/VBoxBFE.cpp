@@ -883,7 +883,11 @@ DECLCALLBACK(void) setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_
     if (VBOX_SUCCESS(rc))
         szError[0] = '\0';
     else
-        RTStrPrintfV(szError, sizeof(szError), pszFormat, args);
+    {
+        RTStrPrintf(szError, sizeof(szError), 
+                    "%N!\nVBox status code: %d (%Vrc)", pszFormat, &args, rc, rc);
+        RTPrintf("%s\n", szError);
+    }
 }
 
 
@@ -985,11 +989,9 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
      * On failure destroy the VM.
      */
     if (VBOX_FAILURE(rc))
-    {
         goto failure;
-    }
-    return 0;
 
+    return 0;
 
 failure:
     if (pVM)
@@ -999,6 +1001,7 @@ failure:
         pVM = NULL;
     }
     machineState = VMSTATE_TERMINATED;
+
     return 0;
 }
 
