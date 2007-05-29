@@ -2676,7 +2676,13 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
         }
     }
 
-    if (PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(pInstrGC + SIZEOF_NEARJUMP32))
+    if (!(pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT|PATMFL_SYSENTER|PATMFL_INT3_REPLACEMENT_BLOCK)))   
+        pPatch->flags |= PATMFL_MUST_INSTALL_PATCHJMP;
+
+    /* If we're going to insert a patch jump, then the jump itself is not allowed to cross a page boundary. */
+    if (     (pPatch->flags & PATMFL_MUST_INSTALL_PATCHJMP)
+        &&   PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(pInstrGC + SIZEOF_NEARJUMP32)
+       )
     {
         STAM_COUNTER_INC(&pVM->patm.s.StatPageBoundaryCrossed);
 #ifdef DEBUG_sandervl
@@ -2793,11 +2799,10 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
         pPatch->flags &= ~PATMFL_INSTR_HINT;
         STAM_COUNTER_INC(&pVM->patm.s.StatInt3Callable);
     }
-    else
-    if (!(pPatch->flags & PATMFL_IDTHANDLER))
-    {
-        pPatch->flags |= PATMFL_MUST_INSTALL_PATCHJMP;
 
+    if (pPatch->flags & PATMFL_MUST_INSTALL_PATCHJMP)
+    {
+        Assert(!(pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT|PATMFL_SYSENTER|PATMFL_INT3_REPLACEMENT_BLOCK)));
         /* now insert a jump in the guest code */
         rc = patmGenJumpToPatch(pVM, pPatch, true);
         AssertRC(rc);
