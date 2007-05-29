@@ -817,10 +817,11 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
 
     polished = true;
 
-    /* update geometry for dynamically added usb-page to avoid qt-layout
-     * hints conflict. */
+    /* update geometry for the dynamically added usb-page to ensure proper
+     * sizeHint calculation by the Qt layout manager */
     wstUSBFilters->updateGeometry();
-    qApp->eventLoop()->processEvents (QEventLoop::AllEvents, 1000);
+    /* let our toplevel widget calculate its sizeHint properly */
+    QApplication::sendPostedEvents (0, 0);
 
     layout()->activate();
 
