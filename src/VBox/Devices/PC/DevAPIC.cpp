@@ -614,7 +614,8 @@ static void apic_init_ipi(APICState *s)
     memset(s->isr, 0, sizeof(s->isr));
     memset(s->tmr, 0, sizeof(s->tmr));
     memset(s->irr, 0, sizeof(s->irr));
-    memset(s->lvt, 0, sizeof(s->lvt));
+    for(i = 0; i < APIC_LVT_NB; i++)
+        s->lvt[i] = 1 << 16; /* mask LVT */
     s->esr = 0;
     memset(s->icr, 0, sizeof(s->icr));
     s->divide_conf = 0;
@@ -730,11 +731,11 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
         Log(("apic_get_interrupt: returns -1 (irr)\n"));
         return -1;
     }
-    reset_bit(s->irr, intno);
     if (s->tpr && (uint32_t)intno <= s->tpr) {
         Log(("apic_get_interrupt: returns %d (sp)\n", s->spurious_vec & 0xff));
         return s->spurious_vec & 0xff;
     }
+    reset_bit(s->irr, intno);
     set_bit(s->isr, intno);
     apic_update_irq(s);
     LogFlow(("apic_get_interrupt: returns %d\n", intno));
