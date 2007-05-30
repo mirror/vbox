@@ -4127,10 +4127,15 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
 
                 if (s->fATAPI)
                 {
-                    if (s->fDMA)
-                        STAM_REL_COUNTER_INC(&s->StatATAPIDMA);
-                    else
-                        STAM_REL_COUNTER_INC(&s->StatATAPIPIO);
+                    if (pCtl->fChainedTransfer)
+                    {
+                        /* Only count the actual transfers, not the PIO
+                         * transfer of the ATAPI command bytes. */
+                        if (s->fDMA)
+                            STAM_REL_COUNTER_INC(&s->StatATAPIDMA);
+                        else
+                            STAM_REL_COUNTER_INC(&s->StatATAPIPIO);
+                    }
                 }
                 else
                 {
