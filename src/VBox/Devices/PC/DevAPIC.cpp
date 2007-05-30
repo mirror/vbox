@@ -214,6 +214,7 @@ typedef struct APICState {
     STAMCOUNTER     StatMMIOReadHC;
     STAMCOUNTER     StatMMIOWriteGC;
     STAMCOUNTER     StatMMIOWriteHC;
+    STAMCOUNTER     StatClearedActiveIrq;
 # endif
 #endif /* VBOX */
 } APICState;
@@ -265,7 +266,7 @@ static int last_apic_id = 0;
 
 static void apic_init_ipi(APICState *s);
 static void apic_set_irq(APICState *s, int vector_num, int trigger_mode);
-static void apic_update_irq(APICState *s);
+static bool apic_update_irq(APICState *s);
 
 #ifdef VBOX
 static uint32_t apic_get_delivery_bitmask(APICState *s, uint8_t dest, uint8_t dest_mode);
@@ -283,6 +284,8 @@ PDMBOTHCBDECL(void) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, u
 PDMBOTHCBDECL(int)  ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int)  ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+
+static void apic_update_tpr(APICState *s, uint32_t val);
 __END_DECLS
 #endif /* VBOX */
 
@@ -452,8 +455,7 @@ PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, uint8_t val)
 {
     APICState *s = PDMINS2DATA(pDevIns, APICState *);
     LogFlow(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, s->tpr, (val & 0x0f) << 4));
-    s->tpr = (val & 0x0f) << 4;
-    apic_update_irq(s);
+    apic_update_tpr(s, (val & 0x0f) << 4);
 }
 
 PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns)
@@ -519,7 +521,7 @@ static int apic_get_arb_pri(APICState *s)
 }
 
 /* signal the CPU if an irq is pending */
-static void apic_update_irq(APICState *s)
+static bool apic_update_irq(APICState *s)
 {
     int irrv, ppr;
     if (!(s->spurious_vec & APIC_SV_ENABLE))
@@ -527,23 +529,44 @@ static void apic_update_irq(APICState *s)
     {
         /* Clear any pending APIC interrupt action flag. */
         s->CTXALLSUFF(pApicHlp)->pfnClearInterruptFF(s->CTXSUFF(pDevIns));
-        return;
+        return false;
     }
 #else
-        return;
+        return false;
 #endif /* VBOX */
     irrv = get_highest_priority_int(s->irr);
     if (irrv < 0)
-        return;
+        return false;
     ppr = apic_get_ppr(s);
     if (ppr && (irrv & 0xf0) <= (ppr & 0xf0))
-        return;
+        return false;
 #ifndef VBOX
     cpu_interrupt(s->cpu_env, CPU_INTERRUPT_HARD);
 #else
     s->CTXALLSUFF(pApicHlp)->pfnSetInterruptFF(s->CTXSUFF(pDevIns));
+    return true;
 #endif
 }
+
+#ifdef VBOX
+static void apic_update_tpr(APICState *s, uint32_t val)
+{
+    bool fIrqIsActive = false;
+    bool fIrqWasActive = false;
+
+    fIrqWasActive = apic_update_irq(s);
+    s->tpr        = val;
+    fIrqIsActive  = apic_update_irq(s);
+
+    /* If an interrupt is pending and now masked, then clear the FF flag. */
+    if (fIrqWasActive && !fIrqIsActive)
+    {
+        Log(("apic_update_tpr: deactivate interrupt that was masked by the TPR update (%x)\n", val));
+        STAM_COUNTER_INC(&s->StatClearedActiveIrq);
+        s->CTXALLSUFF(pApicHlp)->pfnClearInterruptFF(s->CTXSUFF(pDevIns));
+    }
+}
+#endif
 
 static void apic_set_irq(APICState *s, int vector_num, int trigger_mode)
 {
@@ -987,8 +1010,12 @@ static int apic_mem_writel(APICState *s, target_phys_addr_t addr, uint32_t val)
         Log(("apic_mem_writel: write to version register; ignored\n"));
         break;
     case 0x08:
+#ifdef VBOX
+        apic_update_tpr(s, val);
+#else
         s->tpr = val;
         apic_update_irq(s);
+#endif
         break;
     case 0x09:
     case 0x0a:
@@ -1768,6 +1795,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PDMDevHlpSTAMRegister(pDevIns, &pData->StatMMIOReadHC,     STAMTYPE_COUNTER,  "/PDM/APIC/MMIOReadHC",   STAMUNIT_OCCURENCES, "Number of APIC MMIO reads in HC.");
     PDMDevHlpSTAMRegister(pDevIns, &pData->StatMMIOWriteGC,    STAMTYPE_COUNTER,  "/PDM/APIC/MMIOWriteGC",  STAMUNIT_OCCURENCES, "Number of APIC MMIO writes in GC.");
     PDMDevHlpSTAMRegister(pDevIns, &pData->StatMMIOWriteHC,    STAMTYPE_COUNTER,  "/PDM/APIC/MMIOWriteHC",  STAMUNIT_OCCURENCES, "Number of APIC MMIO writes in HC.");
+    PDMDevHlpSTAMRegister(pDevIns, &pData->StatClearedActiveIrq, STAMTYPE_COUNTER,  "/PDM/APIC/Masked/ActiveIRQ",  STAMUNIT_OCCURENCES, "Number of cleared irqs.");
 #endif
 
     return VINF_SUCCESS;
