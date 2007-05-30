@@ -32,6 +32,7 @@
 #include <iprt/assert.h>
 #include <iprt/time.h>
 #include <iprt/string.h>
+#include <iprt/path.h>
 #include <iprt/ctype.h>
 #include "internal/fs.h"
 
@@ -89,7 +90,7 @@ RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, unsigned cbName)
  * @returns
  * @param   fMode       The mode mask containing dos-style attibutes only.
  */
-RTFMODE rtFsModeFromUnix(RTFMODE fMode)
+RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, unsigned cbName)
 {
     fMode &= RTFS_UNIX_MASK;
 
@@ -99,6 +100,12 @@ RTFMODE rtFsModeFromUnix(RTFMODE fMode)
         fMode |= RTFS_DOS_DIRECTORY;
     if (!(fMode & RTFS_DOS_MASK))
         fMode |= RTFS_DOS_NT_NORMAL;
+    if (!(fMode & RTFS_DOS_HIDDEN) && pszName)
+    {
+        pszName = RTPathFilename(pszName);
+        if (pszName && *pszName == '.')
+            fMode |= RTFS_DOS_HIDDEN;
+    }
     return fMode;
 }
 
@@ -116,7 +123,7 @@ RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, unsigned cbName)
     if (!(fMode & RTFS_UNIX_MASK))
         rtFsModeFromDos(fMode, pszName, cbName);
     else if (!(fMode & RTFS_DOS_MASK))
-        rtFsModeFromUnix(fMode);
+        rtFsModeFromUnix(fMode, pszName, cbName);
     else if (!(fMode & RTFS_TYPE_MASK))
         fMode |= fMode & RTFS_DOS_DIRECTORY ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
     else if (RTFS_IS_DIRECTORY(fMode))
@@ -168,7 +175,7 @@ bool rtFsModeIsValidPermissions(RTFMODE fMode)
  * @param   pObjInfo        The file system object info structure to setup.
  * @param   pStat           The stat structure to use.
  */
-void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat)
+void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName)
 {
     pObjInfo->cbObject    = pStat->st_size;
     pObjInfo->cbAllocated = pStat->st_size;
@@ -245,7 +252,7 @@ void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat)
 #endif
     Assert(RTFS_TYPE_MASK == S_IFMT);
 
-    pObjInfo->Attr.fMode  = rtFsModeFromUnix(fMode);
+    pObjInfo->Attr.fMode  = rtFsModeFromUnix(fMode, pszName, cbName);
 
     /* additional unix attribs */
     pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_UNIX;

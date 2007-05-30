@@ -336,7 +336,7 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
         int cchLink = readlink("/proc/self/exe", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
 # else
         int cchLink = readlink("/proc/curproc/file", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
-# endif         
+# endif
         if (cchLink < 0 || cchLink == sizeof(g_szrtProgramPath) - 1)
         {
             int rc = RTErrConvertFromErrno(errno);
@@ -464,7 +464,7 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
         struct stat Stat;
         if (!stat(pszNativePath, &Stat))
         {
-            rtFsConvertStatToObjInfo(pObjInfo, &Stat);
+            rtFsConvertStatToObjInfo(pObjInfo, &Stat, pszPath, 0);
             switch (enmAdditionalAttribs)
             {
                 case RTFSOBJATTRADD_EASIZE:

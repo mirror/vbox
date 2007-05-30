@@ -424,7 +424,7 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
     /*
      * Setup the returned data.
      */
-    rtFsConvertStatToObjInfo(pObjInfo, &Stat);
+    rtFsConvertStatToObjInfo(pObjInfo, &Stat, NULL, 0);
 
     /*
      * Requested attributes (we cannot provide anything actually).

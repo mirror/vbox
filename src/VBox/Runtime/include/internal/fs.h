@@ -30,14 +30,14 @@
 __BEGIN_DECLS
 
 RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, unsigned cbName);
-RTFMODE rtFsModeFromUnix(RTFMODE fMode);
+RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, unsigned cbName);
 RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, unsigned cbName);
 bool    rtFsModeIsValid(RTFMODE fMode);
 bool    rtFsModeIsValidPermissions(RTFMODE fMode);
 
 size_t  rtPathVolumeSpecLen(const char *pszPath);
 #ifndef __WIN__
-void    rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat);
+void    rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName);
 #endif
 
 #ifdef __LINUX__
