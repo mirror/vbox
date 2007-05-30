@@ -2,6 +2,18 @@
 ## @file
 # Top-level makefile for the VirtualBox Guest Additions.
 #
+# This makefile and all it's sub-makefiles are involved in remote
+# building of additions that cannot be build locally. Typically
+# tools/env.sh kmk -C src/VBox/Additions build-somehost-additions
+# is send as a command and the source tree is accessed using an
+# SMB mount.
+#
+# When doing these operations BUILD_TARGET remains the same (not
+# yet true for linux), and it's therefore important that
+# Config.kmk and all the involved (sub-)makefiles doesn't make
+# assumptions about BUILD_TARGET being the same as the additions
+# target.
+#
 
 #
 # Copyright (C) 2006 InnoTek Systemberatung GmbH
@@ -22,35 +34,45 @@
 DEPTH = ../../..
 include	$(PATH_KBUILD)/subheader.kmk
 
+#
+# Make some indicator adjustments to keep things simple in these makefiles.
+#
+ifdef VBOX_ADDITIONS_LINUX_ONLY
+ VBOX_ADDITIONS_XYZ_ONLY = 1
+ VBOX_WITH_LINUX_ADDITIONS = 1
+ VBOX_REMOTE_LINUX_ADDITIONS_BUILD =
+ VBOX_WITH_WIN32_ADDITIONS =
+else ifdef VBOX_ADDITIONS_WIN32_ONLY
+ VBOX_ADDITIONS_XYZ_ONLY = 1
+ VBOX_WITH_WIN32_ADDITIONS = 1
+ VBOX_REMOTE_WIN32_ADDITIONS_BUILD =
+ VBOX_WITH_LINUX_ADDITIONS =
+endif
+
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 ifdef VBOX_WITH_WIN32_ADDITIONS
- ifndef VBOX_REMOTE_BUILD_WIN32_ADDITIONS
+ ifndef VBOX_REMOTE_WIN32_ADDITIONS_BUILD
   include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
  endif
 endif
 
 ifdef VBOX_WITH_LINUX_ADDITIONS
-SUBDIRS      += linux
-LINUXINSTALLER = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
+ SUBDIRS      += linux
+ LINUXINSTALLER = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
 endif
-ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
-PACKING	+= $(PATH_BIN)/additions/VBoxGuestAdditions.iso
-endif
-
 LINUXINSTALLER_CROSS = $(PATH_ROOT)/out/linux.x86/$(BUILD_TYPE)/bin/additions/VBoxLinuxAdditions.run
-# If the build (Windows host only, problem doesn't exist for Linux) should
-# include Linux additions, set VBOX_ADDITIONS_LINUX_CROSS. This causes the
-# Linux additions to be built via a ssh session (to the host specified in
-# VBOX_ADDITIONS_LINUX_CROSS_HOST, usually set in LocalConfig.kmk. Needs
-# eventually be generalized once more additions platforms are supported.
-# This host has the Windows build box tree mounted, in order to make 100% sure
-# that a complete build is created from a single consistent revision.
 ifdef VBOX_ADDITIONS_LINUX_CROSS
-OTHER_CLEAN   += $(LINUXINSTALLER_CROSS)
-LINUXINSTALLER = $(LINUXINSTALLER_CROSS)
+ OTHER_CLEAN   += $(LINUXINSTALLER_CROSS)
+ LINUXINSTALLER = $(LINUXINSTALLER_CROSS)
 endif
 
+# The packing target rule, but only if we're on the local build box.
+ifndef VBOX_ADDITIONS_XYZ_ONLY
+ ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
+  PACKING += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
+ endif
+endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
@@ -109,7 +131,7 @@ $(PATH_BIN)/additions/VBoxGuestAdditions.iso: \
 #
 # Remote building.
 #
-ifdef VBOX_REMOTE_BUILD_WIN32_ADDITIONS
+ifdef VBOX_REMOTE_WIN32_ADDITIONS_BUILD
 OTHER_CLEAN += $(PATH_TARGET)/ts-remote-build-win32-additions
 $(GUESTADDITIONS_WIN32_DEPS): $(PATH_TARGET)/ts-remote-build-win32-additions
 $(PATH_TARGET)/ts-remote-build-win32-additions:
