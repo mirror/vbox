@@ -3702,8 +3702,6 @@ DECLINLINE(void) ataPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
             /* Finish PIO transfer. */
             ataPIOTransfer(pCtl);
             Assert(!pCtl->fRedo);
-            if (!s->fATAPITransfer)
-                ataSetIRQ(s);
         }
     }
 }
