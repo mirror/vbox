@@ -55,6 +55,7 @@ LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
 CFLAGSHAL="-I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
+LIBPATHHAL=""
 LIBHAL="-lhal -ldbus-1"
 QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3"
 KBUILDDIR="`cd $(dirname $0); pwd`/kBuild"
@@ -444,7 +445,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
     if test_compile "$LIBXALAN ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XALAN_LIBS" `echo $LIBXALAN|sed 's+-l++'`
+        cnf_append "SDK_VBOX_XALAN_LIBS" "`echo $LIBXALAN|sed 's+-l++'`"
         cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
       fi
     fi
@@ -479,7 +480,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
     if test_compile "$LIBXERCES ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XERCES_LIBS" `echo $LIBXERCES|sed 's+-l++'`
+        cnf_append "SDK_VBOX_XERCES_LIBS" "`echo $LIBXERCES|sed 's+-l++'`"
         cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
       fi
     fi
@@ -513,7 +514,7 @@ check_libidl()
       fail
     else
       log_success "found version $libidl_ver"
-      cnf_append "VBOX_LIBIDL_CONFIG" `which_wrapper libIDL-config`
+      cnf_append "VBOX_LIBIDL_CONFIG" "`which_wrapper libIDL-config`"
     fi
   fi
 }
@@ -542,7 +543,7 @@ extern "C" int main(void)
   if test_compile $LIBCRYPTO libcrypto openssl; then
     if test_execute nofatal; then
       cnf_append "SDK_VBOX_OPENSSL_INCS" ""
-      cnf_append "SDK_VBOX_OPENSSL_LIBS" `echo $LIBCRYPTO|sed 's+-l++'`
+      cnf_append "SDK_VBOX_OPENSSL_LIBS" "`echo $LIBCRYPTO|sed 's+-l++'`"
     fi
   fi
 }
@@ -576,7 +577,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile $LIBPTHREAD pthread pthread; then
     if test_execute; then
-      cnf_append "LIB_PTHREAD" `echo $LIBPTHREAD|sed 's+-l++'`
+      cnf_append "LIB_PTHREAD" "`echo $LIBPTHREAD|sed 's+-l++'`"
     fi
   fi
 }
@@ -604,7 +605,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBZ ${INCZ:+-I$INCZ}" zlib zlib; then
     if test_execute; then
-      cnf_append "SDK_VBOX_ZLIB_LIBS" `echo $LIBZ|sed 's+-l++'`
+      cnf_append "SDK_VBOX_ZLIB_LIBS" "`echo $LIBZ|sed 's+-l++'`"
       cnf_append "SDK_VBOX_ZLIB_INCS" "$INCZ"
     fi
   fi
@@ -633,7 +634,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBPNG ${INCPNG:+-I$INCPNG}" libpng libpng nofatal; then
     if test_execute nofatal; then
-      cnf_append "SDK_VBOX_LIBPNG_LIBS" `echo $LIBPNG|sed 's+-l++'`
+      cnf_append "SDK_VBOX_LIBPNG_LIBS" "`echo $LIBPNG|sed 's+-l++'`"
       cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
     fi
   fi
@@ -721,8 +722,8 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBSDL $LIBSDLMAIN ${INCSDL:+-I$INCSDL}" SDL SDL; then
     if test_execute; then
-      cnf_append "LIB_SDK_LIBSDL_SDL" `echo $LIBSDL|sed 's+-l++'`
-      cnf_append "LIB_SDK_LIBSDL_SDLMAIN" `echo $LIBSDLMAIN|sed 's+-l++'`
+      cnf_append "LIB_SDK_LIBSDL_SDL"     "`echo $LIBSDL|sed 's+-l++'`"
+      cnf_append "LIB_SDK_LIBSDL_SDLMAIN" "`echo $LIBSDLMAIN|sed 's+-l++'`"
       [ -n "$INCSDL" ] && cnf_append "SDK_LIBSDL_INCS" "$INCSDL"
     fi
   fi
@@ -805,7 +806,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBX11 $LIBXCURSOR" Xcursor Xcursor; then
     log_success "found"
-    cnf_append "LIB_XCURSOR" `echo $LIBXCURSOR|sed 's+-l++'`
+    cnf_append "LIB_XCURSOR" "`echo $LIBXCURSOR|sed 's+-l++'`"
   fi
 }
 
@@ -874,7 +875,7 @@ extern "C" int main(void)
       $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt >> $LOG 2>&1
       if (($?==0)); then
         if test_execute; then
-          cnf_append "QTDIR" `cd $q ; pwd`
+          cnf_append "QTDIR" "`cd $q ; pwd`"
           found_qt=1
           break
         fi
@@ -936,7 +937,7 @@ int main(void)
     fail
   else
     if test_execute; then
-      cnf_append "VBOX_LINUX_SRC" `cd $LINUX ; pwd`
+      cnf_append "VBOX_LINUX_SRC" "`cd $LINUX ; pwd`"
     fi
   fi
 }
@@ -1012,12 +1013,13 @@ function check_libhal()
 {
   test_header libhal
   pc_cflagshal=`pkg-config hal --cflags 2>/dev/null`
-  pc_libhal=`pkg-config hal --libs 2>/dev/null`
+  pc_libhal=`pkg-config hal --libs-only-l 2>/dev/null`
+  pc_libpathhal=`pkg-config hal --libs-only-L 2>/dev/null`
   pc_verhal=`pkg-config hal --modversion 2>/dev/null`
-  if [ ! -z "$pc_cflagshal" ]
-  then # is this acceptable?
-      CFLAGSHAL=$pc_cflagshal
-      LIBHAL=$pc_libhal
+  if [ ! -z "$pc_cflagshal" ]; then # is this acceptable?
+    CFLAGSHAL=$pc_cflagshal
+    LIBPATHHAL=$pc_libpathhal
+    LIBHAL=$pc_libhal
   fi
   echo '
 #include <cstdio>
@@ -1034,10 +1036,11 @@ extern "C" int main(void)
   return 0;
 }
 ' > .tmp_src.cc
-  if test_compile "$CFLAGSHAL $LIBHAL" libhal libhal; then
+  if test_compile "$CFLAGSHAL $LIBPATHHAL $LIBHAL" libhal libhal; then
     log_success "found version $pc_verhal"
-    cnf_append "LIB_HAL_CFLAGS" "$CFLAGSHAL"
-    cnf_append "LIB_HAL_LIBS" `echo $LIBHAL | sed 's+-l++g'`
+    cnf_append "LIB_HAL_CFLAGS"   "$CFLAGSHAL"
+    cnf_append "LIB_HAL_LIBS"     "`echo $LIBHAL | sed 's+-l++g'`"
+    cnf_append "LIB_HAL_LIBPATH"  "`echo $LIBPATHHAL | sed 's+-L++g'`"
     cnf_append "VBOX_WITH_LIBHAL" "1"
   fi
 }
@@ -1225,8 +1228,8 @@ if (($OSE)); then
 fi
 
 # emit disable directives corresponding to any --disable-xxx options.
-(($WITH_XPCOM==0)) && cnf_append "VBOX_WITH_MAIN" ""
-(($WITH_QT==0)) && cnf_append "VBOX_WITH_QTGUI" ""
+(($WITH_XPCOM==0))   && cnf_append "VBOX_WITH_MAIN" ""
+(($WITH_QT==0))      && cnf_append "VBOX_WITH_QTGUI" ""
 (($WITH_SDL_TTF==0)) && cnf_append "VBOX_WITH_SECURELABEL" ""
 
 # append the tools directory to the default search path
@@ -1246,10 +1249,10 @@ check_gcc
 (($OSE==0)) && check_mkisofs
 
 # the libraries
-(($WITH_XPCOM==1)) && check_xalan
-(($WITH_XPCOM==1)) && check_xerces
-(($WITH_LIBIDL==1)) && check_libidl
-(($OSE==0)) && check_ssl
+(($WITH_XPCOM==1))    && check_xalan
+(($WITH_XPCOM==1))    && check_xerces
+(($WITH_LIBIDL==1))   && check_libidl
+(($OSE==0))           && check_ssl
 [ "$OS" != "darwin" ] && check_pthread
 [ "$OS" != "darwin" ] && check_z
 (($OSE==0)) && check_png
@@ -1259,7 +1262,7 @@ check_gcc
 [ "$OS" != "darwin" ] && check_alsa
 [ "$OS" != "darwin" ] && check_x
 [ "$OS" != "darwin" ] && check_xcursor
-(($WITH_QT==1)) && check_qt
+(($WITH_QT==1))       && check_qt
 
 # Linux-specific
 [ "$OS" = "linux" ] && check_linux
