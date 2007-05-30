@@ -185,6 +185,15 @@ typedef struct ATADevState {
      * No data that is part of the saved state after this point!!!!!
      */
 
+    /* Release statistics: number of ATA DMA commands. */
+    STAMCOUNTER StatATADMA;
+    /* Release statistics: number of ATA PIO commands. */
+    STAMCOUNTER StatATAPIO;
+    /* Release statistics: number of ATAPI PIO commands. */
+    STAMCOUNTER StatATAPIDMA;
+    /* Release statistics: number of ATAPI PIO commands. */
+    STAMCOUNTER StatATAPIPIO;
+
     /** Statistics: number of read operations and the time spent reading. */
     STAMPROFILEADV  StatReads;
     /** Statistics: number of bytes read. */
@@ -4116,6 +4125,21 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                 s->iIOBufferEnd = 0;
                 s->u64CmdTS = u64TS;
 
+                if (s->fATAPI)
+                {
+                    if (s->fDMA)
+                        STAM_REL_COUNTER_INC(&s->StatATAPIDMA);
+                    else
+                        STAM_REL_COUNTER_INC(&s->StatATAPIPIO);
+                }
+                else
+                {
+                    if (s->fDMA)
+                        STAM_REL_COUNTER_INC(&s->StatATADMA);
+                    else
+                        STAM_REL_COUNTER_INC(&s->StatATAPIO);
+                }
+
                 pCtl->fChainedTransfer = false;
 
                 if (s->iBeginTransfer != ATAFN_BT_NULL)
@@ -5927,16 +5951,22 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (R0)."));
         }
 
-#ifdef VBOX_WITH_STATISTICS /** @todo release too. */
         for (uint32_t j = 0; j < RT_ELEMENTS(pData->aCts[i].aIfs); j++)
         {
             ATADevState *pIf = &pData->aCts[i].aIfs[j];
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATADMA,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATA DMA transfers.", "/Devices/ATA%d/Unit%d/DMA", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIO,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATA PIO transfers.", "/Devices/ATA%d/Unit%d/PIO", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIDMA,     STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATAPI DMA transfers.", "/Devices/ATA%d/Unit%d/AtapiDMA", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIPIO,     STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATAPI PIO transfers.", "/Devices/ATA%d/Unit%d/AtapiPIO", i, j);
+#ifdef VBOX_WITH_STATISTICS /** @todo release too. */
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatReads,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the read operations.", "/Devices/ATA%d/Unit%d/Reads", i, j);
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesRead,    STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data read.",              "/Devices/ATA%d/Unit%d/ReadBytes", i, j);
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the write operations.","/Devices/ATA%d/Unit%d/Writes", i, j);
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesWritten, STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data written.",           "/Devices/ATA%d/Unit%d/WrittenBytes", i, j);
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatFlushes,      STAMTYPE_PROFILE,     STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the flush operations.","/Devices/ATA%d/Unit%d/Flushes", i, j);
+#endif
         }
+#ifdef VBOX_WITH_STATISTICS /** @todo release too. */
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aCts[i].StatAsyncOps,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,   "The number of async operations.",  "/Devices/ATA%d/Async/Operations", i);
         /** @todo STAMUNIT_MICROSECS */
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aCts[i].StatAsyncMinWait, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,         "Minimum wait in microseconds.",    "/Devices/ATA%d/Async/MinWait", i);
