@@ -24,7 +24,8 @@
 
 #include "VirtualBoxBase.h"
 #include "USBDeviceFilterImpl.h"
-/* #include "USBProxyService.h" circular on Host/HostUSBDevice, the includer must include this. */
+/* #include "USBProxyService.h" circular on Host/HostUSBDevice, the includer
+ * must include this. */
 #include "Collection.h"
 
 #include <VBox/usb.h>
@@ -33,18 +34,17 @@ class SessionMachine;
 class USBProxyService;
 
 /**
- * Object class used for the Host USBDevices property.
+ * Object class used to hold Host USB Device properties.
  */
 class ATL_NO_VTABLE HostUSBDevice :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostUSBDevice, IHostUSBDevice>,
     public VirtualBoxSupportTranslation <HostUSBDevice>,
-    public VirtualBoxBase,
     public IHostUSBDevice
 {
 public:
 
-    HostUSBDevice();
-    virtual ~HostUSBDevice();
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HostUSBDevice)
 
     DECLARE_NOT_AGGREGATABLE(HostUSBDevice)
 
@@ -58,8 +58,14 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (HostUSBDevice)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
     // public initializer/uninitializer for internal purposes only
     HRESULT init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService);
+    void uninit();
 
     // IUSBDevice properties
     STDMETHOD(COMGETTER(Id))(GUIDPARAMOUT aId);
@@ -78,19 +84,45 @@ public:
 
     // public methods only for internal purposes
 
-    const Guid &id() { return mId; }
-    USBDeviceState_T state() { return mState; }
+    /* @note Must be called from under the object read lock. */
+    const Guid &id() const { return mId; }
+
+    /* @note Must be called from under the object read lock. */
+    USBDeviceState_T state() const { return mState; }
+
+    /* @note Must be called from under the object read lock. */
+    USBDeviceState_T pendingState() const { return mPendingState; }
+
+    /* @note Must be called from under the object read lock. */
     ComObjPtr <SessionMachine, ComWeakRef> &machine() { return mMachine; }
+
+/// @todo remove
+#if 0
+    /* @note Must be called from under the object read lock. */
     bool isIgnored() { return mIgnored; }
+#endif
+
+    /* @note Must be called from under the object read lock. */
+    bool isStatePending() const { return mIsStatePending; }
+
+    /* @note Must be called from under the object read lock. */
+    PCUSBDEVICE usbData() const { return mUsb; }
 
     Utf8Str name();
 
+/// @todo remove
+#if 0
     void setIgnored();
+#endif
+
     bool setCaptured (SessionMachine *aMachine);
     int  setHostDriven();
     int  reset();
 
+/// @todo remove
+#if 0
     void setHostState (USBDeviceState_T aState);
+#endif
 
     bool isMatch (const USBDeviceFilter::Data &aData);
 
@@ -104,16 +136,22 @@ public:
 
 private:
 
-    Guid mId;
+    const Guid mId;
     USBDeviceState_T mState;
+    USBDeviceState_T mPendingState;
     ComObjPtr <SessionMachine, ComWeakRef> mMachine;
-    bool mIgnored;
+    bool mIsStatePending : 1;
+/// @todo remove
+#if 0
+    bool mIgnored : 1;
+#endif
+
     /** Pointer to the USB Proxy Service instance. */
     USBProxyService *mUSBProxyService;
 
     /** Pointer to the USB Device structure owned by this device.
      * Only used for host devices. */
-    PUSBDEVICE m_pUsb;
+    PUSBDEVICE mUsb;
 };
 
 

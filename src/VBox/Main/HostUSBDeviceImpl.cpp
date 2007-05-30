@@ -25,22 +25,22 @@
 
 #include <VBox/err.h>
 
-
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-HostUSBDevice::HostUSBDevice()
-    : mUSBProxyService (NULL), m_pUsb (NULL)
+DEFINE_EMPTY_CTOR_DTOR (HostUSBDevice)
+
+HRESULT HostUSBDevice::FinalConstruct()
 {
+    mUSBProxyService = NULL;
+    mUsb = NULL;
+
+    return S_OK;
 }
 
-HostUSBDevice::~HostUSBDevice()
+void HostUSBDevice::FinalRelease()
 {
-    if (m_pUsb)
-    {
-        USBProxyService::freeDevice (m_pUsb);
-        m_pUsb = NULL;
-    }
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -59,13 +59,15 @@ HRESULT HostUSBDevice::init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService)
 {
     ComAssertRet (aUsb, E_INVALIDARG);
 
-    AutoLock alock (this);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
     /*
      * We need a unique ID for this VBoxSVC session.
      * The UUID isn't stored anywhere.
      */
-    mId.create();
+    unconst (mId).create();
 
     /*
      * Convert from USBDEVICESTATE to USBDeviceState.
@@ -97,166 +99,162 @@ HRESULT HostUSBDevice::init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService)
             break;
     }
 
-    /*
-     * Other data members.
-     */
-    mIgnored = false;
-    mUSBProxyService = aUSBProxyService;
-    m_pUsb = aUsb;
+    mPendingState = mState;
 
-    setReady (true);
+    /* Other data members */
+    mIsStatePending = false;
+/// @todo remove
+#if 0
+    mIgnored = false;
+#endif
+    mUSBProxyService = aUSBProxyService;
+    mUsb = aUsb;
+
+    /* Confirm the successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
+}
+
+/**
+ *  Uninitializes the instance and sets the ready flag to FALSE.
+ *  Called either from FinalRelease() or by the parent when it gets destroyed.
+ */
+void HostUSBDevice::uninit()
+{
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
+
+    if (mUsb != NULL)
+    {
+        USBProxyService::freeDevice (mUsb);
+        mUsb = NULL;
+    }
+
+    mUSBProxyService = NULL;
 }
 
 // IUSBDevice properties
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Returns the GUID.
- *
- * @returns COM status code
- * @param   aId     Address of result variable.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
 {
     if (!aId)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
+    /* mId is constant during life time, no need to lock */
     mId.cloneTo (aId);
+
     return S_OK;
 }
 
-
-/**
- * Returns the vendor Id.
- *
- * @returns COM status code
- * @param   aVendorId   Where to store the vendor id.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(VendorId)(USHORT *aVendorId)
 {
     if (!aVendorId)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *aVendorId = m_pUsb->idVendor;
+    AutoReaderLock alock (this);
+
+    *aVendorId = mUsb->idVendor;
+
     return S_OK;
 }
 
-
-/**
- * Returns the product Id.
- *
- * @returns COM status code
- * @param   aProductId      Where to store the product id.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(ProductId)(USHORT *aProductId)
 {
     if (!aProductId)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *aProductId = m_pUsb->idProduct;
+    AutoReaderLock alock (this);
+
+    *aProductId = mUsb->idProduct;
+
     return S_OK;
 }
 
-
-/**
- * Returns the revision BCD.
- *
- * @returns COM status code
- * @param   aRevision       Where to store the revision BCD.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(Revision)(USHORT *aRevision)
 {
     if (!aRevision)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *aRevision = m_pUsb->bcdDevice;
+    AutoReaderLock alock (this);
+
+    *aRevision = mUsb->bcdDevice;
+
     return S_OK;
 }
 
-/**
- * Returns the manufacturer string.
- *
- * @returns COM status code
- * @param   aManufacturer       Where to put the return string.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
 {
     if (!aManufacturer)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    Bstr (m_pUsb->pszManufacturer).cloneTo (aManufacturer);
+    AutoReaderLock alock (this);
+
+    Bstr (mUsb->pszManufacturer).cloneTo (aManufacturer);
+
     return S_OK;
 }
 
-
-/**
- * Returns the product string.
- *
- * @returns COM status code
- * @param   aProduct            Where to put the return string.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(Product)(BSTR *aProduct)
 {
     if (!aProduct)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    Bstr (m_pUsb->pszProduct).cloneTo (aProduct);
+    AutoReaderLock alock (this);
+
+    Bstr (mUsb->pszProduct).cloneTo (aProduct);
+
     return S_OK;
 }
 
-
-/**
- * Returns the serial number string.
- *
- * @returns COM status code
- * @param   aSerialNumber     Where to put the return string.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
 {
     if (!aSerialNumber)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    Bstr (m_pUsb->pszSerialNumber).cloneTo (aSerialNumber);
+    AutoReaderLock alock (this);
+
+    Bstr (mUsb->pszSerialNumber).cloneTo (aSerialNumber);
+
     return S_OK;
 }
 
-/**
- * Returns the device address string.
- *
- * @returns COM status code
- * @param   aAddress            Where to put the returned string.
- */
 STDMETHODIMP HostUSBDevice::COMGETTER(Address)(BSTR *aAddress)
 {
     if (!aAddress)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    Bstr (m_pUsb->pszAddress).cloneTo (aAddress);
+    AutoReaderLock alock (this);
+
+    Bstr (mUsb->pszAddress).cloneTo (aAddress);
+
     return S_OK;
 }
 
@@ -265,11 +263,14 @@ STDMETHODIMP HostUSBDevice::COMGETTER(Port)(USHORT *aPort)
     if (!aPort)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     ///@todo implement
     aPort = 0;
+
     return S_OK;
 }
 
@@ -278,10 +279,13 @@ STDMETHODIMP HostUSBDevice::COMGETTER(Remote)(BOOL *aRemote)
     if (!aRemote)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     *aRemote = FALSE;
+
     return S_OK;
 }
 
@@ -293,10 +297,13 @@ STDMETHODIMP HostUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
     if (!aState)
         return E_POINTER;
 
-    AutoLock lock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     *aState = mState;
+
     return S_OK;
 }
 
@@ -304,47 +311,66 @@ STDMETHODIMP HostUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
+/** 
+ * @note Locks this object for reading.
+ */
 Utf8Str HostUSBDevice::name()
 {
     Utf8Str name;
 
-    AutoLock alock (this);
-    AssertReturn (isReady(), name);
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), name);
 
-    bool haveManufacturer = m_pUsb->pszManufacturer && *m_pUsb->pszManufacturer;
-    bool haveProduct = m_pUsb->pszProduct && *m_pUsb->pszProduct;
+    AutoReaderLock alock (this);
+
+    bool haveManufacturer = mUsb->pszManufacturer && *mUsb->pszManufacturer;
+    bool haveProduct = mUsb->pszProduct && *mUsb->pszProduct;
     if (haveManufacturer && haveProduct)
-        name = Utf8StrFmt ("%s %s", m_pUsb->pszManufacturer,
-                                     m_pUsb->pszProduct);
+        name = Utf8StrFmt ("%s %s", mUsb->pszManufacturer,
+                                     mUsb->pszProduct);
     else if(haveManufacturer)
-        name = Utf8StrFmt ("%s", m_pUsb->pszManufacturer);
+        name = Utf8StrFmt ("%s", mUsb->pszManufacturer);
     else if(haveProduct)
-        name = Utf8StrFmt ("%s", m_pUsb->pszManufacturer);
+        name = Utf8StrFmt ("%s", mUsb->pszManufacturer);
     else
         name = "<unknown>";
 
     return name;
 }
 
-/** Sets the ignored flag and returns the device to the host */
+/// @todo remove
+#if 0
+/** 
+ * Sets the ignored flag and returns the device to the host.
+ *
+ * @note Locks this object for writing.
+ */
 void HostUSBDevice::setIgnored()
 {
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
     AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
 
-    AssertReturn (!mIgnored, (void) 0);
+    AssertReturnVoid (!mIgnored);
 
-    mIgnored = false;
+    mIgnored = true;
+
     setHostDriven();
 }
+#endif
 
-/** Requests the capture */
+/** 
+ * @note Locks this object for writing.
+ */
 bool HostUSBDevice::setCaptured (SessionMachine *aMachine)
 {
     AssertReturn (aMachine, false);
 
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
     AutoLock alock (this);
-    AssertReturn (isReady(), false);
 
     AssertReturn (
         mState == USBDeviceState_USBDeviceBusy ||
@@ -352,10 +378,10 @@ bool HostUSBDevice::setCaptured (SessionMachine *aMachine)
         mState == USBDeviceState_USBDeviceHeld,
         false);
 
-    mUSBProxyService->captureDevice (this);
-
     mState = USBDeviceState_USBDeviceCaptured;
     mMachine = aMachine;
+
+    mUSBProxyService->captureDevice (this);
 
     return true;
 }
@@ -364,11 +390,15 @@ bool HostUSBDevice::setCaptured (SessionMachine *aMachine)
  * Returns the device back to the host
  *
  * @returns VBox status code.
+ *
+ * @note Locks this object for writing.
  */
 int HostUSBDevice::setHostDriven()
 {
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), VERR_INVALID_PARAMETER);
+
     AutoLock alock (this);
-    AssertReturn (isReady(), VERR_INVALID_PARAMETER);
 
     AssertReturn (mState == USBDeviceState_USBDeviceHeld, VERR_INVALID_PARAMETER);
 
@@ -381,28 +411,44 @@ int HostUSBDevice::setHostDriven()
  * Resets the device as if it were just attached to the host
  *
  * @returns VBox status code.
+ *
+ * @note Locks this object for writing.
  */
 int HostUSBDevice::reset()
 {
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), VERR_INVALID_PARAMETER);
+
     AutoLock alock (this);
-    AssertReturn (isReady(), VERR_INVALID_PARAMETER);
 
     mState = USBDeviceState_USBDeviceHeld;
     mMachine.setNull();
+/// @todo remove
+#if 0
     mIgnored = false;
+#endif
 
     /** @todo this operation might fail and cause the device to the reattached with a different address and all that. */
     return mUSBProxyService->resetDevice (this);
 }
 
+/// @todo remove
+#if 0
 /**
  *  Sets the state of the device, as it was reported by the host.
  *  This method applicable only for devices currently controlled by the host.
  *
  *  @param  aState      new state
+ *
+ *  @note Locks this object for writing.
  */
 void HostUSBDevice::setHostState (USBDeviceState_T aState)
 {
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoLock alock (this);
+
     AssertReturn (
         aState == USBDeviceState_USBDeviceUnavailable ||
         aState == USBDeviceState_USBDeviceBusy ||
@@ -421,6 +467,7 @@ void HostUSBDevice::setHostState (USBDeviceState_T aState)
         mState = aState;
     }
 }
+#endif
 
 /**
  *  Returns true if this device matches the given filter data.
@@ -432,44 +479,48 @@ void HostUSBDevice::setHostState (USBDeviceState_T aState)
  *      This method MUST correlate with
  *      USBController::hasMatchingFilter (IUSBDevice *)
  *      in the sense of the device matching logic.
+ *
+ *  @note Locks this object for reading.
  */
 bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
 {
-    AutoLock alock (this);
-    AssertReturn (isReady(), false);
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
+    AutoReaderLock alock (this);
 
     if (!aData.mActive)
         return false;
 
-    if (!aData.mVendorId.isMatch (m_pUsb->idVendor))
+    if (!aData.mVendorId.isMatch (mUsb->idVendor))
     {
         LogFlowMember (("HostUSBDevice::isMatch: vendor not match %04X\n",
-                        m_pUsb->idVendor));
+                        mUsb->idVendor));
         return false;
     }
-    if (!aData.mProductId.isMatch (m_pUsb->idProduct))
+    if (!aData.mProductId.isMatch (mUsb->idProduct))
     {
         LogFlowMember (("HostUSBDevice::isMatch: product id not match %04X\n",
-                        m_pUsb->idProduct));
+                        mUsb->idProduct));
         return false;
     }
-    if (!aData.mRevision.isMatch (m_pUsb->bcdDevice))
+    if (!aData.mRevision.isMatch (mUsb->bcdDevice))
     {
         LogFlowMember (("HostUSBDevice::isMatch: rev not match %04X\n",
-                        m_pUsb->bcdDevice));
+                        mUsb->bcdDevice));
         return false;
     }
 
 #if !defined (__WIN__)
     // these filters are temporarily ignored on Win32
-    if (!aData.mManufacturer.isMatch (Bstr (m_pUsb->pszManufacturer)))
+    if (!aData.mManufacturer.isMatch (Bstr (mUsb->pszManufacturer)))
         return false;
-    if (!aData.mProduct.isMatch (Bstr (m_pUsb->pszProduct)))
+    if (!aData.mProduct.isMatch (Bstr (mUsb->pszProduct)))
         return false;
-    if (!aData.mSerialNumber.isMatch (Bstr (m_pUsb->pszSerialNumber)))
+    if (!aData.mSerialNumber.isMatch (Bstr (mUsb->pszSerialNumber)))
         return false;
     /// @todo (dmik) pusPort is yet absent
-//    if (!aData.mPort.isMatch (Bstr (m_pUsb->pusPort)))
+//    if (!aData.mPort.isMatch (Bstr (mUsb->pusPort)))
 //        return false;
 #endif
 
@@ -503,7 +554,7 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
     /*
      * If all the criteria is empty, devices which are used by the host will not match.
      */
-    if (   m_pUsb->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
+    if (   mUsb->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
         && aData.mVendorId.string().isEmpty()
         && aData.mProductId.string().isEmpty()
         && aData.mRevision.string().isEmpty()
@@ -528,7 +579,7 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
  */
 int HostUSBDevice::compare (PCUSBDEVICE pDev2)
 {
-    return compare (m_pUsb, pDev2);
+    return compare (mUsb, pDev2);
 }
 
 
@@ -563,9 +614,14 @@ int HostUSBDevice::compare (PCUSBDEVICE pDev2)
  * @return false if the state didn't change, or the change might have been caused by VBox.
  *
  * @param   aDev    The current device state as seen by the proxy backend.
+ *
+ * @note Locks this object for writing.
  */
 bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
 {
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
     AutoLock alock (this);
 
     /*
