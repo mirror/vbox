@@ -23,8 +23,12 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-ifndef VBOX_ADDITIONS_LINUX_ONLY
- # Normal mode.
+ifdef VBOX_ADDITIONS_LINUX_ONLY
+ LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
+else ifdef VBOX_ADDITIONS_WIN32_ONLY
+ LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
+else
+ # Build everything.
  BLDPROGS   = uniread
  LIBRARIES  = RuntimeR3 RuntimeR0 RuntimeGC RuntimeEFCPP RuntimeR3NoCRTGCC
  ifdef VBOX_WITH_VBOXDRV
@@ -49,11 +53,7 @@ ifndef VBOX_ADDITIONS_LINUX_ONLY
 	$(PATH_TARGET)/docs.iprt
 
  SUBDIRS_AFTER = testcase
-
-else
- # Linux target guest runtime only mode.
- LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
-endif # only linux guest additions
+endif
 
 
 # global (for now at least)
