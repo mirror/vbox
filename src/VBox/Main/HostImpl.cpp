@@ -1227,6 +1227,8 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId,
             tr ("USB device with UUID {%s} is not currently attached to the host"),
             id.toString().raw());
 
+    AutoLock devLock (device);
+
     if (device->state() == USBDeviceState_USBDeviceNotSupported)
         return setError (E_INVALIDARG,
             tr ("USB device '%s' with UUID {%s} cannot be accessed by guest "
@@ -1273,6 +1275,8 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId,
  */
 HRESULT Host::releaseUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
 {
+    LogFlowThisFunc (("aMachine=%p, aId={%Vuuid}\n", aMachine, Guid (aId).raw()));
+
     AutoLock lock (this);
     CHECK_READY();
 
@@ -1286,9 +1290,12 @@ HRESULT Host::releaseUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
     }
 
     ComAssertRet (!!device, E_FAIL);
+    
+    AutoLock devLock (device);
+
     ComAssertRet (device->machine() == aMachine, E_FAIL);
 
-    // reset the device and apply filters
+    /* reset the device and apply filters */
     int vrc = device->reset();
     ComAssertRCRet (vrc, E_FAIL);
 
@@ -1323,8 +1330,14 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine,
     while (it != mUSBDevices.end())
     {
         ComObjPtr <HostUSBDevice> device = *it;
+
+        AutoLock devLock (device);
+
+/// @todo remove
+#if 0
         if (device->isIgnored())
             continue;
+#endif
 
         if (device->state() == USBDeviceState_USBDeviceBusy ||
             device->state() == USBDeviceState_USBDeviceAvailable ||
@@ -1372,6 +1385,9 @@ HRESULT Host::releaseAllUSBDevices (SessionMachine *aMachine)
     while (it != mUSBDevices.end())
     {
         ComObjPtr <HostUSBDevice> device = *it;
+
+        AutoLock devLock (device);
+
         if (device->machine() == aMachine)
         {
             /* reset the device and apply filters */
@@ -1648,7 +1664,11 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
 HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
                                   SessionMachine *aMachine /* = NULL  */)
 {
-    LogFlowMember (("Host::applyAllUSBFilters: \n"));
+    LogFlowThisFunc (("\n"));
+
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    AutoLock devLock (aDevice);
 
     /* ignore unsupported devices */
     if (aDevice->state() == USBDeviceState_USBDeviceNotSupported)
@@ -1686,14 +1706,20 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
 
         if (aDevice->state() == USBDeviceState_USBDeviceCaptured)
         {
-            // inform the machine's process about the auto-capture
+            /* inform the VM process about the auto-capture */
             ComPtr <IUSBDevice> d;
             aDevice.queryInterfaceTo (d.asOutParam());
+            
+            /* the VM process will query the object, so leave the lock */
+            devLock.leave();
+
             HRESULT rc = machines [i]->onUSBDeviceAttach (d);
             if (SUCCEEDED(rc))
                 return rc;
 
-            // the machine rejected it, continue applying filters.
+            devLock.enter();
+
+            /* the machine rejected it, continue applying filters. */
             aDevice->reset();
         }
     }
@@ -1730,8 +1756,11 @@ void Host::applyMachineUSBFilters (SessionMachine *aMachine,
 {
     LogFlowThisFunc (("\n"));
 
-    AssertReturn (aMachine, (void) 0);
-    AssertReturn (aDevice->state() != USBDeviceState_USBDeviceUnavailable, (void) 0);
+    AssertReturnVoid (isLockedOnCurrentThread());
+    AssertReturnVoid (aDevice->isLockedOnCurrentThread());
+
+    AssertReturnVoid (aMachine);
+    AssertReturnVoid (aDevice->state() != USBDeviceState_USBDeviceUnavailable);
 
     /* We're going to use aMachine which is not our child/parent, add a caller */
     AutoCaller autoCaller (aMachine);
@@ -1766,16 +1795,21 @@ void Host::applyMachineUSBFilters (SessionMachine *aMachine,
  */
 void Host::onUSBDeviceAttached (HostUSBDevice *aDevice)
 {
-    LogFlowMember (("Host::onUSBDeviceAttached: aDevice=%p\n", aDevice));
+    LogFlowThisFunc (("aDevice=%p\n", aDevice));
+
+    AssertReturnVoid (aDevice);
+
     /// @todo (dmik) check locks
     AutoLock alock (this);
 
-    // add to the collecion
+    AutoLock devLock (aDevice);
+
+    /* add to the collecion */
     mUSBDevices.push_back (aDevice);
 
-    // apply all filters (no need to lock the device, nobody can access it yet)
-    ComObjPtr <HostUSBDevice> DevPtr(aDevice);
-    HRESULT rc = applyAllUSBFilters (DevPtr);
+    /* apply all filters */
+    ComObjPtr <HostUSBDevice> device (aDevice);
+    HRESULT rc = applyAllUSBFilters (device);
     AssertComRC (rc);
 }
 
@@ -1787,9 +1821,14 @@ void Host::onUSBDeviceAttached (HostUSBDevice *aDevice)
  */
 void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
 {
-    LogFlowMember (("Host::onUSBDeviceDetached: aDevice=%p\n", aDevice));
+    LogFlowThisFunc (("aDevice=%p\n", aDevice));
+
+    AssertReturnVoid (aDevice);
+
     /// @todo (dmik) check locks
     AutoLock alock (this);
+
+    AutoLock devLock (aDevice);
 
     Guid id = aDevice->id();
 
@@ -1805,15 +1844,18 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
         ++ it;
     }
 
-    AssertReturn (!!device, (void) 0);
+    AssertReturnVoid (!!device);
 
-    // remove from the collecion
+    /* remove from the collecion */
     mUSBDevices.erase (it);
 
     if (device->machine())
     {
-        // the device is captured by a machine, instruct it to release
-        alock.unlock();
+        /* the device is captured by a machine, instruct it to release */
+
+        devLock.leave();
+        alock.leave();
+
         HRESULT rc = device->machine()->onUSBDeviceDetach (device->id());
         AssertComRC (rc);
     }
@@ -1827,7 +1869,8 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
  */
 void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
 {
-    LogFlowMember (("Host::onUSBDeviceStateChanged: \n"));
+    LogFlowThisFunc (("aDevice=%p\n", aDevice));
+
     /// @todo (dmik) check locks
     AutoLock alock (this);
 
