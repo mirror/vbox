@@ -922,11 +922,19 @@ void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
     filter.SetVendorId (QString().sprintf ("%04hX", usb.GetVendorId()));
     filter.SetProductId (QString().sprintf ("%04hX", usb.GetProductId()));
     filter.SetRevision (QString().sprintf ("%04hX", usb.GetRevision()));
+    /* The port property depends on the host computer rather than on the USB
+     * device itself; for this reason only a few people will want to use it in
+     * the filter since the same device plugged into a different socket will
+     * not match the filter in this case.  */
+#if 0
+    /// @todo set it anyway if Alt is currently pressed
     filter.SetPort (QString().sprintf ("%04hX", usb.GetPort()));
+#endif
     filter.SetManufacturer (usb.GetManufacturer());
     filter.SetProduct (usb.GetProduct());
     filter.SetSerialNumber (usb.GetSerialNumber());
     filter.SetRemote (usb.GetRemote() ? "yes" : "no");
+
     filter.SetActive (true);
     addUSBFilter (filter, true);
 
