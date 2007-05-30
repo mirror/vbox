@@ -26,17 +26,16 @@
 #include "Collection.h"
 
 class ATL_NO_VTABLE HostDVDDrive :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostDVDDrive, IHostDVDDrive>,
     public VirtualBoxSupportTranslation <HostDVDDrive>,
-    public VirtualBoxBase,
     public IHostDVDDrive
 {
 public:
 
-    HostDVDDrive();
-    virtual ~HostDVDDrive();
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HostDVDDrive)
 
-    DECLARE_NOT_AGGREGATABLE(HostDVDDrive)
+    DECLARE_NOT_AGGREGATABLE (HostDVDDrive)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -47,53 +46,59 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (HostDVDDrive)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (INPTR BSTR driveName);
-    HRESULT init (INPTR BSTR driveName, INPTR BSTR driveDescription);
+    HRESULT init (INPTR BSTR aName, INPTR BSTR aDescription = NULL);
+    void uninit();
 
     // IHostDVDDrive properties
-    STDMETHOD(COMGETTER(Name)) (BSTR *driveName);
-    STDMETHOD(COMGETTER(Description)) (BSTR *driveDescription);
+    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
+    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
 
     // public methods for internal purposes only
 
-    const Bstr &driveName() const { return mDriveName; }
+    /* @note Must be called from under the object read lock. */
+    const Bstr &name() const { return mName; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostDVDDrive"; }
 
 private:
 
-    Bstr mDriveName;
-    Bstr mDriveDescription;
+    const Bstr mName;
+    const Bstr mDescription;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostDVDDrive)
 
-    STDMETHOD(FindByName) (INPTR BSTR name, IHostDVDDrive **drive)
+    STDMETHOD(FindByName) (INPTR BSTR aName, IHostDVDDrive **aDrive)
     {
-        if (!name)
+        if (!aName)
             return E_INVALIDARG;
-        if (!drive)
+        if (!aDrive)
             return E_POINTER;
 
-        *drive = NULL;
+        *aDrive = NULL;
         Vector::value_type found;
         Vector::iterator it = vec.begin();
         while (it != vec.end() && !found)
         {
             Bstr n;
             (*it)->COMGETTER(Name) (n.asOutParam());
-            if (n == name)
+            if (n == aName)
                 found = *it;
             ++ it;
         }
 
         if (!found)
             return setError (E_INVALIDARG, HostDVDDriveCollection::tr (
-                "The host DVD drive named '%ls' could not be found"), name);
+                "The host DVD drive named '%ls' could not be found"), aName);
 
-        return found.queryInterfaceTo (drive);
+        return found.queryInterfaceTo (aDrive);
     }
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_END (HostDVDDrive)

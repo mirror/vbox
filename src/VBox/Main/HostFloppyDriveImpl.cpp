@@ -24,12 +24,16 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-HostFloppyDrive::HostFloppyDrive()
+DEFINE_EMPTY_CTOR_DTOR (HostFloppyDrive)
+
+HRESULT HostFloppyDrive::FinalConstruct()
 {
+    return S_OK;
 }
 
-HostFloppyDrive::~HostFloppyDrive()
+void HostFloppyDrive::FinalRelease()
 {
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -38,34 +42,54 @@ HostFloppyDrive::~HostFloppyDrive()
 /**
  * Initializes the host floppy drive object.
  *
- * @returns COM result indicator
- * @param driveName name of the drive
+ * @param aName         Name of the drive.
+ *
+ * @return COM result indicator.
  */
-HRESULT HostFloppyDrive::init (INPTR BSTR driveName)
+HRESULT HostFloppyDrive::init (INPTR BSTR aName)
 {
-    ComAssertRet (driveName, E_INVALIDARG);
+    ComAssertRet (aName, E_INVALIDARG);
 
-    AutoLock lock(this);
-    mDriveName = driveName;
-    setReady(true);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+
+    unconst (mName) = aName;
+
+    /* Confirm the successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
+}
+
+/**
+ *  Uninitializes the instance and sets the ready flag to FALSE.
+ *  Called either from FinalRelease() or by the parent when it gets destroyed.
+ */
+void HostFloppyDrive::uninit()
+{
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
+
+    unconst (mName).setNull();
 }
 
 // IHostFloppyDrive properties
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Returns the name of the host drive
- *
- * @returns COM status code
- * @param driveName address of result pointer
- */
-STDMETHODIMP HostFloppyDrive::COMGETTER(Name) (BSTR *driveName)
+STDMETHODIMP HostFloppyDrive::COMGETTER(Name) (BSTR *aName)
 {
-    if (!driveName)
+    if (!aName)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
-    mDriveName.cloneTo(driveName);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mName is constant during life time, no need to lock */
+
+    mName.cloneTo (aName);
+
     return S_OK;
 }

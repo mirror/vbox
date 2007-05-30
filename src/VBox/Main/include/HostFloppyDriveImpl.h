@@ -26,17 +26,16 @@
 #include "Collection.h"
 
 class ATL_NO_VTABLE HostFloppyDrive :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostFloppyDrive, IHostFloppyDrive>,
     public VirtualBoxSupportTranslation <HostFloppyDrive>,
-    public VirtualBoxBase,
     public IHostFloppyDrive
 {
 public:
 
-    HostFloppyDrive();
-    virtual ~HostFloppyDrive();
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HostFloppyDrive)
 
-    DECLARE_NOT_AGGREGATABLE(HostFloppyDrive)
+    DECLARE_NOT_AGGREGATABLE (HostFloppyDrive)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -47,50 +46,57 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (HostFloppyDrive)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (INPTR BSTR driveName);
+    HRESULT init (INPTR BSTR aName);
+    void uninit();
 
     // IHostDVDDrive properties
-    STDMETHOD(COMGETTER(Name)) (BSTR *driveName);
+    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
 
     // public methods for internal purposes only
 
-    const Bstr &driveName() const { return mDriveName; }
+    /* @note Must be called from under the object read lock. */
+    const Bstr &name() const { return mName; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostFloppyDrive"; }
 
 private:
 
-    Bstr mDriveName;
+    const Bstr mName;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostFloppyDrive)
 
-    STDMETHOD(FindByName) (INPTR BSTR name, IHostFloppyDrive **drive)
+    STDMETHOD(FindByName) (INPTR BSTR aName, IHostFloppyDrive **aDrive)
     {
-        if (!name)
+        if (!aName)
             return E_INVALIDARG;
-        if (!drive)
+        if (!aDrive)
             return E_POINTER;
 
-        *drive = NULL;
+        *aDrive = NULL;
         Vector::value_type found;
         Vector::iterator it = vec.begin();
         while (it != vec.end() && !found)
         {
             Bstr n;
             (*it)->COMGETTER(Name) (n.asOutParam());
-            if (n == name)
+            if (n == aName)
                 found = *it;
             ++ it;
         }
 
         if (!found)
             return setError (E_INVALIDARG, HostFloppyDriveCollection::tr (
-                "The host floppy drive named '%ls' could not be found"), name);
+                "The host floppy drive named '%ls' could not be found"), aName);
 
-        return found.queryInterfaceTo (drive);
+        return found.queryInterfaceTo (aDrive);
     }
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_END (HostFloppyDrive)
