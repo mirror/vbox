@@ -25,7 +25,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 ifdef VBOX_WITH_WIN32_ADDITIONS
-include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
+ ifndef VBOX_REMOTE_BUILD_WIN32_ADDITIONS
+  include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
+ endif
 endif
 
 ifdef VBOX_WITH_LINUX_ADDITIONS
@@ -70,7 +72,8 @@ GUESTADDITIONS_WIN32_DEPS = $(PATH_BIN)/additions/VBoxGuest.sys \
 	./WINNT/Network/AMD/netamd.inf \
 	./WINNT/Network/AMD/pcntpci5.cat \
 	./WINNT/Network/AMD/PCNTPCI5.sys
-GUESTADDITIONS_WIN32_FILESPEC = driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/additions/VBoxGuest.sys \
+GUESTADDITIONS_WIN32_FILESPEC = \
+	driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/additions/VBoxGuest.sys \
 	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
 	driver/VBoxGuest/VBoxService.exe=$(PATH_BIN)/additions/VBoxService.exe \
 	driver/VBoxGuest/VBoxControl.exe=$(PATH_BIN)/additions/VBoxControl.exe \
@@ -103,8 +106,26 @@ $(PATH_BIN)/additions/VBoxGuestAdditions.iso: \
 	$(QUIET)$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 -volid "VBOXADDITIONS" -l -graft-points -o $@ \
 		$(GUESTADDITIONS_WIN32_FILESPEC) $(GUESTADDITIONS_LINUX_FILESPEC)
 
+#
+# Remote building.
+#
+ifdef VBOX_REMOTE_BUILD_WIN32_ADDITIONS
+OTHER_CLEAN += $(PATH_TARGET)/ts-remote-build-win32-additions
+$(GUESTADDITIONS_WIN32_DEPS): $(PATH_TARGET)/ts-remote-build-win32-additions
+$(PATH_TARGET)/ts-remote-build-win32-additions:
+	$(RM) -f $@
+	$(VBOX_REMOTE_BUILD_WIN32_ADDITIONS)
+	$(APPEND) $@
+
+build-win32-additions:
+	$(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 -C ../Runtime
+	$(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 -C . all packing
+
+endif # VBOX_REMOTE_BUILD_WIN32_ADDITIONS
+
 # build the Linux installer on a remote machine
 $(LINUXINSTALLER_CROSS):
 	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Runtime BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
 	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/common BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
 	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/linux BUILD_TYPE=release all packing"
+
