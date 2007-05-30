@@ -24,83 +24,91 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-HostDVDDrive::HostDVDDrive()
+DEFINE_EMPTY_CTOR_DTOR (HostDVDDrive)
+
+HRESULT HostDVDDrive::FinalConstruct()
 {
+    return S_OK;
 }
 
-HostDVDDrive::~HostDVDDrive()
+void HostDVDDrive::FinalRelease()
 {
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the host object.
+ * Initializes the host DVD drive object.
  *
- * @returns COM result indicator
- * @param driveName name of the drive
+ * @param aName         Name of the drive.
+ * @param aDescription  Human-readable drive description (may be NULL).
+ *
+ * @return COM result indicator.
  */
-HRESULT HostDVDDrive::init (INPTR BSTR driveName)
+HRESULT HostDVDDrive::init (INPTR BSTR aName,
+                            INPTR BSTR aDescription /* = NULL */)
 {
-    ComAssertRet (driveName, E_INVALIDARG);
+    ComAssertRet (aName, E_INVALIDARG);
 
-    AutoLock lock(this);
-    mDriveName = driveName;
-    setReady(true);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+
+    unconst (mName) = aName;
+    unconst (mDescription) = aDescription;
+
+    /* Confirm the successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
 /**
- * Initializes the host object.
- *
- * @returns COM result indicator
- * @param driveName        name of the drive
- * @param driveDescription human readable description of the drive
+ *  Uninitializes the instance and sets the ready flag to FALSE.
+ *  Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-HRESULT HostDVDDrive::init (INPTR BSTR driveName, INPTR BSTR driveDescription)
+void HostDVDDrive::uninit()
 {
-    ComAssertRet (driveName, E_INVALIDARG);
-    ComAssertRet (driveDescription, E_INVALIDARG);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
-    AutoLock lock(this);
-    mDriveName = driveName;
-    mDriveDescription = driveDescription;
-    setReady(true);
-    return S_OK;
+    unconst (mDescription).setNull();
+    unconst (mName).setNull();
 }
 
 // IHostDVDDrive properties
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Returns the name of the host drive
- *
- * @returns COM status code
- * @param driveName address of result pointer
- */
-STDMETHODIMP HostDVDDrive::COMGETTER(Name) (BSTR *driveName)
+STDMETHODIMP HostDVDDrive::COMGETTER(Name) (BSTR *aName)
 {
-    if (!driveName)
+    if (!aName)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
-    mDriveName.cloneTo(driveName);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mName is constant during life time, no need to lock */
+
+    mName.cloneTo (aName);
+
     return S_OK;
 }
 
-/**
- * Returns the description of the host drive
- *
- * @returns COM status code
- * @param driveDescription address of result pointer
- */
-STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *driveDescription)
+STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!driveDescription)
+    if (!aDescription)
         return E_POINTER;
-    AutoLock lock(this);
-    CHECK_READY();
-    mDriveDescription.cloneTo(driveDescription);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mDescription is constant during life time, no need to lock */
+
+    mDescription.cloneTo (aDescription);
+
     return S_OK;
 }

@@ -1425,7 +1425,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                             {
                                 if (validateDevice(devNode, true))
                                 {
-                                    char description[256];
+                                    Utf8Str description;
                                     char *vendor, *product;
                                     /* We have at least one hit, so operation successful :) */
                                     halSuccess = true;
@@ -1433,17 +1433,16 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                                     halDevices[i], "info.vendor", &dbusError);
                                     product = libhal_device_get_property_string(halContext,
                                                     halDevices[i], "info.product", &dbusError);
-                                    if ((product != 0))
+                                    if ((product != 0 && product[0] != 0))
                                     {
                                         if (vendor != 0 && vendor[0] != 0)
                                         {
-                                            RTStrPrintf(description, sizeof(description),
-                                                        "%s %s (%s)", vendor, product, devNode);
+                                            description = Utf8StrFmt ("%s %s",
+                                                                      vendor, product);
                                         }
                                         else
                                         {
-                                            RTStrPrintf(description, sizeof(description),
-                                                        "%s (%s)", product, devNode);
+                                            description = product;
                                         }
                                         ComObjPtr <HostDVDDrive> hostDVDDriveObj;
                                         hostDVDDriveObj.createObject();
