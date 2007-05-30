@@ -763,6 +763,14 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 }
                 s->gr[0x05] = (s->gr[0x05] & ~0x60) | (shift_control << 5);
                 s->cr[0x09] &= ~0x9f; /* no double scan */
+#ifdef VBOX
+                /* sunlover 30.05.2007
+                 * The ar_index remains with bit 0x20 cleared after a switch from fullscreen
+                 * DOS mode on Windows XP guest. That leads to GMODE_BLANK in vga_update_display.
+                 * But the VBE mode is graphics, so not a blank anymore.
+                 */
+                s->ar_index |= 0x20;
+#endif /* VBOX */
             } else {
                 /* XXX: the bios should do that */
 #ifdef VBOX
