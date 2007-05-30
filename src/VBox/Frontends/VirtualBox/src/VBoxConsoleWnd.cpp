@@ -1557,7 +1557,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                 QString description = drv.GetDescription();
                 QString fullName = description.isEmpty() ?
                     drvName :
-                    QString ("%1 (%2)").arg (description, drvName);
+                    QString ("<nobr>%1 (%2)</nobr>").arg (description, drvName);
                 name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
                     fullName;
                 break;
