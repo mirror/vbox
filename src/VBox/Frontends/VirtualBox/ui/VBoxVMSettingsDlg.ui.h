@@ -1425,15 +1425,12 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         {
             CHostDVDDrive hostDVD = en.GetNext();
             /// @todo (r=dmik) set icon?
+            QString name = hostDVD.GetName();
             QString description = hostDVD.GetDescription();
-            if (description.isEmpty())
-            {
-                cbHostDVD->insertItem (hostDVD.GetName(), id);
-            }
-            else
-            {
-                cbHostDVD->insertItem (description, id);
-            }
+            QString fullName = description.isEmpty() ?
+                name :
+                QString ("%1 (%2)").arg (description, name);
+            cbHostDVD->insertItem (fullName, id);
             hostDVDs [id] = hostDVD;
             ++ id;
         }
@@ -1446,33 +1443,22 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 CHostDVDDrive drv = dvd.GetHostDrive();
                 QString name = drv.GetName();
                 QString description = drv.GetDescription();
+                QString fullName = description.isEmpty() ?
+                    name :
+                    QString ("%1 (%2)").arg (description, name);
                 if (coll.FindByName (name).isNull())
                 {
                     /*
                      *  if the DVD drive is not currently available,
                      *  add it to the end of the list with a special mark
                      */
-                    if (description.isEmpty())
-                    {
-                        cbHostDVD->insertItem ("* " + name);
-                    }
-                    else
-                    {
-                        cbHostDVD->insertItem ("* " + description);
-                    }
+                    cbHostDVD->insertItem ("* " + fullName);
                     cbHostDVD->setCurrentItem (cbHostDVD->count() - 1);
                 }
                 else
                 {
                     /* this will select the correct item from the prepared list */
-                    if (description.isEmpty())
-                    {
-                        cbHostDVD->setCurrentText (name);
-                    }
-                    else
-                    {
-                        cbHostDVD->setCurrentText (description);
-                    }
+                    cbHostDVD->setCurrentText (fullName);
                 }
                 rbHostDVD->setChecked (true);
                 break;
