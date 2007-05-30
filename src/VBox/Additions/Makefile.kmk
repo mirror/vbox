@@ -14,6 +14,13 @@
 # assumptions about BUILD_TARGET being the same as the additions
 # target.
 #
+# To setup the remote building of an addition target, let's call it
+# XYZ, you need to add VBOX_REMOTE_XYZ_ADDITIONS_BUILD to your
+# LocalConfig.kmk. The value is the command(s) required to execute
+# the equivalent to you locally executing kmk -C src/VBoxAdditions
+# build_xyz_additions. This means BUILD_TARGET* and BUILD_TYPE needs
+# to be specified.
+#
 
 #
 # Copyright (C) 2006 InnoTek Systemberatung GmbH
@@ -136,7 +143,7 @@ OTHER_CLEAN += $(PATH_TARGET)/ts-remote-build-win32-additions
 $(GUESTADDITIONS_WIN32_DEPS): $(PATH_TARGET)/ts-remote-build-win32-additions
 $(PATH_TARGET)/ts-remote-build-win32-additions:
 	$(RM) -f $@
-	$(VBOX_REMOTE_BUILD_WIN32_ADDITIONS)
+	$(VBOX_REMOTE_WIN32_ADDITIONS_BUILD)
 	$(APPEND) $@
 
 endif # VBOX_REMOTE_BUILD_WIN32_ADDITIONS
