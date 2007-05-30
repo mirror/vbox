@@ -159,13 +159,13 @@ int gHostKeySym = SDLK_RCTRL;
 bool gfAllowFullscreenToggle = true;
 
 static bool g_fIOAPIC = false;
-static bool g_fACPI = true;
-static bool g_fAudio = false;
+static bool g_fACPI   = true;
+static bool g_fAudio  = false;
 #ifdef VBOXBFE_WITH_USB
-static bool g_fUSB = false;
+static bool g_fUSB    = false;
 #endif
-//static bool fPacketSniffer = false;
 static char *g_pszHdaFile   = NULL;
+static char *g_pszHdbFile   = NULL;
 static char *g_pszCdromFile = NULL;
 static char *g_pszFdaFile   = NULL;
 static const char *pszBootDevice = "IDE";
@@ -283,6 +283,7 @@ static void show_usage()
 {
     RTPrintf("Usage:\n"
              "  -hda <file>        Set first hard disk to file\n"
+             "  -hdb <file>        Set second hard disk to file\n"
              "  -fda <file>        Set first floppy disk to file\n"
              "  -cdrom <file>      Set CDROM to file/device ('none' to unmount)\n"
              "  -boot <a|c|d>      Set boot device (a = floppy, c = first hard disk, d = DVD)\n"
@@ -469,6 +470,17 @@ int main(int argc, char **argv)
             if (RTPathExists(argv[curArg]))
                 g_pszHdaFile = RTPathRealDup(argv[curArg]);
             if (!g_pszHdaFile)
+                return SyntaxError("The path to the specified harddisk, '%s', could not be resolved.\n", argv[curArg]);
+        }
+        else if (strcmp(pszArg, "-hdb") == 0)
+        {
+            if (++curArg >= argc)
+                return SyntaxError("missing file name for second hard disk!\n");
+
+            /* resolve it. */
+            if (RTPathExists(argv[curArg]))
+                g_pszHdbFile = RTPathRealDup(argv[curArg]);
+            if (!g_pszHdbFile)
                 return SyntaxError("The path to the specified harddisk, '%s', could not be resolved.\n", argv[curArg]);
         }
         else if (strcmp(pszArg, "-fda") == 0)
@@ -1081,23 +1093,23 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
      * Root values.
      */
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    rc = CFGMR3InsertString(pRoot,  "Name",                 "Default VM");          UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "RamSize",            g_u32MemorySizeMB * _1M); UPDATE_RC();
+    rc = CFGMR3InsertString(pRoot,  "Name",           "Default VM");                UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
     if (g_fPreAllocRam)
     {
-        rc = CFGMR3InsertInteger(pRoot, "PreAllocRam",      1);                     UPDATE_RC();
+        rc = CFGMR3InsertInteger(pRoot, "PreAllocRam",    1);                       UPDATE_RC();
     }
-    rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "TimerMillies",   10);                          UPDATE_RC();
 #ifdef VBOXSDL_ADVANCED_OPTIONS
-    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         g_fRawR3);              UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         g_fRawR0);              UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          g_fPATM);               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          g_fCSAM);               UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",   g_fRawR3);                    UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",   g_fRawR0);                    UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",    g_fPATM);                     UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",    g_fCSAM);                     UPDATE_RC();
 #else
-    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);                     UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",   1);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",   1);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",    1);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",    1);                           UPDATE_RC();
 #endif
 
     /*
@@ -1116,215 +1128,216 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     PCFGMNODE pCfg = NULL;
     PCFGMNODE pLunL0 = NULL;
     PCFGMNODE pLunL1 = NULL;
+    PCFGMNODE pDrv = NULL;
 
     /*
      * PC Arch.
      */
-    rc = CFGMR3InsertNode(pDevices, "pcarch", &pDev);                               UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "pcarch",         &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
 
     /*
      * PC Bios.
      */
-    rc = CFGMR3InsertNode(pDevices, "pcbios", &pDev);                               UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "pcbios",         &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",            g_u32MemorySizeMB * _1M); UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "BootDevice0",          pszBootDevice);         UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "BootDevice1",          "NONE");                UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "BootDevice2",          "NONE");                UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "BootDevice3",          "NONE");                UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "HardDiskDevice",       "piix3ide");            UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "i82078");              UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",               g_fIOAPIC);             UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "BootDevice0",    pszBootDevice);               UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "BootDevice1",    "NONE");                      UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "BootDevice2",    "NONE");                      UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "BootDevice3",    "NONE");                      UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "HardDiskDevice", "piix3ide");                  UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "FloppyDevice",   "i82078");                    UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",         g_fIOAPIC);                   UPDATE_RC();
 
     /* Default: no bios logo. */
-    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               1);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeOut",              0);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "LogoTime",             0);                     UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "LogoFile",             "");                    UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",         1);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeOut",        0);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "LogoTime",       0);                           UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "LogoFile",       "");                          UPDATE_RC();
 
     /* Boot menu */
-    rc = CFGMR3InsertInteger(pCfg,  "ShowBootMenu",         g_iBootMenu);           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "ShowBootMenu",   g_iBootMenu);                 UPDATE_RC();
 
     /*
      * ACPI
      */
     if (g_fACPI)
     {
-        rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             UPDATE_RC();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   UPDATE_RC();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           UPDATE_RC();
-        rc = CFGMR3InsertInteger(pCfg,  "RamSize", g_u32MemorySizeMB * _1M);        UPDATE_RC();
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", g_fIOAPIC);                       UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pDevices, "acpi",           &pDev);                   UPDATE_RC();
+        rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                  UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",        1);       /* boolean */   UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertInteger(pCfg,  "RamSize",        g_u32MemorySizeMB * _1M); UPDATE_RC();
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",         g_fIOAPIC);               UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    7);                       UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                       UPDATE_RC();
 
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");        UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
+        rc = CFGMR3InsertString(pLunL0, "Driver",         "ACPIHost");              UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
     }
 
     /*
      * PCI bus.
      */
-    rc = CFGMR3InsertNode(pDevices, "pci", &pDev); /* piix3 */                      UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", g_fIOAPIC);                           UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "pci",            &pDev);       /* piix3 */     UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",         g_fIOAPIC);                   UPDATE_RC();
 
     /*
      * DMA
      */
-    rc = CFGMR3InsertNode(pDevices, "8237A", &pDev);                                UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted", 1);                  /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "8237A",          &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
 
     /*
      * PCI bus.
      */
-    rc = CFGMR3InsertNode(pDevices, "pci", &pDev); /* piix3 */                      UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "pci",            &pDev);       /* piix3 */     UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
 
     /*
      * PS/2 keyboard & mouse.
      */
-    rc = CFGMR3InsertNode(pDevices, "pckbd", &pDev);                                UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "pckbd",          &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
 
-    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "KeyboardQueue");       UPDATE_RC();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            64);                    UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                     UPDATE_RC();
+    rc = CFGMR3InsertString(pLunL0, "Driver",         "KeyboardQueue");             UPDATE_RC();
+    rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",      64);                          UPDATE_RC();
 
-    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                     UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL1, "Driver",               "MainKeyboard");        UPDATE_RC();
-    rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)gKeyboard);            UPDATE_RC();
+    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pDrv);                       UPDATE_RC();
+    rc = CFGMR3InsertString(pDrv,   "Driver",         "MainKeyboard");              UPDATE_RC();
+    rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "Object",         (uintptr_t)gKeyboard);        UPDATE_RC();
 
-    rc = CFGMR3InsertNode(pInst,    "LUN#1", &pLunL0);                              UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MouseQueue");          UPDATE_RC();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            128);                   UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "LUN#1",          &pLunL0);                     UPDATE_RC();
+    rc = CFGMR3InsertString(pLunL0, "Driver",         "MouseQueue");                UPDATE_RC();
+    rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",      128);                         UPDATE_RC();
 
-    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                     UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL1, "Driver",               "MainMouse");           UPDATE_RC();
-    rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)gMouse);               UPDATE_RC();
+    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pDrv);                       UPDATE_RC();
+    rc = CFGMR3InsertString(pDrv,   "Driver",         "MainMouse");                 UPDATE_RC();
+    rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "Object",         (uintptr_t)gMouse);           UPDATE_RC();
 
 
     /*
      * i82078 Floppy drive controller
      */
-    rc = CFGMR3InsertNode(pDevices, "i82078",    &pDev);                            UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0",         &pInst);                           UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",   1);                                UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config",    &pCfg);                            UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IRQ",       6);                                UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "DMA",       2);                                UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "MemMapped", 0 );                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x3f0);                            UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "i82078",         &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);                           UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IRQ",            6);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "DMA",            2);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "MemMapped",      0 );                          UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOBase",         0x3f0);                       UPDATE_RC();
 
     /* Attach the status driver */
-    rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                            UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          UPDATE_RC();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&mapFDLeds[0]);           UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                                 UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "LUN#999",        &pLunL0);                     UPDATE_RC();
+    rc = CFGMR3InsertString(pLunL0, "Driver",         "MainStatus");                UPDATE_RC();
+    rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "papLeds",        (uintptr_t)&mapFDLeds[0]);    UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "First",          0);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "Last",           0);                           UPDATE_RC();
 
     if (g_pszFdaFile)
     {
-        rc = CFGMR3InsertNode(pInst,    "LUN#0",     &pLunL0);                      UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL0, "Driver",    "Block");                      UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL0,   "Config",    &pCfg);                        UPDATE_RC();
-        rc = CFGMR3InsertString(pCfg,   "Type",      "Floppy 1.44");                UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
+        rc = CFGMR3InsertString(pLunL0, "Driver",         "Block");                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Type",           "Floppy 1.44");           UPDATE_RC();
         rc = CFGMR3InsertInteger(pCfg,  "Mountable", 1);                            UPDATE_RC();
 
-        rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL1, "Driver",          "RawImage");             UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           UPDATE_RC();
-        rc = CFGMR3InsertString(pCfg,   "Path",         g_pszFdaFile);              UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pDrv);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pDrv,   "Driver",         "RawImage");              UPDATE_RC();
+        rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Path",           g_pszFdaFile);            UPDATE_RC();
     }
 
     /*
      * i8254 Programmable Interval Timer And Dummy Speaker
      */
-    rc = CFGMR3InsertNode(pDevices, "i8254", &pDev);                                UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "i8254",          &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
 #ifdef DEBUG
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
 #endif
 
     /*
      * i8259 Programmable Interrupt Controller.
      */
-    rc = CFGMR3InsertNode(pDevices, "i8259", &pDev);                                UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "i8259",          &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
 
     /*
      * Advanced Programmable Interrupt Controller.
      */
-    rc = CFGMR3InsertNode(pDevices, "apic", &pDev);                                 UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", g_fIOAPIC);                           UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "apic",           &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",         g_fIOAPIC);                   UPDATE_RC();
 
     /*
      * I/O Advanced Programmable Interrupt Controller.
      */
     if (g_fIOAPIC)
     {
-        rc = CFGMR3InsertNode(pDevices, "ioapic", &pDev);                           UPDATE_RC();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */   UPDATE_RC();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           UPDATE_RC();
+        rc = CFGMR3InsertNode(pDevices, "ioapic",         &pDev);                   UPDATE_RC();
+        rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                  UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",        1);       /* boolean */   UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                   UPDATE_RC();
     }
 
     /*
      * RTC MC146818.
      */
-    rc = CFGMR3InsertNode(pDevices, "mc146818", &pDev);                             UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "mc146818",       &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
 
     /*
      * Serial ports
      */
-    rc = CFGMR3InsertNode(pDevices, "serial", &pDev);                               UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IRQ",       4);                                UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x3f8);                            UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "serial",         &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IRQ",            4);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOBase",         0x3f8);                       UPDATE_RC();
 
-    rc = CFGMR3InsertNode(pDev,     "1", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IRQ",       3);                                UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x2f8);                            UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "1",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IRQ",            3);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOBase",         0x2f8);                       UPDATE_RC();
 
     /*
      * VGA.
      */
-    rc = CFGMR3InsertNode(pDevices, "vga", &pDev);                                  UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          2);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             g_u32VRamSizeMB * _1M); UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "vga",            &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    2);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                           UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",       g_u32VRamSizeMB * _1M);       UPDATE_RC();
 
 #ifdef __L4ENV__
     /* XXX hard-coded */
@@ -1339,54 +1352,68 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertString(pCfg,   "CustomVideoMode1", szBuf);                     UPDATE_RC();
 #endif
 
-    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainDisplay");         UPDATE_RC();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)gDisplay);             UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                     UPDATE_RC();
+    rc = CFGMR3InsertString(pLunL0, "Driver",         "MainDisplay");               UPDATE_RC();
+    rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "Object",         (uintptr_t)gDisplay);         UPDATE_RC();
 
     /*
      * IDE (update this when the main interface changes)
      */
-    rc = CFGMR3InsertNode(pDevices, "piix3ide", &pDev); /* piix3 */                 UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          1);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        1);                     UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "piix3ide",       &pDev); /* piix3 */           UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);     /* boolean */         UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    1);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  1);                           UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
 
     if (g_pszHdaFile)
     {
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL0, "Driver",              "Block");            UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           UPDATE_RC();
-        rc = CFGMR3InsertString(pCfg,   "Type",                "HardDisk");         UPDATE_RC();
-        rc = CFGMR3InsertInteger(pCfg,  "Mountable",            0);                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
+        rc = CFGMR3InsertString(pLunL0, "Driver",         "Block");                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Type",           "HardDisk");              UPDATE_RC();
+        rc = CFGMR3InsertInteger(pCfg,  "Mountable",      0);                       UPDATE_RC();
 
-        rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL1, "Driver",              "VBoxHDD");          UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           UPDATE_RC();
-        rc = CFGMR3InsertString(pCfg,   "Path",                 g_pszHdaFile);      UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pDrv);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pDrv,   "Driver",         "VBoxHDD");               UPDATE_RC();
+        rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Path",           g_pszHdaFile);            UPDATE_RC();
+    }
+
+    if (g_pszHdbFile)
+    {
+        rc = CFGMR3InsertNode(pInst,    "LUN#1",          &pLunL1);                 UPDATE_RC();
+        rc = CFGMR3InsertString(pLunL1, "Driver",         "Block");                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL1,   "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Type",           "HardDisk");              UPDATE_RC();
+        rc = CFGMR3InsertInteger(pCfg,  "Mountable",      0);                       UPDATE_RC();
+
+        rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pDrv);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pDrv,   "Driver",         "VBoxHDD");               UPDATE_RC();
+        rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Path",           g_pszHdbFile);            UPDATE_RC();
     }
 
     if (g_pszCdromFile)
     {
         // ASSUME: DVD drive is always attached to LUN#2 (i.e. secondary IDE master)
-        rc = CFGMR3InsertNode(pInst,    "LUN#2", &pLunL0);                          UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "Block");           UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           UPDATE_RC();
-        rc = CFGMR3InsertString(pCfg,   "Type",                 "DVD");             UPDATE_RC();
-        rc = CFGMR3InsertInteger(pCfg,  "Mountable",            1);                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "LUN#2",          &pLunL0);                 UPDATE_RC();
+        rc = CFGMR3InsertString(pLunL0, "Driver",         "Block");                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Type",           "DVD");                   UPDATE_RC();
+        rc = CFGMR3InsertInteger(pCfg,  "Mountable",      1);                       UPDATE_RC();
 
-        rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL1, "Driver",          "MediaISO");             UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           UPDATE_RC();
-        rc = CFGMR3InsertString(pCfg,   "Path",             g_pszCdromFile);        UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pDrv);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pDrv,   "Driver",         "MediaISO");              UPDATE_RC();
+        rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg,   "Path",           g_pszCdromFile);          UPDATE_RC();
     }
 
     /*
      * Network adapters
      */
-    rc = CFGMR3InsertNode(pDevices, "pcnet", &pDev);                                UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "pcnet",          &pDev);                       UPDATE_RC();
     for (ULONG ulInstance = 0; ulInstance < NetworkAdapterCount; ulInstance++)
     {
         if (g_aNetDevs[ulInstance].enmType != BFENETDEV::NOT_CONFIGURED)
@@ -1396,10 +1423,10 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
             rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                        UPDATE_RC();
             rc = CFGMR3InsertInteger(pInst, "Trusted", 1);                          UPDATE_RC();
             rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",
-                                            !ulInstance ? 3 : ulInstance - 1 + 8);  UPDATE_RC();
-            rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo", 0);                    UPDATE_RC();
-            rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                          UPDATE_RC();
-            rc = CFGMR3InsertBytes(pCfg, "MAC", &g_aNetDevs[ulInstance].Mac, sizeof(PDMMAC));
+                                             !ulInstance ? 3 : ulInstance - 1 + 8); UPDATE_RC();
+            rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                   UPDATE_RC();
+            rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);               UPDATE_RC();
+            rc = CFGMR3InsertBytes(pCfg,    "MAC",            &g_aNetDevs[ulInstance].Mac, sizeof(PDMMAC));
                                                                                     UPDATE_RC();
 
             /*
@@ -1408,12 +1435,12 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
             if (g_aNetDevs[ulInstance].fSniff)
             {
                 /* insert the sniffer filter driver. */
-                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                     UPDATE_RC();
-                rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");            UPDATE_RC();
-                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                     UPDATE_RC();
+                rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);         UPDATE_RC();
+                rc = CFGMR3InsertString(pLunL0, "Driver",         "NetSniffer");    UPDATE_RC();
+                rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);           UPDATE_RC();
                 if (g_aNetDevs[ulInstance].pszSniff)
                 {
-                    rc = CFGMR3InsertString(pCfg, "File", g_aNetDevs[ulInstance].pszSniff);
+                    rc = CFGMR3InsertString(pCfg,   "File", g_aNetDevs[ulInstance].pszSniff);
                                                                                     UPDATE_RC();
                 }
             }
@@ -1538,43 +1565,45 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     /*
      * VMM Device
      */
-    rc = CFGMR3InsertNode(pDevices, "VMMDev", &pDev);                               UPDATE_RC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATE_RC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          4);                     UPDATE_RC();
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     UPDATE_RC();
+    rc = CFGMR3InsertNode(pDevices, "VMMDev",         &pDev);                       UPDATE_RC();
+    rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                      UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    4);                           UPDATE_RC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                           UPDATE_RC();
 
     /* the VMM device's Main driver */
-    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainVMMDev");          UPDATE_RC();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)gVMMDev);              UPDATE_RC();
+    rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                     UPDATE_RC();
+    rc = CFGMR3InsertString(pLunL0, "Driver",        "MainVMMDev");                 UPDATE_RC();
+    rc = CFGMR3InsertNode(pLunL0,   "Config",        &pCfg);                        UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "Object",        (uintptr_t)gVMMDev);           UPDATE_RC();
 
     /*
      * AC'97 ICH audio
      */
     if (g_fAudio)
     {
-        rc = CFGMR3InsertNode(pDevices, "ichac97", &pDev);
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);
-        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */   UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",      5);                     UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",    0);                     UPDATE_RC();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
+        rc = CFGMR3InsertNode(pDevices, "ichac97",        &pDev);                   UPDATE_RC();
+        rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                  UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",        1);       /* boolean */   UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    5);                       UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                       UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);
 
         /* the Audio driver */
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "AUDIO");           UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
+        rc = CFGMR3InsertString(pLunL0, "Driver",         "AUDIO");                 UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
 #ifdef __WIN__
-        rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");                      UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg, "AudioDriver",      "winmm");                 UPDATE_RC();
 #elif defined(__DARWIN__)
-        rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");                  UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg, "AudioDriver",      "coreaudio");             UPDATE_RC();
 #elif defined(__LINUX__)
-        rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                        UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg, "AudioDriver",      "oss");                   UPDATE_RC();
+#elif defined(__L4ENV__)
+        rc = CFGMR3InsertString(pCfg, "AudioDriver",      "oss");                   UPDATE_RC();
 #else /* portme */
-        rc = CFGMR3InsertString(pCfg, "AudioDriver", "none");                       UPDATE_RC();
+        rc = CFGMR3InsertString(pCfg, "AudioDriver",      "none");                  UPDATE_RC();
 #endif /* !__WIN__ */
     }
 
@@ -1584,16 +1613,16 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
      */
     if (g_fUSB)
     {
-        rc = CFGMR3InsertNode(pDevices, "usb-ohci", &pDev);                         UPDATE_RC();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               UPDATE_RC();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */   UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",      6);                     UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",    0);                     UPDATE_RC();
+        rc = CFGMR3InsertNode(pDevices, "usb-ohci",       &pDev);                   UPDATE_RC();
+        rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                  UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                   UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",        1);       /* boolean */   UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    6);                       UPDATE_RC();
+        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                       UPDATE_RC();
 
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "VUSBRootHub");     UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           UPDATE_RC();
+        rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
+        rc = CFGMR3InsertString(pLunL0, "Driver",         "VUSBRootHub");           UPDATE_RC();
+        rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
     }
 #endif /* VBOXBFE_WITH_USB */
 
