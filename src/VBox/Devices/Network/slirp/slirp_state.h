@@ -90,6 +90,8 @@ typedef struct NATState
     uint8_t client_ethaddr[6];
     struct ex_list *exec_list;
     char slirp_hostname[33];
+    bool fPassDomain;
+    const char *pszDomain;
     /* Stuff from tcp_input.c */
     struct socket tcb;
     struct socket *tcp_last_so;

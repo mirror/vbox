@@ -302,7 +302,7 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
  * @returns VBox status code.
  * @param   pCfgHandle      The drivers configuration handle.
  */
-static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
+static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCfgHandle)
 {
     /*
      * Enumerate redirections.
@@ -325,7 +325,7 @@ static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 fUDP = false;
             else if (VBOX_FAILURE(rc))
-                return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"UDP\" boolean returned %Vrc"), rc);
+                return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"UDP\" boolean returned %Vrc"), iInstance, rc);
         }
         else if (VBOX_SUCCESS(rc))
         {
@@ -334,22 +334,22 @@ static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
             else if (!RTStrICmp(szProtocol, "UDP"))
                 fUDP = true;
             else
-                return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""), szProtocol);
+                return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""), iInstance, szProtocol);
         }
         else
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string returned %Vrc"), rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string returned %Vrc"), iInstance, rc);
 
         /* host port */
         int32_t iHostPort;
         rc = CFGMR3QueryS32(pNode, "HostPort", &iHostPort);
         if (VBOX_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"HostPort\" integer returned %Vrc"), rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"HostPort\" integer returned %Vrc"), iInstance, rc);
 
         /* guest port */
         int32_t iGuestPort;
         rc = CFGMR3QueryS32(pNode, "GuestPort", &iGuestPort);
         if (VBOX_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestPort\" integer returned %Vrc"), rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestPort\" integer returned %Vrc"), iInstance, rc);
 
         /* guest address */
         char    szGuestIP[32];
@@ -357,17 +357,17 @@ static int drvNATConstructRedir(PDRVNAT pData, PCFGMNODE pCfgHandle)
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             strcpy(szGuestIP, "10.0.2.15");
         else if (VBOX_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string returned %Vrc"), rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string returned %Vrc"), iInstance, rc);
         struct in_addr GuestIP;
         if (!inet_aton(szGuestIP, &GuestIP))
-            return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_NAT_REDIR_GUEST_IP, RT_SRC_POS, N_("NAT#%d: configuration error: invalid \"GuestIP\"=\"%s\", inet_aton failed"), szGuestIP);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_NAT_REDIR_GUEST_IP, RT_SRC_POS, N_("NAT#%d: configuration error: invalid \"GuestIP\"=\"%s\", inet_aton failed"), iInstance, szGuestIP);
 
         /*
          * Call slirp about it.
          */
         Log(("drvNATConstruct: Redir %d -> %s:%d\n", iHostPort, szGuestIP, iGuestPort));
         if (slirp_redir(pData->pNATState, fUDP, iHostPort, GuestIP, iGuestPort) < 0)
-            return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS, N_("NAT#%d: configuration error: failed to set up redirection of %d to %s:%d. Probably a conflict with existing services or other rules"), iHostPort, szGuestIP, iGuestPort);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS, N_("NAT#%d: configuration error: failed to set up redirection of %d to %s:%d. Probably a conflict with existing services or other rules"), iInstance, iHostPort, szGuestIP, iGuestPort);
     } /* for each redir rule */
 
     return VINF_SUCCESS;
@@ -393,8 +393,18 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "\0"))
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "");
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0"))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "Unknown NAT configuration option, only supports PassDomain");
+
+    /*
+     * Get the configuration settings.
+     */
+    bool fPassDomain = true;
+    int rc = CFGMR3QueryBool(pCfgHandle, "PassDomain", &fPassDomain);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fPassDomain = true;
+    else if (VBOX_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"PassDomain\" boolean returned %Vrc"), pDrvIns->iInstance, rc);
 
     /*
      * Init the static parts.
@@ -423,7 +433,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * The slirp lock..
      */
-    int rc = RTCritSectInit(&pData->CritSect);
+    rc = RTCritSectInit(&pData->CritSect);
     if (VBOX_FAILURE(rc))
         return rc;
 #if 0
@@ -441,10 +451,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             /*
              * Initialize slirp.
              */
-            rc = slirp_init(&pData->pNATState, &szNetAddr[0], pData);
+            rc = slirp_init(&pData->pNATState, &szNetAddr[0], fPassDomain, pData);
             if (VBOX_SUCCESS(rc))
             {
-                int rc2 = drvNATConstructRedir(pData, pCfgHandle);
+                int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle);
                 if (VBOX_SUCCESS(rc2))
                 {
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
