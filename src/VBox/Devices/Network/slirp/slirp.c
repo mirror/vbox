@@ -12,13 +12,17 @@ static const uint8_t special_ethaddr[6] = {
 
 #ifdef _WIN32
 
-static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
+static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
+                               const char **ppszDomain)
 {
     FIXED_INFO *FixedInfo=NULL;
     ULONG    BufLen;
     DWORD    ret;
     IP_ADDR_STRING *pIPAddr;
     struct in_addr tmp_addr;
+
+    *ppszDomain = NULL;
+    /** @todo implement search list for Windows host. */
 
     FixedInfo = (FIXED_INFO *)GlobalAlloc(GPTR, sizeof(FIXED_INFO));
     BufLen = sizeof(FIXED_INFO);
@@ -60,7 +64,8 @@ static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 
 #else
 
-static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
+static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
+                               const char **ppszDomain)
 {
     char buff[512];
     char buff2[256];
@@ -91,6 +96,7 @@ static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
     if (!f)
         return -1;
 
+    *ppszDomain = NULL;
     Log(("nat: IP address of your DNS(s): \n"));
     while (fgets(buff, 512, f) != NULL) {
         if (sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1) {
@@ -107,6 +113,20 @@ static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
             } else
                 Log(("nat: %s\n", inet_ntoa(tmp_addr)));
         }
+        if (!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6))
+        {
+            /* Domain name/search list present. Pick first entry */
+            if (*ppszDomain == NULL)
+            {
+                char *tok;
+                tok = strtok(&buff[6], " \t\n");
+                *ppszDomain = RTStrDup(tok);
+                if (pData->fPassDomain)
+                    LogRel(("NAT: passing domain name %s\n", tok));
+                else
+                    Log(("nat: ignoring domain %s\n", tok));
+            }
+        }
     }
     fclose(f);
     if (!found)
@@ -116,7 +136,7 @@ static int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 
 #endif
 
-int slirp_init(PNATState *ppData, const char *pszNetAddr, void *pvUser)
+int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain, void *pvUser)
 {
     int fNATfailed = 0;
     PNATState pData = malloc(sizeof(NATState));
@@ -124,6 +144,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, void *pvUser)
     if (!pData)
         return VERR_NO_MEMORY;
     memset(pData, '\0', sizeof(NATState));
+    pData->fPassDomain = fPassDomain;
     pData->pvUser = pvUser;
 #if ARCH_BITS == 64
     pData->cpvHashUsed = 1;
@@ -149,7 +170,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, void *pvUser)
     inet_aton("127.0.0.1", &loopback_addr);
     inet_aton("127.0.0.1", &dns_addr);
 
-    if (get_dns_addr(pData, &dns_addr) < 0)
+    if (get_dns_addr_domain(pData, &dns_addr, &pData->pszDomain) < 0)
         fNATfailed = 1;
 
     inet_aton(pszNetAddr, &special_addr);
@@ -192,6 +213,9 @@ void slirp_link_down(PNATState pData)
  */
 void slirp_term(PNATState pData)
 {
+    if (pData->pszDomain)
+        RTStrFree((char *)(void *)pData->pszDomain);
+
 #if ARCH_BITS == 64
     LogRel(("NAT: cpvHashUsed=%RU32 cpvHashCollisions=%RU32 cpvHashInserts=%RU64 cpvHashDone=%RU64\n",
             pData->cpvHashUsed, pData->cpvHashCollisions, pData->cpvHashInserts, pData->cpvHashDone));
