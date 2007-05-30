@@ -335,7 +335,8 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
         if (!(pCtx->eflags.u32 & X86_EFL_IF))
         {
             Log2(("Enable irq window exit!\n"));
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT);
+            pVM->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
             AssertRC(rc);
         }
         else
@@ -596,11 +597,16 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         pCtx->tr);
 
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
-        /* @todo use fake TSS here */
-        //if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
-
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u32Base);
+        if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+        {
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          0);
+        }
+        else
+        {
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u32Base);
+        }
         val = pCtx->trHid.Attr.u;
 
         /* The TSS selector must be busy. */
@@ -792,16 +798,29 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     AssertRC(rc);
 
     /** TSC offset. */
-    /** @todo use host tsc if safe, other intercept rdtsc */
-    uint64_t u64TSCOffset = TMCpuTickGetOffset(pVM);
+    uint64_t u64TSCOffset;
 
+    if (TMCpuTickCanUseRealTSC(pVM, &u64TSCOffset))
+    {
+        /** @todo does VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT take precedence over TSC_OFFSET? */
 #if HC_ARCH_BITS == 64
-    rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
 #else
-    rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, (uint32_t)u64TSCOffset);
-    rc |= VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_HIGH, (uint32_t)(u64TSCOffset >> 32ULL));
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, (uint32_t)u64TSCOffset);
+        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_HIGH, (uint32_t)(u64TSCOffset >> 32ULL));
 #endif
-    AssertRC(rc);
+        AssertRC(rc);
+
+        pVM->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+        AssertRC(rc);
+    }
+    else
+    {
+        pVM->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+        AssertRC(rc);
+    }
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
@@ -1461,6 +1480,7 @@ ResumeExecution:
     case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */
         /* Clear VM-exit on IF=1 change. */
         Log2(("VMX_EXIT_IRQ_WINDOW %VGv\n", pCtx->eip));
+        pVM->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
         AssertRC(rc);
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIrqWindow);
