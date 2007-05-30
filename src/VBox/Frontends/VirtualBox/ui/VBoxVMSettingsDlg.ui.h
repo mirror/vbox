@@ -399,6 +399,8 @@ void VBoxVMSettingsDlg::init()
 {
     polished = false;
 
+    mResetFirstRunFlag = false;
+
     setIcon (QPixmap::fromMimeSource ("settings_16px.png"));
 
     /* all pages are initially valid */
@@ -736,7 +738,7 @@ void VBoxVMSettingsDlg::init()
     /* Boot-order table */
     tblBootOrder = new BootItemsList (groupBox12, "tblBootOrder");
     connect (tblBootOrder, SIGNAL (bootSequenceChanged()),
-             this, SLOT (bootSequenceChanged()));
+             this, SLOT (resetFirstRunFlag()));
     /* Fixing focus order for BootItemsList */
     setTabOrder (tbwGeneral, tblBootOrder);
     setTabOrder (tblBootOrder->focusProxy(), chbEnableACPI);
@@ -852,8 +854,6 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
     resize (minimumSize());
 
     VBoxGlobal::centerWidget (this, parentWidget());
-
-    mIsBootSettingsChanged = false;
 }
 
 void VBoxVMSettingsDlg::updateShortcuts()
@@ -910,15 +910,15 @@ void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 }
 
 
-void VBoxVMSettingsDlg::bootSequenceChanged()
+void VBoxVMSettingsDlg::resetFirstRunFlag()
 {
-    mIsBootSettingsChanged = true;
+    mResetFirstRunFlag = true;
 }
 
 
 void VBoxVMSettingsDlg::hdaMediaChanged()
 {
-    bootSequenceChanged();
+    resetFirstRunFlag();
     uuidHDA = grbHDA->isChecked() ? cbHDA->getId() : QUuid();
     txHDA->setText (getHdInfo (grbHDA, uuidHDA));
     /* revailidate */
@@ -928,7 +928,7 @@ void VBoxVMSettingsDlg::hdaMediaChanged()
 
 void VBoxVMSettingsDlg::hdbMediaChanged()
 {
-    bootSequenceChanged();
+    resetFirstRunFlag();
     uuidHDB = grbHDB->isChecked() ? cbHDB->getId() : QUuid();
     txHDB->setText (getHdInfo (grbHDB, uuidHDB));
     /* revailidate */
@@ -938,7 +938,7 @@ void VBoxVMSettingsDlg::hdbMediaChanged()
 
 void VBoxVMSettingsDlg::hddMediaChanged()
 {
-    bootSequenceChanged();
+    resetFirstRunFlag();
     uuidHDD = grbHDD->isChecked() ? cbHDD->getId() : QUuid();
     txHDD->setText (getHdInfo (grbHDD, uuidHDD));
     /* revailidate */
@@ -948,7 +948,7 @@ void VBoxVMSettingsDlg::hddMediaChanged()
 
 void VBoxVMSettingsDlg::cdMediaChanged()
 {
-    bootSequenceChanged();
+    resetFirstRunFlag();
     uuidISODVD = bgDVD->isChecked() ? cbISODVD->getId() : QUuid();
     /* revailidate */
     wvalDVD->revalidate();
@@ -957,7 +957,7 @@ void VBoxVMSettingsDlg::cdMediaChanged()
 
 void VBoxVMSettingsDlg::fdMediaChanged()
 {
-    bootSequenceChanged();
+    resetFirstRunFlag();
     uuidISOFloppy = bgFloppy->isChecked() ? cbISOFloppy->getId() : QUuid();
     /* revailidate */
     wvalFloppy->revalidate();
@@ -1727,9 +1727,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
     }
 
-    /* Clear the "GUI_FirstRun" extra data key in case of one of the boot
-     * settings was changed */
-    if (mIsBootSettingsChanged)
+    /* Clear the "GUI_FirstRun" extra data key in case if the boot order
+     * and/or disk configuration were changed */
+    if (mResetFirstRunFlag)
         cmachine.SetExtraData (GUI_FirstRun, QString::null);
 
     /* audio */
@@ -1825,8 +1825,6 @@ void VBoxVMSettingsDlg::showImageManagerISOFloppy() { showVDImageManager(&uuidIS
 
 void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, QLabel*)
 {
-    bootSequenceChanged();
-
     VBoxDefs::DiskType type = VBoxDefs::InvalidType;
     if (cbb == cbISODVD)
         type = VBoxDefs::CD;
@@ -1839,8 +1837,16 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
                                  WType_Dialog | WShowModal);
     QUuid machineId = cmachine.GetId();
     dlg.setup (type, true, &machineId, true /* aRefresh */, cmachine);
-    *id = dlg.exec() == VBoxDiskImageManagerDlg::Accepted ?
-        dlg.getSelectedUuid() : cbb->getId();
+    if (dlg.exec() == VBoxDiskImageManagerDlg::Accepted)
+    {
+        *id = dlg.getSelectedUuid();
+        resetFirstRunFlag();
+    }
+    else
+    {
+        *id = cbb->getId();
+    }
+
     cbb->setCurrentItem (*id);
     cbb->setFocus();
 
