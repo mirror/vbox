@@ -538,7 +538,7 @@ AssertCompileSize(RMD, 16);
 *   Internal Functions                                                         *
 *******************************************************************************/
 #define PRINT_TMD(T) Log2((    \
-        "TMD0 : TBADR=0x%08x\n" \
+        "TMD0 : TBADR=%#010x\n" \
         "TMD1 : OWN=%d, ERR=%d, FCS=%d, LTI=%d, "       \
         "ONE=%d, DEF=%d, STP=%d, ENP=%d,\n"             \
         "       BPE=%d, BCNT=%d\n"                      \
@@ -555,7 +555,7 @@ AssertCompileSize(RMD, 16);
         (T)->tmd2.tdr, (T)->tmd2.trc))
 
 #define PRINT_RMD(R) Log2((    \
-        "RMD0 : RBADR=0x%08x\n" \
+        "RMD0 : RBADR=%#010x\n" \
         "RMD1 : OWN=%d, ERR=%d, FRAM=%d, OFLO=%d, "     \
         "CRC=%d, BUFF=%d, STP=%d, ENP=%d,\n       "     \
         "BPE=%d, PAM=%d, LAFM=%d, BAM=%d, ONES=%d, BCNT=%d\n" \
@@ -784,7 +784,7 @@ static void LogPkt(const char *name, const void *const src, int count)
     struct ether_header *hdr = (struct ether_header *)(BUF);          \
     Log(("packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, "               \
          "shost=%02x:%02x:%02x:%02x:%02x:%02x, "                      \
-         "type=0x%04x (bcast=%d)\n",                                  \
+         "type=%#06x (bcast=%d)\n",                                  \
          hdr->ether_dhost[0],hdr->ether_dhost[1],hdr->ether_dhost[2], \
          hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5], \
          hdr->ether_shost[0],hdr->ether_shost[1],hdr->ether_shost[2], \
@@ -1025,7 +1025,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 {
     PCNetState *pData   = (PCNetState *)pvUser;
 
-    Log(("#%d pcnetHandleRingWriteGC: write to %08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, GCPhysFault));
+    Log(("#%d pcnetHandleRingWriteGC: write to %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, GCPhysFault));
 
     uint32_t cb;
     int rc = CTXALLSUFF(pData->pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
@@ -1086,7 +1086,7 @@ static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pv
     PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
     PCNetState *pData   = PDMINS2DATA(pDevIns, PCNetState *);
 
-    Log(("#%d pcnetHandleRingWrite: write to %08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, GCPhys));
+    Log(("#%d pcnetHandleRingWrite: write to %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, GCPhys));
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&CTXSUFF(pData->StatRingWrite));
     if (GCPhys >= pData->GCRDRA && GCPhys < pcnetRdraAddr(pData, 0))
@@ -1256,8 +1256,8 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     int rc;
 
-    Log(("pcnetUpdateRingHandlers TD %VGp size %x -> %VGp size %x\n", pData->TDRAPhysOld, pData->cbTDRAOld, pData->GCTDRA, pcnetTdraAddr(pData, 0)));
-    Log(("pcnetUpdateRingHandlers RX %VGp size %x -> %VGp size %x\n", pData->RDRAPhysOld, pData->cbRDRAOld, pData->GCRDRA, pcnetRdraAddr(pData, 0)));
+    Log(("pcnetUpdateRingHandlers TD %VGp size %#x -> %VGp size %#x\n", pData->TDRAPhysOld, pData->cbTDRAOld, pData->GCTDRA, pcnetTdraAddr(pData, 0)));
+    Log(("pcnetUpdateRingHandlers RX %VGp size %#x -> %VGp size %#x\n", pData->RDRAPhysOld, pData->cbRDRAOld, pData->GCRDRA, pcnetRdraAddr(pData, 0)));
 
     /** @todo unregister order not correct! */
 
@@ -1342,7 +1342,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
 static void pcnetInit(PCNetState *pData)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
-    Log(("#%d pcnetInit: init_addr=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetInit: init_addr=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          PHYSADDR(pData, CSR_IADR(pData))));
 
     /** @todo Documentation says that RCVRL and XMTRL are stored as two's complement!
@@ -1370,7 +1370,7 @@ static void pcnetInit(PCNetState *pData)
         struct INITBLK32 initblk;
         pData->GCUpperPhys = 0;
         PCNET_INIT();
-        Log(("#%d initblk.rlen=0x%02x, initblk.tlen=0x%02x\n",
+        Log(("#%d initblk.rlen=%#04x, initblk.tlen=%#04x\n",
              PCNETSTATE_2_DEVINS(pData)->iInstance, initblk.rlen, initblk.tlen));
     }
     else
@@ -1378,7 +1378,7 @@ static void pcnetInit(PCNetState *pData)
         struct INITBLK16 initblk;
         pData->GCUpperPhys = (0xff00 & (uint32_t)pData->aCSR[2]) << 16;
         PCNET_INIT();
-        Log(("#%d initblk.rlen=0x%02x, initblk.tlen=0x%02x\n",
+        Log(("#%d initblk.rlen=%#04x, initblk.tlen=%#04x\n",
              PCNETSTATE_2_DEVINS(pData)->iInstance, initblk.rlen, initblk.tlen));
     }
 
@@ -1398,7 +1398,7 @@ static void pcnetInit(PCNetState *pData)
     CSR_CRST(pData) = CSR_CRBC(pData) = CSR_NRST(pData) = CSR_NRBC(pData) = 0;
     CSR_CXST(pData) = CSR_CXBC(pData) = CSR_NXST(pData) = CSR_NXBC(pData) = 0;
 
-    LogRel(("PCNet#%d: Init: ss32=%d GCRDRA=0x%08x[%d] GCTDRA=0x%08x[%d]\n",
+    LogRel(("PCNet#%d: Init: ss32=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]\n",
             PCNETSTATE_2_DEVINS(pData)->iInstance, BCR_SSIZE32(pData),
             pData->GCRDRA, CSR_RCVRL(pData), pData->GCTDRA, CSR_XMTRL(pData)));
 
@@ -1497,7 +1497,7 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
             {
                 STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatRdtePoll), a);
                 /* This is not problematic since we don't own the descriptor */
-                LogRel(("PCNet#%d: BAD RMD ENTRIES AT 0x%08x (i=%d)\n",
+                LogRel(("PCNet#%d: BAD RMD ENTRIES AT %#010x (i=%d)\n",
                         PCNETSTATE_2_DEVINS(pData)->iInstance, addr, i));
                 return;
             }
@@ -1528,7 +1528,7 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
         {
             STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatRdtePoll), a);
             /* This is not problematic since we don't own the descriptor */
-            LogRel(("PCNet#%d: BAD RMD ENTRIES + AT 0x%08x (i=%d)\n",
+            LogRel(("PCNet#%d: BAD RMD ENTRIES + AT %#010x (i=%d)\n",
                     PCNETSTATE_2_DEVINS(pData)->iInstance, addr, i));
             return;
         }
@@ -1567,7 +1567,7 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
         if (RT_UNLIKELY(tmd->tmd1.ones != 15))
         {
             STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTdtePoll), a);
-            LogRel(("PCNet#%d: BAD TMD XDA=0x%08x\n",
+            LogRel(("PCNet#%d: BAD TMD XDA=%#010x\n",
                     PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, cxda)));
             return 0;
         }
@@ -1662,7 +1662,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
             {
                 RMD rmd;
                 pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, GCPhys));
-                LogRel(("  %08x\n", rmd.rmd1));
+                LogRel(("  %#010x\n", rmd.rmd1));
                 GCPhys += cb;
             }
             pData->aCSR[0] |= 0x1000; /* Set MISS flag */
@@ -1760,7 +1760,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
 
             pData->aCSR[0] |= 0x0400;
 
-            Log(("#%d RCVRC=%d CRDA=0x%08x BLKS=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+            Log(("#%d RCVRC=%d CRDA=%#010x BLKS=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
                  CSR_RCVRC(pData), PHYSADDR(pData, CSR_CRDA(pData)), pktcount));
 #ifdef PCNET_DEBUG_RMD
             PRINT_RMD(&rmd);
@@ -2022,7 +2022,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             break;
 
 #ifdef PCNET_DEBUG_TMD
-        Log2(("#%d TMDLOAD 0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
+        Log2(("#%d TMDLOAD %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
         PRINT_TMD(&tmd);
 #endif
         pcnetXmitScrapFrame(pData);
@@ -2280,10 +2280,10 @@ static void pcnetPollTimer(PCNetState *pData)
 
 #ifdef LOG_ENABLED
     TMD dummy;
-    Log2(("#%d pcnetPollTimer time=%08x TDMD=%d TXON=%d POLL=%d TDTE=%d TDRA=%x\n",
+    Log2(("#%d pcnetPollTimer time=%#010x TDMD=%d TXON=%d POLL=%d TDTE=%d TDRA=%#x\n",
           PCNETSTATE_2_DEVINS(pData)->iInstance, RTTimeMilliTS(), CSR_TDMD(pData), CSR_TXON(pData),
           !CSR_DPOLL(pData), pcnetTdtePoll(pData, &dummy), pData->GCTDRA));
-    Log2(("#%d pcnetPollTimer: CSR_CXDA=%x CSR_XMTRL=%d CSR_XMTRC=%d\n",
+    Log2(("#%d pcnetPollTimer: CSR_CXDA=%#x CSR_XMTRL=%d CSR_XMTRC=%d\n",
           PCNETSTATE_2_DEVINS(pData)->iInstance, CSR_CXDA(pData), CSR_XMTRL(pData), CSR_XMTRC(pData)));
 #endif
 #ifdef PCNET_DEBUG_TMD
@@ -2291,7 +2291,7 @@ static void pcnetPollTimer(PCNetState *pData)
     {
         TMD tmd;
         pcnetTmdLoad(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)));
-        Log2(("#%d pcnetPollTimer: TMDLOAD 0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
+        Log2(("#%d pcnetPollTimer: TMDLOAD %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
         PRINT_TMD(&tmd);
     }
 #endif
@@ -2332,7 +2332,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
     uint16_t val = new_value;
     int      rc  = VINF_SUCCESS;
 #ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRWriteU16: rap=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+    Log(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
 #endif
     switch (u32RAP)
     {
@@ -2356,7 +2356,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                     return VINF_IOM_HC_IOPORT_WRITE;
                 }
 #endif
-                LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %04x => %04x (%04x)\n",
+                LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x => %#06x (%#06x)\n",
                               PCNETSTATE_2_DEVINS(pData)->iInstance,
                               u32RAP, new_value, csr0, pData->aCSR[0]));
                 pData->aCSR[0] = csr0;
@@ -2425,22 +2425,22 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 112: /* MISSC */
             if (CSR_STOP(pData) || CSR_SPND(pData))
                 break;
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             return rc;
         case 3: /* Interrupt Mask and Deferral Control */
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             break;
         case 4: /* Test and Features Control */
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aCSR[4] &= ~(val & 0x026a);
             val &= ~0x026a;
             val |= pData->aCSR[4] & 0x026a;
             break;
         case 5: /* Extended Control and Interrupt 1 */
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
                         PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aCSR[5] &= ~(val & 0x0a90);
             val &= ~0x0a90;
@@ -2464,7 +2464,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 17: /* IADRH */
             return pcnetCSRWriteU16(pData, 2, val);
         case 58: /* Software Style */
-            LOG_REGISTER(("PCNet#%d: WRITE SW_STYLE, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE SW_STYLE, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, val));
             rc = pcnetBCRWriteU16(pData, BCR_SWS, val);
             break;
@@ -2499,11 +2499,11 @@ static uint32_t pcnetCSRReadU16(PCNetState *pData, uint32_t u32RAP)
             break;
         default:
             val = pData->aCSR[u32RAP];
-            LOG_REGISTER(("PCNet#%d: read  CSR%d => %04x\n",
+            LOG_REGISTER(("PCNet#%d: read  CSR%d => %#06x\n",
                     PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
     }
 #ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRReadU16: u32RAP=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetCSRReadU16: u32RAP=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     return val;
@@ -2514,7 +2514,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
     int rc = VINF_SUCCESS;
     u32RAP &= 0x7f;
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRWriteU16: u32RAP=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRWriteU16: u32RAP=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     switch (u32RAP)
@@ -2526,7 +2526,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
             switch (val & 0x00ff)
             {
                 default:
-                    Log(("Bad SWSTYLE=0x%02x\n", val & 0xff));
+                    Log(("Bad SWSTYLE=%#04x\n", val & 0xff));
                     // fall through
                 case 0:
                     val |= 0x0200; /* 16 bit */
@@ -2545,9 +2545,9 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
                     pData->GCUpperPhys   = 0;
                     break;
             }
-            LOG_REGISTER(("PCNet#%d: WRITE SW_STYLE, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE SW_STYLE, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, val));
-            Log(("BCR_SWS=0x%04x\n", val));
+            Log(("BCR_SWS=%#06x\n", val));
             pData->aCSR[58] = val;
             /* fall through */
         case BCR_LNKST:
@@ -2560,13 +2560,13 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
         case BCR_EECAS:
         case BCR_PLAT:
         case BCR_MIIADDR:
-            LOG_REGISTER(("PCNet#%d: WRITE BCR%d, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE BCR%d, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aBCR[u32RAP] = val;
             break;
 
         case BCR_MIIMDR:
-            LOG_REGISTER(("PCNet#%d: WRITE MII%d, %04x\n",
+            LOG_REGISTER(("PCNet#%d: WRITE MII%d, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aMII[pData->aBCR[BCR_MIIADDR] & 0x1f] = val;
             break;
@@ -2697,7 +2697,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP)
             break;
     }
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRReadU16: u32RAP=%d val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRReadU16: u32RAP=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     return val;
@@ -2742,7 +2742,7 @@ static void pcnetAPROMWriteU8(PCNetState *pData, uint32_t addr, uint32_t val)
 {
     addr &= 0x0f;
     val  &= 0xff;
-    Log(("#%d pcnetAPROMWriteU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetAPROMWriteU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
     /* Check APROMWE bit to enable write access */
     if (pcnetBCRReadU16(pData, 2) & 0x80)
@@ -2752,7 +2752,7 @@ static void pcnetAPROMWriteU8(PCNetState *pData, uint32_t addr, uint32_t val)
 static uint32_t pcnetAPROMReadU8(PCNetState *pData, uint32_t addr)
 {
     uint32_t val = pData->aPROM[addr &= 0x0f];
-    Log(("#%d pcnetAPROMReadU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetAPROMReadU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
     return val;
 }
@@ -2762,7 +2762,7 @@ static int pcnetIoportWriteU16(PCNetState *pData, uint32_t addr, uint32_t val)
     int rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportWriteU16: addr=%#010x val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (RT_LIKELY(!BCR_DWIO(pData)))
@@ -2822,7 +2822,7 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportReadU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportReadU16: addr=%#010x val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val & 0xffff));
 #endif
     return val;
@@ -2833,7 +2833,7 @@ static int pcnetIoportWriteU32(PCNetState *pData, uint32_t addr, uint32_t val)
     int rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportWriteU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportWriteU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (RT_LIKELY(BCR_DWIO(pData)))
@@ -2901,7 +2901,7 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportReadU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     return val;
@@ -2910,7 +2910,7 @@ skip_update_irq:
 static void pcnetMMIOWriteU8(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (!(addr & 0x10))
@@ -2923,7 +2923,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
     if (!(addr & 0x10))
         val = pcnetAPROMReadU8(pData, addr);
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU8: addr=0x%08x val=0x%02x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val & 0xff));
 #endif
     return val;
@@ -2932,7 +2932,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU16(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU16: addr=0x%08x val=0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU16: addr=%#010x val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (addr & 0x10)
@@ -2958,7 +2958,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr);
     }
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU16: addr=0x%08x val = 0x%04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU16: addr=%#010x val = %#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val & 0xffff));
 #endif
     return val;
@@ -2967,7 +2967,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU32(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     if (addr & 0x10)
@@ -2999,7 +2999,7 @@ static uint32_t pcnetMMIOReadU32(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr  );
     }
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU32: addr=0x%08x val=0x%08x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          addr, val));
 #endif
     return val;
@@ -3443,27 +3443,27 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     PDMCritSectEnter(&pData->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR0=%04RX32:\n",
+                    "CSR0=%#06x:\n",
                     pData->aCSR[0]);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR1=%04RX32:\n",
+                    "CSR1=%#06x:\n",
                     pData->aCSR[1]);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR2=%04RX32:\n",
+                    "CSR2=%#06x:\n",
                     pData->aCSR[2]);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR3=%04RX32: BSWP=%d EMBA=%d DXMT2PD=%d LAPPEN=%d DXSUFLO=%d IDONM=%d TINTM=%d RINTM=%d MERRM=%d MISSM=%d BABLM=%d\n",
+                    "CSR3=%#06x: BSWP=%d EMBA=%d DXMT2PD=%d LAPPEN=%d DXSUFLO=%d IDONM=%d TINTM=%d RINTM=%d MERRM=%d MISSM=%d BABLM=%d\n",
                     pData->aCSR[3],
                     !!(pData->aCSR[3] & BIT(2)), !!(pData->aCSR[3] & BIT(3)), !!(pData->aCSR[3] & BIT(4)), CSR_LAPPEN(pData),
                     CSR_DXSUFLO(pData), !!(pData->aCSR[3] & BIT(8)), !!(pData->aCSR[3] & BIT(9)), !!(pData->aCSR[3] & BIT(10)),
                     !!(pData->aCSR[3] & BIT(11)), !!(pData->aCSR[3] & BIT(12)), !!(pData->aCSR[3] & BIT(14)));
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR4=%04RX32: JABM=%d JAB=%d TXSTRM=%d TXSTRT=%d RCVCOOM=%d RCVCCO=%d UINT=%d UINTCMD=%d\n"
-                    "            MFCOM=%d MFCO=%d ASTRP_RCV=%d APAD_XMT=%d DPOLL=%d TIMER=%d EMAPLUS=%d EN124=%d\n",
+                    "CSR4=%#06x: JABM=%d JAB=%d TXSTRM=%d TXSTRT=%d RCVCOOM=%d RCVCCO=%d UINT=%d UINTCMD=%d\n"
+                    "              MFCOM=%d MFCO=%d ASTRP_RCV=%d APAD_XMT=%d DPOLL=%d TIMER=%d EMAPLUS=%d EN124=%d\n",
                     pData->aCSR[4],
                     !!(pData->aCSR[4] & BIT( 0)), !!(pData->aCSR[4] & BIT( 1)), !!(pData->aCSR[4] & BIT( 2)), !!(pData->aCSR[4] & BIT( 3)),
                     !!(pData->aCSR[4] & BIT( 4)), !!(pData->aCSR[4] & BIT( 5)), !!(pData->aCSR[4] & BIT( 6)), !!(pData->aCSR[4] & BIT( 7)),
@@ -3471,16 +3471,16 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     !!(pData->aCSR[4] & BIT(12)), !!(pData->aCSR[4] & BIT(13)), !!(pData->aCSR[4] & BIT(14)), !!(pData->aCSR[4] & BIT(15)));
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR5=%04RX32:\n",
+                    "CSR5=%#06x:\n",
                     pData->aCSR[5]);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR6=%04RX32: RLEN=%03x* TLEN=%03x* [* encoded]\n",
+                    "CSR6=%#06x: RLEN=%#x* TLEN=%#x* [* encoded]\n",
                     pData->aCSR[6],
                     (pData->aCSR[6] >> 8) & 0xf, (pData->aCSR[6] >> 12) & 0xf);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR8..11=%04RX32,%04RX32,%04RX32,%04RX32: LADRF=%016RX64\n",
+                    "CSR8..11=%#06x,%#06x,%#06x,%#06x: LADRF=%#018llx\n",
                     pData->aCSR[8], pData->aCSR[9], pData->aCSR[10], pData->aCSR[11],
                       (uint64_t)(pData->aCSR[ 8] & 0xffff)
                     | (uint64_t)(pData->aCSR[ 9] & 0xffff) << 16
@@ -3488,7 +3488,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     | (uint64_t)(pData->aCSR[11] & 0xffff) << 48);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR12..14=%04RX32,%04RX32,%04RX32: PADR=%02x %02x %02x %02x %02x %02x (Current MAC Address)\n",
+                    "CSR12..14=%#06x,%#06x,%#06x: PADR=%02x:%02x:%02x:%02x:%02x:%02x (Current MAC Address)\n",
                     pData->aCSR[12], pData->aCSR[13], pData->aCSR[14],
                      pData->aCSR[12]       & 0xff,
                     (pData->aCSR[12] >> 8) & 0xff,
@@ -3498,8 +3498,8 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     (pData->aCSR[14] >> 8) & 0xff);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR15=%04RX32: DXR=%d DTX=%d LOOP=%d DXMTFCS=%d FCOLL=%d DRTY=%d INTL=%d PORTSEL=%d LTR=%d\n"
-                    "            MENDECL=%d DAPC=%d DLNKTST=%d DRCVPV=%d DRCVBC=%d PROM=%d\n",
+                    "CSR15=%#06x: DXR=%d DTX=%d LOOP=%d DXMTFCS=%d FCOLL=%d DRTY=%d INTL=%d PORTSEL=%d LTR=%d\n"
+                    "              MENDECL=%d DAPC=%d DLNKTST=%d DRCVPV=%d DRCVBC=%d PROM=%d\n",
                     pData->aCSR[15],
                     !!(pData->aCSR[15] & BIT( 0)), !!(pData->aCSR[15] & BIT( 1)), !!(pData->aCSR[15] & BIT( 2)), !!(pData->aCSR[15] & BIT( 3)),
                     !!(pData->aCSR[15] & BIT( 4)), !!(pData->aCSR[15] & BIT( 5)), !!(pData->aCSR[15] & BIT( 6)),   (pData->aCSR[15] >> 7) & 3,
@@ -3507,15 +3507,15 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     !!(pData->aCSR[15] & BIT(12)), !!(pData->aCSR[15] & BIT(13)), !!(pData->aCSR[15] & BIT(14)), !!(pData->aCSR[15] & BIT(15)));
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR46=%04RX32: POLL=%04x (Poll Time Counter)\n",
+                    "CSR46=%#06x: POLL=%#06x (Poll Time Counter)\n",
                     pData->aCSR[46], pData->aCSR[46] & 0xffff);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR47=%04RX32: POLLINT=%04x (Poll Time Interval)\n",
+                    "CSR47=%#06x: POLLINT=%#06x (Poll Time Interval)\n",
                     pData->aCSR[47], pData->aCSR[47] & 0xffff);
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR58=%04RX32: SWSTYLE=%02x %s SSIZE32=%d CSRPCNET=%d APERRENT=%d\n",
+                    "CSR58=%#06x: SWSTYLE=%d %s SSIZE32=%d CSRPCNET=%d APERRENT=%d\n",
                     pData->aCSR[58],
                     pData->aCSR[58] & 0x7f,
                     (pData->aCSR[58] & 0x7f) == 0 ? "C-LANCE / PCnet-ISA"
@@ -3563,7 +3563,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
             pHlp->pfnPrintf(pHlp,
                             "%04x %RGp:%c%c RBADR=%08RX32 BCNT=%03x MCNT=%03x "
                             "OWN=%d ERR=%d FRAM=%d OFLO=%d CRC=%d BUFF=%d STP=%d ENP=%d BPE=%d "
-                            "PAM=%d LAFM=%d BAM=%d RCC=%02x RPC=%02x ONES=%x ZEROS=%d\n",
+                            "PAM=%d LAFM=%d BAM=%d RCC=%02x RPC=%02x ONES=%#x ZEROS=%d\n",
                             i, GCPhys, i + 1 == CSR_RCVRC(pData) ? '*' : ' ', GCPhys == CSR_CRDA(pData) ? '*' : ' ',
                             rmd.rmd0.rbadr, 4096 - rmd.rmd1.bcnt, rmd.rmd2.mcnt,
                             rmd.rmd1.own, rmd.rmd1.err, rmd.rmd1.fram, rmd.rmd1.oflo, rmd.rmd1.crc, rmd.rmd1.buff,
@@ -3603,7 +3603,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
             pHlp->pfnPrintf(pHlp,
                             "%04x %RGp:%c%c TBADR=%08RX32 BCNT=%03x OWN=%d "
                             "ERR=%d NOFCS=%d LTINT=%d ONE=%d DEF=%d STP=%d ENP=%d BPE=%d "
-                            "BUFF=%d UFLO=%d EXDEF=%d LCOL=%d LCAR=%d RTRY=%d TDR=%03x TRC=%x ONES=%x\n"
+                            "BUFF=%d UFLO=%d EXDEF=%d LCOL=%d LCAR=%d RTRY=%d TDR=%03x TRC=%#x ONES=%#x\n"
                             ,
                             i, GCPhys, i + 1 == CSR_XMTRC(pData) ? '*' : ' ', GCPhys == CSR_CXDA(pData) ? '*' : ' ',
                             tmd.tmd0.tbadr, 4096 - tmd.tmd1.bcnt,
