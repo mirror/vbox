@@ -1552,25 +1552,26 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         {
             case CEnums::HostDriveCaptured:
             {
-                QString description = dvd.GetHostDrive().GetDescription();
-                if (description.isEmpty())
-                {
-                    name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
-                        dvd.GetHostDrive().GetName();
-                }
-                else
-                {
-                    name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
-                        description;
-                }
+                CHostDVDDrive drv = dvd.GetHostDrive();
+                QString drvName = drv.GetName();
+                QString description = drv.GetDescription();
+                QString fullName = description.isEmpty() ?
+                    drvName :
+                    QString ("%1 (%2)").arg (description, drvName);
+                name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
+                    fullName;
                 break;
             }
             case CEnums::ImageMounted:
+            {
                 name = dvd.GetImage().GetFilePath();
                 break;
+            }
             case CEnums::NotMounted:
+            {
                 name = tr ("not&nbsp;mounted", "DVD-ROM tooltip");
                 break;
+            }
             default:
                 AssertMsgFailed (("Invalid dvd drive state: %d\n", state));
         }
@@ -2197,20 +2198,13 @@ void VBoxConsoleWnd::prepareDVDMenu()
     {
         CHostDVDDrive hostDVD = en.GetNext();
         /** @todo set icon */
+        QString drvName = hostDVD.GetName();
         QString description = hostDVD.GetDescription();
-        int id;
-        if (description.isEmpty())
-        {
-            id = devicesMountDVDMenu->insertItem (
-                tr ("Host Drive ") + hostDVD.GetName()
-                );
-        }
-        else
-        {
-            id = devicesMountDVDMenu->insertItem (
-                tr ("Host Drive ") + description
-                );
-        }
+        QString fullName = description.isEmpty() ?
+            drvName :
+            QString ("%1 (%2)").arg (description, drvName);
+        int id = devicesMountDVDMenu->insertItem (
+            tr ("Host Drive ") + fullName);
         hostDVDMap [id] = hostDVD;
         if (machine_state != CEnums::Running)
             devicesMountDVDMenu->setItemEnabled (id, false);

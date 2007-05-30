@@ -880,22 +880,17 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
     QString m = aDevice.GetManufacturer();
     QString p = aDevice.GetProduct();
     if (m.isEmpty() && p.isEmpty())
-        details +=
+        details =
             tr ("Unknown device %1:%2", "USB device details")
             .arg (QString().sprintf ("%04hX", aDevice.GetVendorId()))
             .arg (QString().sprintf ("%04hX", aDevice.GetProductId()));
     else
-    {
-        if (!m.isEmpty())
-            details += m;
-        if (!p.isEmpty())
-            details += " " + p;
-    }
+        details = m + " " + p;
     ushort r = aDevice.GetRevision();
     if (r != 0)
         details += QString().sprintf (" [%04hX]", r);
 
-    return details;
+    return details.stripWhiteSpace();
 }
 
 /**
@@ -1172,17 +1167,13 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             case CEnums::HostDriveCaptured:
             {
                 CHostDVDDrive drv = dvd.GetHostDrive();
+                QString drvName = drv.GetName();
                 QString description = drv.GetDescription();
-                if (description.isEmpty())
-                {
+                QString fullName = description.isEmpty() ?
+                    drvName :
+                    QString ("%1 (%2)").arg (description, drvName);
                 item = item.arg (tr ("Host Drive", "details report (DVD)"),
-                                 drv.GetName());
-                }
-                else
-                {
-                item = item.arg (tr ("Host Drive", "details report (DVD)"),
-                                 description);
-                }
+                                 fullName);
                 break;
             }
             default:
