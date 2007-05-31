@@ -137,7 +137,7 @@ static struct RTLOGGERPERTHREAD
  */
 DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
 {
-#ifndef IN_GC
+#ifdef IN_RING3
     if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
     {
         int rc = RTSemFastMutexRequest(pLogger->MutexSem);
@@ -154,7 +154,7 @@ DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
  */
 DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 {
-#ifndef IN_GC
+#ifdef IN_RING3
     if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
         RTSemFastMutexRelease(pLogger->MutexSem);
 #endif
