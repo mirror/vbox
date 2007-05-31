@@ -64,7 +64,7 @@ public:
     virtual int releaseDevice (HostUSBDevice *pDevice);
 
     /**
-     * A VM is releaseing a device back to be held or assigned to another VM.
+     * A VM is releasing a device back to be held or assigned to another VM.
      * A port reset should be performed.
      *
      * @returns VBox status code.

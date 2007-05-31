@@ -223,13 +223,12 @@ void USBProxyService::processChanges (void)
                 /*
                  * Device still there, update the state and move on.
                  */
-                if (DevPtr->updateState (pDevices))
+                if (updateDeviceState (DevPtr, pDevices))
                     mHost->onUSBDeviceStateChanged (DevPtr);
                 It++;
                 PUSBDEVICE pFree = pDevices;
                 pDevices = pDevices->pNext; /* treated as singly linked */
                 freeDevice (pFree);
-                /** @todo detect status changes! */
             }
             else
             {
@@ -254,11 +253,16 @@ void USBProxyService::processChanges (void)
                 else
                 {
                     /*
-                     * DevPtr was detached.
+                     * DevPtr was detached, unless there is a pending async request.
                      */
-                    It = mDevices.erase (It);
-                    mHost->onUSBDeviceDetached (DevPtr);
-                    Log (("USBProxyService::processChanges: detached %p\n", (HostUSBDevice *)DevPtr)); /** @todo add details .*/
+                    /** @todo add a timeout here. */
+                    if (!DevPtr->isStatePendingUnlocked())
+                    {
+                        It = mDevices.erase (It);
+                        mHost->onUSBDeviceDetached (DevPtr);
+                        Log (("USBProxyService::processChanges: detached %p\n", (HostUSBDevice *)DevPtr)); /** @todo add details .*/
+                    }
+                    /* else: operation pending */
                 }
             }
         } /* while */
@@ -371,6 +375,27 @@ void USBProxyService::processChanges (void)
 }
 
 
+bool USBProxyService::updateDeviceStateFake (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice)
+{
+    if (aDevice->isStatePendingUnlocked())
+    {
+        switch (aDevice->pendingStateUnlocked())
+        {
+            case USBDeviceState_USBDeviceCaptured:      aUSBDevice->enmState = USBDEVICESTATE_USED_BY_GUEST; break;
+            case USBDeviceState_USBDeviceHeld:          aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
+            case USBDeviceState_USBDeviceAvailable:     aUSBDevice->enmState = USBDEVICESTATE_UNUSED; break;
+            case USBDeviceState_USBDeviceUnavailable:   aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST; break;
+            case USBDeviceState_USBDeviceBusy:          aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE; break;
+            default:
+                AssertMsgFailed(("%d\n", aDevice->pendingStateUnlocked()));
+                break;
+        }
+    }
+
+    return USBProxyService::updateDeviceState (aDevice, aUSBDevice);
+}
+
+
 
 /* Stubs which the host specific classes overrides: */
 
@@ -440,5 +465,11 @@ int USBProxyService::releaseDevice (HostUSBDevice *pDevice)
 int USBProxyService::resetDevice (HostUSBDevice *pDevice)
 {
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+bool USBProxyService::updateDeviceState (HostUSBDevice *pDevice, PUSBDEVICE pUSBDevice)
+{
+    return pDevice->updateState (pUSBDevice);
 }
 
