@@ -922,7 +922,7 @@ ifdef VBOX_SIGNING_MODE
    VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timestamp.dll
    VBOX_TSA_URL_ARGS ?= /t "$(VBOX_TSA_URL)"
    ## Commands for signing a driver image after link.
-   VBOX_SIGN_DRIVER_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out))
+   VBOX_SIGN_DRIVER_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
    ## Commands for signing an executable or a dll image after link.
    VBOX_SIGN_IMAGE_CMDS  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
    ## Sign a file.
