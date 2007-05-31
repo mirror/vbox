@@ -83,6 +83,16 @@ public:
     virtual int resetDevice (HostUSBDevice *pDevice);
 
     /**
+     * Updates the device state.
+     * This is responsible for calling HostUSBDevice::updateState() and check for async completion.
+     *
+     * @returns true if there is a state change.
+     * @param   pDevice     The device in question.
+     * @param   pUSBDevice  The USB device structure for the last enumeration.
+     */
+    virtual bool updateDeviceState (HostUSBDevice *pDevice, PUSBDEVICE pUSBDevice);
+
+    /**
      * Query if the service is active and working.
      *
      * @returns true if the service is up running.
@@ -149,16 +159,26 @@ protected:
     virtual PUSBDEVICE getDevices (void);
 
     /**
-     * First call made on the service thread, use it to do 
+     * First call made on the service thread, use it to do
      * thread initialization.
      */
     virtual void serviceThreadInit (void);
 
     /**
-     * First call made on the service thread, use it to do 
+     * First call made on the service thread, use it to do
      * thread termination.
      */
     virtual void serviceThreadTerm (void);
+
+    /**
+     * Implement fake capture, ++.
+     *
+     * @returns true if there is a state change.
+     * @param   pDevice     The device in question.
+     * @param   pUSBDevice  The USB device structure for the last enumeration.
+     */
+    bool updateDeviceStateFake (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
+
 
 public:
     /**
@@ -222,6 +242,7 @@ public:
     virtual int holdDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
     virtual int resetDevice (HostUSBDevice *aDevice);
+    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
 
 protected:
     virtual int wait (unsigned aMillies);
@@ -231,12 +252,12 @@ protected:
     virtual void serviceThreadTerm (void);
 
 private:
-    /** Reference to the runloop of the service thread. 
+    /** Reference to the runloop of the service thread.
      * This is NULL if the service thread isn't running. */
     CFRunLoopRef mServiceRunLoopRef;
     /** The opaque value returned by DarwinSubscribeUSBNotifications. */
     void *mNotifyOpaque;
-    /** A hack to work around the problem with the usb device enumeration 
+    /** A hack to work around the problem with the usb device enumeration
      * not including newly attached devices. */
     bool mWaitABitNextTime;
 };
@@ -259,6 +280,7 @@ public:
     virtual int holdDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
     virtual int resetDevice (HostUSBDevice *aDevice);
+    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
 
 protected:
     virtual int wait (unsigned aMillies);
@@ -297,6 +319,7 @@ public:
     virtual int holdDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
     virtual int resetDevice (HostUSBDevice *aDevice);
+    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
 
 protected:
     virtual int wait (unsigned aMillies);

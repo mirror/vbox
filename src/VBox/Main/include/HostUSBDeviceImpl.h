@@ -90,8 +90,22 @@ public:
     /* @note Must be called from under the object read lock. */
     USBDeviceState_T state() const { return mState; }
 
+    /** Same as state() except you don't need to lock any thing. */
+    USBDeviceState_T stateUnlocked() const
+    {
+        AutoReaderLock (this);
+        return state();
+    }
+
     /* @note Must be called from under the object read lock. */
     USBDeviceState_T pendingState() const { return mPendingState; }
+
+    /** Same as pendingState() except you don't need to lock any thing. */
+    USBDeviceState_T pendingStateUnlocked() const
+    {
+        AutoReaderLock (this);
+        return pendingState();
+    }
 
     /* @note Must be called from under the object read lock. */
     ComObjPtr <SessionMachine, ComWeakRef> &machine() { return mMachine; }
@@ -104,6 +118,13 @@ public:
 
     /* @note Must be called from under the object read lock. */
     bool isStatePending() const { return mIsStatePending; }
+
+    /** Same as isStatePending() except you don't need to lock any thing. */
+    bool isStatePendingUnlocked() const
+    {
+        AutoReaderLock (this);
+        return isStatePending();
+    }
 
     /* @note Must be called from under the object read lock. */
     PCUSBDEVICE usbData() const { return mUsb; }
