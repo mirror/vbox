@@ -1391,7 +1391,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                      *  add it to the end of the list with a special mark
                      */
                     cbHostFloppy->insertItem ("* " + fullName);
-                    cbHostFloppy->setCurrentItem (cbHostDVD->count() - 1);
+                    cbHostFloppy->setCurrentItem (cbHostFloppy->count() - 1);
                 }
                 else
                 {
