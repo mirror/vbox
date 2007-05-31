@@ -52,17 +52,20 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (INPTR BSTR aName, INPTR BSTR aDescription = NULL);
+    HRESULT init (INPTR BSTR aName, INPTR BSTR aUdi = NULL, INPTR BSTR aDescription = NULL);
     void uninit();
 
     // IHostDVDDrive properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
+    STDMETHOD(COMGETTER(Udi)) (BSTR *aUdi);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
 
     // public methods for internal purposes only
 
     /* @note Must be called from under the object read lock. */
     const Bstr &name() const { return mName; }
+    const Bstr &udi() const { return mUdi; }
+    const Bstr &description() const { return mDescription; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostDVDDrive"; }
@@ -71,6 +74,7 @@ private:
 
     const Bstr mName;
     const Bstr mDescription;
+    const Bstr mUdi;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostDVDDrive)

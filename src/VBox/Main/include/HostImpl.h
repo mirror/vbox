@@ -35,6 +35,7 @@
 class VirtualBox;
 class SessionMachine;
 class HostDVDDrive;
+class HostFloppyDrive;
 class Progress;
 
 #include <list>
@@ -132,6 +133,7 @@ private:
 #ifdef __LINUX__
 # ifdef VBOX_USE_LIBHAL
     bool getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list);
+    bool getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list);
 # endif
     void parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive> > &list);
     bool validateDevice(const char *deviceNode, bool isCDROM);

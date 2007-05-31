@@ -3501,6 +3501,9 @@
         <attribute name="description" type="wstring" readonly="yes">
             <desc>Returns a human readable description for the drive.</desc>
         </attribute>
+        <attribute name="udi" type="wstring" readonly="yes">
+            <desc>Returns the unique device identifier for the drive.</desc>
+        </attribute>
 
     </interface>
 
@@ -3539,6 +3542,12 @@
     >
         <attribute name="name" type="wstring" readonly="yes">
             <desc>Returns the platform device identifier.</desc>
+        </attribute>
+        <attribute name="description" type="wstring" readonly="yes">
+            <desc>Returns a human readable description for the drive.</desc>
+        </attribute>
+        <attribute name="udi" type="wstring" readonly="yes">
+            <desc>Returns the unique device identifier for the drive.</desc>
         </attribute>
     </interface>
 

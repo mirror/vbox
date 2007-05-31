@@ -1135,8 +1135,13 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             case CEnums::HostDriveCaptured:
             {
                 CHostFloppyDrive drv = floppy.GetHostDrive();
+                QString drvName = drv.GetName();
+                QString description = drv.GetDescription();
+                QString fullName = description.isEmpty() ?
+                    drvName :
+                    QString ("%1 (%2)").arg (description, drvName);
                 item = item.arg (tr ("Host Drive", "details report (floppy)"),
-                                 drv.GetName());
+                                 fullName);
                 break;
             }
             default:

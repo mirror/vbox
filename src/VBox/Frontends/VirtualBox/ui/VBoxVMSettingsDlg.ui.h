@@ -1363,7 +1363,12 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         {
             CHostFloppyDrive hostFloppy = en.GetNext();
             /** @todo set icon? */
-            cbHostFloppy->insertItem (hostFloppy.GetName(), id);
+            QString name = hostFloppy.GetName();
+            QString description = hostFloppy.GetDescription();
+            QString fullName = description.isEmpty() ?
+                name :
+                QString ("%1 (%2)").arg (description, name);
+            cbHostFloppy->insertItem (fullName, id);
             hostFloppies [id] = hostFloppy;
             ++ id;
         }
@@ -1375,19 +1380,23 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             {
                 CHostFloppyDrive drv = floppy.GetHostDrive();
                 QString name = drv.GetName();
+                QString description = drv.GetDescription();
+                QString fullName = description.isEmpty() ?
+                    name :
+                    QString ("%1 (%2)").arg (description, name);
                 if (coll.FindByName (name).isNull())
                 {
                     /*
                      *  if the floppy drive is not currently available,
                      *  add it to the end of the list with a special mark
                      */
-                    cbHostFloppy->insertItem ("* " + name);
-                    cbHostFloppy->setCurrentItem (cbHostFloppy->count() - 1);
+                    cbHostFloppy->insertItem ("* " + fullName);
+                    cbHostFloppy->setCurrentItem (cbHostDVD->count() - 1);
                 }
                 else
                 {
                     /* this will select the correct item from the prepared list */
-                    cbHostFloppy->setCurrentText (name);
+                    cbHostFloppy->setCurrentText (fullName);
                 }
                 rbHostFloppy->setChecked (true);
                 break;
