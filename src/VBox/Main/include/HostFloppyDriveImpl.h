@@ -52,7 +52,8 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (INPTR BSTR aName, INPTR BSTR aUdi = NULL, INPTR BSTR aDescription = NULL);
+    HRESULT init (INPTR BSTR aName, INPTR BSTR aUdi = NULL,
+                  INPTR BSTR aDescription = NULL);
     void uninit();
 
     // IHostFloppyDrive properties
@@ -64,7 +65,11 @@ public:
 
     /* @note Must be called from under the object read lock. */
     const Bstr &name() const { return mName; }
+
+    /* @note Must be called from under the object read lock. */
     const Bstr &udi() const { return mUdi; }
+
+    /* @note Must be called from under the object read lock. */
     const Bstr &description() const { return mDescription; }
 
     // for VirtualBoxSupportErrorInfoImpl

@@ -1351,6 +1351,24 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(LogFolder) (BSTR *aLogFolder)
+{
+    if (!aLogFolder)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    Utf8Str logFolder;
+    getLogFolder (logFolder);
+
+    Bstr (logFolder).cloneTo (aLogFolder);
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
 {
     if (!aCurrentSnapshot)
@@ -2469,7 +2487,7 @@ void Machine::calculateRelativePath (const char *aPath, Utf8Str &aResult)
 void Machine::getLogFolder (Utf8Str &aLogFolder)
 {
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), (void) 0);
+    AssertComRCReturnVoid (autoCaller.rc());
 
     AutoReaderLock alock (this);
 
@@ -7661,24 +7679,6 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
 #else
     return S_FAIL;
 #endif
-}
-
-/**
- *  @note Locks this object for reading.
- */
-STDMETHODIMP SessionMachine::GetLogFolder (BSTR *aLogFolder)
-{
-    AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    Utf8Str logFolder;
-    getLogFolder (logFolder);
-
-    Bstr (logFolder).cloneTo (aLogFolder);
-
-    return S_OK;
 }
 
 /**
