@@ -1863,14 +1863,16 @@ void VBoxDiskImageManagerDlg::addImage()
     }
     else if (currentList == cdsView)
     {
-        filter = tr( "CD/DVD-ROM images (*.iso)");
-        title = tr( "Select a CD/DVD-ROM disk image file" );
+        filter = tr ("CD/DVD-ROM images (*.iso);;"
+                     "All files (*)");
+        title = tr ("Select a CD/DVD-ROM disk image file");
         type = VBoxDefs::CD;
     }
     else if (currentList == fdsView)
     {
-        filter = tr( "Floppy images (*.img)" );
-        title = tr( "Select a floppy disk image file" );
+        filter = tr ("Floppy images (*.img);;"
+                     "All files (*)");
+        title = tr ("Select a floppy disk image file");
         type = VBoxDefs::FD;
     }
     else
