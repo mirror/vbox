@@ -149,7 +149,9 @@ $(PATH_TARGET)/ts-remote-build-win32-additions:
 endif # VBOX_REMOTE_BUILD_WIN32_ADDITIONS
 
 build-win32-additions:
+ifneq ($(BUILD_TARGET),linux) # Nothing is signed here and wine is faster building it.
 	$(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 -C ../Runtime
+endif
 	$(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 -C . all packing
 
 
