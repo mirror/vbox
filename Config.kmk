@@ -933,9 +933,9 @@ ifdef VBOX_SIGNING_MODE
 		$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 		$(VBOX_TSA_URL_ARGS) \
 		$(out))
-   ## Sign an MSI.
+   ## Sign a file.
    # @param 1  The msi to sign.
-   VBOX_SIGN_MSI_FN      = $(VBOX_SIGNTOOL) sign \
+   VBOX_SIGN_FILE_FN      = $(VBOX_SIGNTOOL) sign \
 		$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
 		$(VBOX_CERTIFICATE_STORE_ARGS) \
 		$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
