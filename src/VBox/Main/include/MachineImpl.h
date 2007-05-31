@@ -435,6 +435,7 @@ public:
     STDMETHOD(COMGETTER(State))(MachineState_T *machineState);
     STDMETHOD(COMGETTER(LastStateChange))(LONG64 *aLastStateChange);
     STDMETHOD(COMGETTER(StateFilePath)) (BSTR *aStateFilePath);
+    STDMETHOD(COMGETTER(LogFolder)) (BSTR *aLogFolder);
     STDMETHOD(COMGETTER(CurrentSnapshot)) (ISnapshot **aCurrentSnapshot);
     STDMETHOD(COMGETTER(SnapshotCount)) (ULONG *aSnapshotCount);
     STDMETHOD(COMGETTER(CurrentStateModified))(BOOL *aCurrentStateModified);
@@ -724,7 +725,6 @@ public:
     // IInternalMachineControl methods
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
-    STDMETHOD(GetLogFolder) (BSTR *aLogFolder);
     STDMETHOD(RunUSBDeviceFilters) (IUSBDevice *aUSBDevice, BOOL *aMatched);
     STDMETHOD(CaptureUSBDevice) (INPTR GUIDPARAM aId, IUSBDevice **aHostDevice);
     STDMETHOD(ReleaseUSBDevice) (INPTR GUIDPARAM aId);

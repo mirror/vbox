@@ -1599,7 +1599,7 @@
 
     <interface
         name="IInternalMachineControl" extends="$unknown"
-        uuid="F466BF2E-BD6B-4af0-9C08-46DD42B28A44"
+        uuid="e780b585-585d-47e2-ab53-e94dc552353c"
         internal="yes"
         wsmap="suppress"
     >
@@ -1617,14 +1617,6 @@
 
         <method name="getIPCId">
             <param name="id" type="wstring" dir="return"/>
-        </method>
-
-        <method name="getLogFolder">
-            <desc>
-                Returns the full name of the directory where to store
-                log files created during this machine's executoin.
-            </desc>
-            <param name="logFolder" type="wstring" dir="return"/>
         </method>
 
         <method name="runUSBDeviceFilters">
@@ -1901,7 +1893,7 @@
 
     <interface
         name="IMachine" extends="$unknown"
-        uuid="063ad473-992d-479f-ba7e-7a9ae294368c"
+        uuid="0332de0e-ce75-461f-8c6f-0fa42616404a"
         wsmap="managed"
     >
         <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -2214,6 +2206,16 @@
                     When the machine is not in the Saved state, this attribute
                     <tt>null</tt>.
                 </note>
+            </desc>
+        </attribute>
+
+        <attribute name="logFolder" type="wstring" readonly="yes">
+            <desc>
+                Full path to the folder that stores a set of rotated log files
+                recorded during machine execution. The most recent log file is
+                named <tt>VBox.log</tt>, the previous log file is
+                named <tt>VBox.log.1</tt> and so on (upto <tt>VBox.log.3</tt>
+                in the current version).
             </desc>
         </attribute>
 
@@ -3492,17 +3494,30 @@
 
     <interface
         name="IHostDVDDrive" extends="$unknown"
-        uuid="c2308775-85f3-45ab-ade5-97f02d1e61e0"
+        uuid="21f86694-202d-4ce4-8b05-a63ff82dbf4c"
         wsmap="managed"
     >
         <attribute name="name" type="wstring" readonly="yes">
-            <desc>Returns the platform device identifier.</desc>
+            <desc>
+                Returns the platform-specific device identifier.
+                On DOS-like platforms, it is a drive name (e.g. R:).
+                On Unix-like platforms, it is a device name (e.g. /dev/hdc).
+            </desc>
         </attribute>
         <attribute name="description" type="wstring" readonly="yes">
-            <desc>Returns a human readable description for the drive.</desc>
+            <desc>
+                Returns a human readable description for the drive.  This
+                description usually contains the product and vendor name.  A
+                @c null string is returned if the description is not available.
+            </desc>
         </attribute>
         <attribute name="udi" type="wstring" readonly="yes">
-            <desc>Returns the unique device identifier for the drive.</desc>
+            <desc>
+                Returns the unique device identifier for the drive.  This
+                attribute is reserved for future use instead of
+                <link to="#name"/>. Currently it is not used and may return
+                @c null on some platforms.
+            </desc>
         </attribute>
 
     </interface>
@@ -3537,17 +3552,30 @@
 
     <interface
         name="IHostFloppyDrive" extends="$unknown"
-        uuid="2b2ad1ab-2ea9-4cf8-be3c-2a76677d8725"
+        uuid="b6a4d1a9-4221-43c3-bd52-021a5daa9ed2"
         wsmap="managed"
     >
         <attribute name="name" type="wstring" readonly="yes">
-            <desc>Returns the platform device identifier.</desc>
+            <desc>
+                Returns the platform-specific device identifier.
+                On DOS-like platforms, it is a drive name (e.g. A:).
+                On Unix-like platforms, it is a device name (e.g. /dev/fd0).
+            </desc>
         </attribute>
         <attribute name="description" type="wstring" readonly="yes">
-            <desc>Returns a human readable description for the drive.</desc>
+            <desc>
+                Returns a human readable description for the drive.  This
+                description usually contains the product and vendor name.  A
+                @c null string is returned if the description is not available.
+            </desc>
         </attribute>
         <attribute name="udi" type="wstring" readonly="yes">
-            <desc>Returns the unique device identifier for the drive.</desc>
+            <desc>
+                Returns the unique device identifier for the drive.  This
+                attribute is reserved for future use instead of
+                <link to="#name"/>. Currently it is not used and may return
+                @c null on some platforms.
+            </desc>
         </attribute>
     </interface>
 

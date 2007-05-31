@@ -43,6 +43,7 @@ void HostFloppyDrive::FinalRelease()
  * Initializes the host floppy drive object.
  *
  * @param aName         Name of the drive.
+ * @param aUdi          Universal device identifier (currently may be NULL).
  * @param aDescription  Human-readable drive description (may be NULL).
  *
  * @return COM result indicator.
@@ -100,12 +101,6 @@ STDMETHODIMP HostFloppyDrive::COMGETTER(Name) (BSTR *aName)
     return S_OK;
 }
 
-/**
- * Returns a human readable description of the host drive
- *
- * @returns COM status code
- * @param driveDescription address of result pointer
- */
 STDMETHODIMP HostFloppyDrive::COMGETTER(Description) (BSTR *aDescription)
 {
     if (!aDescription)
@@ -121,12 +116,6 @@ STDMETHODIMP HostFloppyDrive::COMGETTER(Description) (BSTR *aDescription)
     return S_OK;
 }
 
-/**
- * Returns the universal device identifier of the host drive
- *
- * @returns COM status code
- * @param driveDescription address of result pointer
- */
 STDMETHODIMP HostFloppyDrive::COMGETTER(Udi) (BSTR *aUdi)
 {
     if (!aUdi)
@@ -135,7 +124,7 @@ STDMETHODIMP HostFloppyDrive::COMGETTER(Udi) (BSTR *aUdi)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* mDescription is constant during life time, no need to lock */
+    /* mUdi is constant during life time, no need to lock */
 
     mUdi.cloneTo (aUdi);
 

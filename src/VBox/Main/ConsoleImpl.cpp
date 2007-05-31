@@ -6521,7 +6521,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
          */
 
         Bstr logFolder;
-        hrc = console->mControl->GetLogFolder (logFolder.asOutParam());
+        hrc = console->mMachine->COMGETTER(LogFolder) (logFolder.asOutParam());
         CheckComRCBreakRC (hrc);
 
         Utf8Str logDir = logFolder;
