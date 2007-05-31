@@ -120,11 +120,14 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
             {
                 char *tok;
                 tok = strtok(&buff[6], " \t\n");
-                *ppszDomain = RTStrDup(tok);
-                if (pData->fPassDomain)
-                    LogRel(("NAT: passing domain name %s\n", tok));
-                else
-                    Log(("nat: ignoring domain %s\n", tok));
+                if (tok)
+                {
+                    *ppszDomain = RTStrDup(tok);
+                    if (pData->fPassDomain)
+                        LogRel(("NAT: passing domain name %s\n", tok));
+                    else
+                        Log(("nat: ignoring domain %s\n", tok));
+                }
             }
         }
     }
