@@ -102,7 +102,7 @@ main(int argc, char **argv)
 #ifdef __WIN__
     _putenv("SDL_VIDEO_WINDOW_POS=0,0");
 #else
-    putenv("SDL_VIDEO_WINDOW_POS=0,0");
+    setenv("SDL_VIDEO_WINDOW_POS", "0,0", 1);
 #endif
 
     rc = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE);
