@@ -119,7 +119,8 @@ $(REM_MOD)_SOURCES          = \
 	fpu/softfloat-native.c \
 	target-i386/helper.c \
 	target-i386/helper2.c \
-	target-i386/translate.c \
+	target-i386/translate.c
+$(REM_MOD)_SOURCES.debug = \
 	InnoTek/testmath.c
 ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
  $(REM_MOD)_SOURCES        += target-i386/op.c

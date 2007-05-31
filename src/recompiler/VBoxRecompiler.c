@@ -258,7 +258,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     AssertReleaseMsg(sizeof(pVM->rem.padding) >= sizeof(pVM->rem.s), ("%#x >= %#x; sizeof(Env)=%#x\n", sizeof(pVM->rem.padding), sizeof(pVM->rem.s), sizeof(pVM->rem.s.Env)));
     AssertReleaseMsg(sizeof(pVM->rem.s.Env) <= REM_ENV_SIZE, ("%#x == %#x\n", sizeof(pVM->rem.s.Env), REM_ENV_SIZE));
     AssertReleaseMsg(!(RT_OFFSETOF(VM, rem) & 31), ("off=%#x\n", RT_OFFSETOF(VM, rem)));
+#ifdef DEBUG
     Assert(!testmath());
+#endif
     ASSERT_STRUCT_TABLE(Misc);
     ASSERT_STRUCT_TABLE(TLB);
     ASSERT_STRUCT_TABLE(SegmentCache);
