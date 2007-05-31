@@ -48,6 +48,7 @@ void HostDVDDrive::FinalRelease()
  * @return COM result indicator.
  */
 HRESULT HostDVDDrive::init (INPTR BSTR aName,
+                            INPTR BSTR aUdi /* = NULL */,
                             INPTR BSTR aDescription /* = NULL */)
 {
     ComAssertRet (aName, E_INVALIDARG);
@@ -57,6 +58,7 @@ HRESULT HostDVDDrive::init (INPTR BSTR aName,
     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
     unconst (mName) = aName;
+    unconst (mUdi) = aUdi;
     unconst (mDescription) = aDescription;
 
     /* Confirm the successful initialization */
@@ -98,6 +100,12 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Name) (BSTR *aName)
     return S_OK;
 }
 
+/**
+ * Returns a human readable description of the host drive
+ *
+ * @returns COM status code
+ * @param driveDescription address of result pointer
+ */
 STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *aDescription)
 {
     if (!aDescription)
@@ -109,6 +117,27 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *aDescription)
     /* mDescription is constant during life time, no need to lock */
 
     mDescription.cloneTo (aDescription);
+
+    return S_OK;
+}
+
+/**
+ * Returns the universal device identifier of the host drive
+ *
+ * @returns COM status code
+ * @param driveDescription address of result pointer
+ */
+STDMETHODIMP HostDVDDrive::COMGETTER(Udi) (BSTR *aUdi)
+{
+    if (!aUdi)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mDescription is constant during life time, no need to lock */
+
+    mUdi.cloneTo (aUdi);
 
     return S_OK;
 }

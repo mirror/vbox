@@ -43,10 +43,13 @@ void HostFloppyDrive::FinalRelease()
  * Initializes the host floppy drive object.
  *
  * @param aName         Name of the drive.
+ * @param aDescription  Human-readable drive description (may be NULL).
  *
  * @return COM result indicator.
  */
-HRESULT HostFloppyDrive::init (INPTR BSTR aName)
+HRESULT HostFloppyDrive::init (INPTR BSTR aName,
+                               INPTR BSTR aUdi /* = NULL */,
+                               INPTR BSTR aDescription /* = NULL */)
 {
     ComAssertRet (aName, E_INVALIDARG);
 
@@ -55,12 +58,15 @@ HRESULT HostFloppyDrive::init (INPTR BSTR aName)
     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
     unconst (mName) = aName;
+    unconst (mUdi) = aUdi;
+    unconst (mDescription) = aDescription;
 
     /* Confirm the successful initialization */
     autoInitSpan.setSucceeded();
 
     return S_OK;
 }
+
 
 /**
  *  Uninitializes the instance and sets the ready flag to FALSE.
@@ -90,6 +96,48 @@ STDMETHODIMP HostFloppyDrive::COMGETTER(Name) (BSTR *aName)
     /* mName is constant during life time, no need to lock */
 
     mName.cloneTo (aName);
+
+    return S_OK;
+}
+
+/**
+ * Returns a human readable description of the host drive
+ *
+ * @returns COM status code
+ * @param driveDescription address of result pointer
+ */
+STDMETHODIMP HostFloppyDrive::COMGETTER(Description) (BSTR *aDescription)
+{
+    if (!aDescription)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mDescription is constant during life time, no need to lock */
+
+    mDescription.cloneTo (aDescription);
+
+    return S_OK;
+}
+
+/**
+ * Returns the universal device identifier of the host drive
+ *
+ * @returns COM status code
+ * @param driveDescription address of result pointer
+ */
+STDMETHODIMP HostFloppyDrive::COMGETTER(Udi) (BSTR *aUdi)
+{
+    if (!aUdi)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mDescription is constant during life time, no need to lock */
+
+    mUdi.cloneTo (aUdi);
 
     return S_OK;
 }

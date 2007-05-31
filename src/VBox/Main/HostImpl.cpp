@@ -303,42 +303,47 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     while (*p);
     delete[] hostDrives;
 #elif defined(__LINUX__)
+#ifdef VBOX_USE_LIBHAL
+    if (!getFloppyInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
+#endif /* USE_LIBHAL defined */
     // As with the CDROMs, on Linux we have to take a multi-level approach
     // involving parsing the mount tables. As this is not bulletproof, we'll
     // give the user the chance to override the detection by an environment
     // variable and skip the detection.
 
-    if (getenv("VBOX_FLOPPY"))
     {
-        char *floppyEnv = getenv("VBOX_FLOPPY");
-        char *floppyDrive;
-        floppyDrive = strtok(floppyEnv, ":");
-        while (floppyDrive)
+        if (getenv("VBOX_FLOPPY"))
         {
-            // check if this is an acceptable device
-            if (validateDevice(floppyDrive, false))
+            char *floppyEnv = getenv("VBOX_FLOPPY");
+            char *floppyDrive;
+            floppyDrive = strtok(floppyEnv, ":");
+            while (floppyDrive)
             {
-                ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
-                hostFloppyDriveObj.createObject();
-                hostFloppyDriveObj->init (Bstr (floppyDrive));
-                list.push_back (hostFloppyDriveObj);
+                // check if this is an acceptable device
+                if (validateDevice(floppyDrive, false))
+                {
+                    ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
+                    hostFloppyDriveObj.createObject();
+                    hostFloppyDriveObj->init (Bstr (floppyDrive));
+                    list.push_back (hostFloppyDriveObj);
+                }
+                floppyDrive = strtok(NULL, ":");
             }
-            floppyDrive = strtok(NULL, ":");
         }
-    }
-    else
-    {
-        // we assume that a floppy is always /dev/fd[x] with x from 0 to 7
-        char devName[10];
-        for (int i = 0; i <= 7; i++)
+        else
         {
-            sprintf(devName, "/dev/fd%d", i);
-            if (validateDevice(devName, false))
+            // we assume that a floppy is always /dev/fd[x] with x from 0 to 7
+            char devName[10];
+            for (int i = 0; i <= 7; i++)
             {
-                ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
-                hostFloppyDriveObj.createObject();
-                hostFloppyDriveObj->init (Bstr (devName));
-                list.push_back (hostFloppyDriveObj);
+                sprintf(devName, "/dev/fd%d", i);
+                if (validateDevice(devName, false))
+                {
+                    ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
+                    hostFloppyDriveObj.createObject();
+                    hostFloppyDriveObj->init (Bstr (devName));
+                    list.push_back (hostFloppyDriveObj);
+                }
             }
         }
     }
@@ -1410,7 +1415,7 @@ HRESULT Host::releaseAllUSBDevices (SessionMachine *aMachine)
  * Helper function to query the hal subsystem for information about DVD drives attached to the
  * system.
  *
- * @returns true if at least one drive was found, false otherwise
+ * @returns true if information was successfully obtained, false otherwise
  * @retval  list drives found will be attached to this list
  */
 bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
@@ -1433,6 +1438,9 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                                 "storage.cdrom", &numDevices, &dbusError);
                     if (halDevices != 0)
                     {
+                        /* Hal is installed and working, so if no devices are reported, assume
+                           that there are none. */
+                        halSuccess = true;
                         for (int i = 0; i < numDevices; i++)
                         {
                             char *devNode = libhal_device_get_property_string(halContext,
@@ -1443,15 +1451,15 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                 {
                                     Utf8Str description;
                                     char *vendor, *product;
-                                    /* We have at least one hit, so operation successful :) */
-                                    halSuccess = true;
+                                    /* We do not check the error here, as this field may
+                                       not even exist. */
                                     vendor = libhal_device_get_property_string(halContext,
-                                                    halDevices[i], "info.vendor", &dbusError);
+                                                    halDevices[i], "info.vendor", 0);
                                     product = libhal_device_get_property_string(halContext,
                                                     halDevices[i], "info.product", &dbusError);
                                     if ((product != 0 && product[0] != 0))
                                     {
-                                        if (vendor != 0 && vendor[0] != 0)
+                                        if ((vendor != 0) && (vendor[0] != 0))
                                         {
                                             description = Utf8StrFmt ("%s %s",
                                                                       vendor, product);
@@ -1462,15 +1470,32 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                         }
                                         ComObjPtr <HostDVDDrive> hostDVDDriveObj;
                                         hostDVDDriveObj.createObject();
-                                        hostDVDDriveObj->init (Bstr (devNode), Bstr (description));
+                                        hostDVDDriveObj->init (Bstr (devNode),
+                                                               Bstr (halDevices[i]),
+                                                               Bstr (description));
                                         list.push_back (hostDVDDriveObj);
                                     }
                                     else
                                     {
+                                        if (product == 0)
+                                        {
+                                            LogRel(("Host::COMGETTER(DVDDrives): failed to get property \"info.product\" for device %s.  dbus error: %s (%s)\n",
+                                                    halDevices[i], dbusError.name, dbusError.message));
+                                            dbus_error_free(&dbusError);
+                                        }
                                         ComObjPtr <HostDVDDrive> hostDVDDriveObj;
                                         hostDVDDriveObj.createObject();
-                                        hostDVDDriveObj->init (Bstr (devNode));
+                                        hostDVDDriveObj->init (Bstr (devNode),
+                                                               Bstr (halDevices[i]));
                                         list.push_back (hostDVDDriveObj);
+                                    }
+                                    if (vendor != 0)
+                                    {
+                                        libhal_free_string(vendor);
+                                    }
+                                    if (product != 0)
+                                    {
+                                        libhal_free_string(product);
                                     }
                                 }
                                 else
@@ -1520,6 +1545,163 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
     else
     {
         LogRel(("Host::COMGETTER(DVDDrives): failed to connect to dbus.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+        dbus_error_free(&dbusError);
+    }
+    return halSuccess;
+}
+
+
+/**
+ * Helper function to query the hal subsystem for information about floppy drives attached to the
+ * system.
+ *
+ * @returns true if information was successfully obtained, false otherwise
+ * @retval  list drives found will be attached to this list
+ */
+bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
+{
+    bool halSuccess = false;
+    DBusError dbusError;
+    dbus_error_init (&dbusError);
+    DBusConnection *dbusConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
+    if (dbusConnection != 0)
+    {
+        LibHalContext *halContext = libhal_ctx_new();
+        if (halContext != 0)
+        {
+            if (libhal_ctx_set_dbus_connection (halContext, dbusConnection))
+            {
+                if (libhal_ctx_init(halContext, &dbusError))
+                {
+                    int numDevices;
+                    char **halDevices = libhal_find_device_by_capability(halContext,
+                                                "storage", &numDevices, &dbusError);
+                    if (halDevices != 0)
+                    {
+                        /* Hal is installed and working, so if no devices are reported, assume
+                           that there are none. */
+                        halSuccess = true;
+                        for (int i = 0; i < numDevices; i++)
+                        {
+                            char *driveType = libhal_device_get_property_string(halContext,
+                                                    halDevices[i], "storage.drive_type", 0);
+                            if (driveType != 0)
+                            {
+                                if (strcmp(driveType, "floppy") != 0)
+                                {
+                                    libhal_free_string(driveType);
+                                    continue;
+                                }
+                                libhal_free_string(driveType);
+                            }
+                            else
+                            {
+                                /* An error occurred.  The attribute "storage.drive_type"
+                                   probably didn't exist. */
+                                continue;
+                            }
+                            char *devNode = libhal_device_get_property_string(halContext,
+                                                    halDevices[i], "block.device", &dbusError);
+                            if (devNode != 0)
+                            {
+                                if (validateDevice(devNode, false))
+                                {
+                                    Utf8Str description;
+                                    char *vendor, *product;
+                                    /* We do not check the error here, as this field may
+                                       not even exist. */
+                                    vendor = libhal_device_get_property_string(halContext,
+                                                    halDevices[i], "info.vendor", 0);
+                                    product = libhal_device_get_property_string(halContext,
+                                                    halDevices[i], "info.product", &dbusError);
+                                    if ((product != 0) && (product[0] != 0))
+                                    {
+                                        if ((vendor != 0) && (vendor[0] != 0))
+                                        {
+                                            description = Utf8StrFmt ("%s %s",
+                                                                      vendor, product);
+                                        }
+                                        else
+                                        {
+                                            description = product;
+                                        }
+                                        ComObjPtr <HostFloppyDrive> hostFloppyDrive;
+                                        hostFloppyDrive.createObject();
+                                        hostFloppyDrive->init (Bstr (devNode),
+                                                               Bstr (halDevices[i]),
+                                                               Bstr (description));
+                                        list.push_back (hostFloppyDrive);
+                                    }
+                                    else
+                                    {
+                                        if (product == 0)
+                                        {
+                                            LogRel(("Host::COMGETTER(FloppyDrives): failed to get property \"info.product\" for device %s.  dbus error: %s (%s)\n",
+                                                    halDevices[i], dbusError.name, dbusError.message));
+                                            dbus_error_free(&dbusError);
+                                        }
+                                        ComObjPtr <HostFloppyDrive> hostFloppyDrive;
+                                        hostFloppyDrive.createObject();
+                                        hostFloppyDrive->init (Bstr (devNode),
+                                                               Bstr (halDevices[i]));
+                                        list.push_back (hostFloppyDrive);
+                                    }
+                                    if (vendor != 0)
+                                    {
+                                        libhal_free_string(vendor);
+                                    }
+                                    if (product != 0)
+                                    {
+                                        libhal_free_string(product);
+                                    }
+                                }
+                                else
+                                {
+                                    LogRel(("Host::COMGETTER(FloppyDrives): failed to validate the block device %s as a floppy drive\n"));
+                                }
+                                libhal_free_string(devNode);
+                            }
+                            else
+                            {
+                                LogRel(("Host::COMGETTER(FloppyDrives): failed to get property \"block.device\" for device %s.  dbus error: %s (%s)\n",
+                                        halDevices[i], dbusError.name, dbusError.message));
+                                dbus_error_free(&dbusError);
+                            }
+                        }
+                        libhal_free_string_array(halDevices);
+                    }
+                    else
+                    {
+                        LogRel(("Host::COMGETTER(FloppyDrives): failed to get devices with capability \"storage.cdrom\".  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                        dbus_error_free(&dbusError);
+                    }
+                    if (!libhal_ctx_shutdown(halContext, &dbusError))  /* what now? */
+                    {
+                        LogRel(("Host::COMGETTER(FloppyDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                        dbus_error_free(&dbusError);
+                    }
+                }
+                else
+                {
+                    LogRel(("Host::COMGETTER(FloppyDrives): failed to initialise libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
+                    dbus_error_free(&dbusError);
+                }
+                libhal_ctx_free(halContext);
+            }
+            else
+            {
+                LogRel(("Host::COMGETTER(FloppyDrives): failed to set libhal connection to dbus.\n"));
+            }
+        }
+        else
+        {
+            LogRel(("Host::COMGETTER(FloppyDrives): failed to get a libhal context - out of memory?\n"));
+        }
+        dbus_connection_unref(dbusConnection);
+    }
+    else
+    {
+        LogRel(("Host::COMGETTER(FloppyDrives): failed to connect to dbus.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
         dbus_error_free(&dbusError);
     }
     return halSuccess;

@@ -1521,9 +1521,17 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         switch (state)
         {
             case CEnums::HostDriveCaptured:
+            {
+                CHostFloppyDrive drv = floppy.GetHostDrive();
+                QString drvName = drv.GetName();
+                QString description = drv.GetDescription();
+                QString fullName = description.isEmpty() ?
+                    drvName :
+                    QString ("<nobr>%1 (%2)</nobr>").arg (description, drvName);
                 name = tr ("Host&nbsp;Drive&nbsp;", "Floppy tooltip") +
-                    floppy.GetHostDrive().GetName();
+                    fullName;
                 break;
+            }
             case CEnums::ImageMounted:
                 name = floppy.GetImage().GetFilePath();
                 break;
@@ -2156,9 +2164,13 @@ void VBoxConsoleWnd::prepareFloppyMenu()
     {
         CHostFloppyDrive hostFloppy = en.GetNext();
         /** @todo set icon */
+        QString drvName = hostFloppy.GetName();
+        QString description = hostFloppy.GetDescription();
+        QString fullName = description.isEmpty() ?
+            drvName :
+            QString ("%1 (%2)").arg (description, drvName);
         int id = devicesMountFloppyMenu->insertItem (
-            tr ("Host Drive ") + hostFloppy.GetName()
-        );
+            tr ("Host Drive ") + fullName);
         hostFloppyMap [id] = hostFloppy;
         if (machine_state != CEnums::Running)
             devicesMountFloppyMenu->setItemEnabled (id, false);
