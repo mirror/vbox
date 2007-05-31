@@ -15,14 +15,12 @@ static const uint8_t special_ethaddr[6] = {
 static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
                                const char **ppszDomain)
 {
+    int rc = 0;
     FIXED_INFO *FixedInfo=NULL;
     ULONG    BufLen;
     DWORD    ret;
     IP_ADDR_STRING *pIPAddr;
     struct in_addr tmp_addr;
-
-    *ppszDomain = NULL;
-    /** @todo implement search list for Windows host. */
 
     FixedInfo = (FIXED_INFO *)GlobalAlloc(GPTR, sizeof(FIXED_INFO));
     BufLen = sizeof(FIXED_INFO);
@@ -41,7 +39,8 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
             GlobalFree(FixedInfo);
             FixedInfo = NULL;
         }
-        return -1;
+        rc = -1;
+        goto get_dns_prefix;
     }
 
     pIPAddr = &(FixedInfo->DnsServerList);
@@ -59,7 +58,35 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
         GlobalFree(FixedInfo);
         FixedInfo = NULL;
     }
-    return 0;
+
+get_dns_prefix:
+    *ppszDomain = NULL;
+    {
+        OSVERSIONINFO ver;
+        char szDnsDomain[256];
+        DWORD dwSize = sizeof(szDnsDomain);
+
+        GetVersionEx(&ver);
+        if (ver.dwMajorVersion >= 5)
+        {
+            /* GetComputerNameEx exists in Windows versions starting with 2000. */
+            if (GetComputerNameEx(ComputerNameDnsDomain, szDnsDomain, &dwSize))
+            {
+                if (szDnsDomain[0])
+                {
+                    /* Just non-empty strings are valid. */
+                    *ppszDomain = RTStrDup(szDnsDomain);
+                    if (pData->fPassDomain)
+                        LogRel(("NAT: passing domain name %s\n", szDnsDomain));
+                    else
+                        Log(("nat: ignoring domain %s\n", szDnsDomain));
+                }
+            }
+            else
+                Log(("nat: GetComputerNameEx failed (%d)\n", GetLastError()));
+        }
+    }
+    return rc;
 }
 
 #else
