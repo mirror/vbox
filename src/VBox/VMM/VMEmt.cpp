@@ -362,7 +362,7 @@ DECLCALLBACK(int) vmR3WaitHaltedOld(PVM pVM, const uint32_t fMask)
 
 
 /**
- * Method 1 - Block whenever possible, and when lagging behind 
+ * Method 1 - Block whenever possible, and when lagging behind
  * switch to spinning for 10-30ms with occational blocking until
  * the lag has been eliminated.
  */
@@ -376,22 +376,36 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
      */
     bool fBlockOnce = false;
     bool fSpinning = false;
-    if (TMVirtualSyncGetCatchUpPct(pVM) /* non-zero if catching up */)
+    uint32_t u32CatchUpPct = TMVirtualSyncGetCatchUpPct(pVM);
+    if (u32CatchUpPct /* non-zero if catching up */)
     {
-        const uint64_t u64Lag = TMVirtualSyncGetLag(pVM);
-        fSpinning = u64Lag > 25000000 /* 25ms */;
-        if (fSpinning) 
+        if (pVM->vm.s.Halt.Method12.u64StartSpinTS)
         {
-            if (!pVM->vm.s.Halt.Method12.u64StartSpinTS)
-                pVM->vm.s.Halt.Method12.u64StartSpinTS = u64Now;
-            else if (u64Now - pVM->vm.s.Halt.Method12.u64LastBlockTS > 32000000 /* 32ms */)
-                fBlockOnce = true;
+            fSpinning = TMVirtualSyncGetLag(pVM) >= 2*1000000;
+            if (fSpinning)
+            {
+                uint64_t u64Lag = TMVirtualSyncGetLag(pVM);
+                fBlockOnce = u64Now - pVM->vm.s.Halt.Method12.u64LastBlockTS
+                           > RT_MAX(5*1000000, RT_MIN(u64Lag / 4, 200*1000000));
+            }
+            else
+            {
+RTLogRelPrintf("Stopped spinning (%u ms)\n", (u64Now - pVM->vm.s.Halt.Method12.u64StartSpinTS) / 1000000);
+                pVM->vm.s.Halt.Method12.u64StartSpinTS = 0;
+            }
         }
-        else if (pVM->vm.s.Halt.Method12.u64StartSpinTS)
-            pVM->vm.s.Halt.Method12.u64StartSpinTS = 0;
+        else
+        {
+            fSpinning = TMVirtualSyncGetLag(pVM) >= 20*1000000;
+            if (fSpinning)
+                pVM->vm.s.Halt.Method12.u64StartSpinTS = u64Now;
+        }
     }
     else if (pVM->vm.s.Halt.Method12.u64StartSpinTS)
+    {
+RTLogRelPrintf("Stopped spinning (%u ms)\n", (u64Now - pVM->vm.s.Halt.Method12.u64StartSpinTS) / 1000000);
         pVM->vm.s.Halt.Method12.u64StartSpinTS = 0;
+    }
 
     /*
      * Halt loop.
@@ -402,7 +416,7 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
     for (;; cLoops++)
     {
         /*
-         * Work the timers and check if we can exit. 
+         * Work the timers and check if we can exit.
          */
         STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltPoll, a);
         PDMR3Poll(pVM);
@@ -423,7 +437,7 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
         /*
          * Block if we're not spinning and the interval isn't all that small.
          */
-        if (    (   !fSpinning  
+        if (    (   !fSpinning
                  || fBlockOnce)
             &&  u64NanoTS >= 250000) /* 0.250 ms */
         {
@@ -433,9 +447,9 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
             uint32_t cMilliSecs = RT_MIN(u64NanoTS / 1000000, 15);
             if (cMilliSecs <= pVM->vm.s.Halt.Method12.cNSBlockedTooLongAvg)
                 cMilliSecs = 1;
-            else 
+            else
                 cMilliSecs -= pVM->vm.s.Halt.Method12.cNSBlockedTooLongAvg;
-//RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
+RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
             STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltBlock, a);
             rc = RTSemEventWait(pVM->vm.s.EventSemWait, cMilliSecs);
             STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltBlock, a);
@@ -450,8 +464,8 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
                 break;
             }
 
-            /* 
-             * Calc the statistics. 
+            /*
+             * Calc the statistics.
              * Update averages every 16th time, and flush parts of the history every 64th time.
              */
             const uint64_t Elapsed = RTTimeNanoTS() - Start;
@@ -468,7 +482,7 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
                     pVM->vm.s.Halt.Method12.cBlocks = 0x40;
                 }
             }
-//RTLogRelPrintf(" -> %7RU64 ns / %7RI64 ns delta%s\n", Elapsed, Elapsed - u64NanoTS, fBlockOnce ? " (block once)" : "");
+RTLogRelPrintf(" -> %7RU64 ns / %7RI64 ns delta%s\n", Elapsed, Elapsed - u64NanoTS, fBlockOnce ? " (block once)" : "");
 
             /*
              * Clear the block once flag if we actually blocked.
@@ -478,6 +492,7 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
                 fBlockOnce = false;
         }
     }
+if (fSpinning) RTLogRelPrintf("spun for %RU64 ns %u loops; lag=%RU64 pct=%d\n", RTTimeNanoTS() - u64Now, cLoops, TMVirtualSyncGetLag(pVM), u32CatchUpPct);
 
     return rc;
 }
@@ -545,7 +560,7 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
     int rc = vmR3WaitHaltedMethod1(pVM, fMask, u64Now);
 #else
 # error "misconfigured halt"
-#endif 
+#endif
 
     /*
      * Resume the yielder and tell the world we're not blocking.
