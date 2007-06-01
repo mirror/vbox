@@ -33,7 +33,6 @@
 
 #include <qfileinfo.h>
 
-/// @todo Remove? See @c todo in #switchTo() below.
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
 #endif
@@ -540,7 +539,11 @@ bool VBoxVMListBoxItem::canSwitchTo() const
  */
 bool VBoxVMListBoxItem::switchTo()
 {
+#ifdef Q_WS_MAC
+    ULONG64 id = mMachine.ShowConsoleWindow();
+#else
     WId id = (WId) mMachine.ShowConsoleWindow();
+#endif 
     AssertWrapperOk (mMachine);
     if (!mMachine.isOk())
         return false;
@@ -555,14 +558,19 @@ bool VBoxVMListBoxItem::switchTo()
     return vboxGlobal().activateWindow (id, true);
 
 #elif defined (Q_WS_MAC)
-
-    /// @todo (r=dmik) Knut, everything you have to do here is to raise the
-    /// given window over all other top-level windows and give it focus. Ah,
-    /// and deiconify/show it first if it is minimized/hidden. I really hope
-    /// it's better on Mac than on X11. If not, feel free to revert to the
-    /// previous pid-based behavior.
-
-    return false;
+    /*
+     * This is just for the case were the other process cannot steal 
+     * the focus from us. It will send us a PSN so we can try.
+     */
+    ProcessSerialNumber psn;
+    psn.highLongOfPSN = id >> 32;
+    psn.lowLongOfPSN = (UInt32)id;
+    OSErr rc = ::SetFrontProcess (&psn);
+    if (!rc)
+        Log (("GUI: %#RX64 couldn't do SetFrontProcess on itself, the selector (we) had to do it...\n", id));
+    else
+        Log (("GUI: Failed to bring %#RX64 to front. rc=%#x\n", id, rc));
+    return !rc;
 
 #endif
 
