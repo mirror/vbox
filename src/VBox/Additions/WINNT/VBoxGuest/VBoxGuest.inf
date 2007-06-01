@@ -1,7 +1,7 @@
 ;
 ; INF file for installing the VirtualBox Windows guest driver
 ;
-; Copyright (C) 2006 InnoTek Systemberatung GmbH
+; Copyright (C) 2006-2007 innotek GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -84,8 +84,8 @@ vbcoinst.dll
 HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
 
 [Strings]
-INNOTEK_MFG = "InnoTek Systemberatung GmbH"
-INNOTEK = "InnoTek Systemberatung GmbH"
+INNOTEK_MFG = "innotek GmbH"
+INNOTEK = "innotek GmbH"
 VBoxGuest.DeviceDesc = "VirtualBox Device"
 VBoxGuest_svcdesc = "VirtualBox Guest Driver"
 VBoxService_svcdesc = "VirtualBox Guest Service"

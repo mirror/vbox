@@ -2,7 +2,7 @@
 ;
 ; Installation inf for the vrdpdd mirror graphics adapter.
 ;
-; Copyright (C) 2006 InnoTek Systemberatung GmbH
+; Copyright (C) 2006-2007 innotek GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 
 [Version]
 Signature="$WINDOWS NT$"
-Provider=%InnoTek%
+Provider=%innotek%
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
 
@@ -33,13 +33,13 @@ vrdpdd.Display   = 11  ; system32
 ;
 
 [Manufacturer]
-%InnoTek%=vrdpdd.Mfg,NT.5.1
+%innotek%=vrdpdd.Mfg,NT.5.1
 
 [vrdpdd.Mfg]
 ; Empty
 
 [vrdpdd.Mfg.NT.5.1]
-%DevDesc% = vrdpdd, InnoTek_vrdpdd
+%DevDesc% = vrdpdd, innotek_vrdpdd
 
 ;
 ; General installation section
@@ -131,12 +131,12 @@ REG_EXPAND_SZ  = 0x00020000
 REG_BINARY     = 0x00000001
 REG_DWORD      = 0x00010001
 SERVICEROOT    = "System\CurrentControlSet\Services"
-DevDesc      = "InnoTek VirtualBox Mirror Driver"
+DevDesc      = "innotek VirtualBox Mirror Driver"
 
 ;
 ; Localizable Strings
 ;
 
-DiskId       = "InnoTek Mirror Driver Installation DISK (VIDEO)"
+DiskId       = "innotek Mirror Driver Installation DISK (VIDEO)"
 GraphAdap    = "Graphics Adapter"
-InnoTek      = "InnoTek"
+innotek      = "innotek"
