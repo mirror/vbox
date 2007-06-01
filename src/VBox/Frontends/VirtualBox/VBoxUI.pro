@@ -217,6 +217,10 @@ IMAGES	= images/tpixel.png \
 	images/refresh_disabled_16px.png \
 	images/refresh_22px.png \
 	images/refresh_disabled_22px.png \
+	images/show_logs_16px.png \
+	images/show_logs_22px.png \
+	images/show_logs_disabled_16px.png \
+	images/show_logs_disabled_22px.png \
 	images/description_16px.png \
 	images/description_disabled_16px.png \
 	images/edit_description_16px.png \

@@ -418,7 +418,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         "refresh_16px.png", "refresh_disabled_16px.png"));
     vmShowLogsAction = new QAction (this, "vmShowLogsAction");
     vmShowLogsAction->setIconSet (VBoxGlobal::iconSet (
-        "new_16px.png", "new_16px.png"));
+        "show_logs_16px.png", "show_logs_disabled_16px.png"));
     vmShowLogsAction->setToggleAction (true);
 
     helpContentsAction = new QAction (this, "helpContentsAction");
