@@ -157,7 +157,9 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
+#ifdef VBOX_STRICT
 static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
+#endif
 static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static int               pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
