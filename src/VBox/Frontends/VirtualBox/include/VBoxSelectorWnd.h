@@ -38,6 +38,7 @@ class VBoxVMListBox;
 class VBoxSnapshotsWgt;
 class VBoxVMDetailsView;
 class VBoxVMDescriptionPage;
+class VBoxVMLogViewer;
 
 class QLabel;
 class QTextBrowser;
@@ -70,6 +71,7 @@ public slots:
     void vmStart();
     void vmDiscard();
     void vmRefresh();
+    void vmShowLogs (bool);
 
     void refreshVMList();
     void refreshVMItem (const QUuid &aID, bool aDetails,
@@ -118,6 +120,7 @@ private:
     QAction *vmStartAction;
     QAction *vmDiscardAction;
     QAction *vmRefreshAction;
+    QAction *vmShowLogsAction;
     QAction *helpContentsAction;
     QAction *helpWebAction;
     QAction *helpAboutAction;

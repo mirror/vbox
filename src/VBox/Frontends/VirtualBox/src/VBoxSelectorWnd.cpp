@@ -31,6 +31,7 @@
 #include "VBoxDiskImageManagerDlg.h"
 #include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobalSettingsDlg.h"
+#include "VBoxVMLogViewer.h"
 
 #include <qlabel.h>
 #include <qtextbrowser.h>
@@ -415,6 +416,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmRefreshAction = new QAction (this, "vmRefreshAction");
     vmRefreshAction->setIconSet (VBoxGlobal::iconSet (
         "refresh_16px.png", "refresh_disabled_16px.png"));
+    vmShowLogsAction = new QAction (this, "vmShowLogsAction");
+    vmShowLogsAction->setIconSet (VBoxGlobal::iconSet (
+        "new_16px.png", "new_16px.png"));
+    vmShowLogsAction->setToggleAction (true);
 
     helpContentsAction = new QAction (this, "helpContentsAction");
     helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
@@ -508,6 +513,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmDiscardAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmRefreshAction->addTo (vmMenu);
+    vmMenu->insertSeparator();
+    vmShowLogsAction->addTo (vmMenu);
 
     menuBar()->insertItem (QString::null, vmMenu, 2);
 
@@ -568,6 +575,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (vmStartAction, SIGNAL (activated()), this, SLOT (vmStart()));
     connect (vmDiscardAction, SIGNAL (activated()), this, SLOT (vmDiscard()));
     connect (vmRefreshAction, SIGNAL (activated()), this, SLOT (vmRefresh()));
+    connect (vmShowLogsAction, SIGNAL (toggled (bool)), this, SLOT (vmShowLogs (bool)));
 
     connect (helpContentsAction, SIGNAL (activated()), this, SLOT(showHelpContents()));
     connect (helpWebAction, SIGNAL (activated()),
@@ -918,6 +926,19 @@ void VBoxSelectorWnd::vmRefresh()
                    true /* aDescription */);
 }
 
+void VBoxSelectorWnd::vmShowLogs (bool aOn)
+{
+    if (aOn)
+    {
+        VBoxVMLogViewer *logViewer = new VBoxVMLogViewer (this,
+            "logViewer", WType_TopLevel | WDestructiveClose);
+        VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+        CMachine machine = item->machine();
+        logViewer->setup (machine, vmShowLogsAction);
+        logViewer->show();
+    }
+}
+
 void VBoxSelectorWnd::refreshVMList()
 {
     vmListBox->refresh();
@@ -1021,12 +1042,12 @@ void VBoxSelectorWnd::languageChange()
     fileDiskMgrAction->setStatusTip (tr ("Display the Virtual Disk Manager dialog"));
 
 #ifdef Q_WS_MAC
-    /* 
+    /*
      * Macification: Getting the right menu as application preference menu item.
      *
      * QMenuBar::isCommand() in qmenubar_mac.cpp doesn't recognize "Setting"(s)
      * unless it's in the first position. So, we use the Mac term here to make
-     * sure we get picked instead of the VM settings. 
+     * sure we get picked instead of the VM settings.
      *
      * Now, since both QMenuBar and we translate these strings, it's going to
      * be really interesting to see how this plays on non-english systems...
@@ -1039,7 +1060,7 @@ void VBoxSelectorWnd::languageChange()
      * to figure out.
      */
     fileSettingsAction->setMenuText (tr ("&Preferences...", "global settings"));
-#endif 
+#endif
     fileSettingsAction->setAccel (tr ("Ctrl+G"));
     fileSettingsAction->setStatusTip (tr ("Display the global settings dialog"));
 
@@ -1075,6 +1096,12 @@ void VBoxSelectorWnd::languageChange()
     vmRefreshAction->setAccel (tr ("Ctrl+R"));
     vmRefreshAction->setStatusTip (
         tr ("Refresh the accessibility state of the selected virtual machine"));
+
+    vmShowLogsAction->setMenuText (tr ("Show &Log..."));
+    vmShowLogsAction->setText (tr ("Show Log..."));
+    vmShowLogsAction->setAccel (tr ("Ctrl+L"));
+    vmShowLogsAction->setStatusTip (
+        tr ("Show the log of the selected virtual machine"));
 
     helpContentsAction->setMenuText (tr ("&Contents..."));
     helpContentsAction->setAccel (tr ("F1"));
