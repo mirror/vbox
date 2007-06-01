@@ -76,55 +76,55 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Shift Links</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Shift Rechts</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg Links</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg Rechts</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt Links</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt Rechts</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation type="unfinished"></translation>
+        <translation>Win Links</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation type="unfinished"></translation>
+        <translation>Win Rechts</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation type="unfinished"></translation>
+        <translation>Menü</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation type="unfinished"></translation>
+        <translation>AltGr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>UmschLck</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>RollLck</translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Taste_%1&gt;</translation>
     </message>
 </context>
 <context>
@@ -879,7 +879,7 @@
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
@@ -923,16 +923,8 @@
         <translation>Wählen Sie ein Plattenabbild aus</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso)</source>
-        <translation type="obsolete">CD/DVD-ROM-Abbilder (*.iso)</translation>
-    </message>
-    <message>
         <source>Select a CD/DVD-ROM disk image file</source>
         <translation>Wählen Sie ein CD/DVD-ROM-Abbild aus</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img)</source>
-        <translation type="obsolete">Diskettenabbild</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -960,11 +952,11 @@
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM-Abbilder (*.iso);;Alle Dateien (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskettenabbilder (*.img);;Alle Dateien (*)</translation>
     </message>
 </context>
 <context>
@@ -1027,7 +1019,7 @@
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished">&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
@@ -1042,7 +1034,7 @@
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -2629,19 +2621,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige &amp;Log...</translation>
     </message>
     <message>
         <source>Show Log...</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige Log...</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
-        <translation type="unfinished">Strg+F</translation>
+        <translation>Strg+L</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Log-Dateien der ausgewählten virtuellen Maschine</translation>
     </message>
 </context>
 <context>
@@ -2919,7 +2911,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>%1 %2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -3131,99 +3123,99 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Startassistent</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Betätigen Sie &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln und &lt;b&gt;Zurück&lt;/b&gt; für den Wechsel auf die vorherige Seite. Sie können ebenso &lt;b&gt;Abbrechen&lt;/b&gt; betätigen, um den Assistenten sofort abzubrechen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Startassistent</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für Installtionszwecke verwenden möchten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Medientyp</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;CD/DVD-ROM-Laufwerk</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Diskettenlaufwerk</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+D</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wählen Sie das Medium mit dem Installationsprogramm des Betriebssystems das Sie installieren wollen. Dieses Medium muss bootbar sein, anderenfalls kann das Installationsprogramm nicht starten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Medienquelle</translation>
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Host-Laufwerk</translation>
     </message>
     <message>
         <source>Alt+H</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+H</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished">&amp;Abbild</translation>
+        <translation>&amp;Abbild</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation type="unfinished">Alt+A</translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <source>VDM</source>
-        <translation type="unfinished"></translation>
+        <translation>VDM</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Installationsmedium auswählen</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie haben die folgenden Medien zum Booten ausgewählt:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Betätigen Sie &lt;b&gt;Abschließen&lt;/b&gt;, wenn diese Angaben korrekt sind. Nachdem Sie dies getan haben, wird das ausgewählte Medium temporär in die virtuelle Maschine eingebunden und diese startet.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass die Bindung des Mediums automatisch nach dem Ausschalten der virtuellen Maschine aufgehoben und die Bootreihenfolge auf die erste Festplatte zurückgesetzt wird.&lt;/p&gt;&lt;p&gt;Abhängig von der Art des Installationsprogrammes kann es möglich sein, dass Sie das Medium manuell auswerfen müssen, wenn nach der Installation die virtuelle Maschine neu bootet, anderenfalls würde das Installationsprogramm erneut starten. Die Bindung kann durch den Punkt &lt;b&gt;... trennen&lt;/b&gt; im Menü &lt;b&gt;Geräte&lt;/b&gt; aufgehoben werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Zusammenfassung</translation>
+        <translation>Zusammenfassung</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM-Gerät</translation>
     </message>
     <message>
         <source>Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskettenlaufwerk</translation>
     </message>
     <message>
         <source>Host Drive %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Laufwerk %1</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Quelle:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -3247,43 +3239,43 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Log-Anzeige</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sichern</translation>
     </message>
     <message>
         <source>Alt+S</source>
-        <translation type="unfinished">Alt+S</translation>
+        <translation>Alt+S</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">&amp;Aktualisieren</translation>
+        <translation>&amp;Aktualisieren</translation>
     </message>
     <message>
         <source>Alt+R</source>
-        <translation type="unfinished">Alt+Z</translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Schließen</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+S</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - VirtualBox Log-Anzeige</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Keine Log-Dateien gefunden. Drücken Sie &lt;b&gt;Aktualisieren&lt;/b&gt;, um den Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Log-Datei sichern als</translation>
     </message>
 </context>
 <context>
@@ -3349,36 +3341,12 @@ value.&lt;/qt&gt;</source>
         <translation>Erzeugt eine neue zufällige MAC-Adresse.</translation>
     </message>
     <message>
-        <source>Adds a new host interface.</source>
-        <translation type="obsolete">Fügt ein neues Hostinterface hinzu.</translation>
-    </message>
-    <message>
-        <source>&lt;No suitable interfaces&gt;</source>
-        <translation type="obsolete">&lt;keine passenden Interfaces&gt;</translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="obsolete">Hinzufügen</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="obsolete">Entfernen</translation>
-    </message>
-    <message>
         <source>Select TAP setup application</source>
         <translation>Wählen Sie eine Anwendung zum Einrichten des TAP-Interfaces aus</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
         <translation>Wählen Sie eine Anwendung zum Entfernen des TAP-Interfaces aus</translation>
-    </message>
-    <message>
-        <source>VirtualBox Host Interface %1</source>
-        <translation type="obsolete">VirtualBox Hostinterface %1</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Möchten Sie das ausgewählte Hostinterface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;löschen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie:&lt;/b&gt; Dieses Interface wird möglicherweise von virtuellen Netzwerk-Adaptern anderer VMs benutzt. Nachdem es gelöscht wurde, funktionieren diese Adapter nichts mehr, bis deren Einstellungen entsprechend angepasst wurden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -3399,14 +3367,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
         <translation>Zeigt den Namen des Host-Interfaces für diesen Adapter.</translation>
-    </message>
-    <message>
-        <source>Lists all available host interfaces.</source>
-        <translation type="obsolete">Zeigt alle verfügbaren Host-Interfaces.</translation>
-    </message>
-    <message>
-        <source>Removes the selected host interface.</source>
-        <translation type="obsolete">Entfernt das ausgewählte Host-Interface.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
@@ -4045,39 +4005,39 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-&amp;Interfaces</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">Zeigt alle verfügbaren Host-Interfaces.</translation>
+        <translation>Zeigt alle verfügbaren Host-Interfaces.</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">Fügt ein neues Hostinterface hinzu.</translation>
+        <translation>Fügt ein neues Hostinterface hinzu.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">Entfernt das ausgewählte Host-Interface.</translation>
+        <translation>Entfernt das ausgewählte Host-Interface.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
-        <translation type="unfinished">&lt;keine passenden Interfaces&gt;</translation>
+        <translation>&lt;keine passenden Interfaces&gt;</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Hinzufügen</translation>
+        <translation>Hinzufügen</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">Entfernen</translation>
+        <translation>Entfernen</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">VirtualBox Hostinterface %1</translation>
+        <translation>VirtualBox Hostinterface %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Möchten Sie das ausgewählte Hostinterface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;löschen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie:&lt;/b&gt; Dieses Interface wird möglicherweise von virtuellen Netzwerk-Adaptern anderer VMs benutzt. Nachdem es gelöscht wurde, funktionieren diese Adapter nichts mehr, bis deren Einstellungen entsprechend angepasst wurden.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie das ausgewählte Hostinterface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;löschen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie:&lt;/b&gt; Dieses Interface wird möglicherweise von virtuellen Netzwerk-Adaptern anderer VMs benutzt. Nachdem es gelöscht wurde, funktionieren diese Adapter nichts mehr, bis deren Einstellungen entsprechend angepasst wurden.&lt;/p&gt;</translation>
     </message>
 </context>
 </TS>
