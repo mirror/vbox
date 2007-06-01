@@ -352,7 +352,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     TM_CFG_PERIOD(1,    1500000,  10); /* 1.50ms at 1.10x */
     TM_CFG_PERIOD(2,    8000000,  25); /*    8ms at 1.25x */
     TM_CFG_PERIOD(3,   30000000,  50); /*   30ms at 1.50x */
-    TM_CFG_PERIOD(4,  100000000,  75); /*  100ms at 1.75x */
+    TM_CFG_PERIOD(4,   75000000,  75); /*   75ms at 1.75x */
     TM_CFG_PERIOD(5,  175000000, 100); /*  175ms at 2x */
     TM_CFG_PERIOD(6,  500000000, 200); /*  500ms at 3x */
     TM_CFG_PERIOD(7, 3000000000, 300); /*    3s  at 4x */
