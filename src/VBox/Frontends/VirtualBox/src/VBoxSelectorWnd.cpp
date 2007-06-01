@@ -1101,7 +1101,7 @@ void VBoxSelectorWnd::languageChange()
     vmShowLogsAction->setText (tr ("Show Log..."));
     vmShowLogsAction->setAccel (tr ("Ctrl+L"));
     vmShowLogsAction->setStatusTip (
-        tr ("Show the log of the selected virtual machine"));
+        tr ("Show the log files of the selected virtual machine"));
 
     helpContentsAction->setMenuText (tr ("&Contents..."));
     helpContentsAction->setAccel (tr ("F1"));
