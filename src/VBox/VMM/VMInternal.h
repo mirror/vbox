@@ -190,6 +190,23 @@ typedef struct VMRUNTIMEERROR
     bool                    fFatal;
 } VMRUNTIMEERROR, *PVMRUNTIMEERROR;
 
+/** The halt method. */
+typedef enum
+{
+    /** The usual invalid value. */
+    VMHALTMETHOD_INVALID = 0,
+    /** Use the default method. */
+    VMHALTMETHOD_DEFAULT,
+    /** The old spin/yield/block method. */
+    VMHALTMETHOD_OLD,
+    /** The first go at a block/spin method. */
+    VMHALTMETHOD_1,
+    /** The end of valid methods. (not inclusive of course) */
+    VMHALTMETHOD_END,
+    /** The usual 32-bit max value. */
+    VMHALTMETHOD_32BIT_HACK = 0x7fffffff
+} VMHALTMETHOD;
+
 
 /**
  * Converts a VMM pointer into a VM pointer.
@@ -258,55 +275,73 @@ typedef struct VMINT
     /** Set by VMR3SuspendNoSave; cleared by VMR3Resume; signals the VM is in an inconsistent state and saving is not allowed. */
     bool                            fPreventSaveState;
 
-    /** vmR3EmulationThread longjmp buffer 
+    /** vmR3EmulationThread longjmp buffer
      * @todo r=bird: requires union with padding. See EMInternal.h. */
     jmp_buf                         emtJumpEnv;
 
-    /** @name Yield
+    /** @name Generic Halt data
      * @{
      */
+    /** The current halt method.
+     * Can be selected by CFGM option 'VM/HaltMethod'. */
+    VMHALTMETHOD                    enmHaltMethod;
+    /** The index into g_aHaltMethods of the current halt method. */
+    uint32_t volatile               iHaltMethod;
     /** The average time (ns) between two halts in the last second. (updated once per second) */
     uint32_t                        HaltInterval;
     /** The average halt frequency for the last second. (updated once per second) */
     uint32_t                        HaltFrequency;
     /** The number of halts in the current period. */
     uint32_t                        cHalts;
-    uint32_t                        padding0;   /**< alignment padding. */
+    uint32_t                        padding; /**< alignment padding. */
     /** When we started counting halts in cHalts (RTTimeNanoTS). */
     uint64_t                        u64HaltsStartTS;
+    /** @} */
 
     /** Union containing data and config for the different halt algorithms. */
-    union 
+    union
     {
-       /** 
-        * Method 1 & 2 - Block whenever possible, and when lagging behind 
-        * switch to spinning for 10-30ms with occational blocking until
-        * the lag has been eliminated.
-        * 
-        * The difference between 1 and 2 is that we use native absolute 
+       /**
+        * Method 1 & 2 - Block whenever possible, and when lagging behind
+        * switch to spinning with regular blocking every 5-200ms (defaults)
+        * depending on the accumulated lag. The blocking interval is adjusted
+        * with the average oversleeping of the last 64 times.
+        *
+        * The difference between 1 and 2 is that we use native absolute
         * time APIs for the blocking instead of the millisecond based IPRT
         * interface.
         */
-       struct
-       {
-           /** How many times we've blocked while cBlockedNS and cBlockedTooLongNS has been accumulating. */
-           uint32_t                 cBlocks;
-           /** Avg. time spend oversleeping when blocking. (Re-calculated every so often.) */
-           uint64_t                 cNSBlockedTooLongAvg;
-           /** Total time spend oversleeping when blocking. */
-           uint64_t                 cNSBlockedTooLong;
-           /** Total time spent blocking. */
-           uint64_t                 cNSBlocked;
-           /** The timestamp (RTTimeNanoTS) of the last block. */
-           uint64_t                 u64LastBlockTS;
+        struct
+        {
+            /** How many times we've blocked while cBlockedNS and cBlockedTooLongNS has been accumulating. */
+            uint32_t                cBlocks;
+            /** Avg. time spend oversleeping when blocking. (Re-calculated every so often.) */
+            uint64_t                cNSBlockedTooLongAvg;
+            /** Total time spend oversleeping when blocking. */
+            uint64_t                cNSBlockedTooLong;
+            /** Total time spent blocking. */
+            uint64_t                cNSBlocked;
+            /** The timestamp (RTTimeNanoTS) of the last block. */
+            uint64_t                u64LastBlockTS;
 
-          /** When we started spinning relentlessly in order to catch up some of the oversleeping.
-           * This is 0 when we're not spinning. */
-           uint64_t                 u64StartSpinTS;
-       }                            Method12;
+            /** When we started spinning relentlessly in order to catch up some of the oversleeping.
+             * This is 0 when we're not spinning. */
+            uint64_t                u64StartSpinTS;
+
+            /** The max interval without blocking (when spinning). */
+            uint32_t                u32MinBlockIntervalCfg;
+            /** The minimum interval between blocking (when spinning). */
+            uint32_t                u32MaxBlockIntervalCfg;
+            /** The value to divide the current lag by to get the raw blocking interval (when spinning). */
+            uint32_t                u32LagBlockIntervalDivisorCfg;
+            /** When to start spinning (lag / nano secs). */
+            uint32_t                u32StartSpinningCfg;
+            /** When to stop spinning (lag / nano secs). */
+            uint32_t                u32StopSpinningCfg;
+        }                           Method12;
 
 #if 0
-       /** 
+       /**
         * Method 3 & 4 - Same as method 1 & 2 respectivly, except that we
         * sprinkle it with yields.
         */
@@ -373,6 +408,7 @@ typedef struct VMEMULATIONTHREADARGS
 typedef VMEMULATIONTHREADARGS *PVMEMULATIONTHREADARGS;
 
 DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArg);
+int vmR3SetHaltMethod(PVM pVM, VMHALTMETHOD enmHaltMethod);
 DECLCALLBACK(int) vmR3Destroy(PVM pVM);
 DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *args);
 void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
