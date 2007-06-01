@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -404,7 +404,7 @@ static bool IsTAPDevice(const char *guid)
 
                 if (   !strcmp(szNetCfgInstanceId, guid)
                     && !strcmp(szNetProductName, "VirtualBox TAP Adapter")
-                    && !strcmp(szNetProviderName, "InnoTek Systemberatung GmbH"))
+                    && !strcmp(szNetProviderName, "innotek GmbH"))
                 {
                     ret = true;
                     RegCloseKey(hNetCardGUID);
@@ -1295,7 +1295,7 @@ HRESULT Host::releaseUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
     }
 
     ComAssertRet (!!device, E_FAIL);
-    
+
     AutoLock devLock (device);
 
     ComAssertRet (device->machine() == aMachine, E_FAIL);
@@ -1891,7 +1891,7 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
             /* inform the VM process about the auto-capture */
             ComPtr <IUSBDevice> d;
             aDevice.queryInterfaceTo (d.asOutParam());
-            
+
             /* the VM process will query the object, so leave the lock */
             devLock.leave();
 

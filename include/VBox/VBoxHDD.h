@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,7 +40,7 @@ __BEGIN_DECLS
 /** Image info, not handled anyhow.
  *  Must be less than 64 bytes in length, including the trailing 0.
  */
-#define VDI_IMAGE_FILE_INFO   "<<< InnoTek VirtualBox Disk Image >>>\n"
+#define VDI_IMAGE_FILE_INFO   "<<< innotek VirtualBox Disk Image >>>\n"
 
 /** Current image major version. */
 #define VDI_IMAGE_VERSION_MAJOR    (0x0001)

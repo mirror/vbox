@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Threads (Part 2), Ring-0 Driver, Generic Stubs.
+ * innotek Portable Runtime - Threads (Part 2), Ring-0 Driver, Generic Stubs.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Ring-0 Memory Objects, OS/2.
+ * innotek Portable Runtime - Ring-0 Memory Objects, OS/2.
  */
 
 /*

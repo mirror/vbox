@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Setup Sanity Checks, C and C++.
+ * innotek Portable Runtime - Setup Sanity Checks, C and C++.
  */
 
 /*
- * Copyright (c) 2007 InnoTek Systemberatung GmbH
+ * Copyright (c) 2007 innotek GmbH
  *
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as

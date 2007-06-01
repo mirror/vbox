@@ -3,9 +3,9 @@
  *
  * VBoxREM Win64 DLL Wrapper.
  *
- * InnoTek Systemberatung GmbH confidential
+ * innotek GmbH confidential
  *
- * Copyright (c) 2006 InnoTek Systemberatung GmbH
+ * Copyright (c) 2006 innotek GmbH
  *
  * Author: knut st. osmundsen <bird@innotek.de>
  *

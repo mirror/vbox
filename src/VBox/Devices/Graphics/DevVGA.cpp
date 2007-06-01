@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1930,7 +1930,7 @@ static int vga_draw_graphic(VGAState *s, int full_update)
      * programming of the virtual hardware ports. Just return.
      */
     if (bwidth == 0) return VINF_SUCCESS;
-#endif /* VBOX */ 
+#endif /* VBOX */
     y_start = -1;
     page_min = 0x7fffffff;
     page_max = -1;
@@ -2631,7 +2631,7 @@ static int vga_copy_screen_from(PVGASTATE s, uint8_t *buf, int x, int y, int wid
 
 
 
-#ifdef VBOX /* InnoTek code start */
+#ifdef VBOX /* innotek code start */
 
 
 /* -=-=-=-=-=- all contexts -=-=-=-=-=- */
@@ -4998,7 +4998,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         return rc;
     }
     pData->vram_ptrHC = NULL;
-#endif 
+#endif
 
     return VINF_SUCCESS;
 }

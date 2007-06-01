@@ -1,9 +1,9 @@
 /** @file
- * InnoTek Portable Runtime - stdint.h wrapper (for backlevel compilers like MSC).
+ * innotek Portable Runtime - stdint.h wrapper (for backlevel compilers like MSC).
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

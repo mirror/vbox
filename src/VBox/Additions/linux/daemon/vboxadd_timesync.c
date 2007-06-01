@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
     if (!fDaemonize)
         printf("VirtualBox timesync daemon.\n"
-               "(C) 2005 InnoTek Systemberatung GmbH\n"
+               "(C) 2005-2007 innotek GmbH\n"
                "\nSync interval: %d seconds.\n", secInterval);
 
     if (fDaemonize)

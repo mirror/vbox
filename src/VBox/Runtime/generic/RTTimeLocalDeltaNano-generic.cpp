@@ -1,10 +1,10 @@
 /* $Id: RTAssertDoBreakpoint-generic.cpp 18670 2007-02-15 19:49:19Z bird $ */
 /** @file
- * InnoTek Portable Runtime - Time, generic RTTimeLocalDeltaNano.
+ * innotek Portable Runtime - Time, generic RTTimeLocalDeltaNano.
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

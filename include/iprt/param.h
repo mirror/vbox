@@ -1,10 +1,10 @@
 /** @file
  *
- * InnoTek Portable Runtime - Parameter Definitions.
+ * innotek Portable Runtime - Parameter Definitions.
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
