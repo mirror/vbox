@@ -607,7 +607,7 @@ int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR p
         MmBuildMdlForNonPagedPool(pMem->u.cont.pMdl);
         __try
         {
-            pMem->pvR3 = (RTR3PTR)MmMapLockedPages(pMem->u.cont.pMdl, UserMode);
+            pMem->pvR3 = (RTR3PTR)MmMapLockedPagesSpecifyCache(pMem->u.cont.pMdl, UserMode, MmCached, NULL, FALSE, NormalPagePriority);
             if (pMem->pvR3)
             {
                 /*
@@ -708,7 +708,7 @@ int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR
         MmBuildMdlForNonPagedPool(pMem->u.mem.pMdl);
         __try
         {
-            pMem->pvR3 = (RTR3PTR)MmMapLockedPages(pMem->u.mem.pMdl, UserMode);
+            pMem->pvR3 = (RTR3PTR)MmMapLockedPagesSpecifyCache(pMem->u.mem.pMdl, UserMode, MmCached, NULL, FALSE, NormalPagePriority);
             if (pMem->pvR3)
             {
                 /*
@@ -1006,7 +1006,7 @@ int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip)
     void *pv = NULL;
     __try
     {
-        *ppGip = (PCSUPGLOBALINFOPAGE)MmMapLockedPages(pDevExt->pGipMdl, UserMode);
+        *ppGip = (PCSUPGLOBALINFOPAGE)MmMapLockedPagesSpecifyCache(pDevExt->pGipMdl, UserMode, MmCached, NULL, FALSE, NormalPagePriority);
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -1100,7 +1100,7 @@ void *VBOXCALL  supdrvOSExecAlloc(size_t cb)
             MmBuildMdlForNonPagedPool(pMdl);
             __try
             {
-                void *pvMapping = MmMapLockedPages(pMdl, KernelMode);
+                void *pvMapping = MmMapLockedPagesSpecifyCache(pMdl, KernelMode, MmCached, NULL, FALSE, NormalPagePriority);
                 if (pvMapping)
                 {
                     NTSTATUS rc = MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
