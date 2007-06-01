@@ -1168,9 +1168,14 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
             }
             else
             {
-                AssertReturn (flt->id() != NULL, E_FAIL);
-                service->removeFilter (flt->id());
-                flt->id() = NULL;
+                /* It's possible that the given filter was not inserted the proxy
+                 * when this method gets called (as a result of an early VM
+                 * process crash for example. So, don't assert that ID != NULL. */
+                if (flt->id() != NULL)
+                {
+                    service->removeFilter (flt->id());
+                    flt->id() = NULL;
+                }
             }
         }
         ++ it;
