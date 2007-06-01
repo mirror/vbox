@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
     putenv("VBOX_LOG_FLAGS=");
 
     RTR3Init();
-    RTPrintf("vditool    Copyright (c) 2004-2005 InnoTek Systemberatung GmbH.\n\n");
+    RTPrintf("vditool    Copyright (c) 2004-2005 innotek GmbH.\n\n");
 
     /*
      * Do cmd line parsing.

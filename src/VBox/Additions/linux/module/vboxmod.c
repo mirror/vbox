@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,7 +31,7 @@
 #define VERSION "0.5"
 
 MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
-MODULE_AUTHOR("InnoTek Systemberatung GmbH");
+MODULE_AUTHOR("innotek GmbH");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING);

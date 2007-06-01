@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -233,7 +233,7 @@ static MODULESETUPPROTO(vboxSetup);
 static XF86ModuleVersionInfo vboxVersionRec =
 {
     VBOX_DRIVER_NAME,
-    "InnoTek Systemberatung GmbH",
+    "innotek Systemberatung GmbH",
     MODINFOSTRING1,
     MODINFOSTRING2,
 #ifdef XORG_7X
@@ -538,7 +538,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     {
         /* Add 1024x768 to the end of the mode list in case the others are all invalid. */
         for (i = 0; pScrn->display->modes[i] != NULL; i++);
-        pScrn->display->modes      = xnfrealloc(pScrn->display->modes, (i + 2) 
+        pScrn->display->modes      = xnfrealloc(pScrn->display->modes, (i + 2)
                                    * sizeof(char *));
         pScrn->display->modes[i  ] = "1024x768";
         pScrn->display->modes[i+1] = NULL;

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1739,12 +1739,12 @@ QString VBoxGlobal::languageCountryEnglish() const
 
 /**
  *  Comma-separated list of authors of the currently installed translation.
- *  Returns "InnoTek" if no translation is installed or if the translation
- *  file is invalid, or if the translation is supplied by InnoTek.
+ *  Returns "innotek" if no translation is installed or if the translation
+ *  file is invalid, or if the translation is supplied by innotek.
  */
 QString VBoxGlobal::languageTranslators() const
 {
-    return qApp->translate ("@@@", "InnoTek",
+    return qApp->translate ("@@@", "innotek",
                             "Comma-separated list of translators");
 }
 
@@ -2049,14 +2049,14 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         Assert (qtSysTr);
         if (qtSysTr && qtSysTr->load (languageFileName))
             qApp->installTranslator (qtSysTr);
-        /* Note that the Qt translation supplied by InnoTek is always loaded
+        /* Note that the Qt translation supplied by innotek is always loaded
          * afterwards to make sure it will take precedence over the system
          * translation (it may contain more decent variants of translation
          * that better correspond to VirtualBox UI). We need to load both
          * because a newer version of Qt may be installed on the user computer
-         * and the InnoTek version may not fully support it. We don't do it on
+         * and the innotek version may not fully support it. We don't do it on
          * Win32 because we supply a Qt library there and therefore the
-         * InnoTek translation is always the best one. */
+         * innotek translation is always the best one. */
 #endif
         languageFileName =  nlsDir.absFilePath (QString ("qt_") +
                                                 sLoadedLangId +
@@ -2863,24 +2863,24 @@ static Bool XXSendClientMessage (Display *aDpy, Window aWnd, const char *aMsg,
     ev.xclient.data.l [2] = aData2;
     ev.xclient.data.l [3] = aData3;
     ev.xclient.data.l [4] = aData4;
-    
+
     return XSendEvent (aDpy, DefaultRootWindow (aDpy), False,
                        SubstructureRedirectMask, &ev) != 0;
 }
 
 #endif
 
-/** 
+/**
  * Activates the specified window. If necessary, the window will be
  * de-iconified activation.
  *
  * @note On X11, it is implied that @a aWid represents a window of the same
  * display the application was started on.
- * 
- * @param aWId              Window ID to activate.        
+ *
+ * @param aWId              Window ID to activate.
  * @param aSwitchDesktop    @c true to switch to the window's desktop before
  *                          activation.
- * 
+ *
  * @return @c true on success and @c false otherwise.
  */
 /* static */
@@ -2914,7 +2914,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 
         if (desktop != NULL)
         {
-            Bool ok = XXSendClientMessage (dpy, DefaultRootWindow (dpy), 
+            Bool ok = XXSendClientMessage (dpy, DefaultRootWindow (dpy),
                                            "_NET_CURRENT_DESKTOP",
                                            *desktop);
             if (!ok)

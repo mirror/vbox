@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -87,7 +87,7 @@
 static const char DefaultMachineConfig[] =
 {
     "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
-    "<!-- InnoTek VirtualBox Machine Configuration -->" RTFILE_LINEFEED
+    "<!-- innotek VirtualBox Machine Configuration -->" RTFILE_LINEFEED
     "<VirtualBox xmlns=\"" VBOX_XML_NAMESPACE "\" "
         "version=\"" VBOX_XML_VERSION "-" VBOX_XML_PLATFORM "\">" RTFILE_LINEFEED
     "</VirtualBox>" RTFILE_LINEFEED
@@ -3026,14 +3026,14 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
     return S_OK;
 }
 
-/** 
+/**
  *  Increases the number of objects dependent on the machine state or on the
  *  registered state.  Guarantees that these two states will not change at
  *  least until #releaseStateDependency() is called.
  *
  *  Depending on the @a aDepType value, additional state checks may be
  *  made. These checks will set extended error info on failure.
- * 
+ *
  *  If this method returns a failure, the dependency is not added and the
  *  caller is not allowed to rely on any particular machine state or
  *  registration state value and may return the failed result code to the
@@ -3211,7 +3211,7 @@ void Machine::uninitDataAndChildObjects()
 }
 
 
-/** 
+/**
  *  Chhecks that there are no state dependants. If necessary, waits for the
  *  number of dependants to drop to zero. Must be called from under
  *  this object's lock.
@@ -3553,12 +3553,12 @@ HRESULT Machine::loadSettings (bool aRegistered)
             Assert (!mSSData->mStateFilePath);
             mSSData->mStateFilePath.setNull();
 
-            /* no need to use setMachineState() during init() */ 
+            /* no need to use setMachineState() during init() */
             mData->mMachineState = MachineState_Aborted;
         }
         else if (mSSData->mStateFilePath)
         {
-            /* no need to use setMachineState() during init() */ 
+            /* no need to use setMachineState() during init() */
             mData->mMachineState = MachineState_Saved;
         }
     }

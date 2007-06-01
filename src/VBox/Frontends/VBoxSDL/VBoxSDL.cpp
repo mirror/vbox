@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1399,7 +1399,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* 
+    /*
      * Mount a floppy if requested.
      */
     if (fdaFile)
@@ -1461,7 +1461,7 @@ int main(int argc, char *argv[])
     if (FAILED (rc))
         goto leave;
 
-    /* 
+    /*
      * Mount a CD-ROM if requested.
      */
     if (cdromFile)
@@ -3635,7 +3635,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
     strcpy(szPrevTitle, szTitle);
 
 
-    strcpy(szTitle, "InnoTek VirtualBox - ");
+    strcpy(szTitle, "innotek VirtualBox - ");
 
     Bstr name;
     gMachine->COMGETTER(Name)(name.asOutParam());
@@ -3756,7 +3756,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 #ifdef VBOX_WIN32_UI
     setUITitle(szTitle);
 #else
-    SDL_WM_SetCaption(szTitle, "InnoTek VirtualBox");
+    SDL_WM_SetCaption(szTitle, "innotek VirtualBox");
 #endif
 }
 

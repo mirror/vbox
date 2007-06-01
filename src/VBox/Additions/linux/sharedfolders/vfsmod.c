@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -44,7 +44,7 @@
 // #define wchar_t linux_wchar_t
 
 MODULE_DESCRIPTION ("Host file system access VFS for VirtualBox");
-MODULE_AUTHOR ("InnoTek Systemberatung GmbH");
+MODULE_AUTHOR ("innotek GmbH");
 MODULE_LICENSE ("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING);

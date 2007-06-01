@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -344,7 +344,7 @@ public:
                      *    client was faster and requested VirtualBox again.
                      *
                      * In either case, there is nothing to do.
-                     * 
+                     *
                      * Note: case b) is actually no more valid since we don't
                      * call Release() from DestructEventHandler() in this case
                      * any more. Thus, we assert below.
@@ -524,7 +524,7 @@ public:
             {
                 LogFlowFunc (("Another client has requested a reference to VirtualBox, "
                               "canceling detruction...\n"));
-                
+
                 /* make sure the previous timer is stopped */
                 RTTimerStop (sTimer);
             }
@@ -1139,12 +1139,12 @@ int main (int argc, char **argv)
             int  iSize;
 
             iSize = snprintf (szBuf, sizeof(szBuf),
-                              "InnoTek VirtualBox XPCOM Server Version %s",
+                              "innotek VirtualBox XPCOM Server Version %s",
                               VBOX_VERSION_STRING);
             for (int i=iSize; i>0; i--)
                 putchar('*');
             printf ("\n%s\n", szBuf);
-            printf ("(C) 2004-2007 InnoTek Systemberatung GmbH\n");
+            printf ("(C) 2004-2007 innotek GmbH\n");
             printf ("All rights reserved.\n");
 #ifdef DEBUG
             printf ("Debug version.\n");

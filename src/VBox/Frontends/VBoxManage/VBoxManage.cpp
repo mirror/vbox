@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -6105,7 +6105,7 @@ int main(int argc, char *argv[])
     RTR3Init(false);
 
     RTPrintf("VirtualBox Command Line Management Interface Version %s\n"
-             "(C) 2005-2007 InnoTek Systemberatung GmbH\n"
+             "(C) 2005-2007 innotek GmbH\n"
              "All rights reserved.\n"
              "\n",
              VBOX_VERSION_STRING);

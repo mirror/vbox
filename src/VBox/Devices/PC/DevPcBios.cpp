@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -749,7 +749,7 @@ static void pcbiosPlantDMITable(uint8_t *pTable)
     pBIOSInf->header.u8Length    = sizeof(*pBIOSInf);
     pBIOSInf->header.u16Handle   = 0x0000;
     pBIOSInf->u8Vendor           = iStrNr++;
-    STRCPY(pszStr, "InnoTek Systemberatung GmbH");
+    STRCPY(pszStr, "innotek GmbH");
     pBIOSInf->u8Version          = iStrNr++;
     STRCPY(pszStr, "VirtualBox");
     pBIOSInf->u16Start           = 0xE000;
@@ -780,7 +780,7 @@ static void pcbiosPlantDMITable(uint8_t *pTable)
     pSystemInf->header.u8Length  = sizeof(*pSystemInf);
     pSystemInf->header.u16Handle = 0x0001;
     pSystemInf->u8Manufacturer   = iStrNr++;
-    STRCPY(pszStr, "InnoTek Systemberatung GmbH");
+    STRCPY(pszStr, "innotek GmbH");
     pSystemInf->u8ProductName    = iStrNr++;
     STRCPY(pszStr, "VirtualBox");
     pSystemInf->u8Version        = iStrNr++;

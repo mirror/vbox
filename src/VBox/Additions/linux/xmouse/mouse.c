@@ -2413,7 +2413,7 @@ static XF86ModuleVersionInfo xf86MouseVersionRec =
 {
 #ifdef VBOX
     "vboxmouse",
-    "InnoTek Systemberatung GmbH",
+    "innotek GmbH",
 #else
     "mouse",
     MODULEVENDORSTRING,
