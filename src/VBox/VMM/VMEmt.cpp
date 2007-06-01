@@ -37,8 +37,10 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+
 
 
 
@@ -165,6 +167,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
     return rc;
 }
 
+
 /**
  * Wait for VM to be resumed. Handle events like vmR3EmulationThread does.
  * In case the VM is stopped, clean up and long jump to the main EMT loop.
@@ -255,33 +258,11 @@ VMR3DECL(int) VMR3WaitForResume(PVM pVM)
     longjmp(pVM->vm.s.emtJumpEnv, 1);
 }
 
-/**
- * Notify the emulation thread (EMT) about pending Forced Action (FF).
- *
- * This function is called by thread other than EMT to make
- * sure EMT wakes up and promptly service an FF request.
- *
- * @param   pVM             VM handle.
- * @param   fNotifiedREM    Set if REM have already been notified. If clear the
- *                          generic REMR3NotifyFF() method is called.
- */
-VMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM)
-{
-    LogFlow(("VMR3NotifyFF:\n"));
-    if (pVM->vm.s.fWait)
-    {
-        int rc = RTSemEventSignal(pVM->vm.s.EventSemWait);
-        AssertRC(rc);
-    }
-    else if (!fNotifiedREM)
-        REMR3NotifyFF(pVM);
-}
-
 
 /**
  * The old halt loop.
  */
-DECLCALLBACK(int) vmR3WaitHaltedOld(PVM pVM, const uint32_t fMask)
+static DECLCALLBACK(int) vmR3HaltOldDoHalt(PVM pVM, const uint32_t fMask, uint64_t /* u64Now*/)
 {
     /*
      * Halt loop.
@@ -362,17 +343,59 @@ DECLCALLBACK(int) vmR3WaitHaltedOld(PVM pVM, const uint32_t fMask)
 
 
 /**
+ * Initialize the configuration of halt method 1 & 2.
+ *
+ * @return VBox status code. Failure on invalid CFGM data.
+ * @param   pVM     The VM handle.
+ */
+static int vmR3HaltMethod12ReadConfig(PVM pVM)
+{
+    /*
+     * The defaults.
+     */
+    pVM->vm.s.Halt.Method12.u32LagBlockIntervalDivisorCfg = 4;
+    pVM->vm.s.Halt.Method12.u32MinBlockIntervalCfg =   5*1000000;
+    pVM->vm.s.Halt.Method12.u32MaxBlockIntervalCfg = 200*1000000;
+    pVM->vm.s.Halt.Method12.u32StartSpinningCfg    =  20*1000000;
+    pVM->vm.s.Halt.Method12.u32StopSpinningCfg     =   2*1000000;
+
+    /*
+     * Query overrides.
+     */
+    PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/VMM/HaltedMethod1");
+    if (pCfg)
+    {
+
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Initialize halt method 1.
+ *
+ * @return VBox status code.
+ * @param   pVM     The VM handle.
+ */
+static DECLCALLBACK(int) vmR3HaltMethod1Init(PVM pVM)
+{
+    return vmR3HaltMethod12ReadConfig(pVM);
+}
+
+
+/**
  * Method 1 - Block whenever possible, and when lagging behind
  * switch to spinning for 10-30ms with occational blocking until
  * the lag has been eliminated.
  */
-DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t u64Now)
+static DECLCALLBACK(int) vmR3HaltMethod1DoHalt(PVM pVM, const uint32_t fMask, uint64_t u64Now)
 {
     /*
-     * To simplify things, we decide up-front whether we should switch
-     * to spinning or not. This makes some assumptions about the cause
-     * of the spinning (PIT/RTC/PCNet) and that it will generate interrupts
-     * or other events that means we should exit the halt loop.
+     * To simplify things, we decide up-front whether we should switch to spinning or
+     * not. This makes some ASSUMPTIONS about the cause of the spinning (PIT/RTC/PCNet)
+     * and that it will generate interrupts or other events that will cause us to exit
+     * the halt loop.
      */
     bool fBlockOnce = false;
     bool fSpinning = false;
@@ -381,29 +404,31 @@ DECLCALLBACK(int) vmR3WaitHaltedMethod1(PVM pVM, const uint32_t fMask, uint64_t 
     {
         if (pVM->vm.s.Halt.Method12.u64StartSpinTS)
         {
-            fSpinning = TMVirtualSyncGetLag(pVM) >= 2*1000000;
+            fSpinning = TMVirtualSyncGetLag(pVM) >= pVM->vm.s.Halt.Method12.u32StopSpinningCfg;
             if (fSpinning)
             {
                 uint64_t u64Lag = TMVirtualSyncGetLag(pVM);
                 fBlockOnce = u64Now - pVM->vm.s.Halt.Method12.u64LastBlockTS
-                           > RT_MAX(5*1000000, RT_MIN(u64Lag / 4, 200*1000000));
+                           > RT_MAX(pVM->vm.s.Halt.Method12.u32MinBlockIntervalCfg,
+                                    RT_MIN(u64Lag / pVM->vm.s.Halt.Method12.u32LagBlockIntervalDivisorCfg,
+                                           pVM->vm.s.Halt.Method12.u32MaxBlockIntervalCfg));
             }
             else
             {
-RTLogRelPrintf("Stopped spinning (%u ms)\n", (u64Now - pVM->vm.s.Halt.Method12.u64StartSpinTS) / 1000000);
+                //RTLogRelPrintf("Stopped spinning (%u ms)\n", (u64Now - pVM->vm.s.Halt.Method12.u64StartSpinTS) / 1000000);
                 pVM->vm.s.Halt.Method12.u64StartSpinTS = 0;
             }
         }
         else
         {
-            fSpinning = TMVirtualSyncGetLag(pVM) >= 20*1000000;
+            fSpinning = TMVirtualSyncGetLag(pVM) >= pVM->vm.s.Halt.Method12.u32StartSpinningCfg;
             if (fSpinning)
                 pVM->vm.s.Halt.Method12.u64StartSpinTS = u64Now;
         }
     }
     else if (pVM->vm.s.Halt.Method12.u64StartSpinTS)
     {
-RTLogRelPrintf("Stopped spinning (%u ms)\n", (u64Now - pVM->vm.s.Halt.Method12.u64StartSpinTS) / 1000000);
+        //RTLogRelPrintf("Stopped spinning (%u ms)\n", (u64Now - pVM->vm.s.Halt.Method12.u64StartSpinTS) / 1000000);
         pVM->vm.s.Halt.Method12.u64StartSpinTS = 0;
     }
 
@@ -449,7 +474,7 @@ RTLogRelPrintf("Stopped spinning (%u ms)\n", (u64Now - pVM->vm.s.Halt.Method12.u
                 cMilliSecs = 1;
             else
                 cMilliSecs -= pVM->vm.s.Halt.Method12.cNSBlockedTooLongAvg;
-RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
+            //RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
             STAM_REL_PROFILE_START(&pVM->vm.s.StatHaltBlock, a);
             rc = RTSemEventWait(pVM->vm.s.EventSemWait, cMilliSecs);
             STAM_REL_PROFILE_STOP(&pVM->vm.s.StatHaltBlock, a);
@@ -482,7 +507,7 @@ RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, c
                     pVM->vm.s.Halt.Method12.cBlocks = 0x40;
                 }
             }
-RTLogRelPrintf(" -> %7RU64 ns / %7RI64 ns delta%s\n", Elapsed, Elapsed - u64NanoTS, fBlockOnce ? " (block once)" : "");
+            //RTLogRelPrintf(" -> %7RU64 ns / %7RI64 ns delta%s\n", Elapsed, Elapsed - u64NanoTS, fBlockOnce ? " (block once)" : "");
 
             /*
              * Clear the block once flag if we actually blocked.
@@ -492,9 +517,109 @@ RTLogRelPrintf(" -> %7RU64 ns / %7RI64 ns delta%s\n", Elapsed, Elapsed - u64Nano
                 fBlockOnce = false;
         }
     }
-if (fSpinning) RTLogRelPrintf("spun for %RU64 ns %u loops; lag=%RU64 pct=%d\n", RTTimeNanoTS() - u64Now, cLoops, TMVirtualSyncGetLag(pVM), u32CatchUpPct);
+    //if (fSpinning) RTLogRelPrintf("spun for %RU64 ns %u loops; lag=%RU64 pct=%d\n", RTTimeNanoTS() - u64Now, cLoops, TMVirtualSyncGetLag(pVM), u32CatchUpPct);
 
     return rc;
+}
+
+
+/**
+ * Default VMR3Wait() worker.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM handle.
+ */
+static DECLCALLBACK(int) vmR3DefaultWait(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+    ASMAtomicXchgU32(&pVM->vm.s.fWait, 1);
+    for (;;)
+    {
+        /*
+         * Check Relevant FFs.
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK))
+            break;
+
+        /*
+         * Wait for a while. Someone will wake us up or interrupt the call if
+         * anything needs our attention.
+         */
+        rc = RTSemEventWait(pVM->vm.s.EventSemWait, 1000);
+        if (rc == VERR_TIMEOUT)
+            rc = VINF_SUCCESS;
+        else if (VBOX_FAILURE(rc))
+        {
+            AssertMsgFailed(("RTSemEventWait->%Vrc\n", rc));
+            VM_FF_SET(pVM, VM_FF_TERMINATE);
+            rc = VERR_INTERNAL_ERROR;
+            break;
+        }
+
+    }
+    ASMAtomicXchgU32(&pVM->vm.s.fWait, 0);
+    return rc;
+}
+
+
+/**
+ * Default VMR3NotifyFF() worker.
+ *
+ * @param   pVM             The VM handle.
+ * @param   fNotifiedREM    Se VMR3NotifyFF().
+ */
+static DECLCALLBACK(void) vmR3DefaultNotifyFF(PVM pVM, bool fNotifiedREM)
+{
+    if (pVM->vm.s.fWait)
+    {
+        int rc = RTSemEventSignal(pVM->vm.s.EventSemWait);
+        AssertRC(rc);
+    }
+    else if (!fNotifiedREM)
+        REMR3NotifyFF(pVM);
+}
+
+
+/**
+ * Array with halt method descriptors.
+ * VMINT::iHaltMethod contains an index into this array.
+ */
+static const struct VMHALTMETHODDESC
+{
+    /** The halt method id. */
+    VMHALTMETHOD enmHaltMethod;
+    /** The init function for loading config and initialize variables. */
+    DECLR3CALLBACKMEMBER(int,  pfnInit,(PVM pVM));
+    /** The term function. */
+    DECLR3CALLBACKMEMBER(void, pfnTerm,(PVM pVM));
+    /** The halt function. */
+    DECLR3CALLBACKMEMBER(int,  pfnHalt,(PVM pVM, const uint32_t fMask, uint64_t u64Now));
+    /** The wait function. */
+    DECLR3CALLBACKMEMBER(int,  pfnWait,(PVM pVM));
+    /** The notifyFF function. */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyFF,(PVM pVM, bool fNotifiedREM));
+} g_aHaltMethods[] =
+{
+    { VMHALTMETHOD_OLD,     NULL,                   NULL,                   vmR3HaltOldDoHalt,      vmR3DefaultWait,        vmR3DefaultNotifyFF },
+    { VMHALTMETHOD_1,       vmR3HaltMethod1Init,    NULL,                   vmR3HaltMethod1DoHalt,  vmR3DefaultWait,        vmR3DefaultNotifyFF },
+  //{ VMHALTMETHOD_2,       vmR3HaltMethod2Init,    vmR3HaltMethod2Term,    vmR3HaltMethod2DoWait,  vmR3HaltMethod2Wait,    vmR3HaltMethod2NotifyFF },
+};
+
+
+/**
+ * Notify the emulation thread (EMT) about pending Forced Action (FF).
+ *
+ * This function is called by thread other than EMT to make
+ * sure EMT wakes up and promptly service an FF request.
+ *
+ * @param   pVM             VM handle.
+ * @param   fNotifiedREM    Set if REM have already been notified. If clear the
+ *                          generic REMR3NotifyFF() method is called.
+ */
+VMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM)
+{
+    LogFlow(("VMR3NotifyFF:\n"));
+    g_aHaltMethods[pVM->vm.s.iHaltMethod].pfnNotifyFF(pVM, fNotifiedREM);
 }
 
 
@@ -554,13 +679,7 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
     /*
      * Do the halt.
      */
-#if 1
-    int rc = vmR3WaitHaltedOld(pVM, fMask);
-#elif 0 /* work in progress */
-    int rc = vmR3WaitHaltedMethod1(pVM, fMask, u64Now);
-#else
-# error "misconfigured halt"
-#endif
+    int rc = g_aHaltMethods[pVM->vm.s.iHaltMethod].pfnHalt(pVM, fMask, u64Now);
 
     /*
      * Resume the yielder and tell the world we're not blocking.
@@ -596,35 +715,79 @@ VMR3DECL(int) VMR3Wait(PVM pVM)
         return VINF_SUCCESS;
     }
 
-    int rc = VINF_SUCCESS;
-    ASMAtomicXchgU32(&pVM->vm.s.fWait, 1);
-    for (;;)
-    {
-        /*
-         * Check Relevant FFs.
-         */
-        if (VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK))
-            break;
-
-        /*
-         * Wait for a while. Someone will wake us up or interrupt the call if
-         * anything needs our attention.
-         */
-        rc = RTSemEventWait(pVM->vm.s.EventSemWait, 1000);
-        if (rc == VERR_TIMEOUT)
-            rc = VINF_SUCCESS;
-        else if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("RTSemEventWait->%Vrc\n", rc));
-            VM_FF_SET(pVM, VM_FF_TERMINATE);
-            rc = VERR_INTERNAL_ERROR;
-            break;
-        }
-
-    }
-    ASMAtomicXchgU32(&pVM->vm.s.fWait, 0);
-
+    /*
+     * Do waiting according to the halt method (so VMR3NotifyFF
+     * doesn't have to special case anything).
+     */
+    int rc = g_aHaltMethods[pVM->vm.s.iHaltMethod].pfnWait(pVM);
     LogFlow(("VMR3Wait: returns %Vrc (FF %#x)\n", rc, pVM->fForcedActions));
     return rc;
+}
+
+
+/**
+ * Changes the halt method.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   enmHaltMethod   The new halt method.
+ * @thread  EMT.
+ */
+int vmR3SetHaltMethod(PVM pVM, VMHALTMETHOD enmHaltMethod)
+{
+    VM_ASSERT_EMT(pVM);
+    AssertReturn(enmHaltMethod > VMHALTMETHOD_INVALID && enmHaltMethod < VMHALTMETHOD_END, VERR_INVALID_PARAMETER);
+
+    /*
+     * Resolve default (can be overridden in the configuration).
+     */
+    if (enmHaltMethod == VMHALTMETHOD_DEFAULT)
+    {
+        uint32_t u32;
+        int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "VM"), "HaltMethod", &u32);
+        if (VBOX_SUCCESS(rc))
+        {
+            enmHaltMethod = (VMHALTMETHOD)u32;
+            if (enmHaltMethod <= VMHALTMETHOD_INVALID || enmHaltMethod >= VMHALTMETHOD_END)
+                return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Invalid VM/HaltMethod value %d."), enmHaltMethod);
+        }
+        else if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_CHILD_NOT_FOUND)
+            return VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to Query VM/HaltMethod as uint32_t."));
+        else
+            enmHaltMethod = VMHALTMETHOD_OLD;
+            //enmHaltMethod = VMHALTMETHOD_1;
+    }
+
+    /*
+     * Find the descriptor.
+     */
+    unsigned i = 0;
+    while (     i < RT_ELEMENTS(g_aHaltMethods)
+           &&   g_aHaltMethods[i].enmHaltMethod != enmHaltMethod)
+        i++;
+    AssertReturn(i < RT_ELEMENTS(g_aHaltMethods), VERR_INVALID_PARAMETER);
+
+    /*
+     * Terminate the old one.
+     */
+    if (    pVM->vm.s.enmHaltMethod != VMHALTMETHOD_INVALID
+        &&  g_aHaltMethods[pVM->vm.s.iHaltMethod].pfnTerm)
+    {
+        g_aHaltMethods[pVM->vm.s.iHaltMethod].pfnTerm(pVM);
+        pVM->vm.s.enmHaltMethod = VMHALTMETHOD_INVALID;
+    }
+
+    /*
+     * Init the new one.
+     */
+    memset(&pVM->vm.s.Halt, 0, sizeof(pVM->vm.s.Halt));
+    if (g_aHaltMethods[i].pfnInit)
+    {
+        int rc = g_aHaltMethods[i].pfnInit(pVM);
+        AssertRCReturn(rc, rc);
+    }
+    pVM->vm.s.enmHaltMethod = enmHaltMethod;
+    ASMAtomicXchgU32(&pVM->vm.s.iHaltMethod, i);
+    return VINF_SUCCESS;
 }
 
