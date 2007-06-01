@@ -30,6 +30,7 @@ include $(PATH_SUB_CURRENT)/Storage/testcase/Makefile.kmk
 
 # Subdirs with complex makefiles.
 SUBDIRS_LIBRARIES = PC/Etherboot-src
+SUBDIRS_CLEAN     = PC/Etherboot-src
 
 #
 # Main targets.

@@ -1203,7 +1203,8 @@ OTHER_CLEAN += \
 	$(PATH_VBox-xpcom-string)/idl_ts \
 	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(IDLFILES)))) \
 	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.xpt,$(IDLFILES)))) \
-	$(addprefix $(VBOX_PATH_SDK)/idl/,$(notdir $(IDLFILES)))
+	$(addprefix $(VBOX_PATH_SDK)/idl/,$(notdir $(IDLFILES))) \
+	$(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(IDLFILES))))
 
 
 # generate rules
