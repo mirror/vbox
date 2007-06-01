@@ -137,6 +137,8 @@ typedef nsIID   IID;
 #define E_POINTER           NS_ERROR_NULL_POINTER
 #define E_ABORT             NS_ERROR_ABORT
 #define E_FAIL              NS_ERROR_FAILURE
+/* Note: a better analog for E_ACCESSDENIED would probably be
+ * NS_ERROR_NOT_AVAILABLE, but we want binary compatibility for now. */
 #define E_ACCESSDENIED      ((nsresult) 0x80070005L)
 
 #define STDMETHOD(a) NS_IMETHOD a

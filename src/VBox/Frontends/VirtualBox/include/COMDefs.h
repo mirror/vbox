@@ -27,6 +27,15 @@
 #ifndef __COMDefs_h__
 #define __COMDefs_h__
 
+
+/* Both VBox/com/assert.h and qglobal.h contain a definition of ASSERT.
+ * Either of them can be already included here, so try to shut them up.  */
+#undef ASSERT
+
+#include <VBox/com/com.h>
+
+#undef ASSERT
+
 #include <qglobal.h>
 #include <qstring.h>
 #include <quuid.h>
@@ -34,115 +43,34 @@
 #include <iprt/memory> // for auto_copy_ptr
 
 /*
- * common COM / XPCOM includes and defines
+ * Additional COM / XPCOM defines and includes
  */
 
-#if defined(Q_OS_WIN32)
+#define IN_BSTRPARAM    INPTR BSTR
+#define IN_GUIDPARAM    INPTR GUIDPARAM
 
-    #include <objbase.h>
-    /* for _ATL_IIDOF */
-    #include <atldef.h>
+#if !defined (VBOX_WITH_XPCOM)
 
-    #include <VBox/types.h>
+#else /* !defined (VBOX_WITH_XPCOM) */
 
-    /* these are XPCOM only */
-    #define NS_DECL_ISUPPORTS
+#include <nsXPCOM.h>
+#include <nsMemory.h>
+#include <nsIComponentManager.h>
 
-    /* makes interface getter/setter names (n must be capitalized) */
-    #define COMGETTER(n)    get_##n
-    #define COMSETTER(n)    put_##n
+class XPCOMEventQSocketListener;
 
-    #define IN_BSTRPARAM    BSTR
-    #define IN_GUIDPARAM    GUID
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
-    /* const reference to IID of the interface */
-    #define COM_IIDOF(I)    _ATL_IIDOF (I)
-
-#else
-
-    #include <VBox/types.h>
-
-    #include <nsMemory.h>
-    #include <nsIComponentManager.h>
-    #include <ipcIDConnectService.h>
-
-    class nsIComponentManager;
-    class nsIEventQueue;
-    class ipcIDConnectService;
-
-    typedef nsCID   CLSID;
-    typedef nsIID   IID;
-
-    class XPCOMEventQSocketListener;
-
-    #define STDMETHOD(a) NS_IMETHOD a
-    #define STDMETHODIMP NS_IMETHODIMP
-
-    #define HRESULT     nsresult
-    #define SUCCEEDED   NS_SUCCEEDED
-    #define FAILED      NS_FAILED
-
-    /// @todo error code mappings
-    #define S_OK            NS_OK
-    #define E_UNEXPECTED    (HRESULT)0x8000FFFFL
-    #define E_NOTIMPL       (HRESULT)0x80004001L
-    #define E_OUTOFMEMORY   (HRESULT)0x8007000EL
-    #define E_INVALIDARG    (HRESULT)0x80070057L
-    #define E_NOINTERFACE   (HRESULT)0x80004002L
-    #define E_POINTER       (HRESULT)0x80004003L
-    #define E_HANDLE        (HRESULT)0x80070006L
-    #define E_ABORT         (HRESULT)0x80004004L
-    #define E_FAIL          (HRESULT)0x80004005L
-    #define E_ACCESSDENIED  (HRESULT)0x80070005L
-
-    #define IUnknown    nsISupports
-
-    #define BOOL        PRBool
-    #define BYTE        PRUint8
-    #define SHORT       PRInt16
-    #define USHORT      PRUint16
-    #define LONG        PRInt32
-    #define ULONG       PRUint32
-    #define LONG64      PRInt64
-    #define ULONG64     PRUint64
-
-    #define BSTR        PRUnichar*
-    #define LPBSTR      BSTR*
-    #define OLECHAR     wchar_t
-    #define GUID        nsID
-
-    #define IN_BSTRPARAM    const BSTR
-    #define IN_GUIDPARAM    const nsID &
-
-    /* makes interface getter/setter names (n must be capitalized) */
-    #define COMGETTER(n)    Get##n
-    #define COMSETTER(n)    Set##n
-
-    /* const reference to IID of the interface */
-    #define COM_IIDOF(I)    NS_GET_IID (I)
-
-    /* helper functions (defined in the Runtime3 library) */
-    extern "C" {
-        BSTR SysAllocString (const OLECHAR* sz);
-        BSTR SysAllocStringByteLen (char *psz, unsigned int len);
-        BSTR SysAllocStringLen (const OLECHAR *pch, unsigned int cch);
-        void SysFreeString (BSTR bstr);
-        int SysReAllocString (BSTR *pbstr, const OLECHAR *psz);
-        int SysReAllocStringLen (BSTR *pbstr, const OLECHAR *psz, unsigned int cch);
-        unsigned int SysStringByteLen (BSTR bstr);
-        unsigned int SysStringLen (BSTR bstr);
-    }
-
-#endif
 
 /* VirtualBox interfaces declarations */
-#if defined(Q_OS_WIN32)
+#if !defined (VBOX_WITH_XPCOM)
     #include <VirtualBox.h>
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
     #include <VirtualBox_XPCOM.h>
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
 #include "VBoxDefs.h"
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -216,20 +144,27 @@ public:
     static HRESULT initializeCOM();
     static HRESULT cleanupCOM();
 
+#if !defined (VBOX_WITH_XPCOM)
+
     /** Converts a GUID value to QUuid */
-#if defined (Q_OS_WIN32)
-    static QUuid toQUuid (const GUID &id) {
+    static QUuid toQUuid (const GUID &id)
+    {
         return QUuid (id.Data1, id.Data2, id.Data3,
                       id.Data4[0], id.Data4[1], id.Data4[2], id.Data4[3],
                       id.Data4[4], id.Data4[5], id.Data4[6], id.Data4[7]);
     }
-#else
-    static QUuid toQUuid (const nsID &id) {
+
+#else /* !defined (VBOX_WITH_XPCOM) */
+
+    /** Converts a GUID value to QUuid */
+    static QUuid toQUuid (const nsID &id)
+    {
         return QUuid (id.m0, id.m1, id.m2,
                       id.m3[0], id.m3[1], id.m3[2], id.m3[3],
                       id.m3[4], id.m3[5], id.m3[6], id.m3[7]);
     }
-#endif
+
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
     /**
      *  Returns the result code of the last interface method called
@@ -250,27 +185,27 @@ protected:
     /* no arbitrary instance creations */
     COMBase() : mRC (S_OK) {};
 
-#if !defined (Q_OS_WIN32)
-    static nsIComponentManager *gComponentManager;
-    static nsIEventQueue* gEventQ;
-    static ipcIDConnectService *gDConnectService;
-    static PRUint32 gVBoxServerID;
-
-    static XPCOMEventQSocketListener *gSocketListener;
+#if defined (VBOX_WITH_XPCOM)
+    static XPCOMEventQSocketListener *sSocketListener;
 #endif
 
     /** Adapter to pass QString as input BSTR params */
     class BSTRIn
     {
     public:
+
         BSTRIn (const QString &s) : bstr (SysAllocString ((const OLECHAR *) s.ucs2())) {}
-        ~BSTRIn() {
+
+        ~BSTRIn()
+        {
             if (bstr)
                 SysFreeString (bstr);
         }
+
         operator BSTR() const { return bstr; }
 
     private:
+
         BSTR bstr;
     };
 
@@ -278,16 +213,21 @@ protected:
     class BSTROut
     {
     public:
+
         BSTROut (QString &s) : str (s), bstr (0) {}
-        ~BSTROut() {
+
+        ~BSTROut()
+        {
             if (bstr) {
                 str = QString::fromUcs2 (bstr);
                 SysFreeString (bstr);
             }
         }
+
         operator BSTR *() { return &bstr; }
 
     private:
+
         QString &str;
         BSTR bstr;
     };
@@ -297,45 +237,53 @@ protected:
     class ENUMOut
     {
     public:
+
         ENUMOut (CE &e) : ce (e), ve ((VE) 0) {}
         ~ENUMOut() { ce = (CE) ve; }
         operator VE *() { return &ve; }
 
     private:
+
         CE &ce;
         VE ve;
     };
 
-#if defined (Q_OS_WIN32)
+#if !defined (VBOX_WITH_XPCOM)
 
     /** Adapter to pass QUuid as input GUID params */
-    GUID GUIDIn (const QUuid &uuid) const { return uuid; }
+    static GUID GUIDIn (const QUuid &uuid) { return uuid; }
 
     /** Adapter to pass QUuid as output GUID params */
     class GUIDOut
     {
     public:
-        GUIDOut (QUuid &id) : uuid (id) {
+
+        GUIDOut (QUuid &id) : uuid (id)
+        {
             ::memset (&guid, 0, sizeof (GUID));
         }
-        ~GUIDOut() {
+
+        ~GUIDOut()
+        {
             uuid = QUuid (
                 guid.Data1, guid.Data2, guid.Data3,
                 guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-                guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]
-            );
+                guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
         }
+
         operator GUID *() { return &guid; }
 
     private:
+
         QUuid &uuid;
         GUID guid;
     };
 
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
 
     /** Adapter to pass QUuid as input GUID params */
-    static const nsID &GUIDIn (const QUuid &uuid) {
+    static const nsID &GUIDIn (const QUuid &uuid)
+    {
         return *(const nsID *) &uuid;
     }
 
@@ -343,25 +291,30 @@ protected:
     class GUIDOut
     {
     public:
+
         GUIDOut (QUuid &id) : uuid (id), nsid (0) {}
-        ~GUIDOut() {
-            if (nsid) {
+
+        ~GUIDOut()
+        {
+            if (nsid)
+            {
                 uuid = QUuid (
                     nsid->m0, nsid->m1, nsid->m2,
                     nsid->m3[0], nsid->m3[1], nsid->m3[2], nsid->m3[3],
-                    nsid->m3[4], nsid->m3[5], nsid->m3[6], nsid->m3[7]
-                );
+                    nsid->m3[4], nsid->m3[5], nsid->m3[6], nsid->m3[7]);
                 nsMemory::Free (nsid);
             }
         }
+
         operator nsID **() { return &nsid; }
 
     private:
+
         QUuid &uuid;
         nsID *nsid;
     };
 
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
     void fetchErrorInfo (IUnknown * /*callee*/, const GUID * /*calleeIID*/) const {}
 
@@ -393,7 +346,8 @@ protected:
     /* no arbitrary instance creations */
     COMBaseWithEI() : COMBase () {};
 
-    void fetchErrorInfo (IUnknown *callee, const GUID *calleeIID) const {
+    void fetchErrorInfo (IUnknown *callee, const GUID *calleeIID) const
+    {
         mErrInfo.fetchFromCurrentThread (callee, calleeIID);
     }
 
@@ -483,22 +437,21 @@ public:
         AssertMsg (!mIface, ("Instance is already non-NULL\n"));
         if (!mIface)
         {
-#if defined (Q_OS_WIN32)
+#if !defined (VBOX_WITH_XPCOM)
+
             B::mRC = CoCreateInstance (clsid, NULL, CLSCTX_ALL,
-                                       _ATL_IIDOF (I), (void**) &mIface);
-#else
-            /* first, try to create an instance within the in-proc server
-             * (for compatibility with Win32) */
-            B::mRC = B::gComponentManager->
-                CreateInstance (clsid, nsnull, NS_GET_IID (I), (void**) &mIface);
-            if (FAILED (B::mRC) && B::gDConnectService && B::gVBoxServerID)
-            {
-                /* now try the out-of-proc server if it exists */
-                B::mRC = B::gDConnectService->
-                    CreateInstance (B::gVBoxServerID, clsid,
-                                    NS_GET_IID (I), (void**) &mIface);
-            }
-#endif
+                                       _ATL_IIDOF (I), (void **) &mIface);
+
+#else /* !defined (VBOX_WITH_XPCOM) */
+
+            nsCOMPtr <nsIComponentManager> manager;
+            B::mRC = NS_GetComponentManager (getter_AddRefs (manager));
+            if (SUCCEEDED (B::mRC))
+                B::mRC = manager->CreateInstance (clsid, nsnull, NS_GET_IID (I),
+                                                  (void **) &mIface);
+
+#endif /* !defined (VBOX_WITH_XPCOM) */
+
             /* fetch error info, but don't assert if it's missing -- many other
              * reasons can lead to an error (w/o providing error info), not only
              * the instance initialization code (that should always provide it) */
@@ -523,11 +476,11 @@ public:
         mIface = NULL;
         B::mRC = S_OK;
         if (i)
-#if defined (Q_OS_WIN32)
-            B::mRC = i->QueryInterface (_ATL_IIDOF (I), (void**) &mIface);
-#else
-            B::mRC = i->QueryInterface (NS_GET_IID (I), (void**) &mIface);
-#endif
+#if !defined (VBOX_WITH_XPCOM)
+            B::mRC = i->QueryInterface (_ATL_IIDOF (I), (void **) &mIface);
+#else /* !defined (VBOX_WITH_XPCOM) */
+            B::mRC = i->QueryInterface (NS_GET_IID (I), (void **) &mIface);
+#endif /* !defined (VBOX_WITH_XPCOM) */
         release (old_iface);
     };
 
@@ -574,45 +527,52 @@ public:
     {
         mIface = NULL;
         if (that.mIface)
-#if defined (Q_OS_WIN32)
+#if !defined (VBOX_WITH_XPCOM)
             mRC = that.mIface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &mIface);
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
             mRC = that.mIface->QueryInterface (NS_GET_IID (IUnknown), (void**) &mIface);
-#endif
-        if (SUCCEEDED (mRC)) {
+#endif /* !defined (VBOX_WITH_XPCOM) */
+        if (SUCCEEDED (mRC))
+        {
             mRC = that.lastRC();
             mErrInfo = that.errorInfo();
         }
     }
+
     /* specialization for CUnknown */
-    CUnknown (const CUnknown &that) : CInterface <IUnknown, COMBaseWithEI> () {
+    CUnknown (const CUnknown &that) : CInterface <IUnknown, COMBaseWithEI> ()
+    {
         mIface = that.mIface;
         addref (mIface);
         COMBaseWithEI::operator= (that);
     }
 
     template <class C>
-    CUnknown &operator= (const C &that) {
+    CUnknown &operator= (const C &that)
+    {
         /* be aware of self (from COM point of view) assignment */
         IUnknown *old_iface = mIface;
         mIface = NULL;
         mRC = S_OK;
-#if defined (Q_OS_WIN32)
+#if !defined (VBOX_WITH_XPCOM)
         if (that.mIface)
             mRC = that.mIface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &mIface);
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
         if (that.mIface)
             mRC = that.mIface->QueryInterface (NS_GET_IID (IUnknown), (void**) &mIface);
-#endif
-        if (SUCCEEDED (mRC)) {
+#endif /* !defined (VBOX_WITH_XPCOM) */
+        if (SUCCEEDED (mRC))
+        {
             mRC = that.lastRC();
             mErrInfo = that.errorInfo();
         }
         release (old_iface);
         return *this;
     }
+
     /* specialization for CUnknown */
-    CUnknown &operator= (const CUnknown &that) {
+    CUnknown &operator= (const CUnknown &that)
+    {
         attach (that.mIface);
         COMBaseWithEI::operator= (that);
         return *this;

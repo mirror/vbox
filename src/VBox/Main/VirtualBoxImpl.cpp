@@ -39,7 +39,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <VBox/err.h>
+
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
@@ -47,11 +47,15 @@
 #include <iprt/uuid.h>
 #include <iprt/thread.h>
 #include <iprt/process.h>
+
+#include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/VBoxHDD.h>
 #include <VBox/VBoxHDD-new.h>
 #include <VBox/ostypes.h>
 #include <VBox/version.h>
+
+#include <VBox/com/com.h>
 
 #include <algorithm>
 #include <set>
@@ -60,12 +64,7 @@
 // defines
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef __DARWIN__
-#define VBOXCONFIGDIR        "Library/VirtualBox"
-#else
-#define VBOXCONFIGDIR        ".VirtualBox"
-#endif 
-#define VBOXCONFIGGLOBALFILE "VirtualBox.xml"
+#define VBOX_GLOBAL_SETTINGS_FILE "VirtualBox.xml"
 
 // globals
 /////////////////////////////////////////////////////////////////////////////
@@ -137,53 +136,17 @@ HRESULT VirtualBox::init()
         sVersion = VBOX_VERSION_STRING;
     LogFlowThisFunc (("Version: %ls\n", sVersion.raw()));
 
-    int vrc = VINF_SUCCESS;
-    char buf [RTPATH_MAX];
-
-    /*
-     *  Detect the VirtualBox home directory. Note that the code below must
-     *  be in sync with the appropriate code in Logging.cpp
-     *  (MainReleaseLoggerInit()).
-     */
-    {
-        /* check if an alternative VBox Home directory is set */
-        const char *vboxUserHome = getenv ("VBOX_USER_HOME");
-        if (vboxUserHome)
-        {
-            /* get the full path name */
-            vrc = RTPathAbs (vboxUserHome, buf, sizeof (buf));
-            if (VBOX_FAILURE (vrc))
-                return setError (E_FAIL,
-                    tr ("Invalid home directory file path '%s' (%Vrc)"),
-                    vboxUserHome, vrc);
-            unconst (mData.mHomeDir) = buf;
-        }
-        else
-        {
-            /* compose the config directory (full path) */
-            RTPathUserHome (buf, sizeof (buf));
-            unconst (mData.mHomeDir) = Utf8StrFmt ("%s%c%s", buf,
-                                                   RTPATH_DELIMITER,
-                                                   VBOXCONFIGDIR);
-        }
-
-        /* ensure the home directory exists */
-        if (!RTDirExists (mData.mHomeDir))
-        {
-            vrc = RTDirCreateFullPath (mData.mHomeDir, 0777);
-            if (VBOX_FAILURE (vrc))
-            {
-                return setError (E_FAIL,
-                    tr ("Could not create the VirtualBox home directory '%s'"
-                        "(%Vrc)"),
-                    mData.mHomeDir.raw(), vrc);
-            }
-        }
-    }
+    /* Get the VirtualBox home directory. */
+    int vrc = com::GetVBoxUserHomeDirectory (unconst (mData.mHomeDir));
+    if (VBOX_FAILURE (vrc))
+        return setError (E_FAIL,
+            tr ("Could not create the VirtualBox home directory '%s'"
+                "(%Vrc)"),
+            mData.mHomeDir.raw(), vrc);
 
     /* compose the global config file name (always full path) */
     Utf8StrFmt vboxConfigFile ("%s%c%s", mData.mHomeDir.raw(),
-                               RTPATH_DELIMITER, VBOXCONFIGGLOBALFILE);
+                               RTPATH_DELIMITER, VBOX_GLOBAL_SETTINGS_FILE);
 
     /* store the config file name */
     unconst (mData.mCfgFile.mName) = vboxConfigFile;

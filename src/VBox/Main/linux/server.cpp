@@ -22,18 +22,17 @@
 #include <ipcIService.h>
 #include <ipcCID.h>
 
-#include <nsIServiceManager.h>
 #include <nsIComponentRegistrar.h>
 
 #include <nsXPCOMGlue.h>
 #include <nsEventQueueUtils.h>
 
-// for NS_InitXPCOM2 with bin dir parameter
-#include <nsEmbedString.h>
-#include <nsIFile.h>
-#include <nsILocalFile.h>
+// for nsMyFactory
+#include <nsIGenericFactory.h>
+#include <nsIClassInfo.h>
 
 #include "linux/server.h"
+
 #include "Logging.h"
 
 #include <iprt/runtime.h>
@@ -44,9 +43,7 @@
 #include <VBox/param.h>
 #include <VBox/version.h>
 
-// for nsMyFactory
-#include "nsIGenericFactory.h"
-#include "nsIClassInfo.h"
+#include <VBox/com/com.h>
 
 #include <stdio.h>
 
@@ -1072,57 +1069,18 @@ int main (int argc, char **argv)
 
     do
     {
-        XPCOMGlueStartup (nsnull);
-
-        char path [RTPATH_MAX];
-        path [0] = '\0';
-
-        nsCOMPtr<nsIFile> nsAppPath;
-        {
-            /* get the path to the executable */
-            char *appPath = NULL;
-#if defined (DEBUG)
-            appPath = getenv ("VIRTUALBOX_APP_HOME");
-            if (appPath)
-                RTPathReal (appPath, path, RTPATH_MAX);
-            else
-#endif
-                RTPathProgram (path, RTPATH_MAX);
-            appPath = path;
-
-            nsCOMPtr<nsILocalFile> file;
-            rc = NS_NewNativeLocalFile (nsEmbedCString (appPath),
-                                        PR_FALSE, getter_AddRefs (file));
-            if (NS_SUCCEEDED (rc))
-                nsAppPath = do_QueryInterface (file, &rc);
-        }
+        rc = com::Initialize();
         if (NS_FAILED (rc))
         {
-            printf ("ERROR: Failed to create file object! (rc=%08X)\n", rc);
+            printf ("ERROR: Failed to initialize XPCOM! (rc=%08X)\n", rc);
             break;
         }
 
-        /* not really necessary at the moment */
-#if 0
-        if (!RTProcGetExecutableName (path, sizeof (path)))
+        nsCOMPtr <nsIComponentRegistrar> registrar;
+        rc = NS_GetComponentRegistrar (getter_AddRefs (registrar));
+        if (NS_FAILED (rc))
         {
-            printf ("ERROR: Failed to get executable name!\n");
-            break;
-        }
-#endif
-
-        nsCOMPtr<nsIServiceManager> servMan;
-        NS_InitXPCOM2 (getter_AddRefs (servMan), nsAppPath, nsnull);
-        if (!servMan)
-        {
-            printf ("ERROR: Failed to get service manager!\n");
-            break;
-        }
-
-        nsCOMPtr<nsIComponentRegistrar> registrar = do_QueryInterface (servMan);
-        if (!registrar)
-        {
-            printf ("ERROR: Failed to get component registrar!\n");
+            printf ("ERROR: Failed to get component registrar! (rc=%08X)\n", rc);
             break;
         }
 
@@ -1228,30 +1186,29 @@ int main (int argc, char **argv)
             gEventQ->HandleEvent (ev);
         }
 
-        gIpcServ->RemoveName (path);
+        gIpcServ->RemoveName (VBOXSVC_IPC_NAME);
 
-        // stop accepting new events
+        /* stop accepting new events */
         gEventQ->StopAcceptingEvents();
-        // process any remaining events
+
+        /* process any remaining events */
         gEventQ->ProcessPendingEvents();
 
         printf ("Terminated event loop.\n");
-
     }
     while (0); // this scopes the nsCOMPtrs
 
     NS_IF_RELEASE (gIpcServ);
     NS_IF_RELEASE (gEventQ);
 
-    // no nsCOMPtrs are allowed to be alive when you call NS_ShutdownXPCOM
-    LogFlowFunc (("Calling NS_ShutdownXPCOM()...\n"));
-    rc = NS_ShutdownXPCOM (nsnull);
-    LogFlowFunc (("Finished NS_ShutdownXPCOM() (rc=%08X)\n", rc));
+    /* no nsCOMPtrs are allowed to be alive when you call com::Shutdown(). */
+
+    LogFlowFunc (("Calling com::Shutdown()...\n"));
+    rc = com::Shutdown();
+    LogFlowFunc (("Finished com::Shutdown() (rc=%08X)\n", rc));
 
     if (NS_FAILED (rc))
         printf ("ERROR: Failed to shutdown XPCOM! (rc=%08X)\n", rc);
-
-    XPCOMGlueShutdown();
 
     printf ("XPCOM server has shutdown.\n");
 

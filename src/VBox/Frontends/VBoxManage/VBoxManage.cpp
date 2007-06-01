@@ -6073,15 +6073,8 @@ static int handleUpdateSettings (int argc, char *argv[])
     }
     else
     {
-        // check if an alternative VBox Home directory is set
-        Utf8Str homeDir = getenv ("VBOX_USER_HOME");
-        if (!homeDir)
-        {
-            // compose the config directory (full path)
-            char home [RTPATH_MAX];
-            RTPathUserHome (home, RTPATH_MAX);
-            homeDir = Utf8StrFmt ("%s%c%s", home, RTPATH_DELIMITER, ".VirtualBox");
-        }
+        Utf8Str homeDir;
+        GetVBoxUserHomeDirectory (homeDir);
 
         RTPrintf ("Updating settings files in the following VirtualBox Home Directory:\n"
                   "\n    %s\n\n", homeDir.raw());

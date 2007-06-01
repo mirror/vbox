@@ -22,64 +22,31 @@
 
 #include "COMDefs.h"
 
-#if defined (Q_OS_WIN32)
+#if !defined (VBOX_WITH_XPCOM)
 
-// for CComPtr/CComQIPtr
-#include <atlcomcli.h>
-#include <VBox/com/assert.h>
-
-#else // !defined (Q_OS_WIN32)
+#else /* !defined (VBOX_WITH_XPCOM) */
 
 #include <qobject.h>
-#include <qapplication.h>
-#include <qfile.h>
 #include <qsocketnotifier.h>
-#ifdef DEBUG
-    #include <qfileinfo.h>
-#endif
 
-#include <nsXPCOMGlue.h>
-#include <nsIServiceManager.h>
-#include <nsIComponentRegistrar.h>
-// for NS_InitXPCOM2 with bin dir parameter
-#include <nsEmbedString.h>
-#include <nsIFile.h>
-#include <nsILocalFile.h>
-// for dconnect
-#include <ipcIService.h>
-#include <ipcCID.h>
-// XPCOM headers still do not define this, so define by hand
-#define IPC_DCONNECTSERVICE_CONTRACTID \
-    "@mozilla.org/ipc/dconnect-service;1"
-// for event queue management
 #include <nsEventQueueUtils.h>
 #include <nsIEventQueue.h>
-
-// for IID to name resolution
-#include <nsIInterfaceInfo.h>
-#include <nsIInterfaceInfoManager.h>
 
 // for exception fetching
 #include <nsIExceptionService.h>
 
-#undef ASSERT
-#include <VBox/com/assert.h>
 #include <iprt/env.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/err.h>
-
-nsIComponentManager *COMBase::gComponentManager = nsnull;
-nsIEventQueue* COMBase::gEventQ = nsnull;
-ipcIDConnectService *COMBase::gDConnectService = nsnull;
-PRUint32 COMBase::gVBoxServerID = 0;
 
 /* Mac OS X (Carbon mode) and OS/2 will notify the native queue
    internally in plevent.c. Because moc doesn't seems to respect
    #ifdefs, we still have to include the definition of the class.
    very silly. */
 # if !defined (Q_OS_MAC)  && !defined (Q_OS_OS2)
-XPCOMEventQSocketListener *COMBase::gSocketListener = 0;
+XPCOMEventQSocketListener *COMBase::sSocketListener = 0;
+
 # endif
 
 /**
@@ -102,6 +69,11 @@ public:
                           this, SLOT (processEvents()));
     }
 
+    virtual ~XPCOMEventQSocketListener()
+    {
+        delete mNotifier;
+    }
+
 public slots:
 
     void processEvents() { mEventQ->ProcessPendingEvents(); }
@@ -109,10 +81,10 @@ public slots:
 private:
 
     QSocketNotifier *mNotifier;
-    nsIEventQueue *mEventQ;
+    nsCOMPtr <nsIEventQueue> mEventQ;
 };
 
-#endif // !defined (Q_OS_WIN32)
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
 /**
  *  Initializes COM/XPCOM.
@@ -121,175 +93,102 @@ HRESULT COMBase::initializeCOM()
 {
     LogFlowFuncEnter();
 
-#if defined (Q_OS_WIN32)
+    HRESULT rc = S_OK;
+
+#if !defined (VBOX_WITH_XPCOM)
 
     /* disable this damn CoInitialize* somehow made by Qt during
      * creation of the QApplication instance (didn't explore deeply
      * why does it do this) */
     CoUninitialize();
-    CoInitializeEx (NULL, COINIT_MULTITHREADED |
-                          COINIT_DISABLE_OLE1DDE |
-                          COINIT_SPEED_OVER_MEMORY);
 
-    LogFlowFuncLeave();
-    return S_OK;
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
-#else
+    rc = com::Initialize();
 
-    if (gComponentManager)
+#if defined (VBOX_WITH_XPCOM)
+
+#if !defined (__DARWIN__) && !defined (__OS2__)
+
+    if (NS_SUCCEEDED (rc))
     {
-        LogFlowFuncLeave();
-        return S_OK;
-    }
-
-    /*
-     * Set VBOX_XPCOM_HOME if not present like we do in the common glue code.
-     * (XPCOMGlueStartup will query this.)
-     */
-    if (!RTEnvExist ("VBOX_XPCOM_HOME"))
-    {
-        /* get the executable path */
-        char szPathProgram [RTPATH_MAX];
-        int rcVBox = RTPathProgram (szPathProgram, sizeof (szPathProgram));
-        if (RT_SUCCESS (rcVBox))
-            RTEnvSet ("VBOX_XPCOM_HOME", szPathProgram);
-    }
-
-    HRESULT rc;
-    XPCOMGlueStartup (nsnull);
-
-    nsCOMPtr <nsIServiceManager> serviceManager;
-
-    /* create a file object containing the path to the executable */
-    QCString appDir;
+        nsCOMPtr <nsIEventQueue> eventQ;
+        rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
+        if (NS_SUCCEEDED (rc))
+        {
 #ifdef DEBUG
-    appDir = getenv ("VIRTUALBOX_APP_HOME");
-    if (!appDir.isNull())
-        appDir = QFile::encodeName (QFileInfo (QFile::decodeName (appDir)).absFilePath());
-    else
+            BOOL isNative = FALSE;
+            eventQ->IsQueueNative (&isNative);
+            AssertMsg (isNative, ("The event queue must be native"));
 #endif
-    appDir = QFile::encodeName (qApp->applicationDirPath());
-    nsCOMPtr <nsILocalFile> lfAppDir;
-    rc = NS_NewNativeLocalFile (nsEmbedCString (appDir.data()), PR_FALSE,
-                                getter_AddRefs (lfAppDir));
-    if (SUCCEEDED (rc))
-    {
-        nsCOMPtr <nsIFile> fAppDir = do_QueryInterface (lfAppDir, &rc);
-        if (SUCCEEDED( rc ))
-        {
-            /* initialize XPCOM and get the service manager */
-            rc = NS_InitXPCOM2 (getter_AddRefs (serviceManager), fAppDir, nsnull);
-        }
-    }
-
-    if (SUCCEEDED (rc))
-    {
-        /* get the registrar */
-        nsCOMPtr <nsIComponentRegistrar> registrar =
-            do_QueryInterface (serviceManager, &rc);
-        if (SUCCEEDED (rc))
-        {
-            /* autoregister components from a component directory */
-            registrar->AutoRegister (nsnull);
-
-            /* get the component manager */
-            rc = registrar->QueryInterface (NS_GET_IID (nsIComponentManager),
-                                            (void**) &gComponentManager);
-            if (SUCCEEDED (rc))
+            BOOL isOnMainThread = FALSE;
+            rc = eventQ->IsOnCurrentThread (&isOnMainThread);
+            if (NS_SUCCEEDED (rc) && isOnMainThread)
             {
-                /* get the main thread's event queue (afaik, the
-                 * dconnect service always gets created upon XPCOM
-                 * startup, so it will use the main (this) thread's
-                 * event queue to receive IPC events) */
-                rc = NS_GetMainEventQ (&gEventQ);
-#ifdef DEBUG
-                BOOL isNative = FALSE;
-                gEventQ->IsQueueNative (&isNative);
-                AssertMsg (isNative, ("The event queue must be native"));
-#endif
-# if !defined (__DARWIN__) && !defined (__OS2__)
-                gSocketListener = new XPCOMEventQSocketListener (gEventQ);
-# endif
-
-/// @todo remove the below code and corresponding variables etc. when
-/// the server autostart feature is finished and well tested.
-///
-//                /* get the IPC service */
-//                 nsCOMPtr <ipcIService> ipcServ =
-//                     do_GetService (IPC_SERVICE_CONTRACTID, serviceManager, &rc);
-//                 if (SUCCEEDED (rc))
-//                 {
-//                     /* get the VirtualBox out-of-proc server ID */
-//                     rc = ipcServ->ResolveClientName ("VirtualBoxServer",
-//                                                      &gVBoxServerID);
-//                     if (SUCCEEDED (rc))
-//                     {
-//                         /* get the DConnect service */
-//                         rc = serviceManager->
-//                             GetServiceByContractID (IPC_DCONNECTSERVICE_CONTRACTID,
-//                                                     NS_GET_IID (ipcIDConnectService),
-//                                                     (void **) &gDConnectService);
-//                     }
-//                 }
+                sSocketListener = new XPCOMEventQSocketListener (eventQ);
             }
         }
     }
 
+#endif
+
+#endif /* defined (VBOX_WITH_XPCOM) */
+
     if (FAILED (rc))
         cleanupCOM();
+
+    AssertComRC (rc);
 
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
     return rc;
 
-#endif
 }
 
 /**
- *  Initializes COM/XPCOM.
+ *  Cleans up COM/XPCOM.
  */
 HRESULT COMBase::cleanupCOM()
 {
     LogFlowFuncEnter();
 
-#if defined (Q_OS_WIN32)
-    CoUninitialize();
-#else
-    if (gComponentManager)
-    {
-        PRBool isOnCurrentThread = true;
-        if (gEventQ)
-            gEventQ->IsOnCurrentThread (&isOnCurrentThread);
+    HRESULT rc = S_OK;
 
-        if (isOnCurrentThread)
+#if defined (VBOX_WITH_XPCOM)
+
+    /* scope the code to make smart references are released before calling
+     * com::Shutdown() */
+    {
+        nsCOMPtr <nsIEventQueue> eventQ;
+        rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
+        if (NS_SUCCEEDED (rc))
         {
-            LogFlowFunc (("Doing cleanup...\n"));
+            BOOL isOnMainThread = FALSE;
+            rc = eventQ->IsOnCurrentThread (&isOnMainThread);
+            if (NS_SUCCEEDED (rc) && isOnMainThread)
+            {
 # if !defined (__DARWIN__) && !defined (__OS2__)
-            if (gSocketListener)
-                delete gSocketListener;
+                if (sSocketListener)
+                {
+                    delete sSocketListener;
+                    sSocketListener = NULL;
+                }
 # endif
-            if (gDConnectService)
-            {
-                gDConnectService->Release();
-                gDConnectService = nsnull;
             }
-            if (gEventQ)
-            {
-                gEventQ->Release();
-                gEventQ = nsnull;
-            }
-            gComponentManager->Release();
-            gComponentManager = nsnull;
-            /* note: gComponentManager = nsnull indicates that we're
-             * cleaned up */
-            NS_ShutdownXPCOM (nsnull);
-            XPCOMGlueShutdown();
         }
     }
-#endif
 
+#endif /* defined (VBOX_WITH_XPCOM) */
+
+    HRESULT rc2 = com::Shutdown();
+    if (SUCCEEDED (rc))
+        rc = rc2;
+
+    AssertComRC (rc);
+
+    LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
-    return S_OK;
+    return rc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -357,7 +256,7 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
 
     HRESULT rc = E_FAIL;
 
-#if defined (__WIN__)
+#if !defined (VBOX_WITH_XPCOM)
 
     if (callee)
     {
@@ -404,7 +303,7 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
         }
     }
 
-#else // !defined (__WIN__)
+#else /* !defined (VBOX_WITH_XPCOM) */
 
     nsCOMPtr <nsIExceptionService> es;
     es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
@@ -457,7 +356,7 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
 
     AssertComRC (rc);
 
-#endif // !defined (__WIN__)
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
     if (callee && calleeIID && mIsBasicAvailable)
     {
@@ -471,63 +370,11 @@ QString COMErrorInfo::getInterfaceNameFromIID (const QUuid &id)
 {
     QString name;
 
-#if defined (__WIN__)
-
-    LONG rc;
-    LPOLESTR iidStr = NULL;
-    if (StringFromIID (id, &iidStr) == S_OK)
-    {
-        HKEY ifaceKey;
-        rc = RegOpenKeyExW (HKEY_CLASSES_ROOT, L"Interface", 0, KEY_QUERY_VALUE, &ifaceKey);
-        if (rc == ERROR_SUCCESS)
-        {
-            HKEY iidKey;
-            rc = RegOpenKeyExW (ifaceKey, iidStr, 0, KEY_QUERY_VALUE, &iidKey);
-            if (rc == ERROR_SUCCESS)
-            {
-                // determine the size and type
-                DWORD sz, type;
-                rc = RegQueryValueExW (iidKey, NULL, NULL, &type, NULL, &sz);
-                if (rc == ERROR_SUCCESS && type == REG_SZ)
-                {
-                    // query the value to BSTR
-                    BSTR bstrName = SysAllocStringLen (NULL, (sz + 1) / sizeof (TCHAR) + 1);
-                    rc = RegQueryValueExW (iidKey, NULL, NULL, NULL, (LPBYTE) bstrName, &sz);
-                    if (rc == ERROR_SUCCESS)
-                    {
-                        name = QString::fromUcs2 (bstrName);
-                    }
-                    SysFreeString (bstrName);
-                }
-                RegCloseKey (iidKey);
-            }
-            RegCloseKey (ifaceKey);
-        }
-        CoTaskMemFree (iidStr);
-    }
-
-#else
-
-    nsresult rv;
-    nsCOMPtr <nsIInterfaceInfoManager> iim =
-        do_GetService (NS_INTERFACEINFOMANAGER_SERVICE_CONTRACTID, &rv);
-    if (NS_SUCCEEDED (rv))
-    {
-        nsCOMPtr <nsIInterfaceInfo> iinfo;
-        rv = iim->GetInfoForIID (&COMBase::GUIDIn (id), getter_AddRefs (iinfo));
-        if (NS_SUCCEEDED (rv))
-        {
-            const char *iname = NULL;
-            iinfo->GetNameShared (&iname);
-            name = QString::fromLocal8Bit (iname);
-        }
-    }
-
-#endif
+    com::GetInterfaceNameByIID (COMBase::GUIDIn (id), COMBase::BSTROut (name));
 
     return name;
 }
 
-#if !defined (Q_OS_WIN32)
+#if defined (VBOX_WITH_XPCOM)
 #include "COMDefs.moc"
 #endif

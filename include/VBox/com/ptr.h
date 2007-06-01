@@ -23,7 +23,7 @@
 #ifndef __VBox_com_ptr_h__
 #define __VBox_com_ptr_h__
 
-#if defined (__WIN__)
+#if !defined (VBOX_WITH_XPCOM)
 
 #include <atlbase.h>
 
@@ -31,7 +31,7 @@
 # define _ATL_IIDOF(c) __uuidof(c)
 #endif 
 
-#else // !defined (__WIN__)
+#else /* !defined (VBOX_WITH_XPCOM) */
 
 #include <nsXPCOM.h>
 #include <nsIComponentManager.h>
@@ -45,7 +45,7 @@
 #define IPC_DCONNECTSERVICE_CONTRACTID \
     "@mozilla.org/ipc/dconnect-service;1"
 
-#endif // !defined (__WIN__)
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
 #include <VBox/com/defs.h>
 #include <VBox/com/assert.h>
@@ -84,13 +84,13 @@ public:
     template <class I>
     class NoAddRefRelease : public I {
         private:
-#ifdef __WIN__
+#if !defined (VBOX_WITH_XPCOM)
             STDMETHOD_(ULONG, AddRef)() = 0;
             STDMETHOD_(ULONG, Release)() = 0;
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
             NS_IMETHOD_(nsrefcnt) AddRef(void) = 0;
             NS_IMETHOD_(nsrefcnt) Release(void) = 0;
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
     };
 
 protected:
@@ -254,16 +254,16 @@ public:
     {
         HRESULT rc;
         I *obj = NULL;
-#if defined (__WIN__)
+#if !defined (VBOX_WITH_XPCOM)
         rc = CoCreateInstance (clsid, NULL, CLSCTX_INPROC_SERVER, _ATL_IIDOF (I),
                                (void **) &obj);
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
         nsCOMPtr <nsIComponentManager> manager;
         rc = NS_GetComponentManager (getter_AddRefs (manager));
         if (SUCCEEDED (rc))
             rc = manager->CreateInstance (clsid, nsnull, NS_GET_IID (I),
                                           (void **) &obj);
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
         *this = obj;
         if (SUCCEEDED (rc))
             obj->Release();
@@ -281,7 +281,7 @@ public:
      */
     HRESULT createLocalObject (const CLSID &clsid)
     {
-#if defined (__WIN__)
+#if !defined (VBOX_WITH_XPCOM)
         HRESULT rc;
         I *obj = NULL;
         rc = CoCreateInstance (clsid, NULL, CLSCTX_LOCAL_SERVER, _ATL_IIDOF (I),
@@ -290,9 +290,9 @@ public:
         if (SUCCEEDED (rc))
             obj->Release();
         return rc;
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
         return createInprocObject (clsid);
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
     }
 
 #ifdef VBOX_WITH_XPCOM
@@ -409,7 +409,7 @@ public:
      */
     HRESULT createObject() {
         HRESULT rc;
-#if defined (__WIN__)
+#if !defined (VBOX_WITH_XPCOM)
 #   ifdef VBOX_COM_OUTOFPROC_MODULE
         CComObjectNoLock <C> *obj = new CComObjectNoLock <C>();
         if (obj) {
@@ -423,14 +423,14 @@ public:
         CComObject <C> *obj = NULL;
         rc = CComObject <C>::CreateInstance (&obj);
 #   endif
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
         CComObject <C> *obj = new CComObject <C>();
         if (obj) {
             rc = obj->FinalConstruct();
         } else {
             rc = E_OUTOFMEMORY;
         }
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
         *this = obj;
         return rc;
     }
