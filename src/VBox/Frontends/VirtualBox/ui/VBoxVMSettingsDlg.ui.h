@@ -34,6 +34,73 @@ extern const char *GUI_FirstRun;
 
 
 /**
+ *  QDialog class reimplementation to use for adding network interface.
+ *  It has one line-edit field for entering network interface's name and
+ *  common dialog's ok/cancel buttons.
+ */
+class VBoxAddNIDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+
+    VBoxAddNIDialog (QWidget *aParent, const QString &aIfaceName) :
+        QDialog (aParent, "VBoxAddNIDialog", true /* modal */),
+        mLeName (0)
+    {
+        setCaption (tr ("Add Host Interface"));
+        QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+
+        /* Setup Input layout */
+        QHBoxLayout *inputLayout = new QHBoxLayout (mainLayout, 10, "inputLayout");
+        QLabel *lbName = new QLabel (tr ("Interface Name"), this);
+        mLeName = new QLineEdit (aIfaceName, this);
+        QWhatsThis::add (mLeName, tr ("Descriptive name of the new network interface"));
+        inputLayout->addWidget (lbName);
+        inputLayout->addWidget (mLeName);
+        connect (mLeName, SIGNAL (textChanged (const QString &)),
+                 this, SLOT (validate()));
+
+        /* Setup Button layout */
+        QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
+        mBtOk = new QPushButton (tr ("&OK"), this, "mBtOk");
+        QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        QPushButton *btCancel = new QPushButton (tr ("Cancel"), this, "btCancel");
+        connect (mBtOk, SIGNAL (clicked()), this, SLOT (accept()));
+        connect (btCancel, SIGNAL (clicked()), this, SLOT (reject()));
+        buttonLayout->addWidget (mBtOk);
+        buttonLayout->addItem (spacer);
+        buttonLayout->addWidget (btCancel);
+
+        /* Validate interface name field */
+        validate();
+    }
+
+    ~VBoxAddNIDialog() {}
+
+    QString getName() { return mLeName->text(); }
+
+private slots:
+
+    void validate()
+    {
+        mBtOk->setEnabled (!mLeName->text().isEmpty());
+    }
+
+private:
+
+    void showEvent (QShowEvent *aEvent)
+    {
+        setFixedHeight (height());
+        QDialog::showEvent (aEvent);
+    }
+
+    QPushButton *mBtOk;
+    QLineEdit *mLeName;
+};
+
+
+/**
  *  Calculates a suitable page step size for the given max value.
  *  The returned size is so that there will be no more than 32 pages.
  *  The minimum returned page size is 4.
@@ -624,10 +691,24 @@ void VBoxVMSettingsDlg::init()
                          "to the host audio card."));
 
     /* Network Page */
+#ifndef Q_WS_WIN
+    gbInterfaceList->setHidden (true);
+#endif
 
-    QVBoxLayout* pageNetworkLayout = new QVBoxLayout (pageNetwork, 0, 10, "pageNetworkLayout");
+    /* setup tab widget */
+    QVBoxLayout* pageNetworkLayout = static_cast<QVBoxLayout*> (pageNetwork->layout());
     tbwNetwork = new QTabWidget (pageNetwork, "tbwNetwork");
-    pageNetworkLayout->addWidget (tbwNetwork);
+    pageNetworkLayout->insertWidget (0, tbwNetwork);
+    tbwNetwork->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
+    mNoInterfaces = tr ("<No suitable interfaces>");
+    /* setup iconsets */
+    pbHostAdd->setIconSet (VBoxGlobal::iconSet ("add_host_iface_16px.png",
+                                                "add_host_iface_disabled_16px.png"));
+    pbHostRemove->setIconSet (VBoxGlobal::iconSet ("remove_host_iface_16px.png",
+                                                   "remove_host_iface_disabled_16px.png"));
+    /* setup languages */
+    QToolTip::add (pbHostAdd, tr ("Add"));
+    QToolTip::add (pbHostRemove, tr ("Remove"));
 
     /* USB Page */
 
@@ -773,7 +854,7 @@ void VBoxVMSettingsDlg::init()
 
     /* Network Page */
 
-    updateInterfaces (0);
+    loadInterfacesList();
 
     /*
      *  update the Ok button state for pages with validation
@@ -877,24 +958,151 @@ void VBoxVMSettingsDlg::updateShortcuts()
     }
 }
 
-
-void VBoxVMSettingsDlg::updateInterfaces (QWidget *aWidget)
+void VBoxVMSettingsDlg::loadInterfacesList()
 {
 #if defined Q_WS_WIN
-    /* clear list */
+    /* clear inner list */
     mInterfaceList.clear();
-    /* write a QStringList of interface names */
+    /* load current inner list */
     CHostNetworkInterfaceEnumerator en =
         vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces().Enumerate();
     while (en.HasMore())
         mInterfaceList += en.GetNext().GetName();
-    if (aWidget)
+    /* save current list item name */
+    QString currentListItemName = lbHostInterface->currentText();
+    /* load current list items */
+    lbHostInterface->clear();
+    if (mInterfaceList.count())
+        lbHostInterface->insertStringList (mInterfaceList);
+    else
+        lbHostInterface->insertItem (mNoInterfaces);
+    /* select current list item */
+    int index = lbHostInterface->index (
+        lbHostInterface->findItem (currentListItemName));
+    if (index == -1)
+        index = 0;
+    lbHostInterface->setCurrentItem (index);
+    lbHostInterface->setSelected (index, true);
+    /* enable/disable interface delete button */
+    pbHostRemove->setEnabled (!mInterfaceList.isEmpty());
+#endif
+}
+
+void VBoxVMSettingsDlg::hostInterfaceAdd()
+{
+#if defined Q_WS_WIN
+
+    /* allow the started helper process to make itself the foreground window */
+    AllowSetForegroundWindow (ASFW_ANY);
+
+    /* search for the max available interface index */
+    int ifaceNumber = 0;
+    QString ifaceName = tr ("VirtualBox Host Interface %1");
+    QRegExp regExp (QString ("^") + ifaceName.arg ("([0-9]+)") + QString ("$"));
+    for (uint index = 0; index < lbHostInterface->count(); ++ index)
     {
-        VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
-        set->revalidate();
+        QString iface = lbHostInterface->text (index);
+        int pos = regExp.search (iface);
+        if (pos != -1)
+            ifaceNumber = regExp.cap (1).toInt() > ifaceNumber ?
+                          regExp.cap (1).toInt() : ifaceNumber;
     }
-#else
-    NOREF (aWidget);
+
+    /* creating add host interface dialog */
+    VBoxAddNIDialog dlg (this, ifaceName.arg (++ ifaceNumber));
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+    QString iName = dlg.getName();
+
+    /* create interface */
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostNetworkInterface iFace;
+    CProgress progress = host.CreateHostNetworkInterface (iName, iFace);
+    if (host.isOk())
+    {
+        vboxProblem().showModalProgressDialog (progress, iName, this);
+        if (progress.GetResultCode() == 0)
+        {
+            /* add&select newly created interface */
+            delete lbHostInterface->findItem (mNoInterfaces);
+            lbHostInterface->insertItem (iName);
+            mInterfaceList += iName;
+            lbHostInterface->setCurrentItem (lbHostInterface->count() - 1);
+            lbHostInterface->setSelected (lbHostInterface->count() - 1, true);
+            for (int index = 0; index < tbwNetwork->count(); ++ index)
+                networkPageUpdate (tbwNetwork->page (index));
+            /* enable interface delete button */
+            pbHostRemove->setEnabled (true);
+        }
+        else
+            vboxProblem().cannotCreateHostInterface (progress, iName, this);
+    }
+    else
+        vboxProblem().cannotCreateHostInterface (host, iName, this);
+
+    /* allow the started helper process to make itself the foreground window */
+    AllowSetForegroundWindow (ASFW_ANY);
+
+#endif
+}
+
+void VBoxVMSettingsDlg::hostInterfaceRemove()
+{
+#if defined Q_WS_WIN
+
+    /* allow the started helper process to make itself the foreground window */
+    AllowSetForegroundWindow (ASFW_ANY);
+
+    /* check interface name */
+    QString iName = lbHostInterface->currentText();
+    if (iName.isEmpty())
+        return;
+
+    /* asking user about deleting selected network interface */
+    int delNetIface = vboxProblem().message (this, VBoxProblemReporter::Question,
+        tr ("<p>Do you want to remove the selected host network interface "
+            "<nobr><b>%1</b>?</nobr></p>"
+            "<p><b>Note:</b> This interface may be in use by one or more "
+            "network adapters of this or another VM. After it is removed, these "
+            "adapters will no longer work until you correct their settings by "
+            "either choosing a different interface name or a different adapter "
+            "attachment type.</p>").arg (iName),
+        0, /* autoConfirmId */
+        QIMessageBox::Ok | QIMessageBox::Default,
+        QIMessageBox::Cancel | QIMessageBox::Escape);
+    if (delNetIface == QIMessageBox::Cancel)
+        return;
+
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostNetworkInterface iFace = host.GetNetworkInterfaces().FindByName (iName);
+    if (host.isOk())
+    {
+        /* delete interface */
+        CProgress progress = host.RemoveHostNetworkInterface (iFace.GetId(), iFace);
+        if (host.isOk())
+        {
+            vboxProblem().showModalProgressDialog (progress, iName, this);
+            if (progress.GetResultCode() == 0)
+            {
+                if (lbHostInterface->count() == 1)
+                {
+                    lbHostInterface->insertItem (mNoInterfaces);
+                    /* disable interface delete button */
+                    pbHostRemove->setEnabled (false);
+                }
+                delete lbHostInterface->findItem (iName);
+                lbHostInterface->setSelected (lbHostInterface->currentItem(), true);
+                mInterfaceList.erase (mInterfaceList.find (iName));
+                for (int index = 0; index < tbwNetwork->count(); ++ index)
+                    networkPageUpdate (tbwNetwork->page (index));
+            }
+            else
+                vboxProblem().cannotRemoveHostInterface (progress, iFace, this);
+        }
+    }
+
+    if (!host.isOk())
+        vboxProblem().cannotRemoveHostInterface (host, iFace, this);
 #endif
 }
 
@@ -902,9 +1110,8 @@ void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 {
     if (!aWidget) return;
 #if defined Q_WS_WIN
-    updateInterfaces (0);
     VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
-    set->loadList (mInterfaceList);
+    set->loadList (mInterfaceList, mNoInterfaces);
     set->revalidate();
 #endif
 }
@@ -1868,7 +2075,7 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
 void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
 {
     VBoxVMNetworkSettings *page = new VBoxVMNetworkSettings();
-    page->loadList (mInterfaceList);
+    page->loadList (mInterfaceList, mNoInterfaces);
     page->getFromAdapter (aAdapter);
     tbwNetwork->addTab (page, QString (tr ("Adapter %1", "network"))
                                        .arg (aAdapter.GetSlot()));
@@ -1883,16 +2090,6 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     connect (page->grbEnabled, SIGNAL (toggled (bool)), wval, SLOT (revalidate()));
     connect (page->cbNetworkAttachment, SIGNAL (activated (const QString &)),
              wval, SLOT (revalidate()));
-
-#if defined Q_WS_WIN
-    connect (page->lbHostInterface, SIGNAL (highlighted (QListBoxItem*)),
-             wval, SLOT (revalidate()));
-    connect (tbwNetwork, SIGNAL (currentChanged (QWidget*)),
-             this, SLOT (networkPageUpdate (QWidget*)));
-    connect (page, SIGNAL (listChanged (QWidget*)),
-             this, SLOT (updateInterfaces (QWidget*)));
-#endif
-
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
     connect (wval, SIGNAL (isValidRequested (QIWidgetValidator *)),
