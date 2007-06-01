@@ -1548,6 +1548,7 @@ ipcDConnectService::DeserializeException(const PRUint8 *data,
       *xcpt = (nsIException *) wrapper->RealInstance();
       NS_ADDREF(wrapper->RealInstance());
       wrapper->Release();
+      rv = NS_OK;
     }
     else
     {
