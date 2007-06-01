@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>InnoTek</source>
+        <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Adrian Łubik</translation>
     </message>
@@ -269,7 +269,7 @@
         <translation>VirtualBox - Edycja OpenSource</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
+        <source>innotek VirtualBox</source>
         <translation></translation>
     </message>
     <message>
@@ -2413,7 +2413,7 @@ Będzie ona używana przez wszystkie produkty VirtualBox, aby zidentyfikować st
         <translation>VirtualBox edycja OpenSource</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
+        <source>innotek VirtualBox</source>
         <translation></translation>
     </message>
     <message>
