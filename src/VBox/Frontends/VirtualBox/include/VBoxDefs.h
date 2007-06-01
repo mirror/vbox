@@ -139,6 +139,9 @@ struct VBoxDefs
         ShellExecuteEventType,
 #endif
         ActivateMenuEventType,
+#if defined (Q_WS_MAC)
+        ShowWindowEventType,
+#endif 
     };
 };
 
