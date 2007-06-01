@@ -120,7 +120,7 @@ DECLASM(int) VBoxDrvInit(const char *pszArgs)
                            "\r\n"
                            "VirtualBox.org Support Driver for OS/2 version " VBOX_VERSION_STRING "\r\n"
                            "Copyright (C) 2007 Knut St. Osmundsen\r\n"
-                           "Copyright (C) 2007 InnoTek Systemberatung GmbH\r\n");
+                           "Copyright (C) 2007 innotek GmbH\r\n");
                     g_cchInitText = strlen(&g_szInitText[0]);
                 }
                 return VINF_SUCCESS;

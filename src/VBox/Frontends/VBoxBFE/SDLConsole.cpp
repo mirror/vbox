@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1218,7 +1218,7 @@ void SDLConsole::updateTitlebar()
 {
     char title[1024];
 
-    strcpy(title, "InnoTek VirtualBox");
+    strcpy(title, "innotek VirtualBox");
 
     if (machineState == VMSTATE_SUSPENDED)
         strcat(title, " - [Paused]");
@@ -1250,7 +1250,7 @@ void SDLConsole::updateTitlebar()
     }
 #endif /* DEBUG */
 
-    SDL_WM_SetCaption(title, "InnoTek VirtualBox");
+    SDL_WM_SetCaption(title, "innotek VirtualBox");
 }
 
 /**
@@ -1261,8 +1261,8 @@ void SDLConsole::updateTitlebarSave(int iPercent)
 {
     char szTitle[256];
     AssertMsg(iPercent >= 0 && iPercent <= 100, ("%d\n", iPercent));
-    RTStrPrintf(szTitle, sizeof(szTitle), "InnoTek VirtualBox - Saving %d%%...", iPercent);
-    SDL_WM_SetCaption(szTitle, "InnoTek VirtualBox");
+    RTStrPrintf(szTitle, sizeof(szTitle), "innotek VirtualBox - Saving %d%%...", iPercent);
+    SDL_WM_SetCaption(szTitle, "innotek VirtualBox");
 }
 
 /**

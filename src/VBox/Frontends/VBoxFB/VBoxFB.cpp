@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     };
 
     printf("VirtualBox DirectFB GUI built %s %s\n"
-           "(C) 2004-2005 InnoTek Systemberatung GmbH\n"
+           "(C) 2004-2007 innotek GmbH\n"
            "(C) 2004-2005 secunet Security Networks AG\n", __DATE__, __TIME__);
 
     RTUuidClear((PRTUUID)&uuid);

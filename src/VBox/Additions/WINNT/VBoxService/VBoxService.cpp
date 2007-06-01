@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,9 +86,9 @@ VOID SvcDebugOut(LPSTR String, DWORD Status)
 int                VBoxClipboardInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
 unsigned __stdcall VBoxClipboardThread  (void *pInstance);
 void               VBoxClipboardDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
-    
+
 /* The service table. */
-static VBOXSERVICEINFO vboxServiceTable[] = 
+static VBOXSERVICEINFO vboxServiceTable[] =
 {
     {
         "Shared Clipboard",
@@ -104,30 +104,30 @@ static VBOXSERVICEINFO vboxServiceTable[] =
 static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
     pEnv->hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    
+
     if (!pEnv->hStopEvent)
     {
         /* Could not create event. */
         return VERR_NOT_SUPPORTED;
     }
-    
+
     while (pTable->pszName)
     {
         SvcDebugOut2 ("Starting %s...\n", pTable->pszName);
-        
+
         int rc = VINF_SUCCESS;
-        
+
         bool fStartThread = false;
-        
+
         pTable->hThread = (HANDLE)0;
         pTable->pInstance = NULL;
         pTable->fStarted = false;
-    
+
         if (pTable->pfnInit)
         {
             rc = pTable->pfnInit (pEnv, &pTable->pInstance, &fStartThread);
         }
-            
+
         if (VBOX_FAILURE (rc))
         {
             SvcDebugOut2 ("Failed to initialize rc = %Vrc.\n", rc);
@@ -137,24 +137,24 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
             if (pTable->pfnThread && fStartThread)
             {
                 unsigned threadid;
-                
+
                 pTable->hThread = (HANDLE)_beginthreadex (NULL,  /* security */
                                                           0,     /* stacksize */
                                                           pTable->pfnThread,
                                                           pTable->pInstance,
                                                           0,     /* initflag */
                                                           &threadid);
-                
+
                 if (pTable->hThread == (HANDLE)(0))
                 {
                     rc = VERR_NOT_SUPPORTED;
                 }
             }
-            
+
             if (VBOX_FAILURE (rc))
             {
                 SvcDebugOut2 ("Failed to start the thread.\n");
-                
+
                 if (pTable->pfnDestroy)
                 {
                     pTable->pfnDestroy (pEnv, pTable->pInstance);
@@ -165,11 +165,11 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
                 pTable->fStarted = true;
             }
         }
-        
+
         /* Advance to next table element. */
         pTable++;
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -179,10 +179,10 @@ static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
     {
         return;
     }
-    
+
     /* Signal to all threads. */
     SetEvent(pEnv->hStopEvent);
-    
+
     while (pTable->pszName)
     {
         if (pTable->fStarted)
@@ -191,23 +191,23 @@ static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
             {
                 /* There is a thread, wait for termination. */
                 WaitForSingleObject(pTable->hThread, INFINITE);
-                
+
                 CloseHandle (pTable->hThread);
                 pTable->hThread = 0;
             }
-            
+
             if (pTable->pfnDestroy)
             {
                 pTable->pfnDestroy (pEnv, pTable->pInstance);
             }
-            
+
             pTable->fStarted = false;
         }
-        
+
         /* Advance to next table element. */
         pTable++;
     }
-    
+
     CloseHandle (pEnv->hStopEvent);
 }
 
@@ -215,9 +215,9 @@ static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 void WINAPI VBoxServiceStart(void)
 {
     SvcDebugOut2("VBoxService: Start\n");
-    
+
     VBOXSERVICEENV svcEnv;
-    
+
     DWORD status = NO_ERROR;
 
     /* open VBox guest driver */
@@ -235,7 +235,7 @@ void WINAPI VBoxServiceStart(void)
     }
 
     SvcDebugOut2("VBoxService: Driver h %p, st %p\n", gVBoxDriver, status);
-    
+
     if (status == NO_ERROR)
     {
         /* create a custom window class */
@@ -248,7 +248,7 @@ void WINAPI VBoxServiceStart(void)
         if (!RegisterClass(&windowClass))
             status = GetLastError();
     }
-    
+
     SvcDebugOut2("VBoxService: Class st %p\n", status);
 
     if (status == NO_ERROR)
@@ -275,7 +275,7 @@ void WINAPI VBoxServiceStart(void)
                          SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
         }
     }
-    
+
     SvcDebugOut2("VBoxService: Window h %p, st %p\n", gToolWindow, status);
 
     if (status == NO_ERROR)
@@ -293,11 +293,11 @@ void WINAPI VBoxServiceStart(void)
      */
     svcEnv.hInstance  = gInstance;
     svcEnv.hDriver    = gVBoxDriver;
-        
+
     if (status == NO_ERROR)
     {
         int rc = vboxStartServices (&svcEnv, vboxServiceTable);
-        
+
         if (VBOX_FAILURE (rc))
         {
             status = ERROR_GEN_FAILURE;
@@ -333,10 +333,10 @@ void WINAPI VBoxServiceStart(void)
     ndata.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     ndata.uCallbackMessage = WM_USER;
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
-    sprintf(ndata.szTip, "InnoTek VirtualBox Guest Additions %d.%d.%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
+    sprintf(ndata.szTip, "innotek VirtualBox Guest Additions %d.%d.%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
 
     SvcDebugOut2("VBoxService: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon);
-    
+
     /*
      * Main execution loop
      * Wait for the stop semaphore to be posted or a window event to arrive
@@ -370,7 +370,7 @@ void WINAPI VBoxServiceStart(void)
         else /* timeout */
         {
             SvcDebugOut2("VBoxService: timed out\n");
-            
+
             /* we might have to repeat this operation because the shell might not be loaded yet */
             if (!fTrayIconCreated)
             {
@@ -391,7 +391,7 @@ void WINAPI VBoxServiceStart(void)
     WaitForSingleObject(hDisplayChangeThread, INFINITE);
 
     vboxStopServices (&svcEnv, vboxServiceTable);
-    
+
     SvcDebugOut("VBoxService: destroying tool window...\n", 0);
 
     /* destroy the tool window */
@@ -503,7 +503,7 @@ VOID DisplayChangeThread(void *dummy)
                 break;
 
             DDCLOG(("VBoxService: checking event\n"));
-            
+
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
             {

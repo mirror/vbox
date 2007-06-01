@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1325,7 +1325,7 @@ void VBoxConsoleWnd::languageChange()
 #ifdef VBOX_OSE
     caption_prefix = tr ("VirtualBox OSE");
 #else
-    caption_prefix = tr ("InnoTek VirtualBox");
+    caption_prefix = tr ("innotek VirtualBox");
 #endif
 
     /*

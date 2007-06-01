@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,7 +72,7 @@
 static const char DefaultGlobalConfig [] =
 {
     "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
-    "<!-- InnoTek VirtualBox Global Configuration -->" RTFILE_LINEFEED
+    "<!-- innotek VirtualBox Global Configuration -->" RTFILE_LINEFEED
     "<VirtualBox xmlns=\"" VBOX_XML_NAMESPACE "\" "
         "version=\"" VBOX_XML_VERSION "-" VBOX_XML_PLATFORM "\">" RTFILE_LINEFEED
     "  <Global>"RTFILE_LINEFEED
@@ -3048,7 +3048,7 @@ findHardDisk (const Guid *aId, const BSTR aLocation,
             {
                 /* locations of VDI and VMDK hard disks for now are just
                  * file paths */
-                found = RTPathCompare (location, 
+                found = RTPathCompare (location,
                                        Utf8Str (hd->toString
                                                 (false /* aShort */))) == 0;
             }

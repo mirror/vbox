@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -111,7 +111,7 @@ public:
             "(empty if native country name is empty)");
 
         QString translatorsName = tratra (aTranslator,
-            "@@@", "InnoTek", "Comma-separated list of translators");
+            "@@@", "innotek", "Comma-separated list of translators");
 
         QString itemName = nativeLanguage;
         QString langName = englishLanguage;
