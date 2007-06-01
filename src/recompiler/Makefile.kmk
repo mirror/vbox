@@ -132,6 +132,9 @@ else # The remaining targets can be using gcc-4 and needs checking.
 endif
 #$(REM_MOD)_SOURCES.os2      = $(PATH_TARGET)/$(REM_MOD).def
 $(REM_MOD)_SOURCES.win.x86  = $(REM_MOD).def
+ifneq ($(REM_MOD),VBoxREM2)
+ $(REM_MOD)_POST_CMDS       = $(VBOX_SIGN_IMAGE_CMDS)
+endif
 
 
 ifdef REM_USE_NOCRT
