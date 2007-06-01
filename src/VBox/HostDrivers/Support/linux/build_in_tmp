@@ -4,7 +4,7 @@
 # Script to build a kernel module in /tmp. Useful if the module sources
 # are installed in read-only directory.
 #
-# Copyright (C) 2007 InnoTek Systemberatung GmbH
+# Copyright (C) 2007 innotek GmbH
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;

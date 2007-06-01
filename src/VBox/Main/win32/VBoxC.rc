@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,14 +40,14 @@ BEGIN
   BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
-    VALUE "CompanyName",     "InnoTek Systemberatung GmbH\0"
-    VALUE "FileDescription", "InnoTek VirtualBox Interface\0"
+    VALUE "CompanyName",     "innotek GmbH\0"
+    VALUE "FileDescription", "innotek VirtualBox Interface\0"
     VALUE "FileVersion",     "1.0.000\0"
     VALUE "InternalName",    "VBOXC\0"
     VALUE "LegalCopyright",  "\0"
     VALUE "LegalTrademarks", "\0"
     VALUE "OriginalFilename","VBOXC.DLL\0"
-    VALUE "ProductName",     "InnoTek VirtualBox\0"
+    VALUE "ProductName",     "innotek VirtualBox\0"
     VALUE "ProductVersion",  "1.0.000\0"
 
     VALUE "OLESelfRegister", ""

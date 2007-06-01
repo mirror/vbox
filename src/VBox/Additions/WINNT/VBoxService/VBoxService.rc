@@ -1,7 +1,7 @@
 /*
  * VBoxService - Guest Additions Service
  *
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,11 +34,11 @@ BEGIN
    BEGIN
       BLOCK "040904b0"
       BEGIN
-         VALUE "CompanyName",      "InnoTek Systemberatung GmbH"
+         VALUE "CompanyName",      "innotek GmbH"
          VALUE "FileDescription",  "VirtualBox Additions Service\0"
          VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
          VALUE "InternalName",     "vboxservice\0"
-         VALUE "LegalCopyright",   "(C) 2004-2007 InnoTek Systemberatung GmbH\0"
+         VALUE "LegalCopyright",   "(C) 2004-2007 innotek GmbH\0"
          VALUE "OriginalFilename", "VBoxService.exe\0"
          VALUE "ProductName",      "VirtualBox Additions Service\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"

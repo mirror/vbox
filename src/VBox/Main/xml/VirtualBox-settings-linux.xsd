@@ -3,9 +3,9 @@
  *  :tabSize=2:indentSize=2:noTabs=true:
  *  :folding=explicit:collapseFolds=1:
  *
- *  InnoTek VirtualBox Settings Schema Version 1.0-linux
+ *  innotek VirtualBox Settings Schema Version 1.0-linux
 
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,8 +30,8 @@
 
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
-    InnoTek VirtualBox Settings Schema Version 1.0-linux.
-    Copyright (c) 2004-2007 InnoTek Systemberatung GmbH.
+    innotek VirtualBox Settings Schema Version 1.0-linux.
+    Copyright (c) 2004-2007 innotek GmbH.
   </xsd:documentation>
 </xsd:annotation>
 

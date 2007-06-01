@@ -233,7 +233,7 @@ static MODULESETUPPROTO(vboxSetup);
 static XF86ModuleVersionInfo vboxVersionRec =
 {
     VBOX_DRIVER_NAME,
-    "innotek Systemberatung GmbH",
+    "innotek GmbH",
     MODINFOSTRING1,
     MODINFOSTRING2,
 #ifdef XORG_7X

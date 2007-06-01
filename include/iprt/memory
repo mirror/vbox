@@ -1,9 +1,9 @@
 /** @file
- * InnoTek Portable Runtime - C++ Extensions: memory.
+ * innotek Portable Runtime - C++ Extensions: memory.
  */
 
 /*
- * Copyright (C) 2007 InnoTek Systemberatung GmbH
+ * Copyright (C) 2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,7 +21,7 @@
 #ifndef __iprt_memory__
 #define __iprt_memory__
 
-/** @defgroup grp_rt_cppx_memory  InnoTek Portable Runtime C++ Extensions: memory
+/** @defgroup grp_rt_cppx_memory  innotek Portable Runtime C++ Extensions: memory
  * @ingroup grp_rt_cppx
  * @{
  */

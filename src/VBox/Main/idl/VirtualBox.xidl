@@ -22,7 +22,7 @@
  *      WSDL file that describes the web service and C++ method
  *      mappers that map SOAP messages to COM calls.
  *
- * Copyright (C) 2006-2007 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,7 +71,7 @@
     name="VirtualBox"
     uuid="46137EEC-703B-4fe5-AFD4-7C9BBBBA0259"
     version="1.3"
-    desc="InnoTek VirtualBox Type Library"
+    desc="innotek VirtualBox Type Library"
     supportsErrorInfo="yes"
 >
 

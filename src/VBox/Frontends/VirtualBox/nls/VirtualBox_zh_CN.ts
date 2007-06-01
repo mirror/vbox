@@ -1671,7 +1671,7 @@ default virtual machine folder.</source>
     </message>
     <message>
         <source>When checked, the keyboard is automatically
-captured every time the VM window is activated. When the keyboard is captured, 
+captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">选中后，当虚拟电脑窗口处于活动状态时将自动捕获键盘输入。当键盘被捕获时，所有的键盘输入(包括系统切换键如 Alt-Tab) 都将被发送到虚拟电脑.</translation>
     </message>

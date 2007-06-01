@@ -3,9 +3,9 @@
 ;
 ; VBoxREM Wrapper, Assembly routines and wrapper Templates.
 ;
-; InnoTek Systemberatung GmbH confidential
+; innotek GmbH confidential
 ;
-; Copyright (c) 2006 InnoTek Systemberatung GmbH
+; Copyright (C) 2006-2007 innotek GmbH
 ;
 ; Author: knut st. osmundsen <bird@innotek.de>
 ;

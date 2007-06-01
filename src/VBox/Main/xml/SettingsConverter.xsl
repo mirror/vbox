@@ -6,7 +6,7 @@
  *
  *  Template to convert old VirtualBox settings files to the most recent format.
 
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

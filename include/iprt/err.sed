@@ -1,5 +1,5 @@
 ## @file
-# InnoTek Portable Runtime - SED script for converting VBox/err.h to .mac.
+# innotek Portable Runtime - SED script for converting VBox/err.h to .mac.
 #
 
 #

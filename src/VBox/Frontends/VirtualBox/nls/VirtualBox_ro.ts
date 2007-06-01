@@ -1676,7 +1676,7 @@ Calea implicită actuală va fi afişată după ce acceptaţi schimbările şi d
 folder. This folder is used, if not explicitly specified otherwise, when creating new
 virtual machines.</source>
         <translation type="obsolete">Afişează calea către directorul maşinii virtuală implicită.
-Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creaţi noi 
+Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creaţi noi
 maşini virtuale.</translation>
     </message>
     <message>
@@ -1973,7 +1973,7 @@ Căsuţa de selecţie din stânga defineşte dacă filtrele particulare sunt act
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Acest vrăjitor vă va ajuta să creaţi o nouă imagine virtuală de disc hard pentru maşina dvs virtuală.&lt;/p&gt;
-&lt;p&gt;Folosiţi butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare 
+&lt;p&gt;Folosiţi butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare
 şi butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a vă intoarce la pagina precedentă.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2017,7 +2017,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Apăsaţi butonul &lt;b&gt;Selectare&lt;/b&gt; pentru a selecta amplasarea şi numele fişierului 
+        <translation>&lt;p&gt;Apăsaţi butonul &lt;b&gt;Selectare&lt;/b&gt; pentru a selecta amplasarea şi numele fişierului
 pentru a stoca imaginea discului hard virtual sau tastaţi un nume de fişier în câmpul de intrare.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2100,9 +2100,9 @@ unei noi maşini virtuale pentru VirtualBox.&lt;/p&gt;
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare musafir 
+        <translation>&lt;p&gt;Introduceţi un nume pentru noua maşină virtuală şi selectaţi tipul sistemului de operare musafir
 pe care plănuiţi să îl instalaţi în maşină.&lt;/p&gt;
-&lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware. 
+&lt;p&gt;Numele maşinii virtuale indică în mod uzual configuraţia software şi hardware.
 Va fi folosită de către toate produsele VirtualBox pentru a identifica maşina virtuală creată.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3193,7 +3193,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions
         <source>Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
-        <translation type="obsolete">Defineşte filtrul &apos;manufacturat de&apos; ca 
+        <translation type="obsolete">Defineşte filtrul &apos;manufacturat de&apos; ca
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
 valori.</translation>
     </message>
@@ -3201,7 +3201,7 @@ valori.</translation>
         <source>Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
-        <translation type="obsolete">Defineşte filtrul &apos;produs de&apos; ca 
+        <translation type="obsolete">Defineşte filtrul &apos;produs de&apos; ca
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
 valori.</translation>
     </message>
@@ -3209,7 +3209,7 @@ valori.</translation>
         <source>Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
-        <translation type="obsolete">Defineşte filtrul &apos;număr serie&apos; ca 
+        <translation type="obsolete">Defineşte filtrul &apos;număr serie&apos; ca
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
 valori.</translation>
     </message>
@@ -3236,8 +3236,8 @@ sau amândurora (&lt;i&gt;Oricare&lt;/i&gt;).</translation>
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation type="obsolete">Defineşte acţiunea executată de computerul 
-gazdă atunci când un dispozitiv care respectă condiţiile este conectat: 
+        <translation type="obsolete">Defineşte acţiunea executată de computerul
+gazdă atunci când un dispozitiv care respectă condiţiile este conectat:
 îl oferă SO gazdă (&lt;i&gt;Ignoră&lt;/i&gt;) sau îl capturează pentru a fi folosit
 ulterior în maşinile virtuale (&lt;i&gt;Menţine&lt;/i&gt;).
 </translation>
@@ -3265,7 +3265,7 @@ ulterior în maşinile virtuale (&lt;i&gt;Menţine&lt;/i&gt;).
 value.</source>
         <translation type="obsolete">Defineşte filtrul ID vânzător. Formatul
 şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde
-&lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi 
+&lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi
 oricărei valori.</translation>
     </message>
     <message>
@@ -3275,7 +3275,7 @@ oricărei valori.</translation>
 value.</source>
         <translation type="obsolete">Defineşte filtrul ID produs. Formatul
 şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde
-&lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi 
+&lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un şir gol se va potrivi
 oricărei valori.</translation>
     </message>
     <message>
@@ -3286,15 +3286,15 @@ is a decimal digit of the fractional part. An empty string will match any
 value.</source>
         <translation type="obsolete">Defineşte filtrul număr revizie. Formatul
 şirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;IIFF&lt;/tt&gt; unde
-&lt;tt&gt;I&lt;/tt&gt; este un caracter hexazecimal al părţii întregi, iar &lt;tt&gt;F&lt;/tt&gt; 
-este un caracter zecimal al părţii fracţionale. Un şir gol se va potrivi 
+&lt;tt&gt;I&lt;/tt&gt; este un caracter hexazecimal al părţii întregi, iar &lt;tt&gt;F&lt;/tt&gt;
+este un caracter zecimal al părţii fracţionale. Un şir gol se va potrivi
 oricărei valori.</translation>
     </message>
     <message>
         <source>Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
-        <translation type="obsolete">Defineşte filtrul port USB gazdă ca 
+        <translation type="obsolete">Defineşte filtrul port USB gazdă ca
 un şir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un şir gol se va potrivi oricărei
 valori.</translation>
     </message>
@@ -4168,7 +4168,7 @@ o imagine CD/DVD pentru montare.</translation>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="obsolete">Controlează driverul de ieşire aurio. &lt;b&gt;Null Audio Driver&lt;/b&gt; 
+        <translation type="obsolete">Controlează driverul de ieşire aurio. &lt;b&gt;Null Audio Driver&lt;/b&gt;
 determină musafirul să vadă o placă audio, oricum orice acces la aceasta va fi ignorat.</translation>
     </message>
     <message>

@@ -37,11 +37,11 @@
 				VFT2_DRV_COMM
 */
 
-#define VER_COMPANYNAME_STR         "InnoTek Systemberatung GmbH"
+#define VER_COMPANYNAME_STR         "innotek GmbH"
 #define VER_FILEDESCRIPTION_STR     "VirtualBox Host Interface Networking Driver"
 #define VER_ORIGINALFILENAME_STR    TAP_COMPONENT_ID ".sys"
 #define VER_LEGALCOPYRIGHT_YEARS    "2006"
-#define VER_LEGALCOPYRIGHT_STR      "InnoTek Systemberatung GmbH & Others"
+#define VER_LEGALCOPYRIGHT_STR      "innotek GmbH & Others"
 
 
 #define VER_PRODUCTNAME_STR         VER_FILEDESCRIPTION_STR
