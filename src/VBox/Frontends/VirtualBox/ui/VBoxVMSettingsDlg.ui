@@ -27,7 +27,7 @@
             <x>0</x>
             <y>0</y>
             <width>486</width>
-            <height>405</height>
+            <height>493</height>
         </rect>
     </property>
     <property name="sizePolicy">
@@ -293,6 +293,9 @@
             </property>
             <property name="itemMargin">
                 <number>3</number>
+            </property>
+            <property name="whatsThis" stdset="0">
+                <string>Lists all available host interfaces.</string>
             </property>
         </widget>
         <widget class="QLabel" row="0" column="1">
@@ -1962,6 +1965,126 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                 <attribute name="id">
                     <number>5</number>
                 </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>gbInterfaceList</cstring>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout99</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <property name="spacing">
+                                        <number>6</number>
+                                    </property>
+                                    <widget class="QListBox">
+                                        <property name="name">
+                                            <cstring>lbHostInterface</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>7</hsizetype>
+                                                <vsizetype>7</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Lists all available host interfaces.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout27</cstring>
+                                        </property>
+                                        <vbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <property name="margin">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="spacing">
+                                                <number>0</number>
+                                            </property>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>pbHostAdd</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>StrongFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="toolTip" stdset="0">
+                                                    <string></string>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Adds a new host interface.</string>
+                                                </property>
+                                            </widget>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>pbHostRemove</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>StrongFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="toolTip" stdset="0">
+                                                    <string></string>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Removes the selected host interface.</string>
+                                                </property>
+                                            </widget>
+                                            <spacer>
+                                                <property name="name">
+                                                    <cstring>spacer7</cstring>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="sizeType">
+                                                    <enum>Expanding</enum>
+                                                </property>
+                                                <property name="sizeHint">
+                                                    <size>
+                                                        <width>10</width>
+                                                        <height>10</height>
+                                                    </size>
+                                                </property>
+                                            </spacer>
+                                        </vbox>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </vbox>
+                    </widget>
+                </vbox>
             </widget>
             <widget class="QWidget">
                 <property name="name">
@@ -1976,6 +2099,9 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     </property>
                     <property name="margin">
                         <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
                     </property>
                     <widget class="QCheckBox">
                         <property name="name">
@@ -2009,6 +2135,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                 <hbox>
                                     <property name="name">
                                         <cstring>unnamed</cstring>
+                                    </property>
+                                    <property name="margin">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="spacing">
+                                        <number>0</number>
                                     </property>
                                     <widget class="QListView">
                                         <column>
@@ -2671,6 +2803,18 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <receiver>VBoxVMSettingsDlg</receiver>
         <slot>tbUSBFilterDown_clicked()</slot>
     </connection>
+    <connection>
+        <sender>pbHostAdd</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>hostInterfaceAdd()</slot>
+    </connection>
+    <connection>
+        <sender>pbHostRemove</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>hostInterfaceRemove()</slot>
+    </connection>
 </connections>
 <tabstops>
     <tabstop>listView</tabstop>
@@ -2784,6 +2928,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">QIRichLabel *whatsThisLabel;</variable>
     <variable access="private">BootItemsList *tblBootOrder;</variable>
+    <variable access="private">QString mNoInterfaces;</variable>
     <variable access="private">bool mResetFirstRunFlag;</variable>
 </variables>
 <slots>
@@ -2819,8 +2964,9 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>hddMediaChanged()</slot>
     <slot>cdMediaChanged()</slot>
     <slot>fdMediaChanged()</slot>
-    <slot>updateInterfaces( QWidget* )</slot>
     <slot>networkPageUpdate( QWidget* )</slot>
+    <slot>hostInterfaceAdd()</slot>
+    <slot>hostInterfaceRemove()</slot>
     <slot>resetFirstRunFlag()</slot>
 </slots>
 <functions>
@@ -2833,6 +2979,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <function access="private">showEvent( QShowEvent * )</function>
     <function access="private">updateShortcuts()</function>
     <function access="private" returnType="QString">getHdInfo( QGroupBox*, QUuid )</function>
+    <function access="private">loadInterfacesList()</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
