@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-#  InnoTek VirtualBox
+#  innotek VirtualBox
 #
 #  Linux Additions timesync daemon init script
 #
-#  Copyright (C) 2006 InnoTek Systemberatung GmbH
+#  Copyright (C) 2006-2007 innotek GmbH
 #
 #  Use only with permission.
 #

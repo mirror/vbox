@@ -2,7 +2,7 @@
 ; VBox host drivers - Ring-0 support drivers - Win64 host:
 ; Assembly part of Win64 ring-0 host driver
 
-; Copyright (C) 2006 InnoTek Systemberatung GmbH
+; Copyright (C) 2006-2007 innotek GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;

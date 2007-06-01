@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 #
-# InnoTek VirtualBox
+# innotek VirtualBox
 #
 # Linux Additions X11 config update script
 #
-# Copyright (C) 2006 InnoTek Systemberatung GmbH
+# Copyright (C) 2006-2007 innotek GmbH
 #
 # Use only with permission.
 #

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; InnoTek Portable Runtime - DevHelp_VMGlobalToProcess, Ring-0 Driver, OS/2.
+; innotek Portable Runtime - DevHelp_VMGlobalToProcess, Ring-0 Driver, OS/2.
 ;
 
 ;
