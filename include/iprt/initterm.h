@@ -1,9 +1,9 @@
 /** @file
- * InnoTek Portable Runtime - Runtime Init/Term.
+ * innotek Portable Runtime - Runtime Init/Term.
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +27,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_rt    InnoTek Portable Runtime APIs
+/** @defgroup grp_rt    innotek Portable Runtime APIs
  * @{
  */
 

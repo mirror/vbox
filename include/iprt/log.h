@@ -1,9 +1,9 @@
 /** @file
- * InnoTek Portable Runtime - Logging.
+ * innotek Portable Runtime - Logging.
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,7 @@ __BEGIN_DECLS
  */
 
 /**
- * InnoTek Portable Runtime Logging Groups.
+ * innotek Portable Runtime Logging Groups.
  * (Remember to update RT_LOGGROUP_NAMES!)
  *
  * @remark It should be pretty obvious, but just to have
@@ -61,7 +61,7 @@ typedef enum RTLOGGROUP
 } RTLOGGROUP;
 
 /** @def RT_LOGGROUP_NAMES
- * InnoTek Portable Runtime Logging group names.
+ * innotek Portable Runtime Logging group names.
  *
  * Must correspond 100% to RTLOGGROUP!
  * Don't forget commas!

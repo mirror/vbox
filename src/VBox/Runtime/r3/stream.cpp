@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - I/O Stream.
+ * innotek Portable Runtime - I/O Stream.
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -602,7 +602,7 @@ static DECLCALLBACK(size_t) rtstrmOutput(void *pvArg, const char *pachChars, siz
  *
  * @returns Number of bytes printed.
  * @param   pStream         The stream to print to.
- * @param   pszFormat       InnoTek Portable Runtime format string.
+ * @param   pszFormat       innotek Portable Runtime format string.
  * @param   args            Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args)
@@ -639,7 +639,7 @@ RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list ar
  *
  * @returns Number of bytes printed.
  * @param   pStream         The stream to print to.
- * @param   pszFormat       InnoTek Portable Runtime format string.
+ * @param   pszFormat       innotek Portable Runtime format string.
  * @param   ...             Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
@@ -656,7 +656,7 @@ RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
  * Prints a formatted string to the standard output stream (g_pStdOut).
  *
  * @returns Number of bytes printed.
- * @param   pszFormat       InnoTek Portable Runtime format string.
+ * @param   pszFormat       innotek Portable Runtime format string.
  * @param   args            Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args)
@@ -669,7 +669,7 @@ RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args)
  * Prints a formatted string to the standard output stream (g_pStdOut).
  *
  * @returns Number of bytes printed.
- * @param   pszFormat       InnoTek Portable Runtime format string.
+ * @param   pszFormat       innotek Portable Runtime format string.
  * @param   ...             Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTPrintf(const char *pszFormat, ...)

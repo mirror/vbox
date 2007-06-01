@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - AVL tree, RTHCPHYS, unique keys.
+ * innotek Portable Runtime - AVL tree, RTHCPHYS, unique keys.
  */
 
 /*

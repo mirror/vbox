@@ -961,7 +961,7 @@ static char bios_prefix_string[] = "BIOS: ";
 /* Do not use build timestamps in this string. Otherwise even rebuilding the
  * very same code will lead to compare errors when restoring saved state. */
 static char bios_cvs_version_string[] = "VirtualBox " VBOX_VERSION_STRING;
-#define BIOS_COPYRIGHT_STRING "InnoTek VirtualBox BIOS"
+#define BIOS_COPYRIGHT_STRING "innotek VirtualBox BIOS"
 #else /* !VBOX */
 static char bios_cvs_version_string[] = "$Revision: 1.176 $ $Date: 2006/12/30 17:13:17 $";
 
@@ -4086,7 +4086,7 @@ BX_DEBUG_INT15("int15 AX=%04x\n",regs.u.r16.ax);
 BX_DEBUG_INT15("unsupported subfn\n");
         // invalid function
         SET_CF();
-        regs.u.r8.ah = 1; 
+        regs.u.r8.ah = 1;
         break;
       }
 

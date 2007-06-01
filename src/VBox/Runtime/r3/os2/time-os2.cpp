@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Time, POSIX.
+ * innotek Portable Runtime - Time, POSIX.
  */
 
 /*

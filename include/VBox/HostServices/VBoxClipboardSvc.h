@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,7 @@
  */
 #define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE   1
 
-/* 
+/*
  * The service functions which are called by guest.
  */
 /* Call host and wait blocking for an host event VBOX_SHARED_CLIPBOARD_HOST_MSG_* */
@@ -92,27 +92,27 @@ typedef struct _VBoxClipboardFormats
 typedef struct _VBoxClipboardReadData
 {
     VBoxGuestHGCMCallInfo hdr;
-    
+
     /* Requested format. */
     HGCMFunctionParameter format; /* IN uint32_t */
-    
+
     /* The data buffer. */
     HGCMFunctionParameter ptr;    /* IN linear pointer. */
-    
+
     /* Size of returned data, if > ptr->cb, then no data was
      * actually transferred and the guest must repeat the call.
      */
     HGCMFunctionParameter size;   /* OUT uint32_t */
-    
+
 } VBoxClipboardReadData;
 
 typedef struct _VBoxClipboardWriteData
 {
     VBoxGuestHGCMCallInfo hdr;
-    
+
     /* Returned format as requested in the VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA message. */
     HGCMFunctionParameter format; /* IN uint32_t */
-    
+
     /* Data.  */
     HGCMFunctionParameter ptr;    /* IN linear pointer. */
 } VBoxClipboardWriteData;

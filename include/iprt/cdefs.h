@@ -1,9 +1,9 @@
 /** @file
- * InnoTek Portable Runtime - Common C and C++ definitions.
+ * innotek Portable Runtime - Common C and C++ definitions.
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,7 @@
 #define __iprt_cdefs_h__
 
 
-/** @defgroup grp_rt_cdefs  InnoTek Portable Runtime Common Definitions and Macros
+/** @defgroup grp_rt_cdefs  innotek Portable Runtime Common Definitions and Macros
  * @{
  */
 

@@ -1,9 +1,9 @@
 /** @file
- * InnoTek Portable Runtime - AVL Trees.
+ * innotek Portable Runtime - AVL Trees.
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  * Copyright (C) 1999-2003 knut st. osmundsen <bird-src-spam@anduin.net>
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as

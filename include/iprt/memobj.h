@@ -1,9 +1,9 @@
 /** @file
- * InnoTek Portable Runtime - Memory Objects (Ring-0).
+ * innotek Portable Runtime - Memory Objects (Ring-0).
  */
 
 /*
- * Copyright (C) 2006 InnoTek Systemberatung GmbH
+ * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

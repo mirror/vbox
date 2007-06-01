@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Memory Allocation, Ring-0 Driver, OS/2.
+ * innotek Portable Runtime - Memory Allocation, Ring-0 Driver, OS/2.
  */
 
 /*

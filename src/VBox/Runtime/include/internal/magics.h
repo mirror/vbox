@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * InnoTek Portable Runtime - Internal Header Defining The Magic Numbers.
+ * innotek Portable Runtime - Internal Header Defining The Magic Numbers.
  */
 
 /*
- * Copyright (c) 2007 InnoTek Systemberatung GmbH
+ * Copyright (c) 2007 innotek GmbH
  *
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
