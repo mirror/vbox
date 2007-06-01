@@ -76,11 +76,11 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Shift Links</translation>
+        <translation>Umsch Links</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Shift Rechts</translation>
+        <translation>Unsch Rechts</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
@@ -116,11 +116,11 @@
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation>UmschLck</translation>
+        <translation>Umsch Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation>RollLck</translation>
+        <translation>Rollen Lock</translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
@@ -614,7 +614,7 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation type="unfinished">Mauszeigerintegration aktivieren</translation>
+        <translation>&amp;Mauszeigerintegration aktivieren</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
@@ -1393,7 +1393,7 @@
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Host Interface</source>
@@ -2051,7 +2051,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Information</translation>
     </message>
     <message>
         <source>VirtualBox - Question</source>
@@ -2382,15 +2382,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die im Gast installierten VirtualBox Gasterweiterungen sind zu alt: Version %1 ist installiert, erwartet wird Version %2. Einige Features, die Gasterweiterungen benötigen (Mauszeigerintegration, automatische Anpassung der Gastanzeige) funktionieren höchstwahrscheinlich nicht.&lt;/p&gt;&lt;p&gt;Bitte aktualisieren Sie die Gasterweiterungen durch &lt;b&gt;Gasterweiterungen installieren&lt;/b&gt; aus dem Menü &lt;b&gt;Geräte&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die im Gast installierten Virtualbox Gasterweiterungen sind überholt: Version %1 ist installiert, erwartet wird Version %2. Einige Features, die Gasterweiterungen benötigen (Mauszeigerintegration, automatische Anpassung der Gastanzeige) funktionieren möglicherweise nicht wie erwartet.&lt;/p&gt;&lt;p&gt;Bitte aktualisieren Sie die Gasterweiterungen durch &lt;b&gt;Gasterweiterungen installieren&lt;/b&gt; aus dem Menü &lt;b&gt;Geräte&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die im Gast installierten Virtualbox Gasterweiterungen sind zu neu für diese Version von VirtualBox: Version %1 ist installiert, erwartet wird Version %2.&lt;/p&gt;&lt;p&gt;Die Nutzung einer neueren Version der Gasterweiterungen mit einer älteren Version von VirtualBox wird nicht unterstützt. Bitte aktualisieren Sie die Gasterweiterungen durch &lt;b&gt;Gasterweiterungen installieren&lt;/b&gt; aus dem Menü &lt;b&gt;Geräte&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3310,7 +3310,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation>Einstellungen für Host-Interface</translation>
+        <translation>Einstellungen für Hostinterface</translation>
     </message>
     <message>
         <source>&amp;Interface Name</source>
@@ -3366,7 +3366,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation>Zeigt den Namen des Host-Interfaces für diesen Adapter.</translation>
+        <translation>Zeigt den Namen des Hostinterfaces für diesen Adapter.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
@@ -4005,11 +4005,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation>Host-&amp;Interfaces</translation>
+        <translation>Hostinterfaces</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation>Zeigt alle verfügbaren Host-Interfaces.</translation>
+        <translation>Zeigt alle verfügbaren Hostinterfaces.</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
@@ -4017,7 +4017,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation>Entfernt das ausgewählte Host-Interface.</translation>
+        <translation>Entfernt das ausgewählte Hostinterface.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
