@@ -3,7 +3,7 @@
 ;
 ; INF file for installing the Win32 driver
 ;
-; Copyright (C) 2006 InnoTek Systemberatung GmbH
+; Copyright (C) 2006-2007 innotek GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -59,7 +59,7 @@ ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\VBoxDrv.sys
 
 [Strings]
-INNOTEK = "InnoTek Systemberatung GmbH"
+INNOTEK = "innotek GmbH"
 VBoxDrv.SVCDESC = "VirtualBox Service"
 VBoxDrv.DRVDESC = "VirtualBox Driver"
 DISK_NAME = "VirtualBox Driver Installation Disk"

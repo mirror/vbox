@@ -1,7 +1,7 @@
 ;
 ; VirtualBox Video miniport driver
 ;
-; Copyright (C) 2006 InnoTek Systemberatung GmbH
+; Copyright (C) 2006-2007 innotek GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -87,6 +87,6 @@ REG_EXPAND_SZ = 0x00020000
 REG_BINARY = 0x00000001
 REG_DWORD = 0x00010001
 
-Provider = "InnoTek Systemberatung GmbH"
+Provider = "innotek GmbH"
 VBoxVideo.Disk = "VirtualBox Video Driver Disk"
 VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter"
