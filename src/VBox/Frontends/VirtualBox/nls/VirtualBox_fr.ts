@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>InnoTek</source>
+        <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Jean-Jacques Sarton</translation>
     </message>
@@ -296,8 +296,8 @@
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -2488,8 +2488,8 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>

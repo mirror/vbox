@@ -22,7 +22,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>InnoTek</source>
+        <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -268,7 +268,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
+        <source>innotek VirtualBox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2340,7 +2340,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
+        <source>innotek VirtualBox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

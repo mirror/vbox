@@ -22,7 +22,7 @@
         <translation>China</translation>
     </message>
     <message>
-        <source>InnoTek</source>
+        <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Victor Wang</translation>
     </message>
@@ -296,8 +296,8 @@
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -2466,8 +2466,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished">VirtualBox OSE</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation type="unfinished">InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation type="unfinished">innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>

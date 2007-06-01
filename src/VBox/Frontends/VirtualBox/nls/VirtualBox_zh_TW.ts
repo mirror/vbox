@@ -22,7 +22,7 @@
         <translation>Taiwan</translation>
     </message>
     <message>
-        <source>InnoTek</source>
+        <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
         <translation>OSSII (OSS Integral Institute Co. Ltd.)</translation>
     </message>
@@ -423,8 +423,8 @@
 <context>
     <name>VBoxConsoleWnd</name>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Fullscreen mode</source>
@@ -3174,8 +3174,8 @@ with UUID %2!</source>
         <translation>VirtualBox 開放原始碼版本</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>

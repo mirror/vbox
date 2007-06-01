@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>InnoTek</source>
+        <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Ciro Mattia Gonano &lt;ciro@winged.it&gt;</translation>
     </message>
@@ -296,8 +296,8 @@
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -2510,8 +2510,8 @@ questo passo e connettere hard disk più tardi attraverso le Impostazioni della 
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>

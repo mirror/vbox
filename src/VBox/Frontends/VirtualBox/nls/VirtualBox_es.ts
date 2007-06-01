@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>InnoTek</source>
+        <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Joaquin Duo</translation>
     </message>
@@ -296,8 +296,8 @@
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -2506,8 +2506,8 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation>VirtualBox Edición Open Source (OSE)</translation>
     </message>
     <message>
-        <source>InnoTek VirtualBox</source>
-        <translation>InnoTek VirtualBox</translation>
+        <source>innotek VirtualBox</source>
+        <translation>innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>
