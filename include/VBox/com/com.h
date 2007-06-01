@@ -24,6 +24,7 @@
 #define __VBox_com_com_h__
 
 #include "VBox/com/defs.h"
+#include "VBox/com/string.h"
 
 namespace com
 {
@@ -41,7 +42,7 @@ HRESULT Initialize();
  *  Must be called on every thread before termination.
  *  No COM calls may be made after this method returns.
  */
-void Shutdown();
+HRESULT Shutdown();
 
 /**
  *  Resolves a given interface ID to a string containing the interface name.
@@ -53,6 +54,20 @@ void Shutdown();
  *  @param aName    Resolved interface name or @c NULL on error
  */
 void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName);
+
+/** 
+ *  Returns the VirtualBox user home directory.
+ *
+ *  On failure, this function will return a path that caused a failure (or a
+ *  null string if the faiulre is not path-related).
+ *
+ *  On success, this function will try to create the returned directory if it
+ *  doesn't exist yet. This may also fail with the corresponding status code.
+ * 
+ *  @param aDir     Where to return the directory to.
+ *  @return         VBox status code.
+ */
+int GetVBoxUserHomeDirectory (Utf8Str &aDir);
 
 }; // namespace com
 

@@ -22,28 +22,36 @@
 
 #include <objbase.h>
 
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
 
 #include <stdlib.h>
-#include <VBox/err.h>
-#include <iprt/path.h>
 
-#include <nsXPCOMGlue.h>
-#include <nsIComponentRegistrar.h>
-#include <nsIServiceManager.h>
 #include <nsCOMPtr.h>
-#include <nsEventQueueUtils.h>
+#include <nsIServiceManagerUtils.h>
 
 #include <nsIInterfaceInfo.h>
 #include <nsIInterfaceInfoManager.h>
 
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/dir.h>
+#include <iprt/env.h>
 #include <iprt/string.h>
+
 #include <VBox/err.h>
 
 #include "VBox/com/com.h"
 #include "VBox/com/assert.h"
+
+
+#ifdef __DARWIN__
+#define VBOX_USER_HOME_SUFFIX   "Library/VirtualBox"
+#else
+#define VBOX_USER_HOME_SUFFIX   ".VirtualBox"
+#endif 
+
 
 namespace com
 {
@@ -94,7 +102,7 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
         CoTaskMemFree (iidStr);
     }
 
-#else
+#else /* !defined (VBOX_WITH_XPCOM) */
 
     nsresult rv;
     nsCOMPtr <nsIInterfaceInfoManager> iim =
@@ -121,7 +129,46 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
         }
     }
 
-#endif
+#endif /* !defined (VBOX_WITH_XPCOM) */
+}
+
+int GetVBoxUserHomeDirectory (Utf8Str &aDir)
+{
+    /* start with null */
+    aDir.setNull();
+
+    const char *VBoxUserHome = RTEnvGet ("VBOX_USER_HOME");
+
+    char path [RTPATH_MAX];
+    int vrc = VINF_SUCCESS;
+
+    if (VBoxUserHome)
+    {
+        /* get the full path name */
+        char *VBoxUserHomeUtf8 = NULL;
+        vrc = RTStrCurrentCPToUtf8 (&VBoxUserHomeUtf8, VBoxUserHome);
+        if (RT_SUCCESS (vrc))
+        {
+            vrc = RTPathAbs (VBoxUserHomeUtf8, path, sizeof (path));
+            if (RT_SUCCESS (vrc))
+                aDir = path;
+            RTStrFree (VBoxUserHomeUtf8);
+        }
+    }
+    else
+    {
+        /* compose the config directory (full path) */
+        vrc = RTPathUserHome (path, sizeof (path));
+        aDir = Utf8StrFmt ("%s%c%s", path, RTPATH_DELIMITER,
+                           VBOX_USER_HOME_SUFFIX);
+    }
+
+    /* ensure the home directory exists */
+    if (RT_SUCCESS (vrc))
+        if (!RTDirExists (aDir))
+            vrc = RTDirCreateFullPath (aDir, 0777);
+
+    return vrc;
 }
 
 }; // namespace com
