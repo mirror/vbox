@@ -2086,8 +2086,13 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
+#if defined (DEBUG)
+    QString src1 = qApp->applicationDirPath() + "/../../release/bin/VBoxGuestAdditions.iso";
+    QString src2 = qApp->applicationDirPath() + "/../../release/bin/additions/VBoxGuestAdditions.iso";
+#else
     QString src1 = qApp->applicationDirPath() + "/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/additions/VBoxGuestAdditions.iso";
+#endif
     QString src;
 
     if (QFile::exists (src1))
