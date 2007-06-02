@@ -268,7 +268,7 @@ void VBoxVMLogViewer::refresh()
             loadLogFile (logFilesDir.filePath (*it));
     }
 
-    /* creating clean log page if there is no logs at all */
+    /* create an empty log page if there are no logs at all */
     if (!isAnyLogPresent)
     {
         QTextBrowser *dummyLog = createLogPage ("VBox.log");
@@ -277,6 +277,8 @@ void VBoxVMLogViewer::refresh()
         dummyLog->setText (tr ("<p>No log files found. Press the <b>Refresh</b> "
             "button to rescan the log folder <nobr><b>%1</b></nobr>.</p>")
             .arg (logFilesPath));
+        /* we don't want it to remain white */
+        dummyLog->setPaper (backgroundBrush());
     }
 
     /* restore previous tab-widget margin which was reseted when
@@ -294,11 +296,11 @@ void VBoxVMLogViewer::refresh()
     {
         /* resize the whole log-viewer to fit 80 symbols in text-browser for
          * the first time started */
-        QTextBrowser *firstPage = static_cast<QTextBrowser*> (mLogList->page(0));
+        QTextBrowser *firstPage = static_cast <QTextBrowser *> (mLogList->page(0));
         int fullWidth = firstPage->fontMetrics().width (QChar ('x')) * 80 +
                         firstPage->verticalScrollBar()->width() +
                         firstPage->frameWidth() * 2 +
-                        1 * 2 /* some one-pixel margin */ +
+                        5 + 4 /* left text margin + QTabWidget frame width */ +
                         mLogList->margin() * 2 +
                         centralWidget()->layout()->margin() * 2;
         resize (fullWidth, height());
