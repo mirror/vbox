@@ -30,8 +30,34 @@
 *****************************************************************************/
 
 
+VBoxVMLogViewer *VBoxVMLogViewer::mSelf = 0;
+void VBoxVMLogViewer::createLogViewer (CMachine &aMachine)
+{
+    if (!mSelf)
+    {
+        /* creating new log viewer if there is no one existing */
+        mSelf = new VBoxVMLogViewer (0, "VBoxVMLogViewer",
+                                     WType_TopLevel | WDestructiveClose);
+    }
+
+    if (mSelf->machine() != aMachine)
+    {
+        /* re-read new machine data if the machine was changed or
+         * the log-viewer is opened for the first time */
+        mSelf->setup (aMachine);
+    }
+
+    mSelf->show();
+    mSelf->setWindowState (mSelf->windowState() & ~WindowMinimized);
+    mSelf->setActiveWindow();
+}
+
+
 void VBoxVMLogViewer::init()
 {
+    /* prepare dialog to first run */
+    mFirstRun = true;
+
     /* dialog initially is not polished */
     mIsPolished = false;
 
@@ -62,8 +88,26 @@ void VBoxVMLogViewer::init()
 
 void VBoxVMLogViewer::destroy()
 {
-    /* switch the related toggle action off */
-    mAction->setOn (false);
+    mSelf = 0;
+}
+
+
+void VBoxVMLogViewer::setup (CMachine &aMachine)
+{
+    /* saving related machine */
+    mMachine = aMachine;
+
+    /* reading log files */
+    refresh();
+
+    /* loading language constants */
+    languageChangeImp();
+}
+
+
+const CMachine& VBoxVMLogViewer::machine()
+{
+    return mMachine;
 }
 
 
@@ -199,23 +243,6 @@ void VBoxVMLogViewer::resizeEvent (QResizeEvent*)
 }
 
 
-void VBoxVMLogViewer::setup (CMachine &aMachine, QAction *aAction)
-{
-    /* saving predefined variables */
-    mMachine = aMachine;
-    mAction = aAction;
-
-    /* setup self-destruction handler */
-    connect (mAction, SIGNAL (toggled (bool)), this, SLOT (suicide (bool)));
-
-    /* reading log files */
-    refresh();
-
-    /* loading language constants */
-    languageChangeImp();
-}
-
-
 void VBoxVMLogViewer::refresh()
 {
     /* clearing old data if any */
@@ -246,14 +273,37 @@ void VBoxVMLogViewer::refresh()
     {
         QTextBrowser *dummyLog = createLogPage ("VBox.log");
         dummyLog->setTextFormat (Qt::RichText);
+        dummyLog->setWordWrap (QTextEdit::WidgetWidth);
         dummyLog->setText (tr ("<p>No log files found. Press the <b>Refresh</b> "
             "button to rescan the log folder <nobr><b>%1</b></nobr>.</p>")
             .arg (logFilesPath));
     }
 
+    /* restore previous tab-widget margin which was reseted when
+     * the tab widget's children was removed */
+    mLogList->setMargin (10);
+
     /* show the first tab widget's page after the refresh */
     mLogList->showPage (mLogList->page(0));
+
+    /* enable/disable save button & tab widget according log presence */
     mSaveButton->setEnabled (isAnyLogPresent);
+    mLogList->setEnabled (isAnyLogPresent);
+
+    if (mFirstRun)
+    {
+        /* resize the whole log-viewer to fit 80 symbols in text-browser for
+         * the first time started */
+        QTextBrowser *firstPage = static_cast<QTextBrowser*> (mLogList->page(0));
+        int fullWidth = firstPage->fontMetrics().width (QChar ('x')) * 80 +
+                        firstPage->verticalScrollBar()->width() +
+                        firstPage->frameWidth() * 2 +
+                        1 * 2 /* some one-pixel margin */ +
+                        mLogList->margin() * 2 +
+                        centralWidget()->layout()->margin() * 2;
+        resize (fullWidth, height());
+        mFirstRun = false;
+    }
 }
 
 
@@ -279,28 +329,24 @@ QTextBrowser* VBoxVMLogViewer::createLogPage (const QString &aName)
     QFont font = logViewer->currentFont();
     font.setFamily ("Courier New,courier");
     logViewer->setFont (font);
+    logViewer->setWordWrap (QTextEdit::NoWrap);
+    logViewer->setVScrollBarMode (QScrollView::AlwaysOn);
     mLogList->addTab (logViewer, aName);
     return logViewer;
-}
-
-
-void VBoxVMLogViewer::suicide (bool aNo)
-{
-    if (!aNo) close();
 }
 
 
 void VBoxVMLogViewer::save()
 {
     /* prepare "save as" dialog */
-    QDate date = QDate::currentDate();
-    QTime time = QTime::currentTime();
-    QString defaultFileName = QString ("%1-%2-%3-%4-%5-%6-%7.log")
-        .arg (mMachine.GetName())
-        .arg (date.year()).arg (date.month()).arg (date.day())
-        .arg (time.hour()).arg (time.minute()).arg (time.second());
-    QString defaultFullName = QDir::convertSeparators (QDir::home().absPath() + "/" +
-                                                       defaultFileName);
+    QDate fullDate = QDate::currentDate();
+    QTime fullTime = QTime::currentTime();
+    QString date = fullDate.toString ("yyyy-MM-dd");
+    QString time = fullTime.toString ("hh-mm-ss");
+    QString defaultFileName = QString ("%1-%2-%3.log")
+        .arg (mMachine.GetName()).arg (date).arg (time);
+    QString defaultFullName = QDir::convertSeparators (QDir::home().absPath() +
+                                                       "/" + defaultFileName);
 
     QString newFileName = QFileDialog::getSaveFileName (defaultFullName,
         QString::null, this, "SaveLogAsDialog", tr ("Save VirtualBox Log As"));
