@@ -71,7 +71,7 @@ public slots:
     void vmStart();
     void vmDiscard();
     void vmRefresh();
-    void vmShowLogs (bool);
+    void vmShowLogs();
 
     void refreshVMList();
     void refreshVMItem (const QUuid &aID, bool aDetails,

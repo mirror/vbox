@@ -37,6 +37,9 @@
         <property name="name">
             <cstring>unnamed</cstring>
         </property>
+        <property name="margin">
+            <number>10</number>
+        </property>
         <property name="spacing">
             <number>10</number>
         </property>
@@ -158,22 +161,25 @@
     <forward>class QTextBrowser</forward>
 </forwards>
 <variables>
+    <variable access="private">static VBoxVMLogViewer *mSelf;</variable>
+    <variable access="private">bool mFirstRun;</variable>
     <variable access="private">bool mIsPolished;</variable>
     <variable access="private">QSizeGrip *mSizeGrip;</variable>
     <variable access="private">CMachine mMachine;</variable>
-    <variable access="private">QAction *mAction;</variable>
     <variable access="private">QTabWidget *mLogList;</variable>
     <variable access="private">QStringList mLogFilesList;</variable>
     <variable access="private">QPushButton *mDefaultButton;</variable>
 </variables>
 <slots>
     <slot access="pritave">refresh()</slot>
-    <slot access="private">suicide (bool)</slot>
     <slot access="private">save()</slot>
 </slots>
 <functions>
+    <function specifier="static">createLogViewer( CMachine&amp; )</function>
     <function access="private">init()</function>
     <function access="private">destroy()</function>
+    <function>setup( CMachine &amp; )</function>
+    <function returnType="const CMachine&amp;">machine()</function>
     <function access="pritave">languageChangeImp()</function>
     <function access="pritave" returnType="QPushButton*">searchDefaultButton()</function>
     <function access="protected" returnType="bool">eventFilter( QObject*, QEvent* )</function>
@@ -181,7 +187,6 @@
     <function access="protected">keyPressEvent( QKeyEvent* )</function>
     <function access="protected">showEvent( QShowEvent* )</function>
     <function access="protected">resizeEvent( QResizeEvent* )</function>
-    <function>setup( CMachine &amp;, QAction* )</function>
     <function access="pritave">loadLogFile( const QString &amp; )</function>
     <function access="pritave" returnType="QTextBrowser*">createLogPage( const QString &amp; )</function>
 </functions>

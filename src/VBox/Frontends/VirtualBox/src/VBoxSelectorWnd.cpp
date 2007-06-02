@@ -419,7 +419,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmShowLogsAction = new QAction (this, "vmShowLogsAction");
     vmShowLogsAction->setIconSet (VBoxGlobal::iconSet (
         "show_logs_16px.png", "show_logs_disabled_16px.png"));
-    vmShowLogsAction->setToggleAction (true);
 
     helpContentsAction = new QAction (this, "helpContentsAction");
     helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
@@ -575,7 +574,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (vmStartAction, SIGNAL (activated()), this, SLOT (vmStart()));
     connect (vmDiscardAction, SIGNAL (activated()), this, SLOT (vmDiscard()));
     connect (vmRefreshAction, SIGNAL (activated()), this, SLOT (vmRefresh()));
-    connect (vmShowLogsAction, SIGNAL (toggled (bool)), this, SLOT (vmShowLogs (bool)));
+    connect (vmShowLogsAction, SIGNAL (activated()), this, SLOT (vmShowLogs()));
 
     connect (helpContentsAction, SIGNAL (activated()), this, SLOT(showHelpContents()));
     connect (helpWebAction, SIGNAL (activated()),
@@ -926,17 +925,11 @@ void VBoxSelectorWnd::vmRefresh()
                    true /* aDescription */);
 }
 
-void VBoxSelectorWnd::vmShowLogs (bool aOn)
+void VBoxSelectorWnd::vmShowLogs()
 {
-    if (aOn)
-    {
-        VBoxVMLogViewer *logViewer = new VBoxVMLogViewer (this,
-            "logViewer", WType_TopLevel | WDestructiveClose);
-        VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
-        CMachine machine = item->machine();
-        logViewer->setup (machine, vmShowLogsAction);
-        logViewer->show();
-    }
+    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    CMachine machine = item->machine();
+    VBoxVMLogViewer::createLogViewer (machine);
 }
 
 void VBoxSelectorWnd::refreshVMList()
