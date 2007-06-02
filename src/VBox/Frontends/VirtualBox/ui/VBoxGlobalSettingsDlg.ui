@@ -1254,6 +1254,7 @@ to the system default language.&lt;/qt&gt;
     <function>putBackTo( CSystemProperties &amp; props, VBoxGlobalSettings &amp; gs )</function>
     <function access="protected">setWarning( const QString &amp; )</function>
     <function returnType="bool">eventFilter( QObject * watched, QEvent * e )</function>
+    <function access="private">fixLanguageChange()</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>

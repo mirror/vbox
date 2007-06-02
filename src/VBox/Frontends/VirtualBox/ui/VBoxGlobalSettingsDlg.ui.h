@@ -445,6 +445,7 @@ bool VBoxGlobalSettingsDlg::event (QEvent *aEvent)
         listView_currentChanged (listView->firstChild());
         lvLanguages_currentChanged (lvLanguages->currentItem());
         mLanguageChanged = false;
+        fixLanguageChange();
     }
     return result;
 }
@@ -1004,4 +1005,33 @@ void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (QListViewItem *aItem)
     tlAuthorData->setText (aItem->text (3));
 
     mLanguageChanged = true;
+}
+
+void VBoxGlobalSettingsDlg::fixLanguageChange()
+{
+    /* fix for usb page */
+
+    /// @todo currently, we always disable USB UI on XPCOM-based hosts because
+    /// QueryInterface on CUSBDeviceFilter doesn't return CHostUSBDeviceFilter
+    /// for host filters (most likely, our XPCOM/IPC/DCONNECT bug).
+
+#ifdef Q_OS_WIN32
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
+    if (coll.isNull())
+    {
+#endif
+        /* disable the USB host filters category if the USB is
+         * not available (i.e. in VirtualBox OSE) */
+
+        QListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
+        Assert (usbItem);
+        usbItem->setVisible (false);
+
+        /* disable validators if any */
+        pageUSB->setEnabled (false);
+
+#ifdef Q_OS_WIN32
+    }
+#endif
 }
