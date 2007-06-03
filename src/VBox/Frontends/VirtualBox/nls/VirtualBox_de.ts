@@ -50,7 +50,7 @@
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Legt die Bootreihenfolge fest. Mittels der Checkboxen auf der linken Seite können Geräte aktiviert bzw. deaktiviert werden. Durch Auf- bzw. Abbewegen wird die Bootreihenfolge geändert.</translation>
+        <translation>Legt die Bootreihenfolge fest. Mittels der Checkboxen auf der linken Seite können Geräte aktiviert bzw. deaktiviert werden. Durch Auf- bzw. Abbewegen der Einträge wird die Bootreihenfolge geändert.</translation>
     </message>
 </context>
 <context>
@@ -225,7 +225,7 @@
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
-        <translation>Öffnet einen Dialogfenster zur Auswahl des Ordners.</translation>
+        <translation>Öffnet ein Dialogfenster zur Auswahl des Ordners.</translation>
     </message>
     <message>
         <source>OK</source>
@@ -348,7 +348,7 @@
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Passt die Größe der Gastanzeige automatisch an, wenn die Fenstergröße verändert wird (erfordert Gasterweiterungen)</translation>
+        <translation>Passt die Größe der Gastanzeige automatisch an, wenn sich die Fenstergröße ändert (erfordert Gasterweiterungen)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -537,11 +537,11 @@
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Zeigt die momentan zugeordnete Host-Taste.&lt;br&gt;Wird diese Taste allein gedrückt, schaltet den Fangmodus für Tastatur und Maus um. Die Taste führt in Kombination mit anderen Tasten bestimmte Aktionen aus dem Hauptmenü aus.</translation>
+        <translation>Zeigt die momentan zugeordnete Host-Taste.&lt;br&gt;Wird diese Taste allein gedrückt, schaltet sie den Fangmodus für Tastatur und Maus um. Die Taste führt in Kombination mit anderen Tasten bestimmte Aktionen aus dem Hauptmenü aus.</translation>
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Ermöglicht einen schnellen Zugriff auf gemeinsame Ordner (mittels rechten Mausklicks).&lt;br&gt;Beachten Sie, dass gemeinsame Ordner installierte Gasterweiterungen im Gast voraussetzt.</translation>
+        <translation>Ermöglicht einen schnellen Zugriff auf gemeinsame Ordner (mittels rechten Mausklicks).&lt;br&gt;Beachten Sie, dass gemeinsame Ordner installierte Gasterweiterungen im Gast voraussetzen.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
@@ -606,7 +606,7 @@
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Mauszeigerintegration deaktivieren</translation>
+        <translation>Mauszeiger-Integration deaktivieren</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
@@ -614,7 +614,7 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>&amp;Mauszeigerintegration aktivieren</translation>
+        <translation>&amp;Mauszeiger-Integration aktivieren</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
@@ -733,7 +733,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Invoke dialog&apos;s help</source>
@@ -745,7 +745,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accept dialog</source>
@@ -762,7 +762,7 @@
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -979,7 +979,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Serielle Nr. %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Seriennr. %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
@@ -1164,7 +1164,7 @@
     <message>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1318,7 +1318,7 @@
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>External</source>
@@ -1378,12 +1378,12 @@
     <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Not attached</source>
@@ -1428,7 +1428,7 @@
     <message>
         <source>Held</source>
         <comment>USBDeviceState</comment>
-        <translation>Gehalten</translation>
+        <translation>gehalten</translation>
     </message>
     <message>
         <source>Captured</source>
@@ -1482,7 +1482,7 @@
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>Der Wert &apos;%1&apos; des Schlüssels &apos;%2&apos; stimmt nicht mit dem regulären Ausdruck &apos;%3&apos; überein.</translation>
+        <translation>Der Wert &apos;%1&apos; des Schlüssels &apos;%2&apos; passt nicht auf den regulären Ausdruck &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
@@ -1497,15 +1497,15 @@
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -1517,11 +1517,11 @@
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#general</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Input </source>
@@ -1529,23 +1529,23 @@
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#input</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
@@ -1577,7 +1577,7 @@
     </message>
     <message>
         <source>Alt+A</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
@@ -1641,7 +1641,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
@@ -1657,7 +1657,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -1673,11 +1673,11 @@
     </message>
     <message>
         <source>VirtualBox Preferences</source>
-        <translation type="unfinished">VirtualBox Globale Einstellungen</translation>
+        <translation>VirtualBox Globale Einstellungen</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Zeigt die Taste, die als Host-Taste in für VM-Fenster verwendet wird. Aktivieren Sie dieses Feld und betätigen Sie eine neue Host-Taste. Als Host-Taste eignen sich üblicherweise nur Strg, Shift usw.</translation>
+        <translation>Zeigt die Taste, die als Host-Taste in für VM-Fenster verwendet wird. Aktivieren Sie dieses Feld und betätigen Sie eine neue Host-Taste. Als Host-Taste eignen sich üblicherweise nur Strg, Umsch, Alt usw.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -1694,11 +1694,11 @@
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#language</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Interface Language</source>
@@ -1720,7 +1720,7 @@
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation>&lt;verfügbar&gt;</translation>
+        <translation>&lt;nicht verfügbar&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
@@ -1742,7 +1742,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Zeigt den Pfad für voreingestellte VDI Ordner. Falls nicht anders festgelegt wird dieser Ordner wird benutzt, wenn bestehende oder neue virtuelle Medien hinzugefügt werden.</translation>
+        <translation>Zeigt den Pfad für voreingestellte VDI Ordner. Falls nicht anders festgelegt wird dieser Ordner benutzt, wenn vorhandene benutzt oder neue virtuelle Medien hinzugefügt werden.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
@@ -1754,7 +1754,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen erzeugt.</translation>
+        <translation>Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen benutzt.</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
@@ -1766,7 +1766,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
+        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
@@ -1804,7 +1804,7 @@ to the system default language.&lt;/qt&gt;
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Dieser Assistent wird Ihnen helfen, eine neue virtuelle Festplatte für Ihre virtuelle Maschine zu erstellen.&lt;/p&gt;
 &lt;p&gt;Drücken Sie auf &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln
-bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zu wechseln.&lt;/p&gt;</translation>
+bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
@@ -1833,7 +1833,7 @@ das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
@@ -1841,7 +1841,7 @@ das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;
     </message>
     <message>
         <source>Alt+F</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -1927,7 +1927,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Geben Sie einen Namen für die neue virtuelle Maschine ein und wählen Sie den Typ des Gast-Betriebssystems, das Sie installieren wollen, aus.&lt;/p&gt;
+        <translation>&lt;p&gt;Geben Sie einen Namen für die neue virtuelle Maschine ein und wählen Sie den Typ des Gast-Betriebssystems, das Sie installieren wollen.&lt;/p&gt;
 &lt;p&gt;Der Name der virtuellen Maschine gibt üblicherweise einen Anhaltspunkt über die Software und die Konfiguration der Hardware. Er wird von allen VirtualBox-Produkten benutzt, um die VM eindeutig zu identifizieren.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -1952,19 +1952,19 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Memory</source>
@@ -1978,8 +1978,8 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, das Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte durch Drücken von &lt;b&gt;Neu&lt;/b&gt; erstellen oder ein existierendes Abbild durch Betätigen von &lt;b&gt;Existierend&lt;/b&gt; auswählen (durch Aufruf des Managers virtueller Platten).&lt;/p&gt;
-&lt;p&gt;Falls Sie die virtuelle Platte zusätzliche Parameter benötigt, kann dieser Schritt auch übersprungen werden und ein Abbild später über den VM-Einstellungs-Dialog angeschlossen werden.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, die als Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte durch Drücken von &lt;b&gt;Neu&lt;/b&gt; erstellen oder ein existierendes Abbild durch Betätigen von &lt;b&gt;Existierend&lt;/b&gt; auswählen (durch Aufruf des Managers virtueller Platten).&lt;/p&gt;
+&lt;p&gt;Falls die virtuelle Platte zusätzliche Parameter benötigt, kann dieser Schritt auch übersprungen werden und ein Abbild später über den VM-Einstellungs-Dialog angeschlossen werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
@@ -2204,7 +2204,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie die virtuelle Platte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wirklich löschen?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie die virtuelle Platte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wirklich entfernen (d.h. die Registrierung aufheben)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
@@ -2280,7 +2280,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie haben in das VM-Fenster &lt;b&gt;geklickt&lt;/b&gt; oder die &lt;b&gt;Host-Taste&lt;/b&gt; betätigt. Maus sowie Tastatur werden daher &lt;b&gt;gefangen&lt;/b&gt; (die Maus nur, falls Mauszeigerintegration vom aktuellen Gast-System nicht unterstützt wird). Dadurch sind diese für andere Anwendungen neben VirtualBox nicht verfügbar.&lt;/p&gt;&lt;p&gt;Durch Betätigen der Host-Taste kann dieser Modus jederzeit beendet werden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Rand des VM-Fensters gezeigt (Symbol&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;). Zusammen mit dem daneben angezeigten Maus-Icon ziegen diese den aktuellen Tastatur- und Maus-Fangmodus.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie haben in das VM-Fenster &lt;b&gt;geklickt&lt;/b&gt; oder die &lt;b&gt;Host-Taste&lt;/b&gt; betätigt. Maus sowie Tastatur werden daher &lt;b&gt;gefangen&lt;/b&gt; (die Maus nur, falls Mauszeiger-Integration vom aktuellen Gast-System nicht unterstützt wird). Dadurch sind diese für andere Anwendungen neben VirtualBox nicht verfügbar.&lt;/p&gt;&lt;p&gt;Durch Betätigen der Host-Taste kann dieser Modus jederzeit beendet werden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Rand des VM-Fensters gezeigt (Symbol&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;). Zusammen mit dem daneben angezeigten Maus-Icon ziegen diese den aktuellen Tastatur- und Maus-Fangmodus.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -2288,7 +2288,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die virtuelle Maschine meldet Unterstützung der &lt;b&gt;Mauszeigerintegration&lt;/b&gt; durch das Gastsystem. Dies bedeutet, dass die Maus nicht gefangen werden muss, um es im Gastsystem zu benutzen, sondern alle Mausaktionen über der VM-Anzeigebereich werden direkt an den Gast weitergeleitet. Der Fangmodus wird automatisch aufgehoben, falls die Maus momentan gefangen ist.&lt;/p&gt;&lt;p&gt;Das Mausicon in der Statuszeile wird so &amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;aussehen, um anzuzeigen, dass die Mauszeigerintegration durch den Gast unterstützt und momentan aktiv ist.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Einige Anwendungen verhalten sich möglicherweise inkorrekt, wenn die Mauszeigerintegration aktiv ist. Sie können diesen Modus durch Auswahl des entsprechenden Eintrages in der Menüzeile jederzeit deaktivieren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine meldet Unterstützung der &lt;b&gt;Mauszeiger-Integration&lt;/b&gt; durch das Gastsystem. Dies bedeutet, dass die Maus nicht gefangen werden muss, um es im Gastsystem zu benutzen, sondern alle Mausaktionen über der VM-Anzeigebereich werden direkt an den Gast weitergeleitet. Der Fangmodus wird automatisch aufgehoben, falls die Maus momentan gefangen ist.&lt;/p&gt;&lt;p&gt;Das Mausicon in der Statuszeile wird so &amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;aussehen, um anzuzeigen, dass die Mauszeiger-Integration durch den Gast unterstützt und momentan aktiv ist.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Einige Anwendungen verhalten sich möglicherweise inkorrekt, wenn die Mauszeiger-Integration aktiv ist. Sie können diesen Modus durch Auswahl des entsprechenden Eintrages in der Menüzeile jederzeit deaktivieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
@@ -2300,11 +2300,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mindestens eins der registrierten virtuellen Medien ist momentan nicht zugreifbar. Virtuelle Maschinen, die auf eins dieser Medien zugreifen, können so lange nicht gestartet werden, bis diese Medien wieder zugreifbar werden.&lt;/p&gt;&lt;/p&gt;Bestätigen Sie mit &lt;b&gt;OK&lt;/b&gt; um den Manager für virtuelle Medien zu starten und zu überprüfen, welche Medien nicht zugreifbar sind. Oder drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt; um diese Meldung zu ignorieren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Mindestens eins der registrierten virtuellen Medien ist momentan nicht zugreifbar. Virtuelle Maschinen, die auf eines dieser Medien zugreifen, können so lange nicht gestartet werden, bis dieses Medium wieder zugreifbar wird.&lt;/p&gt;&lt;/p&gt;Bestätigen Sie mit &lt;b&gt;OK&lt;/b&gt; um den Manager für virtuelle Medien zu starten und zu überprüfen, welche Medien nicht zugreifbar sind. Oder drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt; um diese Meldung zu ignorieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Das Fenster der virtuellen Maschine schaltet nun auf &lt;b&gt;Vollbild&lt;/b&gt; um. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den Fenstermodus zurückkehren. Die aktuelle &lt;i&gt;Host-Taste&lt;/i&gt; ist als &lt;b&gt;%1&lt;/b&gt; festgelegt.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das Fenster der virtuellen Maschine schaltet nun auf &lt;b&gt;Vollbild&lt;/b&gt; um. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den Fenstermodus zurückkehren. Die aktuelle &lt;i&gt;Host-Taste&lt;/i&gt; ist &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2382,11 +2382,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die im Gast installierten VirtualBox Gasterweiterungen sind zu alt: Version %1 ist installiert, erwartet wird Version %2. Einige Features, die Gasterweiterungen benötigen (Mauszeigerintegration, automatische Anpassung der Gastanzeige) funktionieren höchstwahrscheinlich nicht.&lt;/p&gt;&lt;p&gt;Bitte aktualisieren Sie die Gasterweiterungen durch &lt;b&gt;Gasterweiterungen installieren&lt;/b&gt; aus dem Menü &lt;b&gt;Geräte&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die im Gast installierten VirtualBox Gasterweiterungen sind zu alt: Version %1 ist installiert, erwartet wird Version %2. Einige Features, die Gasterweiterungen benötigen (Mauszeiger-Integration, automatische Anpassung der Gastanzeige) funktionieren höchstwahrscheinlich nicht.&lt;/p&gt;&lt;p&gt;Bitte aktualisieren Sie die Gasterweiterungen durch &lt;b&gt;Gasterweiterungen installieren&lt;/b&gt; aus dem Menü &lt;b&gt;Geräte&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die im Gast installierten Virtualbox Gasterweiterungen sind überholt: Version %1 ist installiert, erwartet wird Version %2. Einige Features, die Gasterweiterungen benötigen (Mauszeigerintegration, automatische Anpassung der Gastanzeige) funktionieren möglicherweise nicht wie erwartet.&lt;/p&gt;&lt;p&gt;Bitte aktualisieren Sie die Gasterweiterungen durch &lt;b&gt;Gasterweiterungen installieren&lt;/b&gt; aus dem Menü &lt;b&gt;Geräte&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die im Gast installierten Virtualbox Gasterweiterungen sind überholt: Version %1 ist installiert, erwartet wird Version %2. Einige Features, die Gasterweiterungen benötigen (Mauszeiger-Integration, automatische Anpassung der Gastanzeige) funktionieren möglicherweise nicht wie erwartet.&lt;/p&gt;&lt;p&gt;Bitte aktualisieren Sie die Gasterweiterungen durch &lt;b&gt;Gasterweiterungen installieren&lt;/b&gt; aus dem Menü &lt;b&gt;Geräte&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -2428,7 +2428,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation>Strg+M</translation>
+        <translation>Strg+L</translation>
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
@@ -2437,7 +2437,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
-        <translation type="unfinished">&amp;Globale Einstellungen...</translation>
+        <translation>&amp;Globale Einstellungen...</translation>
     </message>
     <message>
         <source>Ctrl+G</source>
@@ -2445,7 +2445,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished">Zeigt den Dialog für globale Einstellungen</translation>
+        <translation>Zeigt den Dialog für globale Einstellungen</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -2477,7 +2477,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>&amp;Ändern...</translation>
+        <translation>Än&amp;dern...</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -2485,7 +2485,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation>Strg+Ä</translation>
+        <translation>Strg+D</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
@@ -2533,7 +2533,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Inhalt</translation>
+        <translation>&amp;Inhalt...</translation>
     </message>
     <message>
         <source>F1</source>
@@ -2545,7 +2545,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">Webseite von &amp;VirtualBox</translation>
+        <translation>Webseite von &amp;VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
@@ -2553,7 +2553,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">&amp;Über VirtualBox</translation>
+        <translation>&amp;Über VirtualBox...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
@@ -2585,11 +2585,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation type="unfinished">Beschreibung *</translation>
+        <translation>&amp;Beschreibung *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation type="unfinished">Zeigen</translation>
+        <translation>&amp;Zeigen</translation>
     </message>
     <message>
         <source>Show</source>
@@ -2601,7 +2601,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation type="unfinished">Starten</translation>
+        <translation>&amp;Starten</translation>
     </message>
     <message>
         <source>Start</source>
@@ -2649,7 +2649,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Shared &amp;Folders</source>
@@ -2721,7 +2721,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Snapshot Details </source>
@@ -2828,11 +2828,11 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished">Aktuellen Sicherungspunkt und Zustand verwerfen</translation>
+        <translation>Aktuellen Sicherungspunkt und Zustand &amp;verwerfen</translation>
     </message>
     <message>
         <source>Ctrl+Alt+Shift+D</source>
-        <translation>Strg+Alt+Shif+D</translation>
+        <translation>Strg+Alt+Shif+V</translation>
     </message>
     <message>
         <source>Show Details</source>
@@ -2934,7 +2934,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -2958,7 +2958,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -2978,7 +2978,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>&amp;Serial No.</source>
-        <translation>&amp;Serielle Nr.</translation>
+        <translation>&amp;Seriennr.</translation>
     </message>
     <message>
         <source>R&amp;emote</source>
@@ -3035,7 +3035,7 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Verwendet die serielle Nummer als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf alle seriellen Nummer.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Verwendet die Seriennummer als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf alle Seriennummern.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
@@ -3127,7 +3127,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Betätigen Sie &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln und &lt;b&gt;Zurück&lt;/b&gt; für den Wechsel auf die vorherige Seite. Sie können ebenso &lt;b&gt;Abbrechen&lt;/b&gt; betätigen, um den Assistenten sofort abzubrechen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Betätigen Sie &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln und &lt;b&gt;Zurück&lt;/b&gt; für die Rückkehr auf die vorherige Seite. Sie können ebenso &lt;b&gt;Abbrechen&lt;/b&gt; betätigen, um den Assistenten sofort abzubrechen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
@@ -3135,7 +3135,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für Installtionszwecke verwenden möchten.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für die Installtion verwenden möchten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Type</source>
@@ -3159,7 +3159,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie das Medium mit dem Installationsprogramm des Betriebssystems das Sie installieren wollen. Dieses Medium muss bootbar sein, anderenfalls kann das Installationsprogramm nicht starten.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wählen Sie das Medium mit dem Installationsprogramm des Betriebssystems, das Sie installieren wollen. Dieses Medium muss bootbar sein, anderenfalls kann das Installationsprogramm nicht starten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
@@ -3271,7 +3271,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Keine Log-Dateien gefunden. Drücken Sie &lt;b&gt;Aktualisieren&lt;/b&gt;, um den Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Keine Log-Dateien gefunden. Drücken Sie &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
@@ -3397,19 +3397,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
@@ -3421,11 +3421,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#general</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
@@ -3433,11 +3433,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#hdds</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Floppy </source>
@@ -3445,11 +3445,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#floppy</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
@@ -3457,11 +3457,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>3</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#dvd</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Audio </source>
@@ -3469,11 +3469,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>4</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#audio</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Network </source>
@@ -3481,11 +3481,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>5</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#network</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> USB </source>
@@ -3493,11 +3493,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>6</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#usb</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Remote Display </source>
@@ -3505,11 +3505,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>7</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#vrdp</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -3517,11 +3517,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>8</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>#sfolders</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Identification</source>
@@ -3549,19 +3549,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>=</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
@@ -3597,7 +3597,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -3605,7 +3605,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+P</source>
-        <translation type="unfinished">Alt+A</translation>
+        <translation>Alt+I</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -3641,11 +3641,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="unfinished">Diskettenlaufwerk des Hosts</translation>
+        <translation>&amp;Diskettenlaufwerk des Hosts</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
@@ -3669,7 +3669,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation type="unfinished">CD/DVD-Laufwerk des Hosts</translation>
+        <translation>&amp;CD/DVD-Laufwerk des Hosts</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
@@ -3697,7 +3697,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+U</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -3805,7 +3805,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -3861,7 +3861,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
