@@ -24,12 +24,13 @@
 #include <version-generated.h>
 
 /** Combined version number. */
-#define VBOX_VERSION            (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
+#define VBOX_VERSION                    (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
 /** Get minor version from combined version */
 #define VBOX_GET_VERSION_MINOR(uVer)    (uVer & 0xffff)
 /** Get major version from combined version. */
 #define VBOX_GET_VERSION_MAJOR(uVer)    (uVer >> 16)
-
+/** Vendor name */
+#define VBOX_VENDOR                     "innotek GmbH"
 
 #endif
 
